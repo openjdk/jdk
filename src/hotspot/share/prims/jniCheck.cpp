@@ -1511,11 +1511,12 @@ JNI_ENTRY_CHECKED(jsize,
       checkString(thr, str);
     )
     jsize result = UNCHECKED()->GetStringUTFLength(env,str);
-    jlong full_length =  UNCHECKED()->GetLargeStringUTFLength(env,str);
+    jlong full_length =  UNCHECKED()->GetStringUTFLengthAsLong(env,str);
     if (full_length > result) {
+      ResourceMark rm(thr);
       stringStream ss;
       ss.print("WARNING: large String with modified UTF-8 length " JLONG_FORMAT
-                " is reporting a reduced length of %d - use GetLargeStringUTFLength instead",
+                " is reporting a reduced length of %d - use GetStringUTFLengthAsLong instead",
                 full_length, result);
       NativeReportJNIWarning(thr, ss.as_string());
     }
@@ -1524,13 +1525,13 @@ JNI_ENTRY_CHECKED(jsize,
 JNI_END
 
 JNI_ENTRY_CHECKED(jlong,
-  checked_jni_GetLargeStringUTFLength(JNIEnv *env,
-                                      jstring str))
+  checked_jni_GetStringUTFLengthAsLong(JNIEnv *env,
+                                       jstring str))
     functionEnter(thr);
     IN_VM(
       checkString(thr, str);
     )
-    jlong result = UNCHECKED()->GetLargeStringUTFLength(env,str);
+    jlong result = UNCHECKED()->GetStringUTFLengthAsLong(env,str);
     functionExit(thr);
     return result;
 JNI_END
@@ -2307,7 +2308,7 @@ struct JNINativeInterface_  checked_jni_NativeInterface = {
 
     // Large UTF8 support
 
-    checked_jni_GetLargeStringUTFLength
+    checked_jni_GetStringUTFLengthAsLong
 
 };
 

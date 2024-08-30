@@ -2221,18 +2221,18 @@ JNI_END
 
 
 JNI_ENTRY(jsize, jni_GetStringUTFLength(JNIEnv *env, jstring string))
- HOTSPOT_JNI_GETSTRINGUTFLENGTH_ENTRY(env, string);
+  HOTSPOT_JNI_GETSTRINGUTFLENGTH_ENTRY(env, string);
   oop java_string = JNIHandles::resolve_non_null(string);
   jsize ret = java_lang_String::utf8_length_as_int(java_string);
   HOTSPOT_JNI_GETSTRINGUTFLENGTH_RETURN(ret);
   return ret;
 JNI_END
 
-JNI_ENTRY(jlong, jni_GetLargeStringUTFLength(JNIEnv *env, jstring string))
- HOTSPOT_JNI_GETLARGESTRINGUTFLENGTH_ENTRY(env, string);
+JNI_ENTRY(jlong, jni_GetStringUTFLengthAsLong(JNIEnv *env, jstring string))
+  HOTSPOT_JNI_GETSTRINGUTFLENGTHASLONG_ENTRY(env, string);
   oop java_string = JNIHandles::resolve_non_null(string);
   size_t ret = java_lang_String::utf8_length(java_string);
-  HOTSPOT_JNI_GETLARGESTRINGUTFLENGTH_RETURN(ret);
+  HOTSPOT_JNI_GETSTRINGUTFLENGTHASLONG_RETURN(ret);
 return checked_cast<jlong>(ret);
 JNI_END
 
@@ -3410,7 +3410,7 @@ struct JNINativeInterface_ jni_NativeInterface = {
 
     // Large UTF8 support
 
-    jni_GetLargeStringUTFLength
+    jni_GetStringUTFLengthAsLong
 };
 
 

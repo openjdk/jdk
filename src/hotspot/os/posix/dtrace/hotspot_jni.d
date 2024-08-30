@@ -352,8 +352,8 @@ provider hotspot_jni {
   probe GetStringUTFChars__return(const char*);
   probe GetStringUTFLength__entry(void*, void*);
   probe GetStringUTFLength__return(uintptr_t);
-  probe GetLargeStringUTFLength__entry(void*, void*);
-  probe GetLargeStringUTFLength__return(uintptr_t);
+  probe GetStringUTFLengthAsLong__entry(void*, void*);
+  probe GetStringUTFLengthAsLong__return(uintptr_t);
   probe GetStringUTFRegion__entry(void*, void*, uintptr_t, uintptr_t, char*);
   probe GetStringUTFRegion__return();
   probe GetSuperclass__entry(void*, void*);

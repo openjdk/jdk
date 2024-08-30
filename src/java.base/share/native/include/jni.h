@@ -778,7 +778,7 @@ struct JNINativeInterface_ {
 
     /* Large UTF8 Support */
 
-    jlong (JNICALL *GetLargeStringUTFLength)
+    jlong (JNICALL *GetStringUTFLengthAsLong)
       (JNIEnv *env, jstring str);
 
 };
@@ -1629,8 +1629,8 @@ struct JNIEnv_ {
     jsize GetStringUTFLength(jstring str) {
         return functions->GetStringUTFLength(this,str);
     }
-    jlong GetLargeStringUTFLength(jstring str) {
-        return functions->GetLargeStringUTFLength(this,str);
+    jlong GetStringUTFLengthAsLong(jstring str) {
+        return functions->GetStringUTFLengthAsLong(this,str);
     }
     const char* GetStringUTFChars(jstring str, jboolean *isCopy) {
         return functions->GetStringUTFChars(this,str,isCopy);
