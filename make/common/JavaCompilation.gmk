@@ -255,9 +255,9 @@ define SetupJavaCompilationBody
       $1_JAVAC := $$(INTERIM_LANGTOOLS_ARGS) -m jdk.compiler.interim/com.sun.tools.javac.Main
 
       ifeq ($$($1_SMALL_JAVA), true)
-       $1_JAVAC_CMD := $$(JAVA_SMALL) $$($1_JAVA_FLAGS) $$($1_JAVAC)
+        $1_JAVAC_CMD := $$(JAVA_SMALL) $$($1_JAVA_FLAGS) $$($1_JAVAC)
       else
-       $1_JAVAC_CMD := $$(JAVA) $$($1_JAVA_FLAGS) $$($1_JAVAC)
+        $1_JAVAC_CMD := $$(JAVA) $$($1_JAVA_FLAGS) $$($1_JAVAC)
       endif
     endif
 
