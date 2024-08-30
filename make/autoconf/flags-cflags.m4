@@ -242,6 +242,8 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ALL_CFLAGS="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
       WARNINGS_ENABLE_ALL_CXXFLAGS="$WARNINGS_ENABLE_ALL_CFLAGS $WARNINGS_ENABLE_ADDITIONAL_CXX"
 
+      # These warnings will never be turned on, since they generate too many
+      # false positives.
       DISABLED_WARNINGS="unused-parameter"
       # gcc10/11 on ppc generate lots of abi warnings about layout of aggregates containing vectors
       if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
@@ -259,7 +261,9 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
           -Wunused-function -Wundef -Wunused-value -Woverloaded-virtual"
       WARNINGS_ENABLE_ALL="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"
 
-      DISABLED_WARNINGS="unknown-warning-option unused-parameter unused"
+      # These warnings will never be turned on, since they generate too many
+      # false positives.
+      DISABLED_WARNINGS="unknown-warning-option unused-parameter"
       ;;
   esac
   AC_SUBST(DISABLE_WARNING_PREFIX)
