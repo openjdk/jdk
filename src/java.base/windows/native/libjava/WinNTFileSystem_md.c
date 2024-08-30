@@ -337,7 +337,10 @@ Java_java_io_WinNTFileSystem_getFinalPath0(JNIEnv* env, jobject this, jstring pa
 
     WITH_UNICODE_STRING(env, pathname, path) {
         WCHAR* finalPath = getFinalPath(env, path);
-        rv = (*env)->NewString(env, finalPath, (jsize)wcslen(finalPath));
+        if (finalPath != NULL) {
+            rv = (*env)->NewString(env, finalPath, (jsize)wcslen(finalPath));
+            free(finalPath);
+        }
     } END_UNICODE_STRING(env, path);
 
     if (rv == NULL && !(*env)->ExceptionCheck(env)) {
