@@ -75,7 +75,7 @@ private:
   char* _path;
 public:
   TestController(char* p): _path(p) {}
-  char* subsystem_path() override {
+  const char* subsystem_path() override {
     return _path;
   };
   bool is_read_only() override {
