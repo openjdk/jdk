@@ -117,16 +117,20 @@ AWT_ASSERT_APPKIT_THREAD;
     // don't install the EAWT delegate if another kind of NSApplication is installed, like say, Safari
     BOOL shouldInstall = NO;
     BOOL overrideDelegate = (getenv("AWT_OVERRIDE_NSDELEGATE") != NULL);
+    BOOL isApplicationOwner = NO;
     if (NSApp != nil) {
         if ([NSApp isMemberOfClass:[NSApplication class]] && overrideDelegate) shouldInstall = YES;
-        if ([NSApp isKindOfClass:[NSApplicationAWT class]]) shouldInstall = YES;
+        if ([NSApp isKindOfClass:[NSApplicationAWT class]]) {
+            shouldInstall = YES;
+            isApplicationOwner = YES;
+        }
     }
     checked = YES;
     if (!shouldInstall) {
         [ThreadUtilities setApplicationOwner:NO];
         return nil;
     }
-    [ThreadUtilities setApplicationOwner:YES];
+    [ThreadUtilities setApplicationOwner:isApplicationOwner];
 
     sApplicationDelegate = [[ApplicationDelegate alloc] init];
     return sApplicationDelegate;
