@@ -25,10 +25,13 @@
 #ifndef SHARE_COMPILER_COMPILERDEFINITIONS_INLINE_HPP
 #define SHARE_COMPILER_COMPILERDEFINITIONS_INLINE_HPP
 
+#ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
+#endif
+#ifdef COMPILER2
 #include "opto/c2compiler.hpp"
+#endif
 #include "compiler/compilerDefinitions.hpp"
-
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "runtime/arguments.hpp"
