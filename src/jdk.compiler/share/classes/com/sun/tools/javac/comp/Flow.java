@@ -1017,6 +1017,12 @@ public class Flow {
          * simplify the pattern. If that succeeds, the original found sub-set
          * of patterns is replaced with a new set of patterns of the form:
          * $record($prefix$, $resultOfReduction, $suffix$)
+         *
+         * useHashes: when true, patterns will be a subject to exact equivalence;
+         *            when false, two bindings patterns will be considered equivalent
+         *            if one of them is more generic than the other one;
+         *            when false, the processing will be significantly slower,
+         *            as pattern hashes cannot be used to speed up the matching process
          */
         private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns, boolean useHashes) {
             /* implementation note:
@@ -1072,8 +1078,13 @@ public class Flow {
                                     for (int i = 0; i < rpOne.nested.length; i++) {
                                         if (i != mismatchingCandidate) {
                                             if (!rpOne.nested[i].equals(rpOther.nested[i])) {
-//                                                if (useHashes || !(rpOne.nested[i] instanceof BindingPattern bpOne) || !(rpOther.nested[i] instanceof BindingPattern bpOther) || !types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
-                                                if (useHashes || !(rpOne.nested[i] instanceof BindingPattern bpOne) || !(rpOther.nested[i] instanceof BindingPattern bpOther) || !types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
+                                                if (useHashes ||
+                                                    //when not using hashes,
+                                                    //check if rpOne.nested[i] is
+                                                    //a subtype of rpOther.nested[i]:
+                                                    !(rpOne.nested[i] instanceof BindingPattern bpOne) ||
+                                                    !(rpOther.nested[i] instanceof BindingPattern bpOther) ||
+                                                    !types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
                                                     continue NEXT_PATTERN;
                                                 }
                                             }
@@ -1091,8 +1102,9 @@ public class Flow {
                             updatedPatterns = reduceBindingPatterns(rpOne.fullComponentTypes()[mismatchingCandidateFin], updatedPatterns);
 
                             if (!nestedPatterns.equals(updatedPatterns)) {
-                                //TODO: probably do not remove if subtyping was used?
-                                current.removeAll(join);
+                                if (useHashes) {
+                                    current.removeAll(join);
+                                }
 
                                 for (PatternDescription nested : updatedPatterns) {
                                     PatternDescription[] newNested =
@@ -1166,40 +1178,6 @@ public class Flow {
                 }
             }
             return pattern;
-        }
-
-        private Set<PatternDescription> expandGenericPatterns(Set<PatternDescription> patterns) {
-            var newPatterns = new HashSet<PatternDescription>(patterns);
-            boolean modified;
-            do {
-                modified = false;
-                for (PatternDescription pd : patterns) {
-                    if (pd instanceof RecordPattern rpOne) {
-                        for (int i = 0; i < rpOne.nested.length; i++) {
-                            Set<PatternDescription> toExpand = Set.of(rpOne.nested[i]);
-                            Set<PatternDescription> expanded = expandGenericPatterns(toExpand);
-                            if (expanded != toExpand) {
-                                expanded.removeAll(toExpand);
-                                for (PatternDescription exp : expanded) {
-                                    PatternDescription[] newNested = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
-                                    newNested[i] = exp;
-                                    modified |= newPatterns.add(new RecordPattern(rpOne.recordType(), rpOne.fullComponentTypes(), newNested));
-                                }
-                            }
-                        }
-                    } else if (pd instanceof BindingPattern bp) {
-                        Set<Symbol> permittedSymbols = allPermittedSubTypes(bp.type.tsym, cs -> true);
-
-                        if (!permittedSymbols.isEmpty()) {
-                            for (Symbol permitted : permittedSymbols) {
-                                //TODO infer.instantiatePatternType(selectorType, csym); (?)
-                                modified |= newPatterns.add(new BindingPattern(permitted.type));
-                            }
-                        }
-                    }
-                }
-            } while (modified);
-            return newPatterns;
         }
 
         private Set<PatternDescription> removeCoveredRecordPatterns(Set<PatternDescription> patterns) {
