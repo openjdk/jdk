@@ -23,11 +23,12 @@
 
 /* @test
  * @bug 8322256
- * @summary Test support for concatenated gzip streams
+ * @summary Test support for concatenated GZIP streams
  * @run junit GZIPInputStreamConcat
  */
 
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.*;
@@ -36,110 +37,89 @@ import java.util.stream.*;
 import java.util.zip.*;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class GZIPInputStreamConcat {
 
-    private int bufsize;
+    // The buffer size passed to GZIPInputStream
+    private int bufSize;
 
-    public static Stream<Object[]> testScenarios() throws IOException {
-
+    public static Stream<Arguments> testScenarios() throws IOException {
         // Test concat vs. non-concat, garbage vs. no-garbage, and various buffer sizes on random data
         Random random = new Random();
-        final ArrayList<List<Object>> scenarios = new ArrayList<>();
-        for (int size = 1; size < 1024; size += random.nextInt(32) + 1) {
-            scenarios.add(List.of(randomData(0, 100), size));
+        List<Arguments> scenarios = new ArrayList<>();
+        for (int bufSize = 1; bufSize < 1024; bufSize += random.nextInt(32) + 1) {
+            scenarios.add(Arguments.of(randomData(0, 100), bufSize));
         }
-        return scenarios.stream().map(List::toArray);
+        return scenarios.stream();
     }
 
     @ParameterizedTest
     @MethodSource("testScenarios")
-    public void testScenario(byte[] uncompressed, int size) throws IOException {
-        this.bufsize = size;
-        testScenario(uncompressed);
+    public void testScenario(byte[] uncompressed, int bufSize) throws IOException {
+        this.bufSize = bufSize;
+        runTests(uncompressed);
     }
 
-    public void testScenario(byte[] uncompressed) throws IOException {
+    public void runTests(byte[] uncompressed) throws IOException {
 
         // Compress the test data
-        byte[] compressed = deflate(uncompressed);
+        byte[] compressed = gzip(uncompressed);
 
         // Decompress a single stream with no extra garbage - should always work
-        byte[] input = compressed;
-        byte[] output = uncompressed;
-        testDecomp(input, output, null);
+        decomp(compressed, uncompressed);
 
         // Decompress a truncated GZIP header
-        input = oneByteShort(gzipHeader());
-        testDecomp(input, null, EOFException.class);
+        decompFail(oneByteShort(gzipHeader()), EOFException.class);
 
         // Decompress a single stream that is one byte short - should always fail
-        input = oneByteShort(compressed);
-        output = null;
-        testDecomp(input, null, EOFException.class);
+        decompFail(oneByteShort(compressed), EOFException.class);
 
         // Decompress a single stream with one byte of extra garbage (trying all 256 possible values)
-        for (int extra = 0; extra < 0x100; extra++) {
-            input = oneByteLong(compressed, extra);
-            output = uncompressed;
-            testDecomp(input, output, null);
+        for (int extra = Byte.MIN_VALUE; extra <= Byte.MAX_VALUE ; extra++) {
+            decomp(oneByteLong(compressed, (byte) extra), uncompressed);
         }
 
         // Decompress a single stream followed by a truncated GZIP header
-        input = concat(compressed, oneByteShort(gzipHeader()));
-        output = uncompressed;
-        testDecomp(input, output, null);
+        decomp(concat(compressed, oneByteShort(gzipHeader())), uncompressed);
 
         // Decompress a single stream followed by another stream that is one byte short
-        input = concat(compressed, oneByteShort(compressed));
-        output = uncompressed;
-        testDecomp(input, output, IOException.class);
+        decompFail(concat(compressed, oneByteShort(compressed)), IOException.class);
 
         // Decompress two streams concatenated
-        input = concat(compressed, compressed);
-        output = concat(uncompressed, uncompressed);
-        testDecomp(input, output, null);
+        decomp(concat(compressed, compressed), concat(uncompressed, uncompressed));
 
         // Decompress three streams concatenated
-        input = concat(compressed, compressed, compressed);
-        output = concat(uncompressed, uncompressed, uncompressed);
-        testDecomp(input, output, null);
+        decomp(concat(compressed, compressed, compressed),
+                concat(uncompressed, uncompressed, uncompressed));
 
         // Decompress three streams concatenated followed by a truncated GZIP header
-        input = concat(compressed, compressed, compressed, oneByteShort(gzipHeader()));
-        output = concat(uncompressed, uncompressed, uncompressed);
-        testDecomp(input, output, null);
+        decomp(concat(compressed, compressed, compressed, oneByteShort(gzipHeader())),
+                concat(uncompressed, uncompressed, uncompressed));
     }
 
     // Do decompression and check result
-    public void testDecomp(byte[] compressed, byte[] uncompressed, Class<? extends IOException> exceptionType) {
-        try {
-            byte[] readback = inflate(new ByteArrayInputStream(compressed));
-            if (exceptionType != null)
-                throw new AssertionError("expected " + exceptionType.getSimpleName());
-            assertArrayEquals(uncompressed, readback);
-        } catch (IOException e) {
-            if (exceptionType == null)
-                throw new AssertionError("unexpected exception", e);
-            if (!exceptionType.isAssignableFrom(e.getClass())) {
-                throw new AssertionError(String.format(
-                  "expected %s but got %s", exceptionType.getSimpleName(), e.getClass().getSimpleName()), e);
-            }
-        }
+    public void decomp(byte[] compressed, byte[] uncompressed) throws IOException {
+        byte[] readback = gunzip(new ByteArrayInputStream(compressed));
+        assertArrayEquals(uncompressed, readback);
+    }
+
+    // Do decompression, asserting an execption
+    public void decompFail(byte[] compressed, Class<? extends IOException> exceptionType) {
+        assertThrows(exceptionType, () -> {
+            byte[] readback = gunzip(new ByteArrayInputStream(compressed));
+        });
     }
 
     // Create a GZIP header
     public static byte[] gzipHeader() throws IOException {
-        byte[] compressed = deflate(new byte[0]);
+        byte[] compressed = gzip(new byte[0]);
         return Arrays.copyOfRange(compressed, 0, 10);
     }
 
     // Add one extra byte to the given array
-    public static byte[] oneByteLong(byte[] array, int value) {
-        byte[] array2 = new byte[array.length + 1];
-        System.arraycopy(array, 0, array2, 0, array.length);
-        array2[array.length] = (byte)value;
-        return array2;
+    public static byte[] oneByteLong(byte[] array, byte value) {
+        return concat(array, new byte[] {value});
     }
 
     // Chop off the last byte of the given array
@@ -164,7 +144,7 @@ public class GZIPInputStreamConcat {
     }
 
     // GZIP compress data
-    public static byte[] deflate(byte[] data) throws IOException {
+    public static byte[] gzip(byte[] data) throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         try (GZIPOutputStream out = new GZIPOutputStream(buf)) {
             out.write(data);
@@ -173,7 +153,7 @@ public class GZIPInputStreamConcat {
     }
 
     // GZIP decompress data
-    public byte[] inflate(InputStream in) throws IOException {
-        return new GZIPInputStream(in, bufsize).readAllBytes();
+    public byte[] gunzip(InputStream in) throws IOException {
+        return new GZIPInputStream(in, bufSize).readAllBytes();
     }
 }

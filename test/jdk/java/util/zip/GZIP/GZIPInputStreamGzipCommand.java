@@ -28,6 +28,7 @@
  */
 
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.*;
@@ -40,8 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class GZIPInputStreamGzipCommand {
 
-    public static Stream<String[]> gzipScenarios() throws IOException {
-        final ArrayList<String[]> scenarios = new ArrayList();
+    public static Stream<Arguments> gzipScenarios() throws IOException {
+        List<Arguments> scenarios = new ArrayList();
 
         /*
             # To regenerate the hex data below:
@@ -51,7 +52,7 @@ public class GZIPInputStreamGzipCommand {
                 done
             ) | hexdump -e '32/1 "%02x" "\n"'
         */
-        scenarios.add(new String[] { """
+        scenarios.add(Arguments.of("""
             this is compression level #1
             this is compression level #2
             this is compression level #3
@@ -75,7 +76,7 @@ public class GZIPInputStreamGzipCommand {
             00141cde3f1d0000001f8b0800d42ea46600032bc9c82c5600a2e4fcdc82a2d4
             e2e2ccfc3c859cd4b2d41c05650b2e00db0046b81d0000001f8b0800d42ea466
             02032bc9c82c5600a2e4fcdc82a2d4e2e2ccfc3c859cd4b2d41c05654b2e009a
-            315da11d000000""" });
+            315da11d000000"""));
 
         /*
             # To regenerate the hex data below:
@@ -86,13 +87,13 @@ public class GZIPInputStreamGzipCommand {
                 rm file1.gz file2.gz
             ) | hexdump -e '32/1 "%02x" "\n"'
         */
-        scenarios.add(new String[] { """
+        scenarios.add(Arguments.of("""
             this one has a name
             this one has no name
             """, """
             1f8b08082230a466000366696c6531002bc9c82c56c8cf4b55c8482c564854c8
             4bcc4de50200d7ccdc5a140000001f8b08000000000000032bc9c82c56c8cf4b
-            55c8482c56c8cb57c84bcc4de50200b1effb5015000000""" });
+            55c8482c56c8cb57c84bcc4de50200b1effb5015000000""" ));
 
         /*
             # To regenerate the hex data below:
@@ -104,12 +105,12 @@ public class GZIPInputStreamGzipCommand {
                 done
             ) | gzip --best | hexdump -e '32/1 "%02x" "\n"'
         */
-        scenarios.add(new String[] {
+        scenarios.add(Arguments.of(
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".repeat(1000),
             """
             1f8b08002a35a4660203edc18100000000c320d6f94b1ce45501000000000000
             0000000000000000000000000000000000000000000000000000000000000000
-            c08f01492d182728a00000""" });
+            c08f01492d182728a00000""" ));
 
         return scenarios.stream();
     }
@@ -119,16 +120,16 @@ public class GZIPInputStreamGzipCommand {
     public void testScenario(String input, String hexData) throws IOException {
 
         // Get expected result
-        final byte[] expected = input.getBytes(StandardCharsets.UTF_8);
+        byte[] expected = input.getBytes(StandardCharsets.UTF_8);
 
         // Get actual result
-        final HexFormat hexFormat = HexFormat.of();
-        final byte[] data = hexFormat.parseHex(hexData.replaceAll("\\s", ""));
-        final ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        HexFormat hexFormat = HexFormat.of();
+        byte[] data = hexFormat.parseHex(hexData.replaceAll("\\s", ""));
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
         try (GZIPInputStream gunzip = new GZIPInputStream(new ByteArrayInputStream(data))) {
             gunzip.transferTo(buf);
         }
-        final byte[] actual = buf.toByteArray();
+        byte[] actual = buf.toByteArray();
 
         // Compare
         System.out.println("  ACTUAL: " + hexFormat.formatHex(actual));
