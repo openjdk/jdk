@@ -237,9 +237,10 @@ ReallocMark::ReallocMark() {
 #endif
 }
 
-void ReallocMark::check() {
+void ReallocMark::check(Arena* arena) {
 #ifdef ASSERT
-  if (_nesting != Thread::current()->resource_area()->nesting()) {
+  if ((arena == nullptr || arena == Thread::current()->resource_area()) &&
+      _nesting != Thread::current()->resource_area()->nesting()) {
     fatal("allocation bug: array could grow within nested ResourceMark");
   }
 #endif

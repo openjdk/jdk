@@ -136,6 +136,7 @@ ifeq ($(call isTargetOs, macosx), true)
 	  $(CP) -fRP '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'; \
 	fi
 	if [ -n "`$(XATTR) -ls '$(call DecodeSpace, $@)'`" ]; then \
+          $(CHMOD) u+w '$(call DecodeSpace, $@)'; \
 	  $(XATTR) -cs '$(call DecodeSpace, $@)'; \
 	fi
   endef
@@ -187,6 +188,11 @@ else
 	$(LN) -s '$(call DecodeSpace, $<)' '$(call DecodeSpace, $@)'
   endef
 endif
+
+define copy-and-chmod-executable
+	$(install-file)
+	$(CHMOD) a+rx $@
+endef
 
 ################################################################################
 

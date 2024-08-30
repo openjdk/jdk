@@ -43,7 +43,7 @@ import static java.lang.classfile.ClassFile.*;
 
 public final class CodeImpl
         extends BoundAttribute.BoundCodeAttribute
-        implements CodeModel, LabelContext {
+        implements LabelContext {
 
     static final Instruction[] SINGLETON_INSTRUCTIONS = new Instruction[256];
 
@@ -147,12 +147,7 @@ public final class CodeImpl
         }
         else {
             DirectCodeBuilder.build((MethodInfo) enclosingMethod,
-                                    new Consumer<CodeBuilder>() {
-                                        @Override
-                                        public void accept(CodeBuilder cb) {
-                                            forEach(cb);
-                                        }
-                                    },
+                                    Util.writingAll(this),
                                     (SplitConstantPool)buf.constantPool(),
                                     buf.context(),
                                     null).writeTo(buf);

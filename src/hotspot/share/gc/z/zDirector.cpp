@@ -102,7 +102,7 @@ static double estimated_gc_workers(double serial_gc_time, double parallelizable_
 }
 
 static uint discrete_young_gc_workers(double gc_workers) {
-  return clamp<uint>(ceil(gc_workers), 1, ZYoungGCThreads);
+  return clamp<uint>((uint)ceil(gc_workers), 1, ZYoungGCThreads);
 }
 
 static double select_young_gc_workers(const ZDirectorStats& stats, double serial_gc_time, double parallelizable_gc_time, double alloc_rate_sd_percent, double time_until_oom) {
@@ -426,7 +426,7 @@ static bool rule_major_warmup(const ZDirectorStats& stats) {
   const size_t soft_max_capacity = stats._heap._soft_max_heap_size;
   const size_t used = stats._heap._used;
   const double used_threshold_percent = (stats._old_stats._cycle._nwarmup_cycles + 1) * 0.1;
-  const size_t used_threshold = soft_max_capacity * used_threshold_percent;
+  const size_t used_threshold = (size_t)(soft_max_capacity * used_threshold_percent);
 
   log_debug(gc, director)("Rule Major: Warmup %.0f%%, Used: " SIZE_FORMAT "MB, UsedThreshold: " SIZE_FORMAT "MB",
                           used_threshold_percent * 100, used / M, used_threshold / M);
@@ -497,13 +497,13 @@ static bool rule_major_allocation_rate(const ZDirectorStats& stats) {
   // Doing an old collection makes subsequent young collections more efficient.
   // Calculate the number of young collections ahead that we will try to amortize
   // the cost of doing an old collection for.
-  const int lookahead = stats._heap._total_collections - stats._old_stats._general._total_collections_at_start;
+  const uint lookahead = stats._heap._total_collections - stats._old_stats._general._total_collections_at_start;
 
   // Calculate extra young collection overhead predicted for a number of future
   // young collections, due to not freeing up memory in the old generation.
   const double extra_young_gc_time_for_lookahead = extra_young_gc_time * lookahead;
 
-  log_debug(gc, director)("Rule Major: Allocation Rate, ExtraYoungGCTime: %.3fs, OldGCTime: %.3fs, Lookahead: %d, ExtraYoungGCTimeForLookahead: %.3fs",
+  log_debug(gc, director)("Rule Major: Allocation Rate, ExtraYoungGCTime: %.3fs, OldGCTime: %.3fs, Lookahead: %u, ExtraYoungGCTimeForLookahead: %.3fs",
                           extra_young_gc_time, old_gc_time, lookahead, extra_young_gc_time_for_lookahead);
 
   // If we continue doing as many minor collections as we already did since the
@@ -565,7 +565,7 @@ static bool rule_major_proactive(const ZDirectorStats& stats) {
   // passed since the previous GC. This helps avoid superfluous GCs when running
   // applications with very low allocation rate.
   const size_t used_after_last_gc = stats._old_stats._stat_heap._used_at_relocate_end;
-  const size_t used_increase_threshold = stats._heap._soft_max_heap_size * 0.10; // 10%
+  const size_t used_increase_threshold = (size_t)(stats._heap._soft_max_heap_size * 0.10); // 10%
   const size_t used_threshold = used_after_last_gc + used_increase_threshold;
   const size_t used = stats._heap._used;
   const double time_since_last_gc = stats._old_stats._cycle._time_since_last;

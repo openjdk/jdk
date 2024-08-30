@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -238,7 +238,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler *masm, Register tmp1,
   __ ld(tmp1_class_loader_data, in_bytes(InstanceKlass::class_loader_data_offset()), tmp1);
 
   // Fast path: If class loader is strong, the holder cannot be unloaded.
-  __ lwz(tmp2, in_bytes(ClassLoaderData::keep_alive_offset()), tmp1_class_loader_data);
+  __ lwz(tmp2, in_bytes(ClassLoaderData::keep_alive_ref_count_offset()), tmp1_class_loader_data);
   __ cmpdi(CCR0, tmp2, 0);
   __ bne(CCR0, skip_barrier);
 
