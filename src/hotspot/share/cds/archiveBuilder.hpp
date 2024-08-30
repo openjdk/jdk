@@ -463,20 +463,24 @@ public:
   void report_out_of_space(const char* name, size_t needed_bytes);
 
 #ifdef _LP64
-  // Archived heap object headers (and soon, with Lilliput, markword prototypes) carry pre-computed
-  // narrow Klass ids calculated with the following scheme:
-  // 1) the encoding base must be the mapping start address.
-  // 2) shift must be large enough to result in an encoding range that covers the runtime Klass range.
-  //    That Klass range is defined by CDS archive size and runtime class space size. Luckily, the maximum
-  //    size can be predicted: archive size is assumed to be <1G, class space size capped at 3G, and at
-  //    runtime we put both regions adjacent to each other. Therefore, runtime Klass range size < 4G.
-  // The value of this precomputed shift depends on the class pointer mode at dump time.
-  // Legacy Mode:
-  //    Since nKlass itself is 32 bit, our encoding range len is 4G, and since we set the base directly
-  //    at mapping start, these 4G are enough. Therefore, we don't need to shift at all (shift=0).
+  // The CDS archive contains pre-computed narrow Klass IDs. It carries them in the headers of
+  // archived heap objects. With +UseCompactObjectHeaders, it also carries them in prototypes
+  // in Klass.
+  // When generating the archive, these narrow Klass IDs are computed using the following scheme:
+  // 1) The future encoding base is assumed to point to the first address of the generated mapping.
+  //    That means that at runtime, the narrow Klass encoding must be set up with base pointing to
+  //    the start address of the mapped CDS metadata archive (wherever that may be). This precludes
+  //    zero-based encoding.
+  // 2) The shift must be large enough to result in an encoding range that covers the future assumed
+  //    runtime Klass range. That future Klass range will contain both the CDS metadata archive and
+  //    the future runtime class space. Since we do not know the size of the future class space, we
+  //    need to chose an encoding base/shift combination that will result in a "large enough" size.
+  //    The details depend on whether we use compact object headers or legacy object headers.
+  //  In Legacy Mode, a narrow Klass ID is 32 bit. This gives us an encoding range size of 4G even
+  //    with shift = 0, which is all we need. Therefore, we use a shift=0 for pre-calculating the
+  //    narrow Klass IDs.
   // TinyClassPointer Mode:
-  //    To cover the 4G, we need the highest possible shift value. That may change in the future, if
-  //    we decide to correct the pre-calculated narrow Klass IDs at load time.
+  //    We use the highest possible shift value to maximize the encoding range size.
   static int precomputed_narrow_klass_shift();
 #endif // _LP64
 
