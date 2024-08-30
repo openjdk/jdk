@@ -373,8 +373,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public boolean hasFinalizer() {
-        HotSpotVMConfig config = config();
-        int miscFlags = UNSAFE.getByte(getKlassPointer() + config.klassMiscFlagsOffset);
+        int miscFlags = UNSAFE.getByte(getKlassPointer() + config().klassMiscFlagsOffset);
         return (miscFlags & config().jvmAccHasFinalizer) != 0;
     }
 
@@ -1112,8 +1111,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
 
     @Override
     public boolean isCloneableWithAllocation() {
-        HotSpotVMConfig config = config();
-        int miscFlags = UNSAFE.getByte(getKlassPointer() + config.klassMiscFlagsOffset);
+        int miscFlags = UNSAFE.getByte(getKlassPointer() + config().klassMiscFlagsOffset);
         return (miscFlags & config().jvmAccIsCloneableFast) != 0;
     }
 
