@@ -94,7 +94,7 @@ public class ReattachStressTest {
 
         // Set the connector's "pid" argument to the pid of the debuggee.
         Map<String, Connector.Argument> args = ac.defaultArguments();
-        Connector.StringArgument arg = (Connector.StringArgument) args.get("pid");
+        Connector.StringArgument arg = (Connector.StringArgument)args.get("pid");
         arg.setValue("" + pid);
 
         // Loop that will repeatedly attach and detach from the same debuggee.
