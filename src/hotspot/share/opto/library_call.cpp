@@ -3754,9 +3754,12 @@ Node* LibraryCallKit::load_klass_from_mirror_common(Node* mirror,
 //--------------------(inline_native_Class_query helpers)---------------------
 // Use this for JVM_ACC_INTERFACE.
 // Fall through if (mods & mask) == bits, take the guard otherwise.
-Node* LibraryCallKit::generate_mods_flags_guard(Node* mods, int modifier_mask, int modifier_bits, RegionNode* region) {
+Node* LibraryCallKit::generate_klass_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region,
+                                                 ByteSize offset, const Type* type, BasicType bt) {
   // Branch around if the given klass has the given modifier bit set.
   // Like generate_guard, adds a new path onto the region.
+  Node* modp = basic_plus_adr(kls, in_bytes(offset));
+  Node* mods = make_load(nullptr, modp, type, bt, MemNode::unordered);
   Node* mask = intcon(modifier_mask);
   Node* bits = intcon(modifier_bits);
   Node* mbit = _gvn.transform(new AndINode(mods, mask));
@@ -3765,16 +3768,14 @@ Node* LibraryCallKit::generate_mods_flags_guard(Node* mods, int modifier_mask, i
   return generate_fair_guard(bol, region);
 }
 Node* LibraryCallKit::generate_interface_guard(Node* kls, RegionNode* region) {
-  Node* modp = basic_plus_adr(kls, in_bytes(Klass::access_flags_offset()));
-  Node* mods = make_load(nullptr, modp, TypeInt::INT, T_INT, MemNode::unordered);
-  return generate_mods_flags_guard(mods, JVM_ACC_INTERFACE, 0, region);
+  return generate_klass_flags_guard(kls, JVM_ACC_INTERFACE, 0, region,
+                                    Klass::access_flags_offset(), TypeInt::INT, T_INT);
 }
 
 // Use this for testing if Klass is_hidden, has_finalizer, and is_cloneable_fast.
 Node* LibraryCallKit::generate_misc_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region) {
-  Node* p = basic_plus_adr(kls, in_bytes(Klass::misc_flags_offset()));
-  Node* mods = make_load(nullptr, p, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);
-  return generate_mods_flags_guard(mods, modifier_mask, modifier_bits, region);
+  return generate_klass_flags_guard(kls, modifier_mask, modifier_bits, region,
+                                    Klass::misc_flags_offset(), TypeInt::UBYTE, T_BOOLEAN);
 }
 
 Node* LibraryCallKit::generate_hidden_class_guard(Node* kls, RegionNode* region) {
