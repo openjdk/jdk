@@ -30,7 +30,6 @@ import compiler.lib.ir_framework.*;
  * @test
  * bug 8336860
  * @summary Verify codegen for CMoveL with constants 0 and 1
- * @requires os.simpleArch == "x64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.CMoveLConstants
  */
@@ -40,19 +39,19 @@ public class CMoveLConstants {
     }
 
     @Test
-    @IR(counts = {IRNode.X86_CMOVEL_IMM01, "1"}, phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_CMOVEL_IMM01, "1"}, phase = CompilePhase.FINAL_CODE)
     public static long testSigned(int a, int b) {
         return a > b ? 1L : 0L;
     }
 
     @Test
-    @IR(counts = {IRNode.X86_CMOVEL_IMM01U, "1"}, phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_CMOVEL_IMM01U, "1"}, phase = CompilePhase.FINAL_CODE)
     public static long testUnsigned(int a, int b) {
         return Integer.compareUnsigned(a, b) > 0 ? 1L : 0L;
     }
 
     @Test
-    @IR(counts = {IRNode.X86_CMOVEL_IMM01UCF, "1"}, phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfPlatform = {"x64", "true"}, counts = {IRNode.X86_CMOVEL_IMM01UCF, "1"}, phase = CompilePhase.FINAL_CODE)
     public static long testFloat(float a, float b) {
         return a > b ? 1L : 0L;
     }
