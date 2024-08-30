@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2034,7 +2034,7 @@ class LIR_OpProfileCall : public LIR_Op {
   bool should_profile_receiver_type() const {
     bool callee_is_static = _profiled_callee->is_loaded() && _profiled_callee->is_static();
     Bytecodes::Code bc = _profiled_method->java_code_at_bci(_profiled_bci);
-    bool call_is_virtual = (bc == Bytecodes::_invokevirtual && !_profiled_callee->can_be_statically_bound()) || bc == Bytecodes::_invokeinterface;
+    bool call_is_virtual = (bc == Bytecodes::_invokevirtual && (UseCHA || !_profiled_callee->can_be_statically_bound())) || bc == Bytecodes::_invokeinterface;
     return C1ProfileVirtualCalls && call_is_virtual && !callee_is_static;
   }
 };

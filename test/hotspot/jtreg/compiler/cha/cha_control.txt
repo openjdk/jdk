@@ -1,0 +1,30 @@
+[
+   { match: ["compiler.cha.TypeProfileFinalMethod::main"],
+     Exclude: true,
+   },
+   { match: ["compiler.cha.TypeProfileFinalMethod::test1"],
+     c1: {
+       inline: [
+         "-compiler.cha.TypeProfileFinalMethod::getInstance",
+         // "-compiler.cha.Child1::m",
+       ],
+     },
+     c2: {
+       inline: ["-compiler.cha.TypeProfileFinalMethod::getInstance"],
+     },
+   },
+   { match: ["compiler.cha.TypeProfileFinalMethod::test2"],
+     c1: {
+       inline: [
+         "-compiler.cha.TypeProfileFinalMethod::getInstance",
+         "-compiler.cha.TypeProfileFinalMethod::test1",
+       ],
+     },
+     c2: {
+       inline: [
+         "-compiler.cha.TypeProfileFinalMethod::getInstance",
+       ],
+       PrintInlining: true,
+     },
+   },
+]
