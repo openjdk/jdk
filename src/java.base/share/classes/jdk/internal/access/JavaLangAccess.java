@@ -391,6 +391,10 @@ public interface JavaLangAccess {
      */
     void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
+    /**
+     * Calculates whether the string value is 0 or a negative number when the coder is LATIN1.
+     * If the coder is UTF16, it always returns true.
+     */
     boolean hasNegativeOrZeros(String s);
 
     /**
