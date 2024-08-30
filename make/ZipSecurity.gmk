@@ -60,7 +60,8 @@ $(eval $(call SetupZipArchive, BUILD_SEC_BIN_ZIP, \
         modules/java.security.jgss/sun/security/krb5/internal/util, \
     INCLUDE_FILES := modules/java.security.jgss/sun/security/jgss/spi/GSSContextSpi.class, \
     EXCLUDES := modules/java.security.jgss/sun/security/krb5/internal/tools, \
-    ZIP := $(IMAGES_OUTPUTDIR)/sec-bin.zip))
+    ZIP := $(IMAGES_OUTPUTDIR)/sec-bin.zip, \
+))
 
 TARGETS += $(IMAGES_OUTPUTDIR)/sec-bin.zip
 
@@ -73,7 +74,8 @@ ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupZipArchive, BUILD_SEC_WINDOWS_BIN_ZIP, \
       SRC := $(JDK_OUTPUTDIR), \
       INCLUDES := modules/java.security.jgss/sun/security/krb5/internal/tools, \
-      ZIP := $(IMAGES_OUTPUTDIR)/sec-windows-bin.zip))
+      ZIP := $(IMAGES_OUTPUTDIR)/sec-windows-bin.zip, \
+  ))
 
   TARGETS += $(IMAGES_OUTPUTDIR)/sec-windows-bin.zip
 
@@ -90,7 +92,8 @@ ifeq ($(call isTargetOs, windows), true)
           modules_libs/java.security.jgss/w2k_lsa_auth.dll.diz \
           modules_libs/java.security.jgss/w2k_lsa_auth.dll.map \
           modules_libs/java.security.jgss/w2k_lsa_auth.dll.pdb, \
-      ZIP := $(IMAGES_OUTPUTDIR)/$(JGSS_ZIP_NAME)))
+      ZIP := $(IMAGES_OUTPUTDIR)/$(JGSS_ZIP_NAME), \
+  ))
 
   TARGETS += $(IMAGES_OUTPUTDIR)/$(JGSS_ZIP_NAME)
 endif
