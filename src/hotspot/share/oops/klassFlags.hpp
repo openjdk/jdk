@@ -33,6 +33,8 @@ class outputStream;
 // most apply to InstanceKlass, access is more straightforward through Klass pointers.
 // These flags are JVM internal and not part of the AccessFlags classfile specification.
 
+using klass_flags_t = u1;
+
 class KlassFlags {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -53,12 +55,12 @@ class KlassFlags {
 
   // These flags are write-once before the class is published and then read-only
   // so don't require atomic updates.
-  u1 _flags;
+  klass_flags_t _flags;
 
  public:
   KlassFlags() : _flags(0) {}
 
-  u1 value() const { return _flags; }
+  klass_flags_t value() const { return _flags; }
 
   // Create getters and setters for the flag values.
 #define KLASS_FLAGS_GET_SET(name, ignore)          \

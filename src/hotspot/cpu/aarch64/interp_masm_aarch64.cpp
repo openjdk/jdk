@@ -691,7 +691,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp, obj_reg);
       ldrb(tmp, Address(tmp, Klass::misc_flags_offset()));
-      tstw(tmp, KlassFlags::_misc_is_value_based_class);
+      tst(tmp, KlassFlags::_misc_is_value_based_class);
       br(Assembler::NE, slow_case);
     }
 

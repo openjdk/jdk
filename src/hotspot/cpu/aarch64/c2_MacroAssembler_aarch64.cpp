@@ -65,7 +65,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, oop);
     ldrb(tmp, Address(tmp, Klass::misc_flags_offset()));
-    tstw(tmp, KlassFlags::_misc_is_value_based_class);
+    tst(tmp, KlassFlags::_misc_is_value_based_class);
     br(Assembler::NE, cont);
   }
 
@@ -244,7 +244,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(t1, obj);
     ldrb(t1, Address(t1, Klass::misc_flags_offset()));
-    tstw(t1, KlassFlags::_misc_is_value_based_class);
+    tst(t1, KlassFlags::_misc_is_value_based_class);
     br(Assembler::NE, slow_path);
   }
 

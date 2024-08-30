@@ -1175,8 +1175,7 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp_reg, obj_reg, rklass_decode_tmp);
-      movb(tmp_reg, Address(tmp_reg, Klass::misc_flags_offset()));
-      testl(tmp_reg, KlassFlags::_misc_is_value_based_class);
+      testb(Address(tmp_reg, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
       jcc(Assembler::notZero, slow_case);
     }
 

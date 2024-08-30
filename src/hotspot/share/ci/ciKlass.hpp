@@ -122,7 +122,7 @@ public:
   jint                   access_flags();
 
   // Fetch Klass::misc_flags.
-  jint                   misc_flags();
+  klass_flags_t          misc_flags();
 
   // What kind of ciObject is this?
   bool is_klass() const { return true; }

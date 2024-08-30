@@ -443,8 +443,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // Load the klass and check the has finalizer flag.
         Register klass = Z_ARG2;
         __ load_klass(klass, Z_ARG1);
-        __ z_lb(klass, Address(klass, Klass::misc_flags_offset()));
-        __ testbit(klass, exact_log2(KlassFlags::_misc_has_finalizer));
+        __ z_tm(Address(klass, Klass::misc_flags_offset()), KlassFlags::_misc_has_finalizer);
         __ z_bcr(Assembler::bcondAllZero, Z_R14); // Return if bit is not set.
 
         OopMap* oop_map = save_live_registers(sasm);

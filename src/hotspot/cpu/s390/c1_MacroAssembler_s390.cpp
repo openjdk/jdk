@@ -72,8 +72,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, Roop);
-    z_lb(tmp, Address(tmp, Klass::misc_flags_offset()));
-    testbit(tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
+    z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
     branch_optimized(Assembler::bcondAllOne, slow_case);
   }
 

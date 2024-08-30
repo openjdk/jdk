@@ -433,7 +433,7 @@ protected:
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
 #endif
   static ByteSize bitmap_offset()                { return byte_offset_of(Klass, _bitmap); }
-  static ByteSize misc_flags_offset()            { return byte_offset_of(Klass, _misc_flags); }
+  static ByteSize misc_flags_offset()            { return byte_offset_of(Klass, _misc_flags._flags); }
 
   // Unpacking layout_helper:
   static const int _lh_neutral_value           = 0;  // neutral non-array non-instance value
@@ -705,7 +705,7 @@ protected:
   bool is_value_based() const           { return _misc_flags.is_value_based_class(); }
   void set_is_value_based()             { _misc_flags.set_is_value_based_class(true); }
 
-  u1 misc_flags() const                 { return _misc_flags.value(); }
+  klass_flags_t misc_flags() const      { return _misc_flags.value(); }
 
   inline bool is_non_strong_hidden() const;
 

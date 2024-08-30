@@ -228,7 +228,7 @@ jint ciKlass::access_flags() {
 
 // ------------------------------------------------------------------
 // ciKlass::misc_flags
-jint ciKlass::misc_flags() {
+klass_flags_t ciKlass::misc_flags() {
   assert(is_loaded(), "not loaded");
   GUARDED_VM_ENTRY(
     return get_Klass()->misc_flags();

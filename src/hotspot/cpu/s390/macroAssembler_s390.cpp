@@ -3507,8 +3507,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp, oop);
-    z_lb(temp, Address(temp, Klass::misc_flags_offset()));
-    testbit(temp, exact_log2(KlassFlags::_misc_is_value_based_class));
+    z_tm(Address(temp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
     z_brne(done);
   }
 
@@ -6153,8 +6152,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
-    z_lb(tmp1, Address(temp, Klass::misc_flags_offset()));
-    testbit(tmp1, exact_log2(KlassFlags::_misc_is_value_based_class));
+    z_tm(Address(tmp1, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
     z_brne(slow_path);
   }
 

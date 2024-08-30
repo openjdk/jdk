@@ -1166,8 +1166,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Label register_finalizer;
         Register t = rsi;
         __ load_klass(t, rax, rscratch1);
-        __ movb(t, Address(t, Klass::misc_flags_offset()));
-        __ testl(t, KlassFlags::_misc_has_finalizer);
+        __ testb(Address(t, Klass::misc_flags_offset()), KlassFlags::_misc_has_finalizer);
         __ jcc(Assembler::notZero, register_finalizer);
         __ ret(0);
 

@@ -76,7 +76,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(hdr, obj);
     ldrb(hdr, Address(hdr, Klass::misc_flags_offset()));
-    tstw(hdr, KlassFlags::_misc_is_value_based_class);
+    tst(hdr, KlassFlags::_misc_is_value_based_class);
     br(Assembler::NE, slow_case);
   }
 
