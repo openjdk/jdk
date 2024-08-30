@@ -473,6 +473,7 @@ public final class DirectCodeBuilder
                     if ((short)branchOffset != branchOffset) throw new LabelOverflowException();
                     bytecodesBufWriter.patchU2(dl.labelPc, branchOffset);
                 } else {
+                    assert dl.size == 4;
                     bytecodesBufWriter.patchInt(dl.labelPc, branchOffset);
                 }
             }
@@ -594,13 +595,13 @@ public final class DirectCodeBuilder
         writeBytecode(opcode);
         bytecodesBufWriter.writeIndex(ref);
         bytecodesBufWriter.writeU1(count);
-        bytecodesBufWriter.writeU1(0);
+        bytecodesBufWriter.skip(1);
     }
 
     public void writeInvokeDynamic(InvokeDynamicEntry ref) {
         writeBytecode(INVOKEDYNAMIC);
         bytecodesBufWriter.writeIndex(ref);
-        bytecodesBufWriter.writeU2(0);
+        bytecodesBufWriter.skip(2);
     }
 
     public void writeNewObject(ClassEntry type) {
