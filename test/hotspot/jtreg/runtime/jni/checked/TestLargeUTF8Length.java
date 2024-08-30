@@ -58,7 +58,9 @@ public class TestLargeUTF8Length {
             return;
         }
 
-        OutputAnalyzer oa = ProcessTools.executeTestJava("-Xcheck:jni",
+        OutputAnalyzer oa = ProcessTools.executeTestJava("-Xms9G",
+                                                         "-Xmx9G",
+                                                         "-Xcheck:jni",
                                                          "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
                                                          "TestLargeUTF8Length");
         String warning = "WARNING: large String with modified UTF-8 length .*" +

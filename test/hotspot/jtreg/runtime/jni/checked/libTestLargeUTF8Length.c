@@ -36,7 +36,8 @@ Java_TestLargeUTF8Length_checkUTF8Length(JNIEnv *env, jclass clz,
   utf8_length = (*env)->GetStringUTFLength(env, str);
 
   if (utf8_length != INT_MAX - 1) {
-    printf("Error: expected length of %d, but got %lld\n", INT_MAX - 1, utf8_length);
+    printf("Error: expected length of %d, but got %lld\n", INT_MAX - 1,
+           (long long) utf8_length);
     (*env)->FatalError(env, "Unexpected truncated length");
   }
 
@@ -44,7 +45,8 @@ Java_TestLargeUTF8Length_checkUTF8Length(JNIEnv *env, jclass clz,
   utf8_length = (*env)->GetStringUTFLengthAsLong(env, str);
 
   if (utf8_length != expected_length ) {
-    printf("Error: expected length of %lld, but got %lld\n", expected_length, utf8_length);
+    printf("Error: expected length of %lld, but got %lld\n",
+           (long long) expected_length, (long long) utf8_length);
     (*env)->FatalError(env, "Unexpected true length");
   }
 
