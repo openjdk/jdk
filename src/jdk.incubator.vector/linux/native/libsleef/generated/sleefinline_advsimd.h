@@ -1764,12 +1764,12 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef vcast_vd2_d2_advsi
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef vsel_vd2_vo_vd2_vd2_advsimd_sleef(vopmask_advsimd_sleef m, vdouble2_advsimd_sleef x, vdouble2_advsimd_sleef y) {
   return vd2setxy_vd2_vd_vd_advsimd_sleef(vsel_vd_vo_vd_vd_advsimd_sleef(m, vd2getx_vd_vd2_advsimd_sleef(x), vd2getx_vd_vd2_advsimd_sleef(y)),
-       vsel_vd_vo_vd_vd_advsimd_sleef(m, vd2gety_vd_vd2_advsimd_sleef(x), vd2gety_vd_vd2_advsimd_sleef(y)));
+                            vsel_vd_vo_vd_vd_advsimd_sleef(m, vd2gety_vd_vd2_advsimd_sleef(x), vd2gety_vd_vd2_advsimd_sleef(y)));
 }
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef vsel_vd2_vo_d_d_d_d_advsimd_sleef(vopmask_advsimd_sleef o, double x1, double y1, double x0, double y0) {
   return vd2setxy_vd2_vd_vd_advsimd_sleef(vsel_vd_vo_d_d_advsimd_sleef(o, x1, x0),
-       vsel_vd_vo_d_d_advsimd_sleef(o, y1, y0));
+                            vsel_vd_vo_d_d_advsimd_sleef(o, y1, y0));
 }
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble_advsimd_sleef vadd_vd_3vd_advsimd_sleef(vdouble_advsimd_sleef v0, vdouble_advsimd_sleef v1, vdouble_advsimd_sleef v2) {
@@ -1814,9 +1814,9 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef ddneg_vd2_vd2_advs
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef ddabs_vd2_vd2_advsimd_sleef(vdouble2_advsimd_sleef x) {
   return vcast_vd2_vd_vd_advsimd_sleef(vabs_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(x)),
-    vreinterpret_vd_vm_advsimd_sleef(vxor_vm_vm_vm_advsimd_sleef(vreinterpret_vm_vd_advsimd_sleef(vd2gety_vd_vd2_advsimd_sleef(x)),
-         vand_vm_vm_vm_advsimd_sleef(vreinterpret_vm_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(x)),
-         vreinterpret_vm_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-0.0))))));
+                         vreinterpret_vd_vm_advsimd_sleef(vxor_vm_vm_vm_advsimd_sleef(vreinterpret_vm_vd_advsimd_sleef(vd2gety_vd_vd2_advsimd_sleef(x)),
+                                                          vand_vm_vm_vm_advsimd_sleef(vreinterpret_vm_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(x)),
+                                                                        vreinterpret_vm_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-0.0))))));
 }
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef ddnormalize_vd2_vd2_advsimd_sleef(vdouble2_advsimd_sleef t) {
@@ -1867,7 +1867,7 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef ddadd2_vd2_vd_vd2_
   vdouble_advsimd_sleef s = vadd_vd_vd_vd_advsimd_sleef(x, vd2getx_vd_vd2_advsimd_sleef(y));
   vdouble_advsimd_sleef v = vsub_vd_vd_vd_advsimd_sleef(s, x);
   return vd2setxy_vd2_vd_vd_advsimd_sleef(s, vadd_vd_vd_vd_advsimd_sleef(vadd_vd_vd_vd_advsimd_sleef(vsub_vd_vd_vd_advsimd_sleef(x, vsub_vd_vd_vd_advsimd_sleef(s, v)),
-          vsub_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(y), v)), vd2gety_vd_vd2_advsimd_sleef(y)));
+                                                           vsub_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(y), v)), vd2gety_vd_vd2_advsimd_sleef(y)));
 }
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef ddadd_vd2_vd2_vd2_advsimd_sleef(vdouble2_advsimd_sleef x, vdouble2_advsimd_sleef y) {
@@ -2099,7 +2099,7 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble_advsimd_sleef vorsign_vd_vd_vd_ad
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble_advsimd_sleef vcopysign_vd_vd_vd_advsimd_sleef(vdouble_advsimd_sleef x, vdouble_advsimd_sleef y) {
   return vreinterpret_vd_vm_advsimd_sleef(vxor_vm_vm_vm_advsimd_sleef(vandnot_vm_vm_vm_advsimd_sleef(vreinterpret_vm_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-0.0)), vreinterpret_vm_vd_advsimd_sleef(x)),
-       vand_vm_vm_vm_advsimd_sleef (vreinterpret_vm_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-0.0)), vreinterpret_vm_vd_advsimd_sleef(y))));
+                                          vand_vm_vm_vm_advsimd_sleef (vreinterpret_vm_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-0.0)), vreinterpret_vm_vd_advsimd_sleef(y))));
 }
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble_advsimd_sleef vtruncate2_vd_vd_advsimd_sleef_advsimd_sleef(vdouble_advsimd_sleef x) {
@@ -2349,7 +2349,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_sind2_u35advsimd(vdouble_ad
     ql = vshr_n_s32(ql, 2);
     vopmask_advsimd_sleef o = veq_vo_vi_vi_advsimd_sleef(vand_vi_vi_vi_advsimd_sleef(ddigeti_vi_ddi_advsimd_sleef(ddi_advsimd_sleef), vcast_vi_i_advsimd_sleef(1)), vcast_vi_i_advsimd_sleef(1));
     vdouble2_advsimd_sleef x = vcast_vd2_vd_vd_advsimd_sleef(vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-3.141592653589793116 * 0.5), vd2getx_vd_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef))),
-     vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-1.2246467991473532072e-16 * 0.5), vd2getx_vd_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef))));
+                                 vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-1.2246467991473532072e-16 * 0.5), vd2getx_vd_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef))));
     x = ddadd2_vd2_vd2_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef), x);
     ddi_advsimd_sleef = ddisetdd_ddi_ddi_vd2_advsimd_sleef(ddi_advsimd_sleef, vsel_vd2_vo_vd2_vd2_advsimd_sleef(vcast_vo64_vo32_advsimd_sleef(o), x, ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef)));
     d = vadd_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef)), vd2gety_vd_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef)));
@@ -2363,7 +2363,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_sind2_u35advsimd(vdouble_ad
   vdouble_advsimd_sleef s2 = vmul_vd_vd_vd_advsimd_sleef(s, s), s4 = vmul_vd_vd_vd_advsimd_sleef(s2, s2);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((s4), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(-7.97255955009037868891952e-18)), (vcast_vd_d_advsimd_sleef(2.81009972710863200091251e-15)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(-7.64712219118158833288484e-13)), (vcast_vd_d_advsimd_sleef(1.60590430605664501629054e-10)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(-2.50521083763502045810755e-08)), (vcast_vd_d_advsimd_sleef(2.75573192239198747630416e-06)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(-0.000198412698412696162806809)), (vcast_vd_d_advsimd_sleef(0.00833333333333332974823815)))))))
 
-                                  ;
+                                         ;
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, s, vcast_vd_d_advsimd_sleef(-0.166666666666666657414808));
 
   u = vadd_vd_vd_vd_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(s, vmul_vd_vd_vd_advsimd_sleef(u, d)), d);
@@ -2405,7 +2405,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_sind2_u10advsimd(vdouble_ad
     ql = vshr_n_s32(ql, 2);
     vopmask_advsimd_sleef o = veq_vo_vi_vi_advsimd_sleef(vand_vi_vi_vi_advsimd_sleef(ddigeti_vi_ddi_advsimd_sleef(ddi_advsimd_sleef), vcast_vi_i_advsimd_sleef(1)), vcast_vi_i_advsimd_sleef(1));
     vdouble2_advsimd_sleef x = vcast_vd2_vd_vd_advsimd_sleef(vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-3.141592653589793116 * 0.5), vd2getx_vd_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef))),
-     vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-1.2246467991473532072e-16 * 0.5), vd2getx_vd_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef))));
+                                 vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-1.2246467991473532072e-16 * 0.5), vd2getx_vd_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef))));
     x = ddadd2_vd2_vd2_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef), x);
     ddi_advsimd_sleef = ddisetdd_ddi_ddi_vd2_advsimd_sleef(ddi_advsimd_sleef, vsel_vd2_vo_vd2_vd2_advsimd_sleef(vcast_vo64_vo32_advsimd_sleef(o), x, ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef)));
     s = ddnormalize_vd2_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef));
@@ -2418,14 +2418,14 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_sind2_u10advsimd(vdouble_ad
   vdouble_advsimd_sleef s2 = vmul_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(s), vd2getx_vd_vd2_advsimd_sleef(s)), s4 = vmul_vd_vd_vd_advsimd_sleef(s2, s2);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((s4), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(2.72052416138529567917983e-15)), (vcast_vd_d_advsimd_sleef(-7.6429259411395447190023e-13)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(1.60589370117277896211623e-10)), (vcast_vd_d_advsimd_sleef(-2.5052106814843123359368e-08)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(2.75573192104428224777379e-06)), (vcast_vd_d_advsimd_sleef(-0.000198412698412046454654947)))))))
 
-                                    ;
+                                           ;
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, vd2getx_vd_vd2_advsimd_sleef(s), vcast_vd_d_advsimd_sleef(0.00833333333333318056201922));
 
   x = ddadd_vd2_vd_vd2_advsimd_sleef(vcast_vd_d_advsimd_sleef(1), ddmul_vd2_vd2_vd2_advsimd_sleef(ddadd_vd2_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-0.166666666666666657414808), vmul_vd_vd_vd_advsimd_sleef(u, vd2getx_vd_vd2_advsimd_sleef(s))), s));
   u = ddmul_vd_vd2_vd2_advsimd_sleef(t, x);
 
   u = vreinterpret_vd_vm_advsimd_sleef(vxor_vm_vm_vm_advsimd_sleef(vand_vm_vo64_vm_advsimd_sleef(vcast_vo64_vo32_advsimd_sleef(veq_vo_vi_vi_advsimd_sleef(vand_vi_vi_vi_advsimd_sleef(ql, vcast_vi_i_advsimd_sleef(1)), vcast_vi_i_advsimd_sleef(1))),
-             vreinterpret_vm_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-0.0))), vreinterpret_vm_vd_advsimd_sleef(u)));
+                                                       vreinterpret_vm_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-0.0))), vreinterpret_vm_vd_advsimd_sleef(u)));
   u = vsel_vd_vo_vd_vd_advsimd_sleef(veq_vo_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0)), d, u);
 
   return u;
@@ -2439,15 +2439,15 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_cosd2_u35advsimd(vdouble_ad
 
   if (__builtin_expect(!!(vtestallones_i_vo64_advsimd_sleef(vlt_vo_vd_vd_advsimd_sleef(vabs_vd_vd_advsimd_sleef(d), vcast_vd_d_advsimd_sleef(15)))), 1)) {
     vdouble_advsimd_sleef dql = vmla_vd_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(2),
-       vrint_vd_vd_advsimd_sleef(vmla_vd_vd_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0.318309886183790671537767526745028724), vcast_vd_d_advsimd_sleef(-0.5))),
-       vcast_vd_d_advsimd_sleef(1));
+                                   vrint_vd_vd_advsimd_sleef(vmla_vd_vd_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0.318309886183790671537767526745028724), vcast_vd_d_advsimd_sleef(-0.5))),
+                                   vcast_vd_d_advsimd_sleef(1));
     ql = vrint_vi_vd_advsimd_sleef(dql);
     d = vmla_vd_vd_vd_vd_advsimd_sleef(dql, vcast_vd_d_advsimd_sleef(-3.141592653589793116 * 0.5), d);
     d = vmla_vd_vd_vd_vd_advsimd_sleef(dql, vcast_vd_d_advsimd_sleef(-1.2246467991473532072e-16 * 0.5), d);
   } else if (__builtin_expect(!!(vtestallones_i_vo64_advsimd_sleef(vlt_vo_vd_vd_advsimd_sleef(vabs_vd_vd_advsimd_sleef(d), vcast_vd_d_advsimd_sleef(1e+14)))), 1)) {
     vdouble_advsimd_sleef dqh = vtruncate_vd_vd_advsimd_sleef(vmla_vd_vd_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0.318309886183790671537767526745028724 / (1 << 23)), vcast_vd_d_advsimd_sleef(-0.318309886183790671537767526745028724 / (1 << 24))));
     ql = vrint_vi_vd_advsimd_sleef(vadd_vd_vd_vd_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0.318309886183790671537767526745028724)),
-       vmla_vd_vd_vd_vd_advsimd_sleef(dqh, vcast_vd_d_advsimd_sleef(-(1 << 23)), vcast_vd_d_advsimd_sleef(-0.5))));
+                                   vmla_vd_vd_vd_vd_advsimd_sleef(dqh, vcast_vd_d_advsimd_sleef(-(1 << 23)), vcast_vd_d_advsimd_sleef(-0.5))));
     dqh = vmul_vd_vd_vd_advsimd_sleef(dqh, vcast_vd_d_advsimd_sleef(1 << 24));
     ql = vadd_vi_vi_vi_advsimd_sleef(vadd_vi_vi_vi_advsimd_sleef(ql, ql), vcast_vi_i_advsimd_sleef(1));
     vdouble_advsimd_sleef dql = vcast_vd_vi_advsimd_sleef(ql);
@@ -2467,7 +2467,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_cosd2_u35advsimd(vdouble_ad
     vopmask_advsimd_sleef o = veq_vo_vi_vi_advsimd_sleef(vand_vi_vi_vi_advsimd_sleef(ddigeti_vi_ddi_advsimd_sleef(ddi_advsimd_sleef), vcast_vi_i_advsimd_sleef(1)), vcast_vi_i_advsimd_sleef(0));
     vdouble_advsimd_sleef y = vsel_vd_vo_vd_vd_advsimd_sleef(vgt_vo_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef)), vcast_vd_d_advsimd_sleef(0)), vcast_vd_d_advsimd_sleef(0), vcast_vd_d_advsimd_sleef(-1));
     vdouble2_advsimd_sleef x = vcast_vd2_vd_vd_advsimd_sleef(vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-3.141592653589793116 * 0.5), y),
-     vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-1.2246467991473532072e-16 * 0.5), y));
+                                 vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-1.2246467991473532072e-16 * 0.5), y));
     x = ddadd2_vd2_vd2_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef), x);
     ddi_advsimd_sleef = ddisetdd_ddi_ddi_vd2_advsimd_sleef(ddi_advsimd_sleef, vsel_vd2_vo_vd2_vd2_advsimd_sleef(vcast_vo64_vo32_advsimd_sleef(o), x, ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef)));
     d = vadd_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef)), vd2gety_vd_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef)));
@@ -2481,7 +2481,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_cosd2_u35advsimd(vdouble_ad
   vdouble_advsimd_sleef s2 = vmul_vd_vd_vd_advsimd_sleef(s, s), s4 = vmul_vd_vd_vd_advsimd_sleef(s2, s2);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((s4), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(-7.97255955009037868891952e-18)), (vcast_vd_d_advsimd_sleef(2.81009972710863200091251e-15)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(-7.64712219118158833288484e-13)), (vcast_vd_d_advsimd_sleef(1.60590430605664501629054e-10)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(-2.50521083763502045810755e-08)), (vcast_vd_d_advsimd_sleef(2.75573192239198747630416e-06)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(-0.000198412698412696162806809)), (vcast_vd_d_advsimd_sleef(0.00833333333333332974823815)))))))
 
-                                  ;
+                                         ;
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, s, vcast_vd_d_advsimd_sleef(-0.166666666666666657414808));
 
   u = vadd_vd_vd_vd_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(s, vmul_vd_vd_vd_advsimd_sleef(u, d)), d);
@@ -2505,7 +2505,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_cosd2_u10advsimd(vdouble_ad
   } else if (__builtin_expect(!!(vtestallones_i_vo64_advsimd_sleef(vlt_vo_vd_vd_advsimd_sleef(vabs_vd_vd_advsimd_sleef(d), vcast_vd_d_advsimd_sleef(1e+14)))), 1)) {
     vdouble_advsimd_sleef dqh = vtruncate_vd_vd_advsimd_sleef(vmla_vd_vd_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0.318309886183790671537767526745028724 / (1 << 23)), vcast_vd_d_advsimd_sleef(-0.318309886183790671537767526745028724 / (1 << 24))));
     ql = vrint_vi_vd_advsimd_sleef(vadd_vd_vd_vd_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0.318309886183790671537767526745028724)),
-     vmla_vd_vd_vd_vd_advsimd_sleef(dqh, vcast_vd_d_advsimd_sleef(-(1 << 23)), vcast_vd_d_advsimd_sleef(-0.5))));
+                                        vmla_vd_vd_vd_vd_advsimd_sleef(dqh, vcast_vd_d_advsimd_sleef(-(1 << 23)), vcast_vd_d_advsimd_sleef(-0.5))));
     dqh = vmul_vd_vd_vd_advsimd_sleef(dqh, vcast_vd_d_advsimd_sleef(1 << 24));
     ql = vadd_vi_vi_vi_advsimd_sleef(vadd_vi_vi_vi_advsimd_sleef(ql, ql), vcast_vi_i_advsimd_sleef(1));
     const vdouble_advsimd_sleef dql = vcast_vd_vi_advsimd_sleef(ql);
@@ -2525,7 +2525,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_cosd2_u10advsimd(vdouble_ad
     vopmask_advsimd_sleef o = veq_vo_vi_vi_advsimd_sleef(vand_vi_vi_vi_advsimd_sleef(ddigeti_vi_ddi_advsimd_sleef(ddi_advsimd_sleef), vcast_vi_i_advsimd_sleef(1)), vcast_vi_i_advsimd_sleef(0));
     vdouble_advsimd_sleef y = vsel_vd_vo_vd_vd_advsimd_sleef(vgt_vo_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef)), vcast_vd_d_advsimd_sleef(0)), vcast_vd_d_advsimd_sleef(0), vcast_vd_d_advsimd_sleef(-1));
     vdouble2_advsimd_sleef x = vcast_vd2_vd_vd_advsimd_sleef(vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-3.141592653589793116 * 0.5), y),
-     vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-1.2246467991473532072e-16 * 0.5), y));
+                                 vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-1.2246467991473532072e-16 * 0.5), y));
     x = ddadd2_vd2_vd2_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef), x);
     ddi_advsimd_sleef = ddisetdd_ddi_ddi_vd2_advsimd_sleef(ddi_advsimd_sleef, vsel_vd2_vo_vd2_vd2_advsimd_sleef(vcast_vo64_vo32_advsimd_sleef(o), x, ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef)));
     s = ddnormalize_vd2_vd2_advsimd_sleef(ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef));
@@ -2538,7 +2538,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_cosd2_u10advsimd(vdouble_ad
   vdouble_advsimd_sleef s2 = vmul_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(s), vd2getx_vd_vd2_advsimd_sleef(s)), s4 = vmul_vd_vd_vd_advsimd_sleef(s2, s2);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((s4), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(2.72052416138529567917983e-15)), (vcast_vd_d_advsimd_sleef(-7.6429259411395447190023e-13)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(1.60589370117277896211623e-10)), (vcast_vd_d_advsimd_sleef(-2.5052106814843123359368e-08)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(2.75573192104428224777379e-06)), (vcast_vd_d_advsimd_sleef(-0.000198412698412046454654947)))))))
 
-                                    ;
+                                           ;
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, vd2getx_vd_vd2_advsimd_sleef(s), vcast_vd_d_advsimd_sleef(0.00833333333333318056201922));
 
   x = ddadd_vd2_vd_vd2_advsimd_sleef(vcast_vd_d_advsimd_sleef(1), ddmul_vd2_vd2_vd2_advsimd_sleef(ddadd_vd2_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-0.166666666666666657414808), vmul_vd_vd_vd_advsimd_sleef(u, vd2getx_vd_vd2_advsimd_sleef(s))), s));
@@ -2650,7 +2650,7 @@ SLEEF_INLINE vdouble2_advsimd_sleef Sleef_sincosd2_u10advsimd(vdouble_advsimd_sl
     s = ddigetdd_vd2_ddi_advsimd_sleef(ddi_advsimd_sleef);
     o = vor_vo_vo_vo_advsimd_sleef(visinf_vo_vd_advsimd_sleef(d), visnan_vo_vd_advsimd_sleef(d));
     s = vd2setxy_vd2_vd_vd_advsimd_sleef(vreinterpret_vd_vm_advsimd_sleef(vor_vm_vo64_vm_advsimd_sleef(o, vreinterpret_vm_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(s)))),
-      vreinterpret_vd_vm_advsimd_sleef(vor_vm_vo64_vm_advsimd_sleef(o, vreinterpret_vm_vd_advsimd_sleef(vd2gety_vd_vd2_advsimd_sleef(s)))));
+                           vreinterpret_vd_vm_advsimd_sleef(vor_vm_vo64_vm_advsimd_sleef(o, vreinterpret_vm_vd_advsimd_sleef(vd2gety_vd_vd2_advsimd_sleef(s)))));
   }
 
   t = s;
@@ -2843,11 +2843,11 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef sinpik_advsimd_sle
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, s, vsel_vd_vo_d_d_advsimd_sleef(o, 3.590860448590527540050620e-06, -3.65762041821615519203610e-05));
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, s, vsel_vd_vo_d_d_advsimd_sleef(o, -0.000325991886927389905997954, 0.0024903945701927185027435600));
   x = ddadd2_vd2_vd_vd2_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(u, s),
-   vsel_vd2_vo_d_d_d_d_advsimd_sleef(o, 0.0158543442438155018914259, -1.04693272280631521908845e-18,
-         -0.0807455121882807852484731, 3.61852475067037104849987e-18));
+                        vsel_vd2_vo_d_d_d_d_advsimd_sleef(o, 0.0158543442438155018914259, -1.04693272280631521908845e-18,
+                                            -0.0807455121882807852484731, 3.61852475067037104849987e-18));
   x = ddadd2_vd2_vd2_vd2_advsimd_sleef(ddmul_vd2_vd2_vd2_advsimd_sleef(s2, x),
-    vsel_vd2_vo_d_d_d_d_advsimd_sleef(o, -0.308425137534042437259529, -1.95698492133633550338345e-17,
-          0.785398163397448278999491, 3.06287113727155002607105e-17));
+                         vsel_vd2_vo_d_d_d_d_advsimd_sleef(o, -0.308425137534042437259529, -1.95698492133633550338345e-17,
+                                             0.785398163397448278999491, 3.06287113727155002607105e-17));
 
   x = ddmul_vd2_vd2_vd2_advsimd_sleef(x, vsel_vd2_vo_vd2_vd2_advsimd_sleef(o, s2, vcast_vd2_vd_vd_advsimd_sleef(t, vcast_vd_d_advsimd_sleef(0))));
   x = vsel_vd2_vo_vd2_vd2_advsimd_sleef(o, ddadd2_vd2_vd2_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(1)), x);
@@ -2892,11 +2892,11 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef cospik_advsimd_sle
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, s, vsel_vd_vo_d_d_advsimd_sleef(o, 3.590860448590527540050620e-06, -3.65762041821615519203610e-05));
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, s, vsel_vd_vo_d_d_advsimd_sleef(o, -0.000325991886927389905997954, 0.0024903945701927185027435600));
   x = ddadd2_vd2_vd_vd2_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(u, s),
-   vsel_vd2_vo_d_d_d_d_advsimd_sleef(o, 0.0158543442438155018914259, -1.04693272280631521908845e-18,
-         -0.0807455121882807852484731, 3.61852475067037104849987e-18));
+                        vsel_vd2_vo_d_d_d_d_advsimd_sleef(o, 0.0158543442438155018914259, -1.04693272280631521908845e-18,
+                                            -0.0807455121882807852484731, 3.61852475067037104849987e-18));
   x = ddadd2_vd2_vd2_vd2_advsimd_sleef(ddmul_vd2_vd2_vd2_advsimd_sleef(s2, x),
-    vsel_vd2_vo_d_d_d_d_advsimd_sleef(o, -0.308425137534042437259529, -1.95698492133633550338345e-17,
-          0.785398163397448278999491, 3.06287113727155002607105e-17));
+                         vsel_vd2_vo_d_d_d_d_advsimd_sleef(o, -0.308425137534042437259529, -1.95698492133633550338345e-17,
+                                             0.785398163397448278999491, 3.06287113727155002607105e-17));
 
   x = ddmul_vd2_vd2_vd2_advsimd_sleef(x, vsel_vd2_vo_vd2_vd2_advsimd_sleef(o, s2, vcast_vd2_vd_vd_advsimd_sleef(t, vcast_vd_d_advsimd_sleef(0))));
   x = vsel_vd2_vo_vd2_vd2_advsimd_sleef(o, ddadd2_vd2_vd2_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(1)), x);
@@ -2956,7 +2956,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_tand2_u35advsimd(vdouble_ad
   vdouble_advsimd_sleef s2 = vmul_vd_vd_vd_advsimd_sleef(s, s), s4 = vmul_vd_vd_vd_advsimd_sleef(s2, s2);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((s4), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.3245098826639276316e-3)), (vcast_vd_d_advsimd_sleef(+0.5619219738114323735e-3)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.1460781502402784494e-2)), (vcast_vd_d_advsimd_sleef(+0.3591611540792499519e-2)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.8863268409563113126e-2)), (vcast_vd_d_advsimd_sleef(+0.2186948728185535498e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.5396825399517272970e-1)), (vcast_vd_d_advsimd_sleef(+0.1333333333330500581e+0)))))))
 
-                                ;
+                                       ;
 
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, s, vcast_vd_d_advsimd_sleef(+0.3333333333333343695e+0));
   u = vmla_vd_vd_vd_vd_advsimd_sleef(s, vmul_vd_vd_vd_advsimd_sleef(u, x), x);
@@ -2966,7 +2966,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_tand2_u35advsimd(vdouble_ad
 
   o = vcast_vo64_vo32_advsimd_sleef(veq_vo_vi_vi_advsimd_sleef(vand_vi_vi_vi_advsimd_sleef(ql, vcast_vi_i_advsimd_sleef(1)), vcast_vi_i_advsimd_sleef(1)));
   u = vdiv_vd_vd_vd_advsimd_sleef(vsel_vd_vo_vd_vd_advsimd_sleef(o, vneg_vd_vd_advsimd_sleef(y), x),
-      vsel_vd_vo_vd_vd_advsimd_sleef(o, x, y));
+                    vsel_vd_vo_vd_vd_advsimd_sleef(o, x, y));
   u = vsel_vd_vo_vd_vd_advsimd_sleef(veq_vo_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0)), d, u);
 
   return u;
@@ -2989,8 +2989,8 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_tand2_u10advsimd(vdouble_ad
     vdouble_advsimd_sleef dqh = vtruncate_vd_vd_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(2*0.318309886183790671537767526745028724 / (1 << 24))));
     dqh = vmul_vd_vd_vd_advsimd_sleef(dqh, vcast_vd_d_advsimd_sleef(1 << 24));
     s = ddadd2_vd2_vd2_vd_advsimd_sleef(ddmul_vd2_vd2_vd_advsimd_sleef(vcast_vd2_d_d_advsimd_sleef(0.63661977236758138243, -3.9357353350364971764e-17), d),
-     vsub_vd_vd_vd_advsimd_sleef(vsel_vd_vo_vd_vd_advsimd_sleef(vlt_vo_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0)),
-        vcast_vd_d_advsimd_sleef(-0.5), vcast_vd_d_advsimd_sleef(0.5)), dqh));
+                          vsub_vd_vd_vd_advsimd_sleef(vsel_vd_vo_vd_vd_advsimd_sleef(vlt_vo_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0)),
+                                                         vcast_vd_d_advsimd_sleef(-0.5), vcast_vd_d_advsimd_sleef(0.5)), dqh));
     const vdouble_advsimd_sleef dql = vtruncate_vd_vd_advsimd_sleef(vadd_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(s), vd2gety_vd_vd2_advsimd_sleef(s)));
     ql = vrint_vi_vd_advsimd_sleef(dql);
 
@@ -3016,7 +3016,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_tand2_u10advsimd(vdouble_ad
   vdouble_advsimd_sleef s2 = vmul_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(s), vd2getx_vd_vd2_advsimd_sleef(s)), s4 = vmul_vd_vd_vd_advsimd_sleef(s2, s2);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((s4), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(+0.3245098826639276316e-3)), (vcast_vd_d_advsimd_sleef(+0.5619219738114323735e-3)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(+0.1460781502402784494e-2)), (vcast_vd_d_advsimd_sleef(+0.3591611540792499519e-2)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(+0.8863268409563113126e-2)), (vcast_vd_d_advsimd_sleef(+0.2186948728185535498e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(+0.5396825399517272970e-1)), (vcast_vd_d_advsimd_sleef(+0.1333333333330500581e+0)))))))
 
-                                ;
+                                       ;
 
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, vd2getx_vd_vd2_advsimd_sleef(s), vcast_vd_d_advsimd_sleef(+0.3333333333333343695e+0));
   x = ddadd_vd2_vd2_vd2_advsimd_sleef(t, ddmul_vd2_vd2_vd_advsimd_sleef(ddmul_vd2_vd2_vd2_advsimd_sleef(s, t), u));
@@ -3027,7 +3027,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_tand2_u10advsimd(vdouble_ad
   o = vcast_vo64_vo32_advsimd_sleef(veq_vo_vi_vi_advsimd_sleef(vand_vi_vi_vi_advsimd_sleef(ql, vcast_vi_i_advsimd_sleef(1)), vcast_vi_i_advsimd_sleef(1)));
 
   x = dddiv_vd2_vd2_vd2_advsimd_sleef(vsel_vd2_vo_vd2_vd2_advsimd_sleef(o, ddneg_vd2_vd2_advsimd_sleef(y), x),
-   vsel_vd2_vo_vd2_vd2_advsimd_sleef(o, x, y));
+                        vsel_vd2_vo_vd2_vd2_advsimd_sleef(o, x, y));
 
   u = vadd_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(x), vd2gety_vd_vd2_advsimd_sleef(x));
 
@@ -3056,7 +3056,7 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble_advsimd_sleef atan2k_advsimd_slee
   vdouble_advsimd_sleef t2 = vmul_vd_vd_vd_advsimd_sleef(t, t), t4 = vmul_vd_vd_vd_advsimd_sleef(t2, t2), t8 = vmul_vd_vd_vd_advsimd_sleef(t4, t4), t16 = vmul_vd_vd_vd_advsimd_sleef(t8, t8);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((t16), (vmla_vd_vd_vd_vd_advsimd_sleef((t2), (vcast_vd_d_advsimd_sleef(-1.88796008463073496563746e-05)), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.000209850076645816976906797)), (vcast_vd_d_advsimd_sleef(-0.00110611831486672482563471)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((t8), (vmla_vd_vd_vd_vd_advsimd_sleef((t4), (vmla_vd_vd_vd_vd_advsimd_sleef((t2), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.00370026744188713119232403)), (vcast_vd_d_advsimd_sleef(-0.00889896195887655491740809)))), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.016599329773529201970117)), (vcast_vd_d_advsimd_sleef(-0.0254517624932312641616861)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((t2), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.0337852580001353069993897)), (vcast_vd_d_advsimd_sleef(-0.0407629191276836500001934)))), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.0466667150077840625632675)), (vcast_vd_d_advsimd_sleef(-0.0523674852303482457616113)))))))), (vmla_vd_vd_vd_vd_advsimd_sleef((t4), (vmla_vd_vd_vd_vd_advsimd_sleef((t2), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.0587666392926673580854313)), (vcast_vd_d_advsimd_sleef(-0.0666573579361080525984562)))), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.0769219538311769618355029)), (vcast_vd_d_advsimd_sleef(-0.090908995008245008229153)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((t2), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.111111105648261418443745)), (vcast_vd_d_advsimd_sleef(-0.14285714266771329383765)))), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.199999999996591265594148)), (vcast_vd_d_advsimd_sleef(-0.333333333333311110369124)))))))))))
 
-                                  ;
+                                         ;
 
   t = vmla_vd_vd_vd_vd_advsimd_sleef(s, vmul_vd_vd_vd_advsimd_sleef(t, u), s);
   t = vmla_vd_vd_vd_vd_advsimd_sleef(vcast_vd_vi_advsimd_sleef(q), vcast_vd_d_advsimd_sleef(3.141592653589793238462643383279502884/2), t);
@@ -3088,7 +3088,7 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef atan2k_u1_advsimd_
   vdouble_advsimd_sleef t2 = vmul_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(t), vd2getx_vd_vd2_advsimd_sleef(t)), t4 = vmul_vd_vd_vd_advsimd_sleef(t2, t2), t8 = vmul_vd_vd_vd_advsimd_sleef(t4, t4);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((t8), (vmla_vd_vd_vd_vd_advsimd_sleef((t4), (vmla_vd_vd_vd_vd_advsimd_sleef((t2), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(t)), (vcast_vd_d_advsimd_sleef(1.06298484191448746607415e-05)), (vcast_vd_d_advsimd_sleef(-0.000125620649967286867384336)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(t)), (vcast_vd_d_advsimd_sleef(0.00070557664296393412389774)), (vcast_vd_d_advsimd_sleef(-0.00251865614498713360352999)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((t2), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(t)), (vcast_vd_d_advsimd_sleef(0.00646262899036991172313504)), (vcast_vd_d_advsimd_sleef(-0.0128281333663399031014274)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(t)), (vcast_vd_d_advsimd_sleef(0.0208024799924145797902497)), (vcast_vd_d_advsimd_sleef(-0.0289002344784740315686289)))))))), (vmla_vd_vd_vd_vd_advsimd_sleef((t4), (vmla_vd_vd_vd_vd_advsimd_sleef((t2), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(t)), (vcast_vd_d_advsimd_sleef(0.0359785005035104590853656)), (vcast_vd_d_advsimd_sleef(-0.041848579703592507506027)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(t)), (vcast_vd_d_advsimd_sleef(0.0470843011653283988193763)), (vcast_vd_d_advsimd_sleef(-0.0524914210588448421068719)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((t2), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(t)), (vcast_vd_d_advsimd_sleef(0.0587946590969581003860434)), (vcast_vd_d_advsimd_sleef(-0.0666620884778795497194182)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(t)), (vcast_vd_d_advsimd_sleef(0.0769225330296203768654095)), (vcast_vd_d_advsimd_sleef(-0.0909090442773387574781907)))))))))
 
-                                   ;
+                                          ;
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, vd2getx_vd_vd2_advsimd_sleef(t), vcast_vd_d_advsimd_sleef(0.111111108376896236538123));
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, vd2getx_vd_vd2_advsimd_sleef(t), vcast_vd_d_advsimd_sleef(-0.142857142756268568062339));
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, vd2getx_vd_vd2_advsimd_sleef(t), vcast_vd_d_advsimd_sleef(0.199999999997977351284817));
@@ -3142,7 +3142,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_asind2_u35advsimd(vdouble_a
   vdouble_advsimd_sleef x4 = vmul_vd_vd_vd_advsimd_sleef(x2, x2), x8 = vmul_vd_vd_vd_advsimd_sleef(x4, x4), x16 = vmul_vd_vd_vd_advsimd_sleef(x8, x8);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((x16), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.3161587650653934628e-1)), (vcast_vd_d_advsimd_sleef(-0.1581918243329996643e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.1929045477267910674e-1)), (vcast_vd_d_advsimd_sleef(+0.6606077476277170610e-2)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x8), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.1215360525577377331e-1)), (vcast_vd_d_advsimd_sleef(+0.1388715184501609218e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.1735956991223614604e-1)), (vcast_vd_d_advsimd_sleef(+0.2237176181932048341e-1)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.3038195928038132237e-1)), (vcast_vd_d_advsimd_sleef(+0.4464285681377102438e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.7500000000378581611e-1)), (vcast_vd_d_advsimd_sleef(+0.1666666666666497543e+0)))))))))
 
-                                ;
+                                       ;
 
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, vmul_vd_vd_vd_advsimd_sleef(x, x2), x);
 
@@ -3159,28 +3159,28 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_asind2_u10advsimd(vdouble_a
   vdouble_advsimd_sleef x4 = vmul_vd_vd_vd_advsimd_sleef(x2, x2), x8 = vmul_vd_vd_vd_advsimd_sleef(x4, x4), x16 = vmul_vd_vd_vd_advsimd_sleef(x8, x8);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((x16), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.3161587650653934628e-1)), (vcast_vd_d_advsimd_sleef(-0.1581918243329996643e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.1929045477267910674e-1)), (vcast_vd_d_advsimd_sleef(+0.6606077476277170610e-2)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x8), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.1215360525577377331e-1)), (vcast_vd_d_advsimd_sleef(+0.1388715184501609218e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.1735956991223614604e-1)), (vcast_vd_d_advsimd_sleef(+0.2237176181932048341e-1)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.3038195928038132237e-1)), (vcast_vd_d_advsimd_sleef(+0.4464285681377102438e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.7500000000378581611e-1)), (vcast_vd_d_advsimd_sleef(+0.1666666666666497543e+0)))))))))
 
-                                ;
+                                       ;
 
   u = vmul_vd_vd_vd_advsimd_sleef(u, vmul_vd_vd_vd_advsimd_sleef(x2, vd2getx_vd_vd2_advsimd_sleef(x)));
 
   vdouble2_advsimd_sleef y = ddsub_vd2_vd2_vd_advsimd_sleef(ddsub_vd2_vd2_vd2_advsimd_sleef(vcast_vd2_d_d_advsimd_sleef(3.141592653589793116/4, 1.2246467991473532072e-16/4), x), u);
 
   vdouble_advsimd_sleef r = vsel_vd_vo_vd_vd_advsimd_sleef(o, vadd_vd_vd_vd_advsimd_sleef(u, vd2getx_vd_vd2_advsimd_sleef(x)),
-          vmul_vd_vd_vd_advsimd_sleef(vadd_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(y), vd2gety_vd_vd2_advsimd_sleef(y)), vcast_vd_d_advsimd_sleef(2)));
+                               vmul_vd_vd_vd_advsimd_sleef(vadd_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(y), vd2gety_vd_vd2_advsimd_sleef(y)), vcast_vd_d_advsimd_sleef(2)));
   return vmulsign_vd_vd_vd_advsimd_sleef(r, d);
 }
 
 SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_acosd2_u35advsimd(vdouble_advsimd_sleef d) {
   vopmask_advsimd_sleef o = vlt_vo_vd_vd_advsimd_sleef(vabs_vd_vd_advsimd_sleef(d), vcast_vd_d_advsimd_sleef(0.5));
   vdouble_advsimd_sleef x2 = vsel_vd_vo_vd_vd_advsimd_sleef(o, vmul_vd_vd_vd_advsimd_sleef(d, d),
-    vmul_vd_vd_vd_advsimd_sleef(vsub_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(1), vabs_vd_vd_advsimd_sleef(d)), vcast_vd_d_advsimd_sleef(0.5))), u;
+                                vmul_vd_vd_vd_advsimd_sleef(vsub_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(1), vabs_vd_vd_advsimd_sleef(d)), vcast_vd_d_advsimd_sleef(0.5))), u;
   vdouble_advsimd_sleef x = vsel_vd_vo_vd_vd_advsimd_sleef(o, vabs_vd_vd_advsimd_sleef(d), vsqrt_vd_vd_advsimd_sleef(x2));
   x = vsel_vd_vo_vd_vd_advsimd_sleef(veq_vo_vd_vd_advsimd_sleef(vabs_vd_vd_advsimd_sleef(d), vcast_vd_d_advsimd_sleef(1.0)), vcast_vd_d_advsimd_sleef(0), x);
 
   vdouble_advsimd_sleef x4 = vmul_vd_vd_vd_advsimd_sleef(x2, x2), x8 = vmul_vd_vd_vd_advsimd_sleef(x4, x4), x16 = vmul_vd_vd_vd_advsimd_sleef(x8, x8);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((x16), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.3161587650653934628e-1)), (vcast_vd_d_advsimd_sleef(-0.1581918243329996643e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.1929045477267910674e-1)), (vcast_vd_d_advsimd_sleef(+0.6606077476277170610e-2)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x8), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.1215360525577377331e-1)), (vcast_vd_d_advsimd_sleef(+0.1388715184501609218e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.1735956991223614604e-1)), (vcast_vd_d_advsimd_sleef(+0.2237176181932048341e-1)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.3038195928038132237e-1)), (vcast_vd_d_advsimd_sleef(+0.4464285681377102438e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.7500000000378581611e-1)), (vcast_vd_d_advsimd_sleef(+0.1666666666666497543e+0)))))))))
 
-                                ;
+                                       ;
 
   u = vmul_vd_vd_vd_advsimd_sleef(u, vmul_vd_vd_vd_advsimd_sleef(x2, x));
 
@@ -3188,8 +3188,8 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_acosd2_u35advsimd(vdouble_a
   x = vadd_vd_vd_vd_advsimd_sleef(x, u);
   vdouble_advsimd_sleef r = vsel_vd_vo_vd_vd_advsimd_sleef(o, y, vmul_vd_vd_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(2)));
   return vsel_vd_vo_vd_vd_advsimd_sleef(vandnot_vo_vo_vo_advsimd_sleef(o, vlt_vo_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0))),
-     vd2getx_vd_vd2_advsimd_sleef(ddadd_vd2_vd2_vd_advsimd_sleef(vcast_vd2_d_d_advsimd_sleef(3.141592653589793116, 1.2246467991473532072e-16),
-         vneg_vd_vd_advsimd_sleef(r))), r);
+                          vd2getx_vd_vd2_advsimd_sleef(ddadd_vd2_vd2_vd_advsimd_sleef(vcast_vd2_d_d_advsimd_sleef(3.141592653589793116, 1.2246467991473532072e-16),
+                                                          vneg_vd_vd_advsimd_sleef(r))), r);
 }
 
 SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_acosd2_u10advsimd(vdouble_advsimd_sleef d) {
@@ -3201,18 +3201,18 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_acosd2_u10advsimd(vdouble_a
   vdouble_advsimd_sleef x4 = vmul_vd_vd_vd_advsimd_sleef(x2, x2), x8 = vmul_vd_vd_vd_advsimd_sleef(x4, x4), x16 = vmul_vd_vd_vd_advsimd_sleef(x8, x8);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((x16), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.3161587650653934628e-1)), (vcast_vd_d_advsimd_sleef(-0.1581918243329996643e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.1929045477267910674e-1)), (vcast_vd_d_advsimd_sleef(+0.6606077476277170610e-2)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x8), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.1215360525577377331e-1)), (vcast_vd_d_advsimd_sleef(+0.1388715184501609218e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.1735956991223614604e-1)), (vcast_vd_d_advsimd_sleef(+0.2237176181932048341e-1)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.3038195928038132237e-1)), (vcast_vd_d_advsimd_sleef(+0.4464285681377102438e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.7500000000378581611e-1)), (vcast_vd_d_advsimd_sleef(+0.1666666666666497543e+0)))))))))
 
-                                ;
+                                       ;
 
   u = vmul_vd_vd_vd_advsimd_sleef(u, vmul_vd_vd_vd_advsimd_sleef(x2, vd2getx_vd_vd2_advsimd_sleef(x)));
 
   vdouble2_advsimd_sleef y = ddsub_vd2_vd2_vd2_advsimd_sleef(vcast_vd2_d_d_advsimd_sleef(3.141592653589793116/2, 1.2246467991473532072e-16/2),
-     ddadd_vd2_vd_vd_advsimd_sleef(vmulsign_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(x), d), vmulsign_vd_vd_vd_advsimd_sleef(u, d)));
+                                 ddadd_vd2_vd_vd_advsimd_sleef(vmulsign_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(x), d), vmulsign_vd_vd_vd_advsimd_sleef(u, d)));
   x = ddadd_vd2_vd2_vd_advsimd_sleef(x, u);
 
   y = vsel_vd2_vo_vd2_vd2_advsimd_sleef(o, y, ddscale_vd2_vd2_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(2)));
 
   y = vsel_vd2_vo_vd2_vd2_advsimd_sleef(vandnot_vo_vo_vo_advsimd_sleef(o, vlt_vo_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0))),
-     ddsub_vd2_vd2_vd2_advsimd_sleef(vcast_vd2_d_d_advsimd_sleef(3.141592653589793116, 1.2246467991473532072e-16), y), y);
+                          ddsub_vd2_vd2_vd2_advsimd_sleef(vcast_vd2_d_d_advsimd_sleef(3.141592653589793116, 1.2246467991473532072e-16), y), y);
 
   return vadd_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(y), vd2gety_vd_vd2_advsimd_sleef(y));
 }
@@ -3239,7 +3239,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_atand2_u35advsimd(vdouble_a
   vdouble_advsimd_sleef t2 = vmul_vd_vd_vd_advsimd_sleef(t, t), t4 = vmul_vd_vd_vd_advsimd_sleef(t2, t2), t8 = vmul_vd_vd_vd_advsimd_sleef(t4, t4), t16 = vmul_vd_vd_vd_advsimd_sleef(t8, t8);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((t16), (vmla_vd_vd_vd_vd_advsimd_sleef((t2), (vcast_vd_d_advsimd_sleef(-1.88796008463073496563746e-05)), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.000209850076645816976906797)), (vcast_vd_d_advsimd_sleef(-0.00110611831486672482563471)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((t8), (vmla_vd_vd_vd_vd_advsimd_sleef((t4), (vmla_vd_vd_vd_vd_advsimd_sleef((t2), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.00370026744188713119232403)), (vcast_vd_d_advsimd_sleef(-0.00889896195887655491740809)))), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.016599329773529201970117)), (vcast_vd_d_advsimd_sleef(-0.0254517624932312641616861)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((t2), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.0337852580001353069993897)), (vcast_vd_d_advsimd_sleef(-0.0407629191276836500001934)))), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.0466667150077840625632675)), (vcast_vd_d_advsimd_sleef(-0.0523674852303482457616113)))))))), (vmla_vd_vd_vd_vd_advsimd_sleef((t4), (vmla_vd_vd_vd_vd_advsimd_sleef((t2), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.0587666392926673580854313)), (vcast_vd_d_advsimd_sleef(-0.0666573579361080525984562)))), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.0769219538311769618355029)), (vcast_vd_d_advsimd_sleef(-0.090908995008245008229153)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((t2), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.111111105648261418443745)), (vcast_vd_d_advsimd_sleef(-0.14285714266771329383765)))), (vmla_vd_vd_vd_vd_advsimd_sleef((t), (vcast_vd_d_advsimd_sleef(0.199999999996591265594148)), (vcast_vd_d_advsimd_sleef(-0.333333333333311110369124)))))))))))
 
-                                  ;
+                                         ;
 
   t = vmla_vd_vd_vd_vd_advsimd_sleef(s, vmul_vd_vd_vd_advsimd_sleef(t, u), s);
 
@@ -3265,7 +3265,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_logd2_u35advsimd(vdouble_ad
   vdouble_advsimd_sleef x4 = vmul_vd_vd_vd_advsimd_sleef(x2, x2), x8 = vmul_vd_vd_vd_advsimd_sleef(x4, x4), x3 = vmul_vd_vd_vd_advsimd_sleef(x, x2);
   t = vmla_vd_vd_vd_vd_advsimd_sleef((x8), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vcast_vd_d_advsimd_sleef(0.153487338491425068243146)), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(0.152519917006351951593857)), (vcast_vd_d_advsimd_sleef(0.181863266251982985677316)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(0.222221366518767365905163)), (vcast_vd_d_advsimd_sleef(0.285714294746548025383248)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(0.399999999950799600689777)), (vcast_vd_d_advsimd_sleef(0.6666666666667778740063)))))))
 
-                              ;
+                                     ;
 
   x = vmla_vd_vd_vd_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(2), vmul_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(0.693147180559945286226764), vcast_vd_vi_advsimd_sleef(e)));
   x = vmla_vd_vd_vd_vd_advsimd_sleef(x3, t, x);
@@ -3287,7 +3287,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_expd2_u10advsimd(vdouble_ad
   vdouble_advsimd_sleef s2 = vmul_vd_vd_vd_advsimd_sleef(s, s), s4 = vmul_vd_vd_vd_advsimd_sleef(s2, s2), s8 = vmul_vd_vd_vd_advsimd_sleef(s4, s4);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((s8), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.2081276378237164457e-8)), (vcast_vd_d_advsimd_sleef(+0.2511210703042288022e-7)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s4), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.2755762628169491192e-6)), (vcast_vd_d_advsimd_sleef(+0.2755723402025388239e-5)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.2480158687479686264e-4)), (vcast_vd_d_advsimd_sleef(+0.1984126989855865850e-3)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.1388888888914497797e-2)), (vcast_vd_d_advsimd_sleef(+0.8333333333314938210e-2)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.4166666666666602598e-1)), (vcast_vd_d_advsimd_sleef(+0.1666666666666669072e+0)))))))))
 
-                                ;
+                                       ;
   u = vfma_vd_vd_vd_vd_advsimd_sleef(u, s, vcast_vd_d_advsimd_sleef(+0.5000000000000000000e+0));
   u = vfma_vd_vd_vd_vd_advsimd_sleef(u, s, vcast_vd_d_advsimd_sleef(+0.1000000000000000000e+1));
   u = vfma_vd_vd_vd_vd_advsimd_sleef(u, s, vcast_vd_d_advsimd_sleef(+0.1000000000000000000e+1));
@@ -3310,12 +3310,12 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble_advsimd_sleef expm1k_advsimd_slee
   vdouble_advsimd_sleef s2 = vmul_vd_vd_vd_advsimd_sleef(s, s), s4 = vmul_vd_vd_vd_advsimd_sleef(s2, s2), s8 = vmul_vd_vd_vd_advsimd_sleef(s4, s4);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((s8), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(2.08860621107283687536341e-09)), (vcast_vd_d_advsimd_sleef(2.51112930892876518610661e-08)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s4), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(2.75573911234900471893338e-07)), (vcast_vd_d_advsimd_sleef(2.75572362911928827629423e-06)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(2.4801587159235472998791e-05)), (vcast_vd_d_advsimd_sleef(0.000198412698960509205564975)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(0.00138888888889774492207962)), (vcast_vd_d_advsimd_sleef(0.00833333333331652721664984)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(0.0416666666666665047591422)), (vcast_vd_d_advsimd_sleef(0.166666666666666851703837)))))))))
 
-                                 ;
+                                        ;
 
   u = vadd_vd_vd_vd_advsimd_sleef(vmla_vd_vd_vd_vd_advsimd_sleef(s2, vcast_vd_d_advsimd_sleef(0.5), vmul_vd_vd_vd_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(s2, s), u)), s);
 
   u = vsel_vd_vo_vd_vd_advsimd_sleef(vcast_vo64_vo32_advsimd_sleef(veq_vo_vi_vi_advsimd_sleef(q, vcast_vi_i_advsimd_sleef(0))), u,
-         vsub_vd_vd_vd_advsimd_sleef(vldexp2_vd_vd_vi_advsimd_sleef(vadd_vd_vd_vd_advsimd_sleef(u, vcast_vd_d_advsimd_sleef(1)), q), vcast_vd_d_advsimd_sleef(1)));
+                       vsub_vd_vd_vd_advsimd_sleef(vldexp2_vd_vd_vi_advsimd_sleef(vadd_vd_vd_vd_advsimd_sleef(u, vcast_vd_d_advsimd_sleef(1)), q), vcast_vd_d_advsimd_sleef(1)));
 
   return u;
 }
@@ -3336,7 +3336,7 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef logk_advsimd_sleef
   vdouble_advsimd_sleef x4 = vmul_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(x2), vd2getx_vd_vd2_advsimd_sleef(x2)), x8 = vmul_vd_vd_vd_advsimd_sleef(x4, x4), x16 = vmul_vd_vd_vd_advsimd_sleef(x8, x8);
   t = vmla_vd_vd_vd_vd_advsimd_sleef((x16), (vcast_vd_d_advsimd_sleef(0.116255524079935043668677)), (vmla_vd_vd_vd_vd_advsimd_sleef((x8), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(x2)), (vcast_vd_d_advsimd_sleef(0.103239680901072952701192)), (vcast_vd_d_advsimd_sleef(0.117754809412463995466069)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(x2)), (vcast_vd_d_advsimd_sleef(0.13332981086846273921509)), (vcast_vd_d_advsimd_sleef(0.153846227114512262845736)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(x2)), (vcast_vd_d_advsimd_sleef(0.181818180850050775676507)), (vcast_vd_d_advsimd_sleef(0.222222222230083560345903)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(x2)), (vcast_vd_d_advsimd_sleef(0.285714285714249172087875)), (vcast_vd_d_advsimd_sleef(0.400000000000000077715612)))))))))
 
-                                ;
+                                       ;
 
   vdouble2_advsimd_sleef c = vcast_vd2_d_d_advsimd_sleef(0.666666666666666629659233, 3.80554962542412056336616e-17);
 
@@ -3367,7 +3367,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_logd2_u10advsimd(vdouble_ad
   vdouble_advsimd_sleef x4 = vmul_vd_vd_vd_advsimd_sleef(x2, x2), x8 = vmul_vd_vd_vd_advsimd_sleef(x4, x4);
   t = vmla_vd_vd_vd_vd_advsimd_sleef((x8), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vcast_vd_d_advsimd_sleef(0.1532076988502701353e+0)), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(0.1525629051003428716e+0)), (vcast_vd_d_advsimd_sleef(0.1818605932937785996e+0)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(0.2222214519839380009e+0)), (vcast_vd_d_advsimd_sleef(0.2857142932794299317e+0)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(0.3999999999635251990e+0)), (vcast_vd_d_advsimd_sleef(0.6666666666667333541e+0)))))))
 
-                              ;
+                                     ;
 
   vdouble2_advsimd_sleef s = ddmul_vd2_vd2_vd_advsimd_sleef(vcast_vd2_d_d_advsimd_sleef(0.693147180559945286226764, 2.319046813846299558417771e-17), vcast_vd_vi_advsimd_sleef(e));
 
@@ -3397,7 +3397,7 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble_advsimd_sleef expk_advsimd_sleef(
   vdouble_advsimd_sleef s2 = vmul_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(s), vd2getx_vd_vd2_advsimd_sleef(s)), s4 = vmul_vd_vd_vd_advsimd_sleef(s2, s2), s8 = vmul_vd_vd_vd_advsimd_sleef(s4, s4);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((s8), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(2.51069683420950419527139e-08)), (vcast_vd_d_advsimd_sleef(2.76286166770270649116855e-07)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s4), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(2.75572496725023574143864e-06)), (vcast_vd_d_advsimd_sleef(2.48014973989819794114153e-05)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(0.000198412698809069797676111)), (vcast_vd_d_advsimd_sleef(0.0013888888939977128960529)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(0.00833333333332371417601081)), (vcast_vd_d_advsimd_sleef(0.0416666666665409524128449)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(0.166666666666666740681535)), (vcast_vd_d_advsimd_sleef(0.500000000000000999200722)))))))))
 
-                                 ;
+                                        ;
 
   t = ddadd_vd2_vd_vd2_advsimd_sleef(vcast_vd_d_advsimd_sleef(1), s);
   t = ddadd_vd2_vd2_vd2_advsimd_sleef(t, ddmul_vd2_vd2_vd_advsimd_sleef(ddsqu_vd2_vd2_advsimd_sleef(s), u));
@@ -3420,23 +3420,23 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_powd2_u10advsimd(vdouble_ad
   result = vsel_vd_vo_vd_vd_advsimd_sleef(vgt_vo_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(d), vcast_vd_d_advsimd_sleef(709.78271114955742909217217426)), vcast_vd_d_advsimd_sleef(__builtin_inf()), result);
 
   result = vmul_vd_vd_vd_advsimd_sleef(result,
-    vsel_vd_vo_vd_vd_advsimd_sleef(vgt_vo_vd_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(0)),
-       vcast_vd_d_advsimd_sleef(1),
-       vsel_vd_vo_vd_vd_advsimd_sleef(yisint, vsel_vd_vo_vd_vd_advsimd_sleef(yisodd, vcast_vd_d_advsimd_sleef(-1.0), vcast_vd_d_advsimd_sleef(1)), vcast_vd_d_advsimd_sleef(__builtin_nan("")))));
+                         vsel_vd_vo_vd_vd_advsimd_sleef(vgt_vo_vd_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(0)),
+                                          vcast_vd_d_advsimd_sleef(1),
+                                          vsel_vd_vo_vd_vd_advsimd_sleef(yisint, vsel_vd_vo_vd_vd_advsimd_sleef(yisodd, vcast_vd_d_advsimd_sleef(-1.0), vcast_vd_d_advsimd_sleef(1)), vcast_vd_d_advsimd_sleef(__builtin_nan("")))));
 
   vdouble_advsimd_sleef efx = vmulsign_vd_vd_vd_advsimd_sleef(vsub_vd_vd_vd_advsimd_sleef(vabs_vd_vd_advsimd_sleef(x), vcast_vd_d_advsimd_sleef(1)), y);
 
   result = vsel_vd_vo_vd_vd_advsimd_sleef(visinf_vo_vd_advsimd_sleef(y),
-       vreinterpret_vd_vm_advsimd_sleef(vandnot_vm_vo64_vm_advsimd_sleef(vlt_vo_vd_vd_advsimd_sleef(efx, vcast_vd_d_advsimd_sleef(0.0)),
-          vreinterpret_vm_vd_advsimd_sleef(vsel_vd_vo_vd_vd_advsimd_sleef(veq_vo_vd_vd_advsimd_sleef(efx, vcast_vd_d_advsimd_sleef(0.0)),
-                  vcast_vd_d_advsimd_sleef(1.0),
-                  vcast_vd_d_advsimd_sleef(__builtin_inf()))))),
-       result);
+                            vreinterpret_vd_vm_advsimd_sleef(vandnot_vm_vo64_vm_advsimd_sleef(vlt_vo_vd_vd_advsimd_sleef(efx, vcast_vd_d_advsimd_sleef(0.0)),
+                                                                  vreinterpret_vm_vd_advsimd_sleef(vsel_vd_vo_vd_vd_advsimd_sleef(veq_vo_vd_vd_advsimd_sleef(efx, vcast_vd_d_advsimd_sleef(0.0)),
+                                                                                                      vcast_vd_d_advsimd_sleef(1.0),
+                                                                                                      vcast_vd_d_advsimd_sleef(__builtin_inf()))))),
+                            result);
 
   result = vsel_vd_vo_vd_vd_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(visinf_vo_vd_advsimd_sleef(x), veq_vo_vd_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(0.0))),
-       vmulsign_vd_vd_vd_advsimd_sleef(vsel_vd_vo_vd_vd_advsimd_sleef(vxor_vo_vo_vo_advsimd_sleef(vsignbit_vo_vd_advsimd_sleef(y), veq_vo_vd_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(0.0))),
-              vcast_vd_d_advsimd_sleef(0), vcast_vd_d_advsimd_sleef(__builtin_inf())),
-           vsel_vd_vo_vd_vd_advsimd_sleef(yisodd, x, vcast_vd_d_advsimd_sleef(1))), result);
+                            vmulsign_vd_vd_vd_advsimd_sleef(vsel_vd_vo_vd_vd_advsimd_sleef(vxor_vo_vo_vo_advsimd_sleef(vsignbit_vo_vd_advsimd_sleef(y), veq_vo_vd_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(0.0))),
+                                                               vcast_vd_d_advsimd_sleef(0), vcast_vd_d_advsimd_sleef(__builtin_inf())),
+                                              vsel_vd_vo_vd_vd_advsimd_sleef(yisodd, x, vcast_vd_d_advsimd_sleef(1))), result);
 
   result = vreinterpret_vd_vm_advsimd_sleef(vor_vm_vo64_vm_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(visnan_vo_vd_advsimd_sleef(x), visnan_vo_vd_advsimd_sleef(y)), vreinterpret_vm_vd_advsimd_sleef(result)));
 
@@ -3459,7 +3459,7 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef expk2_advsimd_slee
   vdouble_advsimd_sleef s8 = vmul_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(s4), vd2getx_vd_vd2_advsimd_sleef(s4));
   u = vmla_vd_vd_vd_vd_advsimd_sleef((s8), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(+0.1602472219709932072e-9)), (vcast_vd_d_advsimd_sleef(+0.2092255183563157007e-8)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s4)), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s2)), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(+0.2505230023782644465e-7)), (vcast_vd_d_advsimd_sleef(+0.2755724800902135303e-6)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(+0.2755731892386044373e-5)), (vcast_vd_d_advsimd_sleef(+0.2480158735605815065e-4)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s2)), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(+0.1984126984148071858e-3)), (vcast_vd_d_advsimd_sleef(+0.1388888888886763255e-2)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(s)), (vcast_vd_d_advsimd_sleef(+0.8333333333333347095e-2)), (vcast_vd_d_advsimd_sleef(+0.4166666666666669905e-1)))))))))
 
-                                ;
+                                       ;
 
   t = ddadd_vd2_vd_vd2_advsimd_sleef(vcast_vd_d_advsimd_sleef(0.5), ddmul_vd2_vd2_vd_advsimd_sleef(s, vcast_vd_d_advsimd_sleef(+0.1666666666666666574e+0)));
   t = ddadd_vd2_vd_vd2_advsimd_sleef(vcast_vd_d_advsimd_sleef(1.0), ddmul_vd2_vd2_vd2_advsimd_sleef(t, s));
@@ -3556,7 +3556,7 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef logk2_advsimd_slee
   e = vilogbk_vi_vd_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(d), vcast_vd_d_advsimd_sleef(1.0/0.75)));
 
   m = vd2setxy_vd2_vd_vd_advsimd_sleef(vldexp2_vd_vd_vi_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(d), vneg_vi_vi_advsimd_sleef(e)),
-    vldexp2_vd_vd_vi_advsimd_sleef(vd2gety_vd_vd2_advsimd_sleef(d), vneg_vi_vi_advsimd_sleef(e)));
+                         vldexp2_vd_vd_vi_advsimd_sleef(vd2gety_vd_vd2_advsimd_sleef(d), vneg_vi_vi_advsimd_sleef(e)));
 
   x = dddiv_vd2_vd2_vd2_advsimd_sleef(ddadd2_vd2_vd2_vd_advsimd_sleef(m, vcast_vd_d_advsimd_sleef(-1)), ddadd2_vd2_vd2_vd_advsimd_sleef(m, vcast_vd_d_advsimd_sleef(1)));
   x2 = ddsqu_vd2_vd2_advsimd_sleef(x);
@@ -3564,7 +3564,7 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vdouble2_advsimd_sleef logk2_advsimd_slee
   vdouble_advsimd_sleef x4 = vmul_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(x2), vd2getx_vd_vd2_advsimd_sleef(x2)), x8 = vmul_vd_vd_vd_advsimd_sleef(x4, x4);
   t = vmla_vd_vd_vd_vd_advsimd_sleef((x8), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vcast_vd_d_advsimd_sleef(0.13860436390467167910856)), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(x2)), (vcast_vd_d_advsimd_sleef(0.131699838841615374240845)), (vcast_vd_d_advsimd_sleef(0.153914168346271945653214)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(x2)), (vcast_vd_d_advsimd_sleef(0.181816523941564611721589)), (vcast_vd_d_advsimd_sleef(0.22222224632662035403996)))), (vmla_vd_vd_vd_vd_advsimd_sleef((vd2getx_vd_vd2_advsimd_sleef(x2)), (vcast_vd_d_advsimd_sleef(0.285714285511134091777308)), (vcast_vd_d_advsimd_sleef(0.400000000000914013309483)))))))
 
-                                ;
+                                       ;
   t = vmla_vd_vd_vd_vd_advsimd_sleef(t, vd2getx_vd_vd2_advsimd_sleef(x2), vcast_vd_d_advsimd_sleef(0.666666666666664853302393));
 
   s = ddmul_vd2_vd2_vd_advsimd_sleef(vcast_vd2_d_d_advsimd_sleef(0.693147180559945286226764, 2.319046813846299558417771e-17), vcast_vd_vi_advsimd_sleef(e));
@@ -3587,8 +3587,8 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_asinhd2_u10advsimd(vdouble_
   y = vadd_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(d), vd2gety_vd_vd2_advsimd_sleef(d));
 
   y = vsel_vd_vo_vd_vd_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(vgt_vo_vd_vd_advsimd_sleef(vabs_vd_vd_advsimd_sleef(x), vcast_vd_d_advsimd_sleef(1.3407807929942596355e+154)),
-        visnan_vo_vd_advsimd_sleef(y)),
-         vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(__builtin_inf()), x), y);
+                                    visnan_vo_vd_advsimd_sleef(y)),
+                       vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(__builtin_inf()), x), y);
 
   y = vreinterpret_vd_vm_advsimd_sleef(vor_vm_vo64_vm_advsimd_sleef(visnan_vo_vd_advsimd_sleef(x), vreinterpret_vm_vd_advsimd_sleef(y)));
   y = vsel_vd_vo_vd_vd_advsimd_sleef(visnegzero_vo_vd_advsimd_sleef(x), vcast_vd_d_advsimd_sleef(-0.0), y);
@@ -3601,8 +3601,8 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_acoshd2_u10advsimd(vdouble_
   vdouble_advsimd_sleef y = vadd_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(d), vd2gety_vd_vd2_advsimd_sleef(d));
 
   y = vsel_vd_vo_vd_vd_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(vgt_vo_vd_vd_advsimd_sleef(vabs_vd_vd_advsimd_sleef(x), vcast_vd_d_advsimd_sleef(1.3407807929942596355e+154)),
-        visnan_vo_vd_advsimd_sleef(y)),
-         vcast_vd_d_advsimd_sleef(__builtin_inf()), y);
+                                    visnan_vo_vd_advsimd_sleef(y)),
+                       vcast_vd_d_advsimd_sleef(__builtin_inf()), y);
   y = vreinterpret_vd_vm_advsimd_sleef(vandnot_vm_vo64_vm_advsimd_sleef(veq_vo_vd_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(1.0)), vreinterpret_vm_vd_advsimd_sleef(y)));
 
   y = vreinterpret_vd_vm_advsimd_sleef(vor_vm_vo64_vm_advsimd_sleef(vlt_vo_vd_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(1.0)), vreinterpret_vm_vd_advsimd_sleef(y)));
@@ -3713,7 +3713,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_exp2d2_u10advsimd(vdouble_a
   vdouble_advsimd_sleef s2 = vmul_vd_vd_vd_advsimd_sleef(s, s), s4 = vmul_vd_vd_vd_advsimd_sleef(s2, s2), s8 = vmul_vd_vd_vd_advsimd_sleef(s4, s4);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((s8), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.4434359082926529454e-9)), (vcast_vd_d_advsimd_sleef(+0.7073164598085707425e-8)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s4), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.1017819260921760451e-6)), (vcast_vd_d_advsimd_sleef(+0.1321543872511327615e-5)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.1525273353517584730e-4)), (vcast_vd_d_advsimd_sleef(+0.1540353045101147808e-3)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.1333355814670499073e-2)), (vcast_vd_d_advsimd_sleef(+0.9618129107597600536e-2)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.5550410866482046596e-1)), (vcast_vd_d_advsimd_sleef(+0.2402265069591012214e+0)))))))))
 
-                                ;
+                                       ;
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, s, vcast_vd_d_advsimd_sleef(+0.6931471805599452862e+0));
 
   u = vfma_vd_vd_vd_vd_advsimd_sleef(u, s, vcast_vd_d_advsimd_sleef(1));
@@ -3735,7 +3735,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_exp2d2_u35advsimd(vdouble_a
   vdouble_advsimd_sleef s2 = vmul_vd_vd_vd_advsimd_sleef(s, s), s4 = vmul_vd_vd_vd_advsimd_sleef(s2, s2), s8 = vmul_vd_vd_vd_advsimd_sleef(s4, s4);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((s8), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.4434359082926529454e-9)), (vcast_vd_d_advsimd_sleef(+0.7073164598085707425e-8)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s4), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.1017819260921760451e-6)), (vcast_vd_d_advsimd_sleef(+0.1321543872511327615e-5)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.1525273353517584730e-4)), (vcast_vd_d_advsimd_sleef(+0.1540353045101147808e-3)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.1333355814670499073e-2)), (vcast_vd_d_advsimd_sleef(+0.9618129107597600536e-2)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.5550410866482046596e-1)), (vcast_vd_d_advsimd_sleef(+0.2402265069591012214e+0)))))))))
 
-                                ;
+                                       ;
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, s, vcast_vd_d_advsimd_sleef(+0.6931471805599452862e+0));
 
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, s, vcast_vd_d_advsimd_sleef(1));
@@ -3787,7 +3787,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_exp10d2_u35advsimd(vdouble_
   vdouble_advsimd_sleef s2 = vmul_vd_vd_vd_advsimd_sleef(s, s), s4 = vmul_vd_vd_vd_advsimd_sleef(s2, s2), s8 = vmul_vd_vd_vd_advsimd_sleef(s4, s4);
   u = vmla_vd_vd_vd_vd_advsimd_sleef((s8), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vcast_vd_d_advsimd_sleef(+0.2411463498334267652e-3)), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.1157488415217187375e-2)), (vcast_vd_d_advsimd_sleef(+0.5013975546789733659e-2)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((s4), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.1959762320720533080e-1)), (vcast_vd_d_advsimd_sleef(+0.6808936399446784138e-1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.2069958494722676234e+0)), (vcast_vd_d_advsimd_sleef(+0.5393829292058536229e+0)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((s2), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.1171255148908541655e+1)), (vcast_vd_d_advsimd_sleef(+0.2034678592293432953e+1)))), (vmla_vd_vd_vd_vd_advsimd_sleef((s), (vcast_vd_d_advsimd_sleef(+0.2650949055239205876e+1)), (vcast_vd_d_advsimd_sleef(+0.2302585092994045901e+1)))))))))
 
-                                ;
+                                       ;
 
   u = vmla_vd_vd_vd_vd_advsimd_sleef(u, s, vcast_vd_d_advsimd_sleef(1));
 
@@ -3824,7 +3824,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_log10d2_u10advsimd(vdouble_
   vdouble_advsimd_sleef x4 = vmul_vd_vd_vd_advsimd_sleef(x2, x2), x8 = vmul_vd_vd_vd_advsimd_sleef(x4, x4);
   t = vmla_vd_vd_vd_vd_advsimd_sleef((x8), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vcast_vd_d_advsimd_sleef(+0.6653725819576758460e-1)), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.6625722782820833712e-1)), (vcast_vd_d_advsimd_sleef(+0.7898105214313944078e-1)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.9650955035715275132e-1)), (vcast_vd_d_advsimd_sleef(+0.1240841409721444993e+0)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.1737177927454605086e+0)), (vcast_vd_d_advsimd_sleef(+0.2895296546021972617e+0)))))))
 
-                               ;
+                                      ;
 
   vdouble2_advsimd_sleef s = ddmul_vd2_vd2_vd_advsimd_sleef(vcast_vd2_d_d_advsimd_sleef(0.30102999566398119802, -2.803728127785170339e-18), vcast_vd_vi_advsimd_sleef(e));
 
@@ -3856,10 +3856,10 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_log2d2_u10advsimd(vdouble_a
   vdouble_advsimd_sleef x4 = vmul_vd_vd_vd_advsimd_sleef(x2, x2), x8 = vmul_vd_vd_vd_advsimd_sleef(x4, x4);
   t = vmla_vd_vd_vd_vd_advsimd_sleef((x8), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vcast_vd_d_advsimd_sleef(+0.2211941750456081490e+0)), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.2200768693152277689e+0)), (vcast_vd_d_advsimd_sleef(+0.2623708057488514656e+0)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.3205977477944495502e+0)), (vcast_vd_d_advsimd_sleef(+0.4121985945485324709e+0)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(+0.5770780162997058982e+0)), (vcast_vd_d_advsimd_sleef(+0.96179669392608091449)))))))
 
-                             ;
+                                    ;
 
   vdouble2_advsimd_sleef s = ddadd2_vd2_vd_vd2_advsimd_sleef(vcast_vd_vi_advsimd_sleef(e),
-     ddmul_vd2_vd2_vd2_advsimd_sleef(x, vcast_vd2_d_d_advsimd_sleef(2.885390081777926774, 6.0561604995516736434e-18)));
+                                 ddmul_vd2_vd2_vd2_advsimd_sleef(x, vcast_vd2_d_d_advsimd_sleef(2.885390081777926774, 6.0561604995516736434e-18)));
 
   s = ddadd2_vd2_vd2_vd_advsimd_sleef(s, vmul_vd_vd_vd_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(x2, vd2getx_vd_vd2_advsimd_sleef(x)), t));
 
@@ -3893,7 +3893,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_log2d2_u35advsimd(vdouble_a
   t = vmla_vd_vd_vd_vd_advsimd_sleef(t, x2, vcast_vd_d_advsimd_sleef(+0.96179669392608091449 ));
 
   vdouble2_advsimd_sleef s = ddadd_vd2_vd_vd2_advsimd_sleef(vcast_vd_vi_advsimd_sleef(e),
-    ddmul_vd2_vd_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(2.885390081777926774)));
+                                ddmul_vd2_vd_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(2.885390081777926774)));
 
   vdouble_advsimd_sleef r = vmla_vd_vd_vd_vd_advsimd_sleef(t, vmul_vd_vd_vd_advsimd_sleef(x, x2), vadd_vd_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(s), vd2gety_vd_vd2_advsimd_sleef(s)));
 
@@ -3924,7 +3924,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_log1pd2_u10advsimd(vdouble_
   vdouble_advsimd_sleef x4 = vmul_vd_vd_vd_advsimd_sleef(x2, x2), x8 = vmul_vd_vd_vd_advsimd_sleef(x4, x4);
   t = vmla_vd_vd_vd_vd_advsimd_sleef((x8), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vcast_vd_d_advsimd_sleef(0.1532076988502701353e+0)), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(0.1525629051003428716e+0)), (vcast_vd_d_advsimd_sleef(0.1818605932937785996e+0)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(0.2222214519839380009e+0)), (vcast_vd_d_advsimd_sleef(0.2857142932794299317e+0)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vcast_vd_d_advsimd_sleef(0.3999999999635251990e+0)), (vcast_vd_d_advsimd_sleef(0.6666666666667333541e+0)))))))
 
-                              ;
+                                     ;
 
   s = ddadd_vd2_vd2_vd2_advsimd_sleef(s, ddscale_vd2_vd2_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(2)));
   s = ddadd_vd2_vd2_vd_advsimd_sleef(s, vmul_vd_vd_vd_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(x2, vd2getx_vd_vd2_advsimd_sleef(x)), t));
@@ -3981,7 +3981,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_nextafterd2_advsimd(vdouble
   vdouble_advsimd_sleef ret = vreinterpret_vd_vm_advsimd_sleef(xi2);
 
   ret = vsel_vd_vo_vd_vd_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(veq_vo_vd_vd_advsimd_sleef(ret, vcast_vd_d_advsimd_sleef(0)), vneq_vo_vd_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(0))),
-    vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(0), x), ret);
+                         vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(0), x), ret);
 
   ret = vsel_vd_vo_vd_vd_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(veq_vo_vd_vd_advsimd_sleef(x, vcast_vd_d_advsimd_sleef(0)), veq_vo_vd_vd_advsimd_sleef(y, vcast_vd_d_advsimd_sleef(0))), y, ret);
 
@@ -4054,7 +4054,7 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_sqrtd2_u05advsimd(vdouble_a
   w = vmul_vd_vd_vd_advsimd_sleef(w, q);
 
   w = vsel_vd_vo_vd_vd_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(veq_vo_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0)),
-        veq_vo_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(__builtin_inf()))), d, w);
+                                    veq_vo_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(__builtin_inf()))), d, w);
 
   w = vsel_vd_vo_vd_vd_advsimd_sleef(vlt_vo_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0)), vcast_vd_d_advsimd_sleef(__builtin_nan("")), w);
 
@@ -4125,11 +4125,11 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_fmodd2_advsimd(vdouble_advs
     q = vptrunc_vd_vd_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(vtoward0_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(r)), rd));
 
     q = vsel_vd_vo_vd_vd_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(vgt_vo_vd_vd_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(3), d), vd2getx_vd_vd2_advsimd_sleef(r)),
-           vge_vo_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(r), d)),
-    vcast_vd_d_advsimd_sleef(2), q);
+                                       vge_vo_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(r), d)),
+                         vcast_vd_d_advsimd_sleef(2), q);
     q = vsel_vd_vo_vd_vd_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(vgt_vo_vd_vd_advsimd_sleef(vadd_vd_vd_vd_advsimd_sleef(d, d), vd2getx_vd_vd2_advsimd_sleef(r)),
-           vge_vo_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(r), d)),
-    vcast_vd_d_advsimd_sleef(1), q);
+                                       vge_vo_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(r), d)),
+                         vcast_vd_d_advsimd_sleef(1), q);
     r = ddnormalize_vd2_vd2_advsimd_sleef(ddadd2_vd2_vd2_vd2_advsimd_sleef(r, ddmul_vd2_vd_vd_advsimd_sleef(q, vneg_vd_vd_advsimd_sleef(d))));
     if (vtestallones_i_vo64_advsimd_sleef(vlt_vo_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(r), d))) break;
   }
@@ -4166,8 +4166,8 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_remainderd2_advsimd(vdouble
 
     q = vsel_vd_vo_vd_vd_advsimd_sleef(vlt_vo_vd_vd_advsimd_sleef(vabs_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(r)), vmul_vd_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(1.5))), vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(1.0), vd2getx_vd_vd2_advsimd_sleef(r)), q);
     q = vsel_vd_vo_vd_vd_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(vlt_vo_vd_vd_advsimd_sleef(vabs_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(r)), vmul_vd_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0.5))),
-          vandnot_vo_vo_vo_advsimd_sleef(qisodd, veq_vo_vd_vd_advsimd_sleef(vabs_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(r)), vmul_vd_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0.5))))),
-    vcast_vd_d_advsimd_sleef(0.0), q);
+                                      vandnot_vo_vo_vo_advsimd_sleef(qisodd, veq_vo_vd_vd_advsimd_sleef(vabs_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(r)), vmul_vd_vd_vd_advsimd_sleef(d, vcast_vd_d_advsimd_sleef(0.5))))),
+                         vcast_vd_d_advsimd_sleef(0.0), q);
     if (vtestallones_i_vo64_advsimd_sleef(veq_vo_vd_vd_advsimd_sleef(q, vcast_vd_d_advsimd_sleef(0)))) break;
     q = vsel_vd_vo_vd_vd_advsimd_sleef(visinf_vo_vd_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(q, vneg_vd_vd_advsimd_sleef(d))), vadd_vd_vd_vd_advsimd_sleef(q, vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(-1), vd2getx_vd_vd2_advsimd_sleef(r))), q);
     qisodd = vxor_vo_vo_vo_advsimd_sleef(qisodd, visodd_vo_vd_advsimd_sleef(q));
@@ -4189,8 +4189,8 @@ static SLEEF_CONST dd2_advsimd_sleef gammak_advsimd_sleef(vdouble_advsimd_sleef 
   vopmask_advsimd_sleef otiny = vlt_vo_vd_vd_advsimd_sleef(vabs_vd_vd_advsimd_sleef(a), vcast_vd_d_advsimd_sleef(1e-306)), oref = vlt_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(0.5));
 
   x = vsel_vd2_vo_vd2_vd2_advsimd_sleef(otiny, vcast_vd2_d_d_advsimd_sleef(0, 0),
-     vsel_vd2_vo_vd2_vd2_advsimd_sleef(oref, ddadd2_vd2_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(1), vneg_vd_vd_advsimd_sleef(a)),
-           vcast_vd2_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(0))));
+                          vsel_vd2_vo_vd2_vd2_advsimd_sleef(oref, ddadd2_vd2_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(1), vneg_vd_vd_advsimd_sleef(a)),
+                                              vcast_vd2_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(0))));
 
   vopmask_advsimd_sleef o0 = vand_vo_vo_vo_advsimd_sleef(vle_vo_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(0.5), vd2getx_vd_vd2_advsimd_sleef(x)), vle_vo_vd_vd_advsimd_sleef(vd2getx_vd_vd2_advsimd_sleef(x), vcast_vd_d_advsimd_sleef(1.1)));
   vopmask_advsimd_sleef o2 = vle_vo_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(2.3), vd2getx_vd_vd2_advsimd_sleef(x));
@@ -4247,7 +4247,7 @@ static SLEEF_CONST dd2_advsimd_sleef gammak_advsimd_sleef(vdouble_advsimd_sleef 
   y = clln;
 
   clc = vsel_vd2_vo_vd2_vd2_advsimd_sleef(otiny, vcast_vd2_d_d_advsimd_sleef(83.1776616671934334590333, 3.67103459631568507221878e-15),
-       vsel_vd2_vo_vd2_vd2_advsimd_sleef(oref, ddadd2_vd2_vd2_vd2_advsimd_sleef(vcast_vd2_d_d_advsimd_sleef(1.1447298858494001639, 1.026595116270782638e-17), ddneg_vd2_vd2_advsimd_sleef(clc)), clc));
+                            vsel_vd2_vo_vd2_vd2_advsimd_sleef(oref, ddadd2_vd2_vd2_vd2_advsimd_sleef(vcast_vd2_d_d_advsimd_sleef(1.1447298858494001639, 1.026595116270782638e-17), ddneg_vd2_vd2_advsimd_sleef(clc)), clc));
   clln = vsel_vd2_vo_vd2_vd2_advsimd_sleef(otiny, vcast_vd2_d_d_advsimd_sleef(1, 0), vsel_vd2_vo_vd2_vd2_advsimd_sleef(oref, clln, clld));
 
   if (!vtestallones_i_vo64_advsimd_sleef(vnot_vo64_vo64_advsimd_sleef(oref))) {
@@ -4256,7 +4256,7 @@ static SLEEF_CONST dd2_advsimd_sleef gammak_advsimd_sleef(vdouble_advsimd_sleef 
   }
 
   clld = vsel_vd2_vo_vd2_vd2_advsimd_sleef(otiny, vcast_vd2_vd_vd_advsimd_sleef(vmul_vd_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef((INT64_C(1) << 60)*(double)(INT64_C(1) << 60))), vcast_vd_d_advsimd_sleef(0)),
-        vsel_vd2_vo_vd2_vd2_advsimd_sleef(oref, x, y));
+                             vsel_vd2_vo_vd2_vd2_advsimd_sleef(oref, x, y));
 
   return dd2setab_dd2_vd2_vd2_advsimd_sleef(clc, dddiv_vd2_vd2_vd2_advsimd_sleef(clln, clld));
 }
@@ -4268,13 +4268,13 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_tgammad2_u10advsimd(vdouble
   vopmask_advsimd_sleef o;
 
   o = vor_vo_vo_vo_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(veq_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(-__builtin_inf())),
-    vand_vo_vo_vo_advsimd_sleef(vlt_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(0)), visint_vo_vd_advsimd_sleef(a))),
-     vand_vo_vo_vo_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(visnumber_vo_vd_advsimd_sleef(a), vlt_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(0))), visnan_vo_vd_advsimd_sleef(r)));
+                                vand_vo_vo_vo_advsimd_sleef(vlt_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(0)), visint_vo_vd_advsimd_sleef(a))),
+                   vand_vo_vo_vo_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(visnumber_vo_vd_advsimd_sleef(a), vlt_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(0))), visnan_vo_vd_advsimd_sleef(r)));
   r = vsel_vd_vo_vd_vd_advsimd_sleef(o, vcast_vd_d_advsimd_sleef(__builtin_nan("")), r);
 
   o = vand_vo_vo_vo_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(veq_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(__builtin_inf())), visnumber_vo_vd_advsimd_sleef(a)),
-      vge_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(-0x1p-1022))),
-      vor_vo_vo_vo_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(veq_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(0)), vgt_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(200))), visnan_vo_vd_advsimd_sleef(r)));
+                                  vge_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(-0x1p-1022))),
+                    vor_vo_vo_vo_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(veq_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(0)), vgt_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(200))), visnan_vo_vd_advsimd_sleef(r)));
   r = vsel_vd_vo_vd_vd_advsimd_sleef(o, vmulsign_vd_vd_vd_advsimd_sleef(vcast_vd_d_advsimd_sleef(__builtin_inf()), a), r);
 
   return r;
@@ -4287,8 +4287,8 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_lgammad2_u10advsimd(vdouble
   vopmask_advsimd_sleef o;
 
   o = vor_vo_vo_vo_advsimd_sleef(visinf_vo_vd_advsimd_sleef(a),
-     vor_vo_vo_vo_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(vle_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(0)), visint_vo_vd_advsimd_sleef(a)),
-    vand_vo_vo_vo_advsimd_sleef(visnumber_vo_vd_advsimd_sleef(a), visnan_vo_vd_advsimd_sleef(r))));
+                   vor_vo_vo_vo_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(vle_vo_vd_vd_advsimd_sleef(a, vcast_vd_d_advsimd_sleef(0)), visint_vo_vd_advsimd_sleef(a)),
+                                vand_vo_vo_vo_advsimd_sleef(visnumber_vo_vd_advsimd_sleef(a), visnan_vo_vd_advsimd_sleef(r))));
   r = vsel_vd_vo_vd_vd_advsimd_sleef(o, vcast_vd_d_advsimd_sleef(__builtin_inf()), r);
 
   return r;
@@ -4315,11 +4315,11 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_erfd2_u10advsimd(vdouble_ad
 
     t = vmla_vd_vd_vd_vd_advsimd_sleef((x16), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vcast_vd_d_advsimd_sleef(-0.2083271002525222097e-14)), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vmla_vd_vd_vd_vd_advsimd_sleef((x), (vcast_vd_d_advsimd_sleef(+0.7151909970790897009e-13)), (vcast_vd_d_advsimd_sleef(-0.1162238220110999364e-11)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x), (vcast_vd_d_advsimd_sleef(+0.1186474230821585259e-10)), (vcast_vd_d_advsimd_sleef(-0.8499973178354613440e-10)))))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x8), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vmla_vd_vd_vd_vd_advsimd_sleef((x), (vcast_vd_d_advsimd_sleef(+0.4507647462598841629e-9)), (vcast_vd_d_advsimd_sleef(-0.1808044474288848915e-8)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x), (vcast_vd_d_advsimd_sleef(+0.5435081826716212389e-8)), (vcast_vd_d_advsimd_sleef(-0.1143939895758628484e-7)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vmla_vd_vd_vd_vd_advsimd_sleef((x), (vcast_vd_d_advsimd_sleef(+0.1215442362680889243e-7)), (vcast_vd_d_advsimd_sleef(+0.1669878756181250355e-7)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x), (vcast_vd_d_advsimd_sleef(-0.9808074602255194288e-7)), (vcast_vd_d_advsimd_sleef(+0.1389000557865837204e-6)))))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vmla_vd_vd_vd_vd_advsimd_sleef((x), (vcast_vd_d_advsimd_sleef(+0.2945514529987331866e-6)), (vcast_vd_d_advsimd_sleef(-0.1842918273003998283e-5)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x), (vcast_vd_d_advsimd_sleef(+0.3417987836115362136e-5)), (vcast_vd_d_advsimd_sleef(+0.3860236356493129101e-5)))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vmla_vd_vd_vd_vd_advsimd_sleef((x), (vcast_vd_d_advsimd_sleef(-0.3309403072749947546e-4)), (vcast_vd_d_advsimd_sleef(+0.1060862922597579532e-3)))), (vmla_vd_vd_vd_vd_advsimd_sleef((x), (vcast_vd_d_advsimd_sleef(+0.2323253155213076174e-3)), (vcast_vd_d_advsimd_sleef(+0.1490149719145544729e-3)))))))))))
 
-                                  ;
+                                         ;
     t2 = poly4dd_advsimd_sleef(x, t,
-   vcast_vd2_d_d_advsimd_sleef(0.0092877958392275604405, 7.9287559463961107493e-19),
-   vcast_vd2_d_d_advsimd_sleef(0.042275531758784692937, 1.3785226620501016138e-19),
-   vcast_vd2_d_d_advsimd_sleef(0.07052369794346953491, 9.5846628070792092842e-19));
+                 vcast_vd2_d_d_advsimd_sleef(0.0092877958392275604405, 7.9287559463961107493e-19),
+                 vcast_vd2_d_d_advsimd_sleef(0.042275531758784692937, 1.3785226620501016138e-19),
+                 vcast_vd2_d_d_advsimd_sleef(0.07052369794346953491, 9.5846628070792092842e-19));
     t2 = ddadd_vd2_vd_vd2_advsimd_sleef(vcast_vd_d_advsimd_sleef(1), ddmul_vd2_vd2_vd_advsimd_sleef(t2, x));
     t2 = ddsqu_vd2_vd2_advsimd_sleef(t2);
     t2 = ddsqu_vd2_vd2_advsimd_sleef(t2);
@@ -4330,14 +4330,14 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_erfd2_u10advsimd(vdouble_ad
 
     t = vmla_vd_vd_vd_vd_advsimd_sleef((x16), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), ((vsel_vd_vo_d_d_advsimd_sleef(o25, -0.2083271002525222097e-14, -0.4024015130752621932e-18))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vmla_vd_vd_vd_vd_advsimd_sleef((x), ((vsel_vd_vo_d_d_advsimd_sleef(o25, +0.7151909970790897009e-13, +0.3847193332817048172e-16))), ((vsel_vd_vo_d_d_advsimd_sleef(o25, -0.1162238220110999364e-11, -0.1749316241455644088e-14))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x), ((vsel_vd_vo_d_d_advsimd_sleef(o25, +0.1186474230821585259e-10, +0.5029618322872872715e-13))), ((vsel_vd_vo_d_d_advsimd_sleef(o25, -0.8499973178354613440e-10, -0.1025221466851463164e-11))))))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x8), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vmla_vd_vd_vd_vd_advsimd_sleef((x), ((vsel_vd_vo_d_d_advsimd_sleef(o25, +0.4507647462598841629e-9, +0.1573695559331945583e-10))), ((vsel_vd_vo_d_d_advsimd_sleef(o25, -0.1808044474288848915e-8, -0.1884658558040203709e-9))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x), ((vsel_vd_vo_d_d_advsimd_sleef(o25, +0.5435081826716212389e-8, +0.1798167853032159309e-8))), ((vsel_vd_vo_d_d_advsimd_sleef(o25, -0.1143939895758628484e-7, -0.1380745342355033142e-7))))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vmla_vd_vd_vd_vd_advsimd_sleef((x), ((vsel_vd_vo_d_d_advsimd_sleef(o25, +0.1215442362680889243e-7, +0.8525705726469103499e-7))), ((vsel_vd_vo_d_d_advsimd_sleef(o25, +0.1669878756181250355e-7, -0.4160448058101303405e-6))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x), ((vsel_vd_vo_d_d_advsimd_sleef(o25, -0.9808074602255194288e-7, +0.1517272660008588485e-5))), ((vsel_vd_vo_d_d_advsimd_sleef(o25, +0.1389000557865837204e-6, -0.3341634127317201697e-5))))))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x4), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vmla_vd_vd_vd_vd_advsimd_sleef((x), ((vsel_vd_vo_d_d_advsimd_sleef(o25, +0.2945514529987331866e-6, -0.2515023395879724513e-5))), ((vsel_vd_vo_d_d_advsimd_sleef(o25, -0.1842918273003998283e-5, +0.6539731269664907554e-4))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x), ((vsel_vd_vo_d_d_advsimd_sleef(o25, +0.3417987836115362136e-5, -0.3551065097428388658e-3))), ((vsel_vd_vo_d_d_advsimd_sleef(o25, +0.3860236356493129101e-5, +0.1210736097958368864e-2))))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x2), (vmla_vd_vd_vd_vd_advsimd_sleef((x), ((vsel_vd_vo_d_d_advsimd_sleef(o25, -0.3309403072749947546e-4, -0.2605566912579998680e-2))), ((vsel_vd_vo_d_d_advsimd_sleef(o25, +0.1060862922597579532e-3, +0.1252823202436093193e-2))))), (vmla_vd_vd_vd_vd_advsimd_sleef((x), ((vsel_vd_vo_d_d_advsimd_sleef(o25, +0.2323253155213076174e-3, +0.1820191395263313222e-1))), ((vsel_vd_vo_d_d_advsimd_sleef(o25, +0.1490149719145544729e-3, -0.1021557155453465954e+0))))))))))))
 
-                                                                                  ;
+                                                                                         ;
     t2 = poly4dd_advsimd_sleef(x, t,
-   vsel_vd2_vo_vd2_vd2_advsimd_sleef(o25, vcast_vd2_d_d_advsimd_sleef(0.0092877958392275604405, 7.9287559463961107493e-19),
-         vcast_vd2_d_d_advsimd_sleef(-0.63691044383641748361, -2.4249477526539431839e-17)),
-   vsel_vd2_vo_vd2_vd2_advsimd_sleef(o25, vcast_vd2_d_d_advsimd_sleef(0.042275531758784692937, 1.3785226620501016138e-19),
-         vcast_vd2_d_d_advsimd_sleef(-1.1282926061803961737, -6.2970338860410996505e-17)),
-   vsel_vd2_vo_vd2_vd2_advsimd_sleef(o25, vcast_vd2_d_d_advsimd_sleef(0.07052369794346953491, 9.5846628070792092842e-19),
-         vcast_vd2_d_d_advsimd_sleef(-1.2261313785184804967e-05, -5.5329707514490107044e-22)));
+                 vsel_vd2_vo_vd2_vd2_advsimd_sleef(o25, vcast_vd2_d_d_advsimd_sleef(0.0092877958392275604405, 7.9287559463961107493e-19),
+                                     vcast_vd2_d_d_advsimd_sleef(-0.63691044383641748361, -2.4249477526539431839e-17)),
+                 vsel_vd2_vo_vd2_vd2_advsimd_sleef(o25, vcast_vd2_d_d_advsimd_sleef(0.042275531758784692937, 1.3785226620501016138e-19),
+                                     vcast_vd2_d_d_advsimd_sleef(-1.1282926061803961737, -6.2970338860410996505e-17)),
+                 vsel_vd2_vo_vd2_vd2_advsimd_sleef(o25, vcast_vd2_d_d_advsimd_sleef(0.07052369794346953491, 9.5846628070792092842e-19),
+                                     vcast_vd2_d_d_advsimd_sleef(-1.2261313785184804967e-05, -5.5329707514490107044e-22)));
     vdouble2_advsimd_sleef s2 = ddadd_vd2_vd_vd2_advsimd_sleef(vcast_vd_d_advsimd_sleef(1), ddmul_vd2_vd2_vd_advsimd_sleef(t2, x));
     s2 = ddsqu_vd2_vd2_advsimd_sleef(s2);
     s2 = ddsqu_vd2_vd2_advsimd_sleef(s2);
@@ -4391,13 +4391,13 @@ SLEEF_INLINE SLEEF_CONST vdouble_advsimd_sleef Sleef_erfcd2_u15advsimd(vdouble_a
 
   d = ddmul_vd2_vd2_vd_advsimd_sleef(u, t);
   d = ddadd2_vd2_vd2_vd2_advsimd_sleef(d, vcast_vd2_vd_vd_advsimd_sleef(vsel_vd_vo_vo_vo_d_d_d_d_advsimd_sleef(o0, o1, o2, 0.11283791670955126141, -0.10277263343147646779, -0.50005180473999022439, -0.5000000000258444377),
-         vsel_vd_vo_vo_vo_d_d_d_d_advsimd_sleef(o0, o1, o2, -4.0175691625932118483e-18, -6.2338714083404900225e-18, 2.6362140569041995803e-17, -4.0074044712386992281e-17)));
+                                            vsel_vd_vo_vo_vo_d_d_d_d_advsimd_sleef(o0, o1, o2, -4.0175691625932118483e-18, -6.2338714083404900225e-18, 2.6362140569041995803e-17, -4.0074044712386992281e-17)));
   d = ddmul_vd2_vd2_vd2_advsimd_sleef(d, u);
   d = ddadd2_vd2_vd2_vd2_advsimd_sleef(d, vcast_vd2_vd_vd_advsimd_sleef(vsel_vd_vo_vo_vo_d_d_d_d_advsimd_sleef(o0, o1, o2, -0.37612638903183753802, -0.63661976742916359662, 1.601106273924963368e-06, 2.3761973137523364792e-13),
-         vsel_vd_vo_vo_vo_d_d_d_d_advsimd_sleef(o0, o1, o2, 1.3391897206042552387e-17, 7.6321019159085724662e-18, 1.1974001857764476775e-23, -1.1670076950531026582e-29)));
+                                            vsel_vd_vo_vo_vo_d_d_d_d_advsimd_sleef(o0, o1, o2, 1.3391897206042552387e-17, 7.6321019159085724662e-18, 1.1974001857764476775e-23, -1.1670076950531026582e-29)));
   d = ddmul_vd2_vd2_vd2_advsimd_sleef(d, u);
   d = ddadd2_vd2_vd2_vd2_advsimd_sleef(d, vcast_vd2_vd_vd_advsimd_sleef(vsel_vd_vo_vo_vo_d_d_d_d_advsimd_sleef(o0, o1, o2, 1.1283791670955125586, -1.1283791674717296161, -0.57236496645145429341, -0.57236494292470108114),
-         vsel_vd_vo_vo_vo_d_d_d_d_advsimd_sleef(o0, o1, o2, 1.5335459613165822674e-17, 8.0896847755965377194e-17, 3.0704553245872027258e-17, -2.3984352208056898003e-17)));
+                                            vsel_vd_vo_vo_vo_d_d_d_d_advsimd_sleef(o0, o1, o2, 1.5335459613165822674e-17, 8.0896847755965377194e-17, 3.0704553245872027258e-17, -2.3984352208056898003e-17)));
 
   x = ddmul_vd2_vd2_vd_advsimd_sleef(vsel_vd2_vo_vd2_vd2_advsimd_sleef(o1, d, vcast_vd2_vd_vd_advsimd_sleef(vneg_vd_vd_advsimd_sleef(a), vcast_vd_d_advsimd_sleef(0))), a);
   x = vsel_vd2_vo_vd2_vd2_advsimd_sleef(o1, x, ddadd2_vd2_vd2_vd2_advsimd_sleef(x, d));
@@ -4478,7 +4478,7 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat2_advsimd_sleef vsel_vf2_vo_vo_vo_d
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat2_advsimd_sleef vabs_vf2_vf2_advsimd_sleef(vfloat2_advsimd_sleef x) {
   return vcast_vf2_vf_vf_advsimd_sleef(vreinterpret_vf_vm_advsimd_sleef(vxor_vm_vm_vm_advsimd_sleef(vand_vm_vm_vm_advsimd_sleef(vreinterpret_vm_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-0.0)), vreinterpret_vm_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(x))), vreinterpret_vm_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(x)))),
-    vreinterpret_vf_vm_advsimd_sleef(vxor_vm_vm_vm_advsimd_sleef(vand_vm_vm_vm_advsimd_sleef(vreinterpret_vm_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-0.0)), vreinterpret_vm_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(x))), vreinterpret_vm_vf_advsimd_sleef(vf2gety_vf_vf2_advsimd_sleef(x)))));
+                         vreinterpret_vf_vm_advsimd_sleef(vxor_vm_vm_vm_advsimd_sleef(vand_vm_vm_vm_advsimd_sleef(vreinterpret_vm_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-0.0)), vreinterpret_vm_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(x))), vreinterpret_vm_vf_advsimd_sleef(vf2gety_vf_vf2_advsimd_sleef(x)))));
 }
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat_advsimd_sleef vadd_vf_3vf_advsimd_sleef(vfloat_advsimd_sleef v0, vfloat_advsimd_sleef v1, vfloat_advsimd_sleef v2) {
@@ -4519,7 +4519,7 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat2_advsimd_sleef dfneg_vf2_vf2_advsi
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat2_advsimd_sleef dfabs_vf2_vf2_advsimd_sleef(vfloat2_advsimd_sleef x) {
   return vcast_vf2_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(x)),
-    vreinterpret_vf_vm_advsimd_sleef(vxor_vm_vm_vm_advsimd_sleef(vreinterpret_vm_vf_advsimd_sleef(vf2gety_vf_vf2_advsimd_sleef(x)), vand_vm_vm_vm_advsimd_sleef(vreinterpret_vm_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(x)), vreinterpret_vm_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-0.0f))))));
+                         vreinterpret_vf_vm_advsimd_sleef(vxor_vm_vm_vm_advsimd_sleef(vreinterpret_vm_vf_advsimd_sleef(vf2gety_vf_vf2_advsimd_sleef(x)), vand_vm_vm_vm_advsimd_sleef(vreinterpret_vm_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(x)), vreinterpret_vm_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-0.0f))))));
 }
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat2_advsimd_sleef dfnormalize_vf2_vf2_advsimd_sleef(vfloat2_advsimd_sleef t) {
@@ -4675,7 +4675,7 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat_advsimd_sleef vmulsign_vf_vf_vf_ad
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat_advsimd_sleef vcopysign_vf_vf_vf_advsimd_sleef(vfloat_advsimd_sleef x, vfloat_advsimd_sleef y) {
   return vreinterpret_vf_vm_advsimd_sleef(vxor_vm_vm_vm_advsimd_sleef(vandnot_vm_vm_vm_advsimd_sleef(vreinterpret_vm_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-0.0f)), vreinterpret_vm_vf_advsimd_sleef(x)),
-       vand_vm_vm_vm_advsimd_sleef (vreinterpret_vm_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-0.0f)), vreinterpret_vm_vf_advsimd_sleef(y))));
+                                          vand_vm_vm_vm_advsimd_sleef (vreinterpret_vm_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-0.0f)), vreinterpret_vm_vf_advsimd_sleef(y))));
 }
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat_advsimd_sleef vsign_vf_vf_advsimd_sleef(vfloat_advsimd_sleef f) {
@@ -4845,7 +4845,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_sinf4_u35advsimd(vfloat_advs
     q = vshrq_n_s32(q, 2);
     vopmask_advsimd_sleef o = veq_vo_vi2_vi2_advsimd_sleef(vand_vi2_vi2_vi2_advsimd_sleef(dfigeti_vi2_dfi_advsimd_sleef(dfi_advsimd_sleef), vcast_vi2_i_advsimd_sleef(1)), vcast_vi2_i_advsimd_sleef(1));
     vfloat2_advsimd_sleef x = vcast_vf2_vf_vf_advsimd_sleef(vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(3.1415927410125732422f*-0.5), vf2getx_vf_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef))),
-    vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-8.7422776573475857731e-08f*-0.5), vf2getx_vf_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef))));
+                                vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-8.7422776573475857731e-08f*-0.5), vf2getx_vf_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef))));
     x = dfadd2_vf2_vf2_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef), x);
     dfi_advsimd_sleef = dfisetdf_dfi_dfi_vf2_advsimd_sleef(dfi_advsimd_sleef, vsel_vf2_vo_vf2_vf2_advsimd_sleef(o, x, dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef)));
     d = vadd_vf_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef)), vf2gety_vf_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef)));
@@ -4900,7 +4900,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_cosf4_u35advsimd(vfloat_advs
     vopmask_advsimd_sleef o = veq_vo_vi2_vi2_advsimd_sleef(vand_vi2_vi2_vi2_advsimd_sleef(dfigeti_vi2_dfi_advsimd_sleef(dfi_advsimd_sleef), vcast_vi2_i_advsimd_sleef(1)), vcast_vi2_i_advsimd_sleef(0));
     vfloat_advsimd_sleef y = vsel_vf_vo_vf_vf_advsimd_sleef(vgt_vo_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef)), vcast_vf_f_advsimd_sleef(0)), vcast_vf_f_advsimd_sleef(0), vcast_vf_f_advsimd_sleef(-1));
     vfloat2_advsimd_sleef x = vcast_vf2_vf_vf_advsimd_sleef(vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(3.1415927410125732422f*-0.5), y),
-    vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-8.7422776573475857731e-08f*-0.5), y));
+                                vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-8.7422776573475857731e-08f*-0.5), y));
     x = dfadd2_vf2_vf2_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef), x);
     dfi_advsimd_sleef = dfisetdf_dfi_dfi_vf2_advsimd_sleef(dfi_advsimd_sleef, vsel_vf2_vo_vf2_vf2_advsimd_sleef(o, x, dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef)));
     d = vadd_vf_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef)), vf2gety_vf_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef)));
@@ -4960,7 +4960,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_tanf4_u35advsimd(vfloat_advs
   vfloat_advsimd_sleef s2 = vmul_vf_vf_vf_advsimd_sleef(s, s), s4 = vmul_vf_vf_vf_advsimd_sleef(s2, s2);
   u = vmla_vf_vf_vf_vf_advsimd_sleef((s4), (vmla_vf_vf_vf_vf_advsimd_sleef((s), (vcast_vf_f_advsimd_sleef(0.00927245803177356719970703f)), (vcast_vf_f_advsimd_sleef(0.00331984995864331722259521f)))), (vmla_vf_vf_vf_vf_advsimd_sleef((s2), (vmla_vf_vf_vf_vf_advsimd_sleef((s), (vcast_vf_f_advsimd_sleef(0.0242998078465461730957031f)), (vcast_vf_f_advsimd_sleef(0.0534495301544666290283203f)))), (vmla_vf_vf_vf_vf_advsimd_sleef((s), (vcast_vf_f_advsimd_sleef(0.133383005857467651367188f)), (vcast_vf_f_advsimd_sleef(0.333331853151321411132812f)))))))
 
-                                 ;
+                                        ;
 
   u = vmla_vf_vf_vf_vf_advsimd_sleef(s, vmul_vf_vf_vf_advsimd_sleef(u, x), x);
 
@@ -4989,7 +4989,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_sinf4_u10advsimd(vfloat_advs
     q = vshrq_n_s32(q, 2);
     vopmask_advsimd_sleef o = veq_vo_vi2_vi2_advsimd_sleef(vand_vi2_vi2_vi2_advsimd_sleef(dfigeti_vi2_dfi_advsimd_sleef(dfi_advsimd_sleef), vcast_vi2_i_advsimd_sleef(1)), vcast_vi2_i_advsimd_sleef(1));
     vfloat2_advsimd_sleef x = vcast_vf2_vf_vf_advsimd_sleef(vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(3.1415927410125732422f*-0.5), vf2getx_vf_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef))),
-    vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-8.7422776573475857731e-08f*-0.5), vf2getx_vf_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef))));
+                                vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-8.7422776573475857731e-08f*-0.5), vf2getx_vf_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef))));
     x = dfadd2_vf2_vf2_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef), x);
     dfi_advsimd_sleef = dfisetdf_dfi_dfi_vf2_advsimd_sleef(dfi_advsimd_sleef, vsel_vf2_vo_vf2_vf2_advsimd_sleef(o, x, dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef)));
     s = dfnormalize_vf2_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef));
@@ -5025,7 +5025,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_cosf4_u10advsimd(vfloat_advs
 
   if (__builtin_expect(!!(vtestallones_i_vo32_advsimd_sleef(vlt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(d), vcast_vf_f_advsimd_sleef(125.0f)))), 1)) {
     vfloat_advsimd_sleef dq = vmla_vf_vf_vf_vf_advsimd_sleef(vrint_vf_vf_advsimd_sleef(vmla_vf_vf_vf_vf_advsimd_sleef(d, vcast_vf_f_advsimd_sleef(0.318309886183790671537767526745028724), vcast_vf_f_advsimd_sleef(-0.5f))),
-     vcast_vf_f_advsimd_sleef(2), vcast_vf_f_advsimd_sleef(1));
+                                 vcast_vf_f_advsimd_sleef(2), vcast_vf_f_advsimd_sleef(1));
     q = vrint_vi2_vf_advsimd_sleef(dq);
     s = dfadd2_vf2_vf_vf_advsimd_sleef (d, vmul_vf_vf_vf_advsimd_sleef(dq, vcast_vf_f_advsimd_sleef(-3.1414794921875f*0.5f)));
     s = dfadd2_vf2_vf2_vf_advsimd_sleef(s, vmul_vf_vf_vf_advsimd_sleef(dq, vcast_vf_f_advsimd_sleef(-0.00011315941810607910156f*0.5f)));
@@ -5038,7 +5038,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_cosf4_u10advsimd(vfloat_advs
     vopmask_advsimd_sleef o = veq_vo_vi2_vi2_advsimd_sleef(vand_vi2_vi2_vi2_advsimd_sleef(dfigeti_vi2_dfi_advsimd_sleef(dfi_advsimd_sleef), vcast_vi2_i_advsimd_sleef(1)), vcast_vi2_i_advsimd_sleef(0));
     vfloat_advsimd_sleef y = vsel_vf_vo_vf_vf_advsimd_sleef(vgt_vo_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef)), vcast_vf_f_advsimd_sleef(0)), vcast_vf_f_advsimd_sleef(0), vcast_vf_f_advsimd_sleef(-1));
     vfloat2_advsimd_sleef x = vcast_vf2_vf_vf_advsimd_sleef(vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(3.1415927410125732422f*-0.5), y),
-    vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-8.7422776573475857731e-08f*-0.5), y));
+                                vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-8.7422776573475857731e-08f*-0.5), y));
     x = dfadd2_vf2_vf2_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef), x);
     dfi_advsimd_sleef = dfisetdf_dfi_dfi_vf2_advsimd_sleef(dfi_advsimd_sleef, vsel_vf2_vo_vf2_vf2_advsimd_sleef(o, x, dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef)));
     s = dfnormalize_vf2_vf2_advsimd_sleef(dfigetdf_vf2_dfi_advsimd_sleef(dfi_advsimd_sleef));
@@ -5411,7 +5411,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_atanf4_u35advsimd(vfloat_adv
   vfloat_advsimd_sleef t2 = vmul_vf_vf_vf_advsimd_sleef(t, t), t4 = vmul_vf_vf_vf_advsimd_sleef(t2, t2);
   u = vmla_vf_vf_vf_vf_advsimd_sleef((t4), (vmla_vf_vf_vf_vf_advsimd_sleef((t2), (vmla_vf_vf_vf_vf_advsimd_sleef((t), (vcast_vf_f_advsimd_sleef(0.00282363896258175373077393f)), (vcast_vf_f_advsimd_sleef(-0.0159569028764963150024414f)))), (vmla_vf_vf_vf_vf_advsimd_sleef((t), (vcast_vf_f_advsimd_sleef(0.0425049886107444763183594f)), (vcast_vf_f_advsimd_sleef(-0.0748900920152664184570312f)))))), (vmla_vf_vf_vf_vf_advsimd_sleef((t2), (vmla_vf_vf_vf_vf_advsimd_sleef((t), (vcast_vf_f_advsimd_sleef(0.106347933411598205566406f)), (vcast_vf_f_advsimd_sleef(-0.142027363181114196777344f)))), (vmla_vf_vf_vf_vf_advsimd_sleef((t), (vcast_vf_f_advsimd_sleef(0.199926957488059997558594f)), (vcast_vf_f_advsimd_sleef(-0.333331018686294555664062f)))))))
 
-                                  ;
+                                         ;
 
   t = vmla_vf_vf_vf_vf_advsimd_sleef(s, vmul_vf_vf_vf_advsimd_sleef(t, u), s);
 
@@ -5441,7 +5441,7 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat_advsimd_sleef atan2kf_advsimd_slee
   vfloat_advsimd_sleef t2 = vmul_vf_vf_vf_advsimd_sleef(t, t), t4 = vmul_vf_vf_vf_advsimd_sleef(t2, t2);
   u = vmla_vf_vf_vf_vf_advsimd_sleef((t4), (vmla_vf_vf_vf_vf_advsimd_sleef((t2), (vmla_vf_vf_vf_vf_advsimd_sleef((t), (vcast_vf_f_advsimd_sleef(0.00282363896258175373077393f)), (vcast_vf_f_advsimd_sleef(-0.0159569028764963150024414f)))), (vmla_vf_vf_vf_vf_advsimd_sleef((t), (vcast_vf_f_advsimd_sleef(0.0425049886107444763183594f)), (vcast_vf_f_advsimd_sleef(-0.0748900920152664184570312f)))))), (vmla_vf_vf_vf_vf_advsimd_sleef((t2), (vmla_vf_vf_vf_vf_advsimd_sleef((t), (vcast_vf_f_advsimd_sleef(0.106347933411598205566406f)), (vcast_vf_f_advsimd_sleef(-0.142027363181114196777344f)))), (vmla_vf_vf_vf_vf_advsimd_sleef((t), (vcast_vf_f_advsimd_sleef(0.199926957488059997558594f)), (vcast_vf_f_advsimd_sleef(-0.333331018686294555664062f)))))))
 
-                                  ;
+                                         ;
 
   t = vmla_vf_vf_vf_vf_advsimd_sleef(s, vmul_vf_vf_vf_advsimd_sleef(t, u), s);
   t = vmla_vf_vf_vf_vf_advsimd_sleef(vcast_vf_vi2_advsimd_sleef(q), vcast_vf_f_advsimd_sleef((float)(3.141592653589793238462643383279502884/2)), t);
@@ -5485,7 +5485,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_asinf4_u35advsimd(vfloat_adv
 SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_acosf4_u35advsimd(vfloat_advsimd_sleef d) {
   vopmask_advsimd_sleef o = vlt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(d), vcast_vf_f_advsimd_sleef(0.5f));
   vfloat_advsimd_sleef x2 = vsel_vf_vo_vf_vf_advsimd_sleef(o, vmul_vf_vf_vf_advsimd_sleef(d, d),
-    vmul_vf_vf_vf_advsimd_sleef(vsub_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(1), vabs_vf_vf_advsimd_sleef(d)), vcast_vf_f_advsimd_sleef(0.5f))), u;
+                                vmul_vf_vf_vf_advsimd_sleef(vsub_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(1), vabs_vf_vf_advsimd_sleef(d)), vcast_vf_f_advsimd_sleef(0.5f))), u;
   vfloat_advsimd_sleef x = vsel_vf_vo_vf_vf_advsimd_sleef(o, vabs_vf_vf_advsimd_sleef(d), vsqrt_vf_vf_advsimd_sleef(x2));
   x = vsel_vf_vo_vf_vf_advsimd_sleef(veq_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(d), vcast_vf_f_advsimd_sleef(1.0f)), vcast_vf_f_advsimd_sleef(0), x);
 
@@ -5500,8 +5500,8 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_acosf4_u35advsimd(vfloat_adv
   x = vadd_vf_vf_vf_advsimd_sleef(x, u);
   vfloat_advsimd_sleef r = vsel_vf_vo_vf_vf_advsimd_sleef(o, y, vmul_vf_vf_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(2)));
   return vsel_vf_vo_vf_vf_advsimd_sleef(vandnot_vo_vo_vo_advsimd_sleef(o, vlt_vo_vf_vf_advsimd_sleef(d, vcast_vf_f_advsimd_sleef(0))),
-     vf2getx_vf_vf2_advsimd_sleef(dfadd_vf2_vf2_vf_advsimd_sleef(vcast_vf2_f_f_advsimd_sleef(3.1415927410125732422f,-8.7422776573475857731e-08f),
-         vneg_vf_vf_advsimd_sleef(r))), r);
+                          vf2getx_vf_vf2_advsimd_sleef(dfadd_vf2_vf2_vf_advsimd_sleef(vcast_vf2_f_f_advsimd_sleef(3.1415927410125732422f,-8.7422776573475857731e-08f),
+                                                          vneg_vf_vf_advsimd_sleef(r))), r);
 }
 
 static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat2_advsimd_sleef atan2kf_u1_advsimd_sleef(vfloat2_advsimd_sleef y, vfloat2_advsimd_sleef x) {
@@ -5575,7 +5575,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_asinf4_u10advsimd(vfloat_adv
   vfloat2_advsimd_sleef y = dfsub_vf2_vf2_vf_advsimd_sleef(dfsub_vf2_vf2_vf2_advsimd_sleef(vcast_vf2_f_f_advsimd_sleef(3.1415927410125732422f/4,-8.7422776573475857731e-08f/4), x), u);
 
   vfloat_advsimd_sleef r = vsel_vf_vo_vf_vf_advsimd_sleef(o, vadd_vf_vf_vf_advsimd_sleef(u, vf2getx_vf_vf2_advsimd_sleef(x)),
-          vmul_vf_vf_vf_advsimd_sleef(vadd_vf_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(y), vf2gety_vf_vf2_advsimd_sleef(y)), vcast_vf_f_advsimd_sleef(2)));
+                               vmul_vf_vf_vf_advsimd_sleef(vadd_vf_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(y), vf2gety_vf_vf2_advsimd_sleef(y)), vcast_vf_f_advsimd_sleef(2)));
   return vmulsign_vf_vf_vf_advsimd_sleef(r, d);
 }
 
@@ -5593,13 +5593,13 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_acosf4_u10advsimd(vfloat_adv
   u = vmul_vf_vf_vf_advsimd_sleef(u, vmul_vf_vf_vf_advsimd_sleef(x2, vf2getx_vf_vf2_advsimd_sleef(x)));
 
   vfloat2_advsimd_sleef y = dfsub_vf2_vf2_vf2_advsimd_sleef(vcast_vf2_f_f_advsimd_sleef(3.1415927410125732422f/2, -8.7422776573475857731e-08f/2),
-     dfadd_vf2_vf_vf_advsimd_sleef(vmulsign_vf_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(x), d), vmulsign_vf_vf_vf_advsimd_sleef(u, d)));
+                                 dfadd_vf2_vf_vf_advsimd_sleef(vmulsign_vf_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(x), d), vmulsign_vf_vf_vf_advsimd_sleef(u, d)));
   x = dfadd_vf2_vf2_vf_advsimd_sleef(x, u);
 
   y = vsel_vf2_vo_vf2_vf2_advsimd_sleef(o, y, dfscale_vf2_vf2_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(2)));
 
   y = vsel_vf2_vo_vf2_vf2_advsimd_sleef(vandnot_vo_vo_vo_advsimd_sleef(o, vlt_vo_vf_vf_advsimd_sleef(d, vcast_vf_f_advsimd_sleef(0))),
-     dfsub_vf2_vf2_vf2_advsimd_sleef(vcast_vf2_f_f_advsimd_sleef(3.1415927410125732422f, -8.7422776573475857731e-08f), y), y);
+                          dfsub_vf2_vf2_vf2_advsimd_sleef(vcast_vf2_f_f_advsimd_sleef(3.1415927410125732422f, -8.7422776573475857731e-08f), y), y);
 
   return vadd_vf_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(y), vf2gety_vf_vf2_advsimd_sleef(y));
 }
@@ -5671,12 +5671,12 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat_advsimd_sleef expm1fk_advsimd_slee
   vfloat_advsimd_sleef s2 = vmul_vf_vf_vf_advsimd_sleef(s, s), s4 = vmul_vf_vf_vf_advsimd_sleef(s2, s2);
   u = vmla_vf_vf_vf_vf_advsimd_sleef((s4), (vmla_vf_vf_vf_vf_advsimd_sleef((s), (vcast_vf_f_advsimd_sleef(0.000198527617612853646278381)), (vcast_vf_f_advsimd_sleef(0.00139304355252534151077271)))), (vmla_vf_vf_vf_vf_advsimd_sleef((s2), (vmla_vf_vf_vf_vf_advsimd_sleef((s), (vcast_vf_f_advsimd_sleef(0.00833336077630519866943359)), (vcast_vf_f_advsimd_sleef(0.0416664853692054748535156)))), (vmla_vf_vf_vf_vf_advsimd_sleef((s), (vcast_vf_f_advsimd_sleef(0.166666671633720397949219)), (vcast_vf_f_advsimd_sleef(0.5)))))))
 
-         ;
+                ;
 
   u = vmla_vf_vf_vf_vf_advsimd_sleef(vmul_vf_vf_vf_advsimd_sleef(s, s), u, s);
 
   u = vsel_vf_vo_vf_vf_advsimd_sleef(veq_vo_vi2_vi2_advsimd_sleef(q, vcast_vi2_i_advsimd_sleef(0)), u,
-         vsub_vf_vf_vf_advsimd_sleef(vldexp2_vf_vf_vi2_advsimd_sleef(vadd_vf_vf_vf_advsimd_sleef(u, vcast_vf_f_advsimd_sleef(1)), q), vcast_vf_f_advsimd_sleef(1)));
+                       vsub_vf_vf_vf_advsimd_sleef(vldexp2_vf_vf_vi2_advsimd_sleef(vadd_vf_vf_vf_advsimd_sleef(u, vcast_vf_f_advsimd_sleef(1)), q), vcast_vf_f_advsimd_sleef(1)));
 
   return u;
 }
@@ -5784,7 +5784,7 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat2_advsimd_sleef logkf_advsimd_sleef
 
   s = dfadd_vf2_vf2_vf2_advsimd_sleef(s, dfscale_vf2_vf2_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(2)));
   s = dfadd_vf2_vf2_vf2_advsimd_sleef(s, dfmul_vf2_vf2_vf2_advsimd_sleef(dfmul_vf2_vf2_vf2_advsimd_sleef(x2, x),
-          dfadd2_vf2_vf2_vf2_advsimd_sleef(dfmul_vf2_vf2_vf_advsimd_sleef(x2, t), c)));
+                                             dfadd2_vf2_vf2_vf2_advsimd_sleef(dfmul_vf2_vf2_vf_advsimd_sleef(x2, t), c)));
   return s;
 }
 
@@ -5894,30 +5894,30 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_powf4_u10advsimd(vfloat_advs
 
   vopmask_advsimd_sleef yisint = vor_vo_vo_vo_advsimd_sleef(veq_vo_vf_vf_advsimd_sleef(vtruncate_vf_vf_advsimd_sleef(y), y), vgt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(y), vcast_vf_f_advsimd_sleef(1 << 24)));
   vopmask_advsimd_sleef yisodd = vand_vo_vo_vo_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(veq_vo_vi2_vi2_advsimd_sleef(vand_vi2_vi2_vi2_advsimd_sleef(vtruncate_vi2_vf_advsimd_sleef(y), vcast_vi2_i_advsimd_sleef(1)), vcast_vi2_i_advsimd_sleef(1)), yisint),
-     vlt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(y), vcast_vf_f_advsimd_sleef(1 << 24)));
+                                 vlt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(y), vcast_vf_f_advsimd_sleef(1 << 24)));
 
   vfloat_advsimd_sleef result = expkf_advsimd_sleef(dfmul_vf2_vf2_vf_advsimd_sleef(logkf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(x)), y));
 
   result = vsel_vf_vo_vf_vf_advsimd_sleef(visnan_vo_vf_advsimd_sleef(result), vcast_vf_f_advsimd_sleef(__builtin_inff()), result);
 
   result = vmul_vf_vf_vf_advsimd_sleef(result,
-    vsel_vf_vo_vf_vf_advsimd_sleef(vgt_vo_vf_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(0)),
-       vcast_vf_f_advsimd_sleef(1),
-       vsel_vf_vo_vf_vf_advsimd_sleef(yisint, vsel_vf_vo_vf_vf_advsimd_sleef(yisodd, vcast_vf_f_advsimd_sleef(-1.0f), vcast_vf_f_advsimd_sleef(1)), vcast_vf_f_advsimd_sleef(__builtin_nanf("")))));
+                         vsel_vf_vo_vf_vf_advsimd_sleef(vgt_vo_vf_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(0)),
+                                          vcast_vf_f_advsimd_sleef(1),
+                                          vsel_vf_vo_vf_vf_advsimd_sleef(yisint, vsel_vf_vo_vf_vf_advsimd_sleef(yisodd, vcast_vf_f_advsimd_sleef(-1.0f), vcast_vf_f_advsimd_sleef(1)), vcast_vf_f_advsimd_sleef(__builtin_nanf("")))));
 
   vfloat_advsimd_sleef efx = vmulsign_vf_vf_vf_advsimd_sleef(vsub_vf_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(x), vcast_vf_f_advsimd_sleef(1)), y);
 
   result = vsel_vf_vo_vf_vf_advsimd_sleef(visinf_vo_vf_advsimd_sleef(y),
-       vreinterpret_vf_vm_advsimd_sleef(vandnot_vm_vo32_vm_advsimd_sleef(vlt_vo_vf_vf_advsimd_sleef(efx, vcast_vf_f_advsimd_sleef(0.0f)),
-          vreinterpret_vm_vf_advsimd_sleef(vsel_vf_vo_vf_vf_advsimd_sleef(veq_vo_vf_vf_advsimd_sleef(efx, vcast_vf_f_advsimd_sleef(0.0f)),
-                  vcast_vf_f_advsimd_sleef(1.0f),
-                  vcast_vf_f_advsimd_sleef(__builtin_inff()))))),
-       result);
+                            vreinterpret_vf_vm_advsimd_sleef(vandnot_vm_vo32_vm_advsimd_sleef(vlt_vo_vf_vf_advsimd_sleef(efx, vcast_vf_f_advsimd_sleef(0.0f)),
+                                                                  vreinterpret_vm_vf_advsimd_sleef(vsel_vf_vo_vf_vf_advsimd_sleef(veq_vo_vf_vf_advsimd_sleef(efx, vcast_vf_f_advsimd_sleef(0.0f)),
+                                                                                                      vcast_vf_f_advsimd_sleef(1.0f),
+                                                                                                      vcast_vf_f_advsimd_sleef(__builtin_inff()))))),
+                            result);
 
   result = vsel_vf_vo_vf_vf_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(visinf_vo_vf_advsimd_sleef(x), veq_vo_vf_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(0.0))),
-       vmulsign_vf_vf_vf_advsimd_sleef(vsel_vf_vo_vf_vf_advsimd_sleef(vxor_vo_vo_vo_advsimd_sleef(vsignbit_vo_vf_advsimd_sleef(y), veq_vo_vf_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(0.0f))),
-              vcast_vf_f_advsimd_sleef(0), vcast_vf_f_advsimd_sleef(__builtin_inff())),
-           vsel_vf_vo_vf_vf_advsimd_sleef(yisodd, x, vcast_vf_f_advsimd_sleef(1))), result);
+                            vmulsign_vf_vf_vf_advsimd_sleef(vsel_vf_vo_vf_vf_advsimd_sleef(vxor_vo_vo_vo_advsimd_sleef(vsignbit_vo_vf_advsimd_sleef(y), veq_vo_vf_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(0.0f))),
+                                                               vcast_vf_f_advsimd_sleef(0), vcast_vf_f_advsimd_sleef(__builtin_inff())),
+                                              vsel_vf_vo_vf_vf_advsimd_sleef(yisodd, x, vcast_vf_f_advsimd_sleef(1))), result);
 
   result = vreinterpret_vf_vm_advsimd_sleef(vor_vm_vo32_vm_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(visnan_vo_vf_advsimd_sleef(x), visnan_vo_vf_advsimd_sleef(y)), vreinterpret_vm_vf_advsimd_sleef(result)));
 
@@ -5931,7 +5931,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_fastpowf4_u3500advsimd(vfloa
   vfloat_advsimd_sleef result = expk3f_advsimd_sleef(vmul_vf_vf_vf_advsimd_sleef(logk3f_advsimd_sleef(vabs_vf_vf_advsimd_sleef(x)), y));
   vopmask_advsimd_sleef yisint = vor_vo_vo_vo_advsimd_sleef(veq_vo_vf_vf_advsimd_sleef(vtruncate_vf_vf_advsimd_sleef(y), y), vgt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(y), vcast_vf_f_advsimd_sleef(1 << 24)));
   vopmask_advsimd_sleef yisodd = vand_vo_vo_vo_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(veq_vo_vi2_vi2_advsimd_sleef(vand_vi2_vi2_vi2_advsimd_sleef(vtruncate_vi2_vf_advsimd_sleef(y), vcast_vi2_i_advsimd_sleef(1)), vcast_vi2_i_advsimd_sleef(1)), yisint),
-     vlt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(y), vcast_vf_f_advsimd_sleef(1 << 24)));
+                                 vlt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(y), vcast_vf_f_advsimd_sleef(1 << 24)));
 
   result = vsel_vf_vo_vf_vf_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(vsignbit_vo_vf_advsimd_sleef(x), yisodd), vneg_vf_vf_advsimd_sleef(result), result);
 
@@ -5976,7 +5976,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_sinhf4_u10advsimd(vfloat_adv
   y = vmul_vf_vf_vf_advsimd_sleef(vadd_vf_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(d), vf2gety_vf_vf2_advsimd_sleef(d)), vcast_vf_f_advsimd_sleef(0.5));
 
   y = vsel_vf_vo_vf_vf_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(vgt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(x), vcast_vf_f_advsimd_sleef(89)),
-        visnan_vo_vf_advsimd_sleef(y)), vcast_vf_f_advsimd_sleef(__builtin_inff()), y);
+                                    visnan_vo_vf_advsimd_sleef(y)), vcast_vf_f_advsimd_sleef(__builtin_inff()), y);
   y = vmulsign_vf_vf_vf_advsimd_sleef(y, x);
   y = vreinterpret_vf_vm_advsimd_sleef(vor_vm_vo32_vm_advsimd_sleef(visnan_vo_vf_advsimd_sleef(x), vreinterpret_vm_vf_advsimd_sleef(y)));
 
@@ -5990,7 +5990,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_coshf4_u10advsimd(vfloat_adv
   y = vmul_vf_vf_vf_advsimd_sleef(vadd_vf_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(d), vf2gety_vf_vf2_advsimd_sleef(d)), vcast_vf_f_advsimd_sleef(0.5));
 
   y = vsel_vf_vo_vf_vf_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(vgt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(x), vcast_vf_f_advsimd_sleef(89)),
-        visnan_vo_vf_advsimd_sleef(y)), vcast_vf_f_advsimd_sleef(__builtin_inff()), y);
+                                    visnan_vo_vf_advsimd_sleef(y)), vcast_vf_f_advsimd_sleef(__builtin_inff()), y);
   y = vreinterpret_vf_vm_advsimd_sleef(vor_vm_vo32_vm_advsimd_sleef(visnan_vo_vf_advsimd_sleef(x), vreinterpret_vm_vf_advsimd_sleef(y)));
 
   return y;
@@ -6004,7 +6004,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_tanhf4_u10advsimd(vfloat_adv
   y = vadd_vf_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(d), vf2gety_vf_vf2_advsimd_sleef(d));
 
   y = vsel_vf_vo_vf_vf_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(vgt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(x), vcast_vf_f_advsimd_sleef(8.664339742f)),
-        visnan_vo_vf_advsimd_sleef(y)), vcast_vf_f_advsimd_sleef(1.0f), y);
+                                    visnan_vo_vf_advsimd_sleef(y)), vcast_vf_f_advsimd_sleef(1.0f), y);
   y = vmulsign_vf_vf_vf_advsimd_sleef(y, x);
   y = vreinterpret_vf_vm_advsimd_sleef(vor_vm_vo32_vm_advsimd_sleef(visnan_vo_vf_advsimd_sleef(x), vreinterpret_vm_vf_advsimd_sleef(y)));
 
@@ -6017,7 +6017,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_sinhf4_u35advsimd(vfloat_adv
   y = vmul_vf_vf_vf_advsimd_sleef(y, vmul_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(0.5f), e));
 
   y = vsel_vf_vo_vf_vf_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(vgt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(x), vcast_vf_f_advsimd_sleef(88)),
-        visnan_vo_vf_advsimd_sleef(y)), vcast_vf_f_advsimd_sleef(__builtin_inff()), y);
+                                    visnan_vo_vf_advsimd_sleef(y)), vcast_vf_f_advsimd_sleef(__builtin_inff()), y);
   y = vmulsign_vf_vf_vf_advsimd_sleef(y, x);
   y = vreinterpret_vf_vm_advsimd_sleef(vor_vm_vo32_vm_advsimd_sleef(visnan_vo_vf_advsimd_sleef(x), vreinterpret_vm_vf_advsimd_sleef(y)));
 
@@ -6029,7 +6029,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_coshf4_u35advsimd(vfloat_adv
   vfloat_advsimd_sleef y = vmla_vf_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(0.5f), e, vdiv_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(0.5), e));
 
   y = vsel_vf_vo_vf_vf_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(vgt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(x), vcast_vf_f_advsimd_sleef(88)),
-        visnan_vo_vf_advsimd_sleef(y)), vcast_vf_f_advsimd_sleef(__builtin_inff()), y);
+                                    visnan_vo_vf_advsimd_sleef(y)), vcast_vf_f_advsimd_sleef(__builtin_inff()), y);
   y = vreinterpret_vf_vm_advsimd_sleef(vor_vm_vo32_vm_advsimd_sleef(visnan_vo_vf_advsimd_sleef(x), vreinterpret_vm_vf_advsimd_sleef(y)));
 
   return y;
@@ -6040,7 +6040,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_tanhf4_u35advsimd(vfloat_adv
   vfloat_advsimd_sleef y = vdiv_vf_vf_vf_advsimd_sleef(d, vadd_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(2), d));
 
   y = vsel_vf_vo_vf_vf_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(vgt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(x), vcast_vf_f_advsimd_sleef(8.664339742f)),
-        visnan_vo_vf_advsimd_sleef(y)), vcast_vf_f_advsimd_sleef(1.0f), y);
+                                    visnan_vo_vf_advsimd_sleef(y)), vcast_vf_f_advsimd_sleef(1.0f), y);
   y = vmulsign_vf_vf_vf_advsimd_sleef(y, x);
   y = vreinterpret_vf_vm_advsimd_sleef(vor_vm_vo32_vm_advsimd_sleef(visnan_vo_vf_advsimd_sleef(x), vreinterpret_vm_vf_advsimd_sleef(y)));
 
@@ -6084,8 +6084,8 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_asinhf4_u10advsimd(vfloat_ad
   y = vadd_vf_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(d), vf2gety_vf_vf2_advsimd_sleef(d));
 
   y = vsel_vf_vo_vf_vf_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(vgt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(x), vcast_vf_f_advsimd_sleef(18446743523953729536.0)),
-        visnan_vo_vf_advsimd_sleef(y)),
-         vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(__builtin_inff()), x), y);
+                                    visnan_vo_vf_advsimd_sleef(y)),
+                       vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(__builtin_inff()), x), y);
   y = vreinterpret_vf_vm_advsimd_sleef(vor_vm_vo32_vm_advsimd_sleef(visnan_vo_vf_advsimd_sleef(x), vreinterpret_vm_vf_advsimd_sleef(y)));
   y = vsel_vf_vo_vf_vf_advsimd_sleef(visnegzero_vo_vf_advsimd_sleef(x), vcast_vf_f_advsimd_sleef(-0.0), y);
 
@@ -6097,8 +6097,8 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_acoshf4_u10advsimd(vfloat_ad
   vfloat_advsimd_sleef y = vadd_vf_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(d), vf2gety_vf_vf2_advsimd_sleef(d));
 
   y = vsel_vf_vo_vf_vf_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(vgt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(x), vcast_vf_f_advsimd_sleef(18446743523953729536.0)),
-        visnan_vo_vf_advsimd_sleef(y)),
-         vcast_vf_f_advsimd_sleef(__builtin_inff()), y);
+                                    visnan_vo_vf_advsimd_sleef(y)),
+                       vcast_vf_f_advsimd_sleef(__builtin_inff()), y);
 
   y = vreinterpret_vf_vm_advsimd_sleef(vandnot_vm_vo32_vm_advsimd_sleef(veq_vo_vf_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(1.0f)), vreinterpret_vm_vf_advsimd_sleef(y)));
 
@@ -6270,7 +6270,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_log2f4_u10advsimd(vfloat_adv
   t = vmla_vf_vf_vf_vf_advsimd_sleef(t, x2, vcast_vf_f_advsimd_sleef(+0.9618012905120f));
 
   vfloat2_advsimd_sleef s = dfadd2_vf2_vf_vf2_advsimd_sleef(vcast_vf_vi2_advsimd_sleef(e),
-    dfmul_vf2_vf2_vf2_advsimd_sleef(x, vcast_vf2_f_f_advsimd_sleef(2.8853900432586669922, 3.2734474483568488616e-08)));
+                                dfmul_vf2_vf2_vf2_advsimd_sleef(x, vcast_vf2_f_f_advsimd_sleef(2.8853900432586669922, 3.2734474483568488616e-08)));
 
   s = dfadd2_vf2_vf2_vf_advsimd_sleef(s, vmul_vf_vf_vf_advsimd_sleef(vmul_vf_vf_vf_advsimd_sleef(x2, vf2getx_vf_vf2_advsimd_sleef(x)), t));
 
@@ -6300,7 +6300,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_log2f4_u35advsimd(vfloat_adv
   t = vmla_vf_vf_vf_vf_advsimd_sleef(t, x2, vcast_vf_f_advsimd_sleef(+0.9618024230e+0));
 
   vfloat_advsimd_sleef r = vmla_vf_vf_vf_vf_advsimd_sleef(vmul_vf_vf_vf_advsimd_sleef(x2, x), t,
-         vmla_vf_vf_vf_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(+0.2885390043e+1), vcast_vf_vi2_advsimd_sleef(e)));
+                              vmla_vf_vf_vf_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(+0.2885390043e+1), vcast_vf_vi2_advsimd_sleef(e)));
 
   r = vsel_vf_vo_vf_vf_advsimd_sleef(vispinf_vo_vf_advsimd_sleef(d), vcast_vf_f_advsimd_sleef(__builtin_inf()), r);
   r = vsel_vf_vo_vf_vf_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(vlt_vo_vf_vf_advsimd_sleef(d, vcast_vf_f_advsimd_sleef(0)), visnan_vo_vf_advsimd_sleef(d)), vcast_vf_f_advsimd_sleef(__builtin_nan("")), r);
@@ -6434,7 +6434,7 @@ SLEEF_INLINE vfloat_advsimd_sleef Sleef_sqrtf4_u05advsimd(vfloat_advsimd_sleef d
   w = vmul_vf_vf_vf_advsimd_sleef(w, q);
 
   w = vsel_vf_vo_vf_vf_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(veq_vo_vf_vf_advsimd_sleef(d, vcast_vf_f_advsimd_sleef(0)),
-        veq_vo_vf_vf_advsimd_sleef(d, vcast_vf_f_advsimd_sleef(__builtin_inff()))), d, w);
+                                    veq_vo_vf_vf_advsimd_sleef(d, vcast_vf_f_advsimd_sleef(__builtin_inff()))), d, w);
 
   w = vsel_vf_vo_vf_vf_advsimd_sleef(vlt_vo_vf_vf_advsimd_sleef(d, vcast_vf_f_advsimd_sleef(0)), vcast_vf_f_advsimd_sleef(__builtin_nanf("")), w);
 
@@ -6498,7 +6498,7 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_nextafterf4_advsimd(vfloat_a
   vfloat_advsimd_sleef ret = vreinterpret_vf_vi2_advsimd_sleef(xi2);
 
   ret = vsel_vf_vo_vf_vf_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(veq_vo_vf_vf_advsimd_sleef(ret, vcast_vf_f_advsimd_sleef(0)), vneq_vo_vf_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(0))),
-    vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(0), x), ret);
+                         vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(0), x), ret);
 
   ret = vsel_vf_vo_vf_vf_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(veq_vo_vf_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(0)), veq_vo_vf_vf_advsimd_sleef(y, vcast_vf_f_advsimd_sleef(0))), y, ret);
 
@@ -6551,11 +6551,11 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_fmodf4_advsimd(vfloat_advsim
   for(int i=0;i<8;i++) {
     q = vptrunc_vf_vf_advsimd_sleef(vmul_vf_vf_vf_advsimd_sleef(vtoward0_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(r)), rde));
     q = vsel_vf_vo_vf_vf_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(vgt_vo_vf_vf_advsimd_sleef(vmul_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(3), de), vf2getx_vf_vf2_advsimd_sleef(r)),
-           vge_vo_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(r), de)),
-    vcast_vf_f_advsimd_sleef(2), q);
+                                       vge_vo_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(r), de)),
+                         vcast_vf_f_advsimd_sleef(2), q);
     q = vsel_vf_vo_vf_vf_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(vgt_vo_vf_vf_advsimd_sleef(vmul_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(2), de), vf2getx_vf_vf2_advsimd_sleef(r)),
-           vge_vo_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(r), de)),
-    vcast_vf_f_advsimd_sleef(1), q);
+                                       vge_vo_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(r), de)),
+                         vcast_vf_f_advsimd_sleef(1), q);
     r = dfnormalize_vf2_vf2_advsimd_sleef(dfadd2_vf2_vf2_vf2_advsimd_sleef(r, dfmul_vf2_vf_vf_advsimd_sleef(vptrunc_vf_vf_advsimd_sleef(q), vneg_vf_vf_advsimd_sleef(de))));
     if (vtestallones_i_vo32_advsimd_sleef(vlt_vo_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(r), de))) break;
   }
@@ -6591,12 +6591,12 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_remainderf4_advsimd(vfloat_a
     q = vrintfk2_vf_vf_advsimd_sleef(vmul_vf_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(r), rd));
     q = vsel_vf_vo_vf_vf_advsimd_sleef(vlt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(r)), vmul_vf_vf_vf_advsimd_sleef(d, vcast_vf_f_advsimd_sleef(1.5f))), vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(1.0f), vf2getx_vf_vf2_advsimd_sleef(r)), q);
     q = vsel_vf_vo_vf_vf_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(vlt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(r)), vmul_vf_vf_vf_advsimd_sleef(d, vcast_vf_f_advsimd_sleef(0.5f))),
-          vandnot_vo_vo_vo_advsimd_sleef(qisodd, veq_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(r)), vmul_vf_vf_vf_advsimd_sleef(d, vcast_vf_f_advsimd_sleef(0.5f))))),
-    vcast_vf_f_advsimd_sleef(0.0), q);
+                                      vandnot_vo_vo_vo_advsimd_sleef(qisodd, veq_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(r)), vmul_vf_vf_vf_advsimd_sleef(d, vcast_vf_f_advsimd_sleef(0.5f))))),
+                         vcast_vf_f_advsimd_sleef(0.0), q);
     if (vtestallones_i_vo32_advsimd_sleef(veq_vo_vf_vf_advsimd_sleef(q, vcast_vf_f_advsimd_sleef(0)))) break;
     q = vsel_vf_vo_vf_vf_advsimd_sleef(visinf_vo_vf_advsimd_sleef(vmul_vf_vf_vf_advsimd_sleef(q, vneg_vf_vf_advsimd_sleef(d))), vadd_vf_vf_vf_advsimd_sleef(q, vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(-1), vf2getx_vf_vf2_advsimd_sleef(r))), q);
     qisodd = vxor_vo_vo_vo_advsimd_sleef(qisodd, vand_vo_vo_vo_advsimd_sleef(veq_vo_vi2_vi2_advsimd_sleef(vand_vi2_vi2_vi2_advsimd_sleef(vtruncate_vi2_vf_advsimd_sleef(q), vcast_vi2_i_advsimd_sleef(1)), vcast_vi2_i_advsimd_sleef(1)),
-       vlt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(q), vcast_vf_f_advsimd_sleef(1 << 24))));
+                                                 vlt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(q), vcast_vf_f_advsimd_sleef(1 << 24))));
     r = dfnormalize_vf2_vf2_advsimd_sleef(dfadd2_vf2_vf2_vf2_advsimd_sleef(r, dfmul_vf2_vf_vf_advsimd_sleef(q, vneg_vf_vf_advsimd_sleef(d))));
   }
 
@@ -6626,11 +6626,11 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat2_advsimd_sleef sinpifk_advsimd_sle
   u = vmla_vf_vf_vf_vf_advsimd_sleef(u, s, vsel_vf_vo_f_f_advsimd_sleef(o, +0.3590577080e-5f, -0.3657307388e-4f));
   u = vmla_vf_vf_vf_vf_advsimd_sleef(u, s, vsel_vf_vo_f_f_advsimd_sleef(o, -0.3259917721e-3f, +0.2490393585e-2f));
   x = dfadd2_vf2_vf_vf2_advsimd_sleef(vmul_vf_vf_vf_advsimd_sleef(u, s),
-   vsel_vf2_vo_f_f_f_f_advsimd_sleef(o, 0.015854343771934509277, 4.4940051354032242811e-10,
-         -0.080745510756969451904, -1.3373665339076936258e-09));
+                        vsel_vf2_vo_f_f_f_f_advsimd_sleef(o, 0.015854343771934509277, 4.4940051354032242811e-10,
+                                            -0.080745510756969451904, -1.3373665339076936258e-09));
   x = dfadd2_vf2_vf2_vf2_advsimd_sleef(dfmul_vf2_vf2_vf2_advsimd_sleef(s2, x),
-    vsel_vf2_vo_f_f_f_f_advsimd_sleef(o, -0.30842512845993041992, -9.0728339030733922277e-09,
-          0.78539818525314331055, -2.1857338617566484855e-08));
+                         vsel_vf2_vo_f_f_f_f_advsimd_sleef(o, -0.30842512845993041992, -9.0728339030733922277e-09,
+                                             0.78539818525314331055, -2.1857338617566484855e-08));
 
   x = dfmul_vf2_vf2_vf2_advsimd_sleef(x, vsel_vf2_vo_vf2_vf2_advsimd_sleef(o, s2, vcast_vf2_vf_vf_advsimd_sleef(t, vcast_vf_f_advsimd_sleef(0))));
   x = vsel_vf2_vo_vf2_vf2_advsimd_sleef(o, dfadd2_vf2_vf2_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(1)), x);
@@ -6672,11 +6672,11 @@ static SLEEF_ALWAYS_INLINE SLEEF_CONST vfloat2_advsimd_sleef cospifk_advsimd_sle
   u = vmla_vf_vf_vf_vf_advsimd_sleef(u, s, vsel_vf_vo_f_f_advsimd_sleef(o, +0.3590577080e-5f, -0.3657307388e-4f));
   u = vmla_vf_vf_vf_vf_advsimd_sleef(u, s, vsel_vf_vo_f_f_advsimd_sleef(o, -0.3259917721e-3f, +0.2490393585e-2f));
   x = dfadd2_vf2_vf_vf2_advsimd_sleef(vmul_vf_vf_vf_advsimd_sleef(u, s),
-   vsel_vf2_vo_f_f_f_f_advsimd_sleef(o, 0.015854343771934509277, 4.4940051354032242811e-10,
-         -0.080745510756969451904, -1.3373665339076936258e-09));
+                        vsel_vf2_vo_f_f_f_f_advsimd_sleef(o, 0.015854343771934509277, 4.4940051354032242811e-10,
+                                            -0.080745510756969451904, -1.3373665339076936258e-09));
   x = dfadd2_vf2_vf2_vf2_advsimd_sleef(dfmul_vf2_vf2_vf2_advsimd_sleef(s2, x),
-    vsel_vf2_vo_f_f_f_f_advsimd_sleef(o, -0.30842512845993041992, -9.0728339030733922277e-09,
-          0.78539818525314331055, -2.1857338617566484855e-08));
+                         vsel_vf2_vo_f_f_f_f_advsimd_sleef(o, -0.30842512845993041992, -9.0728339030733922277e-09,
+                                             0.78539818525314331055, -2.1857338617566484855e-08));
 
   x = dfmul_vf2_vf2_vf2_advsimd_sleef(x, vsel_vf2_vo_vf2_vf2_advsimd_sleef(o, s2, vcast_vf2_vf_vf_advsimd_sleef(t, vcast_vf_f_advsimd_sleef(0))));
   x = vsel_vf2_vo_vf2_vf2_advsimd_sleef(o, dfadd2_vf2_vf2_vf_advsimd_sleef(x, vcast_vf_f_advsimd_sleef(1)), x);
@@ -6717,8 +6717,8 @@ static SLEEF_CONST df2_advsimd_sleef gammafk_advsimd_sleef(vfloat_advsimd_sleef 
   vopmask_advsimd_sleef otiny = vlt_vo_vf_vf_advsimd_sleef(vabs_vf_vf_advsimd_sleef(a), vcast_vf_f_advsimd_sleef(1e-30f)), oref = vlt_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(0.5));
 
   x = vsel_vf2_vo_vf2_vf2_advsimd_sleef(otiny, vcast_vf2_f_f_advsimd_sleef(0, 0),
-     vsel_vf2_vo_vf2_vf2_advsimd_sleef(oref, dfadd2_vf2_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(1), vneg_vf_vf_advsimd_sleef(a)),
-           vcast_vf2_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(0))));
+                          vsel_vf2_vo_vf2_vf2_advsimd_sleef(oref, dfadd2_vf2_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(1), vneg_vf_vf_advsimd_sleef(a)),
+                                              vcast_vf2_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(0))));
 
   vopmask_advsimd_sleef o0 = vand_vo_vo_vo_advsimd_sleef(vle_vo_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(0.5), vf2getx_vf_vf2_advsimd_sleef(x)), vle_vo_vf_vf_advsimd_sleef(vf2getx_vf_vf2_advsimd_sleef(x), vcast_vf_f_advsimd_sleef(1.2)));
   vopmask_advsimd_sleef o2 = vle_vo_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(2.3), vf2getx_vf_vf2_advsimd_sleef(x));
@@ -6758,7 +6758,7 @@ static SLEEF_CONST df2_advsimd_sleef gammafk_advsimd_sleef(vfloat_advsimd_sleef 
   y = clln;
 
   clc = vsel_vf2_vo_vf2_vf2_advsimd_sleef(otiny, vcast_vf2_d_advsimd_sleef(41.58883083359671856503),
-       vsel_vf2_vo_vf2_vf2_advsimd_sleef(oref, dfadd2_vf2_vf2_vf2_advsimd_sleef(vcast_vf2_d_advsimd_sleef(1.1447298858494001639), dfneg_vf2_vf2_advsimd_sleef(clc)), clc));
+                            vsel_vf2_vo_vf2_vf2_advsimd_sleef(oref, dfadd2_vf2_vf2_vf2_advsimd_sleef(vcast_vf2_d_advsimd_sleef(1.1447298858494001639), dfneg_vf2_vf2_advsimd_sleef(clc)), clc));
   clln = vsel_vf2_vo_vf2_vf2_advsimd_sleef(otiny, vcast_vf2_f_f_advsimd_sleef(1, 0), vsel_vf2_vo_vf2_vf2_advsimd_sleef(oref, clln, clld));
 
   if (!vtestallones_i_vo32_advsimd_sleef(vnot_vo32_vo32_advsimd_sleef(oref))) {
@@ -6767,7 +6767,7 @@ static SLEEF_CONST df2_advsimd_sleef gammafk_advsimd_sleef(vfloat_advsimd_sleef 
   }
 
   clld = vsel_vf2_vo_vf2_vf2_advsimd_sleef(otiny, vcast_vf2_vf_vf_advsimd_sleef(vmul_vf_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef((INT64_C(1) << 30)*(float)(INT64_C(1) << 30))), vcast_vf_f_advsimd_sleef(0)),
-        vsel_vf2_vo_vf2_vf2_advsimd_sleef(oref, x, y));
+                             vsel_vf2_vo_vf2_vf2_advsimd_sleef(oref, x, y));
 
   return df2setab_df2_vf2_vf2_advsimd_sleef(clc, dfdiv_vf2_vf2_vf2_advsimd_sleef(clln, clld));
 }
@@ -6779,13 +6779,13 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_tgammaf4_u10advsimd(vfloat_a
   vopmask_advsimd_sleef o;
 
   o = vor_vo_vo_vo_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(veq_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(-__builtin_inff())),
-    vand_vo_vo_vo_advsimd_sleef(vlt_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(0)), visint_vo_vf_advsimd_sleef(a))),
-     vand_vo_vo_vo_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(visnumber_vo_vf_advsimd_sleef(a), vlt_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(0))), visnan_vo_vf_advsimd_sleef(r)));
+                                vand_vo_vo_vo_advsimd_sleef(vlt_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(0)), visint_vo_vf_advsimd_sleef(a))),
+                   vand_vo_vo_vo_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(visnumber_vo_vf_advsimd_sleef(a), vlt_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(0))), visnan_vo_vf_advsimd_sleef(r)));
   r = vsel_vf_vo_vf_vf_advsimd_sleef(o, vcast_vf_f_advsimd_sleef(__builtin_nanf("")), r);
 
   o = vand_vo_vo_vo_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(veq_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(__builtin_inff())), visnumber_vo_vf_advsimd_sleef(a)),
-      vge_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(-0x1p-126))),
-      vor_vo_vo_vo_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(veq_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(0)), vgt_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(36))), visnan_vo_vf_advsimd_sleef(r)));
+                                  vge_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(-0x1p-126))),
+                    vor_vo_vo_vo_advsimd_sleef(vor_vo_vo_vo_advsimd_sleef(veq_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(0)), vgt_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(36))), visnan_vo_vf_advsimd_sleef(r)));
   r = vsel_vf_vo_vf_vf_advsimd_sleef(o, vmulsign_vf_vf_vf_advsimd_sleef(vcast_vf_f_advsimd_sleef(__builtin_inff()), a), r);
 
   return r;
@@ -6798,8 +6798,8 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_lgammaf4_u10advsimd(vfloat_a
   vopmask_advsimd_sleef o;
 
   o = vor_vo_vo_vo_advsimd_sleef(visinf_vo_vf_advsimd_sleef(a),
-     vor_vo_vo_vo_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(vle_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(0)), visint_vo_vf_advsimd_sleef(a)),
-    vand_vo_vo_vo_advsimd_sleef(visnumber_vo_vf_advsimd_sleef(a), visnan_vo_vf_advsimd_sleef(r))));
+                   vor_vo_vo_vo_advsimd_sleef(vand_vo_vo_vo_advsimd_sleef(vle_vo_vf_vf_advsimd_sleef(a, vcast_vf_f_advsimd_sleef(0)), visint_vo_vf_advsimd_sleef(a)),
+                                vand_vo_vo_vo_advsimd_sleef(visnumber_vo_vf_advsimd_sleef(a), visnan_vo_vf_advsimd_sleef(r))));
   r = vsel_vf_vo_vf_vf_advsimd_sleef(o, vcast_vf_f_advsimd_sleef(__builtin_inff()), r);
 
   return r;
@@ -6825,11 +6825,11 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_erff4_u10advsimd(vfloat_advs
 
     t = vmla_vf_vf_vf_vf_advsimd_sleef((x4), (vmla_vf_vf_vf_vf_advsimd_sleef((x), (vcast_vf_f_advsimd_sleef(-0.4360447008e-6)), (vcast_vf_f_advsimd_sleef(+0.6867515367e-5)))), (vmla_vf_vf_vf_vf_advsimd_sleef((x2), (vmla_vf_vf_vf_vf_advsimd_sleef((x), (vcast_vf_f_advsimd_sleef(-0.3045156700e-4)), (vcast_vf_f_advsimd_sleef(+0.9808536561e-4)))), (vmla_vf_vf_vf_vf_advsimd_sleef((x), (vcast_vf_f_advsimd_sleef(+0.2395523916e-3)), (vcast_vf_f_advsimd_sleef(+0.1459901541e-3)))))))
 
-                        ;
+                               ;
     t2 = poly4df_advsimd_sleef(x, t,
-   vcast_vf2_f_f_advsimd_sleef(0.0092883445322513580322, -2.7863745897025330755e-11),
-   vcast_vf2_f_f_advsimd_sleef(0.042275499552488327026, 1.3461399289988106057e-09),
-   vcast_vf2_f_f_advsimd_sleef(0.070523701608180999756, -3.6616309318707365163e-09));
+                 vcast_vf2_f_f_advsimd_sleef(0.0092883445322513580322, -2.7863745897025330755e-11),
+                 vcast_vf2_f_f_advsimd_sleef(0.042275499552488327026, 1.3461399289988106057e-09),
+                 vcast_vf2_f_f_advsimd_sleef(0.070523701608180999756, -3.6616309318707365163e-09));
     t2 = dfadd_vf2_vf_vf2_advsimd_sleef(vcast_vf_f_advsimd_sleef(1), dfmul_vf2_vf2_vf_advsimd_sleef(t2, x));
     t2 = dfsqu_vf2_vf2_advsimd_sleef(t2);
     t2 = dfsqu_vf2_vf2_advsimd_sleef(t2);
@@ -6840,14 +6840,14 @@ SLEEF_INLINE SLEEF_CONST vfloat_advsimd_sleef Sleef_erff4_u10advsimd(vfloat_advs
 
     t = vmla_vf_vf_vf_vf_advsimd_sleef((x4), (vmla_vf_vf_vf_vf_advsimd_sleef((x), ((vsel_vf_vo_f_f_advsimd_sleef(o25, -0.4360447008e-6, -0.1130012848e-6))), ((vsel_vf_vo_f_f_advsimd_sleef(o25, +0.6867515367e-5, +0.4115272986e-5))))), (vmla_vf_vf_vf_vf_advsimd_sleef((x2), (vmla_vf_vf_vf_vf_advsimd_sleef((x), ((vsel_vf_vo_f_f_advsimd_sleef(o25, -0.3045156700e-4, -0.6928304356e-4))), ((vsel_vf_vo_f_f_advsimd_sleef(o25, +0.9808536561e-4, +0.7172692567e-3))))), (vmla_vf_vf_vf_vf_advsimd_sleef((x), ((vsel_vf_vo_f_f_advsimd_sleef(o25, +0.2395523916e-3, -0.5131045356e-2))), ((vsel_vf_vo_f_f_advsimd_sleef(o25, +0.1459901541e-3, +0.2708637156e-1))))))))
 
-                                                                ;
+                                                                       ;
     t2 = poly4df_advsimd_sleef(x, t,
-   vsel_vf2_vo_vf2_vf2_advsimd_sleef(o25, vcast_vf2_f_f_advsimd_sleef(0.0092883445322513580322, -2.7863745897025330755e-11),
-         vcast_vf2_f_f_advsimd_sleef(-0.11064319312572479248, 3.7050452777225283007e-09)),
-   vsel_vf2_vo_vf2_vf2_advsimd_sleef(o25, vcast_vf2_f_f_advsimd_sleef(0.042275499552488327026, 1.3461399289988106057e-09),
-         vcast_vf2_f_f_advsimd_sleef(-0.63192230463027954102, -2.0200432585073177859e-08)),
-   vsel_vf2_vo_vf2_vf2_advsimd_sleef(o25, vcast_vf2_f_f_advsimd_sleef(0.070523701608180999756, -3.6616309318707365163e-09),
-         vcast_vf2_f_f_advsimd_sleef(-1.1296638250350952148, 2.5515120196453259252e-08)));
+                 vsel_vf2_vo_vf2_vf2_advsimd_sleef(o25, vcast_vf2_f_f_advsimd_sleef(0.0092883445322513580322, -2.7863745897025330755e-11),
+                                     vcast_vf2_f_f_advsimd_sleef(-0.11064319312572479248, 3.7050452777225283007e-09)),
+                 vsel_vf2_vo_vf2_vf2_advsimd_sleef(o25, vcast_vf2_f_f_advsimd_sleef(0.042275499552488327026, 1.3461399289988106057e-09),
+                                     vcast_vf2_f_f_advsimd_sleef(-0.63192230463027954102, -2.0200432585073177859e-08)),
+                 vsel_vf2_vo_vf2_vf2_advsimd_sleef(o25, vcast_vf2_f_f_advsimd_sleef(0.070523701608180999756, -3.6616309318707365163e-09),
+                                     vcast_vf2_f_f_advsimd_sleef(-1.1296638250350952148, 2.5515120196453259252e-08)));
     t2 = dfmul_vf2_vf2_vf_advsimd_sleef(t2, x);
     vfloat2_advsimd_sleef s2 = dfadd_vf2_vf_vf2_advsimd_sleef(vcast_vf_f_advsimd_sleef(1), t2);
     s2 = dfsqu_vf2_vf2_advsimd_sleef(s2);
