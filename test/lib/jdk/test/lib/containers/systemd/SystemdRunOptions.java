@@ -38,6 +38,8 @@ public class SystemdRunOptions {
     public String memoryLimit; // used in slice for MemoryLimit property
     public String cpuLimit;    // used in slice for CPUQuota property
     public String sliceName;   // name of the slice (nests CPU in memory)
+    public String sliceDMemoryLimit; // used in jdk_internal.slice.d
+    public String sliceDCpuLimit;    // used in jdk_internal.slice.d
 
     /**
      * Convenience constructor for most common use cases in testing.
@@ -80,13 +82,51 @@ public class SystemdRunOptions {
         return testname;
     }
 
+    /**
+     * The memory limit set with a .slice file in the systemd
+     * config directory.
+     *
+     * @param memLimit The memory limit to set (e.g. 1000M).
+     * @return The run options.
+     */
     public SystemdRunOptions memoryLimit(String memLimit) {
         this.memoryLimit = memLimit;
         return this;
     }
 
+    /**
+     * The memory limit to set in the top-level jdk_internal.slice.d
+     * systemd config directory.
+     *
+     * @param memoryLimit The memory limit to set.
+     * @return The run options.
+     */
+    public SystemdRunOptions sliceDMemoryLimit(String memoryLimit) {
+        this.sliceDMemoryLimit = memoryLimit;
+        return this;
+    }
+
+    /**
+     * The CPU limit set with a .slice file in the systemd
+     * config directory.
+     *
+     * @param cpuLimit
+     * @return The run options.
+     */
     public SystemdRunOptions cpuLimit(String cpuLimit) {
         this.cpuLimit = cpuLimit;
+        return this;
+    }
+
+    /**
+     * The Cpu limit set in the top-level jdk_internal.slice.d
+     * systemd config directory.
+     *
+     * @param cpuLimit The CPU limit to set to.
+     * @return The run options.
+     */
+    public SystemdRunOptions sliceDCpuLimit(String cpuLimit) {
+        this.sliceDCpuLimit = cpuLimit;
         return this;
     }
 
@@ -103,5 +143,10 @@ public class SystemdRunOptions {
     public SystemdRunOptions addClassOptions(String... opts) {
         Collections.addAll(classParams,opts);
         return this;
+    }
+
+    public boolean hasSliceDLimit() {
+        return this.sliceDMemoryLimit != null ||
+                this.sliceDCpuLimit != null;
     }
 }

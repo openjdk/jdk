@@ -26,6 +26,7 @@ package jdk.test.lib.containers.systemd;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,9 +34,13 @@ import java.util.List;
 
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.util.FileUtils;
 
 public class SystemdTestUtils {
 
+    private static final String SLICE_NAMESPACE_PREFIX = "jdk_internal";
+    private static final String SLICE_D_MEM_CONFIG_FILE = "memory-limit.conf";
+    private static final String SLICE_D_CPU_CONFIG_FILE = "cpu-limit.conf";
     private static final Path SYSTEMD_CONFIG_HOME = Path.of("/", "etc", "systemd", "system");
 
     // Specifies how many lines to copy from child STDOUT to main test output.
@@ -44,7 +49,7 @@ public class SystemdTestUtils {
     // diagnostic information.
     private static final int MAX_LINES_TO_COPY_FOR_CHILD_STDOUT = 100;
 
-    public record ResultFiles(Path memory, Path cpu) {}
+    public record ResultFiles(Path memory, Path cpu, Path sliceDotDDir) {}
 
     /**
      * Run Java inside a systemd slice with specified parameters and options.
@@ -88,10 +93,27 @@ public class SystemdTestUtils {
         String memorySliceContent = getMemorySlice(runOpts, sliceName);
         String cpuSliceContent = getCpuSlice(runOpts, sliceName);
 
+        Path sliceDotDDir = null;
+        if (runOpts.hasSliceDLimit()) {
+            String dirName = String.format("%s.slice.d", SLICE_NAMESPACE_PREFIX);
+            sliceDotDDir = SYSTEMD_CONFIG_HOME.resolve(Path.of(dirName));
+            Files.createDirectory(sliceDotDDir);
+
+            if (runOpts.sliceDMemoryLimit != null) {
+                Path memoryConfig = sliceDotDDir.resolve(Path.of(SLICE_D_MEM_CONFIG_FILE));
+                Files.writeString(memoryConfig, getMemoryDSliceContent(runOpts));
+            }
+            if (runOpts.sliceDCpuLimit != null) {
+                Path cpuConfig = sliceDotDDir.resolve(Path.of(SLICE_D_CPU_CONFIG_FILE));
+                Files.writeString(cpuConfig, getCPUDSliceContent(runOpts));
+            }
+        }
+
         Path memory, cpu;
         try {
             // memory slice
             memory = SYSTEMD_CONFIG_HOME.resolve(Path.of(sliceFileName(sliceName)));
+            // cpu slice nested in memory
             cpu = SYSTEMD_CONFIG_HOME.resolve(Path.of(sliceFileName(sliceNameCpu)));
             Files.writeString(memory, memorySliceContent);
             Files.writeString(cpu, cpuSliceContent);
@@ -101,13 +123,35 @@ public class SystemdTestUtils {
 
         systemdDaemonReload(cpu);
 
-        return new ResultFiles(memory, cpu);
+        return new ResultFiles(memory, cpu, sliceDotDDir);
+    }
+
+    public static OutputAnalyzer buildAndRunSystemdJava(SystemdRunOptions opts) throws Exception {
+        ResultFiles files = SystemdTestUtils.buildSystemdSlices(opts);
+
+        try {
+            return SystemdTestUtils.systemdRunJava(opts);
+        } finally {
+            try {
+                if (files.memory() != null) {
+                    Files.delete(files.memory());
+                }
+                if (files.cpu() != null) {
+                    Files.delete(files.cpu());
+                }
+                if (files.sliceDotDDir() != null) {
+                    FileUtils.deleteFileTreeUnchecked(files.sliceDotDDir());
+                }
+            } catch (NoSuchFileException e) {
+                // ignore
+            }
+        }
     }
 
     private static String sliceName(SystemdRunOptions runOpts) {
         // Slice name may include '-' which is a hierarchical slice indicator.
         // Replace '-' with '_' to avoid side-effects.
-        return "jdk_internal_" + runOpts.sliceName.replace("-", "_");
+        return SLICE_NAMESPACE_PREFIX + "-" + runOpts.sliceName.replace("-", "_");
     }
 
     private static String sliceNameCpu(SystemdRunOptions runOpts) {
@@ -129,15 +173,11 @@ public class SystemdTestUtils {
 
     private static String getCpuSlice(SystemdRunOptions runOpts, String sliceName) {
         String basicSliceFormat = getBasicSliceFormat();
-        return String.format(basicSliceFormat, sliceName, getMemoryCPUSliceContent(runOpts));
+        return String.format(basicSliceFormat, sliceName, getCPUSliceContent(runOpts));
     }
 
-    private static Object getMemoryCPUSliceContent(SystemdRunOptions runOpts) {
-        String format =
-                """
-                CPUAccounting=true
-                CPUQuota=%s
-                """;
+    private static String getCPUSliceContent(SystemdRunOptions runOpts) {
+        String format = basicCPUContentFormat();
          return String.format(format, runOpts.cpuLimit);
     }
 
@@ -146,12 +186,33 @@ public class SystemdTestUtils {
         return String.format(basicSliceFormat, sliceName, getMemorySliceContent(runOpts));
     }
 
-    private static Object getMemorySliceContent(SystemdRunOptions runOpts) {
-        String format =
-               """
-               MemoryAccounting=true
-               MemoryLimit=%s
-               """;
+    private static String getMemoryDSliceContent(SystemdRunOptions runOpts) {
+        String format = "[Slice]\n" + basicMemoryContentFormat();
+        return String.format(format, runOpts.sliceDMemoryLimit);
+    }
+
+    private static String getCPUDSliceContent(SystemdRunOptions runOpts) {
+        String format = "[Slice]\n" + basicCPUContentFormat();
+        return String.format(format, runOpts.sliceDCpuLimit);
+    }
+
+    private static String basicCPUContentFormat() {
+        return """
+                CPUAccounting=true
+                CPUQuota=%s
+                """;
+    }
+
+    private static String basicMemoryContentFormat() {
+        return """
+                MemoryAccounting=true
+                MemoryLimit=%s
+                """;
+    }
+
+    private static String getMemorySliceContent(SystemdRunOptions runOpts) {
+        String format = basicMemoryContentFormat();
+
         return String.format(format, runOpts.memoryLimit);
     }
 

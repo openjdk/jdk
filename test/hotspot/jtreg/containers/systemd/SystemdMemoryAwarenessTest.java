@@ -24,6 +24,7 @@
 
 /*
  * @test
+ * @bug 8322420 8217338
  * @summary Memory/CPU awareness test for JDK-under-test inside a systemd slice.
  * @requires systemd.support
  * @library /test/lib
@@ -31,17 +32,16 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:whitebox.jar -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SystemdMemoryAwarenessTest
  */
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.containers.systemd.SystemdRunOptions;
 import jdk.test.lib.containers.systemd.SystemdTestUtils;
-import jdk.test.lib.containers.systemd.SystemdTestUtils.ResultFiles;
+import jdk.test.whitebox.WhiteBox;
 
 
 public class SystemdMemoryAwarenessTest {
 
+    private static final int MB = 1024 * 1024;
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
+    private static final String TEST_SLICE_NAME = SystemdMemoryAwarenessTest.class.getSimpleName() + "HS";
 
     public static void main(String[] args) throws Exception {
        testHelloSystemd();
@@ -49,8 +49,11 @@ public class SystemdMemoryAwarenessTest {
 
     private static void testHelloSystemd() throws Exception {
         SystemdRunOptions opts = SystemdTestUtils.newOpts("HelloSystemd");
-        // 1 GB memory
-        opts.memoryLimit("1000M");
+        // 1 GB memory, but the limit in the lower hierarchy is 512M
+        opts.memoryLimit("1024M");
+        int expectedMemLimit = 512;
+        // expected detected limit we test for, 512MB
+        opts.sliceDMemoryLimit(String.format("%dM", expectedMemLimit));
         int physicalCpus = wb.hostCPUs();
         if (physicalCpus < 3) {
            System.err.println("WARNING: host system only has " + physicalCpus + " expected >= 3");
@@ -59,24 +62,13 @@ public class SystemdMemoryAwarenessTest {
         int coreLimit = Math.min(physicalCpus, 2);
         System.out.println("DEBUG: Running test with a CPU limit of " + coreLimit);
         opts.cpuLimit(String.format("%d%%", coreLimit * 100));
-        opts.sliceName(SystemdMemoryAwarenessTest.class.getSimpleName());
+        opts.sliceName(TEST_SLICE_NAME);
 
-        ResultFiles files = SystemdTestUtils.buildSystemdSlices(opts);
-
-        try {
-            SystemdTestUtils.systemdRunJava(opts)
-                .shouldHaveExitValue(0)
-                .shouldContain("Hello Systemd")
-                .shouldContain("OSContainer::active_processor_count: " + coreLimit)
-                .shouldContain("Memory Limit is: 1048576000"); // 1 GB
-        } finally {
-            try {
-                Files.delete(files.memory());
-                Files.delete(files.cpu());
-            } catch (NoSuchFileException e) {
-                // ignore
-            }
-        }
+        SystemdTestUtils.buildAndRunSystemdJava(opts)
+            .shouldHaveExitValue(0)
+            .shouldContain("Hello Systemd")
+            .shouldContain("OSContainer::active_processor_count: " + coreLimit)
+            .shouldContain(String.format("Memory Limit is: %d", (expectedMemLimit * MB)));
     }
 
 }
