@@ -134,7 +134,7 @@ public final class BufWriterImpl implements BufWriter {
             throw new IllegalArgumentException("string too long");
         }
         reserveSpace(len * 3 + 2);
-        int start = this.offset,
+        int start = this.offset;
         int offset = start + 2;
         byte[] elems = this.elems;
         for (int i = 0; i < len; ++i) {
