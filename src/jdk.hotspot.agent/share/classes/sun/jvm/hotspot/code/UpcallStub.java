@@ -42,8 +42,6 @@ public class UpcallStub extends RuntimeBlob {
 
   private static void initialize(TypeDataBase db) {
     Type type = db.lookupType("UpcallStub");
-
-    // FIXME: add any needed fields
   }
 
   public UpcallStub(Address addr) {
