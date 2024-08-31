@@ -573,20 +573,6 @@ private:
   int _index;
 };
 
-// Wrapper over an oop that is a partially scanned array.
-// Can be converted to a ScannerTask for placement in associated task queues.
-// Refers to the partially copied source array oop.
-// Temporarily retained to support ParallelGC until it adopts PartialArrayState.
-class PartialArrayScanTask {
-  oop _src;
-
-public:
-  explicit PartialArrayScanTask(oop src_array) : _src(src_array) {}
-  // Trivially copyable.
-
-  oop to_source_array() const { return _src; }
-};
-
 class PartialArrayState;
 
 // Discriminated union over oop*, narrowOop*, and PartialArrayState.
@@ -627,10 +613,6 @@ public:
 
   explicit ScannerTask(narrowOop* p) : _p(encode(p, NarrowOopTag)) {}
 
-  // Temporarily retained to support ParallelGC until it adopts PartialArrayState.
-  explicit ScannerTask(PartialArrayScanTask t) :
-    _p(encode(t.to_source_array(), PartialArrayTag)) {}
-
   explicit ScannerTask(PartialArrayState* state) :
     _p(encode(state, PartialArrayTag)) {}
 
@@ -646,11 +628,6 @@ public:
     return (raw_value() & NarrowOopTag) != 0;
   }
 
-  // Temporarily retained to support ParallelGC until it adopts PartialArrayState.
-  bool is_partial_array_task() const {
-    return (raw_value() & PartialArrayTag) != 0;
-  }
-
   bool is_partial_array_state() const {
     return (raw_value() & PartialArrayTag) != 0;
   }
@@ -661,11 +638,6 @@ public:
 
   narrowOop* to_narrow_oop_ptr() const {
     return static_cast<narrowOop*>(decode(NarrowOopTag));
-  }
-
-  // Temporarily retained to support ParallelGC until it adopts PartialArrayState.
-  PartialArrayScanTask to_partial_array_task() const {
-    return PartialArrayScanTask(cast_to_oop(decode(PartialArrayTag)));
   }
 
   PartialArrayState* to_partial_array_state() const {
