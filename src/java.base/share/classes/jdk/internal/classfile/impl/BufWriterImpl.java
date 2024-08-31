@@ -154,9 +154,6 @@ public final class BufWriterImpl implements BufWriter {
 
     void writeUTF(String s) {
         int len = s.length();
-        if (len > 65535) {
-            throw new IllegalArgumentException("string too long");
-        }
         reserveSpace(len * 3 + 2);
         int start = this.offset;
         int offset = start + 2;
@@ -177,6 +174,9 @@ public final class BufWriterImpl implements BufWriter {
             }
         }
         int utf_len = offset - start - 2;
+        if (utf_len > 65535) {
+            throw new IllegalArgumentException("string too long");
+        }
         elems[start    ] = (byte) (utf_len >> 8);
         elems[start + 1] = (byte)  utf_len;
         this.offset = offset;
