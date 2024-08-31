@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2020, 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,7 +285,12 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     = UpcallStub::create(name,
                          &buffer,
                          receiver,
-                         in_ByteSize(frame_data_offset));
+                         in_ByteSize(frame_data_offset),
+                         /*
+                          * frame size should be in words,
+                          * and also should include return address
+                          */
+                         (frame_size / wordSize) + 1);
   if (blob == nullptr) {
     return nullptr;
   }

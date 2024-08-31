@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2022, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -330,7 +330,12 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
     = UpcallStub::create(name,
                          &buffer,
                          receiver,
-                         in_ByteSize(frame_data_offset));
+                         in_ByteSize(frame_data_offset),
+                         /*
+                          * frame size should be in words,
+                          * and also should include both saved FP and return address
+                          */
+                         (frame_size / wordSize) + 2);
   if (blob == nullptr) {
     return nullptr;
   }
