@@ -128,38 +128,33 @@ public final class BufWriterImpl implements BufWriter {
         writeBytes(other.elems, 0, other.offset);
     }
 
-    @SuppressWarnings("deprecation")
-    void writeBytesDirect(String s) {
-        int length = s.length();
-        reserveSpace(length);
-        s.getBytes(0, length, elems, offset);
-        offset += length;
-    }
-
     void writeUTF(String s) {
-        int charLength = s.length();
-        reserveSpace(charLength * 3);
-        int offset = this.offset;
+        int len = s.length();
+        if (len > 65535) {
+            throw new IllegalArgumentException("string too long");
+        }
+        reserveSpace(len * 3 + 2);
+        int start = this.offset;
+        int offset = start + 2;
         byte[] elems = this.elems;
-        for (int i = 0; i < charLength; ++i) {
+        for (int i = 0; i < len; ++i) {
             char c = s.charAt(i);
             if (c >= '\001' && c <= '\177') {
                 elems[offset++] = (byte) c;
             } else if (c > '\u07FF') {
-                elems[offset    ] = (byte) (0xE0 | c >> 12 & 0xF);
+                elems[offset] = (byte) (0xE0 | c >> 12 & 0xF);
                 elems[offset + 1] = (byte) (0x80 | c >> 6 & 0x3F);
                 elems[offset + 2] = (byte) (0x80 | c & 0x3F);
                 offset += 3;
             } else {
-                elems[offset    ] = (byte) (0xC0 | c >> 6 & 0x1F);
+                elems[offset] = (byte) (0xC0 | c >> 6 & 0x1F);
                 elems[offset + 1] = (byte) (0x80 | c & 0x3F);
                 offset += 2;
             }
         }
-        int byteLengthFinal = offset - this.offset;
-        if (byteLengthFinal != charLength) {
-            patchInt(this.offset - 2, 2, byteLengthFinal);
-        }
+        int byteLengthFinal = offset - start - 2;
+        elems[start    ] = (byte) (byteLengthFinal >> 8);
+        elems[start + 1] = (byte)  byteLengthFinal;
         this.offset = offset;
     }
 

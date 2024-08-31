@@ -416,15 +416,7 @@ public abstract sealed class AbstractPoolEntry {
             }
             else {
                 // state == STRING and no raw bytes
-                if (stringValue.length() > 65535) {
-                    throw new IllegalArgumentException("string too long");
-                }
-                pool.writeU2(charLen);
-                if (JLA.isLatin1GreaterThanZero(stringValue)) {
-                    pool.writeBytesDirect(stringValue);
-                } else {
-                    pool.writeUTF(stringValue);
-                }
+                pool.writeUTF(stringValue);
             }
         }
     }

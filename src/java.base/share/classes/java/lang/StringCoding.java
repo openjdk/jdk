@@ -34,21 +34,6 @@ class StringCoding {
 
     private StringCoding() { }
 
-    public static boolean isLatin1GreaterThanZero(String s) {
-        byte[] value;
-        return s.coder() == String.LATIN1 && countGreaterThanZero(value = s.value(), 0, value.length) == value.length;
-    }
-
-    public static int countGreaterThanZero(byte[] ba, int off, int len) {
-        int limit = off + len;
-        for (int i = off; i < limit; i++) {
-            if (ba[i] <= 0) {
-                return i - off;
-            }
-        }
-        return len;
-    }
-
     public static boolean hasNegatives(byte[] ba, int off, int len) {
         return countPositives(ba, off, len) != len;
     }
