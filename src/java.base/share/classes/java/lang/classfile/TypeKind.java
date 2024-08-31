@@ -32,7 +32,7 @@ import java.lang.invoke.TypeDescriptor;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.Stable;
 
-import static java.lang.constant.ConstantDescs.*;
+import static jdk.internal.constant.PrimitiveClassDescImpl.*;
 
 /**
  * Describes the data types Java Virtual Machine operates on.
