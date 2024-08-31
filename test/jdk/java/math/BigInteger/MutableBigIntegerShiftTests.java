@@ -67,10 +67,11 @@ public class MutableBigIntegerShiftTests {
      * If order is less than 2, order is changed to 2.
      */
     private static MutableBigIntegerBox fetchNumber(int order) {
-        int numType = random.nextInt(7);
+        int numType = random.nextInt(8);
         MutableBigIntegerBox result = null;
         if (order < 2) order = 2;
 
+        int[] val;
         switch (numType) {
             case 0: // Empty
                 result = MutableBigIntegerBox.ZERO;
@@ -95,7 +96,7 @@ public class MutableBigIntegerShiftTests {
                 break;
 
             case 4: // Random bit density
-                int[] val = new int[(order + 31) >> 5];
+                val = new int[(order + 31) >> 5];
                 int iterations = random.nextInt(order);
                 for (int i = 0; i < iterations; i++) {
                     int bitIdx = random.nextInt(order);
@@ -116,7 +117,14 @@ public class MutableBigIntegerShiftTests {
                     bit = 1 - bit;
                 }
                 break;
-
+            case 6: // random bits with trailing space
+                int len = random.nextInt((order + 31) >> 5) + 1;
+                int offset = random.nextInt(len);
+                val = new int[len << 1];
+                for (int i = 0; i < val.length; i++)
+                    val[i] = random.nextInt();
+                result = new MutableBigIntegerBox(val, offset, len);
+                break;
             default: // random bits
                 result = new MutableBigIntegerBox(new BigInteger(order, random));
         }

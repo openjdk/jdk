@@ -48,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class MutableBigIntegersLeftShift {
 
+    int[] shifts = new int[TESTSIZE];
     private MutableBigIntegerBox[] shiftArray;
     private static final int TESTSIZE = 1000;
 
@@ -63,6 +64,7 @@ public class MutableBigIntegersLeftShift {
 
         for (int i = 0; i < TESTSIZE; i++) {
             shiftArray[i] = new MutableBigIntegerBox(new BigInteger(numbits, r));
+            shifts[i] = r.nextInt((int) (shiftArray[i].bitLength() << 1));
         }
     }
 
@@ -71,9 +73,10 @@ public class MutableBigIntegersLeftShift {
     @OperationsPerInvocation(TESTSIZE)
     public void testLeftShift(Blackhole bh) {
         Random rand = new Random();
+        int i = 0;
         for (MutableBigIntegerBox s : shiftArray) {
-            int shift = rand.nextInt((int) s.bitLength());
-            bh.consume(s.shiftLeft(shift));
+            bh.consume(s.shiftLeft(shifts[i]));
+            i++;
         }
     }
 

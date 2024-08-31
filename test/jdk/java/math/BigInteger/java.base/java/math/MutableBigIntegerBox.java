@@ -50,13 +50,27 @@ public class MutableBigIntegerBox {
     }
 
     /**
+     * Construct MutableBigIntegerBox from magnitude, starting from
+     * offset and with a length of intLen ints.
+     * The value is normalized.
+     * @param mag the magnitude
+     * @param offset the offset where the value starts
+     * @param intLen the length of the value, in int words.
+     */
+    public MutableBigIntegerBox(int[] mag, int offset, int intLen) {
+        this(new MutableBigInteger(mag));
+        val.offset = offset;
+        val.intLen = intLen;
+        val.normalize();
+    }
+
+    /**
      * Construct MutableBigIntegerBox from magnitude.
      * The value is normalized.
      * @param mag the magnitude
      */
     public MutableBigIntegerBox(int[] mag) {
-        this(new MutableBigInteger(mag));
-        val.normalize();
+        this(mag, 0, mag.length);
     }
 
     /**
@@ -81,7 +95,10 @@ public class MutableBigIntegerBox {
      * @param n the shift
      */
     public MutableBigIntegerBox shiftLeft(int n) {
-        MutableBigInteger res = new MutableBigInteger(val);
+        MutableBigInteger res = new MutableBigInteger(val.value.clone());
+        res.offset = val.offset;
+        res.intLen = val.intLen;
+
         res.safeLeftShift(n);
         return new MutableBigIntegerBox(res);
     }
