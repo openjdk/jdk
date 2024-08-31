@@ -392,6 +392,11 @@ public interface JavaLangAccess {
     void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     /**
+     * Determine if the coder is Latin1 and the elements of the value array are greater than 0
+     */
+    boolean isLatin1GreaterThanZero(String s);
+
+    /**
      * Decodes ASCII from the source byte array into the destination
      * char array.
      *

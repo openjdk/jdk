@@ -34,7 +34,11 @@ import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.PoolEntry;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+
 public final class BufWriterImpl implements BufWriter {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private final ConstantPoolBuilder constantPool;
     private final ClassFileImpl context;
@@ -152,25 +156,36 @@ public final class BufWriterImpl implements BufWriter {
         writeBytes(other.elems, 0, other.offset);
     }
 
+    @SuppressWarnings("deprecation")
     void writeUTF(String s) {
         int len = s.length();
-        reserveSpace(len * 3 + 2);
+
+        // If it is too long, it may be slow due to cache misses.
+        boolean writeDirect = len < 256 && JLA.isLatin1GreaterThanZero(s);
+
+        reserveSpace((writeDirect ? len : len * 3) + 2);
+
         int start = this.offset;
         int offset = start + 2;
         byte[] elems = this.elems;
-        for (int i = 0; i < len; ++i) {
-            char c = s.charAt(i);
-            if (c >= '\001' && c <= '\177') {
-                elems[offset++] = (byte) c;
-            } else if (c > '\u07FF') {
-                elems[offset    ] = (byte) (0xE0 | c >> 12 & 0xF);
-                elems[offset + 1] = (byte) (0x80 | c >> 6 & 0x3F);
-                elems[offset + 2] = (byte) (0x80 | c      & 0x3F);
-                offset += 3;
-            } else {
-                elems[offset    ] = (byte) (0xC0 | c >> 6 & 0x1F);
-                elems[offset + 1] = (byte) (0x80 | c      & 0x3F);
-                offset += 2;
+        if (writeDirect) {
+            s.getBytes(0, len, elems, offset);
+            offset += len;
+        } else {
+            for (int i = 0; i < len; ++i) {
+                char c = s.charAt(i);
+                if (c >= '\001' && c <= '\177') {
+                    elems[offset++] = (byte) c;
+                } else if (c > '\u07FF') {
+                    elems[offset    ] = (byte) (0xE0 | c >> 12 & 0xF);
+                    elems[offset + 1] = (byte) (0x80 | c >> 6 & 0x3F);
+                    elems[offset + 2] = (byte) (0x80 | c      & 0x3F);
+                    offset += 3;
+                } else {
+                    elems[offset    ] = (byte) (0xC0 | c >> 6 & 0x1F);
+                    elems[offset + 1] = (byte) (0x80 | c      & 0x3F);
+                    offset += 2;
+                }
             }
         }
         int utf_len = offset - start - 2;
