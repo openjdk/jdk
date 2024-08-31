@@ -409,8 +409,8 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         void writeTo(BufWriterImpl pool) {
+            pool.writeU1(tag);
             if (rawBytes != null) {
-                pool.writeU1(tag);
                 pool.writeU2(rawLen);
                 pool.writeBytes(rawBytes, offset, rawLen);
             }
@@ -419,7 +419,6 @@ public abstract sealed class AbstractPoolEntry {
                 if (stringValue.length() > 65535) {
                     throw new IllegalArgumentException("string too long");
                 }
-                pool.writeU1(tag);
                 pool.writeU2(charLen);
                 if (JLA.isLatin1GreaterThanZero(stringValue)) {
                     pool.writeBytesDirect(stringValue);

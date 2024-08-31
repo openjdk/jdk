@@ -156,6 +156,10 @@ public final class BufWriterImpl implements BufWriter {
                 offset += 2;
             }
         }
+        int byteLengthFinal = offset - this.offset;
+        if (byteLengthFinal != charLength) {
+            patchInt(this.offset - 2, 2, byteLengthFinal);
+        }
         this.offset = offset;
     }
 
