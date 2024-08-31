@@ -248,15 +248,15 @@ public enum TypeKind {
     public static TypeKind from(ClassDesc desc) {
         if (desc == null) throw new NullPointerException();
         if (desc instanceof PrimitiveClassDescImpl) {
+            if (desc == CD_void   ) return VOID;
             if (desc == CD_boolean) return BOOLEAN;
-            if (desc == CD_byte   ) return BYTE;
-            if (desc == CD_char   ) return CHAR;
             if (desc == CD_int    ) return INT;
             if (desc == CD_long   ) return LONG;
-            if (desc == CD_short  ) return SHORT;
+            if (desc == CD_byte   ) return BYTE;
             if (desc == CD_float  ) return FLOAT;
             if (desc == CD_double ) return DOUBLE;
-            else                    return VOID;
+            if (desc == CD_short  ) return SHORT;
+            else                    return CHAR;
         }
         return REFERENCE;
     }
@@ -267,15 +267,15 @@ public enum TypeKind {
      */
     public static TypeKind from(Class<?> cl) {
         if (cl == null         ) throw new NullPointerException();
+        if (cl == void.class   ) return VOID;
         if (cl == boolean.class) return BOOLEAN;
-        if (cl == byte.class   ) return BYTE;
-        if (cl == char.class   ) return CHAR;
         if (cl == int.class    ) return INT;
         if (cl == long.class   ) return LONG;
-        if (cl == short.class  ) return SHORT;
+        if (cl == byte.class   ) return BYTE;
         if (cl == float.class  ) return FLOAT;
         if (cl == double.class ) return DOUBLE;
-        if (cl == void.class   ) return VOID;
+        if (cl == char.class   ) return CHAR;
+        if (cl == short.class  ) return SHORT;
         else                     return REFERENCE;
     }
 }
