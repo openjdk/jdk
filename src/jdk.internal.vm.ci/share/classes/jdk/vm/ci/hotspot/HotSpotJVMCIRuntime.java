@@ -63,6 +63,7 @@ import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.common.InitTimer;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.common.NativeImageReinitialize;
+import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaField;
@@ -1490,5 +1491,19 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         writeDebugOutput(messageBytes, 0, messageBytes.length, true, true);
         exitHotSpot(status);
         throw JVMCIError.shouldNotReachHere();
+    }
+
+    /**
+     * Gets a preallocated exception object of type {@code type} that can be used to implement
+     * {@code OmitStackTraceInFastThrow}.
+     *
+     * @param type the type of the preallocated exception object
+     * @param throwingMethod if non-null, the caller is requesting the object to implement
+     *            {@code OmitStackTraceInFastThrow} in the compiled code for {@code throwingMethod}
+     * @return the pre-allocated object or null if no such pre-allocated object is available or must
+     *            not be used for a hot throw site in {@code throwingMethod}
+     */
+    public <T extends Throwable> JavaConstant getPreallocatedExceptionObject(Class<T> type, ResolvedJavaMethod throwingMethod) {
+        throw new UnsupportedOperationException();
     }
 }
