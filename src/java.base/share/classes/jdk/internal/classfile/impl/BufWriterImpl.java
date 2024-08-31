@@ -168,11 +168,11 @@ public final class BufWriterImpl implements BufWriter {
             } else if (c > '\u07FF') {
                 elems[offset    ] = (byte) (0xE0 | c >> 12 & 0xF);
                 elems[offset + 1] = (byte) (0x80 | c >> 6 & 0x3F);
-                elems[offset + 2] = (byte) (0x80 | c & 0x3F);
+                elems[offset + 2] = (byte) (0x80 | c      & 0x3F);
                 offset += 3;
             } else {
                 elems[offset    ] = (byte) (0xC0 | c >> 6 & 0x1F);
-                elems[offset + 1] = (byte) (0x80 | c & 0x3F);
+                elems[offset + 1] = (byte) (0x80 | c      & 0x3F);
                 offset += 2;
             }
         }
