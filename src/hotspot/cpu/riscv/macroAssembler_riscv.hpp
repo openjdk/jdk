@@ -813,7 +813,6 @@ public:
 
   void li16u(Register Rd, uint16_t imm);
   void li32(Register Rd, int32_t imm);
-  void li64(Register Rd, int64_t imm);
   void li  (Register Rd, int64_t imm);  // optimized load immediate
 
   // mv
@@ -1706,40 +1705,6 @@ public:
            extract_rs1(last_instr) == extract_rd(add);
   }
 
-  // the instruction sequence of li64 is as below:
-  //     lui
-  //     addi
-  //     slli
-  //     addi
-  //     slli
-  //     addi
-  //     slli
-  //     addi
-  static bool check_li64_data_dependency(address instr) {
-    address lui = instr;
-    address addi1 = lui + instruction_size;
-    address slli1 = addi1 + instruction_size;
-    address addi2 = slli1 + instruction_size;
-    address slli2 = addi2 + instruction_size;
-    address addi3 = slli2 + instruction_size;
-    address slli3 = addi3 + instruction_size;
-    address addi4 = slli3 + instruction_size;
-    return extract_rs1(addi1) == extract_rd(lui) &&
-           extract_rs1(addi1) == extract_rd(addi1) &&
-           extract_rs1(slli1) == extract_rd(addi1) &&
-           extract_rs1(slli1) == extract_rd(slli1) &&
-           extract_rs1(addi2) == extract_rd(slli1) &&
-           extract_rs1(addi2) == extract_rd(addi2) &&
-           extract_rs1(slli2) == extract_rd(addi2) &&
-           extract_rs1(slli2) == extract_rd(slli2) &&
-           extract_rs1(addi3) == extract_rd(slli2) &&
-           extract_rs1(addi3) == extract_rd(addi3) &&
-           extract_rs1(slli3) == extract_rd(addi3) &&
-           extract_rs1(slli3) == extract_rd(slli3) &&
-           extract_rs1(addi4) == extract_rd(slli3) &&
-           extract_rs1(addi4) == extract_rd(addi4);
-  }
-
   // the instruction sequence of li16u is as below:
   //     lui
   //     srli
@@ -1784,7 +1749,6 @@ public:
   }
 
   static bool is_li32_at(address instr);
-  static bool is_li64_at(address instr);
   static bool is_pc_relative_at(address branch);
 
   static bool is_membar(address addr) {
