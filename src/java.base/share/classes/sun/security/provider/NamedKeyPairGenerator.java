@@ -25,6 +25,7 @@
 
 package sun.security.provider;
 
+import sun.security.jca.JCAUtil;
 import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.x509.NamedX509Key;
 
@@ -81,7 +82,7 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
     @Override
     public KeyPair generateKeyPair() {
         String name = findName();
-        var keys = generateKeyPair0(name, secureRandom);
+        var keys = generateKeyPair0(name, secureRandom != null ? secureRandom : JCAUtil.getDefSecureRandom());
         try {
             return new KeyPair(new NamedX509Key(fname, name, keys[0]),
                     new NamedPKCS8Key(fname, name, keys[1]));

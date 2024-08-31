@@ -756,6 +756,23 @@ public final class SunJCE extends Provider {
                 "|java.security.interfaces.XECKey");
         ps("KEM", "DHKEM", "com.sun.crypto.provider.DHKEM", null, attrs);
 
+        attrs.clear();
+        attrs.put("ImplementedIn", "Software");
+        ps("KEM", "ML-KEM", "com.sun.crypto.provider.ML_KEM_Provider$K", null, attrs);
+        ps("KEM", "ML-KEM-512", "com.sun.crypto.provider.ML_KEM_Provider$K2", null, attrs);
+        ps("KEM", "ML-KEM-768", "com.sun.crypto.provider.ML_KEM_Provider$K3", null, attrs);
+        ps("KEM", "ML-KEM-1024", "com.sun.crypto.provider.ML_KEM_Provider$K5", null, attrs);
+
+        ps("KeyPairGenerator", "ML-KEM", "com.sun.crypto.provider.ML_KEM_Provider$KPG", null, attrs);
+        ps("KeyPairGenerator", "ML-KEM-512", "com.sun.crypto.provider.ML_KEM_Provider$KPG2", null, attrs);
+        ps("KeyPairGenerator", "ML-KEM-768", "com.sun.crypto.provider.ML_KEM_Provider$KPG3", null, attrs);
+        ps("KeyPairGenerator", "ML-KEM-1024", "com.sun.crypto.provider.ML_KEM_Provider$KPG5", null, attrs);
+
+        ps("KeyFactory", "ML-KEM", "com.sun.crypto.provider.ML_KEM_Provider$KF", null, attrs);
+        ps("KeyFactory", "ML-KEM-512", "com.sun.crypto.provider.ML_KEM_Provider$KF2", null, attrs);
+        ps("KeyFactory", "ML-KEM-768", "com.sun.crypto.provider.ML_KEM_Provider$KF3", null, attrs);
+        ps("KeyFactory", "ML-KEM-1024", "com.sun.crypto.provider.ML_KEM_Provider$KF5", null, attrs);
+
         /*
          * SSL/TLS mechanisms
          *

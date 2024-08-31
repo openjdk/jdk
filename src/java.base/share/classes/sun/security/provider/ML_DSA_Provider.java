@@ -26,19 +26,10 @@
 package sun.security.provider;
 
 import sun.security.jca.JCAUtil;
-import sun.security.pkcs.NamedPKCS8Key;
-import sun.security.x509.NamedX509Key;
-
-import java.io.ByteArrayOutputStream;
 import java.security.*;
-import java.security.spec.AlgorithmParameterSpec;
 import java.security.SecureRandom;
 
-public class ML_DSA extends SignatureSpi {
-
-    public ML_DSA() {
-        this(-1);
-    }
+public class ML_DSA_Provider {
 
     public static class ML_DSA2 extends ML_DSA {
         public ML_DSA2() {
@@ -131,91 +122,49 @@ public class ML_DSA extends SignatureSpi {
         }
     }
 
-    //
-    //Implement SignatureSPI methods
-    //
-
-    private final int lockedSize;
-    private final ByteArrayOutputStream buffer;
-
-    private Dilithium dilithium;
-    private int size;
-    private Dilithium.DilithiumPrivateKey sk;
-    private Dilithium.DilithiumPublicKey pk;
-
-
-    public ML_DSA(int lockedSize) {
-        buffer = new ByteArrayOutputStream();
-        this.lockedSize = lockedSize;
-    }
-
-    protected void engineInitSign(PrivateKey privateKey)
-        throws InvalidKeyException {
-        if (!(privateKey instanceof NamedPKCS8Key mk)) {
-            throw new InvalidKeyException("not an ML_DSA private key: " + privateKey);
+    // TODO: check key in initSign and initVerify
+    public static class SIG extends NamedSignature {
+        public SIG() {
+            this(null);
         }
-        //might need to translate key with keyfactory
-        //todo do we need other checks?
-        size = name2int(mk.getParams().getName());
-        if (lockedSize != -1 && lockedSize != size) throw new InvalidKeyException("Not the same size");
-        dilithium = new Dilithium(size);
-        sk = dilithium.skDecode(mk.getRawBytes());
-        buffer.reset();
-    }
-
-    protected void engineInitVerify(PublicKey publicKey)
-        throws InvalidKeyException {
-        if (!(publicKey instanceof NamedX509Key mk)) {
-            throw new InvalidKeyException("Not an ML_DSA public key: " + publicKey);
+        public SIG(String name) {
+            super("ML-DSA", name);
         }
-        //might need to translate key with keyfactory
-        //todo do we need other checks?
-        size = name2int(mk.getParams().getName());
-        if (lockedSize != -1 && lockedSize != size) throw new InvalidKeyException("Not the same size");
-        dilithium = new Dilithium(size);
 
-        pk = dilithium.pkDecode(mk.getRawBytes());
-        buffer.reset();
-    }
+        @Override
+        public byte[] sign0(String name, byte[] skBytes, byte[] msg, SecureRandom sr) {
+            var size = name2int(name);
+            var dilithium = new Dilithium(size);
+            var sk = dilithium.skDecode(skBytes);
+            Dilithium.DilithiumSignature sig = dilithium.sign(msg, sk);
+            return dilithium.sigEncode(sig);
+        }
 
-    protected void engineUpdate(byte b) { buffer.write(b); }
-
-    protected void engineUpdate(byte[] data, int off, int len) { buffer.write(data, off, len); } //Does signature class fail if init hasn't been called
-
-    protected byte[] engineSign() throws SignatureException {
-        byte[] message = buffer.toByteArray();
-        buffer.reset();
-        Dilithium.DilithiumSignature sig = dilithium.sign(message, sk);
-        return dilithium.sigEncode(sig);
-    }
-
-    protected boolean engineVerify(byte[] signature) {
-        byte[] message = buffer.toByteArray();
-        buffer.reset();
-        Dilithium.DilithiumSignature sig = dilithium.sigDecode(signature);
-        return dilithium.verify(pk, message, sig);
-    }
-
-    @Deprecated
-    protected void engineSetParameter(String key, Object param) {
-        throw new InvalidParameterException("No parameter accepted");
-    }
-
-    @Override
-    protected void engineSetParameter(AlgorithmParameterSpec params)
-        throws InvalidAlgorithmParameterException {
-        if (params != null) {
-            throw new InvalidAlgorithmParameterException("No parameter accepted");
+        @Override
+        public boolean verify0(String name, byte[] pkBytes, byte[] msg, byte[] sigBytes) {
+            var size = name2int(name);
+            var dilithium = new Dilithium(size);
+            var pk = dilithium.pkDecode(pkBytes);
+            var sig = dilithium.sigDecode(sigBytes);
+            return dilithium.verify(pk, msg, sig);
         }
     }
 
-    @Deprecated
-    protected Object engineGetParameter(String key) {
-        return null;
+    public static class SIG2 extends SIG {
+        public SIG2() {
+            super("ML-DSA-44");
+        }
     }
 
-    @Override
-    protected AlgorithmParameters engineGetParameters() {
-        return null;
+    public static class SIG3 extends SIG {
+        public SIG3() {
+            super("ML-DSA-65");
+        }
+    }
+
+    public static class SIG5 extends SIG {
+        public SIG5() {
+            super("ML-DSA-87");
+        }
     }
 }
