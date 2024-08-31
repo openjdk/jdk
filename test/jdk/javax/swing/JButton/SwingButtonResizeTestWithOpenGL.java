@@ -125,9 +125,6 @@ public class SwingButtonResizeTestWithOpenGL {
 
         try {
             robot = new Robot();
-            robot.setAutoWaitForIdle(true);
-            robot.setAutoDelay(200);
-
             if (focusGainedLatch.await(3, TimeUnit.SECONDS)) {
                 System.out.println("Button focus gained...");
             } else {
@@ -193,7 +190,7 @@ public class SwingButtonResizeTestWithOpenGL {
     private BufferedImage getButtonImage() {
         try {
             robot.waitForIdle();
-            robot.delay(500);
+            robot.delay(1000);
 
             AtomicReference<Point> buttonLocRef = new AtomicReference<>();
             SwingUtilities.invokeAndWait(
@@ -210,10 +207,7 @@ public class SwingButtonResizeTestWithOpenGL {
     }
 
     private void disposeFrame() {
-        if (frame != null) {
-            frame.dispose();
-            frame = null;
-        }
+        frame.dispose();
     }
 
     // Save BufferedImage to PNG file
