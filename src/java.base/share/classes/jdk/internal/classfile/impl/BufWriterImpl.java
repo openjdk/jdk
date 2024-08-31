@@ -134,7 +134,7 @@ public final class BufWriterImpl implements BufWriter {
             throw new IllegalArgumentException("string too long");
         }
         reserveSpace(len * 3 + 2);
-        int start = this.offset;
+        int start = this.offset,
         int offset = start + 2;
         byte[] elems = this.elems;
         for (int i = 0; i < len; ++i) {
@@ -142,19 +142,19 @@ public final class BufWriterImpl implements BufWriter {
             if (c >= '\001' && c <= '\177') {
                 elems[offset++] = (byte) c;
             } else if (c > '\u07FF') {
-                elems[offset] = (byte) (0xE0 | c >> 12 & 0xF);
+                elems[offset    ] = (byte) (0xE0 | c >> 12 & 0xF);
                 elems[offset + 1] = (byte) (0x80 | c >> 6 & 0x3F);
                 elems[offset + 2] = (byte) (0x80 | c & 0x3F);
                 offset += 3;
             } else {
-                elems[offset] = (byte) (0xC0 | c >> 6 & 0x1F);
+                elems[offset    ] = (byte) (0xC0 | c >> 6 & 0x1F);
                 elems[offset + 1] = (byte) (0x80 | c & 0x3F);
                 offset += 2;
             }
         }
-        int byteLengthFinal = offset - start - 2;
-        elems[start    ] = (byte) (byteLengthFinal >> 8);
-        elems[start + 1] = (byte)  byteLengthFinal;
+        int utf_len = offset - start - 2;
+        elems[start    ] = (byte) (utf_len >> 8);
+        elems[start + 1] = (byte)  utf_len;
         this.offset = offset;
     }
 
