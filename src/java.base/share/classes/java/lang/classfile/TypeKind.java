@@ -29,6 +29,7 @@ import java.lang.classfile.instruction.DiscontinuedInstruction;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.invoke.TypeDescriptor;
+import jdk.internal.constant.PrimitiveClassDescImpl;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.Stable;
 
@@ -245,17 +246,19 @@ public enum TypeKind {
      * @param desc the ClassDesc
      */
     public static TypeKind from(ClassDesc desc) {
-        if (desc == null      ) throw new NullPointerException();
-        if (desc == CD_boolean) return BOOLEAN;
-        if (desc == CD_byte   ) return BYTE;
-        if (desc == CD_char   ) return CHAR;
-        if (desc == CD_int    ) return INT;
-        if (desc == CD_long   ) return LONG;
-        if (desc == CD_short  ) return SHORT;
-        if (desc == CD_float  ) return FLOAT;
-        if (desc == CD_double ) return DOUBLE;
-        if (desc == CD_void   ) return VOID;
-        else                    return REFERENCE;
+        if (desc == null) throw new NullPointerException();
+        if (desc instanceof PrimitiveClassDescImpl) {
+            if (desc == CD_boolean) return BOOLEAN;
+            if (desc == CD_byte   ) return BYTE;
+            if (desc == CD_char   ) return CHAR;
+            if (desc == CD_int    ) return INT;
+            if (desc == CD_long   ) return LONG;
+            if (desc == CD_short  ) return SHORT;
+            if (desc == CD_float  ) return FLOAT;
+            if (desc == CD_double ) return DOUBLE;
+            else                    return VOID;
+        }
+        return REFERENCE;
     }
 
     /**
