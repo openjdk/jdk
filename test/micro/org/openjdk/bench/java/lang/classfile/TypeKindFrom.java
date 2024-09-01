@@ -41,9 +41,6 @@ import java.lang.constant.ConstantDescs;
 import java.lang.classfile.TypeKind;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Test various operations on
- */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 1, time = 2)
@@ -51,7 +48,6 @@ import java.util.concurrent.TimeUnit;
 @Fork(jvmArgsAppend = "--enable-preview", value = 3)
 @State(Scope.Thread)
 public class TypeKindFrom {
-    /** Dots will be replaced by the descriptor of this benchmark class. */
     @Param({"B", "C", "Z", "S", "I", "F", "J", "D", "V", "java.lang.Object"})
     public String typeName;
     public Class<?> type;
