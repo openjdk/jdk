@@ -25,7 +25,6 @@
 
 package sun.security.provider;
 
-import sun.security.jca.JCAUtil;
 import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.x509.NamedX509Key;
 
@@ -40,32 +39,32 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.NamedParameterSpec;
-import java.util.Locale;
 import java.util.Objects;
 
 public abstract class NamedKEM implements KEMSpi {
 
     private final String fname; // family name
-    private final String pname; // parameter set name, can be null
+    private final String[] pnames; // parameter set name, never null or empty
 
-    public NamedKEM(String fname, String pname) {
+    public NamedKEM(String fname, String... pnames) {
         this.fname = Objects.requireNonNull(fname);
-        this.pname = pname;
+        if (pnames == null || pnames.length == 0) {
+            throw new AssertionError("pnames cannot be null or empty");
+        }
+        this.pnames = pnames;
     }
 
-    private void checkName(String name) throws InvalidKeyException {
-        if (pname != null) {
-            if (!name.equalsIgnoreCase(pname)) {
-                throw new InvalidKeyException("not name");
+    String checkName(String name) throws InvalidKeyException  {
+        for (var pname : pnames) {
+            if (pname.equalsIgnoreCase(name)) {
+                return pname;
             }
         }
-        if (!name.toUpperCase(Locale.ROOT).startsWith(fname.toUpperCase(Locale.ROOT))) {
-            throw new InvalidKeyException(name + " not in family " + fname);
-        }
+        throw new InvalidKeyException("Unknown name: " + name);
     }
 
+    // sr might be null
     public abstract byte[][] encap(String name, byte[] pk, SecureRandom sr);
     public abstract byte[] decap(String name, byte[] sk, byte[] encap);
     public abstract int sslen(String name);
@@ -77,6 +76,9 @@ public abstract class NamedKEM implements KEMSpi {
             throws InvalidAlgorithmParameterException, InvalidKeyException {
         if (spec != null) {
             throw new InvalidAlgorithmParameterException("No params needed");
+        }
+        if (!(publicKey instanceof NamedX509Key)) {
+            publicKey = (PublicKey) new NamedKeyFactory(fname, pnames).engineTranslateKey(publicKey);
         }
         if (publicKey instanceof NamedX509Key qk) {
             checkName(qk.getParams().getName());
@@ -92,6 +94,9 @@ public abstract class NamedKEM implements KEMSpi {
             throws InvalidAlgorithmParameterException, InvalidKeyException {
         if (spec != null) {
             throw new InvalidAlgorithmParameterException("No params needed");
+        }
+        if (!(privateKey instanceof NamedPKCS8Key)) {
+            privateKey = (PrivateKey) new NamedKeyFactory(fname, pnames).engineTranslateKey(privateKey);
         }
         if (privateKey instanceof NamedPKCS8Key qk) {
             checkName(qk.getParams().getName());
@@ -116,7 +121,7 @@ public abstract class NamedKEM implements KEMSpi {
 
         @Override
         public KEM.Encapsulated engineEncapsulate(int from, int to, String algorithm) {
-            var enc = kem.encap(name, key, sr != null ? sr : JCAUtil.getDefSecureRandom());
+            var enc = kem.encap(name, key, sr);
             return new KEM.Encapsulated(
                     new SecretKeySpec(enc[1],
                             from, to - from, "Generic"),
@@ -136,8 +141,7 @@ public abstract class NamedKEM implements KEMSpi {
     }
 
     private static KeyConsumerImpl getKeyConsumerImpl(
-            NamedKEM kem, NamedParameterSpec nps, byte[] key, SecureRandom sr)
-            throws InvalidKeyException {
+            NamedKEM kem, NamedParameterSpec nps, byte[] key, SecureRandom sr) {
         String name = nps.getName();
         return new KeyConsumerImpl(kem, name, kem.sslen(name), kem.clen(name), key, sr);
     }

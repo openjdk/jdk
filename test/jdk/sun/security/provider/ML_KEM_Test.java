@@ -32,43 +32,43 @@ import jdk.test.lib.Utils;
 import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.x509.NamedX509Key;
 
-import java.nio.charset.StandardCharsets;
+import javax.crypto.KEM;
 import java.security.*;
 import java.security.spec.*;
 
-public class ML_DSA_Test {
+public class ML_KEM_Test {
     public static void main(String[] args) throws Exception {
-        var g = KeyPairGenerator.getInstance("ML-DSA");
+        var g = KeyPairGenerator.getInstance("ML-KEM");
         Utils.runAndCheckException(() -> g.generateKeyPair(), IllegalStateException.class);
 
-        Asserts.assertTrue(KeyPairGenerator.getInstance("ML-DSA-44").generateKeyPair().getPrivate().toString().contains("ML-DSA-44"));
-        Asserts.assertTrue(KeyPairGenerator.getInstance("ML-DSA-65").generateKeyPair().getPrivate().toString().contains("ML-DSA-65"));
-        Asserts.assertTrue(KeyPairGenerator.getInstance("ML-DSA-87").generateKeyPair().getPrivate().toString().contains("ML-DSA-87"));
+        Asserts.assertTrue(KeyPairGenerator.getInstance("ML-KEM-512").generateKeyPair().getPrivate().toString().contains("ML-KEM-512"));
+        Asserts.assertTrue(KeyPairGenerator.getInstance("ML-KEM-768").generateKeyPair().getPrivate().toString().contains("ML-KEM-768"));
+        Asserts.assertTrue(KeyPairGenerator.getInstance("ML-KEM-1024").generateKeyPair().getPrivate().toString().contains("ML-KEM-1024"));
 
         Utils.runAndCheckException(() -> g.initialize(NamedParameterSpec.ED448), InvalidAlgorithmParameterException.class);
-        Utils.runAndCheckException(() -> g.initialize(new NamedParameterSpec("ML-DSA-99")), InvalidAlgorithmParameterException.class);
+        Utils.runAndCheckException(() -> g.initialize(new NamedParameterSpec("ML-KEM-2048")), InvalidAlgorithmParameterException.class);
 
-        g.initialize(NamedParameterSpec.ML_DSA_65);
+        g.initialize(NamedParameterSpec.ML_KEM_768);
         var kp = g.generateKeyPair();
 
-        Asserts.assertTrue(kp.getPrivate().toString().contains("ML-DSA-65"));
+        Asserts.assertTrue(kp.getPrivate().toString().contains("ML-KEM-768"));
 
-        testSignature("ML-DSA", kp.getPublic(), kp.getPrivate());
+        testKEM("ML-KEM", kp.getPublic(), kp.getPrivate());
 
-        var s2 = Signature.getInstance("ML-DSA-44");
-        Utils.runAndCheckException(() -> s2.initSign(kp.getPrivate()), InvalidKeyException.class);
+        var k2 = KEM.getInstance("ML-KEM-512");
+        Utils.runAndCheckException(() -> k2.newDecapsulator(kp.getPrivate()), InvalidKeyException.class);
 
-        var s3 = Signature.getInstance("ML-DSA-65");
-        s3.initSign(kp.getPrivate());
+        var k3 = KEM.getInstance("ML-KEM-768");
+        k3.newDecapsulator(kp.getPrivate());
 
-        var kf = KeyFactory.getInstance("ML-DSA");
-        Asserts.assertTrue(kf.generatePrivate(kf.getKeySpec(kp.getPrivate(), PKCS8EncodedKeySpec.class)).toString().contains("ML-DSA-65"));
-        Asserts.assertTrue(kf.generatePublic(kf.getKeySpec(kp.getPublic(), X509EncodedKeySpec.class)).toString().contains("ML-DSA-65"));
+        var kf = KeyFactory.getInstance("ML-KEM");
+        Asserts.assertTrue(kf.generatePrivate(kf.getKeySpec(kp.getPrivate(), PKCS8EncodedKeySpec.class)).toString().contains("ML-KEM-768"));
+        Asserts.assertTrue(kf.generatePublic(kf.getKeySpec(kp.getPublic(), X509EncodedKeySpec.class)).toString().contains("ML-KEM-768"));
 
-        var kf2 = KeyFactory.getInstance("ML-DSA-65");
-        Asserts.assertTrue(kf2.generatePublic(kf2.getKeySpec(kp.getPublic(), X509EncodedKeySpec.class)).toString().contains("ML-DSA-65"));
+        var kf2 = KeyFactory.getInstance("ML-KEM-768");
+        Asserts.assertTrue(kf2.generatePublic(kf2.getKeySpec(kp.getPublic(), X509EncodedKeySpec.class)).toString().contains("ML-KEM-768"));
 
-        var kf3 = KeyFactory.getInstance("ML-DSA-44");
+        var kf3 = KeyFactory.getInstance("ML-KEM-512");
         Utils.runAndCheckException(() -> kf3.generatePublic(kf3.getKeySpec(kp.getPublic(), X509EncodedKeySpec.class)), InvalidKeySpecException.class);
         Utils.runAndCheckException(() -> kf3.generatePublic(kf2.getKeySpec(kp.getPublic(), X509EncodedKeySpec.class)), InvalidKeySpecException.class);
 
@@ -78,7 +78,7 @@ public class ML_DSA_Test {
         var pk = new PublicKey() {
             @Override
             public String getAlgorithm() {
-                return "ML-DSA";
+                return "ML-KEM";
             }
 
             @Override
@@ -95,7 +95,7 @@ public class ML_DSA_Test {
         var sk = new PrivateKey() {
             @Override
             public String getAlgorithm() {
-                return "ML-DSA";
+                return "ML-KEM";
             }
 
             @Override
@@ -109,26 +109,24 @@ public class ML_DSA_Test {
             }
         };
 
-        Asserts.assertTrue(kf2.translateKey(pk).toString().contains("ML-DSA-65"));
-        Asserts.assertTrue(kf2.translateKey(sk).toString().contains("ML-DSA-65"));
+        Asserts.assertTrue(kf2.translateKey(pk).toString().contains("ML-KEM-768"));
+        Asserts.assertTrue(kf2.translateKey(sk).toString().contains("ML-KEM-768"));
         Utils.runAndCheckException(() -> kf.translateKey(pk), InvalidKeyException.class);
         Utils.runAndCheckException(() -> kf.translateKey(sk), InvalidKeyException.class);
 
         Asserts.assertEqualsByteArray(kf2.getKeySpec(kf2.translateKey(pk), EncodedKeySpec.class).getEncoded(), pbytes);
         Asserts.assertEqualsByteArray(kf2.getKeySpec(kf2.translateKey(sk), EncodedKeySpec.class).getEncoded(), sbytes);
 
-        Utils.runAndCheckException(() -> testSignature("ML-DSA", pk, sk), InvalidKeyException.class);
-        testSignature("ML-DSA-65", pk, sk);
+        Utils.runAndCheckException(() -> testKEM("ML-KEM", pk, sk), InvalidKeyException.class);
+        testKEM("ML-KEM-768", pk, sk);
     }
 
-    static void testSignature(String alg, PublicKey pk, PrivateKey sk) throws Exception {
-        var s = Signature.getInstance(alg);
-        var msg = "hello".getBytes(StandardCharsets.UTF_8);
-        s.initSign(sk);
-        s.update(msg);
-        var sig = s.sign();
-        s.initVerify(pk);
-        s.update(msg);
-        Asserts.assertTrue(s.verify(sig));
+    static void testKEM(String alg, PublicKey pk, PrivateKey sk) throws Exception {
+        var k = KEM.getInstance(alg);
+        var e = k.newEncapsulator(pk);
+        var d = k.newDecapsulator(sk);
+        var enc = e.encapsulate();
+        var key = d.decapsulate(enc.encapsulation());
+        Asserts.assertEqualsByteArray(enc.key().getEncoded(), key.getEncoded());
     }
 }

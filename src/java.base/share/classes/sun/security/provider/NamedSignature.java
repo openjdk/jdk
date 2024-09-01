@@ -33,41 +33,43 @@ import java.io.ByteArrayOutputStream;
 import java.security.*;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.Locale;
 import java.util.Objects;
 
 public abstract class NamedSignature extends SignatureSpi {
 
-    // TODO: SecureRandom
     private String name = null;
     private byte[] secKey = null;
     private byte[] pubKey = null;
 
     private final ByteArrayOutputStream bout = new ByteArrayOutputStream();
     private final String fname; // family name
-    private final String pname; // parameter set name, can be null
+    private final String[] pnames; // parameter set name, never null or empty
 
-    public NamedSignature(String fname, String pname) {
+    public NamedSignature(String fname, String... pnames) {
         this.fname = Objects.requireNonNull(fname);
-        this.pname = pname;
+        if (pnames == null || pnames.length == 0) {
+            throw new AssertionError("pnames cannot be null or empty");
+        }
+        this.pnames = pnames;
     }
 
     public abstract byte[] sign0(String name, byte[] sk, byte[] msg, SecureRandom sr);
     public abstract boolean verify0(String name, byte[] pk, byte[] msg, byte[] sig);
 
-    private void checkName(String name) throws InvalidKeyException {
-        if (pname != null) {
-            if (!name.equalsIgnoreCase(pname)) {
-                throw new InvalidKeyException("not name");
+    String checkName(String name) throws InvalidKeyException  {
+        for (var pname : pnames) {
+            if (pname.equalsIgnoreCase(name)) {
+                return pname;
             }
         }
-        if (!name.toUpperCase(Locale.ROOT).startsWith(fname.toUpperCase(Locale.ROOT))) {
-            throw new InvalidKeyException(name + " not in family " + fname);
-        }
+        throw new InvalidKeyException("Unknown name: " + name);
     }
 
     @Override
     protected void engineInitVerify(PublicKey publicKey) throws InvalidKeyException {
+        if (!(publicKey instanceof NamedX509Key)) {
+            publicKey = (PublicKey) new NamedKeyFactory(fname, pnames).engineTranslateKey(publicKey);
+        }
         if (publicKey instanceof NamedX509Key nk) {
             checkName(name = nk.getParams().getName());
             pubKey = nk.getRawBytes();
@@ -78,6 +80,9 @@ public abstract class NamedSignature extends SignatureSpi {
 
     @Override
     protected void engineInitSign(PrivateKey privateKey) throws InvalidKeyException {
+        if (!(privateKey instanceof NamedPKCS8Key)) {
+            privateKey = (PrivateKey) new NamedKeyFactory(fname, pnames).engineTranslateKey(privateKey);
+        }
         if (privateKey instanceof NamedPKCS8Key nk) {
             checkName(name = nk.getParams().getName());
             secKey = nk.getRawBytes();
@@ -133,7 +138,9 @@ public abstract class NamedSignature extends SignatureSpi {
     @Override
     protected void engineSetParameter(AlgorithmParameterSpec params)
             throws InvalidAlgorithmParameterException {
-        throw new InvalidAlgorithmParameterException("No params needed");
+        if (params != null) {
+            throw new InvalidAlgorithmParameterException("No params needed");
+        }
     }
 
     @Override

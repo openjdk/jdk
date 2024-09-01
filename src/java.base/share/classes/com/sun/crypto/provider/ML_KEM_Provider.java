@@ -25,6 +25,7 @@
 
 package com.sun.crypto.provider;
 
+import sun.security.jca.JCAUtil;
 import sun.security.provider.NamedKEM;
 import sun.security.provider.NamedKeyFactory;
 import sun.security.provider.NamedKeyPairGenerator;
@@ -42,16 +43,17 @@ public final class ML_KEM_Provider {
 
     public static class KPG extends NamedKeyPairGenerator {
         public KPG() {
-            this(null);
+            super("ML-KEM", "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024");
         }
 
-        public KPG(String pname) {
+        protected KPG(String pname) {
             super("ML-KEM", pname);
         }
 
         @Override
         public byte[][] generateKeyPair0(String name, SecureRandom sr) {
             var seed = new byte[64];
+            if (sr == null) sr = JCAUtil.getDefSecureRandom();
             sr.nextBytes(seed);
             return ML_KEM.KeyGen(seed, PARAMS.get(name).params());
         }
@@ -77,7 +79,7 @@ public final class ML_KEM_Provider {
 
     public static class KF extends NamedKeyFactory {
         public KF() {
-            this(null);
+            super("ML-KEM", "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024");
         }
         public KF(String name) {
             super("ML-KEM", name);
@@ -102,10 +104,12 @@ public final class ML_KEM_Provider {
         }
     }
 
+    // TODO: check key in newEnc and newDec? No interfaces. Name is checked
     public static class K extends NamedKEM {
         @Override
         public byte[][] encap(String name, byte[] pk, SecureRandom sr) {
             var seed = new byte[32];
+            if (sr == null) sr = JCAUtil.getDefSecureRandom();
             sr.nextBytes(seed);
             return ML_KEM.Enc(pk, seed, PARAMS.get(name).params());
         }
@@ -126,7 +130,7 @@ public final class ML_KEM_Provider {
         }
 
         public K() {
-            this(null);
+            super("ML-KEM", "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024");
         }
 
         public K(String name) {

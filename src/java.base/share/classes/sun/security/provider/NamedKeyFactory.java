@@ -31,30 +31,30 @@ import sun.security.x509.NamedX509Key;
 import java.security.*;
 import java.security.spec.*;
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.Objects;
 
 // This factory can read from a RAW key using translateKey() if key.getFormat() is "RAW",
 // and write to a RAW EncodedKeySpec using getKeySpec(key, EncodedKeySpec).
-public abstract class NamedKeyFactory extends KeyFactorySpi {
+public class NamedKeyFactory extends KeyFactorySpi {
 
     private final String fname; // family name
-    private final String pname; // parameter set name, can be null
+    private final String[] pnames; // parameter set name, never null or empty
 
-    public NamedKeyFactory(String fname, String pname) {
+    public NamedKeyFactory(String fname, String... pnames) {
         this.fname = Objects.requireNonNull(fname);
-        this.pname = pname;
+        if (pnames == null || pnames.length == 0) {
+            throw new AssertionError("pnames cannot be null or empty");
+        }
+        this.pnames = pnames;
     }
 
-    private void checkName(String name) throws InvalidKeySpecException {
-        if (pname != null) {
-            if (!name.equalsIgnoreCase(pname)) {
-                throw new InvalidKeySpecException("not name");
+    String checkName(String name) throws InvalidKeySpecException  {
+        for (var pname : pnames) {
+            if (pname.equalsIgnoreCase(name)) {
+                return pname;
             }
         }
-        if (!name.toUpperCase(Locale.ROOT).startsWith(fname.toUpperCase(Locale.ROOT))) {
-            throw new InvalidKeySpecException(name + " not in family " + fname);
-        }
+        throw new InvalidKeySpecException("Unknown name: " + name);
     }
 
     @Override
@@ -153,18 +153,35 @@ public abstract class NamedKeyFactory extends KeyFactorySpi {
         byte[] bytes = null;
         try {
             if (format.equalsIgnoreCase("RAW")) {
-                if (pname == null) {
-                    throw new InvalidKeyException("Only KeyFactory instantiated with a parameter set name can translate a RAW key");
-                }
-                var n = key.getAlgorithm();
-                if (!n.equalsIgnoreCase(fname) && !n.equalsIgnoreCase(pname)) { // some vendor uses params set name
-                    throw new InvalidKeyException("algorithm must be " + fname + " or " + pname + ", it's " + n);
-                }
-                if (key instanceof PrivateKey) {
+                String kAlg = key.getAlgorithm();
+                if (key instanceof AsymmetricKey pk) {
+                    String name;
+                    if (pk.getParams() instanceof NamedParameterSpec nps) {
+                        name = nps.getName();
+                        try {
+                            name = checkName(name);
+                        } catch (InvalidKeySpecException e) {
+                            throw new InvalidKeyException("This factory does not accept " + name);
+                        }
+                    } else {
+                        if (kAlg.equalsIgnoreCase(fname)) {
+                            if (pnames.length == 1) {
+                                name = pnames[0];
+                            } else {
+                                throw new InvalidKeyException("No parameter set info");
+                            }
+                        } else {
+                            try {
+                                name = checkName(kAlg);
+                            } catch (InvalidKeySpecException e) {
+                                throw new InvalidKeyException("This factory does not accept " + kAlg);
+                            }
+                        }
+                    }
                     bytes = key.getEncoded();
-                    return new NamedPKCS8Key(fname, pname, bytes);
-                } else if (key instanceof PublicKey) {
-                    return new NamedX509Key(fname, pname, key.getEncoded());
+                    return key instanceof PrivateKey
+                            ? new NamedPKCS8Key(fname, name, bytes)
+                            : new NamedX509Key(fname, name, key.getEncoded());
                 } else {
                     throw new InvalidKeyException("Unsupported key type: " + key.getClass());
                 }

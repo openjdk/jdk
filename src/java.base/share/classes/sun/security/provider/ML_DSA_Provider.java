@@ -31,23 +31,6 @@ import java.security.SecureRandom;
 
 public class ML_DSA_Provider {
 
-    public static class ML_DSA2 extends ML_DSA {
-        public ML_DSA2() {
-            super(2);
-        }
-    }
-
-    public static class ML_DSA3 extends ML_DSA {
-        public ML_DSA3() {
-            super(3);
-        }
-    }
-    public static class ML_DSA5 extends ML_DSA {
-        public ML_DSA5() {
-            super(5);
-        }
-    }
-
     static int name2int(String name) {
         if (name.endsWith("44")) return 2;
         else if (name.endsWith("65")) return 3;
@@ -57,7 +40,7 @@ public class ML_DSA_Provider {
 
     public static class KPG extends NamedKeyPairGenerator {
         public KPG() {
-            this(null);
+            super("ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87");
         }
 
         public KPG(String pname) {
@@ -97,7 +80,7 @@ public class ML_DSA_Provider {
 
     public static class KF extends NamedKeyFactory {
         public KF() {
-            this(null);
+            super("ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87");
         }
         public KF(String name) {
             super("ML-DSA", name);
@@ -122,10 +105,10 @@ public class ML_DSA_Provider {
         }
     }
 
-    // TODO: check key in initSign and initVerify
+    // TODO: check key in initSign and initVerify?
     public static class SIG extends NamedSignature {
         public SIG() {
-            this(null);
+            super("ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87");
         }
         public SIG(String name) {
             super("ML-DSA", name);

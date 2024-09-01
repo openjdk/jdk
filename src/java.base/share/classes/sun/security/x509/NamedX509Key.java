@@ -97,4 +97,3 @@ public final class NamedX509Key extends X509Key {
                 "NamedX509Key keys are not directly deserializable");
     }
 }
-
