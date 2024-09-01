@@ -51,8 +51,8 @@ class StringCoding {
     public static int countGreaterThanZero(byte[] ba, int off, int len) {
         int limit = off + len;
         int i = off;
-        for (; i < limit; i += 8) {
-            long v = UNSAFE.getLong(ba, i + ARRAY_BYTE_BASE_OFFSET);
+        for (int end = limit - 7; i < end; i += 8) {
+            long v = UNSAFE.getLongUnaligned(ba, i + ARRAY_BYTE_BASE_OFFSET);
             if ((v & POSITIVE_MASK) != 0 || (v & ~POSITIVE_MASK) != 0) {
                 break;
             }
