@@ -26,12 +26,17 @@
 
 package java.lang;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+
+import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
 /**
  * Utility class for string encoding and decoding.
  */
 class StringCoding {
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final long POSITIVE_MASK = 0b1000000_1000000_1000000_1000000_1000000_1000000_1000000_1000000L;
 
     private StringCoding() { }
 
@@ -45,7 +50,15 @@ class StringCoding {
      */
     public static int countGreaterThanZero(byte[] ba, int off, int len) {
         int limit = off + len;
-        for (int i = off; i < limit; i++) {
+        int i = off;
+        for (; i < limit; i += 8) {
+            long v = UNSAFE.getLong(ba, i + ARRAY_BYTE_BASE_OFFSET);
+            if ((v & POSITIVE_MASK) != 0 || (v & ~POSITIVE_MASK) != 0) {
+                break;
+            }
+        }
+
+        for (; i < limit; i++) {
             if (ba[i] <= 0) {
                 return i - off;
             }
