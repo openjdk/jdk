@@ -121,6 +121,7 @@ public final class JSONMappingFactory {
         descriptorMapper.put("char", new CharacterMapper());
 
         descriptorMapper.put("String", new StringMapper());
+        descriptorMapper.put("java.lang.String", new StringMapper());
         descriptorMapper.put("BigInteger", new BigIntegerMapper());
         descriptorMapper.put("BigDecimal", new BigDecimalMapper());
         descriptorMapper.put("ObjectName", new ObjectNameMapper());
@@ -274,29 +275,42 @@ public final class JSONMappingFactory {
      * e.g. "javax.management.openmbean.SimpleType(name=java.lang.Long)"
      */
     public JSONMapper getTypeMapper(String descriptor) {
+        System.err.println("getTypeMapper for String '" + descriptor + "'");
         if (descriptor == null) return null;
 
         JSONMapper result = null;
+        result = descriptorMapper.get(descriptor);
+        if (result == null) {
         if (descriptor.equals("[J")) {
             // descriptorMapper.put("[J", getTypeMapper(new long[0]));
             result = getTypeMapper(new long[0]);
         } 
-        if (result != null) {
-            return result;
-        }
+        if (descriptor.equals("[Ljava.lang.String;")) {
+            result = new GenericArrayMapper((new String[0]).getClass());
+        } 
+        // Other OpenTypes...
 
-        // KJW XXX
-        // Primitive array
-        // Other OpenTypes
-        result = descriptorMapper.get(descriptor);
+        // Parse CompositeType / TabularType...
+        }
         if (result == null) {
-            if (descriptor.startsWith("[")) {
-               long [] x = new long[0]; // NOT Long[]
-               result = getTypeMapper(x);
+//            result = descriptorMapper.get(descriptor);
+        }
+        if (result == null) {
+            // Parse OpenType / TabularType:
+            try {
+            OpenTypeParser p = new OpenTypeParser(descriptor);
+            OpenType<?> ot = p.parse();
+            if (ot != null) {
+                result = getTypeMapper(ot);
+            }
+            } catch (ParseException pe) {
+                pe.printStackTrace(System.err);
             }
         }
 
-        if (result == null) {
+    /*
+     * considered finding a constructor but not usually useful...
+            if (result == null) {
             try {
                 System.err.println("TRYING " + descriptor);
                 Class<?> c = Class.forName(descriptor);
@@ -306,9 +320,9 @@ public final class JSONMappingFactory {
             } catch (Exception e) {
                 e.printStackTrace(System.err);
             }
-        }
+        } */
+        System.err.println("getTypeMapper for String returning: " + result);
         return result;
-        //descriptorMapper.get(descriptor);
     }
 
     public boolean isTypeMapped(String type) throws ClassNotFoundException {
@@ -341,6 +355,7 @@ public final class JSONMappingFactory {
         GenericArrayMapper(Class<?> type) {
             this.type = type;
             mapper = JSONMappingFactory.INSTANCE.getTypeMapper(JSONMappingFactory.INSTANCE.getArrayComponent(type));
+//            System.err.println("ZZZ GenericArrayMapper: " + type + " = mapper: " + mapper);
         }
 
         private Object handleArrayType(Class<?> classType, JSONElement jsonValue) throws JSONDataException {
@@ -407,7 +422,6 @@ public final class JSONMappingFactory {
 
         @Override
         public CompositeDataSupport toJavaObject(JSONElement jsonValue) throws JSONDataException {
-            new Exception("ZZZZZZ").printStackTrace(System.err);
             if (!(jsonValue instanceof JSONObject)) {
                 throw new JSONDataException("JSON String not an object");
             }
@@ -428,7 +442,6 @@ public final class JSONMappingFactory {
 
         @Override
         public JSONElement toJsonValue(Object d) throws JSONMappingException {
-            new Exception("ZZZZZZ").printStackTrace(System.err);
             CompositeData data = (CompositeData) d;
             if (data == null) {
                 return null;
@@ -462,9 +475,51 @@ public final class JSONMappingFactory {
             "rows": [{ <CompositeData> }]
         }
          */
+
+        private static final String[] keyArray = {"key"};
+        private static final String[] keyValueArray = {"key", "value"};
+
         @Override
         public TabularDataSupport toJavaObject(JSONElement jsonValue) throws JSONDataException {
-            throw new UnsupportedOperationException();
+//            System.err.println("Tabular from: " + jsonValue.toJsonString());
+            if (!(jsonValue instanceof JSONArray)) {
+                throw new JSONDataException("TabularData not in array");
+            } 
+
+            CompositeType rowType = type.getRowType();
+            System.err.println("Tabular rowType: " + rowType);
+            TabularDataSupport tds = new TabularDataSupport(type);
+
+            // Convert JSON array elements into tabular rows:
+            JSONArray array = (JSONArray) jsonValue;
+
+            for (int i=0; i<array.size(); i++) {
+                JSONElement e = array.get(i);
+                JSONObject o = (JSONObject) e;
+                JSONPrimitive key = (JSONPrimitive) o.get("key");
+//                System.err.println(key.getValue());
+                JSONPrimitive value = (JSONPrimitive) o.get("value");
+//                System.err.println(value.getValue() + " == class " + value.getValue().getClass());
+                try {
+                    OpenTypeParser parser = new OpenTypeParser(value.getValue().getClass().getName());
+                    OpenType<?> ot = parser.parseSimpleType();
+                    //System.err.println("opentype = " + ot);
+                    Object openKey = (String) key.getValue();
+                    Object openValue = (String) value.getValue();
+
+                    // put: value needs to be CompositeData...
+                    // Use hints in DefaultMXBeanMappingFactory.TabularMapping.toNonNullOpenValue()
+                    CompositeDataSupport row = new CompositeDataSupport(rowType, keyValueArray,
+                        new Object[] { openKey, openValue });
+                    tds.put(row);
+
+                } catch (Exception ex) {
+                    ex.printStackTrace(System.err);
+                    break;
+                }
+            }
+//            System.err.println("ZZZZ tds = " + tds);
+            return tds;
         }
 
         @Override
@@ -575,7 +630,7 @@ public final class JSONMappingFactory {
             if (jsonValue instanceof JSONPrimitive && ((JSONPrimitive) jsonValue).getValue() instanceof Long) {
                 return (Long) ((JSONPrimitive) jsonValue).getValue();
             } else {
-                throw new JSONDataException("Invalid JSON");
+                throw new JSONDataException("Invalid JSON: " + jsonValue.toJsonString());
             }
         }
 

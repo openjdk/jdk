@@ -45,6 +45,61 @@ public class JSONObject extends LinkedHashMap<String, JSONElement> implements JS
         return super.put(key, new JSONPrimitive(value));
     }
 
+
+    public static String getObjectFieldString(JSONObject json, String name) {
+        JSONElement e = json.get(name);
+        if (e == null) {
+            return null;
+        }
+        if (e instanceof JSONPrimitive) {
+            return (String) ((JSONPrimitive)e).getValue();
+        } else {
+            return null;
+        }
+    }
+
+    public static long getObjectFieldLong(JSONObject json, String name) {
+        JSONElement e = json.get(name);
+        if (e == null) {
+            return -1;
+        }
+        if (e instanceof JSONPrimitive) {
+            return (Long) ((JSONPrimitive)e).getValue();
+        } else {
+            return -1;
+        }
+    }
+
+    public static boolean getObjectFieldBoolean(JSONObject json, String name) {
+        JSONElement e = json.get(name);
+        if (e == null) {
+            return false;
+        }
+        if (e instanceof JSONPrimitive) {
+            return (Boolean) ((JSONPrimitive)e).getValue();
+        } else {
+            return false;
+        }
+    }
+
+    public static JSONArray getObjectFieldArray(JSONObject json, String name) {
+        JSONElement e = json.get(name);
+        if (e != null && e instanceof JSONArray) {
+            return (JSONArray) json.get(name);
+        } else {
+            return null;
+        }
+    }
+
+    public static JSONObject getObjectFieldObject(JSONObject json, String name) {
+        JSONElement e = json.get(name);
+        if (e != null && e instanceof JSONObject) {
+            return (JSONObject) json.get(name);
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public String toJsonString() {
         if (isEmpty()) {

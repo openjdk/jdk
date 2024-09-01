@@ -30,6 +30,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -83,15 +84,13 @@ public class HttpRestConnection implements MBeanServerConnection {
         this.env = env;
         // URL should end /jmx/servers/servername/ e.g. /jmx/servers/platform/
         this.baseURL = baseURL; // "http://" + host + ":" + port + "/jmx/servers/platform/";
-        System.err.println("HttpRestConnection: baseURL = " + baseURL);
+//        System.err.println("HttpRestConnection: baseURL = " + baseURL);
     }
 
     public void setup() throws IOException { 
         // Fetch /jmx/servers/platform and populate basic info.
         String str = executeHttpGetRequest(url(baseURL, ""));
     
-//        System.err.println("XXX setup: raw = " + str);
-
         try {
         JSONParser parser = new JSONParser(str);
         JSONElement json = parser.parse();
@@ -104,8 +103,6 @@ public class HttpRestConnection implements MBeanServerConnection {
         // populated in MBeanServerResource with Arrays.toString(mbeanServer.getDomains())
         value = jo.get("domains");
 
-//        System.err.println("domains json value = " + value);
-//        System.err.println("domains json class = " + value.getClass());
         if (value instanceof JSONArray) {
             // JSONArray extends ArrayList<JSONElement>. 
             ArrayList<String> a = new ArrayList<>();
@@ -117,8 +114,6 @@ public class HttpRestConnection implements MBeanServerConnection {
         } else {
             throw new RuntimeException("JSONArray expected, got: " + value.getClass());
         }
-//        System.err.println("domains array = " + domains);
-
         readMBeans();
 
         } catch (Exception e) {
@@ -132,12 +127,10 @@ public class HttpRestConnection implements MBeanServerConnection {
         objectInfoMap = new HashMap<ObjectName,String>();
         // { "mbeans": [ { name, interfaceClassName, className, desription, attributeCout, operationCount, href, info }, ...
         String str = executeHttpGetRequest(url(baseURL, "mbeans"));
-//        System.err.println("XXX readMBeans: str = " + str);
 
         try {
         JSONParser parser = new JSONParser(str);
         JSONObject jo = (JSONObject) parser.parse();
-//        System.err.println("XXX readMBeans: jo = " + jo);
         JSONElement count = jo.get("mbeanCount");
 
         JSONElement mbeans = jo.get("mbeans");
@@ -293,9 +286,9 @@ public class HttpRestConnection implements MBeanServerConnection {
         if (a == null) {
             throw new AttributeNotFoundException("no attribute '" + attribute + "' in object '" + name + "'");
         }
-        System.err.println("XXX -> gets " + a);
-        System.err.println("XXX -> gets " + a.toJsonString());
-        System.err.println("XXX -> gets " + a.getClass()); // e.g. jdk.internal.management.remote.rest.json.JSONPrimitive
+//        System.err.println("XXX -> gets " + a);
+//        System.err.println("XXX -> gets Json " + a.toJsonString());
+//        System.err.println("XXX -> gets class " + a.getClass()); // e.g. jdk.internal.management.remote.rest.json.JSONPrimitive
         // String s = (String) ((JSONPrimitive) value).getValue();
 //        return ((JSONPrimitive)a).getValue();
 
@@ -326,9 +319,9 @@ public class HttpRestConnection implements MBeanServerConnection {
 
         JSONElement type = thisAttrInfo.get("type");
         String typeName = (String) ((JSONPrimitive) type).getValue();
-        System.err.println("TYPE 1a: '" + typeName + "'");
+        System.err.println("getAttr TYPE 1a: '" + typeName + "'");
         JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(typeName);
-        System.err.println("TYPE 1b: " + typeMapper);
+        System.err.println("getAttr TYPE 1b: mapper = " + typeMapper);
 
         if (typeMapper == null) {
             JSONObject dd = (JSONObject) thisAttrInfo.get("descriptor");
@@ -475,16 +468,46 @@ public class HttpRestConnection implements MBeanServerConnection {
         for (int i = 0; i < params.length; i++) {
             JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(params[i]);
             JSONElement je = typeMapper.toJsonValue(params[i]);
-            System.err.println("p" + i + " = " + params[i] + " aka " + signature[i] + " = " + je);
+//            System.err.println("p" + i + " = " + params[i] + " aka " + signature[i] + " = " + je);
             // XXXXXXX
             o.put("p" + i, je);
         }
         return o.toJsonString();
     }
 
+    public static Object getObjectForType(String originalType, String openType, JSONElement json) {
+    /*
+     * Figure out a Java Object for type information and some JSON.
+     * May use JSONMapper for a named object type, possibly a CompositeType description.
+     * e.g.
+     * "openType": "javax.management.openmbean.SimpleType(name=java.lang.Boolean)",
+     * "originalType": "boolean"
+     * or:
+     * "openType": "javax.management.openmbean.CompositeType(name=java.lang.management.MemoryUsage,items=((itemName=committed,itemType=javax.management.openmbean.SimpleType(name=java.lang.Long)),(itemName=init,itemType=javax.management.openmbean.SimpleType(name=java.lang.Long)),(itemName=max,itemType=javax.management.openmbean.SimpleType(name=java.lang.Long)),(itemName=used,itemType=javax.management.openmbean.SimpleType(name=java.lang.Long))))",
+     * "originalType": "java.lang.management.MemoryUsage"
+     */
+        // Can we create the wanted class directly from JSON:
+        try {
+            Class<?> c = Class.forName("jdk.internal.management.remote.rest.json." + originalType);
+//            System.err.println("ZZZZZZZZZZZZZZZZZ c = " + c);
+            // e.g. jdk.internal.management.remote.rest.json.java.lang.management.ThreadInfo
+            Method m = c.getMethod("from", JSONObject.class);
+            Object o = m.invoke(null, (JSONObject) json);
+//            System.err.println("ZZZZZZZZZZZZZZZZZ o = " + o);
+            return o;
+        } catch (Exception e) {
+            System.err.println("zzz: " + e);
+            e.printStackTrace(System.err);
+        }
 
-    public static Object parseType(String originalType, String openType) {
+        JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(originalType);
+        if (typeMapper != null) {
+            return typeMapper;
+        }
 
+        // Parse openType:
+//        typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(openType);
+//        return typeMapper;
         return null;
     }
 
@@ -496,6 +519,7 @@ public class HttpRestConnection implements MBeanServerConnection {
         System.err.println("XXX HttpRestConnection.invoke name = " + name + " op = " + operationName
                            + " params: " + params + " signature: " + signature);
 
+        Object result = null;
         // Get info for named object,
         JSONObject o = objectForName(name);
         if (o == null) {
@@ -530,13 +554,12 @@ public class HttpRestConnection implements MBeanServerConnection {
             throw new InstanceNotFoundException("no operation '" + operationName + "' in object '" + name + "'");
         }
         JSONObject op = (JSONObject) a;
-        System.err.println("XXX invoke -> found 1 operation: " + a);
+//        System.err.println("XXX invoke -> found 1 operation: " + a);
         System.err.println("XXX invoke -> found 2 operation: " + opInfo);
-        JSONElement descriptor = ((JSONObject) opInfo).get("descriptor");
-        System.err.println("XXX invoke -> found 2 desciptor: " + descriptor.toJsonString());
+        JSONElement descriptor = ((JSONObject) opInfo).get("descriptor"); // contains "openType", "originalType"
+        System.err.println("XXX invoke -> found 2 descriptor: " + descriptor.toJsonString());
         
- 
-        // Form the HTTP/REST request, with given params.
+        // From the HTTP/REST request, with given params.
         String href = (String) ((JSONPrimitive) op.get("href")).getValue(); // includes base and operation name
         String method = (String) ((JSONPrimitive) op.get("method")).getValue();
         String returnType = (String) ((JSONPrimitive) op.get("returnType")).getValue();
@@ -552,17 +575,18 @@ public class HttpRestConnection implements MBeanServerConnection {
         // Parse result.
         JSONParser parser = new JSONParser(s);
         JSONElement json = parser.parse();
-        System.err.println("INVOKE gets: " + s);
+//        System.err.println("INVOKE gets: " + s);
 
         // Return type.
         // descriptor has members openType, originalType.
         // e.g. originalType java.lang.management.ThreadInfo, returnType javax.management.openmbean.CompositeData
-        String originalType = ((JSONElement) ((JSONObject) descriptor).get("originalType")).getValue();
-        String openType     = ((JSONElement) ((JSONObject) descriptor).get("openType")).getValue();
-        System.err.println("RETTYPE openType = " + openType + "\noriginalType " + originalType + ", returnType " + returnType ); 
-        Object type = parseType(originalType, openType);
+        String originalType = (String) ((JSONPrimitive) ((JSONObject) descriptor).get("originalType")).getValue();
+        String openType     = (String) ((JSONPrimitive) ((JSONObject) descriptor).get("openType")).getValue();
+        System.err.println("RETTYPE openType = " + openType + "\nRETTYPE originalType " + originalType + "\nRETTYPE returnType " + returnType ); 
 
-        JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(originalType);
+        result = getObjectForType(originalType, openType, json);
+
+/*        JSONMapper typeMapper = typeMapperFor(originalType, openType);
         System.err.println("RETURNING: typeMapper: " + typeMapper);
         if (typeMapper == null) {
             typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(returnType);
@@ -574,11 +598,13 @@ public class HttpRestConnection implements MBeanServerConnection {
         Object result = typeMapper.toJavaObject(json);
         System.err.println("RETURNING: " + result);
         return result;
-
+ */
         } catch (Exception e) {
             // JSOMappingException, ParseException
             throw new IOException(e);
         }
+
+        return result;
     }
 
     public String getDefaultDomain() throws IOException {

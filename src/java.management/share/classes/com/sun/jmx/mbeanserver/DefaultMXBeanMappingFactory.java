@@ -923,6 +923,11 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
         final Object fromNonNullOpenValue(Object value)
                 throws InvalidObjectException {
             makeCompositeBuilder();
+
+            // Support direct return from e.g. HttpRestConnection.
+            if (!(value instanceof CompositeData)) {
+                return value;
+            }
             return compositeBuilder.fromCompositeData((CompositeData) value,
                                                       itemNames,
                                                       getterMappings);

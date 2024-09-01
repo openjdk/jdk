@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class ThreadInfo {
     private static LockInfo[] EMPTY_SYNCS = new LockInfo[0];
 
     /**
-     * Constructor of ThreadInfo created by the JVM
+     * Constructor of ThreadInfo created by the JVM.
      *
      * @param t             Thread
      * @param state         Thread state
@@ -131,7 +131,47 @@ public class ThreadInfo {
                        long blockedCount, long blockedTime,
                        long waitedCount, long waitedTime,
                        StackTraceElement[] stackTrace) {
-        initialize(t, state, lockObj, lockOwner,
+
+        // This is the traditional constructor which takes a Thread object and Object lockObj.
+
+        initialize(t.threadId(), t.getName(), t.isDaemon(), t.getPriority(),
+                   state,
+                   lockObj != null ? new LockInfo(lockObj) : null,
+                   lockOwner,
+                   blockedCount, blockedTime,
+                   waitedCount, waitedTime, stackTrace,
+                   EMPTY_MONITORS, EMPTY_SYNCS);
+    }
+
+    /**
+     * Constructor of ThreadInfo created by the JVM
+     *
+     * @param threadId      id
+     * @param threadName    name
+     * @param daemon        flag
+     * @param priority      priority
+     * @param state         Thread state
+     * @param lockInfo      Information about Object on which the thread is blocked
+     * @param lockOwnerId   the thread holding the lock
+     * @param lockOwnerName the thread holding the lock
+     * @param blockedCount  Number of times blocked to enter a lock
+     * @param blockedTime   Approx time blocked to enter a lock
+     * @param waitedCount   Number of times waited on a lock
+     * @param waitedTime    Approx time waited on a lock
+     * @param stackTrace    Thread stack trace
+     */
+    protected ThreadInfo(long threadId, String threadName, boolean daemon, int priority,
+                       int state, LockInfo lockInfo,
+                       long lockOwnerId, String lockOwnerName,
+                       long blockedCount, long blockedTime,
+                       long waitedCount, long waitedTime,
+                       StackTraceElement[] stackTrace) {
+
+        // This new constructor takes Thread details, not a Thread object
+        // or lock object.
+
+        initialize(threadId, threadName, daemon, priority,
+                   state, lockInfo, lockOwnerId, lockOwnerName,
                    blockedCount, blockedTime,
                    waitedCount, waitedTime, stackTrace,
                    EMPTY_MONITORS, EMPTY_SYNCS);
@@ -155,7 +195,8 @@ public class ThreadInfo {
      * @param stackDepths   List of stack depths
      * @param synchronizers List of locked synchronizers
      */
-    private ThreadInfo(Thread t, int state, Object lockObj, Thread lockOwner,
+    private ThreadInfo(long threadId, String threadName, boolean daemon, int priority,
+                       int state, Object lockObj, Thread lockOwner,
                        long blockedCount, long blockedTime,
                        long waitedCount, long waitedTime,
                        StackTraceElement[] stackTrace,
@@ -197,10 +238,33 @@ public class ThreadInfo {
             }
         }
 
-        initialize(t, state, lockObj, lockOwner,
+        initialize(threadId, threadName, daemon, priority,
+                   state,
+                   lockObj != null ? new LockInfo(lockObj) : null,
+                   lockOwner,
                    blockedCount, blockedTime,
                    waitedCount, waitedTime, stackTrace,
                    lockedMonitors, lockedSynchronizers);
+    }
+
+    private void initialize(long threadId, String threadName, boolean daemon, int priority,
+                            int state, LockInfo lockInfo, Thread lockOwner,
+                            long blockedCount, long blockedTime,
+                            long waitedCount, long waitedTime,
+                            StackTraceElement[] stackTrace,
+                            MonitorInfo[] lockedMonitors,
+                            LockInfo[] lockedSynchronizers) {
+
+        // New intermediate initialize method to extract LockOwner.
+        long lockOwnerId = lockOwner != null ? lockOwner.threadId() : -1;
+        String lockOwnerName = lockOwner != null ? lockOwner.getName() : null;
+
+        initialize(threadId, threadName, daemon, priority,
+                   state, lockInfo, lockOwnerId, lockOwnerName,
+                   blockedCount, blockedTime,
+                   waitedCount, waitedTime, stackTrace,
+                   lockedMonitors, lockedSynchronizers);
+
     }
 
     /**
@@ -208,8 +272,9 @@ public class ThreadInfo {
      *
      * @param t             Thread
      * @param state         Thread state
-     * @param lockObj       Object on which the thread is blocked
-     * @param lockOwner     the thread holding the lock
+     * @param lockInfo      Information about Object on which the thread is blocked
+     * @param lockOwnerId   the thread holding the lock
+     * @param lockOwnerName the thread holding the lock
      * @param blockedCount  Number of times blocked to enter a lock
      * @param blockedTime   Approx time blocked to enter a lock
      * @param waitedCount   Number of times waited on a lock
@@ -218,14 +283,17 @@ public class ThreadInfo {
      * @param lockedMonitors List of locked monitors
      * @param lockedSynchronizers List of locked synchronizers
      */
-    private void initialize(Thread t, int state, Object lockObj, Thread lockOwner,
+    private void initialize(long threadId, String threadName, boolean daemon, int priority,
+                            int state, LockInfo lockInfo, long lockOwnerId, String lockOwnerName,
                             long blockedCount, long blockedTime,
                             long waitedCount, long waitedTime,
                             StackTraceElement[] stackTrace,
                             MonitorInfo[] lockedMonitors,
                             LockInfo[] lockedSynchronizers) {
-        this.threadId = t.threadId();
-        this.threadName = t.getName();
+
+        // This is the new initialize method that only takes data, not Thread.
+        this.threadId = threadId;
+        this.threadName = threadName;
         this.threadState = ManagementFactoryHelper.toThreadState(state);
         this.suspended = ManagementFactoryHelper.isThreadSuspended(state);
         this.inNative = ManagementFactoryHelper.isThreadRunningNative(state);
@@ -233,29 +301,29 @@ public class ThreadInfo {
         this.blockedTime = blockedTime;
         this.waitedCount = waitedCount;
         this.waitedTime = waitedTime;
-        this.daemon = t.isDaemon();
-        this.priority = t.getPriority();
+        this.daemon = daemon;
+        this.priority = priority;
 
-        if (lockObj == null) {
+        this.lock = lockInfo;
+        if (lockInfo == null) {
             this.lock = null;
             this.lockName = null;
         } else {
-            this.lock = new LockInfo(lockObj);
-            this.lockName =
-                lock.getClassName() + '@' +
-                    Integer.toHexString(lock.getIdentityHashCode());
+            this.lock = lockInfo;
+            this.lockName = lockInfo.getClassName();
+// lock.getClassName() + '@' + Integer.toHexString(lock.getIdentityHashCode());
         }
-        if (lockOwner == null) {
-            this.lockOwnerId = -1;
-            this.lockOwnerName = null;
-        } else {
-            this.lockOwnerId = lockOwner.threadId();
-            this.lockOwnerName = lockOwner.getName();
-        }
+        this.lockOwnerId = -1;
+        this.lockOwnerName = null;
+
         if (stackTrace == null) {
             this.stackTrace = NO_STACK_TRACE;
         } else {
             this.stackTrace = stackTrace;
+            System.err.println("AAAA ThreadInfo.stackTrace = ");
+            for (int i=0; i<stackTrace.length; i++) {
+                System.err.println("AAAA = " + stackTrace[i]);
+            }
         }
         this.lockedMonitors = lockedMonitors;
         this.lockedSynchronizers = lockedSynchronizers;
