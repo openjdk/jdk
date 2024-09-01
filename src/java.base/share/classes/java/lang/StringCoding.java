@@ -35,9 +35,9 @@ class StringCoding {
 
     private StringCoding() { }
 
-    public static boolean isLatin1GreaterThanZero(String s) {
+    public static int countGreaterThanZero(String s) {
         byte[] value;
-        return s.coder() == String.LATIN1 && countGreaterThanZero(value = s.value(), 0, value.length) == value.length;
+        return countGreaterThanZero(value = s.value(), 0, value.length);
     }
 
     /**
