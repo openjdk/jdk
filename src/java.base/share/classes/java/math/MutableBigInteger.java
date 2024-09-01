@@ -622,7 +622,7 @@ class MutableBigInteger {
             newOffset = value.length - offset >= newLen ? offset : 0;
         }
 
-        int len = intLen;
+        int trailingZerosPos = newOffset + intLen;
         if (nBits != 0) {
             // Do primitive shift directly for speed
             if (nBits <= leadingZeros) {
@@ -630,8 +630,7 @@ class MutableBigInteger {
             } else {
                 int lastInt = value[offset + intLen - 1];
                 primitiveRightShift(32 - nBits, result, newOffset); // newOffset <= offset
-                result[newOffset + len] = lastInt << nBits;
-                len++;
+                result[trailingZerosPos++] = lastInt << nBits;
             }
         } else if (result != value || newOffset != offset) {
             System.arraycopy(value, offset, result, newOffset, intLen);
@@ -639,7 +638,7 @@ class MutableBigInteger {
 
         // Add trailing zeros
         if (result == value)
-            Arrays.fill(result, newOffset + len, newOffset + newLen, 0);
+            Arrays.fill(result, trailingZerosPos, newOffset + newLen, 0);
 
         value = result;
         intLen = newLen;
