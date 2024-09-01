@@ -266,16 +266,17 @@ public enum TypeKind {
      * @param cl the class
      */
     public static TypeKind from(Class<?> cl) {
-        if (cl == null         ) throw new NullPointerException();
-        if (cl == void.class   ) return VOID;
-        if (cl == boolean.class) return BOOLEAN;
-        if (cl == int.class    ) return INT;
-        if (cl == long.class   ) return LONG;
-        if (cl == byte.class   ) return BYTE;
-        if (cl == float.class  ) return FLOAT;
-        if (cl == double.class ) return DOUBLE;
-        if (cl == char.class   ) return CHAR;
-        if (cl == short.class  ) return SHORT;
-        else                     return REFERENCE;
+        if (cl.isPrimitive()) {
+            if (cl == void.class   ) return VOID;
+            if (cl == boolean.class) return BOOLEAN;
+            if (cl == int.class    ) return INT;
+            if (cl == long.class   ) return LONG;
+            if (cl == byte.class   ) return BYTE;
+            if (cl == float.class  ) return FLOAT;
+            if (cl == double.class ) return DOUBLE;
+            if (cl == char.class   ) return CHAR;
+            return SHORT;
+        }
+        return REFERENCE;
     }
 }
