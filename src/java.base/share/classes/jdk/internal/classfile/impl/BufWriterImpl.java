@@ -169,9 +169,9 @@ public final class BufWriterImpl implements BufWriter {
             if (len < 256) {
                 countGreaterThanZero = JLA.countGreaterThanZero(s);
             }
-            freeBytes += len - countGreaterThanZero;
+            freeBytes += len - countGreaterThanZero; // 2 bytes
         } else {
-            freeBytes += (len << 1);
+            freeBytes += (len << 1); // 3 bytes
         }
         reserveSpace(freeBytes);
 
