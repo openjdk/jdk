@@ -65,7 +65,7 @@ final class EntrustTLSPolicy {
         // DN: CN=Entrust Root Certification Authority - G4
         //     OU=(c) 2015 Entrust, Inc. - for authorized use only,
         //     OU=See www.entrust.net/legal-terms, O=Entrust, Inc., C=US,
-        "DB3517D1F6732A2D5AB97C533EC70779EE3270A62FB4AC4238372460E6F01E88"
+        "DB3517D1F6732A2D5AB97C533EC70779EE3270A62FB4AC4238372460E6F01E88",
         // cacerts alias: entrust2048ca
         // DN: CN=Entrust.net Certification Authority (2048),
         //     OU=(c) 1999 Entrust.net Limited,
@@ -83,7 +83,7 @@ final class EntrustTLSPolicy {
         "70A73F7F376B60074248904534B11482D5BF0E698ECC498DF52577EBF2E93B9A",
         // cacerts alias: affirmtrustpremiumeccca
         // DN: CN=AffirmTrust Premium ECC, O=AffirmTrust, C=US
-        "BD71FDF6DA97E4CF62D1647ADD2581B07D79ADF8397EB4ECBA9C5E8488821423",
+        "BD71FDF6DA97E4CF62D1647ADD2581B07D79ADF8397EB4ECBA9C5E8488821423"
     );
 
     // Any TLS Server certificate that is anchored by one of the Entrust
