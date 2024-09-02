@@ -158,13 +158,17 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
 // Prematurely returns a metaspace allocation to the _block_freelists
 // because it is not needed anymore.
 void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size) {
-  MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
-  const bool is_class = Metaspace::using_class_space() && Metaspace::is_in_class_space(ptr);
-  if (is_class) {
-    class_space_arena()->deallocate(ptr, word_size);
-  } else {
-    non_class_space_arena()->deallocate(ptr, word_size);
+  NOT_LP64(word_size = align_down(word_size, Metaspace::min_allocation_word_size);)
+  MetaBlock bl(ptr, word_size);
+  // If the block would be reusable for a Klass, add to class arena, otherwise to
+  // then non-class arena.
+  MetaspaceArena* receiving_arena = non_class_space_arena();
+  if (have_class_space_arena() && class_space_arena()->contains(bl) &&
+      is_aligned(ptr, class_space_arena()->allocation_alignment_bytes())) {
+    receiving_arena = class_space_arena();
   }
+  receiving_arena->deallocate(bl);
+  DEBUG_ONLY(InternalStats::inc_num_deallocs();)
 }
 
 // Update statistics. This walks all in-use chunks.
