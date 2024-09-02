@@ -841,9 +841,18 @@ public class Flow {
                         return true;
                     }
                     if (!repeat) {
+                        //there may be situation like:
+                        //class B permits S1, S2
+                        //patterns: R(S1, B), R(S2, S2)
+                        //this might be joined to R(B, S2), as B could be rewritten to S2
+                        //but hashing in reduceNestedPatterns will not allow that
+                        //disable the use of hashing, and use subtyping in
+                        //reduceNestedPatterns to handle situations like this:
                         repeat = useHashes;
                         useHashes = false;
                     } else {
+                        //if a reduction happened, make sure hashing in reduceNestedPatterns
+                        //is enabled, as the hashing speeds up the process significantly:
                         useHashes = true;
                     }
                     patterns = updatedPatterns;
@@ -1024,7 +1033,8 @@ public class Flow {
          *            when false, the processing will be significantly slower,
          *            as pattern hashes cannot be used to speed up the matching process
          */
-        private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns, boolean useHashes) {
+        private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns,
+                                                             boolean useHashes) {
             /* implementation note:
              * finding a sub-set of patterns that only differ in a single
              * column is time-consuming task, so this method speeds it up by:
