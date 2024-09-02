@@ -255,9 +255,9 @@ define SetupJavaCompilationBody
       $1_JAVAC := $$(INTERIM_LANGTOOLS_ARGS) -m jdk.compiler.interim/com.sun.tools.javac.Main
 
       ifeq ($$($1_SMALL_JAVA), true)
-       $1_JAVAC_CMD := $$(JAVA_SMALL) $$($1_JAVA_FLAGS) $$($1_JAVAC)
+        $1_JAVAC_CMD := $$(JAVA_SMALL) $$($1_JAVA_FLAGS) $$($1_JAVAC)
       else
-       $1_JAVAC_CMD := $$(JAVA) $$($1_JAVA_FLAGS) $$($1_JAVAC)
+        $1_JAVAC_CMD := $$(JAVA) $$($1_JAVA_FLAGS) $$($1_JAVAC)
       endif
     endif
 
@@ -282,8 +282,26 @@ define SetupJavaCompilationBody
     $1_FLAGS += -Xlint:$$(call CommaList, $$(addprefix -, $$($1_DISABLED_WARNINGS)))
   endif
 
-  ifneq ($$($1_CLASSPATH), )
-    $1_FLAGS += -cp $$(call PathList, $$($1_CLASSPATH))
+  $1_AUGMENTED_CLASSPATH := $$($1_CLASSPATH)
+  $1_API_TARGET := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi
+  $1_API_INTERNAL := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_internalapi
+
+  ifeq ($$($1_CREATE_API_DIGEST), true)
+    $1_API_DIGEST_FLAGS := \
+        -Xplugin:"depend $$($1_API_TARGET)" \
+        "-XDinternalAPIPath=$$($1_API_INTERNAL)" \
+        "-XDLOG_LEVEL=$(LOG_LEVEL)" \
+        #
+
+    $1_EXTRA_DEPS := $$(BUILDTOOLS_OUTPUTDIR)/depend/_the.COMPILE_DEPEND_batch
+    # including the compilation output on the classpath, so that incremental
+    # compilations in unnamed module can refer to other classes from the same
+    # source root, which are not being recompiled in this compilation:
+    $1_AUGMENTED_CLASSPATH += $$(BUILDTOOLS_OUTPUTDIR)/depend $$($1_BIN)
+  endif
+
+  ifneq ($$($1_AUGMENTED_CLASSPATH), )
+    $1_FLAGS += -cp $$(call PathList, $$($1_AUGMENTED_CLASSPATH))
   endif
 
   # Make sure the dirs exist, or that one of the EXTRA_FILES, that may not
@@ -411,9 +429,6 @@ define SetupJavaCompilationBody
     $1_MODFILELIST := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch.modfiles
     $1_MODFILELIST_FIXED := $$($1_MODFILELIST).fixed
 
-    $1_API_TARGET := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_pubapi
-    $1_API_INTERNAL := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_internalapi
-
     # Put headers in a temp dir to filter out those that actually
     # changed before copying them to the real header dir.
     ifneq (,$$($1_HEADERS))
@@ -441,17 +456,6 @@ define SetupJavaCompilationBody
         $$($1_EXCLUDE_FILES) $$($1_INCLUDE_FILES)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1.vardeps)
-
-    ifeq ($$($1_CREATE_API_DIGEST), true)
-      $1_API_DIGEST_FLAGS := \
-          -classpath $$(BUILDTOOLS_OUTPUTDIR)/depend \
-          -Xplugin:"depend $$($1_API_TARGET)" \
-          "-XDinternalAPIPath=$$($1_API_INTERNAL)" \
-          "-XDLOG_LEVEL=$(LOG_LEVEL)" \
-          #
-
-      $1_EXTRA_DEPS := $$(BUILDTOOLS_OUTPUTDIR)/depend/_the.COMPILE_DEPEND_batch
-    endif
 
     # Create a file with all sources, to pass to javac in an @file.
     # $$($1_VARDEPS_FILE) is used as dependency to track changes in set of
