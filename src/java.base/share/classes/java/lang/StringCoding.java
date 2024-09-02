@@ -36,7 +36,7 @@ import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
  */
 class StringCoding {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-    private static final long POSITIVE_MASK = 0b1000000_1000000_1000000_1000000_1000000_1000000_1000000_1000000L;
+    private static final long POSITIVE_MASK = 0b10000000_10000000_10000000_10000000_10000000_10000000_10000000_10000000L;
 
     private StringCoding() { }
 
