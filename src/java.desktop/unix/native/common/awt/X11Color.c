@@ -1233,8 +1233,8 @@ awt_allocate_systemrgbcolors (jint *rgbColors, int num_colors,
                               AwtGraphicsConfigDataPtr awtData) {
     for (int i = 0; i < num_colors; i++)
         alloc_col (awt_display, awtData->awt_cmap, red (rgbColors [i]),
-                     green (rgbColors [i]), blue (rgbColors [i]), -1,
-                     awtData);
+                   green (rgbColors [i]), blue (rgbColors [i]), -1,
+                   awtData);
 }
 
 int
