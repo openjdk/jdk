@@ -754,14 +754,14 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
       init_tf(TypeFunc::make(domain, range));
       StartNode* s = new StartOSRNode(root(), domain);
       initial_gvn()->set_type_bottom(s);
-      DEBUG_ONLY(verify_start(s);)
+      verify_start(s);
       cg = CallGenerator::for_osr(method(), entry_bci());
     } else {
       // Normal case.
       init_tf(TypeFunc::make(method()));
       StartNode* s = new StartNode(root(), tf()->domain());
       initial_gvn()->set_type_bottom(s);
-      DEBUG_ONLY(verify_start(s);)
+      verify_start(s);
       if (method()->intrinsic_id() == vmIntrinsics::_Reference_get) {
         // With java.lang.ref.reference.get() we must go through the
         // intrinsic - even when get() is the root
@@ -1107,7 +1107,7 @@ void Compile::Init(bool aliasing) {
 
 #ifdef ASSERT
 // Install the StartNode on this compile object.
-void Compile::verify_start(StartNode* s) {
+void Compile::verify_start(StartNode* s) const {
   assert(failing() || s == start(), "should be StartNode");
 }
 #endif

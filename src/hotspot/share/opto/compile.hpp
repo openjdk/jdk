@@ -864,6 +864,7 @@ private:
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
   StartNode*   start() const;              // (Derived from root.)
+  void         verify_start(StartNode* s) const NOT_DEBUG_RETURN;
   Node*        immutable_memory();
 
   Node*        recent_alloc_ctl() const    { return _recent_alloc_ctl; }
@@ -884,7 +885,6 @@ private:
             return (uint) val;
                                            }
 #ifdef ASSERT
-  void         verify_start(StartNode* s);
   void         set_phase_optimize_finished() { _phase_optimize_finished = true; }
   bool         phase_optimize_finished() const { return _phase_optimize_finished; }
   uint         count_live_nodes_by_graph_walk();
