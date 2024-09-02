@@ -480,26 +480,23 @@ int G1BarrierSetC2::get_store_barrier(C2Access& access) const {
     return G1C2BarrierPre | G1C2BarrierPost;
   }
   GraphKit* kit = (static_cast<C2ParseAccess&>(access)).kit();
+  Node * ctl = kit->control();
   Node* adr = access.addr().node();
   uint adr_idx = kit->C->get_alias_index(access.addr().type());
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
 
   bool can_remove_pre_barrier = g1_can_remove_pre_barrier(kit, &kit->gvn(), adr, access.type(), adr_idx);
 
-  bool can_remove_post_barrier = false;
-  if (use_ReduceInitialCardMarks() && access.base() == kit->just_allocated_object(kit->control())) {
-    // We can skip marks on a freshly-allocated object in Eden. Keep this code
-    // in sync with CardTableBarrierSet::on_slowpath_allocation_exit. That
-    // routine informs GC to take appropriate compensating steps, upon a
-    // slow-path allocation, so as to make this card-mark elision safe.
-    can_remove_post_barrier = true;
-  } else if (use_ReduceInitialCardMarks()
-             && g1_can_remove_post_barrier(kit, &kit->gvn(), kit->control(), adr)) {
-    can_remove_post_barrier = true;
-  }
+  // We can skip marks on a freshly-allocated object in Eden. Keep this code in
+  // sync with CardTableBarrierSet::on_slowpath_allocation_exit. That routine
+  // informs GC to take appropriate compensating steps, upon a slow-path
+  // allocation, so as to make this card-mark elision safe.
   // The post-barrier can also be removed if null is written. This case is
   // handled by G1BarrierSetC2::expand_barriers, which runs at the end of C2's
   // platform-independent optimizations to exploit stronger type information.
+  bool can_remove_post_barrier = use_ReduceInitialCardMarks() &&
+    ((access.base() == kit->just_allocated_object(ctl)) ||
+     g1_can_remove_post_barrier(kit, &kit->gvn(), ctl, adr));
 
   int barriers = 0;
   if (!can_remove_pre_barrier) {
