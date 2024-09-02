@@ -194,16 +194,16 @@ public abstract sealed class AbstractMemorySegmentImpl
     private static final long FILL_NATIVE_THRESHOLD = 1L << (Architecture.isAARCH64() ? 10 : 5);
 
     @Override
+    @ForceInline
     public final MemorySegment fill(byte value) {
         checkReadOnly(false);
-        // 0...0X...XXXX implies: 0 <= length < FILL_NATIVE_LIMIT
-        if ((length & -FILL_NATIVE_THRESHOLD) == 0) {
+        if (length == 0) {
+            // Implicit state check
+            checkValidState();
+        } else if (length < FILL_NATIVE_THRESHOLD) {
+            // 0 <= length < FILL_NATIVE_LIMIT : 0...0X...XXXX
+
             // Handle smaller segments directly without transitioning to native code
-            if (length == 0) {
-                // Implicit state check
-                checkValidState();
-                return this;
-            }
             final long u = Byte.toUnsignedLong(value);
             final long longValue = u << 56 | u << 48 | u << 40 | u << 32 | u << 24 | u << 16 | u << 8 | u;
 
@@ -213,18 +213,21 @@ public abstract sealed class AbstractMemorySegmentImpl
             for (; offset < limit; offset += 8) {
                 SCOPED_MEMORY_ACCESS.putLong(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, longValue);
             }
+            int remaining = (int) length - limit;
             // 0...0X00
-            if ((length & 4) != 0) {
+            if (remaining >= 4) {
                 SCOPED_MEMORY_ACCESS.putInt(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, (int) longValue);
                 offset += 4;
+                remaining -= 4;
             }
             // 0...00X0
-            if ((length & 2) != 0) {
+            if (remaining >= 2) {
                 SCOPED_MEMORY_ACCESS.putShort(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, (short) longValue);
                 offset += 2;
+                remaining -= 2;
             }
             // 0...000X
-            if ((length & 1) != 0) {
+            if (remaining == 1) {
                 SCOPED_MEMORY_ACCESS.putByte(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, value);
             }
             // We have now fully handled 0...0X...XXXX
