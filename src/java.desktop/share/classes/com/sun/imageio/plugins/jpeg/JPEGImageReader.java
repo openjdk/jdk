@@ -90,7 +90,7 @@ public class JPEGImageReader extends ImageReader {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void initStatic() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {

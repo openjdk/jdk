@@ -551,10 +551,10 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 
     JLI_TraceLauncher("JVM path is %s\n", jvmpath);
 
-    if (JLI_IsStaticallyLinked()) {
-        libjvm = dlopen(NULL, RTLD_FIRST);
-    } else {
+    if (!JLI_IsStaticallyLinked()) {
         libjvm = dlopen(jvmpath, RTLD_NOW + RTLD_GLOBAL);
+    } else {
+        libjvm = dlopen(NULL, RTLD_FIRST);
     }
 
     if (libjvm == NULL) {
