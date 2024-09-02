@@ -53,6 +53,14 @@ public class AttributeHolder {
         Util.writeAttributes(buf, attributes);
     }
 
+    @SuppressWarnings("unchecked")
+    <A extends Attribute<A>> A get(AttributeMapper<A> am) {
+        for (Attribute<?> a : attributes)
+            if (a.attributeMapper() == am)
+                return (A)a;
+        return null;
+    }
+
     boolean isPresent(AttributeMapper<?> am) {
         for (Attribute<?> a : attributes)
             if (a.attributeMapper() == am)

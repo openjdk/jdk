@@ -28,6 +28,11 @@
  * @run testng ShutdownTest
  */
 
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.function.Consumer;
 
 import jdk.jshell.JShell;
@@ -35,8 +40,9 @@ import jdk.jshell.JShell.Subscription;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import org.testng.annotations.BeforeMethod;
 
-@Test
 public class ShutdownTest extends KullaTesting {
 
     int shutdownCount;
@@ -53,6 +59,7 @@ public class ShutdownTest extends KullaTesting {
         assertEquals(shutdownCount, 1);
     }
 
+    @Test
     public void testCloseCallback() {
         shutdownCount = 0;
         getState().onShutdown(this::shutdownCounter);
@@ -60,6 +67,7 @@ public class ShutdownTest extends KullaTesting {
         assertEquals(shutdownCount, 1);
     }
 
+    @Test
     public void testCloseUnsubscribe() {
         shutdownCount = 0;
         Subscription token = getState().onShutdown(this::shutdownCounter);
@@ -68,6 +76,7 @@ public class ShutdownTest extends KullaTesting {
         assertEquals(shutdownCount, 0);
     }
 
+    @Test
     public void testTwoShutdownListeners() {
         ShutdownListener listener1 = new ShutdownListener();
         ShutdownListener listener2 = new ShutdownListener();
@@ -116,6 +125,51 @@ public class ShutdownTest extends KullaTesting {
     public void testSubscriptionAfterShutdown() {
         assertEval("System.exit(0);");
         getState().onShutdown(e -> {});
+    }
+
+    @Test
+    public void testRunShutdownHooks() throws IOException {
+        Path temporary = Paths.get("temp");
+        Files.newOutputStream(temporary).close();
+        assertEval("import java.io.*;");
+        assertEval("import java.nio.file.*;");
+        assertEval("""
+                        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                            try {
+                                Files.delete(Paths.get("$TEMPORARY"));
+                            } catch (IOException ex) {
+                                //ignored
+                            }
+                        }))
+                        """.replace("$TEMPORARY", temporary.toAbsolutePath()
+                                                           .toString()
+                                                           .replace("\\", "\\\\")));
+        getState().close();
+        assertFalse(Files.exists(temporary));
+    }
+
+    private Method currentTestMethod;
+
+    @BeforeMethod
+    public void setUp(Method testMethod) {
+        currentTestMethod = testMethod;
+        super.setUp();
+    }
+
+    @BeforeMethod
+    public void setUp() {
+    }
+
+    @Override
+    public void setUp(Consumer<JShell.Builder> bc) {
+        Consumer<JShell.Builder> augmentedBuilder = switch (currentTestMethod.getName()) {
+            case "testRunShutdownHooks" -> builder -> {
+                builder.executionEngine(Presets.TEST_STANDARD_EXECUTION);
+                bc.accept(builder);
+            };
+            default -> bc;
+        };
+        super.setUp(augmentedBuilder);
     }
 
     private static class ShutdownListener implements Consumer<JShell> {

@@ -752,7 +752,6 @@ private:
   // of the incremental collection pause, executed by the vm thread.
   void do_collection_pause_at_safepoint_helper();
 
-  G1HeapVerifier::G1VerifyType young_collection_verify_type() const;
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);
   void verify_after_young_collection(G1HeapVerifier::G1VerifyType type);
 
@@ -780,7 +779,19 @@ private:
 
   G1MonotonicArenaFreePool _card_set_freelist_pool;
 
+  // Group cardsets
+  G1CardSetMemoryManager _young_regions_cardset_mm;
+  G1CardSet _young_regions_cardset;
+
 public:
+  G1CardSetConfiguration* card_set_config() { return &_card_set_config; }
+
+  G1CardSet* young_regions_cardset() { return &_young_regions_cardset; };
+
+  G1CardSetMemoryManager* young_regions_card_set_mm() { return &_young_regions_cardset_mm; }
+
+  void prepare_group_cardsets_for_scan();
+
   // After a collection pause, reset eden and the collection set.
   void clear_eden();
   void clear_collection_set();

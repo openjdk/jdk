@@ -54,7 +54,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup {
         loadAWTLibrary();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void loadAWTLibrary() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {

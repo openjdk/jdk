@@ -180,10 +180,6 @@ class PSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
   // counter or from globals.  This is distinguished from counters
   // that are updated via input parameters.
   void update_counters();
-
-  virtual GCPolicyCounters::Name kind() const {
-    return GCPolicyCounters::PSGCAdaptivePolicyCountersKind;
-  }
 };
 
 #endif // SHARE_GC_PARALLEL_PSGCADAPTIVEPOLICYCOUNTERS_HPP

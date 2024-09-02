@@ -189,14 +189,9 @@ public class ConcurrentSkipListSet<E>
      * contains more than {@code Integer.MAX_VALUE} elements, it
      * returns {@code Integer.MAX_VALUE}.
      *
-     * <p>Beware that, unlike in most collections, this method is
-     * <em>NOT</em> a constant-time operation. Because of the
-     * asynchronous nature of these sets, determining the current
-     * number of elements requires traversing them all to count them.
-     * Additionally, it is possible for the size to change during
-     * execution of this method, in which case the returned result
-     * will be inaccurate. Thus, this method is typically not very
-     * useful in concurrent applications.
+     * <p>It is possible for the size to change during execution of this method,
+     * in which case the returned result will be inaccurate.
+     * Thus, this method is typically not very useful in concurrent applications.
      *
      * @return the number of elements in this set
      */

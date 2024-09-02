@@ -511,7 +511,7 @@ const char* frame::print_name() const {
   return "C";
 }
 
-void frame::print_value_on(outputStream* st, JavaThread *thread) const {
+void frame::print_value_on(outputStream* st) const {
   NOT_PRODUCT(address begin = pc()-40;)
   NOT_PRODUCT(address end   = nullptr;)
 
@@ -550,7 +550,7 @@ void frame::print_value_on(outputStream* st, JavaThread *thread) const {
 }
 
 void frame::print_on(outputStream* st) const {
-  print_value_on(st,nullptr);
+  print_value_on(st);
   if (is_interpreted_frame()) {
     interpreter_frame_print_on(st);
   }

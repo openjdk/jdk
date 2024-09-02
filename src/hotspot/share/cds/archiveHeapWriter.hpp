@@ -112,18 +112,18 @@ class ArchiveHeapWriter : AllStatic {
 public:
   static const intptr_t NOCOOPS_REQUESTED_BASE = 0x10000000;
 
+  // The minimum region size of all collectors that are supported by CDS in
+  // ArchiveHeapLoader::can_map() mode. Currently only G1 is supported. G1's region size
+  // depends on -Xmx, but can never be smaller than 1 * M.
+  // (TODO: Perhaps change to 256K to be compatible with Shenandoah)
+  static constexpr int MIN_GC_REGION_ALIGNMENT = 1 * M;
+
 private:
   class EmbeddedOopRelocator;
   struct NativePointerInfo {
     oop _src_obj;
     int _field_offset;
   };
-
-  // The minimum region size of all collectors that are supported by CDS in
-  // ArchiveHeapLoader::can_map() mode. Currently only G1 is supported. G1's region size
-  // depends on -Xmx, but can never be smaller than 1 * M.
-  // (TODO: Perhaps change to 256K to be compatible with Shenandoah)
-  static constexpr int MIN_GC_REGION_ALIGNMENT = 1 * M;
 
   static GrowableArrayCHeap<u1, mtClassShared>* _buffer;
 

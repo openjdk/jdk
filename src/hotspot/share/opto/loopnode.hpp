@@ -952,9 +952,10 @@ private:
                                               LoopNode* outer_main_head, uint dd_main_head, uint idx_before_pre_post,
                                               uint idx_after_post_before_pre, Node* zero_trip_guard_proj_main,
                                               Node* zero_trip_guard_proj_post, const Node_List& old_new);
-  Node* clone_assertion_predicate_and_initialize(Node* iff, Node* new_init, Node* new_stride, Node* predicate,
-                                                 Node* uncommon_proj, Node* control, IdealLoopTree* outer_loop,
-                                                 Node* input_proj);
+  Node* clone_template_assertion_predicate(IfNode* iff, Node* new_init, Node* predicate, Node* uncommon_proj, Node* control,
+                                           IdealLoopTree* outer_loop, Node* input_proj);
+  IfTrueNode* create_initialized_assertion_predicate(IfNode* template_assertion_predicate, Node* new_init,
+                                                     Node* new_stride, Node* control);
   static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
   static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);
   static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
@@ -1577,7 +1578,7 @@ private:
   bool identical_backtoback_ifs(Node *n);
   bool can_split_if(Node *n_ctrl);
   bool cannot_split_division(const Node* n, const Node* region) const;
-  static bool is_divisor_counted_loop_phi(const Node* divisor, const Node* loop);
+  static bool is_divisor_loop_phi(const Node* divisor, const Node* loop);
   bool loop_phi_backedge_type_contains_zero(const Node* phi_divisor, const Type* zero) const;
 
   // Determine if a method is too big for a/another round of split-if, based on
@@ -1774,7 +1775,7 @@ public:
   bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
   void clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp, int i);
   bool clone_cmp_down(Node* n, const Node* blk1, const Node* blk2);
-  void clone_template_assertion_predicate_expression_down(Node* node);
+  void clone_template_assertion_expression_down(Node* node);
 
   Node* similar_subtype_check(const Node* x, Node* r_in);
 
