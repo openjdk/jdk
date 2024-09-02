@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __LP64__
 
 JNIEXPORT void JNICALL
 Java_NoClassDefFoundErrorTest_callDefineClass(JNIEnv *env, jclass klass, jstring className) {
@@ -77,3 +78,5 @@ Java_NoClassDefFoundErrorTest_tryCallFindClass(JNIEnv *env, jclass klass) {
     }
     return JNI_FALSE;
 }
+
+#endif /* __LP64__ */
