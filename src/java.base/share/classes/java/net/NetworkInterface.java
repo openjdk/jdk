@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,11 @@ public final class NetworkInterface {
      * {@link NetPermission}("getNetworkInformation") permission, then all
      * InetAddresses are returned.
      *
+     * @implNote
+     * The returned array contains all or a subset of the InetAddresses that were
+     * bound to the interface at the time the {@linkplain #getNetworkInterfaces()
+     * interface configuration was read}
+     *
      * @return an Enumeration object with all or a subset of the InetAddresses
      * bound to this network interface
      * @see #inetAddresses()
@@ -115,6 +120,11 @@ public final class NetworkInterface {
      * returned in the Stream. However, if the caller has the
      * {@link NetPermission}("getNetworkInformation") permission, then all
      * InetAddresses are returned.
+     *
+     * @implNote
+     * The stream contains all or a subset of the InetAddresses that were
+     * bound to the interface at the time the {@linkplain #getNetworkInterfaces()
+     * interface configuration was read}
      *
      * @return a Stream object with all or a subset of the InetAddresses
      * bound to this network interface
@@ -249,6 +259,16 @@ public final class NetworkInterface {
     /**
      * Searches for the network interface with the specified name.
      *
+     * @apiNote
+     * The returned interface instance may reflect a snapshot of the
+     * configuration taken at the time the instance is created.
+     * To see updates to the configuration may, or may not, require
+     * obtaining a new instance of the interface.
+     * In particular, there is no guarantee that the same interface will be
+     * found at the same index, or that the same network addresses will be
+     * bound to the interface, if the network configuration of the system
+     * has changed.
+     *
      * @param   name
      *          The name of the network interface.
      *
@@ -270,6 +290,16 @@ public final class NetworkInterface {
 
     /**
      * Get a network interface given its index.
+     *
+     * @apiNote
+     * The returned interface instance may reflect a snapshot of the
+     * configuration taken at the time the instance is created.
+     * To see updates to the configuration may, or may not, require
+     * obtaining a new instance of the interface.
+     * In particular, there is no guarantee that the same interface will be
+     * found at the same index, or that the same network addresses will be
+     * bound to the interface, if the network configuration of the system
+     * has changed.
      *
      * @param index an integer, the index of the interface
      * @return the NetworkInterface obtained from its index, or {@code null} if
@@ -293,6 +323,16 @@ public final class NetworkInterface {
      * If the specified IP address is bound to multiple network
      * interfaces it is not defined which network interface is
      * returned.
+     *
+     * @apiNote
+     * The returned interface instance may reflect a snapshot of the
+     * configuration taken at the time the instance is created.
+     * To see updates to the configuration may, or may not, require
+     * obtaining a new instance of the interface.
+     * In particular, there is no guarantee that the same interface will be
+     * found at the same index, or that the same network addresses will be
+     * bound to the interface, if the network configuration of the system
+     * has changed.
      *
      * @param   addr
      *          The {@code InetAddress} to search with.
@@ -334,8 +374,18 @@ public final class NetworkInterface {
      * a loopback interface that only supports communication between entities on
      * this machine.
      *
-     * @apiNote this method can be used in combination with
-     * {@link #getInetAddresses()} to obtain all IP addresses for this node
+     * @apiNote
+     * This method can be used in combination with
+     * {@link #getInetAddresses()} to obtain all IP addresses for this node.
+     * <p>
+     * The returned interface instances may reflect a snapshot of the
+     * configuration taken at the time the instance is created.
+     * To see updates to the configuration may, or may not, require
+     * obtaining new instances of the interfaces.
+     * In particular, there is no guarantee that the same interface will be
+     * found at the same index, or that the same network addresses will be
+     * bound to the interface, if the network configuration of the system
+     * has changed.
      *
      * @return an Enumeration of NetworkInterfaces found on this machine
      * @throws     SocketException  if an I/O error occurs,
@@ -359,13 +409,22 @@ public final class NetworkInterface {
      * loopback interface that only supports communication between entities on
      * this machine.
      *
-     * @apiNote this method can be used in combination with
+     * @apiNote This method can be used in combination with
      * {@link #inetAddresses()}} to obtain a stream of all IP addresses for
      * this node, for example:
      * <pre> {@code
      * Stream<InetAddress> addrs = NetworkInterface.networkInterfaces()
      *     .flatMap(NetworkInterface::inetAddresses);
      * }</pre>
+     * <p>
+     * The returned interface instances may reflect a snapshot of the
+     * configuration taken at the time the instance is created.
+     * To see updates to the configuration may, or may not, require
+     * obtaining new instances of the interfaces.
+     * In particular, there is no guarantee that the same interface will be
+     * found at the same index, or that the same network addresses will be
+     * bound to the interface, if the network configuration of the system
+     * has changed.
      *
      * @return a Stream of NetworkInterfaces found on this machine
      * @throws     SocketException  if an I/O error occurs,
