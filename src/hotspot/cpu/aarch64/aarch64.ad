@@ -2334,7 +2334,7 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
 // Vector width in bytes.
 int Matcher::vector_width_in_bytes(BasicType bt) {
   // The MaxVectorSize should have been set by detecting SVE max vector register size.
-  int size = MIN2((UseSVE > 0) ? 256 : 16, (int)MaxVectorSize);
+  int size = MIN2((UseSVE > 0) ? (int)FloatRegister::sve_vl_max : (int)FloatRegister::neon_vl, (int)MaxVectorSize);
   // Minimum 2 values in vector
   if (size < 2*type2aelembytes(bt)) size = 0;
   // But never < 4
@@ -2373,7 +2373,7 @@ int Matcher::scalable_vector_reg_size(const BasicType bt) {
 
 // Vector ideal reg.
 uint Matcher::vector_ideal_reg(int len) {
-  if (UseSVE > 0 && 16 < len && len <= 256) {
+  if (UseSVE > 0 && FloatRegister::neon_vl < len && len <= FloatRegister::sve_vl_max) {
     return Op_VecA;
   }
   switch(len) {
