@@ -41,8 +41,6 @@
 #include "TimeZone_md.h"
 #include "path_util.h"
 
-static char *isFileIdentical(char* buf, size_t size, char *pathname);
-
 #define fileopen        fopen
 #define filegets        fgets
 #define fileclose       fclose
@@ -61,6 +59,8 @@ static const char popularZones[][4] = {"UTC", "GMT"};
 
 #if defined(_AIX)
 static const char *ETC_ENVIRONMENT_FILE = "/etc/environment";
+#else
+static char *isFileIdentical(char* buf, size_t size, char *pathname);
 #endif
 
 #if defined(__linux__) || defined(MACOSX)
