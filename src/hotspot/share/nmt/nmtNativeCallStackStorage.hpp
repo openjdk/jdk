@@ -89,7 +89,7 @@ public:
   }
 
   const inline NativeCallStack& get(StackIndex si) {
-    if (si._stack_index == -1) {
+    if (si._stack_index == -1 || si._stack_index >= _stacks.length()) {
       return _fake_stack;
     }
     return _stacks.at(si._stack_index);

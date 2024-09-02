@@ -168,7 +168,11 @@ class RegionsTree : public VMATree {
   }
 
   inline const NativeCallStack stack(NodeHelper& node) {
-    return _ncs_storage.get(node.out_stack_index());
+    NativeCallStackStorage::StackIndex si = node.out_stack_index();
+    if (!si.is_invalid()) {
+      return _ncs_storage.get(si);
+    }
+    return NativeCallStack::empty_stack();
   }
 };
 
