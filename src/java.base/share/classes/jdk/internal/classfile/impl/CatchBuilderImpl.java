@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import static java.util.Objects.requireNonNull;
+
 public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
     final CodeBuilder b;
     final BlockCodeBuilderImpl tryBlock;
@@ -57,8 +59,11 @@ public final class CatchBuilderImpl implements CodeBuilder.CatchBuilder {
 
     @Override
     public CodeBuilder.CatchBuilder catchingMulti(List<ClassDesc> exceptionTypes, Consumer<CodeBuilder.BlockCodeBuilder> catchHandler) {
-        Objects.requireNonNull(exceptionTypes);
-        Objects.requireNonNull(catchHandler);
+        requireNonNull(exceptionTypes);
+        for (var e: exceptionTypes){
+            requireNonNull(e);
+        }
+        requireNonNull(catchHandler);
 
         if (catchBlock == null) {
             if (tryBlock.reachable()) {

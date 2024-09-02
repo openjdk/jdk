@@ -81,6 +81,8 @@ public sealed interface ClassFileBuilder<E extends ClassFileElement, B extends C
      * @return this builder
      */
     default B transform(CompoundElement<E> model, ClassFileTransform<?, E, B> transform) {
+        requireNonNull(model);
+        requireNonNull(transform);
         @SuppressWarnings("unchecked")
         B builder = (B) this;
         var resolved = TransformImpl.resolve(transform, builder);

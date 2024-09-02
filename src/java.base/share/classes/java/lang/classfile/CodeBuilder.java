@@ -262,6 +262,8 @@ public sealed interface CodeBuilder
      */
     default CodeBuilder ifThen(Opcode opcode,
                                Consumer<BlockCodeBuilder> thenHandler) {
+//         adding null check here cuauses
+        requireNonNull(thenHandler);
         if (opcode.kind() != Opcode.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VOID) {
             throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
         }
@@ -312,6 +314,10 @@ public sealed interface CodeBuilder
     default CodeBuilder ifThenElse(Opcode opcode,
                                    Consumer<BlockCodeBuilder> thenHandler,
                                    Consumer<BlockCodeBuilder> elseHandler) {
+        //todo i don't think is is neccesary
+        requireNonNull(opcode);
+        requireNonNull(thenHandler);
+        requireNonNull(elseHandler);
         if (opcode.kind() != Opcode.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VOID) {
             throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
         }
@@ -403,6 +409,8 @@ public sealed interface CodeBuilder
      */
     default CodeBuilder trying(Consumer<BlockCodeBuilder> tryHandler,
                                Consumer<CatchBuilder> catchesHandler) {
+        requireNonNull(tryHandler);
+        requireNonNull(catchesHandler);
         Label tryCatchEnd = newLabel();
 
         BlockCodeBuilderImpl tryBlock = new BlockCodeBuilderImpl(this, tryCatchEnd);
@@ -613,6 +621,9 @@ public sealed interface CodeBuilder
      * @since 23
      */
     default CodeBuilder loadConstant(Opcode opcode, ConstantDesc value) {
+//        uncommenting this line breaks OpcodesValidationTest
+//        requireNonNull(opcode);
+//        requireNonNull(value);
         BytecodeHelpers.validateValue(opcode, value);
         return with(switch (opcode) {
             case SIPUSH, BIPUSH -> ConstantInstruction.ofArgument(opcode, ((Number)value).intValue());
@@ -628,6 +639,8 @@ public sealed interface CodeBuilder
      * @since 23
      */
     default CodeBuilder loadConstant(ConstantDesc value) {
+//        adding null check here causes error
+//        requireNonNull(value);
         //avoid switch expressions here
         if (value == null || value == ConstantDescs.NULL)
             return aconst_null();
@@ -709,6 +722,10 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder exceptionCatch(Label start, Label end, Label handler, ClassEntry catchType) {
+        requireNonNull(start);
+        requireNonNull(end);
+        requireNonNull(handler);
+        requireNonNull(catchType);
         return with(ExceptionCatch.of(handler, start, end, Optional.ofNullable(catchType)));
     }
 
@@ -2104,6 +2121,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ldc(ConstantDesc value) {
+        requireNonNull(value);
         return ldc(BytecodeHelpers.constantEntry(constantPool(), value));
     }
 

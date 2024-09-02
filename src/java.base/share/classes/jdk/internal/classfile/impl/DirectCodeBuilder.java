@@ -24,7 +24,6 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -62,10 +61,9 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import static java.lang.classfile.Opcode.*;
+import static java.util.Objects.requireNonNull;
 
 public final class DirectCodeBuilder
         extends AbstractDirectBuilder<CodeModel>
@@ -133,7 +131,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder with(CodeElement element) {
-        Objects.requireNonNull(element);
+        requireNonNull(element);
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
@@ -835,6 +833,8 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder loadConstant(Opcode opcode, ConstantDesc value) {
+//        requireNonNull(opcode);
+//        requireNonNull(value);
         BytecodeHelpers.validateValue(opcode, value);
         // avoid non-local enum switch for bootstrap
         if (opcode == BIPUSH || opcode == SIPUSH) {
