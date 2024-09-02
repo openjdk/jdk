@@ -1189,6 +1189,67 @@ public final class DirectCodeBuilder
         return this;
     }
 
+
+    @Override
+    public CodeBuilder iload(int slot) {
+        writeLocalVar(BytecodeHelpers.iload(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lload(int slot) {
+        writeLocalVar(BytecodeHelpers.lload(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fload(int slot) {
+        writeLocalVar(BytecodeHelpers.fload(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dload(int slot) {
+        writeLocalVar(BytecodeHelpers.dload(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder aload(int slot) {
+        writeLocalVar(BytecodeHelpers.aload(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder istore(int slot) {
+        writeLocalVar(BytecodeHelpers.istore(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lstore(int slot) {
+        writeLocalVar(BytecodeHelpers.lstore(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fstore(int slot) {
+        writeLocalVar(BytecodeHelpers.fstore(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dstore(int slot) {
+        writeLocalVar(BytecodeHelpers.dstore(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder astore(int slot) {
+        writeLocalVar(BytecodeHelpers.astore(slot), slot);
+        return this;
+    }
+
     @Override
     public CodeBuilder imul() {
         writeBytecode(IMUL);
@@ -1472,66 +1533,6 @@ public final class DirectCodeBuilder
     @Override
     public CodeBuilder tableswitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
         writeTableSwitch(low, high, defaultTarget, cases);
-        return this;
-    }
-
-    @Override
-    public CodeBuilder iload(int slot) {
-        writeLocalVar(BytecodeHelpers.iload(slot), slot);
-        return this;
-    }
-
-    @Override
-    public CodeBuilder lload(int slot) {
-        writeLocalVar(BytecodeHelpers.lload(slot), slot);
-        return this;
-    }
-
-    @Override
-    public CodeBuilder fload(int slot) {
-        writeLocalVar(BytecodeHelpers.fload(slot), slot);
-        return this;
-    }
-
-    @Override
-    public CodeBuilder dload(int slot) {
-        writeLocalVar(BytecodeHelpers.dload(slot), slot);
-        return this;
-    }
-
-    @Override
-    public CodeBuilder aload(int slot) {
-        writeLocalVar(BytecodeHelpers.aload(slot), slot);
-        return this;
-    }
-
-    @Override
-    public CodeBuilder istore(int slot) {
-        writeLocalVar(BytecodeHelpers.istore(slot), slot);
-        return this;
-    }
-
-    @Override
-    public CodeBuilder lstore(int slot) {
-        writeLocalVar(BytecodeHelpers.lstore(slot), slot);
-        return this;
-    }
-
-    @Override
-    public CodeBuilder fstore(int slot) {
-        writeLocalVar(BytecodeHelpers.fstore(slot), slot);
-        return this;
-    }
-
-    @Override
-    public CodeBuilder dstore(int slot) {
-        writeLocalVar(BytecodeHelpers.dstore(slot), slot);
-        return this;
-    }
-
-    @Override
-    public CodeBuilder astore(int slot) {
-        writeLocalVar(BytecodeHelpers.astore(slot), slot);
         return this;
     }
 }
