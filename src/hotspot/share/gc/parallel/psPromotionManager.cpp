@@ -321,7 +321,7 @@ void PSPromotionManager::process_array_chunk(PartialArrayState* state) {
 }
 
 void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
-  assert(old_obj->is_objArray(), "precondition");
+  assert(old_obj->forward_safe_klass()->is_objArray_klass(), "precondition");
   assert(old_obj->is_forwarded(), "precondition");
   assert(old_obj->forwardee() == new_obj, "precondition");
   assert(new_obj->is_objArray(), "precondition");
