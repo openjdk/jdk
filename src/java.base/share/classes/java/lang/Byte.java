@@ -76,16 +76,6 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
     public static final byte   MAX_VALUE = 127;
 
     /**
-     * A constant holding polarity(sign) mask used by saturating operations.
-     */
-    public static final byte POLARITY_MASK_BYTE = (byte)(1 << 7);
-
-    /**
-     * A constant holding maximum unsigned value used by saturating unsigned operations.
-     */
-    public static final byte UNSIGNED_MAX = (byte)0xFF;
-
-    /**
      * The {@code Class} instance representing the primitive type
      * {@code byte}.
      */
@@ -644,25 +634,23 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * @since 24
      */
     public static byte subSaturating(byte a, byte b) {
-        byte res = (byte)(a - b);
-        // Saturation occurs when result of computation over opposite polarity inputs exceeds the byte
-        // value range, in this case, for a non-commutative operation like subtraction, result polarity does not
-        // comply with first argument polarity.
-        boolean opposite_polarity_inputs = ((a ^ b) & POLARITY_MASK_BYTE) == POLARITY_MASK_BYTE;
-        if (opposite_polarity_inputs && ((res & POLARITY_MASK_BYTE) != (a & POLARITY_MASK_BYTE))) {
-            return res < 0 ? Byte.MAX_VALUE : Byte.MIN_VALUE;
+        int res = a - b;
+        if (res > Byte.MAX_VALUE) {
+            return Byte.MAX_VALUE;
+        } else if (res < Byte.MIN_VALUE) {
+            return Byte.MIN_VALUE;
         } else {
-            return res;
+            return (byte)res;
         }
     }
 
     /**
      * Saturating unsigned addition of two {@code byte} values,
-     * which returns a {@code Byte.UNSIGNED_MAX} in overflowing scenario.
+     * which returns an maximum unsigned byte value (0xFF) in overflowing scenario.
      *
      * @param a the first operand
      * @param b the second operand
-     * @return the unsigned sum of {@code a} and {@code b} iff within unsigned value range else delimiting {@code Byte.UNSIGNED_MAX} value.
+     * @return the unsigned sum of {@code a} and {@code b} iff within unsigned value range else delimiting maximum unsigned byte value.
      * @see java.util.function.BinaryOperator
      * @since 24
      */
@@ -670,7 +658,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
         byte res = (byte)(a + b);
         boolean overflow = Byte.compareUnsigned(res, (byte)(a | b)) < 0;
         if (overflow) {
-           return Byte.UNSIGNED_MAX;
+           return (byte)(-1);
         } else {
            return res;
         }

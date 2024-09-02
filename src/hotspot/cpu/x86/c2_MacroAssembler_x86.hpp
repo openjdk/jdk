@@ -68,6 +68,9 @@ public:
                   XMMRegister dst, XMMRegister a, XMMRegister b,
                   XMMRegister tmp, XMMRegister atmp, XMMRegister btmp,
                   int vlen_enc);
+
+  void vpuminmaxq(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc);
+
   void evminmax_fp(int opcode, BasicType elem_bt,
                    XMMRegister dst, XMMRegister a, XMMRegister b,
                    KRegister ktmp, XMMRegister atmp, XMMRegister btmp,
@@ -535,8 +538,7 @@ public:
                                        XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, KRegister ktmp, int vlen_enc);
 
   void saturating_unsigned_add_dq_avx(BasicType etype, XMMRegister dst, XMMRegister src1, XMMRegister src2,
-                                      XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3,
-                                      XMMRegister xtmp4, int vlen_enc);
+                                      XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, int vlen_enc);
 
   void saturating_signed_add_sub_dq_avx(BasicType etype, int opc, XMMRegister dst, XMMRegister src1, XMMRegister src2,
                                         XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4, int vlen_enc);

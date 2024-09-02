@@ -1984,9 +1984,8 @@ public final class Long extends Number
      */
     public static long addSaturating(long a, long b) {
         long res = a + b;
-        // Saturation occurs when result of computation over same polarity inputs exceeds the {@code long} value range.
-        boolean same_polarity_inputs = ((a ^ b) & POLARITY_MASK_LONG) == 0;
-        if (same_polarity_inputs && ((res & POLARITY_MASK_LONG) != (a & POLARITY_MASK_LONG))) {
+        // HD 2-12 Overflow iff both arguments have the opposite sign of the result
+        if (((a ^ res) & (b ^ res)) < 0) {
             return res < 0 ? Long.MAX_VALUE : Long.MIN_VALUE;
         } else {
             return res;
@@ -2005,12 +2004,10 @@ public final class Long extends Number
      * @since 24
      */
     public static long subSaturating(long a, long b) {
-        boolean opposite_polarity_inputs = ((a ^ b) & POLARITY_MASK_LONG) == POLARITY_MASK_LONG;
         long res = a - b;
-        // Saturation occurs when result of computation over opposite polarity inputs exceeds the long
-        // value range, in this case, for a non-commutative operation like subtraction, result polarity does not
-        // comply with first argument polarity.
-        if (opposite_polarity_inputs && ((res & POLARITY_MASK_LONG) != (a & POLARITY_MASK_LONG))) {
+        // HD 2-12 Overflow iff the arguments have different signs and
+        // the sign of the result is different from the sign of x
+        if (((a ^ res) & (b ^ res)) < 0) {
             return res < 0 ? Long.MAX_VALUE : Long.MIN_VALUE;
         } else {
             return res;
@@ -2019,11 +2016,11 @@ public final class Long extends Number
 
     /**
      * Saturating unsigned addition of two {@code long} values,
-     * which returns a {@code Long.UNSIGNED_MAX} in overflowing scenario.
+     * which returns maximum unsigned long value in overflowing scenario.
      *
      * @param a the first operand
      * @param b the second operand
-     * @return the unsigned sum of {@code a} and {@code b} iff within unsigned value range else delimiting {@code Long.UNSIGNED_MAX} value.
+     * @return the unsigned sum of {@code a} and {@code b} iff within unsigned value range else delimiting maximum unsigned long value.
      * @see java.util.function.BinaryOperator
      * @since 24
      */

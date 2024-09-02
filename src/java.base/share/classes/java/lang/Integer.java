@@ -88,16 +88,6 @@ public final class Integer extends Number
     @Native public static final int   MAX_VALUE = 0x7fffffff;
 
     /**
-     * A constant holding polarity(sign) mask used by saturating operations.
-     */
-    public static final int POLARITY_MASK_INT  = 1 << 31;
-
-    /**
-     * A constant holding maximum unsigned value used by saturating unsigned operations.
-     */
-    public static final int UNSIGNED_MAX = 0xFFFFFFFF;
-
-    /**
      * The {@code Class} instance representing the primitive type
      * {@code int}.
      *
@@ -2055,25 +2045,23 @@ public final class Integer extends Number
      * @since 24
      */
     public static int subSaturating(int a, int b) {
-        int res = a - b;
-        boolean opposite_polarity_inputs = ((a ^ b) & POLARITY_MASK_INT) == POLARITY_MASK_INT;
-        // Saturation occurs when result of computation over opposite polarity inputs exceeds the int
-        // value range, in this case, for a non-commutative operation like subtraction, result polarity does not
-        // comply with first argument polarity.
-        if (opposite_polarity_inputs && ((res & POLARITY_MASK_INT) != (a & POLARITY_MASK_INT))) {
-            return res < 0 ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+        long res = (long)a - (long)b;
+        if (res > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        } else if (res < Integer.MIN_VALUE) {
+            return Integer.MIN_VALUE;
         } else {
-            return res;
+            return (int)res;
         }
     }
 
     /**
      * Saturating unsigned addition of two {@code int} values,
-     * which returns a {@code Integer.UNSIGNED_MAX} in overflowing scenario.
+     * which returns maximum unsigned int value in overflowing scenario.
      *
      * @param a the first operand
      * @param b the second operand
-     * @return the unsigned sum of {@code a} and {@code b} iff within unsigned value range else delimiting {@code Integer.UNSIGNED_MAX} value.
+     * @return the unsigned sum of {@code a} and {@code b} iff within unsigned value range else delimiting maximum unsigned int value.
      * @see java.util.function.BinaryOperator
      * @since 24
      */
@@ -2081,7 +2069,7 @@ public final class Integer extends Number
         int res = a + b;
         boolean overflow = Integer.compareUnsigned(res, (a | b)) < 0;
         if (overflow)  {
-           return Integer.UNSIGNED_MAX;
+           return -1;
         } else {
            return res;
         }

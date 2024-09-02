@@ -147,7 +147,7 @@ class VectorNode : public TypeNode {
 //===========================Vector=ALU=Operations=============================
 class SaturatingVectorNode : public VectorNode {
  private:
-  bool _is_unsigned;
+  const bool _is_unsigned;
 
  public:
   SaturatingVectorNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : VectorNode(in1, in2, vt), _is_unsigned(is_unsigned) {
@@ -169,7 +169,7 @@ class AddVBNode : public VectorNode {
 
 class SaturatingAddVBNode : public SaturatingVectorNode {
  public:
-  SaturatingAddVBNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1,in2,vt,is_unsigned) {}
+  SaturatingAddVBNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
   virtual int Opcode() const;
 };
 
@@ -183,7 +183,7 @@ class AddVSNode : public VectorNode {
 
 class SaturatingAddVSNode : public SaturatingVectorNode {
  public:
-  SaturatingAddVSNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1,in2,vt,is_unsigned) {}
+  SaturatingAddVSNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
   virtual int Opcode() const;
 };
 
@@ -198,7 +198,7 @@ class AddVINode : public VectorNode {
 
 class SaturatingAddVINode : public SaturatingVectorNode {
  public:
-  SaturatingAddVINode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1,in2,vt,is_unsigned) {}
+  SaturatingAddVINode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
   virtual int Opcode() const;
 };
 
@@ -212,7 +212,7 @@ public:
 
 class SaturatingAddVLNode : public SaturatingVectorNode {
  public:
-  SaturatingAddVLNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1,in2,vt,is_unsigned) {}
+  SaturatingAddVLNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
   virtual int Opcode() const;
 };
 

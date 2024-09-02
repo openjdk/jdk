@@ -926,6 +926,25 @@ void C2_MacroAssembler::vpuminmax(int opcode, BasicType elem_bt, XMMRegister dst
   }
 }
 
+void C2_MacroAssembler::vpuminmaxq(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister xtmp1, XMMRegister xtmp2, int vlen_enc) {
+ // T1 = -1
+ vpcmpeqq(xtmp1, xtmp1, xtmp1, vlen_enc);
+ // T1 = -1 << 63
+ vpsllq(xtmp1, xtmp1, 63, vlen_enc);
+ // Convert SRC2 to signed value i.e. T2 = T1 + SRC2
+ vpaddq(xtmp2, xtmp1, src2, vlen_enc);
+ // Convert SRC1 to signed value i.e. T1 = T1 + SRC1
+ vpaddq(xtmp1, xtmp1, src1, vlen_enc);
+ // Mask = T2 > T1
+ vpcmpgtq(xtmp1, xtmp2, xtmp1, vlen_enc);
+ // Res = Mask ? Src2 : Src1
+ if (opcode == Op_UMaxV) {
+   vpblendvb(dst, src1, src2, xtmp1, vlen_enc);
+ } else {
+   vpblendvb(dst, src2, src1, xtmp1, vlen_enc);
+ }
+}
+
 void C2_MacroAssembler::vpuminmax(int opcode, BasicType elem_bt, XMMRegister dst,
                                   XMMRegister src1, XMMRegister src2, int vlen_enc) {
   assert(opcode == Op_UMinV || opcode == Op_UMaxV, "sanity");
@@ -6668,9 +6687,8 @@ void C2_MacroAssembler::saturating_unsigned_sub_dq_evex(BasicType etype, XMMRegi
   // overflow = Inp1 <u Inp2
   evpcmpu(etype, ktmp,  src2, src1, Assembler::lt, vlen_enc);
   // Res = INP1 - INP2 (non-commutative and non-associative)
-  vpsub(etype, dst, src1, src2, vlen_enc);
   // Res = Mask ? Zero : Res
-  evmovdqu(etype, ktmp, dst, dst, false, vlen_enc);
+  evmasked_op(etype == T_INT ? Op_SubVI : Op_SubVL, etype, ktmp, dst, src1, src2, false, vlen_enc, false);
 }
 
 void C2_MacroAssembler::saturating_unsigned_sub_dq_avx(BasicType etype, XMMRegister dst, XMMRegister src1, XMMRegister src2,
@@ -6694,64 +6712,51 @@ void C2_MacroAssembler::saturating_unsigned_add_dq_evex(BasicType etype, XMMRegi
                                                         XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, KRegister ktmp,
                                                         int vlen_enc) {
   // Unsigned values ranges comprise of only +ve numbers, thus there exist only an upper bound saturation.
-  // overflow = ((UMAX - MAX(SRC1 & SRC2)) <u MIN(SRC1, SRC2)) >>> 31 == 1
+  // overflow_mask = (SRC1 + SRC2) <u (SRC1 | SRC2)
   // Res = Signed Add INP1, INP2
   vpadd(etype, dst, src1, src2, vlen_enc);
-  // Max_Input = Unsigned MAX INP1, INP2
-  evpmaxu(etype, xtmp1, k0, src1, src2, true, vlen_enc);
+  // T1 = SRC1 | SRC2
+  vpor(xtmp1, src1, src2, vlen_enc);
   // Max_Unsigned = -1
   vpternlogd(xtmp3, 0xff, xtmp3, xtmp3, vlen_enc);
-  // X = Max_Unsigned - Max_Input
-  vpsub(etype, xtmp1, xtmp3, xtmp1, vlen_enc);
-  // Min_Input = Unsigned MIN INP1, INP2
-  evpminu(etype, xtmp2, k0, src1, src2, true, vlen_enc);
-  // Unsigned compare:  Mask = X <u Min_Unsigned
-  evpcmpu(etype, ktmp, xtmp2, xtmp1, Assembler::nlt, vlen_enc);
+  // Unsigned compare:  Mask = Res <u T1
+  evpcmpu(etype, ktmp, dst, xtmp1, Assembler::lt, vlen_enc);
   // res  = Mask ? Max_Unsigned : Res
   evpblend(etype, dst, ktmp,  dst, xtmp3, true, vlen_enc);
 }
 
 //
-// Adaptation of unsigned addition overflow detection from hacker's delight
-// section 2-13 : overflow = ((a & b) | ((a | b) & ~(s))) >>> 31 == 1
+// Section 2-13 Hacker Delight list following overflow detection check for saturating
+// unsigned addition operation.
+//    overflow_mask = ((a & b) | ((a | b) & ~( a + b))) >>> 31 == 1
 //
-// Apply Logic optimization on above overflow detection expression by substituting 'a'
-// with boolean values:-
-//   V1 : a = 0  =>  b & ~s
-//   V2 : a = 1  =>  b | ~s
+// We empirically determined its semantic equivalence to following reduced expression
+//    overflow_mask =  (a + b) <u (a | b)
 //
-//        V1  V2
-//         |0  |1
-//      ___|___|___
-//       \       /____ a
-//        \_____/            a + b UMAX
-//           |                 |0   |1
-//        overflow          ___|____|___
-//           |_______________\        /
-//                            \______/
-//                                |
-//                                |
-//                               Res
+// and also verified it though Alive2 solver.
+// (https://alive2.llvm.org/ce/z/XDQ7dY)
+//
+
 void C2_MacroAssembler::saturating_unsigned_add_dq_avx(BasicType etype, XMMRegister dst, XMMRegister src1, XMMRegister src2,
-                                                       XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3,
-                                                       XMMRegister xtmp4, int vlen_enc) {
+                                                       XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3, int vlen_enc) {
   // Res = Signed Add INP1, INP2
   vpadd(etype, dst, src1, src2, vlen_enc);
-  // T1 = SRC2 & ~Res
-  vpandn(xtmp1, dst, src2, vlen_enc);
-  // Compute Max_Unsigned (T2) = -1
-  vpcmpeqd(xtmp3, xtmp3, xtmp3, vlen_enc);
-  // T2 = ~Res
-  vpxor(xtmp2, xtmp3, dst, vlen_enc);
-  // T3 = SRC2 | ~Res
-  vpor(xtmp2, xtmp2, src2, vlen_enc);
-  // Compute mask for muxing T1 with T3 using SRC1.
-  vpsign_extend_dq(etype, xtmp4, src1, vlen_enc);
-  // Blend T1 and T3 using above mask.
-  vpblendvb(xtmp4, xtmp1, xtmp2, xtmp4, vlen_enc);
-  // Compute mask for blending result with saturated upper bound.
-  vpsign_extend_dq(etype, xtmp4, xtmp4, vlen_enc);
-  vpblendvb(dst, dst, xtmp3, xtmp4, vlen_enc);
+  // Compute T1 = INP1 | INP2
+  vpor(xtmp3, src1, src2, vlen_enc);
+  // T1 = Minimum signed value.
+  vpgenmin_value(etype, xtmp2, xtmp1, vlen_enc, true);
+  // Convert T1 to signed value, T1 = T1 + MIN_VALUE
+  vpadd(etype, xtmp3, xtmp3, xtmp2, vlen_enc);
+  // Convert Res to signed value, Res<s> = Res + MIN_VALUE
+  vpadd(etype, xtmp2, xtmp2, dst, vlen_enc);
+  // Compute overflow detection mask = Res<1> <s T1
+  if (etype == T_INT) {
+    vpcmpgtd(xtmp3, xtmp3, xtmp2, vlen_enc);
+  } else {
+    assert(etype == T_LONG, "");
+    vpcmpgtq(xtmp3, xtmp3, xtmp2, vlen_enc);
+  }
+  vpblendvb(dst, dst, xtmp1, xtmp3, vlen_enc);
 }
 
 void C2_MacroAssembler::evpmovq2m_emu(KRegister ktmp, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,

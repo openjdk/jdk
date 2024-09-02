@@ -1770,9 +1770,6 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       if (UseAVX == 0) {
         return false;
       }
-      if (bt == T_LONG && !VM_Version::supports_avx512vl()) {
-        return false;
-      }
       break;
     case Op_MaxV:
     case Op_MinV:
@@ -6515,6 +6512,7 @@ instruct evminmaxFP_reg_eavx(vec dst, vec a, vec b, vec atmp, vec btmp, kReg ktm
 // ------------------------------ Unsigned vector Min/Max ----------------------
 
 instruct uminmax_reg(vec dst, vec a, vec b) %{
+  predicate(VM_Version::supports_avx512vl() || Matcher::vector_element_basic_type(n) != T_LONG);
   match(Set dst (UMinV a b));
   match(Set dst (UMaxV a b));
   format %{ "vector_uminmax_reg  $dst,$a,$b\t!" %}
@@ -6529,6 +6527,7 @@ instruct uminmax_reg(vec dst, vec a, vec b) %{
 %}
 
 instruct uminmax_mem(vec dst, vec a, memory b) %{
+  predicate(VM_Version::supports_avx512vl() || Matcher::vector_element_basic_type(n) != T_LONG);
   match(Set dst (UMinV a (LoadVector b)));
   match(Set dst (UMaxV a (LoadVector b)));
   format %{ "vector_uminmax_mem  $dst,$a,$b\t!" %}
@@ -6538,6 +6537,20 @@ instruct uminmax_mem(vec dst, vec a, memory b) %{
     BasicType elem_bt = Matcher::vector_element_basic_type(this);
     assert(is_integral_type(elem_bt), "");
     __ vpuminmax(opcode, elem_bt, $dst$$XMMRegister, $a$$XMMRegister, $b$$Address, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct uminmaxq_reg(vec dst, vec a, vec b, vec xtmp1, vec xtmp2) %{
+  predicate(!VM_Version::supports_avx512vl() && Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (UMinV a b));
+  match(Set dst (UMaxV a b));
+  effect(TEMP xtmp1, TEMP xtmp2);
+  format %{ "vector_uminmaxq_reg  $dst,$a,$b\t! using xtmp1 and xtmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen_enc = vector_length_encoding(this);
+    __ vpuminmaxq(opcode, $dst$$XMMRegister, $a$$XMMRegister, $b$$XMMRegister, $xtmp1$$XMMRegister, $xtmp2$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -10632,18 +10645,18 @@ instruct saturating_unsigned_add_reg_evex(vec dst, vec src1, vec src2, vec xtmp1
   ins_pipe(pipe_slow);
 %}
 
-instruct saturating_unsigned_add_reg_avx(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2, vec xtmp3, vec xtmp4)
+instruct saturating_unsigned_add_reg_avx(vec dst, vec src1, vec src2, vec xtmp1, vec xtmp2, vec xtmp3)
 %{
   predicate(Type::is_utype(Matcher::vector_element_type(n)) && Matcher::vector_length_in_bytes(n) <= 32 && !VM_Version::supports_avx512vl());
   match(Set dst (SaturatingAddVI src1 src2));
   match(Set dst (SaturatingAddVL src1 src2));
-  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3, TEMP xtmp4);
-  format %{ "saturating_vector_op $dst, $src1, $src2 \t! using $xtmp1, $xtmp2, $xtmp3 and $xtmp4 as TEMP" %}
+  effect(TEMP dst, TEMP xtmp1, TEMP xtmp2, TEMP xtmp3);
+  format %{ "saturating_vector_op $dst, $src1, $src2 \t! using $xtmp1, $xtmp2 and $xtmp3 as TEMP" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     BasicType etype = Matcher::vector_element_basic_type(this);
     __ saturating_unsigned_add_dq_avx(etype, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $xtmp1$$XMMRegister,
-                                      $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, $xtmp4$$XMMRegister, vlen_enc);
+                                      $xtmp2$$XMMRegister, $xtmp3$$XMMRegister, vlen_enc);
   %}
   ins_pipe(pipe_slow);
 %}
