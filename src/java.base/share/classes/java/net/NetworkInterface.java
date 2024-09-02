@@ -40,13 +40,15 @@ import java.util.stream.StreamSupport;
  * A Network Interface is the point of interconnection
  * between a computer and a private or public network.
  * A Network Interface can be physical or logical.
- * Network Interfaces are normally known by names such as "le0",
- * have an index, a (possibly empty) set of {@linkplain InterfaceAddress
- * MAC addresses}, and a (possibly empty) set of {@linkplain
- * InetAddress IP addresses} bound to that interface.
- * Network Interfaces, and in particular their list of assigned IP addresses,
- * can be reconfigured dynamically by the underlying system at any
- * time during the life of the JVM.
+ * A network interface has a name, an index, zero or more assigned
+ * {@inkplain InetAddress IP addresses}, and zero or more {@linkplain
+ * InterfaceAddress MAC Addresses}. The name is highly platform
+ * specific but a name such as "le0" is typical;
+ * it may not be unique. The index is a highly platform
+ * specific number that identifies the interface. The network
+ * configuration may change during the life-time of the JVM:
+ * typically, the set of IP addresses assigned to a network
+ * interface may change.
  * <p>
  * When obtaining a {@code NetworkInterface} instance, part of its
  * configuration (such as its name and the list of assigned IP addresses),
@@ -56,8 +58,6 @@ import java.util.stream.StreamSupport;
  * <p>
  * Network interface instances are typically used to identify the local
  * interface on which a multicast group is joined.
- *
- *
  *
  * @since 1.4
  */
