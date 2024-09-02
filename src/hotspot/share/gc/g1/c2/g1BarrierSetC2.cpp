@@ -318,7 +318,7 @@ Node* G1BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) co
   bool tightly_coupled_alloc = (decorators & C2_TIGHTLY_COUPLED_ALLOC) != 0;
   bool need_store_barrier = !(tightly_coupled_alloc && use_ReduceInitialCardMarks()) && (in_heap || anonymous);
   if (access.is_oop() && need_store_barrier) {
-    access.set_barrier_data(get_store_barrier(access, val));
+    access.set_barrier_data(get_store_barrier(access));
     if (tightly_coupled_alloc) {
       assert(!use_ReduceInitialCardMarks(),
              "post-barriers are only needed for tightly-coupled initialization stores when ReduceInitialCardMarks is disabled");
@@ -474,7 +474,7 @@ void* G1BarrierSetC2::create_barrier_state(Arena* comp_arena) const {
   return new (comp_arena) G1BarrierSetC2State(comp_arena);
 }
 
-int G1BarrierSetC2::get_store_barrier(C2Access& access, C2AccessValue& val) const {
+int G1BarrierSetC2::get_store_barrier(C2Access& access) const {
   if (!access.is_parse_access()) {
     // Only support for eliding barriers at parse time for now.
     return G1C2BarrierPre | G1C2BarrierPost;
@@ -487,13 +487,7 @@ int G1BarrierSetC2::get_store_barrier(C2Access& access, C2AccessValue& val) cons
   bool can_remove_pre_barrier = g1_can_remove_pre_barrier(kit, &kit->gvn(), adr, access.type(), adr_idx);
 
   bool can_remove_post_barrier = false;
-  if (val.node() != nullptr && val.node()->is_Con() && val.node()->bottom_type() == TypePtr::NULL_PTR) {
-    // Must be null.
-    const Type* t = val.node()->bottom_type();
-    assert(t == Type::TOP || t == TypePtr::NULL_PTR, "must be NULL");
-    // No post barrier if writing null.
-    can_remove_post_barrier = true;
-  } else if (use_ReduceInitialCardMarks() && access.base() == kit->just_allocated_object(kit->control())) {
+  if (use_ReduceInitialCardMarks() && access.base() == kit->just_allocated_object(kit->control())) {
     // We can skip marks on a freshly-allocated object in Eden. Keep this code
     // in sync with CardTableBarrierSet::on_slowpath_allocation_exit. That
     // routine informs GC to take appropriate compensating steps, upon a
@@ -503,6 +497,9 @@ int G1BarrierSetC2::get_store_barrier(C2Access& access, C2AccessValue& val) cons
              && g1_can_remove_post_barrier(kit, &kit->gvn(), kit->control(), adr)) {
     can_remove_post_barrier = true;
   }
+  // The post-barrier can also be removed if null is written. This case is
+  // handled by G1BarrierSetC2::expand_barriers, which runs at the end of C2's
+  // platform-independent optimizations to exploit stronger type information.
 
   int barriers = 0;
   if (!can_remove_pre_barrier) {

@@ -95,7 +95,7 @@ protected:
                                   PhaseValues* phase, Node* store,
                                   Node* adr) const;
 
-  int get_store_barrier(C2Access& access, C2AccessValue& val) const;
+  int get_store_barrier(C2Access& access) const;
 
   virtual Node* load_at_resolved(C2Access& access, const Type* val_type) const;
   virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;
