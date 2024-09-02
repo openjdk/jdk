@@ -716,7 +716,7 @@ ObjectValue*
 PhaseOutput::sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id) {
   for (int i = 0; i < objs->length(); i++) {
     assert(objs->at(i)->is_object(), "corrupt object cache");
-    ObjectValue* sv = (ObjectValue*) objs->at(i);
+    ObjectValue* sv = objs->at(i)->as_ObjectValue();
     if (sv->id() == id) {
       return sv;
     }
@@ -755,7 +755,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
   if (local->is_SafePointScalarObject()) {
     SafePointScalarObjectNode* spobj = local->as_SafePointScalarObject();
 
-    ObjectValue* sv = (ObjectValue*) sv_for_node_id(objs, spobj->_idx);
+    ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
     if (sv == nullptr) {
       ciKlass* cik = t->is_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
@@ -987,7 +987,7 @@ bool PhaseOutput::contains_as_scalarized_obj(JVMState* jvms, MachSafePointNode* 
       continue;
     }
 
-    ObjectValue* other = (ObjectValue*) sv_for_node_id(objs, n->_idx);
+    ObjectValue* other = sv_for_node_id(objs, n->_idx);
     if (ov == other) {
       return true;
     }

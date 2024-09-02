@@ -62,6 +62,7 @@ import com.sun.tools.javac.tree.JCTree.JCBreak;
 import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCExpressionStatement;
+
 import static com.sun.tools.javac.tree.JCTree.JCOperatorExpression.OperandPos.LEFT;
 import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
 
@@ -2629,7 +2630,7 @@ public class Lower extends TreeTranslator {
         StringBuilder sb = new StringBuilder();
 
         LowerSignatureGenerator() {
-            super(types);
+            types.super();
         }
 
         @Override

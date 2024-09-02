@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public:
 
   // Prematurely returns a metaspace allocation to the _block_freelists
   // because it is not needed anymore.
-  void deallocate(MetaWord* ptr, size_t word_size, bool is_class);
+  void deallocate(MetaWord* ptr, size_t word_size);
 
   // Update statistics. This walks all in-use chunks.
   void add_to_statistics(metaspace::ClmsStats* out) const;

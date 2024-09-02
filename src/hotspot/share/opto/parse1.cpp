@@ -412,7 +412,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _wrote_volatile = false;
   _wrote_stable = false;
   _wrote_fields = false;
-  _alloc_with_final = nullptr;
+  _alloc_with_final_or_stable = nullptr;
   _block = nullptr;
   _first_return = true;
   _replaced_nodes_for_exceptions = false;
@@ -988,8 +988,8 @@ void Parse::do_exits() {
   // Figure out if we need to emit the trailing barrier. The barrier is only
   // needed in the constructors, and only in three cases:
   //
-  // 1. The constructor wrote a final. The effects of all initializations
-  //    must be committed to memory before any code after the constructor
+  // 1. The constructor wrote a final or a @Stable field. All these
+  //    initializations must be ordered before any code after the constructor
   //    publishes the reference to the newly constructed object. Rather
   //    than wait for the publication, we simply block the writes here.
   //    Rather than put a barrier on only those writes which are required
@@ -1014,34 +1014,23 @@ void Parse::do_exits() {
   // exceptional returns, since they cannot publish normally.
   //
   if (method()->is_object_initializer() &&
-       (wrote_final() ||
+       (wrote_final() || wrote_stable() ||
          (AlwaysSafeConstructors && wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {
+    Node* recorded_alloc = alloc_with_final_or_stable();
     _exits.insert_mem_bar(UseStoreStoreForCtor ? Op_MemBarStoreStore : Op_MemBarRelease,
-                          alloc_with_final());
+                          recorded_alloc);
 
     // If Memory barrier is created for final fields write
     // and allocation node does not escape the initialize method,
     // then barrier introduced by allocation node can be removed.
-    if (DoEscapeAnalysis && alloc_with_final()) {
-      AllocateNode* alloc = AllocateNode::Ideal_allocation(alloc_with_final());
+    if (DoEscapeAnalysis && (recorded_alloc != nullptr)) {
+      AllocateNode* alloc = AllocateNode::Ideal_allocation(recorded_alloc);
       alloc->compute_MemBar_redundancy(method());
     }
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name();
-      tty->print_cr(" writes finals and needs a memory barrier");
-    }
-  }
-
-  // Any method can write a @Stable field; insert memory barriers
-  // after those also. Can't bind predecessor allocation node (if any)
-  // with barrier because allocation doesn't always dominate
-  // MemBarRelease.
-  if (wrote_stable()) {
-    _exits.insert_mem_bar(Op_MemBarRelease);
-    if (PrintOpto && (Verbose || WizardMode)) {
-      method()->print_name();
-      tty->print_cr(" writes @Stable and needs a memory barrier");
+      tty->print_cr(" writes finals/@Stable and needs a memory barrier");
     }
   }
 

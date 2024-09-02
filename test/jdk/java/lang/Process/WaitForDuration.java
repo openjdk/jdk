@@ -55,9 +55,14 @@ public class WaitForDuration {
     @MethodSource("durations")
     void testEdgeDurations(Duration d, int sleepMillis, boolean expected)
             throws IOException, InterruptedException {
-        var pb = ProcessTools.createTestJavaProcessBuilder(
-            WaitForDuration.class.getSimpleName(), Integer.toString(sleepMillis));
-        assertEquals(expected, pb.start().waitFor(d));
+        var child = ProcessTools.createTestJavaProcessBuilder(
+            WaitForDuration.class.getSimpleName(), Integer.toString(sleepMillis))
+                .start();
+        try {
+            assertEquals(expected, child.waitFor(d));
+        } finally {
+            child.destroy();
+        }
     }
 
     @Test
