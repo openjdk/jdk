@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,34 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.classfile.constantpool;
 
-import java.lang.classfile.TypeKind;
-import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
+#include "jni.h"
 
-/**
- * Models a {@code CONSTANT_Double_info} constant in the constant pool of a
- * classfile.
- * @jvms 4.4.5 The CONSTANT_Long_info and CONSTANT_Double_info Structures
- *
- * @since 22
- */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-public sealed interface DoubleEntry
-        extends AnnotationConstantValueEntry, ConstantValueEntry
-        permits AbstractPoolEntry.DoubleEntryImpl {
+// This is in a separate file since it will need to be compiled to two different
+// object files, depending on if we are going to build a static or a dynamic
+// library.
 
-    /**
-     * {@return the double value}
-     */
-    double doubleValue();
-
-    /**
-     * {@return the type of the constant}
-     */
-    @Override
-    default TypeKind typeKind() {
-        return TypeKind.DOUBLE;
-    }
+jboolean JLI_IsStaticallyLinked(void) {
+#ifdef STATIC_BUILD
+  return JNI_TRUE;
+#else
+  return JNI_FALSE;
+#endif
 }
