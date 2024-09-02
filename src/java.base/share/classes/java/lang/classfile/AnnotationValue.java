@@ -97,15 +97,14 @@ public sealed interface AnnotationValue {
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfConstant
-            extends AnnotationValue
-            permits OfString, OfDouble, OfFloat, OfLong, OfInt, OfShort, OfChar, OfByte,
-                    OfBoolean, AnnotationImpl.OfConstantImpl {
+    sealed interface OfConstant extends AnnotationValue {
         /**
          * {@return the constant pool entry backing this constant element}
          *
          * @apiNote
-         * Different types of constant values may share the same type of entry.
+         * Different types of constant values may share the same type of entry
+         * because they have the same {@linkplain TypeKind##computational-type
+         * computational type}.
          * For example, {@link OfInt} and {@link OfChar} are both
          * backed by {@link IntegerEntry}. Use {@link #resolvedValue
          * resolvedValue()} for a value of accurate type.
