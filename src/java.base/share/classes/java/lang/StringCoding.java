@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +26,46 @@
 
 package java.lang;
 
+import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+
+
+import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
 /**
  * Utility class for string encoding and decoding.
  */
 class StringCoding {
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    private static final long POSITIVE_MASK = 0b1000000_1000000_1000000_1000000_1000000_1000000_1000000_1000000L;
 
     private StringCoding() { }
+
+    public static int countGreaterThanZero(String s) {
+        byte[] value;
+        return countGreaterThanZero(value = s.value(), 0, value.length);
+    }
+
+    /**
+     * Count the number of leading greater than zero bytes in the range.
+     */
+    public static int countGreaterThanZero(byte[] ba, int off, int len) {
+        int limit = off + len;
+        int i = off;
+        for (int end = limit - 7; i < end; i += 8) {
+            long v = UNSAFE.getLongUnaligned(ba, i + ARRAY_BYTE_BASE_OFFSET);
+            if ((v & POSITIVE_MASK) != 0 || (v & ~POSITIVE_MASK) != 0) {
+                break;
+            }
+        }
+
+        for (; i < limit; i++) {
+            if (ba[i] <= 0) {
+                return i - off;
+            }
+        }
+        return len;
+    }
 
     public static boolean hasNegatives(byte[] ba, int off, int len) {
         return countPositives(ba, off, len) != len;

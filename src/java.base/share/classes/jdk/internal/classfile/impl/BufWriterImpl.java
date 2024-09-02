@@ -34,7 +34,11 @@ import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.PoolEntry;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+
 public final class BufWriterImpl implements BufWriter {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private final ConstantPoolBuilder constantPool;
     private final ClassFileImpl context;
@@ -150,6 +154,55 @@ public final class BufWriterImpl implements BufWriter {
 
     public void writeBytes(BufWriterImpl other) {
         writeBytes(other.elems, 0, other.offset);
+    }
+
+    @SuppressWarnings("deprecation")
+    void writeUTF(String s) {
+        int len = s.length();
+
+        int countGreaterThanZero = 0;
+        byte coder = JLA.stringCoder(s);
+        int freeBytes = len + 2;
+        if (coder == 0) {
+            // If it is too long, it may be slow due to cache misses.
+            if (len < 256) {
+                countGreaterThanZero = JLA.countGreaterThanZero(s);
+            }
+            freeBytes += len - countGreaterThanZero; // 2 bytes
+        } else {
+            freeBytes += (len << 1); // 3 bytes
+        }
+        reserveSpace(freeBytes);
+
+        int start = this.offset;
+        int offset = start + 2;
+        byte[] elems = this.elems;
+
+        s.getBytes(0, countGreaterThanZero, elems, offset);
+        offset += countGreaterThanZero;
+
+        for (int i = countGreaterThanZero; i < len; ++i) {
+            char c = s.charAt(i);
+            if (c >= '\001' && c <= '\177') {
+                elems[offset++] = (byte) c;
+            } else if (c > '\u07FF') {
+                elems[offset    ] = (byte) (0xE0 | c >> 12 & 0xF);
+                elems[offset + 1] = (byte) (0x80 | c >> 6 & 0x3F);
+                elems[offset + 2] = (byte) (0x80 | c      & 0x3F);
+                offset += 3;
+            } else {
+                elems[offset    ] = (byte) (0xC0 | c >> 6 & 0x1F);
+                elems[offset + 1] = (byte) (0x80 | c      & 0x3F);
+                offset += 2;
+            }
+        }
+        int utf_len = offset - start - 2;
+        if (utf_len > 65535) {
+            throw new IllegalArgumentException("string too long");
+        }
+        elems[start    ] = (byte) (utf_len >> 8);
+        elems[start + 1] = (byte)  utf_len;
+        this.offset = offset;
     }
 
     @Override

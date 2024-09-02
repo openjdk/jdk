@@ -2594,6 +2594,14 @@ public final class System {
                 StringLatin1.inflate(src, srcOff, dst, dstOff, len);
             }
 
+            public byte stringCoder(String s) {
+                return s.coder();
+            }
+
+            public int countGreaterThanZero(String s) {
+                return StringCoding.countGreaterThanZero(s);
+            }
+
             public int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
                 return String.decodeASCII(src, srcOff, dst, dstOff, len);
             }
