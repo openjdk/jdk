@@ -37,6 +37,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.*;
 import java.lang.constant.*;
 import java.nio.charset.StandardCharsets;
@@ -52,7 +53,7 @@ import jdk.internal.classfile.impl.*;
  * Test various operations on
  */
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Warmup(iterations = 1, time = 2)
 @Measurement(iterations = 3, time = 1)
 @Fork(jvmArgsAppend = "--enable-preview", value = 3)
@@ -65,7 +66,8 @@ public class Utf8EntryWriteTo {
 
     @Param({"ascii", "utf8_2_bytes", "utf8_3_bytes", "emoji"})
     public String charType;
-    public String[] constants;
+    ConstantPoolBuilder poolBuilder;
+    ClassEntry thisClass;
 
     @Setup
     public void setup() throws Exception {
@@ -79,44 +81,21 @@ public class Utf8EntryWriteTo {
                 }
         );
         String s = new String(bytes, 0, bytes.length, StandardCharsets.UTF_8);
-        constants = new String[128];
+        String[] constants = new String[128];
         for (int i = 0; i < constants.length; i++) {
             constants[i] = s.repeat(32);
+        }
+
+        poolBuilder = ConstantPoolBuilder.of();
+        thisClass = poolBuilder.classEntry(CLASS_DESC);
+        for (var c : constants) {
+            poolBuilder.utf8Entry(c);
         }
     }
 
     @Benchmark
     public void writeTo(Blackhole bh) {
-        bh.consume(generate(constants));
-    }
-
-    private static byte[] generate(String[] constants) {
-        return ClassFile.of().build(
-                CLASS_DESC,
-                new Consumer<ClassBuilder>() {
-                    @Override
-                    public void accept(ClassBuilder clb) {
-                        clb.withFlags(ACC_FINAL | ACC_SUPER | ACC_SYNTHETIC)
-                           .withMethodBody(
-                                   "concat",
-                                   MTD_String, ACC_FINAL | ACC_PRIVATE | ACC_STATIC,
-                                   new Consumer<CodeBuilder>() {
-                                       @Override
-                                       public void accept(CodeBuilder cb) {
-                                           cb.new_(STRING_BUILDER)
-                                             .dup()
-                                             .invokespecial(STRING_BUILDER, "<init>", MTD_void);
-                                           for (String constant : constants) {
-                                               cb.ldc(constant)
-                                                 .invokevirtual(STRING_BUILDER, "append", MTD_append);
-                                           }
-                                           cb.invokevirtual(STRING_BUILDER, "toString", MTD_String)
-                                             .areturn();
-                                       }
-                                   }
-                           );
-                    }
-                }
-        );
+        ClassFile.of()
+                 .build(thisClass, poolBuilder, (ClassBuilder clb) -> {});
     }
 }
