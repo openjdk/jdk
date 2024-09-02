@@ -206,7 +206,7 @@ public final class DirectCodeBuilder
             }
         }
         if (handlersSize < handlers.size())
-            buf.patchInt(pos, 2, handlersSize);
+            buf.patchU2(pos, handlersSize);
     }
 
     private void buildContent() {
@@ -243,7 +243,7 @@ public final class DirectCodeBuilder
                             }
                         }
                         if (crSize < characterRanges.size())
-                            b.patchInt(pos, 2, crSize);
+                            b.patchU2(pos, crSize);
                     }
                 };
                 attributes.withAttribute(a);
@@ -266,7 +266,7 @@ public final class DirectCodeBuilder
                             }
                         }
                         if (lvSize < localVariables.size())
-                            b.patchInt(pos, 2, lvSize);
+                            b.patchU2(pos, lvSize);
                     }
                 };
                 attributes.withAttribute(a);
@@ -469,8 +469,13 @@ public final class DirectCodeBuilder
         if (deferredLabels != null) {
             for (DeferredLabel dl : deferredLabels) {
                 int branchOffset = labelToBci(dl.label) - dl.instructionPc;
-                if (dl.size == 2 && (short)branchOffset != branchOffset) throw new LabelOverflowException();
-                bytecodesBufWriter.patchInt(dl.labelPc, dl.size, branchOffset);
+                if (dl.size == 2) {
+                    if ((short)branchOffset != branchOffset) throw new LabelOverflowException();
+                    bytecodesBufWriter.patchU2(dl.labelPc, branchOffset);
+                } else {
+                    assert dl.size == 4;
+                    bytecodesBufWriter.patchInt(dl.labelPc, branchOffset);
+                }
             }
         }
     }
@@ -590,13 +595,13 @@ public final class DirectCodeBuilder
         writeBytecode(opcode);
         bytecodesBufWriter.writeIndex(ref);
         bytecodesBufWriter.writeU1(count);
-        bytecodesBufWriter.writeU1(0);
+        bytecodesBufWriter.skip(1);
     }
 
     public void writeInvokeDynamic(InvokeDynamicEntry ref) {
         writeBytecode(INVOKEDYNAMIC);
         bytecodesBufWriter.writeIndex(ref);
-        bytecodesBufWriter.writeU2(0);
+        bytecodesBufWriter.skip(2);
     }
 
     public void writeNewObject(ClassEntry type) {

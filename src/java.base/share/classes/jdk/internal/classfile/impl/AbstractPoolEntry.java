@@ -446,7 +446,7 @@ public abstract sealed class AbstractPoolEntry {
                             throw new IllegalArgumentException();
                         }
                         int byteLengthFinal = byteLength;
-                        pool.patchInt(pool.size() - i - 2, 2, byteLengthFinal);
+                        pool.patchU2(pool.size() - i - 2, byteLengthFinal);
                         for (int j = i; j < charLength; ++j) {
                             c1 = (stringValue).charAt(j);
                             if (c1 >= '\001' && c1 <= '\177') {

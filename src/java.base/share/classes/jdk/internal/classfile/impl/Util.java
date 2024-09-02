@@ -281,8 +281,7 @@ public class Util {
                                     b.writeU2(-1);//max locals
                                     b.writeInt(bytecode.limit());
                                     b.writeBytes(bytecode.array(), 0, bytecode.limit());
-                                    b.writeU2(0);//exception handlers
-                                    b.writeU2(0);//attributes
+                                    b.skip(4);//exception handlers & attributes
                                 }
                     }))));
             ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, dump);

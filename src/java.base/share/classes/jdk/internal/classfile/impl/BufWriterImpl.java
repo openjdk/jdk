@@ -167,12 +167,34 @@ public final class BufWriterImpl implements BufWriter {
         this.offset = prevOffset;
     }
 
+    public void patchU2(int offset, int x) {
+        byte[] elems = this.elems;
+        elems[offset    ] = (byte) (x >> 8);
+        elems[offset + 1] = (byte)  x;
+    }
+
+    public void patchInt(int offset, int x) {
+        byte[] elems = this.elems;
+        elems[offset    ] = (byte) (x >> 24);
+        elems[offset + 1] = (byte) (x >> 16);
+        elems[offset + 2] = (byte) (x >> 8);
+        elems[offset + 3] = (byte)  x;
+    }
+
     @Override
     public void writeIntBytes(int intSize, long intValue) {
         reserveSpace(intSize);
         for (int i = 0; i < intSize; i++) {
             elems[offset++] = (byte) ((intValue >> 8 * (intSize - i - 1)) & 0xFF);
         }
+    }
+
+    public void skip(int skipSize) {
+        int nextOffset = offset + skipSize;
+        if (nextOffset > elems.length) {
+            grow(nextOffset);
+        }
+        this.offset = nextOffset;
     }
 
     @Override
@@ -218,7 +240,7 @@ public final class BufWriterImpl implements BufWriter {
     @Override
     public void writeIndexOrZero(PoolEntry entry) {
         if (entry == null || entry.index() == 0)
-            writeU2(0);
+            skip(2);
         else
             writeIndex(entry);
     }
