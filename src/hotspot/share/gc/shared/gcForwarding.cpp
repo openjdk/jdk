@@ -36,7 +36,7 @@ void GCForwarding::initialize_flags(size_t max_heap_size) {
   if (UseCompactObjectHeaders && max_heap_size > max_narrow_heap_size * HeapWordSize) {
     warning("Compact object headers require a java heap size smaller than %zu (given: %zu). "
             "Disabling compact object headers.", max_narrow_heap_size * HeapWordSize, max_heap_size);
-    FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
+    FLAG_SET_ERGO(UseCompactObjectHeaders, false);
   }
 #endif
 }
