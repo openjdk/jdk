@@ -42,7 +42,7 @@ public class LingeredAppWithFFMUpcall extends LingeredApp {
     public static void upcall() {
         try {
             Thread.sleep(600000);  // 10 min
-        } catch(InterruptedException e) {
+        } catch (InterruptedException e) {
             // Ignore
         }
     }
