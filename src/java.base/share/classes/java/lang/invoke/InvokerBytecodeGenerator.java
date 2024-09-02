@@ -319,7 +319,7 @@ class InvokerBytecodeGenerator {
         clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, new Consumer<>() {
             @Override
             public void accept(CodeBuilder cob) {
-                cob.loadConstant(classDesc)
+                cob.ldc(classDesc)
                    .invokestatic(CD_MethodHandles, "classData", MTD_Object_Class);
                 if (classData.size() == 1) {
                     ClassData p = classData.get(0);
@@ -1659,7 +1659,7 @@ class InvokerBytecodeGenerator {
             clb.withMethodBody("dummy", MTD_void, ACC_STATIC, new Consumer<>() {
                 @Override
                 public void accept(CodeBuilder cob) {
-                    cob.loadConstant(os.toString());
+                    cob.ldc(os.toString());
                     cob.pop();
                     cob.return_();
                 }
