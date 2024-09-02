@@ -692,7 +692,10 @@ public class MessageFormat extends Format {
      * represents the current state of this {@code MessageFormat}}
      *
      * The string is constructed from internal information and therefore
-     * does not necessarily equal the previously applied pattern.
+     * does not necessarily equal the previously applied pattern. The order of
+     * {@code FormatStyle} matching is not guaranteed. That is, a {@code
+     * FormatStyle} produced may not be equivalent to the corresponding style passed,
+     * in the instance that multiple styles are equivalent.
      *
      * @implSpec The implementation in {@link MessageFormat} returns a
      * string that, when passed to a {@code MessageFormat()} constructor

@@ -106,12 +106,14 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     CXXFLAGS := $(LIBAWT_CFLAGS) $(X_CFLAGS), \
     CFLAGS_gcc := -fgcse-after-reload, \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
+    DISABLED_WARNINGS_gcc := unused-but-set-variable unused-variable, \
     DISABLED_WARNINGS_gcc_awt_LoadLibrary.c := unused-result, \
     DISABLED_WARNINGS_gcc_debug_mem.c := format-nonliteral, \
     DISABLED_WARNINGS_gcc_ProcessPath.c := maybe-uninitialized, \
     DISABLED_WARNINGS_gcc_Region.c := maybe-uninitialized, \
     DISABLED_WARNINGS_gcc_SurfaceData.c := unused-value, \
     DISABLED_WARNINGS_gcc_TransformHelper.c := sign-compare, \
+    DISABLED_WARNINGS_clang := unused-but-set-variable unused-variable, \
     DISABLED_WARNINGS_clang_awt_ImagingLib.c := deprecated-non-prototype, \
     DISABLED_WARNINGS_clang_debug_trace.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_Trace.c := format-nonliteral, \
@@ -178,6 +180,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
       CFLAGS := -DHEADLESS=true $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) \
           $(X_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBAWT_HEADLESS_EXTRA_HEADER_DIRS), \
+      DISABLED_WARNINGS_gcc := unused-variable, \
       DISABLED_WARNINGS_gcc_X11Renderer.c := unused-function, \
       DISABLED_WARNINGS_gcc_X11SurfaceData.c := unused-function, \
       JDK_LIBS := libawt java.base:libjava, \
@@ -234,7 +237,7 @@ ifeq ($(call isTargetOs, windows macosx)+$(ENABLE_HEADLESS_ONLY), false+false)
       OPTIMIZATION := LOW, \
       CFLAGS := -DXAWT -DXAWT_HACK $(LIBAWT_XAWT_CFLAGS) \
           $(FONTCONFIG_CFLAGS) $(CUPS_CFLAGS) $(X_CFLAGS), \
-      DISABLED_WARNINGS_gcc := int-to-pointer-cast, \
+      DISABLED_WARNINGS_gcc := int-to-pointer-cast unused-variable, \
       DISABLED_WARNINGS_gcc_awt_Taskbar.c := parentheses, \
       DISABLED_WARNINGS_gcc_GLXSurfaceData.c := unused-function, \
       DISABLED_WARNINGS_gcc_gtk3_interface.c := parentheses type-limits \
@@ -244,8 +247,10 @@ ifeq ($(call isTargetOs, windows macosx)+$(ENABLE_HEADLESS_ONLY), false+false)
       DISABLED_WARNINGS_gcc_screencast_pipewire.c := undef, \
       DISABLED_WARNINGS_gcc_screencast_portal.c := undef, \
       DISABLED_WARNINGS_gcc_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
+      DISABLED_WARNINGS_gcc_X11Color.c := unused-but-set-variable, \
       DISABLED_WARNINGS_gcc_X11SurfaceData.c := implicit-fallthrough \
-          pointer-to-int-cast, \
+          pointer-to-int-cast unused-but-set-variable, \
+      DISABLED_WARNINGS_gcc_X11TextRenderer_md.c := unused-but-set-variable, \
       DISABLED_WARNINGS_gcc_XlibWrapper.c := type-limits pointer-to-int-cast, \
       DISABLED_WARNINGS_gcc_XRBackendNative.c := maybe-uninitialized, \
       DISABLED_WARNINGS_gcc_XToolkit.c := unused-result, \
@@ -308,9 +313,10 @@ ifeq ($(call isTargetOs, macosx), true)
       EXCLUDES := $(LIBAWT_LWAWT_EXCLUDES), \
       OPTIMIZATION := LOW, \
       EXTRA_HEADER_DIRS := $(LIBAWT_LWAWT_EXTRA_HEADER_DIRS), \
-      DISABLED_WARNINGS_clang := incomplete-implementation \
-          deprecated-declarations objc-method-access \
-          incompatible-pointer-types extra-tokens sign-compare undef, \
+      DISABLED_WARNINGS_clang := deprecated-declarations extra-tokens \
+          incompatible-pointer-types incomplete-implementation \
+          objc-method-access sign-compare undef unused-function \
+          unused-variable, \
       DISABLED_WARNINGS_clang_AWTWindow.m := bitwise-op-parentheses, \
       DISABLED_WARNINGS_clang_CFileDialog.m := semicolon-before-method-body, \
       DISABLED_WARNINGS_clang_CGGlyphImages.m := pointer-arith, \

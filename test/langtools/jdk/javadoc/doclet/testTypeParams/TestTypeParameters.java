@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4927167 4974929 6381729 7010344 8025633 8081854 8182765 8187288 8261976
+ * @bug      4927167 4974929 6381729 7010344 8025633 8081854 8182765 8187288 8261976 8313931
  * @summary  When the type parameters are more than 10 characters in length,
  *           make sure there is a line break between type params and return type
  *           in member summary. Also, test for type parameter links in package-summary and
@@ -110,10 +110,22 @@ public class TestTypeParameters extends JavadocTester {
                     <div class="col-first even-row-color"><code>&nbsp;&lt;T extends java.lang.Runnable&gt;<br></code></div>
                     <div class="col-constructor-name even-row-color"><code>\
                     <a href="#%3Cinit%3E()" class="member-name-link">CtorTypeParam</a>()</code></div>
-                    <div class="col-last even-row-color">&nbsp;</div>""",
+                    <div class="col-last even-row-color">
+                    <div class="block">Generic constructor.</div>""",
                 """
                     <div class="member-signature"><span class="modifiers">public</span>\
                     &nbsp;<span class="type-parameters">&lt;T extends java.lang.Runnable&gt;</span>\
-                    &nbsp;<span class="element-name">CtorTypeParam</span>()</div>""");
+                    &nbsp;<span class="element-name">CtorTypeParam</span>()</div>""",
+                """
+                    <a href="#%3Cinit%3E()-type-param-T"><code>T</code></a>""",
+                """
+                    <dt>Type Parameters:</dt>
+                    <dd><span id="&lt;init&gt;()-type-param-T"><code>T</code> - the type parameter</span></dd>""",
+                """
+                    <dt>See Also:</dt>
+                    <dd>
+                    <ul class="tag-list">
+                    <li><a href="#%3Cinit%3E()-type-param-T">link to type parameter</a></li>
+                    </ul>""");
     }
 }

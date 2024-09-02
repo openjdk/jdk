@@ -112,9 +112,12 @@ define SetupTestFilesCompilationBody
         CXXFLAGS := $$(TEST_CFLAGS) $$($1_CFLAGS) $$($1_CFLAGS_$$(name)), \
         LD_SET_ORIGIN := $$($1_LD_SET_ORIGIN), \
         LDFLAGS := $$($1_LDFLAGS_$$(name)), \
-        DISABLED_WARNINGS_gcc := format undef unused-function unused-value, \
-        DISABLED_WARNINGS_clang := undef format-nonliteral \
-            missing-field-initializers sometimes-uninitialized, \
+        DISABLED_WARNINGS_gcc := format undef unused-but-set-variable \
+            unused-const-variable unused-function unused-value \
+            unused-variable, \
+        DISABLED_WARNINGS_clang := format-nonliteral \
+            missing-field-initializers sometimes-uninitialized undef \
+            unused-but-set-variable unused-function unused-variable, \
         DEFAULT_LIBCXX := false, \
         JDK_LIBS := $$($1_JDK_LIBS_$$(name)), \
         LIBS := $$($1_LIBS_$$(name)), \
