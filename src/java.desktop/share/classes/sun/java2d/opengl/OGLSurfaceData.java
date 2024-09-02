@@ -232,7 +232,7 @@ public abstract class OGLSurfaceData extends SurfaceData
         super(getCustomSurfaceType(type), cm);
         this.graphicsConfig = gc;
         this.type = type;
-        setBlitProxyKey(gc.getProxyKey());
+        setBlitProxyCache(gc.getSurfaceDataProxyCache());
     }
 
     @Override

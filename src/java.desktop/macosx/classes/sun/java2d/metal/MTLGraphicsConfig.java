@@ -87,6 +87,7 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
     private final MTLContext context;
     private final Object disposerReferent = new Object();
     private final int maxTextureSize;
+    private final SurfaceManager.ProxyCache surfaceDataProxyCache = new SurfaceManager.ProxyCache();
 
     private static native boolean tryLoadMetalLibrary(int displayID, String shaderLib);
     private static native long getMTLConfigInfo(int displayID, String mtlShadersLib);
@@ -113,8 +114,8 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
     }
 
     @Override
-    public Object getProxyKey() {
-        return this;
+    public SurfaceManager.ProxyCache getSurfaceDataProxyCache() {
+        return surfaceDataProxyCache;
     }
 
     public SurfaceData createManagedSurface(int w, int h, int transparency) {
