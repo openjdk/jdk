@@ -254,7 +254,7 @@ public:
     _clms->add_to_statistics(&stats_before);
 
     // allocate
-    _clms->deallocate(bl.base(), bl.word_size(), is_class);
+    _clms->deallocate(bl.base(), bl.word_size());
 
     // take stats after deallocation
     ClmsStats stats_after;
@@ -273,7 +273,9 @@ public:
 
     EXPECT_ARENA_UNCHANGED(ca);
     EXPECT_ARENA_UNCHANGED(nca);
-    if (is_class) {
+    // Depending on whether the returned block was suitable for Klass,
+    // it may have gone to either the non-class freelist or the class freelist
+    if (d_ca.num_freeblocks_delta == 1) {
       EXPECT_EQ(d_ca.num_freeblocks_delta, 1);
       EXPECT_EQ((size_t)d_ca.freeblocks_words_delta, bl.word_size());
       EXPECT_FREEBLOCKS_UNCHANGED(nca);

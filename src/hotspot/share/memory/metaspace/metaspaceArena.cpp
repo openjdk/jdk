@@ -396,6 +396,8 @@ MetaBlock MetaspaceArena::allocate_inner(size_t word_size, MetaBlock& wastage) {
 // Prematurely returns a metaspace allocation to the _block_freelists
 // because it is not needed anymore (requires CLD lock to be active).
 void MetaspaceArena::deallocate(MetaBlock block) {
+  // Note that we may receive blocks that don't originate from this
+  // arena, and that is okay.
   DEBUG_ONLY(block.verify();)
   // This only matters on 32-bit:
   // Since we always align up allocations from arena, we align up here, too.
