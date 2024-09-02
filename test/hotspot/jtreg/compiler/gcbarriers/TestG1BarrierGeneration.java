@@ -43,6 +43,7 @@ import jdk.test.lib.Asserts;
 public class TestG1BarrierGeneration {
     static final String PRE_ONLY = "pre";
     static final String POST_ONLY = "post";
+    static final String POST_ONLY_NOT_NULL = "post notnull";
     static final String PRE_AND_POST = "pre post";
     static final String PRE_AND_POST_NOT_NULL = "pre post notnull";
 
@@ -188,12 +189,44 @@ public class TestG1BarrierGeneration {
         return o;
     }
 
+    @Test
+    @IR(failOn = {IRNode.STORE_P, IRNode.STORE_N},
+        phase = CompilePhase.BEFORE_MACRO_EXPANSION)
+    public static Outer testStoreNullOnNewObject() {
+        Outer o = new Outer();
+        o.f = null;
+        return o;
+    }
+
+    @Test
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, POST_ONLY_NOT_NULL, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, POST_ONLY_NOT_NULL, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_STORE_P},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_STORE_N, IRNode.G1_ENCODE_P_AND_STORE_N},
+        phase = CompilePhase.FINAL_CODE)
+    public static Outer testStoreNotNullOnNewObject(Object o1) {
+        if (o1.hashCode() == 42) {
+            return null;
+        }
+        Outer o = new Outer();
+        o.f = o1;
+        return o;
+    }
+
     @Run(test = {"testStore",
                  "testStoreNull",
                  "testStoreObfuscatedNull",
                  "testStoreNotNull",
                  "testStoreTwice",
-                 "testStoreOnNewObject"})
+                 "testStoreOnNewObject",
+                 "testStoreNotNullOnNewObject"})
     public void runStoreTests() {
         {
             Outer o = new Outer();
@@ -229,6 +262,15 @@ public class TestG1BarrierGeneration {
         {
             Object o1 = new Object();
             Outer o = testStoreOnNewObject(o1);
+            Asserts.assertEquals(o1, o.f);
+        }
+        {
+            Outer o = testStoreNullOnNewObject();
+            Asserts.assertNull(o.f);
+        }
+        {
+            Object o1 = new Object();
+            Outer o = testStoreNotNullOnNewObject(o1);
             Asserts.assertEquals(o1, o.f);
         }
     }
