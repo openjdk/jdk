@@ -95,7 +95,8 @@ public class Utf8EntryWriteTo {
 
     @Benchmark
     public void writeTo(Blackhole bh) {
-        ClassFile.of()
-                 .build(thisClass, poolBuilder, (ClassBuilder clb) -> {});
+        bh.consum(ClassFile
+                .of()
+                .build(thisClass, poolBuilder, (ClassBuilder clb) -> {}));
     }
 }
