@@ -431,7 +431,7 @@ public:
   ThreadDumpDCmd(outputStream* output, bool heap);
   static const char* name() { return "Thread.print"; }
   static const char* description() {
-    return "Print all threads with stacktraces.";
+    return "Print all platform threads with stacktraces.";
   }
   static const char* impact() {
     return "Medium: Depends on the number of threads.";

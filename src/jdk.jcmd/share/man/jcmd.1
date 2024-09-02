@@ -938,7 +938,7 @@ If %p is specified in the filename, it is expanded to the JVM\[aq]s PID.
 .RE
 .TP
 \f[V]Thread.print\f[R] [\f[I]options\f[R]]
-Prints all threads with stacktraces.
+Prints all platform threads with stacktraces.
 .RS
 .PP
 Impact: Medium --- depends on the number of threads.
@@ -955,6 +955,13 @@ false)
 .IP \[bu] 2
 \f[V]-l\f[R]: (Optional) Prints \f[V]java.util.concurrent\f[R] locks
 (BOOLEAN, false)
+.RE
+.TP
+\f[V]Thread.vthread_summary\f[R]
+Print virtual thread summary
+.RS
+.PP
+Impact: Low
 .RE
 .TP
 \f[V]VM.cds\f[R] [\f[I]arguments\f[R]]

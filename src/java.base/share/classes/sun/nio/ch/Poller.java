@@ -36,7 +36,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 import jdk.internal.misc.InnocuousThread;
-import jdk.internal.vm.VThreadSummary;
 import sun.security.action.GetPropertyAction;
 
 /**
@@ -53,9 +52,6 @@ public abstract class Poller {
         } catch (IOException ioe) {
             throw new ExceptionInInitializerError(ioe);
         }
-
-        // notify serviceability support that the poller I/O mechanism has started
-        VThreadSummary.pollerInitialized();
     }
 
     // maps file descriptors to parked Thread
