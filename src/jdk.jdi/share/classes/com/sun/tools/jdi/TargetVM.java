@@ -123,8 +123,9 @@ public class TargetVM implements Runnable {
                 byte b[] = connection.readPacket();
                 if (b.length == 0) {
                     done = true;
+                } else {
+                    p = Packet.fromByteArray(b);
                 }
-                p = Packet.fromByteArray(b);
             } catch (IOException e) {
                 done = true;
             }
