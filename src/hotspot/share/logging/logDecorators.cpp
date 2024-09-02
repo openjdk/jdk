@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "logging/logDecorators.hpp"
 #include "runtime/os.hpp"
+#include "logDecorators.hpp"
 
 template <LogDecorators::Decorator d>
 struct AllBitmask {
@@ -45,6 +46,15 @@ const char* LogDecorators::_name[][2] = {
 #undef DECORATOR
 };
 
+const LogDecorators::DefaultDecorator LogDecorators::DefaultDecorator::Invalid;
+
+LogDecorators::DefaultDecorator LogDecorators::DefaultDecorators[] = {
+#define DEFAULT_VALUE(mask, level, ...) LogDecorators::DefaultDecorator(LogLevel::level, mask, __VA_ARGS__),
+  DEFAULT_DECORATORS
+#undef DEFAULT_VALUE
+  LogDecorators::DefaultDecorator::Invalid
+};
+
 LogDecorators::Decorator LogDecorators::from_string(const char* str) {
   for (size_t i = 0; i < Count; i++) {
     Decorator d = static_cast<Decorator>(i);
@@ -57,7 +67,7 @@ LogDecorators::Decorator LogDecorators::from_string(const char* str) {
 
 bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
   if (decorator_args == nullptr || strlen(decorator_args) == 0) {
-    _decorators = DefaultDecoratorsMask;
+    // Decorators have already been set
     return true;
   }
 
@@ -92,4 +102,13 @@ bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
     _decorators = tmp_decorators;
   }
   return result;
+}
+
+
+bool LogDecorators::DefaultDecorator::operator==(const DefaultDecorator &ref) const {
+  return this->_selection == ref._selection && this->_mask == ref._mask;
+}
+
+bool LogDecorators::DefaultDecorator::operator!=(const DefaultDecorator &ref) const {
+  return !operator==(ref);
 }

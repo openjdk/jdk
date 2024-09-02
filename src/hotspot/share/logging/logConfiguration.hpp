@@ -90,6 +90,7 @@ class LogConfiguration : public AllStatic {
   static void describe_available(outputStream* out);
   static void describe_current_configuration(outputStream* out);
 
+  static LogDecorators get_default_decorators(LogSelectionList selection_list);
 
  public:
   // Initialization and finalization of log configuration, to be run at vm startup and shutdown respectively.
