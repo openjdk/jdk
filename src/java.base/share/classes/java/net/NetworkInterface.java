@@ -35,12 +35,29 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * This class represents a Network Interface made up of a name,
- * and a list of IP addresses assigned to this interface.
- * It is used to identify the local interface on which a multicast group
- * is joined.
+ * This class represents a Network Interface.
+ * <p>
+ * A Network Interface is the point of interconnection
+ * between a computer and a private or public network.
+ * A Network Interface can be physical or logical.
+ * Network Interfaces are normally known by names such as "le0",
+ * have an index, a (possibly empty) set of {@linkplain InterfaceAddress
+ * MAC addresses}, and a (possibly empty) set of {@linkplain
+ * InetAddress IP addresses} bound to that interface.
+ * Network Interfaces, and in particular their list of assigned IP addresses,
+ * can be reconfigured dynamically by the underlying system at any
+ * time during the life of the JVM.
+ * <p>
+ * When obtaining a {@code NetworkInterface} instance, part of its
+ * configuration (such as its name and the list of assigned IP addresses),
+ * may be snapshot at creation time.
+ * Obtaining an updated view of the network configuration may require
+ * looking up a network interface again in order to obtain a new instance.
+ * <p>
+ * Network interface instances are typically used to identify the local
+ * interface on which a multicast group is joined.
  *
- * Interfaces are normally known by names such as "le0".
+ *
  *
  * @since 1.4
  */
