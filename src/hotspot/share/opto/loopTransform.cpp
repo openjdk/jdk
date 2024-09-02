@@ -1683,8 +1683,8 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   // use by range check elimination.
   Node *pre_opaq  = new Opaque1Node(C, pre_limit, limit);
 
-  register_new_node(pre_limit, pre_head->in(0));
-  register_new_node(pre_opaq , pre_head->in(0));
+  register_new_node(pre_limit, pre_head->in(LoopNode::EntryControl));
+  register_new_node(pre_opaq , pre_head->in(LoopNode::EntryControl));
 
   // Since no other users of pre-loop compare, I can hack limit directly
   assert(cmp_end->outcnt() == 1, "no other users");
@@ -2790,6 +2790,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // Find the main loop limit; we will trim it's iterations
   // to not ever trip end tests
   Node *main_limit = cl->limit();
+  Node* main_limit_c = get_ctrl(main_limit);
 
   // Check graph shape. Cannot optimize a loop if zero-trip
   // Opaque1 node is optimized away and then another round
@@ -2822,9 +2823,15 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   }
   Opaque1Node *pre_opaq = (Opaque1Node*)pre_opaq1;
   Node *pre_limit = pre_opaq->in(1);
+  Node* pre_limit_c = get_ctrl(pre_limit);
 
   // Where do we put new limit calculations
-  Node *pre_ctrl = pre_end->loopnode()->in(LoopNode::EntryControl);
+  Node* pre_ctrl = pre_end->loopnode()->in(LoopNode::EntryControl);
+  // Range check elimination optimizes out conditions whose parameters are loop invariant in the main loop. They usually
+  // have control above the pre loop, but there's no guarantee that they do. There's no guarantee either that the pre
+  // loop limit has control that's out of loop (a previous round of range check elimination could have set a limit that's
+  // not loop invariant).
+  Node* new_limit_ctrl = dominated_node(pre_ctrl, pre_limit_c);
 
   // Ensure the original loop limit is available from the
   // pre-loop Opaque1 node.
@@ -2925,7 +2932,14 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
         continue; // Don't rce this check but continue looking for other candidates.
       }
 
-      assert(is_dominator(compute_early_ctrl(offset, offset_c), pre_end), "node pinned on loop exit test?");
+      // offset and limit can have control set below the pre loop when they are not loop invariant in the pre loop.
+      // Update their control (and the control of inputs as needed) to be above pre_end
+      ensure_node_and_inputs_are_above_pre_end(pre_end, offset, offset_c);
+      ensure_node_and_inputs_are_above_pre_end(pre_end, limit, limit_c);
+
+      // offset and limit could have control below new_limit_ctrl if they are not loop invariant in the pre loop.
+      new_limit_ctrl = dominated_node(new_limit_ctrl, offset_c, limit_c);
+
 #ifdef ASSERT
       if (TraceRangeLimitCheck) {
         tty->print_cr("RC bool node%s", flip ? " flipped:" : ":");
@@ -2945,16 +2959,16 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
       jlong lscale_con = scale_con;
       Node* int_offset = offset;
       offset = new ConvI2LNode(offset);
-      register_new_node(offset, pre_ctrl);
+      register_new_node(offset, new_limit_ctrl);
       Node* int_limit = limit;
       limit = new ConvI2LNode(limit);
-      register_new_node(limit, pre_ctrl);
+      register_new_node(limit, new_limit_ctrl);
 
       // Adjust pre and main loop limits to guard the correct iteration set
       if (cmp->Opcode() == Op_CmpU) { // Unsigned compare is really 2 tests
         if (b_test._test == BoolTest::lt) { // Range checks always use lt
           // The underflow and overflow limits: 0 <= scale*I+offset < limit
-          add_constraint(stride_con, lscale_con, offset, zero, limit, pre_ctrl, &pre_limit, &main_limit);
+          add_constraint(stride_con, lscale_con, offset, zero, limit, new_limit_ctrl, &pre_limit, &main_limit);
           Node* init = cl->init_trip();
           Node* opaque_init = new OpaqueLoopInitNode(C, init);
           register_new_node(opaque_init, loop_entry);
@@ -3013,22 +3027,22 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           // Convert (I*scale+offset) >= Limit to (I*(-scale)+(-offset)) <= -Limit
           lscale_con = -lscale_con;
           offset = new SubLNode(zero, offset);
-          register_new_node(offset, pre_ctrl);
+          register_new_node(offset, new_limit_ctrl);
           limit  = new SubLNode(zero, limit);
-          register_new_node(limit, pre_ctrl);
+          register_new_node(limit, new_limit_ctrl);
           // Fall into LE case
         case BoolTest::le:
           if (b_test._test != BoolTest::gt) {
             // Convert X <= Y to X < Y+1
             limit = new AddLNode(limit, one);
-            register_new_node(limit, pre_ctrl);
+            register_new_node(limit, new_limit_ctrl);
           }
           // Fall into LT case
         case BoolTest::lt:
           // The underflow and overflow limits: MIN_INT <= scale*I+offset < limit
           // Note: (MIN_INT+1 == -MAX_INT) is used instead of MIN_INT here
           // to avoid problem with scale == -1: MIN_INT/(-1) == MIN_INT.
-          add_constraint(stride_con, lscale_con, offset, mini, limit, pre_ctrl, &pre_limit, &main_limit);
+          add_constraint(stride_con, lscale_con, offset, mini, limit, new_limit_ctrl, &pre_limit, &main_limit);
           break;
         default:
           if (PrintOpto) {
@@ -3072,8 +3086,14 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
     // Computed pre-loop limit can be outside of loop iterations range.
     pre_limit = (stride_con > 0) ? (Node*)new MinINode(pre_limit, orig_limit)
                                  : (Node*)new MaxINode(pre_limit, orig_limit);
-    register_new_node(pre_limit, pre_ctrl);
+    register_new_node(pre_limit, new_limit_ctrl);
   }
+  // new pre_limit can push Bool/Cmp/Opaque nodes down (when one of the eliminated condition has parameters that are not
+  // loop invariant in the pre loop.
+  set_ctrl(pre_opaq, new_limit_ctrl);
+  set_ctrl(pre_end->in(1), new_limit_ctrl);
+  set_ctrl(pre_end->cmp_node(), new_limit_ctrl);
+
   _igvn.replace_input_of(pre_opaq, 1, pre_limit);
 
   // Note:: we are making the main loop limit no longer precise;
@@ -3093,7 +3113,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
     register_new_node(main_cmp, main_cle->in(0));
     _igvn.replace_input_of(main_bol, 1, main_cmp);
   }
-  assert(main_limit == cl->limit() || get_ctrl(main_limit) == pre_ctrl, "wrong control for added limit");
+  assert(main_limit == cl->limit() || get_ctrl(main_limit) == new_limit_ctrl, "wrong control for added limit");
   const TypeInt* orig_limit_t = _igvn.type(orig_limit)->is_int();
   bool upward = cl->stride_con() > 0;
   // The new loop limit is <= (for an upward loop) >= (for a downward loop) than the orig limit.
@@ -3101,7 +3121,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // may be too pessimistic. A CastII here guarantees it's not lost.
   main_limit = new CastIINode(pre_ctrl, main_limit, TypeInt::make(upward ? min_jint : orig_limit_t->_lo,
                                                         upward ? orig_limit_t->_hi : max_jint, Type::WidenMax));
-  register_new_node(main_limit, pre_ctrl);
+  register_new_node(main_limit, new_limit_ctrl);
   // Hack the now-private loop bounds
   _igvn.replace_input_of(main_cmp, 2, main_limit);
   if (abs_stride_is_one) {
@@ -3112,6 +3132,35 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // The OpaqueNode is unshared by design
   assert(opqzm->outcnt() == 1, "cannot hack shared node");
   _igvn.replace_input_of(opqzm, 1, main_limit);
+  // new main_limit can push Bool/Cmp nodes down (when one of the eliminated condition has parameters that are not loop
+  // invariant in the pre loop.
+  set_ctrl(opqzm, new_limit_ctrl);
+  set_ctrl(iffm->in(1), new_limit_ctrl);
+  set_ctrl(iffm->in(1)->in(1), new_limit_ctrl);
+}
+
+// Adjust control for node and its inputs (and inputs of its inputs) to be above the pre end
+void PhaseIdealLoop::ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node, Node*& control) {
+  assert(is_dominator(compute_early_ctrl(node, control), pre_end), "node pinned on loop exit test?");
+
+  if (is_dominator(control, pre_end)) {
+    return;
+  }
+  control = pre_end->in(0);
+  ResourceMark rm;
+  Unique_Node_List wq;
+  wq.push(node);
+  for (uint i = 0; i < wq.size(); i++) {
+    Node* n = wq.at(i);
+    assert(is_dominator(compute_early_ctrl(n, get_ctrl(n)), pre_end), "node pinned on loop exit test?");
+    set_ctrl(n, control);
+    for (uint j = 0; j < n->req(); ++j) {
+      Node* in = n->in(j);
+      if (in != nullptr && has_ctrl(in) && !is_dominator(get_ctrl(in), pre_end)) {
+        wq.push(in);
+      }
+    }
+  }
 }
 
 bool IdealLoopTree::compute_has_range_checks() const {
