@@ -3159,7 +3159,7 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
     __ save_return_pc();
 
-    __ resolve_global_jobject(Z_ARG1, Z_tmp_1, Z_tmp_2);
+    __ resolve_jobject(Z_ARG1, Z_tmp_1, Z_tmp_2);
       // Load target method from receiver
     __ load_heap_oop(Z_method, Address(Z_ARG1, java_lang_invoke_MethodHandle::form_offset()),
                     noreg, noreg, IS_NOT_NULL);
