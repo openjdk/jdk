@@ -58,7 +58,7 @@ public class LingeredAppWithFFMUpcall extends LingeredApp {
     public static native void callJNI(long upcallAddr);
 
     public static void main(String[] args) {
-        try{
+        try {
             long upcallAddr = createFunctionPointerForUpcall();
             (new Thread(() -> callJNI(upcallAddr), THREAD_NAME)).start();
             LingeredApp.main(args);
