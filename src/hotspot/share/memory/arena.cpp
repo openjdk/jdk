@@ -335,8 +335,8 @@ void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFail
   size_t corrected_new_size = ARENA_ALIGN(new_size);
 
   // See if we can resize in-place
-  if( (c_old+old_size == _hwm) &&       // Adjusting recent thing
-      (c_old+corrected_new_size <= _max) ) {      // Still fits where it sits
+  if( (c_old+old_size == _hwm) &&                      // Adjusting recent thing
+      ((size_t)(_max-c_old) >= corrected_new_size) ) { // Still fits where it sits, safe from overflow
     _hwm = c_old+corrected_new_size;      // Adjust hwm
     return c_old;               // Return old pointer
   }
