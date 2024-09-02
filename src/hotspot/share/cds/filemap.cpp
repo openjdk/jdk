@@ -2490,8 +2490,8 @@ bool FileMapHeader::validate() {
             "for testing purposes only and should not be used in a production environment");
   }
 
-  log_info(cds)("Archive was created with UseCompressedOops = %d, UseCompressedClassPointers = %d",
-                          compressed_oops(), compressed_class_pointers());
+  log_info(cds)("Archive was created with UseCompressedOops = %d, UseCompressedClassPointers = %d, UseCompactObjectHeaders = %d",
+                          compressed_oops(), compressed_class_pointers(), compact_headers());
   if (compressed_oops() != UseCompressedOops || compressed_class_pointers() != UseCompressedClassPointers) {
     log_info(cds)("Unable to use shared archive.\nThe saved state of UseCompressedOops and UseCompressedClassPointers is "
                                "different from runtime, CDS will be disabled.");
