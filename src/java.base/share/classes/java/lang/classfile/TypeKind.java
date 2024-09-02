@@ -29,8 +29,11 @@ import java.lang.classfile.instruction.DiscontinuedInstruction;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.invoke.TypeDescriptor;
+import jdk.internal.constant.PrimitiveClassDescImpl;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.Stable;
+
+import static jdk.internal.constant.PrimitiveClassDescImpl.*;
 
 /**
  * Describes the data types Java Virtual Machine operates on.
@@ -239,12 +242,41 @@ public enum TypeKind {
     }
 
     /**
-     * {@return the type associated with the specified field descriptor}
-     * @param descriptor the field descriptor
+     * {@return the type associated with the specified ClassDesc}
+     * @param desc the ClassDesc
      */
-    public static TypeKind from(TypeDescriptor.OfField<?> descriptor) {
-        return descriptor.isPrimitive() // implicit null check
-                ? fromDescriptor(descriptor.descriptorString())
-                : REFERENCE;
+    public static TypeKind from(ClassDesc desc) {
+        if (desc == null) throw new NullPointerException();
+        if (desc instanceof PrimitiveClassDescImpl) {
+            if (desc == CD_void   ) return VOID;
+            if (desc == CD_boolean) return BOOLEAN;
+            if (desc == CD_int    ) return INT;
+            if (desc == CD_long   ) return LONG;
+            if (desc == CD_byte   ) return BYTE;
+            if (desc == CD_float  ) return FLOAT;
+            if (desc == CD_double ) return DOUBLE;
+            if (desc == CD_short  ) return SHORT;
+            else                    return CHAR;
+        }
+        return REFERENCE;
+    }
+
+    /**
+     * {@return the type associated with the specified class}
+     * @param cl the class
+     */
+    public static TypeKind from(Class<?> cl) {
+        if (cl.isPrimitive()) {
+            if (cl == void.class   ) return VOID;
+            if (cl == boolean.class) return BOOLEAN;
+            if (cl == int.class    ) return INT;
+            if (cl == long.class   ) return LONG;
+            if (cl == byte.class   ) return BYTE;
+            if (cl == float.class  ) return FLOAT;
+            if (cl == double.class ) return DOUBLE;
+            if (cl == char.class   ) return CHAR;
+            return SHORT;
+        }
+        return REFERENCE;
     }
 }
