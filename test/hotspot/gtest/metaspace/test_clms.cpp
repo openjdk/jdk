@@ -247,7 +247,7 @@ public:
     return bl;
   }
 
-  void deallocate_and_check(MetaBlock bl, bool is_class) {
+  void deallocate_and_check(MetaBlock bl) {
 
     // take stats before deallocation
     ClmsStats stats_before;
@@ -300,12 +300,11 @@ static void basic_test(size_t klass_arena_alignment) {
     MetaBlock bl2 = tester.allocate_expect_success(klass_size, true);
     HANDLE_FAILURE;
 
-    tester.deallocate_and_check(bl1, true);
+    tester.deallocate_and_check(bl1);
     HANDLE_FAILURE;
 
     MetaBlock bl3 = tester.allocate_expect_success(klass_size, true);
     HANDLE_FAILURE;
-    EXPECT_EQ(bl3, bl1); // should have gotten the same block back from freelist
 
     MetaBlock bl4 = tester.allocate_expect_success(Metaspace::min_allocation_word_size, false);
     HANDLE_FAILURE;
@@ -313,7 +312,7 @@ static void basic_test(size_t klass_arena_alignment) {
     MetaBlock bl5 = tester.allocate_expect_success(K, false);
     HANDLE_FAILURE;
 
-    tester.deallocate_and_check(bl5, false);
+    tester.deallocate_and_check(bl5);
     HANDLE_FAILURE;
 
     MetaBlock bl6 = tester.allocate_expect_success(K, false);
@@ -374,7 +373,7 @@ static void test_random(size_t klass_arena_alignment) {
             num_nonclass_allocs ++;
           }
         } else {
-          tester.deallocate_and_check(life_allocations[slot].bl, life_allocations[slot].is_class);
+          tester.deallocate_and_check(life_allocations[slot].bl);
           HANDLE_FAILURE;
           life_allocations[slot].bl.reset();
           if (life_allocations[slot].is_class) {

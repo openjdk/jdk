@@ -164,7 +164,7 @@ void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size) {
   // If the block would be reusable for a Klass, add to class arena, otherwise to
   // then non-class arena.
   MetaspaceArena* receiving_arena = non_class_space_arena();
-  if (have_class_space_arena() && class_space_arena()->contains(bl) &&
+  if (Metaspace::using_class_space() && Metaspace::is_in_class_space(ptr) &&
       is_aligned(ptr, class_space_arena()->allocation_alignment_bytes())) {
     receiving_arena = class_space_arena();
   }
