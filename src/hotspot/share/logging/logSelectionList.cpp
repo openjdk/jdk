@@ -26,7 +26,6 @@
 #include "logging/logSelectionList.hpp"
 #include "logging/logTagSet.hpp"
 #include "runtime/os.hpp"
-#include "logSelectionList.hpp"
 
 static const char* DefaultExpressionString = "all";
 
@@ -58,6 +57,7 @@ bool LogSelectionList::triggers_default(uint *mask) const {
   bool match = false;
   for (size_t i = 0; i < _nselections; ++i) {
     if (LogDecorators::has_default_decorator(_selections[i], mask)) {
+      if (match) return false;  // None to be applied if several selections have conflicting defaults
       match = true;
     }
   }

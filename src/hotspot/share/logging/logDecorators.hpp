@@ -56,7 +56,8 @@ class outputStream;
   DECORATOR(tags,         tg)
 
 #define DEFAULT_DECORATORS \
-  DEFAULT_VALUE((1 << pid_decorator) | (1 << tags_decorator), Trace, LOG_TAGS(gc))
+  DEFAULT_VALUE((1 << pid_decorator) | (1 << tags_decorator), Trace, LOG_TAGS(ref, gc)) \
+  DEFAULT_VALUE(0, Trace, LOG_TAGS(jit))
 
 // LogDecorators represents a selection of decorators that should be prepended to
 // each log message for a given output. Decorators are always prepended in the order
@@ -97,8 +98,6 @@ class LogDecorators {
       va_end(ap);
 
       _selection = LogSelection(tags, false, level);
-      assert(_selection.tag_sets_selected() > 0,
-            "configure_stdout() called with invalid/non-existing log selection");
     }
 
     LogSelection selection() const { return _selection; }
@@ -148,13 +147,19 @@ class LogDecorators {
   }
 
   static bool has_default_decorator(LogSelection selection, uint* mask) {
+    bool match_level;
+    int specificity, max_specificity = 0;
     for (size_t i = 0; DefaultDecorators[i] != DefaultDecorator::Invalid; ++i) {
-      if (DefaultDecorators[i].selection() == selection) {
+      match_level = DefaultDecorators[i].selection().level() != LogLevelType::NotMentioned;
+      specificity = selection.contains(DefaultDecorators[i].selection(), match_level);
+      if (specificity > max_specificity) {
+        *mask = DefaultDecorators[i].mask();
+        max_specificity = specificity;
+      } else if (specificity == max_specificity) {
         *mask |= DefaultDecorators[i].mask();
-        return true;
       }
     }
-    return false;
+    return max_specificity > 0;
   }
 
   static LogDecorators::Decorator from_string(const char* str);

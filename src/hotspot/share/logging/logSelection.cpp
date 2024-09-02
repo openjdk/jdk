@@ -69,6 +69,24 @@ bool LogSelection::operator!=(const LogSelection& ref) const {
   return !operator==(ref);
 }
 
+bool LogSelection::contains(const LogSelection &ref, bool match_level) const {
+  if (match_level && ref.level() != _level) return false;
+  bool match;
+  for (size_t i = 0; i < ref.ntags(); ++i) {
+    match = false;
+    for (size_t j = 0; j < _ntags; ++j) {
+      if (ref._tags[i] == _tags[j]) {
+        match = true;
+        break;
+      }
+    }
+
+    if (!match) return false;
+  }
+
+  return true;
+}
+
 static LogSelection parse_internal(char *str, outputStream* errstream) {
   // Parse the level, if specified
   LogLevelType level = LogLevel::Unspecified;
@@ -182,7 +200,7 @@ static bool contains(LogTagType tag, const LogTagType tags[LogTag::MaxTags], siz
 bool LogSelection::consists_of(const LogTagType tags[LogTag::MaxTags]) const {
   size_t i;
   for (i = 0; tags[i] != LogTag::__NO_TAG; i++) {
-    if (!contains(tags[i], _tags, _ntags)) {
+    if (!::contains(tags[i], _tags, _ntags)) {
       return false;
     }
   }
