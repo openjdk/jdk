@@ -592,7 +592,25 @@ public final class LauncherHelper {
         ostream = ps;
     }
 
-    private static String getMainClassFromJar(String jarname, Manifest manifest) throws IOException {
+    /**
+     * Expects the presence of a {@code Main-Class} attribute in the jar's manifest
+     * and returns that value. If the attribute is absent then this method calls
+     * {@link #abort(Throwable, String, Object...)}. After ascertaining the presence of
+     * {@code Main-Class}, if {@code JavaFX-Application-Class} attribute is found, then
+     * this method returns the value of {@code JavaFX-Application-Class} after appropriately
+     * {@linkplain FXHelper#setFXLaunchParameters(String, int) configuring} Java FX runtime.
+     *
+     * <p>
+     * Additionally, this method also checks for the presence of {@code Launcher-Agent-Class}
+     * attribute in the manifest. If found, and if {@code java.instrument} module is available,
+     * then the agent will loaded. If there's any exception when trying to load the agent, then
+     * this method will call {@code abort()}.
+     * <p>
+     * {@code Add-Exports} and {@code Add-Opens} are also parsed and processed by this method.
+     *
+     * @return the values of the {@code Main-Class} attribute
+     */
+    private static String parseManifest(String jarname, Manifest manifest) throws IOException {
         Attributes mainAttrs = manifest.getMainAttributes();
         // Main-Class
         String mainValue = mainAttrs.getValue(MAIN_CLASS);
@@ -699,7 +717,7 @@ public final class LauncherHelper {
      * 1. Loads the main class from the module or class path
      * 2. Checks for a valid main method.
      * 3. If the main class extends FX Application then call on FXHelper to
-     * perform the launch.
+     * configure the FX launch.
      *
      * @param printToStderr if set, all output will be routed to stderr
      * @param mode LaunchMode as determined by the arguments passed on the
@@ -707,7 +725,7 @@ public final class LauncherHelper {
      * @param what the module name[/class], JAR file, or the main class
      *             depending on the mode
      *
-     * @return the application's main class
+     * @return the application's main entry point
      */
     @SuppressWarnings("fallthrough")
     public static MainEntry locateMainEntry(boolean printToStderr,
@@ -807,66 +825,66 @@ public final class LauncherHelper {
      */
     private static void loadMainClass(int mode, String what, MainEntry.Builder builder) {
         // get the class name
-        String cn = null;
+        String mainClassName = null;
+        Class<?> mainClass = null;
         // In LM_JAR mode, keep the underlying file open to retain it in
         // the JarFile/ZipFile cache. This will avoid needing to re-parse
         // the central directory when the file is opened on the class path,
         // triggered by Class.forName below.
         JarFile jarFile = null;
-        switch (mode) {
-            case LM_CLASS:
-                cn = what;
-                break;
-            case LM_JAR:
-                try {
-                    jarFile = new JarFile(what);
-                    Manifest manifest = jarFile.getManifest();
-                    if (manifest == null) {
-                        abort(null, "java.launcher.jar.error2", jarFile.getName());
-                    }
-                    Attributes mainAttrs = manifest.getMainAttributes();
-                    if (mainAttrs == null) {
-                        abort(null, "java.launcher.jar.error3", jarFile.getName());
-                    }
-                    cn = getMainClassFromJar(jarFile.getName(), manifest);
-                    builder.splashScreenImage = mainAttrs.getValue("Splashscreen-Image");
-                } catch (IOException ioe) {
-                    // TODO: close jarFile
-                    abort(ioe, "java.launcher.jar.error1", what);
-                }
-                break;
-            default:
-                // should never happen
-                throw new InternalError(mode + ": Unknown launch mode");
-        }
-        Class<?> mainClass = null;
         try {
+            switch (mode) {
+                case LM_CLASS:
+                    mainClassName = what;
+                    break;
+                case LM_JAR:
+                    try {
+                        jarFile = new JarFile(what);
+                        Manifest manifest = jarFile.getManifest();
+                        if (manifest == null) {
+                            abort(null, "java.launcher.jar.error2", jarFile.getName());
+                        }
+                        Attributes mainAttrs = manifest.getMainAttributes();
+                        if (mainAttrs == null) {
+                            abort(null, "java.launcher.jar.error3", jarFile.getName());
+                        }
+                        mainClassName = parseManifest(jarFile.getName(), manifest);
+                        builder.splashScreenImage = mainAttrs.getValue("Splashscreen-Image");
+                    } catch (IOException ioe) {
+                        abort(ioe, "java.launcher.jar.error1", what);
+                    }
+                    break;
+                default:
+                    // should never happen
+                    throw new InternalError(mode + ": Unknown launch mode");
+            }
+            assert mainClassName != null : "missing main class name";
             // load the main class
-            cn = cn.replace('/', '.');
+            mainClassName = mainClassName.replace('/', '.');
             ClassLoader scl = ClassLoader.getSystemClassLoader();
             try {
-                mainClass = Class.forName(cn, false, scl);
+                mainClass = Class.forName(mainClassName, false, scl);
             } catch (NoClassDefFoundError | ClassNotFoundException cnfe) {
                 if (OperatingSystem.isMacOS()
-                        && Normalizer.isNormalized(cn, Normalizer.Form.NFD)) {
+                        && Normalizer.isNormalized(mainClassName, Normalizer.Form.NFD)) {
                     try {
                         // On Mac OS X since all names with diacritical marks are
                         // given as decomposed it is possible that main class name
                         // comes incorrectly from the command line and we have
                         // to re-compose it
-                        String ncn = Normalizer.normalize(cn, Normalizer.Form.NFC);
+                        String ncn = Normalizer.normalize(mainClassName, Normalizer.Form.NFC);
                         mainClass = Class.forName(ncn, false, scl);
                     } catch (NoClassDefFoundError | ClassNotFoundException cnfe1) {
-                        abort(cnfe1, "java.launcher.cls.error1", cn,
+                        abort(cnfe1, "java.launcher.cls.error1", mainClassName,
                                 cnfe1.getClass().getCanonicalName(), cnfe1.getMessage());
                     }
                 } else {
-                    abort(cnfe, "java.launcher.cls.error1", cn,
+                    abort(cnfe, "java.launcher.cls.error1", mainClassName,
                             cnfe.getClass().getCanonicalName(), cnfe.getMessage());
                 }
             }
         } catch (LinkageError le) {
-            abort(le, "java.launcher.cls.error4", cn,
+            abort(le, "java.launcher.cls.error4", mainClassName,
                     le.getClass().getName() + ": " + le.getLocalizedMessage());
         } finally {
             if (jarFile != null) {
@@ -877,15 +895,9 @@ public final class LauncherHelper {
                 }
             }
         }
+        assert mainClass != null : "missing main class";
         builder.mainClass = mainClass;
     }
-
-    /*
-     * Accessor method called by the launcher after getting the main class via
-     * checkAndLoadMain(). The "application class" is the class that is finally
-     * executed to start the application and in this case is used to report
-     * the correct application name, typically for UI purposes.
-     */
 
     /*
      * Check if the given class is a JavaFX Application class. This is done
@@ -1029,6 +1041,8 @@ public final class LauncherHelper {
         return oarray;
     }
 
+    // carries details about the application's main method and splash screen image path,
+    // that will be used by the native code in the launcher.
     public record MainEntry (Class<?> mainClass, Method mainMethod,
                              int mainMethodFlag, Class<?> appClass,
                              String splashScreenImage) {
