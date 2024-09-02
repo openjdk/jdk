@@ -475,7 +475,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * MemorySegment ptr = null;
  * try (Arena arena = Arena.ofConfined()) {
  *       MemorySegment z = segment.get(ValueLayout.ADDRESS, ...);    // size = 0, scope = always alive
- *       ptr = z.reinterpret(16, arena, null);                       // size = 4, scope = arena.scope()
+ *       ptr = z.reinterpret(16, arena, null);                       // size = 16, scope = arena.scope()
  *       int x = ptr.getAtIndex(ValueLayout.JAVA_INT, 3);            // ok
  * }
  * int x = ptr.getAtIndex(ValueLayout.JAVA_INT, 3);                  // throws IllegalStateException

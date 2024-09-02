@@ -46,6 +46,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMLIB_IMAGE, \
     CFLAGS := -D__USE_J2D_NAMES -D__MEDIALIB_OLD_NAMES -DMLIB_NO_LIBSUNMATH \
         $(LIBMLIB_IMAGE_CFLAGS), \
     DISABLED_WARNINGS_gcc := unused-function, \
+    DISABLED_WARNINGS_clang_mlib_ImageCreate.c := unused-function, \
     LIBS_unix := $(LIBDL) $(LIBM), \
 ))
 
@@ -84,8 +85,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
         libawt/java2d \
         java.base:libjvm, \
     HEADERS_FROM_SRC := $(LIBLCMS_HEADERS_FROM_SRC), \
-    DISABLED_WARNINGS_gcc := format-nonliteral type-limits \
-        stringop-truncation, \
+    DISABLED_WARNINGS_gcc := format-nonliteral stringop-truncation type-limits \
+        unused-variable, \
     DISABLED_WARNINGS_clang := format-nonliteral, \
     JDK_LIBS := libawt java.base:libjava, \
     LIBS_unix := $(LCMS_LIBS) $(LIBM), \
@@ -118,9 +119,11 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVAJPEG, \
     INCLUDE_FILES := $(LIBJAVAJPEG_INCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
     HEADERS_FROM_SRC := $(LIBJAVAJPEG_HEADERS_FROM_SRC), \
-    DISABLED_WARNINGS_gcc_imageioJPEG.c := clobbered array-bounds, \
+    DISABLED_WARNINGS_gcc_imageioJPEG.c := array-bounds clobbered \
+        unused-but-set-variable, \
     DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
     DISABLED_WARNINGS_gcc_jdphuff.c := shift-negative-value, \
+    DISABLED_WARNINGS_clang_imageioJPEG.c := unused-but-set-variable, \
     JDK_LIBS := java.base:libjava, \
     LIBS := $(LIBJPEG_LIBS), \
 ))
@@ -224,14 +227,17 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
           maybe-uninitialized, \
       DISABLED_WARNINGS_gcc_splashscreen_impl.c := implicit-fallthrough \
           sign-compare unused-function, \
-      DISABLED_WARNINGS_gcc_splashscreen_sys.c := type-limits unused-result, \
+      DISABLED_WARNINGS_gcc_splashscreen_sys.c := type-limits \
+          unused-but-set-variable unused-result unused-variable, \
       DISABLED_WARNINGS_clang := deprecated-non-prototype, \
       DISABLED_WARNINGS_clang_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
-      DISABLED_WARNINGS_clang_splashscreen_impl.c := sign-compare, \
+      DISABLED_WARNINGS_clang_splashscreen_impl.c := sign-compare \
+          unused-but-set-variable unused-function, \
       DISABLED_WARNINGS_clang_splashscreen_png.c := \
           incompatible-pointer-types, \
-      DISABLED_WARNINGS_clang_splashscreen_sys.m := deprecated-declarations, \
+      DISABLED_WARNINGS_clang_splashscreen_sys.m := deprecated-declarations \
+          unused-variable unused-but-set-variable, \
       DISABLED_WARNINGS_microsoft_dgif_lib.c := 4018 4267, \
       DISABLED_WARNINGS_microsoft_splashscreen_impl.c := 4018 4267 4244, \
       DISABLED_WARNINGS_microsoft_splashscreen_png.c := 4267, \
@@ -279,50 +285,51 @@ endif
 ################################################################################
 
 ifeq ($(USE_EXTERNAL_HARFBUZZ), true)
-   LIBFONTMANAGER_EXTRA_SRC =
-   LIBFONTMANAGER_LIBS += $(HARFBUZZ_LIBS)
-   LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
+  LIBFONTMANAGER_EXTRA_SRC =
+  LIBFONTMANAGER_LIBS += $(HARFBUZZ_LIBS)
+  LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
 else
-   LIBFONTMANAGER_EXTRA_SRC = libharfbuzz
+  LIBFONTMANAGER_EXTRA_SRC = libharfbuzz
 
-   ifeq ($(call isTargetOs, windows), false)
-     HARFBUZZ_CFLAGS += -DGETPAGESIZE -DHAVE_MPROTECT -DHAVE_PTHREAD \
+  ifeq ($(call isTargetOs, windows), false)
+    HARFBUZZ_CFLAGS += -DGETPAGESIZE -DHAVE_MPROTECT -DHAVE_PTHREAD \
         -DHAVE_SYSCONF -DHAVE_SYS_MMAN_H -DHAVE_UNISTD_H \
         -DHB_NO_PRAGMA_GCC_DIAGNOSTIC
-   endif
-   ifeq ($(call isTargetOs, linux macosx), true)
-     HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES -DHB_NO_VISIBILITY
-   endif
+  endif
+  ifeq ($(call isTargetOs, linux macosx), true)
+    HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES -DHB_NO_VISIBILITY
+  endif
 
-   # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
-   # hb-subset and hb-style APIs are not needed, excluded to cut on compilation
-   # time.
-   LIBFONTMANAGER_EXCLUDE_FILES += gsubgpos-context.cc hb-ft.cc hb-style.cc \
+  # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
+  # hb-subset and hb-style APIs are not needed, excluded to cut on compilation
+  # time.
+  LIBFONTMANAGER_EXCLUDE_FILES += gsubgpos-context.cc hb-ft.cc hb-style.cc \
       hb-subset-cff-common.cc hb-subset-cff1.cc hb-subset-cff2.cc \
       hb-subset-input.cc hb-subset-instancer-solver.cc hb-subset-plan.cc \
       hb-subset.cc
 
-   # list of disabled warnings and the compilers for which it was specifically
-   # added.
-   # array-bounds         -> GCC 12 on Alpine Linux
-   # parentheses          -> GCC 6
-   # range-loop-analysis  -> clang on Xcode12
+  # list of disabled warnings and the compilers for which it was specifically
+  # added.
+  # array-bounds         -> GCC 12 on Alpine Linux
+  # parentheses          -> GCC 6
+  # range-loop-analysis  -> clang on Xcode12
 
-   HARFBUZZ_DISABLED_WARNINGS_gcc := missing-field-initializers \
-       strict-aliasing unused-result array-bounds parentheses
-   # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
-   # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
-   # maybe-uninitialized required for GCC 8 builds. Not required for GCC 9+.
-   # calloc-transposed-args required for GCC 14 builds. (fixed upstream in
-   #  Harfbuzz 032c931e1c0cfb20f18e5acb8ba005775242bd92)
-   HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type \
-       expansion-to-defined dangling-reference maybe-uninitialized \
-       calloc-transposed-args
-   HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers \
-      range-loop-analysis
-   HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244
+  HARFBUZZ_DISABLED_WARNINGS_gcc := missing-field-initializers \
+      strict-aliasing unused-result array-bounds parentheses \
+       unused-variable
+  # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
+  # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
+  # maybe-uninitialized required for GCC 8 builds. Not required for GCC 9+.
+  # calloc-transposed-args required for GCC 14 builds. (fixed upstream in
+  #  Harfbuzz 032c931e1c0cfb20f18e5acb8ba005775242bd92)
+  HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type \
+      expansion-to-defined dangling-reference maybe-uninitialized \
+      calloc-transposed-args
+  HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers \
+      range-loop-analysis unused-variable
+  HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244
 
-   LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
+  LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
 endif
 
 LIBFONTMANAGER_EXTRA_HEADER_DIRS := \
