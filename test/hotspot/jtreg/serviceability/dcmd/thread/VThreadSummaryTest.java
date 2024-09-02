@@ -23,8 +23,9 @@
 
 /*
  * @test
+ * @bug 8337199
  * @summary Basic test for jcmd Thread.vthread_summary
- * @enablePreview
+ * @modules jdk.jcmd
  * @library /test/lib
  * @run main/othervm VThreadSummaryTest
  */

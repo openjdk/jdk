@@ -32,28 +32,20 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Unsafe;
 import sun.nio.ch.Poller;
 
 /**
  * The implementation for the jcmd Thread.vthread_summary diagnostic command.
  */
 public class VThreadSummary {
+    private static final Unsafe U = Unsafe.getUnsafe();
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     // maximum number of thread containers to print
     private static final int MAX_THREAD_CONTAINERS = 256;
 
-    // set to true if I/O poller in use
-    private static volatile boolean pollerInitialized;
-
     private VThreadSummary() { }
-
-    /**
-     * Invoked by the poller I/O mechanism when it initializes.
-     */
-    public static void pollerInitialized() {
-        pollerInitialized = true;
-    }
 
     /**
      * Invoked by the VM to print virtual thread summary information.
@@ -67,19 +59,19 @@ public class VThreadSummary {
         sb.append(System.lineSeparator());
 
         // print virtual thread scheduler
-        printSchedulerInfo(sb);
+        printSchedulers(sb);
         sb.append(System.lineSeparator());
 
         // print I/O pollers if initialized
-        if (pollerInitialized) {
-            printPollerInfo(sb);
+        if (!U.shouldBeInitialized(Poller.class)) {
+            printPollers(sb);
         }
 
         return sb.toString().getBytes(StandardCharsets.UTF_8);
     }
 
     /**
-     * Prints the tree of thread containers starting from the root container.
+     * Prints the tree of thread containers up to a maximum number.
      */
     private static class ThreadContainersPrinter {
         private final StringBuilder sb;
@@ -101,13 +93,15 @@ public class VThreadSummary {
          *   false if the output was truncated because the max was reached
          */
         private boolean printThreadContainers(ThreadContainer container, int depth) {
-            if (!printThreadContainer(container, depth)) {
+            if (printThreadContainer(container, depth)) {
+                // print children
+                boolean truncated = container.children()
+                        .map(c -> printThreadContainers(c, depth + 1))
+                        .anyMatch(b -> b == false);
+                return !truncated;
+            } else {
                 return false;
             }
-            boolean truncated = container.children()
-                    .map(c -> printThreadContainers(c, depth + 1))
-                    .anyMatch(b -> b == false);
-            return !truncated;
         }
 
         /**
@@ -115,7 +109,7 @@ public class VThreadSummary {
          * number of thread containers has already been printed.
          * @param container the thread container
          * @param depth the depth in the tree, for indentation purposes
-         * @return true if the thread container was printed, false if beyond max
+         * @return true if the thread container was printed, false if max already printed
          */
         private boolean printThreadContainer(ThreadContainer container, int depth) {
             count++;
@@ -148,7 +142,7 @@ public class VThreadSummary {
     /**
      * Print information on the virtual thread schedulers to given string buffer.
      */
-    static void printSchedulerInfo(StringBuilder sb) {
+    static void printSchedulers(StringBuilder sb) {
         sb.append("Default virtual thread scheduler:")
                 .append(System.lineSeparator());
         sb.append(JLA.virtualThreadDefaultScheduler())
@@ -171,7 +165,7 @@ public class VThreadSummary {
     /**
      * Print information on threads registered for I/O to the given string buffer.
      */
-    private static void printPollerInfo(StringBuilder sb) {
+    private static void printPollers(StringBuilder sb) {
         Poller masterPoller = Poller.masterPoller();
         List<Poller> readPollers = Poller.readPollers();
         List<Poller> writePollers = Poller.writePollers();
