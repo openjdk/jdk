@@ -158,6 +158,7 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
 // Prematurely returns a metaspace allocation to the _block_freelists
 // because it is not needed anymore.
 void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size) {
+  MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
   NOT_LP64(word_size = align_down(word_size, Metaspace::min_allocation_word_size);)
   MetaBlock bl(ptr, word_size);
   // If the block would be reusable for a Klass, add to class arena, otherwise to
