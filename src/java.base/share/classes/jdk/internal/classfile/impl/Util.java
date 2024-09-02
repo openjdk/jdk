@@ -56,6 +56,10 @@ import java.lang.classfile.components.ClassPrinter;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
+import static jdk.internal.constant.PrimitiveClassDescImpl.CD_double;
+import static jdk.internal.constant.PrimitiveClassDescImpl.CD_long;
+import static jdk.internal.constant.PrimitiveClassDescImpl.CD_void;
+
 /**
  * Helper to create and manipulate type descriptors, where type descriptors are
  * represented as JVM type descriptor strings and symbols are represented as
@@ -249,16 +253,11 @@ public class Util {
     }
 
     public static int slotSize(ClassDesc desc) {
-        return switch (desc.descriptorString().charAt(0)) {
-            case 'V' -> 0;
-            case 'D','J' -> 2;
-            default -> 1;
-        };
+        return desc == CD_void ? 0 : isDoubleSlot(desc) ? 2 : 1;
     }
 
     public static boolean isDoubleSlot(ClassDesc desc) {
-        char ch = desc.descriptorString().charAt(0);
-        return ch == 'D' || ch == 'J';
+        return desc == CD_double || desc == CD_long;
     }
 
     public static void dumpMethod(SplitConstantPool cp,
