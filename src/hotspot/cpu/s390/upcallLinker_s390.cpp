@@ -216,10 +216,11 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, frame::z_jit_out_preserve_size);
   __ block_comment("} argument_shuffle");
 
-  __ block_comment("load target {");
+  __ block_comment("load_target {");
   __ load_const_optimized(Z_ARG1, (intptr_t)receiver);
-  __ call(RuntimeAddress(StubRoutines::upcall_stub_load_target())); // load taget Method* into Z_method
-  __ block_comment("} load target");
+  __ load_const_optimized(call_target_address, StubRoutines::upcall_stub_load_target());
+  __ call(call_target_address); // load taget Method* into Z_method
+  __ block_comment("} load_target");
 
   __ z_lg(call_target_address, Address(Z_method, in_bytes(Method::from_compiled_offset())));
   __ call(call_target_address);
