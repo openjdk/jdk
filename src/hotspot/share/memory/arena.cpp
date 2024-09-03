@@ -311,7 +311,13 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   return result;
 }
 
-
+// Offsets a pointer with saturation to prevent overflow.
+uintptr_t saturated_pointer_add(uintptr_t ptr, size_t size) {
+  if (ptr > UINTPTR_MAX - size) {
+    return UINTPTR_MAX;
+  }
+  return ptr + size;
+}
 
 // Reallocate storage in Arena.
 void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFailType alloc_failmode) {
@@ -325,20 +331,21 @@ void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFail
   }
   char *c_old = (char*)old_ptr; // Handy name
   // Stupid fast special case
-  if( new_size <= old_size ) {  // Shrink in-place
-    if( c_old+old_size == _hwm) // Attempt to free the excess bytes
-      _hwm = c_old+new_size;    // Adjust hwm
+  if (new_size <= old_size) {     // Shrink in-place
+    if (c_old + old_size == _hwm) // Attempt to free the excess bytes
+      _hwm = c_old + new_size;    // Adjust hwm
     return c_old;
   }
 
   // make sure that new_size is legal
   size_t corrected_new_size = ARENA_ALIGN(new_size);
-
+  uintptr_t new_hwm = saturated_pointer_add((uintptr_t)c_old, corrected_new_size);
   // See if we can resize in-place
-  if( (c_old+old_size == _hwm) &&                      // Adjusting recent thing
-      ((size_t)(_max-c_old) >= corrected_new_size) ) { // Still fits where it sits, safe from overflow
-    _hwm = c_old+corrected_new_size;      // Adjust hwm
-    return c_old;               // Return old pointer
+  if ((c_old + old_size == _hwm) && // Adjusting recent thing
+      ((char *)new_hwm <= _max) &&  // Still fits where it sits
+      (new_hwm != UINTPTR_MAX)) {   // Did not overflow
+    _hwm = (char *)new_hwm;         // Adjust hwm
+    return c_old;                   // Return old pointer
   }
 
   // Oops, got to relocate guts

@@ -104,6 +104,7 @@ public:
 
   // Fast allocate in the arena.  Common case is: pointer test + increment.
   void* Amalloc(size_t x) {
+  assert(x <= (size_t)1 << 31, "unreasonable arena allocation size");
 #ifdef _LP64
     assert(x <= SIZE_MAX - (8-1), "overflow");
     x = (x + (8-1)) & ((unsigned)(-8));
