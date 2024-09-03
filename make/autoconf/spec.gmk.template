@@ -272,7 +272,7 @@ VERSION_CFLAGS = \
     -DVERSION_CLASSFILE_MINOR=$(VERSION_CLASSFILE_MINOR) \
     #
 
-ifneq ($(COMPANY_NAME),)
+ifneq ($(COMPANY_NAME), )
   # COMPANY_NAME is set to "N/A" in make/conf/branding.conf by default,
   # but can be customized with the '--with-vendor-name' configure option.
   # Only export "VENDOR" to the build if COMPANY_NAME contains a real value.
@@ -288,13 +288,13 @@ endif
 # Only export VENDOR_URL, VENDOR_URL_BUG and VENDOR_VM_URL_BUG to the build if
 # they are not empty. Otherwise, default values which are defined in the sources
 # will be used.
-ifneq ($(VENDOR_URL),)
+ifneq ($(VENDOR_URL), )
   VERSION_CFLAGS += -DVENDOR_URL='"$(VENDOR_URL)"'
 endif
-ifneq ($(VENDOR_URL_BUG),)
+ifneq ($(VENDOR_URL_BUG), )
   VERSION_CFLAGS += -DVENDOR_URL_BUG='"$(VENDOR_URL_BUG)"'
 endif
-ifneq ($(VENDOR_URL_VM_BUG),)
+ifneq ($(VENDOR_URL_VM_BUG), )
   VERSION_CFLAGS += -DVENDOR_URL_VM_BUG='"$(VENDOR_URL_VM_BUG)"'
 endif
 
@@ -804,11 +804,7 @@ UCRT_DLL_DIR := @UCRT_DLL_DIR@
 ENABLE_PANDOC := @ENABLE_PANDOC@
 PANDOC_MARKDOWN_FLAG := @PANDOC_MARKDOWN_FLAG@
 
-####################################################
-#
 # Libraries
-#
-
 USE_EXTERNAL_LCMS := @USE_EXTERNAL_LCMS@
 LCMS_CFLAGS := @LCMS_CFLAGS@
 LCMS_LIBS := @LCMS_LIBS@
@@ -821,11 +817,7 @@ USE_EXTERNAL_LIBPNG := @USE_EXTERNAL_LIBPNG@
 PNG_LIBS := @PNG_LIBS@
 PNG_CFLAGS := @PNG_CFLAGS@
 
-####################################################
-#
 # Misc
-#
-
 INCLUDE_SA := @INCLUDE_SA@
 INCLUDE_JVMCI := @INCLUDE_JVMCI@
 INCLUDE_COMPILER2 := @INCLUDE_COMPILER2@
