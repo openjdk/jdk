@@ -37,22 +37,25 @@ import java.util.stream.StreamSupport;
 /**
  * This class represents a Network Interface.
  * <p>
- * A Network Interface is the point of interconnection
- * between a computer and a private or public network.
- * A Network Interface can be physical or logical.
- * A network interface has a name, an index, zero or more assigned
- * {@linkplain InetAddress IP addresses}, and zero or more {@linkplain
- * InterfaceAddress MAC Addresses}. The name is highly platform
- * specific but a name such as "le0" is typical;
- * it may not be unique. The index is a highly platform
+ * A Network Interface is an abstraction encapsulating
+ * the characteristics of a Network Interface Controller, or
+ * Virtual Network adapter, which is a system hardware/software
+ * component connecting a computer, or host system, to a computer
+ * network. A Network Interface can be physical or virtual.
+ * A Network Interface has a name, zero or more assigned
+ * {@linkplain InetAddress IP addresses}, zero or more {@linkplain
+ * InterfaceAddress MAC Addresses}, and may have an index.
+ * The name is highly platform specific but a name such as "le0"
+ * is typical; it may not be unique. The index is a highly platform
  * specific number that identifies the interface. The network
  * configuration may change during the lifetime of the JVM:
  * typically, the set of IP addresses assigned to a network
- * interface may change.
+ * interface can be transient and dynamically allocated, and may
+ * change at any time.
  * <p>
  * When obtaining a {@code NetworkInterface} instance, part of its
  * configuration (such as its name and the list of assigned IP addresses),
- * may be snapshot at creation time.
+ * is reflective of its configuration at creation time.
  * Obtaining an updated view of the network configuration may require
  * looking up a network interface again in order to obtain a new instance.
  * <p>
