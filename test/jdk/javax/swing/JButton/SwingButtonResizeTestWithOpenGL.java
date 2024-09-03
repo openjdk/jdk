@@ -125,6 +125,8 @@ public class SwingButtonResizeTestWithOpenGL {
 
         try {
             robot = new Robot();
+            robot.waitForIdle();
+            robot.delay(1000);
             if (focusGainedLatch.await(3, TimeUnit.SECONDS)) {
                 System.out.println("Button focus gained...");
             } else {
@@ -140,7 +142,6 @@ public class SwingButtonResizeTestWithOpenGL {
             // some platforms may not support maximize frame
             if (frame.getToolkit().isFrameStateSupported(
                     JFrame.MAXIMIZED_BOTH)) {
-                robot.waitForIdle();
                 // maximize frame from normal size
                 frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
                 System.out.println("Frame is maximized");
@@ -151,7 +152,8 @@ public class SwingButtonResizeTestWithOpenGL {
                     System.out.println("Frame is back to normal");
                     // resize from maximum size to normal
                     frame.setExtendedState(JFrame.NORMAL);
-
+                    robot.waitForIdle();
+                    robot.delay(100);
                     // capture image of JButton after resize
                     System.out.println(
                             "Getting image of JButton after resize..image2");
@@ -191,7 +193,7 @@ public class SwingButtonResizeTestWithOpenGL {
     private BufferedImage getButtonImage() {
         try {
             robot.waitForIdle();
-            robot.delay(1000);
+            robot.delay(500);
 
             AtomicReference<Point> buttonLocRef = new AtomicReference<>();
             SwingUtilities.invokeAndWait(
