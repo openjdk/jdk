@@ -2558,21 +2558,10 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
   return MacroAssembler::in_scratch_emit_size();
 }
 
-void C2_MacroAssembler::load_nklass_compact(Register dst, Register obj, Register index, int scale, int disp) {
-  // Note: Don't clobber obj anywhere in that method!
-
+void C2_MacroAssembler::load_nklass_compact_c2(Register dst, Register src) {
   // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract
   // obj-start, so that we can load from the object's mark-word instead. Usually the address
-  // comes as obj-start in obj and klass_offset_in_bytes in disp. However, sometimes C2
-  // emits code that pre-computes obj-start + klass_offset_in_bytes into a register, and
-  // then passes that register as obj and 0 in disp. The following code extracts the base
-  // and offset to load the mark-word.
-  int offset = oopDesc::mark_offset_in_bytes() + disp - oopDesc::klass_offset_in_bytes();
-  if (index == noreg) {
-    ldr(dst, Address(obj, offset));
-  } else {
-    lea(dst, Address(obj, index, Address::lsl(scale)));
-    ldr(dst, Address(dst, offset));
-  }
+  // comes as obj-start in obj and klass_offset_in_bytes in disp.
+  ldr(dst, Address(src, -oopDesc::klass_offset_in_bytes()));
   lsr(dst, dst, markWord::klass_shift);
 }
