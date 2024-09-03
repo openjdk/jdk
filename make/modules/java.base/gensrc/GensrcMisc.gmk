@@ -87,7 +87,7 @@ ifneq ($(filter $(TOOLCHAIN_TYPE), gcc clang), )
 else ifeq ($(TOOLCHAIN_TYPE), microsoft)
   CPP_FLAGS += -nologo
 
-  ifeq ($(OPENJDK_TARGET_CPU),aarch64)
+  ifeq ($(OPENJDK_TARGET_CPU), aarch64)
     # cl.exe does only recognize few file extensions as valid (ex: .c, .h, .cpp), so
     # make sure *.java.template files are recognized as valid input files
     CPP_FILEPREFIX = -Tc

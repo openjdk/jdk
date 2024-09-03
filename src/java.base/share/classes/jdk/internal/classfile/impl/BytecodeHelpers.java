@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,83 +57,125 @@ public class BytecodeHelpers {
 
     public static Opcode loadOpcode(TypeKind tk, int slot) {
         return switch (tk) {
-            case INT, SHORT, BYTE, CHAR, BOOLEAN -> switch (slot) {
-                case 0 -> Opcode.ILOAD_0;
-                case 1 -> Opcode.ILOAD_1;
-                case 2 -> Opcode.ILOAD_2;
-                case 3 -> Opcode.ILOAD_3;
-                default -> (slot < 256) ? Opcode.ILOAD : Opcode.ILOAD_W;
-            };
-            case LONG -> switch (slot) {
-                case 0 -> Opcode.LLOAD_0;
-                case 1 -> Opcode.LLOAD_1;
-                case 2 -> Opcode.LLOAD_2;
-                case 3 -> Opcode.LLOAD_3;
-                default -> (slot < 256) ? Opcode.LLOAD : Opcode.LLOAD_W;
-            };
-            case DOUBLE -> switch (slot) {
-                case 0 -> Opcode.DLOAD_0;
-                case 1 -> Opcode.DLOAD_1;
-                case 2 -> Opcode.DLOAD_2;
-                case 3 -> Opcode.DLOAD_3;
-                default -> (slot < 256) ? Opcode.DLOAD : Opcode.DLOAD_W;
-            };
-            case FLOAT -> switch (slot) {
-                case 0 -> Opcode.FLOAD_0;
-                case 1 -> Opcode.FLOAD_1;
-                case 2 -> Opcode.FLOAD_2;
-                case 3 -> Opcode.FLOAD_3;
-                default -> (slot < 256) ? Opcode.FLOAD : Opcode.FLOAD_W;
-            };
-            case REFERENCE -> switch (slot) {
-                case 0 -> Opcode.ALOAD_0;
-                case 1 -> Opcode.ALOAD_1;
-                case 2 -> Opcode.ALOAD_2;
-                case 3 -> Opcode.ALOAD_3;
-                default -> (slot < 256) ? Opcode.ALOAD : Opcode.ALOAD_W;
-            };
-            case VOID -> throw new IllegalArgumentException("void");
+            case INT, SHORT, BYTE, CHAR, BOOLEAN
+                           -> iload(slot);
+            case LONG      -> lload(slot);
+            case DOUBLE    -> dload(slot);
+            case FLOAT     -> fload(slot);
+            case REFERENCE -> aload(slot);
+            case VOID      -> throw new IllegalArgumentException("void");
+        };
+    }
+
+    public static Opcode aload(int slot) {
+        return switch (slot) {
+            case 0 -> Opcode.ALOAD_0;
+            case 1 -> Opcode.ALOAD_1;
+            case 2 -> Opcode.ALOAD_2;
+            case 3 -> Opcode.ALOAD_3;
+            default -> (slot < 256) ? Opcode.ALOAD : Opcode.ALOAD_W;
+        };
+    }
+
+    public static Opcode fload(int slot) {
+        return switch (slot) {
+            case 0 -> Opcode.FLOAD_0;
+            case 1 -> Opcode.FLOAD_1;
+            case 2 -> Opcode.FLOAD_2;
+            case 3 -> Opcode.FLOAD_3;
+            default -> (slot < 256) ? Opcode.FLOAD : Opcode.FLOAD_W;
+        };
+    }
+
+    public static Opcode dload(int slot) {
+        return switch (slot) {
+            case 0 -> Opcode.DLOAD_0;
+            case 1 -> Opcode.DLOAD_1;
+            case 2 -> Opcode.DLOAD_2;
+            case 3 -> Opcode.DLOAD_3;
+            default -> (slot < 256) ? Opcode.DLOAD : Opcode.DLOAD_W;
+        };
+    }
+
+    public static Opcode lload(int slot) {
+        return switch (slot) {
+            case 0 -> Opcode.LLOAD_0;
+            case 1 -> Opcode.LLOAD_1;
+            case 2 -> Opcode.LLOAD_2;
+            case 3 -> Opcode.LLOAD_3;
+            default -> (slot < 256) ? Opcode.LLOAD : Opcode.LLOAD_W;
+        };
+    }
+
+    public static Opcode iload(int slot) {
+        return switch (slot) {
+            case 0 -> Opcode.ILOAD_0;
+            case 1 -> Opcode.ILOAD_1;
+            case 2 -> Opcode.ILOAD_2;
+            case 3 -> Opcode.ILOAD_3;
+            default -> (slot < 256) ? Opcode.ILOAD : Opcode.ILOAD_W;
         };
     }
 
     public static Opcode storeOpcode(TypeKind tk, int slot) {
         return switch (tk) {
-            case INT, SHORT, BYTE, CHAR, BOOLEAN -> switch (slot) {
-                case 0 -> Opcode.ISTORE_0;
-                case 1 -> Opcode.ISTORE_1;
-                case 2 -> Opcode.ISTORE_2;
-                case 3 -> Opcode.ISTORE_3;
-                default -> (slot < 256) ? Opcode.ISTORE : Opcode.ISTORE_W;
-            };
-            case LONG -> switch (slot) {
-                case 0 -> Opcode.LSTORE_0;
-                case 1 -> Opcode.LSTORE_1;
-                case 2 -> Opcode.LSTORE_2;
-                case 3 -> Opcode.LSTORE_3;
-                default -> (slot < 256) ? Opcode.LSTORE : Opcode.LSTORE_W;
-            };
-            case DOUBLE -> switch (slot) {
-                case 0 -> Opcode.DSTORE_0;
-                case 1 -> Opcode.DSTORE_1;
-                case 2 -> Opcode.DSTORE_2;
-                case 3 -> Opcode.DSTORE_3;
-                default -> (slot < 256) ? Opcode.DSTORE : Opcode.DSTORE_W;
-            };
-            case FLOAT -> switch (slot) {
-                case 0 -> Opcode.FSTORE_0;
-                case 1 -> Opcode.FSTORE_1;
-                case 2 -> Opcode.FSTORE_2;
-                case 3 -> Opcode.FSTORE_3;
-                default -> (slot < 256) ? Opcode.FSTORE : Opcode.FSTORE_W;
-            };
-            case REFERENCE -> switch (slot) {
-                case 0 -> Opcode.ASTORE_0;
-                case 1 -> Opcode.ASTORE_1;
-                case 2 -> Opcode.ASTORE_2;
-                case 3 -> Opcode.ASTORE_3;
-                default -> (slot < 256) ? Opcode.ASTORE : Opcode.ASTORE_W;
-            };
-            case VOID -> throw new IllegalArgumentException("void");
+            case INT, SHORT, BYTE, CHAR, BOOLEAN
+                           -> istore(slot);
+            case LONG      -> lstore(slot);
+            case DOUBLE    -> dstore(slot);
+            case FLOAT     -> fstore(slot);
+            case REFERENCE -> astore(slot);
+            case VOID      -> throw new IllegalArgumentException("void");
+        };
+    }
+
+    public static Opcode astore(int slot) {
+        return switch (slot) {
+            case 0 -> Opcode.ASTORE_0;
+            case 1 -> Opcode.ASTORE_1;
+            case 2 -> Opcode.ASTORE_2;
+            case 3 -> Opcode.ASTORE_3;
+            default -> (slot < 256) ? Opcode.ASTORE : Opcode.ASTORE_W;
+        };
+    }
+
+    public static Opcode fstore(int slot) {
+        return switch (slot) {
+            case 0 -> Opcode.FSTORE_0;
+            case 1 -> Opcode.FSTORE_1;
+            case 2 -> Opcode.FSTORE_2;
+            case 3 -> Opcode.FSTORE_3;
+            default -> (slot < 256) ? Opcode.FSTORE : Opcode.FSTORE_W;
+        };
+    }
+
+    public static Opcode dstore(int slot) {
+        return switch (slot) {
+            case 0 -> Opcode.DSTORE_0;
+            case 1 -> Opcode.DSTORE_1;
+            case 2 -> Opcode.DSTORE_2;
+            case 3 -> Opcode.DSTORE_3;
+            default -> (slot < 256) ? Opcode.DSTORE : Opcode.DSTORE_W;
+        };
+    }
+
+    public static Opcode lstore(int slot) {
+        return switch (slot) {
+            case 0 -> Opcode.LSTORE_0;
+            case 1 -> Opcode.LSTORE_1;
+            case 2 -> Opcode.LSTORE_2;
+            case 3 -> Opcode.LSTORE_3;
+            default -> (slot < 256) ? Opcode.LSTORE : Opcode.LSTORE_W;
+        };
+    }
+
+    public static Opcode istore(int slot) {
+        return switch (slot) {
+            case 0 -> Opcode.ISTORE_0;
+            case 1 -> Opcode.ISTORE_1;
+            case 2 -> Opcode.ISTORE_2;
+            case 3 -> Opcode.ISTORE_3;
+            default -> (slot < 256) ? Opcode.ISTORE : Opcode.ISTORE_W;
         };
     }
 
@@ -234,38 +277,18 @@ public class BytecodeHelpers {
         };
     }
 
-    static void validateSipush(long value) {
-        if (value < Short.MIN_VALUE || Short.MAX_VALUE < value)
+    public static void validateSipush(int value) {
+        if (value != (short) value)
             throw new IllegalArgumentException(
                     "SIPUSH: value must be within: Short.MIN_VALUE <= value <= Short.MAX_VALUE, found: "
                             .concat(Long.toString(value)));
     }
 
-    static void validateBipush(long value) {
-        if (value < Byte.MIN_VALUE || Byte.MAX_VALUE < value)
+    public static void validateBipush(int value) {
+        if (value != (byte) value)
             throw new IllegalArgumentException(
                     "BIPUSH: value must be within: Byte.MIN_VALUE <= value <= Byte.MAX_VALUE, found: "
                             .concat(Long.toString(value)));
-    }
-
-    static void validateSipush(ConstantDesc d) {
-        if (d instanceof Integer iVal) {
-            validateSipush(iVal.longValue());
-        } else if (d instanceof Long lVal) {
-            validateSipush(lVal.longValue());
-        } else {
-            throw new IllegalArgumentException("SIPUSH: not an integral number: ".concat(d.toString()));
-        }
-    }
-
-    static void validateBipush(ConstantDesc d) {
-        if (d instanceof Integer iVal) {
-            validateBipush(iVal.longValue());
-        } else if (d instanceof Long lVal) {
-            validateBipush(lVal.longValue());
-        } else {
-            throw new IllegalArgumentException("BIPUSH: not an integral number: ".concat(d.toString()));
-        }
     }
 
     public static MethodHandleEntry handleDescToHandleInfo(ConstantPoolBuilder constantPool, DirectMethodHandleDesc bootstrapMethod) {
@@ -296,32 +319,6 @@ public class BytecodeHelpers {
         return constantPool.constantDynamicEntry(bme,
                                                  constantPool.nameAndTypeEntry(desc.constantName(),
                                                                        desc.constantType()));
-    }
-
-    public static void validateValue(Opcode opcode, ConstantDesc v) {
-        switch (opcode) {
-            case ACONST_NULL -> {
-                if (v != null && v != ConstantDescs.NULL)
-                    throw new IllegalArgumentException("value must be null or ConstantDescs.NULL with opcode ACONST_NULL");
-            }
-            case SIPUSH ->
-                    validateSipush(v);
-            case BIPUSH ->
-                    validateBipush(v);
-            case LDC, LDC_W, LDC2_W -> {
-                if (v == null)
-                    throw new IllegalArgumentException("`null` must use ACONST_NULL");
-            }
-            default -> {
-                var exp = opcode.constantValue();
-                if (exp == null)
-                    throw new IllegalArgumentException("Can not use Opcode: " + opcode + " with constant()");
-                if (v == null || !(v.equals(exp) || (exp instanceof Long l && v.equals(l.intValue())))) {
-                    var t = (exp instanceof Long) ? "L" : (exp instanceof Float) ? "f" : (exp instanceof Double) ? "d" : "";
-                    throw new IllegalArgumentException("value must be " + exp + t + " with opcode " + opcode.name());
-                }
-            }
-        }
     }
 
     public static Opcode ldcOpcode(LoadableConstantEntry entry) {
