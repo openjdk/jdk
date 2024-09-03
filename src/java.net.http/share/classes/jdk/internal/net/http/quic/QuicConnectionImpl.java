@@ -2019,6 +2019,11 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                         assert resetStreamFrame.streamId() == stream.streamId();
                         streams.processIncomingFrame(stream, resetStreamFrame);
                     }
+                } else if (frame instanceof DataBlockedFrame dataBlockedFrame) {
+                    if (debug.on()) {
+                        debug.log("got DataBlockedFrame");
+                    }
+                    // TODO any specific handling?
                 } else if (frame instanceof StreamDataBlockedFrame streamDataBlockedFrame) {
                     // TODO: move all of this to QuicConnectionStreams?
                     var streamId = streamDataBlockedFrame.streamId();
