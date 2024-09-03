@@ -54,7 +54,7 @@ import java.io.PrintStream;
  * suites.
  */
 public class DTLSRehandshakeTest {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         PrintStream originalOut = System.out;
         String fileOutName = RehandshakeTest.TEST_MODE + "-output.txt";
         try (var fileOut = new FileOutputStream(fileOutName, true);
@@ -62,8 +62,6 @@ public class DTLSRehandshakeTest {
              var printOut = new PrintStream(multiOut)) {
             System.setOut(printOut);
             RehandshakeTest.main(args);
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
         } finally {
             System.setOut(originalOut);
         }
