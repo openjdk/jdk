@@ -2595,7 +2595,7 @@ public final class System {
             }
 
             public boolean isLatin1(String s) {
-                return s.coder() == String.LATIN1;
+                return s.isLatin1();
             }
 
             public int countGreaterThanZero(String s) {
