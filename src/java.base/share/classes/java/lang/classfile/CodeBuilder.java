@@ -606,23 +606,6 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction pushing a constant onto the operand stack
-     * @see Opcode.Kind#CONSTANT
-     * @param opcode the constant instruction opcode
-     * @param value the constant value
-     * @return this builder
-     * @since 23
-     */
-    default CodeBuilder loadConstant(Opcode opcode, ConstantDesc value) {
-        BytecodeHelpers.validateValue(opcode, value);
-        return with(switch (opcode) {
-            case SIPUSH, BIPUSH -> ConstantInstruction.ofArgument(opcode, ((Number)value).intValue());
-            case LDC, LDC_W, LDC2_W -> ConstantInstruction.ofLoad(opcode, BytecodeHelpers.constantEntry(constantPool(), value));
-            default -> ConstantInstruction.ofIntrinsic(opcode);
-        });
-    }
-
-    /**
-     * Generate an instruction pushing a constant onto the operand stack
      * @param value the constant value
      * @return this builder
      * @since 23
@@ -931,12 +914,12 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate an instruction pushing a byte onto the operand stack
-     * @param b the byte
+     * Generate an instruction pushing an int in the range of byte onto the operand stack.
+     * @param b the int in the range of byte
      * @return this builder
      */
     default CodeBuilder bipush(int b) {
-        return loadConstant(Opcode.BIPUSH, b);
+        return with(ConstantInstruction.ofArgument(Opcode.BIPUSH, b));
     }
 
     /**
@@ -2396,12 +2379,12 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate an instruction pushing a short onto the operand stack
-     * @param s the short
+     * Generate an instruction pushing an int in the range of short onto the operand stack.
+     * @param s the int in the range of short
      * @return this builder
      */
     default CodeBuilder sipush(int s) {
-        return loadConstant(Opcode.SIPUSH, s);
+        return with(ConstantInstruction.ofArgument(Opcode.SIPUSH, s));
     }
 
     /**
