@@ -29,34 +29,30 @@
  */
 
 import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.ValueLayout;
 import java.util.stream.Stream;
 
 public class TestLargeStub extends NativeTestHelper {
+
+    private static final int DOWNCALL_AVAILABLE_SLOTS = 248;
+    private static final int UPCALL_AVAILABLE_SLOTS = 250;
 
     MemoryLayout STRUCT_LL = MemoryLayout.structLayout(
         C_LONG_LONG,
         C_LONG_LONG
     ); // 16 byte struct triggers return buffer usage on SysV
 
-    @Test
-    public void testDowncallDoubles() {
+    @Test(dataProvider="layouts")
+    public void testDowncall(ValueLayout layout, int numSlots) {
         // Link a handle with a large number of arguments, to try and overflow the code buffer
         Linker.nativeLinker().downcallHandle(
                 FunctionDescriptor.of(STRUCT_LL,
-                        Stream.generate(() -> C_DOUBLE).limit(124).toArray(MemoryLayout[]::new)),
-                Linker.Option.captureCallState("errno"));
-    }
-
-    @Test
-    public void testDowncallInts() {
-        // Link a handle with a large number of arguments, to try and overflow the code buffer
-        Linker.nativeLinker().downcallHandle(
-                FunctionDescriptor.of(STRUCT_LL,
-                        Stream.generate(() -> C_INT).limit(248).toArray(MemoryLayout[]::new)),
+                        Stream.generate(() -> layout).limit(DOWNCALL_AVAILABLE_SLOTS / numSlots).toArray(MemoryLayout[]::new)),
                 Linker.Option.captureCallState("errno"));
     }
 
@@ -71,11 +67,21 @@ public class TestLargeStub extends NativeTestHelper {
                 Linker.Option.critical(true));
     }
 
-    @Test
-    public void testUpcall() {
+    @Test(dataProvider="layouts")
+    public void testUpcall(ValueLayout layout, int numSlots) {
         // Link a handle with a large number of arguments, to try and overflow the code buffer
         Linker.nativeLinker().downcallHandle(
                 FunctionDescriptor.of(STRUCT_LL,
-                        Stream.generate(() -> C_DOUBLE).limit(125).toArray(MemoryLayout[]::new)));
+                        Stream.generate(() -> layout).limit(UPCALL_AVAILABLE_SLOTS / numSlots).toArray(MemoryLayout[]::new)));
+    }
+
+    @DataProvider
+    public static Object[][] layouts() {
+        return new Object[][] {
+            { C_INT, 1 },
+            { C_LONG_LONG, 2 },
+            { C_FLOAT, 1 },
+            { C_DOUBLE, 2 }
+        };
     }
 }
