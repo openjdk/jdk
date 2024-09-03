@@ -595,13 +595,13 @@ public final class DirectCodeBuilder
         writeBytecode(opcode);
         bytecodesBufWriter.writeIndex(ref);
         bytecodesBufWriter.writeU1(count);
-        bytecodesBufWriter.skip(1);
+        bytecodesBufWriter.writeU1(0);
     }
 
     public void writeInvokeDynamic(InvokeDynamicEntry ref) {
         writeBytecode(INVOKEDYNAMIC);
         bytecodesBufWriter.writeIndex(ref);
-        bytecodesBufWriter.skip(2);
+        bytecodesBufWriter.writeU2(0);
     }
 
     public void writeNewObject(ClassEntry type) {

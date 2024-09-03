@@ -189,11 +189,6 @@ public final class BufWriterImpl implements BufWriter {
         }
     }
 
-    public void skip(int skipSize) {
-        reserveSpace(skipSize);
-        this.offset += skipSize;
-    }
-
     @Override
     public void reserveSpace(int freeBytes) {
         int minCapacity = offset + freeBytes;
@@ -237,7 +232,7 @@ public final class BufWriterImpl implements BufWriter {
     @Override
     public void writeIndexOrZero(PoolEntry entry) {
         if (entry == null || entry.index() == 0)
-            skip(2);
+            writeU2(0);
         else
             writeIndex(entry);
     }
