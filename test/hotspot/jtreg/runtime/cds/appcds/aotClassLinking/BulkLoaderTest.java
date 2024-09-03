@@ -119,8 +119,6 @@ public class BulkLoaderTest {
     }
 }
 
-// FIXME -- test hidden classes in boot2 (with a lambda expr in boot classpath)
-
 class BulkLoaderTestApp {
     static String allPerms = "null.*<no principals>.*java.security.Permissions.*,*java.security.AllPermission.*<all permissions>.*<all actions>";
 
