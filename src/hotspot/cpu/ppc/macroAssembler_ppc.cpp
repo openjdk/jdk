@@ -1737,7 +1737,7 @@ void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_curre
 
   cmpxchg_loop_body(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
                     retry, failed, cmpxchgx_hint, size);
-  if (!weak || use_result_reg) {
+  if (!weak || use_result_reg || failed_ext) {
     if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
       bne_predict_not_taken(CCR0, weak ? failed : retry); // StXcx_ sets CCR0.
     } else {

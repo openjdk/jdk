@@ -177,8 +177,8 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	$(call MakeTargetDir)
 	$(RM) $@
 	$(foreach m, $(MODULE_INFOS), \
-	    ( $(PRINTF) "DEPS_$(call GetModuleNameFromModuleInfo, $m) :=" && \
-	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
+	    ( $(PRINTF) "DEPS_$(call GetModuleNameFromModuleInfo, $m) := " && \
+	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) ' \
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
 	          /^ *requires/ { sub(/;/, ""); \
 	                          sub(/requires /, " "); \
@@ -191,8 +191,8 @@ $(MODULE_DEPS_MAKEFILE): $(MODULE_INFOS) \
 	                          gsub(/\r/, ""); \
 	                          printf(" %s", $$0) } \
 	          END           { printf("\n") }' $m && \
-	      $(PRINTF) "TRANSITIVE_MODULES_$(call GetModuleNameFromModuleInfo, $m) :=" && \
-	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) '\
+	      $(PRINTF) "TRANSITIVE_MODULES_$(call GetModuleNameFromModuleInfo, $m) := " && \
+	      $(AWK) -v MODULE=$(call GetModuleNameFromModuleInfo, $m) ' \
 	          BEGIN      { if (MODULE != "java.base") printf(" java.base"); } \
 	          /^ *requires  *transitive/ { \
 	                          sub(/;/, ""); \

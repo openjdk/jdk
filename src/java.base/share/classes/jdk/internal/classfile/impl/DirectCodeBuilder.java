@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +63,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static java.lang.classfile.Opcode.*;
+
+import static jdk.internal.classfile.impl.BytecodeHelpers.*;
 
 public final class DirectCodeBuilder
         extends AbstractDirectBuilder<CodeModel>
@@ -834,21 +837,6 @@ public final class DirectCodeBuilder
     }
 
     @Override
-    public CodeBuilder loadConstant(Opcode opcode, ConstantDesc value) {
-        BytecodeHelpers.validateValue(opcode, value);
-        // avoid non-local enum switch for bootstrap
-        if (opcode == BIPUSH || opcode == SIPUSH) {
-            writeArgumentConstant(opcode, ((Number) value).intValue());
-        } else if (opcode == LDC || opcode == LDC_W || opcode == LDC2_W) {
-            writeLoadConstant(opcode, BytecodeHelpers.constantEntry(constantPool(), value));
-        } else {
-            // intrinsics
-            writeBytecode(opcode);
-        }
-        return this;
-    }
-
-    @Override
     public CodeBuilder nop() {
         writeBytecode(NOP);
         return this;
@@ -861,6 +849,12 @@ public final class DirectCodeBuilder
     }
 
     @Override
+    public CodeBuilder aload(int slot) {
+        writeLocalVar(BytecodeHelpers.aload(slot), slot);
+        return this;
+    }
+
+    @Override
     public CodeBuilder anewarray(ClassEntry entry) {
         writeNewReferenceArray(entry);
         return this;
@@ -869,6 +863,12 @@ public final class DirectCodeBuilder
     @Override
     public CodeBuilder arraylength() {
         writeBytecode(ARRAYLENGTH);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder astore(int slot) {
+        writeLocalVar(BytecodeHelpers.astore(slot), slot);
         return this;
     }
 
@@ -946,6 +946,12 @@ public final class DirectCodeBuilder
     }
 
     @Override
+    public CodeBuilder dload(int slot) {
+        writeLocalVar(BytecodeHelpers.dload(slot), slot);
+        return this;
+    }
+
+    @Override
     public CodeBuilder dmul() {
         writeBytecode(DMUL);
         return this;
@@ -960,6 +966,12 @@ public final class DirectCodeBuilder
     @Override
     public CodeBuilder drem() {
         writeBytecode(DREM);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dstore(int slot) {
+        writeLocalVar(BytecodeHelpers.dstore(slot), slot);
         return this;
     }
 
@@ -1066,6 +1078,12 @@ public final class DirectCodeBuilder
     }
 
     @Override
+    public CodeBuilder fload(int slot) {
+        writeLocalVar(BytecodeHelpers.fload(slot), slot);
+        return this;
+    }
+
+    @Override
     public CodeBuilder fmul() {
         writeBytecode(FMUL);
         return this;
@@ -1080,6 +1098,12 @@ public final class DirectCodeBuilder
     @Override
     public CodeBuilder frem() {
         writeBytecode(FREM);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fstore(int slot) {
+        writeLocalVar(BytecodeHelpers.fstore(slot), slot);
         return this;
     }
 
@@ -1192,6 +1216,12 @@ public final class DirectCodeBuilder
     }
 
     @Override
+    public CodeBuilder iload(int slot) {
+        writeLocalVar(BytecodeHelpers.iload(slot), slot);
+        return this;
+    }
+
+    @Override
     public CodeBuilder imul() {
         writeBytecode(IMUL);
         return this;
@@ -1272,6 +1302,12 @@ public final class DirectCodeBuilder
     @Override
     public CodeBuilder ishr() {
         writeBytecode(ISHR);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder istore(int slot) {
+        writeLocalVar(BytecodeHelpers.istore(slot), slot);
         return this;
     }
 
@@ -1360,6 +1396,12 @@ public final class DirectCodeBuilder
     }
 
     @Override
+    public CodeBuilder lload(int slot) {
+        writeLocalVar(BytecodeHelpers.lload(slot), slot);
+        return this;
+    }
+
+    @Override
     public CodeBuilder lmul() {
         writeBytecode(LMUL);
         return this;
@@ -1392,6 +1434,12 @@ public final class DirectCodeBuilder
     @Override
     public CodeBuilder lshr() {
         writeBytecode(LSHR);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lstore(int slot) {
+        writeLocalVar(BytecodeHelpers.lstore(slot), slot);
         return this;
     }
 
