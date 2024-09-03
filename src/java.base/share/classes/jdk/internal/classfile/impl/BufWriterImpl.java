@@ -190,11 +190,8 @@ public final class BufWriterImpl implements BufWriter {
     }
 
     public void skip(int skipSize) {
-        int nextOffset = offset + skipSize;
-        if (nextOffset > elems.length) {
-            grow(nextOffset);
-        }
-        this.offset = nextOffset;
+        reserveSpace(skipSize);
+        this.offset += skipSize;
     }
 
     @Override
