@@ -3679,6 +3679,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
 
   // Save the monitor pointer in the current thread, so we can try to
   // reacquire the lock in SharedRuntime::monitor_exit_helper().
+  z_xilf(currentHeader, markWord::monitor_value);
   z_stg(currentHeader, Address(Z_thread, JavaThread::unlocked_inflated_monitor_offset()));
 
   z_cr(currentHeader, Z_thread); // Set flag = NE
@@ -6440,6 +6441,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
 
       // Save the monitor pointer in the current thread, so we can try to
       // reacquire the lock in SharedRuntime::monitor_exit_helper().
+      z_xilf(monitor, markWord::monitor_value);
       z_stg(monitor, Address(Z_thread, JavaThread::unlocked_inflated_monitor_offset()));
 
       z_ltgr(obj, obj); // Set flag = NE

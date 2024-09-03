@@ -312,7 +312,7 @@ public class LockUnlock {
      * With two threads lockObject1 will be contended so should be
      * inflated.
      */
-    @Threads(2)
+    @Threads(3)
     @Benchmark
     public void testContendedLock() {
         synchronized (lockObject1) {
