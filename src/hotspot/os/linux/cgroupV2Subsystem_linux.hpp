@@ -44,7 +44,7 @@ class CgroupV2Controller: public CgroupController {
       // At least one controller exists with references to the paths
     }
 
-    char* subsystem_path() override { return _path; }
+    const char* subsystem_path() override { return _path; }
     bool needs_hierarchy_adjustment() override;
     // Allow for optional updates of the subsystem path
     void set_subsystem_path(const char* cgroup_path);
@@ -64,7 +64,7 @@ class CgroupV2CpuController: public CgroupCpuController {
     bool is_read_only() override {
       return reader()->is_read_only();
     }
-    char* subsystem_path() {
+    const char* subsystem_path() {
       return reader()->subsystem_path();
     }
     bool needs_hierarchy_adjustment() override {
@@ -73,8 +73,8 @@ class CgroupV2CpuController: public CgroupCpuController {
     void set_subsystem_path(const char* cgroup_path) {
       reader()->set_subsystem_path(cgroup_path);
     }
-    char* mount_point() { return reader()->mount_point(); }
-    char* cgroup_path() override { return reader()->cgroup_path(); }
+    const char* mount_point() { return reader()->mount_point(); }
+    const char* cgroup_path() override { return reader()->cgroup_path(); }
 };
 
 class CgroupV2MemoryController final: public CgroupMemoryController {
@@ -97,7 +97,7 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
     bool is_read_only() override {
       return reader()->is_read_only();
     }
-    char* subsystem_path() {
+    const char* subsystem_path() {
       return reader()->subsystem_path();
     }
     bool needs_hierarchy_adjustment() override {
@@ -106,8 +106,8 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
     void set_subsystem_path(const char* cgroup_path) {
       reader()->set_subsystem_path(cgroup_path);
     }
-    char* mount_point() { return reader()->mount_point(); }
-    char* cgroup_path() override { return reader()->cgroup_path(); }
+    const char* mount_point() { return reader()->mount_point(); }
+    const char* cgroup_path() override { return reader()->cgroup_path(); }
 };
 
 class CgroupV2Subsystem: public CgroupSubsystem {
