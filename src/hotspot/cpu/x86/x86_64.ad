@@ -4388,9 +4388,7 @@ instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
   ins_cost(125); // XXX
   format %{ "movl    $dst, $mem\t# compressed klass ptr" %}
   ins_encode %{
-    Register index = $mem$$index != 4 ? $mem$$index$$Register : noreg;
-    Address::ScaleFactor sf = (index != noreg) ? static_cast<Address::ScaleFactor>($mem$$scale) : Address::no_scale;
-    __ load_nklass_compact_c2($dst$$Register, $mem$$base$$Register, index, sf, $mem$$disp);
+    __ load_nklass_compact_c2($dst$$Register, $mem$$Address);
   %}
   ins_pipe(pipe_slow); // XXX
 %}

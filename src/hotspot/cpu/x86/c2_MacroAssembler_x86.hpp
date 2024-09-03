@@ -505,6 +505,6 @@ public:
   void vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
                               Register offset, Register rtmp, int vlen_enc);
 
-  void load_nklass_compact_c2(Register dst, Register obj, Register index, Address::ScaleFactor scale, int disp);
+  void load_nklass_compact_c2(Register dst, Address src);
 
 #endif // CPU_X86_C2_MACROASSEMBLER_X86_HPP
