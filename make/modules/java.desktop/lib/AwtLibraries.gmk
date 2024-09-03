@@ -127,7 +127,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     JDK_LIBS := java.base:libjava java.base:libjvm, \
     LIBS_unix := $(LIBM), \
     LIBS_linux := $(LIBDL), \
-    LIBS_aix := $(LIBDL),\
+    LIBS_aix := $(LIBDL), \
     LIBS_macosx := \
         -framework ApplicationServices \
         -framework AudioToolbox \
