@@ -607,222 +607,62 @@ public abstract sealed class AbstractMemorySegmentImpl
         }
     }
 
+    // COPY_NATIVE_THRESHOLD must be a power of two and should be greater than 2^3
+    private static final long COPY_NATIVE_THRESHOLD = 1 << 6;
+
     @ForceInline
     public static void copy(AbstractMemorySegmentImpl src, long srcOffset,
                             AbstractMemorySegmentImpl dst, long dstOffset,
                             long size) {
-        if ((size & ~31) == 0 && !src.overlaps(dst)) { // 0 <= size < 31 and disjunct segments
-            // Handle smaller sizes directly via standard MemorySegment::(get|set)
-            // operations. This is a win as we do not have to transition to native code.
-            //
-            switch ((int) size) {
-                case 0 : {
-                    // Must do explicit checks here
-                    src.checkAccess(srcOffset, size, true);
-                    dst.checkAccess(dstOffset, size, false);
-                    return;
-                }
-                case 1: {
-                    dst.set(JAVA_BYTE, dstOffset, src.get(JAVA_BYTE, srcOffset));
-                    return;
-                }
-                case 2: {
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset, src.get(JAVA_SHORT_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 3: {
-                    dst.set(JAVA_BYTE, dstOffset + 2, src.get(JAVA_BYTE, srcOffset + 2));
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset, src.get(JAVA_SHORT_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 4: {
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset, src.get(JAVA_INT_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 5: {
-                    dst.set(JAVA_BYTE, dstOffset + 4, src.get(JAVA_BYTE, srcOffset + 4));
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset, src.get(JAVA_INT_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 6: {
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset + 4, src.get(JAVA_SHORT_UNALIGNED, srcOffset + 4));
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset, src.get(JAVA_INT_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 7: {
-                    dst.set(JAVA_BYTE, dstOffset + 6, src.get(JAVA_BYTE, srcOffset + 6));
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset + 4, src.get(JAVA_SHORT_UNALIGNED, srcOffset + 4));
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset, src.get(JAVA_INT_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 8: {
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 9: {
-                    dst.set(JAVA_BYTE, dstOffset + 8, src.get(JAVA_BYTE, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 10: {
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset + 8, src.get(JAVA_SHORT_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 11: {
-                    dst.set(JAVA_BYTE, dstOffset + 10, src.get(JAVA_BYTE, srcOffset + 10));
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset + 8, src.get(JAVA_SHORT_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 12: {
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset + 8, src.get(JAVA_INT_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 13: {
-                    dst.set(JAVA_BYTE, dstOffset + 12, src.get(JAVA_BYTE, srcOffset + 12));
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset + 8, src.get(JAVA_INT_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 14: {
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset + 12, src.get(JAVA_SHORT_UNALIGNED, srcOffset + 12));
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset + 8, src.get(JAVA_INT_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 15: {
-                    dst.set(JAVA_BYTE, dstOffset + 14, src.get(JAVA_BYTE, srcOffset + 14));
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset + 12, src.get(JAVA_SHORT_UNALIGNED, srcOffset + 12));
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset + 8, src.get(JAVA_INT_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 16: {
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 17: {
-                    dst.set(JAVA_BYTE, dstOffset + 16, src.get(JAVA_BYTE, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 18: {
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset + 16, src.get(JAVA_SHORT_UNALIGNED, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 19: {
-                    dst.set(JAVA_BYTE, dstOffset + 18, src.get(JAVA_BYTE, srcOffset + 18));
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset + 16, src.get(JAVA_SHORT_UNALIGNED, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 20: {
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset + 16, src.get(JAVA_INT_UNALIGNED, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 21: {
-                    dst.set(JAVA_BYTE, dstOffset + 20, src.get(JAVA_BYTE, srcOffset + 20));
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset + 16, src.get(JAVA_INT_UNALIGNED, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 22: {
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset + 20, src.get(JAVA_SHORT_UNALIGNED, srcOffset + 20));
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset + 16, src.get(JAVA_INT_UNALIGNED, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 23: { // Slow
-                    dst.set(JAVA_BYTE, dstOffset + 22, src.get(JAVA_BYTE, srcOffset + 22));
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset + 20, src.get(JAVA_SHORT_UNALIGNED, srcOffset + 20));
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset + 16, src.get(JAVA_INT_UNALIGNED, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 24: {
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 16, src.get(JAVA_LONG_UNALIGNED, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 25: {
-                    dst.set(JAVA_BYTE, dstOffset + 24, src.get(JAVA_BYTE, srcOffset + 24));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 16, src.get(JAVA_LONG_UNALIGNED, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 26: {
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset + 24, src.get(JAVA_SHORT_UNALIGNED, srcOffset + 24));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 16, src.get(JAVA_LONG_UNALIGNED, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 27: {
-                    dst.set(JAVA_BYTE, dstOffset + 26, src.get(JAVA_BYTE, srcOffset + 26));
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset + 24, src.get(JAVA_SHORT_UNALIGNED, srcOffset + 24));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 16, src.get(JAVA_LONG_UNALIGNED, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 28: {
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset + 24, src.get(JAVA_INT_UNALIGNED, srcOffset + 24));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 16, src.get(JAVA_LONG_UNALIGNED, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 29: {
-                    dst.set(JAVA_BYTE, dstOffset + 28, src.get(JAVA_BYTE, srcOffset + 28));
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset + 24, src.get(JAVA_INT_UNALIGNED, srcOffset + 24));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 16, src.get(JAVA_LONG_UNALIGNED, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 30: {
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset + 28, src.get(JAVA_SHORT_UNALIGNED, srcOffset + 28));
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset + 24, src.get(JAVA_INT_UNALIGNED, srcOffset + 24));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 16, src.get(JAVA_LONG_UNALIGNED, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-                case 31: { // Slow
-                    dst.set(JAVA_BYTE, dstOffset + 30, src.get(JAVA_BYTE, srcOffset + 30));
-                    dst.set(JAVA_SHORT_UNALIGNED, dstOffset + 28, src.get(JAVA_SHORT_UNALIGNED, srcOffset + 28));
-                    dst.set(JAVA_INT_UNALIGNED, dstOffset + 24, src.get(JAVA_INT_UNALIGNED, srcOffset + 24));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 16, src.get(JAVA_LONG_UNALIGNED, srcOffset + 16));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset + 8, src.get(JAVA_LONG_UNALIGNED, srcOffset + 8));
-                    dst.set(JAVA_LONG_UNALIGNED, dstOffset, src.get(JAVA_LONG_UNALIGNED, srcOffset));
-                    return;
-                }
-            }
-        }
-        // For larger sizes, the transition to native code pays off as the actual
-        // copy throughput is higher than using MemorySegment::(get|set) operations.
+
         Utils.checkNonNegativeIndex(size, "size");
         // Implicit null check for src and dst
         src.checkAccess(srcOffset, size, true);
         dst.checkAccess(dstOffset, size, false);
-        ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(src.sessionImpl(), dst.sessionImpl(),
-                src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset,
-                dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, size);
 
+        if (size <= 0) {
+            // Do nothing
+        } else if (size < COPY_NATIVE_THRESHOLD && !src.overlaps(dst)) {
+            // 0 < size < FILL_NATIVE_LIMIT : 0...0X...XXXX
+            //
+            // Strictly, we could check for !src.asSlice(srcOffset, size).overlaps(dst.asSlice(dstOffset, size) but
+            // this is a bit slower and it likely very unusual there is any difference in the outcome. Also, if there
+            // is an overlap, we could tolerate one particular direction of overlap (but not the other).
+
+            // 0...0X...X000
+            final int limit = (int) (size & (COPY_NATIVE_THRESHOLD - 8));
+            int offset = 0;
+            for (; offset < limit; offset += 8) {
+                final long v = SCOPED_MEMORY_ACCESS.getLong(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset);
+                SCOPED_MEMORY_ACCESS.putLong(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
+            }
+            int remaining = (int) size - offset;
+            // 0...0X00
+            if (remaining >= 4) {
+                final int v = SCOPED_MEMORY_ACCESS.getInt(src.sessionImpl(), src.unsafeGetBase(),src.unsafeGetOffset() + srcOffset + offset);
+                SCOPED_MEMORY_ACCESS.putInt(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
+                offset += 4;
+                remaining -= 4;
+            }
+            // 0...00X0
+            if (remaining >= 2) {
+                final short v = SCOPED_MEMORY_ACCESS.getShort(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset);
+                SCOPED_MEMORY_ACCESS.putShort(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
+                offset += 2;
+                remaining -=2;
+            }
+            // 0...000X
+            if (remaining == 1) {
+                final byte v = SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset);
+                SCOPED_MEMORY_ACCESS.putByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
+            }
+            // We have now fully handled 0...0X...XXXX
+        } else {
+            // For larger sizes, the transition to native code pays off
+            SCOPED_MEMORY_ACCESS.copyMemory(src.sessionImpl(), dst.sessionImpl(),
+                    src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset,
+                    dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, size);
+        }
     }
 
     @ForceInline
