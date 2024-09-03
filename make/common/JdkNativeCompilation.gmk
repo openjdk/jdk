@@ -303,6 +303,12 @@ define SetupJdkNativeCompilationBody
     $1_RC_FTYPE := 0x2L
   endif
 
+  ifneq ($$(MODULE), )
+    ifneq ($$($1_EXCLUDE_FROM_STATIC_LIBS), true)
+      $$(MODULE)_JDK_LIBS += $$($1_NAME)
+    endif
+  endif
+
   ifeq ($$($1_OUTPUT_DIR), )
     ifneq ($$(MODULE), )
       ifeq ($$($1_TYPE), STATIC_LIBRARY)

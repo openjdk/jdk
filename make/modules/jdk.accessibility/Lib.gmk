@@ -82,6 +82,7 @@ ifeq ($(call isTargetOs, windows), true)
             user32.lib uuid.lib winspool.lib, \
         VERSIONINFO_RESOURCE := \
             $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
+        STATIC_LIB_EXCLUDE_OBJS := AccessBridgeDebug.obj AccessBridgeMessages.obj, \
     )
 
     TARGETS += $$(BUILD_LIBWINDOWSACCESSBRIDGE$1)
