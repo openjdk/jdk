@@ -145,6 +145,7 @@ public class SwingButtonResizeTestWithOpenGL {
                 frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
                 System.out.println("Frame is maximized");
                 robot.waitForIdle();
+                robot.delay(100);
 
                 if (frame.getToolkit().isFrameStateSupported(JFrame.NORMAL)) {
                     System.out.println("Frame is back to normal");
