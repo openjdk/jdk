@@ -277,38 +277,18 @@ public class BytecodeHelpers {
         };
     }
 
-    static void validateSipush(long value) {
-        if (value < Short.MIN_VALUE || Short.MAX_VALUE < value)
+    public static void validateSipush(int value) {
+        if (value != (short) value)
             throw new IllegalArgumentException(
                     "SIPUSH: value must be within: Short.MIN_VALUE <= value <= Short.MAX_VALUE, found: "
                             .concat(Long.toString(value)));
     }
 
-    static void validateBipush(long value) {
-        if (value < Byte.MIN_VALUE || Byte.MAX_VALUE < value)
+    public static void validateBipush(int value) {
+        if (value != (byte) value)
             throw new IllegalArgumentException(
                     "BIPUSH: value must be within: Byte.MIN_VALUE <= value <= Byte.MAX_VALUE, found: "
                             .concat(Long.toString(value)));
-    }
-
-    static void validateSipush(ConstantDesc d) {
-        if (d instanceof Integer iVal) {
-            validateSipush(iVal.longValue());
-        } else if (d instanceof Long lVal) {
-            validateSipush(lVal.longValue());
-        } else {
-            throw new IllegalArgumentException("SIPUSH: not an integral number: ".concat(d.toString()));
-        }
-    }
-
-    static void validateBipush(ConstantDesc d) {
-        if (d instanceof Integer iVal) {
-            validateBipush(iVal.longValue());
-        } else if (d instanceof Long lVal) {
-            validateBipush(lVal.longValue());
-        } else {
-            throw new IllegalArgumentException("BIPUSH: not an integral number: ".concat(d.toString()));
-        }
     }
 
     public static MethodHandleEntry handleDescToHandleInfo(ConstantPoolBuilder constantPool, DirectMethodHandleDesc bootstrapMethod) {
@@ -339,32 +319,6 @@ public class BytecodeHelpers {
         return constantPool.constantDynamicEntry(bme,
                                                  constantPool.nameAndTypeEntry(desc.constantName(),
                                                                        desc.constantType()));
-    }
-
-    public static void validateValue(Opcode opcode, ConstantDesc v) {
-        switch (opcode) {
-            case ACONST_NULL -> {
-                if (v != null && v != ConstantDescs.NULL)
-                    throw new IllegalArgumentException("value must be null or ConstantDescs.NULL with opcode ACONST_NULL");
-            }
-            case SIPUSH ->
-                    validateSipush(v);
-            case BIPUSH ->
-                    validateBipush(v);
-            case LDC, LDC_W, LDC2_W -> {
-                if (v == null)
-                    throw new IllegalArgumentException("`null` must use ACONST_NULL");
-            }
-            default -> {
-                var exp = opcode.constantValue();
-                if (exp == null)
-                    throw new IllegalArgumentException("Can not use Opcode: " + opcode + " with constant()");
-                if (v == null || !(v.equals(exp) || (exp instanceof Long l && v.equals(l.intValue())))) {
-                    var t = (exp instanceof Long) ? "L" : (exp instanceof Float) ? "f" : (exp instanceof Double) ? "d" : "";
-                    throw new IllegalArgumentException("value must be " + exp + t + " with opcode " + opcode.name());
-                }
-            }
-        }
     }
 
     public static Opcode ldcOpcode(LoadableConstantEntry entry) {

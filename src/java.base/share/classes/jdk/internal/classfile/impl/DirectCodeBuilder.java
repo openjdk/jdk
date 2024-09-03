@@ -832,21 +832,6 @@ public final class DirectCodeBuilder
     }
 
     @Override
-    public CodeBuilder loadConstant(Opcode opcode, ConstantDesc value) {
-        BytecodeHelpers.validateValue(opcode, value);
-        // avoid non-local enum switch for bootstrap
-        if (opcode == BIPUSH || opcode == SIPUSH) {
-            writeArgumentConstant(opcode, ((Number) value).intValue());
-        } else if (opcode == LDC || opcode == LDC_W || opcode == LDC2_W) {
-            writeLoadConstant(opcode, BytecodeHelpers.constantEntry(constantPool(), value));
-        } else {
-            // intrinsics
-            writeBytecode(opcode);
-        }
-        return this;
-    }
-
-    @Override
     public CodeBuilder nop() {
         writeBytecode(NOP);
         return this;
