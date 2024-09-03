@@ -189,6 +189,18 @@ public final class BufWriterImpl implements BufWriter {
         }
     }
 
+    /**
+     * Skip a few bytes in the output buffer. The skipped area has undefined value.
+     * @param bytes number of bytes to skip
+     * @return the index, for later patching
+     */
+    public int skip(int bytes) {
+        int now = offset;
+        reserveSpace(bytes);
+        offset += bytes;
+        return now;
+    }
+
     @Override
     public void reserveSpace(int freeBytes) {
         int minCapacity = offset + freeBytes;
