@@ -2429,7 +2429,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address cal
   address start   = __ pc();
   address call_pc = nullptr;
   bool cause_return = (id == sharedStubId::polling_page_return_handler_id);
-  RegisterSaver reg_save(id == sharedStubId::polling_page_vectors_safepoint_handler_id /* save_vectors */);
+  bool svae_vectors = (id == sharedStubId::polling_page_vectors_safepoint_handler_id);
 
   // If cause_return is true we are at a poll_return and there is
   // the return address on the stack to the caller on the nmethod
