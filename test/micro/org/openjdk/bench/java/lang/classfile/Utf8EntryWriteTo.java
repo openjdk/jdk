@@ -83,7 +83,7 @@ public class Utf8EntryWriteTo {
         String s = new String(bytes, 0, bytes.length, StandardCharsets.UTF_8);
         String[] constants = new String[128];
         for (int i = 0; i < constants.length; i++) {
-            constants[i] = s.repeat(32);
+            constants[i] = "A".repeat(i).concat(s);
         }
 
         poolBuilder = ConstantPoolBuilder.of();
