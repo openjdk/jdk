@@ -235,6 +235,10 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(AlwaysMergeDMB)) {
       FLAG_SET_DEFAULT(AlwaysMergeDMB, false);
     }
+
+    if (FLAG_IS_DEFAULT(CodeEntryAlignment)) {
+      FLAG_SET_DEFAULT(CodeEntryAlignment, 16);
+    }
   }
 
   if (_cpu == CPU_ARM) {
