@@ -64,9 +64,9 @@ class LDCTest {
                                   for (int i = 0; i <= 256/2 + 2; i++) { // two entries per String
                                       StringEntry s = cpb.stringEntry("string" + i);
                                   }
-                                  c0.loadConstant(LDC, "string0")
-                                    .loadConstant(LDC, "string131")
-                                    .loadConstant(LDC, "string50")
+                                  c0.ldc("string0")
+                                    .ldc("string131")
+                                    .ldc("string50")
                                     .loadConstant(-0.0f)
                                     .loadConstant(-0.0d)
                                     //non-LDC test cases
