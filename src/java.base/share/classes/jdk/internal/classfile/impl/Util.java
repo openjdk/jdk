@@ -112,7 +112,7 @@ public class Util {
     public static int parameterSlots(MethodTypeDesc mDesc) {
         int count = 0;
         for (int i = 0; i < mDesc.parameterCount(); i++) {
-            count += slotSize(mDesc.parameterType(i));
+            count += paramSlotSize(mDesc.parameterType(i));
         }
         return count;
     }
@@ -122,7 +122,7 @@ public class Util {
         int count = ((flags & ACC_STATIC) != 0) ? 0 : 1;
         for (int i = 0; i < result.length; i++) {
             result[i] = count;
-            count += slotSize(mDesc.parameterType(i));
+            count += paramSlotSize(mDesc.parameterType(i));
         }
         return result;
     }
@@ -130,7 +130,7 @@ public class Util {
     public static int maxLocals(int flags, MethodTypeDesc mDesc) {
         int count = ((flags & ACC_STATIC) != 0) ? 0 : 1;
         for (int i = 0; i < mDesc.parameterCount(); i++) {
-            count += slotSize(mDesc.parameterType(i));
+            count += paramSlotSize(mDesc.parameterType(i));
         }
         return count;
     }
@@ -253,6 +253,10 @@ public class Util {
     }
 
     public static int slotSize(ClassDesc desc) {
+        return desc == CD_void ? 0 : isDoubleSlot(desc) ? 2 : 1;
+    }
+
+    public static int paramSlotSize(ClassDesc desc) {
         return isDoubleSlot(desc) ? 2 : 1;
     }
 
