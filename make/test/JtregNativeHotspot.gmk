@@ -59,77 +59,93 @@ VM_TESTBASE_DIR := $(TOPDIR)/test/hotspot/jtreg/vmTestbase
 VM_SHARE_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/vm/share \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 NSK_MONITORING_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 NSK_JDI_INCLUDES := \
-    -I$(VM_TESTBASE_DIR)/nsk/share/native
+    -I$(VM_TESTBASE_DIR)/nsk/share/native \
+    #
 
 NSK_SHARE_JDI_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jdi
+    -I$(VM_TESTBASE_DIR)/nsk/share/jdi \
+    #
 
 NSK_SHARE_JNI_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 RUNTIME_DEFMETH_INCLUDES := \
     -I$(TOPDIR)/test/hotspot/jtreg/vmTestbase/nsk/share/jni \
     -I$(TOPDIR)/test/hotspot/jtreg/vmTestbase/nsk/share/native \
-    -I$(TOPDIR)/test/hotspot/jtreg/vmTestbase/nsk/share/jvmti
+    -I$(TOPDIR)/test/hotspot/jtreg/vmTestbase/nsk/share/jvmti \
+    #
 
 NSK_SHARE_LOCKS_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/locks
+    -I$(VM_TESTBASE_DIR)/nsk/share/locks \
+    #
 
 MLVM_JVMTI_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
     -I$(VM_TESTBASE_DIR)/nsk/share/jni \
     -I$(VM_TESTBASE_DIR)/nsk/share/jvmti \
     -I$(VM_TESTBASE_DIR)/nsk/share/jvmti/agent_common \
-    -I$(VM_TESTBASE_DIR)/vm/mlvm/share
+    -I$(VM_TESTBASE_DIR)/vm/mlvm/share \
+    #
 
 MLVM_STRESS_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 NSK_GC_LOCK_JNI_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/gc/lock/jni \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 NSK_GC_LOCK_REF_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/gc/lock/jniref \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 NSK_STRACE_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 NSK_STRESS_JNI_INCLUDES := \
-    -I$(VM_TESTBASE_DIR)/nsk/stress/jni
+    -I$(VM_TESTBASE_DIR)/nsk/stress/jni \
+    #
 
 NSK_JVMTI_AGENT_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/jni \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
     -I$(VM_TESTBASE_DIR)/nsk/share/jvmti \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jvmti/agent_common
+    -I$(VM_TESTBASE_DIR)/nsk/share/jvmti/agent_common \
+    #
 
 NSK_JVMTI_AOD_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/jni \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
     -I$(VM_TESTBASE_DIR)/nsk/share/aod \
     -I$(VM_TESTBASE_DIR)/nsk/share/jvmti \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jvmti/aod
+    -I$(VM_TESTBASE_DIR)/nsk/share/jvmti/aod \
+    #
 
 NSK_AOD_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/aod \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 NO_FRAMEPOINTER_CFLAGS :=
 ifeq ($(call isTargetOs, linux), true)
@@ -140,7 +156,7 @@ BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libNoFramePointer := $(NO_FRAMEPOINTER_CFLA
 # Optimization -O3 needed, HIGH == -O3
 BUILD_HOTSPOT_JTREG_LIBRARIES_OPTIMIZATION_libNoFramePointer := HIGH
 
-JVMTI_COMMON_INCLUDES=-I$(TOPDIR)/test/lib/jdk/test/lib/jvmti
+JVMTI_COMMON_INCLUDES = -I$(TOPDIR)/test/lib/jdk/test/lib/jvmti
 
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libProcessUtils := $(VM_SHARE_INCLUDES)
 
@@ -762,7 +778,7 @@ BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libretransform002 := $(NSK_JVMTI_AGENT_INCL
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libretransform004 := $(NSK_JVMTI_AGENT_INCLUDES)
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libretransform003 := $(NSK_JVMTI_AGENT_INCLUDES)
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libgetclmdf007 := $(NSK_JVMTI_AGENT_INCLUDES)
-BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libgetclmdf006 :=$(NSK_JVMTI_AGENT_INCLUDES)
+BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libgetclmdf006 := $(NSK_JVMTI_AGENT_INCLUDES)
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libgetclmdf004 := $(NSK_JVMTI_AGENT_INCLUDES)
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libgetclmdf005 := $(NSK_JVMTI_AGENT_INCLUDES)
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libsetlocal001 := $(NSK_JVMTI_AGENT_INCLUDES)
@@ -1559,7 +1575,7 @@ build-test-hotspot-jtreg-native: $(BUILD_HOTSPOT_JTREG_LIBRARIES) $(BUILD_HOTSPO
 ################################################################################
 
 # Copy to hotspot jtreg test image
-$(eval $(call SetupCopyFiles,COPY_HOTSPOT_JTREG_NATIVE, \
+$(eval $(call SetupCopyFiles, COPY_HOTSPOT_JTREG_NATIVE, \
     SRC := $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), \
     DEST := $(TEST_IMAGE_DIR)/hotspot/jtreg/native, \
     FILES := $(wildcard $(addprefix $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), /bin/* /lib/*)), \
