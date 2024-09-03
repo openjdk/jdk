@@ -2569,6 +2569,9 @@ public final class System {
             public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
+            public int countGreaterThanZero(String s) {
+                return StringCoding.countGreaterThanZero(s);
+            }
             public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return String.newStringNoRepl(bytes, cs);
             }
@@ -2596,10 +2599,6 @@ public final class System {
 
             public boolean isLatin1(String s) {
                 return s.isLatin1();
-            }
-
-            public int countGreaterThanZero(String s) {
-                return StringCoding.countGreaterThanZero(s);
             }
 
             public int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {

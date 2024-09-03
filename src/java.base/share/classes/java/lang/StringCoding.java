@@ -35,13 +35,16 @@ class StringCoding {
 
     private StringCoding() { }
 
+    /**
+     * Count the number of leading positive, non-zero bytes in the range.
+     */
     public static int countGreaterThanZero(String s) {
         byte[] value;
         return countGreaterThanZero(value = s.value(), 0, value.length);
     }
 
     /**
-     * Count the number of leading greater than zero bytes in the range.
+     * Count the number of leading positive, non-zero bytes in the range.
      */
     public static int countGreaterThanZero(byte[] ba, int off, int len) {
         int limit = off + len;
