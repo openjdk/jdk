@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,21 @@
  * @test
  * @library ../
  * @modules java.base/jdk.internal.foreign
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestLargeStub
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED TestLargeStub
  */
 
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.ValueLayout;
 import java.util.stream.Stream;
+
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class TestLargeStub extends NativeTestHelper {
 
@@ -47,7 +51,8 @@ public class TestLargeStub extends NativeTestHelper {
         C_LONG_LONG
     ); // 16 byte struct triggers return buffer usage on SysV
 
-    @Test(dataProvider="layouts")
+    @ParameterizedTest
+    @MethodSource("layouts")
     public void testDowncall(ValueLayout layout, int numSlots) {
         // Link a handle with a large number of arguments, to try and overflow the code buffer
         Linker.nativeLinker().downcallHandle(
@@ -67,7 +72,8 @@ public class TestLargeStub extends NativeTestHelper {
                 Linker.Option.critical(true));
     }
 
-    @Test(dataProvider="layouts")
+    @ParameterizedTest
+    @MethodSource("layouts")
     public void testUpcall(ValueLayout layout, int numSlots) {
         // Link a handle with a large number of arguments, to try and overflow the code buffer
         Linker.nativeLinker().downcallHandle(
@@ -75,13 +81,12 @@ public class TestLargeStub extends NativeTestHelper {
                         Stream.generate(() -> layout).limit(UPCALL_AVAILABLE_SLOTS / numSlots).toArray(MemoryLayout[]::new)));
     }
 
-    @DataProvider
-    public static Object[][] layouts() {
-        return new Object[][] {
-            { C_INT, 1 },
-            { C_LONG_LONG, 2 },
-            { C_FLOAT, 1 },
-            { C_DOUBLE, 2 }
-        };
+    private static Stream<Arguments> layouts() {
+        return Stream.of(
+            arguments(C_INT, 1),
+            arguments(C_LONG_LONG, 2),
+            arguments(C_FLOAT, 1),
+            arguments(C_DOUBLE, 2)
+        );
     }
 }
