@@ -34,10 +34,10 @@ include @SPEC@
 BOOT_JDK := $(JDK_IMAGE_DIR)
 
 # The bootcycle build has a different output directory
-OLD_OUTPUTDIR:=@OUTPUTDIR@
-OUTPUTDIR:=$(OLD_OUTPUTDIR)/bootcycle-build
+OLD_OUTPUTDIR := @OUTPUTDIR@
+OUTPUTDIR := $(OLD_OUTPUTDIR)/bootcycle-build
 # No spaces in patsubst to avoid leading space in variable
-JAVAC_SERVER_DIR:=$(patsubst $(OLD_OUTPUTDIR)%,$(OUTPUTDIR)%,$(JAVAC_SERVER_DIR))
+JAVAC_SERVER_DIR := $(patsubst $(OLD_OUTPUTDIR)%,$(OUTPUTDIR)%,$(JAVAC_SERVER_DIR))
 
 JAVA_CMD := $(FIXPATH) $(BOOT_JDK)/bin/java
 JAVAC_CMD := $(FIXPATH) $(BOOT_JDK)/bin/javac
@@ -48,4 +48,3 @@ JAVA_FLAGS_BIG := @BOOTCYCLE_JVM_ARGS_BIG@
 # By filtering out those JVM args, the bootcycle JVM will use its default
 # settings for CDS.
 JAVA_FLAGS := $(filter-out -XX:SharedArchiveFile% -Xshare%, $(JAVA_FLAGS))
-

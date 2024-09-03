@@ -31,7 +31,7 @@
 # Declare default target
 default:
 
-ifeq ($(wildcard $(SPEC)),)
+ifeq ($(wildcard $(SPEC)), )
   $(error Main.gmk needs SPEC set to a proper spec.gmk)
 endif
 
@@ -1414,7 +1414,7 @@ dist-clean: clean
 	($(CD) $(OUTPUTDIR) && \
 	    $(RM) -r *spec.gmk $(CONFIGURESUPPORT_OUTPUTDIR) Makefile compare.sh ide \
 	    configure.log* build.log*)
-	$(if $(filter $(CONF_NAME),$(notdir $(OUTPUTDIR))), \
+	$(if $(filter $(CONF_NAME), $(notdir $(OUTPUTDIR))), \
 	  if test "x`$(LS) $(OUTPUTDIR)`" != x; then \
 	    $(ECHO) "Warning: Not removing non-empty configuration directory for '$(CONF_NAME)'" ; \
 	  else \
