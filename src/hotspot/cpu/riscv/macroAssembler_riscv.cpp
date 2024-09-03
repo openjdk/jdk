@@ -3530,7 +3530,7 @@ void MacroAssembler::atomic_cas(
 
 void MacroAssembler::far_jump(const Address &entry, Register tmp) {
   assert(CodeCache::find_blob(entry.target()) != nullptr,
-         "destination of far call not found in code cache");
+         "destination of far jump not found in code cache");
   assert(entry.rspec().type() == relocInfo::external_word_type
         || entry.rspec().type() == relocInfo::runtime_call_type
         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
