@@ -113,26 +113,15 @@ public class StackMapDecoder {
                 return Integer.compare(dcb.labelToBci(o1.target()), dcb.labelToBci(o2.target()));
             }
         });
-        // count uniques
-        int cnt = 0;
+        b.writeU2(infos.length);
         for (var fr : infos) {
             int offset = dcb.labelToBci(fr.target());
-            if (offset > prevOffset) {
-                cnt ++;
-                prevOffset = offset;
+            if (offset == prevOffset) {
+                throw new IllegalArgumentException("Duplicated stack frame bytecode index: " + offset);
             }
-        }
-        // reset
-        prevOffset = -1;
-        b.writeU2(cnt);
-        for (var fr : infos) {
-            int offset = dcb.labelToBci(fr.target());
-            // skip duplicates
-            if (offset > prevOffset) {
-                writeFrame(buf, offset - prevOffset - 1, prevLocals, fr);
-                prevOffset = offset;
-                prevLocals = fr.locals();
-            }
+            writeFrame(buf, offset - prevOffset - 1, prevLocals, fr);
+            prevOffset = offset;
+            prevLocals = fr.locals();
         }
     }
 
