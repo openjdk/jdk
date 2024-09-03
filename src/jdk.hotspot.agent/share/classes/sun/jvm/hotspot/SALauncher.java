@@ -43,7 +43,7 @@ public class SALauncher {
     private static boolean launcherHelp() {
         System.out.println("    clhsdb       \tcommand line debugger");
         System.out.println("    hsdb         \tui debugger");
-        System.out.println("    debugd --help\tto get more information");
+        System.out.println("    debugd --help\tto get more information (deprecated)");
         System.out.println("    jstack --help\tto get more information");
         System.out.println("    jmap   --help\tto get more information");
         System.out.println("    jinfo  --help\tto get more information");
@@ -69,6 +69,8 @@ public class SALauncher {
         System.out.println("    --exe <executable for corefile>");
         if (canConnectToRemote) {
             System.out.println("    --connect [<serverid>@]<host>[:registryport][/servername] To connect to a remote debug server (debugd).");
+            System.out.println();
+            System.out.println("WARNING: debugd (and therefore --connect) are deprecated and will be removed in a future release.");
         }
         System.out.println();
         System.out.println("    The --core and --exe options must be set together to give the core");
@@ -91,6 +93,7 @@ public class SALauncher {
     }
 
     private static boolean debugdHelp() {
+        System.out.println("WARNING: debugd is deprecated and will be removed in a future release.");
         System.out.println("    --serverid <id>         A unique identifier for this debugd server.");
         System.out.println("    --servername <name>     Instance name of debugd server.");
         System.out.println("    --rmiport <port>        Sets the port number to which the RMI connector is bound." +
@@ -361,7 +364,10 @@ public class SALauncher {
         JSnap.main(buildAttachArgs(newArgMap, false));
     }
 
+    @SuppressWarnings("removal")
     private static void runDEBUGD(String[] args) {
+        System.err.println("WARNING: debugd is deprecated and will be removed in a future release.");
+
         // By default SA agent classes prefer Windows process debugger
         // to windbg debugger. SA expects special properties to be set
         // to choose other debuggers. We will set those here before
