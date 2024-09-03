@@ -48,7 +48,8 @@ $(eval $(call SetupExecute, jlink_interim_image, \
     DEPS :=  $(JMODS) $(call DependOnVariable, INTERIM_MODULES_LIST), \
     OUTPUT_DIR := $(INTERIM_IMAGE_DIR), \
     SUPPORT_DIR := $(INTERIM_JLINK_SUPPORT_DIR), \
-    COMMAND := $(RM) -r $(INTERIM_IMAGE_DIR) && $(JLINK_TOOL) --output $(INTERIM_IMAGE_DIR) \
+    PRE_COMMAND := $(RM) -r $(INTERIM_IMAGE_DIR), \
+    COMMAND := $(JLINK_TOOL) --output $(INTERIM_IMAGE_DIR) \
         --disable-plugin generate-jli-classes \
         --add-modules $(INTERIM_MODULES_LIST), \
 ))
