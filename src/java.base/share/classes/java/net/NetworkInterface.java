@@ -46,7 +46,7 @@ import java.util.stream.StreamSupport;
  * specific but a name such as "le0" is typical;
  * it may not be unique. The index is a highly platform
  * specific number that identifies the interface. The network
- * configuration may change during the life-time of the JVM:
+ * configuration may change during the lifetime of the JVM:
  * typically, the set of IP addresses assigned to a network
  * interface may change.
  * <p>
