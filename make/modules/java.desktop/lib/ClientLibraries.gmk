@@ -46,6 +46,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMLIB_IMAGE, \
     CFLAGS := -D__USE_J2D_NAMES -D__MEDIALIB_OLD_NAMES -DMLIB_NO_LIBSUNMATH \
         $(LIBMLIB_IMAGE_CFLAGS), \
     DISABLED_WARNINGS_gcc := unused-function, \
+    DISABLED_WARNINGS_clang_mlib_ImageCreate.c := unused-function, \
     LIBS_unix := $(LIBDL) $(LIBM), \
 ))
 
@@ -122,6 +123,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVAJPEG, \
         unused-but-set-variable, \
     DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
     DISABLED_WARNINGS_gcc_jdphuff.c := shift-negative-value, \
+    DISABLED_WARNINGS_clang_imageioJPEG.c := unused-but-set-variable, \
     JDK_LIBS := java.base:libjava, \
     LIBS := $(LIBJPEG_LIBS), \
 ))
@@ -230,10 +232,12 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       DISABLED_WARNINGS_clang := deprecated-non-prototype, \
       DISABLED_WARNINGS_clang_dgif_lib.c := sign-compare, \
       DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
-      DISABLED_WARNINGS_clang_splashscreen_impl.c := sign-compare, \
+      DISABLED_WARNINGS_clang_splashscreen_impl.c := sign-compare \
+          unused-but-set-variable unused-function, \
       DISABLED_WARNINGS_clang_splashscreen_png.c := \
           incompatible-pointer-types, \
-      DISABLED_WARNINGS_clang_splashscreen_sys.m := deprecated-declarations, \
+      DISABLED_WARNINGS_clang_splashscreen_sys.m := deprecated-declarations \
+          unused-variable unused-but-set-variable, \
       DISABLED_WARNINGS_microsoft_dgif_lib.c := 4018 4267, \
       DISABLED_WARNINGS_microsoft_splashscreen_impl.c := 4018 4267 4244, \
       DISABLED_WARNINGS_microsoft_splashscreen_png.c := 4267, \
@@ -322,7 +326,7 @@ else
       expansion-to-defined dangling-reference maybe-uninitialized \
       calloc-transposed-args
   HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers \
-      range-loop-analysis
+      range-loop-analysis unused-variable
   HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244
 
   LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
