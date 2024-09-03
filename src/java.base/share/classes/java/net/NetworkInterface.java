@@ -41,7 +41,7 @@ import java.util.stream.StreamSupport;
  * between a computer and a private or public network.
  * A Network Interface can be physical or logical.
  * A network interface has a name, an index, zero or more assigned
- * {@inkplain InetAddress IP addresses}, and zero or more {@linkplain
+ * {@linkplain InetAddress IP addresses}, and zero or more {@linkplain
  * InterfaceAddress MAC Addresses}. The name is highly platform
  * specific but a name such as "le0" is typical;
  * it may not be unique. The index is a highly platform
