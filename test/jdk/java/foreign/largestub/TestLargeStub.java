@@ -43,11 +43,20 @@ public class TestLargeStub extends NativeTestHelper {
     ); // 16 byte struct triggers return buffer usage on SysV
 
     @Test
-    public void testDowncall() {
+    public void testDowncallDoubles() {
         // Link a handle with a large number of arguments, to try and overflow the code buffer
         Linker.nativeLinker().downcallHandle(
                 FunctionDescriptor.of(STRUCT_LL,
                         Stream.generate(() -> C_DOUBLE).limit(124).toArray(MemoryLayout[]::new)),
+                Linker.Option.captureCallState("errno"));
+    }
+
+    @Test
+    public void testDowncallInts() {
+        // Link a handle with a large number of arguments, to try and overflow the code buffer
+        Linker.nativeLinker().downcallHandle(
+                FunctionDescriptor.of(STRUCT_LL,
+                        Stream.generate(() -> C_INT).limit(248).toArray(MemoryLayout[]::new)),
                 Linker.Option.captureCallState("errno"));
     }
 
