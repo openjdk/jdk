@@ -39,10 +39,12 @@ public class CertMsgCheck {
             build();
 
         // Initial client session
-        TLSBase.Client client1 = new TLSBase.Client(true, false);
+        TLSBase.Client client = new TLSBase.Client(true, false);
+        client.connect();
 
-        server.getSession(client1).getSessionContext();
-        server.done();
+        // Close must be called to gather all the exceptions thrown
+        client.close();
+        server.close();
 
         var eList = server.getExceptionList();
         System.out.println("Exception list size is " + eList.size());
