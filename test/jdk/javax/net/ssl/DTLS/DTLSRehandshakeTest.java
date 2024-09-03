@@ -69,6 +69,8 @@ public class DTLSRehandshakeTest {
         }
     }
 
+    // Since this test generates a large amount of logs and JTREG truncates the output, the full
+    // output is also written to an external file. This helps with debugging if the test fails.
     private static class MultiOutputStream extends OutputStream {
         private final OutputStream out1;
         private final OutputStream out2;
