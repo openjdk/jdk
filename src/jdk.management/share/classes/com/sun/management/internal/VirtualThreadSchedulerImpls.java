@@ -56,12 +56,12 @@ public class VirtualThreadSchedulerImpls {
     private abstract static class BaseVirtualThreadSchedulerImpl
             implements VirtualThreadSchedulerMXBean {
 
-        abstract void impSetParallelism(int size);
+        abstract void implSetParallelism(int size);
 
         @Override
         public final void setParallelism(int size) {
             Util.checkControlAccess();
-            impSetParallelism(size);
+            implSetParallelism(size);
         }
 
         @Override
@@ -116,7 +116,7 @@ public class VirtualThreadSchedulerImpls {
         }
 
         @Override
-        void impSetParallelism(int size) {
+        void implSetParallelism(int size) {
             switch (Scheduler.instance()) {
                 case ForkJoinPool pool -> pool.setParallelism(size);
                 case ThreadPoolExecutor pool -> pool.setMaximumPoolSize(size);
@@ -145,7 +145,6 @@ public class VirtualThreadSchedulerImpls {
         @Override
         public long getQueuedVirtualThreadCount() {
             return switch (Scheduler.instance()) {
-                // over estimate for now
                 case ForkJoinPool pool -> pool.getQueuedTaskCount() + pool.getQueuedSubmissionCount();
                 case ThreadPoolExecutor pool -> pool.getQueue().size();
                 default -> -1L;
@@ -164,7 +163,7 @@ public class VirtualThreadSchedulerImpls {
         }
 
         @Override
-        void impSetParallelism(int size) {
+        void implSetParallelism(int size) {
             throw new UnsupportedOperationException();
         }
 

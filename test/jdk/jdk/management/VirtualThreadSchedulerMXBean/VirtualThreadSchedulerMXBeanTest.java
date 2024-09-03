@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8338890
  * @summary Basic test for jdk.management.VirtualThreadSchedulerMXBean
  * @requires vm.continuations
  * @modules jdk.management
