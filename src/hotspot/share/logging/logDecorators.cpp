@@ -67,7 +67,7 @@ LogDecorators::Decorator LogDecorators::from_string(const char* str) {
 
 bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
   if (decorator_args == nullptr || strlen(decorator_args) == 0) {
-    // Decorators have already been set
+    //No decorators supplied, keep default decorators
     return true;
   }
 

@@ -74,30 +74,24 @@ class LogDecorators {
   };
 
   class DefaultDecorator {
-  private:
-
+    LogSelection _selection = LogSelection::Invalid;
+    uint         _mask;
+  
   public:
     DefaultDecorator() {}
     static const DefaultDecorator Invalid;
 
-    DefaultDecorator(LogLevelType level, uint mask, ...) : _mask(mask) {
-      size_t i;
-      va_list ap;
-      LogTagType tags[LogTag::MaxTags];
-      va_start(ap, mask);
-      for (i = 0; i < LogTag::MaxTags; i++) {
-        LogTagType tag = static_cast<LogTagType>(va_arg(ap, int));
-        tags[i] = tag;
-        if (tag == LogTag::__NO_TAG) {
-          assert(i > 0, "Must specify at least one tag!");
-          break;
-        }
-      }
-      assert(i < LogTag::MaxTags || static_cast<LogTagType>(va_arg(ap, int)) == LogTag::__NO_TAG,
-            "Too many tags specified! Can only have up to " SIZE_FORMAT " tags in a tag set.", LogTag::MaxTags);
-      va_end(ap);
+    template<typename... Tags>
+    DefaultDecorator(LogLevelType level, uint mask, LogTagType first, Tags... rest) : _mask(mask) {
+      static_assert(sizeof...(rest) <= LogTag::MaxTags,
+                    "Too many tags specified! Can only have up to tags in a tag set.");
 
-      _selection = LogSelection(tags, false, level);
+      LogTagType tag_arr[LogTag::MaxTags + 1] = { first, static_cast<LogTagType>(rest)... };
+
+      assert(tag_arr[LogTag::MaxTags] == LogTag::__NO_TAG,
+             "Too many tags specified! Can only have up to " SIZE_FORMAT " tags in a tag set.", LogTag::MaxTags);
+
+      _selection = LogSelection(tag_arr, false, level);
     }
 
     LogSelection selection() const { return _selection; }
@@ -105,10 +99,6 @@ class LogDecorators {
 
     bool operator==(const DefaultDecorator& ref) const;
     bool operator!=(const DefaultDecorator& ref) const;
-  
-  private:
-    LogSelection _selection = LogSelection::Invalid;
-    uint         _mask = 0;
   };
 
  private:
@@ -121,14 +111,12 @@ class LogDecorators {
     return 1 << decorator;
   }
 
-  // constexpr LogDecorators(uint mask) : _decorators(mask) {
-  // }
 
  public:
   static const LogDecorators None;
   static const LogDecorators All;
 
-  LogDecorators(uint mask) : _decorators(mask) {
+  constexpr LogDecorators(uint mask) : _decorators(mask) {
   }
 
   LogDecorators() : _decorators(DefaultDecoratorsMask) {
