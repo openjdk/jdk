@@ -1971,7 +1971,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   //            again and can skip the predicate.
 
   // Check (vi) and bail out if the stride is too big.
-  if (stride_con == min_signed_integer(iv_bt) || ABS(stride_con) > max_signed_integer(iv_bt) / 2) {
+  if (stride_con == min_signed_integer(iv_bt) || (ABS(stride_con) > max_signed_integer(iv_bt) / 2)) {
     return false;
   }
 
