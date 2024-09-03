@@ -247,7 +247,7 @@ public class ShutdownNow implements HttpServerAdapters {
                 var error = TRACKER.check(500);
                 if (error != null) throw error;
                 throw new AssertionError("client was still running, but exited after further delay: "
-                                        + "timeout should be adjusted");
+                        + "timeout should be adjusted");
             }
         }
     }

@@ -41,9 +41,9 @@ ALL_MODULES = $(call FindAllModules)
 TARGETS :=
 
 ifneq ($(filter static-libs-image, $(MAKECMDGOALS)), )
-  IMAGE_DEST_DIR=$(STATIC_LIBS_IMAGE_DIR)/lib
+  IMAGE_DEST_DIR = $(STATIC_LIBS_IMAGE_DIR)/lib
 else ifneq ($(filter static-libs-graal-image, $(MAKECMDGOALS)), )
-  IMAGE_DEST_DIR=$(STATIC_LIBS_GRAAL_IMAGE_DIR)/lib
+  IMAGE_DEST_DIR = $(STATIC_LIBS_GRAAL_IMAGE_DIR)/lib
 endif
 
 # Copy JDK static libs to the image.

@@ -131,17 +131,21 @@ class java_lang_String : AllStatic {
   static inline bool deduplication_requested(oop java_string);
   static inline int length(oop java_string);
   static inline int length(oop java_string, typeArrayOop string_value);
-  static int utf8_length(oop java_string);
-  static int utf8_length(oop java_string, typeArrayOop string_value);
+  static size_t utf8_length(oop java_string);
+  static size_t utf8_length(oop java_string, typeArrayOop string_value);
+  // Legacy variants that truncate the length if needed
+  static int    utf8_length_as_int(oop java_string);
+  static int    utf8_length_as_int(oop java_string, typeArrayOop string_value);
 
   // String converters
   static char*  as_utf8_string(oop java_string);
-  static char*  as_utf8_string(oop java_string, int& length);
-  static char*  as_utf8_string_full(oop java_string, char* buf, int buflen, int& length);
-  static char*  as_utf8_string(oop java_string, char* buf, int buflen);
+  // `length` is set to the length of the utf8 sequence.
+  static char*  as_utf8_string(oop java_string, size_t& length);
+  static char*  as_utf8_string_full(oop java_string, char* buf, size_t buflen, size_t& length);
+  static char*  as_utf8_string(oop java_string, char* buf, size_t buflen);
   static char*  as_utf8_string(oop java_string, int start, int len);
-  static char*  as_utf8_string(oop java_string, typeArrayOop value, char* buf, int buflen);
-  static char*  as_utf8_string(oop java_string, typeArrayOop value, int start, int len, char* buf, int buflen);
+  static char*  as_utf8_string(oop java_string, typeArrayOop value, char* buf, size_t buflen);
+  static char*  as_utf8_string(oop java_string, typeArrayOop value, int start, int len, char* buf, size_t buflen);
   static char*  as_platform_dependent_str(Handle java_string, TRAPS);
   static jchar* as_unicode_string(oop java_string, int& length, TRAPS);
   static jchar* as_unicode_string_or_null(oop java_string, int& length);

@@ -1149,7 +1149,9 @@ final class Finished {
 
             //
             // produce
-            NewSessionTicket.t13PosthandshakeProducer.produce(shc);
+            if (SSLConfiguration.serverNewSessionTicketCount > 0) {
+                NewSessionTicket.t13PosthandshakeProducer.produce(shc);
+            }
         }
     }
 

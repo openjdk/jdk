@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiPredicate;
@@ -119,6 +120,7 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
     static volatile boolean tasksFailed;
     static final AtomicLong serverCount = new AtomicLong();
     static final AtomicLong clientCount = new AtomicLong();
+    static final AtomicInteger requestCount = new AtomicInteger();
     static final long start = System.nanoTime();
     public static String now() {
         long now = System.nanoTime() - start;
@@ -271,20 +273,22 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
     }
 
     @Test(dataProvider = "noStalls")
-    public void testNoStalls(String uri, boolean sameClient)
+    public void testNoStalls(String rootUri, boolean sameClient)
             throws Exception {
+        if (!FAILURES.isEmpty()) return;
         HttpClient client = null;
-        out.printf("%ntestNoStalls(%s, %b)%n", uri, sameClient);
+        out.printf("%ntestNoStalls(%s, %b)%n", rootUri, sameClient);
         try {
             for (int i = 0; i < ITERATION_COUNT; i++) {
                 if (!sameClient || client == null)
                     client = newHttpClient(sameClient);
 
+                String uri = rootUri + "/" + requestCount.incrementAndGet();
+                out.printf("\tsending request %s%n", uri);
                 HttpRequest req = request(uri);
 
                 BodyHandler<Stream<String>> handler =
-                        new StallingBodyHandler((w) -> {
-                        },
+                        new StallingBodyHandler((w) -> {},
                                 BodyHandlers.ofLines());
                 Map<HttpRequest, CompletableFuture<HttpResponse<Stream<String>>>> pushPromises =
                         new ConcurrentHashMap<>();
@@ -365,6 +369,10 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
                                      SubscriberType subscriberType)
             throws Exception
     {
+        if (!FAILURES.isEmpty()) {
+            out.printf("%s: skipping test - previous failure detected%n", name);
+            return;
+        }
         out.printf("%n%s%s%n", now(), name);
         try {
             testDependent(uri, sameClient, handlers, finisher,
@@ -375,7 +383,7 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
         }
     }
 
-    private <T,U> void testDependent(String uri, boolean sameClient,
+    private <T,U> void testDependent(String rootUri, boolean sameClient,
                                      Supplier<BodyHandler<T>> handlers,
                                      Finisher finisher,
                                      Extractor<T> extractor,
@@ -388,7 +396,8 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
             for (Where where : EnumSet.of(Where.BODY_HANDLER)) {
                 if (!sameClient || client == null)
                     client = newHttpClient(sameClient);
-
+                String uri = rootUri + "/" + requestCount.incrementAndGet();
+                out.printf("\tsending request %s%n", uri);
                 HttpRequest req = request(uri);
 
                 StallingPushPromiseHandler<T> promiseHandler =
@@ -397,7 +406,13 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
                 System.out.println("try stalling in " + where);
                 CompletableFuture<HttpResponse<T>> responseCF =
                         client.sendAsync(req, handler, promiseHandler);
-                assert subscriberType == SubscriberType.LAZZY || !responseCF.isDone();
+                // The body of the main response can be received before the body
+                // of the push promise handlers are received.
+                // The body of the main response doesn't stall, so the cf of
+                // the main response may be done here even for EAGER subscribers.
+                // We cannot make any assumption on the state of the main response
+                // cf here, so the only thing we can do is to call the finisher
+                // which will wait for them all.
                 finisher.finish(where, responseCF, promiseHandler, extractor);
             }
         } finally {
