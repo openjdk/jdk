@@ -85,6 +85,8 @@ import jdk.internal.net.http.quic.frames.MaxStreamsFrame;
 import jdk.internal.net.http.quic.frames.NewConnectionIDFrame;
 import jdk.internal.net.http.quic.frames.NewTokenFrame;
 import jdk.internal.net.http.quic.frames.PaddingFrame;
+import jdk.internal.net.http.quic.frames.PathChallengeFrame;
+import jdk.internal.net.http.quic.frames.PathResponseFrame;
 import jdk.internal.net.http.quic.frames.PingFrame;
 import jdk.internal.net.http.quic.frames.QuicFrame;
 import jdk.internal.net.http.quic.frames.ResetStreamFrame;
@@ -2150,6 +2152,12 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     if (debug.on()) {
                         debug.log("Registered a new (initial) token for peer " + this.peerAddress);
                     }
+                } else if (frame instanceof PathResponseFrame pathResponseFrame) {
+                    throw new QuicTransportException("Unmatched PATH_RESPONSE frame",
+                            KeySpace.ONE_RTT,
+                            frame.getTypeField(), PROTOCOL_VIOLATION);
+                } else if (frame instanceof PathChallengeFrame pathChallengeFrame) {
+                    sendFrame(new PathResponseFrame(pathChallengeFrame.data()));
                 } else {
                     if (debug.on()) {
                         debug.log("Frame type: %s not supported yet", frame.getClass());
@@ -3604,11 +3612,14 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return ackpacket.packetNumber();
     }
 
-    private LinkedList<QuicFrame> stripAckAndPadding(List<QuicFrame> frames) {
+    private LinkedList<QuicFrame> removeOutdatedFrames(List<QuicFrame> frames) {
+        // Remove frames that should not be retransmitted
         LinkedList<QuicFrame> result = new LinkedList<>();
         for (QuicFrame f : frames) {
             if (!(f instanceof PaddingFrame) &&
-                    !(f instanceof AckFrame)) {
+                    !(f instanceof AckFrame) &&
+                    !(f instanceof PathChallengeFrame) &&
+                    !(f instanceof PathResponseFrame)) {
                result.add(f);
             }
         }
@@ -3661,7 +3672,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         // the maximum datagram size supported on the path. To avoid that, we
         // strip the padding and old ack frame from the original packet, and
         // include the new ack frame only if it fits in the available size.
-        LinkedList<QuicFrame> frames = stripAckAndPadding(packet.frames());
+        LinkedList<QuicFrame> frames = removeOutdatedFrames(packet.frames());
         int size = frames.stream().mapToInt(QuicFrame::size).sum();
         int remaining = maxPayloadSize - size;
         AckFrame ack = packetSpaceManager.getNextAckFrame(false, remaining);
