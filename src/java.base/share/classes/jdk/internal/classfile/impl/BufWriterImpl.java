@@ -160,8 +160,8 @@ public final class BufWriterImpl implements BufWriter {
     @SuppressWarnings("deprecation")
     void writeUTF(String str) {
         int strlen = str.length();
-        int countGreaterThanZero = JLA.isLatin1(str) ? JLA.countGreaterThanZero(str) : 0;
-        int utflen = countGreaterThanZero == strlen ? strlen : utflen(str, countGreaterThanZero);
+        int countNonNegatives = JLA.isLatin1(str) ? JLA.countNonNegatives(str) : 0;
+        int utflen = countNonNegatives == strlen ? strlen : utflen(str, countNonNegatives);
         if (utflen > 65535) {
             throw new IllegalArgumentException("string too long");
         }
@@ -174,10 +174,10 @@ public final class BufWriterImpl implements BufWriter {
         elems[offset + 1] = (byte)  utflen;
         offset += 2;
 
-        str.getBytes(0, countGreaterThanZero, elems, offset);
-        offset += countGreaterThanZero;
+        str.getBytes(0, countNonNegatives, elems, offset);
+        offset += countNonNegatives;
 
-        for (int i = countGreaterThanZero; i < strlen; ++i) {
+        for (int i = countNonNegatives; i < strlen; ++i) {
             char c = str.charAt(i);
             if (c >= '\001' && c <= '\177') {
                 elems[offset++] = (byte) c;
@@ -196,10 +196,10 @@ public final class BufWriterImpl implements BufWriter {
         this.offset = offset;
     }
 
-    private static int utflen(String str, int countGreaterThanZero) {
+    private static int utflen(String str, int countNonNegatives) {
         int strlen = str.length();
         int utflen = strlen;
-        for (int i = countGreaterThanZero; i < strlen; i++) {
+        for (int i = countNonNegatives; i < strlen; i++) {
             int c = str.charAt(i);
             if (c >= 0x80 || c == 0)
                 utflen += (c >= 0x800) ? 2 : 1;

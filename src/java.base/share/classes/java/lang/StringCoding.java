@@ -35,15 +35,18 @@ class StringCoding {
 
     private StringCoding() { }
 
-    public static int countGreaterThanZero(String s) {
+    /**
+     * Count the number of String::value leading non-negatives in the range.
+     */
+    public static int countNonNegatives(String s) {
         byte[] value;
-        return countGreaterThanZero(value = s.value(), 0, value.length);
+        return countNonNegatives(value = s.value(), 0, value.length);
     }
 
     /**
-     * Count the number of leading greater than zero bytes in the range.
+     * Count the number of leading non-negatives in the range.
      */
-    public static int countGreaterThanZero(byte[] ba, int off, int len) {
+    public static int countNonNegatives(byte[] ba, int off, int len) {
         int limit = off + len;
         for (int i = off; i < limit; i++) {
             if (ba[i] <= 0) {
