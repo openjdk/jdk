@@ -5196,7 +5196,14 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
     ss.print(" %d", iter);
   }
   if (n != nullptr) {
-    ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
+    ss.print(": %d %s", n->_idx, NodeClassNames[n->Opcode()]);
+    if (n->is_CallJava()) {
+      CallJavaNode* call = n->as_CallJava();
+      if (call->method() != nullptr) {
+        ss.print(" -");
+        call->method()->print_short_name(&ss);
+      }
+    }
   }
 
   const char* name = ss.as_string();
