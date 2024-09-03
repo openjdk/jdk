@@ -42,7 +42,7 @@
 //
 //  64 bits:
 //  --------
-//  unused:26 hash:31 -->| unused_gap:4  age:4  self-fwd:1  lock:2 (normal object)
+//  unused:22 hash:31 -->| unused_gap:4  age:4  self-fwd:1  lock:2 (normal object)
 //
 //  64 bits (with compact headers):
 //  -------------------------------
@@ -130,16 +130,7 @@ class markWord {
 
 #ifdef _LP64
   // Used only with compact headers:
-  // We store nKlass in the bits 38 to 60 (leaving 4 bits for later usage). When extracting,
-  // we need to read the upper 32 bits and rightshift by the lower 6 foreign bits.
-
-  // These are for loading the nKlass with a 32-bit load and subsequent masking of the lower
-  // shadow bits
-  static constexpr int klass_load_shift           = 32;
-  static constexpr int klass_load_bits            = 32;
-  static constexpr int klass_shadow_bits          = 10;
-  static constexpr uintptr_t klass_shadow_mask    = right_n_bits(klass_shadow_bits);
-  static constexpr uintptr_t klass_shadow_mask_inplace  = klass_shadow_mask << klass_load_shift;
+  // We store nKlass in the bits 43 to 64.
 
   // These are for bit-precise extraction of the nKlass from the 64-bit Markword
   static constexpr int klass_shift                = hash_shift + hash_bits;

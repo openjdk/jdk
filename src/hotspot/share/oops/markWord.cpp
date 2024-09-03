@@ -30,8 +30,6 @@
 #include "utilities/ostream.hpp"
 
 #ifdef _LP64
-STATIC_ASSERT((markWord::klass_shadow_mask_inplace & markWord::klass_mask_in_place) == 0);
-STATIC_ASSERT((markWord::klass_load_shift + markWord::klass_shadow_bits) == markWord::klass_shift);
 STATIC_ASSERT(markWord::klass_shift + markWord::klass_bits == 64);
 // The hash (preceding nKlass) shall be a direct neighbor but not interleave
 STATIC_ASSERT(markWord::klass_shift == markWord::hash_bits + markWord::hash_shift);

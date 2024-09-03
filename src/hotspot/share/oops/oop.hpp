@@ -349,11 +349,9 @@ public:
       // the C2 compiler, and even there we don't use it to access the (narrow)Klass*
       // directly. It is used only as a placeholder to identify the special memory slice
       // of LoadNKlass instructions. This value could be any value that is not a valid
-      // field offset. Also, if it weren't for C2, we could
-      // assert(!UseCompactObjectHeaders) here.
-      constexpr int load_shift = markWord::klass_load_shift;
-      STATIC_ASSERT(load_shift % 8 == 0);
-      return mark_offset_in_bytes() + load_shift / 8;
+      // field offset. Use an offset halfway into the markWord, as the markWord is never
+      // partially loaded from C2.
+      return mark_offset_in_bytes() + sizeof(markWord) / 2;
     } else
 #endif
     {
