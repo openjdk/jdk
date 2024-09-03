@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,8 +195,8 @@ public class ProxyServer extends Thread implements Closeable {
         volatile InputStream clientIn, serverIn;
         volatile OutputStream clientOut, serverOut;
 
-        volatile boolean proxyInClosed;
-        volatile boolean proxyOutClosed;
+        boolean proxyInClosed;  // only accessed from synchronized block
+        boolean proxyOutClosed; // only accessed from synchronized block
 
         final static int CR = 13;
         final static int LF = 10;
