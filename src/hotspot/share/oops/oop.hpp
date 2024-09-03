@@ -105,7 +105,7 @@ class oopDesc {
     if (UseCompactObjectHeaders) {
       return sizeof(markWord) / HeapWordSize;
     } else {
-      return sizeof(oopDesc)/HeapWordSize;
+      return sizeof(oopDesc) / HeapWordSize;
     }
   }
 
