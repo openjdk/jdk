@@ -21,9 +21,10 @@
  * questions.
  */
 
-package compiler.intrinsics; // TODO: not intrinsics
+package compiler.c2;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.Test;
 
 import java.util.function.BiFunction;
 
@@ -32,41 +33,54 @@ import java.util.function.BiFunction;
  * @summary Test DIV and MOD nodes are converted into DIVMOD where possible
  * @requires os.arch=="amd64" | os.arch=="x86_64"
  * @library /test/lib /
- * @run driver compiler.intrinsics.TestDivMod
+ * @run driver compiler.c2.TestDivModNodes
  */
-public class TestDivMod {
+public class TestDivModNodes {
     public static void main(String[] args) {
         TestFramework.run();
     }
 
-//    @Test
-//    @IR(counts = {IRNode.UDIV_MOD_I, "1" })
-//    private static void testIntSignedDivMod(int dividend, int divisor) {
-//        // TODO
-//    }
+    @Test
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(counts = {IRNode.DIV_MOD_I, "1" })
+    private static void testSignedIntDivMod(int dividend, int divisor) {
+        int q = dividend / divisor;
+        int r = dividend % divisor;
+
+        verifyResult(dividend, divisor, q, r, TestDivModNodes::signedIntDiv, TestDivModNodes::signedIntMod);
+    }
+
+    @Test
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @IR(counts = {IRNode.DIV_MOD_L, "1" })
+    private static void testSignedLongDivMod(long dividend, long divisor) {
+        long q = dividend / divisor;
+        long r = dividend % divisor;
+
+        verifyResult(dividend, divisor, q, r, TestDivModNodes::signedLongDiv, TestDivModNodes::signedLongMod);
+    }
 
     @Test
     @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.UDIV_MOD_I, "1" })
-    private static void testIntUnsignedDivMod(int dividend, int divisor) {
+    private static void testUnsignedIntDivMod(int dividend, int divisor) {
         int q = Integer.divideUnsigned(dividend, divisor); // intrinsified on x86
         int r = Integer.remainderUnsigned(dividend, divisor); // intrinsified on x86
 
-        verifyResult(dividend, divisor, q, r, TestDivMod::intUnsignedDiv, TestDivMod::intUnsignedMod);
+        verifyResult(dividend, divisor, q, r, TestDivModNodes::unsignedIntDiv, TestDivModNodes::unsignedIntMod);
     }
 
     @Test
     @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(counts = {IRNode.UDIV_MOD_L, "1" })
-    private static void testLongUnsignedDivMod(long dividend, long divisor) {
+    private static void testUnsignedLongDivMod(long dividend, long divisor) {
         long q = Long.divideUnsigned(dividend, divisor); // intrinsified on x86
         long r = Long.remainderUnsigned(dividend, divisor); // intrinsified on x86
 
-        verifyResult(dividend, divisor, q, r, TestDivMod::longUnsignedDiv, TestDivMod::longUnsignedMod);
+        verifyResult(dividend, divisor, q, r, TestDivModNodes::unsignedLongDiv, TestDivModNodes::unsignedLongMod);
     }
 
-    private static <T extends Number> void verifyResult(
-            T dividend, T divisor, T quotient, T remainder,
+    private static <T extends Number> void verifyResult(T dividend, T divisor, T quotient, T remainder,
             BiFunction<T, T, T> quotientFunc, BiFunction<T, T, T> remainderFunc) {
         T expectedQ = quotientFunc.apply(dividend, divisor);
         T expectedR = remainderFunc.apply(dividend, divisor);
@@ -79,45 +93,45 @@ public class TestDivMod {
         }
     }
 
-    // by spreading div and mod into different, not inlined methods, we can confuse the compiler enough to not perform
-    // this optimization, so we can test for correctness
+    // By spreading div and mod into different, not inlined methods, we can confuse the compiler enough to not perform
+    // the divmod optimization, so we can test for correctness.
     @DontInline
-    private static int intSignedDiv(int dividend, int divisor) {
+    private static int signedIntDiv(int dividend, int divisor) {
         return dividend / divisor;
     }
 
     @DontInline
-    private static int intSignedMod(int dividend, int divisor) {
+    private static int signedIntMod(int dividend, int divisor) {
         return dividend % divisor;
     }
 
     @DontInline
-    private static int intUnsignedDiv(int dividend, int divisor) {
-        return Integer.divideUnsigned(dividend, divisor); // intrinsified on x86
+    private static int unsignedIntDiv(int dividend, int divisor) {
+        return Integer.divideUnsigned(dividend, divisor);
     }
 
     @DontInline
-    private static int intUnsignedMod(int dividend, int divisor) {
-        return Integer.remainderUnsigned(dividend, divisor); // intrinsified on x86
+    private static int unsignedIntMod(int dividend, int divisor) {
+        return Integer.remainderUnsigned(dividend, divisor);
     }
 
     @DontInline
-    private static long longSignedDiv(long dividend, long divisor) {
+    private static long signedLongDiv(long dividend, long divisor) {
         return dividend / divisor;
     }
 
     @DontInline
-    private static long longSignedMod(long dividend, long divisor) {
+    private static long signedLongMod(long dividend, long divisor) {
         return dividend % divisor;
     }
 
     @DontInline
-    private static long longUnsignedDiv(long dividend, long divisor) {
+    private static long unsignedLongDiv(long dividend, long divisor) {
         return Long.divideUnsigned(dividend, divisor); // intrinsified on x86
     }
 
     @DontInline
-    private static long longUnsignedMod(long dividend, long divisor) {
+    private static long unsignedLongMod(long dividend, long divisor) {
         return Long.remainderUnsigned(dividend, divisor); // intrinsified on x86
     }
 }

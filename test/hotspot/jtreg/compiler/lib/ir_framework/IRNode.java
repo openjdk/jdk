@@ -519,6 +519,16 @@ public class IRNode {
         beforeMatchingNameRegex(DIV_L, "DivL");
     }
 
+    public static final String DIV_MOD_I = PREFIX + "DIV_MOD_I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(DIV_MOD_I, "DivModI");
+    }
+
+    public static final String DIV_MOD_L = PREFIX + "DIV_MOD_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(DIV_MOD_L, "DivModL");
+    }
+
     public static final String DIV_VF = VECTOR_PREFIX + "DIV_VF" + POSTFIX;
     static {
         vectorNode(DIV_VF, "DivVF", TYPE_FLOAT);
