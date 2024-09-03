@@ -344,8 +344,8 @@ public final class NetworkInterface {
      * @apiNote
      * The returned interface instance may reflect a snapshot of the
      * configuration taken at the time the instance is created.
-     * To see updates to the configuration may, or may not, require
-     * obtaining a new instance of the interface.
+     * The network configuration may change at any time, and this method may need to
+     * be invoked again to obtain a more up to date view of the network interface.
      * In particular, there is no guarantee that the same interface will be
      * found at the same index, or that the same network addresses will be
      * bound to the interface, if the network configuration of the system
