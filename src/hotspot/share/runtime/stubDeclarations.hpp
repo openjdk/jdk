@@ -44,7 +44,7 @@
   template(jfr_return_lease, RuntimeStub*)                             \
 
 #else
-#define SHARED_JFR_STUBS_DO(TEMPLATE) 
+#define SHARED_JFR_STUBS_DO(TEMPLATE)
 #endif
 
 // template(name, type)

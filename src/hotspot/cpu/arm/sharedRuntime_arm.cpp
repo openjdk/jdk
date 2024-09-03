@@ -1607,7 +1607,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address cal
   assert((id >= sharedStubId::polling_page_vectors_safepoint_handler_id ||
           id <= sharedStubId::polling_page_return_handler_id),
          "expected a polling page stub id");
-         
+
   ResourceMark rm;
   const char *name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 256, 256);

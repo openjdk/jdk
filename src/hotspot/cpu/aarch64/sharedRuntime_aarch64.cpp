@@ -2570,7 +2570,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address cal
   assert((id >= sharedStubId::polling_page_vectors_safepoint_handler_id ||
           id <= sharedStubId::polling_page_return_handler_id),
          "expected a polling page stub id");
-         
+
   ResourceMark rm;
   OopMapSet *oop_maps = new OopMapSet();
   OopMap* map;
@@ -2803,7 +2803,7 @@ RuntimeStub* SharedRuntime::generate_throw_exception(sharedStubId id, address ru
          "expected a throw stub id");
 
   const char *name = SharedRuntime::stub_name(id);
-  
+
   // Information about frame layout at time of blocking runtime call.
   // Note that we only have to preserve callee-saved registers since
   // the compilers are responsible for supplying a continuation point
