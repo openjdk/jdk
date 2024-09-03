@@ -629,6 +629,7 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
+int fubar=0;
 address generate_ghash_processBlocks() {
   StubCodeMark mark(this, "StubRoutines", "ghash");
   address start = __ function_entry();
@@ -646,8 +647,10 @@ address generate_ghash_processBlocks() {
     Register temp2  = R9;
     Register temp3  = R10;
     Register temp4  = R11;
+    Register fubar_addr = R12;
+    Register fubar_value = R13;
 
-VectorRegister vH        = VR0;
+    VectorRegister vH        = VR0;
     VectorRegister vX        = VR1;
     VectorRegister vH_shift  = VR2;
     VectorRegister vTmp1     = VR3;
@@ -655,57 +658,62 @@ VectorRegister vH        = VR0;
     VectorRegister vTmp3     = VR5;
     VectorRegister vTmp4     = VR6;
     VectorRegister vResult   = VR7;
-    VectorRegister vCarry    = VR8;
-    VectorRegister vPerm     = VR9;
+    VectorRegister vMSB    = VR8;
+    VectorRegister vLowerH     = VR9;
+    VectorRegister vHigherH     = VR10;
+    VectorRegister vZero = VR11;
+    VectorRegister vConst1 = VR12;
+    VectorRegister vConst7 = VR13;
 
-  //  const unsigned char constC2[16] = {0xc2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    // Load the address of the constant array into a register
 
-   VectorRegister vConstC2 = VR10; 
+    VectorRegister vConstC2 = VR10; 
+    __ li(temp1, 0x2);
+    __ li(temp1, 0x3);
+    __ li(temp1, 0xc4);
+    __ li(temp1, 0x5);
     __ li(temp1, 0xc2);
     __ sldi(temp1, temp1, 56);
+
     // Load the vector from memory into vConstC2
      __ mtvrd(vConstC2, temp1); 
-     __ vxor(vTmp1, vTmp1, vTmp1);
+     __ vxor(vZero, vZero, vZero);
 
     // Load H into vector registers
-    __ lxvd2x(32 + 1, 0, subkeyH);  // Load H
-    __ vspltisb(vTmp2, 1);
-    __ vspltisb(vTmp3, 7);
-    __ vsldoi(vTmp4, vTmp1, vTmp2, 1);
-    __ vor(vPerm, vCarry, vTmp4);
-    __ vsplt(vTmp1, 0, vH);
-    __ vsl(vH_shift, vH, vTmp2);
-    __ vsrab(vTmp1, vTmp1, vTmp3);
-    __ vand(vTmp1, vTmp1, vPerm);
-    __ vxor(vTmp2, vH_shift, vTmp1);
+    // Use a different register (e.g., R3)
     
-    __ vsldoi(vCarry, vTmp1, vPerm, 8);
+    __ li(temp1, 0);      // Load immediate value 0 into temp  
+    __ lvx(vH, temp1, subkeyH);  // Load H using temp instead of R0
+    
+    __ vspltisb(vConst1, 1);
+    __ vsldoi(vTmp4, vZero, vConst1, 1);
+    __ vor(vTmp4, vConstC2, vTmp4);
+    __ vsplt(vMSB, 0, vH);
+    __ vsl(vH_shift, vH, vConst7);
+    __ vsrab(vMSB, vMSB, vConst7);
+    __ vand(vMSB, vMSB, vTmp4);
+    __ vxor(vTmp2, vH_shift, vMSB);
+   
     __ vsldoi(vTmp3, vTmp2, vTmp2, 8);
-    __ vsldoi(vTmp1, vTmp1, vTmp3, 8);
-    __ vsldoi(vTmp4, vTmp3, vTmp1, 8);
+    __ vsldoi(vLowerH, vZero, vTmp3, 8);
+    __ vsldoi(vHigherH, vTmp3, vZero, 8);
 
-    // Store shifted H
-    __ stvx(vCarry, 0, temp2);
-    __ stvx(vTmp1, 16, temp2);
-    __ stvx(vTmp3, 32, temp2);
-    __ stvx(vTmp4, 48, temp2);
+    __ load_const_optimized(fubar_addr, (uintptr_t)&fubar);
+    __ ld(fubar_value, 0, fubar_addr);
+    __ addi(fubar_value, fubar_value, 1);
+    __ std(fubar_value, 0, fubar_addr);
+     __ unimplemented("ghash");
+ 
 
+
+/*
+    // Store shifted 
    //  VectorSRegister vCarryS = VSR0; // Create a scalar vector register for mtvsrd
 
     __ li(temp1, 0xc2);
     __ sldi(temp1, temp1, 56);
-   __ mtvrd(vConstC2, temp1); // Use VectorSRegister for mtvsrd
+    __ mtvrd(vConstC2, temp1); // Use VectorSRegister for mtvsrd
     __ vxor(vTmp1, vTmp1, vTmp1);
-
-    // Load H into vector registers
-    __ li(temp1, 16);
-    __ lxvd2x(32 + 1, temp1, subkeyH);  // Load Hl
-    __ li(temp1, 32);
-    __ lxvd2x(2 + 32, temp1, subkeyH);  // Load H
-    __ li(temp1, 48);
-    __ lxvd2x(11 + 32, temp1, subkeyH); // Load Hh
 
     __ vxor(vH, vH, vH);
 
@@ -720,7 +728,7 @@ VectorRegister vH        = VR0;
 
     // Load input data
    // __ lxvb16x(32 + 1, temp3, data);
-     __ lvx(vX,temp1);
+    __ lvx(vX,temp1);
     __ addi(temp3, temp3, 16);
 
     // Perform GCM multiplication
@@ -746,12 +754,10 @@ VectorRegister vH        = VR0;
     __ bdnz(loop);
    // __ stxv(vH, state, temp4); 
     __ blr();  // Return from function
+    
 
+*/
 
-
-      // if(UseNewCode){
-  //   __ unimplemented("ghash");
-  // }
 
   return start;
 
