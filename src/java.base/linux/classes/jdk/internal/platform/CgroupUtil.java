@@ -122,18 +122,25 @@ public final class CgroupUtil {
         }
         String origCgroupPath = cpu.getCgroupPath();
         Path workingPath = Path.of(origCgroupPath);
-        boolean adjustmentDone = false;
         int hostCpus = CgroupMetrics.getTotalCpuCount0();
+        int lowestLimit = hostCpus;
 
         int limit = CgroupUtil.processorCount(cpu, hostCpus);
-        while (limit == hostCpus && ((workingPath = workingPath.getParent()) != null)) {
+        String lowestPath = origCgroupPath;
+        while ((workingPath = workingPath.getParent()) != null) {
             cpu.setPath(workingPath.toString()); // adjust path
             limit = CgroupUtil.processorCount(cpu, hostCpus);
-            adjustmentDone = true;
+            if (limit < lowestLimit) {
+                lowestLimit = limit;
+                lowestPath = workingPath.toString();
+            }
         }
-        if (adjustmentDone && limit == hostCpus) {
+        if (lowestLimit == hostCpus) {
             // No lower limit found adjust to original path
             cpu.setPath(origCgroupPath);
+        } else {
+            // Adjust controller to lowest observed limit path
+            cpu.setPath(lowestPath);
         }
     }
 
@@ -144,14 +151,21 @@ public final class CgroupUtil {
         long physicalMemory = CgroupMetrics.getTotalMemorySize0();
         String origCgroupPath = memory.getCgroupPath();
         Path workingPath = Path.of(origCgroupPath);
-        boolean adjustmentDone = false;
         long limit = memory.getMemoryLimit(physicalMemory);
-        while (limit < 0 && ((workingPath = workingPath.getParent()) != null)) {
+        long lowestLimit = limit < 0 ? physicalMemory : limit;
+        String lowestPath = origCgroupPath;
+        while ((workingPath = workingPath.getParent()) != null) {
             memory.setPath(workingPath.toString()); // adjust path
             limit = memory.getMemoryLimit(physicalMemory);
-            adjustmentDone = true;
+            if (limit > 0 && limit < lowestLimit) {
+                lowestLimit = limit;
+                lowestPath = workingPath.toString();
+            }
         }
-        if (adjustmentDone && limit < 0) {
+        if (lowestLimit < physicalMemory) {
+            // Found a lower limit, adjust controller to that path
+            memory.setPath(lowestPath);
+        } else {
             // No lower limit found adjust to original path
             memory.setPath(origCgroupPath);
         }
