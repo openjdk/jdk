@@ -43,7 +43,7 @@ public class CountGreaterZero {
 
         Arrays.fill(bytes, (byte) 'A');
         String s = new String(bytes, StandardCharsets.ISO_8859_1);
-        if (JLA.stringCoder(s) == 0) {
+        if (JLA.isLatin1(s)) {
             assertEquals(bytes.length, JLA.countGreaterThanZero(s));
         } else {
             assertEquals(0, JLA.countGreaterThanZero(s));
@@ -55,7 +55,7 @@ public class CountGreaterZero {
                 bytes[i] = (byte) j;
                 s = new String(bytes, StandardCharsets.ISO_8859_1);
 
-                if (JLA.stringCoder(s) == 0) {
+                if (JLA.isLatin1(s)) {
                     assertEquals(i, JLA.countGreaterThanZero(s));
                 } else {
                     assertEquals(0, JLA.countGreaterThanZero(s));
