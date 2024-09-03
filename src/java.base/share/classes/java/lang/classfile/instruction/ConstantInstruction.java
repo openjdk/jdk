@@ -98,7 +98,7 @@ public sealed interface ConstantInstruction extends Instruction {
          */
         @Override
         default TypeKind typeKind() {
-            return TypeKind.IntType;
+            return TypeKind.INT;
         }
     }
 
