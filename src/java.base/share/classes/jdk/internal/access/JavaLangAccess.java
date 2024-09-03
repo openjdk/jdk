@@ -319,11 +319,6 @@ public interface JavaLangAccess {
     int countPositives(byte[] ba, int off, int len);
 
     /**
-     * Count the number of String::value leading non-negatives in the range.
-     */
-    int countNonNegatives(String s);
-
-    /**
      * Constructs a new {@code String} by decoding the specified subarray of
      * bytes using the specified {@linkplain java.nio.charset.Charset charset}.
      *
@@ -397,6 +392,11 @@ public interface JavaLangAccess {
     void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
     boolean isLatin1(String s);
+
+    /**
+     * if string#coder() is Latin1 return the count of string#value() leading greater than zero, else return 0
+     */
+    int countGreaterThanZero(String s);
 
     /**
      * Decodes ASCII from the source byte array into the destination
