@@ -100,7 +100,7 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
     // Get buffer size needed to read all processes
     int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0};
     if (sysctl(mib, 4, NULL, &bufSize, NULL, 0) < 0) {
-        JNU_ThrowByNameWithLastError(env,
+        JNU_ThrowByNameWithMessageAndLastError(env,
             "java/lang/RuntimeException", "sysctl failed");
         return -1;
     }
@@ -114,8 +114,8 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
 
     // Read process info for all processes
     if (sysctl(mib, 4, buffer, &bufSize, NULL, 0) < 0) {
-        JNU_ThrowByNameWithLastError(env,
-            "java/lang/RuntimeException", "sysctl failed");
+        JNU_ThrowByNameWithMessageAndLastError(env,
+            "java/lang/RuntimeException", "sysctl failed to get info about all processes");
         free(buffer);
         return -1;
     }
