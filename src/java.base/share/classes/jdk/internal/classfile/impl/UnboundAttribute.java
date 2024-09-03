@@ -850,9 +850,8 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         public void writeTo(BufWriterImpl b) {
             b.writeIndex(b.constantPool().utf8Entry(mapper.name()));
             int lengthIndex = b.skip(4);
-            int start = b.size();
             writeBody(b);
-            int written = b.size() - start;
+            int written = b.size() - lengthIndex - 4;
             b.patchInt(lengthIndex, written);
         }
     }
