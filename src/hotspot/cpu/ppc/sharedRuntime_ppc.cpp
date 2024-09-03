@@ -2862,7 +2862,7 @@ void SharedRuntime::generate_deopt_blob() {
   ResourceMark rm;
   // Setup code generation tools
   const char *name = SharedRuntime::stub_name(sharedStubId::deopt_id);
-  CodeBuffer buffer(, 2048, 1024);
+  CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
   int frame_size_in_words;
@@ -3435,7 +3435,13 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(sharedStubId id, address desti
 // Note: the routine set_pc_not_at_call_for_caller in
 // SharedRuntime.cpp requires that this code be generated into a
 // RuntimeStub.
-RuntimeStub* SharedRuntime::generate_throw_exception(const char* name, address runtime_entry) {
+RuntimeStub* SharedRuntime::generate_throw_exception(sharedStubId id, address runtime_entry) {
+  assert((id >= sharedStubId::throw_AbstractMethodError_id &&
+          id <= sharedStubId::throw_delayed_StackOverflowError_id),
+         "expected a throw stub id");
+
+  const char *name = SharedRuntime::stub_name(id);
+
   ResourceMark rm;
   const char* timer_msg = "SharedRuntime generate_throw_exception";
   TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
