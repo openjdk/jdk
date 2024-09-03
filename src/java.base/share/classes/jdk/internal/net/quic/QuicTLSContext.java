@@ -67,7 +67,10 @@ public final class QuicTLSContext {
         // MethodHandle lookup to get access to the field which holds that
         // detail.
         final Object underlyingImpl = CONTEXT_SPI.get(sslContext);
-        return underlyingImpl instanceof SSLContextImpl;
+        if (!(underlyingImpl instanceof SSLContextImpl ssci)) {
+            return false;
+        }
+        return ssci.isUsableWithQuic();
     }
 
     private static SSLContextImpl getSSLContextImpl(
