@@ -38,6 +38,8 @@ public:
 
 template <class U>
 class KnownBits {
+  static_assert(std::is_unsigned<U>::value, "");
+
 public:
   U _zeros;
   U _ones;
@@ -56,6 +58,10 @@ public:
 template <class S, class U>
 class TypeIntPrototype {
 public:
+  static_assert(std::is_signed<S>::value, "");
+  static_assert(std::is_unsigned<U>::value, "");
+  static_assert(sizeof(S) == sizeof(U), "");
+
   RangeInt<S> _srange;
   RangeInt<U> _urange;
   KnownBits<U> _bits;

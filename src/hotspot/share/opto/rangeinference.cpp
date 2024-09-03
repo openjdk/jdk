@@ -162,10 +162,6 @@ normalize_constraints_simple(const RangeInt<U>& bounds, const KnownBits<U>& bits
 template <class S, class U>
 CanonicalizedTypeIntPrototype<S, U>
 TypeIntPrototype<S, U>::canonicalize_constraints() const {
-  static_assert(std::is_signed<S>::value, "");
-  static_assert(std::is_unsigned<U>::value, "");
-  static_assert(sizeof(S) == sizeof(U), "");
-
   RangeInt<S> srange = _srange;
   RangeInt<U> urange = _urange;
   if (srange._lo > srange._hi ||
@@ -243,10 +239,6 @@ bool TypeIntPrototype<S, U>::contains(S v) const {
 // Verify that this set representation is canonical
 template <class S, class U>
 void TypeIntPrototype<S, U>::verify_constraints() const {
-  static_assert(std::is_signed<S>::value, "");
-  static_assert(std::is_unsigned<U>::value, "");
-  static_assert(sizeof(S) == sizeof(U), "");
-
   // Assert that the bounds cannot be further tightened
   assert(contains(_srange._lo) && contains(_srange._hi) &&
          contains(_urange._lo) && contains(_urange._hi), "");
