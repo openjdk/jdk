@@ -115,7 +115,7 @@ bool LogFileStreamOutput::flush() {
   total += result;                                            \
 }
 
-int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const char* msg) {
+int LogFileStreamOutput::write_internal_line(const LogDecorations& decorations, const char* msg) {
   int written = 0;
   const bool use_decorations = !_decorators.is_empty();
 
@@ -143,6 +143,25 @@ int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const
     } while (next != nullptr);
     os::free(dupstr);
   }
+  return written;
+}
+
+int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const char* msg) {
+  int written = 0;
+  char* dupstr = os::strdup_check_oom(msg, mtLogging);
+  char* tmp = dupstr;
+  char* base = tmp;
+
+  while (*tmp != '\0') {
+    if (*tmp == '\n') {
+      *tmp = '\0';
+      written += write_internal_line(decorations, base);
+      base = tmp + 1;
+    }
+    ++tmp;
+  }
+  written += write_internal_line(decorations, base);
+
   return written;
 }
 

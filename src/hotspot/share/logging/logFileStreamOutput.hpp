@@ -50,6 +50,7 @@ class LogFileStreamOutput : public LogOutput {
 
   int write_decorations(const LogDecorations& decorations);
   int write_internal(const LogDecorations& decorations, const char* msg);
+  int write_internal_line(const LogDecorations& decorations, const char* msg);
   bool flush();
 
  public:
