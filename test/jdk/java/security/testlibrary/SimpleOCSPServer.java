@@ -572,8 +572,8 @@ public class SimpleOCSPServer {
      */
     private synchronized void log(String message) {
         if (logEnabled || debug != null) {
-            System.out.println("[" + Thread.currentThread().getName() + "]: " +
-                    message);
+            System.out.println("[" + Thread.currentThread().getName() + "][" +
+                    System.currentTimeMillis() + "]: " + message);
         }
     }
 
@@ -727,6 +727,7 @@ public class SimpleOCSPServer {
             // wait out the delay here before any other processing.
             try {
                 if (delayMsec > 0) {
+                    log("Delaying response for " + delayMsec + " milliseconds.");
                     Thread.sleep(delayMsec);
                 }
             } catch (InterruptedException ie) {
@@ -908,6 +909,13 @@ public class SimpleOCSPServer {
          */
         private LocalOcspRequest parseHttpOcspGet(String[] headerTokens,
                 InputStream inStream) throws IOException, CertificateException {
+            // Display the whole request
+            StringBuilder sb = new StringBuilder("OCSP GET REQUEST\n");
+            for (String hTok : headerTokens) {
+                sb.append(hTok).append("\n");
+            }
+            log(sb.toString());
+
             // Before we process the remainder of the GET URL, we should drain
             // the InputStream of any other header data.  We (for now) won't
             // use it, but will display the contents if logging is enabled.
@@ -999,6 +1007,10 @@ public class SimpleOCSPServer {
         private LocalOcspRequest(byte[] requestBytes) throws IOException,
                 CertificateException {
             Objects.requireNonNull(requestBytes, "Received null input");
+
+            // Display the DER encoding before parsing
+            log("Local OCSP Request Constructor, parsing bytes:\n" +
+                    dumpHexBytes(requestBytes));
 
             DerInputStream dis = new DerInputStream(requestBytes);
 

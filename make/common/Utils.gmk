@@ -270,11 +270,11 @@ Or = \
 ifeq ($(IS_GNU_DATE), yes)
   EpochToISO8601 = \
     $(shell $(DATE) --utc --date="@$(strip $1)" \
-         +"$(ISO_8601_FORMAT_STRING)" 2> /dev/null)
+        +"$(ISO_8601_FORMAT_STRING)" 2> /dev/null)
 else
   EpochToISO8601 = \
     $(shell $(DATE) -u -j -f "%s" "$(strip $1)" \
-         +"$(ISO_8601_FORMAT_STRING)" 2> /dev/null)
+        +"$(ISO_8601_FORMAT_STRING)" 2> /dev/null)
 endif
 
 ################################################################################

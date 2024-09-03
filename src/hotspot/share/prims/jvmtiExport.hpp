@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,10 +287,10 @@ class JvmtiExport : public AllStatic {
   }
 
   // field access management
-  static address  get_field_access_count_addr() NOT_JVMTI_RETURN_(0);
+  static address  get_field_access_count_addr() NOT_JVMTI_RETURN_(nullptr);
 
   // field modification management
-  static address  get_field_modification_count_addr() NOT_JVMTI_RETURN_(0);
+  static address  get_field_modification_count_addr() NOT_JVMTI_RETURN_(nullptr);
 
   // -----------------
 

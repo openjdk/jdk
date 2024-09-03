@@ -228,7 +228,7 @@ address NativeJump::jump_destination() const          {
   // load
 
   // return -1 if jump to self or to 0
-  if ((dest == (address)this) || dest == 0) {
+  if ((dest == (address)this) || dest == nullptr) {
     dest = (address) -1;
   }
   return dest;
@@ -256,7 +256,7 @@ address NativeGeneralJump::jump_destination() const {
   // a general jump
 
   // return -1 if jump to self or to 0
-  if ((dest == (address)this) || dest == 0) {
+  if ((dest == (address)this) || dest == nullptr) {
     dest = (address) -1;
   }
   return dest;

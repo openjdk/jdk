@@ -783,8 +783,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rmem_f
   __ bgt(CCR0/*is_stack_overflow*/, done);
 
   // The stack overflows. Load target address of the runtime stub and call it.
-  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "generated in wrong order");
-  __ load_const_optimized(Rscratch1, (StubRoutines::throw_StackOverflowError_entry()), R0);
+  assert(SharedRuntime::throw_StackOverflowError_entry() != nullptr, "generated in wrong order");
+  __ load_const_optimized(Rscratch1, (SharedRuntime::throw_StackOverflowError_entry()), R0);
   __ mtctr(Rscratch1);
   // Restore caller_sp (c2i adapter may exist, but no shrinking of interpreted caller frame).
 #ifdef ASSERT

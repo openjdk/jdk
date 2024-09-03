@@ -1563,7 +1563,7 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
   // The conditions for a memory barrier are described in Parse::do_exits().
   bool need_mem_bar = false;
   if (method()->name() == ciSymbols::object_initializer_name() &&
-       (scope()->wrote_final() ||
+       (scope()->wrote_final() || scope()->wrote_stable() ||
          (AlwaysSafeConstructors && scope()->wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && scope()->wrote_volatile()))) {
     need_mem_bar = true;
@@ -1741,14 +1741,16 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
     }
   }
 
-  if (field->is_final() && (code == Bytecodes::_putfield)) {
-    scope()->set_wrote_final();
-  }
-
   if (code == Bytecodes::_putfield) {
     scope()->set_wrote_fields();
     if (field->is_volatile()) {
       scope()->set_wrote_volatile();
+    }
+    if (field->is_final()) {
+      scope()->set_wrote_final();
+    }
+    if (field->is_stable()) {
+      scope()->set_wrote_stable();
     }
   }
 
@@ -2114,7 +2116,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 
   if (cha_monomorphic_target != nullptr) {
-    assert(!target->can_be_statically_bound() || target == cha_monomorphic_target, "");
+    assert(!target->can_be_statically_bound() || target->equals(cha_monomorphic_target), "");
     assert(!cha_monomorphic_target->is_abstract(), "");
     if (!cha_monomorphic_target->can_be_statically_bound(actual_recv)) {
       // If we inlined because CHA revealed only a single target method,

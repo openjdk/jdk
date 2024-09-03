@@ -37,6 +37,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleElementVisitor8;
@@ -155,7 +156,7 @@ public class ClassWriter extends SubWriterHolderWriter {
      * @param target the content to which the documentation will be added
      */
     protected void buildClassInfo(Content target) {
-        Content c = HtmlTree.DIV(HtmlStyles.horizontalScroll);
+        var c = new ContentBuilder();
         buildParamInfo(c);
         buildSuperInterfacesInfo(c);
         buildImplementedInterfacesInfo(c);
@@ -164,11 +165,13 @@ public class ClassWriter extends SubWriterHolderWriter {
         buildInterfaceUsageInfo(c);
         buildNestedClassInfo(c);
         buildFunctionalInterfaceInfo(c);
-        buildClassSignature(c);
-        buildDeprecationInfo(c);
-        buildClassDescription(c);
-        buildClassTagInfo(c);
-
+        c.add(new HtmlTree(HtmlTag.HR));
+        var div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
+        buildClassSignature(div);
+        buildDeprecationInfo(div);
+        buildClassDescription(div);
+        buildClassTagInfo(div);
+        c.add(div);
         target.add(getClassInfo(c));
     }
 
@@ -432,17 +435,43 @@ public class ClassWriter extends SubWriterHolderWriter {
     protected Content getHeader(String header) {
         HtmlTree body = getBody(getWindowTitle(utils.getSimpleName(typeElement)));
         var div = HtmlTree.DIV(HtmlStyles.header);
-        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
-                HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement)
-                .linkToSelf(false);  // Let's not link to ourselves in the header
         var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyles.title, Text.of(header));
-        heading.add(getTypeParameterLinks(linkInfo));
+        heading.add(getTypeParameters());
         div.add(heading);
         bodyContents.setHeader(getHeader(PageMode.CLASS, typeElement))
                 .addMainContent(MarkerComments.START_OF_CLASS_DATA)
                 .addMainContent(div);
         return body;
+    }
+
+    // Renders type parameters for the class heading, creating id attributes
+    // if @param block tags are missing in doc comment.
+    private Content getTypeParameters() {
+        var content = new ContentBuilder();
+        var typeParams = typeElement.getTypeParameters();
+        if (!typeParams.isEmpty()) {
+            // Generate id attributes if @param tags are missing for type parameters.
+            // Note that this does not handle the case where some but not all @param tags are missing.
+            var needsId = !utils.hasBlockTag(typeElement, DocTree.Kind.PARAM);
+            var linkInfo = new HtmlLinkInfo(configuration,
+                    HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_AND_BOUNDS, typeElement)
+                    .linkToSelf(false);  // Let's not link to ourselves in the header
+            content.add("<");
+            var first = true;
+            for (TypeParameterElement t : typeParams) {
+                if (!first) {
+                    content.add(",").add(new HtmlTree(HtmlTag.WBR));
+                }
+                var typeParamLink = getLink(linkInfo.forType(t.asType()));
+                content.add(needsId
+                        ? HtmlTree.SPAN_ID(htmlIds.forTypeParam(t.getSimpleName().toString(), typeElement), typeParamLink)
+                        : typeParamLink);
+                first = false;
+            }
+            content.add(">");
+        }
+        return content;
     }
 
     protected Content getClassContentHeader() {
@@ -473,7 +502,6 @@ public class ClassWriter extends SubWriterHolderWriter {
     }
 
     protected void addClassSignature(Content classInfo) {
-        classInfo.add(new HtmlTree(HtmlTag.HR));
         classInfo.add(new Signatures.TypeSignature(typeElement, this)
                 .toContent());
     }
