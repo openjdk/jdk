@@ -25,7 +25,6 @@
 package jdk.internal.classfile.impl;
 
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import java.lang.classfile.BufWriter;
