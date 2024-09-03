@@ -24,7 +24,6 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.nio.ByteBuffer;
 import static java.lang.classfile.ClassFile.ASTORE_3;
 import static java.lang.classfile.ClassFile.ISTORE;
 import static java.lang.classfile.ClassFile.LOOKUPSWITCH;

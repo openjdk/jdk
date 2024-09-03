@@ -38,7 +38,6 @@ import java.lang.classfile.constantpool.InvokeDynamicEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;

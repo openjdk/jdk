@@ -53,7 +53,6 @@ import jdk.internal.access.SharedSecrets;
 import static java.lang.classfile.ClassFile.ACC_STATIC;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.components.ClassPrinter;
-import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
 /**

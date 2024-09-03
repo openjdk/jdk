@@ -24,7 +24,6 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +32,7 @@ import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.components.ClassPrinter;
 import java.lang.classfile.ClassFile;
+import jdk.internal.classfile.impl.ByteBuffer;
 import jdk.internal.classfile.impl.ClassHierarchyImpl;
 import jdk.internal.classfile.impl.RawBytecodeHelper;
 import static jdk.internal.classfile.impl.RawBytecodeHelper.ILLEGAL;
