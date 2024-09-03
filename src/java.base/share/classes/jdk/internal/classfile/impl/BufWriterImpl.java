@@ -160,7 +160,7 @@ public final class BufWriterImpl implements BufWriter {
     @SuppressWarnings("deprecation")
     void writeUTF(String str) {
         int strlen = str.length();
-        int countGreaterThanZero = JLA.isLatin1(str) && strlen < 256 ? JLA.countGreaterThanZero(str) : 0;
+        int countGreaterThanZero = JLA.isLatin1(str) ? JLA.countGreaterThanZero(str) : 0;
         int utflen = countGreaterThanZero == strlen ? strlen : utflen(str, countGreaterThanZero);
         if (utflen > 65535) {
             throw new IllegalArgumentException("string too long");
