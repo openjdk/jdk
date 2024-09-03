@@ -32,7 +32,6 @@ import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.components.ClassPrinter;
 import java.lang.classfile.ClassFile;
-import jdk.internal.classfile.impl.ByteBuffer;
 import jdk.internal.classfile.impl.ClassHierarchyImpl;
 import jdk.internal.classfile.impl.RawBytecodeHelper;
 import static jdk.internal.classfile.impl.RawBytecodeHelper.ILLEGAL;
@@ -316,15 +315,15 @@ public final class VerifierImpl {
         if (code_length < 1 || code_length > MAX_CODE_SIZE) {
             verifyError(String.format("Invalid method Code length %d", code_length));
         }
-        var code = ByteBuffer.wrap(codeArray, 0, _method.codeLength());
-        byte[] code_data = generate_code_data(code, code_length);
+        var code = RawBytecodeHelper.of(codeArray);
+        byte[] code_data = generate_code_data(code);
         int ex_minmax[] = new int[] {code_length, -1};
         verify_exception_handler_table(code_length, code_data, ex_minmax);
         verify_local_variable_table(code_length, code_data);
 
         VerificationTable stackmap_table = new VerificationTable(stackmap_data, current_frame, max_locals, max_stack, code_data, code_length, cp, this);
 
-        var bcs = new RawBytecodeHelper(code);
+        var bcs = code.start();
         boolean no_control_flow = false;
         int opcode;
         while (!bcs.isLastBytecode()) {
@@ -1230,9 +1229,9 @@ public final class VerifierImpl {
         }
     }
 
-    private byte[] generate_code_data(ByteBuffer code, int code_length) {
-        byte code_data[] = new byte[code_length];
-        var bcs = new RawBytecodeHelper(code);
+    private byte[] generate_code_data(RawBytecodeHelper.CodeRange code) {
+        byte[] code_data = new byte[code.length()];
+        var bcs = code.start();
         while (!bcs.isLastBytecode()) {
             if (bcs.rawNext() != ILLEGAL) {
                 int bci = bcs.bci;
@@ -1552,7 +1551,7 @@ public final class VerifierImpl {
             if (new_offset > (code_length - 3) || (_method.codeArray()[new_offset] & 0xff) != ClassFile.NEW) {
                 verifyError("Expecting new instruction");
             }
-            int new_class_index = bcs.getIndexU2Raw(new_offset + 1);
+            int new_class_index = bcs.getU2(new_offset + 1);
             verify_cp_class_type(bci, new_class_index, cp);
             VerificationType new_class_type = cp_index_to_type(
                 new_class_index, cp);

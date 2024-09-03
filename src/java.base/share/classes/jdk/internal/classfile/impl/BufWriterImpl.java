@@ -195,8 +195,8 @@ public final class BufWriterImpl implements BufWriter {
         return offset;
     }
 
-    public ByteBuffer asByteBuffer() {
-        return ByteBuffer.wrap(elems, 0, offset).slice();
+    public RawBytecodeHelper.CodeRange bytecodeView() {
+        return RawBytecodeHelper.of(elems, offset);
     }
 
     public void copyTo(byte[] array, int bufferOffset) {

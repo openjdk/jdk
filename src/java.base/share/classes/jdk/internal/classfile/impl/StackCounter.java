@@ -54,7 +54,7 @@ public final class StackCounter {
                 dcb.methodInfo.methodName().stringValue(),
                 dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
-                dcb.bytecodesBufWriter.asByteBuffer(),
+                dcb.bytecodesBufWriter.bytecodeView(),
                 dcb.constantPool,
                 dcb.handlers);
     }
@@ -66,7 +66,6 @@ public final class StackCounter {
     private final String methodName;
     private final MethodTypeDesc methodDesc;
     private final boolean isStatic;
-    private final ByteBuffer bytecode;
     private final SplitConstantPool cp;
     private final Queue<Target> targets;
     private final BitSet visited;
@@ -95,7 +94,7 @@ public final class StackCounter {
                 return true;
             }
         }
-        bcs.nextBci = bcs.endBci;
+        bcs.nextBci = bcs.endBci();
         return false;
     }
 
@@ -105,14 +104,13 @@ public final class StackCounter {
                      String methodName,
                      MethodTypeDesc methodDesc,
                      boolean isStatic,
-                     ByteBuffer bytecode,
+                     RawBytecodeHelper.CodeRange bytecode,
                      SplitConstantPool cp,
                      List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {
         this.thisClass = thisClass;
         this.methodName = methodName;
         this.methodDesc = methodDesc;
         this.isStatic = isStatic;
-        this.bytecode = bytecode;
         this.cp = cp;
         targets = new ArrayDeque<>();
         stack = rets = 0;
@@ -131,8 +129,8 @@ public final class StackCounter {
         }
         maxLocals = isStatic ? 0 : 1;
         maxLocals += Util.parameterSlots(methodDesc);
-        bcs = new RawBytecodeHelper(bytecode);
-        visited = new BitSet(bcs.endBci);
+        bcs = bytecode.start();
+        visited = new BitSet(bcs.endBci());
         targets.add(new Target(0, 0));
         while (next()) {
             while (!bcs.isLastBytecode()) {
@@ -397,7 +395,7 @@ public final class StackCounter {
                 bcs.bci,
                 methodName,
                 methodDesc.parameterList().stream().map(ClassDesc::displayName).collect(Collectors.joining(","))));
-        Util.dumpMethod(cp, thisClass, methodName, methodDesc, isStatic ? ACC_STATIC : 0, bytecode, sb::append);
+        Util.dumpMethod(cp, thisClass, methodName, methodDesc, isStatic ? ACC_STATIC : 0, bcs.code, sb::append);
         return new IllegalArgumentException(sb.toString());
     }
 }

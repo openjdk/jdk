@@ -24,6 +24,10 @@
  */
 package jdk.internal.classfile.impl;
 
+import jdk.internal.misc.Unsafe;
+import jdk.internal.util.Preconditions;
+import jdk.internal.vm.annotation.Stable;
+
 import static java.lang.classfile.ClassFile.ASTORE_3;
 import static java.lang.classfile.ClassFile.ISTORE;
 import static java.lang.classfile.ClassFile.LOOKUPSWITCH;
@@ -32,9 +36,15 @@ import static java.lang.classfile.ClassFile.WIDE;
 
 public final class RawBytecodeHelper {
 
+    public record CodeRange(byte[] array, int length) {
+        public RawBytecodeHelper start() {
+            return new RawBytecodeHelper(this);
+        }
+    }
+
     public static final int ILLEGAL = -1;
 
-    private static final byte[] LENGTHS = new byte[] {
+    private static final @Stable byte[] LENGTHS = new byte[] {
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 2, 3, 3, 2 | (4 << 4), 2 | (4 << 4), 2 | (4 << 4), 2 | (4 << 4), 2 | (4 << 4), 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         2 | (4 << 4), 2 | (4 << 4), 2 | (4 << 4), 2 | (4 << 4), 2 | (4 << 4), 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3 | (6 << 4), 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2 | (4 << 4), 0, 0, 1, 1, 1,
@@ -50,44 +60,92 @@ public final class RawBytecodeHelper {
         return (n + 3) & ~3;
     }
 
-    private final ByteBuffer bytecode;
-    public int bci, nextBci, endBci;
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+    public final CodeRange code;
+    public int bci;
+    public int nextBci;
     public int rawCode;
     public boolean isWide;
 
-    public RawBytecodeHelper(ByteBuffer bytecode) {
-        this.bytecode = bytecode;
+    public static int getInt(byte[] array, int index) {
+        Preconditions.checkFromIndexSize(index, 4, array.length, Preconditions.IAE_FORMATTER);
+        return UNSAFE.getIntUnaligned(array, (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + index, true);
+    }
+
+    public static CodeRange of(byte[] array) {
+        return new CodeRange(array, array.length);
+    }
+
+    public static CodeRange of(byte[] array, int limit) {
+        return new CodeRange(array, limit);
+    }
+
+    private RawBytecodeHelper(CodeRange range) {
+        this.code = range;
+        // No need to reset
+    }
+
+    public byte[] array() {
+        return code.array;
+    }
+
+    public int endBci() {
+        return code.length;
+    }
+
+    public RawBytecodeHelper reset() {
         this.bci = 0;
         this.nextBci = 0;
-        this.endBci = bytecode.capacity();
+        this.rawCode = 0;
+        this.isWide = false;
+        return this;
     }
 
     public boolean isLastBytecode() {
-        return nextBci >= endBci;
+        return nextBci >= endBci();
     }
 
-    public int getShort(int bci) {
-        return bytecode.getShort(bci);
+    public int getU1(int bci) {
+        Preconditions.checkIndex(bci, endBci(), Preconditions.IAE_FORMATTER);
+        return Byte.toUnsignedInt(array()[bci]);
+    }
+
+    public int getU1() {
+        return Byte.toUnsignedInt(array()[bci]);
+    }
+
+    public int getU2(int bci) {
+        return Short.toUnsignedInt(getShort(bci));
+    }
+
+    public short getShort(int bci) {
+        Preconditions.checkFromIndexSize(bci, 2, endBci(), Preconditions.IAE_FORMATTER);
+        return UNSAFE.getShortUnaligned(array(), (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + bci, true);
+    }
+
+    public int getInt(int bci) {
+        Preconditions.checkFromIndexSize(bci, 4, endBci(), Preconditions.IAE_FORMATTER);
+        return UNSAFE.getIntUnaligned(array(), (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + bci, true);
     }
 
     public int dest() {
         return bci + getShort(bci + 1);
     }
 
-    public int getInt(int bci) {
-        return bytecode.getInt(bci);
-    }
-
     public int destW() {
         return bci + getInt(bci + 1);
     }
 
-    public int getIndexU1() {
-        return bytecode.get(bci + 1) & 0xff;
+    public int getIndex() {
+        return isWide ? getU2(bci + 2) : getIndexU1();
     }
 
-    public int getU1(int bci) {
-        return bytecode.get(bci) & 0xff;
+    public int getIndexU1() {
+        return getU1(bci + 1);
+    }
+
+    public int getIndexU2() {
+        return getU2(bci + 1);
     }
 
     public int rawNext(int jumpTo) {
@@ -97,9 +155,9 @@ public final class RawBytecodeHelper {
 
     public int rawNext() {
         bci = nextBci;
-        int code = bytecode.get(bci) & 0xff;
+        int code = getU1(bci);
         int len = LENGTHS[code] & 0xf;
-        if (len > 0 && (bci <= endBci - len)) {
+        if (len > 0 && (bci <= endBci() - len)) {
             isWide = false;
             nextBci += len;
             if (nextBci <= bci) {
@@ -108,45 +166,45 @@ public final class RawBytecodeHelper {
             rawCode = code;
             return code;
         } else {
-            len = switch (bytecode.get(bci) & 0xff) {
+            len = switch (code) {
                 case WIDE -> {
-                    if (bci + 1 >= endBci) {
+                    if (bci + 1 >= endBci()) {
                         yield -1;
                     }
-                    yield LENGTHS[bytecode.get(bci + 1) & 0xff] >> 4;
+                    yield LENGTHS[getIndexU1()] >> 4;
                 }
                 case TABLESWITCH -> {
                     int aligned_bci = align(bci + 1);
-                    if (aligned_bci + 3 * 4 >= endBci) {
+                    if (aligned_bci + 3 * 4 >= endBci()) {
                         yield -1;
                     }
-                    int lo = bytecode.getInt(aligned_bci + 1 * 4);
-                    int hi = bytecode.getInt(aligned_bci + 2 * 4);
+                    int lo = getInt(aligned_bci + 1 * 4);
+                    int hi = getInt(aligned_bci + 2 * 4);
                     int l = aligned_bci - bci + (3 + hi - lo + 1) * 4;
                     if (l > 0) yield l; else yield -1;
                 }
                 case LOOKUPSWITCH -> {
                     int aligned_bci = align(bci + 1);
-                    if (aligned_bci + 2 * 4 >= endBci) {
+                    if (aligned_bci + 2 * 4 >= endBci()) {
                         yield -1;
                     }
-                    int npairs = bytecode.getInt(aligned_bci + 4);
+                    int npairs = getInt(aligned_bci + 4);
                     int l = aligned_bci - bci + (2 + 2 * npairs) * 4;
                     if (l > 0) yield l; else yield -1;
                 }
                 default ->
                     0;
             };
-            if (len <= 0 || (bci > endBci - len) || (bci - len >= nextBci)) {
+            if (len <= 0 || (bci > endBci() - len) || (bci - len >= nextBci)) {
                 code = ILLEGAL;
             } else {
                 nextBci += len;
                 isWide = false;
                 if (code == WIDE) {
-                    if (bci + 1 >= endBci) {
+                    if (bci + 1 >= endBci()) {
                         code = ILLEGAL;
                     } else {
-                        code = bytecode.get(bci + 1) & 0xff;
+                        code = getIndexU1();
                         isWide = true;
                     }
                 }
@@ -154,17 +212,5 @@ public final class RawBytecodeHelper {
             rawCode = code;
             return code;
         }
-    }
-
-    public int getIndex() {
-        return (isWide) ? getIndexU2Raw(bci + 2) : getIndexU1();
-    }
-
-    public int getIndexU2() {
-        return getIndexU2Raw(bci + 1);
-    }
-
-    public int getIndexU2Raw(int bci) {
-        return bytecode.getShort(bci) & 0xffff;
     }
 }

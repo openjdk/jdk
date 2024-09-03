@@ -72,6 +72,14 @@ public class Preconditions {
         }
     });
 
+    public static final BiFunction<String,List<Number>, IllegalArgumentException>
+            IAE_FORMATTER = Preconditions.outOfBoundsExceptionFormatter(new Function<>() {
+        @Override
+        public IllegalArgumentException apply(String s) {
+            return new IllegalArgumentException(s);
+        }
+    });
+
     /**
      * Maps out-of-bounds values to a runtime exception.
      *
