@@ -107,7 +107,7 @@ public final class NetworkInterface {
     }
 
     /**
-     * Get an Enumeration with all or a subset of the InetAddresses bound to
+     * Get an Enumeration with all, or a subset, of the InetAddresses bound to
      * this network interface.
      * <p>
      * If there is a security manager, its {@code checkConnect}
@@ -118,11 +118,11 @@ public final class NetworkInterface {
      * InetAddresses are returned.
      *
      * @implNote
-     * The returned enumeration contains all or a subset of the InetAddresses that were
+     * The returned enumeration contains all, or a subset, of the InetAddresses that were
      * bound to the interface at the time the {@linkplain #getNetworkInterfaces()
      * interface configuration was read}
      *
-     * @return an Enumeration object with all or a subset of the InetAddresses
+     * @return an Enumeration object with all, or a subset, of the InetAddresses
      * bound to this network interface
      * @see #inetAddresses()
      */
@@ -131,7 +131,7 @@ public final class NetworkInterface {
     }
 
     /**
-     * Get a Stream of all or a subset of the InetAddresses bound to this
+     * Get a Stream of all, or a subset, of the InetAddresses bound to this
      * network interface.
      * <p>
      * If there is a security manager, its {@code checkConnect}
@@ -142,11 +142,11 @@ public final class NetworkInterface {
      * InetAddresses are returned.
      *
      * @implNote
-     * The stream contains all or a subset of the InetAddresses that were
+     * The stream contains all, or a subset, of the InetAddresses that were
      * bound to the interface at the time the {@linkplain #getNetworkInterfaces()
      * interface configuration was read}
      *
-     * @return a Stream object with all or a subset of the InetAddresses
+     * @return a Stream object with all, or a subset, of the InetAddresses
      * bound to this network interface
      * @since 9
      */
@@ -180,7 +180,7 @@ public final class NetworkInterface {
     }
 
     /**
-     * Get a List of all or a subset of the {@code InterfaceAddresses}
+     * Get a List of all, or a subset, of the {@code InterfaceAddresses}
      * of this network interface.
      * <p>
      * If there is a security manager, its {@code checkConnect}
@@ -188,7 +188,7 @@ public final class NetworkInterface {
      * Only InterfaceAddresses where the {@code checkConnect} doesn't throw
      * a SecurityException will be returned in the List.
      *
-     * @return a {@code List} object with all or a subset of the
+     * @return a {@code List} object with all, or a subset, of the
      *         InterfaceAddress of this network interface
      * @since 1.6
      */
