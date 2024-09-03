@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1146,7 +1146,7 @@ Java_sun_jvm_hotspot_debugger_bsd_BsdDebuggerLocal_attach0__Ljava_lang_String_2L
   if ( (ph = Pgrab_core(execName_cstr, coreName_cstr)) == NULL) {
     (*env)->ReleaseStringUTFChars(env, execName, execName_cstr);
     (*env)->ReleaseStringUTFChars(env, coreName, coreName_cstr);
-    THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the core file");
+    THROW_NEW_DEBUGGER_EXCEPTION("Can't attach to the core file. For more information, export LIBSAPROC_DEBUG=1 and try again.");
   }
   (*env)->SetLongField(env, this_obj, p_ps_prochandle_ID, (jlong)(intptr_t)ph);
   (*env)->ReleaseStringUTFChars(env, execName, execName_cstr);
