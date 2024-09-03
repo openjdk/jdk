@@ -555,15 +555,12 @@ public:
 
 class TypeInteger : public Type {
 protected:
-  TypeInteger(TYPES t, int w, bool dual) : Type(t), _dual(dual), _widen(w) {}
+  TypeInteger(TYPES t, int w, bool dual) : Type(t), _is_dual(dual), _widen(w) {}
 
-  // Previously, we signify that a set is in the dual space if _lo > _hi.
-  // However, with the addition of unsigned range and known bits, this becomes
-  // ambiguous whether the set is empty or a dual of a non-empty set.
-  // As a result, we use this field to denote that a set is a dual set.
+  // Denote that a set is a dual set.
   // Dual sets are only used to compute the join of 2 sets, and not used
   // outside.
-  const bool _dual;
+  const bool _is_dual;
 
 public:
   const short _widen;           // Limit on times we widen this sucker
@@ -599,11 +596,12 @@ public:
   virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
+  // A value is in the set represented by this TypeInt if it satisfies all
+  // the below constraints, see contains(jint)
   const jint _lo, _hi;       // Lower bound, upper bound in the signed domain
   const juint _ulo, _uhi;    // Lower bound, upper bound in the unsigned domain
   const juint _zeros, _ones; // Bits that are known to be 0 or 1
 
-  static const TypeInt* cast(const Type* t) { return t->is_int(); }
   static const TypeInt* try_cast(const Type* t) { return t->isa_int(); }
   static const TypeInt* make(jint lo);
   // must always specify w
@@ -614,7 +612,7 @@ public:
   bool is_con() const { return _lo == _hi; }
   bool is_con(jint i) const { return is_con() && _lo == i; }
   jint get_con() const { assert(is_con(), "");  return _lo; }
-  // Check if a TypeInt is a subset of this TypeInt (i.e. all elements of the
+  // Check if a jint/TypeInt is a subset of this TypeInt (i.e. all elements of the
   // argument are also elements of this type)
   bool contains(jint i) const;
   bool contains(const TypeInt* t) const;
@@ -657,9 +655,10 @@ public:
   static const TypeInt* SYMINT; // symmetric range [-max_jint..max_jint]
   static const TypeInt* TYPE_DOMAIN; // alias for TypeInt::INT
 
-  static const TypeInt *as_self(const Type *t) { return t->is_int(); }
+  static const TypeInt* as_self(const Type* t) { return t->is_int(); }
 #ifndef PRODUCT
-  virtual void dump2( Dict &d, uint depth, outputStream *st ) const;
+  virtual void dump2(Dict& d, uint depth, outputStream* st) const;
+  void dump_verbose() const;
 #endif
 };
 
@@ -680,11 +679,12 @@ public:
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 public:
+  // A value is in the set represented by this TypeLong if it satisfies all
+  // the below constraints, see contains(jlong)
   const jlong _lo, _hi;       // Lower bound, upper bound in the signed domain
   const julong _ulo, _uhi;    // Lower bound, upper bound in the unsigned domain
   const julong _zeros, _ones; // Bits that are known to be 0 or 1
 
-  static const TypeLong* cast(const Type* t) { return t->is_long(); }
   static const TypeLong* try_cast(const Type* t) { return t->isa_long(); }
   static const TypeLong* make(jlong lo);
   // must always specify w
@@ -695,7 +695,7 @@ public:
   bool is_con() const { return _lo == _hi; }
   bool is_con(jlong i) const { return is_con() && _lo == i; }
   jlong get_con() const { assert(is_con(), "" ); return _lo; }
-  // Check if a TypeLong is a subset of this TypeLong (i.e. all elements of the
+  // Check if a jlong/TypeLong is a subset of this TypeLong (i.e. all elements of the
   // argument are also elements of this type)
   bool contains(jlong i) const;
   bool contains(const TypeLong* t) const;
@@ -729,10 +729,11 @@ public:
   static const TypeLong* TYPE_DOMAIN; // alias for TypeLong::LONG
 
   // static convenience methods.
-  static const TypeLong *as_self(const Type *t) { return t->is_long(); }
+  static const TypeLong* as_self(const Type* t) { return t->is_long(); }
 
 #ifndef PRODUCT
-  virtual void dump2( Dict &d, uint, outputStream *st  ) const;// Specialized per-Type dumping
+  virtual void dump2(Dict& d, uint, outputStream* st) const;// Specialized per-Type dumping
+  void dump_verbose() const;
 #endif
 };
 

@@ -25,9 +25,9 @@
 #ifndef SHARE_OPTO_RANGEINFERENCE_HPP
 #define SHARE_OPTO_RANGEINFERENCE_HPP
 
-#include "utilities/pair.hpp"
-
 class Type;
+class TypeInt;
+class TypeLong;
 
 template <class T>
 class RangeInt {
@@ -36,32 +36,42 @@ public:
   T _hi;
 };
 
-template <class T>
+template <class U>
 class KnownBits {
 public:
-  T _zeros;
-  T _ones;
+  U _zeros;
+  U _ones;
 };
 
-template <class T, class U>
+template <class S, class U>
+class TypeIntPrototype;
+
+template <class S, class U>
+class CanonicalizedTypeIntPrototype {
+public:
+  bool _present;
+  TypeIntPrototype<S, U> _data;
+};
+
+template <class S, class U>
 class TypeIntPrototype {
 public:
-  RangeInt<T> _srange;
+  RangeInt<S> _srange;
   RangeInt<U> _urange;
   KnownBits<U> _bits;
 
-  Pair<bool, TypeIntPrototype<T, U>> normalize_constraints() const;
+  CanonicalizedTypeIntPrototype<S, U> canonicalize_constraints() const;
   int normalize_widen(int w) const;
 #ifdef ASSERT
-  bool contains(T v) const;
+  bool contains(S v) const;
   void verify_constraints() const;
 #endif // ASSERT
 };
 
 // The result is tuned down by one since we do not have empty type
 // and this is not required to be accurate
-template <class T, class U>
-U cardinality_from_bounds(const RangeInt<T>& srange, const RangeInt<U>& urange) {
+template <class S, class U>
+U cardinality_from_bounds(const RangeInt<S>& srange, const RangeInt<U>& urange) {
   if (U(srange._lo) == urange._lo) {
     return urange._hi - urange._lo;
   }
@@ -69,8 +79,8 @@ U cardinality_from_bounds(const RangeInt<T>& srange, const RangeInt<U>& urange) 
   return urange._hi - U(srange._lo) + U(srange._hi) - urange._lo + 1;
 }
 
-template <class CT, class T, class UT>
-const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(const TypeIntPrototype<T, UT>&, int, bool), bool dual);
+template <class CT, class S, class U>
+const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(const TypeIntPrototype<S, U>&, int, bool), bool dual);
 
 template <class CT>
 bool int_type_equal(const CT* t1, const CT* t2) {
@@ -98,6 +108,9 @@ const char* ulongname(char* buf, size_t buf_size, julong n);
 
 template <class U>
 const char* bitname(char* buf, size_t buf_size, U zeros, U ones);
+
+void int_type_dump(const TypeInt* t, outputStream* st, bool verbose);
+void int_type_dump(const TypeLong* t, outputStream* st, bool verbose);
 #endif // PRODUCT
 
 #endif // SHARE_OPTO_RANGEINFERENCE_HPP

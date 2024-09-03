@@ -37,61 +37,72 @@ public:
   T _data;
 };
 
-template <class T>
-class NormalizeSimpleResult {
+template <class U>
+class SimpleCanonicalResult {
 public:
   bool _present;
-  RangeInt<T> _bounds;
-  KnownBits<T> _bits;
+  RangeInt<U> _bounds;
+  KnownBits<U> _bits;
 };
 
 // Try to tighten the bound constraints from the known bit information
 // E.g: if lo = 0 but the lowest bit is always 1 then we can tighten
 // lo = 1
-template <class T>
-static AdjustResult<RangeInt<T>>
-adjust_bounds_from_bits(const RangeInt<T>& bounds, const KnownBits<T>& bits) {
-  static_assert(std::is_unsigned<T>::value, "");
-
-  auto adjust_lo = [](T lo, const KnownBits<T>& bits) {
-    constexpr size_t W = sizeof(T) * 8;
-    T zero_violation = lo & bits._zeros;
-    T one_violation = ~lo & bits._ones;
+template <class U>
+static AdjustResult<RangeInt<U>>
+adjust_bounds_from_bits(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
+  // Find the minimum value that is not less than lo and satisfies bits
+  auto adjust_lo = [](U lo, const KnownBits<U>& bits) {
+    constexpr size_t W = sizeof(U) * 8;
+    // Violation of lo with respects to bits
+    U zero_violation = lo & bits._zeros;
+    U one_violation = ~lo & bits._ones;
     if (zero_violation == one_violation) {
+      // This means lo does not violate bits, it is the result
+      assert(zero_violation == 0, "");
       return lo;
     }
 
     if (zero_violation < one_violation) {
-      // Align the last violation of ones unset all the lower bits
-      // so we don't care about violations of zeros
-      juint last_violation = W - 1 - count_leading_zeros(one_violation);
-      T alignment = T(1) << last_violation;
+      // This means that the first bit that does not satisfy the bit
+      // requirement is a 0 that should be a 1
+      // Try to set that bit, the smallest value will have all the following
+      // bits being zeros
+      // E.g: lo = 10010010, zeros = 00100100, ones = 01001000
+      juint first_violation = W - 1 - count_leading_zeros(one_violation);
+      U alignment = U(1) << first_violation;
+      // 11000000, notice that all bits after the second digit are zeroed,
+      // which automatically satisfies the unset bit requirement
       lo = (lo & -alignment) + alignment;
-      return lo | bits._ones;
+      // Simply satisfy the set bit requirement
+      return lo | bits._ones; // 11001000
     }
 
-    // Suppose lo = 00110010, zeros = 01010010, ones = 10001000
-    // Since the 4-th bit must be 0, we need to align up the lower bound.
-    // This results in lo = 01000000, but then the 6-th bit does not match,
-    // align up again gives us 10000000.
-    // We can align up directly to 10000000 by finding the first place after
-    // the highest mismatch such that both the corresponding bits are unset.
-    // Since all bits lower than the alignment are unset we don't need to
-    // align for the violations of ones anymore.
-    juint last_violation = W - 1 - count_leading_zeros(zero_violation);
-    T find_mask = std::numeric_limits<T>::max() << last_violation;
-    T either = lo | bits._zeros;
-    T tmp = ~either & find_mask;
-    T alignment = tmp & (-tmp);
-    lo = (lo & -alignment) + alignment;
-    return lo | bits._ones;
+    // This is more difficult because trying to unset a bit requires us to flip
+    // some bits before it (higher bits)
+    // Suppose lo = 11000110, zeros = 00001010, ones = 10010001
+    // Since the 2-nd bit must be 0, we need to align up the lower bound.
+    // This results in lo = 11001000, but then the 4-th bit does not match,
+    // align up again gives us 11010000
+    // We can align up directly to 11010000 by finding the last place before
+    // the first mismatch such that it is 0 in lo and not required to be unset
+    juint first_violation = W - 1 - count_leading_zeros(zero_violation);
+    U find_mask = std::numeric_limits<U>::max() << first_violation; // 11111100
+    U either = lo | bits._zeros; // 11001110
+    U tmp = ~either & find_mask; // 00110000
+    U alignment = tmp & (-tmp); // 00010000
+    lo = (lo & -alignment) + alignment; // 11010000
+    return lo | bits._ones; // 11010001
   };
 
-  T new_lo = adjust_lo(bounds._lo, bits);
+  U new_lo = adjust_lo(bounds._lo, bits);
   if (new_lo < bounds._lo) {
+    // This means we wrapped around, which means no value not less than lo
+    // satisfies bits
     return {true, false, {}};
   }
-  T new_hi = ~adjust_lo(~bounds._hi, {bits._ones, bits._zeros});
+  // Adjust hi by adjusting its bitwise negation
+  U new_hi = ~adjust_lo(~bounds._hi, {bits._ones, bits._zeros});
   if (new_hi > bounds._hi) {
     return {true, false, {}};
   }
@@ -101,17 +112,20 @@ adjust_bounds_from_bits(const RangeInt<T>& bounds, const KnownBits<T>& bits) {
   return {progress, present, {new_lo, new_hi}};
 }
 
-// Try to tighten the known bit constraints from the bound information
+// Try to tighten the known bit constraints from the bound information by
+// extracting the common prefix of lo and hi and combining with the current
+// bit constraints
 // E.g: if lo = 0 and hi = 10, then all but the lowest 4 bits must be 0
-template <class T>
-static AdjustResult<KnownBits<T>>
-adjust_bits_from_bounds(const KnownBits<T>& bits, const RangeInt<T>& bounds) {
-  static_assert(std::is_unsigned<T>::value, "");
-  T mismatch = bounds._lo ^ bounds._hi;
-  T match_mask = mismatch == 0 ? std::numeric_limits<T>::max()
-                               : ~(std::numeric_limits<T>::max() >> count_leading_zeros(mismatch));
-  T new_zeros = bits._zeros | (match_mask &~ bounds._lo);
-  T new_ones = bits._ones | (match_mask & bounds._lo);
+template <class U>
+static AdjustResult<KnownBits<U>>
+adjust_bits_from_bounds(const KnownBits<U>& bits, const RangeInt<U>& bounds) {
+  // Find the mask to filter the common prefix
+  U mismatch = bounds._lo ^ bounds._hi;
+  U match_mask = mismatch == 0 ? std::numeric_limits<U>::max()
+                               : ~(std::numeric_limits<U>::max() >> count_leading_zeros(mismatch));
+  // match_mask & bounds._lo is the common prefix
+  U new_zeros = bits._zeros | (match_mask &~ bounds._lo);
+  U new_ones = bits._ones | (match_mask & bounds._lo);
   bool progress = (new_zeros != bits._zeros) || (new_ones != bits._ones);
   bool present = ((new_zeros & new_ones) == 0);
   return {progress, present, {new_zeros, new_ones}};
@@ -120,14 +134,14 @@ adjust_bits_from_bounds(const KnownBits<T>& bits, const RangeInt<T>& bounds) {
 // Try to tighten both the bounds and the bits at the same time
 // Iteratively tighten 1 using the other until no progress is made.
 // This function converges because bit constraints converge fast.
-template <class T>
-static NormalizeSimpleResult<T>
-normalize_constraints_simple(const RangeInt<T>& bounds, const KnownBits<T>& bits) {
-  AdjustResult<KnownBits<T>> nbits = adjust_bits_from_bounds(bits, bounds);
+template <class U>
+static SimpleCanonicalResult<U>
+normalize_constraints_simple(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
+  AdjustResult<KnownBits<U>> nbits = adjust_bits_from_bounds(bits, bounds);
   if (!nbits._present) {
     return {false, {}, {}};
   }
-  AdjustResult<RangeInt<T>> nbounds{true, true, bounds};
+  AdjustResult<RangeInt<U>> nbounds{true, true, bounds};
   while (true) {
     nbounds = adjust_bounds_from_bits(nbounds._data, nbits._data);
     if (!nbounds._progress || !nbounds._present) {
@@ -145,14 +159,14 @@ normalize_constraints_simple(const RangeInt<T>& bounds, const KnownBits<T>& bits
 // the set and for each bit position that is not constrained, there exists 2
 // values with the bit value at that position being set and unset, respectively,
 // such that both belong to the set represented by the constraints.
-template <class T, class U>
-Pair<bool, TypeIntPrototype<T, U>>
-TypeIntPrototype<T, U>::normalize_constraints() const {
-  static_assert(std::is_signed<T>::value, "");
+template <class S, class U>
+CanonicalizedTypeIntPrototype<S, U>
+TypeIntPrototype<S, U>::canonicalize_constraints() const {
+  static_assert(std::is_signed<S>::value, "");
   static_assert(std::is_unsigned<U>::value, "");
-  static_assert(sizeof(T) == sizeof(U), "");
+  static_assert(sizeof(S) == sizeof(U), "");
 
-  RangeInt<T> srange = _srange;
+  RangeInt<S> srange = _srange;
   RangeInt<U> urange = _urange;
   if (srange._lo > srange._hi ||
       urange._lo > urange._hi ||
@@ -160,24 +174,24 @@ TypeIntPrototype<T, U>::normalize_constraints() const {
     return {false, {}};
   }
 
-  if (T(urange._lo) > T(urange._hi)) {
-    if (T(urange._hi) < srange._lo) {
-      urange._hi = std::numeric_limits<T>::max();
-    } else if (T(urange._lo) > srange._hi) {
-      urange._lo = std::numeric_limits<T>::min();
+  if (S(urange._lo) > S(urange._hi)) {
+    if (S(urange._hi) < srange._lo) {
+      urange._hi = std::numeric_limits<S>::max();
+    } else if (S(urange._lo) > srange._hi) {
+      urange._lo = std::numeric_limits<S>::min();
     }
   }
 
-  if (T(urange._lo) <= T(urange._hi)) {
+  if (S(urange._lo) <= S(urange._hi)) {
     // [lo, hi] and [ulo, uhi] represent the same range
-    urange._lo = MAX2<T>(urange._lo, srange._lo);
-    urange._hi = MIN2<T>(urange._hi, srange._hi);
+    urange._lo = MAX2<S>(urange._lo, srange._lo);
+    urange._hi = MIN2<S>(urange._hi, srange._hi);
     if (urange._lo > urange._hi) {
       return {false, {}};
     }
 
     auto type = normalize_constraints_simple(urange, _bits);
-    return {type._present, {{T(type._bounds._lo), T(type._bounds._hi)},
+    return {type._present, {{S(type._bounds._lo), S(type._bounds._hi)},
                             type._bounds, type._bits}};
   }
 
@@ -191,26 +205,26 @@ TypeIntPrototype<T, U>::normalize_constraints() const {
   if (!neg_type._present && !pos_type._present) {
     return {false, {}};
   } else if (!neg_type._present) {
-    return {true, {{T(pos_type._bounds._lo), T(pos_type._bounds._hi)},
+    return {true, {{S(pos_type._bounds._lo), S(pos_type._bounds._hi)},
                    pos_type._bounds, pos_type._bits}};
   } else if (!pos_type._present) {
-    return {true, {{T(neg_type._bounds._lo), T(neg_type._bounds._hi)},
+    return {true, {{S(neg_type._bounds._lo), S(neg_type._bounds._hi)},
                    neg_type._bounds, neg_type._bits}};
   } else {
-    return {true, {{T(neg_type._bounds._lo), T(pos_type._bounds._hi)},
+    return {true, {{S(neg_type._bounds._lo), S(pos_type._bounds._hi)},
                    {pos_type._bounds._lo, neg_type._bounds._hi},
                    {neg_type._bits._zeros & pos_type._bits._zeros, neg_type._bits._ones & pos_type._bits._ones}}};
   }
 }
 
-template <class T, class U>
-int TypeIntPrototype<T, U>::normalize_widen(int w) const {
+template <class S, class U>
+int TypeIntPrototype<S, U>::normalize_widen(int w) const {
   // Certain normalizations keep us sane when comparing types.
   // The 'SMALLINT' covers constants and also CC and its relatives.
   if (cardinality_from_bounds(_srange, _urange) <= SMALLINT) {
     return Type::WidenMin;
   }
-  if (_srange._lo == std::numeric_limits<T>::min() && _srange._hi == std::numeric_limits<T>::max() &&
+  if (_srange._lo == std::numeric_limits<S>::min() && _srange._hi == std::numeric_limits<S>::max() &&
       _urange._lo == std::numeric_limits<U>::min() && _urange._hi == std::numeric_limits<U>::max() &&
       _bits._zeros == 0 && _bits._ones == 0) {
     // bottom type
@@ -220,18 +234,18 @@ int TypeIntPrototype<T, U>::normalize_widen(int w) const {
 }
 
 #ifdef ASSERT
-template <class T, class U>
-bool TypeIntPrototype<T, U>::contains(T v) const {
+template <class S, class U>
+bool TypeIntPrototype<S, U>::contains(S v) const {
   return v >= _srange._lo && v <= _srange._hi && U(v) >= _urange._lo && U(v) <= _urange._hi &&
          (v & _bits._zeros) == 0 && (~v & _bits._ones) == 0;
 }
 
 // Verify that this set representation is canonical
-template <class T, class U>
-void TypeIntPrototype<T, U>::verify_constraints() const {
-  static_assert(std::is_signed<T>::value, "");
+template <class S, class U>
+void TypeIntPrototype<S, U>::verify_constraints() const {
+  static_assert(std::is_signed<S>::value, "");
   static_assert(std::is_unsigned<U>::value, "");
-  static_assert(sizeof(T) == sizeof(U), "");
+  static_assert(sizeof(S) == sizeof(U), "");
 
   // Assert that the bounds cannot be further tightened
   assert(contains(_srange._lo) && contains(_srange._hi) &&
@@ -262,8 +276,8 @@ template class TypeIntPrototype<jlong, julong>;
 
 // Compute the meet of 2 types, when dual is true, we are actually computing the
 // join.
-template <class CT, class T, class UT>
-const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(const TypeIntPrototype<T, UT>&, int, bool), bool dual) {
+template <class CT, class S, class U>
+const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(const TypeIntPrototype<S, U>&, int, bool), bool dual) {
   // Perform a fast test for common case; meeting the same types together.
   if (i1 == t2 || t2 == Type::TOP) {
     return i1;
@@ -272,15 +286,15 @@ const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(con
   if (i2 != nullptr) {
     if (!dual) {
     // meet
-      return make(TypeIntPrototype<T, UT>{{MIN2(i1->_lo, i2->_lo), MAX2(i1->_hi, i2->_hi)},
-                                          {MIN2(i1->_ulo, i2->_ulo), MAX2(i1->_uhi, i2->_uhi)},
-                                          {i1->_zeros & i2->_zeros, i1->_ones & i2->_ones}},
+      return make(TypeIntPrototype<S, U>{{MIN2(i1->_lo, i2->_lo), MAX2(i1->_hi, i2->_hi)},
+                                         {MIN2(i1->_ulo, i2->_ulo), MAX2(i1->_uhi, i2->_uhi)},
+                                         {i1->_zeros & i2->_zeros, i1->_ones & i2->_ones}},
                   MAX2(i1->_widen, i2->_widen), false);
     }
     // join
-    return make(TypeIntPrototype<T, UT>{{MAX2(i1->_lo, i2->_lo), MIN2(i1->_hi, i2->_hi)},
-                                        {MAX2(i1->_ulo, i2->_ulo), MIN2(i1->_uhi, i2->_uhi)},
-                                        {i1->_zeros | i2->_zeros, i1->_ones | i2->_ones}},
+    return make(TypeIntPrototype<S, U>{{MAX2(i1->_lo, i2->_lo), MIN2(i1->_hi, i2->_hi)},
+                                       {MAX2(i1->_ulo, i2->_ulo), MIN2(i1->_uhi, i2->_uhi)},
+                                       {i1->_zeros | i2->_zeros, i1->_ones | i2->_ones}},
                 MIN2(i1->_widen, i2->_widen), true);
   }
 
@@ -322,7 +336,7 @@ template const Type* int_type_xmeet(const TypeLong* i1, const Type* t2,
 // convergence by abandoning the bounds
 template <class CT>
 const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt) {
-  using T = std::remove_const_t<decltype(CT::_lo)>;
+  using S = std::remove_const_t<decltype(CT::_lo)>;
   using U = std::remove_const_t<decltype(CT::_ulo)>;
 
   if (ot == nullptr) {
@@ -360,14 +374,14 @@ const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt) {
 
   if (nt->_widen < Type::WidenMax) {
     // Returned widened new guy
-    TypeIntPrototype<T, U> prototype{{nt->_lo, nt->_hi}, {nt->_ulo, nt->_uhi}, {nt->_zeros, nt->_ones}};
+    TypeIntPrototype<S, U> prototype{{nt->_lo, nt->_hi}, {nt->_ulo, nt->_uhi}, {nt->_zeros, nt->_ones}};
     return CT::make(prototype, nt->_widen + 1);
   }
 
   // Speed up the convergence by abandoning the bounds, there are only a couple of bits so
   // they converge fast
-  T min = std::numeric_limits<T>::min();
-  T max = std::numeric_limits<T>::max();
+  S min = std::numeric_limits<S>::min();
+  S max = std::numeric_limits<S>::max();
   U umin = std::numeric_limits<U>::min();
   U umax = std::numeric_limits<U>::max();
   U zeros = nt->_zeros;
@@ -380,7 +394,7 @@ const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt) {
     zeros |= lt->_zeros;
     ones |= lt->_ones;
   }
-  TypeIntPrototype<T, U> prototype{{min, max}, {umin, umax}, {zeros, ones}};
+  TypeIntPrototype<S, U> prototype{{min, max}, {umin, umax}, {zeros, ones}};
   return CT::make(prototype, Type::WidenMax);
 }
 template const Type* int_type_widen(const TypeInt* nt, const TypeInt* ot, const TypeInt* lt);
@@ -391,7 +405,7 @@ template const Type* int_type_widen(const TypeLong* nt, const TypeLong* ot, cons
 // slow convergence
 template <class CT>
 const Type* int_type_narrow(const CT* nt, const CT* ot) {
-  using T = decltype(CT::_lo);
+  using S = decltype(CT::_lo);
   using U = decltype(CT::_ulo);
 
   if (nt->singleton() || ot == nullptr) {
@@ -419,9 +433,9 @@ const Type* int_type_narrow(const CT* nt, const CT* ot) {
   }
 
   // Only narrow if the range shrinks a lot
-  U oc = cardinality_from_bounds(RangeInt<T>{ot->_lo, ot->_hi},
+  U oc = cardinality_from_bounds(RangeInt<S>{ot->_lo, ot->_hi},
                                  RangeInt<U>{ot->_ulo, ot->_uhi});
-  U nc = cardinality_from_bounds(RangeInt<T>{nt->_lo, nt->_hi},
+  U nc = cardinality_from_bounds(RangeInt<S>{nt->_lo, nt->_hi},
                                  RangeInt<U>{nt->_ulo, nt->_uhi});
   return (nc > (oc >> 1) + (SMALLINT * 2)) ? ot : nt;
 }
@@ -431,7 +445,7 @@ template const Type* int_type_narrow(const TypeLong* nt, const TypeLong* ot);
 
 #ifndef PRODUCT
 template <class T>
-static const char* intnamenear(T origin, const char* xname, char* buf, size_t buf_size, T n) {
+static const char* int_name_near(T origin, const char* xname, char* buf, size_t buf_size, T n) {
   if (n < origin) {
     if (n <= origin - 10000) {
       return nullptr;
@@ -449,12 +463,12 @@ static const char* intnamenear(T origin, const char* xname, char* buf, size_t bu
 }
 
 const char* intname(char* buf, size_t buf_size, jint n) {
-  const char* str = intnamenear<jint>(max_jint, "maxint", buf, buf_size, n);
+  const char* str = int_name_near<jint>(max_jint, "maxint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
 
-  str = intnamenear<jint>(min_jint, "minint", buf, buf_size, n);
+  str = int_name_near<jint>(min_jint, "minint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
@@ -464,12 +478,12 @@ const char* intname(char* buf, size_t buf_size, jint n) {
 }
 
 const char* uintname(char* buf, size_t buf_size, juint n) {
-  const char* str = intnamenear<juint>(max_juint, "maxuint", buf, buf_size, n);
+  const char* str = int_name_near<juint>(max_juint, "maxuint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
 
-  str = intnamenear<juint>(max_jint, "maxint", buf, buf_size, n);
+  str = int_name_near<juint>(max_jint, "maxint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
@@ -479,27 +493,27 @@ const char* uintname(char* buf, size_t buf_size, juint n) {
 }
 
 const char* longname(char* buf, size_t buf_size, jlong n) {
-  const char* str = intnamenear<jlong>(max_jlong, "maxlong", buf, buf_size, n);
+  const char* str = int_name_near<jlong>(max_jlong, "maxlong", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
 
-  str = intnamenear<jlong>(min_jlong, "minlong", buf, buf_size, n);
+  str = int_name_near<jlong>(min_jlong, "minlong", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
 
-  str = intnamenear<jlong>(max_juint, "maxuint", buf, buf_size, n);
+  str = int_name_near<jlong>(max_juint, "maxuint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
 
-  str = intnamenear<jlong>(max_jint, "maxint", buf, buf_size, n);
+  str = int_name_near<jlong>(max_jint, "maxint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
 
-  str = intnamenear<jlong>(min_jint, "minint", buf, buf_size, n);
+  str = int_name_near<jlong>(min_jint, "minint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
@@ -509,22 +523,22 @@ const char* longname(char* buf, size_t buf_size, jlong n) {
 }
 
 const char* ulongname(char* buf, size_t buf_size, julong n) {
-  const char* str = intnamenear<julong>(max_julong, "maxulong", buf, buf_size, n);
+  const char* str = int_name_near<julong>(max_julong, "maxulong", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
 
-  str = intnamenear<julong>(max_jlong, "maxlong", buf, buf_size, n);
+  str = int_name_near<julong>(max_jlong, "maxlong", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
 
-  str = intnamenear<julong>(max_juint, "maxuint", buf, buf_size, n);
+  str = int_name_near<julong>(max_juint, "maxuint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
 
-  str = intnamenear<julong>(max_jint, "maxint", buf, buf_size, n);
+  str = int_name_near<julong>(max_jint, "maxint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
   }
@@ -556,4 +570,60 @@ const char* bitname(char* buf, size_t buf_size, U zeros, U ones) {
 }
 template const char* bitname(char* buf, size_t buf_size, juint zeros, juint ones);
 template const char* bitname(char* buf, size_t buf_size, julong zeros, julong ones);
+
+void int_type_dump(const TypeInt* t, outputStream* st, bool verbose) {
+  char buf1[40], buf2[40], buf3[40], buf4[40], buf5[40];
+  if (int_type_equal(t, TypeInt::INT)) {
+    st->print("int");
+  } else if (t->is_con()) {
+    st->print("int:%s", intname(buf1, sizeof(buf1), t->get_con()));
+  } else if (int_type_equal(t, TypeInt::BOOL)) {
+    st->print("bool");
+  } else if (int_type_equal(t, TypeInt::BYTE)) {
+    st->print("byte");
+  } else if (int_type_equal(t, TypeInt::CHAR)) {
+    st->print("char");
+  } else if (int_type_equal(t, TypeInt::SHORT)) {
+    st->print("short");
+  } else {
+    if (verbose) {
+      st->print("int:%s..%s ^ %s..%s, bits:%s",
+                intname(buf1, sizeof(buf1), t->_lo), intname(buf2, sizeof(buf2), t->_hi),
+                uintname(buf3, sizeof(buf3), t->_ulo), uintname(buf4, sizeof(buf4), t->_uhi),
+                bitname(buf5, sizeof(buf5), t->_zeros, t->_ones));
+    } else {
+      st->print("int:%s..%s ^ %s..%s",
+                intname(buf1, sizeof(buf1), t->_lo), intname(buf2, sizeof(buf2), t->_hi),
+                uintname(buf3, sizeof(buf3), t->_ulo), uintname(buf4, sizeof(buf4), t->_uhi));
+    }
+  }
+
+  if (t->_widen > 0 && t != TypeInt::INT) {
+    st->print(", widen: %d", t->_widen);
+  }
+}
+
+void int_type_dump(const TypeLong* t, outputStream* st, bool verbose) {
+  char buf1[80], buf2[80], buf3[80], buf4[80], buf5[80];
+  if (int_type_equal(t, TypeLong::LONG)) {
+    st->print("long");
+  } else if (t->is_con()) {
+    st->print("long:%s", longname(buf1, sizeof(buf1), t->get_con()));
+  } else {
+    if (verbose) {
+      st->print("long:%s..%s ^ %s..%s, bits:%s",
+                longname(buf1, sizeof(buf1), t->_lo), longname(buf2,sizeof(buf2), t-> _hi),
+                ulongname(buf3, sizeof(buf3), t->_ulo), ulongname(buf4, sizeof(buf4), t->_uhi),
+                bitname(buf5, sizeof(buf5), t->_zeros, t->_ones));
+    } else {
+      st->print("long:%s..%s ^ %s..%s",
+                longname(buf1, sizeof(buf1), t->_lo), longname(buf2,sizeof(buf2), t-> _hi),
+                ulongname(buf3, sizeof(buf3), t->_ulo), ulongname(buf4, sizeof(buf4), t->_uhi));
+    }
+  }
+
+  if (t->_widen > 0 && t != TypeLong::LONG) {
+    st->print(", widen: %d", t->_widen);
+  }
+}
 #endif // PRODUCT
