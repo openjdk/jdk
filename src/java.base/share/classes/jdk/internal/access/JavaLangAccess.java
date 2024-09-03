@@ -391,7 +391,7 @@ public interface JavaLangAccess {
      */
     void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
-    byte stringCoder(String s);
+    boolean isLatin1(String s);
 
     /**
      * if string#coder() is Latin1 return the count of string#value() leading greater than zero, else return 0

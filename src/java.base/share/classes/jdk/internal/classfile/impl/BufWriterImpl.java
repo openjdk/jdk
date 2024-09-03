@@ -162,9 +162,8 @@ public final class BufWriterImpl implements BufWriter {
         int strlen = str.length();
 
         int countGreaterThanZero = 0;
-        byte coder = JLA.stringCoder(str);
         int freeBytes = strlen + 2;
-        if (coder == 0) {
+        if (JLA.isLatin1(str)) {
             // If it is too long, it may be slow due to cache misses.
             if (strlen < 256) {
                 countGreaterThanZero = JLA.countGreaterThanZero(str);

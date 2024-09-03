@@ -2594,8 +2594,8 @@ public final class System {
                 StringLatin1.inflate(src, srcOff, dst, dstOff, len);
             }
 
-            public byte stringCoder(String s) {
-                return s.coder();
+            public boolean isLatin1(String s) {
+                return s.coder() == String.LATIN1;
             }
 
             public int countGreaterThanZero(String s) {
