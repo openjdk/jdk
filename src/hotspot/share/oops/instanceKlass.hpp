@@ -297,7 +297,6 @@ class InstanceKlass: public Klass {
   // Controls finalizer registration
   static bool _finalization_enabled;
 
-
  public:
 
   // Queries finalization state
