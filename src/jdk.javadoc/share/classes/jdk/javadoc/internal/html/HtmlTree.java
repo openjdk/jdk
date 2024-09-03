@@ -84,6 +84,7 @@ public class HtmlTree extends Content {
      * @param tag the name
      */
     public static HtmlTree of(HtmlTag tag) {
+
         return new HtmlTree(tag);
     }
 
@@ -386,7 +387,7 @@ public class HtmlTree extends Content {
                 .setStyle(style);
     }
 
-    private static HtmlTree BR_INSTANCE = unmodifiableTree(HtmlTag.BR);
+    private static final HtmlTree BR_INSTANCE = unmodifiableTree(HtmlTag.BR);
 
     /**
      * {@return an HTML {@code BR} element}
@@ -398,6 +399,7 @@ public class HtmlTree extends Content {
     /**
      * Creates an HTML {@code BUTTON} element with the given id.
      *
+     * @param id the id
      * @return the element
      */
     public static HtmlTree BUTTON(HtmlId id) {
@@ -407,6 +409,7 @@ public class HtmlTree extends Content {
     /**
      * Creates an HTML {@code BUTTON} element with the given style.
      *
+     * @param style the style
      * @return the element
      */
     public static HtmlTree BUTTON(HtmlStyle style) {
@@ -661,7 +664,7 @@ public class HtmlTree extends Content {
         };
     }
 
-    private static HtmlTree HR_INSTANCE = unmodifiableTree(HtmlTag.HR);
+    private static final HtmlTree HR_INSTANCE = unmodifiableTree(HtmlTag.HR);
 
     /**
      * {@return an HTML {@code HR} element}
@@ -1174,7 +1177,7 @@ public class HtmlTree extends Content {
                 .addAll(items, mapper);
     }
 
-    private static HtmlTree WBR_INSTANCE = unmodifiableTree(HtmlTag.WBR);
+    private static final HtmlTree WBR_INSTANCE = unmodifiableTree(HtmlTag.WBR);
 
     /**
      * {@return an HTML {@code WBR} element}

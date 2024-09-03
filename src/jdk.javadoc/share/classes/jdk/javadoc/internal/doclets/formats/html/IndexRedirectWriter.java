@@ -104,7 +104,7 @@ public class IndexRedirectWriter extends HtmlDocletWriter {
         bodyContent.add(HtmlTree.P(HtmlTree.A(targetPath, Text.of(targetPath))));
 
         var body = HtmlTree.BODY(HtmlStyles.indexRedirectPage)
-                .add(bodyContent);
+                .add(HtmlTree.MAIN(bodyContent));
 
         HtmlDocument htmlDocument = new HtmlDocument(
                 HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body));

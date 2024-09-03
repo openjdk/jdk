@@ -109,9 +109,8 @@ public class SearchWriter extends HtmlDocletWriter {
                         .add(HtmlTree.P(HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, HtmlId.of("search-redirect")))
                                 .add(HtmlTree.LABEL("search-redirect",
                                         contents.getContent("doclet.search.redirect")))))
-                .add(HtmlTree.of(HtmlTag.P)
-                        .setId(HtmlId.of("page-search-notify"))
-                        .add(contents.getContent("doclet.search.loading")))
+                .add(HtmlTree.P(contents.getContent("doclet.search.loading"))
+                        .setId(HtmlId.of("page-search-notify")))
                 .add(HtmlTree.DIV(HtmlTree.DIV(HtmlId.of("result-container"))
                                 .addUnchecked(Text.EMPTY))
                         .setId(HtmlId.of("result-section"))
