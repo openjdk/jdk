@@ -24,9 +24,9 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
-import jdk.internal.classfile.impl.ByteBuffer;
-
 import java.lang.classfile.ClassFile;
+
+import jdk.internal.classfile.impl.RawBytecodeHelper;
 import jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType;
 import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType.*;
 
@@ -105,9 +105,8 @@ final class VerificationBytecodes {
                 if (aligned_bci + 3 * 4 >= end) {
                     return -1;
                 }
-                ByteBuffer bb = ByteBuffer.wrap(bytecode, aligned_bci + 1 * 4, 2 * 4);
-                int lo = bb.getInt();
-                int hi = bb.getInt();
+                int lo = RawBytecodeHelper.getInt(bytecode, aligned_bci + 1 * 4);
+                int hi = RawBytecodeHelper.getInt(bytecode, aligned_bci + 2 * 4);
                 int len = aligned_bci - bci + (3 + hi - lo + 1) * 4;
                 return len > 0 ? len : -1;
             case ClassFile.LOOKUPSWITCH:
@@ -117,7 +116,7 @@ final class VerificationBytecodes {
                 if (aligned_bci + 2 * 4 >= end) {
                     return -1;
                 }
-                int npairs = ByteBuffer.wrap(bytecode, aligned_bci + 4, 4).getInt();
+                int npairs = RawBytecodeHelper.getInt(bytecode, aligned_bci + 4);
                 len = aligned_bci - bci + (2 + 2 * npairs) * 4;
                 return len > 0 ? len : -1;
             default:

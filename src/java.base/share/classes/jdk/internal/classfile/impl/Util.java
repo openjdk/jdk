@@ -269,7 +269,7 @@ public class Util {
                                   String methodName,
                                   MethodTypeDesc methodDesc,
                                   int acc,
-                                  ByteBuffer bytecode,
+                                  RawBytecodeHelper.CodeRange bytecode,
                                   Consumer<String> dump) {
 
         // try to dump debug info about corrupted bytecode
@@ -282,8 +282,8 @@ public class Util {
                                 public void writeBody(BufWriterImpl b) {
                                     b.writeU2(-1);//max stack
                                     b.writeU2(-1);//max locals
-                                    b.writeInt(bytecode.limit());
-                                    b.writeBytes(bytecode.array(), 0, bytecode.limit());
+                                    b.writeInt(bytecode.length());
+                                    b.writeBytes(bytecode.array(), 0, bytecode.length());
                                     b.writeU2(0);//exception handlers
                                     b.writeU2(0);//attributes
                                 }
@@ -291,11 +291,11 @@ public class Util {
             ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, dump);
         } catch (Error | Exception _) {
             // fallback to bytecode hex dump
-            bytecode.rewind();
-            while (bytecode.position() < bytecode.limit()) {
-                dump.accept("%n%04x:".formatted(bytecode.position()));
-                for (int i = 0; i < 16 && bytecode.position() < bytecode.limit(); i++) {
-                    dump.accept(" %02x".formatted(bytecode.get()));
+            var bcs = bytecode.start();
+            while (bcs.bci < bytecode.length()) {
+                dump.accept("%n%04x:".formatted(bcs.bci));
+                for (int i = 0; i < 16 && bcs.bci < bytecode.length(); i++, bcs.bci++) {
+                    dump.accept(" %02x".formatted(bcs.getU1()));
                 }
             }
         }

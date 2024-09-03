@@ -151,7 +151,7 @@ public final class StackMapGenerator {
                 dcb.methodInfo.methodName().stringValue(),
                 dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
-                dcb.bytecodesBufWriter.asByteBuffer(),
+                dcb.bytecodesBufWriter.bytecodeView(),
                 dcb.constantPool,
                 dcb.context,
                 dcb.handlers);
@@ -187,7 +187,7 @@ public final class StackMapGenerator {
     private final Type thisType;
     private final String methodName;
     private final MethodTypeDesc methodDesc;
-    private final ByteBuffer bytecode;
+    private final RawBytecodeHelper.CodeRange bytecode;
     private final SplitConstantPool cp;
     private final boolean isStatic;
     private final LabelContext labelContext;
@@ -221,7 +221,7 @@ public final class StackMapGenerator {
                      String methodName,
                      MethodTypeDesc methodDesc,
                      boolean isStatic,
-                     ByteBuffer bytecode,
+                     RawBytecodeHelper.CodeRange bytecode,
                      SplitConstantPool cp,
                      ClassFileImpl context,
                      List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {
@@ -288,7 +288,7 @@ public final class StackMapGenerator {
     }
 
     private void generate() {
-        exMin = bytecode.capacity();
+        exMin = bytecode.length();
         exMax = -1;
         for (var exhandler : handlers) {
             int start_pc = labelContext.labelToBci(exhandler.tryStart());
@@ -325,15 +325,13 @@ public final class StackMapGenerator {
                 //patch frame
                 frame.pushStack(Type.THROWABLE_TYPE);
                 if (maxStack < 1) maxStack = 1;
-                int blockSize = (i < framesCount - 1 ? frames.get(i + 1).offset : bytecode.limit()) - frame.offset;
+                int end = (i < framesCount - 1 ? frames.get(i + 1).offset : bytecode.length()) - 1;
                 //patch bytecode
-                bytecode.position(frame.offset);
-                for (int n=1; n<blockSize; n++) {
-                    bytecode.put((byte) NOP);
-                }
-                bytecode.put((byte) ATHROW);
+                var arr = bytecode.array();
+                Arrays.fill(arr, frame.offset, end, (byte) NOP);
+                arr[end] = (byte) ATHROW;
                 //patch handlers
-                removeRangeFromExcTable(frame.offset, frame.offset + blockSize);
+                removeRangeFromExcTable(frame.offset, end + 1);
             }
         }
     }
@@ -406,7 +404,7 @@ public final class StackMapGenerator {
         currentFrame.flags = 0;
         currentFrame.offset = -1;
         int stackmapIndex = 0;
-        RawBytecodeHelper bcs = new RawBytecodeHelper(bytecode);
+        var bcs = bytecode.start();
         boolean ncf = false;
         while (!bcs.isLastBytecode()) {
             bcs.rawNext();
@@ -789,7 +787,7 @@ public final class StackMapGenerator {
                     thisUninit = true;
                 } else if (type.tag == ITEM_UNINITIALIZED) {
                     int new_offset = type.bci;
-                    int new_class_index = bcs.getIndexU2Raw(new_offset + 1);
+                    int new_class_index = bcs.getU2(new_offset + 1);
                     Type new_class_type = cpIndexToType(new_class_index, cp);
                     if (inTryBlock) {
                         processExceptionHandlerTargets(bci, thisUninit);
@@ -848,11 +846,11 @@ public final class StackMapGenerator {
         var offsets = new BitSet() {
             @Override
             public void set(int i) {
-                if (i < 0 || i >= bytecode.capacity()) throw new IllegalArgumentException();
+                if (i < 0 || i >= bytecode.length()) throw new IllegalArgumentException();
                 super.set(i);
             }
         };
-        RawBytecodeHelper bcs = new RawBytecodeHelper(bytecode);
+        var bcs = bytecode.start();
         boolean no_control_flow = false;
         int opcode, bci = 0;
         while (!bcs.isLastBytecode()) try {
