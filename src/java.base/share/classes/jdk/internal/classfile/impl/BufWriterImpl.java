@@ -158,20 +158,20 @@ public final class BufWriterImpl implements BufWriter {
     }
 
     @SuppressWarnings("deprecation")
-    void writeUTF(String s) {
-        int len = s.length();
+    void writeUTF(String str) {
+        int strlen = str.length();
 
         int countGreaterThanZero = 0;
-        byte coder = JLA.stringCoder(s);
-        int freeBytes = len + 2;
+        byte coder = JLA.stringCoder(str);
+        int freeBytes = strlen + 2;
         if (coder == 0) {
             // If it is too long, it may be slow due to cache misses.
-            if (len < 256) {
-                countGreaterThanZero = JLA.countGreaterThanZero(s);
+            if (strlen < 256) {
+                countGreaterThanZero = JLA.countGreaterThanZero(str);
             }
-            freeBytes += len - countGreaterThanZero; // 2 bytes
+            freeBytes += strlen - countGreaterThanZero; // 2 bytes
         } else {
-            freeBytes += (len << 1); // 3 bytes
+            freeBytes += (strlen << 1); // 3 bytes
         }
         reserveSpace(freeBytes);
 
@@ -179,11 +179,11 @@ public final class BufWriterImpl implements BufWriter {
         int offset = start + 2;
         byte[] elems = this.elems;
 
-        s.getBytes(0, countGreaterThanZero, elems, offset);
+        str.getBytes(0, countGreaterThanZero, elems, offset);
         offset += countGreaterThanZero;
 
-        for (int i = countGreaterThanZero; i < len; ++i) {
-            char c = s.charAt(i);
+        for (int i = countGreaterThanZero; i < strlen; ++i) {
+            char c = str.charAt(i);
             if (c >= '\001' && c <= '\177') {
                 elems[offset++] = (byte) c;
             } else if (c > '\u07FF') {
@@ -197,12 +197,12 @@ public final class BufWriterImpl implements BufWriter {
                 offset += 2;
             }
         }
-        int utf_len = offset - start - 2;
-        if (utf_len > 65535) {
+        int utflen = offset - start - 2;
+        if (utflen > 65535) {
             throw new IllegalArgumentException("string too long");
         }
-        elems[start    ] = (byte) (utf_len >> 8);
-        elems[start + 1] = (byte)  utf_len;
+        elems[start    ] = (byte) (utflen >> 8);
+        elems[start + 1] = (byte)  utflen;
         this.offset = offset;
     }
 
