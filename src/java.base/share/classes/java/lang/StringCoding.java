@@ -36,17 +36,22 @@ class StringCoding {
     private StringCoding() { }
 
     /**
-     * Count the number of leading positive, non-zero bytes in the range.
+     * Count the number of leading non-zero ascii chars in the range.
      */
-    public static int countGreaterThanZero(String s) {
-        byte[] value;
-        return countGreaterThanZero(value = s.value(), 0, value.length);
+    public static int countNonZeroAscii(String s) {
+        byte[] value = s.value();
+        int strlen = value.length;
+        if (s.isLatin1()) {
+            return countNonZeroAsciiLatin1(value, 0, value.length);
+        } else {
+            return countNonZeroAsciiUTF16(value, 0, s.length());
+        }
     }
 
     /**
-     * Count the number of leading positive, non-zero bytes in the range.
+     * Count the number of non-zero ascii chars in the range.
      */
-    public static int countGreaterThanZero(byte[] ba, int off, int len) {
+    public static int countNonZeroAsciiLatin1(byte[] ba, int off, int len) {
         int limit = off + len;
         for (int i = off; i < limit; i++) {
             if (ba[i] <= 0) {
@@ -54,6 +59,20 @@ class StringCoding {
             }
         }
         return len;
+    }
+
+    /**
+     * Count the number of leading non-zero ascii chars in the range.
+     */
+    public static int countNonZeroAsciiUTF16(byte[] ba, int off, int strlen) {
+        int limit = off + strlen;
+        for (int i = off; i < limit; i++) {
+            char c = StringUTF16.charAt(ba, i);
+            if (c == 0 || c > 0x7F) {
+                return i - off;
+            }
+        }
+        return strlen;
     }
 
     public static boolean hasNegatives(byte[] ba, int off, int len) {

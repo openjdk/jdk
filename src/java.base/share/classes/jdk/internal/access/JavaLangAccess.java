@@ -319,9 +319,9 @@ public interface JavaLangAccess {
     int countPositives(byte[] ba, int off, int len);
 
     /**
-     * Count the number of leading positive, non-zero bytes in the range.
+     * Count the number of leading non-zero ascii chars in the range.
      */
-    int countGreaterThanZero(String s);
+    int countNonZeroAscii(String s);
 
     /**
      * Constructs a new {@code String} by decoding the specified subarray of
@@ -395,8 +395,6 @@ public interface JavaLangAccess {
      * Inflated copy from byte[] to char[], as defined by StringLatin1.inflate
      */
     void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
-
-    boolean isLatin1(String s);
 
     /**
      * Decodes ASCII from the source byte array into the destination

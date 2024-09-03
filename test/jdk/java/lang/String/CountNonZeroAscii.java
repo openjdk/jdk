@@ -31,11 +31,11 @@ import java.util.Arrays;
 /*
  * @test
  * @modules java.base/jdk.internal.access
- * @summary test latin1 String countGreaterThanZero
- * @run testng/othervm -XX:+CompactStrings CountGreaterZero
- * @run testng/othervm -XX:-CompactStrings CountGreaterZero
+ * @summary test latin1 String countNonZeroAscii
+ * @run testng/othervm -XX:+CompactStrings CountNonZeroAscii
+ * @run testng/othervm -XX:-CompactStrings CountNonZeroAscii
  */
-public class CountGreaterZero {
+public class CountNonZeroAscii {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     public static void main(String [] args) {
@@ -43,23 +43,14 @@ public class CountGreaterZero {
 
         Arrays.fill(bytes, (byte) 'A');
         String s = new String(bytes, StandardCharsets.ISO_8859_1);
-        if (JLA.isLatin1(s)) {
-            assertEquals(bytes.length, JLA.countGreaterThanZero(s));
-        } else {
-            assertEquals(0, JLA.countGreaterThanZero(s));
-        }
+        assertEquals(bytes.length, JLA.countNonZeroAscii(s));
 
         for (int i = 0; i < bytes.length; i++) {
             Arrays.fill(bytes, (byte) 'A');
             for (int j = Byte.MIN_VALUE; j <= 0; j++) {
                 bytes[i] = (byte) j;
                 s = new String(bytes, StandardCharsets.ISO_8859_1);
-
-                if (JLA.isLatin1(s)) {
-                    assertEquals(i, JLA.countGreaterThanZero(s));
-                } else {
-                    assertEquals(0, JLA.countGreaterThanZero(s));
-                }
+                assertEquals(i, JLA.countNonZeroAscii(s));
             }
         }
     }
