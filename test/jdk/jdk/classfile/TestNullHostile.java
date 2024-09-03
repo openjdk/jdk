@@ -73,7 +73,7 @@ public class TestNullHostile {
 
     // cuts test runtime by half
     // increment by 1 everytime you add a new default value
-    private static final int DEFAULT_MAPPING_NUMBER = 134;
+    private static final int DEFAULT_MAPPING_NUMBER = 133;
     private static final Set<String> OBJECT_METHODS = Stream.of(Object.class.getMethods())
             .map(Method::getName)
             .collect(Collectors.toSet());
@@ -346,11 +346,6 @@ public class TestNullHostile {
             //todo - removing this breaks jdk/java/lang/invoke/MethodHandleProxies/WithSecurityManagerTest.java
             "java.lang.classfile.ClassHierarchyResolver/ofClassLoading(java.lang.ClassLoader)/0/0",
 
-            //todo - removing this breaks OpcodesValidationTest
-            "java.lang.classfile.CodeBuilder$BlockCodeBuilder/loadConstant(java.lang.classfile.Opcode,java.lang.constant.ConstantDesc)/1/0",
-            "java.lang.classfile.CodeBuilder/loadConstant(java.lang.classfile.Opcode,java.lang.constant.ConstantDesc)/1/0",
-
-
             //todo revisit these
             "java.lang.classfile.ClassFileTransform/accept(java.lang.classfile.ClassFileBuilder,java.lang.classfile.ClassFileElement)/0/0",
             "java.lang.classfile.ClassFileTransform/accept(java.lang.classfile.ClassFileBuilder,java.lang.classfile.ClassFileElement)/1/0",
@@ -465,7 +460,6 @@ public class TestNullHostile {
         addDefaultMapping(Predicate.class, Predicate.not(_ -> false));
         BiFunction<Object, Object, Object> func = (_, _) -> 0;
         addDefaultMapping(BiFunction.class, func);
-        addDefaultMapping(Comparator.class, (_, _) -> 0);
         addDefaultMapping(BiConsumer.class, (_, _) -> {});
         addDefaultMapping(IntFunction.class, _ -> 0);
         addDefaultMapping(PrintWriter.class, new PrintWriter(System.out,true));
@@ -492,7 +486,6 @@ public class TestNullHostile {
                 //do nothing - some complains about Unmatched bit position 0x in some inner final classes
             }
         }
-        System.out.println();
     }
 
     @Test(dataProvider = "cases")

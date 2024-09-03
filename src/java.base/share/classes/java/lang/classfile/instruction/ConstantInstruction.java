@@ -155,6 +155,7 @@ public sealed interface ConstantInstruction extends Instruction {
      *         for the opcode
      */
     static ArgumentConstantInstruction ofArgument(Opcode op, int value) {
+        requireNonNull(op);
         if (op == Opcode.BIPUSH) {
             BytecodeHelpers.validateBipush(value);
         } else if (op == Opcode.SIPUSH) {
