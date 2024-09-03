@@ -22,22 +22,17 @@
  */
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.SecondaryLoop;
-import java.awt.Toolkit;
 import java.util.ArrayList;
-import java.util.concurrent.CountDownLatch;
+
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JTabbedPane;
-
-import static javax.swing.SwingUtilities.convertPointToScreen;
-import static javax.swing.SwingUtilities.invokeLater;
-import static javax.swing.UIManager.getLookAndFeel;
-import static javax.swing.UIManager.getInstalledLookAndFeels;
-import static javax.swing.UIManager.LookAndFeelInfo;
-import static javax.swing.UIManager.setLookAndFeel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 /*
  * @test
@@ -46,99 +41,98 @@ import static javax.swing.UIManager.setLookAndFeel;
  * @summary Tests JTabbedPane background
  */
 
-public class Test8007563 implements Runnable {
+public class Test8007563 {
     private static final ArrayList<String> LIST = new ArrayList<>();
-    private static final LookAndFeelInfo[] INFO = getInstalledLookAndFeels();
-    private static final CountDownLatch LATCH = new CountDownLatch(INFO.length);
-    private static Robot ROBOT;
+    private static JFrame frame;
+    private static JTabbedPane pane;
+    private static Robot robot;
+    private static volatile Dimension dim;
+    private static volatile Point loc;
 
     public static void main(String[] args) throws Exception {
-        ROBOT = new Robot();
-        invokeLater(new Test8007563());
-        LATCH.await();
-        if (!LIST.isEmpty()) {
-            throw new Error(LIST.toString());
-        }
-    }
+        robot = new Robot();
+        robot.setAutoDelay(200);
 
-    private static void addOpaqueError(boolean opaque) {
-        LIST.add(getLookAndFeel().getName() + " opaque=" + opaque);
-    }
+        for (UIManager.LookAndFeelInfo laf :
+                UIManager.getInstalledLookAndFeels()) {
+            System.out.println("Testing: " + laf.getName());
+            setLookAndFeel(laf);
 
-    private static boolean updateLookAndFeel() {
-        int index = (int) LATCH.getCount() - 1;
-        if (index >= 0) {
             try {
-                LookAndFeelInfo info = INFO[index];
-                System.out.println("L&F: " + info.getName());
-                setLookAndFeel(info.getClassName());
-                return true;
-            } catch (Exception exception) {
-                exception.printStackTrace();
+                SwingUtilities.invokeAndWait(Test8007563::createAndShowUI);
+                robot.waitForIdle();
+                robot.delay(500);
+
+                SwingUtilities.invokeAndWait(() -> {
+                    loc = pane.getLocationOnScreen();
+                    dim = pane.getSize();
+                });
+
+                loc = new Point(loc.x + dim.width - 2, loc.y + 2);
+                doTesting(loc, laf);
+
+                if (!pane.isOpaque()) {
+                    pane.setOpaque(true);
+                    pane.repaint();
+                }
+                robot.waitForIdle();
+                robot.delay(500);
+
+                doTesting(loc, laf);
+
+            } finally {
+                SwingUtilities.invokeAndWait(() -> {
+                    if (frame != null) {
+                        frame.dispose();
+                    }
+                });
             }
         }
-        return false;
+        if (!LIST.isEmpty()) {
+            throw new RuntimeException(LIST.toString());
+        }
     }
 
-    private JFrame frame;
-    private JTabbedPane pane;
-
-    public void run() {
-        if (this.frame == null) {
-            if (!updateLookAndFeel()) {
-                return;
-            }
-            this.pane = new JTabbedPane();
-            this.pane.setOpaque(false);
-            this.pane.setBackground(Color.RED);
-            for (int i = 0; i < 3; i++) {
-                this.pane.addTab("Tab " + i, new JLabel("Content area " + i));
-            }
-            this.frame = new JFrame(getClass().getSimpleName());
-            this.frame.getContentPane().setBackground(Color.BLUE);
-            this.frame.add(this.pane);
-            this.frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            this.frame.setSize(400, 200);
-            this.frame.setLocationRelativeTo(null);
-            this.frame.setVisible(true);
-        } else {
-            Point point = new Point(this.pane.getWidth() - 2, 2);
-            convertPointToScreen(point, this.pane);
-            Color actual = ROBOT.getPixelColor(point.x, point.y);
-
-            boolean opaque = this.pane.isOpaque();
-            Color expected = opaque
-                    ? this.pane.getBackground()
-                    : this.frame.getContentPane().getBackground();
-
-            if (!expected.equals(actual)){
-                addOpaqueError(opaque);
-            }
-            if (!opaque) {
-                this.pane.setOpaque(true);
-                this.pane.repaint();
-            } else {
-                this.frame.dispose();
-                this.frame = null;
-                this.pane = null;
-                LATCH.countDown();
-            }
-
+    private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
+        try {
+            UIManager.setLookAndFeel(laf.getClassName());
+        } catch (UnsupportedLookAndFeelException ignored) {
+            System.out.println("Unsupported LAF: " + laf.getClassName());
+        } catch (ClassNotFoundException | InstantiationException
+                 | IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
-        SecondaryLoop secondaryLoop =
-                Toolkit.getDefaultToolkit().getSystemEventQueue()
-                        .createSecondaryLoop();
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                }
-                secondaryLoop.exit();
-                invokeLater(Test8007563.this);
-            }
-        }.start();
-        secondaryLoop.enter();
+    }
+
+    private static void createAndShowUI() {
+        pane = new JTabbedPane();
+        pane.setOpaque(false);
+        pane.setBackground(Color.RED);
+        for (int i = 0; i < 3; i++) {
+            pane.addTab("Tab " + i, new JLabel("Content area " + i));
+        }
+        frame = new JFrame("Test Background Color");
+        frame.getContentPane().setBackground(Color.BLUE);
+        frame.add(pane);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.setSize(400, 200);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+
+    private static void doTesting(Point p, UIManager.LookAndFeelInfo laf) {
+        boolean isOpaque = pane.isOpaque();
+        Color actual = robot.getPixelColor(p.x, p.y);
+        Color expected = isOpaque
+                ? pane.getBackground()
+                : frame.getContentPane().getBackground();
+
+        if (!expected.equals(actual)) {
+            addOpaqueError(laf.getName(), isOpaque);
+        }
+    }
+
+    private static void addOpaqueError(String lafName, boolean opaque) {
+        LIST.add(lafName + " opaque=" + opaque);
     }
 }
