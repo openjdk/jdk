@@ -115,7 +115,7 @@ public final class NetworkInterface {
      * InetAddresses are returned.
      *
      * @implNote
-     * The returned array contains all or a subset of the InetAddresses that were
+     * The returned enumeration contains all or a subset of the InetAddresses that were
      * bound to the interface at the time the {@linkplain #getNetworkInterfaces()
      * interface configuration was read}
      *
