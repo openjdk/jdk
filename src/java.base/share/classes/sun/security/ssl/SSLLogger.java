@@ -101,7 +101,6 @@ public final class SSLLogger {
         System.err.println("\tdefaultctx   print default SSL initialization");
         System.err.println("\thandshake    print each handshake message");
         System.err.println("\tkeymanager   print key manager tracing");
-        System.err.println("\tpluggability print pluggability tracing");
         System.err.println("\trecord       enable per-record tracing");
         System.err.println("\trespmgr      print OCSP response tracing");
         System.err.println("\tsession      print session activity");
