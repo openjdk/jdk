@@ -56,13 +56,16 @@ import java.io.PrintStream;
 public class DTLSRehandshakeTest {
     public static void main(String[] args) throws IOException {
         PrintStream originalOut = System.out;
+        PrintStream originalErr = System.err;
         String fileOutName = RehandshakeTest.TEST_MODE + "-output.txt";
         try (var fileOut = new FileOutputStream(fileOutName, true);
-             var multiOut = new MultiOutputStream(originalOut, fileOut);
-             var printOut = new PrintStream(multiOut)) {
+             var printOut = new PrintStream(new MultiOutputStream(originalOut, fileOut));
+             var printErr = new PrintStream(new MultiOutputStream(originalErr, fileOut))) {
             System.setOut(printOut);
+            System.setErr(printErr);
             RehandshakeTest.main(args);
         } finally {
+            System.setErr(originalErr);
             System.setOut(originalOut);
         }
     }
