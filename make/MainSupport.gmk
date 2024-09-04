@@ -175,7 +175,7 @@ define DeclareRecipesForPhaseAndModule
       $$(foreach d, $$($1_$2_TOPDIRS), \
         $$(eval $1 += $2-$$($1_TARGET_SUFFIX)-$$(notdir $$d)))
     endif
-    ifeq ($(NO_RECIPES),)
+    ifeq ($(NO_RECIPES), )
       $$(eval $$(call DeclareRecipeForModuleMakefile,$1,$2))
     endif
     $1 += $2-$$($1_TARGET_SUFFIX)
@@ -197,8 +197,8 @@ endef
 # $1_MODULES : All modules that had rules generated
 # $1_TARGETS : All targets generated
 define DeclareRecipesForPhase
-  $(foreach i,2 3 4 5 6 7 8, $(if $(strip $($i)),$(strip $1)_$(strip $($i)))$(NEWLINE))
-  $(if $(9),$(error Internal makefile error: Too many arguments to \
+  $(foreach i, 2 3 4 5 6 7 8, $(if $(strip $($i)),$(strip $1)_$(strip $($i)))$(NEWLINE))
+  $(if $(9), $(error Internal makefile error: Too many arguments to \
       DeclareRecipesForPhase, please update MakeHelper.gmk))
 
   $$(foreach m, $$($(strip $1)_CHECK_MODULES), \
