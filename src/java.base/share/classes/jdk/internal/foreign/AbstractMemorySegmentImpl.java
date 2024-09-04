@@ -329,13 +329,8 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public long mismatch(MemorySegment other) {
         Objects.requireNonNull(other);
-        return MemorySegment.mismatch(this, 0, byteSize(), other, 0, other.byteSize());
-    }
-
-    @Override
-    public long mismatchBase(MemorySegment other) {
-        Objects.requireNonNull(other);
-        return MemorySegment.mismatchBase(this, 0, byteSize(), other, 0, other.byteSize());
+        return SegmentBulkOperations.mismatch(this, 0, byteSize(),
+                (AbstractMemorySegmentImpl) other, 0, other.byteSize());
     }
 
     @Override

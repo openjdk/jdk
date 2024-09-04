@@ -995,35 +995,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     long mismatch(MemorySegment other);
 
     /**
-     * Finds and returns the offset, in bytes, of the first mismatch between
-     * this segment and the given other segment. The offset is relative to the
-     * {@linkplain #address() address} of each segment and will be in the
-     * range of 0 (inclusive) up to the {@linkplain #byteSize() size} (in bytes) of
-     * the smaller memory segment (exclusive).
-     * <p>
-     * If the two segments share a common prefix then the returned offset is
-     * the length of the common prefix, and it follows that there is a mismatch
-     * between the two segments at that offset within the respective segments.
-     * If one segment is a proper prefix of the other, then the returned offset is
-     * the smallest of the segment sizes, and it follows that the offset is only
-     * valid for the larger segment. Otherwise, there is no mismatch and {@code
-     * -1} is returned.
-     *
-     * @param other the segment to be tested for a mismatch with this segment
-     * @return the relative offset, in bytes, of the first mismatch between this
-     * and the given other segment, otherwise -1 if no mismatch
-     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
-     *         this segment is not {@linkplain Scope#isAlive() alive}
-     * @throws WrongThreadException if this method is called from a thread {@code T},
-     *         such that {@code isAccessibleBy(T) == false}
-     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
-     *         {@code other} is not {@linkplain Scope#isAlive() alive}
-     * @throws WrongThreadException if this method is called from a thread {@code T},
-     *         such that {@code other.isAccessibleBy(T) == false}
-     */
-    long mismatchBase(MemorySegment other);
-
-    /**
      * Determines whether all the contents of this mapped segment are resident in physical
      * memory.
      *
