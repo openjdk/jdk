@@ -27,7 +27,6 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "asm/register.hpp"
-#include "assembler_x86.hpp"
 #include "atomic_aarch64.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -2115,8 +2114,6 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
     __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-    assert(unsafe_byte_fill != nullptr, "Invalid call");
-
     // bump this on entry, not on exit:
     inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
 
@@ -2126,25 +2123,26 @@ class StubGenerator: public StubCodeGenerator {
     const Register wide_value = rscratch1;
     const Register align_reg = rscratch2;
 
+    Label L_exit;
+
     // Is size == 0? Just exit directly.
     __ cbz(size, L_exit);
 
     // Set up bit pattern
-    __ and(byte_value, 0xFF); // Clear upper 24 bits
+    __ andr(byte_value, 0xFF); // Clear upper 24 bits
     __ mov(wide_value, 0x0101010101010101ULL);
-    __ mul(wide_value, byte_value);
+    __ mul(wide_value, wide_value, byte_value);
 
     // Figure out where we should go
     Label L_8byte, L_4byte, L_2byte;
-    Label L_exit;
     __ orr(align_reg, array, size);
 
     __ tst(align_reg, 7);
-    __ beq(L_8byte);
+    __ br(Assembler::EQ, L_8byte);
     __ tst(align_reg, 3);
-    __ beq(L_4byte);
+    __ br(Assembler::EQ, L_4byte);
     __ tst(align_reg, 1);
-    __ beq(L_2byte);
+    __ br(Assembler::EQ, L_2byte);
     // Single-byte fill
     {
       UnsafeMemoryAccessMark umam(this, true, true);
@@ -2153,7 +2151,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L_loop);
       __ strb(wide_value, Address(__ post(array, 1)));
       __ cmp(array, size); // Are we at the end?
-      __ bne(L_loop);
+      __ br(Assembler::NE, L_loop);
       __ b(L_exit);
     }
 
@@ -2179,7 +2177,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L_loop);
       __ strw(wide_value, Address(__ post(array, 4)));
       __ cmp(array, size);
-      __ bne(L_loop);
+      __ br(Assembler::NE, (L_loop);
       __ b(L_exit);
     }
     __ bind(L_2byte);
@@ -2193,7 +2191,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bind(L_loop);
       __ strh(wide_value, Address(__ post(array, 2)));
       __ cmp(array, size);
-      __ bne(L_loop);
+      __ br(Assembler::NE, (L_loop);
       __ b(L_exit);
     }
     __ bind(L_exit);
