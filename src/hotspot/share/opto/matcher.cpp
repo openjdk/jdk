@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -804,6 +804,10 @@ void Matcher::Fixup_Save_On_Entry( ) {
   if (ret_edge_cnt > TypeFunc::Parms)
     ret_rms[TypeFunc::Parms+0] = _return_value_mask;
 
+  // Input RegMask array shared by all ForwardExceptions
+  uint forw_exc_edge_cnt = TypeFunc::Parms;
+  RegMask* forw_exc_rms  = init_input_masks( forw_exc_edge_cnt + soe_cnt, _return_addr_mask, c_frame_ptr_mask );
+
   // Input RegMask array shared by all Rethrows.
   uint reth_edge_cnt = TypeFunc::Parms+1;
   RegMask *reth_rms  = init_input_masks( reth_edge_cnt + soe_cnt, _return_addr_mask, c_frame_ptr_mask );
@@ -863,6 +867,7 @@ void Matcher::Fixup_Save_On_Entry( ) {
       case Op_Rethrow  : exit->_in_rms = reth_rms; break;
       case Op_TailCall : exit->_in_rms = tail_call_rms; break;
       case Op_TailJump : exit->_in_rms = tail_jump_rms; break;
+      case Op_ForwardException: exit->_in_rms = forw_exc_rms; break;
       case Op_Halt     : exit->_in_rms = halt_rms; break;
       default          : ShouldNotReachHere();
     }
@@ -882,6 +887,7 @@ void Matcher::Fixup_Save_On_Entry( ) {
       reth_rms     [     reth_edge_cnt] = mreg2regmask[i];
       tail_call_rms[tail_call_edge_cnt] = mreg2regmask[i];
       tail_jump_rms[tail_jump_edge_cnt] = mreg2regmask[i];
+      forw_exc_rms [ forw_exc_edge_cnt] = mreg2regmask[i];
       // Halts need the SOE registers, but only in the stack as debug info.
       // A just-prior uncommon-trap or deoptimization will use the SOE regs.
       halt_rms     [     halt_edge_cnt] = *idealreg2spillmask[_register_save_type[i]];
@@ -899,6 +905,7 @@ void Matcher::Fixup_Save_On_Entry( ) {
         reth_rms     [     reth_edge_cnt].Insert(OptoReg::Name(i+1));
         tail_call_rms[tail_call_edge_cnt].Insert(OptoReg::Name(i+1));
         tail_jump_rms[tail_jump_edge_cnt].Insert(OptoReg::Name(i+1));
+        forw_exc_rms [ forw_exc_edge_cnt].Insert(OptoReg::Name(i+1));
         halt_rms     [     halt_edge_cnt].Insert(OptoReg::Name(i+1));
         mproj = new MachProjNode( start, proj_cnt, ret_rms[ret_edge_cnt], Op_RegD );
         proj_cnt += 2;          // Skip 2 for doubles
@@ -911,6 +918,7 @@ void Matcher::Fixup_Save_On_Entry( ) {
         reth_rms     [     reth_edge_cnt] = RegMask::Empty;
         tail_call_rms[tail_call_edge_cnt] = RegMask::Empty;
         tail_jump_rms[tail_jump_edge_cnt] = RegMask::Empty;
+        forw_exc_rms [ forw_exc_edge_cnt] = RegMask::Empty;
         halt_rms     [     halt_edge_cnt] = RegMask::Empty;
         mproj = C->top();
       }
@@ -925,6 +933,7 @@ void Matcher::Fixup_Save_On_Entry( ) {
         reth_rms     [     reth_edge_cnt].Insert(OptoReg::Name(i+1));
         tail_call_rms[tail_call_edge_cnt].Insert(OptoReg::Name(i+1));
         tail_jump_rms[tail_jump_edge_cnt].Insert(OptoReg::Name(i+1));
+        forw_exc_rms [ forw_exc_edge_cnt].Insert(OptoReg::Name(i+1));
         halt_rms     [     halt_edge_cnt].Insert(OptoReg::Name(i+1));
         mproj = new MachProjNode( start, proj_cnt, ret_rms[ret_edge_cnt], Op_RegL );
         proj_cnt += 2;          // Skip 2 for longs
@@ -937,6 +946,7 @@ void Matcher::Fixup_Save_On_Entry( ) {
         reth_rms     [     reth_edge_cnt] = RegMask::Empty;
         tail_call_rms[tail_call_edge_cnt] = RegMask::Empty;
         tail_jump_rms[tail_jump_edge_cnt] = RegMask::Empty;
+        forw_exc_rms [ forw_exc_edge_cnt] = RegMask::Empty;
         halt_rms     [     halt_edge_cnt] = RegMask::Empty;
         mproj = C->top();
       } else {
@@ -948,11 +958,13 @@ void Matcher::Fixup_Save_On_Entry( ) {
       reth_edge_cnt ++;
       tail_call_edge_cnt ++;
       tail_jump_edge_cnt ++;
+      forw_exc_edge_cnt++;
       halt_edge_cnt ++;
 
       // Add a use of the SOE register to all exit paths
-      for( uint j=1; j < root->req(); j++ )
+      for (uint j=1; j < root->req(); j++) {
         root->in(j)->add_req(mproj);
+      }
     } // End of if a save-on-entry register
   } // End of for all machine registers
 }
@@ -1070,6 +1082,7 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
     case Op_Halt:
     case Op_TailCall:
     case Op_TailJump:
+    case Op_ForwardException:
       nidx = Compile::AliasIdxBot;
       nat = TypePtr::BOTTOM;
       break;
@@ -1812,7 +1825,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
     ReduceInst_Interior( s, rule, mem, mach, 1 );
   } else {
     // Instruction chain rules are data-dependent on their inputs
-    mach->add_req(0);             // Set initial control to none
+    mach->add_req(nullptr);     // Set initial control to none
     ReduceInst_Chain_Rule( s, rule, mem, mach );
   }
 
@@ -2960,7 +2973,7 @@ bool Matcher::branches_to_uncommon_trap(const Node *n) {
     }
 
     if (call &&
-        call->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point()) {
+        call->entry_point() == OptoRuntime::uncommon_trap_blob()->entry_point()) {
       const Type* trtype = call->in(TypeFunc::Parms)->bottom_type();
       if (trtype->isa_int() && trtype->is_int()->is_con()) {
         jint tr_con = trtype->is_int()->get_con();

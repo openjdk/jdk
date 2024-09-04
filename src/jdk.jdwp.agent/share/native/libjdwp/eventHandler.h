@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,16 +78,17 @@ void eventHandler_waitForActiveCallbacks();
 void eventHandler_lock(void);
 void eventHandler_unlock(void);
 
+void callback_lock(void);
+void callback_unlock(void);
+
 jboolean eventHandler_synthesizeUnloadEvent(char *signature, JNIEnv *env);
 
 jclass getMethodClass(jvmtiEnv *jvmti_env, jmethodID method);
 
-/***** debugging *****/
+/***** APIs for debugging the debug agent *****/
 
-#ifdef DEBUG
 void eventHandler_dumpAllHandlers(jboolean dumpPermanent);
 void eventHandler_dumpHandlers(EventIndex ei, jboolean dumpPermanent);
 void eventHandler_dumpHandler(HandlerNode *node);
-#endif
 
 #endif /* _EVENTHANDLER_H */

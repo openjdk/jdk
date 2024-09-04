@@ -43,6 +43,10 @@
 #include "runtime/atomic.hpp"
 #include "utilities/events.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/utf8.hpp"
+
+// Limit exception message components to 64K (the same max as Symbols)
+#define MAX_LEN 65535
 
 // Implementation of ThreadShadow
 void check_ThreadShadow() {
@@ -114,10 +118,11 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
   if (h_exception.is_null() && !thread->can_call_java()) {
     ResourceMark rm(thread);
     const char* exc_value = h_name != nullptr ? h_name->as_C_string() : "null";
-    log_info(exceptions)("Thread cannot call Java so instead of throwing exception <%s%s%s> (" PTR_FORMAT ") \n"
+    log_info(exceptions)("Thread cannot call Java so instead of throwing exception <%.*s%s%.*s> (" PTR_FORMAT ") \n"
                         "at [%s, line %d]\nfor thread " PTR_FORMAT ",\n"
                         "throwing pre-allocated exception: %s",
-                        exc_value, message ? ": " : "", message ? message : "",
+                        MAX_LEN, exc_value, message ? ": " : "",
+                        MAX_LEN, message ? message : "",
                         p2i(h_exception()), file, line, p2i(thread),
                         Universe::vm_exception()->print_value_string());
     // We do not care what kind of exception we get for a thread which
@@ -143,10 +148,11 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
 
   // tracing (do this up front - so it works during boot strapping)
   // Note, the print_value_string() argument is not called unless logging is enabled!
-  log_info(exceptions)("Exception <%s%s%s> (" PTR_FORMAT ") \n"
+  log_info(exceptions)("Exception <%.*s%s%.*s> (" PTR_FORMAT ") \n"
                        "thrown [%s, line %d]\nfor thread " PTR_FORMAT,
-                       h_exception->print_value_string(),
-                       message ? ": " : "", message ? message : "",
+                       MAX_LEN, h_exception->print_value_string(),
+                       message ? ": " : "",
+                       MAX_LEN, message ? message : "",
                        p2i(h_exception()), file, line, p2i(thread));
 
   // for AbortVMOnException flag
@@ -177,7 +183,7 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
   thread->set_pending_exception(h_exception(), file, line);
 
   // vm log
-  Events::log_exception(thread, h_exception, message, file, line);
+  Events::log_exception(thread, h_exception, message, file, line, MAX_LEN);
 }
 
 
@@ -257,8 +263,32 @@ void Exceptions::fthrow(JavaThread* thread, const char* file, int line, Symbol* 
   va_list ap;
   va_start(ap, format);
   char msg[max_msg_size];
-  os::vsnprintf(msg, max_msg_size, format, ap);
+  int ret = os::vsnprintf(msg, max_msg_size, format, ap);
   va_end(ap);
+
+  // If ret == -1 then either there was a format conversion error, or the required buffer size
+  // exceeds INT_MAX and so couldn't be returned (undocumented behaviour of vsnprintf). Depending
+  // on the platform the buffer may be filled to its capacity (Linux), filled to the conversion
+  // that encountered the overflow (macOS), or is empty (Windows), so it is possible we
+  // have a truncated UTF-8 sequence. Similarly, if the buffer was too small and ret >= max_msg_size
+  // we may also have a truncated UTF-8 sequence. In such cases we need to fix the buffer so the UTF-8
+  // sequence is valid.
+  if (ret == -1 || ret >= max_msg_size) {
+    int len = (int) strlen(msg);
+    if (len > 0) {
+      // Truncation will only happen if the buffer was filled by vsnprintf,
+      // otherwise vsnprintf already terminated filling it at a well-defined point.
+      // But as this is not a clearly specified area we will perform our own UTF8
+      // truncation anyway - though for those well-defined termination points it
+      // will be a no-op.
+      UTF8::truncate_to_legal_utf8((unsigned char*)msg, len + 1);
+    }
+  }
+  // UTF8::is_legal_utf8 should actually be called is_legal_utf8_class_name as the final
+  // parameter controls a check for a specific character appearing in the "name", which is only
+  // allowed for classfile versions <= 47. We pass `true` so that we allow such strings as this code
+  // know nothing about the actual string content.
+  assert(UTF8::is_legal_utf8((const unsigned char*)msg, (int)strlen(msg), true), "must be");
   _throw_msg(thread, file, line, h_name, msg);
 }
 
@@ -566,13 +596,13 @@ void Exceptions::log_exception(Handle exception, const char* message) {
   ResourceMark rm;
   const char* detail_message = java_lang_Throwable::message_as_utf8(exception());
   if (detail_message != nullptr) {
-    log_info(exceptions)("Exception <%s: %s>\n thrown in %s",
-                         exception->print_value_string(),
-                         detail_message,
-                         message);
+    log_info(exceptions)("Exception <%.*s: %.*s>\n thrown in %.*s",
+                         MAX_LEN, exception->print_value_string(),
+                         MAX_LEN, detail_message,
+                         MAX_LEN, message);
   } else {
-    log_info(exceptions)("Exception <%s>\n thrown in %s",
-                         exception->print_value_string(),
-                         message);
+    log_info(exceptions)("Exception <%.*s>\n thrown in %.*s",
+                         MAX_LEN, exception->print_value_string(),
+                         MAX_LEN, message);
   }
 }

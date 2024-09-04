@@ -48,8 +48,6 @@ public enum GCCause {
   _metadata_GC_threshold ("Metadata GC Threshold"),
   _metadata_GC_clear_soft_refs ("Metadata GC Clear Soft References"),
 
-  _adaptive_size_policy ("Ergonomics"),
-
   _g1_inc_collection_pause ("G1 Evacuation Pause"),
   _g1_compaction_pause ("G1 Compaction Pause"),
   _g1_humongous_allocation ("G1 Humongous Allocation"),

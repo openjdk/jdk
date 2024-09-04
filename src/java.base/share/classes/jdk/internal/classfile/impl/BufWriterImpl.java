@@ -27,10 +27,8 @@ package jdk.internal.classfile.impl;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.List;
 
 import java.lang.classfile.BufWriter;
-import java.lang.classfile.WritableElement;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
@@ -93,17 +91,30 @@ public final class BufWriterImpl implements BufWriter {
 
     @Override
     public void writeU1(int x) {
-        writeIntBytes(1, x);
+        reserveSpace(1);
+        elems[offset++] = (byte) x;
     }
 
     @Override
     public void writeU2(int x) {
-        writeIntBytes(2, x);
+        reserveSpace(2);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) (x >> 8);
+        elems[offset + 1] = (byte) x;
+        this.offset = offset + 2;
     }
 
     @Override
     public void writeInt(int x) {
-        writeIntBytes(4, x);
+        reserveSpace(4);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) (x >> 24);
+        elems[offset + 1] = (byte) (x >> 16);
+        elems[offset + 2] = (byte) (x >> 8);
+        elems[offset + 3] = (byte)  x;
+        this.offset = offset + 4;
     }
 
     @Override
@@ -113,7 +124,18 @@ public final class BufWriterImpl implements BufWriter {
 
     @Override
     public void writeLong(long x) {
-        writeIntBytes(8, x);
+        reserveSpace(8);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) (x >> 56);
+        elems[offset + 1] = (byte) (x >> 48);
+        elems[offset + 2] = (byte) (x >> 40);
+        elems[offset + 3] = (byte) (x >> 32);
+        elems[offset + 4] = (byte) (x >> 24);
+        elems[offset + 5] = (byte) (x >> 16);
+        elems[offset + 6] = (byte) (x >> 8);
+        elems[offset + 7] = (byte)  x;
+        this.offset = offset + 8;
     }
 
     @Override
@@ -126,10 +148,8 @@ public final class BufWriterImpl implements BufWriter {
         writeBytes(arr, 0, arr.length);
     }
 
-    @Override
-    public void writeBytes(BufWriter other) {
-        BufWriterImpl o = (BufWriterImpl) other;
-        writeBytes(o.elems, 0, o.offset);
+    public void writeBytes(BufWriterImpl other) {
+        writeBytes(other.elems, 0, other.offset);
     }
 
     @Override
@@ -157,13 +177,18 @@ public final class BufWriterImpl implements BufWriter {
 
     @Override
     public void reserveSpace(int freeBytes) {
-        if (offset + freeBytes > elems.length) {
-            int newsize = elems.length * 2;
-            while (offset + freeBytes > newsize) {
-                newsize *= 2;
-            }
-            elems = Arrays.copyOf(elems, newsize);
+        int minCapacity = offset + freeBytes;
+        if (minCapacity > elems.length) {
+            grow(minCapacity);
         }
+    }
+
+    private void grow(int minCapacity) {
+        int newsize = elems.length * 2;
+        while (minCapacity > newsize) {
+            newsize *= 2;
+        }
+        elems = Arrays.copyOf(elems, newsize);
     }
 
     @Override
@@ -175,7 +200,6 @@ public final class BufWriterImpl implements BufWriter {
         return ByteBuffer.wrap(elems, 0, offset).slice();
     }
 
-    @Override
     public void copyTo(byte[] array, int bufferOffset) {
         System.arraycopy(elems, 0, array, bufferOffset, size());
     }
@@ -197,21 +221,5 @@ public final class BufWriterImpl implements BufWriter {
             writeU2(0);
         else
             writeIndex(entry);
-    }
-
-    @Override
-    public<T extends WritableElement<?>> void writeList(List<T> list) {
-        writeU2(list.size());
-        for (T t : list) {
-            t.writeTo(this);
-        }
-    }
-
-    @Override
-    public void writeListIndices(List<? extends PoolEntry> list) {
-        writeU2(list.size());
-        for (PoolEntry info : list) {
-            writeIndex(info);
-        }
     }
 }

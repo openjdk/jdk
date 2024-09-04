@@ -34,7 +34,6 @@ import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.constantpool.DoubleEntry;
 import java.lang.classfile.constantpool.FieldRefEntry;
 import java.lang.classfile.constantpool.FloatEntry;
@@ -122,6 +121,8 @@ public abstract sealed class AbstractPoolEntry {
     public int width() {
         return (tag == ClassFile.TAG_LONG || tag == ClassFile.TAG_DOUBLE) ? 2 : 1;
     }
+
+    abstract void writeTo(BufWriterImpl buf);
 
     abstract PoolEntry clone(ConstantPoolBuilder cp);
 
@@ -407,7 +408,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             if (rawBytes != null) {
                 pool.writeU1(tag);
                 pool.writeU2(rawLen);
@@ -478,7 +479,7 @@ public abstract sealed class AbstractPoolEntry {
             return ref1;
         }
 
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeU2(ref1.index());
         }
@@ -508,7 +509,7 @@ public abstract sealed class AbstractPoolEntry {
             return ref2;
         }
 
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeU2(ref1.index());
             pool.writeU2(ref2.index());
@@ -532,15 +533,6 @@ public abstract sealed class AbstractPoolEntry {
 
         public String asInternalName() {
             return ref1.stringValue();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) { return true; }
-            if (o instanceof AbstractNamedEntry ne) {
-                return tag == ne.tag() && name().equals(ref1());
-            }
-            return false;
         }
     }
 
@@ -814,7 +806,7 @@ public abstract sealed class AbstractPoolEntry {
             return nameAndType;
         }
 
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeU2(bsmIndex);
             pool.writeU2(nameAndType.index());
@@ -919,7 +911,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeU1(refKind);
             pool.writeU2(reference.index());
@@ -1038,38 +1030,17 @@ public abstract sealed class AbstractPoolEntry {
 
     }
 
-    abstract static sealed class PrimitiveEntry<T extends ConstantDesc>
-            extends AbstractPoolEntry {
-        protected final T val;
+    public static final class IntegerEntryImpl extends AbstractPoolEntry implements IntegerEntry {
 
-        public PrimitiveEntry(ConstantPool constantPool, int tag, int index, T val) {
-            super(constantPool, tag, index, hash1(tag, val.hashCode()));
-            this.val = val;
-        }
-
-        public T value() {
-            return val;
-        }
-
-        public ConstantDesc constantValue() {
-            return value();
-        }
-
-        @Override
-        public String toString() {
-            return "" + tag() + value();
-        }
-    }
-
-    public static final class IntegerEntryImpl extends PrimitiveEntry<Integer>
-            implements IntegerEntry {
+        private final int val;
 
         IntegerEntryImpl(ConstantPool cpm, int index, int i) {
-            super(cpm, ClassFile.TAG_INTEGER, index, i);
+            super(cpm, ClassFile.TAG_INTEGER, index, hash1(ClassFile.TAG_INTEGER, Integer.hashCode(i)));
+            val = i;
         }
 
         @Override
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeInt(val);
         }
@@ -1081,7 +1052,12 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public int intValue() {
-            return value();
+            return val;
+        }
+
+        @Override
+        public ConstantDesc constantValue() {
+            return val;
         }
 
         @Override
@@ -1094,15 +1070,18 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class FloatEntryImpl extends PrimitiveEntry<Float>
+    public static final class FloatEntryImpl extends AbstractPoolEntry
             implements FloatEntry {
 
+        private final float val;
+
         FloatEntryImpl(ConstantPool cpm, int index, float f) {
-            super(cpm, ClassFile.TAG_FLOAT, index, f);
+            super(cpm, ClassFile.TAG_FLOAT, index, hash1(ClassFile.TAG_FLOAT, Float.hashCode(f)));
+            val = f;
         }
 
         @Override
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeFloat(val);
         }
@@ -1114,7 +1093,12 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public float floatValue() {
-            return value();
+            return val;
+        }
+
+        @Override
+        public ConstantDesc constantValue() {
+            return val;
         }
 
         @Override
@@ -1127,14 +1111,17 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class LongEntryImpl extends PrimitiveEntry<Long> implements LongEntry {
+    public static final class LongEntryImpl extends AbstractPoolEntry implements LongEntry {
+
+        private final long val;
 
         LongEntryImpl(ConstantPool cpm, int index, long l) {
-            super(cpm, ClassFile.TAG_LONG, index, l);
+            super(cpm, ClassFile.TAG_LONG, index, hash1(ClassFile.TAG_LONG, Long.hashCode(l)));
+            val = l;
         }
 
         @Override
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeLong(val);
         }
@@ -1146,7 +1133,12 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public long longValue() {
-            return value();
+            return val;
+        }
+
+        @Override
+        public ConstantDesc constantValue() {
+            return val;
         }
 
         @Override
@@ -1159,14 +1151,17 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class DoubleEntryImpl extends PrimitiveEntry<Double> implements DoubleEntry {
+    public static final class DoubleEntryImpl extends AbstractPoolEntry implements DoubleEntry {
+
+        private final double val;
 
         DoubleEntryImpl(ConstantPool cpm, int index, double d) {
-            super(cpm, ClassFile.TAG_DOUBLE, index, d);
+            super(cpm, ClassFile.TAG_DOUBLE, index, hash1(ClassFile.TAG_DOUBLE, Double.hashCode(d)));
+            val = d;
         }
 
         @Override
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeDouble(val);
         }
@@ -1178,7 +1173,12 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public double doubleValue() {
-            return value();
+            return val;
+        }
+
+        @Override
+        public ConstantDesc constantValue() {
+            return val;
         }
 
         @Override
