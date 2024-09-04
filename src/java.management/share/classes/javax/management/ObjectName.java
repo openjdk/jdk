@@ -1038,9 +1038,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
     /**
      * Deserializes an {@link ObjectName} from an {@link ObjectInputStream}.
      * @serialData <ul>
-     *               <li>In the current serial form (value of property
-     *                   <code>jmx.serial.form</code> differs from
-     *                   <code>1.0</code>): the string
+     *               <li>In the current serial form the string
      *                   &quot;&lt;domain&gt;:&lt;properties&gt;&lt;wild&gt;&quot;,
      *                   where: <ul>
      *                            <li>&lt;domain&gt; represents the domain part
@@ -1062,35 +1060,6 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      *                   to the {@link #ObjectName(String)} constructor to
      *                   produce an equivalent {@link ObjectName}.
      *               </li>
-     *               <li>In the old serial form (value of property
-     *                   <code>jmx.serial.form</code> is
-     *                   <code>1.0</code>): &lt;domain&gt; &lt;propertyList&gt;
-     *                   &lt;propertyListString&gt; &lt;canonicalName&gt;
-     *                   &lt;pattern&gt; &lt;propertyPattern&gt;,
-     *                   where: <ul>
-     *                            <li>&lt;domain&gt; represents the domain part
-     *                                of the {@link ObjectName}</li>
-     *                            <li>&lt;propertyList&gt; is the
-     *                                {@link Hashtable} that contains all the
-     *                                pairs (key,value) for this
-     *                                {@link ObjectName}</li>
-     *                            <li>&lt;propertyListString&gt; is the
-     *                                {@link String} representation of the
-     *                                list of properties in any order (not
-     *                                mandatorily a canonical representation)
-     *                                </li>
-     *                            <li>&lt;canonicalName&gt; is the
-     *                                {@link String} containing this
-     *                                {@link ObjectName}'s canonical name</li>
-     *                            <li>&lt;pattern&gt; is a boolean which is
-     *                                <code>true</code> if this
-     *                                {@link ObjectName} contains a pattern</li>
-     *                            <li>&lt;propertyPattern&gt; is a boolean which
-     *                                is <code>true</code> if this
-     *                                {@link ObjectName} contains a pattern in
-     *                                the list of properties</li>
-     *                          </ul>
-     *               </li>
      *             </ul>
      */
     private void readObject(ObjectInputStream in)
@@ -1111,9 +1080,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
     /**
      * Serializes an {@link ObjectName} to an {@link ObjectOutputStream}.
      * @serialData <ul>
-     *               <li>In the current serial form (value of property
-     *                   <code>jmx.serial.form</code> differs from
-     *                   <code>1.0</code>): the string
+     *               <li>In the current serial form the string
      *                   &quot;&lt;domain&gt;:&lt;properties&gt;&lt;wild&gt;&quot;,
      *                   where: <ul>
      *                            <li>&lt;domain&gt; represents the domain part
@@ -1134,35 +1101,6 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
      *                   The intent is that this string could be supplied
      *                   to the {@link #ObjectName(String)} constructor to
      *                   produce an equivalent {@link ObjectName}.
-     *               </li>
-     *               <li>In the old serial form (value of property
-     *                   <code>jmx.serial.form</code> is
-     *                   <code>1.0</code>): &lt;domain&gt; &lt;propertyList&gt;
-     *                   &lt;propertyListString&gt; &lt;canonicalName&gt;
-     *                   &lt;pattern&gt; &lt;propertyPattern&gt;,
-     *                   where: <ul>
-     *                            <li>&lt;domain&gt; represents the domain part
-     *                                of the {@link ObjectName}</li>
-     *                            <li>&lt;propertyList&gt; is the
-     *                                {@link Hashtable} that contains all the
-     *                                pairs (key,value) for this
-     *                                {@link ObjectName}</li>
-     *                            <li>&lt;propertyListString&gt; is the
-     *                                {@link String} representation of the
-     *                                list of properties in any order (not
-     *                                mandatorily a canonical representation)
-     *                                </li>
-     *                            <li>&lt;canonicalName&gt; is the
-     *                                {@link String} containing this
-     *                                {@link ObjectName}'s canonical name</li>
-     *                            <li>&lt;pattern&gt; is a boolean which is
-     *                                <code>true</code> if this
-     *                                {@link ObjectName} contains a pattern</li>
-     *                            <li>&lt;propertyPattern&gt; is a boolean which
-     *                                is <code>true</code> if this
-     *                                {@link ObjectName} contains a pattern in
-     *                                the list of properties</li>
-     *                          </ul>
      *               </li>
      *             </ul>
      */
