@@ -3530,14 +3530,18 @@ void MacroAssembler::atomic_cas(
 
 void MacroAssembler::far_jump(const Address &entry, Register tmp) {
   assert(CodeCache::find_blob(entry.target()) != nullptr,
-         "destination of far call not found in code cache");
+         "destination of far jump not found in code cache");
   assert(entry.rspec().type() == relocInfo::external_word_type
         || entry.rspec().type() == relocInfo::runtime_call_type
         || entry.rspec().type() == relocInfo::none, "wrong entry relocInfo type");
   // Fixed length: see MacroAssembler::far_branch_size()
+  // We can use auipc + jr here because we know that the total size of
+  // the code cache cannot exceed 2Gb.
   relocate(entry.rspec(), [&] {
-    int32_t offset;
-    la(tmp, entry.target(), offset);
+    int64_t distance = entry.target() - pc();
+    int32_t offset = ((int32_t)distance << 20) >> 20;
+    assert(is_valid_32bit_offset(distance), "Far jump using wrong instructions.");
+    auipc(tmp, (int32_t)distance + 0x800);
     jr(tmp, offset);
   });
 }
@@ -3552,8 +3556,11 @@ void MacroAssembler::far_call(const Address &entry, Register tmp) {
   // We can use auipc + jalr here because we know that the total size of
   // the code cache cannot exceed 2Gb.
   relocate(entry.rspec(), [&] {
-    assert(is_valid_32bit_offset(entry.target() - pc()), "Far call using wrong instructions.");
-    call(entry.target(), tmp);
+    int64_t distance = entry.target() - pc();
+    int32_t offset = ((int32_t)distance << 20) >> 20;
+    assert(is_valid_32bit_offset(distance), "Far call using wrong instructions.");
+    auipc(tmp, (int32_t)distance + 0x800);
+    jalr(tmp, offset);
   });
 }
 
