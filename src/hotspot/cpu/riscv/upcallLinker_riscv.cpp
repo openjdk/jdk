@@ -261,7 +261,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ load target ");
-  __ movptr(j_rarg0, (intptr_t) receiver);
+  __ movptr(j_rarg0, (address) receiver);
   __ far_call(RuntimeAddress(StubRoutines::upcall_stub_load_target())); // loads Method* into xmethod
   __ block_comment("} load target ");
 
