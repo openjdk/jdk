@@ -3448,6 +3448,10 @@ JVM_LEAF(jboolean, JVM_IsForeignLinkerSupported(void))
   return ForeignGlobals::is_foreign_linker_supported() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
+JVM_ENTRY_NO_ENV(jboolean, JVM_IsStaticallyLinked(void))
+  return is_vm_statically_linked() ? JNI_TRUE : JNI_FALSE;
+JVM_END
+
 // String support ///////////////////////////////////////////////////////////////////////////
 
 JVM_ENTRY(jstring, JVM_InternString(JNIEnv *env, jstring str))
