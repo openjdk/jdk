@@ -374,8 +374,8 @@ public class ShutdownNow implements HttpServerAdapters {
             httpsTestServer.stop();
             http2TestServer.stop();
             https2TestServer.stop();
-            h2h3TestServer.start();
-            h3TestServer.start();
+            h2h3TestServer.stop();
+            h3TestServer.stop();
         } finally {
             if (fail != null) throw fail;
         }
