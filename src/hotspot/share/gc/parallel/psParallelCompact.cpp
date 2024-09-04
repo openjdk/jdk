@@ -521,18 +521,13 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
 }
 
 #ifdef ASSERT
-void ParallelCompactData::verify_clear(const PSVirtualSpace* vspace)
+void ParallelCompactData::verify_clear()
 {
-  const size_t* const beg = (const size_t*)vspace->committed_low_addr();
-  const size_t* const end = (const size_t*)vspace->committed_high_addr();
+  const size_t* const beg = (const size_t*) _region_vspace->committed_low_addr();
+  const size_t* const end = (const size_t*) _region_vspace->committed_high_addr();
   for (const size_t* p = beg; p < end; ++p) {
     assert(*p == 0, "not zero");
   }
-}
-
-void ParallelCompactData::verify_clear()
-{
-  verify_clear(_region_vspace);
 }
 #endif  // #ifdef ASSERT
 

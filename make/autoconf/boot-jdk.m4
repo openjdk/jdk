@@ -602,11 +602,12 @@ AC_DEFUN([BOOTJDK_SETUP_BUILD_JDK],
   BUILD_JDK_FOUND="no"
   if test "x$with_build_jdk" != "x"; then
     BOOTJDK_CHECK_BUILD_JDK([
-       if test "x$with_build_jdk" != x; then
-         BUILD_JDK=$with_build_jdk
-         BUILD_JDK_FOUND=maybe
-         AC_MSG_NOTICE([Found potential Build JDK using configure arguments])
-       fi])
+      if test "x$with_build_jdk" != x; then
+        BUILD_JDK=$with_build_jdk
+        BUILD_JDK_FOUND=maybe
+        AC_MSG_NOTICE([Found potential Build JDK using configure arguments])
+      fi
+    ])
     EXTERNAL_BUILDJDK=true
   else
     if test "x$COMPILE_TYPE" = "xcross"; then
