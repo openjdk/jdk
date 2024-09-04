@@ -63,6 +63,29 @@ class SharedRuntime: AllStatic {
   SHARED_STUBS_DO(SHARED_STUB_FIELD_DECLARE)
 #undef SHARED_STUB_FIELD_DECLARE
 
+#ifndef PRODUCT
+  static bool is_resolve_id(sharedStubId id) {
+    return (id == sharedStubId::wrong_method_id ||
+            id == sharedStubId::wrong_method_abstract_id ||
+            id == sharedStubId::ic_miss_id ||
+            id == sharedStubId::resolve_opt_virtual_call_id ||
+            id == sharedStubId::resolve_virtual_call_id ||
+            id == sharedStubId::resolve_static_call_id);
+  }
+  static bool is_polling_page_id(sharedStubId id) {
+    return (id == sharedStubId::polling_page_vectors_safepoint_handler_id ||
+            id == sharedStubId::polling_page_safepoint_handler_id ||
+            id == sharedStubId::polling_page_return_handler_id);
+  }
+  static bool is_throw_id(sharedStubId id) {
+    return (id == sharedStubId::throw_AbstractMethodError_id ||
+            id == sharedStubId::throw_IncompatibleClassChangeError_id ||
+            id == sharedStubId::throw_NullPointerException_at_call_id ||
+            id == sharedStubId::throw_StackOverflowError_id ||
+            id == sharedStubId::throw_delayed_StackOverflowError_id);
+  }
+#endif
+
   // cont_doYieldStub is not yet folded into the general model for
   // shared stub/blob handling. It is actually a specially generated
   // native wrapper for a specific native method, as also is it's
@@ -71,6 +94,7 @@ class SharedRuntime: AllStatic {
 
   // Stub names indexed by sharedStubId
   static const char *_stub_names[];
+
 #ifndef PRODUCT
   // Counters
   static int64_t _nof_megamorphic_calls;         // total # of megamorphic calls (through vtable)
