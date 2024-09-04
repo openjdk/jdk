@@ -70,7 +70,7 @@ public class SALauncher {
         if (canConnectToRemote) {
             System.out.println("    --connect [<serverid>@]<host>[:registryport][/servername] To connect to a remote debug server (debugd).");
             System.out.println();
-            System.out.println("WARNING: debugd (and therefore --connect) are deprecated and will be removed in a future release.");
+            System.err.println("WARNING: --connect is deprecated and will be removed in a future release.");
         }
         System.out.println();
         System.out.println("    The --core and --exe options must be set together to give the core");
@@ -216,6 +216,7 @@ public class SALauncher {
 
             newArgs.add(core);
         } else if (connect != NO_REMOTE) {
+            System.err.println("WARNING: --connect is deprecated and will be removed in a future release.");
             newArgs.add(connect);
         }
 
