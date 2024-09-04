@@ -290,6 +290,12 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @Override
+    public long mismatchBase(MemorySegment other) {
+        Objects.requireNonNull(other);
+        return MemorySegment.mismatchBase(this, 0, byteSize(), other, 0, other.byteSize());
+    }
+
+    @Override
     public void load() {
         throw notAMappedSegment();
     }
@@ -688,7 +694,11 @@ public abstract sealed class AbstractMemorySegmentImpl
         }
     }
 
-    public static long mismatch(MemorySegment srcSegment, long srcFromOffset, long srcToOffset,
+    // MISMATCH_NATIVE_THRESHOLD must be a power of two and should be greater than 2^3
+    private static final long MISMATCH_NATIVE_THRESHOLD = 1 << 20;
+
+
+    public static long mismatchBase(MemorySegment srcSegment, long srcFromOffset, long srcToOffset,
                                 MemorySegment dstSegment, long dstFromOffset, long dstToOffset) {
         AbstractMemorySegmentImpl srcImpl = (AbstractMemorySegmentImpl)Objects.requireNonNull(srcSegment);
         AbstractMemorySegmentImpl dstImpl = (AbstractMemorySegmentImpl)Objects.requireNonNull(dstSegment);
@@ -720,6 +730,90 @@ public abstract sealed class AbstractMemorySegmentImpl
             }
         }
         return srcBytes != dstBytes ? bytes : -1;
+    }
+
+    @ForceInline
+    public static long mismatch(AbstractMemorySegmentImpl src, long srcFromOffset, long srcToOffset,
+                                AbstractMemorySegmentImpl dst, long dstFromOffset, long dstToOffset) {
+        final long srcBytes = srcToOffset - srcFromOffset;
+        final long dstBytes = dstToOffset - dstFromOffset;
+        src.checkAccess(srcFromOffset, srcBytes, true);
+        dst.checkAccess(dstFromOffset, dstBytes, true);
+
+        final long bytes = Math.min(srcBytes, dstBytes);
+        final boolean srcAndDstBytesDiffer = srcBytes != dstBytes;
+
+        if (bytes == 0) {
+            return srcAndDstBytesDiffer ? 0 : -1;
+        } else if (bytes < MISMATCH_NATIVE_THRESHOLD) {
+            final int limit = (int) (bytes & (MISMATCH_NATIVE_THRESHOLD - 8));
+            int offset = 0;
+            for (; offset < limit; offset += 8) {
+                if (SCOPED_MEMORY_ACCESS.getLong(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset) !=
+                        SCOPED_MEMORY_ACCESS.getLong(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset)) {
+                    return mismatchSmall(src, srcFromOffset + offset, dst, dstFromOffset + offset, offset, 8, srcAndDstBytesDiffer);
+                }
+            }
+            int remaining = (int) bytes - offset;
+            // 0...0X00
+            if (remaining >= 4) {
+                if (SCOPED_MEMORY_ACCESS.getInt(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset) !=
+                        SCOPED_MEMORY_ACCESS.getInt(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset)) {
+                    return mismatchSmall(src, srcFromOffset + offset, dst, dstFromOffset + offset, offset, 4, srcAndDstBytesDiffer);
+                }
+                offset += 4;
+                remaining -= 4;
+            }
+            // 0...00X0
+            if (remaining >= 2) {
+                if (SCOPED_MEMORY_ACCESS.getShort(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset) !=
+                        SCOPED_MEMORY_ACCESS.getShort(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset)) {
+                    return mismatchSmall(src, srcFromOffset + offset, dst, dstFromOffset + offset, offset, 2, srcAndDstBytesDiffer);
+                }
+                offset += 2;
+                remaining -= 2;
+            }
+            // 0...000X
+            if (remaining == 1) {
+                if (SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset) !=
+                        SCOPED_MEMORY_ACCESS.getByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset)) {
+                    return offset;
+                }
+            }
+            return srcAndDstBytesDiffer ? bytes : -1;
+            // We have now fully handled 0...0X...XXXX
+        } else {
+            long i;
+            if (SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcToOffset) !=
+                    SCOPED_MEMORY_ACCESS.getByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset)) {
+                return 0;
+            }
+            i = AbstractMemorySegmentImpl.vectorizedMismatchLargeForBytes(src.sessionImpl(), dst.sessionImpl(),
+                    src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset,
+                    dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset,
+                    bytes);
+            if (i >= 0) {
+                return i;
+            }
+            final long remaining = ~i;
+            assert remaining < 8 : "remaining greater than 7: " + remaining;
+            i = bytes - remaining;
+            return mismatchSmall(src, srcFromOffset + i, dst, dstFromOffset + i, i, (int) remaining, srcAndDstBytesDiffer);
+        }
+    }
+
+    // This method is intended to use for 0 <= bytes < 7
+    @ForceInline
+    private static long mismatchSmall(AbstractMemorySegmentImpl src, long srcOffset,
+                                      AbstractMemorySegmentImpl dst, long dstOffset,
+                                      long offset, int bytes, boolean srcAndDstBytesDiffer) {
+        for (int i = 0; i < bytes; i++) {
+            if (SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + i) !=
+                    SCOPED_MEMORY_ACCESS.getByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + i)) {
+                return offset + i;
+            }
+        }
+        return srcAndDstBytesDiffer ? bytes : -1;
     }
 
     private static int getScaleFactor(Buffer buffer) {

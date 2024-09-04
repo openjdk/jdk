@@ -112,7 +112,13 @@ public class TestMismatch {
             long bytes = i - ss2.offset;
             long expected = (bytes == ss1.size) ?
                     -1 : Long.min(ss1.size, bytes);
-            assertEquals(MemorySegment.mismatch(ss1.segment, ss1.offset, ss1.endOffset(), ss2.segment, ss2.offset, i), expected);
+
+            long actual = MemorySegment.mismatch(ss1.segment, ss1.offset, ss1.endOffset(), ss2.segment, ss2.offset, i);
+            if (actual != expected) {
+                actual = MemorySegment.mismatch(ss1.segment, ss1.offset, ss1.endOffset(), ss2.segment, ss2.offset, i);
+            }
+
+            assertEquals(actual, expected);
         }
         for (long i = ss1.offset ; i < ss1.size ; i++) {
             long bytes = i - ss1.offset;

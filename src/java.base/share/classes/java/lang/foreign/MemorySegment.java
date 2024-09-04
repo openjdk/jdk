@@ -994,6 +994,35 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     long mismatch(MemorySegment other);
 
     /**
+     * Finds and returns the offset, in bytes, of the first mismatch between
+     * this segment and the given other segment. The offset is relative to the
+     * {@linkplain #address() address} of each segment and will be in the
+     * range of 0 (inclusive) up to the {@linkplain #byteSize() size} (in bytes) of
+     * the smaller memory segment (exclusive).
+     * <p>
+     * If the two segments share a common prefix then the returned offset is
+     * the length of the common prefix, and it follows that there is a mismatch
+     * between the two segments at that offset within the respective segments.
+     * If one segment is a proper prefix of the other, then the returned offset is
+     * the smallest of the segment sizes, and it follows that the offset is only
+     * valid for the larger segment. Otherwise, there is no mismatch and {@code
+     * -1} is returned.
+     *
+     * @param other the segment to be tested for a mismatch with this segment
+     * @return the relative offset, in bytes, of the first mismatch between this
+     * and the given other segment, otherwise -1 if no mismatch
+     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
+     *         this segment is not {@linkplain Scope#isAlive() alive}
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     *         such that {@code isAccessibleBy(T) == false}
+     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
+     *         {@code other} is not {@linkplain Scope#isAlive() alive}
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     *         such that {@code other.isAccessibleBy(T) == false}
+     */
+    long mismatchBase(MemorySegment other);
+
+    /**
      * Determines whether all the contents of this mapped segment are resident in physical
      * memory.
      *
@@ -2634,7 +2663,60 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     static long mismatch(MemorySegment srcSegment, long srcFromOffset, long srcToOffset,
                          MemorySegment dstSegment, long dstFromOffset, long dstToOffset) {
-        return AbstractMemorySegmentImpl.mismatch(srcSegment, srcFromOffset, srcToOffset,
+        return AbstractMemorySegmentImpl.mismatch(
+                (AbstractMemorySegmentImpl)Objects.requireNonNull(srcSegment), srcFromOffset, srcToOffset,
+                (AbstractMemorySegmentImpl)Objects.requireNonNull(dstSegment), dstFromOffset, dstToOffset);
+    }
+
+    /**
+     * Finds and returns the relative offset, in bytes, of the first mismatch between the
+     * source and the destination segments. More specifically, the bytes at offset
+     * {@code srcFromOffset} through {@code srcToOffset - 1} in the source segment are
+     * compared against the bytes at offset {@code dstFromOffset} through {@code dstToOffset - 1}
+     * in the destination segment.
+     * <p>
+     * If the two segments, over the specified ranges, share a common prefix then the
+     * returned offset is the length of the common prefix, and it follows that there is a
+     * mismatch between the two segments at that relative offset within the respective
+     * segments. If one segment is a proper prefix of the other, over the specified
+     * ranges, then the returned offset is the smallest range, and it follows that the
+     * relative offset is only valid for the segment with the larger range. Otherwise,
+     * there is no mismatch and {@code -1} is returned.
+     *
+     * @param srcSegment the source segment.
+     * @param srcFromOffset the offset (inclusive) of the first byte in the
+     *                      source segment to be tested
+     * @param srcToOffset the offset (exclusive) of the last byte in the
+     *                    source segment to be tested
+     * @param dstSegment the destination segment
+     * @param dstFromOffset the offset (inclusive) of the first byte in the
+     *                      destination segment to be tested
+     * @param dstToOffset the offset (exclusive) of the last byte in the
+     *                    destination segment to be tested
+     * @return the relative offset, in bytes, of the first mismatch between the
+     *         source and destination segments, otherwise -1 if no mismatch
+     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
+     *         {@code srcSegment} is not {@linkplain Scope#isAlive() alive}
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     *         such that {@code srcSegment.isAccessibleBy(T) == false}
+     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
+     *         {@code dstSegment} is not {@linkplain Scope#isAlive() alive}
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     *         such that {@code dstSegment.isAccessibleBy(T) == false}
+     * @throws IndexOutOfBoundsException if {@code srcFromOffset < 0},
+     *         {@code srcToOffset < srcFromOffset} or
+     *         {@code srcToOffset > srcSegment.byteSize()}
+     * @throws IndexOutOfBoundsException if {@code dstFromOffset < 0},
+     *         {@code dstToOffset < dstFromOffset} or
+     *         {@code dstToOffset > dstSegment.byteSize()}
+     *
+     * @see MemorySegment#mismatch(MemorySegment)
+     * @see Arrays#mismatch(Object[], int, int, Object[], int, int)
+     */
+    static long mismatchBase(MemorySegment srcSegment, long srcFromOffset, long srcToOffset,
+                         MemorySegment dstSegment, long dstFromOffset, long dstToOffset) {
+        return AbstractMemorySegmentImpl.mismatchBase(
+                srcSegment, srcFromOffset, srcToOffset,
                 dstSegment, dstFromOffset, dstToOffset);
     }
 
