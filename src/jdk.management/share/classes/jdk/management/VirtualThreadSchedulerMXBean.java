@@ -26,12 +26,13 @@ package jdk.management;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.PlatformManagedObject;
+import java.util.concurrent.ForkJoinPool;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 /**
- * Management interface for the JDK's default {@linkplain Thread##virtual-threads virtual
- * thread} scheduler.
+ * Management interface for the JDK's {@linkplain Thread##virtual-threads virtual thread}
+ * scheduler.
  *
  * <p> {@code VirtualThreadSchedulerMXBean} supports monitoring of the virtual thread
  * scheduler's target parallelism and the {@linkplain Thread##platform-threads platform
@@ -52,12 +53,23 @@ public interface VirtualThreadSchedulerMXBean extends PlatformManagedObject {
     /**
      * {@return the scheduler's target parallelism}
      *
-     * @see java.util.concurrent.ForkJoinPool#getParallelism()
+     * @see ForkJoinPool#getParallelism()
      */
     int getParallelism();
 
     /**
      * Sets the scheduler's target parallelism.
+     *
+     * <p> Increasing the target parallelism allows the scheduler to use more threads as
+     * carrier threads if required. Decreasing the target parallelism reduces the number
+     * of threads that the scheduler may use as carrier threads. If virtual threads are
+     * mounting and unmounting frequently then any downward adjustment will likely come
+     * into effect quickly.
+     *
+     * @implNote The JDK's virtual thread scheduler is a {@link ForkJoinPool}. Target
+     * parallelism defaults to the number of {@linkplain Runtime#availableProcessors()
+     * available processors}. The minimum target parallelism is 1, the maximum target
+     * parallelism is 32767.
      *
      * @param size the target parallelism level
      * @throws IllegalArgumentException if size is less than the minimum, or
@@ -65,16 +77,20 @@ public interface VirtualThreadSchedulerMXBean extends PlatformManagedObject {
      * @throws UnsupportedOperationException if changing the target
      *         parallelism is not suppored by the scheduler
      *
-     * @see java.util.concurrent.ForkJoinPool#setParallelism(int)
+     * @see ForkJoinPool#setParallelism(int)
      */
     void setParallelism(int size);
 
     /**
-     * {@return the current number of platform threads in the scheduler's pool;
+     * {@return the current number of platform threads used by the scheduler;
      * {@code -1} if not known}
      *
-     * @apiNote The number of threads may be greater than the scheduler's target
-     * parallelism.
+     * The thread count includes threads that are currently used as carrier threads and
+     * threads that are <em>idle</em>. The thread count may be greater than the
+     * scheduler's target parallelism.
+     *
+     * @implNote The JDK's virtual thread scheduler is a {@link ForkJoinPool}. The
+     * thread count is the number of worker threads.
      */
     int getThreadCount();
 

@@ -94,7 +94,7 @@ public class VirtualThreadSchedulerImpls {
      * Implementation of VirtualThreadSchedulerMXBean when virtual threads are
      * implemented with continuations + scheduler.
      */
-    private static class VirtualThreadSchedulerImpl extends BaseVirtualThreadSchedulerImpl {
+    private static final class VirtualThreadSchedulerImpl extends BaseVirtualThreadSchedulerImpl {
         /**
          * Holder class for scheduler.
          */
@@ -118,7 +118,13 @@ public class VirtualThreadSchedulerImpls {
         @Override
         void implSetParallelism(int size) {
             switch (Scheduler.instance()) {
-                case ForkJoinPool pool -> pool.setParallelism(size);
+                case ForkJoinPool pool -> {
+                    pool.setParallelism(size);
+                    if (pool.getPoolSize() < size) {
+                        // FJ worker thread creation is on-demand
+                        Thread.startVirtualThread(() -> { });
+                    }
+                }
                 case ThreadPoolExecutor pool -> pool.setMaximumPoolSize(size);
                 default -> throw new UnsupportedOperationException();
             }
@@ -156,7 +162,7 @@ public class VirtualThreadSchedulerImpls {
      * Implementation of VirtualThreadSchedulerMXBean when virtual threads are backed
      * by platform threads.
      */
-    private static class BoundVirtualThreadSchedulerImpl extends BaseVirtualThreadSchedulerImpl {
+    private static final class BoundVirtualThreadSchedulerImpl extends BaseVirtualThreadSchedulerImpl {
         @Override
         public int getParallelism() {
             return Integer.MAX_VALUE;
