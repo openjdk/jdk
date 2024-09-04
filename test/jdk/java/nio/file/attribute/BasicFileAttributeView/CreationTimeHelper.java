@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc.
+ * Copyright (c) 2024 Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,5 +27,5 @@ public class CreationTimeHelper {
     }
 
     // Helper so as to determine 'statx' support on the runtime system
-    static native boolean linuxIsCreationTimeSupported();
+    static native boolean linuxIsCreationTimeSupported(String file);
 }

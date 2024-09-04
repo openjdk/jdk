@@ -44,9 +44,7 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.nio.file.attribute.*;
 import java.time.Instant;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
@@ -109,7 +107,7 @@ public class CreationTime {
             }
         } else if (Platform.isLinux()) {
             // Creation time read depends on statx system call support
-            supportsCreationTimeRead = CreationTimeHelper.linuxIsCreationTimeSupported();
+            supportsCreationTimeRead = CreationTimeHelper.linuxIsCreationTimeSupported(file.toAbsolutePath().toString());
             // Creation time updates are not supported on Linux
             supportsCreationTimeWrite = false;
         }
@@ -124,8 +122,11 @@ public class CreationTime {
             Instant plusHour = Instant.now().plusSeconds(60L * 60L);
             Files.setLastModifiedTime(file, FileTime.from(plusHour));
             FileTime current = creationTime(file);
-            if (!current.equals(creationTime))
+            if (!current.equals(creationTime)) {
+                System.out.println("current = " + current);
+                System.out.println("creationTime = " + creationTime);
                 throw new RuntimeException("Creation time should not have changed");
+            }
         }
 
         /**
