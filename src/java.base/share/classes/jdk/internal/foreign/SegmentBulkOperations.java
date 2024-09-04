@@ -118,7 +118,7 @@ public final class SegmentBulkOperations {
         }
     }
 
-    // This method is intended to use for 0 <= bytes < 7
+    // This method is intended for 0 <= bytes < 7
     @ForceInline
     private static long mismatchSmall(AbstractMemorySegmentImpl src, long srcOffset,
                                       AbstractMemorySegmentImpl dst, long dstOffset,
