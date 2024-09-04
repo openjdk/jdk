@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class UnicodeCasingTest {
         Locale defaultLocale = Locale.getDefault();
         BufferedReader in = null;
         try {
-            // First, we create exlude lists of characters whose mappings exist
+            // First, we create exclude lists of characters whose mappings exist
             // in SpecialCasing.txt and mapping rules in UnicodeData.txt aren't
             // applicable.
             in = Files.newBufferedReader(UCDFiles.SPECIAL_CASING.toRealPath());
@@ -84,7 +84,6 @@ public class UnicodeCasingTest {
                 Locale locale = locales.get(l);
                 Locale.setDefault(locale);
                 defaultLang = locale.getLanguage();
-//                System.out.println("Testing on " + locale + " locale....");
                 System.err.println("Testing on " + locale + " locale....");
                 in = Files.newBufferedReader(UCDFiles.UNICODE_DATA.toRealPath());
                 while ((line = in.readLine()) != null) {
