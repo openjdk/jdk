@@ -159,4 +159,9 @@ public class MutableBigIntegerBox {
     public int compare(MutableBigIntegerBox b) {
         return val.compare(b.val);
     }
+
+    @Override
+    public String toString() {
+        return val.toString();
+    }
 }

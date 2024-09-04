@@ -1,62 +1,82 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+import jdk.test.lib.RandomFactory;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import java.math.BigInteger;
 import java.math.MutableBigIntegerBox;
 import java.util.Random;
-import jdk.test.lib.RandomFactory;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static java.math.MutableBigIntegerBox.*;
 
+/**
+ * @test
+ * @bug 8336274
+ * @summary Tests for correctness of MutableBigInteger.leftShift(int)
+ * @library /test/lib
+ * @build jdk.test.lib.RandomFactory
+ * @build java.base/java.math.MutableBigIntegerBox
+ * @key randomness
+ * @run junit/othervm -DmaxDurationMillis=3000 MutableBigIntegerShiftTests
+ */
 public class MutableBigIntegerShiftTests {
+
+    private static final int DEFAULT_MAX_DURATION_MILLIS = 3_000;
 
     static final int ORDER_SMALL = 60;
     static final int ORDER_MEDIUM = 100;
 
+    private static int maxDurationMillis;
     private static Random random = RandomFactory.getRandom();
 
     static boolean failure = false;
 
-    public static void shift(int order) {
-        int failCount1 = 0;
-        int failCount2 = 0;
-
-        for (int i=0; i<100; i++) {
-            MutableBigIntegerBox x = fetchNumber(order);
-            int n = Math.abs(random.nextInt()%200);
-
-            if (x.shiftLeft(n).compare
-                (x.multiply(new MutableBigIntegerBox(BigInteger.TWO.pow(n)))) != 0) {
-                failCount1++;
-            }
-
-            if (x.shiftLeft(n).shiftRight(n).compare(x) != 0)
-                failCount2++;
-        }
-        report("baz shiftLeft for " + order + " bits", failCount1);
-        report("baz shiftRight for " + order + " bits", failCount2);
+    @BeforeAll
+    static void setMaxDurationMillis() {
+        maxDurationMillis = Math.max(maxDurationMillis(), 0);
     }
 
-    /**
-     * Main to interpret arguments and run several tests.
-     *
-     * Up to three arguments may be given to specify the SIZE of BigIntegers
-     * used for call parameters 1, 2, and 3. The SIZE is interpreted as
-     * the maximum number of decimal digits that the parameters will have.
-     *
-     */
-    public static void main(String[] args) {
-        // Some variables for sizing test numbers in bits
-        int order1 = ORDER_MEDIUM;
-        int order2 = ORDER_SMALL;
+    public static void shift(int order) {
+        for (int i = 0; i < 100; i++) {
+            MutableBigIntegerBox x = fetchNumber(order);
+            int n = Math.abs(random.nextInt() % 200);
 
-        if (args.length >0)
-            order1 = (int)((Integer.parseInt(args[0]))* 3.333);
-        if (args.length >1)
-            order2 = (int)((Integer.parseInt(args[1]))* 3.333);
+            assertTrue(x.shiftLeft(n).compare
+                    (x.multiply(new MutableBigIntegerBox(BigInteger.TWO.pow(n)))) == 0,
+                    "Inconsistent left shift: " + x + "<<" + n + " != " + x + "*2^" + n);
 
-        shift(order1);
-        shift(order2);
+            assertTrue(x.shiftLeft(n).shiftRight(n).compare(x) == 0,
+                    "Inconsistent left shift: (" + x + "<<" + n + ")>>" + n + " != " + x);
+        }
+    }
 
-        if (failure)
-            throw new RuntimeException("Failure in MutableBigIntegerShiftTests.");
+    @Test
+    public static void testShift() {
+        shift(ORDER_SMALL);
+        shift(ORDER_MEDIUM);
     }
 
     /*
@@ -132,10 +152,12 @@ public class MutableBigIntegerShiftTests {
         return result;
     }
 
-    static void report(String testName, int failCount) {
-        System.err.println(testName+": " +
-                           (failCount==0 ? "Passed":"Failed("+failCount+")"));
-        if (failCount > 0)
-            failure = true;
+    private static int maxDurationMillis() {
+        try {
+            return Integer.parseInt(System.getProperty("maxDurationMillis",
+                    Integer.toString(DEFAULT_MAX_DURATION_MILLIS)));
+        } catch (NumberFormatException ignore) {
+        }
+        return DEFAULT_MAX_DURATION_MILLIS;
     }
 }
