@@ -336,9 +336,16 @@ public class Http3ServerConnection {
                 ConnectionSettings clientSettings = ConnectionSettings.createFrom(sf);
                 // Set max and current capacity of the QPack encoder
                 qpackEncoder.configure(clientSettings);
+                long clientMaxTableCapacity = clientSettings.qpackMaxTableCapacity();
                 long capacity = Math.min(Http3TestServer.ENCODER_CAPACITY_LIMIT,
-                                         clientSettings.qpackMaxTableCapacity());
-                qpackEncoder.setTableCapacity(capacity);
+                                         clientMaxTableCapacity);
+                // RFC9204 3.2.3. Maximum Dynamic Table Capacity:
+                // "When the maximum table capacity is zero, the encoder MUST NOT
+                // insert entries into the dynamic table and MUST NOT send any encoder
+                // instructions on the encoder stream."
+                if (clientMaxTableCapacity != 0) {
+                    qpackEncoder.setTableCapacity(capacity);
+                }
             }
             if (controlFramesDecoder.eof()) break;
         }

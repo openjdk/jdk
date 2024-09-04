@@ -119,7 +119,7 @@ public final class Http3ClientProperties {
         int maxHttp3PushStreams = Utils.getIntegerProperty(
                 "jdk.http3.maxConcurrentPushStreams",
                 defaultMaxHttp3PushStreams);
-        long defaultDecoderMaxCapacity = 4096;
+        long defaultDecoderMaxCapacity = 0;
         long decoderMaxTableCapacity = Utils.getLongProperty(
                 "jdk.httpclient.qpack.decoderMaxTableCapacity",
                 defaultDecoderMaxCapacity);
