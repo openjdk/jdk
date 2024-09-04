@@ -44,16 +44,13 @@ class AOTLinkedClassTable {
   static AOTLinkedClassTable _for_static_archive;
   static AOTLinkedClassTable _for_dynamic_archive;
 
-  bool _is_static_archive; // Used for debugging (FIXME TODO....)
-
   Array<InstanceKlass*>* _boot;  // only java.base classes
   Array<InstanceKlass*>* _boot2; // boot classes in other modules
   Array<InstanceKlass*>* _platform;
   Array<InstanceKlass*>* _app;
 
 public:
-  AOTLinkedClassTable(bool is_static_archive) :
-    _is_static_archive(is_static_archive),
+  AOTLinkedClassTable() :
     _boot(nullptr), _boot2(nullptr),
     _platform(nullptr), _app(nullptr) {}
 
