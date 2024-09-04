@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,13 +77,8 @@ bool ZRememberedSet::is_cleared_previous() const {
   return previous()->is_empty();
 }
 
-void ZRememberedSet::clear_all() {
-  _bitmap[0].clear_large();
-  _bitmap[1].clear_large();
-}
-
-void ZRememberedSet::clear_current() {
-  current()->clear_large();
+void ZRememberedSet::delete_all() {
+  resize(0);
 }
 
 void ZRememberedSet::clear_previous() {
