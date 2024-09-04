@@ -61,8 +61,6 @@ protected:
   static void print_load_average(outputStream* st);
   static void print_uptime_info(outputStream* st);
 
-  static char* realpath(const char* filename, char* outbuf, size_t outbuflen);
-
 public:
   static void init(void);  // early initialization - no logging available
   static void init_2(void);// later initialization - logging available

@@ -5316,10 +5316,6 @@ void os::funlockfile(FILE* fp) {
 }
 
 char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
-  return os::win32::realpath(filename, outbuf, outbuflen);
-}
-
-char* os::win32::realpath(const char* filename, char* outbuf, size_t outbuflen) {
 
   if (filename == nullptr || outbuf == nullptr || outbuflen < 1) {
     assert(false, "os::realpath: invalid arguments.");
