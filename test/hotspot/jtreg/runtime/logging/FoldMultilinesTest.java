@@ -41,7 +41,7 @@ public class FoldMultilinesTest {
     private static String XLOG_BASE = "-Xlog:exceptions=info:";
     private static String EXCEPTION_MESSAGE = "line 1\nline 2\\nstring";
     private static String FOLDED_EXCEPTION_MESSAGE = "line 1\\nline 2\\\\nstring";
-    private static Pattern NEWLINE_LOG_PATTERN = Pattern.compile("line 1\\Rline 2\\\\nstring", Pattern.MULTILINE);
+    private static Pattern NEWLINE_LOG_PATTERN = Pattern.compile("line 1\\R\\[[0-9]*\\.?[0-9]*s\\]\\[info\\]\\[exceptions\\] line 2\\\\nstring", Pattern.MULTILINE);
 
     private static String getLog(String out, OutputAnalyzer output) throws Exception {
         return switch (out) {
