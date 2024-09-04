@@ -41,7 +41,7 @@ import javax.swing.UnsupportedLookAndFeelException;
  * @summary Tests JTabbedPane background
  */
 
-public class Test8007563 {
+public class TestJTabbedPaneBackgroundColor {
     private static final ArrayList<String> LIST = new ArrayList<>();
     private static JFrame frame;
     private static JTabbedPane pane;
@@ -59,7 +59,7 @@ public class Test8007563 {
             setLookAndFeel(laf);
 
             try {
-                SwingUtilities.invokeAndWait(Test8007563::createAndShowUI);
+                SwingUtilities.invokeAndWait(TestJTabbedPaneBackgroundColor::createAndShowUI);
                 robot.waitForIdle();
                 robot.delay(500);
 
