@@ -300,33 +300,106 @@ void PhaseIdealLoop::clone_assertion_predicates_to_unswitched_loop(IdealLoopTree
   Unique_Node_List list;
   get_assertion_predicates(old_predicate_proj, list);
 
-  Node_List to_process;
-  IfNode* iff = old_predicate_proj->in(0)->as_If();
-  IfProjNode* uncommon_proj = iff->proj_out(1 - old_predicate_proj->as_Proj()->_con)->as_IfProj();
+  clone_assertion_predicates_to_slow_unswitched_loop(loop, old_new, reason, list, slow_loop_parse_predicate_proj);
+  clone_assertion_predicates_to_fast_unswitched_loop(loop, reason, list, fast_loop_parse_predicate_proj);
+  // Node_List to_process;
+  // // Process in reverse order such that 'create_new_if_for_predicate' can be used in
+  // // 'clone_assertion_predicate_for_unswitched_loops' and the original order is maintained.
+  // for (int i = list.size() - 1; i >= 0; i--) {
+  //   Node* predicate = list.at(i);
+  //   assert(predicate->in(0)->is_If(), "must be If node");
+  //   IfNode* iff = predicate->in(0)->as_If();
+  //   assert(predicate->is_Proj() && predicate->as_Proj()->is_IfProj(), "predicate must be a projection of an if node");
+  //   IfProjNode* predicate_proj = predicate->as_IfProj();
+  //
+  //   IfProjNode* fast_proj = clone_assertion_predicate_for_unswitched_loops(iff, predicate_proj, reason, fast_loop_parse_predicate_proj);
+  //   assert(assertion_predicate_has_loop_opaque_node(fast_proj->in(0)->as_If()), "must find Assertion Predicate for fast loop");
+  //   IfProjNode* slow_proj = clone_assertion_predicate_for_unswitched_loops(iff, predicate_proj, reason, slow_loop_parse_predicate_proj);
+  //   assert(assertion_predicate_has_loop_opaque_node(slow_proj->in(0)->as_If()), "must find Assertion Predicate for slow loop");
+  //
+  //   // Update control dependent data nodes.
+  //   for (DUIterator j = predicate->outs(); predicate->has_out(j); j++) {
+  //     Node* fast_node = predicate->out(j);
+  //     if (loop->is_member(get_loop(ctrl_or_self(fast_node)))) {
+  //       assert(fast_node->in(0) == predicate, "only control edge");
+  //       Node* slow_node = old_new[fast_node->_idx];
+  //       assert(slow_node->in(0) == predicate, "only control edge");
+  //       _igvn.replace_input_of(fast_node, 0, fast_proj);
+  //       to_process.push(slow_node);
+  //       --j;
+  //     }
+  //   }
+  //   // Have to delay updates to the slow loop so uses of predicate are not modified while we iterate on them.
+  //   while (to_process.size() > 0) {
+  //     Node* slow_node = to_process.pop();
+  //     _igvn.replace_input_of(slow_node, 0, slow_proj);
+  //   }
+  // }
+}
+
+void PhaseIdealLoop::clone_assertion_predicates_to_fast_unswitched_loop(IdealLoopTree* loop,
+                                                                        Deoptimization::DeoptReason reason,
+                                                                        const Unique_Node_List& list,
+                                                                        ParsePredicateSuccessProj*
+                                                                        fast_loop_parse_predicate_proj) {
+  assert(fast_loop_parse_predicate_proj->in(0)->is_ParsePredicate(), "sanity check");
+  // Only need to clone range check predicates as those can be changed and duplicated by inserting pre/main/post loops
+  // and doing loop unrolling. Push the original predicates on a list to later process them in reverse order to keep the
+  // original predicate order.
   // Process in reverse order such that 'create_new_if_for_predicate' can be used in
   // 'clone_assertion_predicate_for_unswitched_loops' and the original order is maintained.
   for (int i = list.size() - 1; i >= 0; i--) {
     Node* predicate = list.at(i);
     assert(predicate->in(0)->is_If(), "must be If node");
-    iff = predicate->in(0)->as_If();
+    IfNode* iff = predicate->in(0)->as_If();
     assert(predicate->is_Proj() && predicate->as_Proj()->is_IfProj(), "predicate must be a projection of an if node");
     IfProjNode* predicate_proj = predicate->as_IfProj();
 
     IfProjNode* fast_proj = clone_assertion_predicate_for_unswitched_loops(iff, predicate_proj, reason, fast_loop_parse_predicate_proj);
     assert(assertion_predicate_has_loop_opaque_node(fast_proj->in(0)->as_If()), "must find Assertion Predicate for fast loop");
-    IfProjNode* slow_proj = clone_assertion_predicate_for_unswitched_loops(iff, predicate_proj, reason, slow_loop_parse_predicate_proj);
-    assert(assertion_predicate_has_loop_opaque_node(slow_proj->in(0)->as_If()), "must find Assertion Predicate for slow loop");
 
     // Update control dependent data nodes.
     for (DUIterator j = predicate->outs(); predicate->has_out(j); j++) {
       Node* fast_node = predicate->out(j);
       if (loop->is_member(get_loop(ctrl_or_self(fast_node)))) {
         assert(fast_node->in(0) == predicate, "only control edge");
+        _igvn.replace_input_of(fast_node, 0, fast_proj);
+        --j;
+      }
+    }
+  }
+}
+
+void PhaseIdealLoop::clone_assertion_predicates_to_slow_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
+                                                                        Deoptimization::DeoptReason reason,
+                                                                        const Unique_Node_List& list,
+                                                                        ParsePredicateSuccessProj*
+                                                                        slow_loop_parse_predicate_proj) {
+  assert(slow_loop_parse_predicate_proj->in(0)->is_ParsePredicate(), "sanity check");
+  // Only need to clone range check predicates as those can be changed and duplicated by inserting pre/main/post loops
+  // and doing loop unrolling. Push the original predicates on a list to later process them in reverse order to keep the
+  // original predicate order.
+  Node_List to_process;
+  // Process in reverse order such that 'create_new_if_for_predicate' can be used in
+  // 'clone_assertion_predicate_for_unswitched_loops' and the original order is maintained.
+  for (int i = list.size() - 1; i >= 0; i--) {
+    Node* predicate = list.at(i);
+    assert(predicate->in(0)->is_If(), "must be If node");
+    IfNode* iff = predicate->in(0)->as_If();
+    assert(predicate->is_Proj() && predicate->as_Proj()->is_IfProj(), "predicate must be a projection of an if node");
+    IfProjNode* predicate_proj = predicate->as_IfProj();
+
+    IfProjNode* slow_proj = clone_assertion_predicate_for_unswitched_loops(iff, predicate_proj, reason, slow_loop_parse_predicate_proj);
+    assert(assertion_predicate_has_loop_opaque_node(slow_proj->in(0)->as_If()), "must find Assertion Predicate for slow loop");
+
+    // Update control dependent data nodes.
+    for (DUIterator_Fast jmax, j = predicate->fast_outs(jmax); j < jmax; j++) {
+      Node* fast_node = predicate->fast_out(j);
+      if (loop->is_member(get_loop(ctrl_or_self(fast_node)))) {
+        assert(fast_node->in(0) == predicate, "only control edge");
         Node* slow_node = old_new[fast_node->_idx];
         assert(slow_node->in(0) == predicate, "only control edge");
-        _igvn.replace_input_of(fast_node, 0, fast_proj);
         to_process.push(slow_node);
-        --j;
       }
     }
     // Have to delay updates to the slow loop so uses of predicate are not modified while we iterate on them.
@@ -392,6 +465,11 @@ void PhaseIdealLoop::clone_parse_and_assertion_predicates_to_unswitched_loop(Ide
   Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
 
   const Predicates predicates(entry);
+  const PredicateBlock* short_running_loop_predicate_block = predicates.short_running_loop_predicate_block();
+  if (short_running_loop_predicate_block->has_parse_predicate() && !head->is_CountedLoop()) {
+    clone_parse_predicate_to_unswitched_loops(short_running_loop_predicate_block, Deoptimization::Reason_short_running_loop,
+                                              iffast_pred, ifslow_pred);
+  }
   clone_loop_predication_predicates_to_unswitched_loop(loop, old_new, predicates.loop_predicate_block(),
                                                        Deoptimization::Reason_predicate, iffast_pred, ifslow_pred);
   clone_loop_predication_predicates_to_unswitched_loop(loop, old_new, predicates.profiled_loop_predicate_block(),
@@ -1222,7 +1300,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
 #ifdef ASSERT
     const bool exact_trip_count = cl->has_exact_trip_count();
     const uint trip_count = cl->trip_count();
-    loop->compute_trip_count(this);
+    loop->compute_trip_count(this, T_INT);
     assert(exact_trip_count == cl->has_exact_trip_count() && trip_count == cl->trip_count(),
            "should have computed trip count on Loop Predication entry");
 #endif
@@ -1338,7 +1416,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree* loop) {
       // Do nothing for iteration-splitted loops
       return false;
     }
-    loop->compute_trip_count(this);
+    loop->compute_trip_count(this, T_INT);
     if (cl->trip_count() == 1) {
       // Not worth to hoist checks out of a loop that is only run for one iteration since the checks are only going to
       // be executed once anyway.

@@ -208,6 +208,18 @@ public:
   jlong stride_con() const;
 
   static BaseCountedLoopNode* make(Node* entry, Node* backedge, BasicType bt);
+
+  virtual void set_trip_count(julong tc) = 0;
+  virtual julong trip_count() = 0;
+
+  bool has_exact_trip_count() const { return (_loop_flags & HasExactTripCount) != 0; }
+  void set_exact_trip_count(julong tc) {
+    set_trip_count(tc);
+    _loop_flags |= HasExactTripCount;
+  }
+  void set_nonexact_trip_count() {
+    _loop_flags &= ~HasExactTripCount;
+  }
 };
 
 
@@ -286,23 +298,14 @@ public:
 
   int main_idx() const { return _main_idx; }
 
+  void set_trip_count(julong tc) { _trip_count = checked_cast<uint>(tc); }
+  julong trip_count()            { return _trip_count; }
 
   void set_pre_loop  (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Pre ; _main_idx = main->_idx; }
   void set_main_loop (                     ) { assert(is_normal_loop(),""); _loop_flags |= Main;                         }
   void set_post_loop (CountedLoopNode *main) { assert(is_normal_loop(),""); _loop_flags |= Post; _main_idx = main->_idx; }
   void set_normal_loop(                    ) { _loop_flags &= ~PreMainPostFlagsMask; }
 
-  void set_trip_count(uint tc) { _trip_count = tc; }
-  uint trip_count()            { return _trip_count; }
-
-  bool has_exact_trip_count() const { return (_loop_flags & HasExactTripCount) != 0; }
-  void set_exact_trip_count(uint tc) {
-    _trip_count = tc;
-    _loop_flags |= HasExactTripCount;
-  }
-  void set_nonexact_trip_count() {
-    _loop_flags &= ~HasExactTripCount;
-  }
   void set_notpassed_slp() {
     _loop_flags &= ~PassedSlpAnalysis;
   }
@@ -337,6 +340,12 @@ public:
 };
 
 class LongCountedLoopNode : public BaseCountedLoopNode {
+private:
+  virtual uint size_of() const { return sizeof(*this); }
+
+  // Known trip count calculated by compute_exact_trip_count()
+  julong _trip_count;
+
 public:
   LongCountedLoopNode(Node *entry, Node *backedge)
     : BaseCountedLoopNode(entry, backedge) {
@@ -348,6 +357,9 @@ public:
   virtual BasicType bt() const {
     return T_LONG;
   }
+
+  void set_trip_count(julong tc) { _trip_count = tc; }
+  julong trip_count()            { return _trip_count; }
 
   LongCountedLoopEndNode* loopexit_or_null() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit_or_null(); }
   LongCountedLoopEndNode* loopexit() const { return (LongCountedLoopEndNode*) BaseCountedLoopNode::loopexit(); }
@@ -730,7 +742,7 @@ public:
   uint est_loop_unroll_sz(uint factor) const;
 
   // Compute loop trip count if possible
-  void compute_trip_count(PhaseIdealLoop* phase);
+  void compute_trip_count(PhaseIdealLoop* phase, BasicType bt);
 
   // Compute loop trip count from profile data
   float compute_profile_trip_cnt_helper(Node* n);
@@ -1676,7 +1688,21 @@ private:
                                                      Deoptimization::DeoptReason reason, IfProjNode* old_predicate_proj,
                                                      ParsePredicateSuccessProj* fast_loop_parse_predicate_proj,
                                                      ParsePredicateSuccessProj* slow_loop_parse_predicate_proj);
-  IfProjNode* clone_assertion_predicate_for_unswitched_loops(IfNode* template_assertion_predicate, IfProjNode* predicate,
+
+  void clone_assertion_predicates_to_fast_unswitched_loop(IdealLoopTree* loop,
+                                                          Deoptimization::DeoptReason reason,
+                                                          const Unique_Node_List &list,
+                                                          ParsePredicateSuccessProj*
+                                                          fast_loop_parse_predicate_proj);
+
+  void clone_assertion_predicates_to_slow_unswitched_loop(IdealLoopTree* loop, const Node_List &old_new,
+                                                          Deoptimization::DeoptReason reason,
+                                                          const Unique_Node_List &list,
+                                                          ParsePredicateSuccessProj*
+                                                          slow_loop_parse_predicate_proj);
+
+  IfProjNode* clone_assertion_predicate_for_unswitched_loops(IfNode* template_assertion_predicate,
+                                                             IfProjNode* predicate,
                                                              Deoptimization::DeoptReason reason,
                                                              ParsePredicateSuccessProj* parse_predicate_proj);
   static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry, bool is_fast_loop) PRODUCT_RETURN;
@@ -1791,6 +1817,7 @@ public:
   void pin_array_access_nodes_dependent_on(Node* ctrl);
 
   Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
+  bool short_running_loop(IdealLoopTree* loop, jint stride_con, const Node_List &range_checks, uint iters_limit);
 };
 
 

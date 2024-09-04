@@ -2728,6 +2728,7 @@ const char* Deoptimization::_trap_reason_name[] = {
   "age",
   "predicate",
   "loop_limit_check",
+  "short_running_loop",
   "speculate_class_check",
   "speculate_null_check",
   "speculate_null_assert",

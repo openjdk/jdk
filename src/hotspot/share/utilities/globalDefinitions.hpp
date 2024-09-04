@@ -803,6 +803,15 @@ inline jlong min_signed_integer(BasicType bt) {
   return min_jlong;
 }
 
+inline julong max_unsigned_integer(BasicType bt) {
+  if (bt == T_INT) {
+    return max_juint;
+  }
+  assert(bt == T_LONG, "unsupported");
+  return max_julong;
+}
+
+
 // Auxiliary math routines
 // least common multiple
 extern size_t lcm(size_t a, size_t b);

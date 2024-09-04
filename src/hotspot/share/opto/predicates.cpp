@@ -95,6 +95,7 @@ bool RegularPredicateWithUCT::has_valid_uncommon_trap(const Node* success_proj) 
   assert(RegularPredicate::may_be_predicate_if(success_proj), "must have been checked before");
   const Deoptimization::DeoptReason deopt_reason = uncommon_trap_reason(success_proj->as_IfProj());
   return (deopt_reason == Deoptimization::Reason_loop_limit_check ||
+          deopt_reason == Deoptimization::Reason_short_running_loop ||
           deopt_reason == Deoptimization::Reason_predicate ||
           deopt_reason == Deoptimization::Reason_profile_predicate);
 }
@@ -688,6 +689,8 @@ void Predicates::dump() const {
     _profiled_loop_predicate_block.dump("  ");
     tty->print_cr("- Loop Predicate Block:");
     _loop_predicate_block.dump("  ");
+    tty->print_cr("- Short Running Loop Predicate Block:");
+    _short_running_loop_predicate_block.dump("  ");
     tty->cr();
   } else {
     tty->print_cr("<no predicates>");
