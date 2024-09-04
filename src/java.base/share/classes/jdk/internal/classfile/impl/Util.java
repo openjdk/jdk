@@ -185,8 +185,12 @@ public class Util {
 
     public static void checkKind(Opcode op, Opcode.Kind k) {
         if (op.kind() != k)
-            throw new IllegalArgumentException(
-                    String.format("Wrong opcode kind specified; found %s(%s), expected %s", op, op.kind(), k));
+            throw badOpcodeKindException(op, k);
+    }
+
+    public static IllegalArgumentException badOpcodeKindException(Opcode op, Opcode.Kind k) {
+        return new IllegalArgumentException(
+                String.format("Wrong opcode kind specified; found %s(%s), expected %s", op, op.kind(), k));
     }
 
     public static int flagsToBits(AccessFlag.Location location, Collection<AccessFlag> flags) {
