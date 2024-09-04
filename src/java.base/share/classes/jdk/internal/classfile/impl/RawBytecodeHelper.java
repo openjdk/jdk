@@ -24,8 +24,6 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.Opcode;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -34,11 +32,7 @@ import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.Stable;
 
-import static java.lang.classfile.ClassFile.ASTORE_3;
-import static java.lang.classfile.ClassFile.ISTORE;
-import static java.lang.classfile.ClassFile.LOOKUPSWITCH;
-import static java.lang.classfile.ClassFile.TABLESWITCH;
-import static java.lang.classfile.ClassFile.WIDE;
+import static java.lang.classfile.ClassFile.*;
 
 public final class RawBytecodeHelper {
 
@@ -58,22 +52,42 @@ public final class RawBytecodeHelper {
 
     public static final int ILLEGAL = -1;
 
-    private static final @Stable byte[] LENGTHS;
-
-    static {
-        var lengths = new byte[0x100];
-        Arrays.fill(lengths, (byte) -1);
-        for (var op : Opcode.values()) {
-            if (!op.isWide()) {
-                lengths[op.bytecode()] = (byte) op.sizeIfFixed();
-            } else {
-                // Wide pseudo-opcodes have double the length as normal variants
-                // Must match logic in checkSpecialInstruction()
-                assert lengths[op.bytecode() & 0xFF] * 2 == op.sizeIfFixed();
-            }
-        }
-        LENGTHS = lengths;
-    }
+    /**
+     * The length of opcodes, 0 for
+     * This is generated as if:
+     * {@snippet lang=java :
+     * var lengths = new byte[0x100];
+     * Arrays.fill(lengths, (byte) -1);
+     * for (var op : Opcode.values()) {
+     *     if (!op.isWide()) {
+     *         lengths[op.bytecode()] = (byte) op.sizeIfFixed();
+     *     } else {
+     *         // Wide pseudo-opcodes have double the length as normal variants
+     *         // Must match logic in checkSpecialInstruction()
+     *         assert lengths[op.bytecode() & 0xFF] * 2 == op.sizeIfFixed();
+     *     }
+     * }
+     * }
+     * Tested in UtilTest.
+     */
+    public static final @Stable byte[] LENGTHS = new byte[] {
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            2, 3, 2, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+            1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3,
+            3, 3, 3, 3, 3, 3, 3, 3, 3, 2, -1, -1, 1, 1, 1, 1,
+            1, 1, 3, 3, 3, 3, 3, 3, 3, 5, 5, 3, 2, 3, 1, 1,
+            3, 3, 1, 1, -1, 4, 3, 3, 5, 5, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+            -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    };
 
     public static boolean isStoreIntoLocal(int code) {
         return (ISTORE <= code && code <= ASTORE_3);
@@ -232,11 +246,12 @@ public final class RawBytecodeHelper {
         int len = LENGTHS[code];
         opcode = code;
         isWide = false;
-        if (len < 0) {
+        // Consider using 0 vs -1 to represent invalid vs special
+        if (len <= 0) {
             len = checkSpecialInstruction(code);
         }
 
-        if (len < 0 || (nextBci += len) > endBci()) {
+        if (len <= 0 || (nextBci += len) > endBci()) {
             opcode = ILLEGAL;
         }
     }
