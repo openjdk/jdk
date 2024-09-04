@@ -344,7 +344,7 @@ Java_java_io_WinNTFileSystem_getFinalPath0(JNIEnv* env, jobject this, jstring pa
     } END_UNICODE_STRING(env, path);
 
     if (rv == NULL && !(*env)->ExceptionCheck(env)) {
-        JNU_ThrowIOExceptionWithLastError(env, "Bad pathname"); // XXX message?
+        JNU_ThrowIOExceptionWithLastError(env, "Bad pathname");
     }
 
     return rv;

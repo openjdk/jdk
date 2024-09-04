@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -126,13 +127,14 @@ public class GetCanonicalPath {
         assertFalse(path.length() > 3, "Drive letter incorrectly represented");
     }
 
-    private static Path createPath(String pathname) throws IOException {
+    // Create a File with the given pathname and return the File as a Path
+    private static Path createFile(String pathname) throws IOException {
         File file = new File(pathname);
         file.deleteOnExit();
         return file.toPath();
     }
 
-    private static boolean testLinks = true;
+    private static boolean supportsLinks = true;
     private static String linkMessage;
 
     private static Path link;
@@ -149,45 +151,42 @@ public class GetCanonicalPath {
         final String FILE    = "file.txt";
 
         // Create directories dir/subdir
-        Path dir = createPath(DIR);
-        Path subdir = createPath(dir.resolve(SUBDIR).toString());
+        Path dir = createFile(DIR);
+        Path subdir = createFile(dir.resolve(SUBDIR).toString());
         Files.createDirectories(subdir);
 
         // Create file dir/subdir/target.txt
-        Path target = createPath(subdir.resolve(TARGET).toString());
+        Path target = createFile(subdir.resolve(TARGET).toString());
         Files.createFile(target);
 
         // Create symbolic link link -> dir
-        link = createPath(Path.of(LINK).toString());
+        link = createFile(Path.of(LINK).toString());
         try {
             Files.createSymbolicLink(link, dir);
         } catch (UnsupportedOperationException | IOException x) {
             if (OS.WINDOWS.isCurrentOs()) {
-                testLinks = false;
-                linkMessage = x.getMessage();
+                supportsLinks = false;
+                linkMessage = "\"" + x.getMessage() + "\"";
                 return;
             } else {
                 throw x;
             }
         }
 
-        sublink = createPath(Path.of(DIR, SUBDIR, SUBLINK).toString());
-        Path file = createPath(Path.of(DIR, SUBDIR, FILE).toString());
+        sublink = createFile(Path.of(DIR, SUBDIR, SUBLINK).toString());
+        Path file = createFile(Path.of(DIR, SUBDIR, FILE).toString());
         Files.createFile(file);
 
         // Create symbolic link dir/subdir/sublink -> file.txt
         Files.createSymbolicLink(sublink, Path.of(FILE));
         sublink.toFile().deleteOnExit();
 
-        subsub = createPath(Path.of(LINK, SUBDIR, SUBLINK).toString());
+        subsub = createFile(Path.of(LINK, SUBDIR, SUBLINK).toString());
     }
 
     @Test
     void linkToDir() throws IOException {
-        if (!testLinks) {
-            System.err.println("Links not tested: \"" + linkMessage + "\"");
-            return;
-        }
+        Assumptions.assumeTrue(supportsLinks, linkMessage);
 
         // Check link evaluates to dir
         assertEquals(link.toRealPath().toString(),
@@ -196,10 +195,7 @@ public class GetCanonicalPath {
 
     @Test
     void linkToFile() throws IOException {
-        if (!testLinks) {
-            System.err.println("Links not tested: \"" + linkMessage + "\"");
-            return;
-        }
+        Assumptions.assumeTrue(supportsLinks, linkMessage);
 
         // Check sublink evaluates to file.txt
         assertEquals(sublink.toRealPath().toString(),
@@ -208,10 +204,7 @@ public class GetCanonicalPath {
 
     @Test
     void linkToFileInSubdir() throws IOException {
-        if (!testLinks) {
-            System.err.println("Links not tested: \"" + linkMessage + "\"");
-            return;
-        }
+        Assumptions.assumeTrue(supportsLinks, linkMessage);
 
         // Check link/subdir/sublink evaluates to dir/subdir/file.txt
         assertEquals(subsub.toRealPath().toString(),
