@@ -51,6 +51,7 @@ import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
@@ -188,10 +189,52 @@ public abstract sealed class AbstractMemorySegmentImpl
         return StreamSupport.stream(spliterator(elementLayout), false);
     }
 
+    // FILL_NATIVE_THRESHOLD must be a power of two and should be greater than 2^3
+    // Update the value for Aarch64 once 8338975 is fixed.
+    private static final long FILL_NATIVE_THRESHOLD = 1L << (Architecture.isAARCH64() ? 10 : 5);
+
     @Override
-    public final MemorySegment fill(byte value){
-        checkAccess(0, length, false);
-        SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
+    @ForceInline
+    public final MemorySegment fill(byte value) {
+        checkReadOnly(false);
+        if (length == 0) {
+            // Implicit state check
+            checkValidState();
+        } else if (length < FILL_NATIVE_THRESHOLD) {
+            // 0 <= length < FILL_NATIVE_LIMIT : 0...0X...XXXX
+
+            // Handle smaller segments directly without transitioning to native code
+            final long u = Byte.toUnsignedLong(value);
+            final long longValue = u << 56 | u << 48 | u << 40 | u << 32 | u << 24 | u << 16 | u << 8 | u;
+
+            int offset = 0;
+            // 0...0X...X000
+            final int limit = (int) (length & (FILL_NATIVE_THRESHOLD - 8));
+            for (; offset < limit; offset += 8) {
+                SCOPED_MEMORY_ACCESS.putLong(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, longValue);
+            }
+            int remaining = (int) length - limit;
+            // 0...0X00
+            if (remaining >= 4) {
+                SCOPED_MEMORY_ACCESS.putInt(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, (int) longValue);
+                offset += 4;
+                remaining -= 4;
+            }
+            // 0...00X0
+            if (remaining >= 2) {
+                SCOPED_MEMORY_ACCESS.putShort(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, (short) longValue);
+                offset += 2;
+                remaining -= 2;
+            }
+            // 0...000X
+            if (remaining == 1) {
+                SCOPED_MEMORY_ACCESS.putByte(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, value);
+            }
+            // We have now fully handled 0...0X...XXXX
+        } else {
+            // Handle larger segments via native calls
+            SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
+        }
         return this;
     }
 
