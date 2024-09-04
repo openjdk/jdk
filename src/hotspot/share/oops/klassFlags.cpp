@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +19,16 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
- /*
- * @test
- * @run main/native JniVersion
- */
-public class JniVersion {
+#include "precompiled.hpp"
+#include "oops/klassFlags.hpp"
+#include "utilities/ostream.hpp"
 
-    public static final int JNI_VERSION_24 = 0x00180000;
-
-    public static void main(String... args) throws Exception {
-        System.loadLibrary("JniVersion");
-        int res = getJniVersion();
-        if (res != JNI_VERSION_24) {
-            throw new Exception("Unexpected value returned from getJniVersion(): 0x" + Integer.toHexString(res));
-        }
-    }
-
-    static native int getJniVersion();
+void KlassFlags::print_on(outputStream* st) const {
+#define KLASS_FLAGS_PRINT(name, ignore)          \
+  if (name()) st->print(#name " ");
+  KLASS_FLAGS_DO(KLASS_FLAGS_PRINT)
+#undef KLASS_FLAGS_PRINT
 }

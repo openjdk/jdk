@@ -99,6 +99,7 @@ public class SwingButtonResizeTestWithOpenGL {
         frame.setLocation(200, 200);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         button.setPreferredSize(new Dimension(300, 300));
+        button.setFocusPainted(false);
         button.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent fe) {
                 focusGainedLatch.countDown();
@@ -124,9 +125,8 @@ public class SwingButtonResizeTestWithOpenGL {
 
         try {
             robot = new Robot();
-            robot.setAutoWaitForIdle(true);
-            robot.setAutoDelay(200);
-
+            robot.waitForIdle();
+            robot.delay(1000);
             if (focusGainedLatch.await(3, TimeUnit.SECONDS)) {
                 System.out.println("Button focus gained...");
             } else {
@@ -142,17 +142,18 @@ public class SwingButtonResizeTestWithOpenGL {
             // some platforms may not support maximize frame
             if (frame.getToolkit().isFrameStateSupported(
                     JFrame.MAXIMIZED_BOTH)) {
-                robot.waitForIdle();
                 // maximize frame from normal size
                 frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
                 System.out.println("Frame is maximized");
                 robot.waitForIdle();
+                robot.delay(100);
 
                 if (frame.getToolkit().isFrameStateSupported(JFrame.NORMAL)) {
                     System.out.println("Frame is back to normal");
                     // resize from maximum size to normal
                     frame.setExtendedState(JFrame.NORMAL);
-
+                    robot.waitForIdle();
+                    robot.delay(100);
                     // capture image of JButton after resize
                     System.out.println(
                             "Getting image of JButton after resize..image2");
@@ -209,9 +210,8 @@ public class SwingButtonResizeTestWithOpenGL {
     }
 
     private void disposeFrame() {
-        if (frame != null) {
+        if(frame != null) {
             frame.dispose();
-            frame = null;
         }
     }
 
