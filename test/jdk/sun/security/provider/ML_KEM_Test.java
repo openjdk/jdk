@@ -39,8 +39,8 @@ import java.security.spec.*;
 public class ML_KEM_Test {
     public static void main(String[] args) throws Exception {
         var g = KeyPairGenerator.getInstance("ML-KEM");
-        Utils.runAndCheckException(() -> g.generateKeyPair(), IllegalStateException.class);
 
+        Asserts.assertTrue(g.generateKeyPair().getPrivate().toString().contains("ML-KEM-768"));
         Asserts.assertTrue(KeyPairGenerator.getInstance("ML-KEM-512").generateKeyPair().getPrivate().toString().contains("ML-KEM-512"));
         Asserts.assertTrue(KeyPairGenerator.getInstance("ML-KEM-768").generateKeyPair().getPrivate().toString().contains("ML-KEM-768"));
         Asserts.assertTrue(KeyPairGenerator.getInstance("ML-KEM-1024").generateKeyPair().getPrivate().toString().contains("ML-KEM-1024"));

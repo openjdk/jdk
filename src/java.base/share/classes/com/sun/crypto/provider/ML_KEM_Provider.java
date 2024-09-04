@@ -43,7 +43,8 @@ public final class ML_KEM_Provider {
 
     public static class KPG extends NamedKeyPairGenerator {
         public KPG() {
-            super("ML-KEM", "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024");
+            // ML-KEM-768 is the default
+            super("ML-KEM", "ML-KEM-768", "ML-KEM-512", "ML-KEM-1024");
         }
 
         protected KPG(String pname) {

@@ -73,7 +73,9 @@ public abstract class NamedKEM implements KEMSpi {
         // translate and check
         var nk = (NamedX509Key) new NamedKeyFactory(fname, pnames)
                 .engineTranslateKey(publicKey);
-        return getKeyConsumerImpl(this, nk.getParams(), nk.getRawBytes(), secureRandom);
+        var pk = nk.getRawBytes();
+        checkPublicKey(nk.getParams().getName(), pk);
+        return getKeyConsumerImpl(this, nk.getParams(), pk, secureRandom);
     }
 
     @Override
@@ -86,7 +88,9 @@ public abstract class NamedKEM implements KEMSpi {
         // translate and check
         var nk = (NamedPKCS8Key) new NamedKeyFactory(fname, pnames)
                 .engineTranslateKey(privateKey);
-        return getKeyConsumerImpl(this, nk.getParams(), nk.getRawBytes(), null);
+        var sk = nk.getRawBytes();
+        checkPrivateKey(nk.getParams().getName(), sk);
+        return getKeyConsumerImpl(this, nk.getParams(), sk, null);
     }
 
     // We don't have a flag on whether key is public key or private key.
@@ -159,8 +163,10 @@ public abstract class NamedKEM implements KEMSpi {
      * @param encap the key encapsulation message
      * @return the shared key
      * @throws ProviderException if there is an internal error
+     * @throws DecapsulateException if there is another error
      */
-    public abstract byte[] decap(String name, byte[] sk, byte[] encap);
+    public abstract byte[] decap(String name, byte[] sk, byte[] encap)
+            throws DecapsulateException;
 
     /**
      * User-defined function returning shared secret key length.
@@ -180,4 +186,35 @@ public abstract class NamedKEM implements KEMSpi {
      */
     public abstract int clen(String name);
 
+    /**
+     * User-defined function to validate a public key.
+     *
+     * This method will be called in {@code newEncapsulator}. This gives provider a chance to
+     * reject the key so an {@code InvalidKeyException} can be thrown earlier.
+     *
+     * The default implementation returns with an exception.
+     *
+     * @param name parameter name
+     * @param pk public key in raw bytes
+     * @throws InvalidKeyException if the key is invalid
+     */
+    public void checkPublicKey(String name, byte[] pk) throws InvalidKeyException {
+        return;
+    }
+
+    /**
+     * User-defined function to validate a private key.
+     *
+     * This method will be called in {@code newDecapsulator}. This gives provider a chance to
+     * reject the key so an {@code InvalidKeyException} can be thrown earlier.
+     *
+     * The default implementation returns with an exception.
+     *
+     * @param name parameter name
+     * @param sk public key in raw bytes
+     * @throws InvalidKeyException if the key is invalid
+     */
+    public void checkPrivateKey(String name, byte[] sk) throws InvalidKeyException {
+        return;
+    }
 }

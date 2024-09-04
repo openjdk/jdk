@@ -81,12 +81,8 @@ public class NamedKeyFactoryTest {
         Utils.runAndCheckException(() -> kf5.translateKey(pk3), InvalidKeyException.class);
 
         var kpg = KeyPairGenerator.getInstance("SHA");
-        try {
-            kpg.generateKeyPair();
-            throw new RuntimeException();
-        } catch (IllegalStateException e) {
-            // good
-        }
+        Asserts.assertTrue(kpg.generateKeyPair().getPublic().toString().contains("SHA-256"));
+
         kpg.initialize(new NamedParameterSpec("ShA-256"));
         Asserts.assertTrue(kpg.generateKeyPair().getPublic().toString().contains("SHA-256"));
         kpg.initialize(new NamedParameterSpec("SHa-512"));

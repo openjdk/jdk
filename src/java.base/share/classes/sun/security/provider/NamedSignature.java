@@ -72,6 +72,7 @@ public abstract class NamedSignature extends SignatureSpi {
                 .engineTranslateKey(publicKey);
         name = nk.getParams().getName();
         pubKey = nk.getRawBytes();
+        checkPublicKey(name, pubKey);
         if (secKey != null) {
             Arrays.fill(secKey, (byte)0);
             secKey = null;
@@ -86,6 +87,7 @@ public abstract class NamedSignature extends SignatureSpi {
                 .engineTranslateKey(privateKey);
         name = nk.getParams().getName();
         secKey = nk.getRawBytes();
+        checkPrivateKey(name, secKey);
         pubKey = null;
         bout.reset();
     }
@@ -156,17 +158,54 @@ public abstract class NamedSignature extends SignatureSpi {
      * @param sr SecureRandom object, null if not initialized
      * @return the signature
      * @throws ProviderException if there is an internal error
+     * @throws SignatureException if there is another error
      */
-    public abstract byte[] sign0(String name, byte[] sk, byte[] msg, SecureRandom sr);
+    public abstract byte[] sign0(String name, byte[] sk, byte[] msg, SecureRandom sr)
+            throws SignatureException;
 
     /**
      * User-defined verify function.
+     *
      * @param name parameter name
      * @param pk public key in raw bytes
      * @param msg the message
      * @param sig the signature
      * @return true if verified
      * @throws ProviderException if there is an internal error
+     * @throws SignatureException if there is another error
      */
-    public abstract boolean verify0(String name, byte[] pk, byte[] msg, byte[] sig);
+    public abstract boolean verify0(String name, byte[] pk, byte[] msg, byte[] sig)
+            throws SignatureException;
+
+    /**
+     * User-defined function to validate a public key.
+     *
+     * This method will be called in {@code initVerify}. This gives provider a chance to
+     * reject the key so an {@code InvalidKeyException} can be thrown earlier.
+     *
+     * The default implementation returns with an exception.
+     *
+     * @param name parameter name
+     * @param pk public key in raw bytes
+     * @throws InvalidKeyException if the key is invalid
+     */
+    public void checkPublicKey(String name, byte[] pk) throws InvalidKeyException {
+        return;
+    }
+
+    /**
+     * User-defined function to validate a private key.
+     *
+     * This method will be called in {@code initSign}. This gives provider a chance to
+     * reject the key so an {@code InvalidKeyException} can be thrown earlier.
+     *
+     * The default implementation returns with an exception.
+     *
+     * @param name parameter name
+     * @param sk public key in raw bytes
+     * @throws InvalidKeyException if the key is invalid
+     */
+    public void checkPrivateKey(String name, byte[] sk) throws InvalidKeyException {
+        return;
+    }
 }

@@ -43,6 +43,8 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
     protected String name = null; // init as
     private SecureRandom secureRandom;
 
+    // Implementors should call this ctor with at least one pnames.
+    // If multiple, 1st becomes the default one.
     public NamedKeyPairGenerator(String fname, String... pnames) {
         this.fname = Objects.requireNonNull(fname);
         if (pnames == null || pnames.length == 0) {
@@ -73,16 +75,6 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
         this.secureRandom = random ;
     }
 
-    private String currentParamSet() throws IllegalStateException {
-        if (name != null) {
-            return name;
-        }
-        if (pnames.length == 1) {
-            return pnames[0];
-        }
-        throw new IllegalStateException("No default parameter set");
-    }
-
     @Override
     public void initialize(int keysize, SecureRandom random) {
         if (keysize != -1) {
@@ -93,7 +85,7 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
 
     @Override
     public KeyPair generateKeyPair() {
-        String pname = currentParamSet();
+        String pname = name != null ? name : pnames[0];
         var keys = generateKeyPair0(pname, secureRandom);
         try {
             return new KeyPair(new NamedX509Key(fname, pname, keys[0]),

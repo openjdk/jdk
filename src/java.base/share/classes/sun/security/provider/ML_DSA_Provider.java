@@ -40,7 +40,8 @@ public class ML_DSA_Provider {
 
     public static class KPG extends NamedKeyPairGenerator {
         public KPG() {
-            super("ML-DSA", "ML-DSA-44", "ML-DSA-65", "ML-DSA-87");
+            // ML-DSA-65 is default
+            super("ML-DSA", "ML-DSA-65", "ML-DSA-44", "ML-DSA-87");
         }
 
         public KPG(String pname) {

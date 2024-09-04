@@ -39,8 +39,8 @@ import java.security.spec.*;
 public class ML_DSA_Test {
     public static void main(String[] args) throws Exception {
         var g = KeyPairGenerator.getInstance("ML-DSA");
-        Utils.runAndCheckException(() -> g.generateKeyPair(), IllegalStateException.class);
 
+        Asserts.assertTrue(g.generateKeyPair().getPrivate().toString().contains("ML-DSA-65"));
         Asserts.assertTrue(KeyPairGenerator.getInstance("ML-DSA-44").generateKeyPair().getPrivate().toString().contains("ML-DSA-44"));
         Asserts.assertTrue(KeyPairGenerator.getInstance("ML-DSA-65").generateKeyPair().getPrivate().toString().contains("ML-DSA-65"));
         Asserts.assertTrue(KeyPairGenerator.getInstance("ML-DSA-87").generateKeyPair().getPrivate().toString().contains("ML-DSA-87"));
