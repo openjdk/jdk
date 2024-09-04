@@ -26,7 +26,7 @@
 #ifndef SHARE_NMT_MEMFLAGBITMAP_HPP
 #define SHARE_NMT_MEMFLAGBITMAP_HPP
 
-#include "nmt/memType.hpp"
+#include "nmt/memflags.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -40,12 +40,12 @@ public:
 
   uint32_t raw_value() const { return _v; }
 
-  void set_flag(MemType f) {
+  void set_flag(MEMFLAGS f) {
     const int bitno = (int)f;
     _v |= nth_bit(bitno);
   }
 
-  bool has_flag(MemType f) const {
+  bool has_flag(MEMFLAGS f) const {
     const int bitno = (int)f;
     return _v & nth_bit(bitno);
   }

@@ -1712,7 +1712,7 @@ void FileMapInfo::close() {
  */
 static char* map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
-                        bool allow_exec, MemType flags = mtNone) {
+                        bool allow_exec, MEMFLAGS flags = mtNone) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
                              AlwaysPreTouch ? false : read_only,
                              allow_exec, flags);

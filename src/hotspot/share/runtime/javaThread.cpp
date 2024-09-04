@@ -409,7 +409,7 @@ void JavaThread::check_for_valid_safepoint_state() {
 
 // A JavaThread is a normal Java thread
 
-JavaThread::JavaThread(MemType flags) :
+JavaThread::JavaThread(MEMFLAGS flags) :
   Thread(flags),
   // Initialize fields
   _on_thread_list(false),
@@ -634,7 +634,7 @@ void JavaThread::block_if_vm_exited() {
   }
 }
 
-JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz, MemType flags) : JavaThread(flags) {
+JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz, MEMFLAGS flags) : JavaThread(flags) {
   set_entry_point(entry_point);
   // Create the native thread itself.
   // %note runtime_23

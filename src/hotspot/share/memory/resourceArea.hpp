@@ -51,10 +51,10 @@ class ResourceArea: public Arena {
 #endif // ASSERT
 
 public:
-  ResourceArea(MemType flags = mtThread) :
+  ResourceArea(MEMFLAGS flags = mtThread) :
     Arena(flags, Arena::Tag::tag_ra) DEBUG_ONLY(COMMA _nesting(0)) {}
 
-  ResourceArea(size_t init_size, MemType flags = mtThread) :
+  ResourceArea(size_t init_size, MEMFLAGS flags = mtThread) :
     Arena(flags, Arena::Tag::tag_ra, init_size) DEBUG_ONLY(COMMA _nesting(0)) {
   }
 
