@@ -124,7 +124,6 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
 
     // Concurrent remembered set scanning
     entry_scan_remembered_set();
-    // TODO: When RS scanning yields, we will need a check_cancellation_and_abort() degeneration point here.
 
     // Concurrent mark roots
     entry_mark_roots();
@@ -727,7 +726,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
         heap->verifier()->verify_before_evacuation();
       }
 
-      // TODO: Do we need to set this if we are only promoting regions in place? We don't need the barriers on for that.
       heap->set_evacuation_in_progress(true);
 
       // Verify before arming for concurrent processing.

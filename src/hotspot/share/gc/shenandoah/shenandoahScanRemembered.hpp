@@ -208,7 +208,6 @@ private:
   ShenandoahCardTable *_card_table;
   size_t _card_shift;
   size_t _total_card_count;
-  size_t _cluster_count;
   HeapWord *_whole_heap_base;   // Points to first HeapWord of data contained within heap memory
   CardValue* _byte_map;         // Points to first entry within the card table
   CardValue* _byte_map_base;    // Points to byte_map minus the bias computed from address of heap memory
@@ -238,13 +237,6 @@ public:
   inline void mark_range_as_dirty(HeapWord *p, size_t num_heap_words);
   inline void mark_card_as_clean(HeapWord *p);
   inline void mark_range_as_clean(HeapWord *p, size_t num_heap_words);
-  inline size_t cluster_count() const;
-
-  // Called by GC thread at start of concurrent mark to exchange roles of read and write remembered sets.
-  // Not currently used because mutator write barrier does not honor changes to the location of card table.
-  // Instead of swap_remset, the current implementation of concurrent remembered set scanning does reset_remset
-  // in parallel threads, each invocation processing one entire HeapRegion at a time.
-  void swap_remset() {  _card_table->swap_card_tables(); }
 
   // Merge any dirty values from write table into the read table, while leaving
   // the write table unchanged.
@@ -252,9 +244,6 @@ public:
 
   // Destructively copy the write table to the read table, and clean the write table.
   void reset_remset(HeapWord* start, size_t word_count);
-
-  // Called by GC thread after scanning old remembered set in order to prepare for next GC pass
-  void clear_old_remset() {  _card_table->clear_read_table(); }
 };
 
 // A ShenandoahCardCluster represents the minimal unit of work
@@ -375,51 +364,49 @@ private:
   static const int MaxCardSize = NOT_LP64(512) LP64_ONLY(1024);
   STATIC_ASSERT((MaxCardSize / HeapWordSize) - 1 <= FirstStartBits);
 
-  crossing_info *object_starts;
+  crossing_info *_object_starts;
 
 public:
   // If we're setting first_start, assume the card has an object.
   inline void set_first_start(size_t card_index, uint8_t value) {
-    object_starts[card_index].offsets.first = ObjectStartsInCardRegion | value;
+    _object_starts[card_index].offsets.first = ObjectStartsInCardRegion | value;
   }
 
   inline void set_last_start(size_t card_index, uint8_t value) {
-    object_starts[card_index].offsets.last = value;
+    _object_starts[card_index].offsets.last = value;
   }
 
   inline void set_starts_object_bit(size_t card_index) {
-    object_starts[card_index].offsets.first |= ObjectStartsInCardRegion;
+    _object_starts[card_index].offsets.first |= ObjectStartsInCardRegion;
   }
 
   inline void clear_starts_object_bit(size_t card_index) {
-    object_starts[card_index].offsets.first &= ~ObjectStartsInCardRegion;
+    _object_starts[card_index].offsets.first &= ~ObjectStartsInCardRegion;
   }
 
   // Returns true iff an object is known to start within the card memory associated with card card_index.
   inline bool starts_object(size_t card_index) const {
-    return (object_starts[card_index].offsets.first & ObjectStartsInCardRegion) != 0;
+    return (_object_starts[card_index].offsets.first & ObjectStartsInCardRegion) != 0;
   }
 
   inline void clear_objects_in_range(HeapWord *addr, size_t num_words) {
     size_t card_index = _rs->card_index_for_addr(addr);
     size_t last_card_index = _rs->card_index_for_addr(addr + num_words - 1);
     while (card_index <= last_card_index)
-      object_starts[card_index++].short_word = 0;
+      _object_starts[card_index++].short_word = 0;
   }
 
   ShenandoahCardCluster(ShenandoahDirectCardMarkRememberedSet *rs) {
     _rs = rs;
-    // TODO: We don't really need object_starts entries for every card entry.  We only need these for
-    // the card entries that correspond to old-gen memory.  But for now, let's be quick and dirty.
-    object_starts = NEW_C_HEAP_ARRAY(crossing_info, rs->total_cards(), mtGC);
+    _object_starts = NEW_C_HEAP_ARRAY(crossing_info, rs->total_cards(), mtGC);
     for (size_t i = 0; i < rs->total_cards(); i++) {
-      object_starts[i].short_word = 0;
+      _object_starts[i].short_word = 0;
     }
   }
 
   ~ShenandoahCardCluster() {
-    FREE_C_HEAP_ARRAY(crossing_info, object_starts);
-    object_starts = nullptr;
+    FREE_C_HEAP_ARRAY(crossing_info, _object_starts);
+    _object_starts = nullptr;
   }
 
   // There is one entry within the object_starts array for each card entry.
@@ -428,7 +415,7 @@ public:
   //  into a single larger "free segment".  As each two objects are
   //  coalesced together, the start information pertaining to the second
   //  object must be removed from the objects_starts array.  If the
-  //  second object had been been the first object within card memory,
+  //  second object had been the first object within card memory,
   //  the new first object is the object that follows that object if
   //  that starts within the same card memory, or NoObject if the
   //  following object starts within the following cluster.  If the
@@ -603,7 +590,7 @@ public:
 
   // register_object_without_lock() does not require that the caller hold
   // the heap lock before calling it, under the assumption that the
-  // caller has assure no other thread will endeavor to concurrently
+  // caller has assured no other thread will endeavor to concurrently
   // register objects that start within the same card's memory region
   // as address.
   void register_object_without_lock(HeapWord* address);
@@ -773,32 +760,19 @@ public:
 
 
   // Card index is zero-based relative to first spanned card region.
-  size_t last_valid_index();
-  size_t total_cards();
   size_t card_index_for_addr(HeapWord *p);
   HeapWord *addr_for_card_index(size_t card_index);
   bool is_card_dirty(size_t card_index);
   bool is_write_card_dirty(size_t card_index);
-  void mark_card_as_dirty(size_t card_index);
-  void mark_range_as_dirty(size_t card_index, size_t num_cards);
-  void mark_card_as_clean(size_t card_index);
-  void mark_range_as_clean(size_t card_index, size_t num_cards);
   bool is_card_dirty(HeapWord *p);
   void mark_card_as_dirty(HeapWord *p);
   void mark_range_as_dirty(HeapWord *p, size_t num_heap_words);
   void mark_card_as_clean(HeapWord *p);
   void mark_range_as_clean(HeapWord *p, size_t num_heap_words);
-  size_t cluster_count();
-
-  // Called by GC thread at start of concurrent mark to exchange roles of read and write remembered sets.
-  void swap_remset() { _rs->swap_remset(); }
 
   void reset_remset(HeapWord* start, size_t word_count) { _rs->reset_remset(start, word_count); }
 
   void merge_write_table(HeapWord* start, size_t word_count) { _rs->merge_write_table(start, word_count); }
-
-  // Called by GC thread after scanning old remembered set in order to prepare for next GC pass
-  void clear_old_remset() { _rs->clear_old_remset(); }
 
   size_t cluster_for_addr(HeapWord *addr);
   HeapWord* addr_for_cluster(size_t cluster_no);

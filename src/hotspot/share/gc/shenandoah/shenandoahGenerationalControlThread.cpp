@@ -128,13 +128,6 @@ void ShenandoahGenerationalControlThread::run_service() {
         policy->record_alloc_failure_to_degenerated(degen_point);
         set_gc_mode(stw_degenerated);
       } else {
-        // TODO: if humongous_alloc_failure_pending, there might be value in trying a "compacting" degen before
-        // going all the way to full.  But it's a lot of work to implement this, and it may not provide value.
-        // A compacting degen can move young regions around without doing full old-gen mark (relying upon the
-        // remembered set scan), so it might be faster than a full gc.
-        //
-        // Longer term, think about how to defragment humongous memory concurrently.
-
         heuristics->record_allocation_failure_gc();
         policy->record_alloc_failure_to_full();
         generation = GLOBAL;

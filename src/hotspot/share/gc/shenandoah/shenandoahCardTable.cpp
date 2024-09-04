@@ -40,7 +40,6 @@ void ShenandoahCardTable::initialize() {
   HeapWord* low_bound  = _whole_heap.start();
   HeapWord* high_bound = _whole_heap.end();
 
-  // TODO: Why rs_align is 0 on page_size == os::vm_page_size?
   // ReservedSpace constructor would assert rs_align >= os::vm_page_size().
   const size_t rs_align = _page_size == os::vm_page_size() ? 0 : MAX2(_page_size, granularity);
 
@@ -76,14 +75,6 @@ void ShenandoahCardTable::initialize() {
   log_trace(gc, barrier)("    &_read_byte_map[0]: " INTPTR_FORMAT "  &_read_byte_map[_last_valid_index]: " INTPTR_FORMAT,
                   p2i(&_read_byte_map[0]), p2i(&_read_byte_map[last_valid_index()]));
   log_trace(gc, barrier)("    _read_byte_map_base: " INTPTR_FORMAT, p2i(_read_byte_map_base));
-
-  // TODO: As currently implemented, we do not swap pointers between _read_byte_map and _write_byte_map
-  // because the mutator write barrier hard codes the address of the _write_byte_map_base.  Instead,
-  // the current implementation simply copies contents of _write_byte_map onto _read_byte_map and cleans
-  // the entirety of _write_byte_map at the init_mark safepoint.
-  //
-  // Alternatively, we may switch to a SATB-based write barrier and replace the direct card-marking
-  // remembered set with something entirely different.
 }
 
 void ShenandoahCardTable::initialize(const ReservedSpace& card_table) {
@@ -111,36 +102,4 @@ CardValue* ShenandoahCardTable::read_byte_for(const void* p) {
 
 size_t ShenandoahCardTable::last_valid_index() {
   return CardTable::last_valid_index();
-}
-
-// TODO: This service is not currently used because we are not able to swap _read_byte_map_base and
-// _write_byte_map_base pointers.  If we were able to do so, we would invoke clear_read_table "immediately"
-// following the end of concurrent remembered set scanning so that this read card table would be ready
-// to serve as the new write card table at the time these pointer values were next swapped.
-//
-// In the current implementation, the write-table is cleared immediately after its contents is copied to
-// the read table, obviating the need for this service.
-void ShenandoahCardTable::clear_read_table() {
-  for (size_t i = 0; i < _byte_map_size; i++) {
-    _read_byte_map[i] = clean_card;
-  }
-}
-
-// TODO: This service is not currently used because the mutator write barrier implementation hard codes the
-// location of the _write_byte_may_base.  If we change the mutator's write barrier implementation, then we
-// may use this service to exchange the roles of the read-card-table and write-card-table.
-void ShenandoahCardTable::swap_card_tables() {
-  shenandoah_assert_safepoint();
-
-  CardValue* save_value = _read_byte_map;
-  _read_byte_map = _write_byte_map;
-  _write_byte_map = save_value;
-
-  save_value = _read_byte_map_base;
-  _read_byte_map_base = _write_byte_map_base;
-  _write_byte_map_base = save_value;
-
-  // update the superclass instance variables
-  _byte_map = _write_byte_map;
-  _byte_map_base = _write_byte_map_base;
 }
