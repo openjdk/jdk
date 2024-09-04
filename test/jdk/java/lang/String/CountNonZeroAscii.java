@@ -46,12 +46,12 @@ public class CountNonZeroAscii {
         assertEquals(bytes.length, JLA.countNonZeroAscii(s));
 
         for (int i = 0; i < bytes.length; i++) {
-            Arrays.fill(bytes, (byte) 'A');
             for (int j = Byte.MIN_VALUE; j <= 0; j++) {
                 bytes[i] = (byte) j;
                 s = new String(bytes, StandardCharsets.ISO_8859_1);
                 assertEquals(i, JLA.countNonZeroAscii(s));
             }
+            bytes[i] = (byte) 'A';
         }
     }
 
