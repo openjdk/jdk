@@ -2057,7 +2057,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         int sco_offset = in_bytes(Klass::super_check_offset_offset());
         __ lwz(chk_off, sco_offset, super_k);
 
-        __ call_c(copyfunc_addr, relocInfo::runtime_call_type); ;
+        __ call_c(copyfunc_addr, relocInfo::runtime_call_type);
 
 #ifndef PRODUCT
         if (PrintC1Statistics) {
@@ -2181,7 +2181,8 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   // Arraycopy stubs takes a length in number of elements, so don't scale it.
   __ mr(len, length);
-  __ call_c(entry, relocInfo::runtime_call_type); 
+  __ call_c(entry, relocInfo::runtime_call_type);
+
   if (stub != nullptr) {
     __ bind(*stub->continuation());
   }
