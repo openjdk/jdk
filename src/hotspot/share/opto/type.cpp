@@ -1593,9 +1593,8 @@ const TypeInt* TypeInt::SYMINT; // symmetric range [-max_jint..max_jint]
 const TypeInt* TypeInt::TYPE_DOMAIN; // alias for TypeInt::INT
 
 TypeInt::TypeInt(const TypeIntPrototype<jint, juint>& t, int w, bool dual)
-  : TypeInteger(Int, t.normalize_widen(w), dual),
-    _lo(t._srange._lo), _hi(t._srange._hi), _ulo(t._urange._lo), _uhi(t._urange._hi),
-    _zeros(t._bits._zeros), _ones(t._bits._ones) {
+  : TypeInteger(Int, t.normalize_widen(w), dual), _lo(t._srange._lo), _hi(t._srange._hi),
+    _ulo(t._urange._lo), _uhi(t._urange._hi), _bits(t._bits) {
   DEBUG_ONLY(t.verify_constraints());
 }
 
@@ -1623,8 +1622,7 @@ const Type* TypeInt::make(const TypeIntPrototype<jint, juint>& t, int w) {
 
 bool TypeInt::contains(jint i) const {
   juint u = i;
-  return i >= _lo && i <= _hi && u >= _ulo && u <= _uhi &&
-         (u & _zeros) == 0 && (~u & _ones) == 0;
+  return i >= _lo && i <= _hi && u >= _ulo && u <= _uhi && _bits.is_satisfied_by(u);
 }
 
 bool TypeInt::contains(const TypeInt* t) const {
@@ -1640,7 +1638,7 @@ const Type* TypeInt::xmeet(const Type* t) const {
 }
 
 const Type* TypeInt::xdual() const {
-  return new TypeInt(TypeIntPrototype<jint, juint>{{_lo, _hi}, {_ulo, _uhi}, {_zeros, _ones}},
+  return new TypeInt(TypeIntPrototype<jint, juint>{{_lo, _hi}, {_ulo, _uhi}, _bits},
                      _widen, !_is_dual);
 }
 
@@ -1669,8 +1667,7 @@ const Type* TypeInt::filter_helper(const Type* kills, bool include_speculative) 
   if (ft->_widen < this->_widen) {
     // Do not allow the value of kill->_widen to affect the outcome.
     // The widen bits must be allowed to run freely through the graph.
-    return (new TypeInt(TypeIntPrototype<jint, juint>{{ft->_lo, ft->_hi}, {ft->_ulo, ft->_uhi},
-                                                      {ft->_zeros, ft->_ones}},
+    return (new TypeInt(TypeIntPrototype<jint, juint>{{ft->_lo, ft->_hi}, {ft->_ulo, ft->_uhi}, ft->_bits},
                         this->_widen, false))->hashcons();
   }
   return ft;
@@ -1687,7 +1684,7 @@ bool TypeInt::eq(const Type* t) const {
 // Type-specific hashing function.
 uint TypeInt::hash(void) const {
   return (uint)_lo + (uint)_hi + (uint)_ulo + (uint)_uhi +
-         (uint)_zeros + (uint)_ones + (uint)_widen + (uint)_is_dual + (uint)Type::Int;
+         (uint)_bits._zeros + (uint)_bits._ones + (uint)_widen + (uint)_is_dual + (uint)Type::Int;
 }
 
 //------------------------------is_finite--------------------------------------
@@ -1723,9 +1720,8 @@ const TypeLong* TypeLong::UINT; // 32-bit unsigned subrange
 const TypeLong* TypeLong::TYPE_DOMAIN; // alias for TypeLong::LONG
 
 TypeLong::TypeLong(const TypeIntPrototype<jlong, julong>& t, int w, bool dual)
-  : TypeInteger(Long, t.normalize_widen(w), dual),
-    _lo(t._srange._lo), _hi(t._srange._hi), _ulo(t._urange._lo), _uhi(t._urange._hi),
-    _zeros(t._bits._zeros), _ones(t._bits._ones) {
+  : TypeInteger(Long, t.normalize_widen(w), dual), _lo(t._srange._lo), _hi(t._srange._hi),
+    _ulo(t._urange._lo), _uhi(t._urange._hi), _bits(t._bits) {
   DEBUG_ONLY(t.verify_constraints());
 }
 
@@ -1753,8 +1749,7 @@ const Type* TypeLong::make(const TypeIntPrototype<jlong, julong>& t, int w) {
 
 bool TypeLong::contains(jlong i) const {
   julong u = i;
-  return i >= _lo && i <= _hi && u >= _ulo && u <= _uhi &&
-         (u & _zeros) == 0 && (~u & _ones) == 0;
+  return i >= _lo && i <= _hi && u >= _ulo && u <= _uhi && _bits.is_satisfied_by(u);
 }
 
 bool TypeLong::contains(const TypeLong* t) const {
@@ -1770,7 +1765,7 @@ const Type *TypeLong::xmeet(const Type* t) const {
 }
 
 const Type* TypeLong::xdual() const {
-  return new TypeLong(TypeIntPrototype<jlong, julong>{{_lo, _hi}, {_ulo, _uhi}, {_zeros, _ones}},
+  return new TypeLong(TypeIntPrototype<jlong, julong>{{_lo, _hi}, {_ulo, _uhi}, _bits},
                       _widen, !_is_dual);
 }
 
@@ -1799,8 +1794,7 @@ const Type* TypeLong::filter_helper(const Type* kills, bool include_speculative)
   if (ft->_widen < this->_widen) {
     // Do not allow the value of kill->_widen to affect the outcome.
     // The widen bits must be allowed to run freely through the graph.
-    return (new TypeLong(TypeIntPrototype<jlong, julong>{{ft->_lo, ft->_hi}, {ft->_ulo, ft->_uhi},
-                                                         {ft->_zeros, ft->_ones}},
+    return (new TypeLong(TypeIntPrototype<jlong, julong>{{ft->_lo, ft->_hi}, {ft->_ulo, ft->_uhi}, ft->_bits},
                          this->_widen, false))->hashcons();
   }
   return ft;
@@ -1817,7 +1811,7 @@ bool TypeLong::eq(const Type* t) const {
 // Type-specific hashing function.
 uint TypeLong::hash(void) const {
   return (uint)_lo + (uint)_hi + (uint)_ulo + (uint)_uhi +
-         (uint)_zeros + (uint)_ones + (uint)_widen + (uint)_is_dual + (uint)Type::Long;
+         (uint)_bits._zeros + (uint)_bits._ones + (uint)_widen + (uint)_is_dual + (uint)Type::Long;
 }
 
 //------------------------------is_finite--------------------------------------

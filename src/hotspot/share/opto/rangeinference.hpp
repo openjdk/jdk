@@ -25,6 +25,8 @@
 #ifndef SHARE_OPTO_RANGEINFERENCE_HPP
 #define SHARE_OPTO_RANGEINFERENCE_HPP
 
+#include <type_traits>
+
 class Type;
 class TypeInt;
 class TypeLong;
@@ -36,13 +38,29 @@ public:
   T _hi;
 };
 
+/**
+ * Bits that are known to be 0 or 1. A value v satisfies this constraint iff
+ * (v & zeros) == 0 && (~v & ones) == 0. I.e, all bits that is set in zeros
+ * must be unset in v, and all bits that is set in ones must be set in v.
+ *
+ * E.g:
+ * zeros: 00110100
+ * ones:  10000010
+ * Then:  10001010 would satisfy the bit constraints
+ * while: 10011000 would not since the bit at the 4th position violates
+ * zeros and the bit at the 7th position violates ones
+ */
 template <class U>
 class KnownBits {
-  static_assert(std::is_unsigned<U>::value, "");
+  static_assert(std::is_unsigned<U>::value, "bit info should be unsigned");
 
 public:
   U _zeros;
   U _ones;
+
+  bool is_satisfied_by(U v) const {
+    return (v & _zeros) == 0 && (~v & _ones) == 0;
+  }
 };
 
 template <class S, class U>
@@ -53,6 +71,10 @@ class CanonicalizedTypeIntPrototype {
 public:
   bool _present;
   TypeIntPrototype<S, U> _data;
+
+  static CanonicalizedTypeIntPrototype<S, U> make_empty() {
+    return {false, {}};
+  }
 };
 
 template <class S, class U>
@@ -91,13 +113,13 @@ const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(con
 template <class CT>
 bool int_type_equal(const CT* t1, const CT* t2) {
   return t1->_lo == t2->_lo && t1->_hi == t2->_hi && t1->_ulo == t2->_ulo && t1->_uhi == t2->_uhi &&
-         t1->_zeros == t2->_zeros && t1->_ones == t2->_ones;
+         t1->_bits._zeros == t2->_bits._zeros && t1->_bits._ones == t2->_bits._ones;
 }
 
 template <class CT>
 bool int_type_subset(const CT* super, const CT* sub) {
   return super->_lo <= sub->_lo && super->_hi >= sub->_hi && super->_ulo <= sub->_ulo && super->_uhi >= sub->_uhi &&
-         (super->_zeros &~ sub->_zeros) == 0 && (super->_ones &~ sub->_ones) == 0;
+         (super->_bits._zeros &~ sub->_bits._zeros) == 0 && (super->_bits._ones &~ sub->_bits._ones) == 0;
 }
 
 template <class CT>

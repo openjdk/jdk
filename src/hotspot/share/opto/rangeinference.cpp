@@ -32,79 +32,135 @@ constexpr juint SMALLINT = 3; // a value too insignificant to consider widening
 template <class T>
 class AdjustResult {
 public:
+  // Denote whether there is a change in _data compared to the previous
+  // iteration
   bool _progress;
-  bool _present;
+  bool _present; // whether the constraints are contradictory
   T _data;
+
+  static AdjustResult<T> make_empty() {
+    return {true, false, {}};
+  }
 };
 
+// In the canonical form, [lo, hi] intersects with [ulo, uhi] can result in 2
+// cases:
+// - [lo, hi] is the same as [ulo, uhi], lo and hi are both >= 0 or both < 0
+// - [lo, hi] is not the same as [ulo, uhi], which results in the intersections
+// being [lo, uhi] and [ulo, hi], lo and uhi are < 0 while ulo and hi are >= 0
+// This class deals with each interval with both bounds being >= 0 or < 0
 template <class U>
 class SimpleCanonicalResult {
+  static_assert(std::is_unsigned<U>::value, "bit info should be unsigned");
 public:
-  bool _present;
+  bool _present; // whether this is an empty set
   RangeInt<U> _bounds;
   KnownBits<U> _bits;
+
+  static SimpleCanonicalResult<U> make_empty() {
+    return {false, {}, {}};
+  }
 };
 
-// Try to tighten the bound constraints from the known bit information
-// E.g: if lo = 0 but the lowest bit is always 1 then we can tighten
-// lo = 1
+// Find the minimum value that is not less than lo and satisfies bits
+template <class U>
+static U adjust_lo(U lo, const KnownBits<U>& bits) {
+  constexpr size_t W = sizeof(U) * 8;
+  // Violation of lo with respects to bits
+  // E.g: lo    = 1100
+  //      zeros = 0100
+  //      ones  = 1001
+  // zero_violation = 0100, i.e the second bit should be zero, but it is 1 in
+  // lo. Similarly, one_violation = 0001, i.e the forth bit should be one, but
+  // it is 0 in lo. These make lo not satisfy the bit constraints, which
+  // results in us having to find the smallest value that satisfies bits
+  U zero_violation = lo & bits._zeros;
+  U one_violation = ~lo & bits._ones;
+  if (zero_violation == one_violation) {
+    // This means lo does not violate bits, it is the result
+    assert(zero_violation == 0, "");
+    return lo;
+  }
+
+  if (zero_violation < one_violation) {
+    // This means that the first bit that does not satisfy the bit
+    // requirement is a 0 that should be a 1, try to set that bit
+    // E.g: lo = 10010010, zeros = 00100100, ones = 01001000
+    // first_violation is the position of the violation counting from the
+    // lowest bit up (0-based)
+    juint first_violation = W - 1 - count_leading_zeros(one_violation);
+    U alignment = U(1) << first_violation;
+    // This is the first value which have the violated bit set, which means
+    // that the result should not be smaller than this
+    // 11000000, notice that all bits after the second digit are zeroed,
+    // which automatically satisfies bits._zeros
+    lo = (lo & -alignment) + alignment;
+    // Simply satisfy bits._ones
+    return lo | bits._ones; // 11001000
+  }
+
+  // This is more difficult because trying to unset a bit requires us to flip
+  // some bits before it (higher bits)
+  // Suppose lo = 11000110, zeros = 00001010, ones = 10000001
+  // The smallest value with the 7-th bit unset would be 11001000 but then the
+  // 5-th bit does not match, the smallest value with both bits unset would be
+  // 11010000
+  // We can obtain this number directly by finding the last place before
+  // the first mismatch such that it is 0 in lo and not required to be unset
+  juint first_violation = W - 1 - count_leading_zeros(zero_violation);
+  // This mask out all bits after the first violation
+  U find_mask = std::numeric_limits<U>::max() << first_violation; // 11111100
+  // The smallest value which satisfies bits._zeros will need to set a bit in
+  // lo that is previously unset (because the value needs to be larger than lo)
+  // and that bit will need to be unset in bits._zeros as well
+  U either = lo | bits._zeros; // 11001110
+  // The bit we want to set is the last bit unset in either that stands before
+  // the first violation, which is the last set bit of tmp
+  U tmp = ~either & find_mask; // 00110000
+  // Isolate the last bit
+  U alignment = tmp & (-tmp); // 00010000
+  // Set the bit and unset all the bit after, this is the smallest value that
+  // satisfies bits._zeros
+  lo = (lo & -alignment) + alignment; // 11010000
+  // Satisfy bits._ones
+  return lo | bits._ones; // 11010001
+}
+
+// Try to tighten the bound constraints from the known bit information. I.e, we
+// find the smallest value not smaller than lo, as well as the largest value
+// not larger than hi both of which satisfy bits
+// E.g: lo = 0010, hi = 1001
+// zeros = 0011
+// ones  = 0000
+// -> 4-aligned
+//
+//         0    1    2    3    4    5    6    7    8    9    10
+//         0000 0001 0010 0011 0100 0101 0110 0111 1000 1001 1010
+// bits:   ok   .    .    .    ok   .    .    .    ok   .    .
+// bounds:           lo                                 hi
+// adjust:           --------> lo                  hi <---
 template <class U>
 static AdjustResult<RangeInt<U>>
 adjust_bounds_from_bits(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
-  // Find the minimum value that is not less than lo and satisfies bits
-  auto adjust_lo = [](U lo, const KnownBits<U>& bits) {
-    constexpr size_t W = sizeof(U) * 8;
-    // Violation of lo with respects to bits
-    U zero_violation = lo & bits._zeros;
-    U one_violation = ~lo & bits._ones;
-    if (zero_violation == one_violation) {
-      // This means lo does not violate bits, it is the result
-      assert(zero_violation == 0, "");
-      return lo;
-    }
-
-    if (zero_violation < one_violation) {
-      // This means that the first bit that does not satisfy the bit
-      // requirement is a 0 that should be a 1
-      // Try to set that bit, the smallest value will have all the following
-      // bits being zeros
-      // E.g: lo = 10010010, zeros = 00100100, ones = 01001000
-      juint first_violation = W - 1 - count_leading_zeros(one_violation);
-      U alignment = U(1) << first_violation;
-      // 11000000, notice that all bits after the second digit are zeroed,
-      // which automatically satisfies the unset bit requirement
-      lo = (lo & -alignment) + alignment;
-      // Simply satisfy the set bit requirement
-      return lo | bits._ones; // 11001000
-    }
-
-    // This is more difficult because trying to unset a bit requires us to flip
-    // some bits before it (higher bits)
-    // Suppose lo = 11000110, zeros = 00001010, ones = 10010001
-    // Since the 2-nd bit must be 0, we need to align up the lower bound.
-    // This results in lo = 11001000, but then the 4-th bit does not match,
-    // align up again gives us 11010000
-    // We can align up directly to 11010000 by finding the last place before
-    // the first mismatch such that it is 0 in lo and not required to be unset
-    juint first_violation = W - 1 - count_leading_zeros(zero_violation);
-    U find_mask = std::numeric_limits<U>::max() << first_violation; // 11111100
-    U either = lo | bits._zeros; // 11001110
-    U tmp = ~either & find_mask; // 00110000
-    U alignment = tmp & (-tmp); // 00010000
-    lo = (lo & -alignment) + alignment; // 11010000
-    return lo | bits._ones; // 11010001
-  };
-
   U new_lo = adjust_lo(bounds._lo, bits);
   if (new_lo < bounds._lo) {
     // This means we wrapped around, which means no value not less than lo
     // satisfies bits
-    return {true, false, {}};
+    return AdjustResult<RangeInt<U>>::make_empty();
   }
-  // Adjust hi by adjusting its bitwise negation
+
+  // We need to find the largest value not larger than hi that satisfies bits
+  // One possible method is to do similar to adjust_lo, just with the other
+  // direction
+  // However, we can observe that if v satisfies {bits._zeros, bits._ones},
+  // then ~v would satisfy {bits._ones, bits._zeros}. Combine with the fact
+  // that ~ is a strictly decreasing function, if new_hi is the largest value
+  // not larger than hi that satisfies {bits._zeros, bits._ones}, then ~new_hi
+  // is the smallest value not smaller than ~hi that satisfies
+  // {bits._ones, bits._zeros}
   U new_hi = ~adjust_lo(~bounds._hi, {bits._ones, bits._zeros});
   if (new_hi > bounds._hi) {
-    return {true, false, {}};
+    return AdjustResult<RangeInt<U>>::make_empty();
   }
 
   bool progress = (new_lo != bounds._lo) || (new_hi != bounds._hi);
@@ -115,15 +171,22 @@ adjust_bounds_from_bits(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
 // Try to tighten the known bit constraints from the bound information by
 // extracting the common prefix of lo and hi and combining with the current
 // bit constraints
-// E.g: if lo = 0 and hi = 10, then all but the lowest 4 bits must be 0
+// E.g: lo = 010011
+//      hi = 010100,
+// then all values in [lo, hi] would be
+//           010***
 template <class U>
 static AdjustResult<KnownBits<U>>
 adjust_bits_from_bounds(const KnownBits<U>& bits, const RangeInt<U>& bounds) {
-  // Find the mask to filter the common prefix
+  // Find the mask to filter the common prefix, all values between bounds._lo
+  // and bounds._hi should share this common prefix in terms of bits
   U mismatch = bounds._lo ^ bounds._hi;
+  // Find the first mismatch, all bits before it is the same in bounds._lo and
+  // bounds._hi
   U match_mask = mismatch == 0 ? std::numeric_limits<U>::max()
                                : ~(std::numeric_limits<U>::max() >> count_leading_zeros(mismatch));
-  // match_mask & bounds._lo is the common prefix
+  // match_mask & bounds._lo is the common prefix, extract zeros and ones from
+  // it
   U new_zeros = bits._zeros | (match_mask &~ bounds._lo);
   U new_ones = bits._ones | (match_mask & bounds._lo);
   bool progress = (new_zeros != bits._zeros) || (new_ones != bits._ones);
@@ -133,15 +196,20 @@ adjust_bits_from_bounds(const KnownBits<U>& bits, const RangeInt<U>& bounds) {
 
 // Try to tighten both the bounds and the bits at the same time
 // Iteratively tighten 1 using the other until no progress is made.
-// This function converges because bit constraints converge fast.
+// This function converges because at each iteration, some bits that are
+// unknown is made known. As there are at most 64 bits, the number of
+// iterations should not be larger than 64
 template <class U>
 static SimpleCanonicalResult<U>
-normalize_constraints_simple(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
+canonicalize_constraints_simple(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
   AdjustResult<KnownBits<U>> nbits = adjust_bits_from_bounds(bits, bounds);
   if (!nbits._present) {
-    return {false, {}, {}};
+    return SimpleCanonicalResult<U>::make_empty();
   }
   AdjustResult<RangeInt<U>> nbounds{true, true, bounds};
+  // Since bits are derived from bounds in the previous iteration and vice
+  // versa, if one does not show progress, the other will also not show
+  // progress, so we terminate early
   while (true) {
     nbounds = adjust_bounds_from_bits(nbounds._data, nbits._data);
     if (!nbounds._progress || !nbounds._present) {
@@ -164,12 +232,15 @@ CanonicalizedTypeIntPrototype<S, U>
 TypeIntPrototype<S, U>::canonicalize_constraints() const {
   RangeInt<S> srange = _srange;
   RangeInt<U> urange = _urange;
+  // Trivial contradictions
   if (srange._lo > srange._hi ||
       urange._lo > urange._hi ||
       (_bits._zeros & _bits._ones) != 0) {
-    return {false, {}};
+    return CanonicalizedTypeIntPrototype<S, U>::make_empty();
   }
 
+  // Trivially canonicalize the bounds so that srange._lo and urange._hi are
+  // both < 0 or >= 0. The same for srange._hi and urange._ulo
   if (S(urange._lo) > S(urange._hi)) {
     if (S(urange._hi) < srange._lo) {
       urange._hi = std::numeric_limits<S>::max();
@@ -183,10 +254,10 @@ TypeIntPrototype<S, U>::canonicalize_constraints() const {
     urange._lo = MAX2<S>(urange._lo, srange._lo);
     urange._hi = MIN2<S>(urange._hi, srange._hi);
     if (urange._lo > urange._hi) {
-      return {false, {}};
+      return CanonicalizedTypeIntPrototype<S, U>::make_empty();
     }
 
-    auto type = normalize_constraints_simple(urange, _bits);
+    auto type = canonicalize_constraints_simple(urange, _bits);
     return {type._present, {{S(type._bounds._lo), S(type._bounds._hi)},
                             type._bounds, type._bits}};
   }
@@ -195,11 +266,11 @@ TypeIntPrototype<S, U>::canonicalize_constraints() const {
   // [lo, uhi], which consists of negative values
   // [ulo, hi] which consists of non-negative values
   // We process these 2 separately and combine the results
-  auto neg_type = normalize_constraints_simple({U(srange._lo), urange._hi}, _bits);
-  auto pos_type = normalize_constraints_simple({urange._lo, U(srange._hi)}, _bits);
+  auto neg_type = canonicalize_constraints_simple({U(srange._lo), urange._hi}, _bits);
+  auto pos_type = canonicalize_constraints_simple({urange._lo, U(srange._hi)}, _bits);
 
   if (!neg_type._present && !pos_type._present) {
-    return {false, {}};
+    return CanonicalizedTypeIntPrototype<S, U>::make_empty();
   } else if (!neg_type._present) {
     return {true, {{S(pos_type._bounds._lo), S(pos_type._bounds._hi)},
                    pos_type._bounds, pos_type._bits}};
@@ -232,8 +303,8 @@ int TypeIntPrototype<S, U>::normalize_widen(int w) const {
 #ifdef ASSERT
 template <class S, class U>
 bool TypeIntPrototype<S, U>::contains(S v) const {
-  return v >= _srange._lo && v <= _srange._hi && U(v) >= _urange._lo && U(v) <= _urange._hi &&
-         (v & _bits._zeros) == 0 && (~v & _bits._ones) == 0;
+  U u = v;
+  return v >= _srange._lo && v <= _srange._hi && u >= _urange._lo && u <= _urange._hi && _bits.is_satisfied_by(u);
 }
 
 // Verify that this set representation is canonical
@@ -280,13 +351,13 @@ const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(con
     // meet
       return make(TypeIntPrototype<S, U>{{MIN2(i1->_lo, i2->_lo), MAX2(i1->_hi, i2->_hi)},
                                          {MIN2(i1->_ulo, i2->_ulo), MAX2(i1->_uhi, i2->_uhi)},
-                                         {i1->_zeros & i2->_zeros, i1->_ones & i2->_ones}},
+                                         {i1->_bits._zeros & i2->_bits._zeros, i1->_bits._ones & i2->_bits._ones}},
                   MAX2(i1->_widen, i2->_widen), false);
     }
     // join
     return make(TypeIntPrototype<S, U>{{MAX2(i1->_lo, i2->_lo), MIN2(i1->_hi, i2->_hi)},
                                        {MAX2(i1->_ulo, i2->_ulo), MIN2(i1->_uhi, i2->_uhi)},
-                                       {i1->_zeros | i2->_zeros, i1->_ones | i2->_ones}},
+                                       {i1->_bits._zeros | i2->_bits._zeros, i1->_bits._ones | i2->_bits._ones}},
                 MIN2(i1->_widen, i2->_widen), true);
   }
 
@@ -366,7 +437,7 @@ const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt) {
 
   if (nt->_widen < Type::WidenMax) {
     // Returned widened new guy
-    TypeIntPrototype<S, U> prototype{{nt->_lo, nt->_hi}, {nt->_ulo, nt->_uhi}, {nt->_zeros, nt->_ones}};
+    TypeIntPrototype<S, U> prototype{{nt->_lo, nt->_hi}, {nt->_ulo, nt->_uhi}, nt->_bits};
     return CT::make(prototype, nt->_widen + 1);
   }
 
@@ -376,15 +447,15 @@ const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt) {
   S max = std::numeric_limits<S>::max();
   U umin = std::numeric_limits<U>::min();
   U umax = std::numeric_limits<U>::max();
-  U zeros = nt->_zeros;
-  U ones = nt->_ones;
+  U zeros = nt->_bits._zeros;
+  U ones = nt->_bits._ones;
   if (lt != nullptr) {
     min = lt->_lo;
     max = lt->_hi;
     umin = lt->_ulo;
     umax = lt->_uhi;
-    zeros |= lt->_zeros;
-    ones |= lt->_ones;
+    zeros |= lt->_bits._zeros;
+    ones |= lt->_bits._ones;
   }
   TypeIntPrototype<S, U> prototype{{min, max}, {umin, umax}, {zeros, ones}};
   return CT::make(prototype, Type::WidenMax);
@@ -420,7 +491,7 @@ const Type* int_type_narrow(const CT* nt, const CT* ot) {
   }
 
   // Bits change
-  if (ot->_zeros != nt->_zeros || ot->_ones != nt->_ones) {
+  if (ot->_bits._zeros != nt->_bits._zeros || ot->_bits._ones != nt->_bits._ones) {
     return nt;
   }
 
@@ -579,14 +650,29 @@ void int_type_dump(const TypeInt* t, outputStream* st, bool verbose) {
     st->print("short");
   } else {
     if (verbose) {
-      st->print("int:%s..%s ^ %s..%s, bits:%s",
+      st->print("int:%s..%s, %s..%s, %s",
                 intname(buf1, sizeof(buf1), t->_lo), intname(buf2, sizeof(buf2), t->_hi),
                 uintname(buf3, sizeof(buf3), t->_ulo), uintname(buf4, sizeof(buf4), t->_uhi),
-                bitname(buf5, sizeof(buf5), t->_zeros, t->_ones));
+                bitname(buf5, sizeof(buf5), t->_bits._zeros, t->_bits._ones));
     } else {
-      st->print("int:%s..%s ^ %s..%s",
-                intname(buf1, sizeof(buf1), t->_lo), intname(buf2, sizeof(buf2), t->_hi),
-                uintname(buf3, sizeof(buf3), t->_ulo), uintname(buf4, sizeof(buf4), t->_uhi));
+      if (t->_lo >= 0) {
+        if (t->_hi == max_jint) {
+          st->print("int:>=%s", intname(buf1, sizeof(buf1), t->_lo));
+        } else {
+          st->print("int:%s..%s", intname(buf1, sizeof(buf1), t->_lo), intname(buf2, sizeof(buf2), t->_hi));
+        }
+      } else if (t->_hi < 0) {
+        if (t->_lo == min_jint) {
+          st->print("int:<=%s", intname(buf1, sizeof(buf1), t->_hi));
+        } else {
+          st->print("int:%s..%s", intname(buf1, sizeof(buf1), t->_lo), intname(buf2, sizeof(buf2), t->_hi));
+        }
+      } else {
+        st->print("int:%s..%s, %s..%s",
+                  intname(buf1, sizeof(buf1), t->_lo), intname(buf2, sizeof(buf2), t->_hi),
+                  uintname(buf3, sizeof(buf3), t->_ulo), uintname(buf4, sizeof(buf4), t->_uhi));
+      }
+
     }
   }
 
@@ -606,11 +692,25 @@ void int_type_dump(const TypeLong* t, outputStream* st, bool verbose) {
       st->print("long:%s..%s ^ %s..%s, bits:%s",
                 longname(buf1, sizeof(buf1), t->_lo), longname(buf2,sizeof(buf2), t-> _hi),
                 ulongname(buf3, sizeof(buf3), t->_ulo), ulongname(buf4, sizeof(buf4), t->_uhi),
-                bitname(buf5, sizeof(buf5), t->_zeros, t->_ones));
+                bitname(buf5, sizeof(buf5), t->_bits._zeros, t->_bits._ones));
     } else {
-      st->print("long:%s..%s ^ %s..%s",
-                longname(buf1, sizeof(buf1), t->_lo), longname(buf2,sizeof(buf2), t-> _hi),
-                ulongname(buf3, sizeof(buf3), t->_ulo), ulongname(buf4, sizeof(buf4), t->_uhi));
+      if (t->_lo >= 0) {
+        if (t->_hi == max_jint) {
+          st->print("long:>=%s", longname(buf1, sizeof(buf1), t->_lo));
+        } else {
+          st->print("long:%s..%s", longname(buf1, sizeof(buf1), t->_lo), longname(buf2, sizeof(buf2), t->_hi));
+        }
+      } else if (t->_hi < 0) {
+        if (t->_lo == min_jint) {
+          st->print("long:<=%s", longname(buf1, sizeof(buf1), t->_hi));
+        } else {
+          st->print("long:%s..%s", longname(buf1, sizeof(buf1), t->_lo), longname(buf2, sizeof(buf2), t->_hi));
+        }
+      } else {
+        st->print("long:%s..%s ^ %s..%s",
+                  longname(buf1, sizeof(buf1), t->_lo), longname(buf2,sizeof(buf2), t-> _hi),
+                  ulongname(buf3, sizeof(buf3), t->_ulo), ulongname(buf4, sizeof(buf4), t->_uhi));
+      }
     }
   }
 

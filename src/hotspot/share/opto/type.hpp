@@ -27,6 +27,7 @@
 
 #include "opto/adlcVMDeps.hpp"
 #include "opto/compile.hpp"
+#include "opto/rangeinference.hpp"
 #include "runtime/handles.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -600,7 +601,7 @@ public:
   // the below constraints, see contains(jint)
   const jint _lo, _hi;       // Lower bound, upper bound in the signed domain
   const juint _ulo, _uhi;    // Lower bound, upper bound in the unsigned domain
-  const juint _zeros, _ones; // Bits that are known to be 0 or 1
+  const KnownBits<juint> _bits;
 
   static const TypeInt* try_cast(const Type* t) { return t->isa_int(); }
   static const TypeInt* make(jint lo);
@@ -683,7 +684,7 @@ public:
   // the below constraints, see contains(jlong)
   const jlong _lo, _hi;       // Lower bound, upper bound in the signed domain
   const julong _ulo, _uhi;    // Lower bound, upper bound in the unsigned domain
-  const julong _zeros, _ones; // Bits that are known to be 0 or 1
+  const KnownBits<julong> _bits;
 
   static const TypeLong* try_cast(const Type* t) { return t->isa_long(); }
   static const TypeLong* make(jlong lo);
