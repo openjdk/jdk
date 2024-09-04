@@ -273,7 +273,7 @@ public class AckElicitingTest {
         }
 
         @Override
-        public QuicConnectionId originalDestConnId() {
+        public QuicConnectionId originalServerConnId() {
             return null;
         }
     };

@@ -1388,8 +1388,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             return decoder.decode(src, this);
         }
         @Override
-        public QuicConnectionId originalDestConnId() {
-            return QuicConnectionImpl.this.originalDestConnId();
+        public QuicConnectionId originalServerConnId() {
+            return QuicConnectionImpl.this.originalServerConnId();
         }
 
         @Override
@@ -1666,8 +1666,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * the first time.
      * @return the original connection id
      */
-    protected QuicConnectionId originalDestConnId() {
-        return this.peerConnIdManager.originalDestConnId();
+    protected QuicConnectionId originalServerConnId() {
+        return this.peerConnIdManager.originalServerConnId();
     }
 
     private record IncomingDatagram(SocketAddress source, ByteBuffer destConnId,
@@ -2617,11 +2617,11 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 }
                 return;
             }
-            if (!negotiate.sourceId().equals(originalDestConnId())) {
+            if (!negotiate.sourceId().equals(originalServerConnId())) {
                 if (debug.on()) {
                     debug.log("Received version negotiation packet with wrong connection id");
                     debug.log("expected source id: %s, received source id: %s",
-                            originalDestConnId(), negotiate.sourceId());
+                            originalServerConnId(), negotiate.sourceId());
                     debug.log("ignoring version negotiation packet (wrong id)");
                 }
                 return;
@@ -2724,7 +2724,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         this.encoder = QuicPacketEncoder.of(negotiated);
         this.packetSpace(PacketNumberSpace.INITIAL).versionChanged();
         // regenerate the INITIAL keys using the new negotiated Quic version
-        this.quicTLSEngine.deriveInitialKeys(negotiated, originalDestConnId().asReadOnlyBuffer());
+        this.quicTLSEngine.deriveInitialKeys(negotiated, originalServerConnId().asReadOnlyBuffer());
         return true;
     }
 
@@ -3018,7 +3018,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 throw new SSLHandshakeException(msg);
             }
             final QuicConnectionId clientSelectedPeerId = initialServerConnectionId();
-            this.peerConnIdManager.originalDestConnId(clientSelectedPeerId);
+            this.peerConnIdManager.originalServerConnId(clientSelectedPeerId);
             handshakeFlow.markHandshakeStart();
             stateHandle.markHelloSent();
             // the "original version" used to establish the connection
@@ -3393,7 +3393,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
 
         }
-        final QuicConnectionId clientSelectedPeerConnId = this.peerConnIdManager.originalDestConnId();
+        final QuicConnectionId clientSelectedPeerConnId = this.peerConnIdManager.originalServerConnId();
         if (!params.matches(ParameterId.original_destination_connection_id, clientSelectedPeerConnId)) {
             throw new QuicTransportException(
                     "Original connection ID does not match",

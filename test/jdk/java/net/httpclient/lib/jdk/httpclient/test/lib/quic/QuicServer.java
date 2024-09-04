@@ -51,7 +51,6 @@ import javax.net.ssl.SNIMatcher;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 
-import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -132,7 +131,7 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
     private final ReentrantLock quickServerLock = new ReentrantLock();
     private final QuicConnectionIdFactory idFactory = QuicConnectionIdFactory.getServer();
 
-    record RetryData(QuicConnectionId originalDestConnId,
+    record RetryData(QuicConnectionId originalServerConnId,
                      QuicConnectionId serverChosenConnId) {
     }
 
@@ -717,7 +716,7 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
         //          we may need to build a packet, and then only encode it
         //          instead of having a toByteBuffer() method.
         try {
-            originalIds.add(ComparableById.of(connection.originalDestConnId()));
+            originalIds.add(ComparableById.of(connection.originalServerConnId()));
             endpoint.registerNewConnection(connection);
         } catch (IOException io) {
             if (closed) {
@@ -772,21 +771,21 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
         return sslParameters;
     }
 
-    private byte[] buildRetryToken(final QuicConnectionId originalDestConnId,
+    private byte[] buildRetryToken(final QuicConnectionId originalServerConnId,
                                    final QuicConnectionId serverChosenNewConnId) {
         // TODO this token is too simple to provide authenticity guarantee; use for testing only
         final int NUM_BYTES_FOR_CONN_ID_LENGTH = 1;
         final byte[] result = new byte[retryTokenPrefixBytes.length
-                + NUM_BYTES_FOR_CONN_ID_LENGTH + originalDestConnId.length()
+                + NUM_BYTES_FOR_CONN_ID_LENGTH + originalServerConnId.length()
                 + NUM_BYTES_FOR_CONN_ID_LENGTH + serverChosenNewConnId.length()];
         // copy the retry token prefix
         System.arraycopy(retryTokenPrefixBytes, 0, result, 0, retryTokenPrefixBytes.length);
         int currentIndex = retryTokenPrefixBytes.length;
         // copy over the length of the original dest conn id
-        result[currentIndex++] = (byte) originalDestConnId.length();
+        result[currentIndex++] = (byte) originalServerConnId.length();
         // copy over the original dest connection id sent by the client
-        originalDestConnId.asReadOnlyBuffer().get(0, result, currentIndex, originalDestConnId.length());
-        currentIndex += originalDestConnId.length();
+        originalServerConnId.asReadOnlyBuffer().get(0, result, currentIndex, originalServerConnId.length());
+        currentIndex += originalServerConnId.length();
         // copy over the length of the server chosen dest conn id
         result[currentIndex++] = (byte) serverChosenNewConnId.length();
         // copy over the connection id that the server has chosen and expects clients to use as new dest conn id
@@ -816,10 +815,10 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
             return null;
         }
         // now find the length of the original connection id
-        final int originalDestConnIdLen = token.get();
-        final byte[] originalDestConnId = new byte[originalDestConnIdLen];
+        final int originalServerConnIdLen = token.get();
+        final byte[] originalServerConnId = new byte[originalServerConnIdLen];
         // read the original dest conn id
-        token.get(originalDestConnId);
+        token.get(originalServerConnId);
 
         // now find the length of the server generated dest connection id
         final int serverChosenDestConnIdLen = token.get();
@@ -828,7 +827,7 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
         token.get(serverChosenDestConnId);
 
         // TODO: the use of PeerConnectionId is only for convenience
-        return new RetryData(new PeerConnectionId(originalDestConnId), new PeerConnectionId(serverChosenDestConnId));
+        return new RetryData(new PeerConnectionId(originalServerConnId), new PeerConnectionId(serverChosenDestConnId));
     }
 
     DatagramDeliveryPolicy incomingDeliveryPolicy() {

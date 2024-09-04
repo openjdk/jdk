@@ -97,7 +97,7 @@ public class AckFrameTest {
         }
 
         @Override
-        public QuicConnectionId originalDestConnId() {
+        public QuicConnectionId originalServerConnId() {
             return null;
         }
     };

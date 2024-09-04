@@ -1726,7 +1726,7 @@ public class QuicPacketEncoder {
             temp.limit(payloadend);
             try {
                 context.getTLSEngine().signRetryPacket(retryVersion,
-                        context.originalDestConnId().asReadOnlyBuffer(), temp, buffer);
+                        context.originalServerConnId().asReadOnlyBuffer(), temp, buffer);
             } catch (ShortBufferException e) {
                 throw new AssertionError("Should not happen", e);
             }

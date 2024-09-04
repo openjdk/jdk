@@ -66,7 +66,7 @@ public class RetryCodingContext implements CodingContext {
     }
 
     @Override
-    public QuicConnectionId originalDestConnId() {
+    public QuicConnectionId originalServerConnId() {
         return connectionId;
     }
 

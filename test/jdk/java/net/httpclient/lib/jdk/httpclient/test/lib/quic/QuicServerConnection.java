@@ -87,7 +87,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
     private volatile QuicConnectionId incomingInitialPacketSourceId;
     private final QuicConnectionId peerConnId;
     private final QuicConnectionId clientSentDestConnId;
-    private final QuicConnectionId originalDestConnId;
+    private final QuicConnectionId originalServerConnId;
     private final QuicServer.RetryData retryData;
     private final AtomicBoolean firstHandshakePktProcessed = new AtomicBoolean();
 
@@ -126,7 +126,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
         this.peerConnId = peerConnectionId;
         this.clientSentDestConnId = clientSentDestConnId;
         this.retryData = retryData;
-        this.originalDestConnId = retryData == null ? clientSentDestConnId : retryData.originalDestConnId();
+        this.originalServerConnId = retryData == null ? clientSentDestConnId : retryData.originalServerConnId();
         try {
             this.endpoint = server.getEndpoint();
         } catch (IOException e) {
@@ -144,8 +144,8 @@ public final class QuicServerConnection extends QuicConnectionImpl {
     }
 
     @Override
-    protected QuicConnectionId originalDestConnId() {
-        return this.originalDestConnId;
+    protected QuicConnectionId originalServerConnId() {
+        return this.originalServerConnId;
     }
 
     @Override
@@ -362,10 +362,10 @@ public final class QuicServerConnection extends QuicConnectionImpl {
         final QuicTransportParameters params = new QuicTransportParameters();
         params.setAll(this.transportParams.toMap());
         if (!params.isPresent(original_destination_connection_id)) {
-            params.setParameter(original_destination_connection_id, originalDestConnId.getBytes());
+            params.setParameter(original_destination_connection_id, originalServerConnId.getBytes());
         }
         if (!params.isPresent(original_destination_connection_id)) {
-            params.setParameter(original_destination_connection_id, originalDestConnId.getBytes());
+            params.setParameter(original_destination_connection_id, originalServerConnId.getBytes());
         }
         if (!params.isPresent(initial_source_connection_id)) {
             params.setParameter(initial_source_connection_id, localConnectionId().getBytes());

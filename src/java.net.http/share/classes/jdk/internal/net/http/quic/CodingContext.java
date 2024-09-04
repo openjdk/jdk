@@ -129,7 +129,7 @@ public interface CodingContext {
      * @return the original destination connection id, required for calculating
      * the retry integrity tag
      */
-    QuicConnectionId originalDestConnId();
+    QuicConnectionId originalServerConnId();
 
     /**
      * Returns the TLS engine associated with this context

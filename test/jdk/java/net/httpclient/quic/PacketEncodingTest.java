@@ -327,7 +327,7 @@ public class PacketEncodingTest {
             return true;
         }
         @Override
-        public QuicConnectionId originalDestConnId() {
+        public QuicConnectionId originalServerConnId() {
             throw new AssertionError("should not come here!");
         }
 
@@ -1058,7 +1058,7 @@ public class PacketEncodingTest {
             @Override public int connectionIdLength() {
                 return srcIdLength;
             }
-            @Override public QuicConnectionId originalDestConnId() { return origConnectionId; }
+            @Override public QuicConnectionId originalServerConnId() { return origConnectionId; }
         };
         // Check that peeking at the encoded packet returns correct information
         ByteBuffer encoded = toByteBuffer(encoder, packet, context);

@@ -49,8 +49,13 @@ import static jdk.internal.net.http.quic.QuicConnectionId.MAX_CONNECTION_ID_LENG
 import static jdk.internal.net.quic.QuicTransportErrors.PROTOCOL_VIOLATION;
 
 /**
- * Manages the connection ids advertized by a peer of a (client) connection.
- * The implementation in this class is only applicable for client connections
+ * Manages the connection ids advertised by a peer of a connection.
+ * - Handles incoming NEW_CONNECTION_ID frames,
+ * - produces outgoing RETIRE_CONNECTION_ID frames,
+ * - registers received stateless reset tokens with the QuicEndpoint
+ * Additionally on the client side:
+ * - handles incoming transport parameters (preferred_address, stateless_reset_token)
+ * - stores original and retry peer IDs
  */
 final class PeerConnIdManager {
     private final Logger debug;
@@ -84,7 +89,7 @@ final class PeerConnIdManager {
         this.connection = connection;
     }
 
-    void originalDestConnId(final QuicConnectionId peerConnId) {
+    void originalServerConnId(final QuicConnectionId peerConnId) {
         final var st = this.state;
         if (st != State.INITIAL_PKT_NOT_RECEIVED_FROM_PEER) {
             throw new IllegalStateException("Cannot associate a client selected peer id" +
@@ -93,7 +98,7 @@ final class PeerConnIdManager {
         this.clientSelectedDestConnId = peerConnId;
     }
 
-    QuicConnectionId originalDestConnId() {
+    QuicConnectionId originalServerConnId() {
         final var id = this.clientSelectedDestConnId;
         if (id == null) {
             throw new IllegalArgumentException("Original (peer) connection id not yet set");

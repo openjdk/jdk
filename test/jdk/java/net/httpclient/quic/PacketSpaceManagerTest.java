@@ -307,7 +307,7 @@ public class PacketSpaceManagerTest {
             return true;
         }
         @Override
-        public QuicConnectionId originalDestConnId() {
+        public QuicConnectionId originalServerConnId() {
             return null;
         }
 

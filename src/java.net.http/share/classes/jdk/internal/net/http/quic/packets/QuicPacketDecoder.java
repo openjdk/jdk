@@ -1407,7 +1407,7 @@ public class QuicPacketDecoder {
             // assume the buffer position and limit are set to packet boundaries
             QuicTLSEngine tlsEngine = context.getTLSEngine();
             tlsEngine.verifyRetryPacket(quicVersion,
-                    context.originalDestConnId().asReadOnlyBuffer(), buffer.asReadOnlyBuffer());
+                    context.originalServerConnId().asReadOnlyBuffer(), buffer.asReadOnlyBuffer());
         }
 
         public QuicConnectionId readLongConnectionId() {
