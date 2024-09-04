@@ -319,7 +319,7 @@ public interface JavaLangAccess {
     int countPositives(byte[] ba, int off, int len);
 
     /**
-     * Count the number of leading non-zero ascii chars in the range.
+     * Count the number of leading non-zero ascii chars in the String.
      */
     int countNonZeroAscii(String s);
 
