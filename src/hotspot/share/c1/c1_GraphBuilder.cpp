@@ -1390,9 +1390,9 @@ void GraphBuilder::jsr(int dest) {
   // might end up trying to re-parse a block containing a jsr which
   // has already been activated. Watch for this case and bail out.
   if (next_bci() >= method()->code_size()) {
-      // This can happen if the subroutine does not terminate with a ret,
-      // effectively turning the jsr into a goto.
-      BAILOUT("too-complicated jsr/ret structure");
+    // This can happen if the subroutine does not terminate with a ret,
+    // effectively turning the jsr into a goto.
+    BAILOUT("too-complicated jsr/ret structure");
   }
   for (ScopeData* cur_scope_data = scope_data();
        cur_scope_data != nullptr && cur_scope_data->parsing_jsr() && cur_scope_data->scope() == scope();
