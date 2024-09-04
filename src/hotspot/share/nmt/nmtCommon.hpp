@@ -29,6 +29,10 @@
 
 #include "memory/allStatic.hpp"
 #include "nmt/memflags.hpp"
+#include "runtime/os.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/semaphore.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -137,5 +141,32 @@ class NMTUtil : AllStatic {
   static S _strings[mt_number_of_types];
 };
 
+class NmtGuard : public StackObj {
+private:
+    static Semaphore _nmt_semaphore;
+    static intx volatile _owner;
+
+public:
+    NmtGuard() {
+      intx const current =  os::current_thread_id();
+      intx const owner = Atomic::load(&_owner);
+      assert(current != owner, "Lock is not reentrant");
+
+      _nmt_semaphore.wait();
+      Atomic::store(&_owner, current);
+    }
+
+    ~NmtGuard() {
+      assert_locked();
+      Atomic::store(&_owner, (intx) -1);
+      _nmt_semaphore.signal();
+    }
+
+    static void assert_locked(){
+      intx const current = os::current_thread_id();
+      intx const owner = Atomic::load(&_owner);
+      assert(current == owner, "NMT lock should be acquired in this section.");
+    }
+};
 
 #endif // SHARE_NMT_NMTCOMMON_HPP

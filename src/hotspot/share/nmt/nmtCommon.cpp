@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,9 @@ STATIC_ASSERT(NMT_detail > NMT_summary);
 NMTUtil::S NMTUtil::_strings[] = {
   MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_NAME)
 };
+
+Semaphore NmtGuard::_nmt_semaphore(1);
+intx volatile NmtGuard::_owner((intx) -1);
 
 const char* NMTUtil::scale_name(size_t scale) {
   switch(scale) {

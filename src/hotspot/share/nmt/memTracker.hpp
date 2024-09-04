@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/threadCritical.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/nativeCallStack.hpp"
 
@@ -125,7 +124,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      ThreadCritical tc;
+      NmtGuard guard;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
     }
   }
@@ -151,7 +150,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      ThreadCritical tc;
+      NmtGuard guard;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
@@ -162,7 +161,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      ThreadCritical tc;
+      NmtGuard guard;
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
   }
@@ -210,7 +209,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      ThreadCritical tc;
+      NmtGuard guard;
       VirtualMemoryTracker::split_reserved_region((address)addr, size, split, flag, split_flag);
     }
   }
@@ -219,7 +218,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      ThreadCritical tc;
+      NmtGuard guard;
       VirtualMemoryTracker::set_reserved_region_type((address)addr, flag);
     }
   }
