@@ -439,7 +439,7 @@ public class IRNode {
 
     public static final String CMP_U = PREFIX + "CMP_U" + POSTFIX;
     static {
-        beforeMatchingNameRegex(CMP_U, "CmpU");
+        beforeMatchingNameRegex(CMP_U, "CmpU\\b");
     }
 
     public static final String CMP_U3 = PREFIX + "CMP_U3" + POSTFIX;
