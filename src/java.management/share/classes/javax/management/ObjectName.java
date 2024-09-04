@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,57 +294,7 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
     // Private fields ---------------------------------------->
 
 
-    // Serialization compatibility stuff -------------------->
-
-    // Two serial forms are supported in this class. The selected form depends
-    // on system property "jmx.serial.form":
-    //  - "1.0" for JMX 1.0
-    //  - any other value for JMX 1.1 and higher
-    //
-    // Serial version for old serial form
-    private static final long oldSerialVersionUID = -5467795090068647408L;
-    //
-    // Serial version for new serial form
-    private static final long newSerialVersionUID = 1081892073854801359L;
-    //
-    // Serializable fields in old serial form
-    private static final ObjectStreamField[] oldSerialPersistentFields =
-    {
-        new ObjectStreamField("domain", String.class),
-        new ObjectStreamField("propertyList", Hashtable.class),
-        new ObjectStreamField("propertyListString", String.class),
-        new ObjectStreamField("canonicalName", String.class),
-        new ObjectStreamField("pattern", Boolean.TYPE),
-        new ObjectStreamField("propertyPattern", Boolean.TYPE)
-    };
-    //
-    // Serializable fields in new serial form
-    private static final ObjectStreamField[] newSerialPersistentFields = { };
-    //
-    // Actual serial version and serial form
-    private static final long serialVersionUID;
-    private static final ObjectStreamField[] serialPersistentFields;
-    private static boolean compat = false;
-    static {
-        try {
-            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
-            @SuppressWarnings("removal")
-            String form = AccessController.doPrivileged(act);
-            compat = (form != null && form.equals("1.0"));
-        } catch (Exception e) {
-            // OK: exception means no compat with 1.0, too bad
-        }
-        if (compat) {
-            serialPersistentFields = oldSerialPersistentFields;
-            serialVersionUID = oldSerialVersionUID;
-        } else {
-            serialPersistentFields = newSerialPersistentFields;
-            serialVersionUID = newSerialVersionUID;
-        }
-    }
-
-    //
-    // Serialization compatibility stuff <==============================
+    private static final long serialVersionUID = 1081892073854801359L;
 
     // Class private fields ----------------------------------->
 
@@ -1148,30 +1098,8 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
         throws IOException, ClassNotFoundException {
 
         String cn;
-        if (compat) {
-            // Read an object serialized in the old serial form
-            //
-            //in.defaultReadObject();
-            final ObjectInputStream.GetField fields = in.readFields();
-            String propListString =
-                    (String)fields.get("propertyListString", "");
-
-            // 6616825: take care of property patterns
-            final boolean propPattern =
-                    fields.get("propertyPattern" , false);
-            if (propPattern) {
-                propListString =
-                        (propListString.length()==0?"*":(propListString+",*"));
-            }
-
-            cn = (String)fields.get("domain", "default")+
-                ":"+ propListString;
-        } else {
-            // Read an object serialized in the new serial form
-            //
-            in.defaultReadObject();
-            cn = (String)in.readObject();
-        }
+        in.defaultReadObject();
+        cn = (String)in.readObject();
 
         try {
             construct(cn);
@@ -1242,26 +1170,8 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
     private void writeObject(ObjectOutputStream out)
             throws IOException {
 
-      if (compat)
-      {
-        // Serializes this instance in the old serial form
-        // Read CR 6441274 before making any changes to this code
-        ObjectOutputStream.PutField fields = out.putFields();
-        fields.put("domain", _canonicalName.substring(0, getDomainLength()));
-        fields.put("propertyList", getKeyPropertyList());
-        fields.put("propertyListString", getKeyPropertyListString());
-        fields.put("canonicalName", _canonicalName);
-        fields.put("pattern", (_compressed_storage & (DOMAIN_PATTERN | PROPLIST_PATTERN)) != 0);
-        fields.put("propertyPattern", isPropertyListPattern());
-        out.writeFields();
-      }
-      else
-      {
-        // Serializes this instance in the new serial form
-        //
-        out.defaultWriteObject();
-        out.writeObject(getSerializedNameString());
-      }
+      out.defaultWriteObject();
+      out.writeObject(getSerializedNameString());
     }
 
     //  Category : Serialization <===================================
