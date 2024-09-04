@@ -210,7 +210,9 @@ public class SwingButtonResizeTestWithOpenGL {
     }
 
     private void disposeFrame() {
-        frame.dispose();
+        if(frame != null) {
+            frame.dispose();
+        }
     }
 
     // Save BufferedImage to PNG file
