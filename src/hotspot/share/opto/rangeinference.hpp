@@ -25,6 +25,7 @@
 #ifndef SHARE_OPTO_RANGEINFERENCE_HPP
 #define SHARE_OPTO_RANGEINFERENCE_HPP
 
+#include "utilities/globalDefinitions.hpp"
 #include <type_traits>
 
 class Type;
