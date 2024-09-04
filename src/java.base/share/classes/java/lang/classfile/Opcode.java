@@ -24,8 +24,6 @@
  */
 package java.lang.classfile;
 
-import java.lang.constant.ConstantDesc;
-import java.lang.constant.ConstantDescs;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -45,55 +43,55 @@ public enum Opcode {
     NOP(OpcodeValues.NOP, 1, Kind.NOP),
 
     /** Push null */
-    ACONST_NULL(OpcodeValues.ACONST_NULL, 1, Kind.CONSTANT, TypeKind.REFERENCE, 0, ConstantDescs.NULL),
+    ACONST_NULL(OpcodeValues.ACONST_NULL, 1, Kind.CONSTANT),
 
     /** Push int constant -1 */
-    ICONST_M1(OpcodeValues.ICONST_M1, 1, Kind.CONSTANT, TypeKind.INT, 0, -1),
+    ICONST_M1(OpcodeValues.ICONST_M1, 1, Kind.CONSTANT),
 
     /** Push int constant 0 */
-    ICONST_0(OpcodeValues.ICONST_0, 1, Kind.CONSTANT, TypeKind.INT, 0, 0),
+    ICONST_0(OpcodeValues.ICONST_0, 1, Kind.CONSTANT),
 
     /** Push int constant 1 */
-    ICONST_1(OpcodeValues.ICONST_1, 1, Kind.CONSTANT, TypeKind.INT, 0, 1),
+    ICONST_1(OpcodeValues.ICONST_1, 1, Kind.CONSTANT),
 
     /** Push int constant 2 */
-    ICONST_2(OpcodeValues.ICONST_2, 1, Kind.CONSTANT, TypeKind.INT, 0, 2),
+    ICONST_2(OpcodeValues.ICONST_2, 1, Kind.CONSTANT),
 
     /** Push int constant 3 */
-    ICONST_3(OpcodeValues.ICONST_3, 1, Kind.CONSTANT, TypeKind.INT, 0, 3),
+    ICONST_3(OpcodeValues.ICONST_3, 1, Kind.CONSTANT),
 
     /** Push int constant 4 */
-    ICONST_4(OpcodeValues.ICONST_4, 1, Kind.CONSTANT, TypeKind.INT, 0, 4),
+    ICONST_4(OpcodeValues.ICONST_4, 1, Kind.CONSTANT),
 
     /** Push int constant 5 */
-    ICONST_5(OpcodeValues.ICONST_5, 1, Kind.CONSTANT, TypeKind.INT, 0, 5),
+    ICONST_5(OpcodeValues.ICONST_5, 1, Kind.CONSTANT),
 
     /** Push long constant 0 */
-    LCONST_0(OpcodeValues.LCONST_0, 1, Kind.CONSTANT, TypeKind.LONG, 0, 0L),
+    LCONST_0(OpcodeValues.LCONST_0, 1, Kind.CONSTANT),
 
     /** Push long constant  1 */
-    LCONST_1(OpcodeValues.LCONST_1, 1, Kind.CONSTANT, TypeKind.LONG, 0, 1L),
+    LCONST_1(OpcodeValues.LCONST_1, 1, Kind.CONSTANT),
 
     /** Push float constant 0 */
-    FCONST_0(OpcodeValues.FCONST_0, 1, Kind.CONSTANT, TypeKind.FLOAT, 0, 0.0f),
+    FCONST_0(OpcodeValues.FCONST_0, 1, Kind.CONSTANT),
 
     /** Push float constant 1 */
-    FCONST_1(OpcodeValues.FCONST_1, 1, Kind.CONSTANT, TypeKind.FLOAT, 0, 1.0f),
+    FCONST_1(OpcodeValues.FCONST_1, 1, Kind.CONSTANT),
 
     /** Push float constant 2 */
-    FCONST_2(OpcodeValues.FCONST_2, 1, Kind.CONSTANT, TypeKind.FLOAT, 0, 2.0f),
+    FCONST_2(OpcodeValues.FCONST_2, 1, Kind.CONSTANT),
 
     /** Push double constant 0 */
-    DCONST_0(OpcodeValues.DCONST_0, 1, Kind.CONSTANT, TypeKind.DOUBLE, 0, 0.0d),
+    DCONST_0(OpcodeValues.DCONST_0, 1, Kind.CONSTANT),
 
     /** Push double constant 1 */
-    DCONST_1(OpcodeValues.DCONST_1, 1, Kind.CONSTANT, TypeKind.DOUBLE, 0, 1.0d),
+    DCONST_1(OpcodeValues.DCONST_1, 1, Kind.CONSTANT),
 
     /** Push byte */
-    BIPUSH(OpcodeValues.BIPUSH, 2, Kind.CONSTANT, TypeKind.BYTE),
+    BIPUSH(OpcodeValues.BIPUSH, 2, Kind.CONSTANT),
 
     /** Push short */
-    SIPUSH(OpcodeValues.SIPUSH, 3, Kind.CONSTANT, TypeKind.SHORT),
+    SIPUSH(OpcodeValues.SIPUSH, 3, Kind.CONSTANT),
 
     /** Push item from run-time constant pool */
     LDC(OpcodeValues.LDC, 2, Kind.CONSTANT),
@@ -105,202 +103,202 @@ public enum Opcode {
     LDC2_W(OpcodeValues.LDC2_W, 3, Kind.CONSTANT),
 
     /** Load int from local variable */
-    ILOAD(OpcodeValues.ILOAD, 2, Kind.LOAD, TypeKind.INT, -1),
+    ILOAD(OpcodeValues.ILOAD, 2, Kind.LOAD),
 
     /** Load long from local variable */
-    LLOAD(OpcodeValues.LLOAD, 2, Kind.LOAD, TypeKind.LONG, -1),
+    LLOAD(OpcodeValues.LLOAD, 2, Kind.LOAD),
 
     /** Load float from local variable */
-    FLOAD(OpcodeValues.FLOAD, 2, Kind.LOAD, TypeKind.FLOAT, -1),
+    FLOAD(OpcodeValues.FLOAD, 2, Kind.LOAD),
 
     /** Load double from local variable */
-    DLOAD(OpcodeValues.DLOAD, 2, Kind.LOAD, TypeKind.DOUBLE, -1),
+    DLOAD(OpcodeValues.DLOAD, 2, Kind.LOAD),
 
     /** Load reference from local variable */
-    ALOAD(OpcodeValues.ALOAD, 2, Kind.LOAD, TypeKind.REFERENCE, -1),
+    ALOAD(OpcodeValues.ALOAD, 2, Kind.LOAD),
 
     /** Load int from local variable 0 */
-    ILOAD_0(OpcodeValues.ILOAD_0, 1, Kind.LOAD, TypeKind.INT, 0),
+    ILOAD_0(OpcodeValues.ILOAD_0, 1, Kind.LOAD),
 
     /** Load int from local variable 1 */
-    ILOAD_1(OpcodeValues.ILOAD_1, 1, Kind.LOAD, TypeKind.INT, 1),
+    ILOAD_1(OpcodeValues.ILOAD_1, 1, Kind.LOAD),
 
     /** Load int from local variable 2 */
-    ILOAD_2(OpcodeValues.ILOAD_2, 1, Kind.LOAD, TypeKind.INT, 2),
+    ILOAD_2(OpcodeValues.ILOAD_2, 1, Kind.LOAD),
 
     /** Load int from local variable3  */
-    ILOAD_3(OpcodeValues.ILOAD_3, 1, Kind.LOAD, TypeKind.INT, 3),
+    ILOAD_3(OpcodeValues.ILOAD_3, 1, Kind.LOAD),
 
     /** Load long from local variable 0 */
-    LLOAD_0(OpcodeValues.LLOAD_0, 1, Kind.LOAD, TypeKind.LONG, 0),
+    LLOAD_0(OpcodeValues.LLOAD_0, 1, Kind.LOAD),
 
     /** Load long from local variable 1 */
-    LLOAD_1(OpcodeValues.LLOAD_1, 1, Kind.LOAD, TypeKind.LONG, 1),
+    LLOAD_1(OpcodeValues.LLOAD_1, 1, Kind.LOAD),
 
     /** Load long from local variable 2 */
-    LLOAD_2(OpcodeValues.LLOAD_2, 1, Kind.LOAD, TypeKind.LONG, 2),
+    LLOAD_2(OpcodeValues.LLOAD_2, 1, Kind.LOAD),
 
     /** Load long from local variable 3 */
-    LLOAD_3(OpcodeValues.LLOAD_3, 1, Kind.LOAD, TypeKind.LONG, 3),
+    LLOAD_3(OpcodeValues.LLOAD_3, 1, Kind.LOAD),
 
     /** Load float from local variable 0 */
-    FLOAD_0(OpcodeValues.FLOAD_0, 1, Kind.LOAD, TypeKind.FLOAT, 0),
+    FLOAD_0(OpcodeValues.FLOAD_0, 1, Kind.LOAD),
 
     /** Load float from local variable 1 */
-    FLOAD_1(OpcodeValues.FLOAD_1, 1, Kind.LOAD, TypeKind.FLOAT, 1),
+    FLOAD_1(OpcodeValues.FLOAD_1, 1, Kind.LOAD),
 
     /** Load float from local variable 2 */
-    FLOAD_2(OpcodeValues.FLOAD_2, 1, Kind.LOAD, TypeKind.FLOAT, 2),
+    FLOAD_2(OpcodeValues.FLOAD_2, 1, Kind.LOAD),
 
     /** Load float from local variable 3 */
-    FLOAD_3(OpcodeValues.FLOAD_3, 1, Kind.LOAD, TypeKind.FLOAT, 3),
+    FLOAD_3(OpcodeValues.FLOAD_3, 1, Kind.LOAD),
 
     /** Load double from local variable 0 */
-    DLOAD_0(OpcodeValues.DLOAD_0, 1, Kind.LOAD, TypeKind.DOUBLE, 0),
+    DLOAD_0(OpcodeValues.DLOAD_0, 1, Kind.LOAD),
 
     /** Load double from local variable 1 */
-    DLOAD_1(OpcodeValues.DLOAD_1, 1, Kind.LOAD, TypeKind.DOUBLE, 1),
+    DLOAD_1(OpcodeValues.DLOAD_1, 1, Kind.LOAD),
 
     /** Load double from local variable 2 */
-    DLOAD_2(OpcodeValues.DLOAD_2, 1, Kind.LOAD, TypeKind.DOUBLE, 2),
+    DLOAD_2(OpcodeValues.DLOAD_2, 1, Kind.LOAD),
 
     /** Load double from local variable 3 */
-    DLOAD_3(OpcodeValues.DLOAD_3, 1, Kind.LOAD, TypeKind.DOUBLE, 3),
+    DLOAD_3(OpcodeValues.DLOAD_3, 1, Kind.LOAD),
 
     /**  Load reference from local variable 0 */
-    ALOAD_0(OpcodeValues.ALOAD_0, 1, Kind.LOAD, TypeKind.REFERENCE, 0),
+    ALOAD_0(OpcodeValues.ALOAD_0, 1, Kind.LOAD),
 
     /** Load reference from local variable 1 */
-    ALOAD_1(OpcodeValues.ALOAD_1, 1, Kind.LOAD, TypeKind.REFERENCE, 1),
+    ALOAD_1(OpcodeValues.ALOAD_1, 1, Kind.LOAD),
 
     /** Load reference from local variable 2 */
-    ALOAD_2(OpcodeValues.ALOAD_2, 1, Kind.LOAD, TypeKind.REFERENCE, 2),
+    ALOAD_2(OpcodeValues.ALOAD_2, 1, Kind.LOAD),
 
     /** Load reference from local variable 3 */
-    ALOAD_3(OpcodeValues.ALOAD_3, 1, Kind.LOAD, TypeKind.REFERENCE, 3),
+    ALOAD_3(OpcodeValues.ALOAD_3, 1, Kind.LOAD),
 
     /** Load int from array */
-    IALOAD(OpcodeValues.IALOAD, 1, Kind.ARRAY_LOAD, TypeKind.INT),
+    IALOAD(OpcodeValues.IALOAD, 1, Kind.ARRAY_LOAD),
 
     /** Load long from array */
-    LALOAD(OpcodeValues.LALOAD, 1, Kind.ARRAY_LOAD, TypeKind.LONG),
+    LALOAD(OpcodeValues.LALOAD, 1, Kind.ARRAY_LOAD),
 
     /** Load float from array */
-    FALOAD(OpcodeValues.FALOAD, 1, Kind.ARRAY_LOAD, TypeKind.FLOAT),
+    FALOAD(OpcodeValues.FALOAD, 1, Kind.ARRAY_LOAD),
 
     /** Load double from array */
-    DALOAD(OpcodeValues.DALOAD, 1, Kind.ARRAY_LOAD, TypeKind.DOUBLE),
+    DALOAD(OpcodeValues.DALOAD, 1, Kind.ARRAY_LOAD),
 
     /** Load reference from array */
-    AALOAD(OpcodeValues.AALOAD, 1, Kind.ARRAY_LOAD, TypeKind.REFERENCE),
+    AALOAD(OpcodeValues.AALOAD, 1, Kind.ARRAY_LOAD),
 
     /** Load byte from array */
-    BALOAD(OpcodeValues.BALOAD, 1, Kind.ARRAY_LOAD, TypeKind.BYTE),
+    BALOAD(OpcodeValues.BALOAD, 1, Kind.ARRAY_LOAD),
 
     /** Load char from array */
-    CALOAD(OpcodeValues.CALOAD, 1, Kind.ARRAY_LOAD, TypeKind.CHAR),
+    CALOAD(OpcodeValues.CALOAD, 1, Kind.ARRAY_LOAD),
 
     /** Load short from array */
-    SALOAD(OpcodeValues.SALOAD, 1, Kind.ARRAY_LOAD, TypeKind.SHORT),
+    SALOAD(OpcodeValues.SALOAD, 1, Kind.ARRAY_LOAD),
 
     /** Store int into local variable */
-    ISTORE(OpcodeValues.ISTORE, 2, Kind.STORE, TypeKind.INT, -1),
+    ISTORE(OpcodeValues.ISTORE, 2, Kind.STORE),
 
     /** Store long into local variable */
-    LSTORE(OpcodeValues.LSTORE, 2, Kind.STORE, TypeKind.LONG, -1),
+    LSTORE(OpcodeValues.LSTORE, 2, Kind.STORE),
 
     /** Store float into local variable */
-    FSTORE(OpcodeValues.FSTORE, 2, Kind.STORE, TypeKind.FLOAT, -1),
+    FSTORE(OpcodeValues.FSTORE, 2, Kind.STORE),
 
     /** Store double into local variable */
-    DSTORE(OpcodeValues.DSTORE, 2, Kind.STORE, TypeKind.DOUBLE, -1),
+    DSTORE(OpcodeValues.DSTORE, 2, Kind.STORE),
 
     /** Store reference into local variable */
-    ASTORE(OpcodeValues.ASTORE, 2, Kind.STORE, TypeKind.REFERENCE, -1),
+    ASTORE(OpcodeValues.ASTORE, 2, Kind.STORE),
 
     /** Store int into local variable 0 */
-    ISTORE_0(OpcodeValues.ISTORE_0, 1, Kind.STORE, TypeKind.INT, 0),
+    ISTORE_0(OpcodeValues.ISTORE_0, 1, Kind.STORE),
 
     /** Store int into local variable 1 */
-    ISTORE_1(OpcodeValues.ISTORE_1, 1, Kind.STORE, TypeKind.INT, 1),
+    ISTORE_1(OpcodeValues.ISTORE_1, 1, Kind.STORE),
 
     /** Store int into local variable 2 */
-    ISTORE_2(OpcodeValues.ISTORE_2, 1, Kind.STORE, TypeKind.INT, 2),
+    ISTORE_2(OpcodeValues.ISTORE_2, 1, Kind.STORE),
 
     /** Store int into local variable 3 */
-    ISTORE_3(OpcodeValues.ISTORE_3, 1, Kind.STORE, TypeKind.INT, 3),
+    ISTORE_3(OpcodeValues.ISTORE_3, 1, Kind.STORE),
 
     /** Store long into local variable 0 */
-    LSTORE_0(OpcodeValues.LSTORE_0, 1, Kind.STORE, TypeKind.LONG, 0),
+    LSTORE_0(OpcodeValues.LSTORE_0, 1, Kind.STORE),
 
     /** Store long into local variable 1 */
-    LSTORE_1(OpcodeValues.LSTORE_1, 1, Kind.STORE, TypeKind.LONG, 1),
+    LSTORE_1(OpcodeValues.LSTORE_1, 1, Kind.STORE),
 
     /** Store long into local variable 2 */
-    LSTORE_2(OpcodeValues.LSTORE_2, 1, Kind.STORE, TypeKind.LONG, 2),
+    LSTORE_2(OpcodeValues.LSTORE_2, 1, Kind.STORE),
 
     /** Store long into local variable 3 */
-    LSTORE_3(OpcodeValues.LSTORE_3, 1, Kind.STORE, TypeKind.LONG, 3),
+    LSTORE_3(OpcodeValues.LSTORE_3, 1, Kind.STORE),
 
     /** Store float into local variable 0 */
-    FSTORE_0(OpcodeValues.FSTORE_0, 1, Kind.STORE, TypeKind.FLOAT, 0),
+    FSTORE_0(OpcodeValues.FSTORE_0, 1, Kind.STORE),
 
     /** Store float into local variable 1 */
-    FSTORE_1(OpcodeValues.FSTORE_1, 1, Kind.STORE, TypeKind.FLOAT, 1),
+    FSTORE_1(OpcodeValues.FSTORE_1, 1, Kind.STORE),
 
     /** Store float into local variable 2 */
-    FSTORE_2(OpcodeValues.FSTORE_2, 1, Kind.STORE, TypeKind.FLOAT, 2),
+    FSTORE_2(OpcodeValues.FSTORE_2, 1, Kind.STORE),
 
     /** Store float into local variable 3 */
-    FSTORE_3(OpcodeValues.FSTORE_3, 1, Kind.STORE, TypeKind.FLOAT, 3),
+    FSTORE_3(OpcodeValues.FSTORE_3, 1, Kind.STORE),
 
     /** Store double into local variable 0 */
-    DSTORE_0(OpcodeValues.DSTORE_0, 1, Kind.STORE, TypeKind.DOUBLE, 0),
+    DSTORE_0(OpcodeValues.DSTORE_0, 1, Kind.STORE),
 
     /** Store double into local variable 1 */
-    DSTORE_1(OpcodeValues.DSTORE_1, 1, Kind.STORE, TypeKind.DOUBLE, 1),
+    DSTORE_1(OpcodeValues.DSTORE_1, 1, Kind.STORE),
 
     /** Store double into local variable 2 */
-    DSTORE_2(OpcodeValues.DSTORE_2, 1, Kind.STORE, TypeKind.DOUBLE, 2),
+    DSTORE_2(OpcodeValues.DSTORE_2, 1, Kind.STORE),
 
     /** Store double into local variable 3 */
-    DSTORE_3(OpcodeValues.DSTORE_3, 1, Kind.STORE, TypeKind.DOUBLE, 3),
+    DSTORE_3(OpcodeValues.DSTORE_3, 1, Kind.STORE),
 
     /** Store reference into local variable 0 */
-    ASTORE_0(OpcodeValues.ASTORE_0, 1, Kind.STORE, TypeKind.REFERENCE, 0),
+    ASTORE_0(OpcodeValues.ASTORE_0, 1, Kind.STORE),
 
     /** Store reference into local variable 1 */
-    ASTORE_1(OpcodeValues.ASTORE_1, 1, Kind.STORE, TypeKind.REFERENCE, 1),
+    ASTORE_1(OpcodeValues.ASTORE_1, 1, Kind.STORE),
 
     /** Store reference into local variable 2 */
-    ASTORE_2(OpcodeValues.ASTORE_2, 1, Kind.STORE, TypeKind.REFERENCE, 2),
+    ASTORE_2(OpcodeValues.ASTORE_2, 1, Kind.STORE),
 
     /** Store reference into local variable 3 */
-    ASTORE_3(OpcodeValues.ASTORE_3, 1, Kind.STORE, TypeKind.REFERENCE, 3),
+    ASTORE_3(OpcodeValues.ASTORE_3, 1, Kind.STORE),
 
     /** Store into int array */
-    IASTORE(OpcodeValues.IASTORE, 1, Kind.ARRAY_STORE, TypeKind.INT),
+    IASTORE(OpcodeValues.IASTORE, 1, Kind.ARRAY_STORE),
 
     /** Store into long array */
-    LASTORE(OpcodeValues.LASTORE, 1, Kind.ARRAY_STORE, TypeKind.LONG),
+    LASTORE(OpcodeValues.LASTORE, 1, Kind.ARRAY_STORE),
 
     /** Store into float array */
-    FASTORE(OpcodeValues.FASTORE, 1, Kind.ARRAY_STORE, TypeKind.FLOAT),
+    FASTORE(OpcodeValues.FASTORE, 1, Kind.ARRAY_STORE),
 
     /** Store into double array */
-    DASTORE(OpcodeValues.DASTORE, 1, Kind.ARRAY_STORE, TypeKind.DOUBLE),
+    DASTORE(OpcodeValues.DASTORE, 1, Kind.ARRAY_STORE),
 
     /** Store into reference array */
-    AASTORE(OpcodeValues.AASTORE, 1, Kind.ARRAY_STORE, TypeKind.REFERENCE),
+    AASTORE(OpcodeValues.AASTORE, 1, Kind.ARRAY_STORE),
 
     /** Store into byte array */
-    BASTORE(OpcodeValues.BASTORE, 1, Kind.ARRAY_STORE, TypeKind.BYTE),
+    BASTORE(OpcodeValues.BASTORE, 1, Kind.ARRAY_STORE),
 
     /** Store into char array */
-    CASTORE(OpcodeValues.CASTORE, 1, Kind.ARRAY_STORE, TypeKind.CHAR),
+    CASTORE(OpcodeValues.CASTORE, 1, Kind.ARRAY_STORE),
 
     /** Store into short array */
-    SASTORE(OpcodeValues.SASTORE, 1, Kind.ARRAY_STORE, TypeKind.SHORT),
+    SASTORE(OpcodeValues.SASTORE, 1, Kind.ARRAY_STORE),
 
     /** Pop the top operand stack value */
     POP(OpcodeValues.POP, 1, Kind.STACK),
@@ -330,220 +328,220 @@ public enum Opcode {
     SWAP(OpcodeValues.SWAP, 1, Kind.STACK),
 
     /** Add int */
-    IADD(OpcodeValues.IADD, 1, Kind.OPERATOR, TypeKind.INT),
+    IADD(OpcodeValues.IADD, 1, Kind.OPERATOR),
 
     /** Add long */
-    LADD(OpcodeValues.LADD, 1, Kind.OPERATOR, TypeKind.LONG),
+    LADD(OpcodeValues.LADD, 1, Kind.OPERATOR),
 
     /** Add float */
-    FADD(OpcodeValues.FADD, 1, Kind.OPERATOR, TypeKind.FLOAT),
+    FADD(OpcodeValues.FADD, 1, Kind.OPERATOR),
 
     /** Add double */
-    DADD(OpcodeValues.DADD, 1, Kind.OPERATOR, TypeKind.DOUBLE),
+    DADD(OpcodeValues.DADD, 1, Kind.OPERATOR),
 
     /** Subtract int */
-    ISUB(OpcodeValues.ISUB, 1, Kind.OPERATOR, TypeKind.INT),
+    ISUB(OpcodeValues.ISUB, 1, Kind.OPERATOR),
 
     /** Subtract long */
-    LSUB(OpcodeValues.LSUB, 1, Kind.OPERATOR, TypeKind.LONG),
+    LSUB(OpcodeValues.LSUB, 1, Kind.OPERATOR),
 
     /** Subtract float */
-    FSUB(OpcodeValues.FSUB, 1, Kind.OPERATOR, TypeKind.FLOAT),
+    FSUB(OpcodeValues.FSUB, 1, Kind.OPERATOR),
 
     /** Subtract double */
-    DSUB(OpcodeValues.DSUB, 1, Kind.OPERATOR, TypeKind.DOUBLE),
+    DSUB(OpcodeValues.DSUB, 1, Kind.OPERATOR),
 
     /** Multiply int */
-    IMUL(OpcodeValues.IMUL, 1, Kind.OPERATOR, TypeKind.INT),
+    IMUL(OpcodeValues.IMUL, 1, Kind.OPERATOR),
 
     /** Multiply long */
-    LMUL(OpcodeValues.LMUL, 1, Kind.OPERATOR, TypeKind.LONG),
+    LMUL(OpcodeValues.LMUL, 1, Kind.OPERATOR),
 
     /** Multiply float */
-    FMUL(OpcodeValues.FMUL, 1, Kind.OPERATOR, TypeKind.FLOAT),
+    FMUL(OpcodeValues.FMUL, 1, Kind.OPERATOR),
 
     /** Multiply double */
-    DMUL(OpcodeValues.DMUL, 1, Kind.OPERATOR, TypeKind.DOUBLE),
+    DMUL(OpcodeValues.DMUL, 1, Kind.OPERATOR),
 
     /** Divide int */
-    IDIV(OpcodeValues.IDIV, 1, Kind.OPERATOR, TypeKind.INT),
+    IDIV(OpcodeValues.IDIV, 1, Kind.OPERATOR),
 
     /** Divide long */
-    LDIV(OpcodeValues.LDIV, 1, Kind.OPERATOR, TypeKind.LONG),
+    LDIV(OpcodeValues.LDIV, 1, Kind.OPERATOR),
 
     /** Divide float */
-    FDIV(OpcodeValues.FDIV, 1, Kind.OPERATOR, TypeKind.FLOAT),
+    FDIV(OpcodeValues.FDIV, 1, Kind.OPERATOR),
 
     /** Divide double */
-    DDIV(OpcodeValues.DDIV, 1, Kind.OPERATOR, TypeKind.DOUBLE),
+    DDIV(OpcodeValues.DDIV, 1, Kind.OPERATOR),
 
     /** Remainder int */
-    IREM(OpcodeValues.IREM, 1, Kind.OPERATOR, TypeKind.INT),
+    IREM(OpcodeValues.IREM, 1, Kind.OPERATOR),
 
     /** Remainder long */
-    LREM(OpcodeValues.LREM, 1, Kind.OPERATOR, TypeKind.LONG),
+    LREM(OpcodeValues.LREM, 1, Kind.OPERATOR),
 
     /** Remainder float */
-    FREM(OpcodeValues.FREM, 1, Kind.OPERATOR, TypeKind.FLOAT),
+    FREM(OpcodeValues.FREM, 1, Kind.OPERATOR),
 
     /** Remainder double */
-    DREM(OpcodeValues.DREM, 1, Kind.OPERATOR, TypeKind.DOUBLE),
+    DREM(OpcodeValues.DREM, 1, Kind.OPERATOR),
 
     /** Negate int */
-    INEG(OpcodeValues.INEG, 1, Kind.OPERATOR, TypeKind.INT),
+    INEG(OpcodeValues.INEG, 1, Kind.OPERATOR),
 
     /** Negate long */
-    LNEG(OpcodeValues.LNEG, 1, Kind.OPERATOR, TypeKind.LONG),
+    LNEG(OpcodeValues.LNEG, 1, Kind.OPERATOR),
 
     /** Negate float */
-    FNEG(OpcodeValues.FNEG, 1, Kind.OPERATOR, TypeKind.FLOAT),
+    FNEG(OpcodeValues.FNEG, 1, Kind.OPERATOR),
 
     /** Negate double */
-    DNEG(OpcodeValues.DNEG, 1, Kind.OPERATOR, TypeKind.DOUBLE),
+    DNEG(OpcodeValues.DNEG, 1, Kind.OPERATOR),
 
     /** Shift left int */
-    ISHL(OpcodeValues.ISHL, 1, Kind.OPERATOR, TypeKind.INT),
+    ISHL(OpcodeValues.ISHL, 1, Kind.OPERATOR),
 
     /** Shift left long */
-    LSHL(OpcodeValues.LSHL, 1, Kind.OPERATOR, TypeKind.LONG),
+    LSHL(OpcodeValues.LSHL, 1, Kind.OPERATOR),
 
     /** Shift right int */
-    ISHR(OpcodeValues.ISHR, 1, Kind.OPERATOR, TypeKind.INT),
+    ISHR(OpcodeValues.ISHR, 1, Kind.OPERATOR),
 
     /** Shift right long */
-    LSHR(OpcodeValues.LSHR, 1, Kind.OPERATOR, TypeKind.LONG),
+    LSHR(OpcodeValues.LSHR, 1, Kind.OPERATOR),
 
     /** Logical shift right int */
-    IUSHR(OpcodeValues.IUSHR, 1, Kind.OPERATOR, TypeKind.INT),
+    IUSHR(OpcodeValues.IUSHR, 1, Kind.OPERATOR),
 
     /** Logical shift right long */
-    LUSHR(OpcodeValues.LUSHR, 1, Kind.OPERATOR, TypeKind.LONG),
+    LUSHR(OpcodeValues.LUSHR, 1, Kind.OPERATOR),
 
     /** Boolean AND int */
-    IAND(OpcodeValues.IAND, 1, Kind.OPERATOR, TypeKind.INT),
+    IAND(OpcodeValues.IAND, 1, Kind.OPERATOR),
 
     /** Boolean AND long */
-    LAND(OpcodeValues.LAND, 1, Kind.OPERATOR, TypeKind.LONG),
+    LAND(OpcodeValues.LAND, 1, Kind.OPERATOR),
 
     /** Boolean OR int */
-    IOR(OpcodeValues.IOR, 1, Kind.OPERATOR, TypeKind.INT),
+    IOR(OpcodeValues.IOR, 1, Kind.OPERATOR),
 
     /** Boolean OR long */
-    LOR(OpcodeValues.LOR, 1, Kind.OPERATOR, TypeKind.LONG),
+    LOR(OpcodeValues.LOR, 1, Kind.OPERATOR),
 
     /** Boolean XOR int */
-    IXOR(OpcodeValues.IXOR, 1, Kind.OPERATOR, TypeKind.INT),
+    IXOR(OpcodeValues.IXOR, 1, Kind.OPERATOR),
 
     /** Boolean XOR long */
-    LXOR(OpcodeValues.LXOR, 1, Kind.OPERATOR, TypeKind.LONG),
+    LXOR(OpcodeValues.LXOR, 1, Kind.OPERATOR),
 
     /** Increment local variable by constant */
-    IINC(OpcodeValues.IINC, 3, Kind.INCREMENT, TypeKind.INT, -1),
+    IINC(OpcodeValues.IINC, 3, Kind.INCREMENT),
 
     /** Convert int to long */
-    I2L(OpcodeValues.I2L, 1, Kind.CONVERT, TypeKind.INT, TypeKind.LONG),
+    I2L(OpcodeValues.I2L, 1, Kind.CONVERT),
 
     /** Convert int to float */
-    I2F(OpcodeValues.I2F, 1, Kind.CONVERT, TypeKind.INT, TypeKind.FLOAT),
+    I2F(OpcodeValues.I2F, 1, Kind.CONVERT),
 
     /** Convert int to double */
-    I2D(OpcodeValues.I2D, 1, Kind.CONVERT, TypeKind.INT, TypeKind.DOUBLE),
+    I2D(OpcodeValues.I2D, 1, Kind.CONVERT),
 
     /** Convert long to int */
-    L2I(OpcodeValues.L2I, 1, Kind.CONVERT, TypeKind.LONG, TypeKind.INT),
+    L2I(OpcodeValues.L2I, 1, Kind.CONVERT),
 
     /** Convert long to float */
-    L2F(OpcodeValues.L2F, 1, Kind.CONVERT, TypeKind.LONG, TypeKind.FLOAT),
+    L2F(OpcodeValues.L2F, 1, Kind.CONVERT),
 
     /** Convert long to double */
-    L2D(OpcodeValues.L2D, 1, Kind.CONVERT, TypeKind.LONG, TypeKind.DOUBLE),
+    L2D(OpcodeValues.L2D, 1, Kind.CONVERT),
 
     /** Convert float to int */
-    F2I(OpcodeValues.F2I, 1, Kind.CONVERT, TypeKind.FLOAT, TypeKind.INT),
+    F2I(OpcodeValues.F2I, 1, Kind.CONVERT),
 
     /** Convert float to long */
-    F2L(OpcodeValues.F2L, 1, Kind.CONVERT, TypeKind.FLOAT, TypeKind.LONG),
+    F2L(OpcodeValues.F2L, 1, Kind.CONVERT),
 
     /** Convert float to double */
-    F2D(OpcodeValues.F2D, 1, Kind.CONVERT, TypeKind.FLOAT, TypeKind.DOUBLE),
+    F2D(OpcodeValues.F2D, 1, Kind.CONVERT),
 
     /** Convert double to int */
-    D2I(OpcodeValues.D2I, 1, Kind.CONVERT, TypeKind.DOUBLE, TypeKind.INT),
+    D2I(OpcodeValues.D2I, 1, Kind.CONVERT),
 
     /** Convert double to long */
-    D2L(OpcodeValues.D2L, 1, Kind.CONVERT, TypeKind.DOUBLE, TypeKind.LONG),
+    D2L(OpcodeValues.D2L, 1, Kind.CONVERT),
 
     /** Convert double to float */
-    D2F(OpcodeValues.D2F, 1, Kind.CONVERT, TypeKind.DOUBLE, TypeKind.FLOAT),
+    D2F(OpcodeValues.D2F, 1, Kind.CONVERT),
 
     /** Convert int to byte */
-    I2B(OpcodeValues.I2B, 1, Kind.CONVERT, TypeKind.INT, TypeKind.BYTE),
+    I2B(OpcodeValues.I2B, 1, Kind.CONVERT),
 
     /** Convert int to char */
-    I2C(OpcodeValues.I2C, 1, Kind.CONVERT, TypeKind.INT, TypeKind.CHAR),
+    I2C(OpcodeValues.I2C, 1, Kind.CONVERT),
 
     /** Convert int to short */
-    I2S(OpcodeValues.I2S, 1, Kind.CONVERT, TypeKind.INT, TypeKind.SHORT),
+    I2S(OpcodeValues.I2S, 1, Kind.CONVERT),
 
     /** Compare long */
-    LCMP(OpcodeValues.LCMP, 1, Kind.OPERATOR, TypeKind.LONG),
+    LCMP(OpcodeValues.LCMP, 1, Kind.OPERATOR),
 
     /** Compare float */
-    FCMPL(OpcodeValues.FCMPL, 1, Kind.OPERATOR, TypeKind.FLOAT),
+    FCMPL(OpcodeValues.FCMPL, 1, Kind.OPERATOR),
 
     /** Compare float */
-    FCMPG(OpcodeValues.FCMPG, 1, Kind.OPERATOR, TypeKind.FLOAT),
+    FCMPG(OpcodeValues.FCMPG, 1, Kind.OPERATOR),
 
     /** Compare double */
-    DCMPL(OpcodeValues.DCMPL, 1, Kind.OPERATOR, TypeKind.DOUBLE),
+    DCMPL(OpcodeValues.DCMPL, 1, Kind.OPERATOR),
 
     /** Compare double */
-    DCMPG(OpcodeValues.DCMPG, 1, Kind.OPERATOR, TypeKind.DOUBLE),
+    DCMPG(OpcodeValues.DCMPG, 1, Kind.OPERATOR),
 
     /** Branch if int comparison with zero succeeds */
-    IFEQ(OpcodeValues.IFEQ, 3, Kind.BRANCH, TypeKind.INT),
+    IFEQ(OpcodeValues.IFEQ, 3, Kind.BRANCH),
 
     /** Branch if int comparison with zero succeeds */
-    IFNE(OpcodeValues.IFNE, 3, Kind.BRANCH, TypeKind.INT),
+    IFNE(OpcodeValues.IFNE, 3, Kind.BRANCH),
 
     /** Branch if int comparison with zero succeeds */
-    IFLT(OpcodeValues.IFLT, 3, Kind.BRANCH, TypeKind.INT),
+    IFLT(OpcodeValues.IFLT, 3, Kind.BRANCH),
 
     /** Branch if int comparison with zero succeeds */
-    IFGE(OpcodeValues.IFGE, 3, Kind.BRANCH, TypeKind.INT),
+    IFGE(OpcodeValues.IFGE, 3, Kind.BRANCH),
 
     /** Branch if int comparison with zero succeeds */
-    IFGT(OpcodeValues.IFGT, 3, Kind.BRANCH, TypeKind.INT),
+    IFGT(OpcodeValues.IFGT, 3, Kind.BRANCH),
 
     /** Branch if int comparison with zero succeeds */
-    IFLE(OpcodeValues.IFLE, 3, Kind.BRANCH, TypeKind.INT),
+    IFLE(OpcodeValues.IFLE, 3, Kind.BRANCH),
 
     /** Branch if int comparison succeeds */
-    IF_ICMPEQ(OpcodeValues.IF_ICMPEQ, 3, Kind.BRANCH, TypeKind.INT),
+    IF_ICMPEQ(OpcodeValues.IF_ICMPEQ, 3, Kind.BRANCH),
 
     /** Branch if int comparison succeeds */
-    IF_ICMPNE(OpcodeValues.IF_ICMPNE, 3, Kind.BRANCH, TypeKind.INT),
+    IF_ICMPNE(OpcodeValues.IF_ICMPNE, 3, Kind.BRANCH),
 
     /** Branch if int comparison succeeds */
-    IF_ICMPLT(OpcodeValues.IF_ICMPLT, 3, Kind.BRANCH, TypeKind.INT),
+    IF_ICMPLT(OpcodeValues.IF_ICMPLT, 3, Kind.BRANCH),
 
     /** Branch if int comparison succeeds */
-    IF_ICMPGE(OpcodeValues.IF_ICMPGE, 3, Kind.BRANCH, TypeKind.INT),
+    IF_ICMPGE(OpcodeValues.IF_ICMPGE, 3, Kind.BRANCH),
 
     /** Branch if int comparison succeeds */
-    IF_ICMPGT(OpcodeValues.IF_ICMPGT, 3, Kind.BRANCH, TypeKind.INT),
+    IF_ICMPGT(OpcodeValues.IF_ICMPGT, 3, Kind.BRANCH),
 
     /** Branch if int comparison succeeds */
-    IF_ICMPLE(OpcodeValues.IF_ICMPLE, 3, Kind.BRANCH, TypeKind.INT),
+    IF_ICMPLE(OpcodeValues.IF_ICMPLE, 3, Kind.BRANCH),
 
     /** Branch if reference comparison succeeds */
-    IF_ACMPEQ(OpcodeValues.IF_ACMPEQ, 3, Kind.BRANCH, TypeKind.REFERENCE),
+    IF_ACMPEQ(OpcodeValues.IF_ACMPEQ, 3, Kind.BRANCH),
 
     /** Branch if reference comparison succeeds */
-    IF_ACMPNE(OpcodeValues.IF_ACMPNE, 3, Kind.BRANCH, TypeKind.REFERENCE),
+    IF_ACMPNE(OpcodeValues.IF_ACMPNE, 3, Kind.BRANCH),
 
     /** Branch always */
-    GOTO(OpcodeValues.GOTO, 3, Kind.BRANCH, TypeKind.VOID),
+    GOTO(OpcodeValues.GOTO, 3, Kind.BRANCH),
 
     /**
      * Jump subroutine is discontinued opcode
@@ -564,22 +562,22 @@ public enum Opcode {
     LOOKUPSWITCH(OpcodeValues.LOOKUPSWITCH, -1, Kind.LOOKUP_SWITCH),
 
     /** Return int from method */
-    IRETURN(OpcodeValues.IRETURN, 1, Kind.RETURN, TypeKind.INT),
+    IRETURN(OpcodeValues.IRETURN, 1, Kind.RETURN),
 
     /** Return long from method */
-    LRETURN(OpcodeValues.LRETURN, 1, Kind.RETURN, TypeKind.LONG),
+    LRETURN(OpcodeValues.LRETURN, 1, Kind.RETURN),
 
     /** Return float from method */
-    FRETURN(OpcodeValues.FRETURN, 1, Kind.RETURN, TypeKind.FLOAT),
+    FRETURN(OpcodeValues.FRETURN, 1, Kind.RETURN),
 
     /** Return double from method */
-    DRETURN(OpcodeValues.DRETURN, 1, Kind.RETURN, TypeKind.DOUBLE),
+    DRETURN(OpcodeValues.DRETURN, 1, Kind.RETURN),
 
     /** Return reference from method */
-    ARETURN(OpcodeValues.ARETURN, 1, Kind.RETURN, TypeKind.REFERENCE),
+    ARETURN(OpcodeValues.ARETURN, 1, Kind.RETURN),
 
     /** Return void from method */
-    RETURN(OpcodeValues.RETURN, 1, Kind.RETURN, TypeKind.VOID),
+    RETURN(OpcodeValues.RETURN, 1, Kind.RETURN),
 
     /** Get static field from class */
     GETSTATIC(OpcodeValues.GETSTATIC, 3, Kind.FIELD_ACCESS),
@@ -621,7 +619,7 @@ public enum Opcode {
     ANEWARRAY(OpcodeValues.ANEWARRAY, 3, Kind.NEW_REF_ARRAY),
 
     /** Get length of array */
-    ARRAYLENGTH(OpcodeValues.ARRAYLENGTH, 1, Kind.OPERATOR, TypeKind.INT),
+    ARRAYLENGTH(OpcodeValues.ARRAYLENGTH, 1, Kind.OPERATOR),
 
     /** Throw exception or error */
     ATHROW(OpcodeValues.ATHROW, 1, Kind.THROW_EXCEPTION),
@@ -642,13 +640,13 @@ public enum Opcode {
     MULTIANEWARRAY(OpcodeValues.MULTIANEWARRAY, 4, Kind.NEW_MULTI_ARRAY),
 
     /** Branch if reference is null */
-    IFNULL(OpcodeValues.IFNULL, 3, Kind.BRANCH, TypeKind.REFERENCE),
+    IFNULL(OpcodeValues.IFNULL, 3, Kind.BRANCH),
 
     /** Branch if reference not null */
-    IFNONNULL(OpcodeValues.IFNONNULL, 3, Kind.BRANCH, TypeKind.REFERENCE),
+    IFNONNULL(OpcodeValues.IFNONNULL, 3, Kind.BRANCH),
 
     /** Branch always (wide index) */
-    GOTO_W(OpcodeValues.GOTO_W, 5, Kind.BRANCH, TypeKind.VOID),
+    GOTO_W(OpcodeValues.GOTO_W, 5, Kind.BRANCH),
 
     /**
      * Jump subroutine (wide index) is discontinued opcode
@@ -657,34 +655,34 @@ public enum Opcode {
     JSR_W(OpcodeValues.JSR_W, 5, Kind.DISCONTINUED_JSR),
 
     /** Load int from local variable (wide index) */
-    ILOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.ILOAD, 4, Kind.LOAD, TypeKind.INT, -1),
+    ILOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.ILOAD, 4, Kind.LOAD),
 
     /** Load long from local variable (wide index) */
-    LLOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.LLOAD, 4, Kind.LOAD, TypeKind.LONG, -1),
+    LLOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.LLOAD, 4, Kind.LOAD),
 
     /** Load float from local variable (wide index) */
-    FLOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.FLOAD, 4, Kind.LOAD, TypeKind.FLOAT, -1),
+    FLOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.FLOAD, 4, Kind.LOAD),
 
     /** Load double from local variable (wide index) */
-    DLOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.DLOAD, 4, Kind.LOAD, TypeKind.DOUBLE, -1),
+    DLOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.DLOAD, 4, Kind.LOAD),
 
     /** Load reference from local variable (wide index) */
-    ALOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.ALOAD, 4, Kind.LOAD, TypeKind.REFERENCE, -1),
+    ALOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.ALOAD, 4, Kind.LOAD),
 
     /** Store int into local variable (wide index) */
-    ISTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.ISTORE, 4, Kind.STORE, TypeKind.INT, -1),
+    ISTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.ISTORE, 4, Kind.STORE),
 
     /** Store long into local variable (wide index) */
-    LSTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.LSTORE, 4, Kind.STORE, TypeKind.LONG, -1),
+    LSTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.LSTORE, 4, Kind.STORE),
 
     /** Store float into local variable (wide index) */
-    FSTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.FSTORE, 4, Kind.STORE, TypeKind.FLOAT, -1),
+    FSTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.FSTORE, 4, Kind.STORE),
 
     /** Store double into local variable (wide index) */
-    DSTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.DSTORE, 4, Kind.STORE, TypeKind.DOUBLE, -1),
+    DSTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.DSTORE, 4, Kind.STORE),
 
     /** Store reference into local variable (wide index) */
-    ASTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.ASTORE, 4, Kind.STORE, TypeKind.REFERENCE, -1),
+    ASTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.ASTORE, 4, Kind.STORE),
 
     /**
      * Return from subroutine (wide index) is discontinued opcode
@@ -693,7 +691,7 @@ public enum Opcode {
     RET_W((OpcodeValues.WIDE << 8) | OpcodeValues.RET, 4, Kind.DISCONTINUED_RET),
 
     /** Increment local variable by constant (wide index) */
-    IINC_W((OpcodeValues.WIDE << 8) | OpcodeValues.IINC, 6, Kind.INCREMENT, TypeKind.INT, -1);
+    IINC_W((OpcodeValues.WIDE << 8) | OpcodeValues.IINC, 6, Kind.INCREMENT);
 
     /**
      * Kinds of opcodes.
@@ -1078,59 +1076,41 @@ public enum Opcode {
     private final int bytecode;
     private final int sizeIfFixed;
     private final Kind kind;
-    private final TypeKind primaryTypeKind;
-    private final TypeKind secondaryTypeKind;
-    private final int slot;
-    private final ConstantDesc constantValue;
 
     Opcode(int bytecode, int sizeIfFixed, Kind kind) {
-        this(bytecode, sizeIfFixed, kind, null, null, -1, null);
-    }
-
-    Opcode(int bytecode, int sizeIfFixed, Kind kind, TypeKind typeKind) {
-        this(bytecode, sizeIfFixed, kind, typeKind, null, -1, null);
-    }
-
-    Opcode(int bytecode, int sizeIfFixed, Kind kind, TypeKind typeKind, int slot) {
-        this(bytecode, sizeIfFixed, kind, typeKind, null, slot, null);
-    }
-
-    Opcode(int bytecode, int sizeIfFixed, Kind kind, TypeKind typeKind, int slot, ConstantDesc constantValue) {
-        this(bytecode, sizeIfFixed, kind, typeKind, null, slot, constantValue);
-    }
-
-    Opcode(int bytecode, int sizeIfFixed, Kind kind, TypeKind primaryTypeKind, TypeKind secondaryTypeKind) {
-        this(bytecode, sizeIfFixed, kind, primaryTypeKind, secondaryTypeKind, 0, null);
-    }
-
-    Opcode(int bytecode,
-           int sizeIfFixed,
-           Kind kind,
-           TypeKind primaryTypeKind,
-           TypeKind secondaryTypeKind,
-           int slot,
-           ConstantDesc constantValue) {
         this.bytecode = bytecode;
         this.sizeIfFixed = sizeIfFixed;
         this.kind = kind;
-        this.primaryTypeKind = primaryTypeKind;
-        this.secondaryTypeKind = secondaryTypeKind;
-        this.slot = slot;
-        this.constantValue = constantValue;
     }
 
     /**
-     * {@return bytecode}
+     * {@return the opcode value} For {@linkplain #isWide() wide} pseudo-opcodes, returns the
+     * first 2 bytes of the instruction, which are the {@code wide} opcode and the functional
+     * local variable opcode, as a U2 value.
      */
     public int bytecode() { return bytecode; }
 
     /**
-     * {@return true if the instruction has extended local variable index by additional bytes}
+     * {@return true if this is a pseudo-opcode modified by {@code wide}}
+     *
+     * @see #ILOAD_W
+     * @see #LLOAD_W
+     * @see #FLOAD_W
+     * @see #DLOAD_W
+     * @see #ALOAD_W
+     * @see #ISTORE_W
+     * @see #LSTORE_W
+     * @see #FSTORE_W
+     * @see #DSTORE_W
+     * @see #ASTORE_W
+     * @see #RET_W
+     * @see #IINC_W
      */
     public boolean isWide() { return bytecode > 255; }
 
     /**
-     * {@return size of the instruction if fixed, or -1 otherwise}
+     * {@return size of the instruction in bytes if fixed, or -1 otherwise} This size includes
+     * the opcode itself.
      */
     public int sizeIfFixed() { return sizeIfFixed; }
 
@@ -1138,44 +1118,6 @@ public enum Opcode {
      * {@return instruction kind}
      */
     public Kind kind() { return kind; }
-
-    /**
-     * {@return primary type kind for instructions operating with at least one type, or null otherwise}
-     */
-    public TypeKind primaryTypeKind() {
-        return primaryTypeKind;
-    }
-
-    /**
-     * {@return secondary type kind for instructions operating with two types, or null otherwise}
-     */
-    public TypeKind secondaryTypeKind() {
-        return secondaryTypeKind;
-    }
-
-    /**
-     * {@return local variable slot for instructions operating with local variable, or -1 otherwise}
-     */
-    public int slot() {
-        return slot;
-    }
-
-    /**
-     * {@return constant value for constant instructions, or null otherwise}
-     */
-    public ConstantDesc constantValue() {
-        return constantValue;
-    }
-
-    /**
-     * {@return true if the instruction represents an unconditional branch}
-     */
-    public boolean isUnconditionalBranch() {
-        return switch (this) {
-            case GOTO, ATHROW, GOTO_W, LOOKUPSWITCH, TABLESWITCH -> true;
-            default -> kind() == Kind.RETURN;
-        };
-    }
 
     /**
      * Holds the constant values of the Opcodes.
