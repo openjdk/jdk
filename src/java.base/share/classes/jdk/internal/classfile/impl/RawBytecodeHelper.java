@@ -69,7 +69,7 @@ public final class RawBytecodeHelper {
             } else {
                 // Wide pseudo-opcodes have double the length as normal variants
                 // Must match logic in checkSpecialInstruction()
-                assert lengths[(byte) op.bytecode()] * 2 == op.sizeIfFixed();
+                assert lengths[op.bytecode() & 0xFF] * 2 == op.sizeIfFixed();
             }
         }
         LENGTHS = lengths;
