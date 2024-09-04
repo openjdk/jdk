@@ -22,6 +22,7 @@
  */
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -76,6 +77,21 @@ final class StableTestUtil {
             return delegate.apply(t);
         }
 
+    }
+
+    public static final class CountingBiFunction<T, U, R>
+            extends AbstractCounting<BiFunction<T, U, R>>
+            implements BiFunction<T, U, R> {
+
+        public CountingBiFunction(BiFunction<T, U, R> delegate) {
+            super(delegate);
+        }
+
+        @Override
+        public R apply(T t, U u) {
+            incrementCounter();
+            return delegate.apply(t, u);
+        }
     }
 
     abstract static class AbstractCounting<D> {

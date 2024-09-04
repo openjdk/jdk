@@ -37,6 +37,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -261,7 +262,7 @@ public sealed interface StableValue<T>
      * if (stable.isSet()) {
      *     return stable.get();
      * } else {
-     *     V newValue = mapper.apply(value);
+     *     V newValue = mapper.apply(key);
      *     stable.setOrThrow(newValue);
      *     return newValue;
      * }
@@ -296,7 +297,7 @@ public sealed interface StableValue<T>
      * if (stable.isSet()) {
      *     return stable.get();
      * } else {
-     *     V newValue = mapper.apply(value);
+     *     V newValue = mapper.apply(key);
      *     stable.setOrThrow(newValue);
      *     return newValue;
      * }
@@ -313,6 +314,44 @@ public sealed interface StableValue<T>
      *         invokes the provided {@code mapper} upon being invoked.
      */
     <K> T computeIfUnset(K key, Function<? super K, ? extends T> mapper);
+
+    /**
+     * {@return the set holder value if set, otherwise attempts to compute and set a
+     * new (nullable) value using the provided {@code firstKey}, {@code secondKey}, and
+     * provided {@code mapper}, returning the (pre-existing or newly set) value}
+     * <p>
+     * The provided {@code mapper} is guaranteed to be invoked at most once if it
+     * completes without throwing an exception.
+     * <p>
+     * If the mapper throws an (unchecked) exception, the exception is rethrown, and no
+     * value is set.
+     *
+     * @implSpec The implementation logic is equivalent to the following steps for this
+     * {@code stable}:
+     *
+     * <pre> {@code
+     * if (stable.isSet()) {
+     *     return stable.get();
+     * } else {
+     *     V newValue = mapper.apply(firstKey, secondKey);
+     *     stable.setOrThrow(newValue);
+     *     return newValue;
+     * }
+     * }</pre>
+     * Except it is thread-safe and will only return the same witness value
+     * regardless if invoked by several threads. Also, the provided {@code supplier}
+     * will only be invoked once even if invoked from several threads unless the
+     * {@code supplier} throws an exception.
+     *
+     * @param  firstKey to be used by the provided mapper
+     * @param  secondKey to be used by the provided mapper
+     * @param  mapper that takes the provided keys to be used for computing a value
+     * @param  <K> firstKey type
+     * @param  <L> secondKey type
+     * @throws StackOverflowError if the provided {@code mapper} recursively
+     *         invokes the provided {@code mapper} upon being invoked.
+     */
+    <K, L> T computeIfUnset(K firstKey, L secondKey, BiFunction<? super K, ? super L, ? extends T> mapper);
 
     // Factories
 

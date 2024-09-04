@@ -35,6 +35,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
@@ -249,12 +250,12 @@ final class JepTest {
     }
 
     record CachingPredicate<T>(Map<? extends T, StableValue<Boolean>> delegate,
-                               Predicate<T> original) implements Predicate<T> {
+                               Function<T, Boolean> original) implements Predicate<T> {
 
         public CachingPredicate(Set<? extends T> inputs, Predicate<T> original) {
             this(inputs.stream()
                     .collect(Collectors.toMap(Function.identity(), _ -> StableValue.newInstance())),
-                    original
+                    original::test
             );
         }
 
@@ -265,18 +266,73 @@ final class JepTest {
                 throw new IllegalArgumentException(t.toString());
 
             }
-            if (stable.isSet()) {
-                return stable.isSet();
-            }
-            synchronized (this) {
-                if (stable.isSet()) {
-                    return stable.isSet();
-                }
-                final Boolean r = (Boolean) original.test(t);
-                stable.setOrThrow(r);
-                return r;
-            }
+            return stable.computeIfUnset(t, original);
         }
+    }
+
+    record CachingPredicate2<T>(Map<? extends T, Boolean> delegate) implements Predicate<T> {
+
+        public CachingPredicate2(Set<? extends T> inputs, Predicate<T> original) {
+            this(StableValue.lazyMap(inputs, original::test));
+        }
+
+        @Override
+        public boolean test(T t) {
+            return delegate.get(t);
+        }
+    }
+
+    public static void main(String[] args) {
+        Predicate<Integer> even = i -> i % 2 == 0;
+        Predicate<Integer> cachingPredicate = StableValue.lazyMap(Set.of(1, 2), even::test)::get;
+    }
+
+    record Pair<L, R>(L left, R right){}
+
+    record CachingBiFunction<T, U, R>(Map<Pair<T, U>, StableValue<R>> delegate,
+                                      Function<Pair<T, U>, R> original) implements BiFunction<T, U, R> {
+
+        @Override
+        public R apply(T t, U u) {
+            final var key = new Pair<>(t, u);
+            final StableValue<R> stable = delegate.get(key);
+            if (stable == null) {
+                throw new IllegalArgumentException(t + ", " + u);
+            }
+            return stable.computeIfUnset(key, original);
+        }
+
+        static <T, U, R> CachingBiFunction<T, U, R> of(Set<Pair<T, U>> inputs, BiFunction<T, U, R> original) {
+
+            Map<Pair<T, U>, StableValue<R>> map = inputs.stream()
+                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.newInstance()));
+
+            return new CachingBiFunction<>(map, pair -> original.apply(pair.left(), pair.right()));
+        }
+
+    }
+
+    record CachingBiFunction2<T, U, R>(Map<Pair<T, U>, StableValue<R>> delegate,
+                                      BiFunction<T, U, R> original) implements BiFunction<T, U, R> {
+
+        @Override
+        public R apply(T t, U u) {
+            final var key = new Pair<>(t, u);
+            final StableValue<R> stable = delegate.get(key);
+            if (stable == null) {
+                throw new IllegalArgumentException(t + ", " + u);
+            }
+            return stable.computeIfUnset(key.left(), key.right(), original);
+        }
+
+        static <T, U, R> BiFunction<T, U, R> of(Set<Pair<T, U>> inputs, BiFunction<T, U, R> original) {
+
+            Map<Pair<T, U>, StableValue<R>> map = inputs.stream()
+                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.newInstance()));
+
+            return new CachingBiFunction2<>(map, original);
+        }
+
     }
 
 }

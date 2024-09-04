@@ -149,7 +149,25 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return computeIfUnset0(key, mapper, (BiFunction<? super Function<? super K,? extends T>, ? super K, T>) (BiFunction<?, ?, ?>) FUNCTION_EXTRACTOR);
     }
 
-    // A consolidated method for all computeIfUnset overloads
+    @ForceInline
+    @Override
+    public <K, L> T computeIfUnset(K firstKey, L secondKey, BiFunction<? super K, ? super L, ? extends T> mapper) {
+        Object t = wrappedValue;
+        if (t != null) {
+            return unwrap(t);
+        }
+        synchronized (mutex) {
+            t = wrappedValue;
+            if (t != null) {
+                return unwrap(t);
+            }
+            final T newValue = mapper.apply(firstKey, secondKey);
+            // The mutex is reentrant so we need to check if the value was actually set.
+            return wrapAndCas(newValue) ? newValue : orElseThrow();
+        }
+    }
+
+    // A consolidated method for some computeIfUnset overloads
     @ForceInline
     private <K, P> T computeIfUnset0(K key, P provider, BiFunction<P, K, T> extractor) {
         Object t = wrappedValue;
