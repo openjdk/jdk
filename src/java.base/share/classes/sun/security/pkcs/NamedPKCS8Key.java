@@ -46,6 +46,7 @@ public final class NamedPKCS8Key extends PKCS8Key {
     private final transient NamedParameterSpec paramSpec;
     private final byte[] h;
 
+    // Ctor from family name, parameter set name, raw key bytes
     public NamedPKCS8Key(String fname, String pname, byte[] h) {
         this.fname = fname;
         this.paramSpec = new NamedParameterSpec(pname);
@@ -64,19 +65,25 @@ public final class NamedPKCS8Key extends PKCS8Key {
         }
     }
 
+    // Ctor from family name, and PKCS #8 bytes
     public NamedPKCS8Key(String fname, byte[] encoded) throws InvalidKeyException {
         super(encoded);
         this.fname = fname;
         try {
             paramSpec = new NamedParameterSpec(algid.getName());
+            if (algid.getEncodedParams() != null) {
+                throw new InvalidKeyException("algorithm identifier has params");
+            }
             h = new DerInputStream(key).getOctetString();
         } catch (IOException e) {
-            throw new InvalidKeyException("Cannot parse", e);
+            throw new InvalidKeyException("Cannot parse input", e);
         }
     }
 
     @Override
     public String toString() {
+        // Do not modify: this can be used by earlier JDKs that
+        // does not have the getParams() method
         return paramSpec.getName() + " private key";
     }
 

@@ -25,7 +25,6 @@
 
 package sun.security.provider;
 
-import sun.security.jca.JCAUtil;
 import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.x509.NamedX509Key;
 
@@ -33,17 +32,20 @@ import java.io.ByteArrayOutputStream;
 import java.security.*;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 import java.util.Objects;
 
 public abstract class NamedSignature extends SignatureSpi {
 
+    private final String fname; // family name
+    private final String[] pnames; // allowed parameter set name, need at least one
+
+    private final ByteArrayOutputStream bout = new ByteArrayOutputStream();
+
+    // init with...
     private String name = null;
     private byte[] secKey = null;
     private byte[] pubKey = null;
-
-    private final ByteArrayOutputStream bout = new ByteArrayOutputStream();
-    private final String fname; // family name
-    private final String[] pnames; // parameter set name, never null or empty
 
     public NamedSignature(String fname, String... pnames) {
         this.fname = Objects.requireNonNull(fname);
@@ -53,42 +55,39 @@ public abstract class NamedSignature extends SignatureSpi {
         this.pnames = pnames;
     }
 
-    public abstract byte[] sign0(String name, byte[] sk, byte[] msg, SecureRandom sr);
-    public abstract boolean verify0(String name, byte[] pk, byte[] msg, byte[] sig);
-
-    String checkName(String name) throws InvalidKeyException  {
+    private String checkName(String name) throws InvalidKeyException  {
         for (var pname : pnames) {
             if (pname.equalsIgnoreCase(name)) {
+                // return the stored pname, name should be sTrAnGe.
                 return pname;
             }
         }
-        throw new InvalidKeyException("Unknown name: " + name);
+        throw new InvalidKeyException("Unknown parameter set name: " + name);
     }
 
     @Override
     protected void engineInitVerify(PublicKey publicKey) throws InvalidKeyException {
-        if (!(publicKey instanceof NamedX509Key)) {
-            publicKey = (PublicKey) new NamedKeyFactory(fname, pnames).engineTranslateKey(publicKey);
+        // translate and check
+        var nk = (NamedX509Key) new NamedKeyFactory(fname, pnames)
+                .engineTranslateKey(publicKey);
+        name = nk.getParams().getName();
+        pubKey = nk.getRawBytes();
+        if (secKey != null) {
+            Arrays.fill(secKey, (byte)0);
+            secKey = null;
         }
-        if (publicKey instanceof NamedX509Key nk) {
-            checkName(name = nk.getParams().getName());
-            pubKey = nk.getRawBytes();
-        } else {
-            throw new InvalidKeyException("Unknown key: " + publicKey);
-        }
+        bout.reset();
     }
 
     @Override
     protected void engineInitSign(PrivateKey privateKey) throws InvalidKeyException {
-        if (!(privateKey instanceof NamedPKCS8Key)) {
-            privateKey = (PrivateKey) new NamedKeyFactory(fname, pnames).engineTranslateKey(privateKey);
-        }
-        if (privateKey instanceof NamedPKCS8Key nk) {
-            checkName(name = nk.getParams().getName());
-            secKey = nk.getRawBytes();
-        } else {
-            throw new InvalidKeyException("Unknown key: " + privateKey);
-        }
+        // translate and check
+        var nk = (NamedPKCS8Key) new NamedKeyFactory(fname, pnames)
+                .engineTranslateKey(privateKey);
+        name = nk.getParams().getName();
+        secKey = nk.getRawBytes();
+        pubKey = null;
+        bout.reset();
     }
 
     @Override
@@ -106,7 +105,7 @@ public abstract class NamedSignature extends SignatureSpi {
         if (secKey != null) {
             var msg = bout.toByteArray();
             bout.reset();
-            return sign0(name, secKey, msg, appRandom != null ? appRandom : JCAUtil.getDefSecureRandom());
+            return sign0(name, secKey, msg, appRandom);
         } else {
             throw new IllegalStateException("No private key");
         }
@@ -126,13 +125,13 @@ public abstract class NamedSignature extends SignatureSpi {
     @Override
     @SuppressWarnings("deprecation")
     protected void engineSetParameter(String param, Object value) throws InvalidParameterException {
-        throw new InvalidParameterException("No params needed");
+        throw new UnsupportedOperationException("setParameter() not supported");
     }
 
     @Override
     @SuppressWarnings("deprecation")
     protected Object engineGetParameter(String param) throws InvalidParameterException {
-        throw new InvalidParameterException("No params needed");
+        throw new UnsupportedOperationException("getParameter() not supported");
     }
 
     @Override
@@ -147,4 +146,27 @@ public abstract class NamedSignature extends SignatureSpi {
     protected AlgorithmParameters engineGetParameters() {
         return null;
     }
+
+    /**
+     * User-defined sign function.
+     *
+     * @param name parameter name
+     * @param sk private key in raw bytes
+     * @param msg the message
+     * @param sr SecureRandom object, null if not initialized
+     * @return the signature
+     * @throws ProviderException if there is an internal error
+     */
+    public abstract byte[] sign0(String name, byte[] sk, byte[] msg, SecureRandom sr);
+
+    /**
+     * User-defined verify function.
+     * @param name parameter name
+     * @param pk public key in raw bytes
+     * @param msg the message
+     * @param sig the signature
+     * @return true if verified
+     * @throws ProviderException if there is an internal error
+     */
+    public abstract boolean verify0(String name, byte[] pk, byte[] msg, byte[] sig);
 }

@@ -38,7 +38,10 @@ import java.util.Objects;
 public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
 
     private final String fname; // family name
-    private final String[] pnames; // parameter set name, never null or empty
+    private final String[] pnames; // allowed parameter set name, need at least one
+
+    protected String name = null; // init as
+    private SecureRandom secureRandom;
 
     public NamedKeyPairGenerator(String fname, String... pnames) {
         this.fname = Objects.requireNonNull(fname);
@@ -48,27 +51,21 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
         this.pnames = pnames;
     }
 
-    protected String name = null; // init as
-    private SecureRandom secureRandom;
-
-    String checkName(String name) throws InvalidKeyException  {
+    private String checkName(String name) throws InvalidAlgorithmParameterException  {
         for (var pname : pnames) {
             if (pname.equalsIgnoreCase(name)) {
+                // return the stored pname, name should be sTrAnGe.
                 return pname;
             }
         }
-        throw new InvalidKeyException("Unknown name: " + name);
+        throw new InvalidAlgorithmParameterException("Unknown parameter set name: " + name);
     }
 
     @Override
     public void initialize(AlgorithmParameterSpec params, SecureRandom random)
             throws InvalidAlgorithmParameterException {
         if (params instanceof NamedParameterSpec spec) {
-            try {
-                name = checkName(spec.getName());
-            } catch (InvalidKeyException e) {
-                throw new InvalidAlgorithmParameterException(e);
-            }
+            name = checkName(spec.getName());
         } else {
             throw new InvalidAlgorithmParameterException(
                     "Unknown AlgorithmParameterSpec: " + params);
@@ -76,31 +73,44 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
         this.secureRandom = random ;
     }
 
-    private String findName() throws IllegalStateException {
-        if (name != null) return name;
-        if (pnames.length == 1) return pnames[0];
+    private String currentParamSet() throws IllegalStateException {
+        if (name != null) {
+            return name;
+        }
+        if (pnames.length == 1) {
+            return pnames[0];
+        }
         throw new IllegalStateException("No default parameter set");
     }
 
     @Override
     public void initialize(int keysize, SecureRandom random) {
-        if (keysize != -1) throw new InvalidParameterException("keysize not supported");
+        if (keysize != -1) {
+            throw new InvalidParameterException("keysize not supported");
+        }
         this.secureRandom = random;
     }
 
     @Override
     public KeyPair generateKeyPair() {
-        String name = findName();
-        var keys = generateKeyPair0(name, secureRandom);
+        String pname = currentParamSet();
+        var keys = generateKeyPair0(pname, secureRandom);
         try {
-            return new KeyPair(new NamedX509Key(fname, name, keys[0]),
-                    new NamedPKCS8Key(fname, name, keys[1]));
+            return new KeyPair(new NamedX509Key(fname, pname, keys[0]),
+                    new NamedPKCS8Key(fname, pname, keys[1]));
         } finally {
             Arrays.fill(keys[0], (byte)0);
             Arrays.fill(keys[1], (byte)0);
         }
     }
 
-    // Users defined generator, sr could be null
-    public abstract byte[][] generateKeyPair0(String name, SecureRandom sr);
+    /**
+     * User-defined key pair generator.
+     *
+     * @param pname parametert set name
+     * @param sr SecureRandom object, null if not initialized
+     * @return public key and private key (in this order) in raw bytes
+     * @throws ProviderException if there is an internal error
+     */
+    public abstract byte[][] generateKeyPair0(String pname, SecureRandom sr);
 }

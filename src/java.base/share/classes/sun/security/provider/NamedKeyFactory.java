@@ -33,12 +33,13 @@ import java.security.spec.*;
 import java.util.Arrays;
 import java.util.Objects;
 
-// This factory can read from a RAW key using translateKey() if key.getFormat() is "RAW",
-// and write to a RAW EncodedKeySpec using getKeySpec(key, EncodedKeySpec).
+// Bonus: This factory can read from a RAW key using translateKey(key)
+// if key.getFormat() is "RAW", and write to a RAW EncodedKeySpec using
+// getKeySpec(key, EncodedKeySpec.class).
 public class NamedKeyFactory extends KeyFactorySpi {
 
     private final String fname; // family name
-    private final String[] pnames; // parameter set name, never null or empty
+    private final String[] pnames; // allowed parameter set name, need at least one
 
     public NamedKeyFactory(String fname, String... pnames) {
         this.fname = Objects.requireNonNull(fname);
@@ -48,17 +49,19 @@ public class NamedKeyFactory extends KeyFactorySpi {
         this.pnames = pnames;
     }
 
-    String checkName(String name) throws InvalidKeySpecException  {
+    private String checkName(String name) throws InvalidKeyException  {
         for (var pname : pnames) {
             if (pname.equalsIgnoreCase(name)) {
+                // return the stored pname, name should be sTrAnGe.
                 return pname;
             }
         }
-        throw new InvalidKeySpecException("Unknown name: " + name);
+        throw new InvalidKeyException("Unknown parameter set name: " + name);
     }
 
     @Override
-    protected PublicKey engineGeneratePublic(KeySpec keySpec) throws InvalidKeySpecException {
+    protected PublicKey engineGeneratePublic(KeySpec keySpec)
+            throws InvalidKeySpecException {
         if (keySpec instanceof X509EncodedKeySpec xspec) {
             try {
                 return fromX509(xspec.getEncoded());
@@ -71,7 +74,8 @@ public class NamedKeyFactory extends KeyFactorySpi {
     }
 
     @Override
-    protected PrivateKey engineGeneratePrivate(KeySpec keySpec) throws InvalidKeySpecException {
+    protected PrivateKey engineGeneratePrivate(KeySpec keySpec)
+            throws InvalidKeySpecException {
         if (keySpec instanceof PKCS8EncodedKeySpec pspec) {
             var bytes = pspec.getEncoded();
             try {
@@ -86,13 +90,15 @@ public class NamedKeyFactory extends KeyFactorySpi {
         }
     }
 
-    private PrivateKey fromPKCS8(byte[] bytes) throws InvalidKeyException, InvalidKeySpecException {
+    private PrivateKey fromPKCS8(byte[] bytes)
+            throws InvalidKeyException, InvalidKeySpecException {
         var k = new NamedPKCS8Key(fname, bytes);
         checkName(k.getParams().getName());
         return k;
     }
 
-    private PublicKey fromX509(byte[] bytes) throws InvalidKeyException, InvalidKeySpecException {
+    private PublicKey fromX509(byte[] bytes)
+            throws InvalidKeyException, InvalidKeySpecException {
         var k = new NamedX509Key(fname, bytes);
         checkName(k.getParams().getName());
         return k;
@@ -110,59 +116,68 @@ public class NamedKeyFactory extends KeyFactorySpi {
     }
 
     @Override
-    protected <T extends KeySpec> T engineGetKeySpec(Key key, Class<T> keySpec) throws InvalidKeySpecException {
-        if (key instanceof AsymmetricKey ak) {
-            if (ak.getParams() instanceof NamedParameterSpec nps) { // what if not?
-                checkName(nps.getName());
+    protected <T extends KeySpec> T engineGetKeySpec(Key key, Class<T> keySpec)
+            throws InvalidKeySpecException {
+        try {
+            key = engineTranslateKey(key);
+        } catch (InvalidKeyException e) {
+            throw new InvalidKeySpecException(e);
+        }
+        // key is now either NamedPKCS8Key or NamedX509Key of permitted param set
+        if (key instanceof NamedPKCS8Key nk) {
+            byte[] bytes = null;
+            try {
+                if (keySpec == PKCS8EncodedKeySpec.class) {
+                    return keySpec.cast(
+                            new PKCS8EncodedKeySpec(bytes = key.getEncoded()));
+                } else if (keySpec.isAssignableFrom(EncodedKeySpec.class)) {
+                    return keySpec.cast(
+                            new RawEncodedKeySpec(bytes = nk.getRawBytes()));
+                }
+            } finally {
+                if (bytes != null) {
+                    Arrays.fill(bytes, (byte)0);
+                }
             }
-            if (key instanceof PrivateKey) {
-                if (keySpec == PKCS8EncodedKeySpec.class
-                        && key.getFormat().equalsIgnoreCase("PKCS#8")) {
-                    var bytes = key.getEncoded();
-                    try {
-                        return keySpec.cast(new PKCS8EncodedKeySpec(bytes));
-                    } finally {
-                        Arrays.fill(bytes, (byte) 0);
-                    }
-                } else if (keySpec.isAssignableFrom(EncodedKeySpec.class)
-                        && key instanceof NamedPKCS8Key nk) {
-                    return keySpec.cast(new RawEncodedKeySpec(nk.getRawBytes()));
-                }
-            } else if (key instanceof PublicKey) {
-                if (keySpec == X509EncodedKeySpec.class
-                        && key.getFormat().equalsIgnoreCase("X.509")) {
-                    return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
-                } else if (keySpec.isAssignableFrom(EncodedKeySpec.class)
-                        && key instanceof NamedX509Key nk) {
-                    return keySpec.cast(new RawEncodedKeySpec(nk.getRawBytes()));
-                }
+        } else if (key instanceof NamedX509Key nk) {
+            if (keySpec == X509EncodedKeySpec.class
+                    && key.getFormat().equalsIgnoreCase("X.509")) {
+                return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
+            } else if (keySpec.isAssignableFrom(EncodedKeySpec.class)) {
+                return keySpec.cast(new RawEncodedKeySpec(nk.getRawBytes()));
             }
         }
-
-        throw new InvalidKeySpecException("Unsupported keyspec: " + keySpec);
+        throw new AssertionError("Unknown key: " + key.getClass());
     }
 
     @Override
     protected Key engineTranslateKey(Key key) throws InvalidKeyException {
-        if (key == null) throw new InvalidKeyException("Key must not be null");
-        if (key instanceof NamedPKCS8Key || key instanceof NamedX509Key) {
-            // Need check algorithm and parameters?
+        if (key == null) {
+            throw new InvalidKeyException("Key must not be null");
+        }
+        if (key instanceof NamedX509Key nk) {
+            checkName(nk.getParams().getName());
+            return key;
+        }
+        if (key instanceof NamedPKCS8Key nk) {
+            checkName(nk.getParams().getName());
             return key;
         }
         var format = key.getFormat();
         byte[] bytes = null;
         try {
-            if (format.equalsIgnoreCase("RAW")) {
-                String kAlg = key.getAlgorithm();
+            if (format == null) {
+                throw new InvalidKeyException("Unextractable key");
+            } else if (format.equalsIgnoreCase("RAW")) {
+                var kAlg = key.getAlgorithm();
                 if (key instanceof AsymmetricKey pk) {
                     String name;
+                    // Three case that we can find the parameter set name:
+                    // 1. getParams() returns one
+                    // 2. getAlgorithm() returns family name but this KF is init from param set name
+                    // 3. getAlgorithm() returns param set name (some provider does this)
                     if (pk.getParams() instanceof NamedParameterSpec nps) {
-                        name = nps.getName();
-                        try {
-                            name = checkName(name);
-                        } catch (InvalidKeySpecException e) {
-                            throw new InvalidKeyException("This factory does not accept " + name);
-                        }
+                        name = checkName(nps.getName());
                     } else {
                         if (kAlg.equalsIgnoreCase(fname)) {
                             if (pnames.length == 1) {
@@ -171,24 +186,18 @@ public class NamedKeyFactory extends KeyFactorySpi {
                                 throw new InvalidKeyException("No parameter set info");
                             }
                         } else {
-                            try {
-                                name = checkName(kAlg);
-                            } catch (InvalidKeySpecException e) {
-                                throw new InvalidKeyException("This factory does not accept " + kAlg);
-                            }
+                            name = checkName(kAlg);
                         }
                     }
-                    bytes = key.getEncoded();
                     return key instanceof PrivateKey
-                            ? new NamedPKCS8Key(fname, name, bytes)
+                            ? new NamedPKCS8Key(fname, name, bytes = key.getEncoded())
                             : new NamedX509Key(fname, name, key.getEncoded());
                 } else {
                     throw new InvalidKeyException("Unsupported key type: " + key.getClass());
                 }
             } else if (format.equalsIgnoreCase("PKCS#8") && key instanceof PrivateKey) {
                 try {
-                    bytes = key.getEncoded();
-                    return fromPKCS8(bytes);
+                    return fromPKCS8(bytes = key.getEncoded());
                 } catch (InvalidKeySpecException e) {
                     throw new InvalidKeyException("Invalid PKCS#8 key", e);
                 }
@@ -202,7 +211,9 @@ public class NamedKeyFactory extends KeyFactorySpi {
                 throw new InvalidKeyException("Unknown key format: " + key.getFormat());
             }
         } finally {
-            if (bytes != null) Arrays.fill(bytes, (byte)0);
+            if (bytes != null) {
+                Arrays.fill(bytes, (byte)0);
+            }
         }
     }
 }

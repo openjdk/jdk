@@ -33,19 +33,17 @@ import javax.crypto.KEM;
 import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
+import java.util.Arrays;
 import java.util.Objects;
 
 public abstract class NamedKEM implements KEMSpi {
 
     private final String fname; // family name
-    private final String[] pnames; // parameter set name, never null or empty
+    private final String[] pnames; // allowed parameter set name, need at least one
 
     public NamedKEM(String fname, String... pnames) {
         this.fname = Objects.requireNonNull(fname);
@@ -55,20 +53,15 @@ public abstract class NamedKEM implements KEMSpi {
         this.pnames = pnames;
     }
 
-    String checkName(String name) throws InvalidKeyException  {
+    private String checkName(String name) throws InvalidKeyException  {
         for (var pname : pnames) {
             if (pname.equalsIgnoreCase(name)) {
+                // return the stored pname, name should be sTrAnGe.
                 return pname;
             }
         }
-        throw new InvalidKeyException("Unknown name: " + name);
+        throw new InvalidKeyException("Unknown parameter set name: " + name);
     }
-
-    // sr might be null
-    public abstract byte[][] encap(String name, byte[] pk, SecureRandom sr);
-    public abstract byte[] decap(String name, byte[] sk, byte[] encap);
-    public abstract int sslen(String name);
-    public abstract int clen(String name);
 
     @Override
     public EncapsulatorSpi engineNewEncapsulator(
@@ -77,15 +70,10 @@ public abstract class NamedKEM implements KEMSpi {
         if (spec != null) {
             throw new InvalidAlgorithmParameterException("No params needed");
         }
-        if (!(publicKey instanceof NamedX509Key)) {
-            publicKey = (PublicKey) new NamedKeyFactory(fname, pnames).engineTranslateKey(publicKey);
-        }
-        if (publicKey instanceof NamedX509Key qk) {
-            checkName(qk.getParams().getName());
-            return getKeyConsumerImpl(this, qk.getParams(), qk.getRawBytes(), secureRandom);
-        } else {
-            throw new InvalidKeyException("Unknown key: " + publicKey);
-        }
+        // translate and check
+        var nk = (NamedX509Key) new NamedKeyFactory(fname, pnames)
+                .engineTranslateKey(publicKey);
+        return getKeyConsumerImpl(this, nk.getParams(), nk.getRawBytes(), secureRandom);
     }
 
     @Override
@@ -95,18 +83,16 @@ public abstract class NamedKEM implements KEMSpi {
         if (spec != null) {
             throw new InvalidAlgorithmParameterException("No params needed");
         }
-        if (!(privateKey instanceof NamedPKCS8Key)) {
-            privateKey = (PrivateKey) new NamedKeyFactory(fname, pnames).engineTranslateKey(privateKey);
-        }
-        if (privateKey instanceof NamedPKCS8Key qk) {
-            checkName(qk.getParams().getName());
-            return getKeyConsumerImpl(this, qk.getParams(), qk.getRawBytes(), null);
-        } else {
-            throw new InvalidKeyException("Unknown key: " + privateKey);
-        }
+        // translate and check
+        var nk = (NamedPKCS8Key) new NamedKeyFactory(fname, pnames)
+                .engineTranslateKey(privateKey);
+        return getKeyConsumerImpl(this, nk.getParams(), nk.getRawBytes(), null);
     }
 
-    record KeyConsumerImpl(NamedKEM kem, String name, int sslen, int clen, byte[] key, SecureRandom sr)
+    // We don't have a flag on whether key is public key or private key.
+    // The correct method should always be called.
+    private record KeyConsumerImpl(NamedKEM kem, String name, int sslen, int clen,
+            byte[] key, SecureRandom sr)
             implements KEMSpi.EncapsulatorSpi, KEMSpi.DecapsulatorSpi {
         @Override
         public SecretKey engineDecapsulate(byte[] encapsulation, int from, int to, String algorithm)
@@ -115,18 +101,26 @@ public abstract class NamedKEM implements KEMSpi {
                 throw new DecapsulateException("Invalid key encapsulation message length");
             }
             var ss = kem.decap(name, key, encapsulation);
-            return new SecretKeySpec(ss,
-                    from, to - from, algorithm);
+            try {
+                return new SecretKeySpec(ss,
+                        from, to - from, algorithm);
+            } finally {
+                Arrays.fill(ss, (byte)0);
+            }
         }
 
         @Override
         public KEM.Encapsulated engineEncapsulate(int from, int to, String algorithm) {
             var enc = kem.encap(name, key, sr);
-            return new KEM.Encapsulated(
-                    new SecretKeySpec(enc[1],
-                            from, to - from, "Generic"),
-                    enc[0],
-                    null);
+            try {
+                return new KEM.Encapsulated(
+                        new SecretKeySpec(enc[1],
+                                from, to - from, algorithm),
+                        enc[0],
+                        null);
+            } finally {
+                Arrays.fill(enc[1], (byte)0);
+            }
         }
 
         @Override
@@ -145,4 +139,45 @@ public abstract class NamedKEM implements KEMSpi {
         String name = nps.getName();
         return new KeyConsumerImpl(kem, name, kem.sslen(name), kem.clen(name), key, sr);
     }
+
+    /**
+     * User-defined encap function.
+     *
+     * @param name parameter name
+     * @param pk public key in raw bytes
+     * @param sr SecureRandom object, null if not initialized
+     * @return the key encapsulation message and the shared key (in this order)
+     * @throws ProviderException if there is an internal error
+     */
+    public abstract byte[][] encap(String name, byte[] pk, SecureRandom sr);
+
+    /**
+     * User-defined decap function.
+     *
+     * @param name parameter name
+     * @param sk private key in raw bytes
+     * @param encap the key encapsulation message
+     * @return the shared key
+     * @throws ProviderException if there is an internal error
+     */
+    public abstract byte[] decap(String name, byte[] sk, byte[] encap);
+
+    /**
+     * User-defined function returning shared secret key length.
+     *
+     * @param name parameter name
+     * @return shared secret key length
+     * @throws ProviderException if there is an internal error
+     */
+    public abstract int sslen(String name);
+
+    /**
+     * User-defined function returning key encapsulation message length.
+     *
+     * @param name parameter name
+     * @return key encapsulation message length
+     * @throws ProviderException if there is an internal error
+     */
+    public abstract int clen(String name);
+
 }

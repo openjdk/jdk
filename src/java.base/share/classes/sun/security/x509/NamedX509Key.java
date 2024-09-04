@@ -45,6 +45,7 @@ public final class NamedX509Key extends X509Key {
     private final transient NamedParameterSpec paramSpec;
     private final byte[] h;
 
+    // Ctor from family name, parameter set name, raw key bytes
     public NamedX509Key(String fname, String pname, byte[] h) {
         this.fname = fname;
         this.paramSpec = new NamedParameterSpec(pname);
@@ -58,15 +59,21 @@ public final class NamedX509Key extends X509Key {
         setKey(new BitArray(h.length * 8, h));
     }
 
+    // Ctor from family name, and X.509 bytes
     public NamedX509Key(String fname, byte[] encoded) throws InvalidKeyException {
         this.fname = fname;
         decode(encoded);
         paramSpec = new NamedParameterSpec(algid.getName());
+        if (algid.encodedParams != null) {
+            throw new InvalidKeyException("algorithm identifier has params");
+        }
         h = getKey().toByteArray();
     }
 
     @Override
     public String toString() {
+        // Do not modify: this can be used by earlier JDKs that
+        // does not have the getParams() method
         return paramSpec.getName() + " public key";
     }
 
