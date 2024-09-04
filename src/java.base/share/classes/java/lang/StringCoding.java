@@ -40,7 +40,6 @@ class StringCoding {
      */
     public static int countNonZeroAscii(String s) {
         byte[] value = s.value();
-        int strlen = value.length;
         if (s.isLatin1()) {
             return countNonZeroAsciiLatin1(value, 0, value.length);
         } else {
