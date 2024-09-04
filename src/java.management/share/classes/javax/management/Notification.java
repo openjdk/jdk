@@ -53,7 +53,6 @@ import com.sun.jmx.mbeanserver.GetPropertyAction;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID is not constant
 public class Notification extends EventObject {
 
     private static final long serialVersionUID = -7516092053498031989L;

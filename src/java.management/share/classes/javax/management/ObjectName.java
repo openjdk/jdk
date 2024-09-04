@@ -222,7 +222,6 @@ import java.util.Map;
  * @implNote The maximum allowed length of the domain name in this implementation
  *           is {@code Integer.MAX_VALUE/4}
  */
-@SuppressWarnings("serial") // don't complain serialVersionUID not constant
 public class ObjectName implements Comparable<ObjectName>, QueryExp {
     private static final int DOMAIN_PATTERN = 0x8000_0000;
     private static final int PROPLIST_PATTERN = 0x4000_0000;

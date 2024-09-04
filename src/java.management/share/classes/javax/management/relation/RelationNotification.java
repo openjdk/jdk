@@ -57,12 +57,9 @@ import static com.sun.jmx.mbeanserver.Util.cast;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID not constant
 public class RelationNotification extends Notification {
 
     private static final long serialVersionUID = -6871117877523310399L;
-    //
-    // Actual serial version and serial form
     /**
      * @serialField relationId String Relation identifier of
      * created/removed/updated relation

@@ -81,7 +81,6 @@ import javax.management.RuntimeOperationsException;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")
 public class ModelMBeanInfoSupport extends MBeanInfo implements ModelMBeanInfo {
 
     private static final long serialVersionUID = -1935722590756516193L;

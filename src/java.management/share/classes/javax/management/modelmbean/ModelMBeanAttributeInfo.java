@@ -116,7 +116,6 @@ import javax.management.RuntimeOperationsException;
  * @since 1.5
  */
 
-@SuppressWarnings("serial")  // serialVersionUID is not constant
 public class ModelMBeanAttributeInfo
     extends MBeanAttributeInfo
     implements DescriptorAccess {

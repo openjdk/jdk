@@ -57,7 +57,6 @@ import java.lang.System.Logger.Level;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID must be constant
 public class MBeanServerNotificationFilter extends NotificationFilterSupport {
 
     private static final long serialVersionUID = 2605900539589789736L;

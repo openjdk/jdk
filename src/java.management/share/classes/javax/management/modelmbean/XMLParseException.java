@@ -49,7 +49,6 @@ import java.security.AccessController;
 *
 * @since 1.5
 */
-@SuppressWarnings("serial")  // serialVersionUID not constant
 public class XMLParseException
 extends Exception
 {

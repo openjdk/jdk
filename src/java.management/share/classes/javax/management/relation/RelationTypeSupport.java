@@ -63,7 +63,6 @@ import java.lang.System.Logger.Level;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID not constant
 public class RelationTypeSupport implements RelationType {
 
     private static final long serialVersionUID = 4611072955724144607L;

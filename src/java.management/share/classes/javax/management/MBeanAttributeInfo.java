@@ -40,7 +40,6 @@ import java.util.Objects;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID not constant
 public class MBeanAttributeInfo extends MBeanFeatureInfo implements Cloneable {
 
     private static final long serialVersionUID = 8644704819898565848L;

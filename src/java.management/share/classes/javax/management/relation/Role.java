@@ -51,7 +51,6 @@ import javax.management.ObjectName;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID not constant
 public class Role implements Serializable {
 
     private static final long serialVersionUID = -279985518429862552L;

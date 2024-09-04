@@ -46,7 +46,6 @@ import javax.management.NotCompliantMBeanException;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID not constant
 public class RoleInfo implements Serializable {
 
     private static final long serialVersionUID = 2504952983494636987L;

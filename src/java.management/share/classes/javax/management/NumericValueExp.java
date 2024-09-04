@@ -45,7 +45,6 @@ import java.security.AccessController;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID not constant
 class NumericValueExp extends QueryEval implements ValueExp {
 
     private static final long serialVersionUID = -4679739485102359104L;

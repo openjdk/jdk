@@ -39,7 +39,6 @@ import com.sun.jmx.mbeanserver.GetPropertyAction;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID is not constant
 class ClassAttributeValueExp extends AttributeValueExp {
 
     private static final long serialVersionUID = -1081892073854801359L;

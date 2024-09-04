@@ -44,7 +44,6 @@ import java.security.AccessController;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")
 public class RoleResult implements Serializable {
 
     private static final long serialVersionUID = -6304063118040985512L;

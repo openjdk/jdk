@@ -46,7 +46,6 @@ import java.security.AccessController;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID not constant
 public class InvalidTargetObjectTypeException  extends Exception
 {
     private static final long serialVersionUID = 1190536278266811217L;
