@@ -2567,9 +2567,7 @@ uint SharedRuntime::out_preserve_stack_slots() {
 // and setup oopmap.
 //
 SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
-  assert((id >= SharedStubId::polling_page_vectors_safepoint_handler_id ||
-          id <= SharedStubId::polling_page_return_handler_id),
-         "expected a polling page stub id");
+  assert(is_polling_page_id(id), "expected a polling page stub id");
 
   ResourceMark rm;
   OopMapSet *oop_maps = new OopMapSet();
@@ -2698,9 +2696,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
 //
 RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
   assert (StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
-  assert((id >= SharedStubId::wrong_method_id &&
-          id <= SharedStubId::resolve_static_call_id),
-         "expected a resolve blob id");
+  assert(is_resolve_id(id), "expected a resolve stub id");
 
   // allocate space for the code
   ResourceMark rm;
@@ -2798,9 +2794,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 // caller saved registers were assumed volatile in the compiler.
 
 RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
-  assert((id >= SharedStubId::throw_AbstractMethodError_id &&
-          id <= SharedStubId::throw_delayed_StackOverflowError_id),
-         "expected a throw stub id");
+  assert(is_throw_id(id), "expected a throw stub id");
 
   const char *name = SharedRuntime::stub_name(id);
 
