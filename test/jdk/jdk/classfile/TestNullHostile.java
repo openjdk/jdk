@@ -71,9 +71,6 @@ import static org.testng.Assert.fail;
  */
 public class TestNullHostile {
 
-    // cuts test runtime by half
-    // increment by 1 everytime you add a new default value
-    private static final int DEFAULT_MAPPING_NUMBER = 133;
     private static final Set<String> OBJECT_METHODS = Stream.of(Object.class.getMethods())
             .map(Method::getName)
             .collect(Collectors.toSet());
@@ -333,7 +330,7 @@ public class TestNullHostile {
 
 
 
-            //todo  remove from exclude list later, this breaks corpus and advancedtransformation test
+            //todo  remove from exclude list later, this breaks CorpusTest and AdvancedTransformationsTest
             "java.lang.classfile.ClassHierarchyResolver$ClassHierarchyInfo/ofClass(java.lang.constant.ClassDesc)/0/0",
             "java.lang.classfile.attribute.ModuleAttribute$ModuleAttributeBuilder/requires(java.lang.constant.ModuleDesc,int,java.lang.String)/2/0",
             "java.lang.classfile.attribute.ModuleAttribute/of(java.lang.classfile.constantpool.ModuleEntry,int,java.lang.classfile.constantpool.Utf8Entry,java.util.Collection,java.util.Collection,java.util.Collection,java.util.Collection,java.util.Collection)/2/0",
@@ -473,13 +470,11 @@ public class TestNullHostile {
     }
 
     @BeforeSuite
-    public void TestNPEs() throws IOException, URISyntaxException {
+    public void getDefaultValues() throws IOException, URISyntaxException {
         FileSystem fs = FileSystems.getFileSystem(new URI("jrt:/"));
         var all = findAllClassFiles();
-        int i = 0;
-        while (DEFAULT_VALUES.size() <= DEFAULT_MAPPING_NUMBER && i < all.size() - 1) {
-            var b = Files.readAllBytes(fs.getPath(all.get(i)));
-            i++;
+        for (var file : all) {
+            var b = Files.readAllBytes(fs.getPath(file));
             try {
                 populateClassFileMappings(b);
             } catch (Exception e) {
@@ -568,9 +563,9 @@ public class TestNullHostile {
         try (final Stream<Path> paths = Files.walk(dir)) {
             // each path is in the form: /modules/<modname>/<pkg>/<pkg>/.../name.class
             return paths
-                    .filter((path) -> path.getNameCount() > 2)
+                    .filter(path -> path.getNameCount() > 2)
                     .map(Path::toString)
-                    .filter((name) -> name.endsWith(".class"))
+                    .filter(name -> name.endsWith(".class"))
                     .collect(Collectors.toList());
         }
     }
@@ -760,6 +755,7 @@ public class TestNullHostile {
                 default -> {}
             }
         }
+
         for (ClassElement ce : cm) {
             switch (ce) {
                 case Attribute<?> a -> {
@@ -776,8 +772,7 @@ public class TestNullHostile {
                     addDefaultMapping(AnnotationValue.class, AnnotationValue.of(fm.fieldTypeSymbol()));
                 }
                 case MethodModel mm -> {
-                    var shifter = CodeLocalsShifter.of(mm.flags(), mm.methodTypeSymbol());
-                    addDefaultMapping(CodeLocalsShifter.class, shifter);
+                    addDefaultMapping(CodeLocalsShifter.class, CodeLocalsShifter.of(mm.flags(), mm.methodTypeSymbol()));
                     addDefaultMapping(MethodTypeDesc.class, mm.methodTypeSymbol());
                     addDefaultMapping(MethodModel.class, mm);
                     for (MethodElement me : mm) {
@@ -879,7 +874,6 @@ public class TestNullHostile {
                                 mob.moduleFlags(a.moduleFlagsMask());
                                 a.moduleVersion().ifPresent(v -> mob.moduleVersion(v.stringValue()));
                                 for (var req : a.requires())
-
                                     mob.requires(req.requires().asSymbol(), req.requiresFlagsMask(), req.requiresVersion().map(Utf8Entry::stringValue).orElse("placeholder"));
                                 for (var exp : a.exports())
                                     mob.exports(exp.exportedPackage().asSymbol(), exp.exportsFlagsMask(), exp.exportsTo().stream().map(ModuleEntry::asSymbol).toArray(ModuleDesc[]::new));
@@ -905,8 +899,7 @@ public class TestNullHostile {
         var testClass = "JsrAndRetSample";
         var testMethod = "testMethod";
         var cd_list = ArrayList.class.describeConstable().get();
-        var ccnever = ClassFile.of();
-        ccnever.build(ClassDesc.of(testClass), clb -> clb
+        ClassFile.of().build(ClassDesc.of(testClass), clb -> clb
                 .withVersion(ClassFile.JAVA_5_VERSION, 0)
                 .withMethodBody(testMethod, MethodTypeDesc.of(ConstantDescs.CD_void, cd_list), ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC, cob -> cob
                         .block(bb -> {
