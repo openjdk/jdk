@@ -5324,30 +5324,11 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   }
 
   char* result = nullptr;
-  ALLOW_C_FUNCTION(::_fullpath, char* p = ::_fullpath(nullptr, filename, 0);)
-  if (p != nullptr) {
-    if (strlen(p) < outbuflen) {
-      strcpy(outbuf, p);
-      result = outbuf;
-    } else {
-      errno = ENAMETOOLONG;
-    }
-    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
-  } else {
-    // there was a error
-    // In this case, use the user provided buffer but at least check whether _fullpath caused
-    // a memory overwrite.
-    if (errno == EINVAL) {
-      outbuf[outbuflen - 1] = '\0';
-      ALLOW_C_FUNCTION(::_fullpath, p = ::_fullpath(outbuf, filename, outbuflen - 1);)
-      if (p != nullptr) {
-        guarantee(outbuf[outbuflen - 1] == '\0', "_fullpath buffer overwrite detected.");
-        result = p;
-      }
-    }
+  ALLOW_C_FUNCTION(::_fullpath, result = ::_fullpath(outbuf, filename, outbuflen);)
+  if (result == nullptr) {
+    errno = ENAMETOOLONG;
   }
   return result;
-
 }
 
 // Map a block of memory.
