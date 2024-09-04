@@ -314,7 +314,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         final boolean isClientConn = isClientConnection();
         // we only use the peer connection id manager when the connection corresponds to
         // a client connection
-        this.peerConnIdManager = isClientConn ? new PeerConnIdManager(this, dbgTag) : null;
+        this.peerConnIdManager = new PeerConnIdManager(this, dbgTag);
         this.decoder = QuicPacketDecoder.of(this.quicVersion);
         this.encoder = QuicPacketEncoder.of(this.quicVersion);
         this.codingContext = new QuicCodingContext();
@@ -2271,8 +2271,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         try {
             if (quicPacket instanceof InitialPacket initial) {
                 int total;
-                this.incomingInitialPacketSourceId = initial.sourceId();
-                this.peerConnIdManager.finalizeHandshakePeerConnId(initial);
+                updatePeerConnectionId(initial);
                 total = processInitialPacketPayload(initial);
                 assert total == initial.payloadSize();
                 // received initial packet from server - we won't need to replay anything now
@@ -2289,6 +2288,15 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         } catch (Throwable t) {
             terminator.terminate(TerminationCause.forException(t));
         }
+    }
+
+    protected void updatePeerConnectionId(InitialPacket initial) throws QuicTransportException {
+        this.incomingInitialPacketSourceId = initial.sourceId();
+        this.peerConnIdManager.finalizeHandshakePeerConnId(initial);
+    }
+
+    public QuicConnectionId getIncomingInitialPacketSourceId() {
+        return incomingInitialPacketSourceId;
     }
 
     @Override

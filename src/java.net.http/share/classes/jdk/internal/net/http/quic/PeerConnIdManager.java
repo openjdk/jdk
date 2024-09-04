@@ -61,6 +61,7 @@ final class PeerConnIdManager {
     private final Logger debug;
     private final QuicConnectionImpl connection;
     private final String logTag;
+    private final boolean isClient;
 
     private enum State {
         INITIAL_PKT_NOT_RECEIVED_FROM_PEER,
@@ -80,10 +81,7 @@ final class PeerConnIdManager {
     private volatile long largestReceivedRetirePriorTo = -1; // -1 implies none received so far
 
     PeerConnIdManager(final QuicConnectionImpl connection, final String dbTag) {
-        if (!connection.isClientConnection()) {
-            throw new IllegalArgumentException("PeerConnIdManager isn't meant for" +
-                    " server connection " + connection);
-        }
+        this.isClient = connection.isClientConnection();
         this.debug = Utils.getDebugLogger(() -> dbTag);
         this.logTag = connection.logTag();
         this.connection = connection;
@@ -107,6 +105,9 @@ final class PeerConnIdManager {
     }
 
     void retryConnId(final QuicConnectionId peerConnId) {
+        if (!isClient) {
+            throw new IllegalStateException("Should not be used on the server");
+        }
         final var st = this.state;
         if (st != State.INITIAL_PKT_NOT_RECEIVED_FROM_PEER) {
             throw new IllegalStateException("Cannot associate a peer id, from retry packet," +
@@ -169,6 +170,9 @@ final class PeerConnIdManager {
 
     void handlePreferredAddress(final ByteBuffer preferredConnId,
                                 final byte[] preferredStatelessResetToken) {
+        if (!isClient) {
+            throw new IllegalStateException("Should not be used on the server");
+        }
         final PeerConnectionId peerConnId = new PeerConnectionId(preferredConnId,
                 preferredStatelessResetToken);
         // keep track of this peer connection id
@@ -178,6 +182,9 @@ final class PeerConnIdManager {
     }
 
     void handshakeStatelessResetToken(final byte[] statelessResetToken) {
+        if (!isClient) {
+            throw new IllegalStateException("Should not be used on the server");
+        }
         final QuicConnectionId handshakeConnId = this.peerConnectionIds.get(0L);
         if (handshakeConnId == null) {
             throw new IllegalStateException("No handshake peer connection available");

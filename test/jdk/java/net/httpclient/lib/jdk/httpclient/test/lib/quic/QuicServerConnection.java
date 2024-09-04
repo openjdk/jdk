@@ -84,7 +84,6 @@ public final class QuicServerConnection extends QuicConnectionImpl {
     private volatile boolean connectionIdAcknowledged;
     private final QuicServer server;
     private final byte[] clientInitialToken;
-    private volatile QuicConnectionId incomingInitialPacketSourceId;
     private final QuicConnectionId peerConnId;
     private final QuicConnectionId clientSentDestConnId;
     private final QuicConnectionId originalServerConnId;
@@ -237,7 +236,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
             if (!(quicPacket instanceof InitialPacket initialPacket)) {
                 throw new AssertionError("Bad packet type: " + quicPacket);
             }
-            this.incomingInitialPacketSourceId = initialPacket.sourceId();
+            updatePeerConnectionId(initialPacket);
             var initialPayloadLength = initialPacket.payloadSize();
             assert initialPayloadLength < Integer.MAX_VALUE;
             if (debug.on()) {
@@ -458,7 +457,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
                     null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
         }
         if (!params.matches(initial_source_connection_id,
-                incomingInitialPacketSourceId)) {
+                getIncomingInitialPacketSourceId())) {
             throw new QuicTransportException("Peer connection ID does not match",
                     null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
         }
