@@ -1501,7 +1501,7 @@ void MacroAssembler::reserved_stack_check(Register return_pc) {
   call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), R16_thread);
   pop_frame();
   mtlr(return_pc);
-  load_const_optimized(R0, StubRoutines::throw_delayed_StackOverflowError_entry());
+  load_const_optimized(R0, SharedRuntime::throw_delayed_StackOverflowError_entry());
   mtctr(R0);
   bctr();
 
@@ -1620,7 +1620,7 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
 // Temps, addr_base and exchange_value are killed if size < 4 and processor does not support respective instructions.
 // Only signed types are supported with size < 4.
 void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
-                                       Register compare_value, Register exchange_value,
+                                       RegisterOrConstant compare_value, Register exchange_value,
                                        Register addr_base, Register tmp1, Register tmp2,
                                        Label &retry, Label &failed, bool cmpxchgx_hint, int size) {
   // Sub-word instructions are available since Power 8.
@@ -1634,7 +1634,7 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
            modval = exchange_value;
 
   if (instruction_type != size) {
-    assert_different_registers(tmp1, tmp2, dest_current_value, compare_value, exchange_value, addr_base);
+    assert_different_registers(tmp1, tmp2, dest_current_value, compare_value.register_or_noreg(), exchange_value, addr_base);
     shift_amount = tmp1;
     val32 = tmp2;
     modval = tmp2;
@@ -1695,21 +1695,23 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
 
 // CmpxchgX sets condition register to cmpX(current, compare).
 void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_current_value,
-                                     Register compare_value, Register exchange_value,
+                                     RegisterOrConstant compare_value, Register exchange_value,
                                      Register addr_base, Register tmp1, Register tmp2,
-                                     int semantics, bool cmpxchgx_hint,
-                                     Register int_flag_success, bool contention_hint, bool weak, int size) {
+                                     int semantics, bool cmpxchgx_hint, Register int_flag_success,
+                                     Label* failed_ext, bool contention_hint, bool weak, int size) {
   Label retry;
-  Label failed;
+  Label failed_int;
+  Label& failed = (failed_ext != nullptr) ? *failed_ext : failed_int;
   Label done;
 
   // Save one branch if result is returned via register and
   // result register is different from the other ones.
   bool use_result_reg    = (int_flag_success != noreg);
-  bool preset_result_reg = (int_flag_success != dest_current_value && int_flag_success != compare_value &&
+  bool preset_result_reg = (int_flag_success != dest_current_value && int_flag_success != compare_value.register_or_noreg() &&
                             int_flag_success != exchange_value && int_flag_success != addr_base &&
                             int_flag_success != tmp1 && int_flag_success != tmp2);
   assert(!weak || flag == CCR0, "weak only supported with CCR0");
+  assert(int_flag_success == noreg || failed_ext == nullptr, "cannot have both");
   assert(size == 1 || size == 2 || size == 4, "unsupported");
 
   if (use_result_reg && preset_result_reg) {
@@ -1735,7 +1737,7 @@ void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_curre
 
   cmpxchg_loop_body(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
                     retry, failed, cmpxchgx_hint, size);
-  if (!weak || use_result_reg) {
+  if (!weak || use_result_reg || failed_ext) {
     if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
       bne_predict_not_taken(CCR0, weak ? failed : retry); // StXcx_ sets CCR0.
     } else {
@@ -1760,7 +1762,7 @@ void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_curre
     b(done);
   }
 
-  bind(failed);
+  bind(failed_int);
   if (use_result_reg && !preset_result_reg) {
     li(int_flag_success, 0);
   }
@@ -1787,10 +1789,11 @@ void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_curre
 // To avoid the costly compare exchange the value is tested beforehand.
 // Several special cases exist to avoid that unnecessary information is generated.
 //
-void MacroAssembler::cmpxchgd(ConditionRegister flag,
-                              Register dest_current_value, RegisterOrConstant compare_value, Register exchange_value,
-                              Register addr_base, int semantics, bool cmpxchgx_hint,
-                              Register int_flag_success, Label* failed_ext, bool contention_hint, bool weak) {
+void MacroAssembler::cmpxchgd(ConditionRegister flag, Register dest_current_value,
+                              RegisterOrConstant compare_value, Register exchange_value,
+                              Register addr_base,
+                              int semantics, bool cmpxchgx_hint, Register int_flag_success,
+                              Label* failed_ext, bool contention_hint, bool weak) {
   Label retry;
   Label failed_int;
   Label& failed = (failed_ext != nullptr) ? *failed_ext : failed_int;
@@ -1810,7 +1813,7 @@ void MacroAssembler::cmpxchgd(ConditionRegister flag,
   // Add simple guard in order to reduce risk of starving under high contention (recommended by IBM).
   if (contention_hint) { // Don't try to reserve if cmp fails.
     ld(dest_current_value, 0, addr_base);
-    cmpd(flag, compare_value, dest_current_value);
+    cmpd(flag, dest_current_value, compare_value);
     bne(flag, failed);
   }
 
@@ -1823,7 +1826,7 @@ void MacroAssembler::cmpxchgd(ConditionRegister flag,
   bind(retry);
 
   ldarx(dest_current_value, addr_base, cmpxchgx_hint);
-  cmpd(flag, compare_value, dest_current_value);
+  cmpd(flag, dest_current_value, compare_value);
   if (UseStaticBranchPredictionInCompareAndSwapPPC64) {
     bne_predict_not_taken(flag, failed);
   } else {
@@ -2170,7 +2173,6 @@ do {                                                                  \
          (result        == R8_ARG6      || result        == noreg), "registers must match ppc64.ad"); \
 } while(0)
 
-// Return true: we succeeded in generating this code
 void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
                                                    Register r_super_klass,
                                                    Register temp1,
@@ -2292,9 +2294,8 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
 
   // The bitmap is full to bursting.
   // Implicit invariant: BITMAP_FULL implies (length > 0)
-  assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "");
-  cmpdi(CCR0, r_bitmap, -1);
-  beq(CCR0, L_huge);
+  cmpwi(CCR0, r_array_length, (int32_t)Klass::SECONDARY_SUPERS_TABLE_SIZE - 2);
+  bgt(CCR0, L_huge);
 
   // NB! Our caller has checked bits 0 and 1 in the bitmap. The
   // current slot (at secondary_supers[r_array_index]) has not yet
@@ -2560,8 +2561,8 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp, oop);
-    lwz(temp, in_bytes(Klass::access_flags_offset()), temp);
-    testbitdi(flag, R0, temp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    lbz(temp, in_bytes(Klass::misc_flags_offset()), temp);
+    testbitdi(flag, R0, temp, exact_log2(KlassFlags::_misc_is_value_based_class));
     bne(flag, failure);
   }
 
@@ -2751,8 +2752,8 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
-    lwz(tmp1, in_bytes(Klass::access_flags_offset()), tmp1);
-    testbitdi(flag, R0, tmp1, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    lbz(tmp1, in_bytes(Klass::misc_flags_offset()), tmp1);
+    testbitdi(flag, R0, tmp1, exact_log2(KlassFlags::_misc_is_value_based_class));
     bne(flag, slow_path);
   }
 
@@ -2904,7 +2905,11 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     // Check for monitor (0b10).
     ld(mark, oopDesc::mark_offset_in_bytes(), obj);
     andi_(t, mark, markWord::monitor_value);
-    bne(CCR0, inflated);
+    if (!UseObjectMonitorTable) {
+      bne(CCR0, inflated);
+    } else {
+      bne(CCR0, push_and_slow);
+    }
 
 #ifdef ASSERT
     // Check header not unlocked (0b01).

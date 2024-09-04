@@ -163,8 +163,8 @@ AC_DEFUN([LIB_BUILD_BINUTILS],
 
   # We don't know the version, not checking for libsframe.a
   if test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a && \
-     test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a && \
-     test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a; then
+      test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a && \
+      test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a; then
     AC_MSG_NOTICE([Found binutils binaries in binutils install directory -- not building])
   else
     # On Windows, we cannot build with the normal Microsoft CL, but must instead use
@@ -267,8 +267,10 @@ AC_DEFUN([LIB_SETUP_HSDIS_BINUTILS],
   elif test "x$BINUTILS_INSTALL_DIR" != x; then
     disasm_header="\"$BINUTILS_INSTALL_DIR/include/dis-asm.h\""
     if test -e $BINUTILS_INSTALL_DIR/lib/libbfd.a && \
-       test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a && \
-       (test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a || test -e $BINUTILS_INSTALL_DIR/lib64/libiberty.a || test -e $BINUTILS_INSTALL_DIR/lib32/libiberty.a); then
+        test -e $BINUTILS_INSTALL_DIR/lib/libopcodes.a && \
+        (test -e $BINUTILS_INSTALL_DIR/lib/libiberty.a || \
+        test -e $BINUTILS_INSTALL_DIR/lib64/libiberty.a || \
+        test -e $BINUTILS_INSTALL_DIR/lib32/libiberty.a); then
       HSDIS_CFLAGS="-DLIBARCH_$OPENJDK_TARGET_CPU_LEGACY_LIB -I$BINUTILS_INSTALL_DIR/include"
 
       # libiberty ignores --libdir and may be installed in $BINUTILS_INSTALL_DIR/lib, $BINUTILS_INSTALL_DIR/lib32

@@ -32,7 +32,7 @@
 ifndef _INITSUPPORT_GMK
 _INITSUPPORT_GMK := 1
 
-ifeq ($(HAS_SPEC),)
+ifeq ($(HAS_SPEC), )
 
   # COMMA is defined in spec.gmk, but that is not included yet
   COMMA := ,
@@ -74,13 +74,13 @@ ifeq ($(HAS_SPEC),)
 
   # Setup information about available configurations, if any.
   ifneq ($(CUSTOM_ROOT), )
-    build_dir=$(CUSTOM_ROOT)/build
+    build_dir = $(CUSTOM_ROOT)/build
   else
-    build_dir=$(topdir)/build
+    build_dir = $(topdir)/build
   endif
-  all_spec_files=$(wildcard $(build_dir)/*/spec.gmk)
+  all_spec_files = $(wildcard $(build_dir)/*/spec.gmk)
   # Extract the configuration names from the path
-  all_confs=$(patsubst %/spec.gmk, %, $(patsubst $(build_dir)/%, %, $(all_spec_files)))
+  all_confs = $(patsubst %/spec.gmk, %, $(patsubst $(build_dir)/%, %, $(all_spec_files)))
 
   # Check for unknown command-line variables
   define CheckControlVariables
@@ -128,7 +128,7 @@ ifeq ($(HAS_SPEC),)
     ifeq ($$(CONF_CHECK), )
       # Default behavior is fail
       CONF_CHECK := fail
-    else ifneq ($$(filter-out auto fail ignore, $$(CONF_CHECK)),)
+    else ifneq ($$(filter-out auto fail ignore, $$(CONF_CHECK)), )
       $$(info Error: CONF_CHECK must be one of: auto, fail or ignore.)
       $$(error Cannot continue)
     endif
@@ -147,11 +147,11 @@ ifeq ($(HAS_SPEC),)
         $$(info Error: Cannot use CONF_NAME=$$(CONF_NAME) and SPEC=$$(SPEC) at the same time. Choose one.)
         $$(error Cannot continue)
       endif
-      ifeq ($$(wildcard $$(SPEC)),)
+      ifeq ($$(wildcard $$(SPEC)), )
         $$(info Error: Cannot locate spec.gmk, given by SPEC=$$(SPEC).)
         $$(error Cannot continue)
       endif
-      ifeq ($$(filter /%, $$(SPEC)),)
+      ifeq ($$(filter /%, $$(SPEC)), )
         # If given with relative path, make it absolute
         SPECS := $$(CURDIR)/$$(strip $$(SPEC))
       else
@@ -162,7 +162,7 @@ ifeq ($(HAS_SPEC),)
       override SPEC :=
     else
       # Use spec.gmk files in the build output directory
-      ifeq ($$(all_spec_files),)
+      ifeq ($$(all_spec_files), )
         ifneq ($(CUSTOM_ROOT), )
           $$(info Error: No configurations found for $$(CUSTOM_ROOT).)
         else
@@ -180,7 +180,7 @@ ifeq ($(HAS_SPEC),)
           $$(error Cannot continue)
         endif
         matching_conf := $$(strip $$(filter $$(CONF_NAME), $$(all_confs)))
-        ifeq ($$(matching_conf),)
+        ifeq ($$(matching_conf), )
           $$(info Error: No configurations found matching CONF_NAME=$$(CONF_NAME).)
           $$(info Available configurations in $$(build_dir):)
           $$(foreach var, $$(all_confs), $$(info * $$(var)))
@@ -197,15 +197,15 @@ ifeq ($(HAS_SPEC),)
         SPECS := $$(build_dir)/$$(matching_conf)/spec.gmk
       else ifneq ($$(origin CONF), undefined)
         # User have given a CONF= argument.
-        ifeq ($$(CONF),)
+        ifeq ($$(CONF), )
           # If given CONF=, match all configurations
           matching_confs := $$(strip $$(all_confs))
         else
           # Otherwise select those that contain the given CONF string
-          ifeq ($$(patsubst !%,,$$(CONF)),)
+          ifeq ($$(patsubst !%,,$$(CONF)), )
             # A CONF starting with ! means we should negate the search term
             matching_confs := $$(strip $$(foreach var, $$(all_confs), \
-               $$(if $$(findstring $$(subst !,,$$(CONF)), $$(var)), ,$$(var))))
+                $$(if $$(findstring $$(subst !,,$$(CONF)), $$(var)), ,$$(var))))
           else
             matching_confs := $$(strip $$(foreach var, $$(all_confs), \
                 $$(if $$(findstring $$(CONF), $$(var)), $$(var))))
@@ -215,12 +215,12 @@ ifeq ($(HAS_SPEC),)
             matching_confs := $$(CONF)
             # Don't repeat this output on make restarts caused by including
             # generated files.
-            ifeq ($$(MAKE_RESTARTS),)
+            ifeq ($$(MAKE_RESTARTS), )
               $$(info Using exact match for CONF=$$(CONF) (other matches are possible))
             endif
           endif
         endif
-        ifeq ($$(matching_confs),)
+        ifeq ($$(matching_confs), )
           $$(info Error: No configurations found matching CONF=$$(CONF).)
           $$(info Available configurations in $$(build_dir):)
           $$(foreach var, $$(all_confs), $$(info * $$(var)))
@@ -228,9 +228,9 @@ ifeq ($(HAS_SPEC),)
         else
           # Don't repeat this output on make restarts caused by including
           # generated files.
-          ifeq ($$(MAKE_RESTARTS),)
+          ifeq ($$(MAKE_RESTARTS), )
             ifeq ($$(words $$(matching_confs)), 1)
-              ifneq ($$(findstring $$(LOG_LEVEL), info debug trace),)
+              ifneq ($$(findstring $$(LOG_LEVEL), info debug trace), )
                 $$(info Building configuration '$$(matching_confs)' (matching CONF=$$(CONF)))
               endif
             else
@@ -272,7 +272,7 @@ ifeq ($(HAS_SPEC),)
     # count.
     main_targets_file := $$(dir $(strip $2))make-support/main-targets.gmk
 
-    ifeq ($$(MAKE_RESTARTS),)
+    ifeq ($$(MAKE_RESTARTS), )
       # Only do this if make has not been restarted, and if we do not force it.
       ifeq ($(strip $1), FORCE)
         $$(shell rm -f $$(main_targets_file))
@@ -316,9 +316,9 @@ else # $(HAS_SPEC)=true
   BUILD_LOG_PIPE_SIMPLE := | $(TEE) -a $(BUILD_LOG)
 
   ifneq ($(CUSTOM_ROOT), )
-    topdir=$(CUSTOM_ROOT)
+    topdir = $(CUSTOM_ROOT)
   else
-    topdir=$(TOPDIR)
+    topdir = $(TOPDIR)
   endif
 
   # Setup the build environment to match the requested specification on
@@ -349,39 +349,39 @@ else # $(HAS_SPEC)=true
       ifneq ($$(findstring :, $$(COMPARE_BUILD)), )
         $$(foreach part, $$(subst :, , $$(COMPARE_BUILD)), \
           $$(if $$(filter PATCH=%, $$(part)), \
-            $$(eval COMPARE_BUILD_PATCH=$$(strip $$(patsubst PATCH=%, %, $$(part)))) \
+            $$(eval COMPARE_BUILD_PATCH = $$(strip $$(patsubst PATCH=%, %, $$(part)))) \
           ) \
           $$(if $$(filter CONF=%, $$(part)), \
-            $$(eval COMPARE_BUILD_CONF=$$(strip $$(subst +, , $$(patsubst CONF=%, %, $$(part))))) \
+            $$(eval COMPARE_BUILD_CONF = $$(strip $$(subst +, , $$(patsubst CONF=%, %, $$(part))))) \
           ) \
           $$(if $$(filter MAKE=%, $$(part)), \
-            $$(eval COMPARE_BUILD_MAKE=$$(strip $$(subst +, , $$(patsubst MAKE=%, %, $$(part))))) \
+            $$(eval COMPARE_BUILD_MAKE = $$(strip $$(subst +, , $$(patsubst MAKE=%, %, $$(part))))) \
           ) \
           $$(if $$(filter COMP_OPTS=%, $$(part)), \
-            $$(eval COMPARE_BUILD_COMP_OPTS=$$(strip $$(subst +, , $$(patsubst COMP_OPTS=%, %, $$(part))))) \
+            $$(eval COMPARE_BUILD_COMP_OPTS = $$(strip $$(subst +, , $$(patsubst COMP_OPTS=%, %, $$(part))))) \
           ) \
           $$(if $$(filter COMP_DIR=%, $$(part)), \
-            $$(eval COMPARE_BUILD_COMP_DIR=$$(strip $$(subst +, , $$(patsubst COMP_DIR=%, %, $$(part))))) \
+            $$(eval COMPARE_BUILD_COMP_DIR = $$(strip $$(subst +, , $$(patsubst COMP_DIR=%, %, $$(part))))) \
           ) \
           $$(if $$(filter FAIL=%, $$(part)), \
-            $$(eval COMPARE_BUILD_FAIL=$$(strip $$(subst +, , $$(patsubst FAIL=%, %, $$(part))))) \
+            $$(eval COMPARE_BUILD_FAIL = $$(strip $$(subst +, , $$(patsubst FAIL=%, %, $$(part))))) \
           ) \
           $$(if $$(filter NODRYRUN=%, $$(part)), \
-            $$(eval COMPARE_BUILD_NODRYRUN=$$(strip $$(subst +, , $$(patsubst NODRYRUN=%, %, $$(part))))) \
+            $$(eval COMPARE_BUILD_NODRYRUN = $$(strip $$(subst +, , $$(patsubst NODRYRUN=%, %, $$(part))))) \
           ) \
         )
       else
         # Separate handling for single field case, to allow for spaces in values.
         ifneq ($$(filter PATCH=%, $$(COMPARE_BUILD)), )
-          COMPARE_BUILD_PATCH=$$(strip $$(patsubst PATCH=%, %, $$(COMPARE_BUILD)))
+          COMPARE_BUILD_PATCH = $$(strip $$(patsubst PATCH=%, %, $$(COMPARE_BUILD)))
         else ifneq ($$(filter CONF=%, $$(COMPARE_BUILD)), )
-          COMPARE_BUILD_CONF=$$(strip $$(subst +, , $$(patsubst CONF=%, %, $$(COMPARE_BUILD))))
+          COMPARE_BUILD_CONF = $$(strip $$(subst +, , $$(patsubst CONF=%, %, $$(COMPARE_BUILD))))
         else ifneq ($$(filter --%, $$(COMPARE_BUILD)), )
           # Assume CONF if value begins with --
-          COMPARE_BUILD_CONF=$$(strip $$(subst +, , $$(COMPARE_BUILD)))
+          COMPARE_BUILD_CONF = $$(strip $$(subst +, , $$(COMPARE_BUILD)))
         else
           # Otherwise assume patch file
-          COMPARE_BUILD_PATCH=$$(strip $$(COMPARE_BUILD))
+          COMPARE_BUILD_PATCH = $$(strip $$(COMPARE_BUILD))
         endif
       endif
       ifneq ($$(COMPARE_BUILD_PATCH), )
@@ -531,7 +531,7 @@ else # $(HAS_SPEC)=true
     # used by build comparisons.
     define WaitForJavacServerFinish
 	$(if $(JAVAC_SERVER_DIR), \
-	  sleep 5\
+	  sleep 5 \
 	)
     endef
   else
@@ -544,7 +544,7 @@ else # $(HAS_SPEC)=true
   ##############################################################################
 
   # Store the build times in this directory.
-  BUILDTIMESDIR=$(OUTPUTDIR)/make-support/build-times
+  BUILDTIMESDIR = $(OUTPUTDIR)/make-support/build-times
 
   # Record starting time for build of a sub repository.
   define RecordStartTime
@@ -605,7 +605,7 @@ endif # HAS_SPEC
 # $1: The option to look for
 # $2: The variable to set to "true" if the option is found
 define ParseLogOption
-  ifneq ($$(findstring $1, $$(LOG)),)
+  ifneq ($$(findstring $1, $$(LOG)), )
     override $2 := true
     # First try to remove ",<option>" if it exists, otherwise just remove "<option>"
     LOG_STRIPPED := $$(subst $1,, $$(subst $$(COMMA)$$(strip $1),, $$(LOG)))
@@ -620,7 +620,7 @@ endef
 # $1: The option to look for
 # $2: The variable to set to the value of the option, if found
 define ParseLogValue
-  ifneq ($$(findstring $1=, $$(LOG)),)
+  ifneq ($$(findstring $1=, $$(LOG)), )
     # Make words of out comma-separated list and find the one with opt=val
     value := $$(strip $$(subst $$(strip $1)=,, $$(filter $$(strip $1)=%, $$(subst $$(COMMA), , $$(LOG)))))
     override $2 := $$(value)
@@ -673,7 +673,7 @@ define ParseLogLevel
 
   override LOG_LEVEL := $$(LOG)
 
-  ifeq ($$(LOG_LEVEL),)
+  ifeq ($$(LOG_LEVEL), )
     # Set LOG to "warn" as default if not set
     override LOG_LEVEL := warn
   endif

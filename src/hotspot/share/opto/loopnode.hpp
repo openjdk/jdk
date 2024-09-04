@@ -938,8 +938,6 @@ private:
     return ctrl;
   }
 
-  Node* cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop);
-
 #ifdef ASSERT
   void ensure_zero_trip_guard_proj(Node* node, bool is_main_loop);
 #endif
@@ -960,7 +958,7 @@ private:
   static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);
   static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
-  void copy_assertion_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head, Node* init,
+  void copy_assertion_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head,
                                               Node* stride);
   void initialize_assertion_predicates_for_peeled_loop(const PredicateBlock* predicate_block, LoopNode* outer_loop_head,
                                                        int dd_outer_loop_head, Node* init, Node* stride,
@@ -1534,6 +1532,8 @@ public:
   // Attempt to use a conditional move instead of a phi/branch
   Node *conditional_move( Node *n );
 
+  bool split_thru_phi_could_prevent_vectorization(Node* n, Node* n_blk);
+
   // Check for aggressive application of 'split-if' optimization,
   // using basic block level info.
   void  split_if_with_blocks     ( VectorSet &visited, Node_Stack &nstack);
@@ -1578,7 +1578,7 @@ private:
   bool identical_backtoback_ifs(Node *n);
   bool can_split_if(Node *n_ctrl);
   bool cannot_split_division(const Node* n, const Node* region) const;
-  static bool is_divisor_counted_loop_phi(const Node* divisor, const Node* loop);
+  static bool is_divisor_loop_phi(const Node* divisor, const Node* loop);
   bool loop_phi_backedge_type_contains_zero(const Node* phi_divisor, const Type* zero) const;
 
   // Determine if a method is too big for a/another round of split-if, based on
