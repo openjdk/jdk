@@ -27,7 +27,7 @@
  *     that support it, tests using /tmp directory.
  * @library  ../.. /test/lib
  * @build jdk.test.lib.Platform
- * @run main CreationTime
+ * @run main/native CreationTime
  */
 
 /* @test id=cwd
@@ -36,7 +36,7 @@
  *     scratch directory maybe at diff disk partition to /tmp on linux.
  * @library  ../.. /test/lib
  * @build jdk.test.lib.Platform
- * @run main CreationTime .
+ * @run main/native CreationTime .
  */
 
 import java.lang.foreign.Linker;

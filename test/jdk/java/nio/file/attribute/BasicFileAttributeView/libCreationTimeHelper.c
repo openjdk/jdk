@@ -21,6 +21,7 @@
  * questions.
  */
 #include "jni.h"
+#if defined(__linux__)
 #include <linux/fcntl.h>
 #include <stdio.h>
 #include <string.h>
@@ -78,13 +79,11 @@ struct my_statx
   __uint64_t __statx_pad2[14];
 };
 
-#if defined(__linux__)
 typedef int statx_func(int dirfd, const char *restrict pathname, int flags,
                        unsigned int mask, struct my_statx *restrict statxbuf);
-#endif
-#if defined(__linux__)
+
 static statx_func* my_statx_func = NULL;
-#endif
+#endif  //#defined(__linux__)
 
 // static native boolean linuxIsCreationTimeSupported()
 JNIEXPORT jboolean JNICALL
