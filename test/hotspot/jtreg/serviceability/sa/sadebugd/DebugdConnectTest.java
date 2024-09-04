@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,11 @@ public class DebugdConnectTest {
         OutputAnalyzer out = runJHSDB("jstack", serverID);
 
         out.shouldContain("LingeredApp");
-        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+
+        out.shouldMatch("WARNING: --connect is deprecated");
+        // --connect is deprecated.  When removed, can revert to:
+        // out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+
         out.shouldHaveExitValue(0);
     }
 
@@ -78,7 +82,11 @@ public class DebugdConnectTest {
         OutputAnalyzer out = runJHSDB("jmap", serverID);
 
         out.shouldContain("JVM version is");
-        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+
+        out.shouldMatch("WARNING: --connect is deprecated");
+        // --connect is deprecated.  When removed, can revert to:
+        // out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+
         out.shouldHaveExitValue(0);
     }
 
@@ -86,7 +94,11 @@ public class DebugdConnectTest {
         OutputAnalyzer out = runJHSDB("jinfo", serverID);
 
         out.shouldContain("Java System Properties:");
-        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+
+        out.shouldMatch("WARNING: --connect is deprecated");
+        // --connect is deprecated.  When removed, can revert to:
+        // out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+
         out.shouldHaveExitValue(0);
     }
 
@@ -94,7 +106,11 @@ public class DebugdConnectTest {
         OutputAnalyzer out = runJHSDB("jsnap", serverID);
 
         out.shouldContain("java.vm.name=");
-        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+
+        out.shouldMatch("WARNING: --connect is deprecated");
+        // --connect is deprecated.  When removed, can revert to:
+        // out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+
         out.shouldHaveExitValue(0);
     }
 
