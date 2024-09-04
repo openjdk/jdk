@@ -147,6 +147,9 @@ int LogFileStreamOutput::write_internal_line(const LogDecorations& decorations, 
 }
 
 int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const char* msg) {
+  // Do not do anything if foldmultilines has been specified
+  if (_fold_multilines) return write_internal_line(decorations, msg);
+  
   int written = 0;
   char* dupstr = os::strdup_check_oom(msg, mtLogging);
   char* tmp = dupstr;
