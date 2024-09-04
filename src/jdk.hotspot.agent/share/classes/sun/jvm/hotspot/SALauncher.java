@@ -69,16 +69,16 @@ public class SALauncher {
         System.out.println("    --exe <executable for corefile>");
         if (canConnectToRemote) {
             System.out.println("    --connect [<serverid>@]<host>[:registryport][/servername] To connect to a remote debug server (debugd).");
-            System.out.println();
-            System.err.println("WARNING: --connect is deprecated and will be removed in a future release.");
         }
         System.out.println();
+        if (canConnectToRemote) {
+            System.out.println("    The --connect option is deprecated and will be removed in a future release.");
+        }
         System.out.println("    The --core and --exe options must be set together to give the core");
         System.out.println("    file, and associated executable, to operate on. They can use");
         System.out.println("    absolute or relative paths.");
         System.out.println("    The --pid option can be set to operate on a live process.");
         if (canConnectToRemote) {
-            System.out.println("    The --connect option can be set to connect to a debug server (debugd).");
             System.out.println("    --core, --pid, and --connect are mutually exclusive.");
         } else {
             System.out.println("    --core and --pid are mutually exclusive.");
