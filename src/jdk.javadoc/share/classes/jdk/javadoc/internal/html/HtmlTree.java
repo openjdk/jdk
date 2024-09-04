@@ -84,7 +84,6 @@ public class HtmlTree extends Content {
      * @param tag the name
      */
     public static HtmlTree of(HtmlTag tag) {
-
         return new HtmlTree(tag);
     }
 
