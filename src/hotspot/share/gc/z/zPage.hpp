@@ -44,8 +44,6 @@ enum class ZPageResetType {
   // Page was not selected for relocation, all objects
   // stayed, but the page aged.
   FlipAging,
-  // The page was split and needs to be reset
-  Splitting,
 };
 
 class ZPage : public CHeapObj<mtGC> {

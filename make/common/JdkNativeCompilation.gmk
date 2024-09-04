@@ -182,12 +182,12 @@ define AddJdkLibrary
   $1_$2_NAME := $$(strip $$(lastword $$(subst :, , $3)))
   $1_$2_MODULE := $$(strip $$(patsubst %$$($1_$2_NAME), %, $3))
 
-  ifeq ($$(filter lib%, $$($1_$2_NAME)),)
+  ifeq ($$(filter lib%, $$($1_$2_NAME)), )
     $$(error Library name $$($1_$2_NAME) missing lib prefix in $1)
   endif
   $1_$2_NAME := $$(strip $$(patsubst lib%, %, $$($1_$2_NAME)))
 
-  ifeq ($$($1_$2_MODULE),)
+  ifeq ($$($1_$2_MODULE), )
     $1_$2_MODULE := $$(MODULE)
   else
     $1_$2_MODULE := $$(strip $$(patsubst %:, %, $$($1_$2_MODULE)))

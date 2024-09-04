@@ -77,7 +77,7 @@ public sealed interface ConstantInstruction extends Instruction {
          */
         @Override
         default TypeKind typeKind() {
-            return opcode().primaryTypeKind();
+            return BytecodeHelpers.intrinsicConstantType(opcode());
         }
     }
 
@@ -100,7 +100,7 @@ public sealed interface ConstantInstruction extends Instruction {
          */
         @Override
         default TypeKind typeKind() {
-            return opcode().primaryTypeKind();
+            return TypeKind.INT;
         }
     }
 
@@ -139,7 +139,7 @@ public sealed interface ConstantInstruction extends Instruction {
      */
     static IntrinsicConstantInstruction ofIntrinsic(Opcode op) {
         Util.checkKind(op, Opcode.Kind.CONSTANT);
-        if (op.constantValue() == null)
+        if (op.sizeIfFixed() != 1)
             throw new IllegalArgumentException(String.format("Wrong opcode specified; found %s, expected xCONST_val", op));
         return new AbstractInstruction.UnboundIntrinsicConstantInstruction(op);
     }

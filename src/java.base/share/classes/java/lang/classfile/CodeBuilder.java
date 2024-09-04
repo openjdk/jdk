@@ -263,7 +263,7 @@ public sealed interface CodeBuilder
     default CodeBuilder ifThen(Opcode opcode,
                                Consumer<BlockCodeBuilder> thenHandler) {
         requireNonNull(thenHandler);
-        if (opcode.kind() != Opcode.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VOID) {
+        if (opcode.kind() != Opcode.Kind.BRANCH || BytecodeHelpers.isUnconditionalBranch(opcode)) {
             throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
         }
 
@@ -317,7 +317,7 @@ public sealed interface CodeBuilder
         requireNonNull(opcode);
         requireNonNull(thenHandler);
         requireNonNull(elseHandler);
-        if (opcode.kind() != Opcode.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VOID) {
+        if (opcode.kind() != Opcode.Kind.BRANCH || BytecodeHelpers.isUnconditionalBranch(opcode)) {
             throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
         }
 

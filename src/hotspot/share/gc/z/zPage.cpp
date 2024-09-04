@@ -97,11 +97,6 @@ void ZPage::verify_remset_after_reset(ZPageAge prev_age, ZPageResetType type) {
 
   // Old-to-old reset
   switch (type) {
-  case ZPageResetType::Splitting:
-    // Page is on the way to be destroyed or reused, delay
-    // clearing until the page is reset for Allocation.
-    break;
-
   case ZPageResetType::InPlaceRelocation:
     // Relocation failed and page is being compacted in-place.
     // The remset bits are flipped each young mark start, so
@@ -188,11 +183,9 @@ ZPage* ZPage::split(size_t split_of_size) {
 ZPage* ZPage::split_with_pmem(ZPageType type, const ZPhysicalMemory& pmem) {
   // Resize this page
   const ZVirtualMemory vmem = _virtual.split(pmem.size());
+  assert(vmem.end() == _virtual.start(), "Should be consecutive");
 
   reset_type_and_size(type_from_size(_virtual.size()));
-  reset(_age, ZPageResetType::Splitting);
-
-  assert(vmem.end() == _virtual.start(), "Should be consecutive");
 
   log_trace(gc, page)("Split page [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT "]",
       untype(vmem.start()),
