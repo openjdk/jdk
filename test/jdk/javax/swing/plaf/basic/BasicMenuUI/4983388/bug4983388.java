@@ -88,7 +88,11 @@ public class bug4983388 {
         robot.waitForIdle();
         robot.delay(500);
 
-        SwingUtilities.invokeAndWait(() -> frame.dispose());
+        SwingUtilities.invokeAndWait(() -> {
+            if (frame != null) {
+                frame.dispose();
+            }
+        });
 
         if (!bMenuSelected) {
             throw new RuntimeException("shortcuts on menus do not work");

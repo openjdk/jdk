@@ -31,7 +31,10 @@
 
 import java.awt.Point;
 import java.awt.Robot;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
+
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -53,10 +56,8 @@ public class bug4490179 {
                 frame = new JFrame("bug4490179");
                 button = new JButton("Button");
                 frame.getContentPane().add(button);
-                button.addActionListener(e -> {
-                    if ((e.getModifiers() & InputEvent.BUTTON1_MASK)
-                            != InputEvent.BUTTON1_MASK) {
-                        System.out.println("Status: Failed");
+                button.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
                         passed = false;
                     }
                 });
@@ -81,10 +82,11 @@ public class bug4490179 {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
+            robot.delay(3000);
+            boolean result = passed;
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.delay(500);
 
-            if (!passed) {
+            if (!result) {
                 throw new RuntimeException("Test Failed");
             }
         } finally {
