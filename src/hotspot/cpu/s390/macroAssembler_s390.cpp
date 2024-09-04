@@ -6021,8 +6021,13 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
 
   if (UseObjectMonitorTable) {
     // Clear cache in case fast locking succeeds.
-    z_cghi(top, 0);
-    z_stg(top, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
+    const Address om_cache_addr = Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes())));
+    if (om_cache_addr.is_disp12()) {
+      z_mvghi(om_cache_addr, 0);
+    } else {
+      z_lghi(top, 0); // tmp1 is free at this point
+      z_stg(top, om_cache_addr);
+    }
   }
 
   // First we need to check if the lock-stack has room for pushing the object reference.
@@ -6159,8 +6164,13 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
 
   if (UseObjectMonitorTable) {
     // Clear cache in case fast locking succeeds.
-    z_lghi(tmp1, 0); // tmp1 is free at this point
-    z_stg(tmp1, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+    const Address om_cache_addr = Address(box, BasicLock::object_monitor_cache_offset_in_bytes());
+    if (om_cache_addr.is_disp12()) {
+      z_mvghi(om_cache_addr, 0);
+    } else {
+      z_lghi(tmp1, 0); // tmp1 is free at this point
+      z_stg(tmp1, om_cache_addr);
+    }
   }
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
@@ -6256,8 +6266,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
 
       // search until null encountered, guaranteed _null_sentinel at end.
       add2reg(tmp1, in_bytes(OMCache::oop_to_oop_difference()));
-      z_lg(tmp2, Address(tmp1)); // TODO: top is killed here!!!!
-      z_ltgr(tmp2, tmp2);
+      z_cghsi(0, tmp1, 0);
       z_brne(loop); // if not EQ to 0, go for another loop
 
       // we reached to the end, cache miss
