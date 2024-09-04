@@ -54,19 +54,7 @@ record CachingFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
         if (stable == null) {
             throw new IllegalArgumentException("Input not allowed: " + value);
         }
-        Object r = stable.wrappedValue();
-        if (r != null) {
-            return StableValueUtil.unwrap(r);
-        }
-        synchronized (stable) {
-            r = stable.wrappedValue();
-            if (r != null) {
-                return StableValueUtil.unwrap(r);
-            }
-            final R newValue = original.apply(value);
-            stable.setOrThrow(newValue);
-            return newValue;
-        }
+        return stable.computeIfUnset(value, original);
     }
 
     @Override
@@ -95,7 +83,7 @@ record CachingFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
             if (value == this) {
                 sb.append("(this CachingFunction)");
             } else {
-                sb.append(StableValueUtil.renderWrapped(value));
+                sb.append(StableValueImpl.renderWrapped(value));
             }
         }
         sb.append("}");
@@ -104,7 +92,7 @@ record CachingFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
 
     static <T, R> CachingFunction<T, R> of(Set<? extends T> inputs,
                                            Function<? super T, ? extends R> original) {
-        return new CachingFunction<>(StableValueUtil.ofMap(inputs), original);
+        return new CachingFunction<>(StableValueFactories.ofMap(inputs), original);
     }
 
 }

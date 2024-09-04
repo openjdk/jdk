@@ -29,7 +29,7 @@
  */
 
 import jdk.internal.lang.stable.StableValueImpl;
-import jdk.internal.lang.stable.StableValueUtil;
+import jdk.internal.lang.stable.StableValueFactories;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -268,11 +268,13 @@ final class LazyListTest {
 
     @Test
     void distinct() {
-        List<StableValueImpl<Integer>> list = StableValueUtil.ofList(SIZE);
-        assertEquals(SIZE, list.size());
+        StableValueImpl<Integer>[] array = StableValueFactories.ofArray(SIZE);
+        assertEquals(SIZE, array.length);
         // Check, every StableValue is distinct
         Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
-        list.forEach(e -> idMap.put(e, true));
+        for (var e: array) {
+            idMap.put(e, true);
+        }
         assertEquals(SIZE, idMap.size());
     }
 

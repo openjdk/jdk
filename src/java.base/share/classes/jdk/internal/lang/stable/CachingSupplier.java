@@ -33,56 +33,37 @@ import java.util.function.Supplier;
 /**
  * Implementation of a cached supplier.
  * <p>
- * For performance reasons (~10%), we are not delegating to a StableValue but are using
- * the more primitive functions in StableValueUtil that are shared with StableValueImpl.
- *
  * @implNote This implementation can be used early in the boot sequence as it does not
  *           rely on reflection, MethodHandles, Streams etc.
  *
  * @param <T> the return type
  */
-final class CachingSupplier<T> implements Supplier<T> {
-
-    private static final long VALUE_OFFSET =
-            StableValueUtil.UNSAFE.objectFieldOffset(CachingSupplier.class, "wrappedValue");
-
-    @Stable
-    private final Supplier<? extends T> original;
-    @Stable
-    private final Object mutex = new Object();
-    @Stable
-    private volatile Object wrappedValue;
-
-    private CachingSupplier(Supplier<? extends T> original) {
-        this.original = original;
-    }
+record CachingSupplier<T>(StableValueImpl<T> delegate, Supplier<? extends T> original) implements Supplier<T> {
 
     @ForceInline
     @Override
     public T get() {
-        Object t = wrappedValue;
-        if (t != null) {
-            return StableValueUtil.unwrap(t);
-        }
-        synchronized (mutex) {
-            t = wrappedValue;
-            if (t != null) {
-                return StableValueUtil.unwrap(t);
-            }
-            final T newValue = original.get();
-            StableValueUtil.wrapAndCas(this, VALUE_OFFSET, newValue);
-            return newValue;
-        }
+        return delegate.computeIfUnset(original);
+    }
+
+    @Override
+    public int hashCode() {
+        return System.identityHashCode(this);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj == this;
     }
 
     @Override
     public String toString() {
-        final Object t = wrappedValue;
-        return "CachingSupplier[value=" + (t == this ? "(this CachingSupplier)" : StableValueUtil.renderWrapped(t)) + ", original=" + original + "]";
+        final Object t = delegate.wrappedValue();
+        return "CachingSupplier[value=" + (t == this ? "(this CachingSupplier)" : StableValueImpl.renderWrapped(t)) + ", original=" + original + "]";
     }
 
     static <T> CachingSupplier<T> of(Supplier<? extends T> original) {
-        return new CachingSupplier<>(original);
+        return new CachingSupplier<>(StableValueImpl.newInstance(), original);
     }
 
 }

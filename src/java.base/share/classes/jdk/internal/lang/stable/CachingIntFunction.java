@@ -47,30 +47,17 @@ import java.util.stream.IntStream;
  *
  * @param <R> the return type
  */
-record CachingIntFunction<R>(IntFunction<? extends R> original,
-                             Object[] mutexes,
-                             Object[] wrappedValues) implements IntFunction<R> {
+record CachingIntFunction<R>(StableValueImpl<R>[] delegates,
+                             IntFunction<? extends R> original) implements IntFunction<R> {
 
     @ForceInline
     @Override
     public R apply(int index) {
         try {
-            Objects.checkIndex(index, wrappedValues.length);
-        } catch (IndexOutOfBoundsException e) {
-            throw new IllegalArgumentException(e);
-        }
-        Object r = wrappedValue(index);
-        if (r != null) {
-            return StableValueUtil.unwrap(r);
-        }
-        synchronized (mutexes[index]) {
-            r = wrappedValues[index];
-            if (r != null) {
-                return StableValueUtil.unwrap(r);
-            }
-            final R newValue = original.apply(index);
-            StableValueUtil.wrapAndCas(wrappedValues, StableValueUtil.arrayOffset(index), newValue);
-            return newValue;
+            return delegates[index]
+                    .computeIfUnset(index, original);
+        } catch (java.lang.ArrayIndexOutOfBoundsException ioob) {
+            throw new IllegalArgumentException("Input not allowed: " + index, ioob);
         }
     }
 
@@ -95,30 +82,21 @@ record CachingIntFunction<R>(IntFunction<? extends R> original,
         final StringBuilder sb = new StringBuilder();
         sb.append("[");
         boolean first = true;
-        for (int i = 0; i < wrappedValues.length; i++) {
+        for (int i = 0; i < delegates.length; i++) {
             if (first) { first = false; } else { sb.append(", "); };
-            final Object value = wrappedValue(i);
+            final Object value = delegates[i].wrappedValue();
             if (value == this) {
                 sb.append("(this CachingIntFunction)");
             } else {
-                sb.append(StableValueUtil.renderWrapped(value));
+                sb.append(StableValueImpl.renderWrapped(value));
             }
         }
         sb.append("]");
         return sb.toString();
     }
 
-    @ForceInline
-    private Object wrappedValue(int i) {
-        return StableValueUtil.UNSAFE.getReferenceVolatile(wrappedValues, StableValueUtil.arrayOffset(i));
-    }
-
     static <R> CachingIntFunction<R> of(int size, IntFunction<? extends R> original) {
-        var mutexes = new Object[size];
-        for (int i = 0; i < size; i++) {
-            mutexes[i] = new Object();
-        }
-        return new CachingIntFunction<>(original, mutexes, new Object[size]);
+        return new CachingIntFunction<>(StableValueFactories.ofArray(size), original);
     }
 
 }

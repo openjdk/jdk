@@ -28,7 +28,7 @@ package java.lang;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.lang.stable.StableValueImpl;
-import jdk.internal.lang.stable.StableValueUtil;
+import jdk.internal.lang.stable.StableValueFactories;
 
 import java.io.Serializable;
 import java.util.List;
@@ -42,8 +42,8 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A thin, atomic, non-blocking, thread-safe, set-at-most-once, stable value holder
- * eligible for certain JVM optimizations if set to a value.
+ * A thin, atomic, thread-safe, set-at-most-once, stable value holder eligible for
+ * certain JVM optimizations if set to a value.
  * <p>
  * A stable value is said to be monotonic because the state of a stable value can only go
  * from <em>unset</em> to <em>set</em> and consequently, a value can only be set
@@ -204,6 +204,116 @@ public sealed interface StableValue<T>
         }
     }
 
+    /**
+     * {@return the set holder value if set, otherwise attempts to compute and set a
+     * new (nullable) value using the provided {@code supplier}, returning the
+     * (pre-existing or newly set) value}
+     * <p>
+     * The provided {@code supplier} is guaranteed to be invoked at most once if it
+     * completes without throwing an exception.
+     * <p>
+     * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
+     * value is set. The most common usage is to construct a new object serving as a
+     * lazily computed value or memoized result, as in:
+     *
+     * <pre> {@code
+     * Value witness = stable.computeIfUnset(Value::new);
+     * }</pre>
+     *
+     * @implSpec The implementation logic is equivalent to the following steps for this
+     * {@code stable}:
+     *
+     * <pre> {@code
+     * if (stable.isSet()) {
+     *     return stable.get();
+     * } else {
+     *     V newValue = supplier.get();
+     *     stable.setOrThrow(newValue);
+     *     return newValue;
+     * }
+     * }</pre>
+     * Except it is thread-safe and will only return the same witness value
+     * regardless if invoked by several threads. Also, the provided {@code supplier}
+     * will only be invoked once even if invoked from several threads unless the
+     * {@code supplier} throws an exception.
+     *
+     * @param  supplier to be used for computing a value
+     * @throws StackOverflowError if the provided {@code supplier} recursively
+     *         invokes the provided {@code supplier} upon being invoked.
+     */
+    T computeIfUnset(Supplier<? extends T> supplier);
+
+    /**
+     * {@return the set holder value if set, otherwise attempts to compute and set a
+     * new (nullable) value using the provided {@code key} and provided {@code mapper},
+     * returning the (pre-existing or newly set) value}
+     * <p>
+     * The provided {@code mapper} is guaranteed to be invoked at most once if it
+     * completes without throwing an exception.
+     * <p>
+     * If the mapper throws an (unchecked) exception, the exception is rethrown, and no
+     * value is set.
+     *
+     * @implSpec The implementation logic is equivalent to the following steps for this
+     * {@code stable}:
+     *
+     * <pre> {@code
+     * if (stable.isSet()) {
+     *     return stable.get();
+     * } else {
+     *     V newValue = mapper.apply(value);
+     *     stable.setOrThrow(newValue);
+     *     return newValue;
+     * }
+     * }</pre>
+     * Except it is thread-safe and will only return the same witness value
+     * regardless if invoked by several threads. Also, the provided {@code supplier}
+     * will only be invoked once even if invoked from several threads unless the
+     * {@code supplier} throws an exception.
+     *
+     * @param  key to be used by the provided mapper
+     * @param  mapper that takes the provided key to be used for computing a value
+     * @throws StackOverflowError if the provided {@code mapper} recursively
+     *         invokes the provided {@code mapper} upon being invoked.
+     */
+    T computeIfUnset(int key, IntFunction<? extends T> mapper);
+
+    /**
+     * {@return the set holder value if set, otherwise attempts to compute and set a
+     * new (nullable) value using the provided {@code key} and provided {@code mapper},
+     * returning the (pre-existing or newly set) value}
+     * <p>
+     * The provided {@code mapper} is guaranteed to be invoked at most once if it
+     * completes without throwing an exception.
+     * <p>
+     * If the mapper throws an (unchecked) exception, the exception is rethrown, and no
+     * value is set.
+     *
+     * @implSpec The implementation logic is equivalent to the following steps for this
+     * {@code stable}:
+     *
+     * <pre> {@code
+     * if (stable.isSet()) {
+     *     return stable.get();
+     * } else {
+     *     V newValue = mapper.apply(value);
+     *     stable.setOrThrow(newValue);
+     *     return newValue;
+     * }
+     * }</pre>
+     * Except it is thread-safe and will only return the same witness value
+     * regardless if invoked by several threads. Also, the provided {@code supplier}
+     * will only be invoked once even if invoked from several threads unless the
+     * {@code supplier} throws an exception.
+     *
+     * @param  key to be used by the provided mapper
+     * @param  mapper that takes the provided key to be used for computing a value
+     * @param  <K> key type
+     * @throws StackOverflowError if the provided {@code mapper} recursively
+     *         invokes the provided {@code mapper} upon being invoked.
+     */
+    <K> T computeIfUnset(K key, Function<? super K, ? extends T> mapper);
+
     // Factories
 
     /**
@@ -212,7 +322,7 @@ public sealed interface StableValue<T>
      * @param <T> type of the holder value
      */
     static <T> StableValue<T> newInstance() {
-        return StableValueUtil.newInstance();
+        return StableValueFactories.newInstance();
     }
 
     /**
@@ -239,7 +349,7 @@ public sealed interface StableValue<T>
      */
     static <T> Supplier<T> newCachingSupplier(Supplier<? extends T> original) {
         Objects.requireNonNull(original);
-        return StableValueUtil.newCachingSupplier(original, null);
+        return StableValueFactories.newCachingSupplier(original, null);
     }
 
     /**
@@ -274,7 +384,7 @@ public sealed interface StableValue<T>
                                               ThreadFactory factory) {
         Objects.requireNonNull(original);
         Objects.requireNonNull(factory);
-        return StableValueUtil.newCachingSupplier(original, factory);
+        return StableValueFactories.newCachingSupplier(original, factory);
     }
 
     /**
@@ -307,7 +417,7 @@ public sealed interface StableValue<T>
             throw new IllegalArgumentException();
         }
         Objects.requireNonNull(original);
-        return StableValueUtil.newCachingIntFunction(size, original, null);
+        return StableValueFactories.newCachingIntFunction(size, original, null);
     }
 
     /**
@@ -350,7 +460,7 @@ public sealed interface StableValue<T>
         }
         Objects.requireNonNull(original);
         Objects.requireNonNull(factory);
-        return StableValueUtil.newCachingIntFunction(size, original, factory);
+        return StableValueFactories.newCachingIntFunction(size, original, factory);
     }
 
     /**
@@ -387,7 +497,7 @@ public sealed interface StableValue<T>
                                                     Function<? super T, ? extends R> original) {
         Objects.requireNonNull(inputs);
         Objects.requireNonNull(original);
-        return StableValueUtil.newCachingFunction(inputs, original, null);
+        return StableValueFactories.newCachingFunction(inputs, original, null);
     }
 
     /**
@@ -428,7 +538,7 @@ public sealed interface StableValue<T>
         Objects.requireNonNull(inputs);
         Objects.requireNonNull(original);
         Objects.requireNonNull(factory);
-        return StableValueUtil.newCachingFunction(inputs, original, factory);
+        return StableValueFactories.newCachingFunction(inputs, original, factory);
     }
 
     /**

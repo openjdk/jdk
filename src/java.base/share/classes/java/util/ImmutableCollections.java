@@ -42,7 +42,7 @@ import java.util.function.UnaryOperator;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.stable.StableValueImpl;
-import jdk.internal.lang.stable.StableValueUtil;
+import jdk.internal.lang.stable.StableValueFactories;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.NullableKeyValueHolder;
 import jdk.internal.vm.annotation.ForceInline;
@@ -773,47 +773,32 @@ class ImmutableCollections {
         @Stable
         private final IntFunction<? extends E> mapper;
         @Stable
-        private final List<StableValueImpl<E>> backing;
+        private final StableValueImpl<E>[] backing;
 
         LazyList(int size, IntFunction<? extends E> mapper) {
             this.mapper = mapper;
-            this.backing = StableValueUtil.ofList(size);
+            this.backing = StableValueFactories.ofArray(size);
         }
 
-        @Override public boolean  isEmpty() { return backing.isEmpty();}
-        @Override public int      size() { return backing.size(); }
+        @Override public boolean  isEmpty() { return backing.length == 0;}
+        @Override public int      size() { return backing.length; }
         @Override public Object[] toArray() { return copyInto(new Object[size()]); }
 
         @ForceInline
         @Override
         public E get(int i) {
-            final StableValueImpl<E> stable = backing.get(i);
-            Object e = stable.wrappedValue();
-            if (e != null) {
-                return StableValueUtil.unwrap(e);
-            }
-            synchronized (stable) {
-                e = stable.wrappedValue();
-                if (e != null) {
-                    return StableValueUtil.unwrap(e);
-                }
-                final E newValue = mapper.apply(i);
-                if (!stable.trySet(newValue)) {
-                    // This should never happen. Not even if the mapper recursively
-                    // call itself (see LazyListTest::recursive).
-                    throw new InternalError(
-                            "Cannot set the holder value for index " + i + " to " + e +
-                            " because a value of " + StableValueUtil.unwrap(stable.wrappedValue()) +
-                            " is alredy set.");
-                }
-                return newValue;
+            try {
+                return backing[i]
+                        .computeIfUnset(i, mapper);
+            } catch (ArrayIndexOutOfBoundsException aioobe) {
+                throw new IndexOutOfBoundsException(i);
             }
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
-            final int size = backing.size();
+            final int size = backing.length;
             if (a.length < size) {
                 // Make a new array of a's runtime type, but my contents:
                 T[] n = (T[])Array.newInstance(a.getClass().getComponentType(), size);
@@ -849,7 +834,7 @@ class ImmutableCollections {
 
         @SuppressWarnings("unchecked")
         private <T> T[] copyInto(Object[] a) {
-            final int len = backing.size();
+            final int len = backing.length;
             for (int i = 0; i < len; i++) {
                 a[i] = get(i);
             }
@@ -1481,7 +1466,7 @@ class ImmutableCollections {
 
         LazyMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
             this.mapper = mapper;
-            this.delegate = StableValueUtil.ofMap(keys);
+            this.delegate = StableValueFactories.ofMap(keys);
         }
 
         @Override public boolean              containsKey(Object o) { return delegate.containsKey(o); }
@@ -1497,24 +1482,7 @@ class ImmutableCollections {
             }
             @SuppressWarnings("unchecked")
             final K k = (K) key;
-            return computeIfUnset(k, stable);
-        }
-
-        @ForceInline
-        V computeIfUnset(K key, StableValueImpl<V> stable) {
-            Object v = stable.wrappedValue();
-            if (v != null) {
-                return StableValueUtil.unwrap(v);
-            }
-            synchronized (stable) {
-                v = stable.wrappedValue();
-                if (v != null) {
-                    return StableValueUtil.unwrap(v);
-                }
-                final V newValue = mapper.apply(key);
-                stable.setOrThrow(newValue);
-                return newValue;
-            }
+            return stable.computeIfUnset(k, mapper);
         }
 
         @jdk.internal.ValueBased
@@ -1547,7 +1515,7 @@ class ImmutableCollections {
                 public Entry<K, V> next() {
                     final Map.Entry<K, StableValueImpl<V>> inner = delegateIterator.next();
                     final K key = inner.getKey();
-                    return new NullableKeyValueHolder<>(key, computeIfUnset(key, inner.getValue()));
+                    return new NullableKeyValueHolder<>(key, inner.getValue().computeIfUnset(key, mapper));
                 }
 
                 @Override
@@ -1557,7 +1525,7 @@ class ImmutableCollections {
                                 @Override
                                 public void accept(Entry<K, StableValueImpl<V>> inner) {
                                     final K key = inner.getKey();
-                                    action.accept(new NullableKeyValueHolder<>(key, LazyMap.this.computeIfUnset(key, inner.getValue())));
+                                    action.accept(new NullableKeyValueHolder<>(key, inner.getValue().computeIfUnset(key, mapper)));
                                 }
                             };
                     delegateIterator.forEachRemaining(innerAction);
