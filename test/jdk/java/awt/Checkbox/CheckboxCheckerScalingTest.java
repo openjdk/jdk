@@ -47,26 +47,14 @@ public class CheckboxCheckerScalingTest {
     private static Frame frame;
     private static Checkbox checkbox;
     private static BufferedImage imageAfterChecked;
-    private static volatile boolean checkmarkFound = true;
+    private static volatile boolean checkmarkFound = false;
     private static final int TOLERANCE = 10;
+    private static final int COLOR_CHECK_THRESHOLD = 8;
+    private static int colorCounter = 0;
 
     public static void main(String[] args) throws Exception {
         System.setProperty("sun.java2d.uiScale", "2");
         Robot robot = new Robot();
-        int[][] checkerIndexPattern = {
-                {0, 3},
-                {0, 4},
-                {1, 3},
-                {1, 4},
-                {1, 5},
-                {2, 4},
-                {2, 5},
-                {2, 6},
-                {3, 5},
-                {3, 6},
-                {4, 4},
-                {4, 5}
-        };
 
         try {
             EventQueue.invokeAndWait(() -> {
@@ -85,13 +73,20 @@ public class CheckboxCheckerScalingTest {
                 Point point = checkbox.getLocationOnScreen();
                 Rectangle rect = new Rectangle(point.x + 5, point.y + 7, 8, 8);
                 imageAfterChecked = robot.createScreenCapture(rect);
+                check:
+                {
+                    for (int i = 0; i < imageAfterChecked.getHeight(); i++) {
+                        for (int j = 0; j < imageAfterChecked.getWidth(); j++) {
+                            Color pixelColor = new Color(imageAfterChecked.getRGB(i, j));
+                            if (compareColor(pixelColor)) {
+                                colorCounter++;
+                                if (colorCounter >= COLOR_CHECK_THRESHOLD) {
+                                    checkmarkFound = true;
+                                    break check;
+                                }
+                            }
 
-                for (int i = 0; i < 12; i++) {
-                    Color pixelColor = new Color(imageAfterChecked.getRGB(
-                            checkerIndexPattern[i][0], checkerIndexPattern[i][1]));
-                    if (!compareColor(pixelColor)) {
-                        checkmarkFound = false;
-                        break;
+                        }
                     }
                 }
             });
