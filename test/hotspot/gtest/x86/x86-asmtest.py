@@ -2,8 +2,8 @@ import os
 import re
 import subprocess
 
-OBJDUMP = "/home/intel/binutils/bin/objdump"
-X86_AS = "/home/intel/binutils/bin/as"
+OBJDUMP = "objdump"
+X86_AS = "as"
 X86_OBJCOPY = "objcopy"
 
 cond_to_suffix = {
