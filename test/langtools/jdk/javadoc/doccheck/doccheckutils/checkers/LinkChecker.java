@@ -136,6 +136,7 @@ public class LinkChecker implements HtmlChecker {
     @Override
     public void report() {
         List<Path> pathList = getMissingFiles();
+        errors.log("");
         errors.log("Link Checker Report");
 
         if (!pathList.isEmpty()) {

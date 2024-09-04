@@ -35,9 +35,10 @@ import java.util.List;
 import java.util.concurrent.*;
 
 import toolbox.TestRunner;
+
 /**
  * Takes a directory path under the generated documentation directory as input
- * and runs different {@link FileChecker file checkers} on it
+ * and runs different {@link FileChecker file checkers} on it.
  */
 public class DocCheck extends TestRunner {
     private static final Path ROOT_PATH = Path.of(System.getProperty("test.jdk"));
@@ -56,23 +57,20 @@ public class DocCheck extends TestRunner {
     }
 
     public void init() {
-        Path root = ROOT_PATH.getParent().resolve("docs").resolve(DIR);
+        Path root = ROOT_PATH.getParent()
+                .resolve("docs")
+                .resolve(DIR);
         var fileTester = new FileProcessor();
         fileTester.processFiles(root);
         files = fileTester.getFiles();
     }
 
     public List<FileChecker> getCheckers() {
-        TidyChecker tidy = new TidyChecker();
-        BadCharacterChecker badChars = new BadCharacterChecker();
-        HtmlFileChecker doctypeChecker = new HtmlFileChecker(new DocTypeChecker());
-        HtmlFileChecker htmlChecker = new HtmlFileChecker(new LinkChecker());
-
         List<FileChecker> checkers = new ArrayList<>();
-        checkers.add(tidy);
-        checkers.add(badChars);
-        checkers.add(doctypeChecker);
-        checkers.add(htmlChecker);
+        checkers.add(new TidyChecker());
+        checkers.add(new BadCharacterChecker());
+        checkers.add(new HtmlFileChecker(new DocTypeChecker()));
+        checkers.add(new HtmlFileChecker(new LinkChecker()));
         return checkers;
     }
 
@@ -89,31 +87,36 @@ public class DocCheck extends TestRunner {
     private void runCheckersInParallel(List<FileChecker> checkers) throws Exception {
         ExecutorService executorService = Executors.newFixedThreadPool(checkers.size());
         List<Throwable> exceptions = new ArrayList<>();
-        List<Future<?>> futures = new ArrayList<>();
 
-        for (FileChecker checker : checkers) {
-            futures.add(executorService.submit(() -> {
+        try {
+            List<Future<?>> futures = new ArrayList<>();
+            for (FileChecker checker : checkers) {
+                futures.add(executorService.submit(() -> {
+                    try (checker) {  // try-with-resources ensures closing
+                        checker.checkFiles(files);
+                    } catch (Exception e) {
+                        synchronized (exceptions) {
+                            exceptions.add(e);
+                        }
+                    }
+                }));
+            }
+
+            for (Future<?> future : futures) {
                 try {
-                    checker.checkFiles(files);
-                } catch (RuntimeException e) {
+                    future.get();
+                } catch (InterruptedException | ExecutionException e) {
                     synchronized (exceptions) {
                         exceptions.add(e);
                     }
                 }
-            }));
-        }
-
-        for (Future<?> future : futures) {
-            try {
-                future.get();
-            } catch (InterruptedException | ExecutionException e) {
-                synchronized (exceptions) {
-                    exceptions.add(e);
-                }
+            }
+        } finally {
+            executorService.shutdown();
+            if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
             }
         }
-
-        executorService.shutdown();
 
         if (!exceptions.isEmpty()) {
             throw new Exception("One or more HTML checkers failed: " + exceptions);
@@ -124,9 +127,9 @@ public class DocCheck extends TestRunner {
         List<Throwable> exceptions = new ArrayList<>();
 
         for (FileChecker checker : checkers) {
-            try {
+            try (checker) {
                 checker.checkFiles(files);
-            } catch (RuntimeException e) {
+            } catch (Exception e) {
                 exceptions.add(e);
             }
         }
