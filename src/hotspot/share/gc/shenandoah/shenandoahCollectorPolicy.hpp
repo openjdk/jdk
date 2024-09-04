@@ -29,13 +29,9 @@
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "gc/shenandoah/shenandoahTrace.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/ostream.hpp"
-
-class ShenandoahTracer : public GCTracer, public CHeapObj<mtGC> {
-public:
-  ShenandoahTracer() : GCTracer(Shenandoah) {}
-};
 
 class ShenandoahCollectorPolicy : public CHeapObj<mtGC> {
 private:

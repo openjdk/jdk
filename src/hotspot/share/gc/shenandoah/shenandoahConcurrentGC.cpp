@@ -325,7 +325,7 @@ void ShenandoahConcurrentGC::entry_final_updaterefs() {
 }
 
 void ShenandoahConcurrentGC::entry_final_roots() {
-  static const char* msg = "Pause Final Roots";
+  const char* msg = final_roots_event_message();
   ShenandoahPausePhase gc_phase(msg, ShenandoahPhaseTimings::final_roots);
   EventMark em("%s", msg);
 
@@ -338,7 +338,7 @@ void ShenandoahConcurrentGC::entry_reset() {
 
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
   {
-    static const char* msg = "Concurrent reset";
+    const char* msg = conc_reset_event_message();
     ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_reset);
     EventMark em("%s", msg);
 
@@ -423,7 +423,7 @@ void ShenandoahConcurrentGC::entry_thread_roots() {
 
 void ShenandoahConcurrentGC::entry_weak_refs() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  static const char* msg = "Concurrent weak references";
+  const char* msg = conc_weak_refs_event_message();
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_weak_refs);
   EventMark em("%s", msg);
 
@@ -438,7 +438,7 @@ void ShenandoahConcurrentGC::entry_weak_refs() {
 void ShenandoahConcurrentGC::entry_weak_roots() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  static const char* msg = "Concurrent weak roots";
+  const char* msg = conc_weak_roots_event_message();
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_weak_roots);
   EventMark em("%s", msg);
 
@@ -485,7 +485,7 @@ void ShenandoahConcurrentGC::entry_strong_roots() {
 void ShenandoahConcurrentGC::entry_cleanup_early() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  static const char* msg = "Concurrent cleanup";
+  const char* msg = conc_cleanup_event_message();
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_cleanup_early, true /* log_heap_usage */);
   EventMark em("%s", msg);
 
@@ -541,7 +541,7 @@ void ShenandoahConcurrentGC::entry_updaterefs() {
 void ShenandoahConcurrentGC::entry_cleanup_complete() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   TraceCollectorStats tcs(heap->monitoring_support()->concurrent_collection_counters());
-  static const char* msg = "Concurrent cleanup";
+  const char* msg = conc_cleanup_event_message();
   ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_cleanup_complete, true /* log_heap_usage */);
   EventMark em("%s", msg);
 
@@ -1226,5 +1226,45 @@ const char* ShenandoahConcurrentGC::conc_mark_event_message() const {
     SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent marking", " (unload classes)");
   } else {
     SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent marking", "");
+  }
+}
+
+const char* ShenandoahConcurrentGC::conc_reset_event_message() const {
+  if (ShenandoahHeap::heap()->unload_classes()) {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent reset", " (unload classes)");
+  } else {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent reset", "");
+  }
+}
+
+const char* ShenandoahConcurrentGC::final_roots_event_message() const {
+  if (ShenandoahHeap::heap()->unload_classes()) {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Final Roots", " (unload classes)");
+  } else {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Pause Final Roots", "");
+  }
+}
+
+const char* ShenandoahConcurrentGC::conc_weak_refs_event_message() const {
+  if (ShenandoahHeap::heap()->unload_classes()) {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent weak references", " (unload classes)");
+  } else {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent weak references", "");
+  }
+}
+
+const char* ShenandoahConcurrentGC::conc_weak_roots_event_message() const {
+  if (ShenandoahHeap::heap()->unload_classes()) {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent weak roots", " (unload classes)");
+  } else {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent weak roots", "");
+  }
+}
+
+const char* ShenandoahConcurrentGC::conc_cleanup_event_message() const {
+  if (ShenandoahHeap::heap()->unload_classes()) {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent cleanup", " (unload classes)");
+  } else {
+    SHENANDOAH_RETURN_EVENT_MESSAGE(_generation->type(), "Concurrent cleanup", "");
   }
 }
