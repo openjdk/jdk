@@ -26,7 +26,10 @@
  * @requires vm.flavor != "zero"
  * @modules java.base/jdk.internal.vm.annotation java.base/jdk.internal.misc
  * @key randomness
+ * @run testng/othervm TestMappedHandshake
  * @run testng/othervm -Xint TestMappedHandshake
+ * @run testng/othervm -XX:TieredStopAtLevel=1 TestMappedHandshake
+ * @run testng/othervm -XX:-TieredCompilation TestMappedHandshake
  */
 
 import java.io.File;

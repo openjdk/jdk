@@ -47,7 +47,7 @@ static long calculate_number_of_pages_in_range(void* address, size_t len, size_t
 }
 
 JNIEXPORT jboolean JNICALL
-Java_java_nio_MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong address,
+MMU_isLoaded0(JNIEnv *env, jobject obj, jlong address,
                                          jlong len, jlong numPages)
 {
     jboolean loaded = JNI_TRUE;
@@ -94,7 +94,7 @@ Java_java_nio_MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong addres
 
 
 JNIEXPORT void JNICALL
-Java_java_nio_MappedMemoryUtils_load0(JNIEnv *env, jobject obj, jlong address,
+MMU_load0(JNIEnv *env, jobject obj, jlong address,
                                      jlong len)
 {
     char *a = (char *)jlong_to_ptr(address);
@@ -105,7 +105,7 @@ Java_java_nio_MappedMemoryUtils_load0(JNIEnv *env, jobject obj, jlong address,
 }
 
 JNIEXPORT void JNICALL
-Java_java_nio_MappedMemoryUtils_unload0(JNIEnv *env, jobject obj, jlong address,
+MMU_unload0(JNIEnv *env, jobject obj, jlong address,
                                      jlong len)
 {
     char *a = (char *)jlong_to_ptr(address);
@@ -199,7 +199,7 @@ static int validate_msync_address(size_t address)
 }
 
 JNIEXPORT void JNICALL
-Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
+MMU_force0(JNIEnv *env, jobject obj, jobject fdo,
                                       jlong address, jlong len)
 {
     void* a = (void *)jlong_to_ptr(address);
@@ -217,4 +217,20 @@ Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
         }
         JNU_ThrowIOExceptionWithMessageAndLastError(env, "msync with parameter MS_SYNC failed");
     }
+}
+
+#define FD "Ljava/io/FileDescriptor;"
+
+static JNINativeMethod methods[] = {
+    {"isLoaded0", "(JJJ)Z",             (void *)&MMU_isLoaded0},
+    {"load0",     "(JJ)V",              (void *)&MMU_load0},
+    {"unload0",   "(JJ)V",              (void *)&MMU_unload0},
+    {"force0",    "(" FD "JJ)V",        (void *)&MMU_force0},
+};
+
+JNIEXPORT void JNICALL
+Java_java_nio_MappedMemoryUtils_registerNatives(JNIEnv *env, jclass cls)
+{
+    (*env)->RegisterNatives(env, cls,
+                            methods, sizeof(methods)/sizeof(methods[0]));
 }
