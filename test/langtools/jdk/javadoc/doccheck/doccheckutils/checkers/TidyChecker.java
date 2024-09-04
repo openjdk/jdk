@@ -20,11 +20,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package tools.checkers;
+package doccheckutils.checkers;
 
 
-import tools.FileChecker;
-import tools.Log;
+import doccheckutils.FileChecker;
+import doccheckutils.Log;
 
 import java.io.BufferedReader;
 import java.io.File;

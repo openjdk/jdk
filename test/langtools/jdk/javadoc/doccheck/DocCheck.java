@@ -21,109 +21,114 @@
  * questions.
  */
 
+import doccheckutils.FileChecker;
+import doccheckutils.FileProcessor;
+import doccheckutils.HtmlFileChecker;
+import doccheckutils.checkers.BadCharacterChecker;
+import doccheckutils.checkers.DocTypeChecker;
+import doccheckutils.checkers.LinkChecker;
+import doccheckutils.checkers.TidyChecker;
 
-import org.junit.Before;
-import org.junit.Test;
-import tools.FileChecker;
-import tools.FileProcessor;
-import tools.HtmlFileChecker;
-import tools.checkers.BadCharacterChecker;
-import tools.checkers.DocTypeChecker;
-import tools.checkers.LinkChecker;
-import tools.checkers.TidyChecker;
-
-import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
-
+import toolbox.TestRunner;
 /**
  * Takes a directory path under the generated documentation directory as input
  * and runs different {@link FileChecker file checkers} on it
  */
-public class DocCheck {
+public class DocCheck extends TestRunner {
     private static final Path ROOT_PATH = Path.of(System.getProperty("test.jdk"));
+    private static final Path DIR = Path.of(System.getProperty("doccheck.dir"));
     private List<Path> files;
+    private static final boolean RUN_PARALLEL = Boolean.parseBoolean(System.getProperty("doccheck.runParallel", "true"));
 
-    @Before
-    public void setUp() {
-        Path root = Path.of(ROOT_PATH.getParent() + File.separator + "docs" + File.separator + System.getProperty("doccheck.dir"));
+    public static void main(String... args) throws Exception {
+        DocCheck docCheck = new DocCheck();
+        docCheck.runTests();
+    }
+
+    public DocCheck() {
+        super(System.err);
+        init();
+    }
+
+    public void init() {
+        Path root = ROOT_PATH.getParent().resolve("docs").resolve(DIR);
         var fileTester = new FileProcessor();
         fileTester.processFiles(root);
         files = fileTester.getFiles();
     }
 
+    public List<FileChecker> getCheckers() {
+        TidyChecker tidy = new TidyChecker();
+        BadCharacterChecker badChars = new BadCharacterChecker();
+        HtmlFileChecker doctypeChecker = new HtmlFileChecker(new DocTypeChecker());
+        HtmlFileChecker htmlChecker = new HtmlFileChecker(new LinkChecker());
+
+        List<FileChecker> checkers = new ArrayList<>();
+        checkers.add(tidy);
+        checkers.add(badChars);
+        checkers.add(doctypeChecker);
+        checkers.add(htmlChecker);
+        return checkers;
+    }
+
     @Test
     public void test() throws Exception {
-        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        List<FileChecker> checkers = getCheckers();
+        if (RUN_PARALLEL) {
+            runCheckersInParallel(checkers);
+        } else {
+            runCheckersSequentially(checkers);
+        }
+    }
+
+    private void runCheckersInParallel(List<FileChecker> checkers) throws Exception {
+        ExecutorService executorService = Executors.newFixedThreadPool(checkers.size());
         List<Throwable> exceptions = new ArrayList<>();
+        List<Future<?>> futures = new ArrayList<>();
 
-        try (
-                TidyChecker tidy = new TidyChecker();
-                BadCharacterChecker badChars = new BadCharacterChecker();
-                HtmlFileChecker docChecker = new HtmlFileChecker(new DocTypeChecker());
-                HtmlFileChecker htmlChecker = new HtmlFileChecker(new LinkChecker());
-        ) {
-            List<Future<?>> futures = new ArrayList<>();
+        for (FileChecker checker : checkers) {
             futures.add(executorService.submit(() -> {
                 try {
-                    tidy.checkFiles(files);
+                    checker.checkFiles(files);
                 } catch (RuntimeException e) {
                     synchronized (exceptions) {
                         exceptions.add(e);
                     }
                 }
             }));
+        }
 
-            futures.add(executorService.submit(() -> {
-                try {
-                    docChecker.checkFiles(files);
-                } catch (RuntimeException e) {
-                    synchronized (exceptions) {
-                        exceptions.add(e);
-                    }
-                }
-            }));
-
-            futures.add(executorService.submit(() -> {
-                try {
-                    badChars.checkFiles(files);
-                } catch (RuntimeException e) {
-                    synchronized (exceptions) {
-                        exceptions.add(e);
-                    }
-                }
-            }));
-
-            futures.add(executorService.submit(() -> {
-                try {
-                    htmlChecker.checkFiles(files);
-                } catch (RuntimeException e) {
-                    synchronized (exceptions) {
-                        exceptions.add(e);
-                    }
-                }
-            }));
-
-            for (Future<?> future : futures) {
-                try {
-                    future.get();
-                } catch (InterruptedException | ExecutionException e) {
-                    synchronized (exceptions) {
-                        exceptions.add(e);
-                    }
+        for (Future<?> future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException | ExecutionException e) {
+                synchronized (exceptions) {
+                    exceptions.add(e);
                 }
             }
-        } catch (IOException e) {
-            throw new Exception("Interrupted: " + e);
-        } finally {
-            executorService.shutdown();
+        }
+
+        executorService.shutdown();
+
+        if (!exceptions.isEmpty()) {
+            throw new Exception("One or more HTML checkers failed: " + exceptions);
+        }
+    }
+
+    private void runCheckersSequentially(List<FileChecker> checkers) throws Exception {
+        List<Throwable> exceptions = new ArrayList<>();
+
+        for (FileChecker checker : checkers) {
+            try {
+                checker.checkFiles(files);
+            } catch (RuntimeException e) {
+                exceptions.add(e);
+            }
         }
 
         if (!exceptions.isEmpty()) {

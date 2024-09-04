@@ -20,10 +20,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package tools.checkers;
+package doccheckutils.checkers;
 
-import tools.HtmlChecker;
-import tools.Log;
+import doccheckutils.HtmlChecker;
+import doccheckutils.Log;
 
 import java.io.IOException;
 import java.nio.file.Path;
