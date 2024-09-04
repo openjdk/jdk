@@ -2057,7 +2057,7 @@ void SharedRuntime::generate_deopt_blob() {
     pad += 512; // Increase the buffer size when compiling for JVMCI
   }
 #endif
-  const char *name = SharedRuntime::stub_name(sharedStubId::deopt_id);
+  const char *name = SharedRuntime::stub_name(SharedStubId::deopt_id);
   CodeBuffer buffer(name, 2048 + pad, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words = -1;
@@ -2436,9 +2436,9 @@ uint SharedRuntime::out_preserve_stack_slots() {
 // Generate a special Compile2Runtime blob that saves all registers,
 // and setup oopmap.
 //
-SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address call_ptr) {
-  assert((id >= sharedStubId::polling_page_vectors_safepoint_handler_id ||
-          id <= sharedStubId::polling_page_return_handler_id),
+SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
+  assert((id >= SharedStubId::polling_page_vectors_safepoint_handler_id ||
+          id <= SharedStubId::polling_page_return_handler_id),
          "expected a polling page stub id");
 
   ResourceMark rm;
@@ -2454,8 +2454,8 @@ SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address cal
   address start   = __ pc();
   address call_pc = nullptr;
   int frame_size_in_words = -1;
-  bool cause_return = (id == sharedStubId::polling_page_return_handler_id);
-  RegisterSaver reg_save(id == sharedStubId::polling_page_vectors_safepoint_handler_id /* save_vectors */);
+  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
+  RegisterSaver reg_save(id == SharedStubId::polling_page_vectors_safepoint_handler_id /* save_vectors */);
 
   // Save Integer and Float registers.
   map = reg_saver.save_live_registers(masm, 0, &frame_size_in_words);
@@ -2561,10 +2561,10 @@ SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address cal
 // but since this is generic code we don't know what they are and the caller
 // must do any gc of the args.
 //
-RuntimeStub* SharedRuntime::generate_resolve_blob(sharedStubId id, address destination) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
   assert(StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
-  assert((id >= sharedStubId::wrong_method_id &&
-          id <= sharedStubId::resolve_static_call_id),
+  assert((id >= SharedStubId::wrong_method_id &&
+          id <= SharedStubId::resolve_static_call_id),
          "expected a resolve blob id");
 
   // allocate space for the code
@@ -2661,9 +2661,9 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(sharedStubId id, address desti
 // otherwise assume that stack unwinding will be initiated, so
 // caller saved registers were assumed volatile in the compiler.
 
-RuntimeStub* SharedRuntime::generate_throw_exception(sharedStubId id, address runtime_entry) {
-  assert((id >= sharedStubId::throw_AbstractMethodError_id &&
-          id <= sharedStubId::throw_delayed_StackOverflowError_id),
+RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+  assert((id >= SharedStubId::throw_AbstractMethodError_id &&
+          id <= SharedStubId::throw_delayed_StackOverflowError_id),
          "expected a throw stub id");
 
   const char *name = SharedRuntime::stub_name(id);
@@ -2774,7 +2774,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
 
   int insts_size = 1024;
   int locs_size = 64;
-  const char *name = SharedRuntime::stub_name(sharedStubId::jfr_write_checkpoint_id);
+  const char *name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
   CodeBuffer code(name, insts_size, locs_size);
   OopMapSet* oop_maps = new OopMapSet();
   MacroAssembler* masm = new MacroAssembler(&code);
@@ -2813,7 +2813,7 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 
   int insts_size = 1024;
   int locs_size = 64;
-  const char *name = SharedRuntime::stub_name(sharedStubId::jfr_return_lease_id);
+  const char *name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
   CodeBuffer code(name, insts_size, locs_size);
   OopMapSet* oop_maps = new OopMapSet();
   MacroAssembler* masm = new MacroAssembler(&code);

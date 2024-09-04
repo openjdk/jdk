@@ -2861,7 +2861,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  const char *name = SharedRuntime::stub_name(sharedStubId::deopt_id);
+  const char *name = SharedRuntime::stub_name(SharedStubId::deopt_id);
   CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
@@ -3212,11 +3212,11 @@ void OptoRuntime::generate_uncommon_trap_blob() {
 #endif // COMPILER2
 
 // Generate a special Compile2Runtime blob that saves all registers, and setup oopmap.
-SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address call_ptr) {
+SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
   assert(StubRoutines::forward_exception_entry() != nullptr,
          "must be generated before");
-  assert((id >= sharedStubId::polling_page_vectors_safepoint_handler_id ||
-          id <= sharedStubId::polling_page_return_handler_id),
+  assert((id >= SharedStubId::polling_page_vectors_safepoint_handler_id ||
+          id <= SharedStubId::polling_page_return_handler_id),
          "expected a polling page stub id");
 
   ResourceMark rm;
@@ -3232,7 +3232,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address cal
   int frame_size_in_bytes = 0;
 
   RegisterSaver::ReturnPCLocation return_pc_location;
-  bool cause_return = (id == sharedStubId::polling_page_return_handler_id);
+  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
   if (cause_return) {
     // Nothing to do here. The frame has already been popped in MachEpilogNode.
     // Register LR already contains the return pc.
@@ -3242,7 +3242,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address cal
     return_pc_location = RegisterSaver::return_pc_is_thread_saved_exception_pc;
   }
 
-  bool save_vectors = (id == sharedStubId::polling_page_vectors_safepoint_handler_id);
+  bool save_vectors = (id == SharedStubId::polling_page_vectors_safepoint_handler_id);
 
   // Save registers, fpu state, and flags. Set R31 = return pc.
   map = RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
@@ -3329,9 +3329,9 @@ SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address cal
 // but since this is generic code we don't know what they are and the caller
 // must do any gc of the args.
 //
-RuntimeStub* SharedRuntime::generate_resolve_blob(sharedStubId id, address destination) {
-  assert((id >= sharedStubId::wrong_method_id &&
-          id <= sharedStubId::resolve_static_call_id),
+RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
+  assert((id >= SharedStubId::wrong_method_id &&
+          id <= SharedStubId::resolve_static_call_id),
          "expected a resolve blob id");
 
   // allocate space for the code
@@ -3435,9 +3435,9 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(sharedStubId id, address desti
 // Note: the routine set_pc_not_at_call_for_caller in
 // SharedRuntime.cpp requires that this code be generated into a
 // RuntimeStub.
-RuntimeStub* SharedRuntime::generate_throw_exception(sharedStubId id, address runtime_entry) {
-  assert((id >= sharedStubId::throw_AbstractMethodError_id &&
-          id <= sharedStubId::throw_delayed_StackOverflowError_id),
+RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+  assert((id >= SharedStubId::throw_AbstractMethodError_id &&
+          id <= SharedStubId::throw_delayed_StackOverflowError_id),
          "expected a throw stub id");
 
   const char *name = SharedRuntime::stub_name(id);
@@ -3764,7 +3764,7 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
 // It returns a jobject handle to the event writer.
 // The handle is dereferenced and the return value is the event writer oop.
 RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
-  const char *name = SharedRuntime::stub_name(sharedStubId::jfr_write_checkpoint_id);
+  const char *name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
   CodeBuffer code(name, 512, 64);
   MacroAssembler* masm = new MacroAssembler(&code);
 
@@ -3801,7 +3801,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
 
 // For c2: call to return a leased buffer.
 RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
-  const char *name = SharedRuntime::stub_name(sharedStubId::jfr_return_lease_id);
+  const char *name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
   CodeBuffer code(name, 512, 64);
   MacroAssembler* masm = new MacroAssembler(&code);
 

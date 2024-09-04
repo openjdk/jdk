@@ -1360,7 +1360,7 @@ uint SharedRuntime::out_preserve_stack_slots() {
 //------------------------------generate_deopt_blob----------------------------
 void SharedRuntime::generate_deopt_blob() {
   ResourceMark rm;
-  const char *name = SharedRuntime::stub_name(sharedStubId::deopt_id);
+  const char *name = SharedRuntime::stub_name(SharedStubId::deopt_id);
   CodeBuffer buffer(name, 1024, 1024);
   int frame_size_in_words;
   OopMapSet* oop_maps;
@@ -1602,10 +1602,10 @@ void SharedRuntime::generate_deopt_blob() {
 // setup oopmap, and calls safepoint code to stop the compiled code for
 // a safepoint.
 //
-SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address call_ptr) {
+SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
   assert(StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
-  assert((id >= sharedStubId::polling_page_vectors_safepoint_handler_id ||
-          id <= sharedStubId::polling_page_return_handler_id),
+  assert((id >= SharedStubId::polling_page_vectors_safepoint_handler_id ||
+          id <= SharedStubId::polling_page_return_handler_id),
          "expected a polling page stub id");
 
   ResourceMark rm;
@@ -1614,7 +1614,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address cal
   int frame_size_words;
   OopMapSet* oop_maps;
 
-  bool cause_return = (id == sharedStubId::polling_page_return_handler_id);
+  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
 
   MacroAssembler* masm = new MacroAssembler(&buffer);
   address start = __ pc();
@@ -1676,10 +1676,10 @@ SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address cal
   return SafepointBlob::create(&buffer, oop_maps, frame_size_words);
 }
 
-RuntimeStub* SharedRuntime::generate_resolve_blob(sharedStubId id, address destination) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
   assert(StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
-  assert((id >= sharedStubId::wrong_method_id &&
-          id <= sharedStubId::resolve_static_call_id),
+  assert((id >= SharedStubId::wrong_method_id &&
+          id <= SharedStubId::resolve_static_call_id),
          "expected a resolve blob id");
 
   ResourceMark rm;
@@ -1742,9 +1742,9 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(sharedStubId id, address desti
 // Continuation point for throwing of implicit exceptions that are not handled in
 // the current activation. Fabricates an exception oop and initiates normal
 // exception dispatching in this frame.
-RuntimeStub* SharedRuntime::generate_throw_exception(sharedStubId id, address runtime_entry) {
-  assert((id >= sharedStubId::throw_AbstractMethodError_id &&
-          id <= sharedStubId::throw_delayed_StackOverflowError_id),
+RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+  assert((id >= SharedStubId::throw_AbstractMethodError_id &&
+          id <= SharedStubId::throw_delayed_StackOverflowError_id),
          "expected a throw stub id");
 
   const char *name = SharedRuntime::stub_name(id);
@@ -1808,7 +1808,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
     framesize // inclusive of return address
   };
 
-  const char *name = SharedRuntime::stub_name(sharedStubId::jfr_write_checkpoint_id);
+  const char *name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
   CodeBuffer code(name, 512, 64);
   MacroAssembler* masm = new MacroAssembler(&code);
 
@@ -1852,7 +1852,7 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
     framesize // inclusive of return address
   };
 
-  const char *name = SharedRuntime::stub_name(sharedStubId::jfr_return_lease_id);
+  const char *name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
   CodeBuffer code(name, 512, 64);
   MacroAssembler* masm = new MacroAssembler(&code);
 

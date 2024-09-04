@@ -2488,7 +2488,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
-  const char *name = SharedRuntime::stub_name(sharedStubId::deopt_id);
+  const char *name = SharedRuntime::stub_name(SharedStubId::deopt_id);
   CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
@@ -2835,11 +2835,11 @@ void OptoRuntime::generate_uncommon_trap_blob() {
 //
 // Generate a special Compile2Runtime blob that saves all registers,
 // and setup oopmap.
-SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address call_ptr) {
+SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
   assert(StubRoutines::forward_exception_entry() != nullptr,
          "must be generated before");
-  assert((id >= sharedStubId::polling_page_vectors_safepoint_handler_id ||
-          id <= sharedStubId::polling_page_return_handler_id),
+  assert((id >= SharedStubId::polling_page_vectors_safepoint_handler_id ||
+          id <= SharedStubId::polling_page_return_handler_id),
          "expected a polling page stub id");
 
   ResourceMark rm;
@@ -2855,7 +2855,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address cal
   address call_pc = nullptr;
   int frame_size_in_bytes;
 
-  bool cause_return = (id == sharedStubId::polling_page_return_handler_id);
+  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
   // Make room for return address (or push it again)
   if (!cause_return) {
     __ z_lg(Z_R14, Address(Z_thread, JavaThread::saved_exception_pc_offset()));
@@ -2940,10 +2940,10 @@ SafepointBlob* SharedRuntime::generate_handler_blob(sharedStubId id, address cal
 // but since this is generic code we don't know what they are and the caller
 // must do any gc of the args.
 //
-RuntimeStub* SharedRuntime::generate_resolve_blob(sharedStubId id, address destination) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
   assert (StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
-  assert((id >= sharedStubId::wrong_method_id &&
-          id <= sharedStubId::resolve_static_call_id),
+  assert((id >= SharedStubId::wrong_method_id &&
+          id <= SharedStubId::resolve_static_call_id),
          "expected a resolve blob id");
 
   // allocate space for the code
@@ -3041,9 +3041,9 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(sharedStubId id, address desti
 // SharedRuntime.cpp requires that this code be generated into a
 // RuntimeStub.
 
-RuntimeStub* SharedRuntime::generate_throw_exception(sharedStubId id, address runtime_entry) {
-  assert((id >= sharedStubId::throw_AbstractMethodError_id &&
-          id <= sharedStubId::throw_delayed_StackOverflowError_id),
+RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+  assert((id >= SharedStubId::throw_AbstractMethodError_id &&
+          id <= SharedStubId::throw_delayed_StackOverflowError_id),
          "expected a throw stub id");
 
   const char *name = SharedRuntime::stub_name(id);

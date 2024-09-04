@@ -43,10 +43,10 @@ class vframeStream;
 // Java exceptions), locking/unlocking mechanisms, statistical
 // information, etc.
 
-// define sharedStubId enum tags: wrong_method_id, etc
+// define SharedStubId enum tags: wrong_method_id, etc
 
 #define SHARED_STUB_ID_ENUM_DECLARE(name, type) STUB_ID_NAME(name),
-enum class sharedStubId :int {
+enum class SharedStubId :int {
   NO_STUBID = -1,
   SHARED_STUBS_DO(SHARED_STUB_ID_ENUM_DECLARE)
   NUM_STUBIDS
@@ -64,25 +64,25 @@ class SharedRuntime: AllStatic {
 #undef SHARED_STUB_FIELD_DECLARE
 
 #ifndef PRODUCT
-  static bool is_resolve_id(sharedStubId id) {
-    return (id == sharedStubId::wrong_method_id ||
-            id == sharedStubId::wrong_method_abstract_id ||
-            id == sharedStubId::ic_miss_id ||
-            id == sharedStubId::resolve_opt_virtual_call_id ||
-            id == sharedStubId::resolve_virtual_call_id ||
-            id == sharedStubId::resolve_static_call_id);
+  static bool is_resolve_id(SharedStubId id) {
+    return (id == SharedStubId::wrong_method_id ||
+            id == SharedStubId::wrong_method_abstract_id ||
+            id == SharedStubId::ic_miss_id ||
+            id == SharedStubId::resolve_opt_virtual_call_id ||
+            id == SharedStubId::resolve_virtual_call_id ||
+            id == SharedStubId::resolve_static_call_id);
   }
-  static bool is_polling_page_id(sharedStubId id) {
-    return (id == sharedStubId::polling_page_vectors_safepoint_handler_id ||
-            id == sharedStubId::polling_page_safepoint_handler_id ||
-            id == sharedStubId::polling_page_return_handler_id);
+  static bool is_polling_page_id(SharedStubId id) {
+    return (id == SharedStubId::polling_page_vectors_safepoint_handler_id ||
+            id == SharedStubId::polling_page_safepoint_handler_id ||
+            id == SharedStubId::polling_page_return_handler_id);
   }
-  static bool is_throw_id(sharedStubId id) {
-    return (id == sharedStubId::throw_AbstractMethodError_id ||
-            id == sharedStubId::throw_IncompatibleClassChangeError_id ||
-            id == sharedStubId::throw_NullPointerException_at_call_id ||
-            id == sharedStubId::throw_StackOverflowError_id ||
-            id == sharedStubId::throw_delayed_StackOverflowError_id);
+  static bool is_throw_id(SharedStubId id) {
+    return (id == SharedStubId::throw_AbstractMethodError_id ||
+            id == SharedStubId::throw_IncompatibleClassChangeError_id ||
+            id == SharedStubId::throw_NullPointerException_at_call_id ||
+            id == SharedStubId::throw_StackOverflowError_id ||
+            id == SharedStubId::throw_delayed_StackOverflowError_id);
   }
 #endif
 
@@ -92,7 +92,7 @@ class SharedRuntime: AllStatic {
   // counterpart the continuation do_enter method.
   static nmethod*            _cont_doYield_stub;
 
-  // Stub names indexed by sharedStubId
+  // Stub names indexed by SharedStubId
   static const char *_stub_names[];
 
 #ifndef PRODUCT
@@ -101,9 +101,9 @@ class SharedRuntime: AllStatic {
 #endif // !PRODUCT
 
  private:
-  static SafepointBlob* generate_handler_blob(sharedStubId id, address call_ptr);
-  static RuntimeStub*   generate_resolve_blob(sharedStubId id, address destination);
-  static RuntimeStub*   generate_throw_exception(sharedStubId id, address runtime_entry);
+  static SafepointBlob* generate_handler_blob(SharedStubId id, address call_ptr);
+  static RuntimeStub*   generate_resolve_blob(SharedStubId id, address destination);
+  static RuntimeStub*   generate_throw_exception(SharedStubId id, address runtime_entry);
  public:
   static void generate_initial_stubs(void);
   static void generate_stubs(void);
@@ -117,8 +117,8 @@ class SharedRuntime: AllStatic {
   static RuntimeStub* generate_jfr_return_lease();
 #endif
 
-  static const char *stub_name(sharedStubId id) {
-    assert(id > sharedStubId::NO_STUBID && id < sharedStubId::NUM_STUBIDS, "stub id out of range");
+  static const char *stub_name(SharedStubId id) {
+    assert(id > SharedStubId::NO_STUBID && id < SharedStubId::NUM_STUBIDS, "stub id out of range");
     return _stub_names[(int)id];
   }
 
