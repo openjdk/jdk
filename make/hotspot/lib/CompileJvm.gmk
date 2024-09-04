@@ -92,10 +92,12 @@ CFLAGS_VM_VERSION := \
 DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
     empty-body implicit-fallthrough int-in-bool-context \
     maybe-uninitialized missing-field-initializers \
-    shift-negative-value unknown-pragmas
+    shift-negative-value unknown-pragmas unused-but-set-variable \
+    unused-local-typedefs unused-variable
 
-DISABLED_WARNINGS_clang := sometimes-uninitialized \
-    missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
+DISABLED_WARNINGS_clang := delete-non-abstract-non-virtual-dtor missing-braces \
+    sometimes-uninitialized unknown-pragmas unused-but-set-variable \
+    unused-function unused-local-typedef unused-private-field unused-variable
 
 ifneq ($(DEBUG_LEVEL), release)
   # Assert macro gives warning
@@ -177,15 +179,27 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     arguments.cpp_CXXFLAGS := $(CFLAGS_VM_VERSION), \
     DISABLED_WARNINGS_gcc := $(DISABLED_WARNINGS_gcc), \
     DISABLED_WARNINGS_gcc_ad_$(HOTSPOT_TARGET_CPU_ARCH).cpp := nonnull, \
+    DISABLED_WARNINGS_gcc_bytecodeInterpreter.cpp := unused-label, \
+    DISABLED_WARNINGS_gcc_c1_Runtime1_aarch64.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_cgroupV1Subsystem_linux.cpp := address, \
     DISABLED_WARNINGS_gcc_cgroupV2Subsystem_linux.cpp := address, \
+    DISABLED_WARNINGS_gcc_g1FreeIdSet.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_handshake.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_interp_masm_x86.cpp := uninitialized, \
+    DISABLED_WARNINGS_gcc_javaClasses.cpp := unused-const-variable, \
+    DISABLED_WARNINGS_gcc_jfrChunkWriter.cpp := unused-const-variable, \
+    DISABLED_WARNINGS_gcc_jfrMemorySizer.cpp := unused-const-variable, \
+    DISABLED_WARNINGS_gcc_jfrTraceIdKlassQueue.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_jvmciCodeInstaller.cpp := stringop-overflow, \
+    DISABLED_WARNINGS_gcc_jvmFlag.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_jvmtiTagMap.cpp := stringop-overflow, \
+    DISABLED_WARNINGS_gcc_macroAssembler_ppc_sha.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_postaloc.cpp := address, \
     DISABLED_WARNINGS_gcc_shenandoahLock.cpp := stringop-overflow, \
+    DISABLED_WARNINGS_gcc_stubGenerator_s390.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_synchronizer.cpp := stringop-overflow, \
+    DISABLED_WARNINGS_gcc_templateInterpreterGenerator_x86.cpp := unused-const-variable, \
+    DISABLED_WARNINGS_gcc_xGlobals_ppc.cpp := unused-const-variable, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang), \
     DISABLED_WARNINGS_clang_arguments.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_clang_codeBuffer.cpp := tautological-undefined-compare, \

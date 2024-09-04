@@ -223,8 +223,6 @@ StubFrame::~StubFrame() {
 
 #define __ sasm->
 
-const int float_regs_as_doubles_size_in_slots = pd_nof_fpu_regs_frame_map * 2;
-
 // Stack layout for saving/restoring  all the registers needed during a runtime
 // call (this includes deoptimization)
 // Note: note that users of this frame may well have arguments to some runtime
