@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,34 @@
  * questions.
  */
 
- /*
- * @test
- * @run main/native JniVersion
- */
-public class JniVersion {
+#include <jni.h>
 
-    public static final int JNI_VERSION_24 = 0x00180000;
+#include <limits.h>
+#include <stdio.h>
 
-    public static void main(String... args) throws Exception {
-        System.loadLibrary("JniVersion");
-        int res = getJniVersion();
-        if (res != JNI_VERSION_24) {
-            throw new Exception("Unexpected value returned from getJniVersion(): 0x" + Integer.toHexString(res));
-        }
-    }
+JNIEXPORT void JNICALL
+Java_TestLargeUTF8Length_checkUTF8Length(JNIEnv *env, jclass clz,
+                                         jstring str, jlong expected_length) {
 
-    static native int getJniVersion();
+  jlong utf8_length;
+
+  // First get truncated length to generate warning
+  utf8_length = (*env)->GetStringUTFLength(env, str);
+
+  if (utf8_length != INT_MAX - 1) {
+    printf("Error: expected length of %d, but got %lld\n", INT_MAX - 1,
+           (long long) utf8_length);
+    (*env)->FatalError(env, "Unexpected truncated length");
+  }
+
+  // Now get true length
+  utf8_length = (*env)->GetStringUTFLengthAsLong(env, str);
+
+  if (utf8_length != expected_length ) {
+    printf("Error: expected length of %lld, but got %lld\n",
+           (long long) expected_length, (long long) utf8_length);
+    (*env)->FatalError(env, "Unexpected true length");
+  }
+
+
 }
