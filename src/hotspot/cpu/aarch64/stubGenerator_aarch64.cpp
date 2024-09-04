@@ -2122,6 +2122,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register byte_value = c_rarg2;
     const Register wide_value = rscratch1;
     const Register align_reg = rscratch2;
+    assert_different_registers(array, size, byte_value, wide_value, align_reg);
 
     Label L_exit;
 
@@ -2129,7 +2130,7 @@ class StubGenerator: public StubCodeGenerator {
     __ cbz(size, L_exit);
 
     // Set up bit pattern
-    __ andr(byte_value, 0xFF); // Clear upper 24 bits
+    __ andr(byte_value, byte_value, 0xFF); // Clear upper 24 bits
     __ mov(wide_value, 0x0101010101010101ULL);
     __ mul(wide_value, wide_value, byte_value);
 
@@ -2147,7 +2148,7 @@ class StubGenerator: public StubCodeGenerator {
     {
       UnsafeMemoryAccessMark umam(this, true, true);
       Label L_loop;
-      __ add(size, array);
+      __ add(size, size, array);
       __ bind(L_loop);
       __ strb(wide_value, Address(__ post(array, 1)));
       __ cmp(array, size); // Are we at the end?
@@ -2159,44 +2160,44 @@ class StubGenerator: public StubCodeGenerator {
     {
       UnsafeMemoryAccessMark umam(this, true, true);
       Label L_loop;
-      __ lsr(size, 3); // Divide size by 8
-      __ add(size, array, lsl(3)); // Replace size with end of array
+      __ lsr(size, size, 3); // Divide size by 8
+      __ add(size, size, array, Assembler::LSL, 3); // Replace size with end of array
       __ bind(L_loop);
       // *array = wide_value; array += 8;
       __ str(wide_value, Address(__ post(array, 8)));
       __ cmp(array, size); // Are we at the end?
-      __ bne(L_loop);
+      __ br(Assembler::NE, L_loop);
       __ b(L_exit);
     }
     __ bind(L_4byte);
     {
       UnsafeMemoryAccessMark umam(this, true, true);
       Label L_loop;
-      __ lsr(size, 2);
-      __ add(size, array, lsl(2));
+      __ lsr(size, size, 2);
+      __ add(size, size, array, Assembler::LSL, 2);
       __ bind(L_loop);
       __ strw(wide_value, Address(__ post(array, 4)));
       __ cmp(array, size);
-      __ br(Assembler::NE, (L_loop);
+      __ br(Assembler::NE, L_loop);
       __ b(L_exit);
     }
     __ bind(L_2byte);
     {
       UnsafeMemoryAccessMark umam(this, true, true);
       Label L_loop;
-      __ lsr(size, 1);
+      __ lsr(size, size, 1);
       // Clear upper 16-bits
-      __ and(wide_value, 0xFFFF);
-      __ add(size, array, lsl(1));
+      __ andr(wide_value, wide_value, 0xFFFF);
+      __ add(size, size, array, Assembler::LSL, 1);
       __ bind(L_loop);
       __ strh(wide_value, Address(__ post(array, 2)));
       __ cmp(array, size);
-      __ br(Assembler::NE, (L_loop);
+      __ br(Assembler::NE, L_loop);
       __ b(L_exit);
     }
     __ bind(L_exit);
     __ leave();
-    __ ret(0);
+    __ ret(lr);
 
     return start;
   }
@@ -2783,7 +2784,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
     StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
 
-    Stubroutines::_unsafe_setmemory = generate_unsafe_setmemory("unsafe_setmemory");
+    StubRoutines::_unsafe_setmemory = generate_unsafe_setmemory("unsafe_setmemory");
   }
 
   void generate_math_stubs() { Unimplemented(); }
