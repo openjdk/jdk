@@ -28,6 +28,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include <type_traits>
 
+class outputStream;
 class Type;
 class TypeInt;
 class TypeLong;
