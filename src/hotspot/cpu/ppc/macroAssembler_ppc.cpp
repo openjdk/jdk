@@ -2561,8 +2561,8 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp, oop);
-    lwz(temp, in_bytes(Klass::access_flags_offset()), temp);
-    testbitdi(flag, R0, temp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    lbz(temp, in_bytes(Klass::misc_flags_offset()), temp);
+    testbitdi(flag, R0, temp, exact_log2(KlassFlags::_misc_is_value_based_class));
     bne(flag, failure);
   }
 
@@ -2752,8 +2752,8 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
-    lwz(tmp1, in_bytes(Klass::access_flags_offset()), tmp1);
-    testbitdi(flag, R0, tmp1, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    lbz(tmp1, in_bytes(Klass::misc_flags_offset()), tmp1);
+    testbitdi(flag, R0, tmp1, exact_log2(KlassFlags::_misc_is_value_based_class));
     bne(flag, slow_path);
   }
 
