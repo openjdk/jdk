@@ -26,7 +26,7 @@
  * @bug 8337109
  * @summary Running Doccheck on generated HTML
  * @library /tools/lib /test/langtools/jdk/javadoc/doccheck/
- * @run main/othervm -Ddoccheck.dir=api/java.base -Ddoccheck.dir=true DocCheck
+ * @run main/othervm -Ddoccheck.dir=api/java.base -Ddoccheck.runParallel=true DocCheck
  */
 
 public class DocCheck__jdk_javadoc {
