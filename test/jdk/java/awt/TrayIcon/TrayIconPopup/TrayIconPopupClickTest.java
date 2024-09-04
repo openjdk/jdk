@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import java.awt.Robot;
 import java.awt.TrayIcon;
 import java.awt.SystemTray;
 import java.awt.EventQueue;
@@ -42,14 +43,14 @@ import java.awt.image.BufferedImage;
  * @library /java/awt/patchlib
  * @library /lib/client ../
  * @build java.desktop/java.awt.Helper
- * @build ExtendedRobot SystemTrayIconHelper
+ * @build SystemTrayIconHelper
  * @run main TrayIconPopupClickTest
  */
 
 public class TrayIconPopupClickTest {
 
     TrayIcon icon;
-    ExtendedRobot robot;
+    Robot robot;
     boolean actionPerformed = false;
 
     public static void main(String[] args) throws Exception {

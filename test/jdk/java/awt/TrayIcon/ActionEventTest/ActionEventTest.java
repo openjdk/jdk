@@ -31,7 +31,7 @@
  * @library /lib/client ../
  * @library /java/awt/patchlib
  * @build java.desktop/java.awt.Helper
- * @build ExtendedRobot SystemTrayIconHelper
+ * @build SystemTrayIconHelper
  * @run main ActionEventTest
  */
 
