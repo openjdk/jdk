@@ -2447,7 +2447,8 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   OopMap* map = nullptr;
 
   // Allocate space for the code.  Setup code generation tools.
-  CodeBuffer buffer("handler_blob", 2048, 1024);
+  const char *name = SharedRuntime::stub_name(id);
+  CodeBuffer buffer(name, 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   assert_cond(masm != nullptr);
 
@@ -2455,7 +2456,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   address call_pc = nullptr;
   int frame_size_in_words = -1;
   bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
-  RegisterSaver reg_save(id == SharedStubId::polling_page_vectors_safepoint_handler_id /* save_vectors */);
+  RegisterSaver reg_saver(id == SharedStubId::polling_page_vectors_safepoint_handler_id /* save_vectors */);
 
   // Save Integer and Float registers.
   map = reg_saver.save_live_registers(masm, 0, &frame_size_in_words);
