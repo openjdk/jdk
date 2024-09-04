@@ -43,6 +43,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentBulkOperations;
 import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.javac.Restricted;
 import jdk.internal.reflect.CallerSensitive;
@@ -2663,7 +2664,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      */
     static long mismatch(MemorySegment srcSegment, long srcFromOffset, long srcToOffset,
                          MemorySegment dstSegment, long dstFromOffset, long dstToOffset) {
-        return AbstractMemorySegmentImpl.mismatch(
+        return SegmentBulkOperations.mismatch(
                 (AbstractMemorySegmentImpl)Objects.requireNonNull(srcSegment), srcFromOffset, srcToOffset,
                 (AbstractMemorySegmentImpl)Objects.requireNonNull(dstSegment), dstFromOffset, dstToOffset);
     }
