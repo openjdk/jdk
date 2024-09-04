@@ -291,13 +291,16 @@ public class Util {
             ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, dump);
         } catch (Error | Exception _) {
             // fallback to bytecode hex dump
-            var bcs = bytecode.start();
-            while (bcs.bci < bytecode.length()) {
-                dump.accept("%n%04x:".formatted(bcs.bci));
-                for (int i = 0; i < 16 && bcs.bci < bytecode.length(); i++, bcs.bci++) {
-                    dump.accept(" %02x".formatted(bcs.getU1()));
-                }
+            dumpBytesHex(dump, bytecode.array());
+        }
+    }
+
+    public static void dumpBytesHex(Consumer<String> dump, byte[] bytes) {
+        for (int i = 0; i < bytes.length; i++) {
+            if (i % 16 == 0) {
+                dump.accept("%n%04x:".formatted(i));
             }
+            dump.accept(" %02x".formatted(bytes[i]));
         }
     }
 
