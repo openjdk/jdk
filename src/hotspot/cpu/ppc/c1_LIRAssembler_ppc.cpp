@@ -1859,7 +1859,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
       __ stw(R11_scratch1, simm16_offs, tmp);
     }
 #endif
-    __ call_c(copyfunc_addr, relocInfo::runtime_call_type); 
+    __ call_c(copyfunc_addr, relocInfo::runtime_call_type);
 
     __ nand(tmp, R3_RET, R3_RET);
     __ subf(length, tmp, length);
@@ -2862,7 +2862,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
     return;
   }
 
-  __ call_c(dest, relocInfo::runtime_call_type); 
+  __ call_c(dest, relocInfo::runtime_call_type);
   if (info != nullptr) {
     add_call_info_here(info);
   }
