@@ -1078,7 +1078,7 @@ private:
 
   // Place 'n' in some loop nest, where 'n' is a CFG node
   void build_loop_tree();
-  int build_loop_tree_impl(Node *n, int pre_order);
+  int build_loop_tree_impl(Node* n, int pre_order);
   // Insert loop into the existing loop tree.  'innermost' is a leaf of the
   // loop tree, not the root.
   IdealLoopTree *sort( IdealLoopTree *loop, IdealLoopTree *innermost );
