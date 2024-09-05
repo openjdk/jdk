@@ -23,15 +23,18 @@
 
 /*
  * @test
+ * @key randomness
  * @bug 4851625 4900189 4939441
+ * @library ../ /test/lib
  * @build Tests
  * @build HyperbolicTests
  * @run main HyperbolicTests
- * @summary Tests for {Math, StrictMath}.{sinh, cosh, tanh}
+ * @summary Tests for {Math, StrictMath}.{sinh, cosh, tanh} (use -Dseed=X to set PRNG seed)
  */
 
 import static java.lang.Double.longBitsToDouble;
 import java.util.Random;
+import jdk.test.lib.RandomFactory;
 
 public class HyperbolicTests {
     private HyperbolicTests(){}
@@ -979,9 +982,10 @@ public class HyperbolicTests {
      *
      */
     static int testTanhIntrinsicWithReference() {
+        // Transition boundaries for libm tanh intrinsic.
         double b1 = 0.02;
         double b2 = 5.1;
-        double b3 = 55 * Math.log(2)/2; // ~19.062
+        double b3 = 19.0615474654; // 55 * ln(2)/2
 
         int failures = 0;
 
@@ -999,7 +1003,7 @@ public class HyperbolicTests {
 
         double [] testCases = new double[500];
 
-        Random rand = new Random(0);
+        Random rand = RandomFactory.getRandom();
         for (int i = 0; i < testCases.length; i++) {
             testCases[i] = min + range * rand.nextDouble();
         }
