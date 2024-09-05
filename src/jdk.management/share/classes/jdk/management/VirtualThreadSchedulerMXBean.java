@@ -35,9 +35,9 @@ import javax.management.ObjectName;
  * scheduler.
  *
  * <p> {@code VirtualThreadSchedulerMXBean} supports monitoring of the virtual thread
- * scheduler's target parallelism and the {@linkplain Thread##platform-threads platform
- * threads} used by the virtual thread scheduler as <em>carrier threads</em>. It also
- * supports dynamically changing the scheduler's target parallelism.
+ * scheduler's target parallelism, the {@linkplain Thread##platform-threads platform threads}
+ * used by the scheduler, and the number of virtual threads queued to the scheduler. It
+ * also supports dynamically changing the scheduler's target parallelism.
  *
  * <p> The management interface is registered with the platform {@link MBeanServer
  * MBeanServer}. The {@link ObjectName ObjectName} that uniquely identifies the management
@@ -60,11 +60,12 @@ public interface VirtualThreadSchedulerMXBean extends PlatformManagedObject {
     /**
      * Sets the scheduler's target parallelism.
      *
-     * <p> Increasing the target parallelism allows the scheduler to use more threads as
-     * carrier threads if required. Decreasing the target parallelism reduces the number
-     * of threads that the scheduler may use as carrier threads. If virtual threads are
-     * mounting and unmounting frequently then any downward adjustment will likely come
-     * into effect quickly.
+     * <p> Increasing the target parallelism allows the scheduler to use more platform
+     * threads to <i>carry</i> virtual threads if required. Decreasing the target parallelism
+     * reduces the number of threads that the scheduler may use to carry virtual threads.
+     *
+     * @apiNote If virtual threads are mounting and unmounting frequently then downward
+     * adjustment of the target parallelism will likely come into effect quickly.
      *
      * @implNote The JDK's virtual thread scheduler is a {@link ForkJoinPool}. Target
      * parallelism defaults to the number of {@linkplain Runtime#availableProcessors()
@@ -82,27 +83,35 @@ public interface VirtualThreadSchedulerMXBean extends PlatformManagedObject {
     void setParallelism(int size);
 
     /**
-     * {@return the current number of platform threads used by the scheduler;
-     * {@code -1} if not known}
+     * {@return the current number of platform threads that the scheduler has started
+     * but have not terminated; {@code -1} if not known}
      *
-     * The thread count includes threads that are currently used as carrier threads and
-     * threads that are <em>idle</em>. The thread count may be greater than the
-     * scheduler's target parallelism.
+     * <p> The count includes the platform threads that are currently <i>carrying</i>
+     * virtual threads and the platform threads that are not currently carrying virtual
+     * threads. The thread count may be greater than the scheduler's target parallelism.
      *
-     * @implNote The JDK's virtual thread scheduler is a {@link ForkJoinPool}. The
-     * thread count is the number of worker threads.
+     * @implNote The JDK's virtual thread scheduler is a {@link ForkJoinPool}. The pool
+     * size is the {@linkplain ForkJoinPool#getPoolSize() number of worker threads}.
      */
-    int getThreadCount();
+    int getPoolSize();
 
     /**
-     * {@return an estimate of the number of platform threads currently used by
-     * the scheduler as carriers for virtual threads; {@code -1} if not known}
+     * {@return an estimate of the number of virtual threads that are currently
+     * <i>mounted</i> by the scheduler; {@code -1} if not known}
+     *
+     * <p> The number of mounted virtual threads is equal to the number of platform
+     * threads carrying virtual threads.
+     *
+     * @implNote This method may overestimate the number of virtual threads that are mounted.
      */
-    int getCarrierThreadCount();
+    int getMountedVirtualThreadCount();
 
     /**
      * {@return an estimate of the number of virtual threads that are queued to
      * the scheduler to start or continue execution; {@code -1} if not known}
+     *
+     * @implNote This method may overestimate the number of virtual threads that are
+     * queued to execute.
      */
     long getQueuedVirtualThreadCount();
 }

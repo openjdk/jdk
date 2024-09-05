@@ -79,15 +79,26 @@ class VirtualThreadSchedulerMXBeanTest {
     }
 
     /**
-     * Test getThreadCount and getCarrierThreadCount.
+     * Test getPoolSize.
      */
     @ParameterizedTest
     @MethodSource("managedBeans")
-    void testThreadCounts(VirtualThreadSchedulerMXBean bean) {
+    void testPoolSize(VirtualThreadSchedulerMXBean bean) {
         // run test in virtual thread
         VThreadRunner.run(() -> {
-            assertTrue(bean.getThreadCount() > 0);
-            assertTrue(bean.getCarrierThreadCount() > 0);
+            assertTrue(bean.getPoolSize() > 0);
+        });
+    }
+
+    /**
+     * Test getMountedVirtualThreadCount.
+     */
+    @ParameterizedTest
+    @MethodSource("managedBeans")
+    void testMountedVirtualThreadCount(VirtualThreadSchedulerMXBean bean) {
+        // run test in virtual thread
+        VThreadRunner.run(() -> {
+            assertTrue(bean.getMountedVirtualThreadCount() > 0);
         });
     }
 

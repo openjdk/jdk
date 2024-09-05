@@ -73,9 +73,9 @@ public class VirtualThreadSchedulerImpls {
         public String toString() {
             var sb = new StringBuilder("[parallelism=");
             sb.append(getParallelism());
-            append(sb, "threads", getThreadCount());
-            append(sb, "carriers", getCarrierThreadCount());
-            append(sb, "queued-vthreads", getQueuedVirtualThreadCount());
+            append(sb, "size", getPoolSize());
+            append(sb, "mounted", getMountedVirtualThreadCount());
+            append(sb, "queued", getQueuedVirtualThreadCount());
             sb.append(']');
             return sb.toString();
         }
@@ -131,7 +131,7 @@ public class VirtualThreadSchedulerImpls {
         }
 
         @Override
-        public int getThreadCount() {
+        public int getPoolSize() {
             return switch (Scheduler.instance()) {
                 case ForkJoinPool pool -> pool.getPoolSize();
                 case ThreadPoolExecutor pool -> pool.getPoolSize();
@@ -140,7 +140,7 @@ public class VirtualThreadSchedulerImpls {
         }
 
         @Override
-        public int getCarrierThreadCount() {
+        public int getMountedVirtualThreadCount() {
             return switch (Scheduler.instance()) {
                 case ForkJoinPool pool -> pool.getActiveThreadCount();
                 case ThreadPoolExecutor pool -> pool.getActiveCount();
@@ -174,12 +174,12 @@ public class VirtualThreadSchedulerImpls {
         }
 
         @Override
-        public int getThreadCount() {
+        public int getPoolSize() {
             return -1;
         }
 
         @Override
-        public int getCarrierThreadCount() {
+        public int getMountedVirtualThreadCount() {
             return -1;
         }
 
