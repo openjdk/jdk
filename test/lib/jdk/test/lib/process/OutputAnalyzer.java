@@ -183,7 +183,7 @@ public final class OutputAnalyzer {
      *             If stderr was not empty
      */
     public OutputAnalyzer stderrShouldBeEmptyIgnoreDeprecatedWarnings() {
-        if (!getStderr().replaceAll(VM_DEPRECATED_MSG + "\\R", "").isEmpty() && 
+        if (!getStderr().replaceAll(VM_DEPRECATED_MSG + "\\R", "").isEmpty() &&
             !getStderr().replaceAll(OTHER_DEPRECATED_MSG + "\\R", "").isEmpty()) {
             reportDiagnosticSummary();
             throw new RuntimeException("stderr was not empty");
