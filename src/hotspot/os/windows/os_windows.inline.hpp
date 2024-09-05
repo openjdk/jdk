@@ -61,18 +61,6 @@ inline bool os::numa_has_group_homing()     { return false;  }
 
 // Platform Mutex/Monitor implementation
 
-inline PlatformMutex::PlatformMutex() {
-  InitializeCriticalSection(&_mutex);
-}
-
-inline PlatformMonitor::PlatformMonitor() {
-  InitializeConditionVariable(&_cond);
-}
-
-inline PlatformMonitor::~PlatformMonitor() {
-  // There is no DeleteConditionVariable API
-}
-
 inline void PlatformMutex::lock() {
   EnterCriticalSection(&_mutex);
 }
