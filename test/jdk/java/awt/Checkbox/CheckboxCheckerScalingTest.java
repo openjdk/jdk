@@ -48,7 +48,7 @@ public class CheckboxCheckerScalingTest {
     private static Checkbox checkbox;
     private static BufferedImage imageAfterChecked;
     private static volatile boolean checkmarkFound = false;
-    private static final int TOLERANCE = 10;
+    private static final int TOLERANCE = 5;
     private static final int COLOR_CHECK_THRESHOLD = 8;
     private static int colorCounter = 0;
 
