@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -69,10 +69,7 @@ public class DisableRegistryTest {
         System.out.println(out.getStdout());
         System.err.println(out.getStderr());
 
-        out.shouldMatch("WARNING: --connect is deprecated");
-        // --connect is deprecated.  When removed, can revert to:
-        // out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
-
+        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
         out.shouldContain("Attaching to remote server localhost:10000");
         out.shouldContain("java.vm.version");
         out.shouldHaveExitValue(0);

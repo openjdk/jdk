@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -74,10 +74,7 @@ public class RunCommandOnServerTest {
             System.out.println(out.getStdout());
             System.err.println(out.getStderr());
 
-            out.shouldMatch("WARNING: --connect is deprecated");
-            // --connect is deprecated.  When removed, can revert to:
-            // out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
-
+            out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
             out.shouldMatch("^0x[0-9a-f]+: .+/libjvm\\.(so|dylib) \\+ 0x[0-9a-f]+$");
             out.shouldHaveExitValue(0);
 
