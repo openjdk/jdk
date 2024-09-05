@@ -254,7 +254,7 @@ public interface InvocationHandler {
      * @throws Throwable anything thrown by the default method
 
      * @since 16
-     * @jvms 5.4.3. Method Resolution
+     * @jvms 5.4.3 Resolution
      */
     @CallerSensitive
     public static Object invokeDefault(Object proxy, Method method, Object... args)

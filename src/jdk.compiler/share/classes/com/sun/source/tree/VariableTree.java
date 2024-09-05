@@ -37,7 +37,7 @@ import javax.lang.model.element.Name;
  * </pre>
  *
  * @jls 8.3 Field Declarations
- * @jls 14.4 Local Variable Declaration Statements
+ * @jls 14.4 Local Variable Declarations
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

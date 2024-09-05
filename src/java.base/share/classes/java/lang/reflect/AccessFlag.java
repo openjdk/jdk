@@ -528,7 +528,7 @@ public enum AccessFlag {
 
         /**
          * Method location.
-         * @jvms 4.6 Method
+         * @jvms 4.6 Methods
          */
         METHOD,
 
@@ -540,31 +540,31 @@ public enum AccessFlag {
 
         /**
          * Method parameter location.
-         * @jvms 4.7.24. The MethodParameters Attribute
+         * @jvms 4.7.24 The MethodParameters Attribute
          */
         METHOD_PARAMETER,
 
         /**
          * Module location
-         * @jvms 4.7.25. The Module Attribute
+         * @jvms 4.7.25 The Module Attribute
          */
         MODULE,
 
         /**
          * Module requires location
-         * @jvms 4.7.25. The Module Attribute
+         * @jvms 4.7.25 The Module Attribute
          */
         MODULE_REQUIRES,
 
         /**
          * Module exports location
-         * @jvms 4.7.25. The Module Attribute
+         * @jvms 4.7.25 The Module Attribute
          */
         MODULE_EXPORTS,
 
         /**
          * Module opens location
-         * @jvms 4.7.25. The Module Attribute
+         * @jvms 4.7.25 The Module Attribute
          */
         MODULE_OPENS;
 

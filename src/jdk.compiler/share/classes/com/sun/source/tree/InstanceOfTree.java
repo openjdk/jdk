@@ -33,7 +33,7 @@ package com.sun.source.tree;
  *   <em>expression</em> instanceof <em>type</em>
  * </pre>
  *
- * @jls 15.20.2 Type Comparison Operator instanceof
+ * @jls 15.20.2 The instanceof Operator
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

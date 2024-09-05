@@ -37,7 +37,7 @@ import java.util.List;
  *   }
  * </pre>
  *
- * @jls 15.29 Switch Expressions
+ * @jls 15.28 {@code switch} Expressions
  *
  * @since 14
  */

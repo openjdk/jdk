@@ -34,7 +34,7 @@ package com.sun.source.tree;
  *   <em>value</em>
  * </pre>
  *
- * @jls 15.28 Constant Expressions
+ * @jls 15.29 Constant Expressions
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

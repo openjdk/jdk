@@ -84,7 +84,7 @@ package java.lang;
  * See {@link Class#isRecord()} and {@link Class#getRecordComponents()} for more details.
  *
  * @spec serialization/index.html Java Object Serialization Specification
- * @jls 8.10 Record Types
+ * @jls 8.10 Record Classes
  * @since 16
  */
 public abstract class Record {

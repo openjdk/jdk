@@ -223,7 +223,7 @@ import sun.security.util.SecurityConstants;
  * or a fully qualified name as defined by
  * <cite>The Java Language Specification</cite>.
  *
- * @jls 6.7 Fully Qualified Names
+ * @jls 6.7 Fully Qualified Names and Canonical Names
  * @jls 13.1 The Form of a Binary
  * @see      #resolveClass(Class)
  * @since 1.0

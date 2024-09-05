@@ -44,7 +44,7 @@ import javax.lang.model.element.Name;
  * @jls 8.6 Instance Initializers
  * @jls 8.7 Static Initializers
  * @jls 9.4 Method Declarations
- * @jls 9.6.1 Annotation Type Elements
+ * @jls 9.6.1 Annotation Interface Elements
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons

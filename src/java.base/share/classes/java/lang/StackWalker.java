@@ -170,7 +170,7 @@ public final class StackWalker {
          *
          * @see MethodType#fromMethodDescriptorString(String, ClassLoader)
          * @see MethodType#toMethodDescriptorString()
-         * @jvms 4.3.3 Method Descriptor
+         * @jvms 4.3.3 Method Descriptors
          *
          * @since 10
          */

@@ -43,10 +43,10 @@ import javax.lang.model.element.Name;
  * </pre>
  *
  * @jls 8.1 Class Declarations
- * @jls 8.9 Enum Types
- * @jls 8.10 Record Types
+ * @jls 8.9 Enum Classes
+ * @jls 8.10 Record Classes
  * @jls 9.1 Interface Declarations
- * @jls 9.6 Annotation Types
+ * @jls 9.6 Annotation Interfaces
  *
  * @author Peter von der Ah&eacute;
  * @author Jonathan Gibbons
