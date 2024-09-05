@@ -66,7 +66,7 @@ public class LayoutPath {
     private static final MethodHandle MH_SLICE_LAYOUT;
     private static final MethodHandle MH_CHECK_ENCL_LAYOUT;
     private static final MethodHandle MH_SEGMENT_RESIZE;
-    private static final MethodHandle MH_ADD;
+    private static final MethodHandle MH_ADD_EXACT;
 
     static {
         try {
@@ -81,7 +81,7 @@ public class LayoutPath {
                     MethodType.methodType(void.class, MemorySegment.class, long.class, MemoryLayout.class));
             MH_SEGMENT_RESIZE = lookup.findStatic(LayoutPath.class, "resizeSegment",
                     MethodType.methodType(MemorySegment.class, MemorySegment.class));
-            MH_ADD = lookup.findStatic(Long.class, "sum",
+            MH_ADD_EXACT = lookup.findStatic(Math.class, "addExact",
                     MethodType.methodType(long.class, long.class, long.class));
         } catch (Throwable ex) {
             throw new ExceptionInInitializerError(ex);
@@ -244,15 +244,18 @@ public class LayoutPath {
     }
 
     public MethodHandle offsetHandle() {
-        MethodHandle mh = MethodHandles.insertArguments(MH_ADD, 0, offset);
+        MethodHandle mh = MH_ADD_EXACT;
         for (int i = strides.length - 1; i >= 0; i--) {
             MethodHandle collector = MethodHandles.insertArguments(MH_ADD_SCALED_OFFSET, 2, strides[i], bounds[i]);
-            // (J, ...) -> J to (J, J, ...) -> J
-            // i.e. new coord is prefixed. Last coord will correspond to innermost layout
-            mh = MethodHandles.collectArguments(mh, 0, collector);
+            // (J, J, ...) -> J to (J, J, J, ...) -> J
+            // 1. the leading argument is the base offset (externally provided).
+            // 2. index arguments are added. The last index correspond to the innermost layout.
+            // 3. overflow can only occur at the outermost layer, due to the final addition with the base offset.
+            // This is because the layout API ensures (by construction) that all offsets generated from layout paths
+            // are always < Long.MAX_VALUE.
+            mh = MethodHandles.collectArguments(mh, 1, collector);
         }
-
-        return mh;
+        return MethodHandles.insertArguments(mh, 1, offset);
     }
 
     private MemoryLayout rootLayout() {

@@ -482,13 +482,14 @@ class MacroAssembler: public Assembler {
                                      Register addr_base, Register tmp1, Register tmp2, Register tmp3,
                                      bool cmpxchgx_hint, bool is_add, int size);
   void cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
-                         Register compare_value, Register exchange_value,
+                         RegisterOrConstant compare_value, Register exchange_value,
                          Register addr_base, Register tmp1, Register tmp2,
                          Label &retry, Label &failed, bool cmpxchgx_hint, int size);
-  void cmpxchg_generic(ConditionRegister flag,
-                       Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
-                       Register tmp1, Register tmp2,
-                       int semantics, bool cmpxchgx_hint, Register int_flag_success, bool contention_hint, bool weak, int size);
+  void cmpxchg_generic(ConditionRegister flag, Register dest_current_value,
+                       RegisterOrConstant compare_value, Register exchange_value,
+                       Register addr_base, Register tmp1, Register tmp2,
+                       int semantics, bool cmpxchgx_hint, Register int_flag_success,
+                       Label* failed_ext, bool contention_hint, bool weak, int size);
  public:
   // Temps and addr_base are killed if processor does not support Power 8 instructions.
   // Result will be sign extended.
@@ -528,33 +529,37 @@ class MacroAssembler: public Assembler {
                   Register tmp, bool cmpxchgx_hint);
   // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
-  void cmpxchgb(ConditionRegister flag,
-                Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
-                Register tmp1, Register tmp2, int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, bool contention_hint = false, bool weak = false) {
+  void cmpxchgb(ConditionRegister flag, Register dest_current_value,
+                RegisterOrConstant compare_value, Register exchange_value,
+                Register addr_base, Register tmp1, Register tmp2,
+                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
+                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
     cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
-                    semantics, cmpxchgx_hint, int_flag_success, contention_hint, weak, 1);
+                    semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 1);
   }
   // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
-  void cmpxchgh(ConditionRegister flag,
-                Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
-                Register tmp1, Register tmp2, int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, bool contention_hint = false, bool weak = false) {
+  void cmpxchgh(ConditionRegister flag, Register dest_current_value,
+                RegisterOrConstant compare_value, Register exchange_value,
+                Register addr_base, Register tmp1, Register tmp2,
+                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
+                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
     cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
-                    semantics, cmpxchgx_hint, int_flag_success, contention_hint, weak, 2);
+                    semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 2);
   }
-  void cmpxchgw(ConditionRegister flag,
-                Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
-                int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, bool contention_hint = false, bool weak = false) {
+  void cmpxchgw(ConditionRegister flag, Register dest_current_value,
+                RegisterOrConstant compare_value, Register exchange_value,
+                Register addr_base,
+                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
+                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
     cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, noreg, noreg,
-                    semantics, cmpxchgx_hint, int_flag_success, contention_hint, weak, 4);
+                    semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 4);
   }
-  void cmpxchgd(ConditionRegister flag,
-                Register dest_current_value, RegisterOrConstant compare_value, Register exchange_value,
-                Register addr_base, int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, Label* failed = nullptr, bool contention_hint = false, bool weak = false);
+  void cmpxchgd(ConditionRegister flag, Register dest_current_value,
+                RegisterOrConstant compare_value, Register exchange_value,
+                Register addr_base,
+                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
+                Label* failed = nullptr, bool contention_hint = false, bool weak = false);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
