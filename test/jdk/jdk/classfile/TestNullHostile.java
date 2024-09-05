@@ -26,12 +26,8 @@
  * @modules java.base/jdk.internal.ref
  *          java.base/jdk.internal.classfile.impl
  * @build testdata.*
- * @run testng/othervm TestNullHostile
- *
+ * @run junit/othervm TestNullHostile
  */
-
-import jdk.internal.classfile.impl.*;
-import org.testng.annotations.*;
 
 import java.io.*;
 import java.lang.classfile.*;
@@ -55,8 +51,15 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static jdk.internal.classfile.impl.ClassPrinterImpl.Style.FLOW;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+
+import jdk.internal.classfile.impl.*;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test makes sure that public API classes under {@link java.lang.classfile} throws NPEs whenever
@@ -469,8 +472,8 @@ public class TestNullHostile {
         addReplacements(Set.class, null, Stream.of(new Object[]{null}).collect(Collectors.toSet()));
     }
 
-    @BeforeSuite
-    public void getDefaultValues() throws IOException, URISyntaxException {
+    @BeforeAll
+    public static void getDefaultValues() throws IOException, URISyntaxException {
         FileSystem fs = FileSystems.getFileSystem(new URI("jrt:/"));
         var all = findAllClassFiles();
         for (var file : all) {
@@ -482,21 +485,20 @@ public class TestNullHostile {
             }
         }
     }
-
-    @Test(dataProvider = "cases")
-    public void testNulls(String testName, @NoInjection Method meth, Object receiver, Object[] args) {
+    @ParameterizedTest
+    @MethodSource("cases")
+    void testNulls(String testName, Method meth, Object receiver, Object[] args) {
         try {
             meth.invoke(receiver, args);
             fail("Method invocation completed normally");
         } catch (InvocationTargetException ex) {
             Class<?> cause = ex.getCause().getClass();
-            assertEquals(cause, NullPointerException.class, "got " + cause.getName() + " - expected NullPointerException");
+            assertEquals(NullPointerException.class, cause, "got " + cause.getName() + " - expected NullPointerException");
         } catch (Throwable ex) {
             fail("Unexpected exception: " + ex);
         }
     }
 
-    @DataProvider(name = "cases")
     static Iterator<Object[]> cases() {
         List<Object[]> cases = new ArrayList<>();
         for (Class<?> clazz : CLASSES) {
