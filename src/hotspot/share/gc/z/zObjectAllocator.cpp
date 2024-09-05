@@ -131,12 +131,10 @@ zaddress ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
   return addr;
 }
 
-zaddress ZObjectAllocator::alloc_object_in_medium_page(ZPageType page_type,
-                                                       size_t page_size,
-                                                       size_t size,
+zaddress ZObjectAllocator::alloc_object_in_medium_page(size_t size,
                                                        ZAllocationFlags flags) {
-  ZPage** shared_page = _shared_medium_page.addr();
-  ZPage* page = Atomic::load_acquire(shared_page);
+  ZPage** shared_medium_page = _shared_medium_page.addr();
+  ZPage* page = Atomic::load_acquire(shared_medium_page);
 
   zaddress addr = alloc_object_in_page_atomic(page, size);
 
@@ -154,13 +152,13 @@ zaddress ZObjectAllocator::alloc_object_in_medium_page(ZPageType page_type,
     ZAllocationFlags non_blocking_flags = flags;
     non_blocking_flags.set_non_blocking();
 
-    addr = alloc_object_in_shared_page(_shared_medium_page.addr(), page_type, page_size, size, non_blocking_flags);
+    addr = alloc_object_in_shared_page(shared_medium_page, ZPageType::medium, ZPageSizeMedium, size, non_blocking_flags);
   }
 
   if (is_null(addr) && !flags.non_blocking()) {
     // The above allocation attempts failed and this allocation should stall
     // until memory is available. Redo the allocation with blocking enabled.
-    return alloc_object_in_shared_page(_shared_medium_page.addr(), page_type, page_size, size, flags);
+    addr = alloc_object_in_shared_page(shared_medium_page, ZPageType::medium, ZPageSizeMedium, size, flags);
   }
 
   return addr;
@@ -181,7 +179,7 @@ zaddress ZObjectAllocator::alloc_large_object(size_t size, ZAllocationFlags flag
 }
 
 zaddress ZObjectAllocator::alloc_medium_object(size_t size, ZAllocationFlags flags) {
-  return alloc_object_in_medium_page(ZPageType::medium, ZPageSizeMedium, size, flags);
+  return alloc_object_in_medium_page(size, flags);
 }
 
 zaddress ZObjectAllocator::alloc_small_object(size_t size, ZAllocationFlags flags) {

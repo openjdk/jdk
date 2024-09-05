@@ -58,9 +58,7 @@ private:
                                        size_t size,
                                        ZAllocationFlags flags);
 
-  zaddress alloc_object_in_medium_page(ZPageType page_type,
-                                       size_t page_size,
-                                       size_t size,
+  zaddress alloc_object_in_medium_page(size_t size,
                                        ZAllocationFlags flags);
 
   zaddress alloc_large_object(size_t size, ZAllocationFlags flags);
