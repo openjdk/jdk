@@ -53,7 +53,7 @@ public final class SegmentBulkOperations {
 
     // Update the FILL value for Aarch64 once 8338975 is fixed.
     private static final long NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", Architecture.isAARCH64() ? 10 : 5);
-    private static final long NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 20);
+    private static final long NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 10);
     private static final long NATIVE_THRESHOLD_COPY = powerOfPropertyOr("copy", 6);
 
     @ForceInline
