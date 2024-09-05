@@ -45,7 +45,7 @@ julong uniform_random<julong>() {
 }
 
 template <class S, class U>
-static void test_normalize_constraints_simple() {
+static void test_canonicalize_constraints_simple() {
   constexpr int parameters = 10;
   for (int i = 0; i < parameters; i++) {
     S a = uniform_random<U>();
@@ -107,7 +107,7 @@ static void test_normalize_constraints_simple() {
 }
 
 template <class S, class U>
-static void test_normalize_constraints_random() {
+static void test_canonicalize_constraints_random() {
   constexpr int samples = 1000;
   constexpr int parameters = 1000;
   for (int i = 0; i < parameters; i++) {
@@ -140,11 +140,11 @@ static void test_normalize_constraints_random() {
   }
 }
 
-TEST_VM(opto, normalize_constraints) {
-  test_normalize_constraints_simple<jint, juint>();
-  test_normalize_constraints_simple<jlong, julong>();
-  test_normalize_constraints_random<jint, juint>();
-  test_normalize_constraints_random<jlong, julong>();
+TEST_VM(opto, canonicalize_constraints) {
+  test_canonicalize_constraints_simple<jint, juint>();
+  test_canonicalize_constraints_simple<jlong, julong>();
+  test_canonicalize_constraints_random<jint, juint>();
+  test_canonicalize_constraints_random<jlong, julong>();
 }
 
 #endif // ASSERT
