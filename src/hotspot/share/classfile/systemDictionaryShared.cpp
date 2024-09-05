@@ -285,7 +285,12 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   if (!k->is_hidden() && k->shared_classpath_index() < 0 && is_builtin(k)) {
     // These are classes loaded from unsupported locations (such as those loaded by JVMTI native
     // agent during dump time).
-    return warn_excluded(k, "Unsupported location");
+    if (k->name()->starts_with("java/lang/invoke/BoundMethodHandle$Species_")) {
+      // Such classes are dynamically generated since JDK-8336856. TODO: need a general solution.
+      k->set_shared_classpath_index(0);
+    } else {
+      return warn_excluded(k, "Unsupported location");
+    }
   }
   if (k->signers() != nullptr) {
     // We cannot include signed classes in the archive because the certificates

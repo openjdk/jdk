@@ -52,6 +52,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
@@ -296,26 +297,12 @@ public class HtmlLinkFactory {
         Content link = new ContentBuilder();
         if (utils.isIncluded(typeElement)) {
             if (configuration.isGeneratedDoc(typeElement) && !utils.hasHiddenTag(typeElement)) {
-                DocPath filename = getPath(linkInfo);
+                DocPath fileName = getPath(linkInfo);
                 if (linkInfo.linkToSelf() || typeElement != m_writer.getCurrentPageElement()) {
                         link.add(m_writer.links.createLink(
-                                filename.fragment(linkInfo.getFragment()),
-                                label,
-                                linkInfo.getStyle(),
-                                title));
-                        Content spacer = Text.EMPTY;
-                        if (flags.contains(ElementFlag.PREVIEW)) {
-                            link.add(HtmlTree.SUP(m_writer.links.createLink(
-                                    filename.fragment(m_writer.htmlIds.forPreviewSection(previewTarget).name()),
-                                    m_writer.contents.previewMark)));
-                            spacer = Entity.NO_BREAK_SPACE;
-                        }
-                        if (flags.contains(ElementFlag.RESTRICTED)) {
-                            link.add(spacer);
-                            link.add(HtmlTree.SUP(m_writer.links.createLink(
-                                    filename.fragment(m_writer.htmlIds.forRestrictedSection(restrictedTarget).name()),
-                                    m_writer.contents.restrictedMark)));
-                        }
+                                fileName.fragment(linkInfo.getFragment()),
+                                label, linkInfo.getStyle(), title));
+                        addSuperscript(link, flags, fileName, null, previewTarget, restrictedTarget);
                         return link;
                 }
             }
@@ -325,38 +312,61 @@ public class HtmlLinkFactory {
                 label, linkInfo.getStyle(), true);
             if (crossLink != null) {
                 link.add(crossLink);
-                Content spacer = Text.EMPTY;
-                if (flags.contains(ElementFlag.PREVIEW)) {
-                    link.add(HtmlTree.SUP(m_writer.getCrossClassLink(
-                        typeElement,
-                        m_writer.htmlIds.forPreviewSection(previewTarget).name(),
-                        m_writer.contents.previewMark,
-                        null, false)));
-                    spacer = Entity.NO_BREAK_SPACE;
-                }
-                if (flags.contains(ElementFlag.RESTRICTED)) {
-                    link.add(spacer);
-                    link.add(HtmlTree.SUP(m_writer.getCrossClassLink(
-                            typeElement,
-                            m_writer.htmlIds.forRestrictedSection(restrictedTarget).name(),
-                            m_writer.contents.restrictedMark,
-                            null, false)));
-                }
+                addSuperscript(link, flags, null, typeElement, previewTarget, restrictedTarget);
                 return link;
             }
         }
         // Can't link so just write label.
         link.add(label);
+        addSuperscript(link, flags, null, null, previewTarget, restrictedTarget);
+        return link;
+    }
+
+    /**
+     * Adds PREVIEW and RESTRICTED superscript labels. Depending on the parameter values,
+     * labels will be formatted as local or external links or plain text.
+     *
+     * @param content the content to add to
+     * @param flags the flags
+     * @param fileName file name to link to, or null if no local link target
+     * @param typeElement external type to link to, or null if no external link
+     * @param previewTarget preview link target element
+     * @param restrictedTarget restricted link target element
+     */
+    private void addSuperscript(Content content, Set<ElementFlag> flags, DocPath fileName, TypeElement typeElement,
+                                Element previewTarget, ExecutableElement restrictedTarget) {
         Content spacer = Text.EMPTY;
         if (flags.contains(ElementFlag.PREVIEW)) {
-            link.add(HtmlTree.SUP(m_writer.contents.previewMark));
+            content.add(HtmlTree.SUP(getSuperscript(fileName, typeElement,
+                    m_writer.htmlIds.forPreviewSection(previewTarget),
+                    m_writer.contents.previewMark)));
             spacer = Entity.NO_BREAK_SPACE;
         }
         if (flags.contains(ElementFlag.RESTRICTED)) {
-            link.add(spacer);
-            link.add(HtmlTree.SUP(m_writer.contents.restrictedMark));
+            content.add(spacer);
+            content.add(HtmlTree.SUP(getSuperscript(fileName, typeElement,
+                    m_writer.htmlIds.forRestrictedSection(restrictedTarget),
+                    m_writer.contents.restrictedMark)));
         }
-        return link;
+    }
+
+    /**
+     * Returns PREVIEW or RESTRICTED superscript as either local or external link or as plain text.
+     *
+     * @param fileName local file name to link to, or null if no local link target
+     * @param typeElement external type to link to, or null if no external link
+     * @param id the id fragment to link to
+     * @param label the label content
+     * @return superscript content
+     */
+    private Content getSuperscript(DocPath fileName, TypeElement typeElement, HtmlId id, Content label) {
+        if (fileName != null) {
+            return m_writer.links.createLink(fileName.fragment(id.name()), label);
+        } else if (typeElement != null) {
+            return (m_writer.getCrossClassLink(typeElement, id.name(), label, null, false));
+        } else {
+            return label;
+        }
     }
 
     /**

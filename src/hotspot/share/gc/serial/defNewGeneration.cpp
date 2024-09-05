@@ -846,18 +846,21 @@ void DefNewGeneration::verify() {
 }
 
 void DefNewGeneration::print_on(outputStream* st) const {
-  Generation::print_on(st);
+  st->print(" %-10s", name());
+
+  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
+            capacity()/K, used()/K);
+  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+               p2i(_virtual_space.low_boundary()),
+               p2i(_virtual_space.high()),
+               p2i(_virtual_space.high_boundary()));
+
   st->print("  eden");
   eden()->print_on(st);
   st->print("  from");
   from()->print_on(st);
   st->print("  to  ");
   to()->print_on(st);
-}
-
-
-const char* DefNewGeneration::name() const {
-  return "def new generation";
 }
 
 HeapWord* DefNewGeneration::allocate(size_t word_size) {

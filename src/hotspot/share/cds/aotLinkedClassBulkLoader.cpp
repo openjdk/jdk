@@ -221,7 +221,7 @@ void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char*
 // TODO -- is this really correct? Do we need a special ClassLoaderData for each hidden class?
 void AOTLinkedClassBulkLoader::load_hidden_class(ClassLoaderData* loader_data, InstanceKlass* ik, TRAPS) {
   DEBUG_ONLY({
-      assert(ik->super() == vmClasses::Object_klass(), "must be");
+      assert(ik->java_super()->is_loaded(), "must be");
       for (int i = 0; i < ik->local_interfaces()->length(); i++) {
         assert(ik->local_interfaces()->at(i)->is_loaded(), "must be");
       }
