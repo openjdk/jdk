@@ -1701,6 +1701,8 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
         alias_type(idx)->set_rewritable(false);
       if (flat->offset() == in_bytes(Klass::access_flags_offset()))
         alias_type(idx)->set_rewritable(false);
+      if (flat->offset() == in_bytes(Klass::misc_flags_offset()))
+        alias_type(idx)->set_rewritable(false);
       if (flat->offset() == in_bytes(Klass::java_mirror_offset()))
         alias_type(idx)->set_rewritable(false);
       if (flat->offset() == in_bytes(Klass::secondary_super_cache_offset()))

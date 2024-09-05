@@ -30,10 +30,7 @@
 // os::Linux defines the interface to Linux operating systems
 
 class os::Linux {
-  friend class CgroupSubsystem;
-  friend class CgroupUtil;
   friend class os;
-  friend class OSContainer;
 
   static int (*_pthread_getcpuclockid)(pthread_t, clockid_t *);
   static int (*_pthread_setname_np)(pthread_t, const char*);
@@ -59,7 +56,6 @@ class os::Linux {
   static julong available_memory();
   static julong free_memory();
 
-  static int active_processor_count();
 
   static void initialize_system_info();
 
@@ -94,6 +90,7 @@ class os::Linux {
     bool     has_steal_ticks;
   };
 
+  static int active_processor_count();
   static void kernel_version(long* major, long* minor);
 
   // which_logical_cpu=-1 returns accumulated ticks for all cpus.
