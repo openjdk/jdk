@@ -909,17 +909,17 @@ public record ClassRecord(
                     CpFieldRefRecord.ofFieldRefEntry((FieldRefEntry) cpInfo);
                 case TAG_METHODREF ->
                     CpMethodRefRecord.ofMethodRefEntry((MethodRefEntry) cpInfo);
-                case TAG_INTERFACEMETHODREF ->
+                case TAG_INTERFACE_METHODREF ->
                     CpInterfaceMethodRefRecord.ofInterfaceMethodRefEntry((InterfaceMethodRefEntry) cpInfo);
-                case TAG_NAMEANDTYPE ->
+                case TAG_NAME_AND_TYPE ->
                     CpNameAndTypeRecord.ofNameAndTypeEntry((NameAndTypeEntry) cpInfo);
-                case TAG_METHODHANDLE ->
+                case TAG_METHOD_HANDLE ->
                     CpMethodHandleRecord.ofMethodHandleEntry((MethodHandleEntry) cpInfo);
-                case TAG_METHODTYPE ->
+                case TAG_METHOD_TYPE ->
                     new CpMethodTypeRecord(((MethodTypeEntry) cpInfo).descriptor().stringValue());
-                case TAG_CONSTANTDYNAMIC ->
+                case TAG_DYNAMIC ->
                     CpConstantDynamicRecord.ofConstantDynamicEntry((ConstantDynamicEntry) cpInfo);
-                case TAG_INVOKEDYNAMIC ->
+                case TAG_INVOKE_DYNAMIC ->
                     CpInvokeDynamicRecord.ofInvokeDynamicEntry((InvokeDynamicEntry) cpInfo);
                 case TAG_MODULE ->
                     new CpModuleRecord(((ModuleEntry) cpInfo).name().stringValue());

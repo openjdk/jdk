@@ -118,7 +118,7 @@ class LimitsTest {
     @Test
     void testInvalidUtf8Entry() {
         var cp = ClassFile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE,
-            0, 0, 0, 0, 0, 3, PoolEntry.TAG_INTEGER, 0, 0, 0, 0, PoolEntry.TAG_NAMEANDTYPE, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}).constantPool();
+            0, 0, 0, 0, 0, 3, PoolEntry.TAG_INTEGER, 0, 0, 0, 0, PoolEntry.TAG_NAME_AND_TYPE, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}).constantPool();
         assertTrue(cp.entryByIndex(1) instanceof IntegerEntry); //parse valid int entry first
         assertThrows(ConstantPoolException.class, () -> cp.entryByIndex(2));
     }
