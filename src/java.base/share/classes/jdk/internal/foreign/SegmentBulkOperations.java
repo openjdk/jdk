@@ -114,44 +114,7 @@ public final class SegmentBulkOperations {
         if (bytes == 0) {
             return srcAndDstBytesDiffer ? 0 : -1;
         } else if (bytes < NATIVE_THRESHOLD_MISMATCH) {
-            final int limit = (int) (bytes & (NATIVE_THRESHOLD_MISMATCH - 8));
-            int offset = 0;
-            for (; offset < limit; offset += 8) {
-                final long s = SCOPED_MEMORY_ACCESS.getLong(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset);
-                final long d = SCOPED_MEMORY_ACCESS.getLong(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset);
-                if (s != d) {
-                    return offset + mismatch(s, d);
-                }
-            }
-            int remaining = (int) bytes - offset;
-            // 0...0X00
-            if (remaining >= 4) {
-                final int s = SCOPED_MEMORY_ACCESS.getInt(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset);
-                final int d = SCOPED_MEMORY_ACCESS.getInt(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset);
-                if (s != d) {
-                    return offset + mismatch(s, d);
-                }
-                offset += 4;
-                remaining -= 4;
-            }
-            // 0...00X0
-            if (remaining >= 2) {
-                if (SCOPED_MEMORY_ACCESS.getShort(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset) !=
-                        SCOPED_MEMORY_ACCESS.getShort(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset)) {
-                    return mismatchSmall(src, srcFromOffset + offset, dst, dstFromOffset + offset, offset, 2, srcAndDstBytesDiffer);
-                }
-                offset += 2;
-                remaining -= 2;
-            }
-            // 0...000X
-            if (remaining == 1) {
-                if (SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset) !=
-                        SCOPED_MEMORY_ACCESS.getByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset)) {
-                    return offset;
-                }
-            }
-            return srcAndDstBytesDiffer ? bytes : -1;
-            // We have now fully handled 0...0X...XXXX
+            return mismatch(src, srcFromOffset, dst, dstFromOffset, 0, (int) bytes, srcAndDstBytesDiffer);
         } else {
             long i;
             if (SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset) !=
@@ -168,28 +131,60 @@ public final class SegmentBulkOperations {
             final long remaining = ~i;
             assert remaining < 8 : "remaining greater than 7: " + remaining;
             i = bytes - remaining;
-            return mismatchSmall(src, srcFromOffset + i, dst, dstFromOffset + i, i, (int) remaining, srcAndDstBytesDiffer);
+            return mismatch(src, srcFromOffset + i, dst, dstFromOffset + i, i, (int) remaining, srcAndDstBytesDiffer);
         }
     }
 
-    // This method is intended for 0 <= bytes < 7
     @ForceInline
-    private static long mismatchSmall(AbstractMemorySegmentImpl src, long srcOffset,
-                                      AbstractMemorySegmentImpl dst, long dstOffset,
-                                      long offset, int bytes, boolean srcAndDstBytesDiffer) {
-        for (int i = 0; i < bytes; i++) {
-            if (SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + i) !=
-                    SCOPED_MEMORY_ACCESS.getByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + i)) {
-                return offset + i;
+    private static long mismatch(AbstractMemorySegmentImpl src, long srcFromOffset,
+                                 AbstractMemorySegmentImpl dst, long dstFromOffset,
+                                 long start, int bytes, boolean srcAndDstBytesDiffer) {
+        final int limit = (int) (bytes & (NATIVE_THRESHOLD_MISMATCH - 8));
+        int offset = 0;
+        for (; offset < limit; offset += 8) {
+            final long s = SCOPED_MEMORY_ACCESS.getLong(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset);
+            final long d = SCOPED_MEMORY_ACCESS.getLong(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset);
+            if (s != d) {
+                return start + offset + mismatch(s, d);
             }
         }
-        return srcAndDstBytesDiffer ? bytes : -1;
+        int remaining = bytes - offset;
+        // 0...0X00
+        if (remaining >= 4) {
+            final int s = SCOPED_MEMORY_ACCESS.getInt(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset);
+            final int d = SCOPED_MEMORY_ACCESS.getInt(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset);
+            if (s != d) {
+                return start + offset + mismatch(s, d);
+            }
+            offset += 4;
+            remaining -= 4;
+        }
+        // 0...00X0
+        if (remaining >= 2) {
+            final short s = SCOPED_MEMORY_ACCESS.getShort(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset);
+            final short d = SCOPED_MEMORY_ACCESS.getShort(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset);
+            if (s != d) {
+                return start + offset + mismatch(s, d);
+            }
+            offset += 2;
+            remaining -= 2;
+        }
+        // 0...000X
+        if (remaining == 1) {
+            final byte s = SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset);
+            final byte d = SCOPED_MEMORY_ACCESS.getByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset);
+            if (s != d) {
+                return start + offset;
+            }
+        }
+        return srcAndDstBytesDiffer ? (start + bytes) : -1;
+        // We have now fully handled 0...0X...XXXX
     }
 
     @ForceInline
     private static int mismatch(long first, long second) {
         final long x = first ^ second;
-        return (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
+        return (Architecture.isLittleEndian()
                 ? Long.numberOfTrailingZeros(x)
                 : Long.numberOfLeadingZeros(x)) / 8;
     }
@@ -197,9 +192,18 @@ public final class SegmentBulkOperations {
     @ForceInline
     private static int mismatch(int first, int second) {
         final int x = first ^ second;
-        return (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
+        return (Architecture.isLittleEndian()
                 ? Integer.numberOfTrailingZeros(x)
                 : Integer.numberOfLeadingZeros(x)) / 8;
+    }
+
+    @ForceInline
+    private static int mismatch(short first, short second) {
+        if (Architecture.isLittleEndian()) {
+            return ((0xff & first) == (0xff & second)) ? 1 : 0;
+        } else {
+            return ((0xff & first) == (0xff & second)) ? 0 : 1;
+        }
     }
 
     static final String PROPERTY_PATH = "java.lang.foreign.native.threshold.power.";
