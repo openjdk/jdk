@@ -50,11 +50,8 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class TestFill {
 
-    @Param({"0", "1", "2", "3", "4", "5", "6", "7",
-            "8", "9", "10", "11", "12", "13", "14", "15",
-            "16", "17", "18", "19", "20", "21", "22", "23",
-            "24", "25", "26", "27", "28", "29", "30", "31",
-            "32", "128", "256", "384", "511", "512"})
+    @Param({"2", "3", "4", "5", "6", "7", "8", "64", "512",
+            "4096", "32768", "262144", "2097152", "16777216", "134217728"})
     public int ELEM_SIZE;
 
     byte[] array;
@@ -73,22 +70,43 @@ public class TestFill {
     }
 
     @Benchmark
-    public void arrays_fill() {
+    public void arraysFill() {
         Arrays.fill(array, (byte) 0);
     }
 
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
     @Benchmark
-    public void heap_segment_fill() {
+    public void heapSegmentFillJava() {
         heapSegment.fill((byte) 0);
     }
 
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
     @Benchmark
-    public void native_segment_fill() {
+    public void heapSegmentFillUnsafe() {
+        heapSegment.fill((byte) 0);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
+    @Benchmark
+    public void nativeSegmentFillJava() {
         nativeSegment.fill((byte) 0);
     }
 
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
     @Benchmark
-    public void unaligned_segment_fill() {
+    public void nativeSegmentFillUnsafe() {
+        nativeSegment.fill((byte) 0);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
+    @Benchmark
+    public void unalignedSegmentFillJava() {
+        unalignedSegment.fill((byte) 0);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
+    @Benchmark
+    public void unalignedSegmentFillUnsafe() {
         unalignedSegment.fill((byte) 0);
     }
 

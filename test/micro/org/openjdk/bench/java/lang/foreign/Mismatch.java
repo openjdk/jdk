@@ -52,7 +52,8 @@ import static java.lang.foreign.ValueLayout.*;
 @Fork(value = 3)
 public class Mismatch {
 
-    @Param({"2", "3", "4", "5", "6", "7", "8", "64", "512", "4096", "32768", "262144", "2097152", "16777216", "134217728"})
+    @Param({"2", "3", "4", "5", "6", "7", "8", "64", "512",
+            "4096", "32768", "262144", "2097152", "16777216", "134217728"})
     public int ELEM_SIZE;
 
     MemorySegment srcNative;
