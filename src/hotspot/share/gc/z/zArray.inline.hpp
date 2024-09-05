@@ -96,7 +96,7 @@ ZActivatedArray<T>::ZActivatedArray(bool locked)
     _array() {}
 
 template <typename T>
-ZActivatedArray<T>::~ZActivatedArray<T>() {
+ZActivatedArray<T>::~ZActivatedArray() {
   FreeHeap(_lock);
 }
 

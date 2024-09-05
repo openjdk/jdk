@@ -99,7 +99,7 @@ template <class T> class EventLogBase : public EventLog {
   EventRecord<T>* _records;
 
  public:
-  EventLogBase<T>(const char* name, const char* handle, int length = LogEventsBufferEntries):
+  EventLogBase(const char* name, const char* handle, int length = LogEventsBufferEntries):
     _mutex(Mutex::event, name),
     _name(name),
     _handle(handle),

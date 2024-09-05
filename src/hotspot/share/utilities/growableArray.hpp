@@ -118,7 +118,7 @@ class GrowableArrayView : public GrowableArrayBase {
 protected:
   E* _data; // data array
 
-  GrowableArrayView<E>(E* data, int capacity, int initial_len) :
+  GrowableArrayView(E* data, int capacity, int initial_len) :
       GrowableArrayBase(capacity, initial_len), _data(data) {}
 
   ~GrowableArrayView() {}
@@ -345,7 +345,7 @@ template <typename E>
 class GrowableArrayFromArray : public GrowableArrayView<E> {
 public:
 
-  GrowableArrayFromArray<E>(E* data, int len) :
+  GrowableArrayFromArray(E* data, int len) :
     GrowableArrayView<E>(data, len, len) {}
 };
 
