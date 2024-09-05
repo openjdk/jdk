@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -970,8 +970,8 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp, object);
-      lwz(tmp, in_bytes(Klass::access_flags_offset()), tmp);
-      testbitdi(CCR0, R0, tmp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+      lbz(tmp, in_bytes(Klass::misc_flags_offset()), tmp);
+      testbitdi(CCR0, R0, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
       bne(CCR0, slow_case);
     }
 

@@ -86,8 +86,8 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(Rscratch, Roop);
-    lwz(Rscratch, in_bytes(Klass::access_flags_offset()), Rscratch);
-    testbitdi(CCR0, R0, Rscratch, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    lbz(Rscratch, in_bytes(Klass::misc_flags_offset()), Rscratch);
+    testbitdi(CCR0, R0, Rscratch, exact_log2(KlassFlags::_misc_is_value_based_class));
     bne(CCR0, slow_int);
   }
 

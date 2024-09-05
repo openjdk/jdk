@@ -4559,7 +4559,8 @@ void ClassFileParser::verify_legal_utf8(const unsigned char* buffer,
                                         int length,
                                         TRAPS) const {
   assert(_need_verify, "only called when _need_verify is true");
-  if (!UTF8::is_legal_utf8(buffer, length, _major_version <= 47)) {
+  // Note: 0 <= length < 64K, as it comes from a u2 entry in the CP.
+  if (!UTF8::is_legal_utf8(buffer, static_cast<size_t>(length), _major_version <= 47)) {
     classfile_parse_error("Illegal UTF8 string in constant pool in class file %s", THREAD);
   }
 }
@@ -5173,9 +5174,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   ik->set_has_nonstatic_concrete_methods(_has_nonstatic_concrete_methods);
   ik->set_declares_nonstatic_concrete_methods(_declares_nonstatic_concrete_methods);
 
-  if (_is_hidden) {
-    ik->set_is_hidden();
-  }
+  assert(!_is_hidden || ik->is_hidden(), "must be set already");
 
   // Set PackageEntry for this_klass
   oop cl = ik->class_loader();

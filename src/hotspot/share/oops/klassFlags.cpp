@@ -19,24 +19,16 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @bug 8335664 8338924
- * @summary Ensure a program that ends with a JSR does not crash
- * @library /test/lib
- * @compile LastJsr.jasm
- * @compile LastJsrReachable.jasm
- * @run main/othervm -Xbatch LastJsrTest
- */
+#include "precompiled.hpp"
+#include "oops/klassFlags.hpp"
+#include "utilities/ostream.hpp"
 
-public class LastJsrTest {
-    public static void main(String[] args) {
-        for (int i = 0; i < 1000; ++i) {
-            LastJsr.test();
-            LastJsrReachable.test();
-        }
-        System.out.println("PASSED");
-    }
+void KlassFlags::print_on(outputStream* st) const {
+#define KLASS_FLAGS_PRINT(name, ignore)          \
+  if (name()) st->print(#name " ");
+  KLASS_FLAGS_DO(KLASS_FLAGS_PRINT)
+#undef KLASS_FLAGS_PRINT
 }
