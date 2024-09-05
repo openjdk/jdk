@@ -26,7 +26,10 @@
 package jdk.internal.foreign;
 
 import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.util.Architecture;
 import jdk.internal.vm.annotation.ForceInline;
+
+import java.lang.foreign.MemorySegment;
 
 /**
  * This class contains optimized bulk operation methods that operate on one or several
@@ -45,8 +48,56 @@ public final class SegmentBulkOperations {
 
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
-    // MISMATCH_NATIVE_THRESHOLD must be a power of two and should be greater than 2^3
+    // All the threshold values below MUST be a power of two and should preferably be
+    // greater or equal to 2^3.
+
+    // Update the value for Aarch64 once 8338975 is fixed.
+    private static final long NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", Architecture.isAARCH64() ? 10 : 5);
     private static final long NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 20);
+
+    @ForceInline
+    public static MemorySegment fill(AbstractMemorySegmentImpl dst, byte value) {
+        dst.checkReadOnly(false);
+        if (dst.length == 0) {
+            // Implicit state check
+            dst.checkValidState();
+        } else if (dst.length < NATIVE_THRESHOLD_FILL) {
+            // 0 <= length < FILL_NATIVE_LIMIT : 0...0X...XXXX
+
+            // Handle smaller segments directly without transitioning to native code
+            final long u = Byte.toUnsignedLong(value);
+            final long longValue = u << 56 | u << 48 | u << 40 | u << 32 | u << 24 | u << 16 | u << 8 | u;
+
+            int offset = 0;
+            // 0...0X...X000
+            final int limit = (int) (dst.length & (NATIVE_THRESHOLD_FILL - 8));
+            for (; offset < limit; offset += 8) {
+                SCOPED_MEMORY_ACCESS.putLong(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, longValue);
+            }
+            int remaining = (int) dst.length - limit;
+            // 0...0X00
+            if (remaining >= 4) {
+                SCOPED_MEMORY_ACCESS.putInt(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, (int) longValue);
+                offset += 4;
+                remaining -= 4;
+            }
+            // 0...00X0
+            if (remaining >= 2) {
+                SCOPED_MEMORY_ACCESS.putShort(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, (short) longValue);
+                offset += 2;
+                remaining -= 2;
+            }
+            // 0...000X
+            if (remaining == 1) {
+                SCOPED_MEMORY_ACCESS.putByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + offset, value);
+            }
+            // We have now fully handled 0...0X...XXXX
+        } else {
+            // Handle larger segments via native calls
+            SCOPED_MEMORY_ACCESS.setMemory(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), dst.length, value);
+        }
+        return dst;
+    }
 
     @ForceInline
     public static long mismatch(AbstractMemorySegmentImpl src, long srcFromOffset, long srcToOffset,
