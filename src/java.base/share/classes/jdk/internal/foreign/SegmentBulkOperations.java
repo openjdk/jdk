@@ -30,6 +30,7 @@ import jdk.internal.util.Architecture;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.MemorySegment;
+import java.nio.ByteOrder;
 
 /**
  * This class contains optimized bulk operation methods that operate on one or several
@@ -116,17 +117,19 @@ public final class SegmentBulkOperations {
             final int limit = (int) (bytes & (NATIVE_THRESHOLD_MISMATCH - 8));
             int offset = 0;
             for (; offset < limit; offset += 8) {
-                if (SCOPED_MEMORY_ACCESS.getLong(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset) !=
-                        SCOPED_MEMORY_ACCESS.getLong(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset)) {
-                    return mismatchSmall(src, srcFromOffset + offset, dst, dstFromOffset + offset, offset, 8, srcAndDstBytesDiffer);
+                final long s = SCOPED_MEMORY_ACCESS.getLong(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset);
+                final long d = SCOPED_MEMORY_ACCESS.getLong(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset);
+                if (s != d) {
+                    return offset + mismatch(s, d);
                 }
             }
             int remaining = (int) bytes - offset;
             // 0...0X00
             if (remaining >= 4) {
-                if (SCOPED_MEMORY_ACCESS.getInt(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset) !=
-                        SCOPED_MEMORY_ACCESS.getInt(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset)) {
-                    return mismatchSmall(src, srcFromOffset + offset, dst, dstFromOffset + offset, offset, 4, srcAndDstBytesDiffer);
+                final int s = SCOPED_MEMORY_ACCESS.getInt(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset);
+                final int d = SCOPED_MEMORY_ACCESS.getInt(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset);
+                if (s != d) {
+                    return offset + mismatch(s, d);
                 }
                 offset += 4;
                 remaining -= 4;
@@ -181,6 +184,22 @@ public final class SegmentBulkOperations {
             }
         }
         return srcAndDstBytesDiffer ? bytes : -1;
+    }
+
+    @ForceInline
+    private static int mismatch(long first, long second) {
+        final long x = first ^ second;
+        return (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
+                ? Long.numberOfTrailingZeros(x)
+                : Long.numberOfLeadingZeros(x)) / 8;
+    }
+
+    @ForceInline
+    private static int mismatch(int first, int second) {
+        final int x = first ^ second;
+        return (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
+                ? Integer.numberOfTrailingZeros(x)
+                : Integer.numberOfLeadingZeros(x)) / 8;
     }
 
     static final String PROPERTY_PATH = "java.lang.foreign.native.threshold.power.";
