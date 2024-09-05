@@ -40,14 +40,16 @@ public class Test4887836 {
     public static void main(String[] args) throws Exception {
         String instructions = """
                                 If you do not see white area under the \"Swatches\" tab,
-                                then test passed, otherwise it failed.""";
+                                then test passed, otherwise it failed.
+                                
+                                NOTE: There is no Swatches tab for GTK Look and Feel, Press Pass.""";
 
         PassFailJFrame.builder()
                 .title("Test4759306")
                 .instructions(instructions)
                 .rows(5)
                 .columns(40)
-                .testTimeOut(10)
+                .testTimeOut(5)
                 .testUI(Test4887836::createColorChooser)
                 .build()
                 .awaitAndCheck();
