@@ -295,7 +295,7 @@ size_t ReservedMemoryRegion::committed_size() const {
 void ReservedMemoryRegion::set_mem_tag(MemTag new_mem_tag) {
   assert((mem_tag() == mtNone || mem_tag() == new_mem_tag),
          "Overwrite memory type for region [" INTPTR_FORMAT "-" INTPTR_FORMAT "), %u->%u.",
-         p2i(base()), p2i(end()), (unsigned)mem_tag(), (unsigned)f);
+         p2i(base()), p2i(end()), (unsigned)mem_tag(), (unsigned)new_mem_tag);
   if (mem_tag() != new_mem_tag) {
     VirtualMemorySummary::move_reserved_memory(mem_tag(), new_mem_tag, size());
     VirtualMemorySummary::move_committed_memory(mem_tag(), new_mem_tag, committed_size());
@@ -304,7 +304,7 @@ void ReservedMemoryRegion::set_mem_tag(MemTag new_mem_tag) {
 }
 
 address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
-  assert(type() == mtThreadStack, "Only for thread stack");
+  assert(mem_tag() == mtThreadStack, "Only for thread stack");
   LinkedListNode<CommittedMemoryRegion>* head = _committed_regions.head();
   address bottom = base();
   address top = base() + size();
@@ -523,7 +523,7 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
                                      (size - reserved_rgn->size()));
       ReservedMemoryRegion* cls_rgn = _reserved_regions->find(class_rgn);
       assert(cls_rgn != nullptr, "Class space region  not recorded?");
-      assert(cls_rgn->type() == mtClass, "Must be class type");
+      assert(cls_rgn->mem_tag() == mtClass, "Must be class mem tag");
       remove_released_region(reserved_rgn);
       remove_released_region(cls_rgn);
       return true;

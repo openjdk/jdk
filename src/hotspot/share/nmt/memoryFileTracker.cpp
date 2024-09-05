@@ -79,7 +79,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
       return;
     }
 #ifdef ASSERT
-    if (broken_start != nullptr && prev->val().out.type() != current->val().in.type()) {
+    if (broken_start != nullptr && prev->val().out.mem_tag() != current->val().in.mem_tag()) {
       broken_start = prev;
       broken_end = current;
     }

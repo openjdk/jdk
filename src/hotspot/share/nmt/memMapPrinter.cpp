@@ -122,7 +122,7 @@ public:
       _capacity = new_capacity;
     }
     assert(_capacity > _count, "Sanity");
-    _ranges[_count] = Range { from, to };
+    _mem_tags[_count] = Range { from, to };
     _tags[_count] = mem_tag;
     _count++;
     return true;

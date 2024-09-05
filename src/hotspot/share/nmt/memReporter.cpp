@@ -339,7 +339,7 @@ int MemDetailReporter::report_malloc_sites() {
     const NativeCallStack* stack = malloc_site->call_stack();
     _stackprinter.print_stack(stack);
     MemTag mem_tag = malloc_site->mem_tag();
-    assert(NMTUtil::tag_is_valid(type) && mem_tag != mtNone,
+    assert(NMTUtil::tag_is_valid(mem_tag) && mem_tag != mtNone,
       "Must have a valid memory type");
     INDENT_BY(29,
       out->print("(");
