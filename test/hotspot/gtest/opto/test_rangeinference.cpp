@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "opto/rangeinference.hpp"
+#include "opto/type.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
@@ -42,6 +43,20 @@ juint uniform_random<juint>() {
 template <>
 julong uniform_random<julong>() {
   return (julong(os::random()) << 32) | julong(juint(os::random()));
+}
+
+static void test_canonicalize_constraints_trivial() {
+  ASSERT_FALSE(TypeInt::NON_ZERO->contains(0));
+  ASSERT_TRUE(TypeInt::NON_ZERO->contains(1));
+  ASSERT_TRUE(TypeInt::NON_ZERO->contains(-1));
+  ASSERT_TRUE(TypeInt::CC_NE->contains(-1));
+  ASSERT_TRUE(TypeInt::CC_NE->contains(1));
+  ASSERT_FALSE(TypeInt::CC_NE->contains(0));
+  ASSERT_FALSE(TypeInt::CC_NE->contains(-2));
+  ASSERT_FALSE(TypeInt::CC_NE->contains(2));
+  ASSERT_FALSE(TypeLong::NON_ZERO->contains(0L));
+  ASSERT_TRUE(TypeLong::NON_ZERO->contains(1L));
+  ASSERT_TRUE(TypeLong::NON_ZERO->contains(-1L));
 }
 
 template <class S, class U>
@@ -141,6 +156,7 @@ static void test_canonicalize_constraints_random() {
 }
 
 TEST_VM(opto, canonicalize_constraints) {
+  test_canonicalize_constraints_trivial();
   test_canonicalize_constraints_simple<jint, juint>();
   test_canonicalize_constraints_simple<jlong, julong>();
   test_canonicalize_constraints_random<jint, juint>();
