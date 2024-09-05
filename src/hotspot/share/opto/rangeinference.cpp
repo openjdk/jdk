@@ -82,48 +82,96 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     return lo;
   }
 
+  // The principal here is that, consider the first bit in result that is
+  // different from the corresponding bit in lo, since result is larger than lo
+  // the bit must be unset in lo and set in result. As result should be the
+  // smallest value, the position of this bit should be as low as possible
+  // E.g:      1 2 3 4 5 6
+  //      lo = 1 0 0 1 1 0
+  //       x = 1 0 1 0 1 0
+  //       y = 0 1 1 1 1 1
+  // x would be larger than lo since the first different bit is the 3rd one,
+  // while y is smaller than lo because the first different bit is the 1st bit.
+  // Next consider:
+  //      x1 = 1 0 1 0 1 0
+  //      x2 = 1 0 0 1 1 1
+  // Both x1 and x2 are larger than lo, but x1 > x2 since its first different
+  // bit from lo is the 3rd one, while with x2 it is the 7th one. As a result,
+  // if both x1 and x2 satisfy bits, x2 would be closer to our true result.
   if (zero_violation < one_violation) {
-    // This means that the first bit that does not satisfy the bit
-    // requirement is a 0 that should be a 1, try to set that bit
-    // E.g: lo = 10010010, zeros = 00100100, ones = 01001000
+    // This means that the first bit that does not satisfy the bit requirement
+    // is a 0 that should be a 1, this may be the first different bit we want
+    // to find.
+    // E.g:      1 2 3 4 5 6 7 8
+    //      lo = 1 0 0 1 0 0 1 0
+    //   zeros = 0 0 1 0 0 1 0 0
+    //    ones = 0 1 0 0 1 0 1 0
+    //   1-vio = 0 1 0 0 1 0 0 0
+    //   0-vio = 0 0 0 0 0 0 0 0
+    // Since the result must have the 2nd bit set, it must be at least:
+    //           1 1 0 0 0 0 0 0
+    // This value must satisfy zeros, because all bits before the 2nd bit have
+    // already satisfied zeros, and all bits after the 2nd bit are all 0 now.
+    // Continue the logic with each set bit in ones, we will set each bit in
+    // our new lo (11000000 -> 11001000 -> 11001010). The final value is our
+    // result.
+    // Implementationwise, from 11000000 we can just | with ones to obtain the
+    // final result.
+
     // first_violation is the position of the violation counting from the
     // lowest bit up (0-based)
-    juint first_violation = W - 1 - count_leading_zeros(one_violation);
+    juint first_violation = W - 1 - count_leading_zeros(one_violation); // 6
+    //           0 1 0 0 0 0 0 0
     U alignment = U(1) << first_violation;
     // This is the first value which have the violated bit set, which means
     // that the result should not be smaller than this
-    // 11000000, notice that all bits after the second digit are zeroed,
-    // which automatically satisfies bits._zeros
+    //           1 1 0 0 0 0 0 0
     lo = (lo & -alignment) + alignment;
-    // Simply satisfy bits._ones
-    return lo | bits._ones; // 11001000
+    //           1 1 0 0 1 0 1 0
+    return lo | bits._ones;
   }
 
   // This is more difficult because trying to unset a bit requires us to flip
-  // some bits before it (higher bits)
-  // Suppose lo = 11000110, zeros = 00001010, ones = 10000001
-  // The smallest value with the 7-th bit unset would be 11001000 but then the
-  // 5-th bit does not match, the smallest value with both bits unset would be
-  // 11010000
-  // We can obtain this number directly by finding the last place before
-  // the first mismatch such that it is 0 in lo and not required to be unset
-  juint first_violation = W - 1 - count_leading_zeros(zero_violation);
-  // This mask out all bits after the first violation
-  U find_mask = std::numeric_limits<U>::max() << first_violation; // 11111100
-  // The smallest value which satisfies bits._zeros will need to set a bit in
-  // lo that is previously unset (because the value needs to be larger than lo)
-  // and that bit will need to be unset in bits._zeros as well
-  U either = lo | bits._zeros; // 11001110
+  // some bits before it (higher bits).
+  // Consider the first bit that is change, it must not be set already, and it
+  // must not be set in zeros. As a result, it must be the last bit before the
+  // first bit violation that is unset in both zeros and lo.
+  // E.g:      1 2 3 4 5 6 7 8
+  //      lo = 1 0 0 0 1 1 1 0
+  //   zeros = 0 0 0 1 0 1 0 0
+  //    ones = 1 0 0 0 0 0 1 1
+  //   1-vio = 0 0 0 0 0 0 0 1
+  //   0-vio = 0 0 0 0 0 1 0 0
+  // The first violation is the 6th bit, which should be 0. The 5th cannot be
+  // the first different bit we are looking for, because it is already 1, the
+  // 4th bit also cannot be, because it must be 0. As a result, the first
+  // different bit between the result and lo must be the 3rd bit. As a result,
+  // the result must not be smaller than:
+  //           1 0 1 0 0 0 0 0
+  // This one satisfies zeros so we can use the logic in the previous case to
+  // obtain our final result, which is:
+  //           1 0 1 0 0 0 1 1
+
+  juint first_violation = W - count_leading_zeros(zero_violation);
+  // This mask out all bits from the first violation
+  //           1 1 1 1 1 0 0 0
+  U find_mask = std::numeric_limits<U>::max() << first_violation;
+  //           1 0 0 1 1 1 1 0
+  U either = lo | bits._zeros;
   // The bit we want to set is the last bit unset in either that stands before
   // the first violation, which is the last set bit of tmp
-  U tmp = ~either & find_mask; // 00110000
+  //           0 1 1 0 0 0 0 0
+  U tmp = ~either & find_mask;
   // Isolate the last bit
-  U alignment = tmp & (-tmp); // 00010000
+  //           0 0 1 0 0 0 0 0
+  U alignment = tmp & (-tmp);
   // Set the bit and unset all the bit after, this is the smallest value that
   // satisfies bits._zeros
-  lo = (lo & -alignment) + alignment; // 11010000
+  //           1 0 1 0 0 0 0 0
+  lo = (lo & -alignment) + alignment;
   // Satisfy bits._ones
-  return lo | bits._ones; // 11010001
+  //           1 0 1 0 0 0 1 1
+  return lo | bits._ones;
 }
 
 // Try to tighten the bound constraints from the known bit information. I.e, we
