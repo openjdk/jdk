@@ -124,8 +124,6 @@ public class BasicScrollBarUI
     protected ModelListener modelListener;
     /** KeyboardFocusListener */
     protected KeyboardFocusListener keyboardFocusListener;
-    /** KeyboardFocusManager */
-    protected KeyboardFocusManager keyboardFocusManager;
 
     /** Thumb rectangle */
     protected Rectangle thumbRect;
@@ -360,7 +358,6 @@ public class BasicScrollBarUI
         buttonListener = createArrowButtonListener();
         modelListener = createModelListener();
         propertyChangeListener = createPropertyChangeListener();
-        keyboardFocusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         keyboardFocusListener = createKeyboardFocusListener();
 
         scrollbar.addMouseListener(trackListener);
@@ -368,7 +365,8 @@ public class BasicScrollBarUI
         scrollbar.getModel().addChangeListener(modelListener);
         scrollbar.addPropertyChangeListener(propertyChangeListener);
         scrollbar.addFocusListener(getHandler());
-        keyboardFocusManager.addPropertyChangeListener(keyboardFocusListener);
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .addPropertyChangeListener(keyboardFocusListener);
 
         if (incrButton != null) {
             incrButton.addMouseListener(buttonListener);
@@ -450,8 +448,8 @@ public class BasicScrollBarUI
             incrButton.removeMouseListener(buttonListener);
         }
 
-        keyboardFocusManager.removePropertyChangeListener(keyboardFocusListener);
-        keyboardFocusManager = null;
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .removePropertyChangeListener(keyboardFocusListener);
         scrollbar.getModel().removeChangeListener(modelListener);
         scrollbar.removeMouseListener(trackListener);
         scrollbar.removeMouseMotionListener(trackListener);
@@ -1236,6 +1234,10 @@ public class BasicScrollBarUI
                 // Stop scrolling if no longer focus owner
                 if (e.getNewValue() == null && scrollTimer.isRunning()) {
                     scrollTimer.stop();
+                    if (buttonListener.handledEvent) {
+                        buttonListener.handledEvent = false;
+                    }
+                    scrollbar.setValueIsAdjusting(false);
                 }
             }
         }

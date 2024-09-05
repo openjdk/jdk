@@ -21,13 +21,9 @@
  * questions.
  */
 
-import java.awt.AWTException;
-import java.lang.reflect.InvocationTargetException;
-
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 /*
  * @test
@@ -53,10 +49,7 @@ public class JComboBoxScrollFocusTest {
              passes, otherwise it fails.
             """;
 
-    public static void main(String[] args) throws
-            UnsupportedLookAndFeelException, ClassNotFoundException,
-            InstantiationException, IllegalAccessException, AWTException,
-            InterruptedException, InvocationTargetException {
+    public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         PassFailJFrame
                 .builder()
@@ -72,7 +65,7 @@ public class JComboBoxScrollFocusTest {
     private static JFrame createAndShowGUI() {
         JFrame frame = new JFrame("JComboBoxScrollFocusTest Test Frame");
         JComboBox combobox = new JComboBox();
-        for (int i = 0; i< 100; i ++) {
+        for (int i = 0; i < 100; i ++) {
             combobox.addItem(String.valueOf(i));
         }
         frame.add(combobox);
