@@ -2569,6 +2569,9 @@ public final class System {
             public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
+            public int countNonZeroAscii(String s) {
+                return StringCoding.countNonZeroAscii(s);
+            }
             public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return String.newStringNoRepl(bytes, cs);
             }
