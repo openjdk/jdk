@@ -192,7 +192,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemTag mem_ta
   {
     const MallocHeader* header2 = MallocHeader::resolve_checked(memblock);
     assert(header2->size() == size, "Wrong size");
-    assert(header2->tag() == mem_tag, "Wrong memory tag");
+    assert(header2->mem_tag() == mem_tag, "Wrong memory tag");
   }
 #endif
 
