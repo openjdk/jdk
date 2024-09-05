@@ -1572,7 +1572,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     static void copy(MemorySegment srcSegment, long srcOffset,
                      MemorySegment dstSegment, long dstOffset, long bytes) {
 
-        AbstractMemorySegmentImpl.copy((AbstractMemorySegmentImpl) srcSegment, srcOffset,
+        SegmentBulkOperations.copy((AbstractMemorySegmentImpl) srcSegment, srcOffset,
                 (AbstractMemorySegmentImpl) dstSegment, dstOffset,
                 bytes);
     }

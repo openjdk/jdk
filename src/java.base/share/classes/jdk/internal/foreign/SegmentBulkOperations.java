@@ -30,7 +30,6 @@ import jdk.internal.util.Architecture;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.MemorySegment;
-import java.nio.ByteOrder;
 
 /**
  * This class contains optimized bulk operation methods that operate on one or several
@@ -52,9 +51,10 @@ public final class SegmentBulkOperations {
     // All the threshold values below MUST be a power of two and should preferably be
     // greater or equal to 2^3.
 
-    // Update the value for Aarch64 once 8338975 is fixed.
+    // Update the FILL value for Aarch64 once 8338975 is fixed.
     private static final long NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", Architecture.isAARCH64() ? 10 : 5);
     private static final long NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 20);
+    private static final long NATIVE_THRESHOLD_COPY = powerOfPropertyOr("copy", 6);
 
     @ForceInline
     public static MemorySegment fill(AbstractMemorySegmentImpl dst, byte value) {
@@ -98,6 +98,61 @@ public final class SegmentBulkOperations {
             SCOPED_MEMORY_ACCESS.setMemory(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset(), dst.length, value);
         }
         return dst;
+    }
+
+    @ForceInline
+    public static void copy(AbstractMemorySegmentImpl src, long srcOffset,
+                            AbstractMemorySegmentImpl dst, long dstOffset,
+                            long size) {
+
+        Utils.checkNonNegativeIndex(size, "size");
+        // Implicit null check for src and dst
+        src.checkAccess(srcOffset, size, true);
+        dst.checkAccess(dstOffset, size, false);
+
+        if (size <= 0) {
+            // Do nothing
+        } else if (size < NATIVE_THRESHOLD_COPY && !src.overlaps(dst)) {
+            // 0 < size < FILL_NATIVE_LIMIT : 0...0X...XXXX
+            //
+            // Strictly, we could check for !src.asSlice(srcOffset, size).overlaps(dst.asSlice(dstOffset, size) but
+            // this is a bit slower and it likely very unusual there is any difference in the outcome. Also, if there
+            // is an overlap, we could tolerate one particular direction of overlap (but not the other).
+
+            // 0...0X...X000
+            final int limit = (int) (size & (NATIVE_THRESHOLD_COPY - 8));
+            int offset = 0;
+            for (; offset < limit; offset += 8) {
+                final long v = SCOPED_MEMORY_ACCESS.getLong(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset);
+                SCOPED_MEMORY_ACCESS.putLong(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
+            }
+            int remaining = (int) size - offset;
+            // 0...0X00
+            if (remaining >= 4) {
+                final int v = SCOPED_MEMORY_ACCESS.getInt(src.sessionImpl(), src.unsafeGetBase(),src.unsafeGetOffset() + srcOffset + offset);
+                SCOPED_MEMORY_ACCESS.putInt(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
+                offset += 4;
+                remaining -= 4;
+            }
+            // 0...00X0
+            if (remaining >= 2) {
+                final short v = SCOPED_MEMORY_ACCESS.getShort(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset);
+                SCOPED_MEMORY_ACCESS.putShort(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
+                offset += 2;
+                remaining -=2;
+            }
+            // 0...000X
+            if (remaining == 1) {
+                final byte v = SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset);
+                SCOPED_MEMORY_ACCESS.putByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
+            }
+            // We have now fully handled 0...0X...XXXX
+        } else {
+            // For larger sizes, the transition to native code pays off
+            SCOPED_MEMORY_ACCESS.copyMemory(src.sessionImpl(), dst.sessionImpl(),
+                    src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset,
+                    dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, size);
+        }
     }
 
     @ForceInline
