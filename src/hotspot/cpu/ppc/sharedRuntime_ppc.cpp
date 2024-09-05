@@ -3438,7 +3438,7 @@ RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address ru
 
   ResourceMark rm;
   const char* timer_msg = "SharedRuntime generate_throw_exception";
-  TraceTime timer(timer_msg, TRACETIME_LOG(shInfo, startuptime));
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
 
   CodeBuffer code(name, 1024 DEBUG_ONLY(+ 512), 0);
   MacroAssembler* masm = new MacroAssembler(&code);
