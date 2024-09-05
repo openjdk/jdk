@@ -32,8 +32,8 @@ import java.util.Arrays;
  * @test
  * @modules java.base/jdk.internal.access
  * @summary test latin1 String countNonZeroAscii
- * @run testng/othervm -XX:+CompactStrings CountNonZeroAscii
- * @run testng/othervm -XX:-CompactStrings CountNonZeroAscii
+ * @run main/othervm -XX:+CompactStrings CountNonZeroAscii
+ * @run main/othervm -XX:-CompactStrings CountNonZeroAscii
  */
 public class CountNonZeroAscii {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
