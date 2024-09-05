@@ -966,10 +966,6 @@ private:
                                                        const Node_List& old_new);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
-#ifdef ASSERT
-  bool only_has_infinite_loops();
-#endif
-
   void log_loop_tree();
 
 public:
@@ -1076,7 +1072,7 @@ private:
 
   // Place 'n' in some loop nest, where 'n' is a CFG node
   void build_loop_tree();
-  int build_loop_tree_impl( Node *n, int pre_order );
+  int build_loop_tree_impl(Node* n, int pre_order);
   // Insert loop into the existing loop tree.  'innermost' is a leaf of the
   // loop tree, not the root.
   IdealLoopTree *sort( IdealLoopTree *loop, IdealLoopTree *innermost );
