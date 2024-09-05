@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public final class RawBytecodeHelper {
     public static final int ILLEGAL = -1;
 
     /**
-     * The length of opcodes, 0 for
+     * The length of opcodes, or -1 for no fixed length.
      * This is generated as if:
      * {@snippet lang=java :
      * var lengths = new byte[0x100];
@@ -61,15 +61,12 @@ public final class RawBytecodeHelper {
      * for (var op : Opcode.values()) {
      *     if (!op.isWide()) {
      *         lengths[op.bytecode()] = (byte) op.sizeIfFixed();
-     *     } else {
-     *         // Wide pseudo-opcodes have double the length as normal variants
-     *         // Must match logic in checkSpecialInstruction()
-     *         assert lengths[op.bytecode() & 0xFF] * 2 == op.sizeIfFixed();
      *     }
      * }
      * }
-     * Tested in UtilTest.
+     * Tested in UtilTest::testOpcodeLengthTable.
      */
+    // Note: Consider distinguishing non-opcode and non-fixed-length opcode
     public static final @Stable byte[] LENGTHS = new byte[] {
             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
             2, 3, 2, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1,
@@ -118,16 +115,18 @@ public final class RawBytecodeHelper {
 
     // immutable states
 
-    public byte[] array() {
-        return code.array;
-    }
-
+    /** {@return the end of the code array} */
     public int endBci() {
         return code.length;
     }
 
     // setup
 
+    /**
+     * Sets the starting bci for bytecode reading. Can be set to
+     * {@link #endBci} to end scanning. Must be followed by a
+     * {@link #next} before getter access.
+     */
     public void reset(int nextBci) {
         Preconditions.checkIndex(nextBci, endBci() + 1, IAE_FORMATTER);
         this.nextBci = nextBci;
@@ -136,9 +135,10 @@ public final class RawBytecodeHelper {
     // getters after transition
 
     /**
-     * Returns the current functional opcode, or {@link #ILLEGAL} if the next instruction is invalid in format.
-     * If this returns a valid opcode, that instruction's format must be valid and can be accessed unchecked.
-     * Unspecified if called without a {@link #next} transition after object initialization or {@link #reset}.
+     * Returns the current functional opcode, or {@link #ILLEGAL} if
+     * the next instruction is invalid in format.
+     * If this returns a valid opcode, that instruction's format must
+     * be valid and can be accessed unchecked.
      */
     public int opcode() {
         return opcode;
@@ -146,7 +146,6 @@ public final class RawBytecodeHelper {
 
     /**
      * Returns whether the current functional opcode is in wide.
-     * Unspecified if called without a {@link #next} transition after object initialization or {@link #reset}.
      */
     public boolean isWide() {
         return isWide;
@@ -157,13 +156,6 @@ public final class RawBytecodeHelper {
      */
     public int bci() {
         return bci;
-    }
-
-    /**
-     * Returns whether the end of code array is reached.
-     */
-    public boolean isLastInstruction() {
-        return nextBci >= code.length;
     }
 
     // general utilities
@@ -178,7 +170,7 @@ public final class RawBytecodeHelper {
         return getU2Unchecked(bci);
     }
 
-    public short getShort(int bci) {
+    public int getShort(int bci) {
         Preconditions.checkFromIndexSize(bci, 2, endBci(), IAE_FORMATTER);
         return getShortUnchecked(bci);
     }
@@ -191,20 +183,20 @@ public final class RawBytecodeHelper {
     // Unchecked accessors: only if opcode() is validated
 
     public int getU1Unchecked(int bci) {
-        return Byte.toUnsignedInt(array()[bci]);
+        return Byte.toUnsignedInt(code.array[bci]);
     }
 
     public int getU2Unchecked(int bci) {
-        return UNSAFE.getCharUnaligned(array(), (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + bci, true);
+        return UNSAFE.getCharUnaligned(code.array, (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + bci, true);
     }
 
-    public short getShortUnchecked(int bci) {
-        return UNSAFE.getShortUnaligned(array(), (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + bci, true);
+    public int getShortUnchecked(int bci) {
+        return UNSAFE.getShortUnaligned(code.array, (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + bci, true);
     }
 
     // used after switch validation
     public int getIntUnchecked(int bci) {
-        return UNSAFE.getIntUnaligned(array(), (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + bci, true);
+        return UNSAFE.getIntUnaligned(code.array, (long) Unsafe.ARRAY_BYTE_BASE_OFFSET + bci, true);
     }
 
     // non-wide branches
@@ -235,18 +227,21 @@ public final class RawBytecodeHelper {
     // Transition methods
 
     /**
-     * Transition to the next instruction. If the next instruction is
-     * malformed, returns {@link #ILLEGAL}, so we can perform value access
-     * without bound checks if we have a valid opcode. Must be guarded by
-     * {@link #isLastInstruction()} checks.
+     * Transitions to the next instruction and returns whether scanning should
+     * continue. If the next instruction is malformed, {@link #opcode()} returns
+     * {@link #ILLEGAL}, so we can perform value access without bound checks if
+     * we have a valid opcode.
      */
-    public void next() {
+    public boolean next() {
+        if (nextBci >= endBci()) {
+            return false;
+        }
+
         bci = nextBci;
         int code = getU1Unchecked(bci);
         int len = LENGTHS[code];
         opcode = code;
         isWide = false;
-        // Consider using 0 vs -1 to represent invalid vs special
         if (len <= 0) {
             len = checkSpecialInstruction(code);
         }
@@ -254,9 +249,11 @@ public final class RawBytecodeHelper {
         if (len <= 0 || (nextBci += len) > endBci()) {
             opcode = ILLEGAL;
         }
+
+        return true;
     }
 
-    // pulls out rarely used code blocks to reduce code size
+    // Put rarely used code in another method to reduce code size
     private int checkSpecialInstruction(int code) {
         if (code == WIDE) {
             if (bci + 1 >= endBci()) {
@@ -264,7 +261,8 @@ public final class RawBytecodeHelper {
             }
             opcode = code = getIndexU1();
             isWide = true;
-            return LENGTHS[code] * 2; // must match static block assertion
+            // Validated in UtilTest.testOpcodeLengthTable
+            return LENGTHS[code] * 2;
         }
         if (code == TABLESWITCH) {
             int alignedBci = align(bci + 1);

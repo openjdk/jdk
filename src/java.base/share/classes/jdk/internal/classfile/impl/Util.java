@@ -291,12 +291,12 @@ public class Util {
             ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, dump);
         } catch (Error | Exception _) {
             // fallback to bytecode hex dump
-            dumpBytesHex(dump, bytecode.array());
+            dumpBytesHex(dump, bytecode.array(), bytecode.length());
         }
     }
 
-    public static void dumpBytesHex(Consumer<String> dump, byte[] bytes) {
-        for (int i = 0; i < bytes.length; i++) {
+    public static void dumpBytesHex(Consumer<String> dump, byte[] bytes, int length) {
+        for (int i = 0; i < length; i++) {
             if (i % 16 == 0) {
                 dump.accept("%n%04x:".formatted(i));
             }

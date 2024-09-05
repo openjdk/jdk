@@ -326,8 +326,7 @@ public final class VerifierImpl {
         var bcs = code.start();
         boolean no_control_flow = false;
         int opcode;
-        while (!bcs.isLastInstruction()) {
-            bcs.next();
+        while (bcs.next()) {
             opcode = bcs.opcode();
             bci = bcs.bci();
             current_frame.set_offset(bci);
@@ -1233,8 +1232,7 @@ public final class VerifierImpl {
     private byte[] generate_code_data(RawBytecodeHelper.CodeRange code) {
         byte[] code_data = new byte[code.length()];
         var bcs = code.start();
-        while (!bcs.isLastInstruction()) {
-            bcs.next();
+        while (bcs.next()) {
             if (bcs.opcode() != ILLEGAL) {
                 int bci = bcs.bci();
                 if (bcs.opcode() == ClassFile.NEW) {

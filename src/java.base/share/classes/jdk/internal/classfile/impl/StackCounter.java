@@ -133,8 +133,7 @@ public final class StackCounter {
         visited = new BitSet(bcs.endBci());
         targets.add(new Target(0, 0));
         while (next()) {
-            while (!bcs.isLastInstruction()) {
-                bcs.next();
+            while (bcs.next()) {
                 int opcode = bcs.opcode();
                 int bci = bcs.bci();
                 visited.set(bci);

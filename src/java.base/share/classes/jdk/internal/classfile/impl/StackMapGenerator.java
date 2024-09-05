@@ -407,8 +407,7 @@ public final class StackMapGenerator {
         int stackmapIndex = 0;
         var bcs = bytecode.start();
         boolean ncf = false;
-        while (!bcs.isLastInstruction()) {
-            bcs.next();
+        while (bcs.next()) {
             currentFrame.offset = bcs.bci();
             if (stackmapIndex < frames.size()) {
                 int thisOffset = frames.get(stackmapIndex).offset;
@@ -854,8 +853,7 @@ public final class StackMapGenerator {
         var bcs = bytecode.start();
         boolean no_control_flow = false;
         int opcode, bci = 0;
-        while (!bcs.isLastInstruction()) try {
-            bcs.next();
+        while (bcs.next()) try {
             opcode = bcs.opcode();
             bci = bcs.bci();
             if (no_control_flow) {
