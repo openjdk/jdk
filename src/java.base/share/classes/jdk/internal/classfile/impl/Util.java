@@ -110,9 +110,11 @@ public class Util {
     }
 
     public static int parameterSlots(MethodTypeDesc mDesc) {
-        int count = 0;
-        for (int i = 0; i < mDesc.parameterCount(); i++) {
-            count += paramSlotSize(mDesc.parameterType(i));
+        int count = mDesc.parameterCount();
+        for (int i = count - 1; i >= 0; i--) {
+            if (isDoubleSlot(mDesc.parameterType(i))) {
+                count++;
+            }
         }
         return count;
     }
@@ -128,11 +130,7 @@ public class Util {
     }
 
     public static int maxLocals(int flags, MethodTypeDesc mDesc) {
-        int count = ((flags & ACC_STATIC) != 0) ? 0 : 1;
-        for (int i = 0; i < mDesc.parameterCount(); i++) {
-            count += paramSlotSize(mDesc.parameterType(i));
-        }
-        return count;
+        return parameterSlots(mDesc) + ((flags & ACC_STATIC) == 0 ? 1 : 0) ;
     }
 
     /**
