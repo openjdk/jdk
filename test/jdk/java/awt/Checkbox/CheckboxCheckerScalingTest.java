@@ -46,7 +46,7 @@ import javax.imageio.ImageIO;
 public class CheckboxCheckerScalingTest {
     private static Frame frame;
     private static Checkbox checkbox;
-    private static BufferedImage imageAfterChecked;
+    private static Point point;
     private static volatile boolean checkmarkFound = false;
     private static final int TOLERANCE = 5;
     private static final int COLOR_CHECK_THRESHOLD = 8;
@@ -69,27 +69,25 @@ public class CheckboxCheckerScalingTest {
 
             robot.waitForIdle();
             robot.delay(100);
-            EventQueue.invokeAndWait(() -> {
-                Point point = checkbox.getLocationOnScreen();
-                Rectangle rect = new Rectangle(point.x + 5, point.y + 7, 8, 8);
-                imageAfterChecked = robot.createScreenCapture(rect);
-                check:
-                {
-                    for (int i = 0; i < imageAfterChecked.getHeight(); i++) {
-                        for (int j = 0; j < imageAfterChecked.getWidth(); j++) {
-                            Color pixelColor = new Color(imageAfterChecked.getRGB(i, j));
-                            if (compareColor(pixelColor)) {
-                                colorCounter++;
-                                if (colorCounter >= COLOR_CHECK_THRESHOLD) {
-                                    checkmarkFound = true;
-                                    break check;
-                                }
+            EventQueue.invokeAndWait(() -> point = checkbox.getLocationOnScreen());
+            Rectangle rect = new Rectangle(point.x + 5, point.y + 7, 8, 8);
+            BufferedImage imageAfterChecked = robot.createScreenCapture(rect);
+            check:
+            {
+                for (int i = 0; i < imageAfterChecked.getHeight(); i++) {
+                    for (int j = 0; j < imageAfterChecked.getWidth(); j++) {
+                        Color pixelColor = new Color(imageAfterChecked.getRGB(i, j));
+                        if (compareColor(pixelColor)) {
+                            colorCounter++;
+                            if (colorCounter >= COLOR_CHECK_THRESHOLD) {
+                                checkmarkFound = true;
+                                break check;
                             }
-
                         }
+
                     }
                 }
-            });
+            }
 
             if (!checkmarkFound) {
                 try {
