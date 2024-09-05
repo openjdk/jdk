@@ -247,7 +247,7 @@ bool MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
   // print NMT information, if available
   if (MemTracker::enabled()) {
     // Correlate vma region (from, to) with NMT region(s) we collected previously.
-    const MemFlagBitmap flags = _nmt_info.lookup(vma_from, vma_to);
+    const MemTagBitmap flags = _nmt_info.lookup(vma_from, vma_to);
     if (flags.has_any()) {
       for (int i = 0; i < mt_number_of_tags; i++) {
         const MemTag mem_tag = (MemTag)i;

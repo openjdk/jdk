@@ -30,13 +30,13 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class MemFlagBitmap {
+class MemTagBitmap {
   uint32_t _v;
   STATIC_ASSERT(sizeof(_v) * BitsPerByte >= mt_number_of_tags);
 
 public:
-  MemFlagBitmap(uint32_t v = 0) : _v(v) {}
-  MemFlagBitmap(const MemFlagBitmap& o) : _v(o._v) {}
+  MemTagBitmap(uint32_t v = 0) : _v(v) {}
+  MemTagBitmap(const MemTagBitmap& o) : _v(o._v) {}
 
   uint32_t raw_value() const { return _v; }
 
