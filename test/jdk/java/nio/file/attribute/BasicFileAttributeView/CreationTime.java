@@ -25,18 +25,18 @@
  * @bug 8011536 8151430 8316304 8334339
  * @summary Basic test for creationTime attribute on platforms/file systems
  *     that support it, tests using /tmp directory.
- * @library  ../.. /test/lib
- * @build jdk.test.lib.Platform
- * @run main/native CreationTime
+ * @library  ../.. /test/lib /java/foreign
+ * @build jdk.test.lib.Platform NativeTestHelper
+ * @run main/othervm --enable-native-access=ALL-UNNAMED CreationTime
  */
 
 /* @test id=cwd
  * @summary Basic test for creationTime attribute on platforms/file systems
  *     that support it, tests using the test scratch directory, the test
  *     scratch directory maybe at diff disk partition to /tmp on linux.
- * @library  ../.. /test/lib
- * @build jdk.test.lib.Platform
- * @run main/native CreationTime .
+ * @library  ../.. /test/lib /java/foreign
+ * @build jdk.test.lib.Platform NativeTestHelper
+ * @run main/othervm --enable-native-access=ALL-UNNAMED CreationTime .
  */
 
 import java.lang.foreign.Linker;
@@ -107,7 +107,11 @@ public class CreationTime {
             }
         } else if (Platform.isLinux()) {
             // Creation time read depends on statx system call support
-            supportsCreationTimeRead = CreationTimeHelper.linuxIsCreationTimeSupported(file.toAbsolutePath().toString());
+            try {
+                supportsCreationTimeRead = CreationTimeHelper.linuxIsCreationTimeSupported(file.toAbsolutePath().toString());
+            } catch (Throwable e) {
+                supportsCreationTimeRead = false;
+            }
             // Creation time updates are not supported on Linux
             supportsCreationTimeWrite = false;
         }

@@ -20,8 +20,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include "jni.h"
+#include "export.h"
 #if defined(__linux__)
+#if (__STDC_VERSION__ >= 199901L)
+  #include <stdbool.h>
+#else
+  #define bool int
+  #define true 1
+  #define false 0
+#endif
 #include <linux/fcntl.h>
 #include <stdio.h>
 #include <string.h>
@@ -85,9 +92,8 @@ typedef int statx_func(int dirfd, const char *restrict pathname, int flags,
 static statx_func* my_statx_func = NULL;
 #endif  //#defined(__linux__)
 
-// static native boolean linuxIsCreationTimeSupported()
-JNIEXPORT jboolean JNICALL
-Java_CreationTimeHelper_linuxIsCreationTimeSupported(JNIEnv *env, jclass cls, jstring file) {
+// static boolean linuxIsCreationTimeSupported(char* file)
+EXPORT bool linuxIsCreationTimeSupported(char* file) {
 #if defined(__linux__)
     struct my_statx stx;
     int ret, atflag = AT_SYMLINK_NOFOLLOW;
@@ -96,34 +102,25 @@ Java_CreationTimeHelper_linuxIsCreationTimeSupported(JNIEnv *env, jclass cls, js
 
     my_statx_func = (statx_func*) dlsym(RTLD_DEFAULT, "statx");
     if (my_statx_func == NULL) {
-        return JNI_FALSE;
+        return false;
     }
 
     if (file == NULL) {
         printf("input file error!\n");
-        return JNI_FALSE;
-    }
-    const char *utfChars = (*env)->GetStringUTFChars(env, file, NULL);
-    if (utfChars == NULL) {
-        printf("jstring convert to char array error!\n");
-        return JNI_FALSE;
+        return false;
     }
 
-    ret = my_statx_func(AT_FDCWD, utfChars, atflag, mask, &stx);
-
-    if (file != NULL && utfChars != NULL) {
-        (*env)->ReleaseStringUTFChars(env, file, utfChars);
-    }
+    ret = my_statx_func(AT_FDCWD, file, atflag, mask, &stx);
 
     #ifdef DEBUG
     printf("birth time = %ld\n", stx.stx_btime.tv_sec);
     #endif
     if (ret != 0) {
-        return JNI_FALSE;
+        return false;
     }
     if (stx.stx_mask & STATX_BTIME)
-        return JNI_TRUE;
-    return JNI_FALSE;
+        return true;
+    return false;
 #else
     return JNI_FALSE;
 #endif

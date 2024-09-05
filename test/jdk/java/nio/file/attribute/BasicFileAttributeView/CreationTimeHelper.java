@@ -20,12 +20,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-public class CreationTimeHelper {
+
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
+
+public class CreationTimeHelper extends NativeTestHelper {
 
     static {
         System.loadLibrary("CreationTimeHelper");
     }
 
+    final static Linker abi = Linker.nativeLinker();
+    static final SymbolLookup lookup = SymbolLookup.loaderLookup();
+    final static MethodHandle methodHandle = abi.downcallHandle(lookup.findOrThrow("linuxIsCreationTimeSupported"),
+            FunctionDescriptor.of(C_BOOL, C_POINTER));
+
     // Helper so as to determine 'statx' support on the runtime system
-    static native boolean linuxIsCreationTimeSupported(String file);
+    // static boolean linuxIsCreationTimeSupported(String file);
+    static boolean linuxIsCreationTimeSupported(String file) throws Throwable {
+        try (var arena = Arena.ofConfined()) {
+            MemorySegment s = arena.allocateFrom(file);
+            return (boolean)methodHandle.invokeExact(s);
+        }
+    }
 }
