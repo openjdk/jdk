@@ -5534,7 +5534,7 @@ void MacroAssembler::move32_64(VMRegPair src, VMRegPair dst, Register tmp) {
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       // stack to stack
-      ld(tmp, Address(fp, reg2offset_in(src.first())));
+      lw(tmp, Address(fp, reg2offset_in(src.first())));
       sd(tmp, Address(sp, reg2offset_out(dst.first())));
     } else {
       // stack to reg

@@ -82,7 +82,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
     __ lw(reg, src);
   } else {
     __ lw(x10, src);
-    __ sw(x10, Address(to(), next_stack_offset()));
+    __ sd(x10, Address(to(), next_stack_offset()));
   }
 }
 
