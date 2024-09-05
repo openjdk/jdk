@@ -574,6 +574,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
         return ((long) x) & 0xffL;
     }
 
+
     /**
      * The number of bits used to represent a {@code byte} value in two's
      * complement binary form.

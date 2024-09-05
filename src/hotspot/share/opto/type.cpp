@@ -482,7 +482,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeInt::CC_LE   = TypeInt::make(-1, 0, WidenMin);
   TypeInt::CC_GE   = TypeInt::make( 0, 1, WidenMin);  // == TypeInt::BOOL
   TypeInt::BYTE    = TypeInt::make(-128,127,     WidenMin); // Bytes
-  TypeInt::UBYTE   = TypeInt::make(0, 255,       WidenMin); // Unsigned bytes
+  TypeInt::UBYTE   = TypeInt::make(0, 255,       WidenMin); // Unsigned Bytes
   TypeInt::CHAR    = TypeInt::make(0,65535,      WidenMin); // Java chars
   TypeInt::SHORT   = TypeInt::make(-32768,32767, WidenMin); // Java shorts
   TypeInt::POS     = TypeInt::make(0,max_jint,   WidenMin); // Non-neg values

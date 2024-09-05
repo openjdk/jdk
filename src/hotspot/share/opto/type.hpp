@@ -817,6 +817,7 @@ public:
   }
   static const TypeVect *makemask(const Type* elem, uint length);
 
+
   virtual const Type *xmeet( const Type *t) const;
   virtual const Type *xdual() const;     // Compute dual right now.
 

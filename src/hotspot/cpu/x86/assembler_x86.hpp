@@ -780,7 +780,7 @@ private:
 
   bool needs_eevex(Register reg1, Register reg2 = noreg, Register reg3 = noreg);
   bool needs_eevex(int enc1, int enc2 = -1, int enc3 = -1);
-  bool needs_evex(XMMRegister reg1, XMMRegister reg2 = xnoreg, XMMRegister reg3 = xnoreg);
+  NOT_PRODUCT(bool needs_evex(XMMRegister reg1, XMMRegister reg2 = xnoreg, XMMRegister reg3 = xnoreg);)
 
   void rex_prefix(Address adr, XMMRegister xreg,
                   VexSimdPrefix pre, VexOpcode opc, bool rex_w);

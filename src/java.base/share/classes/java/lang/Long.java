@@ -88,16 +88,6 @@ public final class Long extends Number
     @Native public static final long MAX_VALUE = 0x7fffffffffffffffL;
 
     /**
-     * A constant holding polarity(sign) mask used by saturating operations.
-     */
-    public static final long POLARITY_MASK_LONG = 1L << 63;
-
-    /**
-     * A constant holding maximum unsigned value used by saturating unsigned operations.
-     */
-    public static final long UNSIGNED_MAX = 0xFFFFFFFFFFFFFFFFL;
-
-    /**
      * The {@code Class} instance representing the primitive type
      * {@code long}.
      *

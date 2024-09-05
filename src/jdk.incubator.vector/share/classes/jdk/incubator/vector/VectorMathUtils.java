@@ -121,7 +121,7 @@ public class VectorMathUtils {
         long res = a + b;
         boolean overflow = Long.compareUnsigned(res, (a | b)) < 0;
         if (overflow) {
-           return Long.UNSIGNED_MAX;
+           return -1L;
         } else {
            return res;
         }
