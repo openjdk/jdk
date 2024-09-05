@@ -233,20 +233,22 @@ public final class RawBytecodeHelper {
      * we have a valid opcode.
      */
     public boolean next() {
-        if (nextBci >= endBci()) {
+        var bci = nextBci;
+        var end = endBci();
+        if (bci >= end) {
             return false;
         }
 
-        bci = nextBci;
         int code = getU1Unchecked(bci);
-        int len = LENGTHS[code];
+        int len = LENGTHS[code & 0xFF]; // & 0xFF eliminates bound check
+        this.bci = bci;
         opcode = code;
         isWide = false;
         if (len <= 0) {
-            len = checkSpecialInstruction(code);
+            len = checkSpecialInstruction(bci, end, code); // sets opcode
         }
 
-        if (len <= 0 || (nextBci += len) > endBci()) {
+        if (len <= 0 || (nextBci += len) > end) {
             opcode = ILLEGAL;
         }
 
@@ -254,9 +256,9 @@ public final class RawBytecodeHelper {
     }
 
     // Put rarely used code in another method to reduce code size
-    private int checkSpecialInstruction(int code) {
+    private int checkSpecialInstruction(int bci, int end, int code) {
         if (code == WIDE) {
-            if (bci + 1 >= endBci()) {
+            if (bci + 1 >= end) {
                 return -1;
             }
             opcode = code = getIndexU1();
@@ -266,7 +268,7 @@ public final class RawBytecodeHelper {
         }
         if (code == TABLESWITCH) {
             int alignedBci = align(bci + 1);
-            if (alignedBci + 3 * 4 >= endBci()) {
+            if (alignedBci + 3 * 4 >= end) {
                 return -1;
             }
             int lo = getIntUnchecked(alignedBci + 1 * 4);
@@ -276,7 +278,7 @@ public final class RawBytecodeHelper {
         }
         if (code == LOOKUPSWITCH) {
             int alignedBci = align(bci + 1);
-            if (alignedBci + 2 * 4 >= endBci()) {
+            if (alignedBci + 2 * 4 >= end) {
                 return -1;
             }
             int npairs = getIntUnchecked(alignedBci + 4);
