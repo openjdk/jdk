@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,8 @@
 #include "java_nio_MappedMemoryUtils.h"
 #include <stdlib.h>
 
-JNIEXPORT jboolean JNICALL
-MMU_isLoaded0(JNIEnv *env, jobject obj, jlong address,
-                                         jlong len, jlong numPages)
+jboolean JNICALL MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong address,
+                                             jlong len, jlong numPages)
 {
     jboolean loaded = JNI_FALSE;
     /* Information not available?
@@ -43,22 +42,19 @@ MMU_isLoaded0(JNIEnv *env, jobject obj, jlong address,
     return loaded;
 }
 
-JNIEXPORT void JNICALL
-MMU_load0(JNIEnv *env, jobject obj, jlong address,
+void JNICALL MappedMemoryUtils_load0(JNIEnv *env, jobject obj, jlong address,
                                      jlong len)
 {
     // no madvise available
 }
 
-JNIEXPORT void JNICALL
-MMU_unload0(JNIEnv *env, jobject obj, jlong address,
-                                     jlong len)
+void JNICALL MappedMemoryUtils_unload0(JNIEnv *env, jobject obj, jlong address,
+                                       jlong len)
 {
     // no madvise available
 }
 
-JNIEXPORT void JNICALL
-MMU_force0(JNIEnv *env, jobject obj, jobject fdo,
+void JNICALL MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
                                       jlong address, jlong len)
 {
     void *a = (void *) jlong_to_ptr(address);
@@ -110,10 +106,10 @@ MMU_force0(JNIEnv *env, jobject obj, jobject fdo,
 #define FD "Ljava/io/FileDescriptor;"
 
 static JNINativeMethod methods[] = {
-    {"isLoaded0", "(JJJ)Z",             (void *)&MMU_isLoaded0},
-    {"load0",     "(JJ)V",              (void *)&MMU_load0},
-    {"unload0",   "(JJ)V",              (void *)&MMU_unload0},
-    {"force0",    "(" FD "JJ)V",        (void *)&MMU_force0},
+    {"isLoaded0", "(JJJ)Z",             (void *)&MappedMemoryUtils_isLoaded0},
+    {"load0",     "(JJ)V",              (void *)&MappedMemoryUtils_load0},
+    {"unload0",   "(JJ)V",              (void *)&MappedMemoryUtils_unload0},
+    {"force0",    "(" FD "JJ)V",        (void *)&MappedMemoryUtils_force0},
 };
 
 JNIEXPORT void JNICALL
