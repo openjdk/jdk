@@ -122,6 +122,6 @@ EXPORT bool linuxIsCreationTimeSupported(char* file) {
         return true;
     return false;
 #else
-    return JNI_FALSE;
+    return false;
 #endif
 }
