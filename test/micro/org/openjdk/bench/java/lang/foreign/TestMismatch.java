@@ -88,7 +88,7 @@ public class TestMismatch {
     @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=31"})
     @Benchmark
     public long heapSegmentJava() {
-        return srcNative.mismatch(dstNative);
+        return srcHeap.mismatch(dstHeap);
     }
 
     @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=0"})
@@ -100,7 +100,7 @@ public class TestMismatch {
     @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=0"})
     @Benchmark
     public long heapSegmentUnsafe() {
-        return srcNative.mismatch(dstNative);
+        return srcHeap.mismatch(dstHeap);
     }
 
     @Benchmark
