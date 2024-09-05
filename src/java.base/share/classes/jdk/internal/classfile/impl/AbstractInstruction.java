@@ -425,7 +425,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public boolean isInterface() {
-            return method().tag() == PoolEntry.TAG_INTERFACEMETHODREF;
+            return method().tag() == PoolEntry.TAG_INTERFACE_METHODREF;
         }
 
         @Override

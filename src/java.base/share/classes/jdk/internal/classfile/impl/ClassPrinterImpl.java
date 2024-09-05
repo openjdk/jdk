@@ -603,12 +603,12 @@ public final class ClassPrinterImpl {
                             case TAG_STRING -> "String";
                             case TAG_FIELDREF -> "Fieldref";
                             case TAG_METHODREF -> "Methodref";
-                            case TAG_INTERFACEMETHODREF -> "InterfaceMethodref";
-                            case TAG_NAMEANDTYPE -> "NameAndType";
-                            case TAG_METHODHANDLE -> "MethodHandle";
-                            case TAG_METHODTYPE -> "MethodType";
-                            case TAG_CONSTANTDYNAMIC -> "Dynamic";
-                            case TAG_INVOKEDYNAMIC -> "InvokeDynamic";
+                            case TAG_INTERFACE_METHODREF -> "InterfaceMethodref";
+                            case TAG_NAME_AND_TYPE -> "NameAndType";
+                            case TAG_METHOD_HANDLE -> "MethodHandle";
+                            case TAG_METHOD_TYPE -> "MethodType";
+                            case TAG_DYNAMIC -> "Dynamic";
+                            case TAG_INVOKE_DYNAMIC -> "InvokeDynamic";
                             case TAG_MODULE -> "Module";
                             case TAG_PACKAGE -> "Package";
                             default -> throw new AssertionError("Unknown CP tag: " + e.tag());

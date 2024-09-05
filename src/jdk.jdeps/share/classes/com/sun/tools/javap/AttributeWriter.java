@@ -145,23 +145,23 @@ public class AttributeWriter extends BasicWriter {
                             (e.characterRangeStart() & 0x3ff),
                             (e.characterRangeEnd() >> 10),
                             (e.characterRangeEnd() & 0x3ff)));
-                    if ((e.flags() & CRT_STATEMENT) != 0)
+                    if ((e.flags() & FLAG_STATEMENT) != 0)
                         print(", statement");
-                    if ((e.flags() & CRT_BLOCK) != 0)
+                    if ((e.flags() & FLAG_BLOCK) != 0)
                         print(", block");
-                    if ((e.flags() & CRT_ASSIGNMENT) != 0)
+                    if ((e.flags() & FLAG_ASSIGNMENT) != 0)
                         print(", assignment");
-                    if ((e.flags() & CRT_FLOW_CONTROLLER) != 0)
+                    if ((e.flags() & FLAG_FLOW_CONTROLLER) != 0)
                         print(", flow-controller");
-                    if ((e.flags() & CRT_FLOW_TARGET) != 0)
+                    if ((e.flags() & FLAG_FLOW_TARGET) != 0)
                         print(", flow-target");
-                    if ((e.flags() & CRT_INVOKE) != 0)
+                    if ((e.flags() & FLAG_INVOKE) != 0)
                         print(", invoke");
-                    if ((e.flags() & CRT_CREATE) != 0)
+                    if ((e.flags() & FLAG_CREATE) != 0)
                         print(", create");
-                    if ((e.flags() & CRT_BRANCH_TRUE) != 0)
+                    if ((e.flags() & FLAG_BRANCH_TRUE) != 0)
                         print(", branch-true");
-                    if ((e.flags() & CRT_BRANCH_FALSE) != 0)
+                    if ((e.flags() & FLAG_BRANCH_FALSE) != 0)
                         print(", branch-false");
                     println();
                 }

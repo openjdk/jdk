@@ -170,12 +170,12 @@ public class StackMapDecoder {
     private static void writeTypeInfo(BufWriterImpl bw, VerificationTypeInfo vti) {
         bw.writeU1(vti.tag());
         switch (vti.tag()) {
-            case VT_TOP, VT_INTEGER, VT_FLOAT, VT_DOUBLE, VT_LONG, VT_NULL,
-                 VT_UNINITIALIZED_THIS ->
+            case ITEM_TOP, ITEM_INTEGER, ITEM_FLOAT, ITEM_DOUBLE, ITEM_LONG, ITEM_NULL,
+                 ITEM_UNINITIALIZED_THIS ->
                 {}
-            case VT_OBJECT ->
+            case ITEM_OBJECT ->
                 bw.writeIndex(((ObjectVerificationTypeInfo)vti).className());
-            case VT_UNINITIALIZED ->
+            case ITEM_UNINITIALIZED ->
                 bw.writeU2(bw.labelContext().labelToBci(((UninitializedVerificationTypeInfo)vti).newTarget()));
             default -> throw new IllegalArgumentException("Invalid verification type tag: " + vti.tag());
         }
@@ -234,15 +234,15 @@ public class StackMapDecoder {
     private VerificationTypeInfo readVerificationTypeInfo() {
         int tag = classReader.readU1(p++);
         return switch (tag) {
-            case VT_TOP -> SimpleVerificationTypeInfo.TOP;
-            case VT_INTEGER -> SimpleVerificationTypeInfo.INTEGER;
-            case VT_FLOAT -> SimpleVerificationTypeInfo.FLOAT;
-            case VT_DOUBLE -> SimpleVerificationTypeInfo.DOUBLE;
-            case VT_LONG -> SimpleVerificationTypeInfo.LONG;
-            case VT_NULL -> SimpleVerificationTypeInfo.NULL;
-            case VT_UNINITIALIZED_THIS -> SimpleVerificationTypeInfo.UNINITIALIZED_THIS;
-            case VT_OBJECT -> new ObjectVerificationTypeInfoImpl(classReader.entryByIndex(u2(), ClassEntry.class));
-            case VT_UNINITIALIZED -> new UninitializedVerificationTypeInfoImpl(ctx.getLabel(u2()));
+            case ITEM_TOP -> SimpleVerificationTypeInfo.TOP;
+            case ITEM_INTEGER -> SimpleVerificationTypeInfo.INTEGER;
+            case ITEM_FLOAT -> SimpleVerificationTypeInfo.FLOAT;
+            case ITEM_DOUBLE -> SimpleVerificationTypeInfo.DOUBLE;
+            case ITEM_LONG -> SimpleVerificationTypeInfo.LONG;
+            case ITEM_NULL -> SimpleVerificationTypeInfo.NULL;
+            case ITEM_UNINITIALIZED_THIS -> SimpleVerificationTypeInfo.UNINITIALIZED_THIS;
+            case ITEM_OBJECT -> new ObjectVerificationTypeInfoImpl(classReader.entryByIndex(u2(), ClassEntry.class));
+            case ITEM_UNINITIALIZED -> new UninitializedVerificationTypeInfoImpl(ctx.getLabel(u2()));
             default -> throw new IllegalArgumentException("Invalid verification type tag: " + tag);
         };
     }
@@ -251,7 +251,7 @@ public class StackMapDecoder {
             ClassEntry className) implements ObjectVerificationTypeInfo {
 
         @Override
-        public int tag() { return VT_OBJECT; }
+        public int tag() { return ITEM_OBJECT; }
 
         @Override
         public boolean equals(Object o) {
@@ -276,7 +276,7 @@ public class StackMapDecoder {
     public static record UninitializedVerificationTypeInfoImpl(Label newTarget) implements UninitializedVerificationTypeInfo {
 
         @Override
-        public int tag() { return VT_UNINITIALIZED; }
+        public int tag() { return ITEM_UNINITIALIZED; }
 
         @Override
         public String toString() {

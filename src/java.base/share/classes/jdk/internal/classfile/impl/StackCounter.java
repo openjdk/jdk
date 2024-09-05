@@ -383,11 +383,11 @@ public final class StackCounter {
 
     private void processLdc(int index) {
         switch (cp.entryByIndex(index).tag()) {
-            case TAG_UTF8, TAG_STRING, TAG_CLASS, TAG_INTEGER, TAG_FLOAT, TAG_METHODHANDLE, TAG_METHODTYPE ->
+            case TAG_UTF8, TAG_STRING, TAG_CLASS, TAG_INTEGER, TAG_FLOAT, TAG_METHOD_HANDLE, TAG_METHOD_TYPE ->
                 addStackSlot(+1);
             case TAG_DOUBLE, TAG_LONG ->
                 addStackSlot(+2);
-            case TAG_CONSTANTDYNAMIC ->
+            case TAG_DYNAMIC ->
                 addStackSlot(cp.entryByIndex(index, ConstantDynamicEntry.class).typeKind().slotSize());
             default ->
                 throw error("CP entry #%d %s is not loadable constant".formatted(index, cp.entryByIndex(index).tag()));

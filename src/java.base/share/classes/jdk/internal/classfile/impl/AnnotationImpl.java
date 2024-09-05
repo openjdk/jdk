@@ -60,7 +60,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
             implements AnnotationValue.OfString {
         @Override
         public char tag() {
-            return AEV_STRING;
+            return TAG_STRING;
         }
 
         @Override
@@ -73,7 +73,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
             implements AnnotationValue.OfDouble {
         @Override
         public char tag() {
-            return AEV_DOUBLE;
+            return TAG_DOUBLE;
         }
 
         @Override
@@ -86,7 +86,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
             implements AnnotationValue.OfFloat {
         @Override
         public char tag() {
-            return AEV_FLOAT;
+            return TAG_FLOAT;
         }
 
         @Override
@@ -99,7 +99,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
             implements AnnotationValue.OfLong {
         @Override
         public char tag() {
-            return AEV_LONG;
+            return TAG_LONG;
         }
 
         @Override
@@ -112,7 +112,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
             implements AnnotationValue.OfInt {
         @Override
         public char tag() {
-            return AEV_INT;
+            return TAG_INT;
         }
 
         @Override
@@ -125,7 +125,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
             implements AnnotationValue.OfShort {
         @Override
         public char tag() {
-            return AEV_SHORT;
+            return TAG_SHORT;
         }
 
         @Override
@@ -138,7 +138,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
             implements AnnotationValue.OfChar {
         @Override
         public char tag() {
-            return AEV_CHAR;
+            return TAG_CHAR;
         }
 
         @Override
@@ -151,7 +151,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
             implements AnnotationValue.OfByte {
         @Override
         public char tag() {
-            return AEV_BYTE;
+            return TAG_BYTE;
         }
 
         @Override
@@ -164,7 +164,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
             implements AnnotationValue.OfBoolean {
         @Override
         public char tag() {
-            return AEV_BOOLEAN;
+            return TAG_BOOLEAN;
         }
 
         @Override
@@ -181,7 +181,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public char tag() {
-            return AEV_ARRAY;
+            return TAG_ARRAY;
         }
     }
 
@@ -189,7 +189,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
             implements AnnotationValue.OfEnum {
         @Override
         public char tag() {
-            return AEV_ENUM;
+            return TAG_ENUM;
         }
     }
 
@@ -197,7 +197,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
             implements AnnotationValue.OfAnnotation {
         @Override
         public char tag() {
-            return AEV_ANNOTATION;
+            return TAG_ANNOTATION;
         }
     }
 
@@ -205,7 +205,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
             implements AnnotationValue.OfClass {
         @Override
         public char tag() {
-            return AEV_CLASS;
+            return TAG_CLASS;
         }
     }
 }

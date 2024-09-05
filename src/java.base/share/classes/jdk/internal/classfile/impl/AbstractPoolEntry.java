@@ -636,7 +636,7 @@ public abstract sealed class AbstractPoolEntry {
         public TypeDescriptor typeSym = null;
 
         NameAndTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name, Utf8EntryImpl type) {
-            super(cpm, TAG_NAMEANDTYPE, index, name, type);
+            super(cpm, TAG_NAME_AND_TYPE, index, name, type);
         }
 
         @Override
@@ -753,7 +753,7 @@ public abstract sealed class AbstractPoolEntry {
 
         InterfaceMethodRefEntryImpl(ConstantPool cpm, int index, ClassEntryImpl owner,
                                         NameAndTypeEntryImpl nameAndType) {
-            super(cpm, TAG_INTERFACEMETHODREF, index, owner, nameAndType);
+            super(cpm, TAG_INTERFACE_METHODREF, index, owner, nameAndType);
         }
 
         @Override
@@ -838,12 +838,12 @@ public abstract sealed class AbstractPoolEntry {
 
         InvokeDynamicEntryImpl(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                    NameAndTypeEntryImpl nameAndType) {
-            super(cpm, TAG_INVOKEDYNAMIC, index, hash, bootstrapMethod, nameAndType);
+            super(cpm, TAG_INVOKE_DYNAMIC, index, hash, bootstrapMethod, nameAndType);
         }
 
         InvokeDynamicEntryImpl(ConstantPool cpm, int index, int bsmIndex,
                                    NameAndTypeEntryImpl nameAndType) {
-            super(cpm, TAG_INVOKEDYNAMIC, index, hash2(TAG_INVOKEDYNAMIC, bsmIndex, nameAndType.index()),
+            super(cpm, TAG_INVOKE_DYNAMIC, index, hash2(TAG_INVOKE_DYNAMIC, bsmIndex, nameAndType.index()),
                   bsmIndex, nameAndType);
         }
 
@@ -858,12 +858,12 @@ public abstract sealed class AbstractPoolEntry {
 
         ConstantDynamicEntryImpl(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                      NameAndTypeEntryImpl nameAndType) {
-            super(cpm, TAG_CONSTANTDYNAMIC, index, hash, bootstrapMethod, nameAndType);
+            super(cpm, TAG_DYNAMIC, index, hash, bootstrapMethod, nameAndType);
         }
 
         ConstantDynamicEntryImpl(ConstantPool cpm, int index, int bsmIndex,
                                      NameAndTypeEntryImpl nameAndType) {
-            super(cpm, TAG_CONSTANTDYNAMIC, index, hash2(TAG_CONSTANTDYNAMIC, bsmIndex, nameAndType.index()),
+            super(cpm, TAG_DYNAMIC, index, hash2(TAG_DYNAMIC, bsmIndex, nameAndType.index()),
                   bsmIndex, nameAndType);
         }
 
@@ -881,14 +881,14 @@ public abstract sealed class AbstractPoolEntry {
 
         MethodHandleEntryImpl(ConstantPool cpm, int index, int hash, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
                 reference) {
-            super(cpm, TAG_METHODHANDLE, index, hash);
+            super(cpm, TAG_METHOD_HANDLE, index, hash);
             this.refKind = refKind;
             this.reference = reference;
         }
 
         MethodHandleEntryImpl(ConstantPool cpm, int index, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
                 reference) {
-            super(cpm, TAG_METHODHANDLE, index, hash2(TAG_METHODHANDLE, refKind, reference.index()));
+            super(cpm, TAG_METHOD_HANDLE, index, hash2(TAG_METHOD_HANDLE, refKind, reference.index()));
             this.refKind = refKind;
             this.reference = reference;
         }
@@ -948,7 +948,7 @@ public abstract sealed class AbstractPoolEntry {
         public MethodTypeDesc sym = null;
 
         MethodTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl descriptor) {
-            super(cpm, TAG_METHODTYPE, index, descriptor);
+            super(cpm, TAG_METHOD_TYPE, index, descriptor);
         }
 
         @Override

@@ -1085,13 +1085,17 @@ public enum Opcode {
 
     /**
      * {@return the opcode value} For {@linkplain #isWide() wide} pseudo-opcodes, returns the
-     * first 2 bytes of the instruction, which are the {@code wide} opcode and the functional
-     * local variable opcode, as a U2 value.
+     * first 2 bytes of the instruction, which are the {@link OpcodeValues#WIDE wide} opcode
+     * and the functional opcode, as a U2 value.
+     *
+     * @apiNote
+     * Constants in {@link OpcodeValues}, such as {@link OpcodeValues#NOP}, describe the
+     * non-wide opcode values returned by this method.
      */
     public int bytecode() { return bytecode; }
 
     /**
-     * {@return true if this is a pseudo-opcode modified by {@code wide}}
+     * {@return true if this is a pseudo-opcode modified by {@link OpcodeValues#WIDE wide}}
      *
      * @see #ILOAD_W
      * @see #LLOAD_W
@@ -1122,616 +1126,1223 @@ public enum Opcode {
     /**
      * Holds the constant values of the Opcodes.
      *
+     * @see Opcode#bytecode() Opcode::bytecode
      * @since 24
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     public static final class OpcodeValues {
 
-        /** The integer value used to encode the {@link Opcode#NOP nop} instruction. */
-        public static final int NOP             = 0;
-
-        /** The integer value used to encode the {@link Opcode#ACONST_NULL aconst_null} instruction. */
-        public static final int ACONST_NULL     = 1;
-
-        /** The integer value used to encode the {@link Opcode#ICONST_M1 iconst_m1} instruction. */
-        public static final int ICONST_M1       = 2;
-
-        /** The integer value used to encode the {@link Opcode#ICONST_0 iconst_0} instruction. */
-        public static final int ICONST_0        = 3;
-
-        /** The integer value used to encode the {@link Opcode#ICONST_1 iconst_1} instruction. */
-        public static final int ICONST_1        = 4;
-
-        /** The integer value used to encode the {@link Opcode#ICONST_2 iconst_2} instruction. */
-        public static final int ICONST_2        = 5;
-
-        /** The integer value used to encode the {@link Opcode#ICONST_3 iconst_3} instruction. */
-        public static final int ICONST_3        = 6;
-
-        /** The integer value used to encode the {@link Opcode#ICONST_4 iconst_4} instruction. */
-        public static final int ICONST_4        = 7;
-
-        /** The integer value used to encode the {@link Opcode#ICONST_5 iconst_5} instruction. */
-        public static final int ICONST_5        = 8;
-
-        /** The integer value used to encode the {@link Opcode#LCONST_0 lconst_0} instruction. */
-        public static final int LCONST_0        = 9;
-
-        /** The integer value used to encode the {@link Opcode#LCONST_1 lconst_1} instruction. */
-        public static final int LCONST_1        = 10;
-
-        /** The integer value used to encode the {@link Opcode#FCONST_0 fconst_0} instruction. */
-        public static final int FCONST_0        = 11;
-
-        /** The integer value used to encode the {@link Opcode#FCONST_1 fconst_1} instruction. */
-        public static final int FCONST_1        = 12;
-
-        /** The integer value used to encode the {@link Opcode#FCONST_2 fconst_2} instruction. */
-        public static final int FCONST_2        = 13;
-
-        /** The integer value used to encode the {@link Opcode#DCONST_0 dconst_0} instruction. */
-        public static final int DCONST_0        = 14;
-
-        /** The integer value used to encode the {@link Opcode#DCONST_1 dconst_1} instruction. */
-        public static final int DCONST_1        = 15;
-
-        /** The integer value used to encode the {@link Opcode#BIPUSH bipush} instruction. */
-        public static final int BIPUSH          = 16;
-
-        /** The integer value used to encode the {@link Opcode#SIPUSH sipush} instruction. */
-        public static final int SIPUSH          = 17;
-
-        /** The integer value used to encode the {@link Opcode#LDC ldc} instruction. */
-        public static final int LDC             = 18;
-
-        /** The integer value used to encode the {@link Opcode#LDC_W ldc_w} instruction. */
-        public static final int LDC_W           = 19;
-
-        /** The integer value used to encode the {@link Opcode#LDC2_W ldc2_w} instruction. */
-        public static final int LDC2_W          = 20;
-
-        /** The integer value used to encode the {@link Opcode#ILOAD iload} instruction. */
-        public static final int ILOAD           = 21;
-
-        /** The integer value used to encode the {@link Opcode#LLOAD lload} instruction. */
-        public static final int LLOAD           = 22;
-
-        /** The integer value used to encode the {@link Opcode#FLOAD fload} instruction. */
-        public static final int FLOAD           = 23;
-
-        /** The integer value used to encode the {@link Opcode#DLOAD dload} instruction. */
-        public static final int DLOAD           = 24;
-
-        /** The integer value used to encode the {@link Opcode#ALOAD aload} instruction. */
-        public static final int ALOAD           = 25;
-
-        /** The integer value used to encode the {@link Opcode#ILOAD_0 iload_0} instruction. */
-        public static final int ILOAD_0         = 26;
-
-        /** The integer value used to encode the {@link Opcode#ILOAD_1 iload_1} instruction. */
-        public static final int ILOAD_1         = 27;
-
-        /** The integer value used to encode the {@link Opcode#ILOAD_2 iload_2} instruction. */
-        public static final int ILOAD_2         = 28;
-
-        /** The integer value used to encode the {@link Opcode#ILOAD_3 iload_3} instruction. */
-        public static final int ILOAD_3         = 29;
-
-        /** The integer value used to encode the {@link Opcode#LLOAD_0 lload_0} instruction. */
-        public static final int LLOAD_0         = 30;
-
-        /** The integer value used to encode the {@link Opcode#LLOAD_1 lload_1} instruction. */
-        public static final int LLOAD_1         = 31;
-
-        /** The integer value used to encode the {@link Opcode#LLOAD_2 lload_2} instruction. */
-        public static final int LLOAD_2         = 32;
-
-        /** The integer value used to encode the {@link Opcode#LLOAD_3 lload_3} instruction. */
-        public static final int LLOAD_3         = 33;
-
-        /** The integer value used to encode the {@link Opcode#FLOAD_0 fload_0} instruction. */
-        public static final int FLOAD_0         = 34;
-
-        /** The integer value used to encode the {@link Opcode#FLOAD_1 fload_1} instruction. */
-        public static final int FLOAD_1         = 35;
-
-        /** The integer value used to encode the {@link Opcode#FLOAD_2 fload_2} instruction. */
-        public static final int FLOAD_2         = 36;
-
-        /** The integer value used to encode the {@link Opcode#FLOAD_3 fload_3} instruction. */
-        public static final int FLOAD_3         = 37;
-
-        /** The integer value used to encode the {@link Opcode#DLOAD_0 dload_0} instruction. */
-        public static final int DLOAD_0         = 38;
-
-        /** The integer value used to encode the {@link Opcode#DLOAD_1 dload_1} instruction. */
-        public static final int DLOAD_1         = 39;
-
-        /** The integer value used to encode the {@link Opcode#DLOAD_2 dload_2} instruction. */
-        public static final int DLOAD_2         = 40;
-
-        /** The integer value used to encode the {@link Opcode#DLOAD_3 dload_3} instruction. */
-        public static final int DLOAD_3         = 41;
-
-        /** The integer value used to encode the {@link Opcode#ALOAD_0 aload_0} instruction. */
-        public static final int ALOAD_0         = 42;
-
-        /** The integer value used to encode the {@link Opcode#ALOAD_1 aload_1} instruction. */
-        public static final int ALOAD_1         = 43;
-
-        /** The integer value used to encode the {@link Opcode#ALOAD_2 aload_2} instruction. */
-        public static final int ALOAD_2         = 44;
-
-        /** The integer value used to encode the {@link Opcode#ALOAD_3 aload_3} instruction. */
-        public static final int ALOAD_3         = 45;
-
-        /** The integer value used to encode the {@link Opcode#IALOAD iaload} instruction. */
-        public static final int IALOAD          = 46;
-
-        /** The integer value used to encode the {@link Opcode#LALOAD laload} instruction. */
-        public static final int LALOAD          = 47;
-
-        /** The integer value used to encode the {@link Opcode#FALOAD faload} instruction. */
-        public static final int FALOAD          = 48;
-
-        /** The integer value used to encode the {@link Opcode#DALOAD daload} instruction. */
-        public static final int DALOAD          = 49;
-
-        /** The integer value used to encode the {@link Opcode#AALOAD aaload} instruction. */
-        public static final int AALOAD          = 50;
-
-        /** The integer value used to encode the {@link Opcode#BALOAD baload} instruction. */
-        public static final int BALOAD          = 51;
-
-        /** The integer value used to encode the {@link Opcode#CALOAD caload} instruction. */
-        public static final int CALOAD          = 52;
-
-        /** The integer value used to encode the {@link Opcode#SALOAD saload} instruction. */
-        public static final int SALOAD          = 53;
-
-        /** The integer value used to encode the {@link Opcode#ISTORE istore} instruction. */
-        public static final int ISTORE          = 54;
-
-        /** The integer value used to encode the {@link Opcode#LSTORE lstore} instruction. */
-        public static final int LSTORE          = 55;
-
-        /** The integer value used to encode the {@link Opcode#FSTORE fstore} instruction. */
-        public static final int FSTORE          = 56;
-
-        /** The integer value used to encode the {@link Opcode#DSTORE dstore} instruction. */
-        public static final int DSTORE          = 57;
-
-        /** The integer value used to encode the {@link Opcode#ASTORE astore} instruction. */
-        public static final int ASTORE          = 58;
-
-        /** The integer value used to encode the {@link Opcode#ISTORE_0 istore_0} instruction. */
-        public static final int ISTORE_0        = 59;
-
-        /** The integer value used to encode the {@link Opcode#ISTORE_1 istore_1} instruction. */
-        public static final int ISTORE_1        = 60;
-
-        /** The integer value used to encode the {@link Opcode#ISTORE_2 istore_2} instruction. */
-        public static final int ISTORE_2        = 61;
-
-        /** The integer value used to encode the {@link Opcode#ISTORE_3 istore_3} instruction. */
-        public static final int ISTORE_3        = 62;
-
-        /** The integer value used to encode the {@link Opcode#LSTORE_0 lstore_0} instruction. */
-        public static final int LSTORE_0        = 63;
-
-        /** The integer value used to encode the {@link Opcode#LSTORE_1 lstore_1} instruction. */
-        public static final int LSTORE_1        = 64;
-
-        /** The integer value used to encode the {@link Opcode#LSTORE_2 lstore_2} instruction. */
-        public static final int LSTORE_2        = 65;
-
-        /** The integer value used to encode the {@link Opcode#LSTORE_3 lstore_3} instruction. */
-        public static final int LSTORE_3        = 66;
-
-        /** The integer value used to encode the {@link Opcode#FSTORE_0 fstore_0} instruction. */
-        public static final int FSTORE_0        = 67;
-
-        /** The integer value used to encode the {@link Opcode#FSTORE_1 fstore_1} instruction. */
-        public static final int FSTORE_1        = 68;
-
-        /** The integer value used to encode the {@link Opcode#FSTORE_2 fstore_2} instruction. */
-        public static final int FSTORE_2        = 69;
-
-        /** The integer value used to encode the {@link Opcode#FSTORE_3 fstore_3} instruction. */
-        public static final int FSTORE_3        = 70;
-
-        /** The integer value used to encode the {@link Opcode#DSTORE_0 dstore_0} instruction. */
-        public static final int DSTORE_0        = 71;
-
-        /** The integer value used to encode the {@link Opcode#DSTORE_1 dstore_1} instruction. */
-        public static final int DSTORE_1        = 72;
-
-        /** The integer value used to encode the {@link Opcode#DSTORE_2 dstore_2} instruction. */
-        public static final int DSTORE_2        = 73;
-
-        /** The integer value used to encode the {@link Opcode#DSTORE_3 dstore_3} instruction. */
-        public static final int DSTORE_3        = 74;
-
-        /** The integer value used to encode the {@link Opcode#ASTORE_0 astore_0} instruction. */
-        public static final int ASTORE_0        = 75;
-
-        /** The integer value used to encode the {@link Opcode#ASTORE_1 astore_1} instruction. */
-        public static final int ASTORE_1        = 76;
-
-        /** The integer value used to encode the {@link Opcode#ASTORE_2 astore_2} instruction. */
-        public static final int ASTORE_2        = 77;
-
-        /** The integer value used to encode the {@link Opcode#ASTORE_3 astore_3} instruction. */
-        public static final int ASTORE_3        = 78;
-
-        /** The integer value used to encode the {@link Opcode#IASTORE iastore} instruction. */
-        public static final int IASTORE         = 79;
-
-        /** The integer value used to encode the {@link Opcode#LASTORE lastore} instruction. */
-        public static final int LASTORE         = 80;
-
-        /** The integer value used to encode the {@link Opcode#FASTORE fastore} instruction. */
-        public static final int FASTORE         = 81;
-
-        /** The integer value used to encode the {@link Opcode#DASTORE dastore} instruction. */
-        public static final int DASTORE         = 82;
-
-        /** The integer value used to encode the {@link Opcode#AASTORE aastore} instruction. */
-        public static final int AASTORE         = 83;
-
-        /** The integer value used to encode the {@link Opcode#BASTORE bastore} instruction. */
-        public static final int BASTORE         = 84;
-
-        /** The integer value used to encode the {@link Opcode#CASTORE castore} instruction. */
-        public static final int CASTORE         = 85;
-
-        /** The integer value used to encode the {@link Opcode#SASTORE sastore} instruction. */
-        public static final int SASTORE         = 86;
-
-        /** The integer value used to encode the {@link Opcode#POP pop} instruction. */
-        public static final int POP             = 87;
-
-        /** The integer value used to encode the {@link Opcode#POP2 pop2} instruction. */
-        public static final int POP2            = 88;
-
-        /** The integer value used to encode the {@link Opcode#DUP dup} instruction. */
-        public static final int DUP             = 89;
-
-        /** The integer value used to encode the {@link Opcode#DUP_X1 dup_x1} instruction. */
-        public static final int DUP_X1          = 90;
-
-        /** The integer value used to encode the {@link Opcode#DUP_X2 dup_x2} instruction. */
-        public static final int DUP_X2          = 91;
-
-        /** The integer value used to encode the {@link Opcode#DUP2 dup2} instruction. */
-        public static final int DUP2            = 92;
-
-        /** The integer value used to encode the {@link Opcode#DUP2_X1 dup2_x1} instruction. */
-        public static final int DUP2_X1         = 93;
-
-        /** The integer value used to encode the {@link Opcode#DUP2_X2 dup2_x2} instruction. */
-        public static final int DUP2_X2         = 94;
-
-        /** The integer value used to encode the {@link Opcode#SWAP swap} instruction. */
-        public static final int SWAP            = 95;
-
-        /** The integer value used to encode the {@link Opcode#IADD iadd} instruction. */
-        public static final int IADD            = 96;
-
-        /** The integer value used to encode the {@link Opcode#LADD ladd} instruction. */
-        public static final int LADD            = 97;
-
-        /** The integer value used to encode the {@link Opcode#FADD fadd} instruction. */
-        public static final int FADD            = 98;
-
-        /** The integer value used to encode the {@link Opcode#DADD dadd} instruction. */
-        public static final int DADD            = 99;
-
-        /** The integer value used to encode the {@link Opcode#ISUB isub} instruction. */
-        public static final int ISUB            = 100;
-
-        /** The integer value used to encode the {@link Opcode#LSUB lsub} instruction. */
-        public static final int LSUB            = 101;
-
-        /** The integer value used to encode the {@link Opcode#FSUB fsub} instruction. */
-        public static final int FSUB            = 102;
-
-        /** The integer value used to encode the {@link Opcode#DSUB dsub} instruction. */
-        public static final int DSUB            = 103;
-
-        /** The integer value used to encode the {@link Opcode#IMUL imul} instruction. */
-        public static final int IMUL            = 104;
-
-        /** The integer value used to encode the {@link Opcode#LMUL lmul} instruction. */
-        public static final int LMUL            = 105;
-
-        /** The integer value used to encode the {@link Opcode#FMUL fmul} instruction. */
-        public static final int FMUL            = 106;
-
-        /** The integer value used to encode the {@link Opcode#DMUL dmul} instruction. */
-        public static final int DMUL            = 107;
-
-        /** The integer value used to encode the {@link Opcode#IDIV idiv} instruction. */
-        public static final int IDIV            = 108;
-
-        /** The integer value used to encode the {@link Opcode#LDIV ldiv} instruction. */
-        public static final int LDIV            = 109;
-
-        /** The integer value used to encode the {@link Opcode#FDIV fdiv} instruction. */
-        public static final int FDIV            = 110;
-
-        /** The integer value used to encode the {@link Opcode#DDIV ddiv} instruction. */
-        public static final int DDIV            = 111;
-
-        /** The integer value used to encode the {@link Opcode#IREM irem} instruction. */
-        public static final int IREM            = 112;
-
-        /** The integer value used to encode the {@link Opcode#LREM lrem} instruction. */
-        public static final int LREM            = 113;
-
-        /** The integer value used to encode the {@link Opcode#FREM frem} instruction. */
-        public static final int FREM            = 114;
-
-        /** The integer value used to encode the {@link Opcode#DREM drem} instruction. */
-        public static final int DREM            = 115;
-
-        /** The integer value used to encode the {@link Opcode#INEG ineg} instruction. */
-        public static final int INEG            = 116;
-
-        /** The integer value used to encode the {@link Opcode#LNEG lneg} instruction. */
-        public static final int LNEG            = 117;
-
-        /** The integer value used to encode the {@link Opcode#FNEG fneg} instruction. */
-        public static final int FNEG            = 118;
-
-        /** The integer value used to encode the {@link Opcode#DNEG dneg} instruction. */
-        public static final int DNEG            = 119;
-
-        /** The integer value used to encode the {@link Opcode#ISHL ishl} instruction. */
-        public static final int ISHL            = 120;
-
-        /** The integer value used to encode the {@link Opcode#LSHL lshl} instruction. */
-        public static final int LSHL            = 121;
-
-        /** The integer value used to encode the {@link Opcode#ISHR ishr} instruction. */
-        public static final int ISHR            = 122;
-
-        /** The integer value used to encode the {@link Opcode#LSHR lshr} instruction. */
-        public static final int LSHR            = 123;
-
-        /** The integer value used to encode the {@link Opcode#IUSHR iushr} instruction. */
-        public static final int IUSHR           = 124;
-
-        /** The integer value used to encode the {@link Opcode#LUSHR lushr} instruction. */
-        public static final int LUSHR           = 125;
-
-        /** The integer value used to encode the {@link Opcode#IAND iand} instruction. */
-        public static final int IAND            = 126;
-
-        /** The integer value used to encode the {@link Opcode#LAND land} instruction. */
-        public static final int LAND            = 127;
-
-        /** The integer value used to encode the {@link Opcode#IOR ior} instruction. */
-        public static final int IOR             = 128;
-
-        /** The integer value used to encode the {@link Opcode#LOR lor} instruction. */
-        public static final int LOR             = 129;
-
-        /** The integer value used to encode the {@link Opcode#IXOR ixor} instruction. */
-        public static final int IXOR            = 130;
-
-        /** The integer value used to encode the {@link Opcode#LXOR lxor} instruction. */
-        public static final int LXOR            = 131;
-
-        /** The integer value used to encode the {@link Opcode#IINC iinc} instruction. */
-        public static final int IINC            = 132;
-
-        /** The integer value used to encode the {@link Opcode#I2L i2l} instruction. */
-        public static final int I2L             = 133;
-
-        /** The integer value used to encode the {@link Opcode#I2F i2f} instruction. */
-        public static final int I2F             = 134;
-
-        /** The integer value used to encode the {@link Opcode#I2D i2d} instruction. */
-        public static final int I2D             = 135;
-
-        /** The integer value used to encode the {@link Opcode#L2I l2i} instruction. */
-        public static final int L2I             = 136;
-
-        /** The integer value used to encode the {@link Opcode#L2F l2f} instruction. */
-        public static final int L2F             = 137;
-
-        /** The integer value used to encode the {@link Opcode#L2D l2d} instruction. */
-        public static final int L2D             = 138;
-
-        /** The integer value used to encode the {@link Opcode#F2I f2i} instruction. */
-        public static final int F2I             = 139;
-
-        /** The integer value used to encode the {@link Opcode#F2L f2l} instruction. */
-        public static final int F2L             = 140;
-
-        /** The integer value used to encode the {@link Opcode#F2D f2d} instruction. */
-        public static final int F2D             = 141;
-
-        /** The integer value used to encode the {@link Opcode#D2I d2i} instruction. */
-        public static final int D2I             = 142;
-
-        /** The integer value used to encode the {@link Opcode#D2L d2l} instruction. */
-        public static final int D2L             = 143;
-
-        /** The integer value used to encode the {@link Opcode#D2F d2f} instruction. */
-        public static final int D2F             = 144;
-
-        /** The integer value used to encode the {@link Opcode#I2B i2b} instruction. */
-        public static final int I2B             = 145;
-
-        /** The integer value used to encode the {@link Opcode#I2C i2c} instruction. */
-        public static final int I2C             = 146;
-
-        /** The integer value used to encode the {@link Opcode#I2S i2s} instruction. */
-        public static final int I2S             = 147;
-
-        /** The integer value used to encode the {@link Opcode#LCMP lcmp} instruction. */
-        public static final int LCMP            = 148;
-
-        /** The integer value used to encode the {@link Opcode#FCMPL fcmpl} instruction. */
-        public static final int FCMPL           = 149;
-
-        /** The integer value used to encode the {@link Opcode#FCMPG fcmpg} instruction. */
-        public static final int FCMPG           = 150;
-
-        /** The integer value used to encode the {@link Opcode#DCMPL dcmpl} instruction. */
-        public static final int DCMPL           = 151;
-
-        /** The integer value used to encode the {@link Opcode#DCMPG dcmpg} instruction. */
-        public static final int DCMPG           = 152;
-
-        /** The integer value used to encode the {@link Opcode#IFEQ ifeq} instruction. */
-        public static final int IFEQ            = 153;
-
-        /** The integer value used to encode the {@link Opcode#IFNE ifne} instruction. */
-        public static final int IFNE            = 154;
-
-        /** The integer value used to encode the {@link Opcode#IFLT iflt} instruction. */
-        public static final int IFLT            = 155;
-
-        /** The integer value used to encode the {@link Opcode#IFGE ifge} instruction. */
-        public static final int IFGE            = 156;
-
-        /** The integer value used to encode the {@link Opcode#IFGT ifgt} instruction. */
-        public static final int IFGT            = 157;
-
-        /** The integer value used to encode the {@link Opcode#IFLE ifle} instruction. */
-        public static final int IFLE            = 158;
-
-        /** The integer value used to encode the {@link Opcode#IF_ICMPEQ if_icmpeq} instruction. */
-        public static final int IF_ICMPEQ       = 159;
-
-        /** The integer value used to encode the {@link Opcode#IF_ICMPNE if_icmpne} instruction. */
-        public static final int IF_ICMPNE       = 160;
-
-        /** The integer value used to encode the {@link Opcode#IF_ICMPLT if_icmplt} instruction. */
-        public static final int IF_ICMPLT       = 161;
-
-        /** The integer value used to encode the {@link Opcode#IF_ICMPGE if_icmpge} instruction. */
-        public static final int IF_ICMPGE       = 162;
-
-        /** The integer value used to encode the {@link Opcode#IF_ICMPGT if_icmpgt} instruction. */
-        public static final int IF_ICMPGT       = 163;
-
-        /** The integer value used to encode the {@link Opcode#IF_ICMPLE if_icmple} instruction. */
-        public static final int IF_ICMPLE       = 164;
-
-        /** The integer value used to encode the {@link Opcode#IF_ACMPEQ if_acmpeq} instruction. */
-        public static final int IF_ACMPEQ       = 165;
-
-        /** The integer value used to encode the {@link Opcode#IF_ACMPNE if_acmpne} instruction. */
-        public static final int IF_ACMPNE       = 166;
-
-        /** The integer value used to encode the {@link Opcode#GOTO goto} instruction. */
-        public static final int GOTO            = 167;
-
-        /** The integer value used to encode the {@link Opcode#JSR jsr} instruction. */
-        public static final int JSR             = 168;
-
-        /** The integer value used to encode the {@link Opcode#RET ret} instruction. */
-        public static final int RET             = 169;
-
-        /** The integer value used to encode the {@link Opcode#TABLESWITCH tableswitch} instruction. */
-        public static final int TABLESWITCH     = 170;
-
-        /** The integer value used to encode the {@link Opcode#LOOKUPSWITCH lookupswitch} instruction. */
-        public static final int LOOKUPSWITCH    = 171;
-
-        /** The integer value used to encode the {@link Opcode#IRETURN ireturn} instruction. */
-        public static final int IRETURN         = 172;
-
-        /** The integer value used to encode the {@link Opcode#LRETURN lreturn} instruction. */
-        public static final int LRETURN         = 173;
-
-        /** The integer value used to encode the {@link Opcode#FRETURN freturn} instruction. */
-        public static final int FRETURN         = 174;
-
-        /** The integer value used to encode the {@link Opcode#DRETURN dreturn} instruction. */
-        public static final int DRETURN         = 175;
-
-        /** The integer value used to encode the {@link Opcode#ARETURN areturn} instruction. */
-        public static final int ARETURN         = 176;
-
-        /** The integer value used to encode the {@link Opcode#RETURN return} instruction. */
-        public static final int RETURN          = 177;
-
-        /** The integer value used to encode the {@link Opcode#GETSTATIC getstatic} instruction. */
-        public static final int GETSTATIC       = 178;
-
-        /** The integer value used to encode the {@link Opcode#PUTSTATIC putstatic} instruction. */
-        public static final int PUTSTATIC       = 179;
-
-        /** The integer value used to encode the {@link Opcode#GETFIELD getfield} instruction. */
-        public static final int GETFIELD        = 180;
-
-        /** The integer value used to encode the {@link Opcode#PUTFIELD putfield} instruction. */
-        public static final int PUTFIELD        = 181;
-
-        /** The integer value used to encode the {@link Opcode#INVOKEVIRTUAL invokevirtual} instruction. */
-        public static final int INVOKEVIRTUAL   = 182;
-
-        /** The integer value used to encode the {@link Opcode#INVOKESPECIAL invokespecial} instruction. */
-        public static final int INVOKESPECIAL   = 183;
-
-        /** The integer value used to encode the {@link Opcode#INVOKESTATIC invokestatic} instruction. */
-        public static final int INVOKESTATIC    = 184;
-
-        /** The integer value used to encode the {@link Opcode#INVOKEINTERFACE invokeinterface} instruction. */
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#NOP nop} instruction.
+         */
+        public static final int NOP = 0;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ACONST_NULL aconst_null} instruction.
+         */
+        public static final int ACONST_NULL = 1;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ICONST_M1 iconst_m1} instruction.
+         */
+        public static final int ICONST_M1 = 2;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ICONST_0 iconst_0} instruction.
+         */
+        public static final int ICONST_0 = 3;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ICONST_1 iconst_1} instruction.
+         */
+        public static final int ICONST_1 = 4;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ICONST_2 iconst_2} instruction.
+         */
+        public static final int ICONST_2 = 5;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ICONST_3 iconst_3} instruction.
+         */
+        public static final int ICONST_3 = 6;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ICONST_4 iconst_4} instruction.
+         */
+        public static final int ICONST_4 = 7;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ICONST_5 iconst_5} instruction.
+         */
+        public static final int ICONST_5 = 8;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LCONST_0 lconst_0} instruction.
+         */
+        public static final int LCONST_0 = 9;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LCONST_1 lconst_1} instruction.
+         */
+        public static final int LCONST_1 = 10;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FCONST_0 fconst_0} instruction.
+         */
+        public static final int FCONST_0 = 11;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FCONST_1 fconst_1} instruction.
+         */
+        public static final int FCONST_1 = 12;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FCONST_2 fconst_2} instruction.
+         */
+        public static final int FCONST_2 = 13;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DCONST_0 dconst_0} instruction.
+         */
+        public static final int DCONST_0 = 14;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DCONST_1 dconst_1} instruction.
+         */
+        public static final int DCONST_1 = 15;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#BIPUSH bipush} instruction.
+         */
+        public static final int BIPUSH = 16;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#SIPUSH sipush} instruction.
+         */
+        public static final int SIPUSH = 17;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LDC ldc} instruction.
+         */
+        public static final int LDC = 18;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LDC_W ldc_w} instruction.
+         */
+        public static final int LDC_W = 19;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LDC2_W ldc2_w} instruction.
+         */
+        public static final int LDC2_W = 20;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ILOAD iload} instruction.
+         */
+        public static final int ILOAD = 21;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LLOAD lload} instruction.
+         */
+        public static final int LLOAD = 22;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FLOAD fload} instruction.
+         */
+        public static final int FLOAD = 23;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DLOAD dload} instruction.
+         */
+        public static final int DLOAD = 24;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ALOAD aload} instruction.
+         */
+        public static final int ALOAD = 25;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ILOAD_0 iload_0} instruction.
+         */
+        public static final int ILOAD_0 = 26;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ILOAD_1 iload_1} instruction.
+         */
+        public static final int ILOAD_1 = 27;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ILOAD_2 iload_2} instruction.
+         */
+        public static final int ILOAD_2 = 28;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ILOAD_3 iload_3} instruction.
+         */
+        public static final int ILOAD_3 = 29;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LLOAD_0 lload_0} instruction.
+         */
+        public static final int LLOAD_0 = 30;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LLOAD_1 lload_1} instruction.
+         */
+        public static final int LLOAD_1 = 31;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LLOAD_2 lload_2} instruction.
+         */
+        public static final int LLOAD_2 = 32;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LLOAD_3 lload_3} instruction.
+         */
+        public static final int LLOAD_3 = 33;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FLOAD_0 fload_0} instruction.
+         */
+        public static final int FLOAD_0 = 34;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FLOAD_1 fload_1} instruction.
+         */
+        public static final int FLOAD_1 = 35;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FLOAD_2 fload_2} instruction.
+         */
+        public static final int FLOAD_2 = 36;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FLOAD_3 fload_3} instruction.
+         */
+        public static final int FLOAD_3 = 37;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DLOAD_0 dload_0} instruction.
+         */
+        public static final int DLOAD_0 = 38;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DLOAD_1 dload_1} instruction.
+         */
+        public static final int DLOAD_1 = 39;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DLOAD_2 dload_2} instruction.
+         */
+        public static final int DLOAD_2 = 40;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DLOAD_3 dload_3} instruction.
+         */
+        public static final int DLOAD_3 = 41;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ALOAD_0 aload_0} instruction.
+         */
+        public static final int ALOAD_0 = 42;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ALOAD_1 aload_1} instruction.
+         */
+        public static final int ALOAD_1 = 43;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ALOAD_2 aload_2} instruction.
+         */
+        public static final int ALOAD_2 = 44;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ALOAD_3 aload_3} instruction.
+         */
+        public static final int ALOAD_3 = 45;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IALOAD iaload} instruction.
+         */
+        public static final int IALOAD = 46;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LALOAD laload} instruction.
+         */
+        public static final int LALOAD = 47;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FALOAD faload} instruction.
+         */
+        public static final int FALOAD = 48;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DALOAD daload} instruction.
+         */
+        public static final int DALOAD = 49;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#AALOAD aaload} instruction.
+         */
+        public static final int AALOAD = 50;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#BALOAD baload} instruction.
+         */
+        public static final int BALOAD = 51;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#CALOAD caload} instruction.
+         */
+        public static final int CALOAD = 52;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#SALOAD saload} instruction.
+         */
+        public static final int SALOAD = 53;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ISTORE istore} instruction.
+         */
+        public static final int ISTORE = 54;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LSTORE lstore} instruction.
+         */
+        public static final int LSTORE = 55;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FSTORE fstore} instruction.
+         */
+        public static final int FSTORE = 56;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DSTORE dstore} instruction.
+         */
+        public static final int DSTORE = 57;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ASTORE astore} instruction.
+         */
+        public static final int ASTORE = 58;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ISTORE_0 istore_0} instruction.
+         */
+        public static final int ISTORE_0 = 59;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ISTORE_1 istore_1} instruction.
+         */
+        public static final int ISTORE_1 = 60;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ISTORE_2 istore_2} instruction.
+         */
+        public static final int ISTORE_2 = 61;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ISTORE_3 istore_3} instruction.
+         */
+        public static final int ISTORE_3 = 62;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LSTORE_0 lstore_0} instruction.
+         */
+        public static final int LSTORE_0 = 63;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LSTORE_1 lstore_1} instruction.
+         */
+        public static final int LSTORE_1 = 64;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LSTORE_2 lstore_2} instruction.
+         */
+        public static final int LSTORE_2 = 65;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LSTORE_3 lstore_3} instruction.
+         */
+        public static final int LSTORE_3 = 66;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FSTORE_0 fstore_0} instruction.
+         */
+        public static final int FSTORE_0 = 67;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FSTORE_1 fstore_1} instruction.
+         */
+        public static final int FSTORE_1 = 68;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FSTORE_2 fstore_2} instruction.
+         */
+        public static final int FSTORE_2 = 69;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FSTORE_3 fstore_3} instruction.
+         */
+        public static final int FSTORE_3 = 70;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DSTORE_0 dstore_0} instruction.
+         */
+        public static final int DSTORE_0 = 71;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DSTORE_1 dstore_1} instruction.
+         */
+        public static final int DSTORE_1 = 72;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DSTORE_2 dstore_2} instruction.
+         */
+        public static final int DSTORE_2 = 73;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DSTORE_3 dstore_3} instruction.
+         */
+        public static final int DSTORE_3 = 74;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ASTORE_0 astore_0} instruction.
+         */
+        public static final int ASTORE_0 = 75;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ASTORE_1 astore_1} instruction.
+         */
+        public static final int ASTORE_1 = 76;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ASTORE_2 astore_2} instruction.
+         */
+        public static final int ASTORE_2 = 77;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ASTORE_3 astore_3} instruction.
+         */
+        public static final int ASTORE_3 = 78;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IASTORE iastore} instruction.
+         */
+        public static final int IASTORE = 79;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LASTORE lastore} instruction.
+         */
+        public static final int LASTORE = 80;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FASTORE fastore} instruction.
+         */
+        public static final int FASTORE = 81;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DASTORE dastore} instruction.
+         */
+        public static final int DASTORE = 82;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#AASTORE aastore} instruction.
+         */
+        public static final int AASTORE = 83;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#BASTORE bastore} instruction.
+         */
+        public static final int BASTORE = 84;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#CASTORE castore} instruction.
+         */
+        public static final int CASTORE = 85;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#SASTORE sastore} instruction.
+         */
+        public static final int SASTORE = 86;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#POP pop} instruction.
+         */
+        public static final int POP = 87;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#POP2 pop2} instruction.
+         */
+        public static final int POP2 = 88;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DUP dup} instruction.
+         */
+        public static final int DUP = 89;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DUP_X1 dup_x1} instruction.
+         */
+        public static final int DUP_X1 = 90;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DUP_X2 dup_x2} instruction.
+         */
+        public static final int DUP_X2 = 91;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DUP2 dup2} instruction.
+         */
+        public static final int DUP2 = 92;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DUP2_X1 dup2_x1} instruction.
+         */
+        public static final int DUP2_X1 = 93;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DUP2_X2 dup2_x2} instruction.
+         */
+        public static final int DUP2_X2 = 94;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#SWAP swap} instruction.
+         */
+        public static final int SWAP = 95;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IADD iadd} instruction.
+         */
+        public static final int IADD = 96;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LADD ladd} instruction.
+         */
+        public static final int LADD = 97;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FADD fadd} instruction.
+         */
+        public static final int FADD = 98;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DADD dadd} instruction.
+         */
+        public static final int DADD = 99;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ISUB isub} instruction.
+         */
+        public static final int ISUB = 100;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LSUB lsub} instruction.
+         */
+        public static final int LSUB = 101;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FSUB fsub} instruction.
+         */
+        public static final int FSUB = 102;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DSUB dsub} instruction.
+         */
+        public static final int DSUB = 103;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IMUL imul} instruction.
+         */
+        public static final int IMUL = 104;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LMUL lmul} instruction.
+         */
+        public static final int LMUL = 105;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FMUL fmul} instruction.
+         */
+        public static final int FMUL = 106;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DMUL dmul} instruction.
+         */
+        public static final int DMUL = 107;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IDIV idiv} instruction.
+         */
+        public static final int IDIV = 108;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LDIV ldiv} instruction.
+         */
+        public static final int LDIV = 109;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FDIV fdiv} instruction.
+         */
+        public static final int FDIV = 110;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DDIV ddiv} instruction.
+         */
+        public static final int DDIV = 111;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IREM irem} instruction.
+         */
+        public static final int IREM = 112;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LREM lrem} instruction.
+         */
+        public static final int LREM = 113;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FREM frem} instruction.
+         */
+        public static final int FREM = 114;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DREM drem} instruction.
+         */
+        public static final int DREM = 115;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#INEG ineg} instruction.
+         */
+        public static final int INEG = 116;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LNEG lneg} instruction.
+         */
+        public static final int LNEG = 117;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FNEG fneg} instruction.
+         */
+        public static final int FNEG = 118;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DNEG dneg} instruction.
+         */
+        public static final int DNEG = 119;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ISHL ishl} instruction.
+         */
+        public static final int ISHL = 120;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LSHL lshl} instruction.
+         */
+        public static final int LSHL = 121;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ISHR ishr} instruction.
+         */
+        public static final int ISHR = 122;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LSHR lshr} instruction.
+         */
+        public static final int LSHR = 123;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IUSHR iushr} instruction.
+         */
+        public static final int IUSHR = 124;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LUSHR lushr} instruction.
+         */
+        public static final int LUSHR = 125;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IAND iand} instruction.
+         */
+        public static final int IAND = 126;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LAND land} instruction.
+         */
+        public static final int LAND = 127;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IOR ior} instruction.
+         */
+        public static final int IOR = 128;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LOR lor} instruction.
+         */
+        public static final int LOR = 129;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IXOR ixor} instruction.
+         */
+        public static final int IXOR = 130;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LXOR lxor} instruction.
+         */
+        public static final int LXOR = 131;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IINC iinc} instruction.
+         */
+        public static final int IINC = 132;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#I2L i2l} instruction.
+         */
+        public static final int I2L = 133;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#I2F i2f} instruction.
+         */
+        public static final int I2F = 134;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#I2D i2d} instruction.
+         */
+        public static final int I2D = 135;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#L2I l2i} instruction.
+         */
+        public static final int L2I = 136;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#L2F l2f} instruction.
+         */
+        public static final int L2F = 137;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#L2D l2d} instruction.
+         */
+        public static final int L2D = 138;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#F2I f2i} instruction.
+         */
+        public static final int F2I = 139;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#F2L f2l} instruction.
+         */
+        public static final int F2L = 140;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#F2D f2d} instruction.
+         */
+        public static final int F2D = 141;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#D2I d2i} instruction.
+         */
+        public static final int D2I = 142;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#D2L d2l} instruction.
+         */
+        public static final int D2L = 143;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#D2F d2f} instruction.
+         */
+        public static final int D2F = 144;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#I2B i2b} instruction.
+         */
+        public static final int I2B = 145;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#I2C i2c} instruction.
+         */
+        public static final int I2C = 146;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#I2S i2s} instruction.
+         */
+        public static final int I2S = 147;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LCMP lcmp} instruction.
+         */
+        public static final int LCMP = 148;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FCMPL fcmpl} instruction.
+         */
+        public static final int FCMPL = 149;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FCMPG fcmpg} instruction.
+         */
+        public static final int FCMPG = 150;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DCMPL dcmpl} instruction.
+         */
+        public static final int DCMPL = 151;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DCMPG dcmpg} instruction.
+         */
+        public static final int DCMPG = 152;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IFEQ ifeq} instruction.
+         */
+        public static final int IFEQ = 153;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IFNE ifne} instruction.
+         */
+        public static final int IFNE = 154;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IFLT iflt} instruction.
+         */
+        public static final int IFLT = 155;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IFGE ifge} instruction.
+         */
+        public static final int IFGE = 156;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IFGT ifgt} instruction.
+         */
+        public static final int IFGT = 157;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IFLE ifle} instruction.
+         */
+        public static final int IFLE = 158;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IF_ICMPEQ if_icmpeq} instruction.
+         */
+        public static final int IF_ICMPEQ = 159;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IF_ICMPNE if_icmpne} instruction.
+         */
+        public static final int IF_ICMPNE = 160;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IF_ICMPLT if_icmplt} instruction.
+         */
+        public static final int IF_ICMPLT = 161;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IF_ICMPGE if_icmpge} instruction.
+         */
+        public static final int IF_ICMPGE = 162;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IF_ICMPGT if_icmpgt} instruction.
+         */
+        public static final int IF_ICMPGT = 163;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IF_ICMPLE if_icmple} instruction.
+         */
+        public static final int IF_ICMPLE = 164;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IF_ACMPEQ if_acmpeq} instruction.
+         */
+        public static final int IF_ACMPEQ = 165;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IF_ACMPNE if_acmpne} instruction.
+         */
+        public static final int IF_ACMPNE = 166;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#GOTO goto} instruction.
+         */
+        public static final int GOTO = 167;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#JSR jsr} instruction.
+         */
+        public static final int JSR = 168;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#RET ret} instruction.
+         */
+        public static final int RET = 169;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#TABLESWITCH tableswitch} instruction.
+         */
+        public static final int TABLESWITCH = 170;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LOOKUPSWITCH lookupswitch} instruction.
+         */
+        public static final int LOOKUPSWITCH = 171;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IRETURN ireturn} instruction.
+         */
+        public static final int IRETURN = 172;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#LRETURN lreturn} instruction.
+         */
+        public static final int LRETURN = 173;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#FRETURN freturn} instruction.
+         */
+        public static final int FRETURN = 174;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#DRETURN dreturn} instruction.
+         */
+        public static final int DRETURN = 175;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ARETURN areturn} instruction.
+         */
+        public static final int ARETURN = 176;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#RETURN return} instruction.
+         */
+        public static final int RETURN = 177;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#GETSTATIC getstatic} instruction.
+         */
+        public static final int GETSTATIC = 178;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#PUTSTATIC putstatic} instruction.
+         */
+        public static final int PUTSTATIC = 179;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#GETFIELD getfield} instruction.
+         */
+        public static final int GETFIELD = 180;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#PUTFIELD putfield} instruction.
+         */
+        public static final int PUTFIELD = 181;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#INVOKEVIRTUAL invokevirtual} instruction.
+         */
+        public static final int INVOKEVIRTUAL = 182;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#INVOKESPECIAL invokespecial} instruction.
+         */
+        public static final int INVOKESPECIAL = 183;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#INVOKESTATIC invokestatic} instruction.
+         */
+        public static final int INVOKESTATIC = 184;
+
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#INVOKEINTERFACE invokeinterface} instruction.
+         */
         public static final int INVOKEINTERFACE = 185;
 
-        /** The integer value used to encode the {@link Opcode#INVOKEDYNAMIC invokedynamic} instruction. */
-        public static final int INVOKEDYNAMIC   = 186;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#INVOKEDYNAMIC invokedynamic} instruction.
+         */
+        public static final int INVOKEDYNAMIC = 186;
 
-        /** The integer value used to encode the {@link Opcode#NEW new} instruction. */
-        public static final int NEW             = 187;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#NEW new} instruction.
+         */
+        public static final int NEW = 187;
 
-        /** The integer value used to encode the {@link Opcode#NEWARRAY newarray} instruction. */
-        public static final int NEWARRAY        = 188;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#NEWARRAY newarray} instruction.
+         */
+        public static final int NEWARRAY = 188;
 
-        /** The integer value used to encode the {@link Opcode#ANEWARRAY anewarray} instruction. */
-        public static final int ANEWARRAY       = 189;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ANEWARRAY anewarray} instruction.
+         */
+        public static final int ANEWARRAY = 189;
 
-        /** The integer value used to encode the {@link Opcode#ARRAYLENGTH arraylength} instruction. */
-        public static final int ARRAYLENGTH     = 190;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ARRAYLENGTH arraylength} instruction.
+         */
+        public static final int ARRAYLENGTH = 190;
 
-        /** The integer value used to encode the {@link Opcode#ATHROW athrow} instruction. */
-        public static final int ATHROW          = 191;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#ATHROW athrow} instruction.
+         */
+        public static final int ATHROW = 191;
 
-        /** The integer value used to encode the {@link Opcode#CHECKCAST checkcast} instruction. */
-        public static final int CHECKCAST       = 192;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#CHECKCAST checkcast} instruction.
+         */
+        public static final int CHECKCAST = 192;
 
-        /** The integer value used to encode the {@link Opcode#INSTANCEOF instanceof} instruction. */
-        public static final int INSTANCEOF      = 193;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#INSTANCEOF instanceof} instruction.
+         */
+        public static final int INSTANCEOF = 193;
 
-        /** The integer value used to encode the {@link Opcode#MONITORENTER monitorenter} instruction. */
-        public static final int MONITORENTER    = 194;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#MONITORENTER monitorenter} instruction.
+         */
+        public static final int MONITORENTER = 194;
 
-        /** The integer value used to encode the {@link Opcode#MONITOREXIT monitorexit} instruction. */
-        public static final int MONITOREXIT     = 195;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#MONITOREXIT monitorexit} instruction.
+         */
+        public static final int MONITOREXIT = 195;
 
-        /** The integer value used to encode the {@link Opcode#isWide() wide} instruction. */
-        public static final int WIDE            = 196;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#isWide() wide} instruction.
+         */
+        public static final int WIDE = 196;
 
-        /** The integer value used to encode the {@link Opcode#MULTIANEWARRAY multianewarray} instruction. */
-        public static final int MULTIANEWARRAY  = 197;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#MULTIANEWARRAY multianewarray} instruction.
+         */
+        public static final int MULTIANEWARRAY = 197;
 
-        /** The integer value used to encode the {@link Opcode#IFNULL ifnull} instruction. */
-        public static final int IFNULL          = 198;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IFNULL ifnull} instruction.
+         */
+        public static final int IFNULL = 198;
 
-        /** The integer value used to encode the {@link Opcode#IFNONNULL ifnonnull} instruction. */
-        public static final int IFNONNULL       = 199;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#IFNONNULL ifnonnull} instruction.
+         */
+        public static final int IFNONNULL = 199;
 
-        /** The integer value used to encode the {@link Opcode#GOTO_W goto_w} instruction. */
-        public static final int GOTO_W          = 200;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#GOTO_W goto_w} instruction.
+         */
+        public static final int GOTO_W = 200;
 
-        /** The integer value used to encode the {@link Opcode#JSR_W jsr_w} instruction. */
-        public static final int JSR_W           = 201;
+        /**
+         * The integer {@linkplain Opcode#bytecode() value} used to encode the {@link
+         * Opcode#JSR_W jsr_w} instruction.
+         */
+        public static final int JSR_W = 201;
 
         private OpcodeValues() {}
     }

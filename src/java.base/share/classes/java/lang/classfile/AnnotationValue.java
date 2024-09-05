@@ -58,7 +58,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models an annotation value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value AEV_ANNOTATION}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_ANNOTATION}.
      *
      * @since 22
      */
@@ -71,7 +71,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models an array value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value AEV_ARRAY}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_ARRAY}.
      *
      * @since 22
      */
@@ -129,7 +129,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a string value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value AEV_STRING}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_STRING}.
      *
      * @since 22
      */
@@ -157,7 +157,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a double value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value AEV_DOUBLE}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_DOUBLE}.
      *
      * @since 22
      */
@@ -185,7 +185,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a float value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value AEV_FLOAT}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_FLOAT}.
      *
      * @since 22
      */
@@ -213,7 +213,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a long value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value AEV_LONG}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_LONG}.
      *
      * @since 22
      */
@@ -241,7 +241,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models an int value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value AEV_INT}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_INT}.
      *
      * @since 22
      */
@@ -269,7 +269,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a short value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value AEV_SHORT}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_SHORT}.
      *
      * @since 22
      */
@@ -300,7 +300,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a char value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value AEV_CHAR}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_CHAR}.
      *
      * @since 22
      */
@@ -331,7 +331,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a byte value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value AEV_BYTE}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_BYTE}.
      *
      * @since 22
      */
@@ -362,7 +362,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a boolean value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value AEV_BOOLEAN}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_BOOLEAN}.
      *
      * @since 22
      */
@@ -393,7 +393,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a class value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value AEV_CLASS}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_CLASS}.
      *
      * @since 22
      */
@@ -411,7 +411,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models an enum value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value AEV_ENUM}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_ENUM}.
      *
      * @since 22
      */
@@ -431,47 +431,51 @@ public sealed interface AnnotationValue {
     }
 
     /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfByte}. */
-    int AEV_BYTE = 'B';
+    int TAG_BYTE = 'B';
 
     /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfChar}. */
-    int AEV_CHAR = 'C';
+    int TAG_CHAR = 'C';
 
     /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfDouble}. */
-    int AEV_DOUBLE = 'D';
+    int TAG_DOUBLE = 'D';
 
     /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfFloat}. */
-    int AEV_FLOAT = 'F';
+    int TAG_FLOAT = 'F';
 
     /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfInt}. */
-    int AEV_INT = 'I';
+    int TAG_INT = 'I';
 
     /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfLong}. */
-    int AEV_LONG = 'J';
+    int TAG_LONG = 'J';
 
     /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfShort}. */
-    int AEV_SHORT = 'S';
+    int TAG_SHORT = 'S';
 
     /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfBoolean}. */
-    int AEV_BOOLEAN = 'Z';
+    int TAG_BOOLEAN = 'Z';
 
     /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfString}. */
-    int AEV_STRING = 's';
+    int TAG_STRING = 's';
 
     /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfEnum}. */
-    int AEV_ENUM = 'e';
+    int TAG_ENUM = 'e';
 
     /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfClass}. */
-    int AEV_CLASS = 'c';
+    int TAG_CLASS = 'c';
 
     /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfAnnotation}. */
-    int AEV_ANNOTATION = '@';
+    int TAG_ANNOTATION = '@';
 
     /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfArray}. */
-    int AEV_ARRAY = '[';
+    int TAG_ARRAY = '[';
 
     /**
      * {@return the tag character for this value as per JVMS {@jvms 4.7.16.1}}
      * The tag characters have a one-to-one mapping to the types of annotation element values.
+     *
+     * @apiNote
+     * {@code TAG_}-prefixed constants in this class, such as {@link #TAG_INT},
+     * describe the possible return values of this method.
      */
     char tag();
 

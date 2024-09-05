@@ -430,7 +430,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     public AbstractPoolEntry.NameAndTypeEntryImpl nameAndTypeEntry(Utf8Entry nameEntry, Utf8Entry typeEntry) {
         AbstractPoolEntry.Utf8EntryImpl ne = maybeCloneUtf8Entry(nameEntry);
         AbstractPoolEntry.Utf8EntryImpl te = maybeCloneUtf8Entry(typeEntry);
-        var e = (AbstractPoolEntry.NameAndTypeEntryImpl) findEntry(TAG_NAMEANDTYPE, ne, te);
+        var e = (AbstractPoolEntry.NameAndTypeEntryImpl) findEntry(TAG_NAME_AND_TYPE, ne, te);
         return e == null ? internalAdd(new AbstractPoolEntry.NameAndTypeEntryImpl(this, size, ne, te)) : e;
     }
 
@@ -466,7 +466,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             oe = classEntry(owner.name());
         if (!canWriteDirect(ne.constantPool))
             ne = nameAndTypeEntry(nameAndType.name(), nameAndType.type());
-        var e = (AbstractPoolEntry.InterfaceMethodRefEntryImpl) findEntry(TAG_INTERFACEMETHODREF, oe, ne);
+        var e = (AbstractPoolEntry.InterfaceMethodRefEntryImpl) findEntry(TAG_INTERFACE_METHODREF, oe, ne);
         return e == null ? internalAdd(new AbstractPoolEntry.InterfaceMethodRefEntryImpl(this, size, oe, ne)) : e;
     }
 
@@ -480,7 +480,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     @Override
     public MethodTypeEntry methodTypeEntry(Utf8Entry descriptor) {
         AbstractPoolEntry.Utf8EntryImpl de = maybeCloneUtf8Entry(descriptor);
-        var e = (AbstractPoolEntry.MethodTypeEntryImpl) findEntry(TAG_METHODTYPE, de);
+        var e = (AbstractPoolEntry.MethodTypeEntryImpl) findEntry(TAG_METHOD_TYPE, de);
         return e == null ? internalAdd(new AbstractPoolEntry.MethodTypeEntryImpl(this, size, de)) : e;
     }
 
@@ -490,16 +490,16 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             reference = switch (reference.tag()) {
                 case TAG_FIELDREF -> fieldRefEntry(reference.owner(), reference.nameAndType());
                 case TAG_METHODREF -> methodRefEntry(reference.owner(), reference.nameAndType());
-                case TAG_INTERFACEMETHODREF -> interfaceMethodRefEntry(reference.owner(), reference.nameAndType());
+                case TAG_INTERFACE_METHODREF -> interfaceMethodRefEntry(reference.owner(), reference.nameAndType());
                 default -> throw new IllegalArgumentException(String.format("Bad tag %d", reference.tag()));
             };
         }
 
-        int hash = AbstractPoolEntry.hash2(TAG_METHODHANDLE, refKind, reference.index());
+        int hash = AbstractPoolEntry.hash2(TAG_METHOD_HANDLE, refKind, reference.index());
         EntryMap<PoolEntry> map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
             PoolEntry e = map1.getElementByToken(token);
-            if (e.tag() == TAG_METHODHANDLE
+            if (e.tag() == TAG_METHOD_HANDLE
                 && e instanceof AbstractPoolEntry.MethodHandleEntryImpl ce
                 && ce.kind() == refKind && ce.reference() == reference)
                 return ce;
@@ -520,12 +520,12 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                                             bootstrapMethodEntry.arguments());
         if (!canWriteDirect(nameAndType.constantPool()))
             nameAndType = nameAndTypeEntry(nameAndType.name(), nameAndType.type());
-        int hash = AbstractPoolEntry.hash2(TAG_INVOKEDYNAMIC,
+        int hash = AbstractPoolEntry.hash2(TAG_INVOKE_DYNAMIC,
                 bootstrapMethodEntry.bsmIndex(), nameAndType.index());
         EntryMap<PoolEntry> map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
             PoolEntry e = map1.getElementByToken(token);
-            if (e.tag() == TAG_INVOKEDYNAMIC
+            if (e.tag() == TAG_INVOKE_DYNAMIC
                 && e instanceof AbstractPoolEntry.InvokeDynamicEntryImpl ce
                 && ce.bootstrap() == bootstrapMethodEntry && ce.nameAndType() == nameAndType)
                 return ce;
@@ -551,12 +551,12 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
                                             bootstrapMethodEntry.arguments());
         if (!canWriteDirect(nameAndType.constantPool()))
             nameAndType = nameAndTypeEntry(nameAndType.name(), nameAndType.type());
-        int hash = AbstractPoolEntry.hash2(TAG_CONSTANTDYNAMIC,
+        int hash = AbstractPoolEntry.hash2(TAG_DYNAMIC,
                 bootstrapMethodEntry.bsmIndex(), nameAndType.index());
         EntryMap<PoolEntry> map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
             PoolEntry e = map1.getElementByToken(token);
-            if (e.tag() == TAG_CONSTANTDYNAMIC
+            if (e.tag() == TAG_DYNAMIC
                 && e instanceof AbstractPoolEntry.ConstantDynamicEntryImpl ce
                 && ce.bootstrap() == bootstrapMethodEntry && ce.nameAndType() == nameAndType)
                 return ce;

@@ -698,11 +698,11 @@ public final class StackMapGenerator {
                 currentFrame.pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case TAG_LONG ->
                 currentFrame.pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-            case TAG_METHODHANDLE ->
+            case TAG_METHOD_HANDLE ->
                 currentFrame.pushStack(Type.METHOD_HANDLE_TYPE);
-            case TAG_METHODTYPE ->
+            case TAG_METHOD_TYPE ->
                 currentFrame.pushStack(Type.METHOD_TYPE);
-            case TAG_CONSTANTDYNAMIC ->
+            case TAG_DYNAMIC ->
                 currentFrame.pushStack(cp.entryByIndex(index, ConstantDynamicEntry.class).asSymbol().constantType());
             default ->
                 throw generatorError("CP entry #%d %s is not loadable constant".formatted(index, cp.entryByIndex(index).tag()));

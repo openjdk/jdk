@@ -38,58 +38,55 @@ public sealed interface PoolEntry
                 LoadableConstantEntry, MemberRefEntry, ModuleEntry, NameAndTypeEntry,
                 PackageEntry {
 
-    /** The value of constant pool {@linkplain #tag tag} CLASS. */
+    /** The {@linkplain #tag tag} for {@link ClassEntry CONSTANT_Class} constant kind. */
     int TAG_CLASS = 7;
 
-    /** The value of constant pool {@linkplain #tag tag} CONSTANTDYNAMIC. */
-    int TAG_CONSTANTDYNAMIC = 17;
-
-    /** The value of constant pool {@linkplain #tag tag} DOUBLE. */
+    /** The {@linkplain #tag tag} for {@link DoubleEntry CONSTANT_Double} constant kind. */
     int TAG_DOUBLE = 6;
 
-    /** The value of constant pool {@linkplain #tag tag} FIELDREF. */
+    /** The {@linkplain #tag tag} for {@link ConstantDynamicEntry CONSTANT_Dynamic} constant kind. */
+    int TAG_DYNAMIC = 17;
+
+    /** The {@linkplain #tag tag} for {@link FieldRefEntry CONSTANT_Fieldref} constant kind. */
     int TAG_FIELDREF = 9;
 
-    /** The value of constant pool {@linkplain #tag tag} FLOAT. */
+    /** The {@linkplain #tag tag} for {@link FloatEntry CONSTANT_Float} constant kind. */
     int TAG_FLOAT = 4;
 
-    /** The value of constant pool {@linkplain #tag tag} INTEGER. */
+    /** The {@linkplain #tag tag} for {@link IntegerEntry CONSTANT_Integer} constant kind. */
     int TAG_INTEGER = 3;
 
-    /** The value of constant pool {@linkplain #tag tag} INTERFACEMETHODREF. */
-    int TAG_INTERFACEMETHODREF = 11;
+    /** The {@linkplain #tag tag} for {@link InterfaceMethodRefEntry CONSTANT_InterfaceMethodref} constant kind. */
+    int TAG_INTERFACE_METHODREF = 11;
 
-    /** The value of constant pool {@linkplain #tag tag} INVOKEDYNAMIC. */
-    int TAG_INVOKEDYNAMIC = 18;
+    /** The {@linkplain #tag tag} for {@link InvokeDynamicEntry CONSTANT_InvokeDynamic} constant kind. */
+    int TAG_INVOKE_DYNAMIC = 18;
 
-    /** The value of constant pool {@linkplain #tag tag} LONG. */
+    /** The {@linkplain #tag tag} for {@link LongEntry CONSTANT_Long} constant kind. */
     int TAG_LONG = 5;
 
-    /** The value of constant pool {@linkplain #tag tag} METHODHANDLE. */
-    int TAG_METHODHANDLE = 15;
+    /** The {@linkplain #tag tag} for {@link MethodHandleEntry CONSTANT_MethodHandle} constant kind. */
+    int TAG_METHOD_HANDLE = 15;
 
-    /** The value of constant pool {@linkplain #tag tag} METHODREF. */
+    /** The {@linkplain #tag tag} for {@link MethodRefEntry CONSTANT_Methodref} constant kind. */
     int TAG_METHODREF = 10;
 
-    /** The value of constant pool {@linkplain #tag tag} METHODTYPE. */
-    int TAG_METHODTYPE = 16;
+    /** The {@linkplain #tag tag} for {@link MethodTypeEntry CONSTANT_MethodType} constant kind. */
+    int TAG_METHOD_TYPE = 16;
 
-    /** The value of constant pool {@linkplain #tag tag} MODULE. */
+    /** The {@linkplain #tag tag} for {@link ModuleEntry CONSTANT_Module} constant kind. */
     int TAG_MODULE = 19;
 
-    /** The value of constant pool {@linkplain #tag tag} NAMEANDTYPE. */
-    int TAG_NAMEANDTYPE = 12;
+    /** The {@linkplain #tag tag} for {@link NameAndTypeEntry CONSTANT_NameAndType} constant kind. */
+    int TAG_NAME_AND_TYPE = 12;
 
-    /** The value of constant pool {@linkplain #tag tag} PACKAGE. */
+    /** The {@linkplain #tag tag} for {@link PackageEntry CONSTANT_Package} constant kind. */
     int TAG_PACKAGE = 20;
 
-    /** The value of constant pool {@linkplain #tag tag} STRING. */
+    /** The {@linkplain #tag tag} for {@link StringEntry CONSTANT_String} constant kind. */
     int TAG_STRING = 8;
 
-    /** The value of constant pool {@linkplain #tag tag} UNICODE. */
-    int TAG_UNICODE = 2;
-
-    /** The value of constant pool {@linkplain #tag tag} UTF8. */
+    /** The {@linkplain #tag tag} for {@link Utf8Entry CONSTANT_Utf8} constant kind. */
     int TAG_UTF8 = 1;
 
     /**
@@ -99,6 +96,10 @@ public sealed interface PoolEntry
 
     /**
      * {@return the constant pool tag that describes the type of this entry}
+     *
+     * @apiNote
+     * {@code TAG_}-prefixed constants in this class, such as {@link #TAG_UTF8},
+     * describe the possible return values of this method.
      */
     byte tag();
 
