@@ -2570,6 +2570,9 @@ public final class System {
             public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
+            public int countNonZeroAscii(String s) {
+                return StringCoding.countNonZeroAscii(s);
+            }
             public String newStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
                 return String.newStringNoRepl(bytes, cs);
             }
@@ -2649,6 +2652,10 @@ public final class System {
 
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
                 return String.join(prefix, suffix, delimiter, elements, size);
+            }
+
+            public String concat(String prefix, Object value, String suffix) {
+                return StringConcatHelper.concat(prefix, value, suffix);
             }
 
             public Object classData(Class<?> c) {

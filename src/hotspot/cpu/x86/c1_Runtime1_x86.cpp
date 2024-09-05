@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1166,8 +1166,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Label register_finalizer;
         Register t = rsi;
         __ load_klass(t, rax, rscratch1);
-        __ movl(t, Address(t, Klass::access_flags_offset()));
-        __ testl(t, JVM_ACC_HAS_FINALIZER);
+        __ testb(Address(t, Klass::misc_flags_offset()), KlassFlags::_misc_has_finalizer);
         __ jcc(Assembler::notZero, register_finalizer);
         __ ret(0);
 

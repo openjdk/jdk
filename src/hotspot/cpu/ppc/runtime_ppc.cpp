@@ -99,12 +99,7 @@ void OptoRuntime::generate_exception_blob() {
   __ set_last_Java_frame(/*sp=*/R1_SP, noreg);
 
   __ mr(R3_ARG1, R16_thread);
-#if defined(ABI_ELFv2)
-  __ call_c((address) OptoRuntime::handle_exception_C, relocInfo::none);
-#else
-  __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, OptoRuntime::handle_exception_C),
-            relocInfo::none);
-#endif
+  __ call_c((address) OptoRuntime::handle_exception_C);
   address calls_return_pc = __ last_calls_return_pc();
 # ifdef ASSERT
   __ cmpdi(CCR0, R3_RET, 0);

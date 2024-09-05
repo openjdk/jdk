@@ -204,7 +204,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         HtmlTree body = getBody(getWindowTitle(title));
         ContentBuilder headingContent = new ContentBuilder();
         headingContent.add(contents.getContent("doclet.ClassUse_Title", packageText));
-        headingContent.add(new HtmlTree(HtmlTag.BR));
+        headingContent.add(HtmlTree.BR());
         headingContent.add(name);
         var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyles.title, headingContent);
