@@ -28,13 +28,13 @@ cond_to_suffix = {
 registers_mapping = {
     # skip rax, rsi, rdi, rsp, rbp as they have special encodings
     # 'rax': {64: 'rax', 32: 'eax', 16: 'ax', 8: 'al'},
-    'rbx': {64: 'rbx', 32: 'ebx', 16: 'bx', 8: 'bl'},
     'rcx': {64: 'rcx', 32: 'ecx', 16: 'cx', 8: 'cl'},
     'rdx': {64: 'rdx', 32: 'edx', 16: 'dx', 8: 'dl'},
-    # 'rsi': {64: 'rsi', 32: 'esi', 16: 'si', 8: 'sil'},
-    # 'rdi': {64: 'rdi', 32: 'edi', 16: 'di', 8: 'dil'},
+    'rbx': {64: 'rbx', 32: 'ebx', 16: 'bx', 8: 'bl'},
     # 'rsp': {64: 'rsp', 32: 'esp', 16: 'sp', 8: 'spl'},
     # 'rbp': {64: 'rbp', 32: 'ebp', 16: 'bp', 8: 'bpl'},
+    # 'rsi': {64: 'rsi', 32: 'esi', 16: 'si', 8: 'sil'},
+    # 'rdi': {64: 'rdi', 32: 'edi', 16: 'di', 8: 'dil'},
     'r8': {64: 'r8', 32: 'r8d', 16: 'r8w', 8: 'r8b'},
     'r9': {64: 'r9', 32: 'r9d', 16: 'r9w', 8: 'r9b'},
     'r10': {64: 'r10', 32: 'r10d', 16: 'r10w', 8: 'r10b'},
