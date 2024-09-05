@@ -319,6 +319,11 @@ public interface JavaLangAccess {
     int countPositives(byte[] ba, int off, int len);
 
     /**
+     * Count the number of leading non-zero ascii chars in the String.
+     */
+    int countNonZeroAscii(String s);
+
+    /**
      * Constructs a new {@code String} by decoding the specified subarray of
      * bytes using the specified {@linkplain java.nio.charset.Charset charset}.
      *
@@ -456,6 +461,11 @@ public interface JavaLangAccess {
      * Join strings
      */
     String join(String prefix, String suffix, String delimiter, String[] elements, int size);
+
+    /**
+     * Concatenation of prefix and suffix characters to a String for early bootstrap
+     */
+    String concat(String prefix, Object value, String suffix);
 
     /*
      * Get the class data associated with the given class.

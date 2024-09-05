@@ -49,8 +49,6 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.ref.SoftReference;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -1419,11 +1417,11 @@ public final class StringConcatFactory {
                     // Compute parameter variable slots
                     int paramCount    = concatArgs.parameterCount(),
                         thisSlot      = cb.receiverSlot(),
-                        lengthSlot    = cb.allocateLocal(TypeKind.IntType),
-                        coderSlot     = cb.allocateLocal(TypeKind.ByteType),
-                        bufSlot       = cb.allocateLocal(TypeKind.ReferenceType),
-                        constantsSlot = cb.allocateLocal(TypeKind.ReferenceType),
-                        suffixSlot    = cb.allocateLocal(TypeKind.ReferenceType);
+                        lengthSlot    = cb.allocateLocal(TypeKind.INT),
+                        coderSlot     = cb.allocateLocal(TypeKind.BYTE),
+                        bufSlot       = cb.allocateLocal(TypeKind.REFERENCE),
+                        constantsSlot = cb.allocateLocal(TypeKind.REFERENCE),
+                        suffixSlot    = cb.allocateLocal(TypeKind.REFERENCE);
 
                     /*
                      * Types other than int/long/char/boolean require local variables to store the result of stringOf.
@@ -1447,7 +1445,7 @@ public final class StringConcatFactory {
                             } else {
                                 methodTypeDesc = MTD_String_Object;
                             }
-                            stringSlots[i] = cb.allocateLocal(TypeKind.ReferenceType);
+                            stringSlots[i] = cb.allocateLocal(TypeKind.REFERENCE);
                             cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i))
                               .invokestatic(CD_StringConcatHelper, "stringOf", methodTypeDesc)
                               .astore(stringSlots[i]);
@@ -1464,7 +1462,7 @@ public final class StringConcatFactory {
                             var cl = concatArgs.parameterType(i);
                             if (maybeUTF16(cl)) {
                                 if (cl == char.class) {
-                                    cb.loadLocal(TypeKind.CharType, cb.parameterSlot(i));
+                                    cb.loadLocal(TypeKind.CHAR, cb.parameterSlot(i));
                                 } else {
                                     cb.aload(stringSlots[i]);
                                 }
@@ -1531,7 +1529,7 @@ public final class StringConcatFactory {
                         var kind = TypeKind.from(cl);
                         if (needStringOf(cl)) {
                             paramSlot = stringSlots[i];
-                            kind = TypeKind.ReferenceType;
+                            kind = TypeKind.REFERENCE;
                         }
                         cb.loadLocal(kind, paramSlot);
                     }
@@ -1682,7 +1680,7 @@ public final class StringConcatFactory {
                         } else if (cl == CD_char) {
                             methodTypeDesc = PREPEND_char;
                         } else {
-                            kind = TypeKind.ReferenceType;
+                            kind = TypeKind.REFERENCE;
                             methodTypeDesc = PREPEND_String;
                         }
 

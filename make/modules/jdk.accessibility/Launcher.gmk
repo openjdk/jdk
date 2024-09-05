@@ -93,7 +93,7 @@ ifeq ($(call isTargetOs, windows), true)
         LIBS_windows := advapi32.lib comctl32.lib gdi32.lib user32.lib, \
         VERSIONINFO_RESOURCE := \
             $(ACCESSIBILITY_SRCDIR)/jaccesswalker/jaccesswalkerWindow.rc, \
-   ))
+    ))
 
     TARGETS += $$(BUILD_JACCESSWALKER$1)
   endef
