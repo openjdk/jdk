@@ -34,7 +34,7 @@ import jdk.test.lib.SecurityTools;
 
 public class TestImportPass {
     public static void main(String[] args) throws Throwable {
-        SecurityTools.setResponse("pass123", "pass123");
+        SecurityTools.setResponse("pass123");
         SecurityTools.keytool("-importpass -keystore ks.p12 -storepass changeit " +
                 "-storetype pkcs12 -alias newentry")
                 .shouldNotContain("Enter the password to be stored:")
