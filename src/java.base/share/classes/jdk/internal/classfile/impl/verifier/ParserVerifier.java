@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -230,12 +230,12 @@ public record ParserVerifier(ClassModel classModel) {
                 ClassDesc type = ((FieldModel)ae).fieldTypeSymbol();
                 ConstantValueEntry cve = cva.constant();
                 if (!switch (TypeKind.from(type)) {
-                    case BooleanType, ByteType, CharType, IntType, ShortType -> cve instanceof IntegerEntry;
-                    case DoubleType -> cve instanceof DoubleEntry;
-                    case FloatType -> cve instanceof FloatEntry;
-                    case LongType -> cve instanceof LongEntry;
-                    case ReferenceType -> type.equals(ConstantDescs.CD_String) && cve instanceof StringEntry;
-                    case VoidType -> false;
+                    case BOOLEAN, BYTE, CHAR, INT, SHORT -> cve instanceof IntegerEntry;
+                    case DOUBLE -> cve instanceof DoubleEntry;
+                    case FLOAT -> cve instanceof FloatEntry;
+                    case LONG -> cve instanceof LongEntry;
+                    case REFERENCE -> type.equals(ConstantDescs.CD_String) && cve instanceof StringEntry;
+                    case VOID -> false;
                 }) {
                     errors.add(new VerifyError("Bad constant value type in %s".formatted(toString(ae))));
                 }
@@ -393,7 +393,7 @@ public record ParserVerifier(ClassModel classModel) {
     private static int typeAnnotationsSize(List<TypeAnnotation> ans) {
         int l = 2;
         for (var an : ans) {
-            l += 2 + an.targetInfo().size() + 2 * an.targetPath().size() + annotationSize(an);
+            l += 2 + an.targetInfo().size() + 2 * an.targetPath().size() + annotationSize(an.annotation());
         }
         return l;
     }

@@ -50,7 +50,7 @@ public class Base64Decode {
             "112", "512", "1000", "20000", "50000"})
     private int maxNumBytes;
 
-    @Param({"4"})
+    @Param({"4", "32", "76", "128"})
     private int lineSize;
 
     private byte[] lineSeparator = {'\r', '\n'};

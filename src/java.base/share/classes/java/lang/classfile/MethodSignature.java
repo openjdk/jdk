@@ -32,7 +32,7 @@ import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the generic signature of a method, as defined by {@jvms 4.7.9}.
+ * Models the generic signature of a method, as defined by JVMS {@jvms 4.7.9}.
  *
  * @since 22
  */

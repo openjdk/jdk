@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ ZMarkStripe* ZMarkStripeSet::stripe_for_worker(uint nworkers, uint worker_id) {
     const size_t spillover_nworkers = nworkers - spillover_limit;
     const size_t spillover_worker_id = worker_id - spillover_limit;
     const double spillover_chunk = (double)nstripes / (double)spillover_nworkers;
-    index = spillover_worker_id * spillover_chunk;
+    index = (size_t)(spillover_worker_id * spillover_chunk);
   }
 
   assert(index < nstripes, "Invalid index");
