@@ -872,17 +872,17 @@ public abstract class ShortVector extends AbstractVector<Short> {
             case VECTOR_OP_RROTATE: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> rotateRight(a, (int)n));
             case VECTOR_OP_UMAX: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (short)Short.maxUnsigned(a, b));
+                    v0.bOp(v1, vm, (i, a, b) -> (short)VectorMathUtils.maxUnsigned(a, b));
             case VECTOR_OP_UMIN: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (short)Short.minUnsigned(a, b));
+                    v0.bOp(v1, vm, (i, a, b) -> (short)VectorMathUtils.minUnsigned(a, b));
             case VECTOR_OP_SADD: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (short)(Short.addSaturating(a, b)));
+                    v0.bOp(v1, vm, (i, a, b) -> (short)(VectorMathUtils.addSaturating(a, b)));
             case VECTOR_OP_SSUB: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (short)(Short.subSaturating(a, b)));
+                    v0.bOp(v1, vm, (i, a, b) -> (short)(VectorMathUtils.subSaturating(a, b)));
             case VECTOR_OP_SUADD: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (short)(Short.addSaturatingUnsigned(a, b)));
+                    v0.bOp(v1, vm, (i, a, b) -> (short)(VectorMathUtils.addSaturatingUnsigned(a, b)));
             case VECTOR_OP_SUSUB: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (short)(Short.subSaturatingUnsigned(a, b)));
+                    v0.bOp(v1, vm, (i, a, b) -> (short)(VectorMathUtils.subSaturatingUnsigned(a, b)));
             default: return null;
         }
     }

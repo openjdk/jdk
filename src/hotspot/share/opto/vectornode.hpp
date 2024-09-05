@@ -84,7 +84,6 @@ class VectorNode : public TypeNode {
   static VectorNode* make_mask_node(int vopc, Node* n1, Node* n2, uint vlen, BasicType bt);
 
   static bool is_shift_opcode(int opc);
-  static bool is_unsigned_opcode(int opc);
   static bool can_use_RShiftI_instead_of_URShiftI(Node* n, BasicType bt);
   static bool is_convert_opcode(int opc);
   static bool is_minmax_opcode(int opc);
@@ -145,6 +144,9 @@ class VectorNode : public TypeNode {
 };
 
 //===========================Vector=ALU=Operations=============================
+// Base IR node for saturating signed / unsigned operations.
+// Saturating operation prevents wrapping result value in over/underflowing
+// scenarios, instead returns delimiting MAX/MIN value of result type.
 class SaturatingVectorNode : public VectorNode {
  private:
   const bool _is_unsigned;
@@ -167,12 +169,6 @@ class AddVBNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-class SaturatingAddVBNode : public SaturatingVectorNode {
- public:
-  SaturatingAddVBNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
-  virtual int Opcode() const;
-};
-
 //------------------------------AddVSNode--------------------------------------
 // Vector add char/short
 class AddVSNode : public VectorNode {
@@ -180,13 +176,6 @@ class AddVSNode : public VectorNode {
   AddVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
 };
-
-class SaturatingAddVSNode : public SaturatingVectorNode {
- public:
-  SaturatingAddVSNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
-  virtual int Opcode() const;
-};
-
 
 //------------------------------AddVINode--------------------------------------
 // Vector add int
@@ -196,23 +185,12 @@ class AddVINode : public VectorNode {
   virtual int Opcode() const;
 };
 
-class SaturatingAddVINode : public SaturatingVectorNode {
- public:
-  SaturatingAddVINode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
-  virtual int Opcode() const;
-};
 
 //------------------------------AddVLNode--------------------------------------
 // Vector add long
 class AddVLNode : public VectorNode {
 public:
   AddVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
-  virtual int Opcode() const;
-};
-
-class SaturatingAddVLNode : public SaturatingVectorNode {
- public:
-  SaturatingAddVLNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
   virtual int Opcode() const;
 };
 
@@ -370,23 +348,11 @@ class SubVBNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-class SaturatingSubVBNode : public SaturatingVectorNode {
- public:
-  SaturatingSubVBNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1,in2,vt,is_unsigned) {}
-  virtual int Opcode() const;
-};
-
 //------------------------------SubVSNode--------------------------------------
 // Vector subtract short
 class SubVSNode : public VectorNode {
  public:
   SubVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
-  virtual int Opcode() const;
-};
-
-class SaturatingSubVSNode : public SaturatingVectorNode {
- public:
-  SaturatingSubVSNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1,in2,vt,is_unsigned) {}
   virtual int Opcode() const;
 };
 
@@ -398,12 +364,6 @@ class SubVINode : public VectorNode {
   virtual int Opcode() const;
 };
 
-class SaturatingSubVINode : public SaturatingVectorNode {
- public:
-  SaturatingSubVINode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1,in2,vt,is_unsigned) {}
-  virtual int Opcode() const;
-};
-
 //------------------------------SubVLNode--------------------------------------
 // Vector subtract long
 class SubVLNode : public VectorNode {
@@ -412,9 +372,19 @@ class SubVLNode : public VectorNode {
   virtual int Opcode() const;
 };
 
-class SaturatingSubVLNode : public SaturatingVectorNode {
+//------------------------------SaturatingAddVNode-----------------------------
+// Vector saturating addition.
+class SaturatingAddVNode : public SaturatingVectorNode {
  public:
-  SaturatingSubVLNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1,in2,vt,is_unsigned) {}
+  SaturatingAddVNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
+  virtual int Opcode() const;
+};
+
+//------------------------------SaturatingSubVNode-----------------------------
+// Vector saturating subtraction.
+class SaturatingSubVNode : public SaturatingVectorNode {
+ public:
+  SaturatingSubVNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1,in2,vt,is_unsigned) {}
   virtual int Opcode() const;
 };
 

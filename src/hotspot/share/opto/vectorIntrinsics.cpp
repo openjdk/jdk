@@ -365,9 +365,12 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   }
 
   BasicType elem_bt = elem_type->basic_type();
+  bool has_scalar_op = VectorSupport::has_scalar_op(opr->get_con());
+  bool is_unsigned = VectorSupport::is_unsigned_op(opr->get_con());
+
   int num_elem = vlen->get_con();
   int opc = VectorSupport::vop2ideal(opr->get_con(), elem_bt);
-  int sopc = VectorNode::opcode(opc, elem_bt);
+  int sopc = has_scalar_op ? VectorNode::opcode(opc, elem_bt) : opc;
   if ((opc != Op_CallLeafVector) && (sopc == 0)) {
     log_if_needed("  ** operation not supported: opc=%s bt=%s", NodeClassNames[opc], type2name(elem_bt));
     return false; // operation not supported
@@ -466,7 +469,6 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
   }
 
   Node* operation = nullptr;
-  bool is_unsigned_op = VectorNode::is_unsigned_opcode(opc);
   if (opc == Op_CallLeafVector) {
     assert(UseVectorStubs, "sanity");
     operation = gen_call_to_svml(opr->get_con(), elem_bt, num_elem, opd1, opd2);
@@ -478,16 +480,11 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
       return false;
      }
   } else {
-    const TypeVect* vt = nullptr;
-    if (!is_unsigned_op) {
-      vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_klass));
-    } else {
-      vt = TypeVect::make(Type::get_utype(elem_bt), num_elem, is_vector_mask(vbox_klass));
-    }
+    const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_klass));
     switch (n) {
       case 1:
       case 2: {
-        operation = VectorNode::make(sopc, opd1, opd2, vt, is_vector_mask(vbox_klass), VectorNode::is_shift_opcode(opc), is_unsigned_op);
+        operation = VectorNode::make(sopc, opd1, opd2, vt, is_vector_mask(vbox_klass), VectorNode::is_shift_opcode(opc), is_unsigned);
         break;
       }
       case 3: {
@@ -497,34 +494,18 @@ bool LibraryCallKit::inline_vector_nary_operation(int n) {
       default: fatal("unsupported arity: %d", n);
     }
   }
-  // Reinterpret unsigned vector nodes to signed vectors before boxing it to
-  // facilitate seamless unboxing-boxing optimization.
+
   if (is_masked_op && mask != nullptr) {
     if (use_predicate) {
       operation->add_req(mask);
       operation->add_flag(Node::Flag_is_predicated_vector);
-      operation = gvn().transform(operation);
-      if (is_unsigned_op) {
-        const TypeVect* to_vect_type = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_klass));
-        operation = gvn().transform(new VectorReinterpretNode(operation, operation->bottom_type()->is_vect(), to_vect_type));
-      }
     } else {
       operation->add_flag(Node::Flag_is_predicated_using_blend);
       operation = gvn().transform(operation);
-      if (is_unsigned_op) {
-        const TypeVect* to_vect_type = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_klass));
-        operation = gvn().transform(new VectorReinterpretNode(operation, operation->bottom_type()->is_vect(), to_vect_type));
-      }
       operation = new VectorBlendNode(opd1, operation, mask);
-      operation = gvn().transform(operation);
-    }
-  } else {
-    operation = gvn().transform(operation);
-    if (is_unsigned_op) {
-      const TypeVect* to_vect_type = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_klass));
-      operation = gvn().transform(new VectorReinterpretNode(operation, operation->bottom_type()->is_vect(), to_vect_type));
     }
   }
+  operation = gvn().transform(operation);
 
   // Wrap it up in VectorBox to keep object type information.
   Node* vbox = box_vector(operation, vbox_type, elem_bt, num_elem);

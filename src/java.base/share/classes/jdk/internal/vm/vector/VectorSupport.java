@@ -391,8 +391,6 @@ public class VectorSupport {
 
     /* ============================================================================ */
 
-    /* ============================================================================ */
-
     public interface TernaryOperation<V extends Vector<?>,
                                       M extends VectorMask<?>> {
         V apply(V v1, V v2, V v3, M m);

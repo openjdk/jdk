@@ -38,6 +38,7 @@ import jdk.incubator.vector.VectorShuffle;
 import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.Vector;
+import jdk.incubator.vector.VectorMathUtils;
 
 import jdk.incubator.vector.LongVector;
 
@@ -3043,7 +3044,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     static long UMIN(long a, long b) {
-        return (long)(Long.minUnsigned(a, b));
+        return (long)(VectorMathUtils.minUnsigned(a, b));
     }
 
     @Test(dataProvider = "longBinaryOpProvider")
@@ -3084,7 +3085,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     static long UMAX(long a, long b) {
-        return (long)(Long.maxUnsigned(a, b));
+        return (long)(VectorMathUtils.maxUnsigned(a, b));
     }
 
     @Test(dataProvider = "longBinaryOpProvider")
@@ -3125,7 +3126,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     static long SADD(long a, long b) {
-        return (long)(Long.addSaturating(a, b));
+        return (long)(VectorMathUtils.addSaturating(a, b));
     }
 
     @Test(dataProvider = "longSaturatingBinaryOpProvider")
@@ -3166,7 +3167,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     static long SSUB(long a, long b) {
-        return (long)(Long.subSaturating(a, b));
+        return (long)(VectorMathUtils.subSaturating(a, b));
     }
 
     @Test(dataProvider = "longSaturatingBinaryOpProvider")
@@ -3207,7 +3208,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     static long SUADD(long a, long b) {
-        return (long)(Long.addSaturatingUnsigned(a, b));
+        return (long)(VectorMathUtils.addSaturatingUnsigned(a, b));
     }
 
     @Test(dataProvider = "longSaturatingBinaryOpProvider")
@@ -3248,7 +3249,7 @@ public class LongMaxVectorTests extends AbstractVectorTest {
     }
 
     static long SUSUB(long a, long b) {
-        return (long)(Long.subSaturatingUnsigned(a, b));
+        return (long)(VectorMathUtils.subSaturatingUnsigned(a, b));
     }
 
     @Test(dataProvider = "longSaturatingBinaryOpProvider")

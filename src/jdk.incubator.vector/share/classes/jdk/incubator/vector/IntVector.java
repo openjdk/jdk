@@ -872,17 +872,17 @@ public abstract class IntVector extends AbstractVector<Integer> {
             case VECTOR_OP_RROTATE: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> rotateRight(a, (int)n));
             case VECTOR_OP_UMAX: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (int)Integer.maxUnsigned(a, b));
+                    v0.bOp(v1, vm, (i, a, b) -> (int)VectorMathUtils.maxUnsigned(a, b));
             case VECTOR_OP_UMIN: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (int)Integer.minUnsigned(a, b));
+                    v0.bOp(v1, vm, (i, a, b) -> (int)VectorMathUtils.minUnsigned(a, b));
             case VECTOR_OP_SADD: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (int)(Integer.addSaturating(a, b)));
+                    v0.bOp(v1, vm, (i, a, b) -> (int)(VectorMathUtils.addSaturating(a, b)));
             case VECTOR_OP_SSUB: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (int)(Integer.subSaturating(a, b)));
+                    v0.bOp(v1, vm, (i, a, b) -> (int)(VectorMathUtils.subSaturating(a, b)));
             case VECTOR_OP_SUADD: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (int)(Integer.addSaturatingUnsigned(a, b)));
+                    v0.bOp(v1, vm, (i, a, b) -> (int)(VectorMathUtils.addSaturatingUnsigned(a, b)));
             case VECTOR_OP_SUSUB: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (int)(Integer.subSaturatingUnsigned(a, b)));
+                    v0.bOp(v1, vm, (i, a, b) -> (int)(VectorMathUtils.subSaturatingUnsigned(a, b)));
             case VECTOR_OP_COMPRESS_BITS: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> Integer.compress(a, n));
             case VECTOR_OP_EXPAND_BITS: return (v0, v1, vm) ->

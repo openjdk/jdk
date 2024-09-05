@@ -38,6 +38,7 @@ import jdk.incubator.vector.VectorShuffle;
 import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.Vector;
+import jdk.incubator.vector.VectorMathUtils;
 
 import jdk.incubator.vector.ShortVector;
 
@@ -2968,7 +2969,7 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
     }
 
     static short UMIN(short a, short b) {
-        return (short)(Short.minUnsigned(a, b));
+        return (short)(VectorMathUtils.minUnsigned(a, b));
     }
 
     @Test(dataProvider = "shortBinaryOpProvider")
@@ -3009,7 +3010,7 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
     }
 
     static short UMAX(short a, short b) {
-        return (short)(Short.maxUnsigned(a, b));
+        return (short)(VectorMathUtils.maxUnsigned(a, b));
     }
 
     @Test(dataProvider = "shortBinaryOpProvider")
@@ -3050,7 +3051,7 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
     }
 
     static short SADD(short a, short b) {
-        return (short)(Short.addSaturating(a, b));
+        return (short)(VectorMathUtils.addSaturating(a, b));
     }
 
     @Test(dataProvider = "shortSaturatingBinaryOpProvider")
@@ -3091,7 +3092,7 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
     }
 
     static short SSUB(short a, short b) {
-        return (short)(Short.subSaturating(a, b));
+        return (short)(VectorMathUtils.subSaturating(a, b));
     }
 
     @Test(dataProvider = "shortSaturatingBinaryOpProvider")
@@ -3132,7 +3133,7 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
     }
 
     static short SUADD(short a, short b) {
-        return (short)(Short.addSaturatingUnsigned(a, b));
+        return (short)(VectorMathUtils.addSaturatingUnsigned(a, b));
     }
 
     @Test(dataProvider = "shortSaturatingBinaryOpProvider")
@@ -3173,7 +3174,7 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
     }
 
     static short SUSUB(short a, short b) {
-        return (short)(Short.subSaturatingUnsigned(a, b));
+        return (short)(VectorMathUtils.subSaturatingUnsigned(a, b));
     }
 
     @Test(dataProvider = "shortSaturatingBinaryOpProvider")

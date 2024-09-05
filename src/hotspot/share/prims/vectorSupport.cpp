@@ -199,6 +199,32 @@ instanceOop VectorSupport::allocate_vector(InstanceKlass* ik, frame* fr, Registe
 }
 
 #ifdef COMPILER2
+bool VectorSupport::has_scalar_op(jint id) {
+  VectorOperation vop = (VectorOperation)id;
+  switch (vop) {
+    case VECTOR_OP_COMPRESS:
+    case VECTOR_OP_EXPAND:
+    case VECTOR_OP_SADD:
+    case VECTOR_OP_SUADD:
+    case VECTOR_OP_SSUB:
+    case VECTOR_OP_SUSUB:
+      return false;
+    default:
+      return true;
+  }
+}
+
+bool VectorSupport::is_unsigned_op(jint id) {
+  VectorOperation vop = (VectorOperation)id;
+  switch (vop) {
+    case VECTOR_OP_SUADD:
+    case VECTOR_OP_SUSUB:
+      return true;
+    default:
+      return false;
+  }
+}
+
 int VectorSupport::vop2ideal(jint id, BasicType bt) {
   VectorOperation vop = (VectorOperation)id;
   switch (vop) {
@@ -278,8 +304,8 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       switch (bt) {
         case T_BYTE:
         case T_SHORT:
-        case T_INT:    return Op_UMinI;
-        case T_LONG:   return Op_UMinL;
+        case T_INT:
+        case T_LONG:   return Op_UMinV;
         default: fatal("MIN: %s", type2name(bt));
       }
       break;
@@ -288,8 +314,8 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       switch (bt) {
         case T_BYTE:
         case T_SHORT:
-        case T_INT:    return Op_UMaxI;
-        case T_LONG:   return Op_UMaxL;
+        case T_INT:
+        case T_LONG:   return Op_UMaxV;
         default: fatal("MAX: %s", type2name(bt));
       }
       break;
@@ -353,46 +379,6 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
         case T_FLOAT:  return Op_SqrtF;
         case T_DOUBLE: return Op_SqrtD;
         default: fatal("SQRT: %s", type2name(bt));
-      }
-      break;
-    }
-    case VECTOR_OP_SADD: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-        case T_INT:  return Op_SaturatingAddI;
-        case T_LONG: return Op_SaturatingAddL;
-        default: fatal("RSHIFT: %s", type2name(bt));
-      }
-      break;
-    }
-    case VECTOR_OP_SSUB: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-        case T_INT:  return Op_SaturatingSubI;
-        case T_LONG: return Op_SaturatingSubL;
-        default: fatal("RSHIFT: %s", type2name(bt));
-      }
-      break;
-    }
-    case VECTOR_OP_SUADD: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-        case T_INT:  return Op_SaturatingUAddI;
-        case T_LONG: return Op_SaturatingUAddL;
-        default: fatal("RSHIFT: %s", type2name(bt));
-      }
-      break;
-    }
-    case VECTOR_OP_SUSUB: {
-      switch (bt) {
-        case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
-        case T_INT:  return Op_SaturatingUSubI;
-        case T_LONG: return Op_SaturatingUSubL;
-        default: fatal("RSHIFT: %s", type2name(bt));
       }
       break;
     }
@@ -590,6 +576,28 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
         case T_INT:   return Op_ReverseBytesI;
         case T_LONG:  return Op_ReverseBytesL;
         default: fatal("REVERSE_BYTES: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_SADD:
+    case VECTOR_OP_SUADD: {
+      switch(bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:    // fall-through
+        case T_LONG:   return Op_SaturatingAddV;
+        default: fatal("S[U]ADD: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_SSUB:
+    case VECTOR_OP_SUSUB: {
+      switch(bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:    // fall-through
+        case T_LONG:   return Op_SaturatingSubV;
+        default: fatal("S[U}SUB: %s", type2name(bt));
       }
       break;
     }

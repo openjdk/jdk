@@ -557,11 +557,13 @@ bool Assembler::needs_rex2(Register reg1, Register reg2, Register reg3) {
   return rex2;
 }
 
+#ifndef PRODUCT
 bool Assembler::needs_evex(XMMRegister reg1, XMMRegister reg2, XMMRegister reg3) {
   return (reg1->is_valid() && reg1->encoding() >= 16) ||
          (reg2->is_valid() && reg2->encoding() >= 16) ||
          (reg3->is_valid() && reg3->encoding() >= 16);
 }
+#endif
 
 bool Assembler::needs_eevex(Register reg1, Register reg2, Register reg3) {
   return needs_rex2(reg1, reg2, reg3);
@@ -8466,8 +8468,7 @@ void Assembler::evpmaxuw(XMMRegister dst, KRegister mask, XMMRegister nds, Addre
 }
 
 void Assembler::vpmaxud(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
-  assert(vector_len == AVX_128bit ? VM_Version::supports_avx() :
-        (vector_len == AVX_256bit ? VM_Version::supports_avx2() : VM_Version::supports_avx512bw()), "");
+  assert(UseAVX > 0, "");
   assert((vector_len == Assembler::AVX_512bit || (!needs_evex(dst, nds, src) || VM_Version::supports_avx512vl())), "");
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
@@ -8475,8 +8476,7 @@ void Assembler::vpmaxud(XMMRegister dst, XMMRegister nds, XMMRegister src, int v
 }
 
 void Assembler::vpmaxud(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
-  assert(vector_len == AVX_128bit ? VM_Version::supports_avx() :
-        (vector_len == AVX_256bit ? VM_Version::supports_avx2() : VM_Version::supports_avx512bw()), "");
+  assert(UseAVX > 0, "");
   assert((vector_len == Assembler::AVX_512bit || (!needs_evex(dst, nds) || VM_Version::supports_avx512vl())), "");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);

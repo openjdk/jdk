@@ -125,8 +125,8 @@ class VectorSupport : AllStatic {
     VECTOR_OP_SSUB  = 120,
     VECTOR_OP_SUADD = 121,
     VECTOR_OP_SUSUB = 122,
-    VECTOR_OP_UMIN = 123,
-    VECTOR_OP_UMAX = 124,
+    VECTOR_OP_UMIN  = 123,
+    VECTOR_OP_UMAX  = 124,
 
     VECTOR_OP_SVML_START = VECTOR_OP_TAN,
     VECTOR_OP_SVML_END   = VECTOR_OP_HYPOT,
@@ -149,6 +149,8 @@ class VectorSupport : AllStatic {
   static const char* svmlname[VectorSupport::NUM_SVML_OP];
 
   static int vop2ideal(jint vop, BasicType bt);
+  static bool has_scalar_op(jint id);
+  static bool is_unsigned_op(jint id);
 
   static instanceOop allocate_vector(InstanceKlass* holder, frame* fr, RegisterMap* reg_map, ObjectValue* sv, TRAPS);
 

@@ -4359,9 +4359,7 @@ bool MatchRule::is_vector() const {
     "VectorUCastB2X", "VectorUCastS2X", "VectorUCastI2X",
     "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
     "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
-    "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD",
-    "SaturatingAddVB", "SaturatingAddVS", "SaturatingAddVI", "SaturatingAddVL",
-    "SaturatingSubVB", "SaturatingSubVS", "SaturatingSubVI", "SaturatingSubVL",
+    "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD", "SaturatingAddV", "SaturatingSubV",
     // Next are vector mask ops.
     "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
     "RoundVF", "RoundVD",

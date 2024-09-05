@@ -38,6 +38,7 @@ import jdk.incubator.vector.VectorShuffle;
 import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.Vector;
+import jdk.incubator.vector.VectorMathUtils;
 
 import jdk.incubator.vector.ByteVector;
 
@@ -2977,7 +2978,7 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
     }
 
     static byte UMIN(byte a, byte b) {
-        return (byte)(Byte.minUnsigned(a, b));
+        return (byte)(VectorMathUtils.minUnsigned(a, b));
     }
 
     @Test(dataProvider = "byteBinaryOpProvider")
@@ -3018,7 +3019,7 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
     }
 
     static byte UMAX(byte a, byte b) {
-        return (byte)(Byte.maxUnsigned(a, b));
+        return (byte)(VectorMathUtils.maxUnsigned(a, b));
     }
 
     @Test(dataProvider = "byteBinaryOpProvider")
@@ -3059,7 +3060,7 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
     }
 
     static byte SADD(byte a, byte b) {
-        return (byte)(Byte.addSaturating(a, b));
+        return (byte)(VectorMathUtils.addSaturating(a, b));
     }
 
     @Test(dataProvider = "byteSaturatingBinaryOpProvider")
@@ -3100,7 +3101,7 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
     }
 
     static byte SSUB(byte a, byte b) {
-        return (byte)(Byte.subSaturating(a, b));
+        return (byte)(VectorMathUtils.subSaturating(a, b));
     }
 
     @Test(dataProvider = "byteSaturatingBinaryOpProvider")
@@ -3141,7 +3142,7 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
     }
 
     static byte SUADD(byte a, byte b) {
-        return (byte)(Byte.addSaturatingUnsigned(a, b));
+        return (byte)(VectorMathUtils.addSaturatingUnsigned(a, b));
     }
 
     @Test(dataProvider = "byteSaturatingBinaryOpProvider")
@@ -3182,7 +3183,7 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
     }
 
     static byte SUSUB(byte a, byte b) {
-        return (byte)(Byte.subSaturatingUnsigned(a, b));
+        return (byte)(VectorMathUtils.subSaturatingUnsigned(a, b));
     }
 
     @Test(dataProvider = "byteSaturatingBinaryOpProvider")

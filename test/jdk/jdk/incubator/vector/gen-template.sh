@@ -314,7 +314,6 @@ function gen_binary_op {
 
 function gen_saturating_binary_op {
   echo "Generating binary op $1 ($2)..."
-#  gen_op_tmpl $binary_scalar "$@"
   gen_op_tmpl $saturating_binary "$@"
   gen_op_tmpl $saturating_binary_masked "$@"
 }
@@ -468,12 +467,12 @@ gen_shift_cst_op  "ROL" "ROL_scalar(a, CONST_SHIFT)" "BITWISE"
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "Math.min(a, b)"
 gen_binary_op_no_masked "MAX+max" "Math.max(a, b)"
-gen_binary_op "UMIN" "\$Wideboxtype\$.minUnsigned(a, b)" "BITWISE"
-gen_binary_op "UMAX" "\$Wideboxtype\$.maxUnsigned(a, b)" "BITWISE"
-gen_saturating_binary_op "SADD" "\$Wideboxtype\$.addSaturating(a, b)" "BITWISE"
-gen_saturating_binary_op "SSUB" "\$Wideboxtype\$.subSaturating(a, b)" "BITWISE"
-gen_saturating_binary_op "SUADD" "\$Wideboxtype\$.addSaturatingUnsigned(a, b)" "BITWISE"
-gen_saturating_binary_op "SUSUB" "\$Wideboxtype\$.subSaturatingUnsigned(a, b)" "BITWISE"
+gen_binary_op "UMIN" "VectorMathUtils.minUnsigned(a, b)" "BITWISE"
+gen_binary_op "UMAX" "VectorMathUtils.maxUnsigned(a, b)" "BITWISE"
+gen_saturating_binary_op "SADD" "VectorMathUtils.addSaturating(a, b)" "BITWISE"
+gen_saturating_binary_op "SSUB" "VectorMathUtils.subSaturating(a, b)" "BITWISE"
+gen_saturating_binary_op "SUADD" "VectorMathUtils.addSaturatingUnsigned(a, b)" "BITWISE"
+gen_saturating_binary_op "SUSUB" "VectorMathUtils.subSaturatingUnsigned(a, b)" "BITWISE"
 gen_binary_bcst_op_no_masked "MIN+min" "Math.min(a, b)"
 gen_binary_bcst_op_no_masked "MAX+max" "Math.max(a, b)"
 

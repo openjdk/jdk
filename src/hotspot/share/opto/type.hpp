@@ -465,8 +465,6 @@ public:
                                                       int stable_dimension,
                                                       BasicType loadbt,
                                                       bool is_unsigned_load);
-  static const Type* get_utype(BasicType elem_bt);
-  static bool is_utype(const Type* elem_ty);
 
   // Speculative type helper methods. See TypePtr.
   virtual const TypePtr* speculative() const                                  { return nullptr; }
@@ -627,11 +625,9 @@ public:
   static const TypeInt *UBYTE;
   static const TypeInt *CHAR;
   static const TypeInt *SHORT;
-  static const TypeInt *USHORT;
   static const TypeInt *POS;
   static const TypeInt *POS1;
   static const TypeInt *INT;
-  static const TypeInt *UINT;
   static const TypeInt *SYMINT; // symmetric range [-max_jint..max_jint]
   static const TypeInt *TYPE_DOMAIN; // alias for TypeInt::INT
 
@@ -690,7 +686,6 @@ public:
   static const TypeLong *LONG;
   static const TypeLong *INT;    // 32-bit subrange [min_jint..max_jint]
   static const TypeLong *UINT;   // 32-bit unsigned [0..max_juint]
-  static const TypeLong *ULONG;  // 64-bit unsigned [0..max_julong]
   static const TypeLong *TYPE_DOMAIN; // alias for TypeLong::LONG
 
   // static convenience methods.
