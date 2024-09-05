@@ -572,7 +572,7 @@ public:
   bool is_con() const { return lo_as_long() == hi_as_long(); }
   virtual short widen_limit() const { return _widen; }
 
-  static const Type* make(jlong lo, jlong hi, int w, BasicType bt);
+  static const TypeInteger* make(jlong lo, jlong hi, int w, BasicType bt);
 
   static const TypeInteger* bottom(BasicType type);
   static const TypeInteger* zero(BasicType type);
@@ -587,7 +587,7 @@ public:
 // upper bound, inclusive.
 class TypeInt : public TypeInteger {
   TypeInt(const TypeIntPrototype<jint, juint>& t, int w, bool dual);
-  static const Type* make(const TypeIntPrototype<jint, juint>& t, int w, bool dual);
+  static const Type* try_make(const TypeIntPrototype<jint, juint>& t, int w, bool dual);
 protected:
   virtual const Type* filter_helper(const Type* kills, bool include_speculative) const;
 
@@ -606,8 +606,8 @@ public:
   static const TypeInt* try_cast(const Type* t) { return t->isa_int(); }
   static const TypeInt* make(jint lo);
   // must always specify w
-  static const Type* make(jint lo, jint hi, int w);
-  static const Type* make(const TypeIntPrototype<jint, juint>& t, int w);
+  static const TypeInt* make(jint lo, jint hi, int w);
+  static const Type* try_make(const TypeIntPrototype<jint, juint>& t, int w);
 
   // Check for single integer
   bool is_con() const { return _lo == _hi; }
@@ -669,7 +669,7 @@ public:
 // an upper bound, inclusive.
 class TypeLong : public TypeInteger {
   TypeLong(const TypeIntPrototype<jlong, julong>& t, int w, bool dual);
-  static const Type* make(const TypeIntPrototype<jlong, julong>& t, int w, bool dual);
+  static const Type* try_make(const TypeIntPrototype<jlong, julong>& t, int w, bool dual);
 protected:
   // Do not kill _widen bits.
   virtual const Type* filter_helper(const Type* kills, bool include_speculative) const;
@@ -689,8 +689,8 @@ public:
   static const TypeLong* try_cast(const Type* t) { return t->isa_long(); }
   static const TypeLong* make(jlong lo);
   // must always specify w
-  static const Type* make(jlong lo, jlong hi, int w);
-  static const Type* make(const TypeIntPrototype<jlong, julong>& t, int w);
+  static const TypeLong* make(jlong lo, jlong hi, int w);
+  static const Type* try_make(const TypeIntPrototype<jlong, julong>& t, int w);
 
   // Check for single integer
   bool is_con() const { return _lo == _hi; }

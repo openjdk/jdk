@@ -3884,7 +3884,7 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
       if (size_max > tilen->_hi && tilen->_hi >= 0) {
         size_max = tilen->_hi;
       }
-      const TypeInt* tlcon = TypeInt::make(0, size_max, Type::WidenMin)->is_int();
+      const TypeInt* tlcon = TypeInt::make(0, size_max, Type::WidenMin);
 
       // Only do a narrow I2L conversion if the range check passed.
       IfNode* iff = new IfNode(control(), initial_slow_test, PROB_MIN, COUNT_UNKNOWN);

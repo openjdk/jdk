@@ -486,7 +486,7 @@ const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt) {
   if (nt->_widen < Type::WidenMax) {
     // Returned widened new guy
     TypeIntPrototype<S, U> prototype{{nt->_lo, nt->_hi}, {nt->_ulo, nt->_uhi}, nt->_bits};
-    return CT::make(prototype, nt->_widen + 1);
+    return CT::try_make(prototype, nt->_widen + 1);
   }
 
   // Speed up the convergence by abandoning the bounds, there are only a couple of bits so
@@ -506,7 +506,7 @@ const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt) {
     ones |= lt->_bits._ones;
   }
   TypeIntPrototype<S, U> prototype{{min, max}, {umin, umax}, {zeros, ones}};
-  return CT::make(prototype, Type::WidenMax);
+  return CT::try_make(prototype, Type::WidenMax);
 }
 template const Type* int_type_widen(const TypeInt* nt, const TypeInt* ot, const TypeInt* lt);
 template const Type* int_type_widen(const TypeLong* nt, const TypeLong* ot, const TypeLong* lt);

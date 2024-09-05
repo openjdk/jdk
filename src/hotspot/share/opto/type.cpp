@@ -474,23 +474,23 @@ void Type::Initialize_shared(Compile* current) {
   TypeInt::MINUS_1  = TypeInt::make(-1);  // -1
   TypeInt::ZERO     = TypeInt::make( 0);  //  0
   TypeInt::ONE      = TypeInt::make( 1);  //  1
-  TypeInt::BOOL     = TypeInt::make( 0, 1, WidenMin)->is_int();  // 0 or 1, FALSE or TRUE.
-  TypeInt::CC       = TypeInt::make(-1, 1, WidenMin)->is_int();  // -1, 0 or 1, condition codes
-  TypeInt::CC_LT    = TypeInt::make(-1,-1, WidenMin)->is_int();  // == TypeInt::MINUS_1
-  TypeInt::CC_GT    = TypeInt::make( 1, 1, WidenMin)->is_int();  // == TypeInt::ONE
-  TypeInt::CC_EQ    = TypeInt::make( 0, 0, WidenMin)->is_int();  // == TypeInt::ZERO
-  TypeInt::CC_NE    = TypeInt::make(TypeIntPrototype<jint, juint>{{-1, 1}, {1, max_juint}, {0, 1}}, WidenMin)->is_int();
-  TypeInt::CC_LE    = TypeInt::make(-1, 0, WidenMin)->is_int();
-  TypeInt::CC_GE    = TypeInt::make( 0, 1, WidenMin)->is_int();  // == TypeInt::BOOL
-  TypeInt::BYTE     = TypeInt::make(-128, 127,     WidenMin)->is_int(); // Bytes
-  TypeInt::UBYTE    = TypeInt::make(0, 255,        WidenMin)->is_int(); // Unsigned Bytes
-  TypeInt::CHAR     = TypeInt::make(0, 65535,      WidenMin)->is_int(); // Java chars
-  TypeInt::SHORT    = TypeInt::make(-32768, 32767, WidenMin)->is_int(); // Java shorts
-  TypeInt::NON_ZERO = TypeInt::make(TypeIntPrototype<jint, juint>{{min_jint, max_jint}, {1, max_juint}, {0, 0}}, WidenMin)->is_int();
-  TypeInt::POS      = TypeInt::make(0, max_jint,   WidenMin)->is_int(); // Non-neg values
-  TypeInt::POS1     = TypeInt::make(1, max_jint,   WidenMin)->is_int(); // Positive values
-  TypeInt::INT      = TypeInt::make(min_jint, max_jint, WidenMax)->is_int(); // 32-bit integers
-  TypeInt::SYMINT   = TypeInt::make(-max_jint, max_jint, WidenMin)->is_int(); // symmetric range
+  TypeInt::BOOL     = TypeInt::make( 0, 1, WidenMin);  // 0 or 1, FALSE or TRUE.
+  TypeInt::CC       = TypeInt::make(-1, 1, WidenMin);  // -1, 0 or 1, condition codes
+  TypeInt::CC_LT    = TypeInt::make(-1,-1, WidenMin);  // == TypeInt::MINUS_1
+  TypeInt::CC_GT    = TypeInt::make( 1, 1, WidenMin);  // == TypeInt::ONE
+  TypeInt::CC_EQ    = TypeInt::make( 0, 0, WidenMin);  // == TypeInt::ZERO
+  TypeInt::CC_NE    = TypeInt::try_make(TypeIntPrototype<jint, juint>{{-1, 1}, {1, max_juint}, {0, 1}}, WidenMin)->is_int();
+  TypeInt::CC_LE    = TypeInt::make(-1, 0, WidenMin);
+  TypeInt::CC_GE    = TypeInt::make( 0, 1, WidenMin);  // == TypeInt::BOOL
+  TypeInt::BYTE     = TypeInt::make(-128, 127,     WidenMin); // Bytes
+  TypeInt::UBYTE    = TypeInt::make(0, 255,        WidenMin); // Unsigned Bytes
+  TypeInt::CHAR     = TypeInt::make(0, 65535,      WidenMin); // Java chars
+  TypeInt::SHORT    = TypeInt::make(-32768, 32767, WidenMin); // Java shorts
+  TypeInt::NON_ZERO = TypeInt::try_make(TypeIntPrototype<jint, juint>{{min_jint, max_jint}, {1, max_juint}, {0, 0}}, WidenMin)->is_int();
+  TypeInt::POS      = TypeInt::make(0, max_jint,   WidenMin); // Non-neg values
+  TypeInt::POS1     = TypeInt::make(1, max_jint,   WidenMin); // Positive values
+  TypeInt::INT      = TypeInt::make(min_jint, max_jint, WidenMax); // 32-bit integers
+  TypeInt::SYMINT   = TypeInt::make(-max_jint, max_jint, WidenMin); // symmetric range
   TypeInt::TYPE_DOMAIN = TypeInt::INT;
   // CmpL is overloaded both as the bytecode computation returning
   // a trinary (-1, 0, +1) integer result AND as an efficient long
@@ -505,12 +505,12 @@ void Type::Initialize_shared(Compile* current) {
   TypeLong::MINUS_1  = TypeLong::make(-1);   // -1
   TypeLong::ZERO     = TypeLong::make( 0);   //  0
   TypeLong::ONE      = TypeLong::make( 1);   //  1
-  TypeLong::NON_ZERO = TypeLong::make(TypeIntPrototype<jlong, julong>{{min_jlong, max_jlong}, {1, max_julong}, {0, 0}}, WidenMin)->is_long();
-  TypeLong::POS      = TypeLong::make(0, max_jlong, WidenMin)->is_long(); // Non-neg values
-  TypeLong::NEG      = TypeLong::make(min_jlong, -1, WidenMin)->is_long();
-  TypeLong::LONG     = TypeLong::make(min_jlong, max_jlong, WidenMax)->is_long(); // 64-bit integers
-  TypeLong::INT      = TypeLong::make((jlong)min_jint, (jlong)max_jint,WidenMin)->is_long();
-  TypeLong::UINT     = TypeLong::make(0, (jlong)max_juint, WidenMin)->is_long();
+  TypeLong::NON_ZERO = TypeLong::try_make(TypeIntPrototype<jlong, julong>{{min_jlong, max_jlong}, {1, max_julong}, {0, 0}}, WidenMin)->is_long();
+  TypeLong::POS      = TypeLong::make(0, max_jlong, WidenMin); // Non-neg values
+  TypeLong::NEG      = TypeLong::make(min_jlong, -1, WidenMin);
+  TypeLong::LONG     = TypeLong::make(min_jlong, max_jlong, WidenMax); // 64-bit integers
+  TypeLong::INT      = TypeLong::make((jlong)min_jint, (jlong)max_jint,WidenMin);
+  TypeLong::UINT     = TypeLong::make(0, (jlong)max_juint, WidenMin);
   TypeLong::TYPE_DOMAIN = TypeLong::LONG;
 
   const Type **fboth =(const Type**)shared_type_arena->AmallocWords(2*sizeof(Type*));
@@ -1518,7 +1518,7 @@ bool TypeD::empty(void) const {
   return false;                 // always exactly a singleton
 }
 
-const Type* TypeInteger::make(jlong lo, jlong hi, int w, BasicType bt) {
+const TypeInteger* TypeInteger::make(jlong lo, jlong hi, int w, BasicType bt) {
   if (bt == T_INT) {
     return TypeInt::make(checked_cast<jint>(lo), checked_cast<jint>(hi), w);
   }
@@ -1598,7 +1598,7 @@ TypeInt::TypeInt(const TypeIntPrototype<jint, juint>& t, int w, bool dual)
   DEBUG_ONLY(t.verify_constraints());
 }
 
-const Type* TypeInt::make(const TypeIntPrototype<jint, juint>& t, int w, bool dual) {
+const Type* TypeInt::try_make(const TypeIntPrototype<jint, juint>& t, int w, bool dual) {
   auto new_t = t.canonicalize_constraints();
   if (!new_t._present) {
     return dual ? Type::BOTTOM : Type::TOP;
@@ -1612,12 +1612,13 @@ const TypeInt* TypeInt::make(jint lo) {
                       WidenMin, false))->hashcons()->is_int();
 }
 
-const Type* TypeInt::make(jint lo, jint hi, int w) {
-  return make(TypeIntPrototype<jint, juint>{{lo, hi}, {0, max_juint}, {0, 0}}, w);
+const TypeInt* TypeInt::make(jint lo, jint hi, int w) {
+  assert(lo <= hi, "must be legal bounds");
+  return try_make(TypeIntPrototype<jint, juint>{{lo, hi}, {0, max_juint}, {0, 0}}, w)->is_int();
 }
 
-const Type* TypeInt::make(const TypeIntPrototype<jint, juint>& t, int w) {
-  return make(t, w, false);
+const Type* TypeInt::try_make(const TypeIntPrototype<jint, juint>& t, int w) {
+  return try_make(t, w, false);
 }
 
 bool TypeInt::contains(jint i) const {
@@ -1634,7 +1635,7 @@ bool TypeInt::properly_contains(const TypeInt* t) const {
 }
 
 const Type* TypeInt::xmeet(const Type* t) const {
-  return int_type_xmeet(this, t, TypeInt::make, _is_dual);
+  return int_type_xmeet(this, t, TypeInt::try_make, _is_dual);
 }
 
 const Type* TypeInt::xdual() const {
@@ -1725,7 +1726,7 @@ TypeLong::TypeLong(const TypeIntPrototype<jlong, julong>& t, int w, bool dual)
   DEBUG_ONLY(t.verify_constraints());
 }
 
-const Type* TypeLong::make(const TypeIntPrototype<jlong, julong>& t, int w, bool dual) {
+const Type* TypeLong::try_make(const TypeIntPrototype<jlong, julong>& t, int w, bool dual) {
   auto new_t = t.canonicalize_constraints();
   if (!new_t._present) {
     return dual ? Type::BOTTOM : Type::TOP;
@@ -1739,12 +1740,13 @@ const TypeLong* TypeLong::make(jlong lo) {
                        WidenMin, false))->hashcons()->is_long();
 }
 
-const Type* TypeLong::make(jlong lo, jlong hi, int w) {
-  return make(TypeIntPrototype<jlong, julong>{{lo, hi}, {0, max_julong}, {0, 0}}, w);
+const TypeLong* TypeLong::make(jlong lo, jlong hi, int w) {
+  assert(lo <= hi, "must be legal bounds");
+  return try_make(TypeIntPrototype<jlong, julong>{{lo, hi}, {0, max_julong}, {0, 0}}, w)->is_long();
 }
 
-const Type* TypeLong::make(const TypeIntPrototype<jlong, julong>& t, int w) {
-  return make(t, w, false);
+const Type* TypeLong::try_make(const TypeIntPrototype<jlong, julong>& t, int w) {
+  return try_make(t, w, false);
 }
 
 bool TypeLong::contains(jlong i) const {
@@ -1761,7 +1763,7 @@ bool TypeLong::properly_contains(const TypeLong* t) const {
 }
 
 const Type *TypeLong::xmeet(const Type* t) const {
-  return int_type_xmeet(this, t, TypeLong::make, _is_dual);
+  return int_type_xmeet(this, t, TypeLong::try_make, _is_dual);
 }
 
 const Type* TypeLong::xdual() const {
@@ -2071,7 +2073,7 @@ inline const TypeInt* normalize_array_size(const TypeInt* size) {
   // of their index types.  Pick minimum wideness, since that is the
   // forced wideness of small ranges anyway.
   if (size->_widen != Type::WidenMin)
-    return TypeInt::make(size->_lo, size->_hi, Type::WidenMin)->is_int();
+    return TypeInt::make(size->_lo, size->_hi, Type::WidenMin);
   else
     return size;
 }
@@ -4542,7 +4544,7 @@ const TypeInt* TypeAryPtr::narrow_size_type(const TypeInt* size) const {
   if (!chg) {
     return size;
   }
-  return TypeInt::make(lo, hi, Type::WidenMin)->is_int();
+  return TypeInt::make(lo, hi, Type::WidenMin);
 }
 
 //-------------------------------cast_to_size----------------------------------

@@ -4482,7 +4482,7 @@ Node* Compile::conv_I2X_index(PhaseGVN* phase, Node* idx, const TypeInt* sizetyp
   if (sizetype != nullptr && sizetype->_hi > 0) {
     index_max = sizetype->_hi - 1;
   }
-  const TypeInt* iidxtype = TypeInt::make(0, index_max, Type::WidenMax)->is_int();
+  const TypeInt* iidxtype = TypeInt::make(0, index_max, Type::WidenMax);
   idx = constrained_convI2L(phase, idx, iidxtype, ctrl);
 #endif
   return idx;
@@ -4499,7 +4499,7 @@ Node* Compile::constrained_convI2L(PhaseGVN* phase, Node* value, const TypeInt* 
     value = new CastIINode(ctrl, value, itype, carry_dependency ? ConstraintCastNode::StrongDependency : ConstraintCastNode::RegularDependency, true /* range check dependency */);
     value = phase->transform(value);
   }
-  const TypeLong* ltype = TypeLong::make(itype->_lo, itype->_hi, itype->_widen)->is_long();
+  const TypeLong* ltype = TypeLong::make(itype->_lo, itype->_hi, itype->_widen);
   return phase->transform(new ConvI2LNode(value, ltype));
 }
 
