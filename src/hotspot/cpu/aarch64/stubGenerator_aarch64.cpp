@@ -2161,7 +2161,7 @@ class StubGenerator: public StubCodeGenerator {
       UnsafeMemoryAccessMark umam(this, true, true);
       Label L_loop;
       __ lsr(size, size, 3); // Divide size by 8
-      __ add(size, size, array, Assembler::LSL, 3); // Replace size with end of array
+      __ add(size, array, size, Assembler::LSL, 3); // Replace size with end of array
       __ bind(L_loop);
       // *array = wide_value; array += 8;
       __ str(wide_value, Address(__ post(array, 8)));
@@ -2174,7 +2174,7 @@ class StubGenerator: public StubCodeGenerator {
       UnsafeMemoryAccessMark umam(this, true, true);
       Label L_loop;
       __ lsr(size, size, 2);
-      __ add(size, size, array, Assembler::LSL, 2);
+      __ add(size, array, size, Assembler::LSL, 2);
       __ bind(L_loop);
       __ strw(wide_value, Address(__ post(array, 4)));
       __ cmp(array, size);
@@ -2188,7 +2188,7 @@ class StubGenerator: public StubCodeGenerator {
       __ lsr(size, size, 1);
       // Clear upper 16-bits
       __ andr(wide_value, wide_value, 0xFFFF);
-      __ add(size, size, array, Assembler::LSL, 1);
+      __ add(size, array, size, Assembler::LSL, 1);
       __ bind(L_loop);
       __ strh(wide_value, Address(__ post(array, 2)));
       __ cmp(array, size);
