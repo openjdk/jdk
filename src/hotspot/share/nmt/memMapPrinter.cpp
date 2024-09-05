@@ -88,24 +88,24 @@ class CachedNMTInformation : public VirtualMemoryWalker {
   // structure would have, and it allows for faster iteration of ranges since more
   // of them fit into a cache line.
   Range* _ranges;
-  MemTag* _mem_tag;
+  MemTag* _mem_tags;
   size_t _count, _capacity;
   mutable size_t _last;
 
 public:
-  CachedNMTInformation() : _ranges(nullptr), _types(nullptr),
+  CachedNMTInformation() : _ranges(nullptr), _mem_tags(nullptr),
                            _count(0), _capacity(0), _last(0) {}
 
   ~CachedNMTInformation() {
     ALLOW_C_FUNCTION(free, ::free(_ranges);)
-    ALLOW_C_FUNCTION(free, ::free(_types);)
+    ALLOW_C_FUNCTION(free, ::free(_mem_tags);)
   }
 
   bool add(const void* from, const void* to, MemTag mem_tag) {
     // We rely on NMT regions being sorted by base
     assert(_count == 0 || (from >= _ranges[_count - 1].to), "NMT regions unordered?");
     // we can just fold two regions if they are adjacent and have the same mem_tag.
-    if (_count > 0 && from == _ranges[_count - 1].to && mem_tag == _types[_count - 1]) {
+    if (_count > 0 && from == _ranges[_count - 1].to && mem_tag == _mem_tags[_count - 1]) {
       _ranges[_count - 1].to = to;
       return true;
     }
@@ -114,8 +114,8 @@ public:
       const size_t new_capacity = MAX2((size_t)4096, 2 * _capacity);
       // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks (ThreadCritical).
       ALLOW_C_FUNCTION(realloc, _ranges = (Range*)::realloc(_ranges, new_capacity * sizeof(Range));)
-      ALLOW_C_FUNCTION(realloc, _types = (MemTag*)::realloc(_types, new_capacity * sizeof(MemTag));)
-      if (_ranges == nullptr || _types == nullptr) {
+      ALLOW_C_FUNCTION(realloc, _mem_tags = (MemTag*)::realloc(_mem_tags, new_capacity * sizeof(MemTag));)
+      if (_ranges == nullptr || _mem_tags == nullptr) {
         // In case of OOM lets make no fuss. Just return.
         return false;
       }
@@ -142,7 +142,7 @@ public:
     MemTagBitmap bm;
     for(uintx i = _last; i < _count; i++) {
       if (range_intersects(from, to, _ranges[i].from, _ranges[i].to)) {
-        bm.set_tag(_types[i]);
+        bm.set_tag(_mem_tags[i]);
       } else if (to <= _ranges[i].from) {
         _last = i;
         break;
