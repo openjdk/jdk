@@ -117,14 +117,12 @@ instruct g1StoreN(indirect mem, iRegNsrc src, iRegPdst tmp1, iRegPdst tmp2, flag
                       noreg,
                       RegSet::of($mem$$Register, $src$$Register) /* preserve */);
     __ stw($src$$Register, 0, $mem$$Register);
-    if ((barrier_data() & G1C2BarrierPost) != 0) {
-      post_write_barrier(masm, this,
-                         $mem$$Register,
-                         $src$$Register /* new_val */,
-                         $tmp1$$Register,
-                         $tmp2$$Register,
-                         true /* decode_new_val */);
-    }
+    post_write_barrier(masm, this,
+                       $mem$$Register,
+                       $src$$Register /* new_val */,
+                       $tmp1$$Register,
+                       $tmp2$$Register,
+                       true /* decode_new_val */);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -652,6 +650,8 @@ instruct g1GetAndSetN(iRegNdst res, indirect mem, iRegNsrc newval, iRegPdst tmp1
 instruct g1LoadP(iRegPdst dst, memoryAlg4 mem, iRegPdst tmp, flagsRegCR0 cr0)
 %{
   predicate(UseG1GC && n->as_Load()->is_unordered() && n->as_Load()->barrier_data() != 0);
+  // This instruction does not need an acquiring counterpart because it is only
+  // used for reference loading (Reference::get()).
   match(Set dst (LoadP mem));
   effect(TEMP_DEF dst, TEMP tmp, KILL cr0);
   ins_cost(2 * MEMORY_REF_COST);
@@ -666,23 +666,11 @@ instruct g1LoadP(iRegPdst dst, memoryAlg4 mem, iRegPdst tmp, flagsRegCR0 cr0)
   ins_pipe(pipe_class_default);
 %}
 
-instruct g1LoadP_acq(iRegPdst dst, memoryAlg4 mem)
-%{
-  predicate(UseG1GC && n->as_Load()->barrier_data() != 0);
-  match(Set dst (LoadP mem));
-  ins_cost(3 * MEMORY_REF_COST);
-  format %{ "ld    $dst, $mem\t# ptr" %}
-  ins_encode %{
-    // Note: The combination of SATB barrier and acquire should never be needed,
-    // because Reference.get() doesn't use acquire.
-    ShouldNotReachHere();
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 instruct g1LoadN(iRegNdst dst, memoryAlg4 mem, iRegPdst tmp1, iRegPdst tmp2, flagsRegCR0 cr0)
 %{
   predicate(UseG1GC && n->as_Load()->is_unordered() && n->as_Load()->barrier_data() != 0);
+  // This instruction does not need an acquiring counterpart because it is only
+  // used for reference loading (Reference::get()).
   match(Set dst (LoadN mem));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, KILL cr0);
   ins_cost(2 * MEMORY_REF_COST);
@@ -694,20 +682,6 @@ instruct g1LoadN(iRegNdst dst, memoryAlg4 mem, iRegPdst tmp1, iRegPdst tmp2, fla
                       $dst$$Register,
                       $tmp1$$Register,
                       $tmp2$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct g1LoadN_acq(iRegNdst dst, memoryAlg4 mem)
-%{
-  predicate(UseG1GC && n->as_Load()->barrier_data() != 0);
-  match(Set dst (LoadN mem));
-  ins_cost(3 * MEMORY_REF_COST);
-  format %{ "lwz    $dst, $mem\t# ptr" %}
-  ins_encode %{
-    // Note: The combination of SATB barrier and acquire should never be needed,
-    // because Reference.get() doesn't use acquire.
-    ShouldNotReachHere();
   %}
   ins_pipe(pipe_class_default);
 %}
