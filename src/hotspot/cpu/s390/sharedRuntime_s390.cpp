@@ -2488,7 +2488,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
-  const char *name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
   CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
@@ -2845,7 +2845,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   OopMap* map;
 
   // Allocate space for the code. Setup code generation tools.
-  const char *name = SharedRuntime::stub_name(id);
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
@@ -2945,7 +2945,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   // allocate space for the code
   ResourceMark rm;
 
-  const char *name = SharedRuntime::stub_name(id);
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 1000, 512);
   MacroAssembler* masm                = new MacroAssembler(&buffer);
 
@@ -3040,7 +3040,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
   assert(is_throw_id(id), "expected a throw stub id");
 
-  const char *name = SharedRuntime::stub_name(id);
+  const char* name = SharedRuntime::stub_name(id);
 
   int insts_size = 256;
   int locs_size  = 0;

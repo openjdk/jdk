@@ -2062,7 +2062,7 @@ void SharedRuntime::generate_deopt_blob() {
   ResourceMark rm;
   // setup code generation tools
   // note: the buffer code size must account for StackShadowPages=50
-  const char *name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
   CodeBuffer   buffer(name, 1536, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words;
@@ -2419,7 +2419,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
 
   // allocate space for the code
   // setup code generation tools
-  const char *name = SharedRuntime::stub_name(id);
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer   buffer(name, 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
@@ -2566,7 +2566,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   // allocate space for the code
   ResourceMark rm;
 
-  const char *name = SharedRuntime::stub_name(id);
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 1000, 512);
   MacroAssembler* masm                = new MacroAssembler(&buffer);
 
@@ -2670,7 +2670,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
   assert(is_throw_id(id), "expected a throw stub id");
 
-  const char *name = SharedRuntime::stub_name(id);
+  const char* name = SharedRuntime::stub_name(id);
 
   // Information about frame layout at time of blocking runtime call.
   // Note that we only have to preserve callee-saved registers since
@@ -2784,7 +2784,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
 
   int insts_size = 1024;
   int locs_size = 64;
-  const char *name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
+  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
   CodeBuffer code(name, insts_size, locs_size);
   OopMapSet* oop_maps = new OopMapSet();
   MacroAssembler* masm = new MacroAssembler(&code);
@@ -2826,7 +2826,7 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 
   int insts_size = 1024;
   int locs_size = 64;
-  const char *name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
+  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
   CodeBuffer code(name, insts_size, locs_size);
   OopMapSet* oop_maps = new OopMapSet();
   MacroAssembler* masm = new MacroAssembler(&code);

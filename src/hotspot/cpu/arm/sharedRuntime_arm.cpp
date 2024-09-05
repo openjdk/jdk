@@ -1360,7 +1360,7 @@ uint SharedRuntime::out_preserve_stack_slots() {
 //------------------------------generate_deopt_blob----------------------------
 void SharedRuntime::generate_deopt_blob() {
   ResourceMark rm;
-  const char *name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
   CodeBuffer buffer(name, 1024, 1024);
   int frame_size_in_words;
   OopMapSet* oop_maps;
@@ -1607,7 +1607,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   assert(is_polling_page_id(id), "expected a polling page stub id");
 
   ResourceMark rm;
-  const char *name = SharedRuntime::stub_name(id);
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 256, 256);
   int frame_size_words;
   OopMapSet* oop_maps;
@@ -1679,7 +1679,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   assert(is_resolve_id(id), "expected a resolve stub id");
 
   ResourceMark rm;
-  const char *name = SharedRuntime::stub_name(id);
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 1000, 512);
   int frame_size_words;
   OopMapSet *oop_maps;
@@ -1741,7 +1741,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
   assert(is_throw_id(id), "expected a throw stub id");
 
-  const char *name = SharedRuntime::stub_name(id);
+  const char* name = SharedRuntime::stub_name(id);
 
   int insts_size = 128;
   int locs_size  = 32;
@@ -1802,7 +1802,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
     framesize // inclusive of return address
   };
 
-  const char *name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
+  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
   CodeBuffer code(name, 512, 64);
   MacroAssembler* masm = new MacroAssembler(&code);
 
@@ -1846,7 +1846,7 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
     framesize // inclusive of return address
   };
 
-  const char *name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
+  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
   CodeBuffer code(name, 512, 64);
   MacroAssembler* masm = new MacroAssembler(&code);
 

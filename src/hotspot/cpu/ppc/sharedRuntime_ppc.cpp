@@ -2861,7 +2861,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
-  const char *name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
   CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
@@ -3222,7 +3222,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address cal
   OopMap* map;
 
   // Allocate space for the code. Setup code generation tools.
-  const char *name = SharedRuntime::stub_name(id);
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
@@ -3333,7 +3333,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
   // allocate space for the code
   ResourceMark rm;
 
-  const char *name = SharedRuntime::stub_name(id);
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 1000, 512);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
@@ -3434,11 +3434,11 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address desti
 RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
   assert(is_throw_id(id), "expected a throw stub id");
 
-  const char *name = SharedRuntime::stub_name(id);
+  const char* name = SharedRuntime::stub_name(id);
 
   ResourceMark rm;
   const char* timer_msg = "SharedRuntime generate_throw_exception";
-  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+  TraceTime timer(timer_msg, TRACETIME_LOG(shInfo, startuptime));
 
   CodeBuffer code(name, 1024 DEBUG_ONLY(+ 512), 0);
   MacroAssembler* masm = new MacroAssembler(&code);
@@ -3758,7 +3758,7 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
 // It returns a jobject handle to the event writer.
 // The handle is dereferenced and the return value is the event writer oop.
 RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
-  const char *name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
+  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
   CodeBuffer code(name, 512, 64);
   MacroAssembler* masm = new MacroAssembler(&code);
 
@@ -3795,7 +3795,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
 
 // For c2: call to return a leased buffer.
 RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
-  const char *name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
+  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
   CodeBuffer code(name, 512, 64);
   MacroAssembler* masm = new MacroAssembler(&code);
 

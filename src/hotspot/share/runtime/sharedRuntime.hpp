@@ -63,7 +63,7 @@ class SharedRuntime: AllStatic {
   SHARED_STUBS_DO(SHARED_STUB_FIELD_DECLARE)
 #undef SHARED_STUB_FIELD_DECLARE
 
-#ifndef PRODUCT
+#ifdef ASSERT
   static bool is_resolve_id(SharedStubId id) {
     return (id == SharedStubId::wrong_method_id ||
             id == SharedStubId::wrong_method_abstract_id ||
