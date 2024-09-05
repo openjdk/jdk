@@ -83,8 +83,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       } else {
         // If the state is not matching then we have different operations, such as:
         // reserve [x1, A); ... commit [A, x2); or
-        // reserve [x1, A), flag1; ... reserve [A, x2), flag2; or
-        // reserve [A, x1), flag1; ... reserve [A, x2), flag2;
+        // reserve [x1, A), type1; ... reserve [A, x2), type2; or
+        // reserve [A, x1), type1; ... reserve [A, x2), type2;
         // then we re-use the existing out node, overwriting its old metadata.
         leqA_n->val() = stA;
       }
@@ -147,10 +147,10 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   if (to_be_deleted_inbetween_a_b.length() == 0 && LEQ_A_found) {
     // We must have smashed a hole in an existing region (or replaced it entirely).
     // LEQ_A < A < B <= C
-    SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(LEQ_A.out().flag())];
-    if (LEQ_A.out().type() == StateType::Reserved) {
+    SingleDiff& rescom = diff.type[NMTUtil::tag_to_index(LEQ_A.out().mem_tag())];
+    if (LEQ_A.out().state() == StateType::Reserved) {
       rescom.reserve -= B - A;
-    } else if (LEQ_A.out().type() == StateType::Committed) {
+    } else if (LEQ_A.out().state() == StateType::Committed) {
       rescom.commit -= B - A;
       rescom.reserve -= B - A;
     }
@@ -163,32 +163,32 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     _tree.remove(delete_me.address);
 
     // Perform summary accounting
-    SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(delete_me.in().flag())];
-    if (delete_me.in().type() == StateType::Reserved) {
+    SingleDiff& rescom = diff.type[NMTUtil::tag_to_index(delete_me.in().mem_tag())];
+    if (delete_me.in().state() == StateType::Reserved) {
       rescom.reserve -= delete_me.address - prev.address;
-    } else if (delete_me.in().type() == StateType::Committed) {
+    } else if (delete_me.in().state() == StateType::Committed) {
       rescom.commit -= delete_me.address - prev.address;
       rescom.reserve -= delete_me.address - prev.address;
     }
     prev = delete_me;
   }
 
-  if (prev.address != A && prev.out().type() != StateType::Released) {
+  if (prev.address != A && prev.out().state() != StateType::Released) {
     // The last node wasn't released, so it must be connected to a node outside of (A, B)
     // A - prev - B - (some node >= B)
     // It might be that prev.address == B == (some node >= B), this is fine.
-    if (prev.out().type() == StateType::Reserved) {
-      SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(prev.out().flag())];
+    if (prev.out().state() == StateType::Reserved) {
+      SingleDiff& rescom = diff.type[NMTUtil::tag_to_index(prev.out().mem_tag())];
       rescom.reserve -= B - prev.address;
-    } else if (prev.out().type() == StateType::Committed) {
-      SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(prev.out().flag())];
+    } else if (prev.out().state() == StateType::Committed) {
+      SingleDiff& rescom = diff.type[NMTUtil::tag_to_index(prev.out().mem_tag())];
       rescom.commit -= B - prev.address;
       rescom.reserve -= B - prev.address;
     }
   }
 
   // Finally, we can register the new region [A, B)'s summary data.
-  SingleDiff& rescom = diff.flag[NMTUtil::flag_to_index(metadata.flag)];
+  SingleDiff& rescom = diff.type[NMTUtil::tag_to_index(metadata.mem_tag)];
   if (state == StateType::Reserved) {
     rescom.reserve += B - A;
   } else if (state == StateType::Committed) {

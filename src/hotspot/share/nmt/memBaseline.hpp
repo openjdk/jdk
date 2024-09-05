@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,14 +144,14 @@ class MemBaseline {
     return bl->_malloc_memory_snapshot.malloc_overhead();
   }
 
-  MallocMemory* malloc_memory(MEMFLAGS flag) {
+  MallocMemory* malloc_memory(MemTag mem_tag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _malloc_memory_snapshot.by_type(flag);
+    return _malloc_memory_snapshot.by_type(mem_tag);
   }
 
-  VirtualMemory* virtual_memory(MEMFLAGS flag) {
+  VirtualMemory* virtual_memory(MemTag mem_tag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _virtual_memory_snapshot.by_type(flag);
+    return _virtual_memory_snapshot.by_type(mem_tag);
   }
 
 
