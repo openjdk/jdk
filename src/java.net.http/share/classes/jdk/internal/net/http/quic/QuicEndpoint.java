@@ -1492,6 +1492,18 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      * @param connection the connection that is mapped to the cid
      * @return true if connection ID was removed, false otherwise
      */
+    public boolean addConnectionId(QuicConnectionId cid, QuicPacketReceiver connection) {
+        var old = connections.putIfAbsent(cid, connection);
+        return old == null;
+    }
+
+    /**
+     * Remove the cid to connection mapping from the endpoint.
+     *
+     * @param cid        the connection ID to be removed
+     * @param connection the connection that is mapped to the cid
+     * @return true if connection ID was removed, false otherwise
+     */
     public boolean removeConnectionId(QuicConnectionId cid, QuicPacketReceiver connection) {
         if (debug.on()) debug.log("removing connection ID " + cid);
         return connections.remove(cid, connection);
@@ -1695,8 +1707,8 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         }
 
         @Override
-        public final QuicConnectionId localConnectionId() {
-            return localConnectionId;
+        public Stream<QuicConnectionId> connectionIds() {
+            return Stream.of(localConnectionId);
         }
 
         @Override

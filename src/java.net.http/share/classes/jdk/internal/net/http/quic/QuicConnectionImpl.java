@@ -256,6 +256,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     // the current (local) connection ID
     private final QuicConnectionId connectionId;
     private final PeerConnIdManager peerConnIdManager;
+    private final LocalConnIdManager localConnIdManager;
     private volatile QuicConnectionId incomingInitialPacketSourceId;
     protected volatile QuicEndpoint endpoint;
     private volatile QuicTransportParameters localTransportParameters;
@@ -312,9 +313,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 ? QuicVersion.lowestOf(quicInstance.getAvailableVersions())
                 : firstFlightVersion;
         final boolean isClientConn = isClientConnection();
-        // we only use the peer connection id manager when the connection corresponds to
-        // a client connection
         this.peerConnIdManager = new PeerConnIdManager(this, dbgTag);
+        this.localConnIdManager = new LocalConnIdManager(this, dbgTag, connectionId);
         this.decoder = QuicPacketDecoder.of(this.quicVersion);
         this.encoder = QuicPacketEncoder.of(this.quicVersion);
         this.codingContext = new QuicCodingContext();
@@ -1638,16 +1638,12 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      */
     @Override
     public Stream<QuicConnectionId> connectionIds() {
-        // let's start with one...
-        var connectionId = this.connectionId;
-        assert connectionId != null;
-        return Stream.of(connectionId);
+        return localConnIdManager.connectionIds();
     }
 
     /**
      * {@return the local connection id}
      */
-    @Override
     public QuicConnectionId localConnectionId() {
         return connectionId;
     }
@@ -2121,7 +2117,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     }
                     this.peerConnIdManager.handleNewConnectionIdFrame(PacketType.ONERTT, newCid);
                 } else if (frame instanceof RetireConnectionIDFrame retireCid) {
-                    this.peerConnIdManager.handleRetireConnectionIdFrame(oneRTT.destinationId(),
+                    this.localConnIdManager.handleRetireConnectionIdFrame(oneRTT.destinationId(),
                             PacketType.ONERTT, retireCid);
                 } else if (frame instanceof NewTokenFrame newTokenFrame) {
                     if (!isClientConnection()) {
@@ -2981,6 +2977,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         // which will enable the idle timer (if it hasn't been already)
         final long timeout = this.localTransportParameters.getIntParameter(max_idle_timeout, 0);
         this.idleTimeoutManager.localIdleTimeout(timeout);
+        // TODO uncomment this
+        // this.localConnIdManager.sendNewConnectionIdFrame();
         return this.endpoint;
     }
 

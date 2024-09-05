@@ -47,25 +47,13 @@ import java.util.stream.Stream;
 public interface QuicPacketReceiver {
 
     /**
-     * {@return the local connection id}
-     */
-    QuicConnectionId localConnectionId();
-
-    /**
      * A stream of local connectionIds.
      * According to Quic-Transport, a connection may have several
      * connection IDs;
      *
-     * @implSpec
-     * The default implementation of this method returns a stream
-     * containing only the {@link #localConnectionId() local connection
-     * ID}
-     *
      * @return a stream of local connectionIds for this connection.
      */
-    default Stream<QuicConnectionId> connectionIds() {
-        return Stream.of(localConnectionId());
-    }
+    Stream<QuicConnectionId> connectionIds();
 
     /**
      * The initial connection id assigned by the peer.

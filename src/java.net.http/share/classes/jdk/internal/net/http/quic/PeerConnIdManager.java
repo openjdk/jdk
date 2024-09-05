@@ -311,51 +311,6 @@ final class PeerConnIdManager {
                 + sequenceNumber;
     }
 
-    void handleRetireConnectionIdFrame(final QuicConnectionId incomingPacketDestConnId,
-                                       final QuicPacket.PacketType packetType,
-                                       final RetireConnectionIDFrame retireFrame)
-            throws QuicTransportException {
-        if (debug.on()) {
-            debug.log("Received RETIRE_CONNECTION_ID frame: %s", retireFrame);
-        }
-        final long seqNumber = retireFrame.sequenceNumber();
-        final Map.Entry<Long, PeerConnectionId> largest = this.peerConnectionIds.lastEntry();
-        if (largest != null && seqNumber > largest.getKey()) {
-            // RFC-9000, section 19.16: Receipt of a RETIRE_CONNECTION_ID frame containing a
-            // sequence number greater than any previously sent to the peer MUST be treated
-            // as a connection error of type PROTOCOL_VIOLATION
-            throw new QuicTransportException("Invalid sequence number " + seqNumber
-                    + " in RETIRE_CONNECTION_ID frame",
-                    packetType.keySpace().orElse(null),
-                    retireFrame.getTypeField(), PROTOCOL_VIOLATION);
-        }
-        final PeerConnectionId toRetire = this.peerConnectionIds.get(seqNumber);
-        if (toRetire == null) {
-            return;
-        }
-        if (toRetire.equals(incomingPacketDestConnId)) {
-            // RFC-9000, section 19.16: The sequence number specified in a RETIRE_CONNECTION_ID
-            // frame MUST NOT refer to the Destination Connection ID field of the packet in which
-            // the frame is contained. The peer MAY treat this as a connection error of type
-            // PROTOCOL_VIOLATION.
-            throw new QuicTransportException("Invalid connection id in RETIRE_CONNECTION_ID frame",
-                    packetType.keySpace().orElse(null),
-                    retireFrame.getTypeField(), PROTOCOL_VIOLATION);
-        }
-        // forget this id from our local store
-        this.peerConnectionIds.remove(seqNumber);
-        // the QuicEndpoint only stores local connection ids and peer issued stateless reset tokens.
-        // So when we are retiring a connection id, we remove the stateless reset token that the
-        // endpoint is holding on to.
-        final byte[] statelessResetToken = toRetire.getStatelessResetToken();
-        if (statelessResetToken != null) {
-            this.connection.endpoint().forgetStatelessResetToken(statelessResetToken);
-        }
-        if (debug.on()) {
-            debug.log("retired connection id " + toRetire);
-        }
-    }
-
     private List<RetireConnectionIDFrame> retirePriorTo(final long priorTo) {
         // RFC-9000, section 19.15: A receiver MUST ignore any Retire Prior To fields that do not
         // increase the largest received Retire Prior To value
