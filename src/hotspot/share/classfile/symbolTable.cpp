@@ -111,7 +111,7 @@ static uint64_t _alt_hash_seed = 0;
 static inline void log_trace_symboltable_helper(Symbol* sym, const char* msg) {
 #ifndef PRODUCT
   ResourceMark rm;
-  log_trace(symboltable)("%s [%s]", msg, sym->as_quoted_ascii());
+  log_trace(symboltable)("%s [%s]", msg, sym == nullptr ? "<unavailable>" : sym->as_quoted_ascii());
 #endif // PRODUCT
 }
 
@@ -173,8 +173,12 @@ public:
       // so log it.
       log_trace_symboltable_helper(&value, "Freeing permanent symbol");
       size_t alloc_size = SymbolTableHash::get_dynamic_node_size(value.byte_size());
+      Symbol* sym = &value;
+      // If we zap the resource area in Afree then we can't log the value of Value
+      // as it has been zapped.
+      NOT_PRODUCT(sym = ZapResourceArea ? nullptr : &value;)
       if (!SymbolTable::arena()->Afree(memory, alloc_size)) {
-        log_trace_symboltable_helper(&value, "Leaked permanent symbol");
+        log_trace_symboltable_helper(sym, "Leaked permanent symbol");
       }
     }
     SymbolTable::item_removed();
