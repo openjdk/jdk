@@ -86,7 +86,7 @@ public class DescriptorSupport
 {
 
     private static final long serialVersionUID = -6292969195866300415L;
-    private static final ObjectStreamField[] serialPersistentFields = 
+    private static final ObjectStreamField[] serialPersistentFields =
     {
       new ObjectStreamField("descriptor", HashMap.class)
     };
