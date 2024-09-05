@@ -53,7 +53,7 @@ bool LogSelectionList::verify_selections(outputStream* out) const {
   return valid;
 }
 
-bool LogSelectionList::triggers_default(uint *mask) const {
+bool LogSelectionList::triggers_default(uint* mask) const {
   bool match = false;
   for (size_t i = 0; i < _nselections; ++i) {
     if (LogDecorators::has_default_decorator(_selections[i], mask)) {

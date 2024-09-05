@@ -74,15 +74,16 @@ class LogDecorators {
   };
 
   class DefaultDecorator {
-    LogSelection _selection = LogSelection::Invalid;
+    LogSelection _selection;
     uint         _mask;
   
+    DefaultDecorator() : _selection(LogSelection::Invalid), _mask(0) {}
+
   public:
-    DefaultDecorator() {}
     static const DefaultDecorator Invalid;
 
     template<typename... Tags>
-    DefaultDecorator(LogLevelType level, uint mask, LogTagType first, Tags... rest) : _mask(mask) {
+    DefaultDecorator(LogLevelType level, uint mask, LogTagType first, Tags... rest) : _selection(LogSelection::Invalid), _mask(mask) {
       static_assert(sizeof...(rest) <= LogTag::MaxTags,
                     "Too many tags specified! Can only have up to tags in a tag set.");
 
@@ -134,7 +135,7 @@ class LogDecorators {
     return _name[decorator][1];
   }
 
-  static bool has_default_decorator(LogSelection selection, uint* mask) {
+  static bool has_default_decorator(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults = DefaultDecorators) {
     bool match_level;
     int specificity, max_specificity = 0;
     for (size_t i = 0; DefaultDecorators[i] != DefaultDecorator::Invalid; ++i) {
