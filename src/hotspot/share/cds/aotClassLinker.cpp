@@ -46,10 +46,12 @@ AOTClassLinker::ClassesTable* AOTClassLinker::_vm_classes = nullptr;
 AOTClassLinker::ClassesTable* AOTClassLinker::_candidates = nullptr;
 GrowableArrayCHeap<InstanceKlass*, mtClassShared>* AOTClassLinker::_sorted_candidates = nullptr;
 
+#ifdef ASSERT
 bool AOTClassLinker::is_initialized() {
   assert(CDSConfig::is_dumping_archive(), "AOTClassLinker is for CDS dumping only");
   return _vm_classes != nullptr;
 }
+#endif
 
 void AOTClassLinker::initialize() {
   assert(!is_initialized(), "sanity");
@@ -159,6 +161,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
 }
 
 void AOTClassLinker::add_candidates() {
+  assert_at_safepoint();
   if (CDSConfig::is_dumping_aot_linked_classes()) {
     GrowableArray<Klass*>* klasses = ArchiveBuilder::current()->klasses();
     for (GrowableArrayIterator<Klass*> it = klasses->begin(); it != klasses->end(); ++it) {
@@ -172,6 +175,7 @@ void AOTClassLinker::add_candidates() {
 
 void AOTClassLinker::write_to_archive() {
   assert(is_initialized(), "sanity");
+  assert_at_safepoint();
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
     AOTLinkedClassTable* table = AOTLinkedClassTable::get(CDSConfig::is_dumping_static_archive());
@@ -197,8 +201,8 @@ Array<InstanceKlass*>* AOTClassLinker::write_classes(oop class_loader, bool is_j
 
     if (ik->is_shared() && CDSConfig::is_dumping_dynamic_archive()) {
       if (CDSConfig::is_using_aot_linked_classes()) {
-        // This class must have been recorded as a AOT-linked for the base archive,
-        // so no need do so again for the dynamic archive.
+        // This class was recorded as a AOT-linked for the base archive,
+        // so there's no need to do so again for the dynamic archive.
       } else {
         list.append(ik);
       }

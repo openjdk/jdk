@@ -47,7 +47,7 @@ template <typename T> class Array;
 // which is also written into the AOTCache.
 //
 // AOTClassLinker is enabled by the -XX:+AOTClassLinking option. If this option
-// is disabled, no AOTLinkedClassTable will be included in the AOTCache.
+// is disabled, an empty AOTLinkedClassTable will be included in the AOTCache.
 //
 // For each class C in the AOTLinkedClassTable, the following properties for C
 // are assigned by AOTClassLinker and cannot be changed thereafter.
@@ -79,7 +79,7 @@ class AOTClassLinker :  AllStatic {
   // Sorted list such that super types come first.
   static GrowableArrayCHeap<InstanceKlass*, mtClassShared>* _sorted_candidates;
 
-  static bool is_initialized(); // for debugging
+  DEBUG_ONLY(static bool is_initialized());
 
   static void add_vm_class(InstanceKlass* ik);
   static void add_candidate(InstanceKlass* ik);
@@ -96,15 +96,15 @@ public:
   // Is this class resolved as part of vmClasses::resolve_all()?
   static bool is_vm_class(InstanceKlass* ik);
 
-  // When CDS is enabled, is ik guatanteed to be loaded at deployment time (and
+  // When CDS is enabled, is ik guatanteed to be linked at deployment time (and
   // cannot be replaced by JVMTI, etc)?
   // This is a necessary (not but sufficient) condition for keeping a direct pointer
-  // to ik in precomputed data (such as ConstantPool entries in archived classes,
+  // to ik in AOT-computed data (such as ConstantPool entries in archived classes,
   // or in AOT-compiled code).
   static bool is_candidate(InstanceKlass* ik);
 
   // Request that ik to be added to the candidates table. This will return succeed only if
-  // ik is allowed to be aot-loaded.
+  // ik is allowed to be aot-linked.
   static bool try_add_candidate(InstanceKlass* ik);
 
   static int num_app_initiated_classes();

@@ -39,7 +39,7 @@ template <typename T> class Array;
 
 // During a Production Run, the AOTLinkedClassBulkLoader loads all classes from
 // a AOTLinkedClassTable into their respective ClassLoaders. This happens very early
-// in the JVM bootstrap stage, way before any application code is executed.
+// in the JVM bootstrap stage, before any application code is executed.
 //
 class AOTLinkedClassBulkLoader :  AllStatic {
   enum class LoaderKind : int {
@@ -49,16 +49,12 @@ class AOTLinkedClassBulkLoader :  AllStatic {
     APP
   };
 
-  static bool _preloading_non_javavase_classes;
-
-  static void load_impl(JavaThread* current, LoaderKind loader_kind, oop class_loader_oop);
+  static void load_classes_in_loader(JavaThread* current, LoaderKind loader_kind, oop class_loader_oop);
   static void load_table(AOTLinkedClassTable* table, LoaderKind loader_kind, Handle loader, TRAPS);
   static void initiate_loading(JavaThread* current, const char* category, Handle loader, Array<InstanceKlass*>* classes);
-  static void load_classes(LoaderKind loader_kind, Array<InstanceKlass*>* classes, const char* category, Handle loader, TRAPS);
-  static void load_class_quick(InstanceKlass* ik, ClassLoaderData* loader_data, Handle domain, TRAPS);
-  static void load_hidden_class(ClassLoaderData* loader_data, InstanceKlass* ik, TRAPS);
+  static void load_classes_impl(LoaderKind loader_kind, Array<InstanceKlass*>* classes, const char* category, Handle loader, TRAPS);
   static void maybe_init(Array<InstanceKlass*>* classes, TRAPS);
-  static void jvmti_agent_error(InstanceKlass* expected, InstanceKlass* actual, const char* type);
+  static void load_hidden_class(ClassLoaderData* loader_data, InstanceKlass* ik, TRAPS);
 
 public:
   static void serialize(SerializeClosure* soc, bool is_static_archive);

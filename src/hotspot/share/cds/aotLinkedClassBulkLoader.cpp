@@ -56,22 +56,22 @@ void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc, bool is_static_a
 }
 
 void AOTLinkedClassBulkLoader::load_javabase_boot_classes(JavaThread* current) {
-  load_impl(current, LoaderKind::BOOT, nullptr);
+  load_classes_in_loader(current, LoaderKind::BOOT, nullptr);
 }
 
 void AOTLinkedClassBulkLoader::load_non_javabase_boot_classes(JavaThread* current) {
-  load_impl(current, LoaderKind::BOOT2, nullptr);
+  load_classes_in_loader(current, LoaderKind::BOOT2, nullptr);
 }
 
 void AOTLinkedClassBulkLoader::load_platform_classes(JavaThread* current) {
-  load_impl(current, LoaderKind::PLATFORM, SystemDictionary::java_platform_loader());
+  load_classes_in_loader(current, LoaderKind::PLATFORM, SystemDictionary::java_platform_loader());
 }
 
 void AOTLinkedClassBulkLoader::load_app_classes(JavaThread* current) {
-  load_impl(current, LoaderKind::APP, SystemDictionary::java_system_loader());
+  load_classes_in_loader(current, LoaderKind::APP, SystemDictionary::java_system_loader());
 }
 
-void AOTLinkedClassBulkLoader::load_impl(JavaThread* current, LoaderKind loader_kind, oop class_loader_oop) {
+void AOTLinkedClassBulkLoader::load_classes_in_loader(JavaThread* current, LoaderKind loader_kind, oop class_loader_oop) {
   if (!CDSConfig::is_using_aot_linked_classes()) {
     return;
   }
@@ -108,11 +108,11 @@ void AOTLinkedClassBulkLoader::load_table(AOTLinkedClassTable* table, LoaderKind
 
   switch (loader_kind) {
   case LoaderKind::BOOT:
-    load_classes(loader_kind, table->boot(), "boot ", loader, CHECK);
+    load_classes_impl(loader_kind, table->boot(), "boot ", loader, CHECK);
     break;
 
   case LoaderKind::BOOT2:
-    load_classes(loader_kind, table->boot2(), "boot2", loader, CHECK);
+    load_classes_impl(loader_kind, table->boot2(), "boot2", loader, CHECK);
     break;
 
   case LoaderKind::PLATFORM:
@@ -121,7 +121,7 @@ void AOTLinkedClassBulkLoader::load_table(AOTLinkedClassTable* table, LoaderKind
       initiate_loading(THREAD, category, loader, table->boot());
       initiate_loading(THREAD, category, loader, table->boot2());
 
-      load_classes(loader_kind, table->platform(), category, loader, CHECK);
+      load_classes_impl(loader_kind, table->platform(), category, loader, CHECK);
     }
     break;
   case LoaderKind::APP:
@@ -131,12 +131,12 @@ void AOTLinkedClassBulkLoader::load_table(AOTLinkedClassTable* table, LoaderKind
       initiate_loading(THREAD, category, loader, table->boot2());
       initiate_loading(THREAD, category, loader, table->platform());
 
-      load_classes(loader_kind, table->app(), category, loader, CHECK);
+      load_classes_impl(loader_kind, table->app(), category, loader, CHECK);
     }
   }
 }
 
-void AOTLinkedClassBulkLoader::load_classes(LoaderKind loader_kind, Array<InstanceKlass*>* classes, const char* category, Handle loader, TRAPS) {
+void AOTLinkedClassBulkLoader::load_classes_impl(LoaderKind loader_kind, Array<InstanceKlass*>* classes, const char* category, Handle loader, TRAPS) {
   if (classes == nullptr) {
     return;
   }
@@ -158,20 +158,17 @@ void AOTLinkedClassBulkLoader::load_classes(LoaderKind loader_kind, Array<Instan
       } else {
         InstanceKlass* actual;
         if (loader_data == ClassLoaderData::the_null_class_loader_data()) {
-          if (!Universe::is_fully_initialized()) {
-            load_class_quick(ik, loader_data, Handle(), CHECK);
-            actual = ik;
-          } else {
-            actual = SystemDictionary::load_instance_class(ik->name(), loader, CHECK);
-          }
+          actual = SystemDictionary::load_instance_class(ik->name(), loader, CHECK);
         } else {
-          // Note: we are not adding the locker objects into java.lang.ClassLoader::parallelLockMap, but
-          // that should be harmless.
           actual = SystemDictionaryShared::find_or_load_shared_class(ik->name(), loader, CHECK);
         }
 
         if (actual != ik) {
-          jvmti_agent_error(ik, actual, "preloaded");
+          ResourceMark rm;
+          log_error(cds)("Unable to resolve %s class from CDS archive: %s", category, ik->external_name());
+          log_error(cds)("Expected: " INTPTR_FORMAT ", actual: " INTPTR_FORMAT, p2i(ik), p2i(actual));
+          log_error(cds)("JVMTI class retransformation is not supported when archive was generated with -XX:+AOTClassLinking.");
+          MetaspaceShared::unrecoverable_loading_error();
         }
         assert(actual->is_loaded(), "must be");
       }
@@ -231,50 +228,6 @@ void AOTLinkedClassBulkLoader::load_hidden_class(ClassLoaderData* loader_data, I
   SystemDictionary::load_shared_class_misc(ik, loader_data);
   ik->add_to_hierarchy(THREAD);
   assert(ik->is_loaded(), "Must be in at least loaded state");
-}
-
-void AOTLinkedClassBulkLoader::load_class_quick(InstanceKlass* ik, ClassLoaderData* loader_data, Handle domain, TRAPS) {
-  assert(!ik->is_loaded(), "sanity");
-
-#ifdef ASSERT
-  {
-    InstanceKlass* super = ik->java_super();
-    if (super != nullptr) {
-      assert(super->is_loaded(), "must have been loaded");
-    }
-    Array<InstanceKlass*>* intfs = ik->local_interfaces();
-    for (int i = 0; i < intfs->length(); i++) {
-      assert(intfs->at(i)->is_loaded(), "must have been loaded");
-    }
-  }
-#endif
-
-  ik->restore_unshareable_info(loader_data, domain, nullptr, CHECK); // TODO: should we use ik->package()?
-  SystemDictionary::load_shared_class_misc(ik, loader_data);
-
-  // We are adding to the dictionary but can get away without
-  // holding SystemDictionary_lock, as no other threads will be loading
-  // classes at the same time.
-  assert(!Universe::is_fully_initialized(), "sanity");
-  Dictionary* dictionary = loader_data->dictionary();
-  dictionary->add_klass(THREAD, ik->name(), ik);
-  ik->add_to_hierarchy(THREAD);
-  assert(ik->is_loaded(), "Must be in at least loaded state");
-}
-
-void AOTLinkedClassBulkLoader::jvmti_agent_error(InstanceKlass* expected, InstanceKlass* actual, const char* type) {
-  if (actual->is_shared() && expected->name() == actual->name() &&
-      LambdaFormInvokers::may_be_regenerated_class(expected->name())) {
-    // For the 4 regenerated classes (such as java.lang.invoke.Invokers$Holder) there's one
-    // in static archive and one in dynamic archive. If the dynamic archive is loaded, we
-    // load the one from the dynamic archive.
-    return;
-  }
-  ResourceMark rm;
-  log_error(cds)("Unable to resolve %s class from CDS archive: %s", type, expected->external_name());
-  log_error(cds)("Expected: " INTPTR_FORMAT ", actual: " INTPTR_FORMAT, p2i(expected), p2i(actual));
-  log_error(cds)("JVMTI class retransformation is not supported when archive was generated with -XX:+AOTClassLinking.");
-  MetaspaceShared::unrecoverable_loading_error();
 }
 
 void AOTLinkedClassBulkLoader::init_javabase_preloaded_classes(TRAPS) {
