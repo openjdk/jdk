@@ -108,7 +108,8 @@ public class CreationTime {
         } else if (Platform.isLinux()) {
             // Creation time read depends on statx system call support
             try {
-                supportsCreationTimeRead = CreationTimeHelper.linuxIsCreationTimeSupported(file.toAbsolutePath().toString());
+                supportsCreationTimeRead = CreationTimeHelper.
+                        linuxIsCreationTimeSupported(file.toAbsolutePath().toString());
             } catch (Throwable e) {
                 supportsCreationTimeRead = false;
             }

@@ -37,7 +37,8 @@ public class CreationTimeHelper extends NativeTestHelper {
 
     final static Linker abi = Linker.nativeLinker();
     static final SymbolLookup lookup = SymbolLookup.loaderLookup();
-    final static MethodHandle methodHandle = abi.downcallHandle(lookup.findOrThrow("linuxIsCreationTimeSupported"),
+    final static MethodHandle methodHandle = abi.
+            downcallHandle(lookup.findOrThrow("linuxIsCreationTimeSupported"),
             FunctionDescriptor.of(C_BOOL, C_POINTER));
 
     // Helper so as to determine 'statx' support on the runtime system
