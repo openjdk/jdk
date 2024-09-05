@@ -37,7 +37,8 @@ ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupCopyFiles, COPY_LIBS_LIB, \
       SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base, \
       DEST := $(JDK_OUTPUTDIR)/lib, \
-      FILES := $(filter %.lib, $(LIB_TARGETS))))
+      FILES := $(filter %.lib, $(LIB_TARGETS)), \
+  ))
 
   TARGETS += $(COPY_LIBS_BIN) $(COPY_LIBS_LIB)
 else
