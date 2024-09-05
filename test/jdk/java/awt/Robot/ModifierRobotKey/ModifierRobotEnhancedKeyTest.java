@@ -55,6 +55,7 @@ import static jdk.test.lib.Asserts.assertTrue;
  *          some key with one or more modifiers.
  * @library /lib/client/
  * @library /test/lib
+ * @build ExtendedRobot
  * @key headful
  * @run main/timeout=600 ModifierRobotEnhancedKeyTest
  */
@@ -63,7 +64,7 @@ public class ModifierRobotEnhancedKeyTest extends KeyAdapter {
 
     private boolean focusGained = false;
     private boolean startTest = false;
-    private Robot robot;
+    private ExtendedRobot robot;
     private Frame frame;
     private Canvas canvas;
 
@@ -154,7 +155,7 @@ public class ModifierRobotEnhancedKeyTest extends KeyAdapter {
     }
 
     public void doTest() throws Exception {
-        robot = new Robot();
+        robot = new ExtendedRobot();
 
         robot.mouseMove((int) frame.getLocationOnScreen().getX() + frame.getSize().width / 2,
                         (int) frame.getLocationOnScreen().getY() + frame.getSize().height / 2);
