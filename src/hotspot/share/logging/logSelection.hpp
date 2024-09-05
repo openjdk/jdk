@@ -54,7 +54,7 @@ class LogSelection : public StackObj {
   bool operator==(const LogSelection& ref) const;
   bool operator!=(const LogSelection& ref) const;
 
-  bool contains(const LogSelection& ref, bool match_level) const;
+  bool contains(const LogSelection& ref) const;
 
   size_t ntags() const;
   LogLevelType level() const;

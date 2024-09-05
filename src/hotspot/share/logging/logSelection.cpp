@@ -69,13 +69,12 @@ bool LogSelection::operator!=(const LogSelection& ref) const {
   return !operator==(ref);
 }
 
-bool LogSelection::contains(const LogSelection &ref, bool match_level) const {
-  if (match_level && ref.level() != _level) return false;
+bool LogSelection::contains(const LogSelection &other) const {
   bool match;
-  for (size_t i = 0; i < ref.ntags(); ++i) {
+  for (size_t i = 0; i < other.ntags(); ++i) {
     match = false;
     for (size_t j = 0; j < _ntags; ++j) {
-      if (ref._tags[i] == _tags[j]) {
+      if (other._tags[i] == _tags[j]) {
         match = true;
         break;
       }
