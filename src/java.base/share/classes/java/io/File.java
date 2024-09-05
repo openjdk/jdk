@@ -838,7 +838,8 @@ public class File
 
     /**
      * Tests whether the file denoted by this abstract pathname is a
-     * directory.
+     * directory.  Symbolic links are followed and the file attribute of the
+     * final target of the link is read.
      *
      * <p> Where it is required to distinguish an I/O exception from the case
      * that the file is not a directory, or where several attributes of the
@@ -872,6 +873,8 @@ public class File
      * file.  A file is <em>normal</em> if it is not a directory and, in
      * addition, satisfies other system-dependent criteria.  Any non-directory
      * file created by a Java application is guaranteed to be a normal file.
+     * Symbolic links are followed and the file attribute of the final target
+     * of the link is read.
      *
      * <p> Where it is required to distinguish an I/O exception from the case
      * that the file is not a normal file, or where several attributes of the
@@ -903,9 +906,11 @@ public class File
     /**
      * Tests whether the file named by this abstract pathname is a hidden
      * file.  The exact definition of <em>hidden</em> is system-dependent.  On
-     * UNIX systems, a file is considered to be hidden if its name begins with
-     * a period character ({@code '.'}).  On Microsoft Windows systems, a file is
-     * considered to be hidden if it has been marked as such in the filesystem.
+     * UNIX systems, a file or symbolic link is considered to be hidden if its
+     * name begins with a period character ({@code '.'}).  On Microsoft Windows
+     * systems, a file is considered to be hidden if it has been marked as such
+     * in the filesystem, and a symbolic link to be hidden if its final target
+     * is so marked in the filesystem.
      *
      * @return  {@code true} if and only if the file denoted by this
      *          abstract pathname is hidden according to the conventions of the
