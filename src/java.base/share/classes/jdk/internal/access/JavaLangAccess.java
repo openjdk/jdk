@@ -319,6 +319,11 @@ public interface JavaLangAccess {
     int countPositives(byte[] ba, int off, int len);
 
     /**
+     * Count the number of leading non-zero ascii chars in the String.
+     */
+    int countNonZeroAscii(String s);
+
+    /**
      * Constructs a new {@code String} by decoding the specified subarray of
      * bytes using the specified {@linkplain java.nio.charset.Charset charset}.
      *
