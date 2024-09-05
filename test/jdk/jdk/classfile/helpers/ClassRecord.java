@@ -520,7 +520,7 @@ public record ClassRecord(
                         yield new ConstantPoolEntryRecord.CpClassRecord("[" + type).hashCode() + 1;
                     }
                     case NewPrimitiveArrayInstruction cins ->
-                        new ConstantPoolEntryRecord.CpClassRecord("[" + cins.typeKind().descriptor()).hashCode() + 1;
+                        new ConstantPoolEntryRecord.CpClassRecord("[" + cins.typeKind().upperBound().descriptorString()).hashCode() + 1;
                     case TypeCheckInstruction cins ->
                         ConstantPoolEntryRecord.ofCPEntry(cins.type()).hashCode();
                     case ConstantInstruction.LoadConstantInstruction cins -> {

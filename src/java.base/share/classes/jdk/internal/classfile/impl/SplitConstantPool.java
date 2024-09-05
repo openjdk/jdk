@@ -266,19 +266,70 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         return bsm;
     }
 
-    private <T extends ConstantDesc> PoolEntry findPrimitiveEntry(int tag, T val) {
-        int hash = AbstractPoolEntry.hash1(tag, val.hashCode());
+    private IntegerEntry findIntEntry(int val) {
+        int hash = AbstractPoolEntry.hash1(TAG_INTEGER, Integer.hashCode(val));
         EntryMap<PoolEntry> map = map();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
             PoolEntry e = map.getElementByToken(token);
-            if (e.tag() == tag
-                && e instanceof AbstractPoolEntry.PrimitiveEntry<?> ce
-                && ce.value().equals(val))
-                return e;
+            if (e.tag() == TAG_INTEGER
+                    && e instanceof AbstractPoolEntry.IntegerEntryImpl ce
+                    && ce.intValue() == val)
+                return ce;
         }
         if (!doneFullScan) {
             fullScan();
-            return findPrimitiveEntry(tag, val);
+            return findIntEntry(val);
+        }
+        return null;
+    }
+
+    private LongEntry findLongEntry(long val) {
+        int hash = AbstractPoolEntry.hash1(TAG_LONG, Long.hashCode(val));
+        EntryMap<PoolEntry> map = map();
+        for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
+            PoolEntry e = map.getElementByToken(token);
+            if (e.tag() == TAG_LONG
+                    && e instanceof AbstractPoolEntry.LongEntryImpl ce
+                    && ce.longValue() == val)
+                return ce;
+        }
+        if (!doneFullScan) {
+            fullScan();
+            return findLongEntry(val);
+        }
+        return null;
+    }
+
+    private FloatEntry findFloatEntry(float val) {
+        int hash = AbstractPoolEntry.hash1(TAG_FLOAT, Float.hashCode(val));
+        EntryMap<PoolEntry> map = map();
+        for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
+            PoolEntry e = map.getElementByToken(token);
+            if (e.tag() == TAG_FLOAT
+                    && e instanceof AbstractPoolEntry.FloatEntryImpl ce
+                    && ce.floatValue() == val)
+                return ce;
+        }
+        if (!doneFullScan) {
+            fullScan();
+            return findFloatEntry(val);
+        }
+        return null;
+    }
+
+    private DoubleEntry findDoubleEntry(double val) {
+        int hash = AbstractPoolEntry.hash1(TAG_DOUBLE, Double.hashCode(val));
+        EntryMap<PoolEntry> map = map();
+        for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
+            PoolEntry e = map.getElementByToken(token);
+            if (e.tag() == TAG_DOUBLE
+                    && e instanceof AbstractPoolEntry.DoubleEntryImpl ce
+                    && ce.doubleValue() == val)
+                return ce;
+        }
+        if (!doneFullScan) {
+            fullScan();
+            return findDoubleEntry(val);
         }
         return null;
     }
@@ -542,25 +593,25 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public IntegerEntry intEntry(int value) {
-        var e = (IntegerEntry) findPrimitiveEntry(TAG_INTEGER, value);
+        var e = findIntEntry(value);
         return e == null ? internalAdd(new AbstractPoolEntry.IntegerEntryImpl(this, size, value)) : e;
     }
 
     @Override
     public FloatEntry floatEntry(float value) {
-        var e = (FloatEntry) findPrimitiveEntry(TAG_FLOAT, value);
+        var e = findFloatEntry(value);
         return e == null ? internalAdd(new AbstractPoolEntry.FloatEntryImpl(this, size, value)) : e;
     }
 
     @Override
     public LongEntry longEntry(long value) {
-        var e = (LongEntry) findPrimitiveEntry(TAG_LONG, value);
+        var e = findLongEntry(value);
         return e == null ? internalAdd(new AbstractPoolEntry.LongEntryImpl(this, size, value)) : e;
     }
 
     @Override
     public DoubleEntry doubleEntry(double value) {
-        var e = (DoubleEntry) findPrimitiveEntry(TAG_DOUBLE, value);
+        var e = findDoubleEntry(value);
         return e == null ? internalAdd(new AbstractPoolEntry.DoubleEntryImpl(this, size, value)) : e;
     }
 
