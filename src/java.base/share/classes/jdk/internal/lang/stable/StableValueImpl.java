@@ -66,13 +66,8 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Stable
     private volatile Object wrappedValue;
 
-    @Stable
-    private final Object mutex;
-
     // Only allow creation via the factory `StableValueImpl::newInstance`
-    private StableValueImpl() {
-        this.mutex = new Object();
-    }
+    private StableValueImpl() {}
 
     @ForceInline
     @Override
@@ -82,7 +77,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         }
         // Mutual exclusion is required here as `computeIfUnset` might also
         // attempt to modify the `wrappedValue`
-        synchronized (mutex) {
+        synchronized (this) {
             return wrapAndCas(newValue);
         }
     }
@@ -156,7 +151,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         if (t != null) {
             return unwrap(t);
         }
-        synchronized (mutex) {
+        synchronized (this) {
             t = wrappedValue;
             if (t != null) {
                 return unwrap(t);
@@ -174,7 +169,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         if (t != null) {
             return unwrap(t);
         }
-        synchronized (mutex) {
+        synchronized (this) {
             t = wrappedValue;
             if (t != null) {
                 return unwrap(t);

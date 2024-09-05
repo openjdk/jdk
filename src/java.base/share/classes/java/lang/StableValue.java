@@ -53,6 +53,7 @@ import java.util.function.Supplier;
  * StableValue is mainly intended to be a member of a holding class and is usually neither
  * exposed directly via accessors nor passed as a method parameter.
  *
+ *
  * <h2 id="factories">Factories</h2>
  * <p>
  * To create a new fresh (unset) StableValue, use the
@@ -138,14 +139,16 @@ import java.util.function.Supplier;
  * Except for a StableValue's holder value itself, all method parameters must be
  * <em>non-null</em> or a {@link NullPointerException} will be thrown.
  *
- * <a id="identity"></a>
- * Implementations of this interface can be
- * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * classes; programmers should treat instances that are
- * {@linkplain Object#equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
- * The {@code equals} method should be used for comparisons.
+ * @implNote Implementing classes are free to synchronize on {@code this} and consequently,
+ *           care should be taken whenever (directly or indirectly) synchronizing on
+ *           a StableValue. Failure to do this may lead to deadlock.
+ *
+ * @implNote Instance fields explicitly declared as StableValue are eligible for certain
+ *           JVM optimizations compared to normal instance fields. This comes with
+ *           restrictions on reflective modifications. Although most ways of reflective
+ *           modification of such fields are disabled, it is strongly discouraged to
+ *           circumvent these protection means as reflectively modifying such fields may
+ *           lead to unspecified behavior.
  *
  * @param <T> type of the holder value
  *
