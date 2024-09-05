@@ -52,35 +52,54 @@ import static java.lang.foreign.ValueLayout.*;
 @Fork(value = 3)
 public class Mismatch {
 
-    @Param({"0", "1", "2", "3", "4", "5", "6", "7", "8",
-            "9", "10", "11", "12", "13", "14", "15", "16",
-            "17", "18", "19", "20", "21", "22", "23", "24",
-            "25", "26", "27", "28", "29", "30", "31", "32",
-            "33", "36", "40", "44", "48", "52", "56", "60", "63", "64",
-            "128", "256", "512", "1024", "8388608"})
+    @Param({"2", "3", "4", "5", "6", "7", "8", "64", "512", "4096", "32768", "262144", "2097152", "16777216", "134217728"})
     public int ELEM_SIZE;
 
+    MemorySegment srcNative;
+    MemorySegment dstNative;
     byte[] srcArray;
     byte[] dstArray;
-    MemorySegment src;
-    MemorySegment dst;
+    MemorySegment srcHeap;
+    MemorySegment dstHeap;
 
     @Setup
     public void setup() {
-        src = Arena.ofAuto().allocate(ELEM_SIZE);
-        dst = Arena.ofAuto().allocate(ELEM_SIZE);
+        // Always use the same alignment regardless of size
+        srcNative = Arena.ofAuto().allocate(ELEM_SIZE,16);
+        dstNative = Arena.ofAuto().allocate(ELEM_SIZE, 16);
         var rnd = new Random(42);
         for (int i = 0; i < ELEM_SIZE; i++) {
-            src.set(JAVA_BYTE, i, (byte) rnd.nextInt(Byte.MIN_VALUE, Byte.MAX_VALUE));
+            srcNative.set(JAVA_BYTE, i, (byte) rnd.nextInt(Byte.MIN_VALUE, Byte.MAX_VALUE));
         }
-        dst.copyFrom(src);
-        srcArray = src.toArray(JAVA_BYTE);
-        dstArray = dst.toArray(JAVA_BYTE);
+        dstNative.copyFrom(srcNative);
+        srcArray = srcNative.toArray(JAVA_BYTE);
+        dstArray = dstNative.toArray(JAVA_BYTE);
+        srcHeap = MemorySegment.ofArray(srcArray);
+        dstHeap = MemorySegment.ofArray(dstArray);
     }
 
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=31"})
     @Benchmark
-    public long segment() {
-        return src.mismatch(dst);
+    public long nativeSegmentJava() {
+        return srcNative.mismatch(dstNative);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=31"})
+    @Benchmark
+    public long heapSegmentJava() {
+        return srcNative.mismatch(dstNative);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=0"})
+    @Benchmark
+    public long nativeSegmentUnsafe() {
+        return srcNative.mismatch(dstNative);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=0"})
+    @Benchmark
+    public long heapSegmentUnsafe() {
+        return srcNative.mismatch(dstNative);
     }
 
     @Benchmark

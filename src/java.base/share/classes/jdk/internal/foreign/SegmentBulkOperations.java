@@ -46,7 +46,7 @@ public final class SegmentBulkOperations {
     private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
 
     // MISMATCH_NATIVE_THRESHOLD must be a power of two and should be greater than 2^3
-    private static final long MISMATCH_NATIVE_THRESHOLD = 1 << 20;
+    private static final long NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 20);
 
     @ForceInline
     public static long mismatch(AbstractMemorySegmentImpl src, long srcFromOffset, long srcToOffset,
@@ -61,8 +61,8 @@ public final class SegmentBulkOperations {
 
         if (bytes == 0) {
             return srcAndDstBytesDiffer ? 0 : -1;
-        } else if (bytes < MISMATCH_NATIVE_THRESHOLD) {
-            final int limit = (int) (bytes & (MISMATCH_NATIVE_THRESHOLD - 8));
+        } else if (bytes < NATIVE_THRESHOLD_MISMATCH) {
+            final int limit = (int) (bytes & (NATIVE_THRESHOLD_MISMATCH - 8));
             int offset = 0;
             for (; offset < limit; offset += 8) {
                 if (SCOPED_MEMORY_ACCESS.getLong(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset) !=
@@ -130,6 +130,13 @@ public final class SegmentBulkOperations {
             }
         }
         return srcAndDstBytesDiffer ? bytes : -1;
+    }
+
+    static final String PROPERTY_PATH = "java.lang.foreign.native.threshold.power.";
+
+    static long powerOfPropertyOr(String name, int defaultPower) {
+        final int power = Integer.getInteger(PROPERTY_PATH + name, defaultPower);
+        return 1L << Math.clamp(power, 0, Integer.SIZE - 1);
     }
 
 }
