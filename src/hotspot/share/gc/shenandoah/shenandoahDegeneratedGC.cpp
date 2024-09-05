@@ -133,10 +133,8 @@ void ShenandoahDegenGC::op_degenerated() {
       heap->set_unload_classes(_generation->heuristics()->can_unload_classes() &&
                                 (!heap->mode()->is_generational() || _generation->is_global()));
 
-      if (heap->mode()->is_generational() &&
-            (_generation->is_young() || (_generation->is_global() && ShenandoahVerify))) {
-        // Swap remembered sets for young, or if the verifier will run during a global collect
-        // TODO: This path should not depend on ShenandoahVerify
+      if (heap->mode()->is_generational() && _generation->is_young()) {
+        // Swap remembered sets for young
         _generation->swap_remembered_set();
       }
 

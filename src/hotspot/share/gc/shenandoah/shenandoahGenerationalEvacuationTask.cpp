@@ -154,7 +154,6 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
   scanner->reset_object_range(region->bottom(), region->end());
   scanner->mark_range_as_dirty(region->bottom(), region->get_top_before_promote() - region->bottom());
 
-  // TODO: use an existing coalesce-and-fill function rather than replicating the code here.
   HeapWord* obj_addr = region->bottom();
   while (obj_addr < tams) {
     oop obj = cast_to_oop(obj_addr);
@@ -223,12 +222,6 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
   assert(region->age() >= _tenuring_threshold, "Only promote regions that are sufficiently aged");
   assert(marking_context->is_marked(obj), "promoted humongous object should be alive");
 
-  // TODO: Consider not promoting humongous objects that represent primitive arrays.  Leaving a primitive array
-  // (obj->is_typeArray()) in young-gen is harmless because these objects are never relocated and they are not
-  // scanned.  Leaving primitive arrays in young-gen memory allows their memory to be reclaimed more quickly when
-  // it becomes garbage.  Better to not make this change until sizes of young-gen and old-gen are completely
-  // adaptive, as leaving primitive arrays in young-gen might be perceived as an "astonishing result" by someone
-  // has carefully analyzed the required sizes of an application's young-gen and old-gen.
   const size_t used_bytes = obj->size() * HeapWordSize;
   const size_t spanned_regions = ShenandoahHeapRegion::required_regions(used_bytes);
   const size_t humongous_waste = spanned_regions * ShenandoahHeapRegion::region_size_bytes() - obj->size() * HeapWordSize;

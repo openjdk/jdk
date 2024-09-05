@@ -207,7 +207,6 @@ void ShenandoahGeneration::swap_remembered_set() {
   heap->assert_gc_workers(heap->workers()->active_workers());
   shenandoah_assert_safepoint();
 
-  // TODO: Eventually, we want to replace this with a constant-time exchange of pointers.
   ShenandoahOldGeneration* old_generation = heap->old_generation();
   ShenandoahCopyWriteCardTableToRead task(old_generation->card_scan());
   old_generation->parallel_heap_region_iterate(&task);
@@ -599,11 +598,6 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // these regions.  The likely outcome is that these regions will not be selected for evacuation or promotion
       // in the current cycle and we will anticipate that they will be promoted in the next cycle.  This will cause
       // us to reserve more old-gen memory so that these objects can be promoted in the subsequent cycle.
-      //
-      // TODO:
-      //   If we are auto-tuning the tenure age and regions that were anticipated to be promoted in place end up
-      //   being promoted by evacuation, this event should feed into the tenure-age-selection heuristic so that
-      //   the tenure age can be increased.
       if (heap->is_aging_cycle() && (r->age() + 1 == tenuring_threshold)) {
         if (r->garbage() >= old_garbage_threshold) {
           promo_potential += r->get_live_data_bytes();
@@ -705,14 +699,6 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
       // preselected regions, which are removed when we exit this scope.
       ResourceMark rm;
       ShenandoahCollectionSetPreselector preselector(collection_set, heap->num_regions());
-
-      // TODO: young_available can include available (between top() and end()) within each young region that is not
-      // part of the collection set.  Making this memory available to the young_evacuation_reserve allows a larger
-      // young collection set to be chosen when available memory is under extreme pressure.  Implementing this "improvement"
-      // is tricky, because the incremental construction of the collection set actually changes the amount of memory
-      // available to hold evacuated young-gen objects.  As currently implemented, the memory that is available within
-      // non-empty regions that are not selected as part of the collection set can be allocated by the mutator while
-      // GC is evacuating and updating references.
 
       // Find the amount that will be promoted, regions that will be promoted in
       // place, and preselect older regions that will be promoted by evacuation.

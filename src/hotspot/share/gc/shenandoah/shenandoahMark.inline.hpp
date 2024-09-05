@@ -65,10 +65,6 @@ template <class T, ShenandoahGenerationType GENERATION, StringDedupMode STRING_D
 void ShenandoahMark::do_task(ShenandoahObjToScanQueue* q, T* cl, ShenandoahLiveData* live_data, StringDedup::Requests* const req, ShenandoahMarkTask* task, uint worker_id) {
   oop obj = task->obj();
 
-  // TODO: This will push array chunks into the mark queue with no regard for
-  // generations. I don't think it will break anything, but the young generation
-  // scan might end up processing some old generation array chunks.
-
   shenandoah_assert_not_forwarded(nullptr, obj);
   shenandoah_assert_marked(nullptr, obj);
   shenandoah_assert_not_in_cset_except(nullptr, obj, ShenandoahHeap::heap()->cancelled_gc());
@@ -310,11 +306,6 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
     if (in_generation<GENERATION>(heap, obj)) {
       mark_ref(q, mark_context, weak, obj);
       shenandoah_assert_marked(p, obj);
-      // TODO: As implemented herein, GLOBAL collections reconstruct the card table during GLOBAL concurrent
-      // marking. Note that the card table is cleaned at init_mark time so it needs to be reconstructed to support
-      // future young-gen collections.  It might be better to reconstruct card table in a different phase.  We could
-      // either mark all live memory as dirty, or could use the GLOBAL update-refs scanning of pointers to determine
-      // precisely which cards to flag as dirty.
       if (GENERATION == YOUNG && heap->is_in_old(p)) {
         // Mark card as dirty because remembered set scanning still finds interesting pointer.
         heap->old_generation()->mark_card_as_dirty((HeapWord*)p);
@@ -328,12 +319,8 @@ inline void ShenandoahMark::mark_through_ref(T *p, ShenandoahObjToScanQueue* q, 
       shenandoah_assert_marked(p, obj);
     } else if (GENERATION == OLD) {
       // Old mark, found a young pointer.
-      // TODO: Rethink this: may be redundant with dirtying of cards identified during young-gen remembered set scanning
-      // and by mutator write barriers.
       if (heap->is_in(p)) {
         assert(heap->is_in_young(obj), "Expected young object.");
-        // TODO: This assert _should not_ pop, but it does. We need to figure out why.
-        // assert(heap->old_generation()->card_scan()->is_card_dirty((HeapWord*)p), "Card should already be marked.");
         heap->old_generation()->mark_card_as_dirty(p);
       }
     }

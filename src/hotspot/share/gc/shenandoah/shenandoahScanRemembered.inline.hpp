@@ -171,8 +171,6 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
       // process a new dirty range on the object. This is always
       // the case for large object arrays, which are typically more
       // common.
-      // TODO: It is worthwhile to memoize this, so as to avoid that
-      // overhead, and it is easy to do, but deferred to a follow-up.
       HeapWord* p = _scc->block_start(dirty_l);
       oop obj = cast_to_oop(p);
 

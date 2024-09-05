@@ -1170,13 +1170,6 @@ void ShenandoahFullGC::phase5_epilog() {
 
     // We also do not expand old generation size following Full GC because we have scrambled age populations and
     // no longer have objects separated by age into distinct regions.
-
-    // TODO: Do we need to fix FullGC so that it maintains aged segregation of objects into distinct regions?
-    //       A partial solution would be to remember how many objects are of tenure age following Full GC, but
-    //       this is probably suboptimal, because most of these objects will not reside in a region that will be
-    //       selected for the next evacuation phase.
-
-
     if (heap->mode()->is_generational()) {
       ShenandoahGenerationalFullGC::compute_balances();
     }

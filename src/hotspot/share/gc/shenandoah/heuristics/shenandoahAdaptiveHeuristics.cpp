@@ -22,8 +22,8 @@
  * questions.
  *
  */
-#include "precompiled.hpp"
 
+#include "precompiled.hpp"
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
@@ -205,6 +205,34 @@ static double saturate(double value, double min, double max) {
   return MAX2(MIN2(value, max), min);
 }
 
+//  Rationale:
+//    The idea is that there is an average allocation rate and there are occasional abnormal bursts (or spikes) of
+//    allocations that exceed the average allocation rate.  What do these spikes look like?
+//
+//    1. At certain phase changes, we may discard large amounts of data and replace it with large numbers of newly
+//       allocated objects.  This "spike" looks more like a phase change.  We were in steady state at M bytes/sec
+//       allocation rate and now we're in a "reinitialization phase" that looks like N bytes/sec.  We need the "spike"
+//       accommodation to give us enough runway to recalibrate our "average allocation rate".
+//
+//   2. The typical workload changes.  "Suddenly", our typical workload of N TPS increases to N+delta TPS.  This means
+//       our average allocation rate needs to be adjusted.  Once again, we need the "spike" accomodation to give us
+//       enough runway to recalibrate our "average allocation rate".
+//
+//    3. Though there is an "average" allocation rate, a given workload's demand for allocation may be very bursty.  We
+//       allocate a bunch of LABs during the 5 ms that follow completion of a GC, then we perform no more allocations for
+//       the next 150 ms.  It seems we want the "spike" to represent the maximum divergence from average within the
+//       period of time between consecutive evaluation of the should_start_gc() service.  Here's the thinking:
+//
+//       a) Between now and the next time I ask whether should_start_gc(), we might experience a spike representing
+//          the anticipated burst of allocations.  If that would put us over budget, then we should start GC immediately.
+//       b) Between now and the anticipated depletion of allocation pool, there may be two or more bursts of allocations.
+//          If there are more than one of these bursts, we can "approximate" that these will be separated by spans of
+//          time with very little or no allocations so the "average" allocation rate should be a suitable approximation
+//          of how this will behave.
+//
+//    For cases 1 and 2, we need to "quickly" recalibrate the average allocation rate whenever we detect a change
+//    in operation mode.  We want some way to decide that the average rate has changed, while keeping average
+//    allocation rate computation independent.
 bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   size_t capacity = _space_info->soft_max_capacity();
   size_t available = _space_info->soft_available();
@@ -238,34 +266,6 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
       return true;
     }
   }
-  //  Rationale:
-  //    The idea is that there is an average allocation rate and there are occasional abnormal bursts (or spikes) of
-  //    allocations that exceed the average allocation rate.  What do these spikes look like?
-  //
-  //    1. At certain phase changes, we may discard large amounts of data and replace it with large numbers of newly
-  //       allocated objects.  This "spike" looks more like a phase change.  We were in steady state at M bytes/sec
-  //       allocation rate and now we're in a "reinitialization phase" that looks like N bytes/sec.  We need the "spike"
-  //       accommodation to give us enough runway to recalibrate our "average allocation rate".
-  //
-  //   2. The typical workload changes.  "Suddenly", our typical workload of N TPS increases to N+delta TPS.  This means
-  //       our average allocation rate needs to be adjusted.  Once again, we need the "spike" accomodation to give us
-  //       enough runway to recalibrate our "average allocation rate".
-  //
-  //    3. Though there is an "average" allocation rate, a given workload's demand for allocation may be very bursty.  We
-  //       allocate a bunch of LABs during the 5 ms that follow completion of a GC, then we perform no more allocations for
-  //       the next 150 ms.  It seems we want the "spike" to represent the maximum divergence from average within the
-  //       period of time between consecutive evaluation of the should_start_gc() service.  Here's the thinking:
-  //
-  //       a) Between now and the next time I ask whether should_start_gc(), we might experience a spike representing
-  //          the anticipated burst of allocations.  If that would put us over budget, then we should start GC immediately.
-  //       b) Between now and the anticipated depletion of allocation pool, there may be two or more bursts of allocations.
-  //          If there are more than one of these bursts, we can "approximate" that these will be separated by spans of
-  //          time with very little or no allocations so the "average" allocation rate should be a suitable approximation
-  //          of how this will behave.
-  //
-  //    For cases 1 and 2, we need to "quickly" recalibrate the average allocation rate whenever we detect a change
-  //    in operation mode.  We want some way to decide that the average rate has changed.  Make average allocation rate
-  //    computations an independent effort.
   // Check if allocation headroom is still okay. This also factors in:
   //   1. Some space to absorb allocation spikes (ShenandoahAllocSpikeFactor)
   //   2. Accumulated penalties from Degenerated and Full GC

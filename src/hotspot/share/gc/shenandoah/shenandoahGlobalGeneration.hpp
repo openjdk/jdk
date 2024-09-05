@@ -50,8 +50,7 @@ public:
   bool contains(ShenandoahHeapRegion* region) const override;
 
   bool contains(oop obj) const override {
-    // TODO: Should this assert is_in()?
-    return true;
+    return ShenandoahHeap::heap()->is_in_reserved(obj);
   }
 
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;

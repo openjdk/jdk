@@ -68,11 +68,6 @@ public:
 
   size_t last_valid_index();
 
-  void clear_read_table();
-
-  // Exchange the roles of the read and write card tables.
-  void swap_card_tables();
-
   CardValue* read_byte_map() {
     return _read_byte_map;
   }

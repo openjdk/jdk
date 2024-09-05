@@ -133,15 +133,6 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
 
   heap->free_set()->log_status_under_lock();
 
-
-  // TODO: Old marking doesn't support class unloading yet
-  // Perform concurrent class unloading
-  // if (heap->unload_classes() &&
-  //     heap->is_concurrent_weak_root_in_progress()) {
-  //   entry_class_unloading();
-  // }
-
-
   assert(!heap->is_concurrent_strong_root_in_progress(), "No evacuations during old gc.");
 
   // We must execute this vm operation if we completed final mark. We cannot
