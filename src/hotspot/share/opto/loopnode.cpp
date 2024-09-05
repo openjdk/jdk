@@ -5535,7 +5535,7 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
         // properly insert infinite loop in loop tree
         sort(_ltree_root, l);
         // fix child link from parent
-        IdealLoopTree *p = l->_parent;
+        IdealLoopTree* p = l->_parent;
         l->_next = p->_child;
         p->_child = l;
         // code below needs enclosing loop
