@@ -335,27 +335,34 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             info = new byte[0];
         }
         int rounds = (outLen + hmacLen - 1) / hmacLen;
-        kdfOutput = new byte[rounds * hmacLen];
-
-        for (int i = 0, offset = 0; i < rounds; i++, offset += hmacLen) {
-            // Calculate this round
-            try {
+        kdfOutput = new byte[outLen];
+        int i = 0;
+        int offset = 0;
+        try {
+            while (i < rounds) {
                 if (i > 0) {
-                    hmacObj.update(kdfOutput, Math.max(0, offset - hmacLen),
-                                   hmacLen); // add T(i-1)
+                    hmacObj.update(kdfOutput, Math.max(0,offset - hmacLen), hmacLen); // add T(i-1)
                 }
-                hmacObj.update(info); // Add info
-                hmacObj.update((byte) (i + 1)); // Add round number
-                hmacObj.doFinal(kdfOutput, offset);
-            } catch (ShortBufferException sbe) {
-                // This really shouldn't happen given that we've
-                // sized the buffers to their largest possible size up-front,
-                // but just in case...
-                throw new RuntimeException(sbe);
+                hmacObj.update(info);                   // Add info
+                hmacObj.update((byte) ++i);             // Add round number
+                if (i == rounds && (outLen - offset < hmacLen)) {
+                    // special handling for last chunk
+                    byte[] tmp = hmacObj.doFinal();
+                    System.arraycopy(tmp, 0, kdfOutput, offset,
+                                     outLen - offset);
+                    offset = outLen;
+                } else {
+                    hmacObj.doFinal(kdfOutput, offset);
+                    offset += hmacLen;
+                }
             }
+        } catch (ShortBufferException sbe) {
+            // This really shouldn't happen given that we've
+            // sized the buffers to their largest possible size up-front,
+            // but just in case...
+            throw new ProviderException(sbe);
         }
-
-        return Arrays.copyOf(kdfOutput, outLen);
+        return kdfOutput;
     }
 
     protected KDFParameters engineGetParameters() {

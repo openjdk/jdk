@@ -25,8 +25,11 @@
  * @test
  * @bug 8331008
  * @summary basic HKDF operations
+ * @library /test/lib
  * @enablePreview
  */
+
+import jdk.test.lib.Asserts;
 
 import javax.crypto.KDF;
 import javax.crypto.spec.HKDFParameterSpec;
@@ -51,20 +54,23 @@ public class BasicHKDFFunctions {
         var extractAndExpand = HKDFParameterSpec.ofExtract().addIKM(ikm).addSalt(salt).thenExpand(info, len);
         var okm2 = kdf.deriveKey("OKM", extractAndExpand);
 
-        if (!Arrays.equals(prk.getEncoded(), expectedPrk)) {
-            throw new Exception("the PRK does not match the expected value");
-        }
-        if (!Arrays.equals(okm1.getEncoded(), expectedOkm)) {
-            throw new Exception("the OKM does not match the expected value (expand)");
-        }
-        if (!Arrays.equals(okm2.getEncoded(), expectedOkm)) {
-            throw new Exception("the OKM does not match the expected value (extract expand)");
-        }
+        Asserts.assertEqualsByteArray(prk.getEncoded(), expectedPrk,
+                                      "the PRK must match the expected value");
+
+        Asserts.assertEqualsByteArray(okm1.getEncoded(), expectedOkm,
+                                      "the OKM must match the expected value "
+                                      + "(expand)");
+
+        Asserts.assertEqualsByteArray(okm2.getEncoded(), expectedOkm,
+                                      "the OKM must match the expected value "
+                                      + "(extract expand)");
 
         // test empty extract
         test(HKDFParameterSpec.ofExtract().extractOnly());
         // test expand with empty info
         test(HKDFParameterSpec.ofExtract().thenExpand(new byte[0], 32));
+        // test expand with null info
+        test(HKDFParameterSpec.ofExtract().thenExpand(null, 32));
         // test extract with zero-length salt
         test(HKDFParameterSpec.ofExtract().addIKM(ikm).addSalt(new byte[0]).extractOnly());
     }

@@ -86,15 +86,14 @@ import java.util.Objects;
  * instantiating a {@code KDF} object, the provider is selected the first time
  * the {@code deriveKey} or {@code deriveData} method is called, and a provider
  * is chosen that supports the parameters passed to the {@code deriveKey} or
- * {@code deriveData} method. However, if {@code getProviderName} or
- * {@code getParameters} is called before calling the {@code deriveKey} or
- * {@code deriveData} methods, the first provider supporting the KDF algorithm
- * and {@code KDFParameters} is chosen, which may not be the provider that is
- * eventually selected once the {@code AlgorithmParameterSpec} is supplied in
- * the derive methods. Therefore, it is recommended not to call
- * {@code getProviderName} or {@code getKDFParameters} until after a key
+ * {@code deriveData} method. If the {@code getProviderName} or {@code
+ * getParameters} method is called before the {@code deriveKey} or {@code
+ * deriveData} methods, the first provider supporting the KDF algorithm and
+ * optional {@code KDFParameters} is chosen. This provider may not support
+ * the key material that is subsequently passed to the deriveKey or
+ * deriveData methods. Therefore, it is recommended not to call the {@code
+ * getProviderName} or {@code getParameters} methods until after a key
  * derivation operation. Once a provider is selected, it cannot be changed.
- *
  *
  * @see KDFParameters
  * @see SecretKey
@@ -347,11 +346,15 @@ public final class KDF {
                 if (!(obj instanceof KDFSpi spiObj)) {
                     lastException = new NoSuchAlgorithmException(
                         new InvalidAlgorithmParameterException(
-                            "newInstance failed to provide a KDFSpi for the "
-                            + "provided kdfParameters"));
-                    continue;
-                }
-                if (t.hasNext()) {
+                            "No provider can be found that supports the "
+                            + "specified parameters"));
+                    if (!skipDebug && pdebug != null) {
+                        pdebug.println(
+                            "obj was not an instance of KDFSpi (should not "
+                            + "happen)");
+                    }
+                    // continue to next iteration
+                } else if (t.hasNext()) {
                     return new KDF(new Delegate(spiObj, s.getProvider()), t,
                                    algorithm, kdfParameters);
                 } else { // no other choices, lock down provider
@@ -362,9 +365,12 @@ public final class KDF {
                 lastException =
                     new NoSuchAlgorithmException(
                         new InvalidAlgorithmParameterException(
-                            "newInstance failed for the provided "
-                            + "kdfParameters"));
-                continue;
+                            "No provider can be found that supports the "
+                            + "specified parameters"));
+                if (!skipDebug && pdebug != null) {
+                    pdebug.println(e.toString());
+                }
+                // continue to next iteration
             }
         }
         if (lastException != null) {
