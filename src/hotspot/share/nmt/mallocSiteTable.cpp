@@ -112,7 +112,7 @@ bool MallocSiteTable::walk(MallocSiteWalker* walker) {
  *  Under any of above circumstances, caller should handle the situation.
  */
 MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t* marker, MemTag mem_tag) {
-  assert(type != mtNone, "Should have a real memory type");
+  assert(mem_tag != mtNone, "Should have a real memory tag");
   const unsigned int hash = key.calculate_hash();
   const unsigned int index = hash_to_index(hash);
   *marker = 0;
