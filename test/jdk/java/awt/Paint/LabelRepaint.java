@@ -36,15 +36,21 @@ public final class LabelRepaint extends Label {
 
     public static void main(final String[] args) {
         for (int i = 0; i < 10; ++i) {
-            final Frame frame = new Frame();
-            frame.setSize(300, 300);
-            frame.setLocationRelativeTo(null);
-            LabelRepaint label = new LabelRepaint();
-            frame.add(label);
-            frame.setVisible(true);
-            sleep();
-            label.test();
-            frame.dispose();
+            Frame frame = null;
+            try {
+                frame = new Frame();
+                frame.setSize(300, 300);
+                frame.setLocationRelativeTo(null);
+                LabelRepaint label = new LabelRepaint();
+                frame.add(label);
+                frame.setVisible(true);
+                sleep();
+                label.test();
+            } finally {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            }
         }
     }
 
