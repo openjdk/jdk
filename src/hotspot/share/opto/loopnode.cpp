@@ -4511,23 +4511,6 @@ bool PhaseIdealLoop::process_expensive_nodes() {
   return progress;
 }
 
-#ifdef ASSERT
-// Goes over all children of the root of the loop tree. Check if any of them have a path
-// down to Root, that does not go via a NeverBranch exit.
-bool PhaseIdealLoop::only_has_infinite_loops() {
-  ResourceMark rm;
-  Unique_Node_List worklist;
-  // start traversal at all loop heads of first-level loops
-  for (IdealLoopTree* l = _ltree_root->_child; l != nullptr; l = l->_next) {
-    Node* head = l->_head;
-    assert(head->is_Region(), "");
-    worklist.push(head);
-  }
-  return RegionNode::are_all_nodes_in_infinite_subgraph(worklist);
-}
-#endif
-
-
 //=============================================================================
 //----------------------------build_and_optimize-------------------------------
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to

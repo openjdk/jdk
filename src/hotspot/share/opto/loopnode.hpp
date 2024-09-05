@@ -966,10 +966,6 @@ private:
                                                        const Node_List& old_new);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
-#ifdef ASSERT
-  bool only_has_infinite_loops();
-#endif
-
   void log_loop_tree();
 
 public:
