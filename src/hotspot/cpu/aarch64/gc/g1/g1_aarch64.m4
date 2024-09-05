@@ -342,44 +342,40 @@ instruct g1GetAndSetN$1(indirect mem, iRegN newval, iRegPNoSp tmp1, iRegPNoSp tm
 %}')dnl
 XCHGN_INSN(,atomic_xchgw,atomic_xchgw)
 XCHGN_INSN(Acq,atomic_xchgw_acq,atomic_xchgalw)
-dnl
-define(`LOADP_INSN',
-`
+
 // This pattern is generated automatically from g1_aarch64.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct g1LoadP$1(iRegPNoSp dst, indirect mem, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsReg cr)
+instruct g1LoadP(iRegPNoSp dst, indirect mem, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsReg cr)
 %{
-  predicate(UseG1GC && ifelse($1,Volatile,'needs_acquiring_load(n)`,'!needs_acquiring_load(n)`) && n->as_Load()->barrier_data() != 0);
+  // This instruction does not need an acquiring counterpart because it is only
+  // used for reference loading (Reference::get()). The same holds for g1LoadN.
+  predicate(UseG1GC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   match(Set dst (LoadP mem));
   effect(TEMP dst, TEMP tmp1, TEMP tmp2, KILL cr);
-  ins_cost(ifelse($1,Volatile,VOLATILE_REF_COST,4 * INSN_COST));
-  format %{ "$2  $dst, $mem\t# ptr" %}
+  ins_cost(4 * INSN_COST);
+  format %{ "ldr  $dst, $mem\t# ptr" %}
   ins_encode %{
-    __ $2($dst$$Register, $mem$$Register);
+    __ ldr($dst$$Register, $mem$$Register);
     write_barrier_pre(masm, this,
                       noreg /* obj */,
                       $dst$$Register /* pre_val */,
                       $tmp1$$Register /* tmp1 */,
                       $tmp2$$Register /* tmp2 */);
   %}
-  ins_pipe(ifelse($1,Volatile,pipe_serial,iload_reg_mem));
-%}')dnl
-LOADP_INSN(,ldr)
-LOADP_INSN(Volatile,ldar)
-dnl
-define(`LOADN_INSN',
-`
+  ins_pipe(iload_reg_mem);
+%}
+
 // This pattern is generated automatically from g1_aarch64.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct g1LoadN$1(iRegNNoSp dst, indirect mem, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
+instruct g1LoadN(iRegNNoSp dst, indirect mem, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
 %{
-  predicate(UseG1GC && ifelse($1,Volatile,'needs_acquiring_load(n)`,'!needs_acquiring_load(n)`) && n->as_Load()->barrier_data() != 0);
+  predicate(UseG1GC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   match(Set dst (LoadN mem));
   effect(TEMP dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
-  ins_cost(ifelse($1,Volatile,VOLATILE_REF_COST,4 * INSN_COST));
-  format %{ "$2  $dst, $mem\t# compressed ptr" %}
+  ins_cost(4 * INSN_COST);
+  format %{ "ldrw  $dst, $mem\t# compressed ptr" %}
   ins_encode %{
-    __ $2($dst$$Register, $mem$$Register);
+    __ ldrw($dst$$Register, $mem$$Register);
     if ((barrier_data() & G1C2BarrierPre) != 0) {
       __ decode_heap_oop($tmp1$$Register, $dst$$Register);
       write_barrier_pre(masm, this,
@@ -389,9 +385,7 @@ instruct g1LoadN$1(iRegNNoSp dst, indirect mem, iRegPNoSp tmp1, iRegPNoSp tmp2, 
                         $tmp3$$Register /* tmp2 */);
     }
   %}
-  ins_pipe(ifelse($1,Volatile,pipe_serial,iload_reg_mem));
-%}')dnl
-LOADN_INSN(,ldrw)
-LOADN_INSN(Volatile,ldarw)
+  ins_pipe(iload_reg_mem);
+%}
 
 // END This section of the file is automatically generated. Do not edit --------------
