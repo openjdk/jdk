@@ -44,59 +44,12 @@
  *      -Dtest.mode=krb DTLSRehandshakeTest
  */
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-
 /**
  * Testing DTLS engines re-handshaking using each of the supported cipher
  * suites.
  */
 public class DTLSRehandshakeTest {
-    public static void main(String[] args) throws IOException {
-        PrintStream originalOut = System.out;
-        PrintStream originalErr = System.err;
-        String fileOutName = RehandshakeTest.TEST_MODE + "-output.txt";
-        try (var fileOut = new FileOutputStream(fileOutName, true);
-             var printOut = new PrintStream(new MultiOutputStream(originalOut, fileOut));
-             var printErr = new PrintStream(new MultiOutputStream(originalErr, fileOut))) {
-            System.setOut(printOut);
-            System.setErr(printErr);
-            RehandshakeTest.main(args);
-        } finally {
-            System.setErr(originalErr);
-            System.setOut(originalOut);
-        }
-    }
-
-    // Since this test generates a large amount of logs and JTREG truncates the output, the full
-    // output is also written to an external file. This helps with debugging if the test fails.
-    private static class MultiOutputStream extends OutputStream {
-        private final OutputStream out1;
-        private final OutputStream out2;
-
-        public MultiOutputStream(OutputStream out1, OutputStream out2) {
-            this.out1 = out1;
-            this.out2 = out2;
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            out1.write(b);
-            out2.write(b);
-        }
-
-        @Override
-        public void flush() throws IOException {
-            out1.flush();
-            out2.flush();
-        }
-
-        @Override
-        public void close() throws IOException {
-            out1.close();
-            out2.close();
-        }
+    public static void main(String[] args) {
+        RehandshakeTest.main(args);
     }
 }
