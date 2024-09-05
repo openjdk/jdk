@@ -692,7 +692,7 @@ public final class OutputAnalyzer {
      */
     public OutputAnalyzer stderrShouldMatchIgnoreDeprecatedWarnings(String pattern) {
         String stderr = getStderr().replaceAll(VM_DEPRECATED_MSG + "\\R", "");
-        stderr = getStderr().replaceAll(OTHER_DEPRECATED_MSG + "\\R", "");
+        stderr = stderr.replaceAll(OTHER_DEPRECATED_MSG + "\\R", "");
         Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
         if (!matcher.find()) {
             reportDiagnosticSummary();
