@@ -5525,7 +5525,7 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
         set_loop(C->root(), _ltree_root);
         // move to outer most loop with same header
         l = m_loop;
-        for (;;) {
+        while (true) {
           IdealLoopTree* next = l->_parent;
           if (next == nullptr || next->_head != m) {
             break;
