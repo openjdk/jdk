@@ -2185,7 +2185,7 @@ class StubGenerator: public StubCodeGenerator {
       Label L_loop;
       // Clear upper 16-bits of wide_value
       __ andr(wide_value, wide_value, 0xFFFF);
-      __ add(size, array);
+      __ add(size, array, size);
       __ bind(L_loop);
       __ strh(wide_value, Address(__ post(array, 2)));
       __ cmp(array, size);
