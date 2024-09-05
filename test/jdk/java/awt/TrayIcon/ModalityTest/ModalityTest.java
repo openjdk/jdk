@@ -33,7 +33,7 @@ import java.awt.image.BufferedImage;
  * @modules java.desktop/java.awt:open
  * @library /java/awt/patchlib
  * @library /lib/client ../
- * @build SystemTrayIconHelper
+ * @build ExtendedRobot SystemTrayIconHelper
  * @build java.desktop/java.awt.Helper
  * @run main ModalityTest
  */
@@ -41,7 +41,7 @@ public class ModalityTest {
 
     private static boolean isOel7orLater;
     TrayIcon icon;
-    Robot robot;
+    ExtendedRobot robot;
     Dialog d;
 
     boolean actionPerformed = false;
