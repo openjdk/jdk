@@ -259,9 +259,11 @@ private:
   int _segment_max_size_elems;
 
 public:
-  size_t segments_count() { return _segments_count; }
+  int roots_count() { return _roots_count; }
   size_t base_offset() { return _base_offset; }
+  size_t segments_count() { return _segments_count; }
   int segment_max_size_bytes() { return _segment_max_size_bytes; }
+  int segment_max_size_elems() { return _segment_max_size_elems; }
 
   size_t byte_size_for_segment(size_t seg_idx);
   int length_for_segment(size_t seg_idx);

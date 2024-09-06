@@ -289,7 +289,11 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- has_non_jar_in_classpath:       %d", _has_non_jar_in_classpath);
   st->print_cr("- requested_base_address:         " INTPTR_FORMAT, p2i(_requested_base_address));
   st->print_cr("- mapped_base_address:            " INTPTR_FORMAT, p2i(_mapped_base_address));
-  st->print_cr("- heap_roots_base_offset:         " SIZE_FORMAT, _heap_roots.base_offset());
+  st->print_cr("- heap_roots.roots_count:         %d" , _heap_roots.roots_count());
+  st->print_cr("- heap_roots.base_offset:         " SIZE_FORMAT, _heap_roots.base_offset());
+  st->print_cr("- heap_roots.segments_count:      " SIZE_FORMAT, _heap_roots.segments_count());
+  st->print_cr("- heap_roots.seg_max_size_elems:  %d", _heap_roots.segment_max_size_bytes());
+  st->print_cr("- heap_roots.seg_max_size_bytes:  %d", _heap_roots.segment_max_size_elems());
   st->print_cr("- _heap_oopmap_start_pos:         " SIZE_FORMAT, _heap_oopmap_start_pos);
   st->print_cr("- _heap_ptrmap_start_pos:         " SIZE_FORMAT, _heap_ptrmap_start_pos);
   st->print_cr("- _rw_ptrmap_start_pos:           " SIZE_FORMAT, _rw_ptrmap_start_pos);
