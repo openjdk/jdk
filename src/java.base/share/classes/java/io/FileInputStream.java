@@ -40,6 +40,11 @@ import sun.nio.ch.FileChannelImpl;
  * such as image data. For reading streams of characters, consider using
  * {@code FileReader}.
  *
+ * <p>
+ * <a href= "../../java/nio/file/package-summary.html#links">Symbolic links</a>
+ * are transparent to the constructors of this class, whether they are provided
+ * by a pathname string or via a {@code File} object.
+ *
  * @apiNote
  * The {@link #close} method should be called to release resources used by this
  * stream, either directly, or with the {@code try}-with-resources statement.
