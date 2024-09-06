@@ -138,7 +138,8 @@ void *AdlArena::Acalloc( size_t items, size_t x ) {
 }
 
 //------------------------------realloc----------------------------------------
-size_t pointer_delta(const void *left, const void *right) {
+static size_t pointer_delta(const void *left, const void *right) {
+  assert(left >= right, "pointer delta underflow");
   return (uintptr_t)left - (uintptr_t)right;
 }
 
