@@ -3507,9 +3507,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp, oop);
-    z_l(temp, Address(temp, Klass::access_flags_offset()));
-    assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
-    z_nilh(temp, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
+    z_tm(Address(temp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
     z_brne(done);
   }
 
@@ -6154,9 +6152,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
-    z_l(tmp1, Address(tmp1, Klass::access_flags_offset()));
-    assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
-    z_nilh(tmp1, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
+    z_tm(Address(tmp1, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
     z_brne(slow_path);
   }
 
@@ -6286,6 +6282,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
 
   BLOCK_COMMENT("compiler_fast_lightweight_unlock {");
   { // Lightweight Unlock
+    NearLabel push_and_slow_path;
 
     // Check if obj is top of lock-stack.
     z_lgf(top, Address(Z_thread, ls_top_offset));
@@ -6315,7 +6312,11 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     // Check for monitor (0b10).
     z_lg(mark, Address(obj, mark_offset));
     z_tmll(mark, markWord::monitor_value);
-    z_brnaz(inflated);
+    if (!UseObjectMonitorTable) {
+      z_brnaz(inflated);
+    } else {
+      z_brnaz(push_and_slow_path);
+    }
 
 #ifdef ASSERT
     // Check header not unlocked (0b01).
@@ -6334,6 +6335,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
       branch_optimized(Assembler::bcondEqual, unlocked);
     }
 
+    bind(push_and_slow_path);
     // Restore lock-stack and handle the unlock in runtime.
     z_lgf(top, Address(Z_thread, ls_top_offset));
     DEBUG_ONLY(z_stg(obj, Address(Z_thread, top));)

@@ -439,7 +439,7 @@ public class IRNode {
 
     public static final String CMP_U = PREFIX + "CMP_U" + POSTFIX;
     static {
-        beforeMatchingNameRegex(CMP_U, "CmpU");
+        beforeMatchingNameRegex(CMP_U, "CmpU\\b");
     }
 
     public static final String CMP_U3 = PREFIX + "CMP_U3" + POSTFIX;
@@ -2231,6 +2231,21 @@ public class IRNode {
     public static final String X86_TESTL_REG = PREFIX + "X86_TESTL_REG" + POSTFIX;
     static {
         machOnlyNameRegex(X86_TESTL_REG, "testL_reg");
+    }
+
+    public static final String X86_CMOVEL_IMM01 = PREFIX + "X86_CMOVEL_IMM01" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_CMOVEL_IMM01, "cmovL_imm_01");
+    }
+
+    public static final String X86_CMOVEL_IMM01U = PREFIX + "X86_CMOVEL_IMM01U" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_CMOVEL_IMM01U, "cmovL_imm_01U");
+    }
+
+    public static final String X86_CMOVEL_IMM01UCF = PREFIX + "X86_CMOVEL_IMM01UCF" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_CMOVEL_IMM01UCF, "cmovL_imm_01UCF");
     }
 
     /*

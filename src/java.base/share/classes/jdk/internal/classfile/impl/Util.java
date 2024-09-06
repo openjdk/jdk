@@ -185,8 +185,12 @@ public class Util {
 
     public static void checkKind(Opcode op, Opcode.Kind k) {
         if (op.kind() != k)
-            throw new IllegalArgumentException(
-                    String.format("Wrong opcode kind specified; found %s(%s), expected %s", op, op.kind(), k));
+            throw badOpcodeKindException(op, k);
+    }
+
+    public static IllegalArgumentException badOpcodeKindException(Opcode op, Opcode.Kind k) {
+        return new IllegalArgumentException(
+                String.format("Wrong opcode kind specified; found %s(%s), expected %s", op, op.kind(), k));
     }
 
     public static int flagsToBits(AccessFlag.Location location, Collection<AccessFlag> flags) {
@@ -224,7 +228,7 @@ public class Util {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
+    private static <T extends Attribute<T>> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
         if (attr instanceof CustomAttribute<?> ca) {
             var mapper = (AttributeMapper<T>) ca.attributeMapper();
             mapper.writeAttribute(writer, (T) ca);

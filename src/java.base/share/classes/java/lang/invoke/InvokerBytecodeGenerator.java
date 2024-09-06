@@ -125,7 +125,7 @@ class InvokerBytecodeGenerator {
             name = makeDumpableClassName(name);
         }
         this.name = name;
-        this.className = CLASS_PREFIX + name;
+        this.className = CLASS_PREFIX.concat(name);
         this.classDesc = ClassDesc.ofInternalName(className);
         this.lambdaForm = lambdaForm;
         this.invokerName = invokerName;
@@ -180,11 +180,16 @@ class InvokerBytecodeGenerator {
             if (ctr == null)  ctr = 0;
             DUMP_CLASS_FILES_COUNTERS.put(className, ctr+1);
         }
-        String sfx = ctr.toString();
-        while (sfx.length() < 3)
-            sfx = "0" + sfx;
-        className += sfx;
-        return className;
+
+        var buf = new StringBuilder(className.length() + 3).append(className);
+        int ctrVal = ctr;
+        if (ctrVal < 10) {
+            buf.repeat('0', 2);
+        } else if (ctrVal < 100) {
+            buf.append('0');
+        }
+        buf.append(ctrVal);
+        return buf.toString();
     }
 
     static class ClassData {
@@ -368,9 +373,9 @@ class InvokerBytecodeGenerator {
      */
     private void emitUnboxing(CodeBuilder cob, TypeKind target) {
         switch (target) {
-            case BooleanType -> emitReferenceCast(cob, Boolean.class, null);
-            case CharType -> emitReferenceCast(cob, Character.class, null);
-            case ByteType, DoubleType, FloatType, IntType, LongType, ShortType ->
+            case BOOLEAN -> emitReferenceCast(cob, Boolean.class, null);
+            case CHAR -> emitReferenceCast(cob, Character.class, null);
+            case BYTE, DOUBLE, FLOAT, INT, LONG, SHORT ->
                 emitReferenceCast(cob, Number.class, null);
             default -> {}
         }
@@ -443,7 +448,7 @@ class InvokerBytecodeGenerator {
         }
         if (writeBack != null) {
             cob.dup();
-            emitStoreInsn(cob, TypeKind.ReferenceType, writeBack.index());
+            emitStoreInsn(cob, TypeKind.REFERENCE, writeBack.index());
         }
     }
 
@@ -901,7 +906,7 @@ class InvokerBytecodeGenerator {
         // invoke selectAlternativeName.arguments[1]
         Class<?>[] preForkClasses = localClasses.clone();
         emitPushArgument(cob, selectAlternativeName, 1);  // get 2nd argument of selectAlternative
-        emitStoreInsn(cob, TypeKind.ReferenceType, receiver.index());  // store the MH in the receiver slot
+        emitStoreInsn(cob, TypeKind.REFERENCE, receiver.index());  // store the MH in the receiver slot
         emitStaticInvoke(cob, invokeBasicName);
 
         // goto L_done
@@ -913,7 +918,7 @@ class InvokerBytecodeGenerator {
         // invoke selectAlternativeName.arguments[2]
         System.arraycopy(preForkClasses, 0, localClasses, 0, preForkClasses.length);
         emitPushArgument(cob, selectAlternativeName, 2);  // get 3rd argument of selectAlternative
-        emitStoreInsn(cob, TypeKind.ReferenceType, receiver.index());  // store the MH in the receiver slot
+        emitStoreInsn(cob, TypeKind.REFERENCE, receiver.index());  // store the MH in the receiver slot
         emitStaticInvoke(cob, invokeBasicName);
 
         // L_done:
@@ -1151,7 +1156,7 @@ class InvokerBytecodeGenerator {
         emitPushArgument(cob, invoker, 2); // push cases
         cob.getfield(CD_CasesHolder, "cases", CD_MethodHandle_array);
         int casesLocal = extendLocalsMap(new Class<?>[] { MethodHandle[].class });
-        emitStoreInsn(cob, TypeKind.ReferenceType, casesLocal);
+        emitStoreInsn(cob, TypeKind.REFERENCE, casesLocal);
 
         Label endLabel = cob.newLabel();
         Label defaultLabel = cob.newLabel();
@@ -1172,7 +1177,7 @@ class InvokerBytecodeGenerator {
         for (int i = 0; i < numCases; i++) {
             cob.labelBinding(cases.get(i).target());
             // Load the particular case:
-            emitLoadInsn(cob, TypeKind.ReferenceType, casesLocal);
+            emitLoadInsn(cob, TypeKind.REFERENCE, casesLocal);
             cob.loadConstant(i);
             cob.aaload();
 
@@ -1311,7 +1316,7 @@ class InvokerBytecodeGenerator {
         // PREINIT:
         emitPushArgument(cob, MethodHandleImpl.LoopClauses.class, invoker.arguments[1]);
         cob.getfield(CD_LoopClauses, "clauses", CD_MethodHandle_array2);
-        emitStoreInsn(cob, TypeKind.ReferenceType, clauseDataIndex);
+        emitStoreInsn(cob, TypeKind.REFERENCE, clauseDataIndex);
 
         // INIT:
         for (int c = 0, state = 0; c < nClauses; ++c) {
@@ -1398,7 +1403,7 @@ class InvokerBytecodeGenerator {
     }
 
     private void emitPushClauseArray(CodeBuilder cob, int clauseDataSlot, int which) {
-        emitLoadInsn(cob, TypeKind.ReferenceType, clauseDataSlot);
+        emitLoadInsn(cob, TypeKind.REFERENCE, clauseDataSlot);
         cob.loadConstant(which - 1);
         cob.aaload();
     }
@@ -1497,7 +1502,7 @@ class InvokerBytecodeGenerator {
         //      long        -     l2i,i2b   l2i,i2s  l2i,i2c    l2i      <->      l2f      l2d
         //      float       -     f2i,i2b   f2i,i2s  f2i,i2c    f2i      f2l      <->      f2d
         //      double      -     d2i,i2b   d2i,i2s  d2i,i2c    d2i      d2l      d2f      <->
-        if (from != to && from != TypeKind.BooleanType) try {
+        if (from != to && from != TypeKind.BOOLEAN) try {
             cob.conversion(from, to);
         } catch (IllegalArgumentException e) {
             throw new IllegalStateException("unhandled prim cast: " + from + "2" + to);

@@ -451,7 +451,7 @@ public abstract class AbstractMemberWriter {
      */
     protected void addModifiersAndType(Element member, TypeMirror type,
             Content target) {
-        var code = new HtmlTree(HtmlTag.CODE);
+        var code = HtmlTree.CODE();
         addModifiers(member, code);
         if (type == null) {
             code.add(switch (member.getKind()) {
@@ -670,7 +670,7 @@ public abstract class AbstractMemberWriter {
      * @return the inherited summary links
      */
     public Content getInheritedSummaryLinks() {
-        return new HtmlTree(HtmlTag.CODE);
+        return HtmlTree.CODE();
     }
 
     /**
