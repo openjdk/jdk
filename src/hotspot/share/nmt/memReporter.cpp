@@ -543,7 +543,7 @@ void MemSummaryDiffReporter::print_malloc_diff(size_t current_amount, size_t cur
   out->print("%s" SIZE_FORMAT "%s", alloc_tag, amount_in_current_scale(current_amount), scale);
   // Report type only if it is valid and not under "thread" category
   if (mem_tag != mtNone && mem_tag != mtThread) {
-    out->print(" mem_tag=%s", NMTUtil::tag_to_name(mem_tag));
+    out->print(" type=%s", NMTUtil::tag_to_name(mem_tag));
   }
 
   int64_t amount_diff = diff_in_current_scale(current_amount, early_amount);
