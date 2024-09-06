@@ -136,13 +136,15 @@ class LogDecorators {
   }
 
   static bool has_default_decorator(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults = DefaultDecorators) {
-    int specificity, max_specificity = 0;
+    int max_specificity = 0;
     for (size_t i = 0; DefaultDecorators[i] != DefaultDecorator::Invalid; ++i) {
       const bool ignore_level = DefaultDecorators[i].selection().level() == LogLevelType::NotMentioned;
       const bool level_matches = ignore_level || selection.level() == DefaultDecorators[i].selection().level();
       if (!level_matches) continue;
-      specificity = selection.contains(DefaultDecorators[i].selection()) ? DefaultDecorators[i].selection().ntags() : 0;
-      if (specificity == 0) continue;
+      if (!selection.contains(DefaultDecorators[i].selection())) {
+        continue;
+      }
+      int specificity = DefaultDecorators[i].selection().ntags();
       if (specificity > max_specificity) {
         *mask = DefaultDecorators[i].mask();
         max_specificity = specificity;
