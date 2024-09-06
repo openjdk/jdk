@@ -35,6 +35,34 @@ import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
 import java.util.Objects;
 
+/// An implementation extends this class to create its own `KeyPairGenerator`.
+///
+/// An implementation must include a zero-argument public constructor that calls
+/// `super(fname, pnames)`, where `fname` is the family name of the algorithm and
+/// `pnames` are the supported parameter set names. `pnames` must contain at least
+/// one element and the first element is the default parameter set name,
+/// i.e. the parameter set to be used in key pair generation unless
+/// [#initialize(AlgorithmParameterSpec, java.security.SecureRandom)]
+/// is called to choose a specific parameter set. This requirement also applies
+/// to implementations of [NamedKeyFactory], [NamedKEM], and [NamedSignature],
+/// although there is no default parameter set concept for these classes.
+///
+/// An implementation must implement all abstract methods. For all these
+/// methods, the implementation must relinquish any "ownership" of any input
+/// and output array argument. Precisely, the implementation must not retain
+/// any reference to a returning array so that it won't be able to modify its
+/// content later. Similarly, the implementation must not modify any input
+/// array argument and must not retain any reference to an input array argument
+/// after the call. Together, this makes sure that the caller does not need to
+/// make any defensive copy on the input and output arrays. This requirement
+/// also applies to abstract methods defined in [NamedKEM] and [NamedSignature].
+///
+/// Also, an implementation must not keep any extra copy of a private key.
+/// For key generation, the only copy is the one returned in the
+/// [#generateKeyPair0] call. For all other methods, it must not make
+/// a copy of the input private key. A `KEM` implementation also must
+/// not keep a copy of the shared secret key, no matter if it's an
+/// encapsulator or a decapsulator.
 public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
 
     private final String fname; // family name
@@ -87,13 +115,8 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
     public KeyPair generateKeyPair() {
         String pname = name != null ? name : pnames[0];
         var keys = generateKeyPair0(pname, secureRandom);
-        try {
-            return new KeyPair(new NamedX509Key(fname, pname, keys[0]),
-                    new NamedPKCS8Key(fname, pname, keys[1]));
-        } finally {
-            Arrays.fill(keys[0], (byte)0);
-            Arrays.fill(keys[1], (byte)0);
-        }
+        return new KeyPair(new NamedX509Key(fname, pname, keys[0]),
+                new NamedPKCS8Key(fname, pname, keys[1]));
     }
 
     /**

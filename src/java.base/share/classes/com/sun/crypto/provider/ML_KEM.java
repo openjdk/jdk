@@ -543,7 +543,6 @@ public final class ML_KEM {
         var v = DecodePoly(c2, params.dv).Decompress(params.dv);
         var sHat = DecodeVec(sk, params.k, 12);
         var out = v.sub(sHat.DotNTT(u.NTT()).InvNTT()).Compress(1).Encode(1);
-        var oo = sHat.DotNTT(u.NTT()).InvNTT();
         return out;
     }
 

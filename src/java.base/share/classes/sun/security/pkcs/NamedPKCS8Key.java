@@ -46,7 +46,8 @@ public final class NamedPKCS8Key extends PKCS8Key {
     private final transient NamedParameterSpec paramSpec;
     private final byte[] h;
 
-    // Ctor from family name, parameter set name, raw key bytes
+    // Ctor from family name, parameter set name, raw key bytes.
+    // Key bytes won't be cloned, caller must relinquish ownership
     public NamedPKCS8Key(String fname, String pname, byte[] h) {
         this.fname = fname;
         this.paramSpec = new NamedParameterSpec(pname);
@@ -55,7 +56,7 @@ public final class NamedPKCS8Key extends PKCS8Key {
         } catch (NoSuchAlgorithmException e) {
             throw new ProviderException(e);
         }
-        this.h = h.clone();
+        this.h = h;
 
         DerValue val = new DerValue(DerValue.tag_OctetString, h);
         try {
@@ -87,8 +88,10 @@ public final class NamedPKCS8Key extends PKCS8Key {
         return paramSpec.getName() + " private key";
     }
 
+    // Returns the reference to the internal key. Caller must not modify
+    // the content or keep a reference
     public byte[] getRawBytes() {
-        return h.clone();
+        return h;
     }
 
     @Override

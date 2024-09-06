@@ -45,7 +45,8 @@ public final class NamedX509Key extends X509Key {
     private final transient NamedParameterSpec paramSpec;
     private final byte[] h;
 
-    // Ctor from family name, parameter set name, raw key bytes
+    // Ctor from family name, parameter set name, raw key bytes.
+    // Key bytes won't be cloned, caller must relinquish ownership
     public NamedX509Key(String fname, String pname, byte[] h) {
         this.fname = fname;
         this.paramSpec = new NamedParameterSpec(pname);
@@ -54,7 +55,7 @@ public final class NamedX509Key extends X509Key {
         } catch (NoSuchAlgorithmException e) {
             throw new ProviderException(e);
         }
-        this.h = h.clone();
+        this.h = h;
 
         setKey(new BitArray(h.length * 8, h));
     }
@@ -77,8 +78,10 @@ public final class NamedX509Key extends X509Key {
         return paramSpec.getName() + " public key";
     }
 
+    // Returns the reference to the internal key. Caller must not modify
+    // the content or keep a reference
     public byte[] getRawBytes() {
-        return h.clone();
+        return h;
     }
 
     @Override

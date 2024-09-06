@@ -35,6 +35,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 import java.util.Objects;
 
+/// An implementation extends this class to create its own `Signature`.
 public abstract class NamedSignature extends SignatureSpi {
 
     private final String fname; // family name
@@ -73,10 +74,7 @@ public abstract class NamedSignature extends SignatureSpi {
         name = nk.getParams().getName();
         pubKey = nk.getRawBytes();
         checkPublicKey(name, pubKey);
-        if (secKey != null) {
-            Arrays.fill(secKey, (byte)0);
-            secKey = null;
-        }
+        secKey = null;
         bout.reset();
     }
 

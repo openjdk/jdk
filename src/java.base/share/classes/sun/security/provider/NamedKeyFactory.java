@@ -33,9 +33,11 @@ import java.security.spec.*;
 import java.util.Arrays;
 import java.util.Objects;
 
-// Bonus: This factory can read from a RAW key using translateKey(key)
-// if key.getFormat() is "RAW", and write to a RAW EncodedKeySpec using
-// getKeySpec(key, EncodedKeySpec.class).
+/// An implementation extends this class to create its own `KeyFactory`.
+///
+/// Bonus: This factory can read from a RAW key using `translateKey`
+/// if `key.getFormat` is "RAW", and write to a RAW `EncodedKeySpec`
+/// `using getKeySpec(key, EncodedKeySpec.class)`.
 public class NamedKeyFactory extends KeyFactorySpi {
 
     private final String fname; // family name
@@ -164,7 +166,6 @@ public class NamedKeyFactory extends KeyFactorySpi {
             return key;
         }
         var format = key.getFormat();
-        byte[] bytes = null;
         try {
             if (format == null) {
                 throw new InvalidKeyException("Unextractable key");
@@ -190,16 +191,19 @@ public class NamedKeyFactory extends KeyFactorySpi {
                         }
                     }
                     return key instanceof PrivateKey
-                            ? new NamedPKCS8Key(fname, name, bytes = key.getEncoded())
+                            ? new NamedPKCS8Key(fname, name, key.getEncoded())
                             : new NamedX509Key(fname, name, key.getEncoded());
                 } else {
                     throw new InvalidKeyException("Unsupported key type: " + key.getClass());
                 }
             } else if (format.equalsIgnoreCase("PKCS#8") && key instanceof PrivateKey) {
+                var bytes = key.getEncoded();
                 try {
-                    return fromPKCS8(bytes = key.getEncoded());
+                    return fromPKCS8(bytes);
                 } catch (InvalidKeySpecException e) {
                     throw new InvalidKeyException("Invalid PKCS#8 key", e);
+                } finally {
+                    Arrays.fill(bytes, (byte)0);
                 }
             } else if (format.equalsIgnoreCase("X.509") && key instanceof PublicKey) {
                 try {
@@ -209,10 +213,6 @@ public class NamedKeyFactory extends KeyFactorySpi {
                 }
             } else {
                 throw new InvalidKeyException("Unknown key format: " + key.getFormat());
-            }
-        } finally {
-            if (bytes != null) {
-                Arrays.fill(bytes, (byte)0);
             }
         }
     }
