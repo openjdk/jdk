@@ -3059,7 +3059,6 @@ class StubGenerator: public StubCodeGenerator {
   address generate_upcall_stub_load_target() {
     StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
     address start = __ pc();
-    __ save_return_pc();
 
     __ resolve_jobject(Z_ARG1, Z_tmp_1, Z_tmp_2);
       // Load target method from receiver
@@ -3072,7 +3071,6 @@ class StubGenerator: public StubCodeGenerator {
     __ z_lg(Z_method, Address(Z_method, java_lang_invoke_ResolvedMethodName::vmtarget_offset()));
     __ z_stg(Z_method, Address(Z_thread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
 
-    __ restore_return_pc();
     __ z_br(Z_R14);
 
     return start;
