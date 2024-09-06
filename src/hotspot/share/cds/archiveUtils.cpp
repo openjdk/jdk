@@ -384,7 +384,7 @@ int HeapRoots::length_for_segment(size_t seg_idx) {
   }
 }
 
-int HeapRoots::segment_start(size_t seg_idx) {
+int HeapRoots::segment_start_elems(size_t seg_idx) {
   assert(seg_idx < _segment_count, "In range");
   return (int)(seg_idx * _segment_max_size_elems);
 }

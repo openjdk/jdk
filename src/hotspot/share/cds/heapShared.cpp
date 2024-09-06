@@ -133,8 +133,8 @@ static ArchivableStaticFieldInfo fmg_archive_subgraph_entry_fields[] = {
 
 KlassSubGraphInfo* HeapShared::_default_subgraph_info;
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
-GrowableArrayCHeap<OopHandle, mtClassShared>* HeapShared::_roots;
-size_t HeapShared::_roots_segment_max_size;
+GrowableArrayCHeap<OopHandle, mtClassShared>* HeapShared::_root_segments;
+size_t HeapShared::_root_segment_max_size;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
 MetaspaceObjToOopHandleTable* HeapShared::_scratch_java_mirror_table = nullptr;
 MetaspaceObjToOopHandleTable* HeapShared::_scratch_references_table = nullptr;
@@ -226,7 +226,7 @@ int HeapShared::append_root(oop obj) {
   return _pending_roots->append(obj);
 }
 
-objArrayOop HeapShared::roots(int segment_idx) {
+objArrayOop HeapShared::root_segment(int segment_idx) {
   if (CDSConfig::is_dumping_heap()) {
     assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
     if (!HeapShared::can_write()) {
@@ -236,20 +236,20 @@ objArrayOop HeapShared::roots(int segment_idx) {
     assert(CDSConfig::is_using_archive(), "must be");
   }
 
-  objArrayOop roots = (objArrayOop)_roots->at(segment_idx).resolve();
+  objArrayOop roots = (objArrayOop)_root_segments->at(segment_idx).resolve();
   assert(roots != nullptr, "should have been initialized");
   return roots;
 }
 
 // Returns an objArray that contains all the roots of the archived objects
 oop HeapShared::get_root(int index, bool clear) {
-  assert(_roots_segment_max_size > 0, "sanity");
+  assert(_root_segment_max_size > 0, "sanity");
   assert(index >= 0, "sanity");
   assert(!CDSConfig::is_dumping_heap() && CDSConfig::is_using_archive(), "runtime only");
-  assert(!_roots->is_empty(), "must have loaded shared heap");
-  int seg_idx = index / (int)_roots_segment_max_size;
-  int int_idx = index % (int)_roots_segment_max_size;
-  oop result = roots(seg_idx)->obj_at(int_idx);
+  assert(!_root_segments->is_empty(), "must have loaded shared heap");
+  int seg_idx = index / (int)_root_segment_max_size;
+  int int_idx = index % (int)_root_segment_max_size;
+  oop result = root_segment(seg_idx)->obj_at(int_idx);
   if (clear) {
     clear_root(index);
   }
@@ -260,14 +260,14 @@ void HeapShared::clear_root(int index) {
   assert(index >= 0, "sanity");
   assert(CDSConfig::is_using_archive(), "must be");
   if (ArchiveHeapLoader::is_in_use()) {
-    assert(_roots_segment_max_size > 0, "sanity");
-    int seg_idx = index / (int)_roots_segment_max_size;
-    int int_idx = index % (int)_roots_segment_max_size;
+    assert(_root_segment_max_size > 0, "sanity");
+    int seg_idx = index / (int)_root_segment_max_size;
+    int int_idx = index % (int)_root_segment_max_size;
     if (log_is_enabled(Debug, cds, heap)) {
-      oop old = roots(seg_idx)->obj_at(int_idx);
+      oop old = root_segment(seg_idx)->obj_at(int_idx);
       log_debug(cds, heap)("Clearing root %d: was " PTR_FORMAT, index, p2i(old));
     }
-    roots(seg_idx)->obj_at_put(int_idx, nullptr);
+    root_segment(seg_idx)->obj_at_put(int_idx, nullptr);
   }
 }
 
@@ -771,18 +771,18 @@ void HeapShared::write_subgraph_info_table() {
   }
 }
 
-void HeapShared::add_heap_roots(oop roots_oop) {
-  if (roots_oop != nullptr) {
+void HeapShared::add_root_segment(oop segment_oop) {
+  if (segment_oop != nullptr) {
     assert(ArchiveHeapLoader::is_in_use(), "must be");
-    if (_roots == nullptr) {
-      _roots = new GrowableArrayCHeap<OopHandle, mtClassShared>(10);
+    if (_root_segments == nullptr) {
+      _root_segments = new GrowableArrayCHeap<OopHandle, mtClassShared>(10);
     }
-    _roots->push(OopHandle(Universe::vm_global(), roots_oop));
+    _root_segments->push(OopHandle(Universe::vm_global(), segment_oop));
   }
 }
 
-void HeapShared::init_roots_segment_max_size(size_t size) {
-  _roots_segment_max_size = size;
+void HeapShared::init_root_segment_max_size(size_t size) {
+  _root_segment_max_size = size;
 }
 
 void HeapShared::serialize_tables(SerializeClosure* soc) {

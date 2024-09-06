@@ -290,8 +290,8 @@ private:
   static KlassSubGraphInfo* _default_subgraph_info;
 
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
-  static GrowableArrayCHeap<OopHandle, mtClassShared>* _roots;
-  static size_t _roots_segment_max_size;
+  static GrowableArrayCHeap<OopHandle, mtClassShared>* _root_segments;
+  static size_t _root_segment_max_size;
   static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
   static MetaspaceObjToOopHandleTable* _scratch_java_mirror_table;
   static MetaspaceObjToOopHandleTable* _scratch_references_table;
@@ -400,7 +400,7 @@ private:
   static GrowableArrayCHeap<oop, mtClassShared>* pending_roots() { return _pending_roots; }
 
   // Dump-time and runtime
-  static objArrayOop roots(int segment_idx);
+  static objArrayOop root_segment(int segment_idx);
   static oop get_root(int index, bool clear=false);
 
   // Run-time only
@@ -423,8 +423,8 @@ private:
 
   static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
-  static void add_heap_roots(oop roots_oop) NOT_CDS_JAVA_HEAP_RETURN;
-  static void init_roots_segment_max_size(size_t size) NOT_CDS_JAVA_HEAP_RETURN;
+  static void add_root_segment(oop segment_oop) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_root_segment_max_size(size_t size) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_tables(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 
 #ifndef PRODUCT
