@@ -533,7 +533,7 @@ class InvokerBytecodeGenerator {
         final byte[] classFile = classFileSetup(new Consumer<>() {
             @Override
             public void accept(ClassBuilder clb) {
-                addMethod(clb);
+                addMethod(clb, true);
                 clinit(clb, classDesc, classData);
                 bogusMethod(clb, lambdaForm);
             }
@@ -541,7 +541,7 @@ class InvokerBytecodeGenerator {
         return classFile;
     }
 
-    void addMethod(ClassBuilder clb) {
+    void addMethod(ClassBuilder clb, boolean alive) {
         methodSetup(clb, new Consumer<>() {
             @Override
             public void accept(MethodBuilder mb) {
@@ -552,7 +552,9 @@ class InvokerBytecodeGenerator {
                     mb.accept(LF_DONTINLINE_ANNOTATIONS);
                 }
 
-                classData(mb, lambdaForm, CD_LambdaForm); // keep LambdaForm instance & its compiled form lifetime tightly coupled.
+                if (alive) {
+                    classData(mb, lambdaForm, CD_LambdaForm); // keep LambdaForm instance & its compiled form lifetime tightly coupled.
+                }
 
                 mb.withCode(new Consumer<>() {
                     @Override
