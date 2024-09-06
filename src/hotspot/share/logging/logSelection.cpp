@@ -69,7 +69,7 @@ bool LogSelection::operator!=(const LogSelection& ref) const {
   return !operator==(ref);
 }
 
-bool LogSelection::contains(const LogSelection &other) const {
+bool LogSelection::superset_of(const LogSelection& other) const {
   bool match;
   for (size_t i = 0; i < other.ntags(); ++i) {
     match = false;
@@ -199,7 +199,7 @@ static bool contains(LogTagType tag, const LogTagType tags[LogTag::MaxTags], siz
 bool LogSelection::consists_of(const LogTagType tags[LogTag::MaxTags]) const {
   size_t i;
   for (i = 0; tags[i] != LogTag::__NO_TAG; i++) {
-    if (!::contains(tags[i], _tags, _ntags)) {
+    if (!contains(tags[i], _tags, _ntags)) {
       return false;
     }
   }

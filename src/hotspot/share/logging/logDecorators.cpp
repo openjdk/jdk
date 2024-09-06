@@ -26,6 +26,10 @@
 #include "runtime/os.hpp"
 #include "logDecorators.hpp"
 
+#define DEFAULT_DECORATORS \
+  DEFAULT_VALUE((1 << pid_decorator) | (1 << tags_decorator), NotMentioned, LOG_TAGS(ref, gc, jit, jni, jfr)) \
+  DEFAULT_VALUE(0, Trace, LOG_TAGS(jit))
+
 template <LogDecorators::Decorator d>
 struct AllBitmask {
   // Use recursive template deduction to calculate the bitmask of all decorations.

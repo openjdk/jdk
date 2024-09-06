@@ -55,9 +55,6 @@ class outputStream;
   DECORATOR(level,        l)    \
   DECORATOR(tags,         tg)
 
-#define DEFAULT_DECORATORS \
-  DEFAULT_VALUE((1 << pid_decorator) | (1 << tags_decorator), NotMentioned, LOG_TAGS(ref, gc)) \
-  DEFAULT_VALUE(0, Trace, LOG_TAGS(jit))
 
 // LogDecorators represents a selection of decorators that should be prepended to
 // each log message for a given output. Decorators are always prepended in the order
@@ -84,10 +81,10 @@ class LogDecorators {
 
     template<typename... Tags>
     DefaultDecorator(LogLevelType level, uint mask, LogTagType first, Tags... rest) : _selection(LogSelection::Invalid), _mask(mask) {
-      static_assert(sizeof...(rest) <= LogTag::MaxTags,
-                    "Too many tags specified! Can only have up to tags in a tag set.");
+      static_assert(sizeof...(rest) <= LogTag::MaxTags + 1,
+                    "Too many tags specified!");
 
-      LogTagType tag_arr[LogTag::MaxTags + 1] = { first, static_cast<LogTagType>(rest)... };
+      LogTagType tag_arr[LogTag::MaxTags + 1] = { first, rest... };
 
       assert(tag_arr[LogTag::MaxTags] == LogTag::__NO_TAG,
              "Too many tags specified! Can only have up to " SIZE_FORMAT " tags in a tag set.", LogTag::MaxTags);
@@ -95,7 +92,7 @@ class LogDecorators {
       _selection = LogSelection(tag_arr, false, level);
     }
 
-    LogSelection selection() const { return _selection; }
+    const LogSelection& selection() const { return _selection; }
     uint mask()              const { return _mask; }
 
     bool operator==(const DefaultDecorator& ref) const;
@@ -141,7 +138,7 @@ class LogDecorators {
       const bool ignore_level = DefaultDecorators[i].selection().level() == LogLevelType::NotMentioned;
       const bool level_matches = ignore_level || selection.level() == DefaultDecorators[i].selection().level();
       if (!level_matches) continue;
-      if (!selection.contains(DefaultDecorators[i].selection())) {
+      if (!selection.superset_of(DefaultDecorators[i].selection())) {
         continue;
       }
       int specificity = DefaultDecorators[i].selection().ntags();
