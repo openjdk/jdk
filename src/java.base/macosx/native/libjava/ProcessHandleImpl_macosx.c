@@ -121,7 +121,7 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
 
         // Read process info for all processes
         errsysctl = sysctl(mib, 4, buffer, &bufSize, NULL, 0);
-    } while (errsysctl < 0 && maxRetries-- > 0);
+    } while (errsysctl < 0 && errno == ENOMEM && maxRetries-- > 0);
 
     if (errsysctl < 0) {
         JNU_ThrowByNameWithMessageAndLastError(env,
