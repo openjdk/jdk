@@ -1201,7 +1201,7 @@ void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
     ParCompactionManager::gc_thread_compaction_manager(worker_id);
 
   do {
-    ScannerTask task;
+    PSScannerTask task;
     if (ParCompactionManager::steal(worker_id, task)) {
       cm->follow_contents(task);
     }

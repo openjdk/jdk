@@ -126,7 +126,7 @@ ParCompactionManager::gc_thread_compaction_manager(uint index) {
 }
 
 inline void ParCompactionManager::publish_and_drain_marking_tasks() {
-  ScannerTask task;
+  PSScannerTask task;
   while (marking_stack()->pop_overflow(task)) {
     if (!marking_stack()->try_push_to_taskqueue(task)) {
       follow_contents(task);
@@ -157,7 +157,7 @@ void ParCompactionManager::process_array_chunk(PartialArrayState* state) {
   if (step._ncreate > 0) {
     state->add_references(step._ncreate);
     for (uint i = 0; i < step._ncreate; ++i) {
-      push(ScannerTask(state));
+      push(PSScannerTask(state));
     }
 //    TASKQUEUE_STATS_ONLY(_array_chunk_pushes += step._ncreate);
   }
@@ -186,7 +186,7 @@ void ParCompactionManager::push_objArray(oop obj) {
                                               array_length,
                                               step._ncreate);
      for (uint i = 0; i < step._ncreate; ++i) {
-       marking_stack()->push(ScannerTask(state));
+       marking_stack()->push(PSScannerTask(state));
      }
 //     TASKQUEUE_STATS_ONLY(_array_chunk_pushes += step._ncreate);
    }

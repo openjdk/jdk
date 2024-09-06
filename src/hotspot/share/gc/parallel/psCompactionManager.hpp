@@ -57,6 +57,38 @@ public:
   virtual void do_oop(narrowOop* p)               { do_oop_work(p); }
 };
 
+class PSScannerTask {
+private:
+  void* _holder;
+
+  static const uintptr_t PartialArrayStateBit = 1;
+
+public:
+  PSScannerTask() : _holder(nullptr) { }
+
+  explicit PSScannerTask(oop obj) : _holder(obj) {
+    assert(_holder != nullptr, "Not allowed to set null task queue element");
+    assert(is_aligned(_holder, 1), "Misaligned");
+  }
+
+  explicit PSScannerTask(PartialArrayState* p) : _holder((void*)((uintptr_t)p | PartialArrayStateBit)) {
+    assert(is_aligned(p, 1), "Misaligned");
+  }
+
+  oop obj() const {
+    assert(is_oop(), "Trying to read partial array state " PTR_FORMAT " as oop", p2i(_holder));
+    return cast_to_oop(_holder);
+  }
+
+  PartialArrayState* to_partial_array_state() const {
+    assert(is_partial_array_state(), "Trying to read oop " PTR_FORMAT " as partial array state", p2i(_holder));
+    return static_cast<PartialArrayState*>(static_cast<void*>(static_cast<char*>(_holder) - PartialArrayStateBit));
+  }
+
+  bool is_oop() const { return !is_partial_array_state(); }
+  bool is_partial_array_state() const { return ((uintptr_t)_holder & PartialArrayStateBit) != 0; }
+};
+
 class ParCompactionManager : public CHeapObj<mtGC> {
   friend class MarkFromRootsTask;
   friend class ParallelCompactRefProcProxyTask;
@@ -67,7 +99,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   friend class PCAddThreadRootsMarkingTaskClosure;
 
  private:
-  typedef OverflowTaskQueue<ScannerTask, mtGC>           PSScannerTasksQueue;
+  typedef OverflowTaskQueue<PSScannerTask, mtGC>         PSScannerTasksQueue;
   typedef GenericTaskQueueSet<PSScannerTasksQueue, mtGC> PSScannerTasksQueueSet;
   typedef OverflowTaskQueue<size_t, mtGC>                RegionTaskQueue;
   typedef GenericTaskQueueSet<RegionTaskQueue, mtGC>     RegionTaskQueueSet;
@@ -183,7 +215,7 @@ public:
   ParMarkBitMap* mark_bitmap() { return _mark_bitmap; }
 
   // Save for later processing.  Must not fail.
-  inline void push(ScannerTask task);
+  inline void push(PSScannerTask task);
   inline void push_region(size_t index);
 
   // Check mark and maybe push on marking stack.
@@ -192,7 +224,7 @@ public:
   // Access function for compaction managers
   static ParCompactionManager* gc_thread_compaction_manager(uint index);
 
-  static bool steal(int queue_num, ScannerTask& t);
+  static bool steal(int queue_num, PSScannerTask& t);
   static bool steal(int queue_num, size_t& region);
 
   // Process tasks remaining on any marking stack
@@ -202,7 +234,7 @@ public:
   // Process tasks remaining on any stack
   void drain_region_stacks();
 
-  void follow_contents(ScannerTask task);
+  void follow_contents(PSScannerTask task);
   void push_objArray(oop obj);
   void follow_array(objArrayOop array, int start, int end);
   void process_array_chunk(PartialArrayState* state);
