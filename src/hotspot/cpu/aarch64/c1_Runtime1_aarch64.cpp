@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -783,8 +783,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Label register_finalizer;
         Register t = r5;
         __ load_klass(t, r0);
-        __ ldrw(t, Address(t, Klass::access_flags_offset()));
-        __ tbnz(t, exact_log2(JVM_ACC_HAS_FINALIZER), register_finalizer);
+        __ ldrb(t, Address(t, Klass::misc_flags_offset()));
+        __ tbnz(t, exact_log2(KlassFlags::_misc_has_finalizer), register_finalizer);
         __ ret(lr);
 
         __ bind(register_finalizer);
@@ -1029,4 +1029,4 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
 #undef __
 
-const char *Runtime1::pd_name_for_address(address entry) { Unimplemented(); return 0; }
+const char *Runtime1::pd_name_for_address(address entry) { Unimplemented(); }

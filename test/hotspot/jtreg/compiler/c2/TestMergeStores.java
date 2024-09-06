@@ -611,8 +611,9 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
-        applyIf = {"UseUnalignedAccesses", "true"})
+    // Disabled by JDK-8335390, to be enabled again by JDK-8335392.
+    // @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+    //     applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test1f(byte[] a) {
         UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0, (byte)0xbe);
         UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1, (byte)0xba);

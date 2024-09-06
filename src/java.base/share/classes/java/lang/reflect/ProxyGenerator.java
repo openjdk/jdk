@@ -508,8 +508,7 @@ final class ProxyGenerator {
         Class<?>[] exceptionTypes = m.getSharedExceptionTypes();
 
         String sig = m.toShortSignature();
-        List<ProxyMethod> sigmethods = proxyMethods.computeIfAbsent(sig,
-                _ -> new ArrayList<>(3));
+        List<ProxyMethod> sigmethods = proxyMethodsFor(sig);
         for (ProxyMethod pm : sigmethods) {
             if (returnType == pm.returnType) {
                 /*
@@ -531,16 +530,17 @@ final class ProxyGenerator {
                 exceptionTypes, fromClass, "m" + proxyMethodCount++));
     }
 
+    private List<ProxyMethod> proxyMethodsFor(String sig) {
+        return proxyMethods.computeIfAbsent(sig, _ -> new ArrayList<>(3));
+    }
+
     /**
      * Add an existing ProxyMethod (hashcode, equals, toString).
      *
      * @param pm an existing ProxyMethod
      */
     private void addProxyMethod(ProxyMethod pm) {
-        String sig = pm.shortSignature;
-        List<ProxyMethod> sigmethods = proxyMethods.computeIfAbsent(sig,
-                _ -> new ArrayList<>(3));
-        sigmethods.add(pm);
+        proxyMethodsFor(pm.shortSignature).add(pm);
     }
 
     /**

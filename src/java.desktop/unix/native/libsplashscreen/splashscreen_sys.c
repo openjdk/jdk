@@ -209,7 +209,7 @@ FreeColors(Display * display, Screen * screen, int numColors,
 }
 
 static void SplashCenter(Splash * splash) {
-    Atom type, atom, actual_type;
+    Atom atom, actual_type;
     int status, actual_format;
     unsigned long nitems, bytes_after;
     CARD16 *prop = NULL;
@@ -251,8 +251,6 @@ static void SplashUpdateSizeHints(Splash * splash) {
 
 void
 SplashCreateWindow(Splash * splash) {
-    XSizeHints sizeHints;
-
     XSetWindowAttributes attr;
 
     attr.backing_store = NotUseful;
@@ -740,11 +738,10 @@ void
 SplashCreateThread(Splash * splash) {
     pthread_t thr;
     pthread_attr_t attr;
-    int rc;
 
     int rslt = pthread_attr_init(&attr);
     if (rslt != 0) return;
-    rc = pthread_create(&thr, &attr, SplashScreenThread, (void *) splash);
+    pthread_create(&thr, &attr, SplashScreenThread, (void *) splash);
     pthread_attr_destroy(&attr);
 }
 

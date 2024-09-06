@@ -61,6 +61,7 @@ class JvmtiSampledObjectAllocEventCollector;
 class JvmtiThreadState;
 
 class Metadata;
+class ObjectMonitor;
 class OopHandleList;
 class OopStorage;
 class OSThread;
@@ -478,10 +479,12 @@ private:
 
  public:
   // Constructor
-  JavaThread();                            // delegating constructor
-  JavaThread(bool is_attaching_via_jni);   // for main thread and JNI attached threads
-  JavaThread(ThreadFunction entry_point, size_t stack_size = 0);
+  JavaThread(MEMFLAGS flags = mtThread);   // delegating constructor
+  JavaThread(ThreadFunction entry_point, size_t stack_size = 0, MEMFLAGS flags = mtThread);
   ~JavaThread();
+
+  // Factory method to create a new JavaThread whose attach state is "is attaching"
+  static JavaThread* create_attaching_thread();
 
 #ifdef ASSERT
   // verify this JavaThread hasn't be published in the Threads::list yet
@@ -1163,6 +1166,7 @@ public:
 
 private:
   LockStack _lock_stack;
+  OMCache _om_cache;
 
 public:
   LockStack& lock_stack() { return _lock_stack; }
@@ -1173,6 +1177,13 @@ public:
   // is typically in a dedicated register.
   static ByteSize lock_stack_top_offset()  { return lock_stack_offset() + LockStack::top_offset(); }
   static ByteSize lock_stack_base_offset() { return lock_stack_offset() + LockStack::base_offset(); }
+
+  static ByteSize om_cache_offset()        { return byte_offset_of(JavaThread, _om_cache); }
+  static ByteSize om_cache_oops_offset()   { return om_cache_offset() + OMCache::entries_offset(); }
+
+  void om_set_monitor_cache(ObjectMonitor* monitor);
+  void om_clear_monitor_cache();
+  ObjectMonitor* om_get_from_monitor_cache(oop obj);
 
   static OopStorage* thread_oop_storage();
 

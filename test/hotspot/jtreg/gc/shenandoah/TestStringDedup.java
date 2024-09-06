@@ -65,24 +65,6 @@
  *      TestStringDedup
  */
 
-/*
- * @test id=iu
- * @summary Test Shenandoah string deduplication implementation
- * @key randomness
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- * @modules java.base/java.lang:open
- *          java.management
- *
- * @run main/othervm -Xmx256m -Xlog:gc+stats -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:StringDeduplicationAgeThreshold=3
- *      TestStringDedup
- *
- * @run main/othervm -Xmx256m -Xlog:gc+stats -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive -XX:StringDeduplicationAgeThreshold=3
- *      TestStringDedup
- */
-
 import java.lang.reflect.*;
 import java.util.*;
 import jdk.test.lib.Utils;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -443,7 +443,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         // Load the klass and check the has finalizer flag.
         Register klass = Z_ARG2;
         __ load_klass(klass, Z_ARG1);
-        __ testbit(Address(klass, Klass::access_flags_offset()), exact_log2(JVM_ACC_HAS_FINALIZER));
+        __ z_tm(Address(klass, Klass::misc_flags_offset()), KlassFlags::_misc_has_finalizer);
         __ z_bcr(Assembler::bcondAllZero, Z_R14); // Return if bit is not set.
 
         OopMap* oop_map = save_live_registers(sasm);

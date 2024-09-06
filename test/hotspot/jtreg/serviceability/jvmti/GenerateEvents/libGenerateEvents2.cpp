@@ -71,7 +71,7 @@ CompiledMethodLoad(jvmtiEnv* jvmti, jmethodID method,
   check_jvmti_status(env, err, "CompiledMethodLoad: Error in JVMTI GetMethodName");
 
   printf("%s: CompiledMethodLoad: %s%s\n", AGENT_NAME, name, sign);
-  fflush(0);
+  fflush(nullptr);
 }
 
 JNIEXPORT jint JNICALL
@@ -132,7 +132,7 @@ Java_MyPackage_GenerateEventsTest_agent2FailStatus(JNIEnv *env, jclass cls) {
     printf("check2: Unexpected non-zero event count in agent2: %d\n", agent2_event_count);
   }
   printf("\n");
-  fflush(0);
+  fflush(nullptr);
 
   return fail_status;
 }

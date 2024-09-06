@@ -114,7 +114,8 @@ address OptoRuntime::_notify_jvmti_vthread_mount                  = nullptr;
 address OptoRuntime::_notify_jvmti_vthread_unmount                = nullptr;
 #endif
 
-ExceptionBlob* OptoRuntime::_exception_blob;
+UncommonTrapBlob*   OptoRuntime::_uncommon_trap_blob;
+ExceptionBlob*      OptoRuntime::_exception_blob;
 
 // This should be called in an assertion at the start of OptoRuntime routines
 // which are entered from compiled code (all of them)
@@ -138,6 +139,7 @@ static bool check_compiled_frame(JavaThread* thread) {
 
 bool OptoRuntime::generate(ciEnv* env) {
 
+  generate_uncommon_trap_blob();
   generate_exception_blob();
 
   // Note: tls: Means fetching the return oop out of the thread-local storage
@@ -1435,8 +1437,8 @@ const TypeFunc* OptoRuntime::intpoly_montgomeryMult_P256_Type() {
 
   // result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms + 0] = TypeInt::INT; // carry bits in output
-  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
+  fields[TypeFunc::Parms + 0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
 
@@ -1455,7 +1457,7 @@ const TypeFunc* OptoRuntime::intpoly_assign_Type() {
 
   // result type needed
   fields = TypeTuple::fields(1);
-  fields[TypeFunc::Parms + 0] = NULL; // void
+  fields[TypeFunc::Parms + 0] = nullptr; // void
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }

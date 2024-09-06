@@ -94,6 +94,7 @@ protected:
   const int  _length;
   const bool _do_zero;
 
+  void mem_zap_start_padding(HeapWord* mem) const PRODUCT_RETURN;
   void mem_zap_end_padding(HeapWord* mem) const PRODUCT_RETURN;
 
 public:

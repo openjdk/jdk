@@ -343,8 +343,6 @@ public:
     return to_offset_u4(offset);
   }
 
-  static void assert_is_vm_thread() PRODUCT_RETURN;
-
 public:
   ArchiveBuilder();
   ~ArchiveBuilder();
@@ -432,7 +430,6 @@ public:
   }
 
   static ArchiveBuilder* current() {
-    assert_is_vm_thread();
     assert(_current != nullptr, "ArchiveBuilder must be active");
     return _current;
   }

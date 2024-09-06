@@ -1946,7 +1946,6 @@ class ciMethodData;
 class MethodData : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
-private:
   friend class ProfileData;
   friend class TypeEntriesAtCall;
   friend class ciMethodData;
@@ -2080,8 +2079,8 @@ private:
 
 #if INCLUDE_JVMCI
   // Support for HotSpotMethodData.setCompiledIRSize(int)
-  int                _jvmci_ir_size;
   FailedSpeculation* _failed_speculations;
+  int                _jvmci_ir_size;
 #endif
 
   // Size of _data array in bytes.  (Excludes header and extra_data fields.)

@@ -160,8 +160,13 @@ void NativeCall::set_destination_mt_safe(address dest) {
 void NativeMovConstReg::verify() {
 #ifdef AMD64
   // make sure code pattern is actually a mov reg64, imm64 instruction
-  if ((ubyte_at(0) != Assembler::REX_W && ubyte_at(0) != Assembler::REX_WB) ||
-      (ubyte_at(1) & (0xff ^ register_mask)) != 0xB8) {
+  bool valid_rex_prefix  = ubyte_at(0) == Assembler::REX_W || ubyte_at(0) == Assembler::REX_WB;
+  bool valid_rex2_prefix = ubyte_at(0) == Assembler::REX2  &&
+       (ubyte_at(1) == Assembler::REX2BIT_W  ||
+        ubyte_at(1) == Assembler::REX2BIT_WB ||
+        ubyte_at(1) == Assembler::REX2BIT_WB4);
+  int opcode = has_rex2_prefix() ? ubyte_at(2) : ubyte_at(1);
+  if ((!valid_rex_prefix || !valid_rex2_prefix) && (opcode & (0xff ^ register_mask)) != 0xB8) {
     print();
     fatal("not a REX.W[B] mov reg64, imm64");
   }
@@ -208,6 +213,11 @@ int NativeMovRegMem::instruction_start() const {
     instr_0 = ubyte_at(off);
   }
 
+  if (instr_0 == instruction_REX2_prefix) {
+    off+=2;
+    instr_0 = ubyte_at(off);
+  }
+
   if (instr_0 == instruction_code_xor) {
     off += 2;
     instr_0 = ubyte_at(off);
@@ -226,29 +236,39 @@ int NativeMovRegMem::instruction_start() const {
     instr_0 = ubyte_at(off);
   }
 
+  if (instr_0 == instruction_REX2_prefix) {
+    off+=2;
+    instr_0 = ubyte_at(off);
+  }
+
   if ( instr_0 >= instruction_prefix_wide_lo && // 0x40
        instr_0 <= instruction_prefix_wide_hi) { // 0x4f
     off++;
     instr_0 = ubyte_at(off);
   }
 
-
+  // Extended prefixes can only follow REX prefixes,
+  // REX2 is directly followed by main opcode.
   if (instr_0 == instruction_extended_prefix ) {  // 0x0f
     off++;
   }
 
+  // Offset of instruction opcode.
   return off;
 }
 
+// Format [REX/REX2] [OPCODE] [ModRM] [SIB] [IMM/DISP32]
 int NativeMovRegMem::patch_offset() const {
   int off = data_offset + instruction_start();
   u_char mod_rm = *(u_char*)(instruction_address() + 1);
   // nnnn(r12|rsp) isn't coded as simple mod/rm since that is
   // the encoding to use an SIB byte. Which will have the nnnn
   // field off by one byte
+  // ModRM Byte Format = Mod[2] REG[3] RM[3]
   if ((mod_rm & 7) == 0x4) {
     off++;
   }
+  // Displacement offset.
   return off;
 }
 
@@ -294,12 +314,6 @@ void NativeMovRegMem::print() {
 void NativeLoadAddress::verify() {
   // make sure code pattern is actually a mov [reg+offset], reg instruction
   u_char test_byte = *(u_char*)instruction_address();
-#ifdef _LP64
-  if ( (test_byte == instruction_prefix_wide ||
-        test_byte == instruction_prefix_wide_extended) ) {
-    test_byte = *(u_char*)(instruction_address() + 1);
-  }
-#endif // _LP64
   if ( ! ((test_byte == lea_instruction_code)
           LP64_ONLY(|| (test_byte == mov64_instruction_code) ))) {
     fatal ("not a lea reg, [reg+offs] instruction");

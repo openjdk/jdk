@@ -34,10 +34,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.Comment;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Script;
 
 /**
  * An HTML {@code <head>} element.
@@ -267,9 +272,9 @@ public class Head extends Content {
      * @return the HTML
      */
     private Content toContent() {
-        var head = new HtmlTree(TagName.HEAD);
-        head.add(getGeneratedBy(showTimestamp, generatedDate));
-        head.add(HtmlTree.TITLE(title));
+        var head = HtmlTree.of(HtmlTag.HEAD)
+            .add(getGeneratedBy(showTimestamp, generatedDate))
+            .add(HtmlTree.TITLE(title));
 
         head.add(HtmlTree.META("viewport", "width=device-width, initial-scale=1"));
 
@@ -295,9 +300,9 @@ public class Head extends Content {
         }
 
         if (canonicalLink != null) {
-            var link = new HtmlTree(TagName.LINK);
-            link.put(HtmlAttr.REL, "canonical");
-            link.put(HtmlAttr.HREF, canonicalLink.getPath());
+            var link = HtmlTree.of(HtmlTag.LINK)
+                .put(HtmlAttr.REL, "canonical")
+                .put(HtmlAttr.HREF, canonicalLink.getPath());
             head.add(link);
         }
 

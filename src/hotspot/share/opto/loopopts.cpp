@@ -295,12 +295,12 @@ bool PhaseIdealLoop::cannot_split_division(const Node* n, const Node* region) co
   }
 
   Node* divisor = n->in(2);
-  return is_divisor_counted_loop_phi(divisor, region) &&
+  return is_divisor_loop_phi(divisor, region) &&
          loop_phi_backedge_type_contains_zero(divisor, zero);
 }
 
-bool PhaseIdealLoop::is_divisor_counted_loop_phi(const Node* divisor, const Node* loop) {
-  return loop->is_BaseCountedLoop() && divisor->is_Phi() && divisor->in(0) == loop;
+bool PhaseIdealLoop::is_divisor_loop_phi(const Node* divisor, const Node* loop) {
+  return loop->is_Loop() && divisor->is_Phi() && divisor->in(0) == loop;
 }
 
 bool PhaseIdealLoop::loop_phi_backedge_type_contains_zero(const Node* phi_divisor, const Type* zero) const {
@@ -340,24 +340,31 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
   // I can assume this path reaches an infinite loop.  In this case it's not
   // important to optimize the data Nodes - either the whole compilation will
   // be tossed or this path (and all data Nodes) will go dead.
-  if (iff->outcnt() != 2) return;
+  if (iff->outcnt() != 2) {
+    return;
+  }
 
   // Make control-dependent data Nodes on the live path (path that will remain
   // once the dominated IF is removed) become control-dependent on the
   // dominating projection.
   Node* dp = iff->proj_out_or_null(pop == Op_IfTrue);
 
-  if (dp == nullptr)
+  if (dp == nullptr) {
     return;
+  }
 
-  IdealLoopTree* old_loop = get_loop(dp);
+  rewire_safe_outputs_to_dominator(dp, prevdom, pin_array_access_nodes);
+}
 
-  for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
-    Node* cd = dp->fast_out(i); // Control-dependent node
+void PhaseIdealLoop::rewire_safe_outputs_to_dominator(Node* source, Node* dominator, const bool pin_array_access_nodes) {
+  IdealLoopTree* old_loop = get_loop(source);
+
+  for (DUIterator_Fast imax, i = source->fast_outs(imax); i < imax; i++) {
+    Node* out = source->fast_out(i); // Control-dependent node
     // Do not rewire Div and Mod nodes which could have a zero divisor to avoid skipping their zero check.
-    if (cd->depends_only_on_test() && _igvn.no_dependent_zero_check(cd)) {
-      assert(cd->in(0) == dp, "");
-      _igvn.replace_input_of(cd, 0, prevdom);
+    if (out->depends_only_on_test() && _igvn.no_dependent_zero_check(out)) {
+      assert(out->in(0) == source, "must be control dependent on source");
+      _igvn.replace_input_of(out, 0, dominator);
       if (pin_array_access_nodes) {
         // Because of Loop Predication, Loads and range check Cast nodes that are control dependent on this range
         // check (that is about to be removed) now depend on multiple dominating Hoisted Check Predicates. After the
@@ -365,21 +372,21 @@ void PhaseIdealLoop::dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip, b
         // in the graph. To ensure that these Loads/Casts do not float above any of the dominating checks (even when the
         // lowest dominating check is later replaced by yet another dominating check), we need to pin them at the lowest
         // dominating check.
-        Node* clone = cd->pin_array_access_node();
+        Node* clone = out->pin_array_access_node();
         if (clone != nullptr) {
-          clone = _igvn.register_new_node_with_optimizer(clone, cd);
-          _igvn.replace_node(cd, clone);
-          cd = clone;
+          clone = _igvn.register_new_node_with_optimizer(clone, out);
+          _igvn.replace_node(out, clone);
+          out = clone;
         }
       }
-      set_early_ctrl(cd, false);
-      IdealLoopTree* new_loop = get_loop(get_ctrl(cd));
+      set_early_ctrl(out, false);
+      IdealLoopTree* new_loop = get_loop(get_ctrl(out));
       if (old_loop != new_loop) {
         if (!old_loop->_child) {
-          old_loop->_body.yank(cd);
+          old_loop->_body.yank(out);
         }
         if (!new_loop->_child) {
-          new_loop->_body.push(cd);
+          new_loop->_body.push(out);
         }
       }
       --i;
@@ -795,18 +802,25 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
   // Avoid duplicated float compare.
   if (phis > 1 && (cmp_op == Op_CmpF || cmp_op == Op_CmpD)) return nullptr;
 
-  // Ignore cost if CMOVE can be moved outside the loop.
-  if (used_inside_loop && cost >= ConditionalMoveLimit) {
-    return nullptr;
+  float infrequent_prob = PROB_UNLIKELY_MAG(3);
+  // Ignore cost and blocks frequency if CMOVE can be moved outside the loop.
+  if (used_inside_loop) {
+    if (cost >= ConditionalMoveLimit) return nullptr; // Too much goo
+
+    // BlockLayoutByFrequency optimization moves infrequent branch
+    // from hot path. No point in CMOV'ing in such case (110 is used
+    // instead of 100 to take into account not exactness of float value).
+    if (BlockLayoutByFrequency) {
+      infrequent_prob = MAX2(infrequent_prob, (float)BlockLayoutMinDiamondPercentage/110.0f);
+    }
   }
   // Check for highly predictable branch.  No point in CMOV'ing if
   // we are going to predict accurately all the time.
-  constexpr float infrequent_prob = PROB_UNLIKELY_MAG(2);
   if (C->use_cmove() && (cmp_op == Op_CmpF || cmp_op == Op_CmpD)) {
     //keep going
-  } else if (iff->_prob < infrequent_prob || iff->_prob > (1.0f - infrequent_prob)) {
+  } else if (iff->_prob < infrequent_prob ||
+      iff->_prob > (1.0f - infrequent_prob))
     return nullptr;
-  }
 
   // --------------
   // Now replace all Phis with CMOV's
@@ -1055,7 +1069,7 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
 #endif
             lca = place_outside_loop(lca, n_loop);
             assert(!n_loop->is_member(get_loop(lca)), "control must not be back in the loop");
-            assert(get_loop(lca)->_nest < n_loop->_nest || lca->in(0)->is_NeverBranch(), "must not be moved into inner loop");
+            assert(get_loop(lca)->_nest < n_loop->_nest || get_loop(lca)->_head->as_Loop()->is_in_infinite_subgraph(), "must not be moved into inner loop");
 
             // Move store out of the loop
             _igvn.replace_node(hook, n->in(MemNode::Memory));
@@ -1073,6 +1087,25 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
       }
     }
   }
+}
+
+// Split some nodes that take a counted loop phi as input at a counted
+// loop can cause vectorization of some expressions to fail
+bool PhaseIdealLoop::split_thru_phi_could_prevent_vectorization(Node* n, Node* n_blk) {
+  if (!n_blk->is_CountedLoop()) {
+    return false;
+  }
+
+  int opcode = n->Opcode();
+
+  if (opcode != Op_AndI &&
+      opcode != Op_MulI &&
+      opcode != Op_RotateRight &&
+      opcode != Op_RShiftI) {
+    return false;
+  }
+
+  return n->in(1) == n_blk->as_BaseCountedLoop()->phi();
 }
 
 //------------------------------split_if_with_blocks_pre-----------------------
@@ -1158,6 +1191,10 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   // Pushing a shift through the iv Phi can get in the way of addressing optimizations or range check elimination
   if (n_blk->is_BaseCountedLoop() && n->Opcode() == Op_LShift(n_blk->as_BaseCountedLoop()->bt()) &&
       n->in(1) == n_blk->as_BaseCountedLoop()->phi()) {
+    return n;
+  }
+
+  if (split_thru_phi_could_prevent_vectorization(n, n_blk)) {
     return n;
   }
 
@@ -1258,9 +1295,7 @@ Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) co
   // Pick control right outside the loop
   for (;;) {
     Node* dom = idom(useblock);
-    if (loop->is_member(get_loop(dom)) ||
-        // NeverBranch nodes are not assigned to the loop when constructed
-        (dom->is_NeverBranch() && loop->is_member(get_loop(dom->in(0))))) {
+    if (loop->is_member(get_loop(dom))) {
       break;
     }
     useblock = dom;
@@ -4656,6 +4691,9 @@ void DataNodeGraph::clone(Node* node, Node* new_ctrl) {
   _phase->igvn().register_new_node_with_optimizer(clone);
   _orig_to_new.put(node, clone);
   _phase->set_ctrl(clone, new_ctrl);
+  if (node->is_CastII()) {
+    clone->set_req(0, new_ctrl);
+  }
 }
 
 // Rewire the data inputs of all (unprocessed) cloned nodes, whose inputs are still pointing to the same inputs as their

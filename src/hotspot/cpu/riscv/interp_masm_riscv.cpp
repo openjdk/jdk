@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -750,13 +750,13 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp, obj_reg);
-      lwu(tmp, Address(tmp, Klass::access_flags_offset()));
-      test_bit(tmp, tmp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+      lbu(tmp, Address(tmp, Klass::misc_flags_offset()));
+      test_bit(tmp, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
       bnez(tmp, slow_case);
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      lightweight_lock(obj_reg, tmp, tmp2, tmp3, slow_case);
+      lightweight_lock(lock_reg, obj_reg, tmp, tmp2, tmp3, slow_case);
       j(count);
     } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg
@@ -792,15 +792,9 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      call_VM(noreg,
-              CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj),
-              obj_reg);
-    } else {
-      call_VM(noreg,
-              CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-              lock_reg);
-    }
+    call_VM(noreg,
+            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+            lock_reg);
     j(done);
 
     bind(count);
@@ -1467,8 +1461,7 @@ void InterpreterMacroAssembler::notify_method_entry() {
     bind(L);
   }
 
-  {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false);
+  if (DTraceMethodProbes) {
     get_method(c_rarg1);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
                  xthread, c_rarg1);
@@ -1506,8 +1499,7 @@ void InterpreterMacroAssembler::notify_method_exit(
     pop(state);
   }
 
-  {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false);
+  if (DTraceMethodProbes) {
     push(state);
     get_method(c_rarg1);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),

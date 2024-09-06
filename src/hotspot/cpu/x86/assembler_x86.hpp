@@ -530,14 +530,16 @@ class Assembler : public AbstractAssembler  {
   };
 
   enum PrefixBits {
-    REXBIT_B  = 0x01,
-    REXBIT_X  = 0x02,
-    REXBIT_R  = 0x04,
-    REXBIT_W  = 0x08,
+    REX2BIT_B  = 0x01,
+    REX2BIT_X  = 0x02,
+    REX2BIT_R  = 0x04,
+    REX2BIT_W  = 0x08,
     REX2BIT_B4 = 0x10,
     REX2BIT_X4 = 0x20,
     REX2BIT_R4 = 0x40,
-    REX2BIT_M0 = 0x80
+    REX2BIT_M0 = 0x80,
+    REX2BIT_WB = 0x09,
+    REX2BIT_WB4 = 0x18,
   };
 
   enum VexPrefix {
@@ -1017,6 +1019,15 @@ private:
 
   void pusha_uncached();
   void popa_uncached();
+
+  // APX ISA extensions for register save/restore optimizations.
+  void push2(Register src1, Register src2, bool with_ppx = false);
+  void pop2(Register src1, Register src2, bool with_ppx = false);
+  void push2p(Register src1, Register src2);
+  void pop2p(Register src1, Register src2);
+  void pushp(Register src);
+  void popp(Register src);
+
 #endif
   void vzeroupper_uncached();
   void decq(Register dst);
@@ -3070,7 +3081,6 @@ public:
   }
 
   void set_extended_context(void) { _is_extended_context = true; }
-
 };
 
 #endif // CPU_X86_ASSEMBLER_X86_HPP

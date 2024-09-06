@@ -1273,7 +1273,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         // longs and doubles will be split into two words.
         unitsize = sizeof(narrowOop);
       }
-      os::print_hex_dump(&lsh, base, top, unitsize, 32, requested_base);
+      os::print_hex_dump(&lsh, base, top, unitsize, /* print_ascii=*/true, /* bytes_per_line=*/32, requested_base);
     }
   }
 
@@ -1292,9 +1292,9 @@ public:
 
     address header = address(mapinfo->header());
     address header_end = header + mapinfo->header()->header_size();
-    log_region("header", header, header_end, 0);
+    log_region("header", header, header_end, nullptr);
     log_header(mapinfo);
-    log_as_hex(header, header_end, 0);
+    log_as_hex(header, header_end, nullptr);
 
     DumpRegion* rw_region = &builder->_rw_region;
     DumpRegion* ro_region = &builder->_ro_region;
@@ -1303,8 +1303,8 @@ public:
     log_metaspace_region("ro region", ro_region, &builder->_ro_src_objs);
 
     address bitmap_end = address(bitmap + bitmap_size_in_bytes);
-    log_region("bitmap", address(bitmap), bitmap_end, 0);
-    log_as_hex((address)bitmap, bitmap_end, 0);
+    log_region("bitmap", address(bitmap), bitmap_end, nullptr);
+    log_as_hex((address)bitmap, bitmap_end, nullptr);
 
 #if INCLUDE_CDS_JAVA_HEAP
     if (heap_info->is_used()) {
@@ -1412,10 +1412,3 @@ void ArchiveBuilder::report_out_of_space(const char* name, size_t needed_bytes) 
   log_error(cds)("Unable to allocate from '%s' region: Please reduce the number of shared classes.", name);
   MetaspaceShared::unrecoverable_writing_error();
 }
-
-
-#ifndef PRODUCT
-void ArchiveBuilder::assert_is_vm_thread() {
-  assert(Thread::current()->is_VM_thread(), "ArchiveBuilder should be used only inside the VMThread");
-}
-#endif

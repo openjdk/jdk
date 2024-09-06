@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,12 +122,12 @@ class ClassHierarchyInfoTest {
     void transformAndVerifySingle(ClassHierarchyResolver res) throws Exception {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
         var classModel = ClassFile.of().parse(path);
-        byte[] newBytes = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(res)).transform(classModel,
+        byte[] newBytes = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(res)).transformClass(classModel,
                 (clb, cle) -> {
                     if (cle instanceof MethodModel mm) {
                         clb.transformMethod(mm, (mb, me) -> {
                             if (me instanceof CodeModel cm) {
-                                mb.withCode(cob -> cm.forEachElement(cob));
+                                mb.withCode(cm::forEach);
                             }
                             else
                                 mb.with(me);

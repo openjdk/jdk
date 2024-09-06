@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 // Create a CompilerThread
 CompilerThread::CompilerThread(CompileQueue* queue,
                                CompilerCounters* counters)
-                               : JavaThread(&CompilerThread::thread_entry) {
+  : JavaThread(&CompilerThread::thread_entry, 0, mtCompiler) {
   _env   = nullptr;
   _log   = nullptr;
   _task  = nullptr;
@@ -42,9 +42,6 @@ CompilerThread::CompilerThread(CompileQueue* queue,
   _can_call_java = false;
   _compiler = nullptr;
   _arena_stat = CompilationMemoryStatistic::enabled() ? new ArenaStatCounter : nullptr;
-
-  // Compiler uses resource area for compilation, let's bias it to mtCompiler
-  resource_area()->bias_to(mtCompiler);
 
 #ifndef PRODUCT
   _ideal_graph_printer = nullptr;

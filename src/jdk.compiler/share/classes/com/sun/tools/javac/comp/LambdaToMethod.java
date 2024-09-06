@@ -40,20 +40,15 @@ import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.DynamicMethodSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
-import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.MethodType;
-import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.LambdaToMethod.LambdaAnalyzerPreprocessor.*;
-import com.sun.tools.javac.comp.Lower.BasicFreeVarCollector;
 import com.sun.tools.javac.resources.CompilerProperties.Notes;
-import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
-import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -72,7 +67,6 @@ import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 import javax.lang.model.element.ElementKind;
-import javax.lang.model.type.TypeKind;
 
 import com.sun.tools.javac.main.Option;
 
@@ -126,9 +120,6 @@ public class LambdaToMethod extends TreeTranslator {
     /** deduplicate lambda implementation methods */
     private final boolean deduplicateLambdas;
 
-    /** lambda proxy is a dynamic nestmate */
-    private final boolean nestmateLambdas;
-
     /** Flag for alternate metafactories indicating the lambda object is intended to be serializable */
     public static final int FLAG_SERIALIZABLE = 1 << 0;
 
@@ -175,7 +166,6 @@ public class LambdaToMethod extends TreeTranslator {
         debugLinesOrVars = lineDebugInfo || varDebugInfo;
         verboseDeduplication = options.isSet("debug.dumpLambdaToMethodDeduplication");
         deduplicateLambdas = options.getBoolean("deduplicateLambdas", true);
-        nestmateLambdas = Target.instance(context).runtimeUseNestAccess();
     }
     // </editor-fold>
 
@@ -284,6 +274,7 @@ public class LambdaToMethod extends TreeTranslator {
         this.attrEnv = env;
         this.context = null;
         this.contextMap = new HashMap<>();
+        cdef = analyzer.analyzeAndPreprocessClass((JCClassDecl) cdef);
         return translate(cdef);
     }
     // </editor-fold>
@@ -297,10 +288,6 @@ public class LambdaToMethod extends TreeTranslator {
      */
     @Override
     public void visitClassDef(JCClassDecl tree) {
-        if (tree.sym.owner.kind == PCK) {
-            //analyze class
-            tree = analyzer.analyzeAndPreprocessClass(tree);
-        }
         KlassInfo prevKlassInfo = kInfo;
         try {
             kInfo = new KlassInfo(tree);
@@ -418,9 +405,7 @@ public class LambdaToMethod extends TreeTranslator {
 
         ListBuffer<JCExpression> syntheticInits = new ListBuffer<>();
 
-        if (localContext.methodReferenceReceiver != null) {
-            syntheticInits.append(localContext.methodReferenceReceiver);
-        } else if (!sym.isStatic()) {
+        if (!sym.isStatic()) {
             syntheticInits.append(makeThis(
                     sym.owner.enclClass().asType(),
                     localContext.owner.enclClass()));
@@ -432,11 +417,6 @@ public class LambdaToMethod extends TreeTranslator {
                 JCExpression captured_local = make.Ident(fv).setType(fv.type);
                 syntheticInits.append(captured_local);
             }
-        }
-        // add captured outer this instances (used only when `this' capture itself is illegal)
-        for (Symbol fv : localContext.getSymbolMap(CAPTURED_OUTER_THIS).keySet()) {
-            JCExpression captured_local = make.QualThis(fv.type);
-            syntheticInits.append(captured_local);
         }
 
         //then, determine the arguments to the indy call
@@ -547,54 +527,6 @@ public class LambdaToMethod extends TreeTranslator {
                     //members defined inside the lambda body, etc.) )
                     super.visitIdent(tree);
                 }
-            } finally {
-                make.at(prevPos);
-            }
-        }
-    }
-
-    /**
-     * Translate qualified `this' references within a lambda to the mapped identifier
-     * @param tree
-     */
-    @Override
-    public void visitSelect(JCFieldAccess tree) {
-        if (context == null || !analyzer.lambdaFieldAccessFilter(tree)) {
-            super.visitSelect(tree);
-        } else {
-            int prevPos = make.pos;
-            try {
-                make.at(tree);
-
-                LambdaTranslationContext lambdaContext = (LambdaTranslationContext) context;
-                JCTree ltree = lambdaContext.translate(tree);
-                if (ltree != null) {
-                    result = ltree;
-                } else {
-                    super.visitSelect(tree);
-                }
-            } finally {
-                make.at(prevPos);
-            }
-        }
-    }
-
-    /**
-     * Translate instance creation expressions with implicit enclosing instances
-     * @param tree
-     */
-    @Override
-    public void visitNewClass(JCNewClass tree) {
-        if (context == null || !analyzer.lambdaNewClassFilter(context, tree)) {
-            super.visitNewClass(tree);
-        } else {
-            int prevPos = make.pos;
-            try {
-                make.at(tree);
-
-                LambdaTranslationContext lambdaContext = (LambdaTranslationContext) context;
-                tree = lambdaContext.translate(tree);
-                super.visitNewClass(tree);
             } finally {
                 make.at(prevPos);
             }
@@ -725,7 +657,7 @@ public class LambdaToMethod extends TreeTranslator {
         deser.sym = kInfo.deserMethodSym;
         deser.type = kInfo.deserMethodSym.type;
         //System.err.printf("DESER: '%s'\n", deser);
-        return deser;
+        return lower.translateMethod(attrEnv, deser, make);
     }
 
     /** Make an attributed class instance creation expression.
@@ -857,244 +789,7 @@ public class LambdaToMethod extends TreeTranslator {
         return new VarSymbol(flags | SYNTHETIC, name, type, owner);
     }
 
-    /**
-     * Set varargsElement field on a given tree (must be either a new class tree
-     * or a method call tree)
-     */
-    private void setVarargsIfNeeded(JCTree tree, Type varargsElement) {
-        if (varargsElement != null) {
-            switch (tree.getTag()) {
-                case APPLY: ((JCMethodInvocation)tree).varargsElement = varargsElement; break;
-                case NEWCLASS: ((JCNewClass)tree).varargsElement = varargsElement; break;
-                case TYPECAST: setVarargsIfNeeded(((JCTypeCast) tree).expr, varargsElement); break;
-                default: throw new AssertionError();
-            }
-        }
-    }
-
-    /**
-     * Convert method/constructor arguments by inserting appropriate cast
-     * as required by type-erasure - this is needed when bridging a lambda/method
-     * reference, as the bridged signature might require downcast to be compatible
-     * with the generated signature.
-     */
-    private List<JCExpression> convertArgs(Symbol meth, List<JCExpression> args, Type varargsElement) {
-       Assert.check(meth.kind == MTH);
-       List<Type> formals = types.erasure(meth.type).getParameterTypes();
-       if (varargsElement != null) {
-           Assert.check((meth.flags() & VARARGS) != 0);
-       }
-       return transTypes.translateArgs(args, formals, varargsElement, attrEnv);
-    }
-
     // </editor-fold>
-
-    /**
-     * Converts a method reference which cannot be used directly into a lambda
-     */
-    private class MemberReferenceToLambda {
-
-        private final JCMemberReference tree;
-        private final ReferenceTranslationContext localContext;
-        private final Symbol owner;
-        private final ListBuffer<JCExpression> args = new ListBuffer<>();
-        private final ListBuffer<JCVariableDecl> params = new ListBuffer<>();
-
-        private JCExpression receiverExpression = null;
-
-        MemberReferenceToLambda(JCMemberReference tree, ReferenceTranslationContext localContext, Symbol owner) {
-            this.tree = tree;
-            this.localContext = localContext;
-            this.owner = owner;
-        }
-
-        JCLambda lambda() {
-            int prevPos = make.pos;
-            try {
-                make.at(tree);
-
-                //body generation - this can be either a method call or a
-                //new instance creation expression, depending on the member reference kind
-                VarSymbol rcvr = addParametersReturnReceiver();
-                JCExpression expr = (tree.getMode() == ReferenceMode.INVOKE)
-                        ? expressionInvoke(rcvr)
-                        : expressionNew();
-
-                JCLambda slam = make.Lambda(params.toList(), expr);
-                slam.target = tree.target;
-                slam.type = tree.type;
-                slam.pos = tree.pos;
-                return slam;
-            } finally {
-                make.at(prevPos);
-            }
-        }
-
-        /**
-         * Generate the parameter list for the converted member reference.
-         *
-         * @return The receiver variable symbol, if any
-         */
-        VarSymbol addParametersReturnReceiver() {
-            Type samDesc = localContext.bridgedRefSig();
-            List<Type> samPTypes = samDesc.getParameterTypes();
-            List<Type> descPTypes = tree.getDescriptorType(types).getParameterTypes();
-
-            // Determine the receiver, if any
-            VarSymbol rcvr;
-            switch (tree.kind) {
-                case BOUND:
-                    // The receiver is explicit in the method reference
-                    rcvr = addParameter("rec$", tree.getQualifierExpression().type, false);
-                    receiverExpression = attr.makeNullCheck(tree.getQualifierExpression());
-                    break;
-                case UNBOUND:
-                    // The receiver is the first parameter, extract it and
-                    // adjust the SAM and unerased type lists accordingly
-                    rcvr = addParameter("rec$", samDesc.getParameterTypes().head, false);
-                    samPTypes = samPTypes.tail;
-                    descPTypes = descPTypes.tail;
-                    break;
-                default:
-                    rcvr = null;
-                    break;
-            }
-            List<Type> implPTypes = tree.sym.type.getParameterTypes();
-            int implSize = implPTypes.size();
-            int samSize = samPTypes.size();
-            // Last parameter to copy from referenced method, exclude final var args
-            int last = localContext.needsVarArgsConversion() ? implSize - 1 : implSize;
-
-            // Failsafe -- assure match-up
-            boolean checkForIntersection = tree.varargsElement != null || implSize == descPTypes.size();
-
-            // Use parameter types of the implementation method unless the unerased
-            // SAM parameter type is an intersection type, in that case use the
-            // erased SAM parameter type so that the supertype relationship
-            // the implementation method parameters is not obscured.
-            // Note: in this loop, the lists implPTypes, samPTypes, and descPTypes
-            // are used as pointers to the current parameter type information
-            // and are thus not usable afterwards.
-            for (int i = 0; implPTypes.nonEmpty() && i < last; ++i) {
-                // By default use the implementation method parameter type
-                Type parmType = implPTypes.head;
-                if (checkForIntersection) {
-                    if (descPTypes.head.getKind() == TypeKind.INTERSECTION) {
-                        parmType = samPTypes.head;
-                    }
-                    // If the unerased parameter type is a type variable whose
-                    // bound is an intersection (eg. <T extends A & B>) then
-                    // use the SAM parameter type
-                    if (descPTypes.head.getKind() == TypeKind.TYPEVAR) {
-                        TypeVar tv = (TypeVar) descPTypes.head;
-                        if (tv.getUpperBound().getKind() == TypeKind.INTERSECTION) {
-                            parmType = samPTypes.head;
-                        }
-                    }
-                }
-                addParameter("x$" + i, parmType, true);
-
-                // Advance to the next parameter
-                implPTypes = implPTypes.tail;
-                samPTypes = samPTypes.tail;
-                descPTypes = descPTypes.tail;
-            }
-            // Flatten out the var args
-            for (int i = last; i < samSize; ++i) {
-                addParameter("xva$" + i, tree.varargsElement, true);
-            }
-
-            return rcvr;
-        }
-
-        JCExpression getReceiverExpression() {
-            return receiverExpression;
-        }
-
-        private JCExpression makeReceiver(VarSymbol rcvr) {
-            if (rcvr == null) return null;
-            JCExpression rcvrExpr = make.Ident(rcvr);
-            boolean protAccess =
-                    isProtectedInSuperClassOfEnclosingClassInOtherPackage(tree.sym, owner);
-            Type rcvrType = tree.ownerAccessible && !protAccess ? tree.sym.enclClass().type
-                                                                : tree.expr.type;
-            if (rcvrType == syms.arrayClass.type) {
-                // Map the receiver type to the actually type, not just "array"
-                rcvrType = tree.getQualifierExpression().type;
-            }
-            if (!rcvr.type.tsym.isSubClass(rcvrType.tsym, types)) {
-                rcvrExpr = make.TypeCast(make.Type(rcvrType), rcvrExpr).setType(rcvrType);
-            }
-            return rcvrExpr;
-        }
-
-        /**
-         * determine the receiver of the method call - the receiver can
-         * be a type qualifier, the synthetic receiver parameter or 'super'.
-         */
-        private JCExpression expressionInvoke(VarSymbol rcvr) {
-            JCExpression qualifier =
-                    (rcvr != null) ?
-                        makeReceiver(rcvr) :
-                        tree.getQualifierExpression();
-
-            //create the qualifier expression
-            JCFieldAccess select = make.Select(qualifier, tree.sym.name);
-            select.sym = tree.sym;
-            select.type = tree.sym.erasure(types);
-
-            //create the method call expression
-            JCExpression apply = make.Apply(List.nil(), select,
-                    convertArgs(tree.sym, args.toList(), tree.varargsElement)).
-                    setType(tree.sym.erasure(types).getReturnType());
-
-            apply = transTypes.coerce(attrEnv, apply,
-                    types.erasure(localContext.tree.referentType.getReturnType()));
-
-            setVarargsIfNeeded(apply, tree.varargsElement);
-            return apply;
-        }
-
-        /**
-         * Lambda body to use for a 'new'.
-         */
-        private JCExpression expressionNew() {
-            if (tree.kind == ReferenceKind.ARRAY_CTOR) {
-                //create the array creation expression
-                JCNewArray newArr = make.NewArray(
-                        make.Type(types.elemtype(tree.getQualifierExpression().type)),
-                        List.of(make.Ident(params.first())),
-                        null);
-                newArr.type = tree.getQualifierExpression().type;
-                return newArr;
-            } else {
-                //create the instance creation expression
-                //note that method reference syntax does not allow an explicit
-                //enclosing class (so the enclosing class is null)
-                // but this may need to be patched up later with the proxy for the outer this
-                JCNewClass newClass = make.NewClass(null,
-                        List.nil(),
-                        make.Type(tree.getQualifierExpression().type),
-                        convertArgs(tree.sym, args.toList(), tree.varargsElement),
-                        null);
-                newClass.constructor = tree.sym;
-                newClass.constructorType = tree.sym.erasure(types);
-                newClass.type = tree.getQualifierExpression().type;
-                setVarargsIfNeeded(newClass, tree.varargsElement);
-                return newClass;
-            }
-        }
-
-        private VarSymbol addParameter(String name, Type p, boolean genArg) {
-            VarSymbol vsym = new VarSymbol(PARAMETER | SYNTHETIC, names.fromString(name), p, owner);
-            vsym.pos = tree.pos;
-            params.append(make.VarDef(vsym, null));
-            if (genArg) {
-                args.append(make.Ident(vsym));
-            }
-            return vsym;
-        }
-    }
 
     private MethodType typeToMethodType(Type mt) {
         Type type = types.erasure(mt);
@@ -1239,11 +934,6 @@ public class LambdaToMethod extends TreeTranslator {
         private int lambdaCount = 0;
 
         /**
-         * List of types undergoing construction, i.e., in an early construction context.
-         */
-        private List<ClassSymbol> typesUnderConstruction;
-
-        /**
          * keep the count of lambda expression defined in given context (used to
          * generate unambiguous names for serializable lambdas)
          */
@@ -1273,29 +963,9 @@ public class LambdaToMethod extends TreeTranslator {
 
         private JCClassDecl analyzeAndPreprocessClass(JCClassDecl tree) {
             frameStack = List.nil();
-            typesUnderConstruction = List.nil();
             localClassDefs = new HashMap<>();
             return translate(tree);
         }
-
-        @Override
-        public void visitApply(JCMethodInvocation tree) {
-            super.visitApply(tree);
-            if (TreeInfo.isConstructorCall(tree)) {
-                Assert.check(typesUnderConstruction.head == currentClass());
-                typesUnderConstruction = typesUnderConstruction.tail;   // end of early construction context
-            }
-        }
-            // where
-            private ClassSymbol currentClass() {
-                for (Frame frame : frameStack) {
-                    if (frame.tree.hasTag(JCTree.Tag.CLASSDEF)) {
-                        JCClassDecl cdef = (JCClassDecl) frame.tree;
-                        return cdef.sym;
-                    }
-                }
-                return null;
-            }
 
         @Override
         public void visitBlock(JCBlock tree) {
@@ -1329,21 +999,6 @@ public class LambdaToMethod extends TreeTranslator {
                 }
                 if (directlyEnclosingLambda() != null) {
                     tree.sym.owner = owner();
-                    if (tree.sym.hasOuterInstance()) {
-                        //if a class is defined within a lambda, the lambda must capture
-                        //its enclosing instance (if any)
-                        TranslationContext<?> localContext = context();
-                        final TypeSymbol outerInstanceSymbol = tree.sym.type.getEnclosingType().tsym;
-                        while (localContext != null && !localContext.owner.isStatic()) {
-                            if (localContext.tree.hasTag(LAMBDA)) {
-                                JCTree block = capturedDecl(localContext.depth, outerInstanceSymbol);
-                                if (block == null) break;
-                                ((LambdaTranslationContext)localContext)
-                                        .addSymbol(outerInstanceSymbol, CAPTURED_THIS);
-                            }
-                            localContext = localContext.prev;
-                        }
-                    }
                 }
                 frameStack = frameStack.prepend(new Frame(tree));
                 super.visitClassDef(tree);
@@ -1398,16 +1053,7 @@ public class LambdaToMethod extends TreeTranslator {
 
         @Override
         public void visitLambda(JCLambda tree) {
-            analyzeLambda(tree, "lambda.stat");
-        }
-
-        private void analyzeLambda(JCLambda tree, JCExpression methodReferenceReceiver) {
-            // Translation of the receiver expression must occur first
-            JCExpression rcvr = translate(methodReferenceReceiver);
-            LambdaTranslationContext context = analyzeLambda(tree, "mref.stat.1");
-            if (rcvr != null) {
-                context.methodReferenceReceiver = rcvr;
-            }
+            analyzeLambda(tree, tree.wasMethodReference ? "mref.stat.1" : "lambda.stat");
         }
 
         private LambdaTranslationContext analyzeLambda(JCLambda tree, String statKey) {
@@ -1434,85 +1080,14 @@ public class LambdaToMethod extends TreeTranslator {
 
         @Override
         public void visitMethodDef(JCMethodDecl tree) {
-            List<ClassSymbol> prevTypesUnderConstruction = typesUnderConstruction;
             List<Frame> prevStack = frameStack;
             try {
-                if (TreeInfo.isConstructor(tree))       // start early construction context (Object() notwithstanding)
-                    typesUnderConstruction = typesUnderConstruction.prepend(currentClass());
                 frameStack = frameStack.prepend(new Frame(tree));
                 super.visitMethodDef(tree);
-            } finally {
+            }
+            finally {
                 frameStack = prevStack;
-                typesUnderConstruction = prevTypesUnderConstruction;
             }
-        }
-
-        @Override
-        public void visitNewClass(JCNewClass tree) {
-            TypeSymbol def = tree.type.tsym;
-            boolean inReferencedClass = currentlyInClass(def);
-            boolean isLocal = def.isDirectlyOrIndirectlyLocal();
-            if ((inReferencedClass && isLocal || lambdaNewClassFilter(context(), tree))) {
-                TranslationContext<?> localContext = context();
-                final TypeSymbol outerInstanceSymbol = tree.type.getEnclosingType().tsym;
-                while (localContext != null  && !localContext.owner.isStatic()) {
-                    if (localContext.tree.hasTag(LAMBDA)) {
-                        if (outerInstanceSymbol != null) {
-                            JCTree block = capturedDecl(localContext.depth, outerInstanceSymbol);
-                            if (block == null) break;
-                        }
-                        ((LambdaTranslationContext)localContext)
-                                .addSymbol(outerInstanceSymbol, CAPTURED_THIS);
-                    }
-                    localContext = localContext.prev;
-                }
-            }
-            super.visitNewClass(tree);
-            if (context() != null && !inReferencedClass && isLocal) {
-                LambdaTranslationContext lambdaContext = (LambdaTranslationContext)context();
-                captureLocalClassDefs(def, lambdaContext);
-            }
-        }
-        //where
-            void captureLocalClassDefs(Symbol csym, final LambdaTranslationContext lambdaContext) {
-                JCClassDecl localCDef = localClassDefs.get(csym);
-                if (localCDef != null && lambdaContext.freeVarProcessedLocalClasses.add(csym)) {
-                    BasicFreeVarCollector fvc = lower.new BasicFreeVarCollector() {
-                        @Override
-                        void addFreeVars(ClassSymbol c) {
-                            captureLocalClassDefs(c, lambdaContext);
-                        }
-                        @Override
-                        void visitSymbol(Symbol sym) {
-                            if (sym.kind == VAR &&
-                                    sym.owner.kind == MTH &&
-                                    ((VarSymbol)sym).getConstValue() == null) {
-                                TranslationContext<?> localContext = context();
-                                while (localContext != null) {
-                                    if (localContext.tree.getTag() == LAMBDA) {
-                                        JCTree block = capturedDecl(localContext.depth, sym);
-                                        if (block == null) break;
-                                        ((LambdaTranslationContext)localContext).addSymbol(sym, CAPTURED_VAR);
-                                    }
-                                    localContext = localContext.prev;
-                                }
-                            }
-                        }
-                    };
-                    fvc.scan(localCDef);
-                }
-        }
-        //where
-        boolean currentlyInClass(Symbol csym) {
-            for (Frame frame : frameStack) {
-                if (frame.tree.hasTag(JCTree.Tag.CLASSDEF)) {
-                    JCClassDecl cdef = (JCClassDecl) frame.tree;
-                    if (cdef.sym == csym) {
-                        return true;
-                    }
-                }
-            }
-            return false;
         }
 
         /**
@@ -1531,15 +1106,9 @@ public class LambdaToMethod extends TreeTranslator {
         public void visitReference(JCMemberReference tree) {
             ReferenceTranslationContext rcontext = new ReferenceTranslationContext(tree);
             contextMap.put(tree, rcontext);
-            if (rcontext.needsConversionToLambda()) {
-                 // Convert to a lambda, and process as such
-                MemberReferenceToLambda conv = new MemberReferenceToLambda(tree, rcontext, owner());
-                analyzeLambda(conv.lambda(), conv.getReceiverExpression());
-            } else {
-                super.visitReference(tree);
-                if (dumpLambdaToMethodStats) {
-                    log.note(tree, Notes.MrefStat(rcontext.needsAltMetafactory(), null));
-                }
+            super.visitReference(tree);
+            if (dumpLambdaToMethodStats) {
+                log.note(tree, Notes.MrefStat(rcontext.needsAltMetafactory(), null));
             }
         }
 
@@ -1722,12 +1291,13 @@ public class LambdaToMethod extends TreeTranslator {
          * in nested scopes (which do not need to undergo capture).
          */
         private JCTree capturedDecl(int depth, Symbol sym) {
+            Assert.check(sym.kind != TYP);
             int currentDepth = frameStack.size() - 1;
             for (Frame block : frameStack) {
                 switch (block.tree.getTag()) {
                     case CLASSDEF:
                         ClassSymbol clazz = ((JCClassDecl)block.tree).sym;
-                        if (clazz.isSubClass(sym, types) || sym.isMemberOf(clazz, types)) {
+                        if (clazz.isSubClass(sym.enclClass(), types)) {
                             return currentDepth > depth ? null : block.tree;
                         }
                         break;
@@ -1771,42 +1341,6 @@ public class LambdaToMethod extends TreeTranslator {
             return (sym.kind == VAR || sym.kind == MTH)
                     && !sym.isStatic()
                     && sym.name != names.init;
-        }
-
-        /**
-         *  This is used to filter out those select nodes that need to be adjusted
-         *  when translating away lambda expressions - at the moment, this is the
-         *  set of nodes that select `this' (qualified this)
-         */
-        private boolean lambdaFieldAccessFilter(JCFieldAccess fAccess) {
-            return (context instanceof LambdaTranslationContext lambdaContext)
-                    && !fAccess.sym.isStatic()
-                    && fAccess.name == names._this
-                    && (fAccess.sym.owner.kind == TYP)
-                    && !lambdaContext.translatedSymbols.get(CAPTURED_OUTER_THIS).isEmpty();
-        }
-
-        /**
-         * This is used to filter out those new class expressions that need to
-         * be qualified with an enclosing tree
-         */
-        private boolean lambdaNewClassFilter(TranslationContext<?> context, JCNewClass tree) {
-            if (context != null
-                    && tree.encl == null
-                    && tree.def == null
-                    && !tree.type.getEnclosingType().hasTag(NONE)) {
-                Type encl = tree.type.getEnclosingType();
-                Type current = context.owner.enclClass().type;
-                while (!current.hasTag(NONE)) {
-                    if (current.tsym.isSubClass(encl.tsym, types)) {
-                        return true;
-                    }
-                    current = current.getEnclosingType();
-                }
-                return false;
-            } else {
-                return false;
-            }
         }
 
         private class Frame {
@@ -1918,18 +1452,6 @@ public class LambdaToMethod extends TreeTranslator {
 
             List<JCVariableDecl> syntheticParams;
 
-            /**
-             * to prevent recursion, track local classes processed
-             */
-            final Set<Symbol> freeVarProcessedLocalClasses;
-
-            /**
-             * For method references converted to lambdas.  The method
-             * reference receiver expression. Must be treated like a captured
-             * variable.
-             */
-            JCExpression methodReferenceReceiver;
-
             LambdaTranslationContext(JCLambda tree) {
                 super(tree);
                 Frame frame = frameStack.head;
@@ -1960,13 +1482,10 @@ public class LambdaToMethod extends TreeTranslator {
                 }
                 translatedSymbols = new EnumMap<>(LambdaSymbolKind.class);
 
-                translatedSymbols.put(PARAM, new LinkedHashMap<Symbol, Symbol>());
-                translatedSymbols.put(LOCAL_VAR, new LinkedHashMap<Symbol, Symbol>());
-                translatedSymbols.put(CAPTURED_VAR, new LinkedHashMap<Symbol, Symbol>());
-                translatedSymbols.put(CAPTURED_THIS, new LinkedHashMap<Symbol, Symbol>());
-                translatedSymbols.put(CAPTURED_OUTER_THIS, new LinkedHashMap<Symbol, Symbol>());
-
-                freeVarProcessedLocalClasses = new HashSet<>();
+                translatedSymbols.put(PARAM, new LinkedHashMap<>());
+                translatedSymbols.put(LOCAL_VAR, new LinkedHashMap<>());
+                translatedSymbols.put(CAPTURED_VAR, new LinkedHashMap<>());
+                translatedSymbols.put(CAPTURED_THIS, new LinkedHashMap<>());
             }
 
              /**
@@ -2066,16 +1585,6 @@ public class LambdaToMethod extends TreeTranslator {
                             }
                         };
                         break;
-                    case CAPTURED_OUTER_THIS:
-                        Name name = names.fromString(sym.flatName().toString().replace('.', '$') + names.dollarThis);
-                        ret = new VarSymbol(SYNTHETIC | FINAL | PARAMETER, name, types.erasure(sym.type), translatedSym) {
-                            @Override
-                            public Symbol baseSymbol() {
-                                //keep mapping with original captured symbol
-                                return sym;
-                            }
-                        };
-                        break;
                     case LOCAL_VAR:
                         ret = new VarSymbol(sym.flags() & FINAL, sym.name, sym.type, translatedSym) {
                             @Override
@@ -2114,14 +1623,6 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             void addSymbol(Symbol sym, LambdaSymbolKind skind) {
-                if (skind == CAPTURED_THIS && sym != null && sym.kind == TYP && !typesUnderConstruction.isEmpty()) {
-                    ClassSymbol currentClass = currentClass();
-                    if (currentClass != null && typesUnderConstruction.contains(currentClass)) {
-                        // reference must be to enclosing outer instance, mutate capture kind.
-                        Assert.check(sym != currentClass); // should have been caught right in Attr
-                        skind = CAPTURED_OUTER_THIS;
-                    }
-                }
                 Map<Symbol, Symbol> transMap = getSymbolMap(skind);
                 if (!transMap.containsKey(sym)) {
                     transMap.put(sym, translate(sym, skind));
@@ -2145,52 +1646,9 @@ public class LambdaToMethod extends TreeTranslator {
                                 return t;
                             }
                             break;
-                        case CAPTURED_OUTER_THIS:
-                            Optional<Symbol> proxy = m.keySet().stream()
-                                    .filter(out -> lambdaIdent.sym.isMemberOf(out.type.tsym, types))
-                                    .reduce((a, b) -> a.isEnclosedBy((ClassSymbol)b) ? a : b);
-                            if (proxy.isPresent()) {
-                                // Transform outer instance variable references anchoring them to the captured synthetic.
-                                Symbol tSym = m.get(proxy.get());
-                                JCExpression t = make.Ident(tSym).setType(lambdaIdent.sym.owner.type);
-                                t = make.Select(t, lambdaIdent.name);
-                                t.setType(lambdaIdent.type);
-                                TreeInfo.setSymbol(t, lambdaIdent.sym);
-                                return t;
-                            }
-                            break;
                     }
                 }
                 return null;
-            }
-
-            /* Translate away qualified this expressions, anchoring them to synthetic parameters that
-               capture the qualified this handle. `fieldAccess' is guaranteed to one such.
-            */
-            public JCTree translate(JCFieldAccess fieldAccess) {
-                Assert.check(fieldAccess.name == names._this);
-                Map<Symbol, Symbol> m = translatedSymbols.get(LambdaSymbolKind.CAPTURED_OUTER_THIS);
-                if (m.containsKey(fieldAccess.sym.owner)) {
-                    Symbol tSym = m.get(fieldAccess.sym.owner);
-                    JCExpression t = make.Ident(tSym).setType(fieldAccess.sym.owner.type);
-                    return t;
-                }
-                return null;
-            }
-
-            /* Translate away naked new instance creation expressions with implicit enclosing instances,
-               anchoring them to synthetic parameters that stand proxy for the qualified outer this handle.
-            */
-            public JCNewClass translate(JCNewClass newClass) {
-                Assert.check(newClass.clazz.type.tsym.hasOuterInstance() && newClass.encl == null);
-                Map<Symbol, Symbol> m = translatedSymbols.get(LambdaSymbolKind.CAPTURED_OUTER_THIS);
-                final Type enclosingType = newClass.clazz.type.getEnclosingType();
-                if (m.containsKey(enclosingType.tsym)) {
-                      Symbol tSym = m.get(enclosingType.tsym);
-                      JCExpression encl = make.Ident(tSym).setType(enclosingType);
-                      newClass.encl = encl;
-                }
-                return newClass;
             }
 
             /**
@@ -2230,10 +1688,6 @@ public class LambdaToMethod extends TreeTranslator {
                     params.append(make.VarDef((VarSymbol) thisSym, null));
                     parameterSymbols.append((VarSymbol) thisSym);
                 }
-                for (Symbol thisSym : getSymbolMap(CAPTURED_OUTER_THIS).values()) {
-                    params.append(make.VarDef((VarSymbol) thisSym, null));
-                    parameterSymbols.append((VarSymbol) thisSym);
-                }
                 for (Symbol thisSym : getSymbolMap(PARAM).values()) {
                     params.append(make.VarDef((VarSymbol) thisSym, null));
                     parameterSymbols.append((VarSymbol) thisSym);
@@ -2259,102 +1713,12 @@ public class LambdaToMethod extends TreeTranslator {
         }
 
         /**
-         * This class retains all the useful information about a method reference;
-         * the contents of this class are filled by the LambdaAnalyzer visitor,
-         * and the used by the main translation routines in order to adjust method
-         * references (i.e. in case a bridge is needed)
+         * Simple subclass modelling the translation context of a method reference.
          */
         final class ReferenceTranslationContext extends TranslationContext<JCMemberReference> {
 
-            final boolean isSuper;
-
             ReferenceTranslationContext(JCMemberReference tree) {
                 super(tree);
-                this.isSuper = tree.hasKind(ReferenceKind.SUPER);
-            }
-
-            boolean needsVarArgsConversion() {
-                return tree.varargsElement != null;
-            }
-
-            /**
-             * @return Is this an array operation like clone()
-             */
-            boolean isArrayOp() {
-                return tree.sym.owner == syms.arrayClass;
-            }
-
-            boolean receiverAccessible() {
-                //hack needed to workaround 292 bug (7087658)
-                //when 292 issue is fixed we should remove this and change the backend
-                //code to always generate a method handle to an accessible method
-                return tree.ownerAccessible;
-            }
-
-            /**
-             * This method should be called only when target release <= 14
-             * where LambdaMetaFactory does not spin nestmate classes.
-             *
-             * This method should be removed when --release 14 is not supported.
-             */
-            boolean isPrivateInOtherClass() {
-                assert !nestmateLambdas;
-                return  (tree.sym.flags() & PRIVATE) != 0 &&
-                        !types.isSameType(
-                              types.erasure(tree.sym.enclClass().asType()),
-                              types.erasure(owner.enclClass().asType()));
-            }
-
-            /**
-             * Erasure destroys the implementation parameter subtype
-             * relationship for intersection types.
-             * Have similar problems for union types too.
-             */
-            boolean interfaceParameterIsIntersectionOrUnionType() {
-                List<Type> tl = tree.getDescriptorType(types).getParameterTypes();
-                for (; tl.nonEmpty(); tl = tl.tail) {
-                    Type pt = tl.head;
-                    if (isIntersectionOrUnionType(pt))
-                        return true;
-                }
-                return false;
-            }
-
-            boolean isIntersectionOrUnionType(Type t) {
-                switch (t.getKind()) {
-                    case INTERSECTION:
-                    case UNION:
-                        return true;
-                    case TYPEVAR:
-                        TypeVar tv = (TypeVar) t;
-                        return isIntersectionOrUnionType(tv.getUpperBound());
-                }
-                return false;
-            }
-
-            /**
-             * Does this reference need to be converted to a lambda
-             * (i.e. var args need to be expanded or "super" is used)
-             */
-            final boolean needsConversionToLambda() {
-                return interfaceParameterIsIntersectionOrUnionType() ||
-                        isSuper ||
-                        needsVarArgsConversion() ||
-                        isArrayOp() ||
-                        (!nestmateLambdas && isPrivateInOtherClass()) ||
-                        isProtectedInSuperClassOfEnclosingClassInOtherPackage(tree.sym, owner) ||
-                        !receiverAccessible() ||
-                        (tree.getMode() == ReferenceMode.NEW &&
-                          tree.kind != ReferenceKind.ARRAY_CTOR &&
-                          (tree.sym.owner.isDirectlyOrIndirectlyLocal() || tree.sym.owner.isInner()));
-            }
-
-            Type generatedRefSig() {
-                return types.erasure(tree.sym.type);
-            }
-
-            Type bridgedRefSig() {
-                return types.erasure(types.findDescriptorSymbol(tree.target.tsym).type);
             }
         }
     }
@@ -2368,14 +1732,12 @@ public class LambdaToMethod extends TreeTranslator {
         PARAM,          // original to translated lambda parameters
         LOCAL_VAR,      // original to translated lambda locals
         CAPTURED_VAR,   // variables in enclosing scope to translated synthetic parameters
-        CAPTURED_THIS,  // class symbols to translated synthetic parameters (for captured member access)
-        CAPTURED_OUTER_THIS; // used when `this' capture is illegal, but outer this capture is legit (JDK-8129740)
+        CAPTURED_THIS;  // class symbols to translated synthetic parameters (for captured member access)
 
         boolean propagateAnnotations() {
             switch (this) {
                 case CAPTURED_VAR:
                 case CAPTURED_THIS:
-                case CAPTURED_OUTER_THIS:
                     return false;
                 default:
                     return true;
@@ -2417,12 +1779,6 @@ public class LambdaToMethod extends TreeTranslator {
         }
     }
 
-    private boolean isProtectedInSuperClassOfEnclosingClassInOtherPackage(Symbol targetReference,
-                                                                          Symbol currentClass) {
-        return ((targetReference.flags() & PROTECTED) != 0 &&
-                targetReference.packge() != currentClass.packge());
-    }
-
     /**
      * Signature Generation
      */
@@ -2440,7 +1796,7 @@ public class LambdaToMethod extends TreeTranslator {
         boolean allowIllegalSignatures;
 
         L2MSignatureGenerator(boolean allowIllegalSignatures) {
-            super(types);
+            types.super();
             this.allowIllegalSignatures = allowIllegalSignatures;
         }
 

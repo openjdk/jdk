@@ -321,7 +321,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
            "should be held, after move_to");
   }
   if (ProfileInterpreter) {
-    iframe()->interpreter_frame_set_mdp(0); // clear out the mdp.
+    iframe()->interpreter_frame_set_mdp(nullptr); // clear out the mdp.
   }
   iframe()->interpreter_frame_set_bcp(bcp);
   if (ProfileInterpreter) {

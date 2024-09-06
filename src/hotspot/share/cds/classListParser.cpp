@@ -463,7 +463,7 @@ void ClassListParser::check_class_name(const char* class_name) {
     err = "class name too long";
   } else {
     assert(Symbol::max_length() < INT_MAX && len < INT_MAX, "must be");
-    if (!UTF8::is_legal_utf8((const unsigned char*)class_name, (int)len, /*version_leq_47*/false)) {
+    if (!UTF8::is_legal_utf8((const unsigned char*)class_name, len, /*version_leq_47*/false)) {
       err = "class name is not valid UTF8";
     }
   }
@@ -830,6 +830,8 @@ void ClassListParser::parse_constant_pool_tag() {
       // ignore
       break;
     case JVM_CONSTANT_Fieldref:
+    case JVM_CONSTANT_Methodref:
+    case JVM_CONSTANT_InterfaceMethodref:
       preresolve_fmi = true;
       break;
       break;
@@ -847,4 +849,3 @@ void ClassListParser::parse_constant_pool_tag() {
     ClassPrelinker::preresolve_field_and_method_cp_entries(THREAD, ik, &preresolve_list);
   }
 }
-

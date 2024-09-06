@@ -44,6 +44,19 @@ STATIC_ASSERT(is_aligned((int)Chunk::init_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::medium_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
 
+
+const char* Arena::tag_name[] = {
+#define ARENA_TAG_STRING(name, str, desc) XSTR(name),
+  DO_ARENA_TAG(ARENA_TAG_STRING)
+#undef ARENA_TAG_STRING
+};
+
+const char* Arena::tag_desc[] = {
+#define ARENA_TAG_DESC(name, str, desc) XSTR(desc),
+  DO_ARENA_TAG(ARENA_TAG_DESC)
+#undef ARENA_TAG_DESC
+};
+
 // MT-safe pool of same-sized chunks to reduce malloc/free thrashing
 // NB: not using Mutex because pools are used before Threads are initialized
 class ChunkPool {
@@ -209,7 +222,12 @@ void Chunk::next_chop(Chunk* k) {
   k->_next = nullptr;
 }
 
-Arena::Arena(MEMFLAGS flag, Tag tag, size_t init_size) : _flags(flag), _tag(tag), _size_in_bytes(0)  {
+Arena::Arena(MEMFLAGS flag, Tag tag, size_t init_size) :
+  _flags(flag), _tag(tag),
+  _size_in_bytes(0),
+  _first(nullptr), _chunk(nullptr),
+  _hwm(nullptr), _max(nullptr)
+{
   init_size = ARENA_ALIGN(init_size);
   _chunk = ChunkPool::allocate_chunk(init_size, AllocFailStrategy::EXIT_OOM);
   _first = _chunk;
@@ -217,15 +235,6 @@ Arena::Arena(MEMFLAGS flag, Tag tag, size_t init_size) : _flags(flag), _tag(tag)
   _max = _chunk->top();
   MemTracker::record_new_arena(flag);
   set_size_in_bytes(init_size);
-}
-
-Arena::Arena(MEMFLAGS flag, Tag tag) : _flags(flag), _tag(tag), _size_in_bytes(0) {
-  _chunk = ChunkPool::allocate_chunk(Chunk::init_size, AllocFailStrategy::EXIT_OOM);
-  _first = _chunk;
-  _hwm = _chunk->bottom();      // Save the cached hwm, max
-  _max = _chunk->top();
-  MemTracker::record_new_arena(flag);
-  set_size_in_bytes(Chunk::init_size);
 }
 
 Arena::~Arena() {

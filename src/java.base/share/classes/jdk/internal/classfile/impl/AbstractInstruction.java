@@ -145,7 +145,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.loadType(op);
         }
 
         @Override
@@ -173,7 +173,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.storeType(op);
         }
 
         @Override
@@ -317,7 +317,7 @@ public abstract sealed class AbstractInstruction
             int pad = ap - (pos + 1);
             int low = code.classReader.readInt(ap + 4);
             int high = code.classReader.readInt(ap + 8);
-            if (high < low || high - low > code.codeLength >> 2) {
+            if (high < low || (long)high - low > code.codeLength >> 2) {
                 throw new IllegalArgumentException("Invalid tableswitch values low: " + low + " high: " + high);
             }
             int cnt = high - low + 1;
@@ -529,7 +529,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public ClassEntry className() {
             if (classEntry == null)
-                classEntry = code.classReader.readClassEntry(pos + 1);
+                classEntry = code.classReader.readEntry(pos + 1, ClassEntry.class);
             return classEntry;
         }
 
@@ -576,7 +576,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public ClassEntry componentType() {
-            return code.classReader.readClassEntry(pos + 1);
+            return code.classReader.readEntry(pos + 1, ClassEntry.class);
         }
 
         @Override
@@ -607,7 +607,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public ClassEntry arrayType() {
-            return code.classReader.readClassEntry(pos + 1);
+            return code.classReader.readEntry(pos + 1, ClassEntry.class);
         }
 
         @Override
@@ -636,7 +636,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public ClassEntry type() {
             if (typeEntry == null)
-                typeEntry = code.classReader.readClassEntry(pos + 1);
+                typeEntry = code.classReader.readEntry(pos + 1, ClassEntry.class);
             return typeEntry;
         }
 
@@ -800,7 +800,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.loadType(op);
         }
 
         @Override
@@ -831,7 +831,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.storeType(op);
         }
 
         @Override
@@ -993,7 +993,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.returnType(op);
         }
 
         @Override
@@ -1226,7 +1226,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.arrayLoadType(op);
         }
     }
 
@@ -1239,7 +1239,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.arrayStoreType(op);
         }
     }
 
@@ -1286,12 +1286,12 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind fromType() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.convertFromType(op);
         }
 
         @Override
         public TypeKind toType() {
-            return op.secondaryTypeKind();
+            return BytecodeHelpers.convertToType(op);
         }
     }
 
@@ -1304,27 +1304,19 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return op.primaryTypeKind();
+            return BytecodeHelpers.operatorOperandType(op);
         }
     }
 
     public static final class UnboundIntrinsicConstantInstruction
             extends UnboundInstruction implements ConstantInstruction.IntrinsicConstantInstruction {
-        final ConstantDesc constant;
-
         public UnboundIntrinsicConstantInstruction(Opcode op) {
             super(op);
-            constant = op.constantValue();
-        }
-
-        @Override
-        public void writeTo(DirectCodeBuilder writer) {
-            super.writeTo(writer);
         }
 
         @Override
         public ConstantDesc constantValue() {
-            return constant;
+            return BytecodeHelpers.intrinsicConstantValue(op);
         }
     }
 

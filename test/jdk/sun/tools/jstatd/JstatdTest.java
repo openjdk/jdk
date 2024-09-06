@@ -356,7 +356,7 @@ public final class JstatdTest {
         OutputAnalyzer output = jstatdThread.getOutput();
         List<String> stdout = output.asLinesWithoutVMWarnings();
         output.reportDiagnosticSummary();
-        assertEquals(stdout.size(), 1, "Output should contain one line");
+        assertEquals(stdout.size(), 2, "Output should contain two lines"); // includes deprecation warning
         assertTrue(stdout.get(0).startsWith("jstatd started"), "List should start with 'jstatd started'");
         assertNotEquals(output.getExitValue(), 0,
                 "jstatd process exited with unexpected exit code");

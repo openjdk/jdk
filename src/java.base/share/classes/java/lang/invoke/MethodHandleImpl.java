@@ -27,8 +27,9 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.constant.MethodTypeDescImpl;
+import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.foreign.abi.NativeEntryPoint;
-import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
@@ -39,6 +40,8 @@ import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
 
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
@@ -56,13 +59,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.MN_CALLER_SENSITIVE;
 import static java.lang.invoke.MethodHandleNatives.Constants.MN_HIDDEN_MEMBER;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 /**
  * Trusted implementation code for MethodHandle.
@@ -1035,8 +1039,10 @@ abstract class MethodHandleImpl {
     // Put the whole mess into its own nested class.
     // That way we can lazily load the code and set up the constants.
     private static class BindCaller {
-        private static MethodType INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
-        private static MethodType REFLECT_INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object.class, Object[].class);
+
+        private static final ClassDesc CD_Object_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;");
+        private static final MethodType INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
+        private static final MethodType REFLECT_INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object.class, Object[].class);
 
         static MethodHandle bindCaller(MethodHandle mh, Class<?> hostClass) {
             // Code in the boot layer should now be careful while creating method handles or
@@ -1250,8 +1256,6 @@ abstract class MethodHandleImpl {
 
         /** Produces byte code for a class that is used as an injected invoker. */
         private static byte[] generateInvokerTemplate() {
-            ClassWriter cw = new ClassWriter(0);
-
             // private static class InjectedInvoker {
             //     /* this is used to wrap DMH(s) of caller-sensitive methods */
             //     @Hidden
@@ -1265,39 +1269,25 @@ abstract class MethodHandleImpl {
             //     }
             // }
             // }
-            cw.visit(CLASSFILE_VERSION, ACC_PRIVATE | ACC_SUPER, "InjectedInvoker", null, "java/lang/Object", null);
-            {
-                var mv = cw.visitMethod(ACC_STATIC, "invoke_V",
-                        "(Ljava/lang/invoke/MethodHandle;[Ljava/lang/Object;)Ljava/lang/Object;",
-                        null, null);
-
-                mv.visitCode();
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeExact",
-                        "([Ljava/lang/Object;)Ljava/lang/Object;", false);
-                mv.visitInsn(ARETURN);
-                mv.visitMaxs(2, 2);
-                mv.visitEnd();
-
-                cw.visitEnd();
-            }
-
-            {
-                var mv = cw.visitMethod(ACC_STATIC, "reflect_invoke_V",
-                        "(Ljava/lang/invoke/MethodHandle;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;",
-                        null, null);
-                mv.visitCode();
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitVarInsn(ALOAD, 2);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/invoke/MethodHandle", "invokeExact",
-                        "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", false);
-                mv.visitInsn(ARETURN);
-                mv.visitMaxs(3, 3);
-                mv.visitEnd();
-            }
-            return cw.toByteArray();
+            return ClassFile.of().build(ReferenceClassDescImpl.ofValidated("LInjectedInvoker;"), clb -> clb
+                    .withFlags(ACC_PRIVATE | ACC_SUPER)
+                    .withMethodBody(
+                        "invoke_V",
+                        MethodTypeDescImpl.ofValidated(CD_Object, CD_MethodHandle, CD_Object_array),
+                        ACC_STATIC,
+                        cob -> cob.aload(0)
+                                  .aload(1)
+                                  .invokevirtual(CD_MethodHandle, "invokeExact", MethodTypeDescImpl.ofValidated(CD_Object, CD_Object_array))
+                                  .areturn())
+                    .withMethodBody(
+                        "reflect_invoke_V",
+                        MethodTypeDescImpl.ofValidated(CD_Object, CD_MethodHandle, CD_Object, CD_Object_array),
+                        ACC_STATIC,
+                        cob -> cob.aload(0)
+                                  .aload(1)
+                                  .aload(2)
+                                  .invokevirtual(CD_MethodHandle, "invokeExact", MethodTypeDescImpl.ofValidated(CD_Object, CD_Object, CD_Object_array))
+                                  .areturn()));
         }
     }
 

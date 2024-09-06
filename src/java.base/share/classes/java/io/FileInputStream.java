@@ -371,6 +371,9 @@ public class FileInputStream extends InputStream
         return (capacity == nread) ? buf : Arrays.copyOf(buf, nread);
     }
 
+    /**
+     * @since 11
+     */
     @Override
     public byte[] readNBytes(int len) throws IOException {
         if (len < 0)

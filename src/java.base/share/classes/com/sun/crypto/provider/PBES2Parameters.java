@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,8 +131,8 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
 
     PBES2Parameters(String pbes2AlgorithmName) throws NoSuchAlgorithmException {
         int and;
-        String kdfAlgo = null;
-        String cipherAlgo = null;
+        String kdfAlgo;
+        String cipherAlgo;
 
         // Extract the KDF and encryption algorithm names
         this.pbes2AlgorithmName = pbes2AlgorithmName;
@@ -210,9 +210,6 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
     protected void engineInit(byte[] encoded)
         throws IOException
     {
-        String kdfAlgo = null;
-        String cipherAlgo = null;
-
         DerValue pBES2_params = new DerValue(encoded);
         if (pBES2_params.tag != DerValue.tag_Sequence) {
             throw new IOException("PBE parameter parsing error: "
@@ -231,16 +228,15 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
             kdf = pBES2_params.data.getDerValue();
         }
 
-        kdfAlgo = parseKDF(kdf);
+        String kdfAlgo = parseKDF(kdf);
 
         if (pBES2_params.tag != DerValue.tag_Sequence) {
             throw new IOException("PBE parameter parsing error: "
                 + "not an ASN.1 SEQUENCE tag");
         }
-        cipherAlgo = parseES(pBES2_params.data.getDerValue());
+        String cipherAlgo = parseES(pBES2_params.data.getDerValue());
 
-        this.pbes2AlgorithmName = new StringBuilder().append("PBEWith")
-            .append(kdfAlgo).append("And").append(cipherAlgo).toString();
+        this.pbes2AlgorithmName = "PBEWith" + kdfAlgo + "And" + cipherAlgo;
     }
 
     @SuppressWarnings("deprecation")
@@ -305,7 +301,7 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
 
     @SuppressWarnings("deprecation")
     private String parseES(DerValue encryptionScheme) throws IOException {
-        String cipherAlgo = null;
+        String cipherAlgo;
 
         cipherAlgo_OID = encryptionScheme.data.getOID();
         if (aes128CBC_OID.equals(cipherAlgo_OID)) {
@@ -399,7 +395,7 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
     /*
      * Returns a formatted string describing the parameters.
      *
-     * The algorithn name pattern is: "PBEWith<prf>And<encryption>"
+     * The algorithm name pattern is: "PBEWith<prf>And<encryption>"
      * where <prf> is one of: HmacSHA1, HmacSHA224, HmacSHA256, HmacSHA384,
      * HmacSHA512, HmacSHA512/224, or HmacSHA512/256 and <encryption> is
      * AES with a keysize suffix.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,10 @@ import java.io.*;
 import java.lang.constant.ClassDesc;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.attribute.SourceFileAttribute;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
@@ -58,11 +55,10 @@ import static helpers.TestConstants.MTD_INT_VOID;
 import static helpers.TestConstants.MTD_VOID;
 import static helpers.TestUtil.ExpectedLvRecord;
 import static helpers.TestUtil.ExpectedLvtRecord;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
-import static java.lang.classfile.Opcode.*;
-import static java.lang.classfile.Opcode.INVOKEVIRTUAL;
-import static java.lang.classfile.TypeKind.VoidType;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LvtTest {
@@ -88,7 +84,7 @@ class LvtTest {
                         .orElseThrow();
 
         List<LocalVariable> lvs = new ArrayList<>();
-        co.forEachElement(e -> {
+        co.forEach(e -> {
             if (e instanceof LocalVariable l) lvs.add(l);
         });
 
@@ -108,7 +104,7 @@ class LvtTest {
         ClassModel c = cc.parse(fileBytes);
 
         // Compare transformed model and original with CodeBuilder filter
-        byte[] newClass = cc.transform(c, Transforms.threeLevelNoop);
+        byte[] newClass = cc.transformClass(c, Transforms.threeLevelNoop);
         ClassRecord orig = ClassRecord.ofClassModel(cc.parse(fileBytes), ClassRecord.CompatibilityFilter.By_ClassBuilder);
         ClassRecord transformed = ClassRecord.ofClassModel(cc.parse(newClass), ClassRecord.CompatibilityFilter.By_ClassBuilder);
         ClassRecord.assertEqualsDeep(transformed, orig);
@@ -128,7 +124,7 @@ class LvtTest {
                       )
               )
               .withMethod("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),
-                          AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb
                               .withCode(c0 -> {
                                   ConstantPoolBuilder cpb = cb.constantPool();
@@ -198,7 +194,7 @@ class LvtTest {
                         .orElseThrow();
 
         List<LocalVariableType> lvts = new ArrayList<>();
-        co.forEachElement(e -> {
+        co.forEach(e -> {
             if (e instanceof LocalVariableType l) lvts.add(l);
         });
 
@@ -243,7 +239,7 @@ class LvtTest {
               )
 
               .withMethod("m", MethodTypeDesc.of(CD_Object, CD_Object.arrayType()),
-                          ClassFile.ACC_PUBLIC,
+                          ACC_PUBLIC,
                           mb -> mb.withFlags(AccessFlag.PUBLIC)
                                   .withCode(c0 -> {
                                       ConstantPoolBuilder cpb = cb.constantPool();
@@ -304,11 +300,11 @@ class LvtTest {
     void skipDebugSkipsLVT() {
         ClassModel c = ClassFile.of(ClassFile.DebugElementsOption.DROP_DEBUG).parse(fileBytes);
 
-        c.forEachElement(e -> {
+        c.forEach(e -> {
             if (e instanceof MethodModel m) {
-                m.forEachElement(el -> {
+                m.forEach(el -> {
                     if (el instanceof CodeModel cm) {
-                        cm.forEachElement(elem -> {
+                        cm.forEach(elem -> {
                             assertFalse(elem instanceof LocalVariable);
                             assertFalse(elem instanceof LocalVariableType);
                         });

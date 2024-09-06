@@ -165,6 +165,7 @@ module java.base {
         java.desktop,
         java.logging,
         java.management,
+        java.management.rmi,
         java.naming,
         java.rmi,
         jdk.charsets,
@@ -255,7 +256,8 @@ module java.base {
         jdk.internal.jvmstat,
         jdk.management,
         jdk.management.agent,
-        jdk.internal.vm.ci;
+        jdk.internal.vm.ci,
+        jdk.jfr;
     exports jdk.internal.vm.annotation to
         java.instrument,
         jdk.internal.vm.ci,
