@@ -1027,8 +1027,8 @@ public class Flow {
          * of patterns is replaced with a new set of patterns of the form:
          * $record($prefix$, $resultOfReduction, $suffix$)
          *
-         * useHashes: when true, patterns will be a subject to exact equivalence;
-         *            when false, two bindings patterns will be considered equivalent
+         * useHashes: when true, patterns will be subject to exact equivalence;
+         *            when false, two binding patterns will be considered equivalent
          *            if one of them is more generic than the other one;
          *            when false, the processing will be significantly slower,
          *            as pattern hashes cannot be used to speed up the matching process
@@ -1059,13 +1059,13 @@ public class Flow {
                      mismatchingCandidate < nestedPatternsCount;
                      mismatchingCandidate++) {
                     int mismatchingCandidateFin = mismatchingCandidate;
-                    var groupByHashes =
+                    var groupEquivalenceCandidates =
                             current
                              .stream()
                              //error recovery, ignore patterns with incorrect number of nested patterns:
                              .filter(pd -> pd.nested.length == nestedPatternsCount)
                              .collect(groupingBy(pd -> useHashes ? pd.hashCode(mismatchingCandidateFin) : 0));
-                    for (var candidates : groupByHashes.values()) {
+                    for (var candidates : groupEquivalenceCandidates.values()) {
                         var candidatesArr = candidates.toArray(RecordPattern[]::new);
 
                         for (int firstCandidate = 0;
