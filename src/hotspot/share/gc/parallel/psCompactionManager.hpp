@@ -126,7 +126,6 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   PSScannerTasksQueue           _marking_stack;
   PartialArrayTaskStepper       _partial_array_stepper;
   uint                          _partial_array_state_allocator_index;
-  uint                          _min_array_size_for_chunking;
 
   size_t                        _next_shadow_region;
 

@@ -59,7 +59,7 @@ PreservedMarksSet* ParCompactionManager::_preserved_marks_set = nullptr;
 
 ParCompactionManager::ParCompactionManager(PreservedMarks* preserved_marks,
                                            ReferenceProcessor* ref_processor)
-  : _partial_array_stepper(ParallelGCThreads, ParGCArrayScanChunk),
+  : _partial_array_stepper(ParallelGCThreads, ObjArrayMarkingStride),
     _mark_and_push_closure(this, ref_processor) {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
@@ -72,9 +72,6 @@ ParCompactionManager::ParCompactionManager(PreservedMarks* preserved_marks,
 
  // Initialize to a bad value; fixed by initialize().
   _partial_array_state_allocator_index = UINT_MAX;
-
-  // let's choose 1.5x the chunk size
-  _min_array_size_for_chunking = (3 * ParGCArrayScanChunk / 2);
 
   TASKQUEUE_STATS_ONLY(reset_stats());
 }

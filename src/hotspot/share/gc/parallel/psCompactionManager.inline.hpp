@@ -90,8 +90,7 @@ inline void ParCompactionManager::mark_and_push(T* p) {
       _marking_stats_cache->push(obj, obj->size());
 
       if (obj->is_objArray() &&
-          PSChunkLargeArrays &&
-          obj->size() > _min_array_size_for_chunking) {
+          objArrayOop(obj)->length() > (int)ObjArrayMarkingStride) {
         push_objArray(obj);
       } else {
         push(PSScannerTask(obj));
