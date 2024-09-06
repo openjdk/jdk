@@ -110,7 +110,9 @@ public final class KDF {
 
     private record Delegate(KDFSpi spi, Provider provider) {}
 
+    //guarded by 'lock'
     private Delegate pairOfSpiAndProv;
+    //guarded by 'lock'
     private Delegate firstPairOfSpiAndProv;
 
     // The name of the KDF algorithm.
@@ -123,7 +125,9 @@ public final class KDF {
     // null once provider is selected
     private Iterator<Service> serviceIterator;
 
-    private final Object lock;
+    // This lock is intended to provide synchronization when the KDFSpi and
+    // Provider objects of the Delegate record are changed
+    private final Object lock = new Object();
 
     /**
      * Instantiates a {@code KDF} object. This constructor is called when a
@@ -138,7 +142,6 @@ public final class KDF {
         // note that the parameters are being passed to the impl in getInstance
         this.kdfParameters = kdfParameters;
         serviceIterator = null;
-        lock = new Object();
     }
 
     /**
@@ -156,7 +159,6 @@ public final class KDF {
         serviceIterator = t;
         this.algorithm = algorithm;
         this.kdfParameters = kdfParameters;
-        lock = new Object();
     }
 
     /**
