@@ -52,7 +52,7 @@ inline bool Klass::is_loader_alive() const {
 }
 
 inline oop Klass::java_mirror() const {
-  return _java_mirror.resolve();
+  return _java_mirror.resolve<ON_PHANTOM_OOP_REF>();
 }
 
 inline oop Klass::java_mirror_no_keepalive() const {

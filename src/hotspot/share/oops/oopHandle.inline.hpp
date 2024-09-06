@@ -30,8 +30,9 @@
 #include "oops/access.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 
+template <DecoratorSet decorators = DECORATORS_NONE>
 inline oop OopHandle::resolve() const {
-  return (_obj == nullptr) ? (oop)nullptr : NativeAccess<>::oop_load(_obj);
+  return (_obj == nullptr) ? (oop)nullptr : NativeAccess<decorators>::oop_load(_obj);
 }
 
 inline oop OopHandle::peek() const {
