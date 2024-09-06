@@ -159,10 +159,6 @@ public:
     return NOT_LP64(false) LP64_ONLY(UseCompressedClassPointers);
   }
 
-  static bool is_compressed_klass_ptr(const Klass* k) {
-    return using_class_space() && (is_in_class_space(k) || is_in_shared_metaspace(k));
-  }
-
   static bool is_class_space_allocation(MetadataType mdType) {
     return mdType == ClassType && using_class_space();
   }

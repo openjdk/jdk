@@ -30,7 +30,6 @@
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrEpochQueue.inline.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
-#include "memory/metaspace.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "utilities/macros.hpp"
 
@@ -76,7 +75,7 @@ static size_t element_size(bool compressed) {
 }
 
 static bool can_compress_element(const Klass* klass) {
-  return Metaspace::is_compressed_klass_ptr(klass) &&
+  return CompressedKlassPointers::is_in_encoding_range(klass) &&
          JfrTraceId::load_raw(klass) < uncompressed_threshold;
 }
 
