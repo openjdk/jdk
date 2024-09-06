@@ -224,7 +224,7 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
                        MIN_GC_REGION_ALIGNMENT,
                        max_elem_count);
 
-  for (size_t seg_idx = 0; seg_idx < heap_roots.segment_count(); seg_idx++) {
+  for (size_t seg_idx = 0; seg_idx < heap_roots.segments_count(); seg_idx++) {
     int elem_count = heap_roots.length_for_segment(seg_idx);
     size_t bytes_size = objArrayOopDesc::object_size(elem_count) * HeapWordSize;
 
@@ -234,9 +234,9 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
 
     assert((oop_offset % MIN_GC_REGION_ALIGNMENT) == 0,
            "Roots segment " SIZE_FORMAT " start is not aligned: " SIZE_FORMAT,
-           heap_roots.segment_count(), oop_offset);
+           heap_roots.segments_count(), oop_offset);
 
-    int seg_start = heap_roots.segment_start_elems(seg_idx);
+    int seg_start = heap_roots.roots_offset_for_segment(seg_idx);
     objArrayOop seg_oop = manifest_root_segment(oop_offset, elem_count);
     for (int i = 0; i < elem_count; i++) {
       root_segment_at_put(seg_oop, i, roots->at(seg_start + i));
@@ -616,7 +616,7 @@ void ArchiveHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassSh
 
   // Relocate HeapShared::roots(), which is created in copy_roots_to_buffer() and
   // doesn't have a corresponding src_obj, so we can't use EmbeddedOopRelocator on it.
-  for (size_t seg_idx = 0; seg_idx < _heap_roots.segment_count(); seg_idx++) {
+  for (size_t seg_idx = 0; seg_idx < _heap_roots.segments_count(); seg_idx++) {
     size_t seg_offset = _heap_roots.segment_offset(seg_idx);
 
     objArrayOop requested_obj = (objArrayOop)requested_obj_from_buffer_offset(seg_offset);

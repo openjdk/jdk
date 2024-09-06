@@ -376,10 +376,10 @@ void ArchiveHeapLoader::finish_initialization() {
     intptr_t bottom = is_loaded() ? _loaded_heap_bottom : _mapped_heap_bottom;
 
     HeapRoots roots = FileMapInfo::current_info()->heap_roots();
-    size_t max_size = roots.segment_max_size_bytes();
+    int max_size = roots.segment_max_size_bytes();
     HeapShared::init_root_segment_max_size(max_size);
     intptr_t base_roots_oop = bottom + roots.base_offset();
-    for (size_t c = 0; c < roots.segment_count(); c++) {
+    for (size_t c = 0; c < roots.segments_count(); c++) {
       HeapShared::add_root_segment(cast_to_oop(base_roots_oop + (c * max_size)));
     }
   }

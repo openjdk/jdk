@@ -134,7 +134,7 @@ static ArchivableStaticFieldInfo fmg_archive_subgraph_entry_fields[] = {
 KlassSubGraphInfo* HeapShared::_default_subgraph_info;
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
 GrowableArrayCHeap<OopHandle, mtClassShared>* HeapShared::_root_segments;
-size_t HeapShared::_root_segment_max_size;
+int HeapShared::_root_segment_max_size;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
 MetaspaceObjToOopHandleTable* HeapShared::_scratch_java_mirror_table = nullptr;
 MetaspaceObjToOopHandleTable* HeapShared::_scratch_references_table = nullptr;
@@ -781,7 +781,7 @@ void HeapShared::add_root_segment(oop segment_oop) {
   }
 }
 
-void HeapShared::init_root_segment_max_size(size_t size) {
+void HeapShared::init_root_segment_max_size(int size) {
   _root_segment_max_size = size;
 }
 

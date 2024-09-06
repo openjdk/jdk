@@ -252,27 +252,27 @@ public:
 
 class HeapRoots {
 private:
+  int _roots_count;
   size_t _base_offset;
-  size_t _roots_count;
-  size_t _segment_count;
-  size_t _segment_max_size_bytes;
-  size_t _segment_max_size_elems;
+  size_t _segments_count;
+  int _segment_max_size_bytes;
+  int _segment_max_size_elems;
 
 public:
-  size_t segment_count() { return _segment_count; }
+  size_t segments_count() { return _segments_count; }
   size_t base_offset() { return _base_offset; }
-  size_t segment_max_size_bytes() { return _segment_max_size_bytes; }
+  int segment_max_size_bytes() { return _segment_max_size_bytes; }
 
   size_t byte_size_for_segment(size_t seg_idx);
   int length_for_segment(size_t seg_idx);
-  int segment_start_elems(size_t seg_idx);
+  int roots_offset_for_segment(size_t seg_idx);
   size_t segment_offset(size_t seg_idx);
 
   HeapRoots() {}
-  HeapRoots(size_t base_offset, int root_count, int segment_max_size_bytes, int segment_max_size_elems) :
+  HeapRoots(size_t base_offset, int roots_count, int segment_max_size_bytes, int segment_max_size_elems) :
+          _roots_count(roots_count),
           _base_offset(base_offset),
-          _roots_count(root_count),
-          _segment_count((root_count + segment_max_size_elems - 1) / segment_max_size_elems),
+          _segments_count((roots_count + segment_max_size_elems - 1) / segment_max_size_elems),
           _segment_max_size_bytes(segment_max_size_bytes),
           _segment_max_size_elems(segment_max_size_elems) {}
 };

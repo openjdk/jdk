@@ -375,17 +375,17 @@ size_t HeapRoots::byte_size_for_segment(size_t seg_idx) {
 }
 
 int HeapRoots::length_for_segment(size_t seg_idx) {
-  assert(seg_idx < _segment_count, "In range");
-  if (seg_idx != _segment_count - 1) {
-    return (int)_segment_max_size_elems;
+  assert(seg_idx < _segments_count, "In range");
+  if (seg_idx != _segments_count - 1) {
+    return _segment_max_size_elems;
   } else {
     // Last slice, leftover
-    return (int)(_roots_count % _segment_max_size_elems);
+    return _roots_count % _segment_max_size_elems;
   }
 }
 
-int HeapRoots::segment_start_elems(size_t seg_idx) {
-  assert(seg_idx < _segment_count, "In range");
+int HeapRoots::roots_offset_for_segment(size_t seg_idx) {
+  assert(seg_idx < _segments_count, "In range");
   return (int)(seg_idx * _segment_max_size_elems);
 }
 
