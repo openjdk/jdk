@@ -464,6 +464,11 @@ public interface JavaLangAccess {
     byte stringCoder(String str);
 
     /**
+     * Get the string initial coder, When COMPACT_STRINGS is on, it returns 0, and when it is off, it returns 1.
+     */
+    byte stringInitCoder();
+
+    /**
      * Join strings
      */
     String join(String prefix, String suffix, String delimiter, String[] elements, int size);
