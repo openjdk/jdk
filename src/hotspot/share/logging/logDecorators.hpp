@@ -93,7 +93,7 @@ class LogDecorators {
     }
 
     const LogSelection& selection() const { return _selection; }
-    uint mask()              const { return _mask; }
+    uint mask()                     const { return _mask; }
 
     bool operator==(const DefaultDecorator& ref) const;
     bool operator!=(const DefaultDecorator& ref) const;
@@ -114,11 +114,9 @@ class LogDecorators {
   static const LogDecorators None;
   static const LogDecorators All;
 
-  constexpr LogDecorators(uint mask) : _decorators(mask) {
-  }
+  constexpr LogDecorators(uint mask) : _decorators(mask) {}
 
-  LogDecorators() : _decorators(DefaultDecoratorsMask) {
-  }
+  LogDecorators() : _decorators(DefaultDecoratorsMask) {}
 
   void clear() {
     _decorators = 0;
