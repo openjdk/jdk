@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      7180906 8026567 8239804 8324342 8332039
+ * @bug      7180906 8026567 8239804 8324342 8332039 8335870
  * @summary  Test to make sure that the since tag works correctly
  * @library  /tools/lib ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -185,6 +185,42 @@ public class TestSinceTag extends JavadocTester {
                     <dl class="notes">
                     <dt>Since:</dt>
                     <dd>99 <a href="C.html" title="class in p"><code>C</code></a></dd>""");
+
+    }
+
+    @Test
+    public void testSinceInfer_Package(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                          /**
+                           * package p
+                           * @since 24
+                           */
+                        package p;
+                         """,
+                         """
+                        package p;
+                        /**
+                         * Class C.
+                         */
+                         public class C {
+                             public class Nested { }
+                         }""");
+        javadoc("-d", base.resolve("api").toString(),
+                "-sourcepath", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+        checkOutput("p/C.html", true,
+                """
+                        <dl class="notes">
+                        <dt>Since:</dt>
+                        <dd>24</dd>""");
+
+        checkOutput("p/C.Nested.html", true,
+                """
+                        <dl class="notes">
+                        <dt>Since:</dt>
+                        <dd>24</dd>""");
 
     }
 }
