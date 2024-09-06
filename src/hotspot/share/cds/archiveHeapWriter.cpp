@@ -617,7 +617,7 @@ void ArchiveHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassSh
   // Relocate HeapShared::roots(), which is created in copy_roots_to_buffer() and
   // doesn't have a corresponding src_obj, so we can't use EmbeddedOopRelocator on it.
   for (size_t seg_idx = 0; seg_idx < _heap_roots.segment_count(); seg_idx++) {
-    size_t seg_offset = _heap_roots.base_offset() + (seg_idx * MIN_GC_REGION_ALIGNMENT);
+    size_t seg_offset = _heap_roots.segment_offset(seg_idx);
 
     objArrayOop requested_obj = (objArrayOop)requested_obj_from_buffer_offset(seg_offset);
     update_header_for_requested_obj(requested_obj, nullptr, Universe::objectArrayKlass());

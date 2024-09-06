@@ -285,7 +285,7 @@ public:
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
-  void set_heap_roots(HeapRoots roots)      { _heap_roots = roots; }
+  void set_heap_roots(HeapRoots roots)           { _heap_roots = roots; }
   void set_heap_oopmap_start_pos(size_t n)       { _heap_oopmap_start_pos = n; }
   void set_heap_ptrmap_start_pos(size_t n)       { _heap_ptrmap_start_pos = n; }
   void set_rw_ptrmap_start_pos(size_t n)         { _rw_ptrmap_start_pos = n; }

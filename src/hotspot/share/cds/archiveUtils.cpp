@@ -389,3 +389,7 @@ int HeapRoots::segment_start_elems(size_t seg_idx) {
   return (int)(seg_idx * _segment_max_size_elems);
 }
 
+size_t HeapRoots::segment_offset(size_t seg_idx) {
+  return _base_offset + seg_idx * _segment_max_size_bytes;
+}
+
