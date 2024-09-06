@@ -536,7 +536,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return r;
     }
 
-    static ShortVector selectFromHelper(Vector<Short> v1, Vector<Short> v2, Vector<Short> v3) {
+    static ShortVector selectFromTwoVectorHelper(Vector<Short> v1, Vector<Short> v2, Vector<Short> v3) {
         int vlen = v1.length();
         short[] res = new short[vlen];
         short[] vpayload1 = ((ShortVector)v1).vec();
@@ -2593,10 +2593,10 @@ public abstract class ShortVector extends AbstractVector<Short> {
     /*package-private*/
     @ForceInline
     final ShortVector selectFromTemplate(ShortVector v1, ShortVector v2) {
-        int twovectorlen = length() * 2;
-        ShortVector wrapped_indexes = this.lanewise(VectorOperators.AND, twovectorlen - 1);
+        int twoVectorLen = length() * 2;
+        ShortVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLen - 1);
         return (ShortVector)VectorSupport.selectFromTwoVectorOp(getClass(), short.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> selectFromHelper(vec1, vec2, vec3)
+            (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 

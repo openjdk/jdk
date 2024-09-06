@@ -168,7 +168,7 @@
     return BoolTest::illegal;
   }
 
-  static bool vector_indexes_needs_massaging(BasicType ety, int vlen) {
+  static bool vector_indexes_needs_pruning(BasicType bt, int vlen) {
     return false;
   }
 

@@ -536,7 +536,7 @@ public abstract class LongVector extends AbstractVector<Long> {
         return r;
     }
 
-    static LongVector selectFromHelper(Vector<Long> v1, Vector<Long> v2, Vector<Long> v3) {
+    static LongVector selectFromTwoVectorHelper(Vector<Long> v1, Vector<Long> v2, Vector<Long> v3) {
         int vlen = v1.length();
         long[] res = new long[vlen];
         long[] vpayload1 = ((LongVector)v1).vec();
@@ -2443,10 +2443,10 @@ public abstract class LongVector extends AbstractVector<Long> {
     /*package-private*/
     @ForceInline
     final LongVector selectFromTemplate(LongVector v1, LongVector v2) {
-        int twovectorlen = length() * 2;
-        LongVector wrapped_indexes = this.lanewise(VectorOperators.AND, twovectorlen - 1);
+        int twoVectorLen = length() * 2;
+        LongVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLen - 1);
         return (LongVector)VectorSupport.selectFromTwoVectorOp(getClass(), long.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> selectFromHelper(vec1, vec2, vec3)
+            (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 

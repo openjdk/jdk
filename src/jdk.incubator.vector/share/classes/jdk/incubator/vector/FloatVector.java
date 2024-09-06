@@ -525,7 +525,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return r;
     }
 
-    static FloatVector selectFromHelper(Vector<Float> v1, Vector<Float> v2, Vector<Float> v3) {
+    static FloatVector selectFromTwoVectorHelper(Vector<Float> v1, Vector<Float> v2, Vector<Float> v3) {
         int vlen = v1.length();
         float[] res = new float[vlen];
         float[] vpayload1 = ((FloatVector)v1).vec();
@@ -2446,14 +2446,14 @@ public abstract class FloatVector extends AbstractVector<Float> {
     /*package-private*/
     @ForceInline
     final FloatVector selectFromTemplate(FloatVector v1, FloatVector v2) {
-        int twovectorlen = length() * 2;
+        int twoVectorLen = length() * 2;
         FloatVector wrapped_indexes = this.convert(VectorOperators.F2I, 0)
-                                               .lanewise(VectorOperators.AND, twovectorlen - 1)
+                                               .lanewise(VectorOperators.AND, twoVectorLen - 1)
                                                .reinterpretAsInts()
                                                .convert(VectorOperators.I2F, 0)
                                                .reinterpretAsFloats();
         return (FloatVector)VectorSupport.selectFromTwoVectorOp(getClass(), float.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> selectFromHelper(vec1, vec2, vec3)
+            (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 

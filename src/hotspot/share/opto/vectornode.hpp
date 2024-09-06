@@ -1269,7 +1269,6 @@ class VectorLongToMaskNode : public VectorNode {
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
-
 //-------------------------- Vector mask broadcast -----------------------------------
 class MaskAllNode : public VectorNode {
  public:
@@ -1615,10 +1614,12 @@ class VectorRearrangeNode : public VectorNode {
 };
 
 
+// Selects elements from second and third vector based on the indices held in
+// first vector two input vectors based on the indexes held in first vector.
 class SelectFromTwoVectorNode : public VectorNode {
 public:
-  SelectFromTwoVectorNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt)
-  : VectorNode(in1, in2, in3, vt) {}
+  SelectFromTwoVectorNode(Node* index, Node* src1, Node* src2, const TypeVect* vt)
+  : VectorNode(index, src1, src2, vt) {}
 
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual int Opcode() const;

@@ -10487,15 +10487,15 @@ instruct DoubleClassCheck_reg_reg_vfpclass(rRegI dst, regD src, kReg ktmp, rFlag
 %}
 
 
-instruct selectFromTwoVec_evex(vec dst, vec src1, vec src2)
+instruct vector_selectfrom_twovectors_reg_evex(vec index, vec src1, vec src2)
 %{
-  match(Set dst (SelectFromTwoVector (Binary dst src1) src2));
-  effect(TEMP dst);
-  format %{ "select_from_two_vector $dst, $src1, $src2 \t!" %}
+  match(Set index (SelectFromTwoVector (Binary index src1) src2));
+  effect(TEMP index);
+  format %{ "select_from_two_vector $index, $src1, $src2 \t!" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     BasicType bt = Matcher::vector_element_basic_type(this);
-    __ select_from_two_vector_evex(bt, $dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
+    __ select_from_two_vectors_evex(bt, $index$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
   %}
   ins_pipe(pipe_slow);
 %}

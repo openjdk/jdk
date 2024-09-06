@@ -212,8 +212,8 @@
     return BoolTest::lt;
   }
 
-  static bool vector_indexes_needs_massaging(BasicType ety, int vlen) {
-     switch(ety) {
+  static bool vector_indexes_needs_pruning(BasicType bt, int vlen) {
+     switch(bt) {
        default:
          return false;
        case T_SHORT:

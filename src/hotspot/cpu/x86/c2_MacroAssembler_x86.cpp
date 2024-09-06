@@ -6443,8 +6443,8 @@ void C2_MacroAssembler::vector_rearrange_int_float(BasicType bt, XMMRegister dst
   }
 }
 
-void C2_MacroAssembler::select_from_two_vector_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1,
-                                                    XMMRegister src2, int vlen_enc) {
+void C2_MacroAssembler::select_from_two_vectors_evex(BasicType elem_bt, XMMRegister dst, XMMRegister src1,
+                                                     XMMRegister src2, int vlen_enc) {
   switch(elem_bt) {
     case T_BYTE:
       evpermi2b(dst, src1, src2, vlen_enc);

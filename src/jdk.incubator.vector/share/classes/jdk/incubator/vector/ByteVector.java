@@ -536,7 +536,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return r;
     }
 
-    static ByteVector selectFromHelper(Vector<Byte> v1, Vector<Byte> v2, Vector<Byte> v3) {
+    static ByteVector selectFromTwoVectorHelper(Vector<Byte> v1, Vector<Byte> v2, Vector<Byte> v3) {
         int vlen = v1.length();
         byte[] res = new byte[vlen];
         byte[] vpayload1 = ((ByteVector)v1).vec();
@@ -2592,10 +2592,10 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     /*package-private*/
     @ForceInline
     final ByteVector selectFromTemplate(ByteVector v1, ByteVector v2) {
-        int twovectorlen = length() * 2;
-        ByteVector wrapped_indexes = this.lanewise(VectorOperators.AND, twovectorlen - 1);
+        int twoVectorLen = length() * 2;
+        ByteVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLen - 1);
         return (ByteVector)VectorSupport.selectFromTwoVectorOp(getClass(), byte.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> selectFromHelper(vec1, vec2, vec3)
+            (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 

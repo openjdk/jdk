@@ -525,7 +525,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         return r;
     }
 
-    static DoubleVector selectFromHelper(Vector<Double> v1, Vector<Double> v2, Vector<Double> v3) {
+    static DoubleVector selectFromTwoVectorHelper(Vector<Double> v1, Vector<Double> v2, Vector<Double> v3) {
         int vlen = v1.length();
         double[] res = new double[vlen];
         double[] vpayload1 = ((DoubleVector)v1).vec();
@@ -2434,14 +2434,14 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     /*package-private*/
     @ForceInline
     final DoubleVector selectFromTemplate(DoubleVector v1, DoubleVector v2) {
-        int twovectorlen = length() * 2;
+        int twoVectorLen = length() * 2;
         DoubleVector wrapped_indexes = this.convert(VectorOperators.D2I, 0)
-                                               .lanewise(VectorOperators.AND, twovectorlen - 1)
+                                               .lanewise(VectorOperators.AND, twoVectorLen - 1)
                                                .reinterpretAsInts()
                                                .convert(VectorOperators.I2D, 0)
                                                .reinterpretAsDoubles();
         return (DoubleVector)VectorSupport.selectFromTwoVectorOp(getClass(), double.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> selectFromHelper(vec1, vec2, vec3)
+            (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 

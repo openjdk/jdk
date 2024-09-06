@@ -536,7 +536,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         return r;
     }
 
-    static IntVector selectFromHelper(Vector<Integer> v1, Vector<Integer> v2, Vector<Integer> v3) {
+    static IntVector selectFromTwoVectorHelper(Vector<Integer> v1, Vector<Integer> v2, Vector<Integer> v3) {
         int vlen = v1.length();
         int[] res = new int[vlen];
         int[] vpayload1 = ((IntVector)v1).vec();
@@ -2577,10 +2577,10 @@ public abstract class IntVector extends AbstractVector<Integer> {
     /*package-private*/
     @ForceInline
     final IntVector selectFromTemplate(IntVector v1, IntVector v2) {
-        int twovectorlen = length() * 2;
-        IntVector wrapped_indexes = this.lanewise(VectorOperators.AND, twovectorlen - 1);
+        int twoVectorLen = length() * 2;
+        IntVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLen - 1);
         return (IntVector)VectorSupport.selectFromTwoVectorOp(getClass(), int.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> selectFromHelper(vec1, vec2, vec3)
+            (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 
