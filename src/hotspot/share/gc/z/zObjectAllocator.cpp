@@ -143,7 +143,7 @@ zaddress ZObjectAllocator::alloc_object_in_medium_page(size_t size,
     // of the new page using a lock. This is to avoid having multiple
     // threads requesting a medium page from the page cache when we know
     // only one of the will succeed in installing the page at this layer.
-    ZLocker<ZConditionLock> locker(&_medium_page_alloc_lock);
+    ZLocker<ZLock> locker(&_medium_page_alloc_lock);
 
     // When holding the lock we can't allow the page allocator to stall,
     // which in the common case it won't. The page allocation is thus done

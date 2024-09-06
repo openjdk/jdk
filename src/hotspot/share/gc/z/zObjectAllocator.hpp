@@ -42,7 +42,7 @@ private:
   ZPerCPU<size_t>    _undone;
   ZPerCPU<ZPage*>    _shared_small_page;
   ZContended<ZPage*> _shared_medium_page;
-  ZConditionLock     _medium_page_alloc_lock;
+  ZLock              _medium_page_alloc_lock;
 
   ZPage** shared_small_page_addr();
   ZPage* const* shared_small_page_addr() const;
