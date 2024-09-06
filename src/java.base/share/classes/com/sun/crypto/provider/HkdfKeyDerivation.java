@@ -126,12 +126,8 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     @Override
     protected byte[] engineDeriveData(AlgorithmParameterSpec derivationSpec)
         throws InvalidAlgorithmParameterException {
-        List<SecretKey> ikms;
-        List<SecretKey> salts;
-        byte[] inputKeyMaterial;
-        byte[] salt;
-        byte[] pseudoRandomKey;
-        byte[] info;
+        List<SecretKey> ikms, salts;
+        byte[] inputKeyMaterial, salt, pseudoRandomKey, info;
         int length;
         // A switch would be nicer, but we may need to backport this before
         // JDK 17
