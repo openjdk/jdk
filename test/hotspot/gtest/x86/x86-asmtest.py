@@ -240,6 +240,7 @@ test_regs = list(registers_mapping.keys())
 immediates32 = [2 ** i for i in range(0, 32, 4)]
 immediates16 = [2 ** i for i in range(0, 16, 2)]
 immediates8 = [2 ** i for i in range(0, 8, 2)]
+immediates5 = [2 ** i for i in range(0, 5, 1)]
 immediate_values_8_to_16_bit = [2 ** i for i in range(8, 16, 2)]
 immediate_values_16_to_32_bit = [2 ** i for i in range(16, 32, 2)]
 
@@ -286,7 +287,7 @@ def generate(RegOp, ops):
         elif RegOp == RegImmInstruction:
             for reg in test_regs:
                 if op_name in shift_ops:
-                    imm_list = immediates8
+                    imm_list = immediates5
                 else:
                     imm_list = immediate_map[width]
                 for imm in imm_list:
@@ -300,7 +301,7 @@ def generate(RegOp, ops):
             if op_name in addw_ops:
                 imm_list = immediate_values_8_to_16_bit
             elif op_name in shift_ops:
-                imm_list = immediates8
+                imm_list = immediates5
             else:
                 imm_list = immediate_map[width]
             for imm in imm_list:
@@ -326,7 +327,7 @@ def generate(RegOp, ops):
         elif RegOp == RegRegImmInstruction:
             for i in range(len(test_regs)):
                 if op_name in shift_ops:
-                    imm_list = immediates8
+                    imm_list = immediates5
                 else:
                     imm_list = immediate_map[width]
                 for imm in imm_list:
