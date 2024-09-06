@@ -39,6 +39,7 @@ import org.openjdk.jmh.annotations.Warmup;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
@@ -47,65 +48,66 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 3)
-public class TestCopy {
+public class SegmentBulkFill {
 
     @Param({"2", "3", "4", "5", "6", "7", "8", "64", "512",
             "4096", "32768", "262144", "2097152", "16777216", "134217728"})
     public int ELEM_SIZE;
 
-    byte[] srcArray;
-    byte[] dstArray;
-    MemorySegment heapSrcSegment;
-    MemorySegment heapDstSegment;
-    MemorySegment nativeSrcSegment;
-    MemorySegment nativeDstSegment;
-    ByteBuffer srcBuffer;
-    ByteBuffer dstBuffer;
+    byte[] array;
+    MemorySegment heapSegment;
+    MemorySegment nativeSegment;
+    MemorySegment unalignedSegment;
+    ByteBuffer buffer;
 
     @Setup
     public void setup() {
-        srcArray = new byte[ELEM_SIZE];
-        dstArray = new byte[ELEM_SIZE];
-        heapSrcSegment = MemorySegment.ofArray(srcArray);
-        heapDstSegment = MemorySegment.ofArray(dstArray);
-        nativeSrcSegment = Arena.ofAuto().allocate(ELEM_SIZE);
-        nativeDstSegment = Arena.ofAuto().allocate(ELEM_SIZE);
-        srcBuffer = ByteBuffer.wrap(srcArray);
-        dstBuffer = ByteBuffer.wrap(dstArray);
+        array = new byte[ELEM_SIZE];
+        heapSegment = MemorySegment.ofArray(array);
+        nativeSegment = Arena.ofAuto().allocate(ELEM_SIZE, 8);
+        unalignedSegment = Arena.ofAuto().allocate(ELEM_SIZE + 1, 8).asSlice(1);
+        buffer = ByteBuffer.wrap(array);
     }
 
     @Benchmark
-    public void arrayCopy() {
-        System.arraycopy(srcArray, 0, dstArray, 0, ELEM_SIZE);
+    public void arraysFill() {
+        Arrays.fill(array, (byte) 0);
     }
 
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
     @Benchmark
-    public void bufferCopy() {
-        dstBuffer.put(srcBuffer);
+    public void heapSegmentFillJava() {
+        heapSegment.fill((byte) 0);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.copy=31"})
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
     @Benchmark
-    public void heapSegmentCopyJava() {
-        MemorySegment.copy(heapSrcSegment, 0, heapDstSegment, 0, ELEM_SIZE);
+    public void heapSegmentFillUnsafe() {
+        heapSegment.fill((byte) 0);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.copy=0"})
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
     @Benchmark
-    public void heapSegmentCopyUnsafe() {
-        MemorySegment.copy(heapSrcSegment, 0, heapDstSegment, 0, ELEM_SIZE);
+    public void nativeSegmentFillJava() {
+        nativeSegment.fill((byte) 0);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.copy=31"})
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
     @Benchmark
-    public void nativeSegmentCopyJava() {
-        MemorySegment.copy(nativeSrcSegment, 0, nativeDstSegment, 0, ELEM_SIZE);
+    public void nativeSegmentFillUnsafe() {
+        nativeSegment.fill((byte) 0);
     }
 
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.copy=0"})
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
     @Benchmark
-    public void nativeSegmentCopyUnsafe() {
-        MemorySegment.copy(nativeSrcSegment, 0, nativeDstSegment, 0, ELEM_SIZE);
+    public void unalignedSegmentFillJava() {
+        unalignedSegment.fill((byte) 0);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
+    @Benchmark
+    public void unalignedSegmentFillUnsafe() {
+        unalignedSegment.fill((byte) 0);
     }
 
 }

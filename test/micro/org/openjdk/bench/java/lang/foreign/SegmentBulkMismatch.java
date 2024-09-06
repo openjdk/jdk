@@ -38,9 +38,11 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
+
+import static java.lang.foreign.ValueLayout.*;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -48,66 +50,63 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 3)
-public class TestFill {
+public class SegmentBulkMismatch {
 
     @Param({"2", "3", "4", "5", "6", "7", "8", "64", "512",
             "4096", "32768", "262144", "2097152", "16777216", "134217728"})
     public int ELEM_SIZE;
 
-    byte[] array;
-    MemorySegment heapSegment;
-    MemorySegment nativeSegment;
-    MemorySegment unalignedSegment;
-    ByteBuffer buffer;
+    MemorySegment srcNative;
+    MemorySegment dstNative;
+    byte[] srcArray;
+    byte[] dstArray;
+    MemorySegment srcHeap;
+    MemorySegment dstHeap;
 
     @Setup
     public void setup() {
-        array = new byte[ELEM_SIZE];
-        heapSegment = MemorySegment.ofArray(array);
-        nativeSegment = Arena.ofAuto().allocate(ELEM_SIZE, 8);
-        unalignedSegment = Arena.ofAuto().allocate(ELEM_SIZE + 1, 8).asSlice(1);
-        buffer = ByteBuffer.wrap(array);
+        // Always use the same alignment regardless of size
+        srcNative = Arena.ofAuto().allocate(ELEM_SIZE,16);
+        dstNative = Arena.ofAuto().allocate(ELEM_SIZE, 16);
+        var rnd = new Random(42);
+        for (int i = 0; i < ELEM_SIZE; i++) {
+            srcNative.set(JAVA_BYTE, i, (byte) rnd.nextInt(Byte.MIN_VALUE, Byte.MAX_VALUE));
+        }
+        dstNative.copyFrom(srcNative);
+        srcArray = srcNative.toArray(JAVA_BYTE);
+        dstArray = dstNative.toArray(JAVA_BYTE);
+        srcHeap = MemorySegment.ofArray(srcArray);
+        dstHeap = MemorySegment.ofArray(dstArray);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=31"})
+    @Benchmark
+    public long nativeSegmentJava() {
+        return srcNative.mismatch(dstNative);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=31"})
+    @Benchmark
+    public long heapSegmentJava() {
+        return srcHeap.mismatch(dstHeap);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=0"})
+    @Benchmark
+    public long nativeSegmentUnsafe() {
+        return srcNative.mismatch(dstNative);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=0"})
+    @Benchmark
+    public long heapSegmentUnsafe() {
+        return srcHeap.mismatch(dstHeap);
     }
 
     @Benchmark
-    public void arraysFill() {
-        Arrays.fill(array, (byte) 0);
-    }
-
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
-    @Benchmark
-    public void heapSegmentFillJava() {
-        heapSegment.fill((byte) 0);
-    }
-
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
-    @Benchmark
-    public void heapSegmentFillUnsafe() {
-        heapSegment.fill((byte) 0);
-    }
-
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
-    @Benchmark
-    public void nativeSegmentFillJava() {
-        nativeSegment.fill((byte) 0);
-    }
-
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
-    @Benchmark
-    public void nativeSegmentFillUnsafe() {
-        nativeSegment.fill((byte) 0);
-    }
-
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=31"})
-    @Benchmark
-    public void unalignedSegmentFillJava() {
-        unalignedSegment.fill((byte) 0);
-    }
-
-    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.fill=0"})
-    @Benchmark
-    public void unalignedSegmentFillUnsafe() {
-        unalignedSegment.fill((byte) 0);
+    public long array() {
+        return Arrays.mismatch(srcArray, dstArray);
     }
 
 }
+
