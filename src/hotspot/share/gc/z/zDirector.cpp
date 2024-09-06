@@ -488,7 +488,6 @@ static bool rule_major_allocation_rate(const ZDirectorStats& stats) {
 
   // Calculate the GC cost for each reclaimed byte
   const double current_young_gc_time_per_bytes_freed = double(young_gc_time) / double(reclaimed_per_young_gc);
-  const double current_old_gc_time_per_bytes_freed = double(old_gc_time) / double(reclaimed_per_old_gc);
 
   // Calculate extra time per young collection inflicted by *not* doing an
   // old collection that frees up memory in the old generation.
@@ -518,7 +517,11 @@ static bool rule_major_allocation_rate(const ZDirectorStats& stats) {
 
   // If the garbage is cheaper to reap in the old generation, then it makes sense
   // to upgrade minor collections to major collections.
-  const bool old_garbage_is_cheaper = current_old_gc_time_per_bytes_freed < current_young_gc_time_per_bytes_freed;
+  bool old_garbage_is_cheaper = true;
+  if (reclaimed_per_old_gc != 0) {
+    const double current_old_gc_time_per_bytes_freed = double(old_gc_time) / double(reclaimed_per_old_gc);
+    old_garbage_is_cheaper = current_old_gc_time_per_bytes_freed < current_young_gc_time_per_bytes_freed;
+  }
 
   return can_amortize_time_cost || old_garbage_is_cheaper || is_major_urgent(stats);
 }
