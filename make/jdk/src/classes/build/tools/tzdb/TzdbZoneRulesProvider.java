@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,31 +365,31 @@ class TzdbZoneRulesProvider {
 
         Month parseMonth(String mon) {
             switch (mon) {
-            case "Jan": return Month.JANUARY;
-            case "Feb": return Month.FEBRUARY;
-            case "Mar": return Month.MARCH;
-            case "Apr": return Month.APRIL;
+            case "Jan", "January": return Month.JANUARY;
+            case "Feb", "February": return Month.FEBRUARY;
+            case "Mar", "March": return Month.MARCH;
+            case "Apr", "April": return Month.APRIL;
             case "May": return Month.MAY;
-            case "Jun": return Month.JUNE;
-            case "Jul": return Month.JULY;
-            case "Aug": return Month.AUGUST;
-            case "Sep": return Month.SEPTEMBER;
-            case "Oct": return Month.OCTOBER;
-            case "Nov": return Month.NOVEMBER;
-            case "Dec": return Month.DECEMBER;
+            case "Jun", "June": return Month.JUNE;
+            case "Jul", "July": return Month.JULY;
+            case "Aug", "August": return Month.AUGUST;
+            case "Sep", "September": return Month.SEPTEMBER;
+            case "Oct", "October": return Month.OCTOBER;
+            case "Nov", "November": return Month.NOVEMBER;
+            case "Dec", "December": return Month.DECEMBER;
             }
             throw new IllegalArgumentException("Unknown month: " + mon);
         }
 
         DayOfWeek parseDayOfWeek(String dow) {
             switch (dow) {
-            case "Mon": return DayOfWeek.MONDAY;
-            case "Tue": return DayOfWeek.TUESDAY;
-            case "Wed": return DayOfWeek.WEDNESDAY;
-            case "Thu": return DayOfWeek.THURSDAY;
-            case "Fri": return DayOfWeek.FRIDAY;
-            case "Sat": return DayOfWeek.SATURDAY;
-            case "Sun": return DayOfWeek.SUNDAY;
+            case "Mon", "Monday": return DayOfWeek.MONDAY;
+            case "Tue", "Tuesday": return DayOfWeek.TUESDAY;
+            case "Wed", "Wednesday": return DayOfWeek.WEDNESDAY;
+            case "Thu", "Thursday": return DayOfWeek.THURSDAY;
+            case "Fri", "Friday": return DayOfWeek.FRIDAY;
+            case "Sat", "Saturday": return DayOfWeek.SATURDAY;
+            case "Sun", "Sunday": return DayOfWeek.SUNDAY;
             }
             throw new IllegalArgumentException("Unknown day-of-week: " + dow);
         }
