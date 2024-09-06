@@ -79,6 +79,11 @@ import jdk.internal.util.StaticProperty;
  * {@code user.dir}, and is typically the directory in which the Java
  * virtual machine was invoked.
  *
+ * <p> Unless otherwise noted,
+ * <a href= "../../java/nio/file/package-summary.html#links">symbolic links</a>
+ * are transparent to the constructors and methods of this class, whether they
+ * are provided by a pathname string or via a {@code File} object.
+ *
  * <p> The <em>parent</em> of an abstract pathname may be obtained by invoking
  * the {@link #getParent} method of this class and consists of the pathname's
  * prefix and each name in the pathname's name sequence except for the last.
@@ -141,12 +146,6 @@ import jdk.internal.util.StaticProperty;
  * java.nio.file.Files} class to provide more efficient and extensive access to
  * additional file operations, file attributes, and I/O exceptions to help
  * diagnose errors when an operation on a file fails.
- *
- * <h2>Operations on Symbolic Links</h2>
- *
- * <p> Unless otherwise noted,
- * <a href= "../../java/nio/file/package-summary.html#links">symbolic links</a>
- * are transparent to {@code File} operations.
  *
  * @since   1.0
  */
