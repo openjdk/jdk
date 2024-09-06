@@ -42,7 +42,7 @@ import javax.swing.UnsupportedLookAndFeelException;
  */
 
 public class TestJTabbedPaneBackgroundColor {
-    private static final ArrayList<String> LIST = new ArrayList<>();
+    private static ArrayList<String> lafList = new ArrayList<>();
     private static JFrame frame;
     private static JTabbedPane pane;
     private static Robot robot;
@@ -51,7 +51,6 @@ public class TestJTabbedPaneBackgroundColor {
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
-        robot.setAutoDelay(200);
 
         for (UIManager.LookAndFeelInfo laf :
                 UIManager.getInstalledLookAndFeels()) {
@@ -88,8 +87,8 @@ public class TestJTabbedPaneBackgroundColor {
                 });
             }
         }
-        if (!LIST.isEmpty()) {
-            throw new RuntimeException(LIST.toString());
+        if (!lafList.isEmpty()) {
+            throw new RuntimeException(lafList.toString());
         }
     }
 
@@ -133,6 +132,6 @@ public class TestJTabbedPaneBackgroundColor {
     }
 
     private static void addOpaqueError(String lafName, boolean opaque) {
-        LIST.add(lafName + " opaque=" + opaque);
+        lafList.add(lafName + " opaque=" + opaque);
     }
 }
