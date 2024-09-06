@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,9 @@ enum Month {
      * @return the Month value
      */
     static Month parse(String name) {
+        if (name.length() > 3) {
+            name = name.substring(0, 3);
+        }
         Month m = abbreviations.get(name);
         if (m != null) {
             return m;
