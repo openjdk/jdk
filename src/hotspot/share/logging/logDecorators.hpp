@@ -67,7 +67,8 @@ class LogDecorators {
     DECORATOR_LIST
 #undef DECORATOR
     Count,
-    Invalid
+    Invalid,
+    NoDecorators
   };
 
   class DefaultDecorator {
@@ -130,6 +131,18 @@ class LogDecorators {
     return _name[decorator][1];
   }
 
+  template<typename... Decorators>
+  static uint mask_from_decorators(LogDecorators::Decorator first, Decorators... rest) {
+    uint bitmask = 0;
+    for (const LogDecorators::Decorator& decorator : (LogDecorators::Decorator[]){first, rest...}) {
+      if (decorator == NoDecorators) return 0;
+      bitmask |= mask(decorator);
+    }
+    return bitmask;
+  }
+
+  // Check if we have some default decorators for a given LogSelection. If that is the case,
+  // the output parameter mask will contain the defaults-specified decorators mask
   static bool has_default_decorator(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults = DefaultDecorators) {
     int max_specificity = 0;
     for (size_t i = 0; DefaultDecorators[i] != DefaultDecorator::Invalid; ++i) {

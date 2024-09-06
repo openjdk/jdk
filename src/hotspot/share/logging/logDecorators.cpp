@@ -27,8 +27,8 @@
 #include "logDecorators.hpp"
 
 #define DEFAULT_DECORATORS \
-  DEFAULT_VALUE((1 << pid_decorator) | (1 << tags_decorator), NotMentioned, LOG_TAGS(ref, gc, jit, jni, jfr)) \
-  DEFAULT_VALUE(0, Trace, LOG_TAGS(jit))
+  DEFAULT_VALUE(mask_from_decorators(pid_decorator, time_decorator), NotMentioned, LOG_TAGS(ref, gc, jit, jni, jfr)) \
+  DEFAULT_VALUE(mask_from_decorators(NoDecorators), Trace, LOG_TAGS(jit))
 
 template <LogDecorators::Decorator d>
 struct AllBitmask {
