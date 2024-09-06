@@ -1285,7 +1285,7 @@ public final class StringConcatFactory {
                         public void accept(ClassBuilder clb) {
                             if (staticConcat) {
                                 clb.withSuperclass(CD_Object)
-                                   .withFlags(ACC_SUPER | ACC_SYNTHETIC);
+                                   .withFlags(ACC_ABSTRACT | ACC_SUPER | ACC_SYNTHETIC);
                             } else {
                                 clb.withSuperclass(CD_StringConcatBase)
                                    .withFlags(ACC_FINAL | ACC_SUPER | ACC_SYNTHETIC)
