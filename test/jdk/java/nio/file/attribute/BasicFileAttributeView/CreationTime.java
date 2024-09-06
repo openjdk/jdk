@@ -81,7 +81,7 @@ public class CreationTime {
             System.out.println("creationTime.toMillis() == " + creationTime.toMillis());
             // If the file system doesn't support birth time, then skip this test
             if (creationTime.toMillis() == 0) {
-                throw new SkippedException("birth time not support for: " + file);
+                throw new SkippedException("birth time not supported for: " + file);
             } else {
                 err.println("File creation time reported as: " + creationTime);
                 throw new RuntimeException("Expected to be close to: " + now);
