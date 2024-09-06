@@ -165,6 +165,8 @@ int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const
   }
   written += write_internal_line(decorations, base);
 
+  os::free(dupstr);
+
   return written;
 }
 
