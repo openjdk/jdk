@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import jdk.internal.ref.CleanerFactory;
@@ -456,9 +457,9 @@ public class DnsClient {
                                 ") for:" + xid + "    sock-timeout:" +
                                 timeoutLeft + " ms.");
                     }
-                    long start = System.currentTimeMillis();
+                    long start = System.nanoTime();
                     gotData = blockingReceive(udpChannel, ipkt, timeoutLeft);
-                    long end = System.currentTimeMillis();
+                    long end = System.nanoTime();
                     assert gotData || ipkt.position() == 0;
                     if (gotData && isMatchResponse(data, xid)) {
                         return data;
@@ -471,7 +472,10 @@ public class DnsClient {
                             return cachedMsg;
                         }
                     }
-                    timeoutLeft = pktTimeout - ((int) (end - start));
+                    // Math.max ensures that the timeout is decreased
+                    long elapsedMillis = Math.max(1,
+                            TimeUnit.NANOSECONDS.toMillis(end - start));
+                    timeoutLeft = timeoutLeft - (int) elapsedMillis;
                 } while (timeoutLeft > MIN_TIMEOUT);
                 // no matching packets received within the timeout
                 throw new SocketTimeoutException();
@@ -491,10 +495,15 @@ public class DnsClient {
             udpChannelSelector.select(timeout);
             var keys = udpChannelSelector.selectedKeys();
             if (keys.contains(selectionKey) && selectionKey.isReadable()) {
-                dc.receive(buffer);
-                dataReceived = true;
+                int before = buffer.position();
+                var senderAddress = dc.receive(buffer);
+                // Empty packets are ignored
+                dataReceived = senderAddress != null && buffer.position() > before;
             }
-            keys.clear();
+            // Avoid contention with Selector.close() if called by a clean-up thread
+            synchronized (keys) {
+                keys.clear();
+            }
         } finally {
             selectionKey.cancel();
             // Flush the canceled key out of the selected key set

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
-import java.time.Instant;
 
 import jdk.test.lib.net.URIBuilder;
 
@@ -40,7 +39,7 @@ import jdk.test.lib.net.URIBuilder;
  *          number of retries.
  * @library ../lib/ /test/lib
  * @modules java.base/sun.security.util
- * @run main Timeout
+ * @run main/othervm Timeout
  */
 
 public class Timeout extends DNSTestBase {
@@ -48,8 +47,12 @@ public class Timeout extends DNSTestBase {
     private static final int TIMEOUT = 250;
     // try 5 times per server
     private static final int RETRIES = 5;
+    // DnsClient retries again with increased timeout if left
+    // timeout is less than this value, and max retry attempts
+    // is not reached
+    private static final int DNS_CLIENT_MIN_TIMEOUT = 50;
 
-    private Instant startTime;
+    private long startTime;
 
     public Timeout() {
         setLocalServer(false);
@@ -81,7 +84,7 @@ public class Timeout extends DNSTestBase {
             setContext(new InitialDirContext(env()));
 
             // Any request should fail after timeouts have expired.
-            startTime = Instant.now();
+            startTime = System.nanoTime();
             context().getAttributes("");
 
             throw new RuntimeException(
@@ -92,28 +95,32 @@ public class Timeout extends DNSTestBase {
     @Override
     public boolean handleException(Exception e) {
         if (e instanceof CommunicationException) {
-            Duration elapsedTime = Duration.between(startTime, Instant.now());
+            Duration elapsedTime = Duration.ofNanos(System.nanoTime() - startTime);
             if (!(((CommunicationException) e)
                     .getRootCause() instanceof SocketTimeoutException)) {
                 return false;
             }
 
             Duration expectedTime = Duration.ofMillis(TIMEOUT)
-                    .multipliedBy((1 << RETRIES) - 1);
+                    .multipliedBy((1 << RETRIES) - 1)
+                    .minus(Duration.ofMillis((DNS_CLIENT_MIN_TIMEOUT - 1) * RETRIES));
             DNSTestUtils.debug("Elapsed (ms):  " + elapsedTime.toMillis());
             DNSTestUtils.debug("Expected (ms): " + expectedTime.toMillis());
 
             // Check that elapsed time is as long as expected, and
-            // not more than 50% greater.
+            // not more than 67% greater. Given the min DNS timeout
+            // correction above the threshold value is equal to 61%.
             if (elapsedTime.compareTo(expectedTime) >= 0 &&
-                    elapsedTime.multipliedBy(2)
-                            .compareTo(expectedTime.multipliedBy(3)) <= 0) {
+                    elapsedTime.multipliedBy(3)
+                            .compareTo(expectedTime.multipliedBy(5)) <= 0) {
+                // 3 * elapsedTime <= expectedTime*5
+                // elapsedTime <= 1.67 expectedTime
                 System.out.println("elapsed time is as long as expected.");
                 return true;
             }
             throw new RuntimeException(
                     "Failed: timeout in " + elapsedTime.toMillis()
-                            + " ms, expected" + expectedTime.toMillis() + "ms");
+                            + " ms, expected " + expectedTime.toMillis() + " ms");
         }
 
         return super.handleException(e);
