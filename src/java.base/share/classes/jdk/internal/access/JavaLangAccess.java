@@ -459,8 +459,9 @@ public interface JavaLangAccess {
 
     Object stringConcat1(String[] constants);
 
-    byte stringInitCoder();
-
+    /**
+     * Get the Coder of String, which is used by StringConcatFactory to calculate the initCoder of constants
+     */
     byte stringCoder(String str);
 
     /**
