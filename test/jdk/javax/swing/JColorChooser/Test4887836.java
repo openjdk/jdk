@@ -41,7 +41,7 @@ public class Test4887836 {
         String instructions = """
                                 If you do not see white area under the \"Swatches\" tab,
                                 then test passed, otherwise it failed.
-                                
+
                                 NOTE: There is no Swatches tab for GTK Look and Feel, Press Pass.""";
 
         PassFailJFrame.builder()
