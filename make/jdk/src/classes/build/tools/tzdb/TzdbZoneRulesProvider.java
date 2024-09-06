@@ -364,33 +364,35 @@ class TzdbZoneRulesProvider {
         }
 
         Month parseMonth(String mon) {
-            switch (mon) {
-            case "Jan", "January": return Month.JANUARY;
-            case "Feb", "February": return Month.FEBRUARY;
-            case "Mar", "March": return Month.MARCH;
-            case "Apr", "April": return Month.APRIL;
-            case "May": return Month.MAY;
-            case "Jun", "June": return Month.JUNE;
-            case "Jul", "July": return Month.JULY;
-            case "Aug", "August": return Month.AUGUST;
-            case "Sep", "September": return Month.SEPTEMBER;
-            case "Oct", "October": return Month.OCTOBER;
-            case "Nov", "November": return Month.NOVEMBER;
-            case "Dec", "December": return Month.DECEMBER;
-            }
+            int len = mon.length();
+
+            if (mon.regionMatches(true, 0, "January", 0, len)) return Month.JANUARY;
+            if (mon.regionMatches(true, 0, "February", 0, len)) return Month.FEBRUARY;
+            if (mon.regionMatches(true, 0, "March", 0, len)) return Month.MARCH;
+            if (mon.regionMatches(true, 0, "April", 0, len)) return Month.APRIL;
+            if (mon.regionMatches(true, 0, "May", 0, len)) return Month.MAY;
+            if (mon.regionMatches(true, 0, "June", 0, len)) return Month.JUNE;
+            if (mon.regionMatches(true, 0, "July", 0, len)) return Month.JULY;
+            if (mon.regionMatches(true, 0, "August", 0, len)) return Month.AUGUST;
+            if (mon.regionMatches(true, 0, "September", 0, len)) return Month.SEPTEMBER;
+            if (mon.regionMatches(true, 0, "October", 0, len)) return Month.OCTOBER;
+            if (mon.regionMatches(true, 0, "November", 0, len)) return Month.NOVEMBER;
+            if (mon.regionMatches(true, 0, "December", 0, len)) return Month.DECEMBER;
+
             throw new IllegalArgumentException("Unknown month: " + mon);
         }
 
         DayOfWeek parseDayOfWeek(String dow) {
-            switch (dow) {
-            case "Mon", "Monday": return DayOfWeek.MONDAY;
-            case "Tue", "Tuesday": return DayOfWeek.TUESDAY;
-            case "Wed", "Wednesday": return DayOfWeek.WEDNESDAY;
-            case "Thu", "Thursday": return DayOfWeek.THURSDAY;
-            case "Fri", "Friday": return DayOfWeek.FRIDAY;
-            case "Sat", "Saturday": return DayOfWeek.SATURDAY;
-            case "Sun", "Sunday": return DayOfWeek.SUNDAY;
-            }
+            int len = dow.length();
+
+            if (dow.regionMatches(true, 0, "Monday", 0, len)) return DayOfWeek.MONDAY;
+            if (dow.regionMatches(true, 0, "Tuesday", 0, len)) return DayOfWeek.TUESDAY;
+            if (dow.regionMatches(true, 0, "Wednesday", 0, len)) return DayOfWeek.WEDNESDAY;
+            if (dow.regionMatches(true, 0, "Thursday", 0, len)) return DayOfWeek.THURSDAY;
+            if (dow.regionMatches(true, 0, "Friday", 0, len)) return DayOfWeek.FRIDAY;
+            if (dow.regionMatches(true, 0, "Saturday", 0, len)) return DayOfWeek.SATURDAY;
+            if (dow.regionMatches(true, 0, "Sunday", 0, len)) return DayOfWeek.SUNDAY;
+
             throw new IllegalArgumentException("Unknown day-of-week: " + dow);
         }
 
