@@ -258,6 +258,14 @@ public final class CodeImpl
                     switch (i) {
                         case BranchInstruction br -> br.target();
                         case DiscontinuedInstruction.JsrInstruction jsr -> jsr.target();
+                        case LookupSwitchInstruction ls -> {
+                            ls.defaultTarget();
+                            ls.cases();
+                        }
+                        case TableSwitchInstruction ts -> {
+                            ts.defaultTarget();
+                            ts.cases();
+                        }
                         default -> {}
                     }
                     pos += i.sizeInBytes();

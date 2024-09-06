@@ -209,7 +209,7 @@ public final class DirectCodeBuilder
             }
         }
         if (handlersSize < handlers.size())
-            buf.patchInt(pos, 2, handlersSize);
+            buf.patchU2(pos, handlersSize);
     }
 
     private void buildContent() {
@@ -246,7 +246,7 @@ public final class DirectCodeBuilder
                             }
                         }
                         if (crSize < characterRanges.size())
-                            b.patchInt(pos, 2, crSize);
+                            b.patchU2(pos, crSize);
                     }
                 };
                 attributes.withAttribute(a);
@@ -269,7 +269,7 @@ public final class DirectCodeBuilder
                             }
                         }
                         if (lvSize < localVariables.size())
-                            b.patchInt(pos, 2, lvSize);
+                            b.patchU2(pos, lvSize);
                     }
                 };
                 attributes.withAttribute(a);
@@ -292,7 +292,7 @@ public final class DirectCodeBuilder
                             }
                         }
                         if (lvtSize < localVariableTypes.size())
-                            b.patchInt(pos, 2, lvtSize);
+                            b.patchU2(pos, lvtSize);
                     }
                 };
                 attributes.withAttribute(a);
@@ -455,8 +455,7 @@ public final class DirectCodeBuilder
     private void writeLabelOffset(int nBytes, int instructionPc, Label label) {
         int targetBci = labelToBci(label);
         if (targetBci == -1) {
-            int pc = curPc();
-            bytecodesBufWriter.writeIntBytes(nBytes, 0);
+            int pc = bytecodesBufWriter.skip(nBytes);
             if (deferredLabels == null)
                 deferredLabels = new ArrayList<>();
             deferredLabels.add(new DeferredLabel(pc, nBytes, instructionPc, label));
@@ -472,8 +471,13 @@ public final class DirectCodeBuilder
         if (deferredLabels != null) {
             for (DeferredLabel dl : deferredLabels) {
                 int branchOffset = labelToBci(dl.label) - dl.instructionPc;
-                if (dl.size == 2 && (short)branchOffset != branchOffset) throw new LabelOverflowException();
-                bytecodesBufWriter.patchInt(dl.labelPc, dl.size, branchOffset);
+                if (dl.size == 2) {
+                    if ((short)branchOffset != branchOffset) throw new LabelOverflowException();
+                    bytecodesBufWriter.patchU2(dl.labelPc, branchOffset);
+                } else {
+                    assert dl.size == 4;
+                    bytecodesBufWriter.patchInt(dl.labelPc, branchOffset);
+                }
             }
         }
     }
@@ -543,11 +547,11 @@ public final class DirectCodeBuilder
         writeBytecode(LOOKUPSWITCH);
         int pad = 4 - (curPc() % 4);
         if (pad != 4)
-            bytecodesBufWriter.writeIntBytes(pad, 0);
+            bytecodesBufWriter.skip(pad); // padding content can be anything
         writeLabelOffset(4, instructionPc, defaultTarget);
         bytecodesBufWriter.writeInt(cases.size());
         cases = new ArrayList<>(cases);
-        cases.sort(new Comparator<SwitchCase>() {
+        cases.sort(new Comparator<>() {
             @Override
             public int compare(SwitchCase c1, SwitchCase c2) {
                 return Integer.compare(c1.caseValue(), c2.caseValue());
@@ -564,7 +568,7 @@ public final class DirectCodeBuilder
         writeBytecode(TABLESWITCH);
         int pad = 4 - (curPc() % 4);
         if (pad != 4)
-            bytecodesBufWriter.writeIntBytes(pad, 0);
+            bytecodesBufWriter.skip(pad); // padding content can be anything
         writeLabelOffset(4, instructionPc, defaultTarget);
         bytecodesBufWriter.writeInt(low);
         bytecodesBufWriter.writeInt(high);
