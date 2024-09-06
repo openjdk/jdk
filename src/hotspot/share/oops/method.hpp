@@ -850,7 +850,7 @@ public:
   Method* get_new_method() const {
     Method* new_method = method_holder()->method_with_idnum(orig_method_idnum());
     assert(this != new_method, "sanity check");
-    return new_method == nullptr ? Universe::throw_no_such_method_error() : new_method;
+    return (new_method == nullptr || is_deleted()) ? Universe::throw_no_such_method_error() : new_method;
   }
 
   // Printing
