@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,9 +78,8 @@ public class ForceGC {
         ReferenceQueue<Object> queue = new ReferenceQueue<>();
         Object obj = new Object();
         PhantomReference<Object> ref = new PhantomReference<>(obj, queue);
-        obj = null;
         Reference.reachabilityFence(obj);
-        Reference.reachabilityFence(ref);
+        obj = null;
 
         int retries = (int)(timeout / 200);
         for (; retries >= 0; retries--) {
@@ -100,6 +99,7 @@ public class ForceGC {
                 // ignore, the loop will try again
             }
         }
+        Reference.reachabilityFence(ref);
 
         return booleanSupplier.getAsBoolean();
     }
