@@ -40,9 +40,9 @@ import javax.lang.model.element.Modifier;
  * </pre>
  *
  * @jls 8.1.1 Class Modifiers
+ * @jls 8.1.3 Inner Classes and Enclosing Instances
  * @jls 8.3.1 Field Modifiers
  * @jls 8.4.3 Method Modifiers
- * @jls 8.5.1 Static Member Type Declarations
  * @jls 8.8.3 Constructor Modifiers
  * @jls 9.1.1 Interface Modifiers
  * @jls 9.7 Annotations
