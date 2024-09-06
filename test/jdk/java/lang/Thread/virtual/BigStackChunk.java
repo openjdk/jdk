@@ -44,7 +44,7 @@ class BigStackChunk {
         int i5 = i4 + 1;
         int i6 = i5 + 1;
         int i7 = i6 + 1;
-        long ll = 2*(long)i1;
+        long ll = 2 * (long)i1;
         float ff = ll + 1.2f;
         double dd = ff + 1.3D;
 

@@ -286,7 +286,7 @@ static void map_stack_pages(JavaThread* thread, size_t size, address sp) {
     size_t page_size = os::vm_page_size();
     address last_touched_page = watermark - StackOverflow::stack_shadow_zone_size();
     size_t pages_to_touch = align_up(watermark - new_sp, page_size) / page_size;
-    while (pages_to_touch--) {
+    while (pages_to_touch-- > 0) {
       last_touched_page -= page_size;
       *last_touched_page = 0;
     }

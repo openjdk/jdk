@@ -55,6 +55,9 @@ inline void os::map_stack_shadow_pages(address sp) {
     sp -= page_size;
     *sp = 0;
   }
+  StackOverflow* state = JavaThread::current()->stack_overflow_state();
+  assert(sp > state->shadow_zone_safe_limit(), "");
+  state->set_shadow_zone_growth_watermark(sp);
 }
 
 inline bool os::numa_has_group_homing()     { return false;  }
