@@ -1109,7 +1109,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
     for (size_t seg_idx = 0; seg_idx < roots.segment_count(); seg_idx++) {
       address requested_start = ArchiveHeapWriter::buffered_addr_to_requested_addr(start);
-      st.print_cr(PTR_FORMAT ": Heap roots segment [" SIZE_FORMAT "]",
+      st.print_cr(PTR_FORMAT ": Heap roots segment [%d]",
                p2i(requested_start), roots.length_for_segment(seg_idx));
       start += roots.byte_size_for_segment(seg_idx);
     }

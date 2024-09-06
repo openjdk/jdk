@@ -264,13 +264,14 @@ public:
   size_t segment_max_size_bytes() { return _segment_max_size_bytes; }
 
   size_t byte_size_for_segment(size_t seg_idx);
-  size_t length_for_segment(size_t seg_idx);
+  int length_for_segment(size_t seg_idx);
+  int segment_start(size_t seg_idx);
 
   HeapRoots() {}
   HeapRoots(size_t base_offset, int root_count, int segment_max_size_bytes, int segment_max_size_elems) :
           _base_offset(base_offset),
           _roots_count(root_count),
-          _segment_count(0),
+          _segment_count((root_count + segment_max_size_elems - 1) / segment_max_size_elems),
           _segment_max_size_bytes(segment_max_size_bytes),
           _segment_max_size_elems(segment_max_size_elems) {}
 

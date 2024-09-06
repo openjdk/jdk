@@ -190,6 +190,8 @@ private:
     return buffered_addr - buffer_bottom();
   }
 
+  static void root_segment_at_put(objArrayOop segment, int index, oop root);
+  static objArrayOop manifest_root_segment(size_t offset, int element_count);
   static void copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots);
   static void copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots);
   static size_t copy_one_source_obj_to_buffer(oop src_obj);

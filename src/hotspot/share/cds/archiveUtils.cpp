@@ -371,16 +371,21 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
 }
 
 size_t HeapRoots::byte_size_for_segment(size_t seg_idx) {
-  return objArrayOopDesc::object_size((int) length_for_segment(seg_idx)) * HeapWordSize;
+  return objArrayOopDesc::object_size(length_for_segment(seg_idx)) * HeapWordSize;
 }
 
-size_t HeapRoots::length_for_segment(size_t seg_idx) {
+int HeapRoots::length_for_segment(size_t seg_idx) {
   assert(seg_idx < _segment_count, "In range");
   if (seg_idx != _segment_count - 1) {
-    return _segment_max_size_elems;
+    return (int)_segment_max_size_elems;
   } else {
     // Last slice, leftover
-    return (_roots_count % _segment_max_size_elems);
+    return (int)(_roots_count % _segment_max_size_elems);
   }
+}
+
+int HeapRoots::segment_start(size_t seg_idx) {
+  assert(seg_idx < _segment_count, "In range");
+  return (int)(seg_idx * _segment_max_size_elems);
 }
 
