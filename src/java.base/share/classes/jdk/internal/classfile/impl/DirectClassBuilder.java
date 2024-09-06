@@ -192,7 +192,7 @@ public final class DirectClassBuilder
         boolean written = constantPool.writeBootstrapMethods(tail);
         if (written) {
             // Update attributes count
-            tail.patchInt(attributesOffset, 2, attributes.size() + 1);
+            tail.patchU2(attributesOffset, attributes.size() + 1);
         }
 
         // Now we can make the head
