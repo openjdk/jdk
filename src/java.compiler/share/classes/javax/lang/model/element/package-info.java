@@ -37,7 +37,7 @@
  * However, the interfaces can model some structures only
  * appearing inside method bodies, such as {@linkplain ElementKind#LOCAL_VARIABLE local variables},
  * {@linkplain NestingKind#ANONYMOUS anonymous classes}, and
- * {@linkplain ElementKind#EXCEPTION_PARAMETER exception parameters}. 
+ * {@linkplain ElementKind#EXCEPTION_PARAMETER exception parameters}.
  * Therefore, these interfaces can be used by an AST API to model the
  * declarations found in the method bodies of Java compilation units
  * (JLS {@jls 7.3}).
