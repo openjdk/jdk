@@ -185,7 +185,6 @@ class AddVINode : public VectorNode {
   virtual int Opcode() const;
 };
 
-
 //------------------------------AddVLNode--------------------------------------
 // Vector add long
 class AddVLNode : public VectorNode {
