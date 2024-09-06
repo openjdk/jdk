@@ -142,6 +142,12 @@ import jdk.internal.util.StaticProperty;
  * additional file operations, file attributes, and I/O exceptions to help
  * diagnose errors when an operation on a file fails.
  *
+ * <h2>Operations on Symbolic Links</h2>
+ *
+ * <p> Unless otherwise noted,
+ * <a href= "../../java/nio/file/package-summary.html#links">symbolic links</a>
+ * are transparent to {@code File} operations.
+ *
  * @since   1.0
  */
 
@@ -838,8 +844,7 @@ public class File
 
     /**
      * Tests whether the file denoted by this abstract pathname is a
-     * directory.  Symbolic links are followed and the file attribute of the
-     * final target of the link is read.
+     * directory.
      *
      * <p> Where it is required to distinguish an I/O exception from the case
      * that the file is not a directory, or where several attributes of the
@@ -873,8 +878,6 @@ public class File
      * file.  A file is <em>normal</em> if it is not a directory and, in
      * addition, satisfies other system-dependent criteria.  Any non-directory
      * file created by a Java application is guaranteed to be a normal file.
-     * Symbolic links are followed and the file attribute of the final target
-     * of the link is read.
      *
      * <p> Where it is required to distinguish an I/O exception from the case
      * that the file is not a normal file, or where several attributes of the
@@ -906,11 +909,17 @@ public class File
     /**
      * Tests whether the file named by this abstract pathname is a hidden
      * file.  The exact definition of <em>hidden</em> is system-dependent.  On
-     * UNIX systems, a file or symbolic link is considered to be hidden if its
-     * name begins with a period character ({@code '.'}).  On Microsoft Windows
-     * systems, a file is considered to be hidden if it has been marked as such
-     * in the filesystem, and a symbolic link to be hidden if its final target
-     * is so marked in the filesystem.
+     * UNIX systems, a file is considered to be hidden if its name begins with
+     * a period character ({@code '.'}).  On Microsoft Windows systems, a file
+     * is considered to be hidden if it has been marked as such in the
+     * filesystem.
+     *
+     *
+     * @implNote
+     * If the file is a symbolic link, then on UNIX system it is considered to
+     * be hidden if the name of the link itself, not that of its target, begins
+     * with a period character.  On Windows systems, a symbolic link is
+     * considered hidden if its target is so marked in the filesystem.
      *
      * @return  {@code true} if and only if the file denoted by this
      *          abstract pathname is hidden according to the conventions of the
@@ -1053,7 +1062,8 @@ public class File
     /**
      * Deletes the file or directory denoted by this abstract pathname.  If
      * this pathname denotes a directory, then the directory must be empty in
-     * order to be deleted.
+     * order to be deleted.  If this pathname denotes a symbolic link, then the
+     * link itself, not its target, will be deleted.
      *
      * <p> Note that the {@link java.nio.file.Files} class defines the {@link
      * java.nio.file.Files#delete(Path) delete} method to throw an {@link IOException}
@@ -1426,7 +1436,9 @@ public class File
     }
 
     /**
-     * Renames the file denoted by this abstract pathname.
+     * Renames the file denoted by this abstract pathname.  If this pathname
+     * denotes a symbolic link, then the link itself, not its target, will be
+     * renamed.
      *
      * <p> Many aspects of the behavior of this method are inherently
      * platform-dependent: The rename operation might not be able to move a
