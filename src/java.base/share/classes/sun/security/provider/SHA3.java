@@ -67,17 +67,18 @@ public abstract class SHA3 extends DigestBase {
         0x8000000000008080L, 0x80000001L, 0x8000000080008008L,
     };
 
-    // the starting 3 or 5 bits of the domain separator and 10*1 padding
-    // (11111... for the SHAKE functions and 011... for the SHA3-nnn ones)
+    // The starting byte combining the 2 or 4-bit domain separator and
+    // leading bits of the 10*1 padding, see Table 6 in B.2 of FIPS PUB 202
+    // for examples
     private final byte suffix;
 
     // the state matrix flattened into an array
     private long[] state = new long[DM*DM];
 
-    // The byte offset in the state where the next sqeeze() will start.
+    // The byte offset in the state where the next squeeze() will start.
     // -1 indicates that either we are in the absorbing phase (only
-    // update() calls were made so far) in an XOF or the class was initialized
-    // as a hash.
+    // update() calls were made so far) in an extendable-output function (XOF)
+    // or the class was initialized as a hash.
     // The first squeeze() call (after a possibly empty sequence of update()
     // calls) will set it to 0 at its start.
     // When a squeeze() call uses up all available bytes from this state
@@ -166,7 +167,7 @@ public abstract class SHA3 extends DigestBase {
         }
     }
 
-    void implSqueeze(byte[]output, int offset, int numBytes) {
+    void implSqueeze(byte[] output, int offset, int numBytes) {
         // Moving this allocation to the block where it is used causes a little
         // performance drop, that is why it is here.
         byte[] byteState = new byte[8];
@@ -251,8 +252,9 @@ public abstract class SHA3 extends DigestBase {
 
     /**
      * Utility function for padding the specified data based on the
-     * pad10*1 algorithm (section 5.1) and the 2-bit suffix "01" required
-     * for SHA-3 hash (section 6.1).
+     * pad10*1 algorithm (section 5.1) and the 2-bit suffix "01" or 4-bit
+     * suffix "1111" required for SHA-3 hash functions (section 6.1) and
+     * extendable-output functions (section 6.1) respectively.
      */
     private static int setPaddingBytes(byte suffix, byte[] in, int len) {
         if (len != in.length) {
