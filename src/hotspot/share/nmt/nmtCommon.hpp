@@ -29,9 +29,9 @@
 
 #include "memory/allStatic.hpp"
 #include "nmt/memflags.hpp"
-#include "runtime/os.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/os.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -145,27 +145,40 @@ class NmtGuard : public StackObj {
 private:
     static Semaphore _nmt_semaphore;
     static intx volatile _owner;
+    static size_t _count;
 
 public:
     NmtGuard() {
       intx const current =  os::current_thread_id();
       intx const owner = Atomic::load(&_owner);
-      assert(current != owner, "Lock is not reentrant");
 
-      _nmt_semaphore.wait();
-      Atomic::store(&_owner, current);
+      if (owner != current) {
+        _nmt_semaphore.wait();
+        Atomic::store(&_owner, current);
+      }
+      _count++;
     }
 
     ~NmtGuard() {
       assert_locked();
-      Atomic::store(&_owner, (intx) -1);
-      _nmt_semaphore.signal();
+      _count--;
+
+      if (_count == 0) {
+        Atomic::store(&_owner, (intx) -1);
+        _nmt_semaphore.signal();
+      }
     }
 
-    static void assert_locked(){
+    static bool is_owner() {
       intx const current = os::current_thread_id();
       intx const owner = Atomic::load(&_owner);
-      assert(current == owner, "NMT lock should be acquired in this section.");
+      return current == owner;
+    }
+
+    static void assert_locked() {
+#ifdef DEBUG
+      assert(is_owner(), "NMT lock should be acquired in this section. Current TID %ld, owner TID %ld", os::current_thread_id(), Atomic::load(&_owner));
+#endif
     }
 };
 

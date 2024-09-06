@@ -169,7 +169,7 @@ class MemTracker : AllStatic {
   static inline MemoryFileTracker::MemoryFile* register_file(const char* descriptive_name) {
     assert_post_init();
     if (!enabled()) return nullptr;
-    MemoryFileTracker::Instance::Locker lock;
+    NmtGuard guard;
     return MemoryFileTracker::Instance::make_file(descriptive_name);
   }
 
@@ -177,7 +177,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    MemoryFileTracker::Instance::Locker lock;
+    NmtGuard guard;
     MemoryFileTracker::Instance::free_file(file);
   }
 
@@ -186,7 +186,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    MemoryFileTracker::Instance::Locker lock;
+    NmtGuard guard;
     MemoryFileTracker::Instance::allocate_memory(file, offset, size, stack, flag);
   }
 
@@ -195,7 +195,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    MemoryFileTracker::Instance::Locker lock;
+    NmtGuard guard;
     MemoryFileTracker::Instance::free_memory(file, offset, size);
   }
 
@@ -267,6 +267,12 @@ class MemTracker : AllStatic {
   // Given an unknown pointer, check if it points into a known region; print region if found
   // and return true; false if not found.
   static bool print_containing_region(const void* p, outputStream* out);
+
+  static void reduce_tracking_to_summary() {
+    if (_tracking_level == NMT_detail) {
+      _tracking_level = NMT_summary;
+    }
+  }
 
  private:
   static void report(bool summary_only, outputStream* output, size_t scale);

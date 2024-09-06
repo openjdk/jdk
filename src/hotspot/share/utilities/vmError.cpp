@@ -717,6 +717,9 @@ void VMError::report(outputStream* st, bool _verbose) {
   address lastpc = nullptr;
 
   BEGIN
+  if (MemTracker::enabled() && NmtGuard::is_owner()) {
+    MemTracker::reduce_tracking_to_summary();
+  }
 
   STEP("printing fatal error message")
     st->print_cr("#");
