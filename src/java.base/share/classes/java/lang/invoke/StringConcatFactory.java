@@ -1285,7 +1285,7 @@ public final class StringConcatFactory {
                         public void accept(ClassBuilder clb) {
                             if (staticConcat) {
                                 clb.withSuperclass(CD_Object)
-                                   .withFlags(ACC_FINAL | ACC_SUPER | ACC_SYNTHETIC);
+                                   .withFlags(ACC_SUPER | ACC_SYNTHETIC);
                             } else {
                                 clb.withSuperclass(CD_StringConcatBase)
                                    .withFlags(ACC_FINAL | ACC_SUPER | ACC_SYNTHETIC)
@@ -1492,7 +1492,12 @@ public final class StringConcatFactory {
                      * coder = coder(this.coder, arg0, arg1, ... argN);
                      */
                     if (staticConcat) {
-                        cb.ldc(coder);
+                        // coder can only be 0 or 1
+                        if (coder == 0) {
+                            cb.iconst_0();
+                        } else {
+                            cb.iconst_1();
+                        }
                     } else {
                         cb.aload(thisSlot)
                           .getfield(concatClass, "coder", CD_byte);
