@@ -39,7 +39,7 @@ public class AndLNodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8" })
+    @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7", "test8", "test9" })
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -68,6 +68,7 @@ public class AndLNodeIdealizationTests {
         Asserts.assertEQ(((byte)a & -8L) >= -128, test6(a, b));
         Asserts.assertEQ(((byte)a & -8L) <= 127, test7(a, b));
         Asserts.assertEQ(((a & 255) & (char)b) > 255, test8(a, b));
+        Asserts.assertEQ((((a & 1) - 3) & ((b & 2) - 10)) > -8, test9(a, b));
     }
 
     @Test
@@ -126,5 +127,12 @@ public class AndLNodeIdealizationTests {
     // Checks that [0, 255] & [0, 65535] => [0, 255]
     public boolean test8(long a, long b) {
         return ((a & 255) & (char)b) > 255;
+    }
+
+    @Test
+    @IR(failOn = { IRNode.AND })
+    // Checks that [-3, -2] & [-10, -8] => [-16, -8]
+    public boolean test9(long a, long b) {
+        return (((a & 1) - 3) & ((b & 2) - 10)) > -8;
     }
 }

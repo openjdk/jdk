@@ -597,20 +597,25 @@ const Type* MulHiValue(const Type *t1, const Type *t2, const Type *bot) {
 template<typename IntegerType>
 static const IntegerType* and_value(const IntegerType* r0, const IntegerType* r1) {
   typedef typename IntegerType::NativeType NativeType;
+  static_assert(std::is_signed<NativeType>::value, "Native type of IntegerType must be signed!");
 
-  int widen = MAX2(r0->_widen,r1->_widen);
+  int widen = MAX2(r0->_widen, r1->_widen);
 
-  // If both are constants, we can calculate a precise result.
-  if(r0->is_con() && r1->is_con()) {
+  // If both types are constants, we can calculate a constant result.
+  if (r0->is_con() && r1->is_con()) {
     return IntegerType::make(r0->get_con() & r1->get_con());
   }
 
-  // If both ranges are positive, the result will range from 0 up to the maximum value of the smaller range.
+  // If both ranges are positive, the result will range from 0 up to the hi value of the smaller range. The minimum
+  // of the two constrains the upper bound because any higher value in the other range will see all zeroes, so it will be masked out.
   if (r0->_lo >= 0 && r1->_lo >= 0) {
     return IntegerType::make(0, MIN2(r0->_hi, r1->_hi), widen);
   }
 
   // If only one range is positive, the result will range from 0 up to that range's maximum value.
+  // For the operation 'x & C' where C is a positive constant, the result will be in the range [0..C]. With that observation,
+  // we can say that for any integer c such that 0 <= c <= C will also be in the range [0..C]. Therefore, 'x & [c..C]'
+  // where c >= 0 will be in the range [0..C].
   if (r0->_lo >= 0) {
     return IntegerType::make(0, r0->_hi, widen);
   }
@@ -623,19 +628,33 @@ static const IntegerType* and_value(const IntegerType* r0, const IntegerType* r1
   // and constants.
 
   assert(r0->_lo < 0 && r1->_lo < 0, "positive ranges should already be handled!");
-  static_assert(std::is_signed<NativeType>::value, "native type of IntegerType must be signed!");
 
-  // The lower bound of both ranges will contain the common leading 1-bits. In order to count them with count_leading_zeros,
-  // the bits are inverted.
+  // As two's complement means that both numbers will start with leading 1s, the lower bound of both ranges will contain
+  // the common leading 1s of both minimum values. In order to count them with count_leading_zeros, the bits are inverted.
   NativeType sel_val = ~MIN2(r0->_lo, r1->_lo);
 
-  // To get the number of bits to shift, we count the leading 0-bits and then subtract one, as the sign bit is already set.
-  // Since count_leading_zeros is undefined at 0 (~(-1)) the number of digits in the native type can be used instead,
-  // as it returns 31 and 63 for signed integers and longs respectively.
-  int shift_bits = sel_val == 0 ? std::numeric_limits<NativeType>::digits : count_leading_zeros(sel_val) - 1;
+  NativeType min;
+  if (sel_val == 0) {
+    // Since count_leading_zeros is undefined at 0, we short-circuit the condition where both ranges have a minimum of -1.
+    min = -1;
+  } else {
+    // To get the number of bits to shift, we count the leading 0-bits and then subtract one, as the sign bit is already set.
+    int shift_bits = count_leading_zeros(sel_val) - 1;
+    min = std::numeric_limits<NativeType>::min() >> shift_bits;
+  }
 
-  // Since the result of bitwise-and can be as high as the largest value of each range, the result should find the maximum.
-  return IntegerType::make(std::numeric_limits<NativeType>::min() >> shift_bits, MAX2(r0->_hi, r1->_hi), widen);
+  NativeType max;
+  if (r0->_hi < 0 && r1->_hi < 0) {
+    // If both ranges are negative, then the same optimization as both positive ranges will apply, and the smaller hi
+    // value will mask off any bits set by higher values.
+    max = MIN2(r0->_hi, r1->_hi);
+  } else {
+    // In the case of ranges that cross zero, negative values can cause the higher order bits to be set, so the maximum
+    // positive value can be as high as the larger hi value.
+    max = MAX2(r0->_hi, r1->_hi);
+  }
+
+  return IntegerType::make(min, max, widen);
 }
 
 //=============================================================================
