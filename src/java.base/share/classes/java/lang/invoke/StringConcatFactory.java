@@ -1254,7 +1254,7 @@ public final class StringConcatFactory {
                 MethodHandlePair handlePair = weakConstructorHandle.get();
                 if (handlePair != null) {
                     try {
-                        var instance = handlePair.constructor.invokeBasic(constants);
+                        var instance = handlePair.constructor.invokeBasic((Object)constants);
                         return handlePair.concatenator.bindTo(instance);
                     } catch (Throwable e) {
                         throw new StringConcatException("Exception while utilizing the hidden class", e);
@@ -1333,7 +1333,7 @@ public final class StringConcatFactory {
                 var constructor = lookup.findConstructor(hiddenClass, CONSTRUCTOR_METHOD_TYPE);
                 var concatenator = lookup.findVirtual(hiddenClass, METHOD_NAME, concatArgs);
                 CACHE.put(concatArgs, new SoftReference<>(new MethodHandlePair(constructor, concatenator)));
-                var instance = constructor.invokeBasic(constants);
+                var instance = constructor.invokeBasic((Object)constants);
                 return concatenator.bindTo(instance);
             } catch (Throwable e) {
                 throw new StringConcatException("Exception while spinning the class", e);
