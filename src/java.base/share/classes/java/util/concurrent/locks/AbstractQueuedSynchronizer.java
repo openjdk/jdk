@@ -516,7 +516,9 @@ public abstract class AbstractQueuedSynchronizer
         }
 
         public final boolean block() {
-            while (!isReleasable()) LockSupport.park();
+            while (!isReleasable()) {
+                LockSupport.park();
+            }
             return true;
         }
     }
@@ -1706,6 +1708,8 @@ public abstract class AbstractQueuedSynchronizer
                         rejected = true;
                     } catch (InterruptedException ie) {
                         interrupted = true;
+                    } catch (Error | RuntimeException ex) {
+                        // Spurious errors, keep trying
                     }
                 } else
                     Thread.onSpinWait();    // awoke while enqueuing
@@ -1753,6 +1757,8 @@ public abstract class AbstractQueuedSynchronizer
                         rejected = true;
                     } catch (InterruptedException ie) {
                         interrupted = true;
+                    } catch (Error | RuntimeException ex) {
+                        // Spurious errors, keep trying
                     }
                 } else
                     Thread.onSpinWait();    // awoke while enqueuing

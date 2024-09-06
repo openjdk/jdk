@@ -89,22 +89,32 @@ public final class TestDisposerRace {
             try {
                 return allocator.get();
             } catch (OutOfMemoryError ignored1) {
-                try {
-                    Thread.sleep(1); // Give GC a little chance to run
-                } catch (InterruptedException ignored2) {}
+                for (;;) {
+                    try {
+                        Thread.sleep(1); // Give GC a little chance to run
+                        break;
+                    } catch (OutOfMemoryError | InterruptedException ignored2) {
+                        continue;
+                    }
+                }
             }
         }
     }
 
     private static <E extends Exception> void retryOnOOME(ThrowingRunnable<E> tr) throws E {
-        for(;;) {
+        for (;;) {
             try {
                 tr.run();
                 break;
             } catch (OutOfMemoryError ignored1) {
-                try {
-                    Thread.sleep(1); // Give GC a little chance to run
-                } catch (InterruptedException ignored2) {}
+                for (;;) {
+                    try {
+                        Thread.sleep(1); // Give GC a little chance to run
+                        break;
+                    } catch (OutOfMemoryError | InterruptedException ignored2) {
+                        continue;
+                    }
+                }
             }
         }
     }
@@ -135,9 +145,14 @@ public final class TestDisposerRace {
     }
 
     private static void giveGCAChance() {
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException ignored) {}
+        for (;;) {
+            try {
+                Thread.sleep(2000); // Give GC a little chance to run
+                break;
+            } catch (OutOfMemoryError | InterruptedException ignored2) {
+                continue;
+            }
+        }
     }
 
     private static void generateOOME() throws Exception {
