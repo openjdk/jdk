@@ -46,7 +46,7 @@ import javax.imageio.ImageIO;
 public class CheckboxCheckerScalingTest {
     private static Frame frame;
     private static Checkbox checkbox;
-    private static Point point;
+    private static volatile Point point;
     private static volatile boolean checkmarkFound = false;
     private static final int TOLERANCE = 5;
     private static final int COLOR_CHECK_THRESHOLD = 8;
@@ -78,8 +78,7 @@ public class CheckboxCheckerScalingTest {
                     for (int j = 0; j < imageAfterChecked.getWidth(); j++) {
                         Color pixelColor = new Color(imageAfterChecked.getRGB(i, j));
                         if (compareColor(pixelColor)) {
-                            colorCounter++;
-                            if (colorCounter >= COLOR_CHECK_THRESHOLD) {
+                            if (++colorCounter >= COLOR_CHECK_THRESHOLD) {
                                 checkmarkFound = true;
                                 break check;
                             }
