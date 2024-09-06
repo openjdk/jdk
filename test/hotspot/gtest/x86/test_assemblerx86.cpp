@@ -25,6 +25,7 @@ static std::unordered_map<std::string, std::pair<uint8_t, uint8_t>> insns_map = 
 };
 
 static void asm_check(const uint8_t *insns, const uint8_t *insns1, const unsigned int *insns_lens, const char *insns_strs[], size_t len) {
+  ResourceMark rm;
   size_t cur_idx = 0;
   for (size_t i = 0; i < len; i++) {
     size_t insn_len = insns_lens[i];
