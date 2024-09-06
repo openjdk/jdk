@@ -47,7 +47,7 @@ public class CheckboxCheckerScalingTest {
     private static Frame frame;
     private static Checkbox checkbox;
     private static volatile Point point;
-    private static volatile boolean checkmarkFound = false;
+    private static boolean checkmarkFound = false;
     private static final int TOLERANCE = 5;
     private static final int COLOR_CHECK_THRESHOLD = 8;
     private static int colorCounter = 0;
@@ -58,7 +58,7 @@ public class CheckboxCheckerScalingTest {
 
         try {
             EventQueue.invokeAndWait(() -> {
-                frame = new Frame("ComboBox checker scaling test");
+                frame = new Frame("CheckBox checker scaling test");
                 checkbox = new Checkbox("one");
                 checkbox.setState(true);
                 frame.add(checkbox);
