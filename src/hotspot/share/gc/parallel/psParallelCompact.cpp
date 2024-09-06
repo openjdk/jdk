@@ -1203,6 +1203,7 @@ void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
   do {
     PSScannerTask task;
     if (ParCompactionManager::steal(worker_id, task)) {
+      TASKQUEUE_STATS_ONLY(cm->record_steal(task));
       cm->follow_contents(task);
     }
     cm->follow_marking_stacks();
@@ -1367,7 +1368,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
     _gc_tracer.report_object_count_after_gc(is_alive_closure(), &ParallelScavengeHeap::heap()->workers());
   }
 #if TASKQUEUE_STATS
-  ParCompactionManager::marking_queues()->print_and_reset_taskqueue_stats("Oop Queue");
+  ParCompactionManager::print_and_reset_taskqueue_stats();
 #endif
 }
 

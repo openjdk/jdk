@@ -75,6 +75,8 @@ ParCompactionManager::ParCompactionManager(PreservedMarks* preserved_marks,
 
   // let's choose 1.5x the chunk size
   _min_array_size_for_chunking = (3 * ParGCArrayScanChunk / 2);
+
+  TASKQUEUE_STATS_ONLY(reset_stats());
 }
 
 void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
@@ -149,7 +151,7 @@ void ParCompactionManager::follow_marking_stacks() {
 }
 
 void ParCompactionManager::process_array_chunk(PartialArrayState* state) {
-//  TASKQUEUE_STATS_ONLY(++_array_chunks_processed);
+  TASKQUEUE_STATS_ONLY(++_array_chunks_processed);
 
   // Claim a chunk.  Push additional tasks before processing the claimed
   // chunk to allow other workers to steal while we're processing.
@@ -159,7 +161,7 @@ void ParCompactionManager::process_array_chunk(PartialArrayState* state) {
     for (uint i = 0; i < step._ncreate; ++i) {
       push(PSScannerTask(state));
     }
-//    TASKQUEUE_STATS_ONLY(_array_chunk_pushes += step._ncreate);
+    TASKQUEUE_STATS_ONLY(_array_chunk_pushes += step._ncreate);
   }
   int start = checked_cast<int>(step._index);
   int end = checked_cast<int>(step._index + _partial_array_stepper.chunk_size());
@@ -178,7 +180,7 @@ void ParCompactionManager::push_objArray(oop obj) {
   PartialArrayTaskStepper::Step step = _partial_array_stepper.start(array_length);
 
    if (step._ncreate > 0) {
-//     TASKQUEUE_STATS_ONLY(++_arrays_chunked);
+     TASKQUEUE_STATS_ONLY(++_arrays_chunked);
      PartialArrayState* state =
      _partial_array_state_allocator->allocate(_partial_array_state_allocator_index,
                                               obj, nullptr,
@@ -188,7 +190,7 @@ void ParCompactionManager::push_objArray(oop obj) {
      for (uint i = 0; i < step._ncreate; ++i) {
        marking_stack()->push(PSScannerTask(state));
      }
-//     TASKQUEUE_STATS_ONLY(_array_chunk_pushes += step._ncreate);
+     TASKQUEUE_STATS_ONLY(_array_chunk_pushes += step._ncreate);
    }
    follow_array(objArrayOop(obj), 0, checked_cast<int>(step._index));
 }
@@ -237,6 +239,46 @@ void ParCompactionManager::push_shadow_region(size_t shadow_region) {
 void ParCompactionManager::remove_all_shadow_regions() {
   _shadow_region_array->clear();
 }
+
+
+#if TASKQUEUE_STATS
+void ParCompactionManager::print_local_stats(outputStream* const out, uint i) const {
+  #define FMT " " SIZE_FORMAT_W(10)
+  out->print_cr("%3u" FMT FMT FMT FMT,
+                i, _array_chunk_pushes, _array_chunk_steals,
+                _arrays_chunked, _array_chunks_processed);
+  #undef FMT
+}
+
+static const char* const pm_stats_hdr[] = {
+  "    ----partial array----     arrays      array",
+  "thr       push      steal    chunked     chunks",
+  "--- ---------- ---------- ---------- ----------"
+};
+
+void ParCompactionManager::print_and_reset_taskqueue_stats() {
+  if (!log_is_enabled(Trace, gc, task, stats)) {
+    return;
+  }
+  Log(gc, task, stats) log;
+  ResourceMark rm;
+  LogStream ls(log.trace());
+
+  marking_queues()->print_and_reset_taskqueue_stats("Marking Stacks");
+
+  const uint hlines = sizeof(pm_stats_hdr) / sizeof(pm_stats_hdr[0]);
+  for (uint i = 0; i < hlines; ++i) ls.print_cr("%s", pm_stats_hdr[i]);
+  for (uint i = 0; i < ParallelGCThreads; ++i) {
+    _manager_array[i]->print_local_stats(&ls, i);
+    _manager_array[i]->reset_stats();
+  }
+}
+
+void ParCompactionManager::reset_stats() {
+  _array_chunk_pushes = _array_chunk_steals = 0;
+  _arrays_chunked = _array_chunks_processed = 0;
+}
+#endif // TASKQUEUE_STATS
 
 #ifdef ASSERT
 void ParCompactionManager::verify_all_marking_stack_empty() {

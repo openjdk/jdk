@@ -111,6 +111,18 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static PSOldGen*              _old_gen;
   static PartialArrayStateAllocator*  _partial_array_state_allocator;
 
+#if TASKQUEUE_STATS
+  size_t                              _array_chunk_pushes;
+  size_t                              _array_chunk_steals;
+  size_t                              _arrays_chunked;
+  size_t                              _array_chunks_processed;
+
+  void print_local_stats(outputStream* const out, uint i) const;
+  static void print_and_reset_taskqueue_stats();
+
+  void reset_stats();
+#endif // TASKQUEUE_STATS
+
   PSScannerTasksQueue           _marking_stack;
   PartialArrayTaskStepper       _partial_array_stepper;
   uint                          _partial_array_state_allocator_index;
@@ -239,6 +251,7 @@ public:
   void follow_array(objArrayOop array, int start, int end);
   void process_array_chunk(PartialArrayState* state);
 
+  TASKQUEUE_STATS_ONLY(inline void record_steal(PSScannerTask task);)
 
   class FollowStackClosure: public VoidClosure {
    private:

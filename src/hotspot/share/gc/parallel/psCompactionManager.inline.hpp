@@ -209,4 +209,12 @@ inline void ParCompactionManager::flush_and_destroy_marking_stats_cache() {
   _marking_stats_cache = nullptr;
 }
 
+#if TASKQUEUE_STATS
+void ParCompactionManager::record_steal(PSScannerTask task) {
+  if (task.is_partial_array_state()) {
+    ++_array_chunk_steals;
+  }
+}
+#endif // TASKQUEUE_STATS
+
 #endif // SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_INLINE_HPP
