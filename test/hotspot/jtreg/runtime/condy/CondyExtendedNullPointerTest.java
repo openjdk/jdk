@@ -34,7 +34,6 @@
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.compiler.InMemoryJavaCompiler;
 
 public class CondyExtendedNullPointerTest {
     public static void main(String args[]) throws Throwable {
