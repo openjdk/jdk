@@ -1327,6 +1327,8 @@ public abstract class AbstractQueuedLongSynchronizer
                         rejected = true;
                     } catch (InterruptedException ie) {
                         interrupted = true;
+                    } catch (Error | RuntimeException ex) {
+                        // Spurious errors, keep trying
                     }
                 } else
                     Thread.onSpinWait();    // awoke while enqueuing
@@ -1374,6 +1376,8 @@ public abstract class AbstractQueuedLongSynchronizer
                         rejected = true;
                     } catch (InterruptedException ie) {
                         interrupted = true;
+                    } catch (Error | RuntimeException ex) {
+                        // Spurious errors, keep trying
                     }
                 } else
                     Thread.onSpinWait();    // awoke while enqueuing
