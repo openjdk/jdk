@@ -791,30 +791,22 @@ private:
   void evex_prefix(bool vex_r, bool vex_b, bool vex_x, bool evex_v, bool evex_r, bool evex_b,
                        bool eevex_x, int nds_enc, VexSimdPrefix pre, VexOpcode opc, bool no_flags = false);
 
-  void evex_prefix_ndd(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false) {
-    vex_prefix(adr, ndd_enc, xreg_enc, pre, opc, attributes, /* nds_is_ndd */ true , /* force_evex */ true, no_flags);
-  }
+  void evex_prefix_ndd(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false);
 
-  void evex_prefix_nf(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false) {
-    vex_prefix(adr, ndd_enc, xreg_enc, pre, opc, attributes, /* nds_is_ndd */ false , /* force_evex */ true, no_flags);
-  }
+  void evex_prefix_nf(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false);
 
   void vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
-                  InstructionAttr *attributes, bool nds_is_ndd = false, bool force_evex = false, bool no_flags = false);
+                  InstructionAttr *attributes, bool nds_is_ndd = false, bool no_flags = false);
 
   int  vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc,
                              VexSimdPrefix pre, VexOpcode opc,
-                             InstructionAttr *attributes, bool src_is_gpr = false, bool nds_is_ndd = false, bool force_evex = false, bool no_flags = false);
+                             InstructionAttr *attributes, bool src_is_gpr = false, bool nds_is_ndd = false, bool no_flags = false);
 
   int  evex_prefix_and_encode_ndd(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                             InstructionAttr *attributes, bool no_flags = false) {
-    return vex_prefix_and_encode(dst_enc, nds_enc, src_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ true , /* force_evex */ true, no_flags);
-  }
+                                  InstructionAttr *attributes, bool no_flags = false);
 
   int  evex_prefix_and_encode_nf(int dst_enc, int nds_enc, int src_enc, VexSimdPrefix pre, VexOpcode opc,
-                             InstructionAttr *attributes, bool no_flags = false) {
-    return vex_prefix_and_encode(dst_enc, nds_enc, src_enc, pre, opc, attributes, /* src_is_gpr */ true, /* nds_is_ndd */ false, /* force_evex */ true, no_flags);
-  }
+                                 InstructionAttr *attributes, bool no_flags = false);
 
   void simd_prefix(XMMRegister xreg, XMMRegister nds, Address adr, VexSimdPrefix pre,
                    VexOpcode opc, InstructionAttr *attributes);
