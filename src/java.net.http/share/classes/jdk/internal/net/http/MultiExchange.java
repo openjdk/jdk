@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ class MultiExchange<T> implements Cancelable {
     Exchange<T> exchange; // the current exchange
     Exchange<T> previous;
     volatile Throwable retryCause;
-    volatile boolean expiredOnce;
+    volatile boolean retriedOnce;
     volatile HttpResponse<T> response;
 
     // Maximum number of times a request will be retried/redirected
@@ -469,7 +469,7 @@ class MultiExchange<T> implements Cancelable {
                             return exch.ignoreBody().handle((r,t) -> {
                                 previousreq = currentreq;
                                 currentreq = newrequest;
-                                expiredOnce = false;
+                                retriedOnce = false;
                                 setExchange(new Exchange<>(currentreq, this, acc));
                                 return responseAsyncImpl();
                             }).thenCompose(Function.identity());
@@ -482,7 +482,7 @@ class MultiExchange<T> implements Cancelable {
                             return completedFuture(response);
                         }
                         // all exceptions thrown are handled here
-                        CompletableFuture<Response> errorCF = getExceptionalCF(ex);
+                        CompletableFuture<Response> errorCF = getExceptionalCF(ex, exch.exchImpl);
                         if (errorCF == null) {
                             return responseAsyncImpl();
                         } else {
@@ -554,36 +554,39 @@ class MultiExchange<T> implements Cancelable {
      * Takes a Throwable and returns a suitable CompletableFuture that is
      * completed exceptionally, or null.
      */
-    private CompletableFuture<Response> getExceptionalCF(Throwable t) {
+    private CompletableFuture<Response> getExceptionalCF(Throwable t, ExchangeImpl<?> exchImpl) {
         if ((t instanceof CompletionException) || (t instanceof ExecutionException)) {
             if (t.getCause() != null) {
                 t = t.getCause();
             }
         }
+        final boolean retryAsUnprocessed = exchImpl != null && exchImpl.isUnprocessedByPeer();
         if (cancelled && !requestCancelled() && t instanceof IOException) {
             if (!(t instanceof HttpTimeoutException)) {
                 t = toTimeoutException((IOException)t);
             }
-        } else if (retryOnFailure(t)) {
+        } else if (retryAsUnprocessed || retryOnFailure(t)) {
             Throwable cause = retryCause(t);
 
             if (!(t instanceof ConnectException)) {
                 // we may need to start a new connection, and if so
                 // we want to start with a fresh connect timeout again.
                 if (connectTimeout != null) connectTimeout.reset();
-                if (!canRetryRequest(currentreq)) {
-                    return failedFuture(cause); // fails with original cause
+                if (!retryAsUnprocessed && !canRetryRequest(currentreq)) {
+                    // a (peer) processed request which cannot be retried, fail with
+                    // the original cause
+                    return failedFuture(cause);
                 }
             } // ConnectException: retry, but don't reset the connectTimeout.
 
             // allow the retry mechanism to do its work
             retryCause = cause;
-            if (!expiredOnce) {
+            if (!retriedOnce) {
                 if (debug.on()) {
                     debug.log(t.getClass().getSimpleName()
-                            + " (async): retrying due to: ", t);
+                            + " (async): retrying " + currentreq + " due to: ", t);
                 }
-                expiredOnce = true;
+                retriedOnce = true;
                 // The connection was abruptly closed.
                 // We return null to retry the same request a second time.
                 // The request filters have already been applied to the
@@ -594,7 +597,7 @@ class MultiExchange<T> implements Cancelable {
             } else {
                 if (debug.on()) {
                     debug.log(t.getClass().getSimpleName()
-                            + " (async): already retried once.", t);
+                            + " (async): already retried once " + currentreq, t);
                 }
                 t = cause;
             }

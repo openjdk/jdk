@@ -154,7 +154,7 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * @see #uninitialize
      * @see UIManager#setLookAndFeel
      */
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     public void initialize() {
         java.security.AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {

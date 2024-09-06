@@ -47,6 +47,7 @@ import com.sun.tools.javac.comp.Infer.GraphSolver.InferenceGraph;
 import com.sun.tools.javac.comp.Infer.GraphSolver.InferenceGraph.Node;
 import com.sun.tools.javac.comp.Resolve.InapplicableMethodException;
 import com.sun.tools.javac.comp.Resolve.VerboseResolutionMode;
+import com.sun.tools.javac.util.CompilerInternalException;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -68,7 +69,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static com.sun.tools.javac.code.TypeTag.*;
-import java.util.Comparator;
+import static com.sun.tools.javac.main.Option.DOE;
 
 /** Helper class for type parameter inference, used by the attribution phase.
  *
@@ -97,6 +98,8 @@ public class Infer {
      */
     private List<String> pendingGraphs;
 
+    private final boolean dumpStacktraceOnError;
+
     public static Infer instance(Context context) {
         Infer instance = context.get(inferKey);
         if (instance == null)
@@ -119,6 +122,7 @@ public class Infer {
         pendingGraphs = List.nil();
 
         emptyContext = new InferenceContext(this, List.nil());
+        dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
     }
 
     /** A value for prototypes that admit any type, including polymorphic ones. */
@@ -133,8 +137,8 @@ public class Infer {
 
         transient List<JCDiagnostic> messages = List.nil();
 
-        InferenceException() {
-            super(null);
+        InferenceException(boolean dumpStacktrace) {
+            super(null, dumpStacktrace);
         }
 
         @Override
@@ -144,7 +148,7 @@ public class Infer {
     }
 
     InferenceException error(JCDiagnostic diag) {
-        InferenceException result = new InferenceException();
+        InferenceException result = new InferenceException(dumpStacktraceOnError);
         if (diag != null) {
             result.messages = result.messages.append(diag);
         }
@@ -1342,19 +1346,14 @@ public class Infer {
          * A NodeNotFoundException is thrown whenever an inference strategy fails
          * to pick the next node to solve in the inference graph.
          */
-        public static class NodeNotFoundException extends RuntimeException {
+        class NodeNotFoundException extends CompilerInternalException {
             private static final long serialVersionUID = 0;
 
             transient InferenceGraph graph;
 
-            public NodeNotFoundException(InferenceGraph graph) {
+            public NodeNotFoundException(InferenceGraph graph, boolean dumpStacktraceOnError) {
+                super(dumpStacktraceOnError);
                 this.graph = graph;
-            }
-
-            @Override
-            public Throwable fillInStackTrace() {
-                // This is an internal exception; the stack trace is irrelevant.
-                return this;
             }
         }
         /**
@@ -1375,7 +1374,7 @@ public class Infer {
         public Node pickNode(InferenceGraph g) {
             if (g.nodes.isEmpty()) {
                 //should not happen
-                throw new NodeNotFoundException(g);
+                throw new NodeNotFoundException(g, Infer.this.dumpStacktraceOnError);
             }
             return g.nodes.get(0);
         }
@@ -1450,7 +1449,7 @@ public class Infer {
             }
             if (bestPath == noPath) {
                 //no path leads there
-                throw new NodeNotFoundException(g);
+                throw new NodeNotFoundException(g, Infer.this.dumpStacktraceOnError);
             }
             return bestPath.fst.head;
         }

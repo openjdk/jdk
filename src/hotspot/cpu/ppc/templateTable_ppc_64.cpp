@@ -2130,8 +2130,8 @@ void TemplateTable::_return(TosState state) {
 
     // Load klass of this obj.
     __ load_klass(Rklass, R17_tos);
-    __ lwz(Rklass_flags, in_bytes(Klass::access_flags_offset()), Rklass);
-    __ testbitdi(CCR0, R0, Rklass_flags, exact_log2(JVM_ACC_HAS_FINALIZER));
+    __ lbz(Rklass_flags, in_bytes(Klass::misc_flags_offset()), Rklass);
+    __ testbitdi(CCR0, R0, Rklass_flags, exact_log2(KlassFlags::_misc_has_finalizer));
     __ bfalse(CCR0, Lskip_register_finalizer);
 
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), R17_tos /* obj */);

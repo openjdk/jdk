@@ -2147,11 +2147,20 @@ public final class LocalDate
      */
     @Override
     public String toString() {
+        var buf = new StringBuilder(10);
+        formatTo(buf);
+        return buf.toString();
+    }
+
+    /**
+     * Prints the toString result to the given buf, avoiding extra string allocations.
+     * Requires extra capacity of 10 to avoid StringBuilder reallocation.
+     */
+    void formatTo(StringBuilder buf) {
         int yearValue = year;
         int monthValue = month;
         int dayValue = day;
         int absYear = Math.abs(yearValue);
-        StringBuilder buf = new StringBuilder(10);
         if (absYear < 1000) {
             if (yearValue < 0) {
                 buf.append('-');
@@ -2164,11 +2173,10 @@ public final class LocalDate
             }
             buf.append(yearValue);
         }
-        return buf.append(monthValue < 10 ? "-0" : "-")
-            .append(monthValue)
-            .append(dayValue < 10 ? "-0" : "-")
-            .append(dayValue)
-            .toString();
+        buf.append(monthValue < 10 ? "-0" : "-")
+           .append(monthValue)
+           .append(dayValue < 10 ? "-0" : "-")
+           .append(dayValue);
     }
 
     //-----------------------------------------------------------------------
