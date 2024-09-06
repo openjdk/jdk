@@ -41,9 +41,6 @@
 #ifndef STATX_BTIME
 #define STATX_BTIME 0x00000800U
 #endif
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif
 #ifndef RTLD_DEFAULT
 #define RTLD_DEFAULT RTLD_LOCAL
 #endif
