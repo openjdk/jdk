@@ -44,7 +44,6 @@ public class Test4887836 {
         // ColorChooser UI design is different for GTK L&F.
         // There is no Swatches tab available for GTK L&F, skip the testing.
         if (UIManager.getLookAndFeel().getName().contains("GTK")) {
-            System.out.println("Test skipped for " + UIManager.getLookAndFeel().getName());
             throw new SkippedException("Test not applicable for GTK L&F");
         }
 

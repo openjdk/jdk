@@ -43,7 +43,6 @@ public class bug4419255 {
         // ColorChooser UI design is different for GTK L&F.
         // There is no RGB tab available for GTK L&F, skip the testing.
         if (UIManager.getLookAndFeel().getName().contains("GTK")) {
-            System.out.println("Test skipped for " + UIManager.getLookAndFeel().getName());
             throw new SkippedException("Test not applicable for GTK L&F");
         }
         String instructions = """
