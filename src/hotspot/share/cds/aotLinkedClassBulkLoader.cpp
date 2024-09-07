@@ -28,28 +28,19 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/cdsProtectionDomain.hpp"
 #include "cds/heapShared.hpp"
-#include "cds/lambdaFormInvokers.inline.hpp"
 #include "classfile/classLoader.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
-#include "compiler/compilationPolicy.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/constantPool.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/javaCalls.hpp"
-#include "runtime/perfData.inline.hpp"
-#include "runtime/timer.hpp"
-#include "services/management.hpp"
+#include "runtime/java.hpp"
 
 void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc, bool is_static_archive) {
   AOTLinkedClassTable::get(is_static_archive)->serialize(soc);
@@ -72,21 +63,33 @@ void AOTLinkedClassBulkLoader::load_app_classes(JavaThread* current) {
 }
 
 void AOTLinkedClassBulkLoader::load_classes_in_loader(JavaThread* current, LoaderKind loader_kind, oop class_loader_oop) {
+  ExceptionMark em(current);
+  ResourceMark rm(current);
+  HandleMark hm(current);
+
+  load_classes_in_loader_impl(loader_kind, class_loader_oop, current);
+  if (current->has_pending_exception()) {
+    // We cannot continue, as we might have loaded some of the aot-linked classes, which
+    // may have dangling C++ pointers to other aot-linked classes that we have failed to load.
+    if (current->pending_exception()->is_a(vmClasses::OutOfMemoryError_klass())) {
+      log_error(cds)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
+                     SIZE_FORMAT "M", MaxHeapSize/M);
+    } else {
+      log_error(cds)("%s: %s", current->pending_exception()->klass()->external_name(),
+                     java_lang_String::as_utf8_string(java_lang_Throwable::message(current->pending_exception())));
+    }
+    vm_exit_during_initialization("Unexpected exception when loading aot-linked classes.");
+  }
+}
+
+void AOTLinkedClassBulkLoader::load_classes_in_loader_impl(LoaderKind loader_kind, oop class_loader_oop, TRAPS) {
   if (!CDSConfig::is_using_aot_linked_classes()) {
     return;
   }
 
-  HandleMark hm(current);
-  ResourceMark rm(current);
-  ExceptionMark em(current);
-
-  Handle h_loader(current, class_loader_oop);
-
-  load_table(AOTLinkedClassTable::for_static_archive(),  loader_kind, h_loader, current);
-  assert(!current->has_pending_exception(), "VM should have exited due to ExceptionMark");
-
-  load_table(AOTLinkedClassTable::for_dynamic_archive(), loader_kind, h_loader, current);
-  assert(!current->has_pending_exception(), "VM should have exited due to ExceptionMark");
+  Handle h_loader(THREAD, class_loader_oop);
+  load_table(AOTLinkedClassTable::for_static_archive(),  loader_kind, h_loader, CHECK);
+  load_table(AOTLinkedClassTable::for_dynamic_archive(), loader_kind, h_loader, CHECK);
 
   if (Universe::is_fully_initialized() && VerifyDuringStartup) {
     // Make sure we're still in a clean slate.
@@ -140,7 +143,7 @@ void AOTLinkedClassBulkLoader::load_classes_impl(LoaderKind loader_kind, Array<I
   for (int i = 0; i < classes->length(); i++) {
     InstanceKlass* ik = classes->at(i);
     if (log_is_enabled(Info, cds, aot, load)) {
-      ResourceMark rm;
+      ResourceMark rm(THREAD);
       log_info(cds, aot, load)("%s %s%s%s", category, ik->external_name(),
                                ik->is_loaded() ? " (already loaded)" : "",
                                ik->is_hidden() ? " (hidden)" : "");
@@ -159,7 +162,7 @@ void AOTLinkedClassBulkLoader::load_classes_impl(LoaderKind loader_kind, Array<I
         }
 
         if (actual != ik) {
-          ResourceMark rm;
+          ResourceMark rm(THREAD);
           log_error(cds)("Unable to resolve %s class from CDS archive: %s", category, ik->external_name());
           log_error(cds)("Expected: " INTPTR_FORMAT ", actual: " INTPTR_FORMAT, p2i(ik), p2i(actual));
           log_error(cds)("JVMTI class retransformation is not supported when archive was generated with -XX:+AOTClassLinking.");
@@ -193,7 +196,7 @@ void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char*
     assert(ik->is_loaded(), "must have already been loaded by a parent loader");
     if (ik->is_public() && !ik->is_hidden()) {
       if (log_is_enabled(Info, cds, aot, load)) {
-        ResourceMark rm;
+        ResourceMark rm(current);
         const char* defining_loader = (ik->class_loader() == nullptr ? "boot" : "plat");
         log_info(cds, aot, load)("%s %s (initiated, defined by %s)", category, ik->external_name(),
                                  defining_loader);

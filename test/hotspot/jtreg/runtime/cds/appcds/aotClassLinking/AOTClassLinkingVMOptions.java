@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,11 @@ public class AOTClassLinkingVMOptions {
         TestCommon.run("-cp", appJar, "-Djdk.module.validation=1", "Hello")
             .assertAbnormalExit("CDS archive has aot-linked classes." +
                                 " It cannot be used when archived full module graph is not used");
+
+        testCase("Cannot use -Djava.system.class.loader");
+        TestCommon.run("-cp", appJar, "-Djava.system.class.loader=dummy", "Hello")
+            .assertAbnormalExit("CDS archive has aot-linked classes." +
+                                " It cannot be used when the java.system.class.loader property is specified.");
 
         // NOTE: tests for ClassFileLoadHook + AOTClassLinking is in
         // ../jvmti/ClassFileLoadHookTest.java
