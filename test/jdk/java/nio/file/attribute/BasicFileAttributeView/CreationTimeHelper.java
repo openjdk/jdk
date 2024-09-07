@@ -44,6 +44,8 @@ public class CreationTimeHelper extends NativeTestHelper {
     // Helper so as to determine 'statx' support on the runtime system
     // static boolean linuxIsCreationTimeSupported(String file);
     static boolean linuxIsCreationTimeSupported(String file) throws Throwable {
+        if (!abi.defaultLookup().find("statx").isPresent())
+            return false;
         try (var arena = Arena.ofConfined()) {
             MemorySegment s = arena.allocateFrom(file);
             return (boolean)methodHandle.invokeExact(s);
