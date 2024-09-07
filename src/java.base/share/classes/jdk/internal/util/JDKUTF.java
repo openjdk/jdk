@@ -57,9 +57,8 @@ public abstract class JDKUTF {
      */
     @ForceInline
     public static int utflen(String str, int countNonZeroAscii) {
-        int strlen = str.length();
-        int utflen = strlen;
-        for (int i = countNonZeroAscii; i < strlen; i++) {
+        int utflen = str.length();
+        for (int i = utflen - 1; i >= countNonZeroAscii; i--) {
             int c = str.charAt(i);
             if (c >= 0x80 || c == 0)
                 utflen += (c >= 0x800) ? 2 : 1;
