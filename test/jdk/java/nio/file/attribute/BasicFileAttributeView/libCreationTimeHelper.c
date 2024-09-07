@@ -115,7 +115,11 @@ EXPORT bool linuxIsCreationTimeSupported(char* file) {
     if (ret != 0) {
         return false;
     }
-    if (stx.stx_mask & STATX_BTIME)
+    // On some systems where statx is available but birth time might still not
+    // be supported as it's file system specific. The only reliable way to
+    // check for supported or not is looking at the filled in STATX_BTIME bit
+    // in the returned statx buffer mask.
+    if ((stx.stx_mask & STATX_BTIME) != 0)
         return true;
     return false;
 #else
