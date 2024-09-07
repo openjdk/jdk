@@ -101,15 +101,23 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     @Override
     public PoolEntry entryByIndex(int index) {
         if (index <= 0 || index >= size()) {
-            throw new ConstantPoolException("Bad CP index: " + index);
+            throw badCP(index);
         }
         PoolEntry pe = (index < parentSize)
                ? parent.entryByIndex(index)
                : myEntries[index - parentSize];
         if (pe == null) {
-            throw new ConstantPoolException("Unusable CP index: " + index);
+            throw unusableCP(index);
         }
         return pe;
+    }
+
+    private static ConstantPoolException badCP(int index) {
+        return new ConstantPoolException("Bad CP index: " + index);
+    }
+
+    private static ConstantPoolException unusableCP(int index) {
+        return new ConstantPoolException("Unusable CP index: " + index);
     }
 
     @Override
