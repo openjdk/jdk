@@ -293,18 +293,8 @@ public final class StackMapGenerator {
     private void generate() {
         exMin = bytecode.length();
         exMax = -1;
-        for (var exhandler : handlers) {
-            int start_pc = labelContext.labelToBci(exhandler.tryStart());
-            int end_pc = labelContext.labelToBci(exhandler.tryEnd());
-            int handler_pc = labelContext.labelToBci(exhandler.handler());
-            if (start_pc >= 0 && end_pc >= 0 && end_pc > start_pc && handler_pc >= 0) {
-                if (start_pc < exMin) exMin = start_pc;
-                if (end_pc > exMax) exMax = end_pc;
-                var catchType = exhandler.catchType();
-                rawHandlers.add(new RawExceptionCatch(start_pc, end_pc, handler_pc,
-                        catchType.isPresent() ? cpIndexToType(catchType.get().index(), cp)
-                                              : Type.THROWABLE_TYPE));
-            }
+        if (!handlers.isEmpty()) {
+            generateHandlers();
         }
         BitSet frameOffsets = detectFrameOffsets();
         int framesCount = frameOffsets.cardinality();
@@ -335,6 +325,22 @@ public final class StackMapGenerator {
                 arr[end] = (byte) ATHROW;
                 //patch handlers
                 removeRangeFromExcTable(frame.offset, end + 1);
+            }
+        }
+    }
+
+    private void generateHandlers() {
+        for (var exhandler : handlers) {
+            int start_pc = labelContext.labelToBci(exhandler.tryStart());
+            int end_pc = labelContext.labelToBci(exhandler.tryEnd());
+            int handler_pc = labelContext.labelToBci(exhandler.handler());
+            if (start_pc >= 0 && end_pc >= 0 && end_pc > start_pc && handler_pc >= 0) {
+                if (start_pc < exMin) exMin = start_pc;
+                if (end_pc > exMax) exMax = end_pc;
+                var catchType = exhandler.catchType();
+                rawHandlers.add(new RawExceptionCatch(start_pc, end_pc, handler_pc,
+                        catchType.isPresent() ? cpIndexToType(catchType.get().index(), cp)
+                                              : Type.THROWABLE_TYPE));
             }
         }
     }
