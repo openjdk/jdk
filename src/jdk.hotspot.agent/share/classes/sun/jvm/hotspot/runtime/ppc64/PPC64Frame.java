@@ -323,7 +323,8 @@ public class PPC64Frame extends Frame {
     }
 
     var lastJavaFP = stub.getLastJavaFP(this); // This will be null
-    var lastJavaSP = stub.getLastJavaSP(this);                              var lastJavaPC = stub.getLastJavaPC(this);
+    var lastJavaSP = stub.getLastJavaSP(this);
+    var lastJavaPC = stub.getLastJavaPC(this);
 
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(lastJavaSP.greaterThan(getSP()), "must be above this frame on stack");
