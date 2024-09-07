@@ -1548,17 +1548,6 @@ class MutableBigInteger {
         }
     }
 
-    private static void copyAndShift(int[] src, int srcFrom, int srcLen, int[] dst, int dstFrom, int shift) {
-        int n2 = 32 - shift;
-        int c=src[srcFrom];
-        for (int i=0; i < srcLen-1; i++) {
-            int b = c;
-            c = src[++srcFrom];
-            dst[dstFrom+i] = (b << shift) | (c >>> n2);
-        }
-        dst[dstFrom+srcLen-1] = c << shift;
-    }
-
     /**
      * Divide this MutableBigInteger by the divisor.
      * The quotient will be placed into the provided quotient object &
@@ -1576,13 +1565,13 @@ class MutableBigInteger {
         MutableBigInteger rem; // Remainder starts as dividend with space for a leading zero
         if (shift > 0) {
             divisor = new int[dlen];
-            copyAndShift(div.value,div.offset,dlen,divisor,0,shift);
+            div.primitiveLeftShift(shift, divisor, 0);
             if (Integer.numberOfLeadingZeros(value[offset]) >= shift) {
                 int[] remarr = new int[intLen + 1];
                 rem = new MutableBigInteger(remarr);
                 rem.intLen = intLen;
                 rem.offset = 1;
-                copyAndShift(value,offset,intLen,remarr,1,shift);
+                this.primitiveLeftShift(shift, remarr, 1);
             } else {
                 int[] remarr = new int[intLen + 2];
                 rem = new MutableBigInteger(remarr);
