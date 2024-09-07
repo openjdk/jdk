@@ -29,6 +29,7 @@ package java.io;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArray;
+import jdk.internal.util.JDKUTF;
 
 /**
  * A data output stream lets an application write primitive Java data
@@ -361,7 +362,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
     static int writeUTF(String str, DataOutput out) throws IOException {
         final int strlen = str.length();
         int countNonZeroAscii = JLA.countNonZeroAscii(str);
-        int utflen = utflen(str, countNonZeroAscii);
+        int utflen = JDKUTF.utflen(str, countNonZeroAscii);
 
         if (utflen > 65535 || /* overflow */ utflen < strlen)
             throw new UTFDataFormatException(tooLongMsg(str, utflen));
@@ -381,34 +382,11 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
         str.getBytes(0, countNonZeroAscii, bytearr, count);
         count += countNonZeroAscii;
 
-        for (int i = countNonZeroAscii; i < strlen; i++) {
-            int c = str.charAt(i);
-            if (c < 0x80 && c != 0) {
-                bytearr[count++] = (byte) c;
-            } else if (c >= 0x800) {
-                bytearr[count    ] = (byte) (0xE0 | ((c >> 12) & 0x0F));
-                bytearr[count + 1] = (byte) (0x80 | ((c >> 6 ) & 0x3F));
-                bytearr[count + 2] = (byte) (0x80 | ( c        & 0x3F));
-                count += 3;
-            } else {
-                bytearr[count    ] = (byte) (0xC0 | ((c >>  6) & 0x1F));
-                bytearr[count + 1] = (byte) (0x80 | ( c        & 0x3F));
-                count += 2;
-            }
+        for (int i = countNonZeroAscii; i < strlen;) {
+            count = JDKUTF.putChar(bytearr, count, str.charAt(i++));
         }
         out.write(bytearr, 0, utflen + 2);
         return utflen + 2;
-    }
-
-    static int utflen(String str, int countNonZeroAscii) {
-        int strlen = str.length();
-        int utflen = strlen;
-        for (int i = countNonZeroAscii; i < strlen; i++) {
-            int c = str.charAt(i);
-            if (c >= 0x80 || c == 0)
-                utflen += (c >= 0x800) ? 2 : 1;
-        }
-        return utflen;
     }
 
     private static String tooLongMsg(String s, int bits32) {

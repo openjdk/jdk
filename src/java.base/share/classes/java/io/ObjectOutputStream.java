@@ -37,9 +37,8 @@ import java.util.StringJoiner;
 import jdk.internal.util.ByteArray;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.JDKUTF;
 import sun.reflect.misc.ReflectUtil;
-
-import static java.io.DataOutputStream.utflen;
 
 /**
  * An ObjectOutputStream writes primitive data types and graphs of Java objects
@@ -2014,25 +2013,14 @@ public class ObjectOutputStream
 
         void writeUTF(String str, int stroff) throws IOException {
             int pos = this.pos;
-            for (int strlen = str.length(); stroff < strlen; stroff++) {
-                char c = str.charAt(stroff);
+            for (int strlen = str.length(); stroff < strlen;) {
+                char c = str.charAt(stroff++);
                 int csize = c != 0 && c < 0x80 ? 1 : c >= 0x800 ? 3 : 2;
                 if (pos + csize >= MAX_BLOCK_SIZE) {
                     drain();
                     pos = 0;
                 }
-                if (c < 0x80 && c != 0) {
-                    buf[pos++] = (byte) c;
-                } else if (c >= 0x800) {
-                    buf[pos + 2] = (byte) (0x80 | ( c        & 0x3F));
-                    buf[pos + 1] = (byte) (0x80 | ((c >> 6 ) & 0x3F));
-                    buf[pos    ] = (byte) (0xE0 | ((c >> 12) & 0x0F));
-                    pos += 3;
-                } else {
-                    buf[pos + 1] = (byte) (0x80 | ( c       & 0x3F));
-                    buf[pos    ] = (byte) (0xC0 | ((c >> 6) & 0x1F));
-                    pos += 2;
-                }
+                pos = JDKUTF.putChar(buf, pos, c);
             }
             this.pos = pos;
         }
@@ -2058,7 +2046,7 @@ public class ObjectOutputStream
         void writeUTFInternal(String str, boolean writeHeader) throws IOException {
             int strlen = str.length();
             int countNonZeroAscii = JLA.countNonZeroAscii(str);
-            int utflen = utflen(str, countNonZeroAscii);
+            int utflen = JDKUTF.utflen(str, countNonZeroAscii);
             if (utflen <= 0xFFFF) {
                 if(writeHeader) {
                     writeByte(TC_STRING);
