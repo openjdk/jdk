@@ -1633,6 +1633,7 @@ void Assembler::andb(Address dst, Register src) {
 }
 
 void Assembler::andw(Register dst, Register src) {
+  emit_int8(0x66);
   (void)prefix_and_encode(dst->encoding(), src->encoding());
   emit_arith(0x23, 0xC0, dst, src);
 }
@@ -4230,6 +4231,7 @@ void Assembler::notl(Register dst) {
 }
 
 void Assembler::orw(Register dst, Register src) {
+  emit_int8(0x66);
   (void)prefix_and_encode(dst->encoding(), src->encoding());
   emit_arith(0x0B, 0xC0, dst, src);
 }
@@ -6803,6 +6805,7 @@ void Assembler::xorb(Address dst, Register src) {
 }
 
 void Assembler::xorw(Register dst, Register src) {
+  emit_int8(0x66);
   (void)prefix_and_encode(dst->encoding(), src->encoding());
   emit_arith(0x33, 0xC0, dst, src);
 }
