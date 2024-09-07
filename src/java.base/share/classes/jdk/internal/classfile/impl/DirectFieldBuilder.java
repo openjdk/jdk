@@ -44,12 +44,13 @@ public final class DirectFieldBuilder
                               ClassFileImpl context,
                               Utf8Entry name,
                               Utf8Entry type,
+                              int flags,
                               FieldModel original) {
         super(constantPool, context);
         setOriginal(original);
         this.name = name;
         this.desc = type;
-        this.flags = 0;
+        this.flags = flags;
     }
 
     @Override
