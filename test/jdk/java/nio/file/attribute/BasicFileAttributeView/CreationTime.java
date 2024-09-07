@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024 Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +52,6 @@ import jtreg.SkippedException;
 
 public class CreationTime {
 
-    private static final java.io.PrintStream err = System.err;
-
     /**
      * Reads the creationTime attribute
      */
@@ -79,13 +78,8 @@ public class CreationTime {
         Instant now = Instant.now();
         if (Math.abs(creationTime.toMillis()-now.toEpochMilli()) > 10000L) {
             System.out.println("creationTime.toMillis() == " + creationTime.toMillis());
-            // If the file system doesn't support birth time, then skip this test
-            if (creationTime.toMillis() == 0) {
-                throw new SkippedException("birth time not supported for: " + file);
-            } else {
-                err.println("File creation time reported as: " + creationTime);
-                throw new RuntimeException("Expected to be close to: " + now);
-            }
+            System.err.println("File creation time reported as: " + creationTime);
+            throw new RuntimeException("Expected to be close to: " + now);
         }
 
         /**
