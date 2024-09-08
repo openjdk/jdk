@@ -68,6 +68,12 @@ public final class DirectFieldBuilder
         return this;
     }
 
+    @Override
+    public FieldBuilder withFlags(int flags) {
+        setFlags(flags);
+        return this;
+    }
+
     void setFlags(int flags) {
         this.flags = flags;
     }
