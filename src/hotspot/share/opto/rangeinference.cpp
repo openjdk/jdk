@@ -235,7 +235,7 @@ adjust_bits_from_bounds(const KnownBits<U>& bits, const RangeInt<U>& bounds) {
                                : ~(std::numeric_limits<U>::max() >> count_leading_zeros(mismatch));
   // match_mask & bounds._lo is the common prefix, extract zeros and ones from
   // it
-  U new_zeros = bits._zeros | (match_mask &~ bounds._lo);
+  U new_zeros = bits._zeros | (match_mask & ~bounds._lo);
   U new_ones = bits._ones | (match_mask & bounds._lo);
   bool progress = (new_zeros != bits._zeros) || (new_ones != bits._ones);
   bool present = ((new_zeros & new_ones) == 0);

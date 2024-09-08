@@ -42,7 +42,7 @@ public:
 
 /**
  * Bits that are known to be 0 or 1. A value v satisfies this constraint iff
- * (v & zeros) == 0 && (~v & ones) == 0. I.e, all bits that is set in zeros
+ * (v & zeros) == 0 && (v & ones) == ones. I.e, all bits that is set in zeros
  * must be unset in v, and all bits that is set in ones must be set in v.
  *
  * E.g:
@@ -51,6 +51,9 @@ public:
  * Then:  10001010 would satisfy the bit constraints
  * while: 10011000 would not since the bit at the 4th position violates
  * zeros and the bit at the 7th position violates ones
+ *
+ * A KnownBits is sane if there is no position at which a bit must be both set
+ * and unset at the same time. That is (zeros & ones) == 0.
  */
 template <class U>
 class KnownBits {
@@ -61,7 +64,7 @@ public:
   U _ones;
 
   bool is_satisfied_by(U v) const {
-    return (v & _zeros) == 0 && (~v & _ones) == 0;
+    return (v & _zeros) == 0 && (v & _ones) == _ones;
   }
 };
 
