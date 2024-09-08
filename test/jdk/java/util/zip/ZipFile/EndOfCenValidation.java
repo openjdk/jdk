@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public class EndOfCenValidation {
     private static final int ENDSIZ = ZipFile.ENDSIZ; // Offset of CEN size field within ENDHDR
     private static final int ENDOFF = ZipFile.ENDOFF; // Offset of CEN offset field within ENDHDR
     // Maximum allowed CEN size allowed by ZipFile
-    private static int MAX_CEN_SIZE = Integer.MAX_VALUE - ENDHDR - 1;
+    private static int MAX_CEN_SIZE = Integer.MAX_VALUE - 2;
 
     // Expected message when CEN size does not match file size
     private static final String INVALID_CEN_BAD_SIZE = "invalid END header (bad central directory size)";
