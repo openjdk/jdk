@@ -28,22 +28,23 @@
  * @requires vm.continuations
  * @modules jdk.management
  * @library /test/lib
- * @run junit/othervm --enable-native-access=ALL-UNNAMED VirtualThreadSchedulerMXBeanTest
+ * @run junit/othervm VirtualThreadSchedulerMXBeanTest
  */
 
 import java.lang.management.ManagementFactory;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
+import java.util.stream.IntStream;
 import javax.management.MBeanServer;
 import jdk.management.VirtualThreadSchedulerMXBean;
 
 import jdk.test.lib.thread.VThreadRunner;
-import jdk.test.lib.thread.VThreadPinner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 
 class VirtualThreadSchedulerMXBeanTest {
 
@@ -62,19 +63,107 @@ class VirtualThreadSchedulerMXBeanTest {
     }
 
     /**
-     * Test parallelism.
+     * Test default parallelism.
      */
     @ParameterizedTest
     @MethodSource("managedBeans")
-    void testParallelism(VirtualThreadSchedulerMXBean bean) {
-        int parallelism = bean.getParallelism();
-        assertTrue(parallelism > 0);
-        bean.setParallelism(parallelism + 1);
-        try {
-            assertEquals(parallelism + 1, bean.getParallelism());
+    void testDefaultParallelism(VirtualThreadSchedulerMXBean bean) {
+        assertEquals(Runtime.getRuntime().availableProcessors(), bean.getParallelism());
+    }
+
+    /**
+     * Test increasing parallelism.
+     */
+    @ParameterizedTest
+    @MethodSource("managedBeans")
+    void testIncreaseParallelism(VirtualThreadSchedulerMXBean bean) throws Exception {
+        assumeFalse(Thread.currentThread().isVirtual(), "Main thread is a virtual thread");
+
+        final int parallelism = bean.getParallelism();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var done = new AtomicBoolean();
+            Runnable busyTask = () -> {
+                while (!done.get()) {
+                    Thread.onSpinWait();
+                }
+            };
+
+            try {
+                // saturate
+                IntStream.range(0, parallelism).forEach(_ -> executor.submit(busyTask));
+                awaitPoolSizeGte(bean, parallelism);
+                awaitMountedVirtualThreadCountGte(bean, parallelism);
+
+                // increase parallelism
+                for (int k = 1; k <= 4; k++) {
+                    int newParallelism = parallelism + k;
+                    bean.setParallelism(newParallelism);
+                    executor.submit(busyTask);
+
+                    // pool size and mounted virtual thread should increase
+                    awaitPoolSizeGte(bean, newParallelism);
+                    awaitMountedVirtualThreadCountGte(bean, newParallelism);
+                }
+            } finally {
+                done.set(true);
+            }
         } finally {
-            // restore
-            bean.setParallelism(parallelism);
+            bean.setParallelism(parallelism);   // restore
+        }
+    }
+
+    /**
+     * Test reducing parallelism.
+     */
+    @ParameterizedTest
+    @MethodSource("managedBeans")
+    void testReduceParallelism(VirtualThreadSchedulerMXBean bean) throws Exception {
+        assumeFalse(Thread.currentThread().isVirtual(), "Main thread is a virtual thread");
+
+        final int parallelism = bean.getParallelism();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var done = new AtomicBoolean();
+            var sleep = new AtomicBoolean();
+
+            // spin when !sleep
+            Runnable busyTask = () -> {
+                while (!done.get()) {
+                    if (sleep.get()) {
+                        try {
+                            Thread.sleep(10);
+                        } catch (InterruptedException e) { }
+                    } else {
+                        Thread.onSpinWait();
+                    }
+                }
+            };
+
+            try {
+                // increase parallelism + saturate
+                int newParallelism = parallelism + 4;
+                bean.setParallelism(newParallelism);
+                IntStream.range(0, newParallelism).forEach(_ -> executor.submit(busyTask));
+                awaitMountedVirtualThreadCountGte(bean, newParallelism);
+
+                // reduce parallelism and workload
+                newParallelism = Math.clamp(parallelism / 2, 1, parallelism);
+                bean.setParallelism(newParallelism);
+                sleep.set(true);
+                // mounted virtual thread count should reduce
+                awaitMountedVirtualThreadCountLte(bean, newParallelism);
+
+                // increase workload, the mounted virtual thread count should not increase
+                sleep.set(false);
+                for (int i = 0; i < 5; i++) {
+                    Thread.sleep(100);
+                    assertTrue(bean.getMountedVirtualThreadCount() <= newParallelism);
+                }
+
+            } finally {
+                done.set(true);
+            }
+        } finally {
+            bean.setParallelism(parallelism);  // restore
         }
     }
 
@@ -84,9 +173,10 @@ class VirtualThreadSchedulerMXBeanTest {
     @ParameterizedTest
     @MethodSource("managedBeans")
     void testPoolSize(VirtualThreadSchedulerMXBean bean) {
-        // run test in virtual thread
+        assertTrue(bean.getPoolSize() >= 0);
         VThreadRunner.run(() -> {
-            assertTrue(bean.getPoolSize() > 0);
+            assertTrue(Thread.currentThread().isVirtual());
+            assertTrue(bean.getPoolSize() >= 1);
         });
     }
 
@@ -96,9 +186,10 @@ class VirtualThreadSchedulerMXBeanTest {
     @ParameterizedTest
     @MethodSource("managedBeans")
     void testMountedVirtualThreadCount(VirtualThreadSchedulerMXBean bean) {
-        // run test in virtual thread
+        assertTrue(bean.getMountedVirtualThreadCount() >= 0);
         VThreadRunner.run(() -> {
-            assertTrue(bean.getMountedVirtualThreadCount() > 0);
+            assertTrue(Thread.currentThread().isVirtual());
+            assertTrue(bean.getMountedVirtualThreadCount() >= 1);
         });
     }
 
@@ -108,37 +199,62 @@ class VirtualThreadSchedulerMXBeanTest {
     @ParameterizedTest
     @MethodSource("managedBeans")
     void testQueuedVirtualThreadCount(VirtualThreadSchedulerMXBean bean) throws Exception {
-        // skip if virtual thread
-        if (Thread.currentThread().isVirtual()) {
-            return;
-        }
-        int parallelism = bean.getParallelism();
+        assumeFalse(Thread.currentThread().isVirtual(), "Main thread is a virtual thread");
+
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            var ready = new CountDownLatch(parallelism);
-            var done = new CountDownLatch(1);
-            try {
-
-                // start virtual threads to pin all carriers
-                for (int i = 0; i < parallelism; i++) {
-                    executor.submit(() -> {
-                        VThreadPinner.runPinned(() -> {
-                            ready.countDown();
-                            done.await();
-                        });
-                        return null;
-                    });
+            var done = new AtomicBoolean();
+            Runnable busyTask = () -> {
+                while (!done.get()) {
+                    Thread.onSpinWait();
                 }
-                ready.await();
+            };
 
-                // start 5 virtual threads, their tasks will be queued to exeucte
+            try {
+                // saturate
+                int parallelism = bean.getParallelism();
+                IntStream.range(0, parallelism).forEach(_ -> executor.submit(busyTask));
+                awaitMountedVirtualThreadCountGte(bean, parallelism);
+
+                // start 5 virtual threads, their tasks will be queued to execute
                 for (int i = 0; i < 5; i++) {
-                    Thread.startVirtualThread(() -> { });
+                    executor.submit(() -> { });
                 }
                 assertTrue(bean.getQueuedVirtualThreadCount() >= 5);
-
             } finally {
-                done.countDown();
+                done.set(true);
             }
+        }
+    }
+
+    /**
+     * Waits for pool size >= target to be true.
+     */
+    void awaitPoolSizeGte(VirtualThreadSchedulerMXBean bean, int target) throws InterruptedException {
+        System.err.format("await pool size >= %d ...%n", target);
+        while (bean.getPoolSize() < target) {
+            Thread.sleep(10);
+        }
+    }
+
+    /**
+     * Waits for the mounted virtual thread count >= target to be true.
+     */
+    void awaitMountedVirtualThreadCountGte(VirtualThreadSchedulerMXBean bean,
+                                           int target) throws InterruptedException {
+        System.err.format("await mounted virtual thread count >= %d ...%n", target);
+        while (bean.getMountedVirtualThreadCount() < target) {
+            Thread.sleep(10);
+        }
+    }
+
+    /**
+     * Waits for the mounted virtual thread count <= target to be true.
+     */
+    void awaitMountedVirtualThreadCountLte(VirtualThreadSchedulerMXBean bean,
+                                           int target) throws InterruptedException {
+        System.err.format("await mounted virtual thread count <= %d ...%n", target);
+        while (bean.getMountedVirtualThreadCount() > target) {
+            Thread.sleep(10);
         }
     }
 }
