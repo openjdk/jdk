@@ -26,6 +26,7 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -107,6 +108,13 @@ public final class DirectClassBuilder
     }
 
     @Override
+    public ClassBuilder withMethod(String name, MethodTypeDesc descriptor, int flags, Consumer<? super MethodBuilder> handler) {
+        var method = new DirectMethodBuilder(constantPool, context, constantPool.utf8Entry(name), constantPool.utf8Entry(descriptor), flags, null);
+        method.mDesc = descriptor;
+        return withMethod(method.run(handler));
+    }
+
+    @Override
     public ClassBuilder transformMethod(MethodModel method, MethodTransform transform) {
         DirectMethodBuilder builder = new DirectMethodBuilder(constantPool, context, method.methodName(),
                                                               method.methodType(),
@@ -184,7 +192,7 @@ public final class DirectClassBuilder
         boolean written = constantPool.writeBootstrapMethods(tail);
         if (written) {
             // Update attributes count
-            tail.patchInt(attributesOffset, 2, attributes.size() + 1);
+            tail.patchU2(attributesOffset, attributes.size() + 1);
         }
 
         // Now we can make the head

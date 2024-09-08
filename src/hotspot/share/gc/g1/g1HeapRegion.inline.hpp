@@ -511,4 +511,12 @@ inline void G1HeapRegion::add_pinned_object_count(size_t value) {
   Atomic::add(&_pinned_object_count, value, memory_order_relaxed);
 }
 
+inline void G1HeapRegion::install_group_cardset(G1CardSet* group_cardset) {
+  _rem_set->install_group_cardset(group_cardset);
+}
+
+inline void G1HeapRegion::uninstall_group_cardset() {
+  _rem_set->uninstall_group_cardset();
+}
+
 #endif // SHARE_GC_G1_G1HEAPREGION_INLINE_HPP

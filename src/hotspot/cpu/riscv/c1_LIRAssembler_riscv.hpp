@@ -62,8 +62,6 @@ private:
   void caswu(Register addr, Register newval, Register cmpval);
   void casl(Register addr, Register newval, Register cmpval);
 
-  void poll_for_safepoint(relocInfo::relocType rtype, CodeEmitInfo* info = nullptr);
-
   void deoptimize_trap(CodeEmitInfo *info);
 
   enum {

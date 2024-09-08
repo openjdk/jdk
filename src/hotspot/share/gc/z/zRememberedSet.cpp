@@ -78,8 +78,8 @@ bool ZRememberedSet::is_cleared_previous() const {
 }
 
 void ZRememberedSet::clear_all() {
-  clear_current();
-  clear_previous();
+  _bitmap[0].clear_large();
+  _bitmap[1].clear_large();
 }
 
 void ZRememberedSet::clear_current() {

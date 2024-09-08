@@ -268,7 +268,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- core_region_alignment:          " SIZE_FORMAT, _core_region_alignment);
   st->print_cr("- obj_alignment:                  %d", _obj_alignment);
   st->print_cr("- narrow_oop_base:                " INTPTR_FORMAT, p2i(_narrow_oop_base));
-  st->print_cr("- narrow_oop_base:                " INTPTR_FORMAT, p2i(_narrow_oop_base));
   st->print_cr("- narrow_oop_shift                %d", _narrow_oop_shift);
   st->print_cr("- compact_strings:                %d", _compact_strings);
   st->print_cr("- max_heap_size:                  " UINTX_FORMAT, _max_heap_size);
@@ -2025,7 +2024,7 @@ void FileMapInfo::map_or_load_heap_region() {
         // TODO - remove implicit knowledge of G1
         log_info(cds)("Cannot use CDS heap data. UseG1GC is required for -XX:-UseCompressedOops");
       } else {
-        log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC or UseParallelGC are required.");
+        log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC, UseParallelGC, or UseShenandoahGC are required.");
       }
     }
   }

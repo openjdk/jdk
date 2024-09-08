@@ -65,7 +65,7 @@ void Klass::set_java_mirror(Handle m) {
 }
 
 bool Klass::is_cloneable() const {
-  return _access_flags.is_cloneable_fast() ||
+  return _misc_flags.is_cloneable_fast() ||
          is_subtype_of(vmClasses::Cloneable_klass());
 }
 
@@ -76,7 +76,7 @@ void Klass::set_is_cloneable() {
   } else if (is_instance_klass() && InstanceKlass::cast(this)->reference_type() != REF_NONE) {
     // Reference cloning should not be intrinsified and always happen in JVM_Clone.
   } else {
-    _access_flags.set_is_cloneable_fast();
+    _misc_flags.set_is_cloneable_fast(true);
   }
 }
 
@@ -975,6 +975,7 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
   // print class
   st->print(BULLET"klass: ");
   obj->klass()->print_value_on(st);
+  st->print(BULLET"flags: "); _misc_flags.print_on(st); st->cr();
   st->cr();
 }
 
