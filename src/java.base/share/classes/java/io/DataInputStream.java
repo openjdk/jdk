@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +26,11 @@
 
 package java.io;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArray;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /**
@@ -45,6 +49,7 @@ import java.util.Objects;
  * @since   1.0
  */
 public class DataInputStream extends FilterInputStream implements DataInput {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
     private static final char[] EMPTY_CHAR_ARRAY = new char[0];
@@ -592,12 +597,15 @@ loop:   while (true) {
         int chararr_count=0;
 
         in.readFully(bytearr, 0, utflen);
+        int ascii = JLA.countPositives(bytearr, 0, utflen);
+        if (ascii == utflen) {
+            return new String(bytearr, 0, utflen, StandardCharsets.ISO_8859_1);
+        }
 
-        while (count < utflen) {
-            c = (int) bytearr[count] & 0xff;
-            if (c > 127) break;
-            count++;
-            chararr[chararr_count++]=(char)c;
+        if (ascii != 0) {
+            JLA.inflateBytesToChars(bytearr, 0, chararr, 0, ascii);
+            count += ascii;
+            chararr_count += ascii;
         }
 
         while (count < utflen) {
