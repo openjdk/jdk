@@ -515,7 +515,7 @@ public final class StringConcatFactory {
             mh = simpleConcat3(paramType0);
             mh = MethodHandles.insertArguments(mh, 2, suffix);
             return MethodHandles.insertArguments(mh, 0, prefix);
-        } else if (paramCount == 2 && constants[1] == null) {
+        } else if (paramCount == 2 && constants[1].isEmpty()) {
             var paramType1 = mt.parameterType(1);
             // Two reference arguments, no surrounding constants
             if (!mt.hasPrimitives() && suffix.isEmpty() && prefix.isEmpty()) {
