@@ -94,6 +94,7 @@ public final class TestDisposerRace {
                         Thread.sleep(1); // Give GC a little chance to run
                         break;
                     } catch (OutOfMemoryError | InterruptedException ignored2) {
+                        System.gc(); // If we can't even sleep, ask the GC for assistance
                         continue;
                     }
                 }
@@ -112,6 +113,7 @@ public final class TestDisposerRace {
                         Thread.sleep(1); // Give GC a little chance to run
                         break;
                     } catch (OutOfMemoryError | InterruptedException ignored2) {
+                        System.gc(); // If we can't even sleep, ask the GC for assistance
                         continue;
                     }
                 }
@@ -150,6 +152,7 @@ public final class TestDisposerRace {
                 Thread.sleep(2000); // Give GC a little chance to run
                 break;
             } catch (OutOfMemoryError | InterruptedException ignored2) {
+                System.gc(); // If we can't even sleep, ask the GC for assistance
                 continue;
             }
         }
