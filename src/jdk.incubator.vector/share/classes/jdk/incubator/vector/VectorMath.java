@@ -26,16 +26,16 @@ package jdk.incubator.vector;
 
 
 /**
- * Following class declares utility routines used in the fallback implementation
- * various vector APIs.
+ * The class {@code VectorMath} contains methods for performing
+ * scalar numeric operations in support of vector numeric operations.
  *
  */
-public class VectorMathUtils {
+public class VectorMath {
 
    /**
     * Default Constructor definition.
     */
-    private VectorMathUtils() {
+    private VectorMath() {
     }
 
     /**
@@ -47,7 +47,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static long maxUnsigned(long a, long b) {
+    public static long maxUnsigned(long a, long b) {
         return Long.compareUnsigned(a, b) > 0 ? a : b;
     }
 
@@ -60,7 +60,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static long minUnsigned(long a, long b) {
+    public static long minUnsigned(long a, long b) {
         return Long.compareUnsigned(a, b) < 0 ? a : b;
     }
 
@@ -75,7 +75,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static long addSaturating(long a, long b) {
+    public static long addSaturating(long a, long b) {
         long res = a + b;
         // HD 2-12 Overflow iff both arguments have the opposite sign of the result
         if (((a ^ res) & (b ^ res)) < 0) {
@@ -96,7 +96,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static long subSaturating(long a, long b) {
+    public static long subSaturating(long a, long b) {
         long res = a - b;
         // HD 2-12 Overflow iff the arguments have different signs and
         // the sign of the result is different from the sign of a
@@ -117,7 +117,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static long addSaturatingUnsigned(long a, long b) {
+    public static long addSaturatingUnsigned(long a, long b) {
         long res = a + b;
         boolean overflow = Long.compareUnsigned(res, (a | b)) < 0;
         if (overflow) {
@@ -137,7 +137,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static long subSaturatingUnsigned(long a, long b) {
+    public static long subSaturatingUnsigned(long a, long b) {
         if (Long.compareUnsigned(b, a) < 0) {
            return a - b;
         } else {
@@ -154,7 +154,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static int maxUnsigned(int a, int b) {
+    public static int maxUnsigned(int a, int b) {
         return Integer.compareUnsigned(a, b) > 0 ? a : b;
     }
 
@@ -167,7 +167,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static int minUnsigned(int a, int b) {
+    public static int minUnsigned(int a, int b) {
         return Integer.compareUnsigned(a, b) < 0 ? a : b;
     }
 
@@ -183,7 +183,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static int addSaturating(int a, int b) {
+    public static int addSaturating(int a, int b) {
         long res = (long)a + (long)b;
         if (res > Integer.MAX_VALUE) {
             return Integer.MAX_VALUE;
@@ -205,7 +205,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static int subSaturating(int a, int b) {
+    public static int subSaturating(int a, int b) {
         long res = (long)a - (long)b;
         if (res > Integer.MAX_VALUE) {
             return Integer.MAX_VALUE;
@@ -226,7 +226,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static int addSaturatingUnsigned(int a, int b) {
+    public static int addSaturatingUnsigned(int a, int b) {
         int res = a + b;
         boolean overflow = Integer.compareUnsigned(res, (a | b)) < 0;
         if (overflow)  {
@@ -246,7 +246,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static short maxUnsigned(short a, short b) {
+    public static short maxUnsigned(short a, short b) {
         return Short.compareUnsigned(a, b) > 0 ? a : b;
     }
 
@@ -259,7 +259,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static short minUnsigned(short a, short b) {
+    public static short minUnsigned(short a, short b) {
         return Short.compareUnsigned(a, b) < 0 ? a : b;
     }
 
@@ -274,7 +274,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static short addSaturating(short a, short b) {
+    public static short addSaturating(short a, short b) {
         int res = a + b;
         if (res > Short.MAX_VALUE) {
             return Short.MAX_VALUE;
@@ -296,7 +296,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static short subSaturating(short a, short b) {
+    public static short subSaturating(short a, short b) {
         int res = a - b;
         if (res > Short.MAX_VALUE) {
             return Short.MAX_VALUE;
@@ -317,7 +317,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static short addSaturatingUnsigned(short a, short b) {
+    public static short addSaturatingUnsigned(short a, short b) {
         short res = (short)(a + b);
         boolean overflow = Short.compareUnsigned(res, (short)(a | b)) < 0;
         if (overflow) {
@@ -338,7 +338,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static short subSaturatingUnsigned(short a, short b) {
+    public static short subSaturatingUnsigned(short a, short b) {
         if (Short.compareUnsigned(b, a) < 0) {
             return (short)(a - b);
         } else {
@@ -355,7 +355,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static byte maxUnsigned(byte a, byte b) {
+    public static byte maxUnsigned(byte a, byte b) {
         return Byte.compareUnsigned(a, b) > 0 ? a : b;
     }
 
@@ -368,7 +368,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static byte minUnsigned(byte a, byte b) {
+    public static byte minUnsigned(byte a, byte b) {
         return Byte.compareUnsigned(a, b) < 0 ? a : b;
     }
 
@@ -383,7 +383,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static byte addSaturating(byte a, byte b) {
+    public static byte addSaturating(byte a, byte b) {
         int res = a + b;
         if (res > Byte.MAX_VALUE) {
             return Byte.MAX_VALUE;
@@ -405,7 +405,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static byte subSaturating(byte a, byte b) {
+    public static byte subSaturating(byte a, byte b) {
         int res = a - b;
         if (res > Byte.MAX_VALUE) {
             return Byte.MAX_VALUE;
@@ -426,7 +426,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    static byte addSaturatingUnsigned(byte a, byte b) {
+    public static byte addSaturatingUnsigned(byte a, byte b) {
         byte res = (byte)(a + b);
         boolean overflow = Byte.compareUnsigned(res, (byte)(a | b)) < 0;
         if (overflow) {
@@ -446,7 +446,7 @@ public class VectorMathUtils {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-   static byte subSaturatingUnsigned(byte a, byte b) {
+   public static byte subSaturatingUnsigned(byte a, byte b) {
         if (Byte.compareUnsigned(b, a) < 0) {
             return (byte)(a - b);
         } else {

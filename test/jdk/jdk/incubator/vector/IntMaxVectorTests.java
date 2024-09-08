@@ -38,7 +38,7 @@ import jdk.incubator.vector.VectorShuffle;
 import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.Vector;
-import jdk.incubator.vector.VectorMathUtils;
+import jdk.incubator.vector.VectorMath;
 
 import jdk.incubator.vector.IntVector;
 
@@ -3022,7 +3022,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
     }
 
     static int UMIN(int a, int b) {
-        return (int)(VectorMathUtils.minUnsigned(a, b));
+        return (int)(VectorMath.minUnsigned(a, b));
     }
 
     @Test(dataProvider = "intBinaryOpProvider")
@@ -3063,7 +3063,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
     }
 
     static int UMAX(int a, int b) {
-        return (int)(VectorMathUtils.maxUnsigned(a, b));
+        return (int)(VectorMath.maxUnsigned(a, b));
     }
 
     @Test(dataProvider = "intBinaryOpProvider")
@@ -3104,7 +3104,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
     }
 
     static int SADD(int a, int b) {
-        return (int)(VectorMathUtils.addSaturating(a, b));
+        return (int)(VectorMath.addSaturating(a, b));
     }
 
     @Test(dataProvider = "intSaturatingBinaryOpProvider")
@@ -3145,7 +3145,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
     }
 
     static int SSUB(int a, int b) {
-        return (int)(VectorMathUtils.subSaturating(a, b));
+        return (int)(VectorMath.subSaturating(a, b));
     }
 
     @Test(dataProvider = "intSaturatingBinaryOpProvider")
@@ -3186,7 +3186,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
     }
 
     static int SUADD(int a, int b) {
-        return (int)(VectorMathUtils.addSaturatingUnsigned(a, b));
+        return (int)(VectorMath.addSaturatingUnsigned(a, b));
     }
 
     @Test(dataProvider = "intSaturatingBinaryOpProvider")
@@ -3227,7 +3227,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
     }
 
     static int SUSUB(int a, int b) {
-        return (int)(VectorMathUtils.subSaturatingUnsigned(a, b));
+        return (int)(VectorMath.subSaturatingUnsigned(a, b));
     }
 
     @Test(dataProvider = "intSaturatingBinaryOpProvider")
