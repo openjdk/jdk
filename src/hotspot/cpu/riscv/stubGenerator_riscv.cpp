@@ -2276,31 +2276,23 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
   }
 
-  void generate_rev8_pack2(const VectorRegister vtmp1, const VectorRegister vtmp2) {
-    __ vrev8_v(vtmp1, vtmp1);
-    __ vrev8_v(vtmp2, vtmp2);
-  }
-
-  void generate_rev8_pack4(const VectorRegister vtmp1, const VectorRegister vtmp2,
-                           const VectorRegister vtmp3, const VectorRegister vtmp4) {
-    generate_rev8_pack2(vtmp1, vtmp2);
-    generate_rev8_pack2(vtmp3, vtmp4);
-  }
-
-  void generate_vle32_pack2(const Register key, const VectorRegister vtmp1,
-                            const VectorRegister vtmp2) {
+  void generate_aes_loadkeys(const Register &key, VectorRegister *working_vregs, int reg_number) {
     const int step = 16;
-    __ vle32_v(vtmp1, key);
-    __ addi(key, key, step);
-    __ vle32_v(vtmp2, key);
-    __ addi(key, key, step);
+    for (int i = 0; i < reg_number; i++) {
+      __ vle32_v(working_vregs[i], key);
+      __ vrev8_v(working_vregs[i], working_vregs[i]);
+      __ addi(key, key, step);
+    }
   }
 
-  void generate_vle32_pack4(const Register key, const VectorRegister vtmp1,
-                            const VectorRegister vtmp2, const VectorRegister vtmp3,
-                            const VectorRegister vtmp4) {
-    generate_vle32_pack2(key, vtmp1, vtmp2);
-    generate_vle32_pack2(key, vtmp3, vtmp4);
+  void generate_aes_encrypt(const VectorRegister &res, VectorRegister *working_vregs, int reg_number) {
+    assert(reg_number <= 15, "reg_number should be less than or equal to working_vregs size")
+
+    __ vxor_vv(res, res, working_vregs[0]);
+    for (int i = 1; i < reg_number; i++) {
+      __ vaesem_vv(res, working_vregs[i]);
+    }
+    __ vaesef_vv(res, working_vregs[reg_number]);
   }
 
   // Arguments:
@@ -2316,20 +2308,18 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "aescrypt_encryptBlock");
 
-    Label L_do44, L_do52, L_end;
+    Label L_do44, L_do52;
 
     const Register from        = c_rarg0;  // source array address
     const Register to          = c_rarg1;  // destination array address
     const Register key         = c_rarg2;  // key array address
     const Register keylen      = c_rarg3;
 
-    const VectorRegister res   = v19;
     VectorRegister working_vregs[] = {
       v4, v5, v6, v7, v8, v9, v10, v11,
       v12, v13, v14, v15, v16, v17, v18
     };
-
-    const VectorRegister vzero = v17;
+    const VectorRegister res   = v19;
 
     address start = __ pc();
     __ enter();
@@ -2344,47 +2334,27 @@ class StubGenerator: public StubCodeGenerator {
     __ beq(keylen, t2, L_do52);
     // Else we fallthrough to the biggest case (256-bit key size)
 
-    for (int i = 0; i < 15; i++) {
-      __ vle32_v(working_vregs[i], key);
-      __ vrev8_v(working_vregs[i], working_vregs[i]);
-      __ addi(key, key, 16);
-    }
-
-    __ vxor_vv(res, res, working_vregs[0]);
-    for (int i = 1; i < 14; i++) {
-      __ vaesem_vv(res, working_vregs[i]);
-    }
-    __ vaesef_vv(res, working_vregs[14]);
-    __ j(L_end);
+    // Note: the following function performs key += 15*16
+    generate_aes_loadkeys(key, working_vregs, 15);
+    generate_aes_encrypt(res, working_vregs, 14);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
 
   __ bind(L_do52);
-    for (int i = 0; i < 13; i++) {
-      __ vle32_v(working_vregs[i], key);
-      __ vrev8_v(working_vregs[i], working_vregs[i]);
-      __ addi(key, key, 16);
-    }
-
-    __ vxor_vv(res, res, working_vregs[0]);
-    for (int i = 1; i < 12; i++) {
-      __ vaesem_vv(res, working_vregs[i]);
-    }
-    __ vaesef_vv(res, working_vregs[12]);
-    __ j(L_end);
+    // Note: the following function performs key += 13*16
+    generate_aes_loadkeys(key, working_vregs, 13);
+    generate_aes_encrypt(res, working_vregs, 12);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
 
   __ bind(L_do44);
-    for (int i = 0; i < 11; i++) {
-      __ vle32_v(working_vregs[i], key);
-      __ vrev8_v(working_vregs[i], working_vregs[i]);
-      __ addi(key, key, 16);
-    }
-
-    __ vxor_vv(res, res, working_vregs[0]);
-    for (int i = 1; i < 10; i++) {
-      __ vaesem_vv(res, working_vregs[i]);
-    }
-    __ vaesef_vv(res, working_vregs[10]);
-
-  __ bind(L_end);
+    // Note: the following function performs key += 11*16
+    generate_aes_loadkeys(key, working_vregs, 11);
+    generate_aes_encrypt(res, working_vregs, 10);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
@@ -2393,17 +2363,16 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  void generate_aesdecrypt_round(const VectorRegister res, const VectorRegister vzero,
-                                 const VectorRegister vtmp1, const VectorRegister vtmp2,
-                                 const VectorRegister vtmp3, const VectorRegister vtmp4) {
-    __ vxor_vv(res, res, vtmp1);
-    __ vaesdm_vv(res, vzero);
-    __ vxor_vv(res, res, vtmp2);
-    __ vaesdm_vv(res, vzero);
-    __ vxor_vv(res, res, vtmp3);
-    __ vaesdm_vv(res, vzero);
-    __ vxor_vv(res, res, vtmp4);
-    __ vaesdm_vv(res, vzero);
+  void generate_aes_decrypt(const VectorRegister &res, const VectorRegister &vzero,
+    const VectorRegister &vtemp, VectorRegister *working_vregs, int reg_number) {
+    assert(reg_number <= 14, "reg_number should be less than or equal to working_vregs size");
+
+    for (int i = 0; i < reg_number; i++) {
+      __ vxor_vv(res, res, working_vregs[i]);
+      __ vaesdm_vv(res, vzero);
+    }
+    __ vxor_vv(res, res, working_vregs[reg_number]);
+    __ vaesdf_vv(res, vtemp);
   }
 
   // Arguments:
@@ -2418,21 +2387,21 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "aescrypt_decryptBlock");
-    Label L_doLast;
+
+    Label L_do44, L_do52;
 
     const Register from        = c_rarg0;  // source array address
     const Register to          = c_rarg1;  // destination array address
     const Register key         = c_rarg2;  // key array address
     const Register keylen      = c_rarg3;
 
-    const VectorRegister res   = v16;
-    const VectorRegister vtmp1 = v4;
-    const VectorRegister vtmp2 = v5;
-    const VectorRegister vtmp3 = v6;
-    const VectorRegister vtmp4 = v7;
-
-    const VectorRegister vzero = v17;
-    const VectorRegister vtemp = v18;
+    VectorRegister working_vregs[] = {
+      v4, v5, v6, v7, v8, v9, v10, v11,
+      v12, v13, v14, v15, v16, v17
+    };
+    const VectorRegister res   = v18;
+    const VectorRegister vzero = v19;
+    const VectorRegister vtemp = v20;
 
     address start = __ pc();
     __ enter(); // required for proper stackwalking of RuntimeStub frame
@@ -2444,56 +2413,39 @@ class StubGenerator: public StubCodeGenerator {
     __ vmv_v_x(vzero, zr);
     __ vle32_v(vtemp, key);
     __ addi(key, key, 16);
-    // Note: the following function performs key += 4*16
-    generate_vle32_pack4(key, vtmp1, vtmp2, vtmp3, vtmp4);
-
     __ vrev8_v(vtemp, vtemp);
-    generate_rev8_pack4(vtmp1, vtmp2, vtmp3, vtmp4);
-    generate_aesdecrypt_round(res, vzero, vtmp1, vtmp2, vtmp3, vtmp4);
-
-    // Note: the following function performs key += 4*16
-    generate_vle32_pack4(key, vtmp1, vtmp2, vtmp3, vtmp4);
-    generate_rev8_pack4(vtmp1, vtmp2, vtmp3, vtmp4);
-    generate_aesdecrypt_round(res, vzero, vtmp1, vtmp2, vtmp3, vtmp4);
-
-    // Note: the following function performs key += 2*16
-    generate_vle32_pack2(key, vtmp1, vtmp2);
-    generate_rev8_pack2(vtmp1, vtmp2);
-
-    __ mv(t2, 44);
-    __ beq(keylen, t2, L_doLast);
-
-    __ vxor_vv(res, res, vtmp1);
-    __ vaesdm_vv(res, vzero);
-    __ vxor_vv(res, res, vtmp2);
-    __ vaesdm_vv(res, vzero);
-
-    // Note: the following function performs key += 2*16
-    generate_vle32_pack2(key, vtmp1, vtmp2);
-    generate_rev8_pack2(vtmp1, vtmp2);
 
     __ mv(t2, 52);
-    __ beq(keylen, t2, L_doLast);
+    __ blt(keylen, t2, L_do44);
+    __ beq(keylen, t2, L_do52);
+    // Else we fallthrough to the biggest case (256-bit key size)
 
-    __ vxor_vv(res, res, vtmp1);
-    __ vaesdm_vv(res, vzero);
-    __ vxor_vv(res, res, vtmp2);
-    __ vaesdm_vv(res, vzero);
-
-    // Note: the following function performs key += 2*16
-    generate_vle32_pack2(key, vtmp1, vtmp2);
-    generate_rev8_pack2(vtmp1, vtmp2);
-
-    __ bind(L_doLast);
-
-    __ vxor_vv(res, res, vtmp1);
-    __ vaesdm_vv(res, vzero);
-    __ vxor_vv(res, res, vtmp2);
-    __ vaesdf_vv(res, vtemp);
+    // Note: the following function performs key += 14*16
+    generate_aes_loadkeys(key, working_vregs, 14);
+    generate_aes_decrypt(res, vzero, vtemp, working_vregs, 13);
 
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
 
+  __ bind(L_do52);
+    // Note: the following function performs key += 12*16
+    generate_aes_loadkeys(key, working_vregs, 12);
+    generate_aes_decrypt(res, vzero, vtemp, working_vregs, 11);
+
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+  __ bind(L_do44);
+    // Note: the following function performs key += 10*16
+    generate_aes_loadkeys(key, working_vregs, 10);
+    generate_aes_decrypt(res, vzero, vtemp, working_vregs, 9);
+
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
     __ leave();
     __ ret();
 
