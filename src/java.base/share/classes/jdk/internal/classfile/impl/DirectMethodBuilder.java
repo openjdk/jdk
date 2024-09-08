@@ -61,6 +61,12 @@ public final class DirectMethodBuilder
         this.flags = flags;
     }
 
+    @Override
+    public MethodBuilder withFlags(int flags) {
+        setFlags(flags);
+        return this;
+    }
+
     void setFlags(int flags) {
         boolean wasStatic = (this.flags & ClassFile.ACC_STATIC) != 0;
         boolean isStatic = (flags & ClassFile.ACC_STATIC) != 0;
