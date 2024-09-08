@@ -37,9 +37,9 @@ import jdk.test.lib.thread.VThreadPinner;
  * @build jdk.test.lib.Utils
  * @run driver jdk.test.lib.util.JavaAgentBuilder
  *             TestPinCaseWithCFLH TestPinCaseWithCFLH.jar
- * @run main/othervm/timeout=100  -Djdk.virtualThreadScheduler.maxPoolSize=1
+ * @run main/othervm/timeout=100 -Djdk.virtualThreadScheduler.maxPoolSize=1
  *       -Djdk.tracePinnedThreads=full --enable-native-access=ALL-UNNAMED
- *       -javaagent:TestPinCaseWithCFLH.jar TestPinCaseWithCFLH
+ *       -javaagent:TestPinCaseWithCFLH.jar -XX:+BackgroundCompilation TestPinCaseWithCFLH
  */
 public class TestPinCaseWithCFLH {
 
