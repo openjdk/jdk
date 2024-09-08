@@ -578,14 +578,16 @@ loop:   while (true) {
      */
     public static final String readUTF(DataInput in) throws IOException {
         int utflen = in.readUnsignedShort();
-        byte[] bytearr;
+        byte[] bytearr = null;
         if (in instanceof DataInputStream dis) {
-            if (dis.bytearr.length < utflen) {
-                dis.bytearr = new byte[utflen*2];
+            if (dis.bytearr.length >= utflen) {
+                bytearr = dis.bytearr;
             }
-            bytearr = dis.bytearr;
-        } else {
+        }
+        boolean allocate = false;
+        if (bytearr == null) {
             bytearr = new byte[utflen];
+            allocate = true;
         }
 
         int c, char2, char3;
@@ -595,7 +597,16 @@ loop:   while (true) {
         in.readFully(bytearr, 0, utflen);
         int ascii = JLA.countPositives(bytearr, 0, utflen);
         if (ascii == utflen) {
-            return new String(bytearr, 0, utflen, StandardCharsets.ISO_8859_1);
+            String str;
+            if (allocate) {
+                str = JLA.newStringNoRepl(bytearr, StandardCharsets.ISO_8859_1);
+            } else {
+                str = new String(bytearr, 0, utflen, StandardCharsets.ISO_8859_1);
+            }
+            return str;
+        }
+        if (allocate && in instanceof DataInputStream dis) {
+            dis.bytearr = bytearr;
         }
 
         char[] chararr;
