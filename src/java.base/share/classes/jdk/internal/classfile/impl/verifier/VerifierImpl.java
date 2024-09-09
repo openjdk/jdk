@@ -24,7 +24,6 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -316,20 +315,20 @@ public final class VerifierImpl {
         if (code_length < 1 || code_length > MAX_CODE_SIZE) {
             verifyError(String.format("Invalid method Code length %d", code_length));
         }
-        var code = ByteBuffer.wrap(codeArray, 0, _method.codeLength());
-        byte[] code_data = generate_code_data(code, code_length);
+        var code = RawBytecodeHelper.of(codeArray);
+        byte[] code_data = generate_code_data(code);
         int ex_minmax[] = new int[] {code_length, -1};
         verify_exception_handler_table(code_length, code_data, ex_minmax);
         verify_local_variable_table(code_length, code_data);
 
         VerificationTable stackmap_table = new VerificationTable(stackmap_data, current_frame, max_locals, max_stack, code_data, code_length, cp, this);
 
-        var bcs = new RawBytecodeHelper(code);
+        var bcs = code.start();
         boolean no_control_flow = false;
         int opcode;
-        while (!bcs.isLastBytecode()) {
-            opcode = bcs.rawNext();
-            bci = bcs.bci;
+        while (bcs.next()) {
+            opcode = bcs.opcode();
+            bci = bcs.bci();
             current_frame.set_offset(bci);
             current_frame.set_mark();
             stackmap_index = verify_stackmap_table(stackmap_index, bci, current_frame, stackmap_table, no_control_flow);
@@ -340,7 +339,7 @@ public final class VerifierImpl {
                 int target;
                 VerificationType type, type2 = null;
                 VerificationType atype;
-                if (bcs.isWide) {
+                if (bcs.isWide()) {
                     if (opcode != ClassFile.IINC && opcode != ClassFile.ILOAD
                         && opcode != ClassFile.ALOAD && opcode != ClassFile.LLOAD
                         && opcode != ClassFile.ISTORE && opcode != ClassFile.ASTORE
@@ -1195,7 +1194,7 @@ public final class VerifierImpl {
                     case ClassFile.MULTIANEWARRAY :
                     {
                         index = bcs.getIndexU2();
-                        int dim = _method.codeArray()[bcs.bci+3] & 0xff;
+                        int dim = _method.codeArray()[bcs.bci() +3] & 0xff;
                         verify_cp_class_type(bci, index, cp);
                         VerificationType new_array_type =
                             cp_index_to_type(index, cp);
@@ -1230,13 +1229,13 @@ public final class VerifierImpl {
         }
     }
 
-    private byte[] generate_code_data(ByteBuffer code, int code_length) {
-        byte code_data[] = new byte[code_length];
-        var bcs = new RawBytecodeHelper(code);
-        while (!bcs.isLastBytecode()) {
-            if (bcs.rawNext() != ILLEGAL) {
-                int bci = bcs.bci;
-                if (bcs.rawCode == ClassFile.NEW) {
+    private byte[] generate_code_data(RawBytecodeHelper.CodeRange code) {
+        byte[] code_data = new byte[code.length()];
+        var bcs = code.start();
+        while (bcs.next()) {
+            if (bcs.opcode() != ILLEGAL) {
+                int bci = bcs.bci();
+                if (bcs.opcode() == ClassFile.NEW) {
                     code_data[bci] = NEW_OFFSET;
                 } else {
                     code_data[bci] = BYTECODE_OFFSET;
@@ -1410,7 +1409,7 @@ public final class VerifierImpl {
     }
 
     void verify_switch(RawBytecodeHelper bcs, int code_length, byte[] code_data, VerificationFrame current_frame, VerificationTable stackmap_table) {
-        int bci = bcs.bci;
+        int bci = bcs.bci();
         int aligned_bci = VerificationBytecodes.align(bci + 1);
         // 4639449 & 4647081: padding bytes must be 0
         if (_klass.majorVersion() < NONZERO_PADDING_BYTES_IN_SWITCH_MAJOR_VERSION) {
@@ -1422,12 +1421,12 @@ public final class VerifierImpl {
                 padding_offset++;
             }
         }
-        int default_ofset = bcs.getInt(aligned_bci);
+        int default_offset = bcs.getIntUnchecked(aligned_bci);
         int keys, delta;
         current_frame.pop_stack(VerificationType.integer_type);
-        if (bcs.rawCode == ClassFile.TABLESWITCH) {
-            int low = bcs.getInt(aligned_bci + 4);
-            int high = bcs.getInt(aligned_bci + 2*4);
+        if (bcs.opcode() == ClassFile.TABLESWITCH) {
+            int low = bcs.getIntUnchecked(aligned_bci + 4);
+            int high = bcs.getIntUnchecked(aligned_bci + 2*4);
             if (low > high) {
                 verifyError("low must be less than or equal to high in tableswitch");
             }
@@ -1438,31 +1437,31 @@ public final class VerifierImpl {
             delta = 1;
         } else {
             // Make sure that the lookupswitch items are sorted
-            keys = bcs.getInt(aligned_bci + 4);
+            keys = bcs.getIntUnchecked(aligned_bci + 4);
             if (keys < 0) {
                 verifyError("number of keys in lookupswitch less than 0");
             }
             delta = 2;
             for (int i = 0; i < (keys - 1); i++) {
-                int this_key = bcs.getInt(aligned_bci + (2+2*i)*4);
-                int next_key = bcs.getInt(aligned_bci + (2+2*i+2)*4);
+                int this_key = bcs.getIntUnchecked(aligned_bci + (2+2*i)*4);
+                int next_key = bcs.getIntUnchecked(aligned_bci + (2+2*i+2)*4);
                 if (this_key >= next_key) {
                     verifyError("Bad lookupswitch instruction");
                 }
             }
         }
-        int target = bci + default_ofset;
+        int target = bci + default_offset;
         stackmap_table.check_jump_target(current_frame, target);
         for (int i = 0; i < keys; i++) {
-            aligned_bci = VerificationBytecodes.align(bcs.bci + 1);
-            target = bci + bcs.getInt(aligned_bci + (3+i*delta)*4);
+            aligned_bci = VerificationBytecodes.align(bcs.bci() + 1);
+            target = bci + bcs.getIntUnchecked(aligned_bci + (3+i*delta)*4);
             stackmap_table.check_jump_target(current_frame, target);
         }
     }
 
     void verify_field_instructions(RawBytecodeHelper bcs, VerificationFrame current_frame, ConstantPoolWrapper cp, boolean allow_arrays) {
         int index = bcs.getIndexU2();
-        verify_cp_type(bcs.bci, index, cp, 1 << JVM_CONSTANT_Fieldref);
+        verify_cp_type(bcs.bci(), index, cp, 1 << JVM_CONSTANT_Fieldref);
         String field_name = cp.refNameAt(index);
         String field_sig = cp.refSignatureAt(index);
         if (!VerificationSignature.isValidTypeSignature(field_sig)) verifyError("Invalid field signature");
@@ -1477,7 +1476,7 @@ public final class VerifierImpl {
         VerificationType stack_object_type = null;
         int n = change_sig_to_verificationType(sig_stream, field_type, 0);
         boolean is_assignable;
-        switch (bcs.rawCode) {
+        switch (bcs.opcode()) {
             case ClassFile.GETSTATIC ->  {
                 for (int i = 0; i < n; i++) {
                     current_frame.push_stack(field_type[i]);
@@ -1524,7 +1523,7 @@ public final class VerifierImpl {
     boolean verify_invoke_init(RawBytecodeHelper bcs, int ref_class_index, VerificationType ref_class_type,
             VerificationFrame current_frame, int code_length, boolean in_try_block,
             boolean this_uninit, ConstantPoolWrapper cp, VerificationTable stackmap_table) {
-        int bci = bcs.bci;
+        int bci = bcs.bci();
         VerificationType type = current_frame.pop_stack(VerificationType.reference_check);
         if (type.is_uninitialized_this(this)) {
             String superk_name = current_class().superclassName();
@@ -1552,7 +1551,7 @@ public final class VerifierImpl {
             if (new_offset > (code_length - 3) || (_method.codeArray()[new_offset] & 0xff) != ClassFile.NEW) {
                 verifyError("Expecting new instruction");
             }
-            int new_class_index = bcs.getIndexU2Raw(new_offset + 1);
+            int new_class_index = bcs.getU2(new_offset + 1);
             verify_cp_class_type(bci, new_class_index, cp);
             VerificationType new_class_type = cp_index_to_type(
                 new_class_index, cp);
@@ -1583,7 +1582,7 @@ public final class VerifierImpl {
     boolean verify_invoke_instructions(RawBytecodeHelper bcs, int code_length, VerificationFrame current_frame, boolean in_try_block, boolean this_uninit, VerificationType return_type, ConstantPoolWrapper cp, VerificationTable stackmap_table) {
         // Make sure the constant pool item is the right type
         int index = bcs.getIndexU2();
-        int opcode = bcs.rawCode;
+        int opcode = bcs.opcode();
         int types = 0;
         switch (opcode) {
             case ClassFile.INVOKEINTERFACE:
@@ -1601,7 +1600,7 @@ public final class VerifierImpl {
             default:
                 types = 1 << JVM_CONSTANT_Methodref;
         }
-        verify_cp_type(bcs.bci, index, cp, types);
+        verify_cp_type(bcs.bci(), index, cp, types);
         String method_name = cp.refNameAt(index);
         String method_sig = cp.refSignatureAt(index);
         if (!VerificationSignature.isValidMethodSignature(method_sig)) verifyError("Invalid method signature");
@@ -1619,7 +1618,7 @@ public final class VerifierImpl {
         mth_sig_verif_types = new sig_as_verification_types(verif_types);
         create_method_sig_entry(mth_sig_verif_types, sig);
         int nargs = mth_sig_verif_types.num_args();
-        int bci = bcs.bci;
+        int bci = bcs.bci();
         if (opcode == ClassFile.INVOKEINTERFACE) {
             if ((_method.codeArray()[bci+3] & 0xff) != (nargs+1)) {
                 verifyError("Inconsistent args count operand in invokeinterface");
