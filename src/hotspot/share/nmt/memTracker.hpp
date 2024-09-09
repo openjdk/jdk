@@ -80,7 +80,6 @@ class MemTracker : AllStatic {
     assert(mem_base != nullptr, "caller should handle null");
     if (enabled()) {
       return MallocTracker::record_malloc(mem_base, size, mem_tag, stack);
-      return MallocTracker::record_malloc(mem_base, size, mem_tag, stack);
     }
     return mem_base;
   }

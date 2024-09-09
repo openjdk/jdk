@@ -67,7 +67,7 @@
   f(mtTest,           "TEST", "JVM internal test mappings")
   //end
 
-static const char* get_shortname_for_nmt_flag(MemTag mem_tag) {
+static const char* get_shortname_for_mem_tag(MemTag mem_tag) {
 #define DO(t, shortname, text) if (t == mem_tag) return shortname;
   NMT_FLAGS_DO(DO)
 #undef DO
@@ -255,7 +255,7 @@ bool MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
           if (num_printed > 0) {
             _out->put(',');
           }
-          _out->print("%s", get_shortname_for_nmt_flag(mem_tag));
+          _out->print("%s", get_shortname_for_mem_tag(mem_tag));
           if (mem_tag == mtThreadStack) {
             print_thread_details_for_supposed_stack_address(vma_from, vma_to, _out);
           }

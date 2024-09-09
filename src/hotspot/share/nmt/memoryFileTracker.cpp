@@ -48,8 +48,8 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
   VMATree::SummaryDiff diff = file->_tree.commit_mapping(offset, size, regiondata);
   for (int i = 0; i < mt_number_of_tags; i++) {
     VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_tag(i));
-    summary->reserve_memory(diff.type[i].commit);
-    summary->commit_memory(diff.type[i].commit);
+    summary->reserve_memory(diff.tag[i].commit);
+    summary->commit_memory(diff.tag[i].commit);
   }
 }
 
@@ -57,8 +57,8 @@ void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size
   VMATree::SummaryDiff diff = file->_tree.release_mapping(offset, size);
   for (int i = 0; i < mt_number_of_tags; i++) {
     VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_tag(i));
-    summary->reserve_memory(diff.type[i].commit);
-    summary->commit_memory(diff.type[i].commit);
+    summary->reserve_memory(diff.tag[i].commit);
+    summary->commit_memory(diff.tag[i].commit);
   }
 }
 
@@ -105,8 +105,8 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
     tty->print_cr("Broken tree found with first occurrence at nodes %zu, %zu",
                   broken_start->key(), broken_end->key());
     tty->print_cr("Expected start out to have same type as end in, but was: %s, %s",
-                  VMATree::statetype_to_string(broken_start->val().out.state()),
-                  VMATree::statetype_to_string(broken_end->val().in.state()));
+                  VMATree::statetype_to_string(broken_start->val().out.tag()),
+                  VMATree::statetype_to_string(broken_end->val().in.tag()));
   }
 #endif
 }

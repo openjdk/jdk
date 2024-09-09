@@ -848,8 +848,8 @@ void MemDetailDiffReporter::diff_virtual_memory_sites() const {
         old_virtual_memory_site(early_site);
         early_site = early_itr.next();
       } else if (early_site->mem_tag() != current_site->mem_tag()) {
-        // This site was originally allocated with one type, then released,
-        // then re-allocated at the same site (as far as we can tell) with a different type.
+        // This site was originally allocated with one memory type, then released,
+        // then re-allocated at the same site (as far as we can tell) with a different memory type.
         old_virtual_memory_site(early_site);
         early_site = early_itr.next();
         new_virtual_memory_site(current_site);

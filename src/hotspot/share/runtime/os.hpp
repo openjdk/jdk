@@ -913,9 +913,9 @@ class os: AllStatic {
 
   // SocketInterface (ex HPI SocketInterface )
   static int socket_close(int fd);
-  static ssize_t recv(int fd, char* buf, size_t nBytes, uint type);
-  static ssize_t send(int fd, char* buf, size_t nBytes, uint type);
-  static ssize_t raw_send(int fd, char* buf, size_t nBytes, uint type);
+  static ssize_t recv(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t send(int fd, char* buf, size_t nBytes, uint flags);
+  static ssize_t raw_send(int fd, char* buf, size_t nBytes, uint flags);
   static ssize_t connect(int fd, struct sockaddr* him, socklen_t len);
 
   // Support for signals

@@ -159,10 +159,10 @@ public:
     delta commit;
   };
   struct SummaryDiff {
-    SingleDiff type[mt_number_of_tags];
+    SingleDiff tag[mt_number_of_tags];
     SummaryDiff() {
       for (int i = 0; i < mt_number_of_tags; i++) {
-        type[i] = SingleDiff{0, 0};
+        tag[i] = SingleDiff{0, 0};
       }
     }
   };

@@ -60,14 +60,14 @@ class ObjectMonitorTable : AllStatic {
     }
     static void* allocate_node(void* context, size_t size, Value const& value) {
       ObjectMonitorTable::inc_items_count();
-      return AllocateHeap(size, MemTag::mtObjectMonitor);
+      return AllocateHeap(size, mtObjectMonitor);
     };
     static void free_node(void* context, void* memory, Value const& value) {
       ObjectMonitorTable::dec_items_count();
       FreeHeap(memory);
     }
   };
-  using ConcurrentTable = ConcurrentHashTable<Config, MemTag::mtObjectMonitor>;
+  using ConcurrentTable = ConcurrentHashTable<Config, mtObjectMonitor>;
 
   static ConcurrentTable* _table;
   static volatile size_t _items_count;
