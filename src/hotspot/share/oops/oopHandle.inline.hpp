@@ -30,7 +30,7 @@
 #include "oops/access.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 
-template <DecoratorSet decorators = DECORATORS_NONE>
+template <DecoratorSet decorators>
 inline oop OopHandle::resolve() const {
   return (_obj == nullptr) ? (oop)nullptr : NativeAccess<decorators>::oop_load(_obj);
 }
