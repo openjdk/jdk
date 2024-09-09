@@ -29,7 +29,6 @@
 #include "opto/matcher.hpp"
 #include "opto/node.hpp"
 #include "opto/regmask.hpp"
-#include "utilities/population_count.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 //------------------------------dump-------------------------------------------
@@ -53,16 +52,11 @@ const RegMask RegMask::Empty;
 
 const RegMask RegMask::All(
 # define BODY(I) -1,
-  FORALL_BODY
+    FORALL_BODY
 # undef BODY
-  0
-);
+    true);
 
 //=============================================================================
-Arena* RegMask::_get_arena() {
-  return Compile::current()->comp_arena();
-}
-
 bool RegMask::is_vector(uint ireg) {
   return (ireg == Op_VecA || ireg == Op_VecS || ireg == Op_VecD ||
           ireg == Op_VecX || ireg == Op_VecY || ireg == Op_VecZ );
@@ -397,21 +391,30 @@ bool RegMask::is_UP() const {
   return true;
 }
 
-// Compute size of register mask in bits
-uint RegMask::Size() const {
-  uint sum = 0;
-  assert(valid_watermarks(), "sanity");
-  for (unsigned i = _lwm; i <= _hwm; i++) {
-    sum += population_count(_rm_up(i));
+#ifndef PRODUCT
+bool RegMask::_dump_end_run(outputStream* st, OptoReg::Name start,
+                            OptoReg::Name last) const {
+  bool last_is_end = last == (int)offset_bits() + (int)rm_size_bits() - 1;
+  if (is_AllStack() && last_is_end) {
+    st->print("-...");
+    return true;
   }
-  return sum;
+  if (start == last) { // 1-register run; no special printing
+  } else if (start + 1 == last) {
+    st->print(","); // 2-register run; print as "rX,rY"
+    OptoReg::dump(last, st);
+  } else { // Multi-register run; print as "rX-rZ"
+    st->print("-");
+    OptoReg::dump(last, st);
+  }
+  return false;
 }
 
-#ifndef PRODUCT
 void RegMask::dump(outputStream *st) const {
   st->print("[");
 
   RegMaskIterator rmi(*this);
+  bool printed_all_stack = false;
   if (rmi.has_next()) {
     OptoReg::Name start = rmi.next();
 
@@ -428,34 +431,37 @@ void RegMask::dump(outputStream *st) const {
         // Adjacent registers just collect into long runs, no printing.
         last = reg;
       } else {                  // Ending some kind of run
-        if (start == last) {    // 1-register run; no special printing
-        } else if (start+1 == last) {
-          st->print(",");       // 2-register run; print as "rX,rY"
-          OptoReg::dump(last, st);
-        } else {                // Multi-register run; print as "rX-rZ"
-          st->print("-");
-          OptoReg::dump(last, st);
-        }
+        printed_all_stack = _dump_end_run(st, start, last);
+        assert(!printed_all_stack, "");
         st->print(",");         // Separate start of new run
         start = last = reg;     // Start a new register run
         OptoReg::dump(start, st); // Print register
       } // End of if ending a register run or not
     } // End of while regmask not empty
-
-    if (start == last) {        // 1-register run; no special printing
-    } else if (start+1 == last) {
-      st->print(",");           // 2-register run; print as "rX,rY"
-      OptoReg::dump(last, st);
-    } else {                    // Multi-register run; print as "rX-rZ"
-      st->print("-");
-      OptoReg::dump(last, st);
+    printed_all_stack = _dump_end_run(st, start, last);
+    // Print all-stack if not already done.
+    if (is_AllStack() && !printed_all_stack) {
+      st->print(",");
+      OptoReg::dump(offset_bits() + rm_size_bits(), st);
+      st->print("-...");
     }
-    if (is_AllStack()) { st->print(","); }
-  }
-  if (is_AllStack()) {
-    OptoReg::dump(offset_bits() + rm_size_bits(), st);
-    st->print("...");
+  } else {
+    // Mask is all-stack only.
+    if (is_AllStack() && !printed_all_stack) {
+      OptoReg::dump(offset_bits() + rm_size_bits(), st);
+      st->print("-...");
+    }
   }
   st->print("]");
+}
+
+void RegMask::dump_hex(outputStream* st) const {
+  st->print("...%x|", is_AllStack() ? 0xf : 0x0);
+  for (int i = _rm_max(); i >= 0; i--) {
+    st->print(LP64_ONLY("%0*lx") NOT_LP64("%0*x"), (int)sizeof(uintptr_t) * CHAR_BIT / 4, _rm_up(i));
+    if (i != 0) {
+      st->print("|");
+    }
+  }
 }
 #endif

@@ -162,18 +162,17 @@ bool   RegisterForm::verify() {
   return  valid;
 }
 
+// Compute the least number of words required for registers in register masks.
+int RegisterForm::words_for_regs() { return (_reg_ctr + 31) >> 5; }
+
 // Compute RegMask size
 int RegisterForm::RegMask_Size() {
-  // Need at least this many words
-  int words_for_regs = (_reg_ctr + 31)>>5;
   // The array of Register Mask bits should be large enough to cover
   // all the machine registers and all parameters that need to be passed
-  // on the stack (stack registers) up to some interesting limit.  Methods
-  // that need more parameters will NOT be compiled.  On Intel, the limit
-  // is something like 90+ parameters.
+  // on the stack (stack registers) up to some interesting limit.
   // Add a few (3 words == 96 bits) for incoming & outgoing arguments to calls.
   // Round up to the next doubleword size.
-  return (words_for_regs + 3 + 1) & ~1;
+  return (words_for_regs() + 3 + 1) & ~1;
 }
 
 void RegisterForm::dump() {                  // Debug printer

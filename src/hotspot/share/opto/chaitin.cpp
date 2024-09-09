@@ -536,6 +536,9 @@ void PhaseChaitin::Register_Allocate() {
   // Select colors by re-inserting LRGs back into the IFG in reverse order.
   // Return whether or not something spills.
   uint spills = Select( );
+  if (C->failing()) {
+    return;
+  }
 
   // If we spill, split and recycle the entire thing
   while( spills ) {
@@ -599,6 +602,9 @@ void PhaseChaitin::Register_Allocate() {
     // Select colors by re-inserting LRGs back into the IFG in reverse order.
     // Return whether or not something spills.
     spills = Select();
+    if (C->failing()) {
+      return;
+    }
   }
 
   // Count number of Simplify-Select trips per coloring success.
@@ -1354,7 +1360,7 @@ void PhaseChaitin::Simplify( ) {
 
 // Is 'reg' register legal for 'lrg'?
 static bool is_legal_reg(LRG &lrg, OptoReg::Name reg) {
-  if (reg < LRG::SPILL_REG && lrg.mask().Member(reg)) {
+  if (lrg.mask().can_represent(reg) && lrg.mask().Member(reg)) {
     // RA uses OptoReg which represent the highest element of a registers set.
     // For example, vectorX (128bit) on x86 uses [XMM,XMMb,XMMc,XMMd] set
     // in which XMMd is used by RA to represent such vectors. A double value
@@ -1377,7 +1383,7 @@ static bool is_legal_reg(LRG &lrg, OptoReg::Name reg) {
   return false;
 }
 
-static OptoReg::Name find_first_set(LRG &lrg, RegMask mask) {
+static OptoReg::Name find_first_set(LRG& lrg, RegMask& mask) {
   int num_regs = lrg.num_regs();
   OptoReg::Name assigned = mask.find_first_set(lrg, num_regs);
 
@@ -1454,7 +1460,8 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg ) {
         return reg;
     } else if( !lrg.mask().is_offset() ) {
       // Choose a color which is legal for him
-      RegMask tempmask = lrg.mask();
+      ResourceMark rm(C->regmask_arena());
+      RegMask tempmask(lrg.mask(), C->regmask_arena());
       tempmask.AND(lrgs(copy_lrg).mask());
       tempmask.clear_to_sets(lrg.num_regs());
       OptoReg::Name reg = find_first_set(lrg, tempmask);
@@ -1466,7 +1473,9 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg ) {
   // If no bias info exists, just go with the register selection ordering
   if (lrg._is_vector || lrg.num_regs() == 2 || lrg.is_scalable()) {
     // Find an aligned set
-    return find_first_set(lrg, lrg.mask());
+    ResourceMark rm(C->regmask_arena());
+    RegMask tempmask(lrg.mask(), C->regmask_arena());
+    return find_first_set(lrg, tempmask);
   }
 
   // CNC - Fun hack.  Alternate 1st and 2nd selection.  Enables post-allocate
@@ -1554,7 +1563,10 @@ uint PhaseChaitin::Select( ) {
 
     // Remove neighbor colors
     IndexSet *s = _ifg->neighbors(lidx);
-    debug_only(RegMask orig_mask = lrg->mask();)
+#ifndef PRODUCT
+    ResourceMark rm(C->regmask_arena());
+    RegMask orig_mask(lrg->mask(), C->regmask_arena());
+#endif
 
     if (!s->is_empty()) {
       IndexSetIterator elements(s);
@@ -1568,7 +1580,8 @@ uint PhaseChaitin::Select( ) {
         if (nreg < LRG::SPILL_REG) {
 #ifndef PRODUCT
           uint size = lrg->mask().Size();
-          RegMask rm = lrg->mask();
+          ResourceMark r(C->regmask_arena());
+          RegMask rm(lrg->mask(), C->regmask_arena());
 #endif
           lrg->SUBTRACT_inner(nlrg.mask());
 #ifndef PRODUCT
@@ -1579,7 +1592,7 @@ uint PhaseChaitin::Select( ) {
             tty->print(" intersected L%d ", neighbor);
             nlrg.mask().dump();
             tty->print(" removed ");
-            rm.SUBTRACT_inner(lrg->mask());
+            rm.SUBTRACT(lrg->mask());
             rm.dump();
             tty->print(" leaving ");
             lrg->mask().dump();
@@ -1604,7 +1617,13 @@ uint PhaseChaitin::Select( ) {
     // a chunk-rollover event
     if(!OptoReg::is_valid(reg) && is_allstack) {
       // Bump register mask up to next stack chunk
-      lrg->rollover();
+      bool success = lrg->rollover();
+      if (!success) {
+        // We very rarely, if ever, reach this bailout in practice.
+        C->record_method_not_compilable(
+            "chunk-rollover outside of OptoReg range");
+        return -1;
+      }
       goto retry_next_chunk;
     }
 
@@ -1612,7 +1631,8 @@ uint PhaseChaitin::Select( ) {
     // Did we get a color?
     else if( OptoReg::is_valid(reg)) {
 #ifndef PRODUCT
-      RegMask avail_rm = lrg->mask();
+      ResourceMark rm(C->regmask_arena());
+      RegMask avail_rm(lrg->mask(), C->regmask_arena());
 #endif
 
       // Record selected register

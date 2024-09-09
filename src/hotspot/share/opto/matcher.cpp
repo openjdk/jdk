@@ -81,7 +81,8 @@ Matcher::Matcher()
   _ruleName(ruleName),
   _register_save_policy(register_save_policy),
   _c_reg_save_policy(c_reg_save_policy),
-  _register_save_type(register_save_type) {
+  _register_save_type(register_save_type),
+  _return_addr_mask(C->comp_arena()) {
   C->set_matcher(this);
 
   idealreg2spillmask  [Op_RegI] = nullptr;
@@ -188,7 +189,7 @@ void Matcher::match( ) {
   }
   // One-time initialization of some register masks.
   init_spill_mask( C->root()->in(1) );
-  _return_addr_mask = return_addr();
+  _return_addr_mask.Insert(return_addr());
 #ifdef _LP64
   // Pointers take 2 slots in 64-bit land
   _return_addr_mask.Insert(OptoReg::add(return_addr(),1));
@@ -222,10 +223,10 @@ void Matcher::match( ) {
   VMRegPair *vm_parm_regs  = NEW_RESOURCE_ARRAY( VMRegPair, argcnt );
   _parm_regs               = NEW_RESOURCE_ARRAY( OptoRegPair, argcnt );
   _calling_convention_mask = NEW_RESOURCE_ARRAY( RegMask, argcnt );
-  new(_calling_convention_mask) RegMask[argcnt];
   uint i;
   for( i = 0; i<argcnt; i++ ) {
     sig_bt[i] = domain->field_at(i+TypeFunc::Parms)->basic_type();
+    new (_calling_convention_mask + i) RegMask(C->comp_arena());
   }
 
   // Pass array of ideal registers and length to USER code (from the AD file)
@@ -428,7 +429,9 @@ void Matcher::match( ) {
 
 static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
   RegMask *rms = NEW_RESOURCE_ARRAY( RegMask, size );
-  new(rms) RegMask[size];
+  for (unsigned int i = 0; i < size; ++i) {
+    new (rms + i) RegMask(Compile::current()->comp_arena());
+  }
   // Do all the pre-defined register masks
   rms[TypeFunc::Control  ] = RegMask::Empty;
   rms[TypeFunc::I_O      ] = RegMask::Empty;
@@ -468,7 +471,7 @@ void Matcher::init_first_stack_mask() {
 
   // Initialize empty placeholder masks into the newly allocated arena
   for (int i = 0; i < NOF_STACK_MASKS; i++) {
-    new (rms + i) RegMask();
+    new (rms + i) RegMask(C->comp_arena());
   }
 
   idealreg2spillmask  [Op_RegN] = &rms[0];
@@ -531,11 +534,11 @@ void Matcher::init_first_stack_mask() {
   C->FIRST_STACK_mask().Set_All_From(_out_arg_limit);
 
   // Make spill masks.  Registers for their class, plus FIRST_STACK_mask.
-  RegMask aligned_stack_mask = C->FIRST_STACK_mask();
+  RegMask aligned_stack_mask(C->FIRST_STACK_mask(), C->comp_arena());
   // Keep spill masks aligned.
   aligned_stack_mask.clear_to_pairs();
   assert(aligned_stack_mask.is_AllStack(), "should be infinite stack");
-  RegMask scalable_stack_mask = aligned_stack_mask;
+  RegMask scalable_stack_mask(aligned_stack_mask, C->comp_arena());
 
   *idealreg2spillmask[Op_RegP] = *idealreg2regmask[Op_RegP];
 #ifdef _LP64
@@ -1315,7 +1318,9 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   // Allocate a private array of RegMasks.  These RegMasks are not shared.
   msfpt->_in_rms = NEW_RESOURCE_ARRAY( RegMask, cnt );
   // Empty them all.
-  for (uint i = 0; i < cnt; i++) ::new (&(msfpt->_in_rms[i])) RegMask();
+  for (uint i = 0; i < cnt; i++) {
+    ::new (&(msfpt->_in_rms[i])) RegMask(C->comp_arena());
+  }
 
   // Do all the pre-defined non-Empty register masks
   msfpt->_in_rms[TypeFunc::ReturnAdr] = _return_addr_mask;
