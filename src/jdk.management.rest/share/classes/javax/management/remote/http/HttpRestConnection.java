@@ -43,6 +43,7 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -204,28 +205,69 @@ public class HttpRestConnection implements MBeanServerConnection {
         throw new UnsupportedOperationException("unregisterMBean not supported");
     }
 
+    protected ObjectInstance objectInstanceForName(String objectName)
+            throws InstanceNotFoundException, IOException {
+
+        JSONObject o = objectInfoForName(name);
+        if (o == null) {
+            throw new InstanceNotFoundException("Not known: " + objectName);
+        }
+        String className = JSONObject.getObjectFieldString(o, "className");
+        if (className == null) {
+            throw new InstanceNotFoundException("No className in MBean info: " + objectName);
+        }
+        try {
+            return new ObjectInstance(objectName, className);
+        } catch (MalformedObjectNameException mone) {
+            mone.printStackTrace(System.err);
+            return null;
+        }
+
+    }
+
     public ObjectInstance getObjectInstance(ObjectName name)
             throws InstanceNotFoundException, IOException {
 
+        ObjectInstance i = objectInstanceForName(name.toString());
+        if (i == null) {
+            throw new InstanceNotFoundException("Not found: " + name);
+        }
+        return i;
+    }
 
+    protected Set<JSONObject> queryMB(ObjectName name, QueryExp query)
+        throws IOException {
+
+        // Search objectInfoMap.
+        // XXX
         return null;
     }
 
     public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query)
             throws IOException {
 
-        String str = executeHttpGetRequest(url(baseURL, "mbeans/"));
-        System.err.println("queryMBeans: " + str);
+        // Query operations are a client-side convenience now, rather than a means for a
+        // client to query a remote server.
 
-        return null;
+        // Consider refreshing?
+
+        Set<ObjectInstance> results = new HashSet<>();
+        // Search objectInfoMap.
+        // XXX
+        return results;
     }
 
     public Set<ObjectName> queryNames(ObjectName name, QueryExp query) throws IOException {
-        return null;
+        Set<ObjectInstance> objects = queryMBeans(name, query);
+        Set<ObjectName> names = new HashSet<ObjectName>();
+        // populate names from objects
+        // XXXX
+        return names;
     }
 
     public boolean isRegistered(ObjectName name) throws IOException {
-        return false;
+        ObjectInstance i = objectInstanceForName(name.toString());
+        return (i != null);
     }
 
 
@@ -358,12 +400,14 @@ public class HttpRestConnection implements MBeanServerConnection {
                    InvalidAttributeValueException, MBeanException,
                    ReflectionException, IOException {
 
+        // XXX POST 
     }
 
     public AttributeList setAttributes(ObjectName name,
                                        AttributeList attributes)
         throws InstanceNotFoundException, ReflectionException, IOException {
 
+        // XXX POST 
         return null;
     }
 
@@ -681,7 +725,7 @@ public class HttpRestConnection implements MBeanServerConnection {
     public boolean isInstanceOf(ObjectName name, String className)
             throws InstanceNotFoundException, IOException {
 
-        return true;
+        return true; // XXX
     }
 
     protected static URL url(String baseURL, String s) {
@@ -810,6 +854,4 @@ public class HttpRestConnection implements MBeanServerConnection {
         }
         return null;
     }
-
-
 }
