@@ -112,7 +112,7 @@ jint os_getChildren(JNIEnv *env, jlong jpid, jlongArray jarray,
 
         // Allocate buffer big enough for all processes; add a little
         // bit of space to be able to hold a few more proc infos
-        // for processes started rigth after the first sysctl call
+        // for processes started right after the first sysctl call
         buffer = malloc(bufSize + 4 * sizeof(struct kinfo_proc));
         if (buffer == NULL) {
             JNU_ThrowOutOfMemoryError(env, "malloc failed");
