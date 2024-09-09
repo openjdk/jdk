@@ -28,20 +28,30 @@ import java.util.Map;
 
 /*
  * @test
- * @bug 7004967
+ * @bug 7004967 8329754
  * @summary SecureRandom should be more explicit about threading
  */
 public class ThreadSafe {
     public static void main(String[] args) throws Exception {
         Provider p = new P();
         NoSync.test(SecureRandom.getInstance("S1", p), 5, 5);
+
         try {
             NoSync.test(SecureRandom.getInstance("S2", p), 5, 5);
             throw new Exception("Failed");
         } catch (RuntimeException re) {
             // Good
         }
+
+        try {
+            NoSync.test(SecureRandom.getInstance("AliasS2", p), 5, 5);
+            throw new Exception("Failed");
+        } catch (RuntimeException re) {
+            // Good
+        }
+
         NoSync.test(SecureRandom.getInstance("S3", p), 5, 5);
+
         try {
             NoSync.test(SecureRandom.getInstance("S4", p), 5, 5);
             throw new Exception("Failed");
@@ -62,6 +72,9 @@ public class ThreadSafe {
             put("SecureRandom.S2", S.class.getName());
             put("SecureRandom.S2 ThreadSafe", "true");
 
+            //Bad. Alias of S2, should fail because S2 is marked as ThreadSafe
+            put("alg.Alias.SecureRandom.AliasS2", "S2");
+
             // Good. No attribute.
             putService(new Service(this, "SecureRandom", "S3",
                     S.class.getName(), null, null));
@@ -80,6 +93,7 @@ public class ThreadSafe {
         }
 
         private volatile boolean inCall = false;
+
         @Override
         protected void engineNextBytes(byte[] bytes) {
             if (inCall) {
