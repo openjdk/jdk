@@ -1201,7 +1201,7 @@ void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
     ParCompactionManager::gc_thread_compaction_manager(worker_id);
 
   do {
-    PSScannerTask task;
+    PSMarkTask task;
     if (ParCompactionManager::steal(worker_id, task)) {
       TASKQUEUE_STATS_ONLY(cm->record_steal(task));
       cm->follow_contents(task);
@@ -1220,7 +1220,7 @@ public:
   MarkFromRootsTask(uint active_workers) :
       WorkerTask("MarkFromRootsTask"),
       _strong_roots_scope(active_workers),
-      _terminator(active_workers, ParCompactionManager::marking_queues()),
+      _terminator(active_workers, ParCompactionManager::marking_stacks()),
       _active_workers(active_workers) {}
 
   virtual void work(uint worker_id) {
@@ -1258,7 +1258,7 @@ class ParallelCompactRefProcProxyTask : public RefProcProxyTask {
 public:
   ParallelCompactRefProcProxyTask(uint max_workers)
     : RefProcProxyTask("ParallelCompactRefProcProxyTask", max_workers),
-      _terminator(_max_workers, ParCompactionManager::marking_queues()) {}
+      _terminator(_max_workers, ParCompactionManager::marking_stacks()) {}
 
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
