@@ -265,7 +265,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
       }
     case NMethodPatchingType::conc_instruction_and_data_patch:
       {
-        // If we patch code we need both a code patching and a loadload
+        // If we patch code we need both a cmodx fence and a loadload
         // fence. It's not super cheap, so we use a global epoch mechanism
         // to hide them in a slow path.
         // The high level idea of the global epoch mechanism is to detect
@@ -273,11 +273,19 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
         // last nmethod was disarmed. This implies that the required
         // fencing has been performed for all preceding nmethod disarms
         // as well. Therefore, we do not need any further fencing.
+
         __ la(t1, ExternalAddress((address)&_patching_epoch));
-        // Embed an artificial data dependency to order the guard load
-        // before the epoch load.
-        __ srli(ra, t0, 32);
-        __ orr(t1, t1, ra);
+        if (!UseZtso) {
+          // Embed a synthetic data dependency between the load of the guard and
+          // the load of the epoch. This guarantees that these loads occur in
+          // order, while allowing other independent instructions to be reordered.
+          // Note: This may be slower than using a membar(load|load) (fence r,r).
+          // Because processors will not start the second load until the first comes back.
+          // This means you can’t overlap the two loads,
+          // which is stronger than needed for ordering (stronger than TSO).
+          __ srli(ra, t0, 32);
+          __ orr(t1, t1, ra);
+        }
         // Read the global epoch value.
         __ lwu(t1, t1);
         // Combine the guard value (low order) with the epoch value (high order).

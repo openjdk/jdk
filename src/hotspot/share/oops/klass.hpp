@@ -27,6 +27,7 @@
 
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
+#include "oops/klassFlags.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
@@ -165,6 +166,8 @@ class Klass : public Metadata {
                                 // Keep it away from the beginning of a Klass to avoid cacheline
                                 // contention that may happen when a nearby object is modified.
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
+                                // Some flags created by the JVM, not in the class file itself,
+                                // are in _misc_flags below.
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
@@ -193,6 +196,8 @@ private:
     _is_generated_shared_class             = 1 << 5
   };
 #endif
+
+  KlassFlags  _misc_flags;
 
   CDS_JAVA_HEAP_ONLY(int _archived_mirror_index;)
 
@@ -428,6 +433,7 @@ protected:
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
 #endif
   static ByteSize bitmap_offset()                { return byte_offset_of(Klass, _bitmap); }
+  static ByteSize misc_flags_offset()            { return byte_offset_of(Klass, _misc_flags._flags); }
 
   // Unpacking layout_helper:
   static const int _lh_neutral_value           = 0;  // neutral non-array non-instance value
@@ -692,12 +698,14 @@ protected:
   bool is_super() const                 { return _access_flags.is_super(); }
   bool is_synthetic() const             { return _access_flags.is_synthetic(); }
   void set_is_synthetic()               { _access_flags.set_is_synthetic(); }
-  bool has_finalizer() const            { return _access_flags.has_finalizer(); }
-  void set_has_finalizer()              { _access_flags.set_has_finalizer(); }
-  bool is_hidden() const                { return access_flags().is_hidden_class(); }
-  void set_is_hidden()                  { _access_flags.set_is_hidden_class(); }
-  bool is_value_based()                 { return _access_flags.is_value_based_class(); }
-  void set_is_value_based()             { _access_flags.set_is_value_based_class(); }
+  bool has_finalizer() const            { return _misc_flags.has_finalizer(); }
+  void set_has_finalizer()              { _misc_flags.set_has_finalizer(true); }
+  bool is_hidden() const                { return _misc_flags.is_hidden_class(); }
+  void set_is_hidden()                  { _misc_flags.set_is_hidden_class(true); }
+  bool is_value_based() const           { return _misc_flags.is_value_based_class(); }
+  void set_is_value_based()             { _misc_flags.set_is_value_based_class(true); }
+
+  klass_flags_t misc_flags() const      { return _misc_flags.value(); }
 
   inline bool is_non_strong_hidden() const;
 
