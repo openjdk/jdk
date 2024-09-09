@@ -37,6 +37,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import jdk.internal.access.JavaUtilCollectionAccess;
@@ -789,7 +790,8 @@ class ImmutableCollections {
         public E get(int i) {
             try {
                 return backing[i]
-                        .computeIfUnset(i, mapper);
+                        .computeIfUnset(new Supplier<E>() {
+                            @Override  public E get() { return mapper.apply(i); }});
             } catch (ArrayIndexOutOfBoundsException aioobe) {
                 throw new IndexOutOfBoundsException(i);
             }
@@ -1482,7 +1484,8 @@ class ImmutableCollections {
             }
             @SuppressWarnings("unchecked")
             final K k = (K) key;
-            return stable.computeIfUnset(k, mapper);
+            return stable.computeIfUnset(new Supplier<V>() {
+                @Override public V get() { return mapper.apply(k); }});
         }
 
         @jdk.internal.ValueBased
@@ -1514,8 +1517,9 @@ class ImmutableCollections {
                 @Override
                 public Entry<K, V> next() {
                     final Map.Entry<K, StableValueImpl<V>> inner = delegateIterator.next();
-                    final K key = inner.getKey();
-                    return new NullableKeyValueHolder<>(key, inner.getValue().computeIfUnset(key, mapper));
+                    final K k = inner.getKey();
+                    return new NullableKeyValueHolder<>(k, inner.getValue().computeIfUnset(new Supplier<V>() {
+                        @Override public V get() { return mapper.apply(k); }}));
                 }
 
                 @Override
@@ -1524,8 +1528,9 @@ class ImmutableCollections {
                             new Consumer<>() {
                                 @Override
                                 public void accept(Entry<K, StableValueImpl<V>> inner) {
-                                    final K key = inner.getKey();
-                                    action.accept(new NullableKeyValueHolder<>(key, inner.getValue().computeIfUnset(key, mapper)));
+                                    final K k = inner.getKey();
+                                    action.accept(new NullableKeyValueHolder<>(k, inner.getValue().computeIfUnset(new Supplier<V>() {
+                                        @Override public V get() { return mapper.apply(k); }})));
                                 }
                             };
                     delegateIterator.forEachRemaining(innerAction);

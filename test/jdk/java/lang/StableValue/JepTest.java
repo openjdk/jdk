@@ -33,15 +33,21 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.AbstractList;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 final class JepTest {
 
@@ -146,7 +152,7 @@ final class JepTest {
 
         // 1. Centrally declare a caching supplier and define how it should be computed
         private static final Supplier<Logger> LOGGER =
-                StableValue.newCachingSupplier( () -> Logger.getLogger("com.company.Foo"), null );
+                StableValue.newCachingSupplier( () -> Logger.getLogger("com.company.Foo") );
 
 
         static Logger logger() {
@@ -174,7 +180,7 @@ final class JepTest {
     class CachedNum {
         // 1. Centrally declare a cached IntFunction backed by a list of StableValue elements
         private static final IntFunction<Logger> LOGGERS =
-                StableValue.newCachingIntFunction(2, CachedNum::fromNumber, null);
+                StableValue.newCachingIntFunction(2, CachedNum::fromNumber);
 
         // 2. Define a function that is to be called the first
         //    time a particular message number is referenced
@@ -197,24 +203,7 @@ final class JepTest {
         // 1. Centrally declare a cached function backed by a map of stable values
         private static final Function<String, Logger> LOGGERS =
                 StableValue.newCachingFunction(Set.of("com.company.Foo", "com.company.Bar"),
-                Logger::getLogger, null);
-
-        private static final String NAME = "com.company.Foo";
-
-        // 2. Access the cached value via the function with as-declared-final
-        //    performance (evaluation made before the first access)
-        Logger logger = LOGGERS.apply(NAME);
-    }
-
-    class CachedBackground {
-
-        // 1. Centrally declare a cached function backed by a map of stable values
-        //    computed in the background by two distinct virtual threads.
-        private static final Function<String, Logger> LOGGERS =
-                StableValue.newCachingFunction(Set.of("com.company.Foo", "com.company.Bar"),
-                Logger::getLogger,
-                // Create cheap virtual threads for background computation
-                Thread.ofVirtual().factory());
+                Logger::getLogger);
 
         private static final String NAME = "com.company.Foo";
 
@@ -231,7 +220,7 @@ final class JepTest {
 
             // 1. Centrally declare a cached IntFunction backed by a list of StableValue elements
             private static final IntFunction<String> ERROR_FUNCTION =
-                    StableValue.newCachingIntFunction(SIZE, ErrorMessages::readFromFile, null);
+                    StableValue.newCachingIntFunction(SIZE, ErrorMessages::readFromFile);
 
             // 2. Define a function that is to be called the first
             //    time a particular message number is referenced
@@ -266,7 +255,7 @@ final class JepTest {
                 throw new IllegalArgumentException(t.toString());
 
             }
-            return stable.computeIfUnset(t, original);
+            return stable.computeIfUnset(() -> original.apply(t));
         }
     }
 
@@ -299,7 +288,7 @@ final class JepTest {
             if (stable == null) {
                 throw new IllegalArgumentException(t + ", " + u);
             }
-            return stable.computeIfUnset(key, original);
+            return stable.computeIfUnset(() -> original.apply(key));
         }
 
         static <T, U, R> CachingBiFunction<T, U, R> of(Set<Pair<T, U>> inputs, BiFunction<T, U, R> original) {
@@ -322,7 +311,7 @@ final class JepTest {
             if (stable == null) {
                 throw new IllegalArgumentException(t + ", " + u);
             }
-            return stable.computeIfUnset(key.left(), key.right(), original);
+            return stable.computeIfUnset(() -> original.apply(key.left(), key.right()));
         }
 
         static <T, U, R> BiFunction<T, U, R> of(Set<Pair<T, U>> inputs, BiFunction<T, U, R> original) {
@@ -334,5 +323,61 @@ final class JepTest {
         }
 
     }
+
+    static
+    class Application {
+        private final StableValue<Logger> LOGGER = StableValue.newInstance();
+
+        public Logger getLogger() {
+            return LOGGER.computeIfUnset(() -> Logger.getLogger("com.company.Foo"));
+        }
+    }
+
+    record CachingIntPredicate(List<StableValue<Boolean>> outputs,
+                               IntPredicate resultFunction) implements IntPredicate {
+
+        CachingIntPredicate(int size, IntPredicate resultFunction) {
+            this(Stream.generate(StableValue::<Boolean>newInstance).limit(size).toList(), resultFunction);
+        }
+
+        @Override
+        public boolean test(int value) {
+            return outputs.get(value).computeIfUnset(() -> resultFunction.test(value));
+        }
+
+    }
+
+
+    static
+    class FixedStableList<E> extends AbstractList<E> {
+        private final List<StableValue<E>> elements;
+
+        FixedStableList(int size) {
+            this.elements = Stream.generate(StableValue::<E>newInstance)
+                    .limit(size)
+                    .toList();
+        }
+
+        @Override
+        public E get(int index) {
+            return elements.get(index).orElseThrow();
+        }
+
+
+
+        @Override
+        public E set(int index, E element) {
+            elements.get(index).setOrThrow(element);
+            return null;
+        }
+
+
+
+        @Override
+        public int size() {
+            return elements.size();
+        }
+    }
+
 
 }

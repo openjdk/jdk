@@ -44,7 +44,6 @@ final class CachingSupplierTest {
     @Test
     void factoryInvariants() {
         assertThrows(NullPointerException.class, () -> StableValue.newCachingSupplier(null));
-        assertThrows(NullPointerException.class, () -> StableValue.newCachingSupplier(SUPPLIER, null));
     }
 
     @Test
@@ -62,20 +61,6 @@ final class CachingSupplierTest {
         assertEquals(supplier.get(), cached.get());
         assertEquals(1, cs.cnt());
         assertEquals("CachingSupplier[value=[" + supplier.get() + "], original=" + cs + "]", cached.toString());
-    }
-
-    @Test
-    void background() {
-        final AtomicInteger cnt = new AtomicInteger(0);
-        ThreadFactory factory = r -> new Thread(() -> {
-            r.run();
-            cnt.incrementAndGet();
-        });
-        var cached = StableValue.newCachingSupplier(SUPPLIER, factory);
-        while (cnt.get() < 1) {
-            Thread.onSpinWait();
-        }
-        assertEquals(SUPPLIER.get(), cached.get());
     }
 
     @Test

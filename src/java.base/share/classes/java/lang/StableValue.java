@@ -36,8 +36,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ThreadFactory;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -69,11 +67,6 @@ import java.util.function.Supplier;
  * {@snippet lang = java :
  *     Supplier<T> cache = StableValue.newCachingSupplier(original);
  * }
- * The caching supplier can also be computed by a fresh background thread if a
- * thread factory is provided as a second parameter as shown here:
- * {@snippet lang = java :
- *     Supplier<T> cache = StableValue.newCachingSupplier(original, Thread.ofVirtual().factory());
- * }
  *     </li>
  *
  *     <li>
@@ -84,9 +77,6 @@ import java.util.function.Supplier;
  * {@snippet lang = java:
  *     IntFunction<R> cache = StableValue.newCachingIntFunction(size, original);
  *}
- * Just like a caching supplier, a thread factory can be provided as a second parameter
- * allowing all the values for the allowed input values to be computed by distinct
- * background threads.
  *     </li>
  *
  *     <li>
@@ -97,9 +87,6 @@ import java.util.function.Supplier;
  * {@snippet lang = java :
  *    Function<T, R> cache = StableValue.newCachingFunction(inputs, original);
  * }
- * Just like a caching supplier, a thread factory can be provided as a second parameter
- * allowing all the values for the allowed input values to be computed by distinct
- * background threads.
  *     </li>
  *
  *     <li>
@@ -247,115 +234,6 @@ public sealed interface StableValue<T>
      */
     T computeIfUnset(Supplier<? extends T> supplier);
 
-    /**
-     * {@return the set holder value if set, otherwise attempts to compute and set a
-     * new (nullable) value using the provided {@code key} and provided {@code mapper},
-     * returning the (pre-existing or newly set) value}
-     * <p>
-     * The provided {@code mapper} is guaranteed to be invoked at most once if it
-     * completes without throwing an exception.
-     * <p>
-     * If the mapper throws an (unchecked) exception, the exception is rethrown, and no
-     * value is set.
-     *
-     * @implSpec The implementation logic is equivalent to the following steps for this
-     * {@code stable}:
-     *
-     * <pre> {@code
-     * if (stable.isSet()) {
-     *     return stable.get();
-     * } else {
-     *     V newValue = mapper.apply(key);
-     *     stable.setOrThrow(newValue);
-     *     return newValue;
-     * }
-     * }</pre>
-     * Except it is thread-safe and will only return the same witness value
-     * regardless if invoked by several threads. Also, the provided {@code supplier}
-     * will only be invoked once even if invoked from several threads unless the
-     * {@code supplier} throws an exception.
-     *
-     * @param  key to be used by the provided mapper
-     * @param  mapper that takes the provided key to be used for computing a value
-     * @throws StackOverflowError if the provided {@code mapper} recursively
-     *         invokes the provided {@code mapper} upon being invoked.
-     */
-    T computeIfUnset(int key, IntFunction<? extends T> mapper);
-
-    /**
-     * {@return the set holder value if set, otherwise attempts to compute and set a
-     * new (nullable) value using the provided {@code key} and provided {@code mapper},
-     * returning the (pre-existing or newly set) value}
-     * <p>
-     * The provided {@code mapper} is guaranteed to be invoked at most once if it
-     * completes without throwing an exception.
-     * <p>
-     * If the mapper throws an (unchecked) exception, the exception is rethrown, and no
-     * value is set.
-     *
-     * @implSpec The implementation logic is equivalent to the following steps for this
-     * {@code stable}:
-     *
-     * <pre> {@code
-     * if (stable.isSet()) {
-     *     return stable.get();
-     * } else {
-     *     V newValue = mapper.apply(key);
-     *     stable.setOrThrow(newValue);
-     *     return newValue;
-     * }
-     * }</pre>
-     * Except it is thread-safe and will only return the same witness value
-     * regardless if invoked by several threads. Also, the provided {@code supplier}
-     * will only be invoked once even if invoked from several threads unless the
-     * {@code supplier} throws an exception.
-     *
-     * @param  key to be used by the provided mapper
-     * @param  mapper that takes the provided key to be used for computing a value
-     * @param  <K> key type
-     * @throws StackOverflowError if the provided {@code mapper} recursively
-     *         invokes the provided {@code mapper} upon being invoked.
-     */
-    <K> T computeIfUnset(K key, Function<? super K, ? extends T> mapper);
-
-    /**
-     * {@return the set holder value if set, otherwise attempts to compute and set a
-     * new (nullable) value using the provided {@code firstKey}, {@code secondKey}, and
-     * provided {@code mapper}, returning the (pre-existing or newly set) value}
-     * <p>
-     * The provided {@code mapper} is guaranteed to be invoked at most once if it
-     * completes without throwing an exception.
-     * <p>
-     * If the mapper throws an (unchecked) exception, the exception is rethrown, and no
-     * value is set.
-     *
-     * @implSpec The implementation logic is equivalent to the following steps for this
-     * {@code stable}:
-     *
-     * <pre> {@code
-     * if (stable.isSet()) {
-     *     return stable.get();
-     * } else {
-     *     V newValue = mapper.apply(firstKey, secondKey);
-     *     stable.setOrThrow(newValue);
-     *     return newValue;
-     * }
-     * }</pre>
-     * Except it is thread-safe and will only return the same witness value
-     * regardless if invoked by several threads. Also, the provided {@code supplier}
-     * will only be invoked once even if invoked from several threads unless the
-     * {@code supplier} throws an exception.
-     *
-     * @param  firstKey to be used by the provided mapper
-     * @param  secondKey to be used by the provided mapper
-     * @param  mapper that takes the provided keys to be used for computing a value
-     * @param  <K> firstKey type
-     * @param  <L> secondKey type
-     * @throws StackOverflowError if the provided {@code mapper} recursively
-     *         invokes the provided {@code mapper} upon being invoked.
-     */
-    <K, L> T computeIfUnset(K firstKey, L secondKey, BiFunction<? super K, ? super L, ? extends T> mapper);
-
     // Factories
 
     /**
@@ -391,42 +269,7 @@ public sealed interface StableValue<T>
      */
     static <T> Supplier<T> newCachingSupplier(Supplier<? extends T> original) {
         Objects.requireNonNull(original);
-        return StableValueFactories.newCachingSupplier(original, null);
-    }
-
-    /**
-     * {@return a new caching, thread-safe, stable, lazily computed
-     * {@linkplain Supplier supplier} that records the value of the provided
-     * {@code original} supplier upon being first accessed via
-     * {@linkplain Supplier#get() Supplier::get}, or via a background thread
-     * created from the provided {@code factory}}
-     * <p>
-     * The provided {@code original} supplier is guaranteed to be successfully invoked
-     * at most once even in a multi-threaded environment. Competing threads invoking the
-     * {@linkplain Supplier#get() Supplier::get} method when a value is already under
-     * computation will block until a value is computed or an exception is thrown by the
-     * computing thread.
-     * <p>
-     * If the {@code original} Supplier invokes the returned Supplier recursively,
-     * a StackOverflowError will be thrown when the returned
-     * Supplier's {@linkplain Supplier#get() Supplier::get} method is invoked.
-     * <p>
-     * If the provided {@code original} supplier throws an exception, it is relayed
-     * to the initial caller. If the memoized supplier is computed by a background thread,
-     * exceptions from the provided {@code original} supplier will be relayed to the
-     * background thread's {@linkplain Thread#getUncaughtExceptionHandler() uncaught
-     * exception handler}.
-     *
-     * @param original supplier used to compute a memoized value
-     * @param factory  a factory that will be used to create a background thread that will
-     *                 attempt to compute the memoized value.
-     * @param <T>      the type of results supplied by the returned supplier
-     */
-    static <T> Supplier<T> newCachingSupplier(Supplier<? extends T> original,
-                                              ThreadFactory factory) {
-        Objects.requireNonNull(original);
-        Objects.requireNonNull(factory);
-        return StableValueFactories.newCachingSupplier(original, factory);
+        return StableValueFactories.newCachingSupplier(original);
     }
 
     /**
@@ -459,50 +302,7 @@ public sealed interface StableValue<T>
             throw new IllegalArgumentException();
         }
         Objects.requireNonNull(original);
-        return StableValueFactories.newCachingIntFunction(size, original, null);
-    }
-
-    /**
-     * {@return a new caching, thread-safe, stable, lazily computed
-     * {@link IntFunction } that, for each allowed input, records the values of the
-     * provided {@code original} IntFunction upon being first accessed via
-     * {@linkplain IntFunction#apply(int) IntFunction::apply}, or via background
-     * threads created from the provided {@code factory} (if non-null)}
-     * <p>
-     * The provided {@code original} IntFunction is guaranteed to be successfully invoked
-     * at most once per allowed input, even in a multi-threaded environment. Competing
-     * threads invoking the {@linkplain IntFunction#apply(int) IntFunction::apply} method
-     * when a value is already under computation will block until a value is computed or
-     * an exception is thrown by the computing thread.
-     * <p>
-     * If the {@code original} IntFunction invokes the returned IntFunction recursively
-     * for a particular input value, a StackOverflowError will be thrown when the returned
-     * IntFunction's {@linkplain IntFunction#apply(int) IntFunction::apply} method is
-     * invoked.
-     * <p>
-     * If the provided {@code original} IntFunction throws an exception, it is relayed
-     * to the initial caller. If the memoized IntFunction is computed by a background
-     * thread, exceptions from the provided {@code original} IntFunction will be relayed
-     * to the background thread's {@linkplain Thread#getUncaughtExceptionHandler()
-     * uncaught exception handler}.
-     * <p>
-     * The order in which background threads are started is unspecified.
-     *
-     * @param size     the size of the allowed inputs in {@code [0, size)}
-     * @param original IntFunction used to compute a memoized value
-     * @param factory  a factory that will be used to create {@code size} background
-     *                 threads that will attempt to compute all the memoized values.
-     * @param <R>      the type of results delivered by the returned IntFunction
-     */
-    static <R> IntFunction<R> newCachingIntFunction(int size,
-                                                    IntFunction<? extends R> original,
-                                                    ThreadFactory factory) {
-        if (size < 0) {
-            throw new IllegalArgumentException();
-        }
-        Objects.requireNonNull(original);
-        Objects.requireNonNull(factory);
-        return StableValueFactories.newCachingIntFunction(size, original, factory);
+        return StableValueFactories.newCachingIntFunction(size, original);
     }
 
     /**
@@ -539,48 +339,7 @@ public sealed interface StableValue<T>
                                                     Function<? super T, ? extends R> original) {
         Objects.requireNonNull(inputs);
         Objects.requireNonNull(original);
-        return StableValueFactories.newCachingFunction(inputs, original, null);
-    }
-
-    /**
-     * {@return a new caching, thread-safe, stable, lazily computed {@link Function}
-     * that, for each allowed input in the given set of {@code inputs}, records the
-     * values of the provided {@code original} Function upon being first accessed via
-     * {@linkplain Function#apply(Object) Function::apply}, or via background
-     * threads created from the provided {@code factory} (if non-null)}
-     * <p>
-     * The provided {@code original} Function is guaranteed to be successfully invoked
-     * at most once per allowed input, even in a multi-threaded environment. Competing
-     * threads invoking the {@linkplain Function#apply(Object) Function::apply} method
-     * when a value is already under computation will block until a value is computed or
-     * an exception is thrown by the computing thread.
-     * <p>
-     * If the {@code original} Function invokes the returned Function recursively
-     * for a particular input value, a StackOverflowError will be thrown when the returned
-     * Function's {@linkplain Function#apply(Object) Function::apply} method is invoked.
-     * <p>
-     * If the provided {@code original} Function throws an exception, it is relayed
-     * to the initial caller. If the memoized Function is computed by a background
-     * thread, exceptions from the provided {@code original} Function will be relayed to
-     * the background thread's {@linkplain Thread#getUncaughtExceptionHandler() uncaught
-     * exception handler}.
-     * <p>
-     * The order in which background threads are started is unspecified.
-     *
-     * @param inputs   the set of allowed input values
-     * @param original Function used to compute a memoized value
-     * @param factory  a factory that will be used to create {@code size} background
-     *                 threads that will attempt to compute the memoized values.
-     * @param <T>      the type of the input to the returned Function
-     * @param <R>      the type of results delivered by the returned Function
-     */
-    static <T, R> Function<T, R> newCachingFunction(Set<? extends T> inputs,
-                                                    Function<? super T, ? extends R> original,
-                                                    ThreadFactory factory) {
-        Objects.requireNonNull(inputs);
-        Objects.requireNonNull(original);
-        Objects.requireNonNull(factory);
-        return StableValueFactories.newCachingFunction(inputs, original, factory);
+        return StableValueFactories.newCachingFunction(inputs, original);
     }
 
     /**

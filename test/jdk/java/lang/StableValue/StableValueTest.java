@@ -103,36 +103,6 @@ final class StableValueTest {
        assertEquals(1, cs.cnt());
    }
 
-   @Test
-   void testComputeIfUnsetIntFunction() {
-       StableTestUtil.CountingIntFunction<Integer> cs = new StableTestUtil.CountingIntFunction<>(i -> i);
-       StableValue<Integer> stable = StableValue.newInstance();
-       assertEquals(VALUE, stable.computeIfUnset(VALUE, cs));
-       assertEquals(1, cs.cnt());
-       assertEquals(VALUE, stable.computeIfUnset(VALUE, cs));
-       assertEquals(1, cs.cnt());
-   }
-
-   @Test
-   void testComputeIfUnsetFunction() {
-       StableTestUtil.CountingFunction<Integer, Integer> cs = new StableTestUtil.CountingFunction<>(Function.identity());
-       StableValue<Integer> stable = StableValue.newInstance();
-       assertEquals(VALUE, stable.computeIfUnset(VALUE, cs));
-       assertEquals(1, cs.cnt());
-       assertEquals(VALUE, stable.computeIfUnset(VALUE, cs));
-       assertEquals(1, cs.cnt());
-   }
-
-   @Test
-   void testComputeIfUnsetBiFunction() {
-       StableTestUtil.CountingBiFunction<Integer, Integer, Integer> cs = new StableTestUtil.CountingBiFunction<>(Integer::max);
-       StableValue<Integer> stable = StableValue.newInstance();
-       assertEquals(VALUE, stable.computeIfUnset(VALUE, 0, cs));
-       assertEquals(1, cs.cnt());
-       assertEquals(VALUE, stable.computeIfUnset(VALUE, 0, cs));
-       assertEquals(1, cs.cnt());
-   }
-
     @Test
     void testHashCode() {
         StableValue<Integer> stableValue = StableValue.newInstance();

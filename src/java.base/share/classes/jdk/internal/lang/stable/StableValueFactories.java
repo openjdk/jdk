@@ -18,6 +18,20 @@ public final class StableValueFactories {
         return StableValueImpl.newInstance();
     }
 
+    public static <T> Supplier<T> newCachingSupplier(Supplier<? extends T> original) {
+        return CachingSupplier.of(original);
+    }
+
+    public static <R> IntFunction<R> newCachingIntFunction(int size,
+                                                           IntFunction<? extends R> original) {
+        return CachingIntFunction.of(size, original);
+    }
+
+    public static <T, R> Function<T, R> newCachingFunction(Set<? extends T> inputs,
+                                                           Function<? super T, ? extends R> original) {
+        return CachingFunction.of(inputs, original);
+    }
+
     public static <T> StableValueImpl<T>[] ofArray(int size) {
         if (size < 0) {
             throw new IllegalArgumentException();
@@ -41,56 +55,5 @@ public final class StableValueFactories {
         return Map.ofEntries(entries);
     }
 
-    public static <T> Supplier<T> newCachingSupplier(Supplier<? extends T> original,
-                                                     ThreadFactory factory) {
-
-        final Supplier<T> caching = CachingSupplier.of(original);
-
-        if (factory != null) {
-            final Thread thread = factory.newThread(new Runnable() {
-                @Override
-                public void run() {
-                    caching.get();
-                }
-            });
-            thread.start();
-        }
-        return caching;
-    }
-
-    public static <R> IntFunction<R> newCachingIntFunction(int size,
-                                                           IntFunction<? extends R> original,
-                                                           ThreadFactory factory) {
-
-        final IntFunction<R> caching = CachingIntFunction.of(size, original);
-
-        if (factory != null) {
-            for (int i = 0; i < size; i++) {
-                final int input = i;
-                final Thread thread = factory.newThread(new Runnable() {
-                    @Override public void run() { caching.apply(input); }
-                });
-                thread.start();
-            }
-        }
-        return caching;
-    }
-
-    public static <T, R> Function<T, R> newCachingFunction(Set<? extends T> inputs,
-                                                           Function<? super T, ? extends R> original,
-                                                           ThreadFactory factory) {
-
-        final Function<T, R> caching = CachingFunction.of(inputs, original);
-
-        if (factory != null) {
-            for (final T t : inputs) {
-                final Thread thread = factory.newThread(new Runnable() {
-                    @Override public void run() { caching.apply(t); }
-                });
-                thread.start();
-            }
-        }
-        return caching;
-    }
 
 }

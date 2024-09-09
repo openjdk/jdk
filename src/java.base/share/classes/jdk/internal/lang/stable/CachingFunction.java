@@ -30,6 +30,7 @@ import jdk.internal.vm.annotation.ForceInline;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 // Note: It would be possible to just use `LazyMap::get` with some additional logic
 // instead of this class but explicitly providing a class like this provides better
@@ -54,7 +55,8 @@ record CachingFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
         if (stable == null) {
             throw new IllegalArgumentException("Input not allowed: " + value);
         }
-        return stable.computeIfUnset(value, original);
+        return stable.computeIfUnset(new Supplier<R>() {
+            @Override  public R get() { return original.apply(value); }});
     }
 
     @Override

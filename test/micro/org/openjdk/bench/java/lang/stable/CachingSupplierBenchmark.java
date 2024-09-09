@@ -47,9 +47,8 @@ import java.util.function.Supplier;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 2)
 @Fork(value = 2, jvmArgsAppend = {
-        "--enable-preview",
-        // Prevent the use of uncommon traps
-        "-XX:PerMethodTrapLimit=0"})
+        "--enable-preview"
+})
 @Threads(Threads.MAX)   // Benchmark under contention
 @OperationsPerInvocation(2)
 public class CachingSupplierBenchmark {
@@ -77,6 +76,7 @@ public class CachingSupplierBenchmark {
         return supplier.get() + supplier2.get();
     }
 
+/*
     @Benchmark
     public int staticStable() {
         return STABLE.orElseThrow() + STABLE2.orElseThrow();
@@ -86,6 +86,7 @@ public class CachingSupplierBenchmark {
     public int staticSupplier() {
         return SUPPLIER.get() + SUPPLIER2.get();
     }
+*/
 
     private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
         m.trySet(value);

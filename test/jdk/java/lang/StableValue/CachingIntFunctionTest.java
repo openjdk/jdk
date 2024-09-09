@@ -47,9 +47,6 @@ final class CachingIntFunctionTest {
     void factoryInvariants() {
         assertThrows(IllegalArgumentException.class, () -> StableValue.newCachingIntFunction(-1, MAPPER));
         assertThrows(NullPointerException.class, () -> StableValue.newCachingIntFunction(SIZE, null));
-        assertThrows(IllegalArgumentException.class, () -> StableValue.newCachingIntFunction(-1, MAPPER, Thread.ofVirtual().factory()));
-        assertThrows(NullPointerException.class, () -> StableValue.newCachingIntFunction(SIZE, null, Thread.ofVirtual().factory()));
-        assertThrows(NullPointerException.class, () -> StableValue.newCachingIntFunction(SIZE, MAPPER, null));
     }
 
     @Test
@@ -70,26 +67,6 @@ final class CachingIntFunctionTest {
         assertThrows(IllegalArgumentException.class, () -> cached.apply(SIZE));
         assertThrows(IllegalArgumentException.class, () -> cached.apply(-1));
         assertThrows(IllegalArgumentException.class, () -> cached.apply(1_000_000));
-    }
-
-    @Test
-    void background() {
-        final AtomicInteger cnt = new AtomicInteger(0);
-        ThreadFactory factory = new ThreadFactory() {
-            @java.lang.Override
-            public Thread newThread(Runnable r) {
-                return new Thread(() -> {
-                    r.run();
-                    cnt.incrementAndGet();
-                });
-            }
-        };
-        var cached = StableValue.newCachingIntFunction(SIZE, MAPPER, factory);
-        while (cnt.get() < 2) {
-            Thread.onSpinWait();
-        }
-        assertEquals(0, cached.apply(0));
-        assertEquals(1, cached.apply(1));
     }
 
     @Test

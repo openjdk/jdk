@@ -28,10 +28,8 @@ package jdk.internal.lang.stable;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.Objects;
 import java.util.function.IntFunction;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.function.Supplier;
 
 // Note: It would be possible to just use `LazyList::get` instead of this
 // class but explicitly providing a class like this provides better
@@ -47,7 +45,7 @@ import java.util.stream.IntStream;
  *
  * @param <R> the return type
  */
-record CachingIntFunction<R>(StableValueImpl<R>[] delegates,
+record CachingIntFunction<R>(@Stable StableValueImpl<R>[] delegates,
                              IntFunction<? extends R> original) implements IntFunction<R> {
 
     @ForceInline
@@ -55,7 +53,8 @@ record CachingIntFunction<R>(StableValueImpl<R>[] delegates,
     public R apply(int index) {
         try {
             return delegates[index]
-                    .computeIfUnset(index, original);
+                    .computeIfUnset(new Supplier<R>() {
+                        @Override public R get() { return original.apply(index); }});
         } catch (java.lang.ArrayIndexOutOfBoundsException ioob) {
             throw new IllegalArgumentException("Input not allowed: " + index, ioob);
         }

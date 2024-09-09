@@ -30,9 +30,6 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
@@ -108,45 +105,11 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return wrappedValue != null;
     }
 
-    // (p, _) -> p.get()
-    private static final BiFunction<Supplier<Object>, Object, Object> SUPPLIER_EXTRACTOR = new BiFunction<>() {
-        @Override public Object apply(Supplier<Object> supplier, Object unused) { return supplier.get(); }
-    };
-
-    // IntFunction::apply
-    private static final BiFunction<IntFunction<Object>, Integer, Object> INT_FUNCTION_EXTRACTOR = new BiFunction<>() {
-        @Override public Object apply(IntFunction<Object> mapper, Integer key) { return mapper.apply(key); }
-    };
-
-    // Function::apply
-    private static final BiFunction<Function<Object, Object>, Object, Object> FUNCTION_EXTRACTOR = new BiFunction<>() {
-        @Override  public Object apply(Function<Object, Object> mapper, Object key) { return mapper.apply(key); }
-    };
 
     @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T computeIfUnset(Supplier<? extends T> supplier) {
-        return computeIfUnset0(null, supplier, (BiFunction<? super Supplier<? extends T>, ?, T>) (BiFunction<?, ?, ?>) SUPPLIER_EXTRACTOR);
-    }
-
-    @SuppressWarnings("unchecked")
-    @ForceInline
-    @Override
-    public T computeIfUnset(int key, IntFunction<? extends T> mapper) {
-        return computeIfUnset0(key, mapper, (BiFunction<? super IntFunction<? extends T>, ? super Integer, T>) (BiFunction<?, ?, ?>) INT_FUNCTION_EXTRACTOR);
-    }
-
-    @SuppressWarnings("unchecked")
-    @ForceInline
-    @Override
-    public <K> T computeIfUnset(K key, Function<? super K, ? extends T> mapper) {
-        return computeIfUnset0(key, mapper, (BiFunction<? super Function<? super K,? extends T>, ? super K, T>) (BiFunction<?, ?, ?>) FUNCTION_EXTRACTOR);
-    }
-
-    @ForceInline
-    @Override
-    public <K, L> T computeIfUnset(K firstKey, L secondKey, BiFunction<? super K, ? super L, ? extends T> mapper) {
         Object t = wrappedValue;
         if (t != null) {
             return unwrap(t);
@@ -156,25 +119,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
             if (t != null) {
                 return unwrap(t);
             }
-            final T newValue = mapper.apply(firstKey, secondKey);
-            // The mutex is reentrant so we need to check if the value was actually set.
-            return wrapAndCas(newValue) ? newValue : orElseThrow();
-        }
-    }
-
-    // A consolidated method for some computeIfUnset overloads
-    @ForceInline
-    private <K, P> T computeIfUnset0(K key, P provider, BiFunction<P, K, T> extractor) {
-        Object t = wrappedValue;
-        if (t != null) {
-            return unwrap(t);
-        }
-        synchronized (this) {
-            t = wrappedValue;
-            if (t != null) {
-                return unwrap(t);
-            }
-            final T newValue = extractor.apply(provider, key);
+            final T newValue = supplier.get();
             // The mutex is reentrant so we need to check if the value was actually set.
             return wrapAndCas(newValue) ? newValue : orElseThrow();
         }

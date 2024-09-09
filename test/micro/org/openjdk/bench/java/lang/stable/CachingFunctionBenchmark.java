@@ -51,9 +51,8 @@ import java.util.stream.IntStream;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 2)
 @Fork(value = 2, jvmArgsAppend = {
-        "--enable-preview",
-        // Prevent the use of uncommon traps
-        "-XX:PerMethodTrapLimit=0"})
+        "--enable-preview"
+})
 @Threads(Threads.MAX)   // Benchmark under contention
 @OperationsPerInvocation(100)
 public class CachingFunctionBenchmark {

@@ -26,7 +26,6 @@
 package jdk.internal.lang.stable;
 
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 
 import java.util.function.Supplier;
 

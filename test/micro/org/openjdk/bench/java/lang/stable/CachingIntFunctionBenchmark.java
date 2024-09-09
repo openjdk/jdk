@@ -48,9 +48,8 @@ import java.util.function.IntFunction;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 2)
 @Fork(value = 2, jvmArgsAppend = {
-        "--enable-preview",
-        // Prevent the use of uncommon traps
-        "-XX:PerMethodTrapLimit=0"})
+        "--enable-preview"
+})
 @Threads(Threads.MAX)   // Benchmark under contention
 @OperationsPerInvocation(100)
 public class CachingIntFunctionBenchmark {
@@ -72,6 +71,7 @@ public class CachingIntFunctionBenchmark {
         }
         return sum;
     }
+
 
     @Benchmark
     public int intFunction() {
