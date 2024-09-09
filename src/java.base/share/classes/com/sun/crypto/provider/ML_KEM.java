@@ -25,8 +25,8 @@
 
 package com.sun.crypto.provider;
 
-import sun.security.provider.SHAKE128;
-import sun.security.provider.SHAKE256;
+import sun.security.provider.SHA3.SHAKE128;
+import sun.security.provider.SHA3.SHAKE256;
 
 import java.io.ByteArrayOutputStream;
 import java.security.MessageDigest;
