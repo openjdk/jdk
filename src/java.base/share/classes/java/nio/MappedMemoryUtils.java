@@ -127,7 +127,6 @@ import jdk.internal.misc.Unsafe;
     private static native void registerNatives();
     static {
         registerNatives();
-        isLoaded0(0, 0, 0);
     }
 
     // utility methods
