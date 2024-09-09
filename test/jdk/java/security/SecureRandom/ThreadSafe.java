@@ -24,6 +24,7 @@
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.SecureRandomSpi;
+import java.util.Collections;
 import java.util.Map;
 
 /*
@@ -35,6 +36,7 @@ public class ThreadSafe {
     public static void main(String[] args) throws Exception {
         Provider p = new P();
         NoSync.test(SecureRandom.getInstance("S1", p), 5, 5);
+        NoSync.test(SecureRandom.getInstance("AliasS1", p), 5, 5);
 
         try {
             NoSync.test(SecureRandom.getInstance("S2", p), 5, 5);
@@ -51,9 +53,17 @@ public class ThreadSafe {
         }
 
         NoSync.test(SecureRandom.getInstance("S3", p), 5, 5);
+        NoSync.test(SecureRandom.getInstance("AliasS3", p), 5, 5);
 
         try {
             NoSync.test(SecureRandom.getInstance("S4", p), 5, 5);
+            throw new Exception("Failed");
+        } catch (RuntimeException re) {
+            // Good
+        }
+
+        try {
+            NoSync.test(SecureRandom.getInstance("AliasS4", p), 5, 5);
             throw new Exception("Failed");
         } catch (RuntimeException re) {
             // Good
@@ -68,6 +78,9 @@ public class ThreadSafe {
             // Good. No attribute.
             put("SecureRandom.S1", S.class.getName());
 
+            // Good. Alias of S1, should pass because S1 is not marked as ThreadSafe
+            put("Alg.alias.SecureRandom.AliasS1", "S1");
+
             // Bad. Boasting ThreadSafe but isn't
             put("SecureRandom.S2", S.class.getName());
             put("SecureRandom.S2 ThreadSafe", "true");
@@ -77,11 +90,11 @@ public class ThreadSafe {
 
             // Good. No attribute.
             putService(new Service(this, "SecureRandom", "S3",
-                    S.class.getName(), null, null));
+                    S.class.getName(), Collections.singletonList("AliasS3"), null));
 
             // Bad. Boasting ThreadSafe but isn't
             putService(new Service(this, "SecureRandom", "S4",
-                    S.class.getName(), null, Map.of("ThreadSafe", "true")));
+                    S.class.getName(), Collections.singletonList("AliasS4"), Map.of("ThreadSafe", "true")));
         }
     }
 
