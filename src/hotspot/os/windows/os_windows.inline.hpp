@@ -57,7 +57,8 @@ inline void os::map_stack_shadow_pages(address sp) {
     *sp = 0;
   }
   StackOverflow* state = JavaThread::current()->stack_overflow_state();
-  assert(original_sp > state->shadow_zone_safe_limit(), "");
+  assert(original_sp > state->shadow_zone_safe_limit(), "original_sp=" INTPTR_FORMAT ", "
+         "shadow_zone_safe_limit=" INTPTR_FORMAT, p2i(original_sp), p2i(state->shadow_zone_safe_limit()));
   state->set_shadow_zone_growth_watermark(original_sp);
 }
 
