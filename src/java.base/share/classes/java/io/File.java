@@ -81,7 +81,7 @@ import jdk.internal.util.StaticProperty;
  *
  * <p> Unless otherwise noted,
  * <a href= "../../java/nio/file/package-summary.html#links">symbolic links</a>
- * are transparent to the constructors and methods of this class, whether they
+ * are automatically redirected to the <i>target</i> of the link, whether they
  * are provided by a pathname string or via a {@code File} object.
  *
  * <p> The <em>parent</em> of an abstract pathname may be obtained by invoking

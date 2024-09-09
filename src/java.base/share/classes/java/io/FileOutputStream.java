@@ -47,8 +47,8 @@ import sun.nio.ch.FileChannelImpl;
  *
  * <p>
  * <a href= "../../java/nio/file/package-summary.html#links">Symbolic links</a>
- * are transparent to the constructors of this class, whether they are provided
- * by a pathname string or via a {@code File} object.
+ * are automatically redirected to the <i>target</i> of the link, whether they
+ * are provided by a pathname string or via a {@code File} object.
  *
  * @apiNote
  * The {@link #close} method should be called to release resources used by this
