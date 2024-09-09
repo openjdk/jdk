@@ -443,6 +443,7 @@ public class DnsClient {
                 udpChannel.write(opkt);
 
                 // timeout remaining after successive 'blockingReceive()'
+                // no point in supporting timeout > Integer.MAX_VALUE, clamp if needed
                 long timeoutLeft = Math.clamp(pktTimeout, 0, Integer.MAX_VALUE);
                 int cnt = 0;
                 boolean gotData = false;
