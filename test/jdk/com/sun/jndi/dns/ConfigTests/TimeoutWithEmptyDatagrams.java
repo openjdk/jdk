@@ -59,8 +59,6 @@ public class TimeoutWithEmptyDatagrams extends DNSTestBase {
     // is not reached
     private static final int DNS_CLIENT_MIN_TIMEOUT = 50;
 
-    private long startTime;
-
     public TimeoutWithEmptyDatagrams() {
         setLocalServer(false);
     }
@@ -141,6 +139,7 @@ public class TimeoutWithEmptyDatagrams extends DNSTestBase {
                 }
             });
 
+            long startTime = 0;
             try {
                 env().put(Context.PROVIDER_URL, allQuietUrl);
                 env().put("com.sun.jndi.dns.timeout.initial", String.valueOf(TIMEOUT));
