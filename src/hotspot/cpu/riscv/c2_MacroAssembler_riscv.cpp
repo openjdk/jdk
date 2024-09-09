@@ -68,8 +68,8 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, oop);
-    lwu(tmp, Address(tmp, Klass::access_flags_offset()));
-    test_bit(tmp, tmp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    lbu(tmp, Address(tmp, Klass::misc_flags_offset()));
+    test_bit(tmp, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
     bnez(tmp, slow_path);
   }
 
@@ -277,8 +277,8 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box,
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
-    lwu(tmp1, Address(tmp1, Klass::access_flags_offset()));
-    test_bit(tmp1, tmp1, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    lbu(tmp1, Address(tmp1, Klass::misc_flags_offset()));
+    test_bit(tmp1, tmp1, exact_log2(KlassFlags::_misc_is_value_based_class));
     bnez(tmp1, slow_path);
   }
 

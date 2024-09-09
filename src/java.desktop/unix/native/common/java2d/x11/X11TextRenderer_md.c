@@ -213,7 +213,7 @@ AWTDrawGlyphList(JNIEnv *env, jobject xtr,
     XImage *theImage;
     Pixmap thePixmap;
     XGCValues xgcv;
-    int scan, screen;
+    int screen;
     AwtGraphicsConfigDataPtr cData;
     X11SDOps *xsdo = (X11SDOps *)jlong_to_ptr(dstData);
     jint cx1, cy1, cx2, cy2;
@@ -235,8 +235,6 @@ AWTDrawGlyphList(JNIEnv *env, jobject xtr,
     theImage = cData->monoImage;
     thePixmap = cData->monoPixmap;
     theGC = cData->monoPixmapGC;
-
-    scan = theImage->bytes_per_line;
 
     xgcv.fill_style = FillStippled;
     xgcv.stipple = thePixmap;

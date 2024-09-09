@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -157,19 +157,13 @@ MetaWord* ClassLoaderMetaspace::expand_and_allocate(size_t word_size, Metaspace:
 
 // Prematurely returns a metaspace allocation to the _block_freelists
 // because it is not needed anymore.
-void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {
-  NOT_LP64(word_size = align_down(word_size, Metaspace::min_allocation_word_size);)
-  MetaBlock bl(ptr, word_size);
-  if (word_size >= Metaspace::min_allocation_word_size) {
-    MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
-    if (have_class_space_arena() && is_class) {
-      assert(class_space_arena()->contains(bl),
-             "Not from class arena " METABLOCKFORMAT "?", METABLOCKFORMATARGS(bl));
-      class_space_arena()->deallocate(MetaBlock(ptr, word_size));
-    } else {
-      non_class_space_arena()->deallocate(MetaBlock(ptr, word_size));
-    }
-    DEBUG_ONLY(InternalStats::inc_num_deallocs();)
+void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size) {
+  MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
+  const bool is_class = Metaspace::using_class_space() && Metaspace::is_in_class_space(ptr);
+  if (is_class) {
+    class_space_arena()->deallocate(ptr, word_size);
+  } else {
+    non_class_space_arena()->deallocate(ptr, word_size);
   }
 }
 

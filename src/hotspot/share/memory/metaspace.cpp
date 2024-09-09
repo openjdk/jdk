@@ -1013,6 +1013,7 @@ void Metaspace::purge(bool classes_unloaded) {
   MetaspaceCriticalAllocation::process();
 }
 
+
 // Returns true if pointer points into one of the metaspace regions, or
 // into the class space.
 bool Metaspace::is_in_shared_metaspace(const void* ptr) {
@@ -1023,3 +1024,4 @@ bool Metaspace::is_in_shared_metaspace(const void* ptr) {
 bool Metaspace::is_in_nonclass_metaspace(const void* ptr) {
   return VirtualSpaceList::vslist_nonclass()->contains((MetaWord*)ptr);
 }
+

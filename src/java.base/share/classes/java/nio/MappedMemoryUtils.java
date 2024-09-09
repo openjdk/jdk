@@ -116,6 +116,18 @@ import jdk.internal.misc.Unsafe;
     private static native void unload0(long address, long length);
     private static native void force0(FileDescriptor fd, long address, long length) throws IOException;
 
+    /* Register the natives via the static initializer.
+     *
+     * This is required, as these native methods are "scoped methods" (see ScopedMemoryAccess).
+     * As such, it's better not to end up doing a full JNI lookup while in a scoped method context,
+     * as that will make the stack trace too deep.
+     */
+    private static native void registerNatives();
+    static {
+        registerNatives();
+        isLoaded0(0, 0, 0);
+    }
+
     // utility methods
 
     // Returns the distance (in bytes) of the buffer start from the

@@ -982,8 +982,6 @@ JvmtiEventControllerPrivate::change_field_watch(jvmtiEvent event_type, bool adde
             added? "add" : "remove",
             *count_addr));
 
-  JvmtiVTMSTransitionDisabler disabler;
-
   if (added) {
     (*count_addr)++;
     if (*count_addr == 1) {
