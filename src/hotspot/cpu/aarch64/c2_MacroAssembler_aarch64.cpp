@@ -2558,10 +2558,22 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
   return MacroAssembler::in_scratch_emit_size();
 }
 
-void C2_MacroAssembler::load_nklass_compact_c2(Register dst, Register src) {
+void C2_MacroAssembler::load_nklass_compact_c2(Register dst, Register obj, Register index, int scale, int disp) {
+  // Note: Don't clobber obj anywhere in that method!
+
   // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract
   // obj-start, so that we can load from the object's mark-word instead. Usually the address
-  // comes as obj-start in obj and klass_offset_in_bytes in disp.
-  ldr(dst, Address(src, -oopDesc::klass_offset_in_bytes()));
+  // comes as obj-start in obj and klass_offset_in_bytes in disp. However, sometimes C2
+  // combines decoding of a compressed oop and the load of the narrow Klass. When that happens,
+  // we get the heapBase in obj, and the narrowOop+klass_offset_in_bytes/sizeof(narrowOop) in index.
+  // When that happens, we need to lea the address into a single register, and subtract the
+  // klass_offset_in_bytes, to get the address of the mark-word.
+  int offset = oopDesc::mark_offset_in_bytes() + disp - oopDesc::klass_offset_in_bytes();
+  if (index == noreg) {
+    ldr(dst, Address(obj, offset));
+  } else {
+    lea(dst, Address(obj, index, Address::lsl(scale)));
+    ldr(dst, Address(dst, offset));
+  }
   lsr(dst, dst, markWord::klass_shift);
 }
