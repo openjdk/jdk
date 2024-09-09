@@ -276,7 +276,9 @@ public:
           _count((roots_count + max_size_in_elems - 1) / max_size_in_elems),
           _roots_count(roots_count),
           _max_size_in_bytes(max_size_in_bytes),
-          _max_size_in_elems(max_size_in_elems) {}
+          _max_size_in_elems(max_size_in_elems) {
+    assert(is_power_of_2(_max_size_in_bytes), "must be");
+  }
 };
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP

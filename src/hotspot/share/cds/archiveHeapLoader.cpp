@@ -379,7 +379,7 @@ void ArchiveHeapLoader::finish_initialization() {
     // The byte size of each segment (except for the last one) is max_size.
     HeapRootSegments segments = FileMapInfo::current_info()->heap_root_segments();
     int max_size = segments.max_size_in_bytes();
-    HeapShared::init_root_segment_max_size(max_size);
+    HeapShared::init_root_segment_sizes(max_size);
     intptr_t first_segment_addr = bottom + segments.base_offset();
     for (size_t c = 0; c < segments.count(); c++) {
       oop segment_oop = cast_to_oop(first_segment_addr + (c * max_size));
