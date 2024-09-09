@@ -721,22 +721,16 @@ final class StringConcatHelper {
 
     @ForceInline
     static String concat(String prefix, Object value, String suffix) {
-        if (prefix == null) prefix = "null";
-        if (suffix == null) suffix = "null";
         return concat0(prefix, stringOf(value), suffix);
     }
 
     @ForceInline
     static String concat(String prefix, float value, String suffix) {
-        if (prefix == null) prefix = "null";
-        if (suffix == null) suffix = "null";
         return concat0(prefix, stringOf(value), suffix);
     }
 
     @ForceInline
     static String concat(String prefix, double value, String suffix) {
-        if (prefix == null) prefix = "null";
-        if (suffix == null) suffix = "null";
         return concat0(prefix, stringOf(value), suffix);
     }
 
@@ -753,9 +747,6 @@ final class StringConcatHelper {
      */
     @ForceInline
     static String concat(String prefix, int value, String suffix) {
-        if (prefix == null) prefix = "null";
-        if (suffix == null) suffix = "null";
-
         byte coder = (byte) (prefix.coder() | suffix.coder());
         int length = prefix.length() + DecimalDigits.stringSize(value);
         byte[] buf = newArrayWithSuffix(suffix, length, coder);
@@ -776,9 +767,6 @@ final class StringConcatHelper {
      */
     @ForceInline
     static String concat(String prefix, long value, String suffix) {
-        if (prefix == null) prefix = "null";
-        if (suffix == null) suffix = "null";
-
         byte coder = (byte) (prefix.coder() | suffix.coder());
         int length = prefix.length() + DecimalDigits.stringSize(value);
         byte[] buf = newArrayWithSuffix(suffix, length, coder);
@@ -799,9 +787,6 @@ final class StringConcatHelper {
      */
     @ForceInline
     static String concat(String prefix, char value, String suffix) {
-        if (prefix == null) prefix = "null";
-        if (suffix == null) suffix = "null";
-
         byte coder = (byte) (prefix.coder() | suffix.coder() | stringCoder(value));
         int length = prefix.length() + 1;
         byte[] buf = newArrayWithSuffix(suffix, length, coder);
@@ -822,9 +807,6 @@ final class StringConcatHelper {
      */
     @ForceInline
     static String concat(String prefix, boolean value, String suffix) {
-        if (prefix == null) prefix = "null";
-        if (suffix == null) suffix = "null";
-
         byte coder = (byte) (prefix.coder() | suffix.coder());
         int length = stringSize(prefix.length(), value);
         byte[] buf = newArrayWithSuffix(suffix, length, coder);
