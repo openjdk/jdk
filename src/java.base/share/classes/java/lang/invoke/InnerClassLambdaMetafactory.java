@@ -158,7 +158,6 @@ import sun.invoke.util.Wrapper;
         implMethodName = implInfo.getName();
         implMethodDesc = methodDesc(implInfo.getMethodType());
         constructorType = factoryType.changeReturnType(Void.TYPE);
-        constructorTypeDesc = methodDesc(constructorType);
         lambdaClassName = lambdaClassName(targetClass);
         lambdaClassEntry = pool.classEntry(ReferenceClassDescImpl.ofValidated(ConstantUtils.concat("L", lambdaClassName, ";")));
         // If the target class invokes a protected method inherited from a
@@ -184,6 +183,7 @@ import sun.invoke.util.Wrapper;
             argNames = EMPTY_STRING_ARRAY;
             argDescs = EMPTY_CLASSDESC_ARRAY;
         }
+        constructorTypeDesc = MethodTypeDescImpl.ofValidated(CD_void, argDescs);
     }
 
     private static String lambdaClassName(Class<?> targetClass) {
@@ -192,7 +192,7 @@ import sun.invoke.util.Wrapper;
             // use the original class name
             name = name.replace('/', '_');
         }
-        return name.replace('.', '/') + "$$Lambda";
+        return name.replace('.', '/').concat("$$Lambda");
     }
 
     /**
@@ -222,7 +222,7 @@ import sun.invoke.util.Wrapper;
                 MethodHandle mh = caller.findConstructor(innerClass, constructorType);
                 if (factoryType.parameterCount() == 0) {
                     // In the case of a non-capturing lambda, we optimize linkage by pre-computing a single instance
-                    Object inst = mh.asType(methodType(Object.class)).invokeExact();
+                    Object inst = mh.invokeBasic();
                     return new ConstantCallSite(MethodHandles.constant(interfaceClass, inst));
                 } else {
                     return new ConstantCallSite(mh.asType(factoryType));
