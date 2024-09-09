@@ -665,7 +665,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   log_info(os)("Initialized VM with process ID %d", os::current_process_id());
   if (log_is_enabled(Info, os)) {
     char buffer[2*PATH_MAX];
-    os::check_core_dump_enabled(buffer, sizeof(buffer));
+    os::check_core_prerequisites(buffer, sizeof(buffer), true);
     log_info(os)("core dump info: %s", buffer);
   }
 

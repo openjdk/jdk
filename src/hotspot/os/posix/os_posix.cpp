@@ -104,17 +104,17 @@ static int clock_tics_per_sec = 100;
 size_t os::_os_min_stack_allowed = PTHREAD_STACK_MIN;
 
 // Check core dump limit and report possible place where core can be found
-bool os::check_core_dump_enabled(char* buffer, size_t bufferSize) {
+static void check_core_prerequisites(char* buffer, size_t bufferSize, bool check_only) {
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
     jio_snprintf(buffer, bufferSize, "CreateCoredumpOnCrash is disabled from command line");
     VMError::record_coredump_status(buffer, false);
-    return false;
+    return;
   }
 
   bool success;
   char core_path[PATH_MAX];
-  if (get_core_path(core_path, PATH_MAX) <= 0) {
-    jio_snprintf(buffer, bufferSize, "core.%d (may not exist)", current_process_id());
+  if (os::get_core_path(core_path, PATH_MAX) <= 0) {
+    jio_snprintf(buffer, bufferSize, "core.%d (may not exist)", os::current_process_id());
     success = true;
 #ifdef LINUX
   } else if (core_path[0] == '"') { // redirect to user process
@@ -145,11 +145,6 @@ bool os::check_core_dump_enabled(char* buffer, size_t bufferSize) {
   }
 
   VMError::record_coredump_status(buffer, success);
-  return success;
-}
-
-void os::prepare_core_dump(char* buffer, size_t buffsz) {
-  // nothing to do
 }
 
 bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
