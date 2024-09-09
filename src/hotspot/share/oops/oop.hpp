@@ -119,20 +119,6 @@ class oopDesc {
   // to be able to figure out the size of an object knowing its klass.
   inline size_t size_given_klass(Klass* klass);
 
-  // The following set of methods is used to access the mark-word and related
-  // properties when the object may be forwarded. Be careful where and when
-  // using this method. It assumes that the forwardee is installed in
-  // the header as a plain pointer (or self-forwarded). In particular,
-  // those methods can not deal with the encoded forwarding that is used
-  // in Serial, Parallel, G1 and Shenandoah full-GCs.
-private:
-  inline Klass*   forward_safe_klass_impl(markWord m) const;
-public:
-  inline Klass*   forward_safe_klass() const;
-  inline Klass*   forward_safe_klass(markWord m) const;
-  inline size_t   forward_safe_size();
-  inline void     forward_safe_init_mark();
-
   // type test operations (inlined in oop.inline.hpp)
   inline bool is_instance()    const;
   inline bool is_instanceRef() const;

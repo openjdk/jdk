@@ -225,53 +225,6 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
   return s;
 }
 
-#ifdef _LP64
-Klass* oopDesc::forward_safe_klass_impl(markWord m) const {
-  assert(UseCompactObjectHeaders, "Only get here with compact headers");
-  if (m.is_marked()) {
-    oop fwd = forwardee(m);
-    markWord m2 = fwd->mark();
-    assert(!m2.is_marked() || m2.is_self_forwarded(), "no double forwarding: this: " PTR_FORMAT " (" INTPTR_FORMAT "), fwd: " PTR_FORMAT " (" INTPTR_FORMAT ")", p2i(this), m.value(), p2i(fwd), m2.value());
-    m = m2;
-  }
-  return m.klass();
-}
-#endif
-
-Klass* oopDesc::forward_safe_klass(markWord m) const {
-#ifdef _LP64
-  if (UseCompactObjectHeaders) {
-    return forward_safe_klass_impl(m);
-  } else
-#endif
-  {
-    return klass();
-  }
-}
-
-Klass* oopDesc::forward_safe_klass() const {
-#ifdef _LP64
-  if (UseCompactObjectHeaders) {
-    return forward_safe_klass_impl(mark());
-  } else
-#endif
-  {
-    return klass();
-  }
-}
-
-size_t oopDesc::forward_safe_size() {
-  return size_given_klass(forward_safe_klass());
-}
-
-void oopDesc::forward_safe_init_mark() {
-  if (UseCompactObjectHeaders) {
-    set_mark(forward_safe_klass()->prototype_header());
-  } else {
-    set_mark(markWord::prototype());
-  }
-}
-
 bool oopDesc::is_instance()    const { return klass()->is_instance_klass();             }
 bool oopDesc::is_instanceRef() const { return klass()->is_reference_instance_klass();   }
 bool oopDesc::is_stackChunk()  const { return klass()->is_stack_chunk_instance_klass(); }

@@ -1133,7 +1133,7 @@ oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
-  size_t size = p->forward_safe_size();
+  size_t size = ShenandoahForwarding::size(p);
 
   assert(!heap_region_containing(p)->is_humongous(), "never evacuate humongous objects");
 
