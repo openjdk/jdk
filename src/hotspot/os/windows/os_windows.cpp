@@ -1287,7 +1287,7 @@ void os::shutdown() {
 static HANDLE dumpFile = nullptr;
 
 // Check if core dump is enabled.
-static void check_core_prerequisites(char* buffer, size_t bufferSize, bool check_only) {
+void os::check_core_prerequisites(char* buffer, size_t bufferSize, bool check_only) {
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
     jio_snprintf(buffer, buffsz, "CreateCoredumpOnCrash is disabled from command line");
     VMError::record_coredump_status(buffer, false);
