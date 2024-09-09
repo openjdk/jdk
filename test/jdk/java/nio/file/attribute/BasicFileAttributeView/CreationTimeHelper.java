@@ -41,11 +41,18 @@ public class CreationTimeHelper extends NativeTestHelper {
             downcallHandle(lookup.findOrThrow("linuxIsCreationTimeSupported"),
             FunctionDescriptor.of(C_BOOL, C_POINTER));
 
-    // Helper so as to determine 'statx' support on the runtime system
-    // static boolean linuxIsCreationTimeSupported(String file);
+    // Helper so as to determine birth time support or not on Linux.
+    // Support is determined in a two-step process:
+    // 1. Determine if `statx` system call is available. If available proceed,
+    //    otherwise return false.
+    // 2. Perform an actual `statx` call on the given file and check for birth
+    //    time support in the mask returned from the call. This is needed,
+    //    since some file systems, like nfs/tmpfs etc., don't support birth
+    //    time even though the `statx` system call is available.
     static boolean linuxIsCreationTimeSupported(String file) throws Throwable {
-        if (!abi.defaultLookup().find("statx").isPresent())
+        if (!abi.defaultLookup().find("statx").isPresent()) {
             return false;
+        }
         try (var arena = Arena.ofConfined()) {
             MemorySegment s = arena.allocateFrom(file);
             return (boolean)methodHandle.invokeExact(s);
