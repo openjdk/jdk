@@ -30,6 +30,7 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/defaultStream.hpp"
+#include <string.h>
 
 const char* const LogFileStreamOutput::FoldMultilinesOptionKey = "foldmultilines";
 
@@ -115,18 +116,30 @@ bool LogFileStreamOutput::flush() {
   total += result;                                            \
 }
 
-int LogFileStreamOutput::write_internal_line(const LogDecorations& decorations, const char* msg) {
+int LogFileStreamOutput::write_internal_line(const LogDecorations& decorations, const char* msg, int msg_len) {
   int written = 0;
   const bool use_decorations = !_decorators.is_empty();
 
-  if (use_decorations) {
-    WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
-    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
-  }
-
   if (!_fold_multilines) {
-    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written);
+    int written_tmp = 0;
+    while (true) {
+      if (use_decorations) {
+        WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
+        WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
+      }
+      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written_tmp);
+      if (written_tmp >= msg_len) {
+        // We are finished, add up everything
+        written += written_tmp;
+        break;
+      }
+      msg += written_tmp;
+    }
   } else {
+    if (use_decorations) {
+      WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
+      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
+    }
     char *dupstr = os::strdup_check_oom(msg, mtLogging);
     char *cur = dupstr;
     char *next;
@@ -147,23 +160,21 @@ int LogFileStreamOutput::write_internal_line(const LogDecorations& decorations, 
 }
 
 int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const char* msg) {
+  int msg_len = strlen(msg);
+
   // Do not do anything if foldmultilines has been specified
-  if (_fold_multilines) return write_internal_line(decorations, msg);
+  if (_fold_multilines) return write_internal_line(decorations, msg, msg_len);
   
-  int written = 0;
   char* dupstr = os::strdup_check_oom(msg, mtLogging);
   char* tmp = dupstr;
-  char* base = tmp;
 
   while (*tmp != '\0') {
     if (*tmp == '\n') {
       *tmp = '\0';
-      written += write_internal_line(decorations, base);
-      base = tmp + 1;
     }
     ++tmp;
   }
-  written += write_internal_line(decorations, base);
+  int written = write_internal_line(decorations, dupstr, msg_len);
 
   os::free(dupstr);
 
