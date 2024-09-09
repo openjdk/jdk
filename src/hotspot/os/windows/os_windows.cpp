@@ -1290,13 +1290,13 @@ static HANDLE dumpFile = nullptr;
 void os::check_core_prerequisites(char* buffer, size_t bufferSize, bool check_only) {
   bool status = true;
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
-    jio_snprintf(buffer, buffsz, "CreateCoredumpOnCrash is disabled from command line");
+    jio_snprintf(buffer, bufferSize, "CreateCoredumpOnCrash is disabled from command line");
     status = false;
   }
 
 #ifndef ASSERT
   if (status && FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !os::win32::is_windows_server()) {
-    jio_snprintf(buffer, buffsz, "Minidumps are not enabled by default on client versions of Windows");
+    jio_snprintf(buffer, bufferSize, "Minidumps are not enabled by default on client versions of Windows");
     status = false;
   }
 #endif
@@ -1305,15 +1305,15 @@ void os::check_core_prerequisites(char* buffer, size_t bufferSize, bool check_on
     const char* cwd = get_current_directory(nullptr, 0);
     int pid = current_process_id();
     if (cwd != nullptr) {
-      jio_snprintf(buffer, buffsz, "%s\\hs_err_pid%u.mdmp", cwd, pid);
+      jio_snprintf(buffer, bufferSize, "%s\\hs_err_pid%u.mdmp", cwd, pid);
     } else {
-      jio_snprintf(buffer, buffsz, ".\\hs_err_pid%u.mdmp", pid);
+      jio_snprintf(buffer, bufferSize, ".\\hs_err_pid%u.mdmp", pid);
     }
 
     if (check_only == false && dumpFile == nullptr &&
        (dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr))
                  == INVALID_HANDLE_VALUE) {
-      jio_snprintf(buffer, buffsz, "Failed to create minidump file (0x%x).", GetLastError());
+      jio_snprintf(buffer, bufferSize, "Failed to create minidump file (0x%x).", GetLastError());
       status = false;
     }
   }
