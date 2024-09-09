@@ -68,11 +68,11 @@ public:
   }
 
   VMATree::StateType in_type_of(VMATree::TreapNode* x) {
-    return x->val().in.state();
+    return x->val().in.type();
   }
 
   VMATree::StateType out_type_of(VMATree::TreapNode* x) {
-    return x->val().out.state();
+    return x->val().out.type();
   }
 
   int count_nodes(Tree& tree) {
@@ -275,11 +275,11 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
     Tree tree;
     VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.type[NMTUtil::tag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
     all_diff = tree.reserve_mapping(50, 25, rd2);
-    diff = all_diff.type[NMTUtil::tag_to_index(mtTest)];
-    VMATree::SingleDiff diff2 = all_diff.type[NMTUtil::tag_to_index(mtNMT)];
+    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
+    VMATree::SingleDiff diff2 = all_diff.tag[NMTUtil::tag_to_index(mtNMT)];
     EXPECT_EQ(-25, diff.reserve);
     EXPECT_EQ(25, diff2.reserve);
   }
@@ -287,20 +287,20 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
     VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.type[NMTUtil::tag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
     all_diff = tree.release_mapping(0, 100);
-    diff = all_diff.type[NMTUtil::tag_to_index(mtTest)];
+    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(-100, diff.reserve);
   }
   { // Convert some of a released mapping to a committed one
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
     VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.type[NMTUtil::tag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
     all_diff = tree.commit_mapping(0, 100, rd);
-    diff = all_diff.type[NMTUtil::tag_to_index(mtTest)];
+    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(0, diff.reserve);
     EXPECT_EQ(100, diff.commit);
   }
@@ -308,10 +308,10 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree tree;
     VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.type[NMTUtil::tag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
     all_diff = tree.reserve_mapping(100, 100, rd);
-    diff = all_diff.type[NMTUtil::tag_to_index(mtTest)];
+    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
   }
   { // Adjacent reserved mappings with different flags
@@ -319,12 +319,12 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
     Tree tree;
     VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd);
-    VMATree::SingleDiff diff = all_diff.type[NMTUtil::tag_to_index(mtTest)];
+    VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
     all_diff = tree.reserve_mapping(100, 100, rd2);
-    diff = all_diff.type[NMTUtil::tag_to_index(mtTest)];
+    diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(0, diff.reserve);
-    diff = all_diff.type[NMTUtil::tag_to_index(mtNMT)];
+    diff = all_diff.tag[NMTUtil::tag_to_index(mtNMT)];
     EXPECT_EQ(100, diff.reserve);
   }
 
@@ -335,8 +335,8 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     tree.commit_mapping(128, 128, rd);
     tree.commit_mapping(512, 128, rd);
     VMATree::SummaryDiff diff = tree.commit_mapping(0, 1024, rd);
-    EXPECT_EQ(768, diff.type[NMTUtil::tag_to_index(mtTest)].commit);
-    EXPECT_EQ(768, diff.type[NMTUtil::tag_to_index(mtTest)].reserve);
+    EXPECT_EQ(768, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
+    EXPECT_EQ(768, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   }
 }
 
@@ -384,17 +384,17 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 
       // Register diff
       if (old_info.kind == Reserved) {
-        diff.type[(int)old_info.mem_tag].reserve -= page_size;
+        diff.tag[(int)old_info.mem_tag].reserve -= page_size;
       } else if (old_info.kind == Committed) {
-        diff.type[(int)old_info.mem_tag].reserve -= page_size;
-        diff.type[(int)old_info.mem_tag].commit -= page_size;
+        diff.tag[(int)old_info.mem_tag].reserve -= page_size;
+        diff.tag[(int)old_info.mem_tag].commit -= page_size;
       }
 
       if (kind == Reserved) {
-        diff.type[(int)new_info.mem_tag].reserve += page_size;
+        diff.tag[(int)new_info.mem_tag].reserve += page_size;
       } else if (kind == Committed) {
-        diff.type[(int)new_info.mem_tag].reserve += page_size;
-        diff.type[(int)new_info.mem_tag].commit += page_size;
+        diff.tag[(int)new_info.mem_tag].reserve += page_size;
+        diff.tag[(int)new_info.mem_tag].commit += page_size;
       }
       // Overwrite old one with new
       pages[i] = new_info;
@@ -478,8 +478,8 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
     }
 
     for (int j = 0; j < mt_number_of_tags; j++) {
-      VMATree::SingleDiff td = tree_diff.type[j];
-      VMATree::SingleDiff sd = simple_diff.type[j];
+      VMATree::SingleDiff td = tree_diff.tag[j];
+      VMATree::SingleDiff sd = simple_diff.tag[j];
       ASSERT_EQ(td.reserve, sd.reserve);
       ASSERT_EQ(td.commit, sd.commit);
     }
