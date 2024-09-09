@@ -31,7 +31,6 @@ import java.util.function.Consumer;
 
 import java.lang.classfile.AttributeMapper;
 import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassFile.*;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.ClassModel;
@@ -86,7 +85,8 @@ public final class ClassFileImpl implements ClassFile {
             null, // DeadCodeOption.PATCH_DEAD_CODE,
             null, // DeadLabelsOption.FAIL_ON_DEAD_LABELS,
             null, // new ClassHierarchyResolverOptionImpl(ClassHierarchyResolver.defaultResolver()),
-            null /* */);
+            null  // _ -> null
+        );
 
     @SuppressWarnings("unchecked")
     @Override
@@ -129,29 +129,6 @@ public final class ClassFileImpl implements ClassFile {
         return new ClassFileImpl(smo, deo, lno, apo, cpso, sjo, dco, dlo, chro, amo);
     }
 
-    public Function<Utf8Entry, AttributeMapper<?>> attributeMapper() {
-        if (attributeMapperOption == null) {
-            return _ -> null;
-        } else {
-            return ((AttributeMapperOption)attributeMapperOption).attributeMapper();
-        }
-    }
-
-    public ClassHierarchyResolver classHierarchyResolver() {
-        if (classHierarchyResolverOption == null) {
-            return ClassHierarchyImpl.DEFAULT_RESOLVER;
-        } else {
-            return ((ClassHierarchyResolverOption)classHierarchyResolverOption).classHierarchyResolver();
-        }
-    }
-
-    public boolean dropDeadLabels() {
-        if (deadLabelsOption == null) {
-            return false;
-        }
-        return deadLabelsOption == DeadLabelsOption.DROP_DEAD_LABELS;
-    }
-
     @Override
     public ClassModel parse(byte[] bytes) {
         return new ClassImpl(bytes, this);
@@ -169,9 +146,8 @@ public final class ClassFileImpl implements ClassFile {
 
     @Override
     public byte[] transformClass(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
-        ConstantPoolBuilder constantPool = constantPoolSharingOption == ConstantPoolSharingOption.SHARED_POOL
-                                                                     ? ConstantPoolBuilder.of(model)
-                                                                     : ConstantPoolBuilder.of();
+        ConstantPoolBuilder constantPool = sharedConstantPool() ? ConstantPoolBuilder.of(model)
+                                                                : ConstantPoolBuilder.of();
         return build(newClassName, constantPool,
                 new Consumer<ClassBuilder>() {
                     @Override
@@ -181,6 +157,10 @@ public final class ClassFileImpl implements ClassFile {
                         builder.transform((ClassImpl)model, transform);
                     }
                 });
+    }
+
+    public boolean sharedConstantPool() {
+        return constantPoolSharingOption == null || constantPoolSharingOption == ConstantPoolSharingOption.SHARED_POOL;
     }
 
     @Override
@@ -201,18 +181,32 @@ public final class ClassFileImpl implements ClassFile {
         }
     }
 
-    public boolean passDebugElements() {
-        if (debugElementsOption == null || debugElementsOption == DebugElementsOption.PASS_DEBUG) {
-            return true;
+    public Function<Utf8Entry, AttributeMapper<?>> attributeMapper() {
+        if (attributeMapperOption == null) {
+            return _ -> null;
+        } else {
+            return ((AttributeMapperOption)attributeMapperOption).attributeMapper();
         }
-        return false;
+    }
+
+    public ClassHierarchyResolver classHierarchyResolver() {
+        if (classHierarchyResolverOption == null) {
+            return ClassHierarchyImpl.DEFAULT_RESOLVER;
+        } else {
+            return ((ClassHierarchyResolverOption)classHierarchyResolverOption).classHierarchyResolver();
+        }
+    }
+
+    public boolean dropDeadLabels() {
+        return (deadLabelsOption != null && deadLabelsOption == DeadLabelsOption.DROP_DEAD_LABELS);
+    }
+
+    public boolean passDebugElements() {
+        return (debugElementsOption == null || debugElementsOption == DebugElementsOption.PASS_DEBUG);
     }
 
     public boolean passLineNumbers() {
-        if (lineNumbersOption == null || lineNumbersOption == LineNumbersOption.PASS_LINE_NUMBERS) {
-            return true;
-        }
-        return false;
+        return (lineNumbersOption == null || lineNumbersOption == LineNumbersOption.PASS_LINE_NUMBERS);
     }
 
     public AttributesProcessingOption attributesProcessingOption() {
