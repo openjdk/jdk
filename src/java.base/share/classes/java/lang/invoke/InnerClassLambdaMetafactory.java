@@ -98,7 +98,7 @@ import sun.invoke.util.Wrapper;
     private final ClassDesc[] argDescs;              // Type descriptors for the constructor arguments
     private final String lambdaClassName;            // Generated name for the generated class "X$$Lambda$1"
     private final ConstantPoolBuilder pool = ConstantPoolBuilder.of();
-    private final ClassEntry lambdaClassEntry;       // Type descriptor for the generated class "X$$Lambda$1"
+    private final ClassEntry lambdaClassEntry;       // Class entry for the generated class "X$$Lambda$1"
     private final boolean useImplMethodHandle;       // use MethodHandle invocation instead of symbolic bytecode invocation
 
     /**
