@@ -41,33 +41,52 @@ import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.verifier.VerifierImpl;
 
-public record ClassFileImpl(StackMapsOption stackMapsOption,
-                            DebugElementsOption debugElementsOption,
-                            LineNumbersOption lineNumbersOption,
-                            AttributesProcessingOption attributesProcessingOption,
-                            ConstantPoolSharingOption constantPoolSharingOption,
-                            ShortJumpsOption shortJumpsOption,
-                            DeadCodeOption deadCodeOption,
-                            DeadLabelsOption deadLabelsOption,
-                            ClassHierarchyResolverOption classHierarchyResolverOption,
-                            AttributeMapperOption attributeMapperOption) implements ClassFile {
+public final class ClassFileImpl implements ClassFile {
+
+    private Option stackMapsOption;
+    private Option debugElementsOption;
+    private Option lineNumbersOption;
+    private Option attributesProcessingOption;
+    private Option constantPoolSharingOption;
+    private Option shortJumpsOption;
+    private Option deadCodeOption;
+    private Option deadLabelsOption;
+    private Option classHierarchyResolverOption;
+    private Option attributeMapperOption;
+
+    private ClassFileImpl(Option stackMapsOption,
+                          Option debugElementsOption,
+                          Option lineNumbersOption,
+                          Option attributesProcessingOption,
+                          Option constantPoolSharingOption,
+                          Option shortJumpsOption,
+                          Option deadCodeOption,
+                          Option deadLabelsOption,
+                          Option classHierarchyResolverOption,
+                          Option attributeMapperOption) {
+        this.stackMapsOption              = stackMapsOption;
+        this.debugElementsOption          = debugElementsOption;
+        this.lineNumbersOption            = lineNumbersOption;
+        this.attributesProcessingOption   = attributesProcessingOption;
+        this.constantPoolSharingOption    = constantPoolSharingOption;
+        this.shortJumpsOption             = shortJumpsOption;
+        this.deadCodeOption               = deadCodeOption;
+        this.deadLabelsOption             = deadLabelsOption;
+        this.classHierarchyResolverOption = classHierarchyResolverOption;
+        this.attributeMapperOption        = attributeMapperOption;
+    }
 
     public static final ClassFileImpl DEFAULT_CONTEXT = new ClassFileImpl(
-            StackMapsOption.STACK_MAPS_WHEN_REQUIRED,
-            DebugElementsOption.PASS_DEBUG,
-            LineNumbersOption.PASS_LINE_NUMBERS,
-            AttributesProcessingOption.PASS_ALL_ATTRIBUTES,
-            ConstantPoolSharingOption.SHARED_POOL,
-            ShortJumpsOption.FIX_SHORT_JUMPS,
-            DeadCodeOption.PATCH_DEAD_CODE,
-            DeadLabelsOption.FAIL_ON_DEAD_LABELS,
-            new ClassHierarchyResolverOptionImpl(ClassHierarchyResolver.defaultResolver()),
-            new AttributeMapperOptionImpl(new Function<>() {
-                @Override
-                public AttributeMapper<?> apply(Utf8Entry k) {
-                    return null;
-                }
-            }));
+            null, // StackMapsOption.STACK_MAPS_WHEN_REQUIRED
+            null, // DebugElementsOption.PASS_DEBUG,
+            null, // LineNumbersOption.PASS_LINE_NUMBERS,
+            null, // AttributesProcessingOption.PASS_ALL_ATTRIBUTES,
+            null, // ConstantPoolSharingOption.SHARED_POOL,
+            null, // ShortJumpsOption.FIX_SHORT_JUMPS,
+            null, // DeadCodeOption.PATCH_DEAD_CODE,
+            null, // DeadLabelsOption.FAIL_ON_DEAD_LABELS,
+            null, // new ClassHierarchyResolverOptionImpl(ClassHierarchyResolver.defaultResolver()),
+            null /* */);
 
     @SuppressWarnings("unchecked")
     @Override
@@ -85,6 +104,8 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
         for (var o : options) {
             if (o instanceof StackMapsOption oo) {
                 smo = oo;
+            } else if (o instanceof ClassHierarchyResolverOption oo) {
+                chro = oo;
             } else if (o instanceof DebugElementsOption oo) {
                 deo = oo;
             } else if (o instanceof LineNumbersOption oo) {
@@ -99,8 +120,6 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
                 dco = oo;
             } else if (o instanceof DeadLabelsOption oo) {
                 dlo = oo;
-            } else if (o instanceof ClassHierarchyResolverOption oo) {
-                chro = oo;
             } else if (o instanceof AttributeMapperOption oo) {
                 amo = oo;
             } else { // null or unknown Option type
@@ -108,6 +127,29 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
             }
         }
         return new ClassFileImpl(smo, deo, lno, apo, cpso, sjo, dco, dlo, chro, amo);
+    }
+
+    public Function<Utf8Entry, AttributeMapper<?>> attributeMapper() {
+        if (attributeMapperOption == null) {
+            return _ -> null;
+        } else {
+            return ((AttributeMapperOption)attributeMapperOption).attributeMapper();
+        }
+    }
+
+    public ClassHierarchyResolver classHierarchyResolver() {
+        if (classHierarchyResolverOption == null) {
+            return ClassHierarchyImpl.DEFAULT_RESOLVER;
+        } else {
+            return ((ClassHierarchyResolverOption)classHierarchyResolverOption).classHierarchyResolver();
+        }
+    }
+
+    public boolean dropDeadLabels() {
+        if (deadLabelsOption == null) {
+            return false;
+        }
+        return deadLabelsOption == DeadLabelsOption.DROP_DEAD_LABELS;
     }
 
     @Override
@@ -127,7 +169,7 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
 
     @Override
     public byte[] transformClass(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
-        ConstantPoolBuilder constantPool = constantPoolSharingOption() == ConstantPoolSharingOption.SHARED_POOL
+        ConstantPoolBuilder constantPool = constantPoolSharingOption == ConstantPoolSharingOption.SHARED_POOL
                                                                      ? ConstantPoolBuilder.of(model)
                                                                      : ConstantPoolBuilder.of();
         return build(newClassName, constantPool,
@@ -144,7 +186,7 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
     @Override
     public List<VerifyError> verify(ClassModel model) {
         try {
-            return VerifierImpl.verify(model, classHierarchyResolverOption().classHierarchyResolver(), null);
+            return VerifierImpl.verify(model, classHierarchyResolver(), null);
         } catch (IllegalArgumentException verifierInitializationError) {
             return List.of(new VerifyError(verifierInitializationError.getMessage()));
         }
@@ -157,6 +199,44 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
         } catch (IllegalArgumentException parsingError) {
             return List.of(new VerifyError(parsingError.getMessage()));
         }
+    }
+
+    public boolean passDebugElements() {
+        if (debugElementsOption == null || debugElementsOption == DebugElementsOption.PASS_DEBUG) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean passLineNumbers() {
+        if (lineNumbersOption == null || lineNumbersOption == LineNumbersOption.PASS_LINE_NUMBERS) {
+            return true;
+        }
+        return false;
+    }
+
+    public AttributesProcessingOption attributesProcessingOption() {
+        return (attributesProcessingOption == null) ? AttributesProcessingOption.PASS_ALL_ATTRIBUTES : (AttributesProcessingOption)attributesProcessingOption;
+    }
+
+    public boolean fixShortJumps() {
+        return (shortJumpsOption == null || shortJumpsOption == ShortJumpsOption.FIX_SHORT_JUMPS);
+    }
+
+    public boolean stackMapsWhenRequired() {
+        return (stackMapsOption == null || stackMapsOption == StackMapsOption.STACK_MAPS_WHEN_REQUIRED);
+    }
+
+    public boolean generateStackMaps() {
+        return (stackMapsOption == StackMapsOption.GENERATE_STACK_MAPS);
+    }
+
+    public boolean dropStackMaps() {
+        return (stackMapsOption == StackMapsOption.DROP_STACK_MAPS);
+    }
+
+    public boolean patchDeadCode() {
+        return (deadCodeOption == null || deadCodeOption == DeadCodeOption.PATCH_DEAD_CODE);
     }
 
     public record AttributeMapperOptionImpl(Function<Utf8Entry, AttributeMapper<?>> attributeMapper)
