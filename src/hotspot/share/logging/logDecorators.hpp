@@ -133,6 +133,7 @@ class LogDecorators {
 
   template<typename... Decorators>
   static uint mask_from_decorators(LogDecorators::Decorator first, Decorators... rest) {
+    uint bitmask = 0;
     LogDecorators::Decorator decorators[1 + sizeof...(rest)] = { first, rest... };
     for (const auto decorator : decorators) {
       if (decorator == NoDecorators) return 0;
