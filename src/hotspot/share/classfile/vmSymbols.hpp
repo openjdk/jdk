@@ -750,6 +750,7 @@ class SerializeClosure;
                                                                                                                   \
   /* Stable Values */                                                                                             \
   template(java_lang_StableValue_signature,        "Ljava/lang/StableValue;")                                     \
+  template(java_lang_StableValue_array_signature,  "[Ljava/lang/StableValue;")                                    \
   /*end*/
 
 // enum for figuring positions and size of Symbol::_vm_symbols[]

@@ -350,24 +350,24 @@ final class JepTest {
 
     static
     class FixedStableList<E> extends AbstractList<E> {
-        private final List<StableValue<E>> elements;
+        private final StableValue<E>[] elements;
 
         FixedStableList(int size) {
             this.elements = Stream.generate(StableValue::<E>newInstance)
                     .limit(size)
-                    .toList();
+                    .toArray(StableValue[]::new);
         }
 
         @Override
         public E get(int index) {
-            return elements.get(index).orElseThrow();
+            return elements[index].orElseThrow();
         }
 
 
 
         @Override
         public E set(int index, E element) {
-            elements.get(index).setOrThrow(element);
+            elements[index].setOrThrow(element);
             return null;
         }
 
@@ -375,7 +375,7 @@ final class JepTest {
 
         @Override
         public int size() {
-            return elements.size();
+            return elements.length;
         }
     }
 

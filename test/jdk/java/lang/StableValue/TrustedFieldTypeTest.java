@@ -47,6 +47,9 @@ final class TrustedFieldTypeTest {
         final class HolderNonFinal {
             private StableValue<Integer> value = StableValue.newInstance();
         }
+        final class ArrayHolder {
+            private final StableValue<Integer>[] array = (StableValue<Integer>[]) new StableValue[]{};
+        }
 
         Field valueField = Holder.class.getDeclaredField("value");
         valueField.setAccessible(true);
@@ -64,6 +67,16 @@ final class TrustedFieldTypeTest {
         // As the field is not final, both read and write should be ok (not trusted)
         Object readNonFinal = valueNonFinal.get(holderNonFinal);
         valueNonFinal.set(holderNonFinal, StableValue.newInstance());
+
+        Field arrayField = ArrayHolder.class.getDeclaredField("array");
+        arrayField.setAccessible(true);
+        ArrayHolder arrayHolder = new ArrayHolder();
+        // We should be able to read the StableValue array
+        read = arrayField.get(arrayHolder);
+        // We should NOT be able to write to the StableValue array
+        assertThrows(IllegalAccessException.class, () ->
+                arrayField.set(arrayHolder, new StableValue[1])
+        );
     }
 
     @SuppressWarnings("removal")
@@ -76,10 +89,19 @@ final class TrustedFieldTypeTest {
         final class Holder {
             private final StableValue<Integer> value = StableValue.newInstance();
         }
+        final class ArrayHolder {
+            private final StableValue<Integer>[] array = (StableValue<Integer>[]) new StableValue[]{};
+        }
 
         Field valueField = Holder.class.getDeclaredField("value");
         assertThrows(UnsupportedOperationException.class, () ->
                 unsafe.objectFieldOffset(valueField)
+        );
+
+        Field arrayField = ArrayHolder.class.getDeclaredField("array");
+
+        assertThrows(UnsupportedOperationException.class, () ->
+                unsafe.objectFieldOffset(arrayField)
         );
 
     }
@@ -89,10 +111,16 @@ final class TrustedFieldTypeTest {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
 
         StableValue<Integer> originalValue = StableValue.newInstance();
+        @SuppressWarnings("unchecked")
+        StableValue<Integer>[] originalArrayValue = new StableValue[10];
 
         final class Holder {
             private final StableValue<Integer> value = originalValue;
         }
+        final class ArrayHolder {
+            private final StableValue<Integer>[] array = originalArrayValue;
+        }
+
 
         VarHandle valueVarHandle = lookup.findVarHandle(Holder.class, "value", StableValue.class);
         Holder holder = new Holder();
@@ -103,6 +131,17 @@ final class TrustedFieldTypeTest {
 
         assertThrows(UnsupportedOperationException.class, () ->
                 valueVarHandle.compareAndSet(holder, originalValue, StableValue.newInstance())
+        );
+
+        VarHandle arrayVarHandle = lookup.findVarHandle(ArrayHolder.class, "array", StableValue[].class);
+        ArrayHolder arrayHolder = new ArrayHolder();
+
+        assertThrows(UnsupportedOperationException.class, () ->
+                arrayVarHandle.set(arrayHolder, new StableValue[1])
+        );
+
+        assertThrows(UnsupportedOperationException.class, () ->
+                arrayVarHandle.compareAndSet(arrayHolder, originalArrayValue, new StableValue[1])
         );
 
     }

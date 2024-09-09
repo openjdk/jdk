@@ -993,10 +993,15 @@ public final class Unsafe {
             throw new UnsupportedOperationException("can't get base address on a record class: " + f);
         }
         Class<?> fieldType = f.getType();
-        // Todo: Change to "java.lang.StableValue.class.isAssignableFrom(fieldType)" after StableValue exits preview
-        if (fieldType.getName().equals("java.lang.StableValue")) {
+        // Todo: Change to "java.lang.StableValue.class.isAssignableFrom(fieldType)" etc. after StableValue exits preview
+        if (fieldType.getName().equals("java.lang.StableValue") || (fieldType.isArray() && deepComponent(fieldType).getName().equals("java.lang.StableValue"))) {
             throw new UnsupportedOperationException("can't get field offset for a field of type " + fieldType.getName() + ": " + f);
         }
+    }
+
+    @ForceInline
+    private static Class<?> deepComponent(Class<?> clazz) {
+        return clazz.isArray() ? deepComponent(clazz.getComponentType()) : clazz;
     }
 
     /** The value of {@code arrayBaseOffset(boolean[].class)}.

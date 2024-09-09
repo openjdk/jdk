@@ -130,12 +130,12 @@ import java.util.function.Supplier;
  *           care should be taken whenever (directly or indirectly) synchronizing on
  *           a StableValue. Failure to do this may lead to deadlock.
  *
- * @implNote Instance fields explicitly declared as StableValue are eligible for certain
- *           JVM optimizations compared to normal instance fields. This comes with
- *           restrictions on reflective modifications. Although most ways of reflective
- *           modification of such fields are disabled, it is strongly discouraged to
- *           circumvent these protection means as reflectively modifying such fields may
- *           lead to unspecified behavior.
+ * @implNote Instance fields explicitly declared as StableValue or one-dimensional arrays
+ *           thereof are eligible for certain JVM optimizations compared to normal
+ *           instance fields. This comes with restrictions on reflective modifications.
+ *           Although most ways of reflective modification of such fields are disabled,
+ *           it is strongly discouraged to circumvent these protection means as
+ *           reflectively modifying such fields may lead to unspecified behavior.
  *
  * @param <T> type of the holder value
  *
