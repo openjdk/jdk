@@ -84,7 +84,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
       broken_end = current;
     }
 #endif
-    if (prev->val().out.state() == VMATree::StateType::Committed) {
+    if (prev->val().out.type() == VMATree::StateType::Committed) {
       const VMATree::position& start_addr = prev->key();
       const VMATree::position& end_addr = current->key();
       stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated " SIZE_FORMAT "%s" " for %s from",
@@ -105,8 +105,8 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
     tty->print_cr("Broken tree found with first occurrence at nodes %zu, %zu",
                   broken_start->key(), broken_end->key());
     tty->print_cr("Expected start out to have same type as end in, but was: %s, %s",
-                  VMATree::statetype_to_string(broken_start->val().out.mem_tag()),
-                  VMATree::statetype_to_string(broken_end->val().in.mem_tag()));
+                  VMATree::statetype_to_string(broken_start->val().out.type()),
+                  VMATree::statetype_to_string(broken_end->val().in.type()));
   }
 #endif
 }

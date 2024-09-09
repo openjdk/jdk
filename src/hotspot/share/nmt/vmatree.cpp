@@ -148,9 +148,9 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     // We must have smashed a hole in an existing region (or replaced it entirely).
     // LEQ_A < A < B <= C
     SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(LEQ_A.out().mem_tag())];
-    if (LEQ_A.out().state() == StateType::Reserved) {
+    if (LEQ_A.out().type() == StateType::Reserved) {
       rescom.reserve -= B - A;
-    } else if (LEQ_A.out().state() == StateType::Committed) {
+    } else if (LEQ_A.out().type() == StateType::Committed) {
       rescom.commit -= B - A;
       rescom.reserve -= B - A;
     }
@@ -164,23 +164,23 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 
     // Perform summary accounting
     SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(delete_me.in().mem_tag())];
-    if (delete_me.in().state() == StateType::Reserved) {
+    if (delete_me.in().type() == StateType::Reserved) {
       rescom.reserve -= delete_me.address - prev.address;
-    } else if (delete_me.in().state() == StateType::Committed) {
+    } else if (delete_me.in().type() == StateType::Committed) {
       rescom.commit -= delete_me.address - prev.address;
       rescom.reserve -= delete_me.address - prev.address;
     }
     prev = delete_me;
   }
 
-  if (prev.address != A && prev.out().state() != StateType::Released) {
+  if (prev.address != A && prev.out().type() != StateType::Released) {
     // The last node wasn't released, so it must be connected to a node outside of (A, B)
     // A - prev - B - (some node >= B)
     // It might be that prev.address == B == (some node >= B), this is fine.
-    if (prev.out().state() == StateType::Reserved) {
+    if (prev.out().type() == StateType::Reserved) {
       SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(prev.out().mem_tag())];
       rescom.reserve -= B - prev.address;
-    } else if (prev.out().state() == StateType::Committed) {
+    } else if (prev.out().type() == StateType::Committed) {
       SingleDiff& rescom = diff.tag[NMTUtil::tag_to_index(prev.out().mem_tag())];
       rescom.commit -= B - prev.address;
       rescom.reserve -= B - prev.address;

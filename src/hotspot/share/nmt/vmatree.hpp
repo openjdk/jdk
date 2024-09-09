@@ -87,25 +87,25 @@ public:
 private:
   struct IntervalState {
   private:
-    // Store the state and mem_tag as two bytes
-    uint8_t info[2];
+    // Store the type and mem_tag as two bytes
+    uint8_t type_flag[2];
     NativeCallStackStorage::StackIndex sidx;
 
   public:
-    IntervalState() : info{0,0}, sidx() {}
-    IntervalState(const StateType state, const RegionData data) {
-      assert(!(state == StateType::Released) || data.mem_tag == mtNone, "Released type must have flag mtNone");
-      info[0] = static_cast<uint8_t>(state);
-      info[1] = static_cast<uint8_t>(data.mem_tag);
+    IntervalState() : type_flag{0,0}, sidx() {}
+    IntervalState(const StateType type, const RegionData data) {
+      assert(!(type == StateType::Released) || data.mem_tag == mtNone, "Released type must have flag mtNone");
+      type_flag[0] = static_cast<uint8_t>(type);
+      type_flag[1] = static_cast<uint8_t>(data.mem_tag);
       sidx = data.stack_idx;
     }
 
-    StateType state() const {
-      return static_cast<StateType>(info[0]);
+    StateType type() const {
+      return static_cast<StateType>(type_flag[0]);
     }
 
     MemTag mem_tag() const {
-      return static_cast<MemTag>(info[1]);
+      return static_cast<MemTag>(type_flag[1]);
     }
 
     RegionData regiondata() const {
@@ -124,7 +124,7 @@ private:
     IntervalState out;
 
     bool is_noop() {
-      return in.state() == out.state() &&
+      return in.type() == out.type() &&
              RegionData::equals(in.regiondata(), out.regiondata());
     }
   };
