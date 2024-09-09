@@ -230,12 +230,12 @@ public record ParserVerifier(ClassModel classModel) {
                 ClassDesc type = ((FieldModel)ae).fieldTypeSymbol();
                 ConstantValueEntry cve = cva.constant();
                 if (!switch (TypeKind.from(type)) {
-                    case BooleanType, ByteType, CharType, IntType, ShortType -> cve instanceof IntegerEntry;
-                    case DoubleType -> cve instanceof DoubleEntry;
-                    case FloatType -> cve instanceof FloatEntry;
-                    case LongType -> cve instanceof LongEntry;
-                    case ReferenceType -> type.equals(ConstantDescs.CD_String) && cve instanceof StringEntry;
-                    case VoidType -> false;
+                    case BOOLEAN, BYTE, CHAR, INT, SHORT -> cve instanceof IntegerEntry;
+                    case DOUBLE -> cve instanceof DoubleEntry;
+                    case FLOAT -> cve instanceof FloatEntry;
+                    case LONG -> cve instanceof LongEntry;
+                    case REFERENCE -> type.equals(ConstantDescs.CD_String) && cve instanceof StringEntry;
+                    case VOID -> false;
                 }) {
                     errors.add(new VerifyError("Bad constant value type in %s".formatted(toString(ae))));
                 }
