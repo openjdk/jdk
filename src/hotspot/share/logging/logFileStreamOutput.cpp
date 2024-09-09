@@ -160,7 +160,7 @@ int LogFileStreamOutput::write_internal_line(const LogDecorations& decorations, 
 }
 
 int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const char* msg) {
-  int msg_len = strlen(msg);
+  int msg_len = (int)strlen(msg);
 
   // Do not do anything if foldmultilines has been specified
   if (_fold_multilines) return write_internal_line(decorations, msg, msg_len);
