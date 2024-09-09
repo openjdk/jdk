@@ -1318,7 +1318,7 @@ void os::check_core_prerequisites(char* buffer, size_t bufferSize, bool check_on
     }
   }
 
-  VMError::record_coredump_status(buffer, success);
+  VMError::record_coredump_status(buffer, status);
 }
 
 void os::abort(bool dump_core, void* siginfo, const void* context) {
