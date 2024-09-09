@@ -437,11 +437,11 @@ public class DnsClient {
                 // Packets may only be sent to or received from this server address
                 InetSocketAddress target = new InetSocketAddress(server, port);
                 udpChannel.connect(target);
-                int pktTimeout = (timeout * (1 << retry));
+                long pktTimeout = (timeout * (1L << retry));
                 udpChannel.write(opkt);
 
                 // timeout remaining after successive 'blockingReceive()'
-                int timeoutLeft = pktTimeout;
+                long timeoutLeft = Math.clamp(pktTimeout, 0, Integer.MAX_VALUE);
                 int cnt = 0;
                 boolean gotData = false;
                 do {
@@ -472,10 +472,9 @@ public class DnsClient {
                             return cachedMsg;
                         }
                     }
-                    // Math.max ensures that the timeout is decreased
-                    long elapsedMillis = Math.max(1,
-                            TimeUnit.NANOSECONDS.toMillis(end - start));
-                    timeoutLeft = timeoutLeft - (int) elapsedMillis;
+                    long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(end - start);
+                    // Setting the Math.clamp min to 1 ensures that the timeout is decreased
+                    timeoutLeft = timeoutLeft - Math.clamp(elapsedMillis, 1, Integer.MAX_VALUE);
                 } while (timeoutLeft > MIN_TIMEOUT);
                 // no matching packets received within the timeout
                 throw new SocketTimeoutException();
