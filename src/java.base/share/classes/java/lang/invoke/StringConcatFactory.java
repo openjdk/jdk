@@ -521,18 +521,6 @@ public final class StringConcatFactory {
             if (!mt.hasPrimitives() && suffix.isEmpty() && prefix.isEmpty()) {
                 return simpleConcat();
             }
-
-            if (suffix.isEmpty() && !paramType1.isPrimitive() && paramType1 == String.class) {
-                // "prefix" + i + s
-                mh = simpleConcat3(paramType0);
-                return MethodHandles.insertArguments(mh, 0, prefix);
-            }
-
-            if (prefix.isEmpty() && !paramType0.isPrimitive() && paramType0 == String.class) {
-                // s + i + "suffix"
-                mh = simpleConcat3(paramType1);
-                return MethodHandles.insertArguments(mh, 2, suffix);
-            }
         }
 
         return null;
