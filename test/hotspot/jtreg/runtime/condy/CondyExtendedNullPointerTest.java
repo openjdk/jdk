@@ -25,7 +25,6 @@
  * @test
  * @bug 8339488
  * @summary Test extended NullPointerException message in method with CONSTANT_Dynamic.
- * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile CondyExtendedNullPointer.jasm
@@ -37,7 +36,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class CondyExtendedNullPointerTest {
     public static void main(String args[]) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xverify:all",
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-Xverify:all",
                                                                              "CondyExtendedNullPointer");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("Cannot invoke \"Object.notify()\" because \"CondyExtendedNullPointer.nullObject\" is null");
