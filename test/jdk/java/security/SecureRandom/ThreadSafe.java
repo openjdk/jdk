@@ -21,53 +21,46 @@
  * questions.
  */
 
+import static jdk.test.lib.Utils.runAndCheckException;
+
+import java.lang.Override;
 import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.SecureRandomSpi;
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 /*
  * @test
+ * @library /test/lib
  * @bug 7004967 8329754
  * @summary SecureRandom should be more explicit about threading
  */
+
 public class ThreadSafe {
     public static void main(String[] args) throws Exception {
         Provider p = new P();
         NoSync.test(SecureRandom.getInstance("S1", p), 5, 5);
         NoSync.test(SecureRandom.getInstance("AliasS1", p), 5, 5);
 
-        try {
-            NoSync.test(SecureRandom.getInstance("S2", p), 5, 5);
-            throw new Exception("Failed");
-        } catch (RuntimeException re) {
-            // Good
-        }
+        runAndCheckException(
+                () -> NoSync.test(SecureRandom.getInstance("S2", p), 5, 5),
+                RuntimeException.class);
 
-        try {
-            NoSync.test(SecureRandom.getInstance("AliasS2", p), 5, 5);
-            throw new Exception("Failed");
-        } catch (RuntimeException re) {
-            // Good
-        }
+        runAndCheckException(
+                () -> NoSync.test(SecureRandom.getInstance("AliasS2", p), 5, 5),
+                RuntimeException.class);
 
         NoSync.test(SecureRandom.getInstance("S3", p), 5, 5);
         NoSync.test(SecureRandom.getInstance("AliasS3", p), 5, 5);
 
-        try {
-            NoSync.test(SecureRandom.getInstance("S4", p), 5, 5);
-            throw new Exception("Failed");
-        } catch (RuntimeException re) {
-            // Good
-        }
+        runAndCheckException(
+                () -> NoSync.test(SecureRandom.getInstance("S4", p), 5, 5),
+                RuntimeException.class);
 
-        try {
-            NoSync.test(SecureRandom.getInstance("AliasS4", p), 5, 5);
-            throw new Exception("Failed");
-        } catch (RuntimeException re) {
-            // Good
-        }
+        runAndCheckException(
+                () -> NoSync.test(SecureRandom.getInstance("AliasS4", p), 5, 5),
+                RuntimeException.class);
     }
 
     public static class P extends Provider {
@@ -90,17 +83,18 @@ public class ThreadSafe {
 
             // Good. No attribute.
             putService(new Service(this, "SecureRandom", "S3",
-                    S.class.getName(), Collections.singletonList("AliasS3"), null));
+                    S.class.getName(), List.of("AliasS3"), null));
 
             // Bad. Boasting ThreadSafe but isn't
             putService(new Service(this, "SecureRandom", "S4",
-                    S.class.getName(), Collections.singletonList("AliasS4"), Map.of("ThreadSafe", "true")));
+                    S.class.getName(), List.of("AliasS4"), Map.of("ThreadSafe", "true")));
         }
     }
 
     // This implementation is not itself thread safe.
     public static class S extends SecureRandomSpi {
-        @java.lang.Override
+
+        @Override
         protected void engineSetSeed(byte[] seed) {
             return;
         }
