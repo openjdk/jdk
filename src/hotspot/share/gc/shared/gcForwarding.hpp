@@ -37,6 +37,9 @@
  * compressed-oops encoding: it basically subtracts the forwardee address from the
  * heap-base, shifts that difference into the right place, and sets the lowest two
  * bits (to indicate 'forwarded' state as usual).
+ * With compact-headers, we have 40 bits to encode forwarding pointers. This is
+ * enough to address 8TB of heap. If the heap size exceeds that limit, we turn off
+ * compact headers.
  */
 class GCForwarding : public AllStatic {
   static const int NumLowBitsNarrow = LP64_ONLY(markWord::klass_shift) NOT_LP64(0 /*unused*/);
@@ -47,7 +50,7 @@ class GCForwarding : public AllStatic {
   static int _num_low_bits;
 public:
   static void initialize_flags(size_t max_heap_size);
-  static void initialize(MemRegion heap);
+  static void initialize();
   static inline void forward_to(oop from, oop to);
   static inline oop forwardee(oop from);
   static inline bool is_forwarded(oop obj);

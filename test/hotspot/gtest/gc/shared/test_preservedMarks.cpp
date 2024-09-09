@@ -37,7 +37,7 @@ TEST_VM(PreservedMarks, iterate_and_restore) {
 
   HeapWord fakeheap[32] = { nullptr };
   HeapWord* heap = align_up(fakeheap, 8 * sizeof(HeapWord));
-  GCForwarding::initialize(MemRegion(&heap[0], &heap[16]));
+  GCForwarding::initialize();
 
   oop o1 = cast_to_oop(&heap[0]); o1->set_mark(originalMark());
   oop o2 = cast_to_oop(&heap[2]); o2->set_mark(originalMark());

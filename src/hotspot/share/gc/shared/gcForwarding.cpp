@@ -34,20 +34,22 @@ void GCForwarding::initialize_flags(size_t max_heap_size) {
 #ifdef _LP64
   size_t max_narrow_heap_size = right_n_bits(NumLowBitsNarrow - Shift);
   if (UseCompactObjectHeaders && max_heap_size > max_narrow_heap_size * HeapWordSize) {
-    warning("Compact object headers require a java heap size smaller than %zu (given: %zu). "
-            "Disabling compact object headers.", max_narrow_heap_size * HeapWordSize, max_heap_size);
+    warning("Compact object headers require a java heap size smaller than " SIZE_FORMAT
+            "%s (given: " SIZE_FORMAT "%s). Disabling compact object headers.",
+            byte_size_in_proper_unit(max_narrow_heap_size * HeapWordSize),
+            proper_unit_for_byte_size(max_narrow_heap_size * HeapWordSize),
+            byte_size_in_proper_unit(max_heap_size),
+            proper_unit_for_byte_size(max_heap_size));
     FLAG_SET_ERGO(UseCompactObjectHeaders, false);
   }
 #endif
 }
 
-void GCForwarding::initialize(MemRegion heap) {
+void GCForwarding::initialize() {
 #ifdef _LP64
-  _heap_base = heap.start();
-  if (heap.word_size() <= right_n_bits(NumLowBitsNarrow - Shift)) {
+  if (UseCompactObjectHeaders) {
     _num_low_bits = NumLowBitsNarrow;
   } else {
-    assert(!UseCompactObjectHeaders, "Compact object headers should be turned off for large heaps");
     _num_low_bits = NumLowBitsWide;
   }
 #endif

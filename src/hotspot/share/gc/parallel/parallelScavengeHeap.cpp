@@ -130,7 +130,7 @@ jint ParallelScavengeHeap::initialize() {
 
   ParallelInitLogger::print();
 
-  GCForwarding::initialize(heap_rs.region());
+  GCForwarding::initialize();
 
   return JNI_OK;
 }

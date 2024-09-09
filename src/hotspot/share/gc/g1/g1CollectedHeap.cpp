@@ -1435,7 +1435,7 @@ jint G1CollectedHeap::initialize() {
 
   G1InitLogger::print();
 
-  GCForwarding::initialize(heap_rs.region());
+  GCForwarding::initialize();
 
   return JNI_OK;
 }

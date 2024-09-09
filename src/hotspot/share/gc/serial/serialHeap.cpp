@@ -201,7 +201,7 @@ jint SerialHeap::initialize() {
 
   GCInitLogger::print();
 
-  GCForwarding::initialize(_reserved);
+  GCForwarding::initialize();
 
   return JNI_OK;
 }
