@@ -3160,21 +3160,19 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
   }
 }
 
-void Compile::handle_div_mod_op(Node* n, int div_op, int div_mod_op, bool is_unsigned) {
+void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
   if (!UseDivMod) {
     return;
   }
 
   // Check if a%b and a/b both exist
-  Node* d = n->find_similar(div_op);
+  Node* d = n->find_similar(Op_DivIL(bt, is_unsigned));
   if (!d) {
     return;
   }
 
-  BasicType bt = div_op == Op_DivI || div_op == Op_UDivI ? T_INT : T_LONG;
-
   // Replace them with a fused divmod if supported
-  if (Matcher::has_match_rule(div_mod_op)) {
+  if (Matcher::has_match_rule(Op_DivModIL(bt, is_unsigned))) {
     DivModNode* divmod = DivModNode::make(n, bt, is_unsigned);
     d->subsume_by(divmod->div_proj(), this);
     n->subsume_by(divmod->mod_proj(), this);
@@ -3634,19 +3632,19 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 #endif
 
   case Op_ModI:
-    handle_div_mod_op(n, Op_DivI, Op_DivModI, false);
+    handle_div_mod_op(n, T_INT, false);
     break;
 
   case Op_ModL:
-    handle_div_mod_op(n, Op_DivL, Op_DivModL, false);
+    handle_div_mod_op(n, T_LONG, false);
     break;
 
   case Op_UModI:
-    handle_div_mod_op(n, Op_UDivI, Op_UDivModI, true);
+    handle_div_mod_op(n, T_INT, true);
     break;
 
   case Op_UModL:
-    handle_div_mod_op(n, Op_UDivL, Op_UDivModL, true);
+    handle_div_mod_op(n, T_LONG, true);
     break;
 
   case Op_LoadVector:
