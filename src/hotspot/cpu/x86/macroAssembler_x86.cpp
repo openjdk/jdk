@@ -10421,4 +10421,13 @@ void MacroAssembler::restore_legacy_gprs() {
   movq(rax, Address(rsp, 15 * wordSize));
   addq(rsp, 16 * wordSize);
 }
+
+void MacroAssembler::setCC(Assembler::Condition comparison, Register dst) {
+  if (VM_Version::supports_apx_f()) {
+    esetzuCC(comparison, dst);
+  } else {
+    setb(comparison, dst);
+    movzbl(dst, dst);
+  }
+}
 #endif

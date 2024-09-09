@@ -135,8 +135,7 @@ instruct xCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rFla
     if (barrier_data() != XLoadBarrierElided) {
       __ cmpptr($tmp$$Register, rax);
     }
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setCC(Assembler::equal, $res$$Register);
   %}
 
   ins_pipe(pipe_cmpxchg);

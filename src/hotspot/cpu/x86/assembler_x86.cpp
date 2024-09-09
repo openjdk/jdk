@@ -14727,6 +14727,19 @@ void Assembler::xorq(Address dst, Register src) {
   emit_operand(src, dst, 0);
 }
 
+void Assembler::esetzuCC(Condition cc, Register dst) {
+  assert(VM_Version::supports_apx_f(), "");
+  assert(0 <= cc && cc < 16, "illegal cc");
+
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  attributes.set_is_evex_instruction();
+  attributes.set_extended_context();
+
+  // Encoding Format : eevex_prefix | opcode_cc | modrm
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, 0, VEX_SIMD_F2, /* MAP4 */VEX_OPCODE_0F_3C, &attributes);
+  emit_opcode_prefix_and_encoding(0x40 | cc, 0xC0, encode);
+}
+
 #endif // !LP64
 
 void InstructionAttr::set_address_attributes(int tuple_type, int input_size_in_bits) {
