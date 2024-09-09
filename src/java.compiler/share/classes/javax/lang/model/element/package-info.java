@@ -32,7 +32,7 @@
  * The interfaces in this package do not model the structure of a
  * program inside a method body; for example there is no
  * representation of a {@code for} loop or {@code try}-{@code finally}
- * block. Concretely, there is no model of the abstract syntax tree
+ * block. Concretely, there is no model of any abstract syntax tree
  * (AST) structure of a Java program.  However, the interfaces can
  * model some structures only appearing inside method bodies, such as
  * {@linkplain ElementKind#LOCAL_VARIABLE local variables},
