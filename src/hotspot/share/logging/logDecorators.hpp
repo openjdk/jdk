@@ -145,7 +145,7 @@ class LogDecorators {
   // Check if we have some default decorators for a given LogSelection. If that is the case,
   // the output parameter mask will contain the defaults-specified decorators mask
   static bool has_default_decorator(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults = DefaultDecorators) {
-    int max_specificity = 0;
+    size_t max_specificity = 0;
     for (size_t i = 0; DefaultDecorators[i] != DefaultDecorator::Invalid; ++i) {
       const bool ignore_level = DefaultDecorators[i].selection().level() == LogLevelType::NotMentioned;
       const bool level_matches = ignore_level || selection.level() == DefaultDecorators[i].selection().level();
@@ -153,7 +153,7 @@ class LogDecorators {
       if (!selection.superset_of(DefaultDecorators[i].selection())) {
         continue;
       }
-      int specificity = DefaultDecorators[i].selection().ntags();
+      size_t specificity = DefaultDecorators[i].selection().ntags();
       if (specificity > max_specificity) {
         *mask = DefaultDecorators[i].mask();
         max_specificity = specificity;
