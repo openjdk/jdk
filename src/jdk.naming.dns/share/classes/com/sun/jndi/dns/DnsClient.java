@@ -438,7 +438,7 @@ public class DnsClient {
                 InetSocketAddress target = new InetSocketAddress(server, port);
                 udpChannel.connect(target);
                 // use 1L below to ensure conversion to long and avoid potential
-                // integer overflow (timeout is an int) 
+                // integer overflow (timeout is an int)
                 long pktTimeout = (timeout * (1L << retry));
                 udpChannel.write(opkt);
 
