@@ -2694,7 +2694,6 @@ void C2_MacroAssembler::vectortest(BasicType bt, XMMRegister src1, XMMRegister s
 }
 
 void C2_MacroAssembler::vpadd(BasicType elem_bt, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc) {
-  assert(UseAVX >= 2, "required");
 #ifdef ASSERT
   bool is_bw = ((elem_bt == T_BYTE) || (elem_bt == T_SHORT));
   bool is_bw_supported = VM_Version::supports_avx512bw();
