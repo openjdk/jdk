@@ -23,7 +23,7 @@
 # questions.
 #
 
-########################################################################
+################################################################################
 # This file handles detection of the Boot JDK. The Boot JDK detection
 # process has been developed as a response to solve a complex real-world
 # problem. Initially, it was simple, but it has grown as platform after
@@ -49,7 +49,7 @@
 # JDK, and if one is found, check if it is acceptable. If not, we print
 # our reasons for rejecting it (useful when debugging non-working
 # configure situations) and continue checking the next one.
-########################################################################
+################################################################################
 
 # Execute the check given as argument, and verify the result
 # If the Boot JDK was previously found, do nothing
@@ -322,7 +322,7 @@ AC_DEFUN([BOOTJDK_SETUP_CLASSPATH],
   AC_SUBST(CLASSPATH)
 ])
 
-###############################################################################
+################################################################################
 #
 # We need a Boot JDK to bootstrap the build.
 #
@@ -602,11 +602,12 @@ AC_DEFUN([BOOTJDK_SETUP_BUILD_JDK],
   BUILD_JDK_FOUND="no"
   if test "x$with_build_jdk" != "x"; then
     BOOTJDK_CHECK_BUILD_JDK([
-       if test "x$with_build_jdk" != x; then
-         BUILD_JDK=$with_build_jdk
-         BUILD_JDK_FOUND=maybe
-         AC_MSG_NOTICE([Found potential Build JDK using configure arguments])
-       fi])
+      if test "x$with_build_jdk" != x; then
+        BUILD_JDK=$with_build_jdk
+        BUILD_JDK_FOUND=maybe
+        AC_MSG_NOTICE([Found potential Build JDK using configure arguments])
+      fi
+    ])
     EXTERNAL_BUILDJDK=true
   else
     if test "x$COMPILE_TYPE" = "xcross"; then

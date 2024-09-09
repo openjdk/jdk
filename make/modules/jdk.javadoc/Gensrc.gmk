@@ -26,7 +26,7 @@
 include GensrcCommon.gmk
 include GensrcProperties.gmk
 
-$(eval $(call SetupVersionProperties, JAVADOC_VERSION,\
+$(eval $(call SetupVersionProperties, JAVADOC_VERSION, \
     jdk/javadoc/internal/tool/resources/version.properties))
 
 $(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \

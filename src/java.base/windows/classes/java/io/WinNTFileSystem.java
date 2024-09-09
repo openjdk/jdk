@@ -490,10 +490,24 @@ final class WinNTFileSystem extends FileSystem {
                 return path;
             return "" + ((char) (c-32)) + ':' + '\\';
         }
-        return canonicalize0(path);
+        String canonicalPath = canonicalize0(path);
+        String finalPath = null;
+        try {
+            finalPath = getFinalPath(canonicalPath);
+        } catch (IOException ignored) {
+            finalPath = canonicalPath;
+        }
+        return finalPath;
     }
 
     private native String canonicalize0(String path)
+            throws IOException;
+
+    private String getFinalPath(String path) throws IOException {
+        return getFinalPath0(path);
+    }
+
+    private native String getFinalPath0(String path)
             throws IOException;
 
 

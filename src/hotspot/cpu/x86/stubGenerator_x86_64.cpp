@@ -45,9 +45,6 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci_globals.hpp"
 #endif
-#if INCLUDE_JFR
-#include "jfr/support/jfrIntrinsics.hpp"
-#endif
 
 // For a more detailed description of the stub routine structure
 // see the comment in stubRoutines.hpp
@@ -3702,7 +3699,7 @@ address StubGenerator::generate_cont_thaw(const char* label, Continuation::thaw_
   Label L_thaw_success;
   __ testptr(rbx, rbx);
   __ jccb(Assembler::notZero, L_thaw_success);
-  __ jump(RuntimeAddress(StubRoutines::throw_StackOverflowError_entry()));
+  __ jump(RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
   __ bind(L_thaw_success);
 
   // Make room for the thawed frames and align the stack.
@@ -3776,198 +3773,6 @@ address StubGenerator::generate_cont_returnBarrier() {
 
 address StubGenerator::generate_cont_returnBarrier_exception() {
   return generate_cont_thaw("Cont thaw return barrier exception", Continuation::thaw_return_barrier_exception);
-}
-
-#if INCLUDE_JFR
-
-// For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
-// It returns a jobject handle to the event writer.
-// The handle is dereferenced and the return value is the event writer oop.
-RuntimeStub* StubGenerator::generate_jfr_write_checkpoint() {
-  enum layout {
-    rbp_off,
-    rbpH_off,
-    return_off,
-    return_off2,
-    framesize // inclusive of return address
-  };
-
-  CodeBuffer code("jfr_write_checkpoint", 1024, 64);
-  MacroAssembler* _masm = new MacroAssembler(&code);
-  address start = __ pc();
-
-  __ enter();
-  address the_pc = __ pc();
-
-  int frame_complete = the_pc - start;
-
-  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch1);
-  __ movptr(c_rarg0, r15_thread);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
-  __ reset_last_Java_frame(true);
-
-  // rax is jobject handle result, unpack and process it through a barrier.
-  __ resolve_global_jobject(rax, r15_thread, c_rarg0);
-
-  __ leave();
-  __ ret(0);
-
-  OopMapSet* oop_maps = new OopMapSet();
-  OopMap* map = new OopMap(framesize, 1);
-  oop_maps->add_gc_map(frame_complete, map);
-
-  RuntimeStub* stub =
-    RuntimeStub::new_runtime_stub(code.name(),
-                                  &code,
-                                  frame_complete,
-                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                  oop_maps,
-                                  false);
-  return stub;
-}
-
-// For c2: call to return a leased buffer.
-RuntimeStub* StubGenerator::generate_jfr_return_lease() {
-  enum layout {
-    rbp_off,
-    rbpH_off,
-    return_off,
-    return_off2,
-    framesize // inclusive of return address
-  };
-
-  CodeBuffer code("jfr_return_lease", 1024, 64);
-  MacroAssembler* _masm = new MacroAssembler(&code);
-  address start = __ pc();
-
-  __ enter();
-  address the_pc = __ pc();
-
-  int frame_complete = the_pc - start;
-
-  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch2);
-  __ movptr(c_rarg0, r15_thread);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), 1);
-  __ reset_last_Java_frame(true);
-
-  __ leave();
-  __ ret(0);
-
-  OopMapSet* oop_maps = new OopMapSet();
-  OopMap* map = new OopMap(framesize, 1);
-  oop_maps->add_gc_map(frame_complete, map);
-
-  RuntimeStub* stub =
-    RuntimeStub::new_runtime_stub(code.name(),
-                                  &code,
-                                  frame_complete,
-                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                  oop_maps,
-                                  false);
-  return stub;
-}
-
-#endif // INCLUDE_JFR
-
-// Continuation point for throwing of implicit exceptions that are
-// not handled in the current activation. Fabricates an exception
-// oop and initiates normal exception dispatching in this
-// frame. Since we need to preserve callee-saved values (currently
-// only for C2, but done for C1 as well) we need a callee-saved oop
-// map and therefore have to make these stubs into RuntimeStubs
-// rather than BufferBlobs.  If the compiler needs all registers to
-// be preserved between the fault point and the exception handler
-// then it must assume responsibility for that in
-// AbstractCompiler::continuation_for_implicit_null_exception or
-// continuation_for_implicit_division_by_zero_exception. All other
-// implicit exceptions (e.g., NullPointerException or
-// AbstractMethodError on entry) are either at call sites or
-// otherwise assume that stack unwinding will be initiated, so
-// caller saved registers were assumed volatile in the compiler.
-address StubGenerator::generate_throw_exception(const char* name,
-                                                address runtime_entry,
-                                                Register arg1,
-                                                Register arg2) {
-  // Information about frame layout at time of blocking runtime call.
-  // Note that we only have to preserve callee-saved registers since
-  // the compilers are responsible for supplying a continuation point
-  // if they expect all registers to be preserved.
-  enum layout {
-    rbp_off = frame::arg_reg_save_area_bytes/BytesPerInt,
-    rbp_off2,
-    return_off,
-    return_off2,
-    framesize // inclusive of return address
-  };
-
-  int insts_size = 512;
-  int locs_size  = 64;
-
-  CodeBuffer code(name, insts_size, locs_size);
-  OopMapSet* oop_maps  = new OopMapSet();
-  MacroAssembler* _masm = new MacroAssembler(&code);
-
-  address start = __ pc();
-
-  // This is an inlined and slightly modified version of call_VM
-  // which has the ability to fetch the return PC out of
-  // thread-local storage and also sets up last_Java_sp slightly
-  // differently than the real call_VM
-
-  __ enter(); // required for proper stackwalking of RuntimeStub frame
-
-  assert(is_even(framesize/2), "sp not 16-byte aligned");
-
-  // return address and rbp are already in place
-  __ subptr(rsp, (framesize-4) << LogBytesPerInt); // prolog
-
-  int frame_complete = __ pc() - start;
-
-  // Set up last_Java_sp and last_Java_fp
-  address the_pc = __ pc();
-  __ set_last_Java_frame(rsp, rbp, the_pc, rscratch1);
-  __ andptr(rsp, -(StackAlignmentInBytes));    // Align stack
-
-  // Call runtime
-  if (arg1 != noreg) {
-    assert(arg2 != c_rarg1, "clobbered");
-    __ movptr(c_rarg1, arg1);
-  }
-  if (arg2 != noreg) {
-    __ movptr(c_rarg2, arg2);
-  }
-  __ movptr(c_rarg0, r15_thread);
-  BLOCK_COMMENT("call runtime_entry");
-  __ call(RuntimeAddress(runtime_entry));
-
-  // Generate oop map
-  OopMap* map = new OopMap(framesize, 0);
-
-  oop_maps->add_gc_map(the_pc - start, map);
-
-  __ reset_last_Java_frame(true);
-
-  __ leave(); // required for proper stackwalking of RuntimeStub frame
-
-  // check for pending exceptions
-#ifdef ASSERT
-  Label L;
-  __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), NULL_WORD);
-  __ jcc(Assembler::notEqual, L);
-  __ should_not_reach_here();
-  __ bind(L);
-#endif // ASSERT
-  __ jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
-
-
-  // codeBlob framesize is in words (not VMRegImpl::slot_size)
-  RuntimeStub* stub =
-    RuntimeStub::new_runtime_stub(name,
-                                  &code,
-                                  frame_complete,
-                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                  oop_maps, false);
-  return stub->entry_point();
 }
 
 // exception handler for upcall stubs
@@ -4087,17 +3892,6 @@ void StubGenerator::generate_initial_stubs() {
   StubRoutines::x86::_double_sign_mask      = generate_fp_mask("double_sign_mask", 0x7FFFFFFFFFFFFFFF);
   StubRoutines::x86::_double_sign_flip      = generate_fp_mask("double_sign_flip", 0x8000000000000000);
 
-  // Build this early so it's available for the interpreter.
-  StubRoutines::_throw_StackOverflowError_entry =
-    generate_throw_exception("StackOverflowError throw_exception",
-                             CAST_FROM_FN_PTR(address,
-                                              SharedRuntime::
-                                              throw_StackOverflowError));
-  StubRoutines::_throw_delayed_StackOverflowError_entry =
-    generate_throw_exception("delayed StackOverflowError throw_exception",
-                             CAST_FROM_FN_PTR(address,
-                                              SharedRuntime::
-                                              throw_delayed_StackOverflowError));
   if (UseCRC32Intrinsics) {
     // set table address before stub generation which use it
     StubRoutines::_crc_table_adr = (address)StubRoutines::x86::_crc_table;
@@ -4131,42 +3925,10 @@ void StubGenerator::generate_continuation_stubs() {
   StubRoutines::_cont_thaw          = generate_cont_thaw();
   StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
   StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-
-  JFR_ONLY(generate_jfr_stubs();)
 }
-
-#if INCLUDE_JFR
-void StubGenerator::generate_jfr_stubs() {
-  StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
-  StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
-  StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
-  StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
-}
-#endif
 
 void StubGenerator::generate_final_stubs() {
   // Generates the rest of stubs and initializes the entry points
-
-  // These entry points require SharedInfo::stack0 to be set up in
-  // non-core builds and need to be relocatable, so they each
-  // fabricate a RuntimeStub internally.
-  StubRoutines::_throw_AbstractMethodError_entry =
-    generate_throw_exception("AbstractMethodError throw_exception",
-                             CAST_FROM_FN_PTR(address,
-                                              SharedRuntime::
-                                              throw_AbstractMethodError));
-
-  StubRoutines::_throw_IncompatibleClassChangeError_entry =
-    generate_throw_exception("IncompatibleClassChangeError throw_exception",
-                             CAST_FROM_FN_PTR(address,
-                                              SharedRuntime::
-                                              throw_IncompatibleClassChangeError));
-
-  StubRoutines::_throw_NullPointerException_at_call_entry =
-    generate_throw_exception("NullPointerException at call throw_exception",
-                             CAST_FROM_FN_PTR(address,
-                                              SharedRuntime::
-                                              throw_NullPointerException_at_call));
 
   // support for verify_oop (must happen after universe_init)
   if (VerifyOops) {

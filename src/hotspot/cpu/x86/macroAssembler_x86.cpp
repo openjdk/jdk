@@ -1303,7 +1303,7 @@ void MacroAssembler::reserved_stack_check() {
   jcc(Assembler::below, no_reserved_zone_enabling);
 
   call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), thread);
-  jump(RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry()));
+  jump(RuntimeAddress(SharedRuntime::throw_delayed_StackOverflowError_entry()));
   should_not_reach_here();
 
   bind(no_reserved_zone_enabling);
