@@ -127,7 +127,7 @@ public final class StringConcatFactory {
         HIGH_ARITY_THRESHOLD = highArity != null ? Integer.parseInt(highArity) : 0;
 
         String cacheThreshold = VM.getSavedProperty("java.lang.invoke.StringConcat.cacheThreshold");
-        CACHE_THRESHOLD = cacheThreshold != null ? Integer.parseInt(cacheThreshold) : 16;
+        CACHE_THRESHOLD = cacheThreshold != null ? Integer.parseInt(cacheThreshold) : 256;
 
         String inlineThreshold = VM.getSavedProperty("java.lang.invoke.StringConcat.inlineThreshold");
         FORCE_INLINE_THRESHOLD = inlineThreshold != null ? Integer.parseInt(inlineThreshold) : 16;
