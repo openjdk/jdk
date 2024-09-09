@@ -631,10 +631,10 @@ public class ParameterAnnotations extends TestRunner {
 
         ClassModel model = cf.parse(classfile);
 
-        byte[] newClassFile = cf.transform(model,
-                                           ClassTransform.transformingMethods(m -> m.methodName()
-                                                                                    .equalsString("<init>"),
-                                                                              changeConstructor));
+        byte[] newClassFile = cf.transformClass(model,
+                                                ClassTransform.transformingMethods(m -> m.methodName()
+                                                                                         .equalsString("<init>"),
+                                                                                  changeConstructor));
 
         try (OutputStream out = Files.newOutputStream(classfile)) {
             out.write(newClassFile);
