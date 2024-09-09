@@ -86,9 +86,8 @@ static statx_func* my_statx_func = NULL;
 // static boolean linuxIsCreationTimeSupported(char* file)
 EXPORT bool linuxIsCreationTimeSupported(char* file) {
 #if defined(__linux__)
-    struct my_statx stx;
+    struct my_statx stx = {0};
     int ret, atflag = AT_SYMLINK_NOFOLLOW;
-    memset(&stx, 0xbf, sizeof(stx));
     unsigned int mask = STATX_BASIC_STATS | STATX_BTIME;
 
     my_statx_func = (statx_func*) dlsym(RTLD_DEFAULT, "statx");

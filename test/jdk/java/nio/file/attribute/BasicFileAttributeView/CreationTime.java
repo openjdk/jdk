@@ -28,7 +28,7 @@
  *     that support it, tests using /tmp directory.
  * @library  ../.. /test/lib /java/foreign
  * @build jdk.test.lib.Platform NativeTestHelper
- * @run main/othervm --enable-native-access=ALL-UNNAMED CreationTime
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED CreationTime
  */
 
 /* @test id=cwd
@@ -37,7 +37,7 @@
  *     scratch directory maybe at diff disk partition to /tmp on linux.
  * @library  ../.. /test/lib /java/foreign
  * @build jdk.test.lib.Platform NativeTestHelper
- * @run main/othervm --enable-native-access=ALL-UNNAMED CreationTime .
+ * @run main/othervm/native --enable-native-access=ALL-UNNAMED CreationTime .
  */
 
 import java.lang.foreign.Linker;
