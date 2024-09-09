@@ -81,15 +81,10 @@ public class Oop {
   // Accessors for declared fields
   public Mark  getMark()   { return new Mark(getHandle()); }
 
-  private static Klass getKlass(Mark mark) {
-    assert(VM.getVM().isCompactObjectHeadersEnabled());
-    return mark.getKlass();
-  }
-
   public Klass getKlass() {
     if (VM.getVM().isCompactObjectHeadersEnabled()) {
       assert(VM.getVM().isCompressedKlassPointersEnabled());
-      return getKlass(getMark());
+      return getMark().getKlass();
     } else if (VM.getVM().isCompressedKlassPointersEnabled()) {
       return (Klass)compressedKlass.getValue(getHandle());
     } else {
@@ -224,7 +219,7 @@ public class Oop {
     }
     if (VM.getVM().isCompactObjectHeadersEnabled()) {
       Mark mark = new Mark(handle);
-      return getKlass(mark);
+      return mark.getKlass();
     } else if (VM.getVM().isCompressedKlassPointersEnabled()) {
       return (Klass)Metadata.instantiateWrapperFor(handle.getCompKlassAddressAt(compressedKlass.getOffset()));
     } else {
