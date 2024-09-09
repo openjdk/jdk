@@ -1312,7 +1312,7 @@ void os::check_core_prerequisites(char* buffer, size_t bufferSize, bool check_on
 
     if (check_only == false && dumpFile == nullptr &&
        (dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr))
-        == INVALID_HANDLE_VALUE) {
+                 == INVALID_HANDLE_VALUE) {
       jio_snprintf(buffer, buffsz, "Failed to create minidump file (0x%x).", GetLastError());
       status = false;
     }
