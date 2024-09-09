@@ -67,7 +67,7 @@ inline void OrderAccess::cross_modify_fence_impl() {
   // PR_RISCV_CTX_SW_FENCEI_ON. Thus if context switch to another hart we are
   // ensured that instruction fetch will see any previous data stores
   //
-  // The alternative is using full system IPI (system wide icache sync) then 
+  // The alternative is using full system IPI (system wide icache sync) then
   // this barrier is not strictly needed. As this is emitted in runtime slow-path
   // we will just always emit it, typically after a safepoint.
   guarantee(VM_Version::supports_fencei_barrier(), "Linux kernel require fence.i");
