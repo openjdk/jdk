@@ -187,7 +187,7 @@ void ArchiveHeapWriter::ensure_buffer_space(size_t min_bytes) {
 }
 
 void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
-  Klass* k = Universe::objectArrayKlass(); // already relocated to point to archived klass
+  Klass* k = Universe::objectArrayKlass();
   int length = roots->length();
   _heap_roots_word_size = objArrayOopDesc::object_size(length);
   size_t byte_size = _heap_roots_word_size * HeapWordSize;
@@ -206,8 +206,7 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
   {
     // This is copied from MemAllocator::finish
     if (UseCompactObjectHeaders) {
-      narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(k);
-      oopDesc::release_set_mark(mem, markWord::prototype().set_narrow_klass(nk));
+      oopDesc::release_set_mark(mem, k->prototype_header());
     } else {
       oopDesc::set_mark(mem, markWord::prototype());
       oopDesc::release_set_klass(mem, k);
