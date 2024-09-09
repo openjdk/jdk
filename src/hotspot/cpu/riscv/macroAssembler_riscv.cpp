@@ -1454,6 +1454,99 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   xorr(crc, crc, tmp2);
 }
 
+void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register len, const int64_t unroll_words,
+                                         Register tmp1, Register tmp2, Register tmp3, Register tmp4,
+                                         Register table0, Register table3) {
+
+    const int N = 16, W = 4;
+    const Register blks = tmp2;
+    const Register tmpTable = tmp3, tableN16 = tmp4;
+    const VectorRegister vcrc = v4, vword = v8, vtmp = v12;
+    Label VectorLoop;
+    Label LastBlock;
+
+    // prepare
+    add(tableN16, table3, 1*256*sizeof(juint), tmp1);
+    addi(len, len, unroll_words);
+
+    if (MaxVectorSize == 16) {
+      vsetivli(zr, N, Assembler::e32, Assembler::m4, Assembler::ma, Assembler::ta);
+    } else if (MaxVectorSize == 32) {
+      vsetivli(zr, N, Assembler::e32, Assembler::m2, Assembler::ma, Assembler::ta);
+    } else {
+      assert(MaxVectorSize > 32);
+      vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
+    }
+    vmv_v_x(vcrc, zr);
+    slli(crc, crc, 32);
+    srli(crc, crc, 32);
+    vmv_s_x(vcrc, crc);
+
+    srli(blks, len, 6);
+    slli(t1, blks, 6);
+    sub(len, len, t1);
+    sub(blks, blks, 1);
+    blez(blks, LastBlock);
+
+    bind(VectorLoop);
+    {
+      mv(tmpTable, tableN16);
+
+      vle32_v(vword, buf);
+      vxor_vv(vword, vword, vcrc);
+
+      addi(buf, buf, N*W);
+
+      mv(t1, 0xff);
+      vand_vx(vtmp, vword, t1);
+      vsll_vi(vtmp, vtmp, 2);
+      vluxei32_v(vcrc, tmpTable, vtmp);
+
+      mv(tmp1, 1);
+      for (int k = 1; k < W; k++) {
+        addi(tmpTable, tmpTable, 256*4);
+
+        slli(t1, tmp1, 3);
+        vsrl_vx(vtmp, vword, t1);
+
+        mv(t1, 0xff);
+        vand_vx(vtmp, vtmp, t1);
+        vsll_vi(vtmp, vtmp, 2);
+        vluxei32_v(vtmp, tmpTable, vtmp);
+
+        vxor_vv(vcrc, vcrc, vtmp);
+
+        addi(tmp1, tmp1, 1);
+      }
+
+      sub(blks, blks, 1);
+      bgtz(blks, VectorLoop);
+    }
+
+    bind(LastBlock);
+    {
+      mv(crc, zr);
+      for (int i = 0; i < N; i++) {
+        lwu(t1, Address(buf, i*W));
+        vmv_x_s(t0, vcrc);
+        // in vmv_x_s, the value is sign-extended to SEW bits, but we need zero-extended here.
+        slli(t0, t0, 32);
+        srli(t0, t0, 32);
+        vslidedown_vi(vcrc, vcrc, 1);
+        xorr(t1, t0, t1);
+        xorr(crc, crc, t1);
+        for (int j = 0; j < W; j++) {
+          andi(t1, crc, 0xff);
+          shadd(t1, t1, table0, tmp1, 2);
+          lwu(t1, Address(t1, 0));
+          srli(t0, crc, 8);
+          xorr(crc, t0, t1);
+        }
+      }
+      addi(buf, buf, N*W);
+    }
+}
+
 /**
  * @param crc   register containing existing CRC (32-bit)
  * @param buf   register pointing to input byte buffer (byte*)
@@ -1465,7 +1558,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
   assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
-  Label L_by16_loop, L_unroll_loop, L_unroll_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
+  Label L_by16_loop, L_unroll_loop, L_vector_or_unroll_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
 
   const int64_t unroll = 16;
   const int64_t unroll_words = unroll*wordSize;
@@ -1479,7 +1572,12 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   add(table2, table0, 2*256*sizeof(juint), tmp1);
   add(table3, table2, 1*256*sizeof(juint), tmp1);
 
-  bge(len, zr, L_unroll_loop_entry);
+  if (UseRVV) {
+    sub(tmp1, len, unroll_words);
+    bge(tmp1, zr, L_vector_or_unroll_entry);
+  } else {
+    bge(len, zr, L_vector_or_unroll_entry);
+  }
   addiw(len, len, unroll_words-4);
   bge(len, zr, L_by4_loop);
   addiw(len, len, 4);
@@ -1487,25 +1585,36 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   j(L_exit);
 
   align(CodeEntryAlignment);
-  bind(L_unroll_loop_entry);
-    const Register buf_end = tmp3;
-    add(buf_end, buf, len); // buf_end will be used as endpoint for loop below
-    andi(len, len, unroll_words-1); // len = (len % unroll_words)
-    sub(len, len, unroll_words); // Length after all iterations
-  bind(L_unroll_loop);
-    for (int i = 0; i < unroll; i++) {
-      ld(tmp1, Address(buf, i*wordSize));
-      update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, false);
-      update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, true);
-    }
+  bind(L_vector_or_unroll_entry);
+  if (UseRVV) {
+    vector_update_crc32(crc, buf, len, unroll_words, tmp1, tmp2, tmp3, tmp4, table0, table3);
 
-    addi(buf, buf, unroll_words);
-    ble(buf, buf_end, L_unroll_loop);
-    addiw(len, len, unroll_words-4);
+    addiw(len, len, -4);
     bge(len, zr, L_by4_loop);
     addiw(len, len, 4);
     bgt(len, zr, L_by1_loop);
-    j(L_exit);
+    j(L_exit); 
+  } else {
+      const Register buf_end = tmp3;
+      add(buf_end, buf, len); // buf_end will be used as endpoint for loop below
+      andi(len, len, unroll_words-1); // len = (len % unroll_words)
+      sub(len, len, unroll_words); // Length after all iterations
+    bind(L_unroll_loop);
+      for (int i = 0; i < unroll; i++) {
+        ld(tmp1, Address(buf, i*wordSize));
+        update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, false);
+        update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, true);
+      }
+
+      addi(buf, buf, unroll_words);
+      ble(buf, buf_end, L_unroll_loop);
+
+      addiw(len, len, unroll_words-4);
+      bge(len, zr, L_by4_loop);
+      addiw(len, len, 4);
+      bgt(len, zr, L_by1_loop);
+      j(L_exit); 
+  }
 
   bind(L_by4_loop);
     lwu(tmp1, Address(buf));
