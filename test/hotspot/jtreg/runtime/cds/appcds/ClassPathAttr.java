@@ -30,6 +30,7 @@
  * @run driver/timeout=240 ClassPathAttr
  */
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import java.io.File;
@@ -82,6 +83,40 @@ public class ClassPathAttr {
             output.shouldMatch("checking shared classpath entry: .*cpattr2.jar");
             output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
           });
+
+      // Test handling of forward slash ('/') file separator for Class-Path attribute on Windows.
+      if (Platform.isWindows()) {
+
+          // Test with relative path
+          // Find the index to the dir before the jar file.
+          int idx = jar1.lastIndexOf(File.separator);
+          idx = jar1.substring(0, idx - 1).lastIndexOf(File.separator);
+          // Setup jar direcotry and names.
+          String jarDir = jar1.substring(0, idx);
+          String jar1Name = jar1.substring(idx + 1);
+          String jar4Name = jar4.substring(idx + 1);
+          String newCp = jar1Name.replace("\\", "/") + File.pathSeparator + jar4Name.replace("\\", "/");
+
+          OutputAnalyzer out = TestCommon.testDump(jarDir, newCp, classlist, "-Xlog:class+path=info");
+          if (i == 1) {
+              out.shouldContain("opened: 0/cpattr1.jar"); // first jar on -cp
+          } else {
+              // first jar on -cp with long Class-Path: attribute
+              out.shouldContain("opened: 0/cpattr1_long.jar");
+          }
+          // one of the jar in the Class-Path: attribute of cpattr1.jar
+          out.shouldContain("opened: 0/cpattr2.jar");
+
+          TestCommon.runWithRelativePath(
+              jarDir.replace("\\", "/"),
+              "-Xlog:class+path,class+load",
+              "-cp", newCp,
+              "CpAttr1")
+            .assertNormalExit(output -> {
+                output.shouldMatch("checking shared classpath entry: .*cpattr2.jar");
+                output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
+              });
+      }
     }
 
     // test duplicate jars in the "Class-path" attribute in the jar manifest
