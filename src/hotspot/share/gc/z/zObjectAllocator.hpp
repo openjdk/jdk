@@ -65,7 +65,6 @@ private:
   zaddress alloc_medium_object(size_t size, ZAllocationFlags flags);
   zaddress alloc_small_object(size_t size, ZAllocationFlags flags);
   zaddress alloc_object(size_t size, ZAllocationFlags flags);
-  zaddress alloc_object_in_page_atomic(ZPage* page, size_t size);
 
 public:
   ZObjectAllocator(ZPageAge age);

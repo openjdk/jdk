@@ -79,20 +79,17 @@ void ZObjectAllocator::undo_alloc_page(ZPage* page) {
   ZHeap::heap()->undo_alloc_page(page);
 }
 
-zaddress ZObjectAllocator::alloc_object_in_page_atomic(ZPage* page, size_t size) {
-  if (page == nullptr) {
-    return zaddress::null;
-  }
-  return page->alloc_object_atomic(size);
-}
-
 zaddress ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
                                                        ZPageType page_type,
                                                        size_t page_size,
                                                        size_t size,
                                                        ZAllocationFlags flags) {
+  zaddress addr = zaddress::null;
   ZPage* page = Atomic::load_acquire(shared_page);
-  zaddress addr = alloc_object_in_page_atomic(page, size);
+
+  if (page != nullptr) {
+    addr = page->alloc_object_atomic(size);
+  }
 
   if (is_null(addr)) {
     // Allocate new page
@@ -133,10 +130,13 @@ zaddress ZObjectAllocator::alloc_object_in_shared_page(ZPage** shared_page,
 
 zaddress ZObjectAllocator::alloc_object_in_medium_page(size_t size,
                                                        ZAllocationFlags flags) {
+  zaddress addr = zaddress::null;
   ZPage** shared_medium_page = _shared_medium_page.addr();
   ZPage* page = Atomic::load_acquire(shared_medium_page);
 
-  zaddress addr = alloc_object_in_page_atomic(page, size);
+  if (page != nullptr) {
+    addr = page->alloc_object_atomic(size);
+  }
 
   if (is_null(addr)) {
     // When a new medium page is required, we synchronize the allocation
