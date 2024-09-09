@@ -32,6 +32,8 @@ import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import sun.misc.Unsafe;
+import java.util.Objects;
 
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
@@ -44,12 +46,16 @@ public class HeapMismatchManualLoopTest {
     @Param({"4", "8", "16", "32", "64", "128"})
     public int ELEM_SIZE;
 
+    static final Unsafe unsafe = Utils.unsafe;
+
     byte[] srcArray;
     byte[] dstArray;
     MemorySegment srcSegment;
     MemorySegment dstSegment;
     ByteBuffer srcBuffer;
     ByteBuffer dstBuffer;
+    long srcByteSize;
+    long dstByteSize;
 
     @Setup
     public void setup() {
@@ -59,6 +65,8 @@ public class HeapMismatchManualLoopTest {
         dstSegment = MemorySegment.ofArray(dstArray);
         srcBuffer = ByteBuffer.wrap(srcArray);
         dstBuffer = ByteBuffer.wrap(dstArray);
+        srcByteSize = ELEM_SIZE;
+        dstByteSize = ELEM_SIZE;
     }
 
     @Benchmark
@@ -88,6 +96,32 @@ public class HeapMismatchManualLoopTest {
     public int buffer_mismatch() {
         for (int i = 0; i < srcBuffer.capacity() ; i++) {
             if (srcBuffer.get(i) != dstBuffer.get(i)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public long unsafe_mismatch() {
+        for (long i = 0; i < srcByteSize ; i++) {
+            Objects.checkIndex(i, srcByteSize);
+            Objects.checkIndex(i, dstByteSize);
+            long offset = Unsafe.ARRAY_BYTE_BASE_OFFSET + i * Unsafe.ARRAY_BYTE_INDEX_SCALE;
+            if (unsafe.getByte(srcArray, offset) != unsafe.getByte(dstArray, offset)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    public long unsafe_mismatch2() {
+        for (long i = 0; i < srcByteSize ; i++) {
+            long offset = Unsafe.ARRAY_BYTE_BASE_OFFSET + i * Unsafe.ARRAY_BYTE_INDEX_SCALE;
+            if (unsafe.getByte(srcArray, offset) != unsafe.getByte(dstArray, offset)) {
                 return i;
             }
         }
