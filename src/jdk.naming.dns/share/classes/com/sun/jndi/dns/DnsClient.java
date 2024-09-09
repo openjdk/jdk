@@ -438,15 +438,16 @@ public class DnsClient {
                 InetSocketAddress target = new InetSocketAddress(server, port);
                 udpChannel.connect(target);
                 // use 1L below to ensure conversion to long and avoid potential
-                // integer overflow (timeout is an int)
-                long pktTimeout = (timeout * (1L << retry));
+                // integer overflow (timeout is an int).
+                // no point in supporting timeout > Integer.MAX_VALUE, clamp if needed
+                long pktTimeout = Math.clamp(timeout * (1L << retry), 0, Integer.MAX_VALUE);
                 udpChannel.write(opkt);
 
                 // timeout remaining after successive 'blockingReceive()'
-                // no point in supporting timeout > Integer.MAX_VALUE, clamp if needed
-                long timeoutLeft = Math.clamp(pktTimeout, 0, Integer.MAX_VALUE);
+                long timeoutLeft = pktTimeout;
                 int cnt = 0;
                 boolean gotData = false;
+                long start = System.nanoTime();
                 do {
                     // prepare for retry
                     if (gotData) {
@@ -460,9 +461,7 @@ public class DnsClient {
                                 ") for:" + xid + "    sock-timeout:" +
                                 timeoutLeft + " ms.");
                     }
-                    long start = System.nanoTime();
                     gotData = blockingReceive(udpChannel, ipkt, timeoutLeft);
-                    long end = System.nanoTime();
                     assert gotData || ipkt.position() == 0;
                     if (gotData && isMatchResponse(data, xid)) {
                         return data;
@@ -475,9 +474,9 @@ public class DnsClient {
                             return cachedMsg;
                         }
                     }
-                    long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(end - start);
-                    // Setting the Math.clamp min to 1 ensures that the timeout is decreased
-                    timeoutLeft = timeoutLeft - Math.clamp(elapsedMillis, 1, Integer.MAX_VALUE);
+                    long elapsedMillis = TimeUnit.NANOSECONDS
+                                                 .toMillis(System.nanoTime() - start);
+                    timeoutLeft = pktTimeout - Math.clamp(elapsedMillis, 0, Integer.MAX_VALUE);
                 } while (timeoutLeft > MIN_TIMEOUT);
                 // no matching packets received within the timeout
                 throw new SocketTimeoutException();
