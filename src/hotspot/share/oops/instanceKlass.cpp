@@ -2659,8 +2659,8 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     array_klasses()->restore_unshareable_info(class_loader_data(), Handle(), CHECK);
   }
 
-  // Initialize @ValueBased class annotation
-  if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation()) {
+  // Initialize @ValueBased class annotation if not already set in the archived klass.
+  if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation() && !is_value_based()) {
     set_is_value_based();
   }
 }
