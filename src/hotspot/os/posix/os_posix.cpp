@@ -108,7 +108,6 @@ void os::check_core_prerequisites(char* buffer, size_t bufferSize, bool check_on
   bool status = true;
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
     jio_snprintf(buffer, bufferSize, "CreateCoredumpOnCrash is disabled from command line");
-    VMError::record_coredump_status(buffer, false);
     status = false;
   }
 
