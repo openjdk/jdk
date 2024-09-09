@@ -463,44 +463,20 @@ public final class ModuleBootstrap {
 
         // Step 8: CDS dump phase
 
-        if (CDS.isDumpingStaticArchive()) {
-            boolean canArchive = false;
+        if (CDS.isDumpingStaticArchive() && !haveModulePath && addModules.isEmpty()) {
+            assert !isPatched;
 
-            // If -Xshare:dump and mainModule are specified, check if the mainModule
-            // is in the runtime image and not on the upgrade module path. If so,
-            // set canArchive to true so that the module graph can be archived.
-            if (mainModule != null) {
-                String scheme = systemModuleFinder.find(mainModule)
-                        .stream()
-                        .map(ModuleReference::location)
-                        .flatMap(Optional::stream)
-                        .findAny()
-                        .map(URI::getScheme)
-                        .orElse(null);
-                canArchive = "jrt".equalsIgnoreCase(scheme);
-            } else {
-                // unnamed module
-                if (!haveModulePath
-                        && addModules.isEmpty()
-                        && limitModules.isEmpty()
-                        && !isPatched) {
-                    canArchive = true;
-                }
-            }
-
-            // Archive module graph and boot layer can be archived at CDS dump time.
-            if (canArchive) {
-                boolean hasSplitPackages = containsSplitPackages(cf);
-                boolean hasIncubatorModules = containsIncubatorModule(cf);
-                ArchivedModuleGraph.archive(hasSplitPackages,
-                        hasIncubatorModules,
-                        systemModuleFinder,
-                        cf,
-                        clf,
-                        mainModule);
-                if (!hasSplitPackages && !hasIncubatorModules) {
-                    ArchivedBootLayer.archive(bootLayer);
-                }
+            // Archive module graph and maybe boot layer
+            boolean hasSplitPackages = containsSplitPackages(cf);
+            boolean hasIncubatorModules = containsIncubatorModule(cf);
+            ArchivedModuleGraph.archive(hasSplitPackages,
+                                        hasIncubatorModules,
+                                        systemModuleFinder,
+                                        cf,
+                                        clf,
+                                        mainModule);
+            if (!hasSplitPackages && !hasIncubatorModules) {
+                ArchivedBootLayer.archive(bootLayer);
             }
         }
 
