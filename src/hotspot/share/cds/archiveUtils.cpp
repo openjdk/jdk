@@ -370,26 +370,26 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
   }
 }
 
-size_t HeapRoots::byte_size_for_segment(size_t seg_idx) {
-  return objArrayOopDesc::object_size(length_for_segment(seg_idx)) * HeapWordSize;
+size_t HeapRootSegments::size_in_bytes(size_t seg_idx) {
+  return objArrayOopDesc::object_size(size_in_elems(seg_idx)) * HeapWordSize;
 }
 
-int HeapRoots::length_for_segment(size_t seg_idx) {
-  assert(seg_idx < _segments_count, "In range");
-  if (seg_idx != _segments_count - 1) {
-    return _segment_max_size_elems;
+int HeapRootSegments::size_in_elems(size_t seg_idx) {
+  assert(seg_idx < _count, "In range");
+  if (seg_idx != _count - 1) {
+    return _max_size_in_elems;
   } else {
     // Last slice, leftover
-    return _roots_count % _segment_max_size_elems;
+    return _roots_count % _max_size_in_elems;
   }
 }
 
-int HeapRoots::roots_offset_for_segment(size_t seg_idx) {
-  assert(seg_idx < _segments_count, "In range");
-  return (int)(seg_idx * _segment_max_size_elems);
+int HeapRootSegments::roots_offset(size_t seg_idx) {
+  assert(seg_idx < _count, "In range");
+  return (int)(seg_idx * _max_size_in_elems);
 }
 
-size_t HeapRoots::segment_offset(size_t seg_idx) {
-  return _base_offset + seg_idx * _segment_max_size_bytes;
+size_t HeapRootSegments::segment_offset(size_t seg_idx) {
+  return _base_offset + seg_idx * _max_size_in_bytes;
 }
 

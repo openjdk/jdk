@@ -54,7 +54,7 @@ GrowableArrayCHeap<u1, mtClassShared>* ArchiveHeapWriter::_buffer = nullptr;
 size_t ArchiveHeapWriter::_buffer_used;
 
 // Heap root segments
-HeapRoots ArchiveHeapWriter::_heap_roots;
+HeapRootSegments ArchiveHeapWriter::_heap_root_segments;
 
 address ArchiveHeapWriter::_requested_bottom;
 address ArchiveHeapWriter::_requested_top;
@@ -219,34 +219,34 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
   assert(objArrayOopDesc::object_size(max_elem_count)*HeapWordSize == MIN_GC_REGION_ALIGNMENT,
          "Should match exactly");
 
-  HeapRoots heap_roots(_buffer_used,
-                       roots->length(),
-                       MIN_GC_REGION_ALIGNMENT,
-                       max_elem_count);
+  HeapRootSegments segments(_buffer_used,
+                            roots->length(),
+                            MIN_GC_REGION_ALIGNMENT,
+                            max_elem_count);
 
-  for (size_t seg_idx = 0; seg_idx < heap_roots.segments_count(); seg_idx++) {
-    int elem_count = heap_roots.length_for_segment(seg_idx);
-    size_t bytes_size = objArrayOopDesc::object_size(elem_count) * HeapWordSize;
+  for (size_t seg_idx = 0; seg_idx < segments.count(); seg_idx++) {
+    int size_elems = segments.size_in_elems(seg_idx);
+    size_t size_bytes = segments.size_in_bytes(seg_idx);
 
     size_t oop_offset = _buffer_used;
-    _buffer_used = oop_offset + bytes_size;
+    _buffer_used = oop_offset + size_bytes;
     ensure_buffer_space(_buffer_used);
 
     assert((oop_offset % MIN_GC_REGION_ALIGNMENT) == 0,
            "Roots segment " SIZE_FORMAT " start is not aligned: " SIZE_FORMAT,
-           heap_roots.segments_count(), oop_offset);
+           segments.count(), oop_offset);
 
-    int seg_start = heap_roots.roots_offset_for_segment(seg_idx);
-    objArrayOop seg_oop = manifest_root_segment(oop_offset, elem_count);
-    for (int i = 0; i < elem_count; i++) {
+    int seg_start = segments.roots_offset(seg_idx);
+    objArrayOop seg_oop = manifest_root_segment(oop_offset, size_elems);
+    for (int i = 0; i < size_elems; i++) {
       root_segment_at_put(seg_oop, i, roots->at(seg_start + i));
     }
 
     log_info(cds, heap)("archived obj root segment [%d] = " SIZE_FORMAT " bytes, obj = " PTR_FORMAT,
-                        elem_count, bytes_size, p2i(seg_oop));
+                        size_elems, size_bytes, p2i(seg_oop));
   }
 
-  _heap_roots = heap_roots;
+  _heap_root_segments = segments;
 }
 
 static int oop_sorting_rank(oop o) {
@@ -477,7 +477,7 @@ void ArchiveHeapWriter::set_requested_address(ArchiveHeapInfo* info) {
 
   info->set_buffer_region(MemRegion(offset_to_buffered_address<HeapWord*>(0),
                                     offset_to_buffered_address<HeapWord*>(_buffer_used)));
-  info->set_heap_roots(_heap_roots);
+  info->set_heap_root_segments(_heap_root_segments);
 }
 
 // Oop relocation
@@ -616,22 +616,22 @@ void ArchiveHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassSh
 
   // Relocate HeapShared::roots(), which is created in copy_roots_to_buffer() and
   // doesn't have a corresponding src_obj, so we can't use EmbeddedOopRelocator on it.
-  for (size_t seg_idx = 0; seg_idx < _heap_roots.segments_count(); seg_idx++) {
-    size_t seg_offset = _heap_roots.segment_offset(seg_idx);
+  for (size_t seg_idx = 0; seg_idx < _heap_root_segments.count(); seg_idx++) {
+    size_t seg_offset = _heap_root_segments.segment_offset(seg_idx);
 
     objArrayOop requested_obj = (objArrayOop)requested_obj_from_buffer_offset(seg_offset);
     update_header_for_requested_obj(requested_obj, nullptr, Universe::objectArrayKlass());
     address buffered_obj = offset_to_buffered_address<address>(seg_offset);
-    int length = _heap_roots.length_for_segment(seg_idx);
+    int length = _heap_root_segments.size_in_elems(seg_idx);
 
     if (UseCompressedOops) {
       for (int i = 0; i < length; i++) {
-        narrowOop* addr = (narrowOop*)(buffered_obj + requested_obj->obj_at_offset<narrowOop>(i));
+        narrowOop* addr = (narrowOop*)(buffered_obj + objArrayOopDesc::obj_at_offset<narrowOop>(i));
         relocate_field_in_buffer<narrowOop>(addr, heap_info->oopmap());
       }
     } else {
       for (int i = 0; i < length; i++) {
-        oop* addr = (oop*)(buffered_obj + requested_obj->obj_at_offset<oop>(i));
+        oop* addr = (oop*)(buffered_obj + objArrayOopDesc::obj_at_offset<oop>(i));
         relocate_field_in_buffer<oop>(addr, heap_info->oopmap());
       }
     }

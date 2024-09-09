@@ -41,7 +41,7 @@ class ArchiveHeapInfo {
   MemRegion _buffer_region;             // Contains the archived objects to be written into the CDS archive.
   CHeapBitMap _oopmap;
   CHeapBitMap _ptrmap;
-  HeapRoots _heap_roots;
+  HeapRootSegments _heap_root_segments;
 
 public:
   ArchiveHeapInfo() : _buffer_region(), _oopmap(128, mtClassShared), _ptrmap(128, mtClassShared) {}
@@ -56,8 +56,8 @@ public:
   CHeapBitMap* oopmap() { return &_oopmap; }
   CHeapBitMap* ptrmap() { return &_ptrmap; }
 
-  void set_heap_roots(HeapRoots roots) { _heap_roots = roots; };
-  HeapRoots heap_roots() { return _heap_roots; }
+  void set_heap_root_segments(HeapRootSegments segments) { _heap_root_segments = segments; };
+  HeapRootSegments heap_root_segments() { return _heap_root_segments; }
 };
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -129,8 +129,8 @@ private:
   // The number of bytes that have written into _buffer (may be smaller than _buffer->length()).
   static size_t _buffer_used;
 
-  // The bottom of the copy of Heap::roots() inside this->_buffer.
-  static HeapRoots _heap_roots;
+  // The heap root segments information.
+  static HeapRootSegments _heap_root_segments;
 
   // The address range of the requested location of the archived heap objects.
   static address _requested_bottom;

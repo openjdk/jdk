@@ -250,33 +250,33 @@ public:
   static void log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) NOT_CDS_RETURN;
 };
 
-class HeapRoots {
+class HeapRootSegments {
 private:
-  int _roots_count;
   size_t _base_offset;
-  size_t _segments_count;
-  int _segment_max_size_bytes;
-  int _segment_max_size_elems;
+  size_t _count;
+  int _roots_count;
+  int _max_size_in_bytes;
+  int _max_size_in_elems;
 
 public:
-  int roots_count() { return _roots_count; }
   size_t base_offset() { return _base_offset; }
-  size_t segments_count() { return _segments_count; }
-  int segment_max_size_bytes() { return _segment_max_size_bytes; }
-  int segment_max_size_elems() { return _segment_max_size_elems; }
+  size_t count() { return _count; }
+  int roots_count() { return _roots_count; }
+  int max_size_in_bytes() { return _max_size_in_bytes; }
+  int max_size_in_elems() { return _max_size_in_elems; }
 
-  size_t byte_size_for_segment(size_t seg_idx);
-  int length_for_segment(size_t seg_idx);
-  int roots_offset_for_segment(size_t seg_idx);
+  size_t size_in_bytes(size_t seg_idx);
+  int size_in_elems(size_t seg_idx);
+  int roots_offset(size_t seg_idx);
   size_t segment_offset(size_t seg_idx);
 
-  HeapRoots() {}
-  HeapRoots(size_t base_offset, int roots_count, int segment_max_size_bytes, int segment_max_size_elems) :
-          _roots_count(roots_count),
+  HeapRootSegments() {}
+  HeapRootSegments(size_t base_offset, int roots_count, int max_size_in_bytes, int max_size_in_elems) :
           _base_offset(base_offset),
-          _segments_count((roots_count + segment_max_size_elems - 1) / segment_max_size_elems),
-          _segment_max_size_bytes(segment_max_size_bytes),
-          _segment_max_size_elems(segment_max_size_elems) {}
+          _count((roots_count + max_size_in_elems - 1) / max_size_in_elems),
+          _roots_count(roots_count),
+          _max_size_in_bytes(max_size_in_bytes),
+          _max_size_in_elems(max_size_in_elems) {}
 };
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP

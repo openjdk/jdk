@@ -236,9 +236,9 @@ objArrayOop HeapShared::root_segment(int segment_idx) {
     assert(CDSConfig::is_using_archive(), "must be");
   }
 
-  objArrayOop roots = (objArrayOop)_root_segments->at(segment_idx).resolve();
-  assert(roots != nullptr, "should have been initialized");
-  return roots;
+  objArrayOop segment = (objArrayOop)_root_segments->at(segment_idx).resolve();
+  assert(segment != nullptr, "should have been initialized");
+  return segment;
 }
 
 // Returns an objArray that contains all the roots of the archived objects
@@ -771,14 +771,13 @@ void HeapShared::write_subgraph_info_table() {
   }
 }
 
-void HeapShared::add_root_segment(oop segment_oop) {
-  if (segment_oop != nullptr) {
-    assert(ArchiveHeapLoader::is_in_use(), "must be");
-    if (_root_segments == nullptr) {
-      _root_segments = new GrowableArrayCHeap<OopHandle, mtClassShared>(10);
-    }
-    _root_segments->push(OopHandle(Universe::vm_global(), segment_oop));
+void HeapShared::add_root_segment(objArrayOop segment_oop) {
+  assert(segment_oop != nullptr, "must be");
+  assert(ArchiveHeapLoader::is_in_use(), "must be");
+  if (_root_segments == nullptr) {
+    _root_segments = new GrowableArrayCHeap<OopHandle, mtClassShared>(10);
   }
+  _root_segments->push(OopHandle(Universe::vm_global(), segment_oop));
 }
 
 void HeapShared::init_root_segment_max_size(int size) {

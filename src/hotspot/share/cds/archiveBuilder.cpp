@@ -1104,14 +1104,14 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
     LogStreamHandle(Info, cds, map) st;
 
-    HeapRoots roots = heap_info->heap_roots();
-    assert(roots.base_offset() == 0, "Sanity");
+    HeapRootSegments segments = heap_info->heap_root_segments();
+    assert(segments.base_offset() == 0, "Sanity");
 
-    for (size_t seg_idx = 0; seg_idx < roots.segments_count(); seg_idx++) {
+    for (size_t seg_idx = 0; seg_idx < segments.count(); seg_idx++) {
       address requested_start = ArchiveHeapWriter::buffered_addr_to_requested_addr(start);
       st.print_cr(PTR_FORMAT ": Heap roots segment [%d]",
-               p2i(requested_start), roots.length_for_segment(seg_idx));
-      start += roots.byte_size_for_segment(seg_idx);
+                  p2i(requested_start), segments.size_in_elems(seg_idx));
+      start += segments.size_in_bytes(seg_idx);
     }
     log_heap_roots();
 
