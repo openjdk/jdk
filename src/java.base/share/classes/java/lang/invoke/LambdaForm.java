@@ -1555,26 +1555,12 @@ class LambdaForm {
          *  Return -1 if the name is not used.
          */
         int lastUseIndex(Name n) {
+            Object[] arguments = this.arguments;
             if (arguments == null)  return -1;
             for (int i = arguments.length; --i >= 0; ) {
                 if (arguments[i] == n)  return i;
             }
             return -1;
-        }
-
-        /** Return the number of occurrences of n in the argument array.
-         *  Return 0 if the name is not used.
-         */
-        int useCount(Name n) {
-            int count = 0;
-            if (arguments != null) {
-                for (Object argument : arguments) {
-                    if (argument == n) {
-                        count++;
-                    }
-                }
-            }
-            return count;
         }
 
         public boolean equals(Name that) {
@@ -1618,8 +1604,16 @@ class LambdaForm {
     int useCount(Name n) {
         int count = (result == n.index) ? 1 : 0;
         int i = Math.max(n.index + 1, arity);
+        Name[] names = this.names;
         while (i < names.length) {
-            count += names[i++].useCount(n);
+            Object[] arguments = names[i++].arguments;
+            if (arguments != null) {
+                for (Object argument : arguments) {
+                    if (argument == n) {
+                        count++;
+                    }
+                }
+            }
         }
         return count;
     }
