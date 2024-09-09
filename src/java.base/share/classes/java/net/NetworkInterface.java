@@ -62,13 +62,12 @@ import java.util.stream.StreamSupport;
  * Network interface instances are typically used to identify the local
  * interface on which a multicast group is joined.
  *
- * @apiNote <a id="lookup"></a>Several static  methods in this class allow to
- * lookup and return new instances of {@code NetworkInterface}.
- * As outlined above, the returned interface instances may reflect a snapshot
- * of the configuration taken at the time the instance is created.
- * The network configuration may change at any time, and such methods may need to
- * be invoked again in order to obtain a more up-to-date view of the network
- * interfaces.
+ * @apiNote <a id="lookup"></a>Several static methods in this class are
+ * factory methods, returning a new instance of a {@code NetworkInterface},
+ * reflecting the configuration at the time of instantiation.
+ * The network configuration may change at any time, and as such,
+ * these methods may need to be invoked again in order to obtain
+ * a more up-to-date view of the network interfaces.
  * In particular, there is no guarantee that the same interface will be
  * found at the same index, or that the same network addresses will be
  * bound to the interface, if the network configuration of the system
