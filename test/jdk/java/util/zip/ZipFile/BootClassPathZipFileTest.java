@@ -27,11 +27,11 @@
  * @summary -Xbootclasspath can not read some ZIP64 ZIP files
  * @library /test/lib
  * @run driver BootClassPathZipFileCreator
- * @run main/othervm -Xbootclasspath/a:./NonZip64.zip
+ * @run main/othervm -Xbootclasspath/a:${test.classes}/NonZip64.zip
  *       BootClassPathZipFileTest NonZip64.zip
- * @run main/othervm -Xbootclasspath/a:./TotalMagicZip64.zip
+ * @run main/othervm -Xbootclasspath/a:${test.classes}/TotalMagicZip64.zip
  *       BootClassPathZipFileTest TotalMagicZip64.zip
- * @run main/othervm -Xbootclasspath/a:./NoMagicZip64.zip
+ * @run main/othervm -Xbootclasspath/a:${test.classes}/NoMagicZip64.zip
  *       BootClassPathZipFileTest NoMagicZip64.zip
  */
 
@@ -46,9 +46,9 @@ public class BootClassPathZipFileTest {
         // Ensure the ZIP file exists, otherwise the failure signature of
         // the ZIP file not existing is the same as the ZIP file not being
         // readable, that is, ClassNotFoundException on CLASS_NAME.
-        Path zipPath = Paths.get(System.getProperty("user.dir"), args[0]);
-        if (!Files.exists(zipPath)) {
-            throw new RuntimeException(zipPath + " does not exist");
+        Path zip = BootClassPathZipFileCreator.zipPath(args[0]);
+        if (!Files.exists(zip)) {
+            throw new RuntimeException(zip + " does not exist");
         }
         Class c = loader.loadClass(BootClassPathZipFileCreator.CLASS_NAME);
     }

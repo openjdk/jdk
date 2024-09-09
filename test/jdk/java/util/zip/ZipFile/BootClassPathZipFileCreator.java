@@ -67,13 +67,19 @@ public class BootClassPathZipFileCreator {
         classBytes = new InMemoryJavaCompiler().compile(CLASS_NAME, code);
     }
 
+    static Path zipPath(String basename) {
+        return Paths.get(System.getProperty("test.classes",
+                                            System.getProperty("user.dir")),
+                         basename);
+    }
+
     private static void createZip(String type) throws Exception {
         HashMap<String, Object> env = new HashMap<>();
         env.put("create", "true");
         if (type.equals("NoMagicZip64")) {
             env.put("forceZIP64End", "true");
         }
-        Path zip = Paths.get(System.getProperty("user.dir"), type + ".zip");
+        Path zip = zipPath(type + ".zip");
         // Delete any existing ZIP file.
         Files.deleteIfExists(zip);
         // Create ZIP file.
