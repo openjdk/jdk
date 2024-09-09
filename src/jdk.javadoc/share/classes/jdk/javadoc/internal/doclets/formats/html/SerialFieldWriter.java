@@ -58,7 +58,7 @@ public class SerialFieldWriter extends FieldWriter {
     }
 
     protected Content getFieldsContentHeader() {
-        return new HtmlTree(HtmlTag.LI).setStyle(HtmlStyles.blockList);
+        return HtmlTree.LI(HtmlStyles.blockList);
     }
 
     protected Content getSerializableFields(String heading, Content source) {
@@ -76,12 +76,12 @@ public class SerialFieldWriter extends FieldWriter {
         Content nameContent = Text.of(fieldName);
         var heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, nameContent);
         content.add(heading);
-        var pre = new HtmlTree(HtmlTag.PRE);
         Content fieldContent = writer.getLink(new HtmlLinkInfo(
                 configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, fieldType));
-        pre.add(fieldContent);
-        pre.add(" ");
-        pre.add(fieldName);
+        var pre = HtmlTree.PRE()
+                .add(fieldContent)
+                .add(" ")
+                .add(fieldName);
         content.add(pre);
     }
 

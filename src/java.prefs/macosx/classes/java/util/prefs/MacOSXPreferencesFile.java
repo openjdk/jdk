@@ -82,7 +82,7 @@ class MacOSXPreferencesFile {
         loadPrefsLib();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void loadPrefsLib() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {

@@ -103,7 +103,7 @@ public class AnnotationDefaultVerifier {
                 case AnnotationValue.OfByte ev -> {
                     testCase.checkEquals((int)ev.byteValue(), Integer.parseInt(values[0]), "const_value_index");
                 }
-                case AnnotationValue.OfCharacter ev -> {
+                case AnnotationValue.OfChar ev -> {
                     testCase.checkEquals((int)ev.charValue(), Integer.parseInt(values[0]), "const_value_index");
                 }
                 case AnnotationValue.OfShort ev -> {
@@ -113,7 +113,7 @@ public class AnnotationDefaultVerifier {
                     testCase.checkEquals(ev.booleanValue()? 1: 0, Integer.parseInt(values[0]), "const_value_index");
                 }
                 default -> {
-                    testCase.checkEquals(((AnnotationValue.OfInteger) element_value).intValue(), Integer.parseInt(values[0]), "const_value_index");
+                    testCase.checkEquals(((AnnotationValue.OfInt) element_value).intValue(), Integer.parseInt(values[0]), "const_value_index");
                 }
             }
         }

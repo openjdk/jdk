@@ -23,17 +23,17 @@
 # questions.
 #
 
-################################################################
+################################################################################
 # MakeBase provides the core functionality needed and used by all makefiles. It
 # should be included by all makefiles. MakeBase provides essential
 # functionality for named parameter functions, variable dependency, tool
 # execution, logging and fixpath functionality.
-################################################################
+################################################################################
 
 ifndef _MAKEBASE_GMK
 _MAKEBASE_GMK := 1
 
-ifeq ($(wildcard $(SPEC)),)
+ifeq ($(wildcard $(SPEC)), )
   $(error MakeBase.gmk needs SPEC set to a proper spec.gmk)
 endif
 
@@ -49,16 +49,16 @@ endif
 # When calling macros, the spaces between arguments are
 # often semantically important! Sometimes we need to subst
 # spaces and commas, therefore we need the following macros.
-X:=
-SPACE:=$(X) $(X)
-COMMA:=,
-DOLLAR:=$$
-HASH:=\#
-LEFT_PAREN:=(
-RIGHT_PAREN:=)
-SQUOTE:='
+X :=
+SPACE := $(X) $(X)
+COMMA := ,
+DOLLAR := $$
+HASH := \#
+LEFT_PAREN := (
+RIGHT_PAREN := )
+SQUOTE := '
 #'
-DQUOTE:="
+DQUOTE := "
 #"
 define NEWLINE
 
@@ -99,7 +99,7 @@ define SetupLogging
     endif
   endif
 
-  ifneq ($$(findstring $$(LOG_LEVEL), debug trace),)
+  ifneq ($$(findstring $$(LOG_LEVEL), debug trace), )
     SHELL := $$(SHELL) -x
   endif
 
@@ -117,21 +117,21 @@ define SetupLogging
   # The warn level can never be turned off
   LogWarn = $$(info $(LOG_PREFIX)$$(strip $$1))
   LOG_WARN :=
-  ifneq ($$(findstring $$(LOG_LEVEL), info debug trace),)
+  ifneq ($$(findstring $$(LOG_LEVEL), info debug trace), )
     LogInfo = $$(info $(LOG_PREFIX)$$(strip $$1))
     LOG_INFO :=
   else
     LogInfo =
     LOG_INFO := > /dev/null
   endif
-  ifneq ($$(findstring $$(LOG_LEVEL), debug trace),)
+  ifneq ($$(findstring $$(LOG_LEVEL), debug trace), )
     LogDebug = $$(info $(LOG_PREFIX)$$(strip $$1))
     LOG_DEBUG :=
   else
     LogDebug =
     LOG_DEBUG := > /dev/null
   endif
-  ifneq ($$(findstring $$(LOG_LEVEL), trace),)
+  ifneq ($$(findstring $$(LOG_LEVEL), trace), )
     LogTrace = $$(info $(LOG_PREFIX)$$(strip $$1))
     LOG_TRACE :=
   else
@@ -164,14 +164,14 @@ PARAM_SEQUENCE := $(call sequence, 2, $(MAX_PARAMS))
 #     BAR := some parameter value, \
 # ))
 define NamedParamsMacroTemplate
-  $(if $($(MAX_PARAMS)),$(error Internal makefile error: \
+  $(if $($(MAX_PARAMS)), $(error Internal makefile error: \
       Too many named arguments to macro, please update MAX_PARAMS in MakeBase.gmk))
   # Iterate over 2 3 4... and evaluate the named parameters with $1_ as prefix
-  $(foreach i,$(PARAM_SEQUENCE), $(if $(strip $($i)),\
+  $(foreach i, $(PARAM_SEQUENCE), $(if $(strip $($i)), \
     $(strip $1)_$(strip $(call EscapeHash, $(call DoubleDollar, $($i))))$(NEWLINE)))
   # Debug print all named parameter names and values
   $(if $(findstring $(LOG_LEVEL), trace), \
-    $(info $0 $(strip $1) $(foreach i,$(PARAM_SEQUENCE), \
+    $(info $0 $(strip $1) $(foreach i, $(PARAM_SEQUENCE), \
       $(if $(strip $($i)),$(NEWLINE) $(strip [$i] $(if $(filter $(LOG_LEVEL), trace), \
         $($i), $(wordlist 1, 20, $($(i))) $(if $(word 21, $($(i))), ...)))))))
 
@@ -246,8 +246,8 @@ DependOnVariableFileName = \
 # Param 1 - Name of variable
 DependOnVariableWriteFile = \
     $(call MakeDir, $(dir $($1_filename))) \
-    $(call WriteFile, $1_old:=$(call DoubleDollar,$(call EscapeHash,$($1))), \
-         $($1_filename)) \
+    $(call WriteFile, $1_old := $(call DoubleDollar,$(call EscapeHash,$($1))), \
+        $($1_filename)) \
 
 # Does the actual work with parameters stripped.
 # If the file exists AND the contents is the same as the variable, do nothing
@@ -260,7 +260,7 @@ DependOnVariableHelper = \
         $(eval $1_filename := $(call DependOnVariableFileName, $1, $2)) \
         $(if $(wildcard $($1_filename)), \
           $(eval include $($1_filename)) \
-          $(if $(call equals, $(strip $($1)), $(strip $($1_old))),,\
+          $(if $(call equals, $(strip $($1)), $(strip $($1_old))),, \
             $(if $(findstring $(LOG_LEVEL), trace), \
                 $(info NewVariable $1: >$(strip $($1))<) \
                 $(info OldVariable $1: >$(strip $($1_old))<) \

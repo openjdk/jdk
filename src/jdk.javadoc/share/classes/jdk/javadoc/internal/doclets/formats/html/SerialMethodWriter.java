@@ -51,7 +51,7 @@ public class SerialMethodWriter extends MethodWriter {
     }
 
     protected Content getMethodsContentHeader() {
-        return new HtmlTree(HtmlTag.LI);
+        return HtmlTree.LI();
     }
 
     /**
