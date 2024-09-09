@@ -1564,29 +1564,21 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return null;
         }
 
-        public RecordComponent findRecordComponentToRemove(JCVariableDecl var) {
-            RecordComponent toRemove = null;
-            for (RecordComponent rc : recordComponents) {
-                /* it could be that a record erroneously declares two record components with the same name, in that
-                 * case we need to use the position to disambiguate, but if we loaded the record from a class file
-                 * all positions will be -1, in that case we have to ignore the position and match only based on the
-                 * name
-                 */
-                if (rc.name == var.name && (var.pos == rc.pos || rc.pos == -1)) {
-                    toRemove = rc;
-                }
-            }
-            return toRemove;
-        }
-
         /* creates a record component if non is related to the given variable and recreates a brand new one
          * in other case
          */
         public RecordComponent createRecordComponent(RecordComponent existing, JCVariableDecl rcDecl, VarSymbol varSym) {
             RecordComponent rc = null;
-            if (existing != null) {
-                recordComponents = List.filter(recordComponents, existing);
-                recordComponents = recordComponents.append(rc = new RecordComponent(varSym, existing.ast, existing.isVarargs));
+            if (existing != null && !recordComponents.isEmpty()) {
+                ListBuffer<RecordComponent> newRComps = new ListBuffer<>();
+                for (RecordComponent rcomp : recordComponents) {
+                    if (existing == rcomp) {
+                        newRComps.add(rc = new RecordComponent(varSym, existing.ast, existing.isVarargs));
+                    } else {
+                        newRComps.add(rcomp);
+                    }
+                }
+                recordComponents = newRComps.toList();
             } else {
                 // Didn't find the record component: create one.
                 recordComponents = recordComponents.append(rc = new RecordComponent(varSym, rcDecl));

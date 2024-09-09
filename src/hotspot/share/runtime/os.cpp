@@ -213,9 +213,9 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
     abs_local_to_UTC = -(abs_local_to_UTC);
   }
   // Convert time zone offset seconds to hours and minutes.
-  const time_t zone_hours = (abs_local_to_UTC / seconds_per_hour);
-  const time_t zone_min =
-    ((abs_local_to_UTC % seconds_per_hour) / seconds_per_minute);
+  const int zone_hours = static_cast<int>(abs_local_to_UTC / seconds_per_hour);
+  const int zone_min =
+    static_cast<int>((abs_local_to_UTC % seconds_per_hour) / seconds_per_minute);
 
   // Print an ISO 8601 date and time stamp into the buffer
   const int year = 1900 + time_struct.tm_year;
@@ -1016,11 +1016,14 @@ static void print_hex_location(outputStream* st, const_address p, int unitsize, 
 }
 
 void os::print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize,
-                        bool print_ascii, int bytes_per_line, const_address logical_start) {
+                        bool print_ascii, int bytes_per_line, const_address logical_start, const_address highlight_address) {
   constexpr int max_bytes_per_line = 64;
   assert(unitsize == 1 || unitsize == 2 || unitsize == 4 || unitsize == 8, "just checking");
   assert(bytes_per_line > 0 && bytes_per_line <= max_bytes_per_line &&
          is_power_of_2(bytes_per_line), "invalid bytes_per_line");
+  assert(highlight_address == nullptr || (highlight_address >= start && highlight_address < end),
+         "address %p to highlight not in range %p - %p", highlight_address, start, end);
+
 
   start = align_down(start, unitsize);
   logical_start = align_down(logical_start, unitsize);
@@ -1037,7 +1040,11 @@ void os::print_hex_dump(outputStream* st, const_address start, const_address end
   // Print out the addresses as if we were starting from logical_start.
   while (p < end) {
     if (cols == 0) {
-      st->print(PTR_FORMAT ":   ", p2i(logical_p));
+      // highlight start of line if address of interest is located in the line
+      const bool should_highlight = (highlight_address >= p && highlight_address < p + bytes_per_line);
+      const char* const prefix =
+        (highlight_address != nullptr) ? (should_highlight ? "=>" : "  ") : "";
+      st->print("%s" PTR_FORMAT ":   ", prefix, p2i(logical_p));
     }
     print_hex_location(st, p, unitsize, ascii_form);
     p += unitsize;
@@ -1082,7 +1089,7 @@ void os::print_tos(outputStream* st, address sp) {
 
 void os::print_instructions(outputStream* st, address pc, int unitsize) {
   st->print_cr("Instructions: (pc=" PTR_FORMAT ")", p2i(pc));
-  print_hex_dump(st, pc - 256, pc + 256, unitsize, /* print_ascii=*/false);
+  print_hex_dump(st, pc - 256, pc + 256, unitsize, /* print_ascii=*/false, pc);
 }
 
 void os::print_environment_variables(outputStream* st, const char** env_list) {
@@ -2271,8 +2278,8 @@ bool os::unmap_memory(char *addr, size_t bytes) {
   return result;
 }
 
-void os::free_memory(char *addr, size_t bytes, size_t alignment_hint) {
-  pd_free_memory(addr, bytes, alignment_hint);
+void os::disclaim_memory(char *addr, size_t bytes) {
+  pd_disclaim_memory(addr, bytes);
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {

@@ -70,9 +70,9 @@ BUILD_JAVA_FLAGS := $(JAVA_FLAGS_BIG)
 
 ################################################################################
 # Hard-coded values copied from spec.gmk.in.
-X:=
-SPACE:=$(X) $(X)
-COMMA:=,
+X :=
+SPACE := $(X) $(X)
+COMMA := ,
 MAKE_ARGS = $(MAKE_LOG_FLAGS) -r -R -I $(TOPDIR)/make/common SPEC=$(SPEC) \
     MAKE_LOG_FLAGS="$(MAKE_LOG_FLAGS)" LOG_LEVEL=$(LOG_LEVEL)
 BASH_ARGS := -o pipefail -e

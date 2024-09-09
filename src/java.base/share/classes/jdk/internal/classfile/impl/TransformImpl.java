@@ -111,7 +111,7 @@ public final class TransformImpl {
             ResolvedTransform<ClassElement> upstream = TransformImpl.resolve(t, chainedBuilder);
             return new ResolvedTransform<>(upstream.consumer(),
                                           chainRunnable(upstream.endHandler(), downstream.endHandler()),
-                                          chainRunnable(upstream.startHandler(), downstream.startHandler()));
+                                          chainRunnable(downstream.startHandler(), upstream.startHandler()));
         }
     }
 
@@ -198,7 +198,7 @@ public final class TransformImpl {
             ResolvedTransform<MethodElement> upstream = TransformImpl.resolve(t, chainedBuilder);
             return new ResolvedTransform<>(upstream.consumer(),
                                            chainRunnable(upstream.endHandler(), downstream.endHandler()),
-                                           chainRunnable(upstream.startHandler(), downstream.startHandler()));
+                                           chainRunnable(downstream.startHandler(), upstream.startHandler()));
         }
     }
 
@@ -261,7 +261,7 @@ public final class TransformImpl {
             ResolvedTransform<FieldElement> upstream = TransformImpl.resolve(t, chainedBuilder);
             return new ResolvedTransform<>(upstream.consumer(),
                                            chainRunnable(upstream.endHandler(), downstream.endHandler()),
-                                           chainRunnable(upstream.startHandler(), downstream.startHandler()));
+                                           chainRunnable(downstream.startHandler(), upstream.startHandler()));
         }
     }
 
@@ -301,7 +301,7 @@ public final class TransformImpl {
             ResolvedTransform<CodeElement> upstream = TransformImpl.resolve(t, chainedBuilder);
             return new ResolvedTransform<>(upstream.consumer(),
                                          chainRunnable(upstream.endHandler(), downstream.endHandler()),
-                                         chainRunnable(upstream.startHandler(), downstream.startHandler()));
+                                         chainRunnable(downstream.startHandler(), upstream.startHandler()));
         }
     }
 

@@ -72,20 +72,6 @@ import sun.invoke.util.Wrapper;
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
     private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = ConstantUtils.EMPTY_CLASSDESC;
 
-    // Static builders to avoid lambdas
-    record FieldFlags(int flags) implements Consumer<FieldBuilder> {
-        @Override
-        public void accept(FieldBuilder fb) {
-            fb.withFlags(flags);
-        }
-    };
-    record MethodBody(Consumer<CodeBuilder> code) implements Consumer<MethodBuilder> {
-        @Override
-        public void accept(MethodBuilder mb) {
-            mb.withCode(code);
-        }
-    };
-
     // For dumping generated classes to disk, for debugging purposes
     private static final ClassFileDumper lambdaProxyClassFileDumper;
 
@@ -324,7 +310,7 @@ import sun.invoke.util.Wrapper;
                    .withInterfaceSymbols(interfaces);
                 // Generate final fields to be filled in by constructor
                 for (int i = 0; i < argDescs.length; i++) {
-                    clb.withField(argNames[i], argDescs[i], new FieldFlags(ACC_PRIVATE | ACC_FINAL));
+                    clb.withField(argNames[i], argDescs[i], ACC_PRIVATE | ACC_FINAL);
                 }
 
                 generateConstructor(clb);
@@ -334,7 +320,7 @@ import sun.invoke.util.Wrapper;
                 }
 
                 // Forward the SAM method
-                clb.withMethod(interfaceMethodName,
+                clb.withMethodBody(interfaceMethodName,
                         methodDesc(interfaceMethodType),
                         ACC_PUBLIC,
                         forwardingMethod(interfaceMethodType));
@@ -342,7 +328,7 @@ import sun.invoke.util.Wrapper;
                 // Forward the bridges
                 if (altMethods != null) {
                     for (MethodType mt : altMethods) {
-                        clb.withMethod(interfaceMethodName,
+                        clb.withMethodBody(interfaceMethodName,
                                 methodDesc(mt),
                                 ACC_PUBLIC | ACC_BRIDGE,
                                 forwardingMethod(mt));
@@ -376,10 +362,10 @@ import sun.invoke.util.Wrapper;
         ClassDesc lambdaTypeDescriptor = classDesc(factoryType.returnType());
 
         // Generate the static final field that holds the lambda singleton
-        clb.withField(LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor, new FieldFlags(ACC_PRIVATE | ACC_STATIC | ACC_FINAL));
+        clb.withField(LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
 
         // Instantiate the lambda and store it to the static final field
-        clb.withMethod(CLASS_INIT_NAME, MTD_void, ACC_STATIC, new MethodBody(new Consumer<CodeBuilder>() {
+        clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, new Consumer<>() {
             @Override
             public void accept(CodeBuilder cob) {
                 assert factoryType.parameterCount() == 0;
@@ -389,7 +375,7 @@ import sun.invoke.util.Wrapper;
                    .putstatic(lambdaClassDesc, LAMBDA_INSTANCE_FIELD, lambdaTypeDescriptor)
                    .return_();
             }
-        }));
+        });
     }
 
     /**
@@ -397,8 +383,8 @@ import sun.invoke.util.Wrapper;
      */
     private void generateConstructor(ClassBuilder clb) {
         // Generate constructor
-        clb.withMethod(INIT_NAME, constructorTypeDesc, ACC_PRIVATE,
-                new MethodBody(new Consumer<CodeBuilder>() {
+        clb.withMethodBody(INIT_NAME, constructorTypeDesc, ACC_PRIVATE,
+                new Consumer<>() {
                     @Override
                     public void accept(CodeBuilder cob) {
                         cob.aload(0)
@@ -412,7 +398,7 @@ import sun.invoke.util.Wrapper;
                         }
                         cob.return_();
                     }
-                }));
+                });
     }
 
     private static class SerializationSupport {
@@ -439,8 +425,8 @@ import sun.invoke.util.Wrapper;
      * Generate a writeReplace method that supports serialization
      */
     private void generateSerializationFriendlyMethods(ClassBuilder clb) {
-        clb.withMethod(SerializationSupport.NAME_METHOD_WRITE_REPLACE, SerializationSupport.MTD_Object, ACC_PRIVATE | ACC_FINAL,
-                new MethodBody(new Consumer<CodeBuilder>() {
+        clb.withMethodBody(SerializationSupport.NAME_METHOD_WRITE_REPLACE, SerializationSupport.MTD_Object, ACC_PRIVATE | ACC_FINAL,
+                new Consumer<>() {
                     @Override
                     public void accept(CodeBuilder cob) {
                         cob.new_(SerializationSupport.CD_SerializedLambda)
@@ -468,7 +454,7 @@ import sun.invoke.util.Wrapper;
                                           SerializationSupport.MTD_CTOR_SERIALIZED_LAMBDA)
                            .areturn();
                     }
-                }));
+                });
     }
 
     /**
@@ -504,8 +490,8 @@ import sun.invoke.util.Wrapper;
      * This method generates a method body which calls the lambda implementation
      * method, converting arguments, as needed.
      */
-    Consumer<MethodBuilder> forwardingMethod(MethodType methodType) {
-        return new MethodBody(new Consumer<CodeBuilder>() {
+    Consumer<CodeBuilder> forwardingMethod(MethodType methodType) {
+        return new Consumer<>() {
             @Override
             public void accept(CodeBuilder cob) {
                 if (implKind == MethodHandleInfo.REF_newInvokeSpecial) {
@@ -542,7 +528,7 @@ import sun.invoke.util.Wrapper;
                 TypeConvertingMethodAdapter.convertType(cob, implReturnClass, samReturnClass, samReturnClass);
                 cob.return_(TypeKind.from(samReturnClass));
             }
-        });
+        };
     }
 
     private void convertArgumentTypes(CodeBuilder cob, MethodType samType) {

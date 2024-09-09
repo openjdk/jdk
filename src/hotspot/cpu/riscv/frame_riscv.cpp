@@ -269,7 +269,7 @@ void frame::patch_pc(Thread* thread, address pc) {
 
   // Either the return address is the original one or we are going to
   // patch in the same address that's already there.
-  assert(_pc == pc_old || pc == pc_old || pc_old == 0, "must be");
+  assert(_pc == pc_old || pc == pc_old || pc_old == nullptr, "must be");
   DEBUG_ONLY(address old_pc = _pc;)
   *pc_addr = pc;
   _pc = pc; // must be set before call to get_deopt_original_pc

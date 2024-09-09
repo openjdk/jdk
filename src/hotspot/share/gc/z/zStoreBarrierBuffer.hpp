@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,16 +59,16 @@ private:
   // sizeof(ZStoreBarrierEntry) scaled index growing downwards
   size_t             _current;
 
-  void on_new_phase_relocate(int i);
-  void on_new_phase_remember(int i);
-  void on_new_phase_mark(int i);
+  void on_new_phase_relocate(size_t i);
+  void on_new_phase_remember(size_t i);
+  void on_new_phase_mark(size_t i);
 
   void clear();
 
   bool is_old_mark() const;
   bool stored_during_old_mark() const;
   bool is_empty() const;
-  intptr_t current() const;
+  size_t current() const;
 
   void install_base_pointers_inner();
 

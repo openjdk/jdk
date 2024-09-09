@@ -2659,8 +2659,8 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     array_klasses()->restore_unshareable_info(class_loader_data(), Handle(), CHECK);
   }
 
-  // Initialize @ValueBased class annotation
-  if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation()) {
+  // Initialize @ValueBased class annotation if not already set in the archived klass.
+  if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation() && !is_value_based()) {
     set_is_value_based();
   }
 }
@@ -2779,9 +2779,9 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
 
 #if INCLUDE_JVMTI
   // Deallocate breakpoint records
-  if (breakpoints() != 0x0) {
+  if (breakpoints() != nullptr) {
     methods_do(clear_all_breakpoints);
-    assert(breakpoints() == 0x0, "should have cleared breakpoints");
+    assert(breakpoints() == nullptr, "should have cleared breakpoints");
   }
 
   // deallocate the cached class file

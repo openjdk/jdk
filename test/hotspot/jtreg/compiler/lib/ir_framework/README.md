@@ -157,7 +157,16 @@ The framework allows the use of additional compiler control annotations for help
 - [@ForceCompile](./ForceCompile.java)
 - [@ForceCompileClassInitializer](./ForceCompileClassInitializer.java)
 
-### 2.5 Framework Debug and Stress Flags
+### 2.5 IR Tests with Privileged Classes
+To run tests in a privileged mode (e.g. when using `@Stable`, `@Contended`, `@ReservedStackAccess` etc.), one need to add the test classes to the boot classpath. This can easily be achieved by calling `TestFramework.addTestClassesToBootClassPath()` on the test framework object:
+```
+TestFramework testFramework = new TestFramework();
+testFramework
+        .addTestClassesToBootClassPath()
+        .start();
+```
+
+### 2.6 Framework Debug and Stress Flags
 The framework provides various stress and debug flags. They should mainly be used as JTreg VM and/or Javaoptions (apart from `VerifyIR`). The following (property) flags are supported:
 
 - `-DVerifyIR=false`: Explicitly disable IR verification. This is useful, for example, if some scenarios use VM flags that let `@IR` annotation rules fail and the user does not want to provide separate IR rules or add flag preconditions to the already existing IR rules.

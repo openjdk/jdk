@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_HPP
 #define SHARE_GC_PARALLEL_PSCOMPACTIONMANAGER_HPP
 
+#include "classfile/classLoaderData.hpp"
 #include "gc/parallel/psParallelCompact.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
@@ -40,6 +41,19 @@ class ObjectStartArray;
 class ParallelCompactData;
 class ParMarkBitMap;
 
+class PCMarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
+  ParCompactionManager* _compaction_manager;
+
+  template <typename T> void do_oop_work(T* p);
+public:
+  PCMarkAndPushClosure(ParCompactionManager* cm, ReferenceProcessor* rp) :
+    ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_stw_fullgc_mark, rp),
+    _compaction_manager(cm) { }
+
+  virtual void do_oop(oop* p)                     { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)               { do_oop_work(p); }
+};
+
 class ParCompactionManager : public CHeapObj<mtGC> {
   friend class MarkFromRootsTask;
   friend class ParallelCompactRefProcProxyTask;
@@ -47,6 +61,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   friend class ParMarkBitMap;
   friend class PSParallelCompact;
   friend class FillDensePrefixAndCompactionTask;
+  friend class PCAddThreadRootsMarkingTaskClosure;
 
  private:
   typedef OverflowTaskQueue<oop, mtGC>            OopTaskQueue;
@@ -71,6 +86,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   ObjArrayTaskQueue             _objarray_stack;
   size_t                        _next_shadow_region;
 
+  PCMarkAndPushClosure _mark_and_push_closure;
   // Is there a way to reuse the _oop_stack for the
   // saving empty regions?  For now just create a different
   // type of TaskQueue.
@@ -104,7 +120,9 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // objArray stack, otherwise returns false and the task is invalid.
   bool publish_or_pop_objarray_tasks(ObjArrayTask& task);
 
-  ParCompactionManager(PreservedMarks* preserved_marks);
+  ParCompactionManager(PreservedMarks* preserved_marks,
+                       ReferenceProcessor* ref_processor);
+
   // Array of task queues.  Needed by the task terminator.
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
   OopTaskQueue*  oop_stack()       { return &_oop_stack; }

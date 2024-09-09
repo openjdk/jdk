@@ -35,18 +35,6 @@ package gc.shenandoah;
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 
-/* @test id=iu
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm
- *      -Xbootclasspath/a:.
- *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      gc.shenandoah.TestReferenceRefersToShenandoah
- */
-
 /* @test id=satb-100
  * @requires vm.gc.Shenandoah
  * @library /test/lib
@@ -57,19 +45,6 @@ package gc.shenandoah;
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGarbageThreshold=100 -Xmx100m
- *      gc.shenandoah.TestReferenceRefersToShenandoah
- */
-
-/* @test id=iu-100
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- * @build jdk.test.whitebox.WhiteBox
- * @modules java.base
- * @run main jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm
- *      -Xbootclasspath/a:.
- *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGarbageThreshold=100 -Xmx100m
  *      gc.shenandoah.TestReferenceRefersToShenandoah
  */
 
@@ -200,10 +175,6 @@ public class TestReferenceRefersToShenandoah {
         testObject4 = null;
     }
 
-    private static boolean isShenandoahIUMode() {
-        return "iu".equals(WB.getStringVMFlag("ShenandoahGCMode"));
-    }
-
     private static void testConcurrentCollection() throws Exception {
         progress("setup concurrent collection test");
         setup();
@@ -239,14 +210,7 @@ public class TestReferenceRefersToShenandoah {
             expectCleared(testPhantom1, "testPhantom1");
             expectCleared(testWeak2, "testWeak2");
             expectValue(testWeak3, testObject3, "testWeak3");
-            // This is true for all currently supported concurrent collectors,
-            // except Shenandoah+IU, which allows clearing refs even when
-            // accessed during concurrent marking.
-            if (isShenandoahIUMode()) {
-              expectCleared(testWeak4, "testWeak4");
-            } else {
-              expectNotCleared(testWeak4, "testWeak4");
-            }
+            expectNotCleared(testWeak4, "testWeak4");
 
             progress("verify get returns expected values");
             if (testWeak2.get() != null) {
@@ -261,12 +225,10 @@ public class TestReferenceRefersToShenandoah {
             }
 
             TestObject obj4 = testWeak4.get();
-            if (!isShenandoahIUMode()) {
-                if (obj4 == null) {
-                    fail("testWeak4.get() returned null");
-                } else if (obj4.value != 4) {
-                    fail("testWeak4.get().value is " + obj4.value);
-                }
+            if (obj4 == null) {
+                fail("testWeak4.get() returned null");
+            } else if (obj4.value != 4) {
+                fail("testWeak4.get().value is " + obj4.value);
             }
 
             progress("verify queue entries");

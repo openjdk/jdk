@@ -28,7 +28,7 @@
 ###
 
 # Helper macro to allow $(info) to properly print strings beginning with spaces.
-_:=
+_ :=
 
 help:
 	$(info )
@@ -108,7 +108,7 @@ help:
 	$(info $(_) TEST_OPTS="OPT1=x;..." # Generic control of all test harnesses)
 	$(info $(_) TEST_VM_OPTS="ARG ..." # Same as setting TEST_OPTS to VM_OPTIONS="ARG ...")
 	$(info )
-	$(if $(all_confs), $(info Available configurations in $(build_dir):) $(foreach var,$(all_confs),$(info * $(var))),\
+	$(if $(all_confs), $(info Available configurations in $(build_dir):) $(foreach var,$(all_confs),$(info * $(var))), \
 	    $(info No configurations were found in $(build_dir).) $(info Run 'bash configure' to create a configuration.))
         # We need a dummy rule otherwise make will complain
 	@true
