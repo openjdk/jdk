@@ -774,7 +774,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
         assert(!(lrgs(lidx).mask().is_offset() &&
                  !lrgs(lidx).mask().Member(nreg_lo)),
                "invalid assumption");
-        if( !lrgs(lidx).mask().Member(nreg_lo) ) { // Nearly always adjacent
+        if (!lrgs(lidx).mask().Member(nreg_lo)) { // Nearly always adjacent
           // Sparc occasionally has non-adjacent pairs.
           // Find the actual other value
           RegMask tmp = lrgs(lidx).mask();

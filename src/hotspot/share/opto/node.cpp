@@ -545,8 +545,8 @@ Node *Node::clone() const {
     // MachProjNodes contain register masks that may contain pointers to
     // externally allocated memory. Make sure to use a proper constructor
     // instead of just shallowly copying.
-    MachProjNode *mach  = n->as_MachProj();
-    MachProjNode *mthis = this->as_MachProj();
+    MachProjNode* mach = n->as_MachProj();
+    MachProjNode* mthis = this->as_MachProj();
     new (&mach->_rout) RegMask(mthis->_rout);
   }
   if (n->is_Call()) {

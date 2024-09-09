@@ -253,7 +253,7 @@ class RegMask {
       assert(orig_ext_adr == &_RM_UP_EXT, "clone sanity check");
       _grow(src._rm_size, false);
       memcpy(_RM_UP_EXT, src._RM_UP_EXT,
-          sizeof(uintptr_t) * (src._rm_size - _RM_SIZE));
+             sizeof(uintptr_t) * (src._rm_size - _RM_SIZE));
     }
 
     // If the source is smaller than us, we need to set the gap according to
@@ -274,19 +274,18 @@ class RegMask {
   void _set_range(unsigned int start, int value, unsigned int length) {
     if (start < _RM_SIZE) {
       memset(_RM_UP + start, value,
-             sizeof(uintptr_t) * MIN2((int)length,(int)_RM_SIZE-(int)start));
+             sizeof(uintptr_t) * MIN2((int)length, (int)_RM_SIZE - (int)start));
     }
     if (start + length > _RM_SIZE) {
       assert(_RM_UP_EXT != nullptr, "sanity");
       assert(orig_ext_adr == &_RM_UP_EXT, "clone sanity check");
-      memset(_RM_UP_EXT + MAX2((int)start-(int)_RM_SIZE,0), value,
+      memset(_RM_UP_EXT + MAX2((int)start - (int)_RM_SIZE, 0), value,
              sizeof(uintptr_t) * MIN2((int)length,
-                                      (int)length-((int)_RM_SIZE-(int)start)));
+                                      (int)length - ((int)_RM_SIZE - (int)start)));
     }
   }
 
- public:
-
+public:
   unsigned int rm_size() const { return _rm_size; }
   unsigned int rm_size_bits() const { return _rm_size * BitsPerWord; }
 
@@ -368,14 +367,16 @@ class RegMask {
 
   RegMask(const RegMask& rm) : RegMask(rm, nullptr) {}
 
-  RegMask& operator= (const RegMask& rm) {
+  RegMask& operator=(const RegMask& rm) {
     _copy(rm);
     return *this;
   }
 
   bool Member(OptoReg::Name reg) const {
     reg = reg - offset_bits();
-    if (reg < 0) { return false; }
+    if (reg < 0) {
+      return false;
+    }
     if (reg >= (int)rm_size_bits()) {
       return is_AllStack();
     }
@@ -567,7 +568,9 @@ class RegMask {
     if (index < _rm_max()) {
       _set_range(index + 1, 0xFF, _rm_max() - index);
     }
-    if (index < _lwm) _lwm = index;
+    if (index < _lwm) {
+      _lwm = index;
+    }
     _hwm = _rm_max();
     set_AllStack();
     assert(valid_watermarks(), "post-condition");
@@ -675,7 +678,7 @@ class RegMask {
   // Subtract 'rm' from 'this', but ignore everything in 'rm' that does not
   // overlap with us and to not modify our all-stack flag. Supports masks of
   // differing offsets. Does not support 'rm' with the all-stack flag set.
-  void SUBTRACT_inner(const RegMask &rm) {
+  void SUBTRACT_inner(const RegMask& rm) {
     assert(valid_watermarks() && rm.valid_watermarks(), "sanity");
     assert(!rm.is_AllStack(), "not supported");
     // Various translations due to differing offsets
@@ -697,7 +700,7 @@ class RegMask {
   // Roll over the register mask. The main use is to expose a new set of stack
   // slots for the register allocator. Return if the rollover succeeded or not.
   bool rollover() {
-    assert(is_AllStack_only(),"rolling over non-empty mask");
+    assert(is_AllStack_only(), "rolling over non-empty mask");
     if ((_rm_size + _offset + _rm_size) * BitsPerWord > SHRT_MAX) {
       // The maximum OptoReg size is SHRT_MAX. Register masks
       // cannot represent anything beyond that.

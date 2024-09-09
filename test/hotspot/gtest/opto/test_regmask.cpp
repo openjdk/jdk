@@ -207,7 +207,7 @@ TEST_VM(RegMask, is_bound_set) {
     }
     // A set with the AllStack bit does not count as a bound set
     for (int j = rm.rm_size_bits() - size; j < (int)rm.rm_size_bits(); j++) {
-        rm.Insert(j);
+      rm.Insert(j);
     }
     rm.set_AllStack();
     ASSERT_FALSE(rm.is_bound_set(size));

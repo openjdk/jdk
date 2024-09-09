@@ -1359,7 +1359,7 @@ void PhaseChaitin::Simplify( ) {
 }
 
 // Is 'reg' register legal for 'lrg'?
-static bool is_legal_reg(LRG &lrg, OptoReg::Name reg) {
+static bool is_legal_reg(LRG& lrg, OptoReg::Name reg) {
   if (lrg.mask().can_represent(reg) && lrg.mask().Member(reg)) {
     // RA uses OptoReg which represent the highest element of a registers set.
     // For example, vectorX (128bit) on x86 uses [XMM,XMMb,XMMc,XMMd] set
@@ -1431,7 +1431,7 @@ static OptoReg::Name find_first_set(LRG& lrg, RegMask& mask) {
 }
 
 // Choose a color using the biasing heuristic
-OptoReg::Name PhaseChaitin::bias_color( LRG &lrg ) {
+OptoReg::Name PhaseChaitin::bias_color(LRG& lrg) {
 
   // Check for "at_risk" LRG's
   uint risk_lrg = _lrg_map.find(lrg._risk_bias);
@@ -1445,8 +1445,9 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg ) {
     while ((datum = elements.next()) != 0) {
       OptoReg::Name reg = lrgs(datum).reg();
       // If this LRG's register is legal for us, choose it
-      if (is_legal_reg(lrg, reg))
+      if (is_legal_reg(lrg, reg)) {
         return reg;
+      }
     }
   }
 
@@ -1456,9 +1457,10 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg ) {
     if(!_ifg->_yanked->test(copy_lrg)) {
       OptoReg::Name reg = lrgs(copy_lrg).reg();
       //  And it is legal for you,
-      if (is_legal_reg(lrg, reg))
+      if (is_legal_reg(lrg, reg)) {
         return reg;
-    } else if( !lrg.mask().is_offset() ) {
+      }
+    } else if (!lrg.mask().is_offset()) {
       // Choose a color which is legal for him
       ResourceMark rm(C->regmask_arena());
       RegMask tempmask(lrg.mask(), C->regmask_arena());
@@ -1495,8 +1497,7 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg ) {
     // dealing with registers in the first "chunk" (and not stack slots). But,
     // this does change behavior compared to the old version (hence my
     // hesitation).
-    if(OptoReg::is_valid(reg2)
-         && OptoReg::is_reg(reg2 - lrg.mask().offset_bits())) {
+    if (OptoReg::is_valid(reg2) && OptoReg::is_reg(reg2 - lrg.mask().offset_bits())) {
       reg = reg2;
     }
   }
@@ -1504,9 +1505,9 @@ OptoReg::Name PhaseChaitin::bias_color( LRG &lrg ) {
 }
 
 // Choose a color in the current chunk
-OptoReg::Name PhaseChaitin::choose_color( LRG &lrg ) {
-  assert( C->in_preserve_stack_slots() == 0 || lrg.mask().is_offset() || lrg._is_bound || lrg.mask().is_bound1() || !lrg.mask().Member(OptoReg::Name(_matcher._old_SP-1)), "must not allocate stack0 (inside preserve area)");
-  assert(C->out_preserve_stack_slots() == 0 || lrg.mask().is_offset() || lrg._is_bound || lrg.mask().is_bound1() || !lrg.mask().Member(OptoReg::Name(_matcher._old_SP+0)), "must not allocate stack0 (inside preserve area)");
+OptoReg::Name PhaseChaitin::choose_color(LRG& lrg) {
+  assert(C->in_preserve_stack_slots() == 0 || lrg.mask().is_offset() || lrg._is_bound || lrg.mask().is_bound1() || !lrg.mask().Member(OptoReg::Name(_matcher._old_SP - 1)), "must not allocate stack0 (inside preserve area)");
+  assert(C->out_preserve_stack_slots() == 0 || lrg.mask().is_offset() || lrg._is_bound || lrg.mask().is_bound1() || !lrg.mask().Member(OptoReg::Name(_matcher._old_SP + 0)), "must not allocate stack0 (inside preserve area)");
 
   if( lrg.num_regs() == 1 ||    // Common Case
       !lrg._fat_proj )          // Aligned+adjacent pairs ok
@@ -1519,7 +1520,7 @@ OptoReg::Name PhaseChaitin::choose_color( LRG &lrg ) {
   // Fat-proj case or misaligned double argument.
   assert(lrg.compute_mask_size() == lrg.num_regs() ||
          lrg.num_regs() == 2,"fat projs exactly color" );
-  assert( !lrg.mask().is_offset(), "always color in 1st chunk" );
+  assert(!lrg.mask().is_offset(), "always color in 1st chunk");
   // Return the highest element in the set.
   return lrg.mask().find_last_elem();
 }
@@ -1554,12 +1555,12 @@ uint PhaseChaitin::Select( ) {
     // capture allstackedness flag before mask is hacked
     const int is_allstack = lrg->mask().is_AllStack();
 
-    // Yeah, yeah, yeah, I know, I know.  I can refactor this
-    // to avoid the GOTO, although the refactored code will not
-    // be much clearer.  We arrive here IFF we have a stack-based
-    // live range that cannot color in the current chunk, and it
-    // has to move into the next free stack chunk.
-    retry_next_chunk:
+  // Yeah, yeah, yeah, I know, I know.  I can refactor this
+  // to avoid the GOTO, although the refactored code will not
+  // be much clearer.  We arrive here IFF we have a stack-based
+  // live range that cannot color in the current chunk, and it
+  // has to move into the next free stack chunk.
+  retry_next_chunk:
 
     // Remove neighbor colors
     IndexSet *s = _ifg->neighbors(lidx);
@@ -1610,12 +1611,12 @@ uint PhaseChaitin::Select( ) {
     }
 
     // Check if a color is available and if so pick the color
-    OptoReg::Name reg = choose_color( *lrg );
+    OptoReg::Name reg = choose_color(*lrg);
 
     //---------------
     // If we fail to color and the AllStack flag is set, trigger
     // a chunk-rollover event
-    if(!OptoReg::is_valid(reg) && is_allstack) {
+    if (!OptoReg::is_valid(reg) && is_allstack) {
       // Bump register mask up to next stack chunk
       bool success = lrg->rollover();
       if (!success) {
@@ -1629,7 +1630,7 @@ uint PhaseChaitin::Select( ) {
 
     //---------------
     // Did we get a color?
-    else if( OptoReg::is_valid(reg)) {
+    else if (OptoReg::is_valid(reg)) {
 #ifndef PRODUCT
       ResourceMark rm(C->regmask_arena());
       RegMask avail_rm(lrg->mask(), C->regmask_arena());
@@ -1638,8 +1639,9 @@ uint PhaseChaitin::Select( ) {
       // Record selected register
       lrg->set_reg(reg);
 
-      if( reg >= _max_reg )     // Compute max register limit
-        _max_reg = OptoReg::add(reg,1);
+      if( reg >= _max_reg ) {     // Compute max register limit
+        _max_reg = OptoReg::add(reg, 1);
+      }
 
       // If the live range is not bound, then we actually had some choices
       // to make.  In this case, the mask has more bits in it than the colors
@@ -1702,7 +1704,6 @@ uint PhaseChaitin::Select( ) {
       }
 #endif
     } // end spill case
-
   }
 
   return spill_reg-LRG::SPILL_REG;      // Return number of spills

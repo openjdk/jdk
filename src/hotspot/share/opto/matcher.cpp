@@ -1234,8 +1234,9 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
     // Keep track of the largest numbered stack slot used for an arg.
     // Largest used slot per call-site indicates the amount of stack
     // that is killed by the call.
-    if( warped >= out_arg_limit_per_call )
-      out_arg_limit_per_call = OptoReg::add(warped,1);
+    if( warped >= out_arg_limit_per_call ) {
+      out_arg_limit_per_call = OptoReg::add(warped, 1);
+    }
     return warped;
   }
   return OptoReg::as_OptoReg(reg);
