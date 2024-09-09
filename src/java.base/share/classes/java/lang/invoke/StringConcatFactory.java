@@ -515,10 +515,26 @@ public final class StringConcatFactory {
             mh = simpleConcat3(paramType0);
             mh = MethodHandles.insertArguments(mh, 2, suffix);
             return MethodHandles.insertArguments(mh, 0, prefix);
-        } else if (paramCount == 2 && !mt.hasPrimitives() && suffix.isEmpty()
-                && constants[0].isEmpty() && constants[1].isEmpty()) {
+        } else if (paramCount == 2 && constants[1].isEmpty()) {
+            var paramType1 = mt.parameterType(1);
             // Two reference arguments, no surrounding constants
-            return simpleConcat();
+            if (!mt.hasPrimitives() && suffix.isEmpty() && prefix.isEmpty()) {
+                return simpleConcat();
+            }
+
+            if (suffix.isEmpty() && paramType1 == String.class) {
+                // "prefix" + x + s
+                mh = simpleConcat3(paramType0);
+                mh = MethodHandles.insertArguments(mh, 0, prefix);
+                return MethodHandles.filterArguments(mh, 1, objectStringifier());
+            }
+
+            if (prefix.isEmpty() && paramType0 == String.class) {
+                // s + x + "suffix"
+                mh = simpleConcat3(paramType1);
+                mh = MethodHandles.insertArguments(mh, 2, suffix);
+                return MethodHandles.filterArguments(mh, 0, objectStringifier());
+            }
         }
 
         return null;
