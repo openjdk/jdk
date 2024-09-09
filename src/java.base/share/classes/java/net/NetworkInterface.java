@@ -62,6 +62,18 @@ import java.util.stream.StreamSupport;
  * Network interface instances are typically used to identify the local
  * interface on which a multicast group is joined.
  *
+ * @apiNote <a id="lookup"></a>Several static  methods in this class allow to
+ * lookup and return new instances of {@code NetworkInterface}.
+ * As outlined above, the returned interface instances may reflect a snapshot
+ * of the configuration taken at the time the instance is created.
+ * The network configuration may change at any time, and such methods may need to
+ * be invoked again in order to obtain a more up-to-date view of the network
+ * interfaces.
+ * In particular, there is no guarantee that the same interface will be
+ * found at the same index, or that the same network addresses will be
+ * bound to the interface, if the network configuration of the system
+ * has changed.
+ *
  * @since 1.4
  */
 public final class NetworkInterface {
@@ -282,12 +294,8 @@ public final class NetworkInterface {
      * @apiNote
      * The returned interface instance may reflect a snapshot of the
      * configuration taken at the time the instance is created.
-     * The network configuration may change at any time, and this method may need to
-     * be invoked again to obtain a more up-to-date view of the network interface.
-     * In particular, there is no guarantee that the same interface will be
-     * found at the same index, or that the same network addresses will be
-     * bound to the interface, if the network configuration of the system
-     * has changed.
+     * See the general discussion of {@linkplain NetworkInterface##lookup
+     * snapshots and configuration} for the semantics of the returned interface.
      *
      * @param   name
      *          The name of the network interface.
@@ -314,12 +322,8 @@ public final class NetworkInterface {
      * @apiNote
      * The returned interface instance may reflect a snapshot of the
      * configuration taken at the time the instance is created.
-     * The network configuration may change at any time, and this method may need to
-     * be invoked again to obtain a more up-to-date view of the network interface.
-     * In particular, there is no guarantee that the same interface will be
-     * found at the same index, or that the same network addresses will be
-     * bound to the interface, if the network configuration of the system
-     * has changed.
+     * See the general discussion of {@linkplain NetworkInterface##lookup
+     * snapshots and configuration} for the semantics of the returned interface.
      *
      * @param index an integer, the index of the interface
      * @return the NetworkInterface obtained from its index, or {@code null} if
@@ -347,12 +351,8 @@ public final class NetworkInterface {
      * @apiNote
      * The returned interface instance may reflect a snapshot of the
      * configuration taken at the time the instance is created.
-     * The network configuration may change at any time, and this method may need to
-     * be invoked again to obtain a more up-to-date view of the network interface.
-     * In particular, there is no guarantee that the same interface will be
-     * found at the same index, or that the same network addresses will be
-     * bound to the interface, if the network configuration of the system
-     * has changed.
+     * See the general discussion of {@linkplain NetworkInterface##lookup
+     * snapshots and configuration} for the semantics of the returned interface.
      *
      * @param   addr
      *          The {@code InetAddress} to search with.
@@ -400,12 +400,8 @@ public final class NetworkInterface {
      * <p>
      * The returned interface instances may reflect a snapshot of the
      * configuration taken at the time the instance is created.
-     * The network configuration may change at any time, and this method may need to
-     * be invoked again to obtain a more up-to-date view of the network interfaces.
-     * In particular, there is no guarantee that the same interface will be
-     * found at the same index, or that the same network addresses will be
-     * bound to the interface, if the network configuration of the system
-     * has changed.
+     * See the general discussion of {@linkplain NetworkInterface##lookup
+     * snapshots and configuration} for the semantics of the returned interface.
      *
      * @return an Enumeration of NetworkInterfaces found on this machine
      * @throws     SocketException  if an I/O error occurs,
@@ -439,12 +435,8 @@ public final class NetworkInterface {
      * <p>
      * The returned interface instances may reflect a snapshot of the
      * configuration taken at the time the instance is created.
-     * The network configuration may change at any time, and this method may need to
-     * be invoked again to obtain a more up-to-date view of the network interfaces.
-     * In particular, there is no guarantee that the same interface will be
-     * found at the same index, or that the same network addresses will be
-     * bound to the interface, if the network configuration of the system
-     * has changed.
+     * See the general discussion of {@linkplain NetworkInterface##lookup
+     * snapshots and configuration} for the semantics of the returned interface.
      *
      * @return a Stream of NetworkInterfaces found on this machine
      * @throws     SocketException  if an I/O error occurs,
