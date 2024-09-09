@@ -21,13 +21,7 @@
  * questions.
  */
 #include "export.h"
-#if (__STDC_VERSION__ >= 199901L)
-  #include <stdbool.h>
-#else
-  #define bool int
-  #define true 1
-  #define false 0
-#endif
+#include <stdbool.h>
 #if defined(__linux__)
 #include <linux/fcntl.h>
 #include <stdio.h>
