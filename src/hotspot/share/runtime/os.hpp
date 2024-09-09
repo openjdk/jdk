@@ -857,9 +857,9 @@ class os: AllStatic {
   static frame      current_frame();
 
   static void print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize, bool print_ascii,
-                             int bytes_per_line, const_address logical_start);
-  static void print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize, bool print_ascii = true) {
-    print_hex_dump(st, start, end, unitsize, print_ascii, /*bytes_per_line=*/16, /*logical_start=*/start);
+                             int bytes_per_line, const_address logical_start, const_address highlight_address = nullptr);
+  static void print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize, bool print_ascii = true, const_address highlight_address = nullptr) {
+    print_hex_dump(st, start, end, unitsize, print_ascii, /*bytes_per_line=*/16, /*logical_start=*/start, highlight_address);
   }
 
   // returns a string to describe the exception/signal;

@@ -49,8 +49,6 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.ref.SoftReference;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -1198,9 +1196,14 @@ public final class StringConcatFactory {
 
         /**
          * Construct the MethodType of the coder method. The first parameter is the initialized coder.
-         * Only parameter types which can be UTF16 are added. Returns null if no such parameter exists.
+         * Only parameter types which can be UTF16 are added.
+         * Returns null if no such parameter exists or CompactStrings is off.
          */
         private static MethodTypeDesc coderArgsIfMaybeUTF16(MethodType concatArgs) {
+            if (JLA.stringInitCoder() != 0) {
+                return null;
+            }
+
             int parameterCount = concatArgs.parameterCount();
 
             int maybeUTF16Count = 0;
@@ -1244,7 +1247,7 @@ public final class StringConcatFactory {
             lookup = STR_LOOKUP;
             final MethodType concatArgs = erasedArgs(args);
 
-            // 1 argment use built-in method
+            // 1 argument use built-in method
             if (args.parameterCount() == 1) {
                 Object concat1 = JLA.stringConcat1(constants);
                 var handle = lookup.findVirtual(concat1.getClass(), METHOD_NAME, concatArgs);
@@ -1256,7 +1259,7 @@ public final class StringConcatFactory {
                 MethodHandlePair handlePair = weakConstructorHandle.get();
                 if (handlePair != null) {
                     try {
-                        var instance = handlePair.constructor.invoke(constants);
+                        var instance = handlePair.constructor.invokeBasic((Object)constants);
                         return handlePair.concatenator.bindTo(instance);
                     } catch (Throwable e) {
                         throw new StringConcatException("Exception while utilizing the hidden class", e);
@@ -1333,10 +1336,10 @@ public final class StringConcatFactory {
                 var hiddenClass = lookup.makeHiddenClassDefiner(CLASS_NAME, classBytes, Set.of(), DUMPER)
                                         .defineClass(true, null);
                 var constructor = lookup.findConstructor(hiddenClass, CONSTRUCTOR_METHOD_TYPE);
-                var concat      = lookup.findVirtual(hiddenClass, METHOD_NAME, concatArgs);
-                CACHE.put(concatArgs, new SoftReference<>(new MethodHandlePair(constructor, concat)));
-                var instance = hiddenClass.cast(constructor.invoke(constants));
-                return concat.bindTo(instance);
+                var concatenator = lookup.findVirtual(hiddenClass, METHOD_NAME, concatArgs);
+                CACHE.put(concatArgs, new SoftReference<>(new MethodHandlePair(constructor, concatenator)));
+                var instance = constructor.invokeBasic((Object)constants);
+                return concatenator.bindTo(instance);
             } catch (Throwable e) {
                 throw new StringConcatException("Exception while spinning the class", e);
             }
@@ -1419,11 +1422,11 @@ public final class StringConcatFactory {
                     // Compute parameter variable slots
                     int paramCount    = concatArgs.parameterCount(),
                         thisSlot      = cb.receiverSlot(),
-                        lengthSlot    = cb.allocateLocal(TypeKind.IntType),
-                        coderSlot     = cb.allocateLocal(TypeKind.ByteType),
-                        bufSlot       = cb.allocateLocal(TypeKind.ReferenceType),
-                        constantsSlot = cb.allocateLocal(TypeKind.ReferenceType),
-                        suffixSlot    = cb.allocateLocal(TypeKind.ReferenceType);
+                        lengthSlot    = cb.allocateLocal(TypeKind.INT),
+                        coderSlot     = cb.allocateLocal(TypeKind.BYTE),
+                        bufSlot       = cb.allocateLocal(TypeKind.REFERENCE),
+                        constantsSlot = cb.allocateLocal(TypeKind.REFERENCE),
+                        suffixSlot    = cb.allocateLocal(TypeKind.REFERENCE);
 
                     /*
                      * Types other than int/long/char/boolean require local variables to store the result of stringOf.
@@ -1447,7 +1450,7 @@ public final class StringConcatFactory {
                             } else {
                                 methodTypeDesc = MTD_String_Object;
                             }
-                            stringSlots[i] = cb.allocateLocal(TypeKind.ReferenceType);
+                            stringSlots[i] = cb.allocateLocal(TypeKind.REFERENCE);
                             cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i))
                               .invokestatic(CD_StringConcatHelper, "stringOf", methodTypeDesc)
                               .astore(stringSlots[i]);
@@ -1464,7 +1467,7 @@ public final class StringConcatFactory {
                             var cl = concatArgs.parameterType(i);
                             if (maybeUTF16(cl)) {
                                 if (cl == char.class) {
-                                    cb.loadLocal(TypeKind.CharType, cb.parameterSlot(i));
+                                    cb.loadLocal(TypeKind.CHAR, cb.parameterSlot(i));
                                 } else {
                                     cb.aload(stringSlots[i]);
                                 }
@@ -1531,7 +1534,7 @@ public final class StringConcatFactory {
                         var kind = TypeKind.from(cl);
                         if (needStringOf(cl)) {
                             paramSlot = stringSlots[i];
-                            kind = TypeKind.ReferenceType;
+                            kind = TypeKind.REFERENCE;
                         }
                         cb.loadLocal(kind, paramSlot);
                     }
@@ -1682,7 +1685,7 @@ public final class StringConcatFactory {
                         } else if (cl == CD_char) {
                             methodTypeDesc = PREPEND_char;
                         } else {
-                            kind = TypeKind.ReferenceType;
+                            kind = TypeKind.REFERENCE;
                             methodTypeDesc = PREPEND_String;
                         }
 
