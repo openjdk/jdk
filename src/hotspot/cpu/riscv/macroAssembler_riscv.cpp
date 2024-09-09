@@ -1593,7 +1593,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     bge(len, zr, L_by4_loop);
     addiw(len, len, 4);
     bgt(len, zr, L_by1_loop);
-    j(L_exit); 
+    j(L_exit);
   } else {
       const Register buf_end = tmp3;
       add(buf_end, buf, len); // buf_end will be used as endpoint for loop below
@@ -1613,7 +1613,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
       bge(len, zr, L_by4_loop);
       addiw(len, len, 4);
       bgt(len, zr, L_by1_loop);
-      j(L_exit); 
+      j(L_exit);
   }
 
   bind(L_by4_loop);
