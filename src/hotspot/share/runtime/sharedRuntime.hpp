@@ -30,6 +30,7 @@
 #include "interpreter/linkResolver.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/stubDeclarations.hpp"
 #include "utilities/macros.hpp"
 
 class AdapterHandlerEntry;
@@ -42,37 +43,57 @@ class vframeStream;
 // Java exceptions), locking/unlocking mechanisms, statistical
 // information, etc.
 
+// define SharedStubId enum tags: wrong_method_id, etc
+
+#define SHARED_STUB_ID_ENUM_DECLARE(name, type) STUB_ID_NAME(name),
+enum class SharedStubId :int {
+  NO_STUBID = -1,
+  SHARED_STUBS_DO(SHARED_STUB_ID_ENUM_DECLARE)
+  NUM_STUBIDS
+};
+#undef SHARED_STUB_ID_ENUM_DECLARE
+
 class SharedRuntime: AllStatic {
   friend class VMStructs;
 
  private:
-  // Shared stub locations
+  // Declare shared stub fields
+#define SHARED_STUB_FIELD_DECLARE(name, type) \
+  static type        BLOB_FIELD_NAME(name);
+  SHARED_STUBS_DO(SHARED_STUB_FIELD_DECLARE)
+#undef SHARED_STUB_FIELD_DECLARE
 
-  static RuntimeStub*        _wrong_method_blob;
-  static RuntimeStub*        _wrong_method_abstract_blob;
-  static RuntimeStub*        _ic_miss_blob;
-  static RuntimeStub*        _resolve_opt_virtual_call_blob;
-  static RuntimeStub*        _resolve_virtual_call_blob;
-  static RuntimeStub*        _resolve_static_call_blob;
+#ifdef ASSERT
+  static bool is_resolve_id(SharedStubId id) {
+    return (id == SharedStubId::wrong_method_id ||
+            id == SharedStubId::wrong_method_abstract_id ||
+            id == SharedStubId::ic_miss_id ||
+            id == SharedStubId::resolve_opt_virtual_call_id ||
+            id == SharedStubId::resolve_virtual_call_id ||
+            id == SharedStubId::resolve_static_call_id);
+  }
+  static bool is_polling_page_id(SharedStubId id) {
+    return (id == SharedStubId::polling_page_vectors_safepoint_handler_id ||
+            id == SharedStubId::polling_page_safepoint_handler_id ||
+            id == SharedStubId::polling_page_return_handler_id);
+  }
+  static bool is_throw_id(SharedStubId id) {
+    return (id == SharedStubId::throw_AbstractMethodError_id ||
+            id == SharedStubId::throw_IncompatibleClassChangeError_id ||
+            id == SharedStubId::throw_NullPointerException_at_call_id ||
+            id == SharedStubId::throw_StackOverflowError_id ||
+            id == SharedStubId::throw_delayed_StackOverflowError_id);
+  }
+#endif
 
-  static DeoptimizationBlob* _deopt_blob;
-
-  static SafepointBlob*      _polling_page_vectors_safepoint_handler_blob;
-  static SafepointBlob*      _polling_page_safepoint_handler_blob;
-  static SafepointBlob*      _polling_page_return_handler_blob;
-
+  // cont_doYieldStub is not yet folded into the general model for
+  // shared stub/blob handling. It is actually a specially generated
+  // native wrapper for a specific native method, as also is it's
+  // counterpart the continuation do_enter method.
   static nmethod*            _cont_doYield_stub;
 
-  static RuntimeStub*        _throw_AbstractMethodError_blob;
-  static RuntimeStub*        _throw_IncompatibleClassChangeError_blob;
-  static RuntimeStub*        _throw_NullPointerException_at_call_blob;
-  static RuntimeStub*        _throw_StackOverflowError_blob;
-  static RuntimeStub*        _throw_delayed_StackOverflowError_blob;
-
-#if INCLUDE_JFR
-  static RuntimeStub*        _jfr_write_checkpoint_blob;
-  static RuntimeStub*        _jfr_return_lease_blob;
-#endif
+  // Stub names indexed by SharedStubId
+  static const char *_stub_names[];
 
 #ifndef PRODUCT
   // Counters
@@ -80,10 +101,9 @@ class SharedRuntime: AllStatic {
 #endif // !PRODUCT
 
  private:
-  enum { POLL_AT_RETURN,  POLL_AT_LOOP, POLL_AT_VECTOR_LOOP };
-  static SafepointBlob* generate_handler_blob(address call_ptr, int poll_type);
-  static RuntimeStub*   generate_resolve_blob(address destination, const char* name);
-  static RuntimeStub*   generate_throw_exception(const char* name, address runtime_entry);
+  static SafepointBlob* generate_handler_blob(SharedStubId id, address call_ptr);
+  static RuntimeStub*   generate_resolve_blob(SharedStubId id, address destination);
+  static RuntimeStub*   generate_throw_exception(SharedStubId id, address runtime_entry);
  public:
   static void generate_initial_stubs(void);
   static void generate_stubs(void);
@@ -96,6 +116,11 @@ class SharedRuntime: AllStatic {
   // For c2: call to runtime to return a buffer lease.
   static RuntimeStub* generate_jfr_return_lease();
 #endif
+
+  static const char *stub_name(SharedStubId id) {
+    assert(id > SharedStubId::NO_STUBID && id < SharedStubId::NUM_STUBIDS, "stub id out of range");
+    return _stub_names[(int)id];
+  }
 
   // max bytes for each dtrace string parameter
   enum { max_dtrace_string_size = 256 };
