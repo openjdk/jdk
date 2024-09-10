@@ -818,7 +818,6 @@ void InstanceKlass::initialize_from_cds(TRAPS) {
 
   if (has_preinitialized_mirror() && CDSConfig::is_loading_heap() &&
       are_super_types_initialized(this)) {
-    // TODO: also check for events listeners such as JVMTI, JFR, etc
     if (log_is_enabled(Info, cds, init)) {
       ResourceMark rm;
       log_info(cds, init)("%s (quickest)", external_name());
@@ -841,6 +840,9 @@ void InstanceKlass::initialize_from_cds(TRAPS) {
   }
 
   if (log_is_enabled(Info, cds, init)) {
+    // If we have a preinit mirror, we may come to here if a supertype is not
+    // yet initialized. It will still be quicker than usual, as we will skip the
+    // execution of <clinit> of this class.
     ResourceMark rm;
     log_info(cds, init)("%s%s", external_name(),
                         (has_preinitialized_mirror() && CDSConfig::is_loading_heap()) ? " (quicker)" : "");

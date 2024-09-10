@@ -139,7 +139,7 @@ CDSHeapVerifier::~CDSHeapVerifier() {
 
 class CDSHeapVerifier::CheckStaticFields : public FieldClosure {
   CDSHeapVerifier* _verifier;
-  InstanceKlass* _ik;
+  InstanceKlass* _ik; // The class whose static fields are being checked.
   const char** _exclusions;
 public:
   CheckStaticFields(CDSHeapVerifier* verifier, InstanceKlass* ik)
@@ -154,7 +154,7 @@ public:
 
     oop static_obj_field = _ik->java_mirror()->obj_field(fd->offset());
     if (static_obj_field != nullptr) {
-      Klass* klass = static_obj_field->klass();
+      Klass* klass_of_field = static_obj_field->klass();
       if (_exclusions != nullptr) {
         for (const char** p = _exclusions; *p != nullptr; p++) {
           if (fd->name()->equals(*p)) {
@@ -174,15 +174,15 @@ public:
         // This field points to an archived mirror.
         return;
       }
-      if (klass->has_archived_enum_objs()) {
-        // This klass is a subclass of java.lang.Enum. If any instance of this klass
-        // has been archived, we will archive all static fields of this klass.
+      if (klass_of_field->has_archived_enum_objs()) {
+        // This field is an Enum. If any instance of this Enum has been archived, we will archive
+        // all static fields of this Enum as well.
         // See HeapShared::initialize_enum_klass().
         return;
       }
-      if (klass->is_instance_klass()) {
-        if (InstanceKlass::cast(klass)->is_initialized() &&
-            AOTClassInitializer::can_archive_preinitialized_mirror(InstanceKlass::cast(klass))) {
+      if (klass_of_field->is_instance_klass()) {
+        if (InstanceKlass::cast(klass_of_field)->is_initialized() &&
+            AOTClassInitializer::can_archive_preinitialized_mirror(InstanceKlass::cast(klass_of_field))) {
           return;
         }
       }

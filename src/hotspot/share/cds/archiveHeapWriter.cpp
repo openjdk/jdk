@@ -503,6 +503,9 @@ template <typename T> void ArchiveHeapWriter::relocate_field_in_buffer(T* field_
   oop source_referent = load_source_oop_from_buffer<T>(field_addr_in_buffer);
   if (source_referent != nullptr) {
     if (java_lang_Class::is_instance(source_referent)) {
+      // When the source object points to a "real" mirror, the buffered object should point
+      // to the "scratch" mirror, which has all unarchivable fields scrubbed (to be reinstated
+      // at run time).
       source_referent = HeapShared::scratch_java_mirror(source_referent);
       assert(source_referent != nullptr, "must be");
     }

@@ -738,7 +738,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 #endif
 
-  AOTLinkedClassBulkLoader::init_javabase_preloaded_classes(CHECK_JNI_ERR);
+  AOTLinkedClassBulkLoader::finish_loading_javabase_classes(CHECK_JNI_ERR);
 
   // Start string deduplication thread if requested.
   if (StringDedup::is_enabled()) {

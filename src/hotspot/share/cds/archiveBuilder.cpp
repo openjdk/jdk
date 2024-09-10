@@ -778,6 +778,7 @@ void ArchiveBuilder::make_klasses_shareable() {
   DECLARE_INSTANCE_KLASS_COUNTER(num_platform_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_app_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_hidden_klasses);
+  DECLARE_INSTANCE_KLASS_COUNTER(num_enum_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_unlinked_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_unregistered_klasses);
   int num_obj_array_klasses = 0;
@@ -880,6 +881,7 @@ void ArchiveBuilder::make_klasses_shareable() {
         kind = " interface";
       } else if (src_ik->java_super() == vmClasses::Enum_klass()) {
         kind = " enum";
+        ADD_COUNT(num_enum_klasses);
       }
 
       if (ik->is_hidden()) {
@@ -919,6 +921,7 @@ void ArchiveBuilder::make_klasses_shareable() {
   log_info(cds)("      platform         " STATS_FORMAT, STATS_PARAMS(platform_klasses));
   log_info(cds)("      app              " STATS_FORMAT, STATS_PARAMS(app_klasses));
   log_info(cds)("      unregistered     " STATS_FORMAT, STATS_PARAMS(unregistered_klasses));
+  log_info(cds)("      (enum)           " STATS_FORMAT, STATS_PARAMS(enum_klasses));
   log_info(cds)("      (hidden)         " STATS_FORMAT, STATS_PARAMS(hidden_klasses));
   log_info(cds)("      (unlinked)       " STATS_FORMAT ", boot = %d, plat = %d, app = %d, unreg = %d",
                                           STATS_PARAMS(unlinked_klasses),

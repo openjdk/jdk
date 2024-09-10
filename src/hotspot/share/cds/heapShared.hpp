@@ -169,7 +169,6 @@ public:
 private:
 #if INCLUDE_CDS_JAVA_HEAP
   static bool _disable_writing;
-  static bool _box_classes_inited;
   static DumpedInternedStrings *_dumped_interned_strings;
 
   // statistics
@@ -291,7 +290,7 @@ private:
   // The "default subgraph" is the root of all archived objects that do not belong to any
   // of the classes defined in the <xxx>_archive_subgraph_entry_fields[] arrays:
   //    - interned strings
-  //    - Klass::java_mirror()
+  //    - Klass::java_mirror() -- including initialized mirrors such as those of Enum klasses.
   //    - ConstantPool::resolved_references()
   static KlassSubGraphInfo* _default_subgraph_info;
   static ArchivedKlassSubGraphInfoRecord* _runtime_default_subgraph_info;
@@ -353,7 +352,6 @@ private:
   static void fill_failed_loaded_region();
   static void mark_native_pointers(oop orig_obj);
   static bool has_been_archived(oop orig_obj);
-  static bool can_mirror_be_used_in_subgraph(oop orig_java_mirror);
   static void archive_java_mirrors();
   static void archive_strings();
  public:

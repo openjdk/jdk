@@ -91,10 +91,25 @@ void AOTLinkedClassBulkLoader::load_classes_in_loader_impl(LoaderKind loader_kin
   load_table(AOTLinkedClassTable::for_static_archive(),  loader_kind, h_loader, CHECK);
   load_table(AOTLinkedClassTable::for_dynamic_archive(), loader_kind, h_loader, CHECK);
 
-  if (loader_kind == LoaderKind::BOOT) {
-    // Delayed until init_javabase_preloaded_classes
-  } else {
-    HeapShared::initialize_default_subgraph_classes(h_loader, CHECK);
+  // Initialize the InstanceKlasses of all archived heap objects that are reachable from the
+  // archived java class mirrors.
+  //
+  // Only the classes in the static archive can have archived mirrors.
+  AOTLinkedClassTable* static_table = AOTLinkedClassTable::for_static_archive();
+  switch (loader_kind) {
+  case LoaderKind::BOOT:
+    // Delayed until finish_loading_javabase_classes(), as the VM is not ready to
+    // execute some of the <clinit> methods.
+    break;
+  case LoaderKind::BOOT2:
+    init_classes_reachable_from_mirrors(h_loader, static_table->boot2(), CHECK);
+    break;
+  case LoaderKind::PLATFORM:
+    init_classes_reachable_from_mirrors(h_loader, static_table->platform(), CHECK);
+    break;
+  case LoaderKind::APP:
+    init_classes_reachable_from_mirrors(h_loader, static_table->app(), CHECK);
+    break;
   }
 
   if (Universe::is_fully_initialized() && VerifyDuringStartup) {
@@ -178,13 +193,6 @@ void AOTLinkedClassBulkLoader::load_classes_impl(LoaderKind loader_kind, Array<I
       }
     }
   }
-
-
-  if (loader_kind == LoaderKind::BOOT) {
-    // Delayed until init_javabase_preloaded_classes
-  } else {
-    maybe_init(classes, CHECK);
-  }
 }
 
 // Initiate loading of the <classes> in the <loader>. The <classes> should have already been loaded
@@ -219,20 +227,25 @@ void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char*
   }
 }
 
-void AOTLinkedClassBulkLoader::init_javabase_preloaded_classes(TRAPS) {
-  maybe_init(AOTLinkedClassTable::for_static_archive()->boot(),  CHECK);
-
-  // Initialize java.base classes in the default subgraph.
-  HeapShared::initialize_default_subgraph_classes(Handle(), CHECK);
+void AOTLinkedClassBulkLoader::finish_loading_javabase_classes(TRAPS) {
+  init_classes_reachable_from_mirrors(Handle(), AOTLinkedClassTable::for_static_archive()->boot(), CHECK);
 }
 
-void AOTLinkedClassBulkLoader::maybe_init(Array<InstanceKlass*>* classes, TRAPS) {
+void AOTLinkedClassBulkLoader::init_classes_reachable_from_mirrors(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS) {
   if (classes != nullptr) {
     for (int i = 0; i < classes->length(); i++) {
       InstanceKlass* ik = classes->at(i);
+      if (ik->class_loader_data() == nullptr) {
+        // This class is not yet loaded. We will initialize it in a later phase.
+        // For example, we have loaded only BOOT classes but k is part of BOOT2.
+        continue;
+      }
       if (ik->has_preinitialized_mirror()) {
         ik->initialize_from_cds(CHECK);
       }
     }
   }
+
+  // See comments in initialize_default_subgraph_classes() about what it does.
+  HeapShared::initialize_default_subgraph_classes(Handle(), CHECK);
 }
