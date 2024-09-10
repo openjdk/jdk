@@ -27,6 +27,7 @@
  * @run junit/othervm --enable-preview CachingFunctionTest
  */
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -45,8 +46,13 @@ import static org.junit.jupiter.api.Assertions.*;
 final class CachingFunctionTest {
 
     enum Value {
+        // Zero is here so that we have enums with ordinals before the first one
+        // actually used in input sets (i.e. ZERO is not in the input set)
+        ZERO(0),
+        // Valid values
         THIRTEEN(13),
         FORTY_TWO(42),
+        // Illegal values (not in the input set)
         ILLEGAL(-1);
 
         final int intValue;
@@ -61,8 +67,6 @@ final class CachingFunctionTest {
 
     }
 
-    private static final Value VALUE = Value.FORTY_TWO;
-    private static final Value VALUE2 = Value.THIRTEEN;
     private static final Function<Value, Integer> MAPPER = Value::asInt;
 
     @ParameterizedTest
@@ -82,14 +86,14 @@ final class CachingFunctionTest {
     void basic(Set<Value> inputs, Function<Value, Integer> mapper) {
         StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(mapper);
         var cached = StableValue.newCachingFunction(inputs, cif);
-        assertEquals(mapper.apply(VALUE), cached.apply(VALUE));
+        assertEquals(mapper.apply(Value.FORTY_TWO), cached.apply(Value.FORTY_TWO));
         assertEquals(1, cif.cnt());
-        assertEquals(mapper.apply(VALUE), cached.apply(VALUE));
+        assertEquals(mapper.apply(Value.FORTY_TWO), cached.apply(Value.FORTY_TWO));
         assertEquals(1, cif.cnt());
         assertTrue(cached.toString().startsWith(cached.getClass().getSimpleName() + "[values={"));
         // Key order is unspecified
-        assertTrue(cached.toString().contains(VALUE2 + "=.unset"));
-        assertTrue(cached.toString().contains(VALUE + "=[" + mapper.apply(VALUE) + "]"));
+        assertTrue(cached.toString().contains(Value.THIRTEEN + "=.unset"));
+        assertTrue(cached.toString().contains(Value.FORTY_TWO + "=[" + mapper.apply(Value.FORTY_TWO) + "]"));
         assertTrue(cached.toString().endsWith(", original=" + cif + "]"));
         // One between the values and one just before "original"
         assertEquals(2L, cached.toString().chars().filter(ch -> ch == ',').count());
@@ -111,14 +115,14 @@ final class CachingFunctionTest {
             throw new UnsupportedOperationException();
         });
         var cached = StableValue.newCachingFunction(inputs, cif);
-        assertThrows(UnsupportedOperationException.class, () -> cached.apply(VALUE));
+        assertThrows(UnsupportedOperationException.class, () -> cached.apply(Value.FORTY_TWO));
         assertEquals(1, cif.cnt());
-        assertThrows(UnsupportedOperationException.class, () -> cached.apply(VALUE));
+        assertThrows(UnsupportedOperationException.class, () -> cached.apply(Value.FORTY_TWO));
         assertEquals(2, cif.cnt());
         assertTrue(cached.toString().startsWith(cached.getClass().getSimpleName() + "[values={"));
         // Key order is unspecified
-        assertTrue(cached.toString().contains(VALUE2 + "=.unset"));
-        assertTrue(cached.toString().contains(VALUE + "=.unset"));
+        assertTrue(cached.toString().contains(Value.THIRTEEN + "=.unset"));
+        assertTrue(cached.toString().contains(Value.FORTY_TWO + "=.unset"));
         assertTrue(cached.toString().endsWith(", original=" + cif + "]"));
     }
 
@@ -128,7 +132,7 @@ final class CachingFunctionTest {
         final AtomicReference<Function<?, ?>> ref = new AtomicReference<>();
         Function<Value, Function<?, ?>> cached = StableValue.newCachingFunction(inputs, _ -> ref.get());
         ref.set(cached);
-        cached.apply(VALUE);
+        cached.apply(Value.FORTY_TWO);
         String toString = cached.toString();
         assertTrue(toString.contains("(this " + cached.getClass().getSimpleName() + ")"));
         assertDoesNotThrow(cached::hashCode);
@@ -151,17 +155,25 @@ final class CachingFunctionTest {
         Function<Value, Integer> f0 = StableValue.newCachingFunction(inputs, Value::asInt);
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         if (!inputs.isEmpty()) {
-            f0.apply(VALUE);
+            f0.apply(Value.FORTY_TWO);
             assertEquals(System.identityHashCode(f0), f0.hashCode());
         }
     }
 
+    @Test
+    void usesOptimizedVersion() {
+        Function<Value, Integer> enumFunction = StableValue.newCachingFunction(EnumSet.of(Value.FORTY_TWO), Value::asInt);
+        assertEquals("jdk.internal.lang.stable.CachingEnumFunction", enumFunction.getClass().getName());
+        Function<Value, Integer> emptyFunction = StableValue.newCachingFunction(Set.of(), Value::asInt);
+        assertEquals("jdk.internal.lang.stable.EmptyCachingFunction", emptyFunction.getClass().getName());
+    }
+
     private static Stream<Set<Value>> nonEmptySets() {
         return Stream.of(
-                Set.of(VALUE, VALUE2),
-                linkedHashSet(VALUE, VALUE2),
-                treeSet(VALUE2, VALUE),
-                EnumSet.of(VALUE, VALUE2)
+                Set.of(Value.FORTY_TWO, Value.THIRTEEN),
+                linkedHashSet(Value.THIRTEEN, Value.FORTY_TWO),
+                treeSet(Value.FORTY_TWO, Value.THIRTEEN),
+                EnumSet.of(Value.FORTY_TWO, Value.THIRTEEN)
         );
     }
 
