@@ -278,8 +278,7 @@ public class SinceChecker {
         for (ModuleElement.ExportsDirective ed : ElementFilter.exportsIn(moduleElement.getDirectives())) {
             if (ed.getTargetModules() == null) {
                 String packageVersion = getPackageVersionFromFile(moduleDirectory, ed);
-                if (packageVersion != null) {
-                    if (EXCLUDE_LIST.contains(ed.getPackage().toString())) continue;
+                if (packageVersion != null && !EXCLUDE_LIST.contains(ed.getPackage().toString())) {
                     checkModuleOrPackage(javadocHelper, packageVersion, ed.getPackage(), ct, "Package: ");
                     analyzePackageCheck(ed.getPackage(), ct, javadocHelper);
                 } // Skip the package if packageVersion is null
