@@ -192,7 +192,7 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   C1StubId enter_id = ce->compilation()->has_fpu_code() ?
                               C1StubId::monitorenter_id :
                               C1StubId::monitorenter_nofpu_id;
-  __ call(Runtime1::entry_for(enter_id), relocInfo::runtime_call_type);
+  __ call(Runtime1::entry_for(C1StubId::enter_id), relocInfo::runtime_call_type);
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   __ b(_continuation);
@@ -322,10 +322,10 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;
   switch (_id) {
-    case access_field_id:  target = Runtime1::entry_for(access_field_patching_id); break;
-    case load_klass_id:    target = Runtime1::entry_for(load_klass_patching_id); reloc_type = relocInfo::metadata_type; break;
-    case load_mirror_id:   target = Runtime1::entry_for(load_mirror_patching_id); reloc_type = relocInfo::oop_type; break;
-    case load_appendix_id: target = Runtime1::entry_for(load_appendix_patching_id); reloc_type = relocInfo::oop_type; break;
+    case access_field_id:  target = Runtime1::entry_for(C1StubId::access_field_patching_id); break;
+    case load_klass_id:    target = Runtime1::entry_for(C1StubId::load_klass_patching_id); reloc_type = relocInfo::metadata_type; break;
+    case load_mirror_id:   target = Runtime1::entry_for(C1StubId::load_mirror_patching_id); reloc_type = relocInfo::oop_type; break;
+    case load_appendix_id: target = Runtime1::entry_for(C1StubId::load_appendix_patching_id); reloc_type = relocInfo::oop_type; break;
     default: ShouldNotReachHere();
   }
   __ bind(call_patch);

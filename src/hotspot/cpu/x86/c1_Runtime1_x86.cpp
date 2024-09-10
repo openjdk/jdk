@@ -60,7 +60,7 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
 #ifdef _LP64
   // At a method handle call, the stack may not be properly aligned
   // when returning with an exception.
-  align_stack = (stub_id() == C1StubId::handle_exception_from_callee_id);
+  align_stack = (stub_id() == (int)C1StubId::handle_exception_from_callee_id);
 #endif
 
 #ifdef _LP64
