@@ -26,7 +26,7 @@
  * @summary Stress test Thread.getStackTrace on virtual threads that are blocking or
  *     blocked on monitorenter
  * @requires vm.debug != true
- * @modules java.base/java.lang:+open
+ * @modules jdk.management
  * @library /test/lib
  * @run main/othervm GetStackTraceALotWhenBlocking 500000
  */
@@ -34,7 +34,7 @@
 /*
  * @test
  * @requires vm.debug == true & vm.continuations
- * @modules java.base/java.lang:+open
+ * @modules jdk.management
  * @library /test/lib
  * @run main/othervm/timeout=300 GetStackTraceALotWhenBlocking 50000
  */
@@ -42,7 +42,7 @@
 import java.time.Instant;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
-import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.management
 
 public class GetStackTraceALotWhenBlocking {
 

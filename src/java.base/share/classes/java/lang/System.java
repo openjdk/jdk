@@ -65,6 +65,7 @@ import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -2764,6 +2765,10 @@ public final class System {
                 } else {
                     throw new WrongThreadException();
                 }
+            }
+
+            public Executor virtualThreadDefaultScheduler() {
+                return VirtualThread.defaultScheduler();
             }
 
             public StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,
