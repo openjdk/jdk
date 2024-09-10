@@ -32,6 +32,8 @@ import sun.invoke.util.Wrapper;
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.FieldRefEntry;
 import java.lang.classfile.instruction.SwitchCase;
 import java.lang.constant.ClassDesc;
@@ -93,7 +95,8 @@ class InvokerBytecodeGenerator {
     /** Name of new class */
     private final String name;
     private final String className;
-    private final ClassDesc classDesc;
+    private final ConstantPoolBuilder pool = ConstantPoolBuilder.of();
+    private final ClassEntry classEntry;
 
     private final LambdaForm lambdaForm;
     private final String     invokerName;
@@ -131,7 +134,7 @@ class InvokerBytecodeGenerator {
         this.name = name;
         this.className = CLASS_PREFIX.concat(name);
         validateInternalClassName(name);
-        this.classDesc = ReferenceClassDescImpl.ofValidated(concat("L", className, ";"));
+        this.classEntry = pool.classEntry(ReferenceClassDescImpl.ofValidated(concat("L", className, ";")));
         this.lambdaForm = lambdaForm;
         this.invokerName = invokerName;
         this.invokerType = invokerType;
@@ -212,7 +215,7 @@ class InvokerBytecodeGenerator {
         } else {
             name = "_D_" + classData.size();
         }
-        var field = cfb.constantPool().fieldRefEntry(classDesc, name, desc);
+        var field = pool.fieldRefEntry(classEntry, pool.nameAndTypeEntry(name, desc));
         classData.add(new ClassData(field, arg));
         return field;
     }
@@ -243,7 +246,7 @@ class InvokerBytecodeGenerator {
      */
     private byte[] classFileSetup(Consumer<? super ClassBuilder> config) {
         try {
-            return ClassFile.of().build(classDesc, new Consumer<>() {
+            return ClassFile.of().build(classEntry, pool, new Consumer<>() {
                 @Override
                 public void accept(ClassBuilder clb) {
                     clb.withFlags(ACC_ABSTRACT | ACC_SUPER)
@@ -293,14 +296,14 @@ class InvokerBytecodeGenerator {
      * <clinit> to initialize the static final fields with the live class data
      * LambdaForms can't use condy due to bootstrapping issue.
      */
-    static void clinit(ClassBuilder clb, ClassDesc classDesc, List<ClassData> classData) {
+    static void clinit(ClassBuilder clb, ClassEntry classEntry, List<ClassData> classData) {
         if (classData.isEmpty())
             return;
 
         clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, new Consumer<>() {
             @Override
             public void accept(CodeBuilder cob) {
-                cob.loadConstant(classDesc)
+                cob.ldc(classEntry)
                    .invokestatic(CD_MethodHandles, "classData", MTD_Object_Class);
                 int size = classData.size();
                 if (size == 1) {
@@ -534,7 +537,7 @@ class InvokerBytecodeGenerator {
             @Override
             public void accept(ClassBuilder clb) {
                 addMethod(clb, true);
-                clinit(clb, classDesc, classData);
+                clinit(clb, classEntry, classData);
                 bogusMethod(clb, lambdaForm);
             }
         });
@@ -1551,7 +1554,7 @@ class InvokerBytecodeGenerator {
                         });
                     }
                 });
-                clinit(clb, classDesc, classData);
+                clinit(clb, classEntry, classData);
                 bogusMethod(clb, invokerType);
             }
         });
@@ -1627,7 +1630,7 @@ class InvokerBytecodeGenerator {
                         });
                     }
                 });
-                clinit(clb, classDesc, classData);
+                clinit(clb, classEntry, classData);
                 bogusMethod(clb, dstType);
             }
         });
