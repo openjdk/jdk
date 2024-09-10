@@ -22,7 +22,6 @@
  */
 
 import java.io.File;
-import java.security.*;
 import java.time.*;
 import java.util.*;
 import javax.net.ssl.*;
@@ -42,14 +41,14 @@ import javax.net.ssl.*;
 
 public class Entrust {
 
-    private static final String certPath = "certs" + File.separator +  "Entrust";
+    private static final String certPath = "chains" + File.separator + "entrust";
 
     // Each of the roots have a test certificate chain stored in a file
     // named "<root>-chain.pem".
-    private static String[] rootsToTest = new String[] {
+    private static String[] rootsToTest = new String[]{
             "entrustevca", "entrustrootcaec1", "entrustrootcag2", "entrustrootcag4",
             "entrust2048ca", "affirmtrustcommercialca", "affirmtrustnetworkingca",
-            "affirmtrustpremiumca", "affirmtrustpremiumeccca" };
+            "affirmtrustpremiumca", "affirmtrustpremiumeccca"};
 
     // A date that is after the restrictions take effect
     private static final Date NOVEMBER_1_2024 =
@@ -69,17 +68,17 @@ public class Entrust {
         boolean policyOn = args[1].equals("policyOn");
         boolean isValid = args[2].equals("valid");
 
-        X509TrustManager[] tms = new X509TrustManager[] {
+        X509TrustManager[] tms = new X509TrustManager[]{
                 Distrust.getTMF("PKIX", null),
                 Distrust.getTMF("SunX509", null)
         };
 
         if (!policyOn) {
             // disable policy (default is on)
-            Security.setProperty("jdk.security.caDistrustPolicies", "");
+            Distrust.disableDistrustPolicy();
         }
 
         Date notBefore = before ? BEFORE_NOVEMBER_1_2024 : NOVEMBER_1_2024;
-        Distrust.testCertificateChain(certPath, rootsToTest, notBefore, isValid, tms);
+        Distrust.testCertificateChain(certPath, notBefore, isValid, tms, rootsToTest);
     }
 }
