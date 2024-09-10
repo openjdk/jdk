@@ -27,6 +27,7 @@
  * @bug 8339725
  * @summary Stress test GetMethodDeclaringClass
  * @requires vm.jvmti
+ * @requires os.family == "linux"
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc
