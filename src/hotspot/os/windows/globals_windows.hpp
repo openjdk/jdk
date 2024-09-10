@@ -38,7 +38,7 @@
 product(bool, UseAllWindowsProcessorGroups, false,                        \
         "Use all processor groups on supported Windows versions")         \
                                                                           \
-product(bool, EnableAllLargePageSizesForWindows, false, EXPERIMENTAL,     \
+product(bool, EnableAllLargePageSizesForWindows, false,                   \
         "Enable support for multiple large page sizes on "                \
         "Windows Server")                                                 \
                                                                           \
