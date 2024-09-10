@@ -356,11 +356,13 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
 
     // If AHS is enabled, check to see if AHS allows for expansion.
     // Save temporary value to prevent race conditions in case
-    // CurrentMaxExpansionSize is overridden during the lifetime of this
+    // CurrentMaxHeapSize is overridden during the lifetime of this
     // function.
-    const size_t current_max_expansion_size = CurrentMaxExpansionSize;
+    const size_t current_max_heap_size = CurrentMaxHeapSize;
+    const size_t current_max_expansion_size =
+        current_max_heap_size - capacity();
     bool can_expand = true;
-    if (current_max_expansion_size > 0) {
+    if (current_max_heap_size > 0) {
       size_t aligned_current_max_expansion_size =
           ReservedSpace::page_align_size_down(current_max_expansion_size);
       aligned_current_max_expansion_size = align_down(
@@ -389,19 +391,6 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
       log_debug(gc, ergo, heap, ahs)("Heap expansion (humongous allocation request). Allocation request: " SIZE_FORMAT "B",
                                  word_size * HeapWordSize);
       policy()->record_new_heap_size(num_regions());
-      if (current_max_expansion_size > 0) {
-        assert(current_max_expansion_size >=
-                   obj_regions * G1HeapRegion::GrainBytes, "sanity");
-        const size_t new_current_max_expansion_size =
-            current_max_expansion_size - (obj_regions * G1HeapRegion::GrainBytes);
-        // In a very rare case, it's possible that CurrentMaxExpansionSize is
-        // exactly equal to the amount of spaces we want to expand. To prevent
-        // this from happening, we bound the minimum value of
-        // CurrentMaxExpansionSize by 1, since a 0-value is interpreted as AHS
-        // being disabled.
-        CurrentMaxExpansionSize =
-            MAX2(new_current_max_expansion_size, static_cast<size_t>(1));
-      }
     } else {
       // Policy: Potentially trigger a defragmentation GC.
     }
@@ -1100,7 +1089,7 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
   // function. It is still possible for the timing of the write to override a
   // more recent CurrentMaxExpansionSize value, but this is tolerable for one
   // iteration.
-  const size_t current_max_expansion_size = CurrentMaxExpansionSize;
+  const size_t current_max_expansion_size = CurrentMaxHeapSize - capacity();
   log_debug(ahs)("expand() of size: " SIZE_FORMAT
                  " called with SoftMaxHeapSize: " SIZE_FORMAT
                  "B, CurrentMaxExpansionSize: " SIZE_FORMAT
@@ -1160,9 +1149,6 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
   log_debug(gc, ergo, heap, ahs)(
       "Expanded the heap by %i regions, wanted to expand by %i regions",
       expanded_by, regions_to_expand);
-  if (current_max_expansion_size > 0) {
-    CurrentMaxExpansionSize =
-        current_max_expansion_size - actual_expand_bytes;
   }
 
   return true;
