@@ -46,8 +46,8 @@ public class TestDivModNodes {
             counts = {IRNode.DIV_MOD_I, "1"},
             failOn = {IRNode.DIV_I, IRNode.MOD_I})
     @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"aarch64", "true"},
-            counts = {IRNode.MUL_I, "1", IRNode.SUB_I, "1"},
-            failOn = {IRNode.DIV_I, IRNode.MOD_I})
+            counts = {IRNode.DIV_I, "1", IRNode.MUL_I, "1", IRNode.SUB_I, "1"},
+            failOn = {IRNode.MOD_I})
     @IR(applyIf = {"UseDivMod", "false"},
             counts = {IRNode.DIV_I, "1", IRNode.MOD_I, "1"})
     private static void testSignedIntDivMod(int dividend, int divisor) {
@@ -63,8 +63,8 @@ public class TestDivModNodes {
             counts = {IRNode.DIV_MOD_L, "1"},
             failOn = {IRNode.DIV_L, IRNode.MOD_L})
     @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"aarch64", "true"},
-            counts = {IRNode.MUL_L, "1", IRNode.SUB_L, "1"},
-            failOn = {IRNode.DIV_L, IRNode.MOD_L})
+            counts = {IRNode.DIV_L, "1", IRNode.MUL_L, "1", IRNode.SUB_L, "1"},
+            failOn = {IRNode.MOD_L})
     @IR(applyIf = {"UseDivMod", "false"},
             counts = {IRNode.DIV_L, "1", IRNode.MOD_L, "1"})
     private static void testSignedLongDivMod(long dividend, long divisor) {
@@ -80,8 +80,8 @@ public class TestDivModNodes {
             counts = {IRNode.UDIV_MOD_I, "1"},
             failOn = {IRNode.UDIV_I, IRNode.UMOD_I})
     @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"aarch64", "true"},
-            counts = {IRNode.MUL_I, "1", IRNode.SUB_I, "1"},
-            failOn = {IRNode.UDIV_I, IRNode.UMOD_I})
+            counts = {IRNode.UDIV_I, "1", IRNode.MUL_I, "1", IRNode.SUB_I, "1"},
+            failOn = {IRNode.UMOD_I})
     @IR(applyIf = {"UseDivMod", "false"},
             counts = {IRNode.UDIV_I, "1", IRNode.UMOD_I, "1"})
     private static void testUnsignedIntDivMod(int dividend, int divisor) {
@@ -97,8 +97,8 @@ public class TestDivModNodes {
             counts = {IRNode.UDIV_MOD_L, "1"},
             failOn = {IRNode.UDIV_L, IRNode.UMOD_L})
     @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"aarch64", "true"},
-            counts = {IRNode.MUL_L, "1", IRNode.SUB_L, "1"},
-            failOn = {IRNode.UDIV_L, IRNode.MOD_L})
+            counts = {IRNode.UDIV_L, "1", IRNode.MUL_L, "1", IRNode.SUB_L, "1"},
+            failOn = {IRNode.MOD_L})
     @IR(applyIf = {"UseDivMod", "false"},
             counts = {IRNode.UDIV_L, "1", IRNode.UMOD_L, "1"})
     private static void testUnsignedLongDivMod(long dividend, long divisor) {
