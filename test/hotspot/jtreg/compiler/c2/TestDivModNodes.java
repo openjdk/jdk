@@ -31,7 +31,6 @@ import java.util.function.BiFunction;
 /*
  * @test
  * @summary Test DIV and MOD nodes are converted into DIVMOD where possible
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
  * @library /test/lib /
  * @run main/othervm -XX:+UseDivMod compiler.c2.TestDivModNodes
  * @run main/othervm -XX:-UseDivMod compiler.c2.TestDivModNodes
