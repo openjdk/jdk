@@ -809,7 +809,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
     // into the constant pool.
     return nullptr;
   }
-  assert(UTF8::is_legal_utf8((const unsigned char*)name, (int)strlen(name), false), "illegal UTF name");
+  assert(UTF8::is_legal_utf8((const unsigned char*)name, strlen(name), false), "illegal UTF name");
 
   TempNewSymbol h_name = SymbolTable::new_symbol(name);
   Klass* k = SystemDictionary::resolve_or_null(h_name, CHECK_NULL);
@@ -3403,7 +3403,7 @@ JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name, jboolean throwExceptio
                                   vmSymbols::java_lang_UnsatisfiedLinkError(),
                                   msg, Exceptions::unsafe_to_utf8);
 
-      THROW_HANDLE_0(h_exception);
+      THROW_HANDLE_NULL(h_exception);
     } else {
       log_info(library)("Failed to load library %s", name);
       return load_result;
@@ -3446,6 +3446,10 @@ JVM_END
 
 JVM_LEAF(jboolean, JVM_IsForeignLinkerSupported(void))
   return ForeignGlobals::is_foreign_linker_supported() ? JNI_TRUE : JNI_FALSE;
+JVM_END
+
+JVM_ENTRY_NO_ENV(jboolean, JVM_IsStaticallyLinked(void))
+  return is_vm_statically_linked() ? JNI_TRUE : JNI_FALSE;
 JVM_END
 
 // String support ///////////////////////////////////////////////////////////////////////////

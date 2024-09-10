@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,7 @@ public final class EventWriter {
     private long currentPosition;
     private long maxPosition;
     private boolean valid;
+    private boolean pinVirtualThread;
     boolean excluded;
 
     private PlatformEventType eventType;
@@ -144,7 +145,7 @@ public final class EventWriter {
             return;
         }
         if (length > StringPool.MIN_LIMIT && length < StringPool.MAX_LIMIT) {
-            long l = StringPool.addString(s);
+            long l = StringPool.addString(s, pinVirtualThread);
             if (l > 0) {
                 putByte(StringParser.Encoding.CONSTANT_POOL.byteValue());
                 putLong(l);
@@ -296,11 +297,12 @@ public final class EventWriter {
         return false;
     }
 
-    private EventWriter(long startPos, long maxPos, long threadID, boolean valid, boolean excluded) {
+    private EventWriter(long startPos, long maxPos, long threadID, boolean valid, boolean pinVirtualThread, boolean excluded) {
         startPosition = currentPosition = startPos;
         maxPosition = maxPos;
         this.threadID = threadID;
         this.valid = valid;
+        this.pinVirtualThread = pinVirtualThread;
         this.excluded = excluded;
     }
 

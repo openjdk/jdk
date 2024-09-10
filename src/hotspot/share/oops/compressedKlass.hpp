@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,18 @@ public:
 
   static inline narrowKlass encode_not_null(Klass* v);
   static inline narrowKlass encode(Klass* v);
+
+  // Returns whether the pointer is in the memory region used for encoding compressed
+  // class pointers.  This includes CDS.
+
+  // encoding                                                               encoding
+  // base                                                                   end (base+range)
+  // |-----------------------------------------------------------------------|
+  // |----CDS---| |--------------------class space---------------------------|
+
+  static inline bool is_in_encoding_range(const void* p) {
+    return p >= _base && p < (_base + _range);
+  }
 };
 
 #endif // SHARE_OOPS_COMPRESSEDKLASS_HPP

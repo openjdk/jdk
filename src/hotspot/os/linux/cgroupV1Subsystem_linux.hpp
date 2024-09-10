@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ class CgroupV1Controller: public CgroupController {
 
     void set_subsystem_path(char *cgroup_path);
     char *subsystem_path() override { return _path; }
-    bool is_read_only() { return _read_only; }
+    bool is_read_only() override { return _read_only; }
 };
 
 class CgroupV1MemoryController final : public CgroupMemoryController {

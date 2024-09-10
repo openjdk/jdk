@@ -155,7 +155,7 @@ public class CodeWriter extends BasicWriter {
                 case NewObjectInstruction instr ->
                     printConstantPoolRef(instr.className());
                 case NewPrimitiveArrayInstruction instr ->
-                    print(" " + instr.typeKind().typeName());
+                    print(" " + instr.typeKind().upperBound().displayName());
                 case NewReferenceArrayInstruction instr ->
                     printConstantPoolRef(instr.componentType());
                 case TableSwitchInstruction instr -> {
