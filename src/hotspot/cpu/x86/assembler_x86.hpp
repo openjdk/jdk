@@ -1079,31 +1079,16 @@ private:
   void adcl(Register dst, Address src);
   void adcl(Register dst, Register src);
 
-  void eadcl(Register dst, Address src, int32_t imm32);
-  void eadcl(Register dst, Address src1, Register src2);
-  void eadcl(Register dst, Register src, int32_t imm32);
-  void eadcl(Register dst, Register src1, Address src2);
-  void eadcl(Register dst, Register src1, Register src2);
-
   void adcq(Register dst, int32_t imm32);
-  void eadcq(Register dst, Register src, int32_t imm32);
   void adcq(Register dst, Address src);
-  void eadcq(Register dst, Register src1, Address src2);
   void adcq(Register dst, Register src);
-  void eadcq(Register dst, Register src1, Register src2);
 
   void addb(Address dst, int imm8);
-  void eaddb(Register dst, Address src, int imm8, bool no_flags);
   void addb(Address dst, Register src);
-  void eaddb(Register dst, Address src1, Register src2, bool no_flags);
   void addb(Register dst, int imm8);
-  void eaddb(Register dst, Register src, int imm8, bool no_flags);
   void addw(Register dst, Register src);
-  void eaddw(Register dst, Register src1, Register srcs, bool no_flags);
   void addw(Address dst, int imm16);
-  void eaddw(Register dst, Address src, int imm16, bool no_flags);
   void addw(Address dst, Register src);
-  void eaddw(Register dst, Address src1, Register src2, bool no_flags);
 
   void addl(Address dst, int32_t imm32);
   void eaddl(Register dst, Address src, int32_t imm32, bool no_flags);
@@ -1166,9 +1151,7 @@ private:
   void vaesdeclast(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   void andw(Register dst, Register src);
-  void eandw(Register dst, Register src1, Register src2, bool no_flags);
   void andb(Address dst, Register src);
-  void eandb(Register dst, Address src1, Register src2, bool no_flags);
 
   void andl(Address  dst, int32_t imm32);
   void eandl(Register dst, Address  src, int32_t imm32, bool no_flags);
@@ -1179,7 +1162,6 @@ private:
   void andl(Register dst, Register src);
   void eandl(Register dst, Register src1, Register src2, bool no_flags);
   void andl(Address dst, Register src);
-  void eandl(Register dst, Address src1, Register src2, bool no_flags);
 
   void andq(Address  dst, int32_t imm32);
   void eandq(Register dst, Address  src, int32_t imm32, bool no_flags);
@@ -1565,14 +1547,12 @@ private:
   void imull(Register src);
   void eimull(Register src, bool no_flags);
   void imull(Register dst, Register src);
-  // void eimull(Register dst, Register src, bool no_flags);
   void eimull(Register dst, Register src1, Register src2, bool no_flags);
   void imull(Register dst, Register src, int value);
   void eimull(Register dst, Register src, int value, bool no_flags);
   void imull(Register dst, Address src, int value);
   void eimull(Register dst, Address src, int value, bool no_flags);
   void imull(Register dst, Address src);
-  // void eimull(Register dst, Address src, bool no_flags);
   void eimull(Register dst, Register src1, Address src2, bool no_flags);
 
 #ifdef _LP64
@@ -2330,22 +2310,14 @@ private:
 #endif
 
   void sbbl(Address dst, int32_t imm32);
-  void esbbl(Register dst, Address src, int32_t imm32);
   void sbbl(Register dst, int32_t imm32);
-  void esbbl(Register dst, Register src, int32_t imm32);
   void sbbl(Register dst, Address src);
-  void esbbl(Register dst, Register src1, Address src2);
   void sbbl(Register dst, Register src);
-  void esbbl(Register dst, Register src1, Register src2);
 
   void sbbq(Address dst, int32_t imm32);
-  void esbbq(Register dst, Address src, int32_t imm32);
   void sbbq(Register dst, int32_t imm32);
-  void esbbq(Register dst, Register src, int32_t imm32);
   void sbbq(Register dst, Address src);
-  void esbbq(Register dst, Register src1, Address src2);
   void sbbq(Register dst, Register src);
-  void esbbq(Register dst, Register src, Register src2);
 
   void setb(Condition cc, Register dst);
 
@@ -2383,7 +2355,6 @@ private:
   void shll(Register dst, int imm8);
   void eshll(Register dst, Register src, int imm8, bool no_flags);
   void shll(Register dst);
-  // void eshll(Register dst, bool no_flags);
   void eshll(Register dst, Register src, bool no_flags);
 
   void shlq(Register dst, int imm8);
