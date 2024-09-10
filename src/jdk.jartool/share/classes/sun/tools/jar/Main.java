@@ -251,7 +251,7 @@ public class Main {
      * Starts main program with the specified arguments.
      */
     @SuppressWarnings({"removal"})
-    public synchronized boolean run(String args[]) {
+    public synchronized boolean run(String[] args) {
         ok = true;
         if (!parseArgs(args)) {
             return false;
@@ -495,7 +495,7 @@ public class Main {
     /**
      * Parses command line arguments.
      */
-    boolean parseArgs(String args[]) {
+    boolean parseArgs(String[] args) {
         /* Preprocess and expand @file arguments */
         try {
             args = CommandLine.parse(args);
@@ -1505,7 +1505,7 @@ public class Main {
     /**
      * Lists contents of JAR file, via ZipFile.
      */
-    void list(String fname, String files[]) throws IOException {
+    void list(String fname, String[] files) throws IOException {
         try (ZipFile zf = new ZipFile(fname)) {
             Enumeration<? extends ZipEntry> zes = zf.entries();
             while (zes.hasMoreElements()) {
@@ -1682,7 +1682,7 @@ public class Main {
     /**
      * Main routine to start program.
      */
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         Main jartool = new Main(System.out, System.err, "jar");
         System.exit(jartool.run(args) ? 0 : 1);
     }
