@@ -1086,7 +1086,6 @@ private:
   void addb(Address dst, int imm8);
   void addb(Address dst, Register src);
   void addb(Register dst, int imm8);
-  void addw(Register dst, Register src);
   void addw(Address dst, int imm16);
   void addw(Address dst, Register src);
 
@@ -1150,7 +1149,6 @@ private:
   void vaesdec(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vaesdeclast(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
-  void andw(Register dst, Register src);
   void andb(Address dst, Register src);
 
   void andl(Address  dst, int32_t imm32);

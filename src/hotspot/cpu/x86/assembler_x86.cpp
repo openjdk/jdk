@@ -1413,12 +1413,6 @@ void Assembler::addb(Register dst, int imm8) {
   emit_arith_b(0x80, 0xC0, dst, imm8);
 }
 
-void Assembler::addw(Register dst, Register src) {
-  emit_int8(0x66);
-  (void)prefix_and_encode(dst->encoding(), src->encoding());
-  emit_arith(0x03, 0xC0, dst, src);
-}
-
 void Assembler::addw(Address dst, int imm16) {
   InstructionMark im(this);
   emit_int8(0x66);
@@ -1669,11 +1663,6 @@ void Assembler::andb(Address dst, Register src) {
   prefix(dst, src, true);
   emit_int8(0x20);
   emit_operand(src, dst, 0);
-}
-
-void Assembler::andw(Register dst, Register src) {
-  (void)prefix_and_encode(dst->encoding(), src->encoding());
-  emit_arith(0x23, 0xC0, dst, src);
 }
 
 void Assembler::andl(Address dst, int32_t imm32) {

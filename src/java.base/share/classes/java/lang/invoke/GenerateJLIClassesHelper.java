@@ -563,7 +563,7 @@ class GenerateJLIClassesHelper {
                .withSuperclass(InvokerBytecodeGenerator.INVOKER_SUPER_DESC)
                .with(SourceFileAttribute.of(className.substring(className.lastIndexOf('/') + 1)));
             for (int i = 0; i < forms.length; i++) {
-                new InvokerBytecodeGenerator(className, names[i], forms[i], forms[i].methodType()).addMethod(clb);
+                new InvokerBytecodeGenerator(className, names[i], forms[i], forms[i].methodType()).addMethod(clb, false);
             }
         });
     }

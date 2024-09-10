@@ -59,7 +59,7 @@ public final class X11GraphicsEnvironment extends SunGraphicsEnvironment {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void initStatic() {
         java.security.AccessController.doPrivileged(
                           new java.security.PrivilegedAction<Object>() {
