@@ -98,12 +98,12 @@ public:
 
   // When CDS is enabled, is ik guatanteed to be linked at deployment time (and
   // cannot be replaced by JVMTI, etc)?
-  // This is a necessary (not but sufficient) condition for keeping a direct pointer
+  // This is a necessary (but not sufficient) condition for keeping a direct pointer
   // to ik in AOT-computed data (such as ConstantPool entries in archived classes,
   // or in AOT-compiled code).
   static bool is_candidate(InstanceKlass* ik);
 
-  // Request that ik to be added to the candidates table. This will return succeed only if
+  // Request that ik be added to the candidates table. This will return true only if
   // ik is allowed to be aot-linked.
   static bool try_add_candidate(InstanceKlass* ik);
 

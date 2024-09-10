@@ -921,9 +921,9 @@ void ArchiveBuilder::make_klasses_shareable() {
   log_info(cds)("      unregistered     " STATS_FORMAT, STATS_PARAMS(unregistered_klasses));
   log_info(cds)("      (hidden)         " STATS_FORMAT, STATS_PARAMS(hidden_klasses));
   log_info(cds)("      (unlinked)       " STATS_FORMAT ", boot = %d, plat = %d, app = %d, unreg = %d",
-                                                              STATS_PARAMS(unlinked_klasses),
-                                                              boot_unlinked, platform_unlinked,
-                                                              app_unlinked, unreg_unlinked);
+                                          STATS_PARAMS(unlinked_klasses),
+                                          boot_unlinked, platform_unlinked,
+                                          app_unlinked, unreg_unlinked);
   log_info(cds)("    obj array classes  = %5d", num_obj_array_klasses);
   log_info(cds)("    type array classes = %5d", num_type_array_klasses);
   log_info(cds)("               symbols = %5d", _symbols->length());
