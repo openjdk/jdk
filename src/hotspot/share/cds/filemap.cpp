@@ -292,8 +292,8 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- heap_root_segments.roots_count: %d" , _heap_root_segments.roots_count());
   st->print_cr("- heap_root_segments.base_offset: " SIZE_FORMAT, _heap_root_segments.base_offset());
   st->print_cr("- heap_root_segments.count:       " SIZE_FORMAT, _heap_root_segments.count());
-  st->print_cr("- heap_root_segments.max_size_elems: %d", _heap_root_segments.max_size_in_bytes());
-  st->print_cr("- heap_root_segments.max_size_bytes: %d", _heap_root_segments.max_size_in_elems());
+  st->print_cr("- heap_root_segments.max_size_elems: %d", _heap_root_segments.max_size_in_elems());
+  st->print_cr("- heap_root_segments.max_size_bytes: %d", _heap_root_segments.max_size_in_bytes());
   st->print_cr("- _heap_oopmap_start_pos:         " SIZE_FORMAT, _heap_oopmap_start_pos);
   st->print_cr("- _heap_ptrmap_start_pos:         " SIZE_FORMAT, _heap_ptrmap_start_pos);
   st->print_cr("- _rw_ptrmap_start_pos:           " SIZE_FORMAT, _rw_ptrmap_start_pos);
