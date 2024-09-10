@@ -24,6 +24,7 @@
  */
 package java.lang.constant;
 
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.constant.PrimitiveClassDescImpl;
 import jdk.internal.constant.ReferenceClassDescImpl;
@@ -328,7 +329,7 @@ public final class ConstantDescs {
      *
      * @since 21
      */
-    public static final MethodTypeDesc MTD_void = MethodTypeDesc.of(CD_void);
+    public static final MethodTypeDesc MTD_void = MethodTypeDescImpl.ofValidated("()V", CD_void, ConstantUtils.EMPTY_CLASSDESC);
 
     static final DirectMethodHandleDesc MHD_METHODHANDLE_ASTYPE
             = MethodHandleDesc.ofMethod(Kind.VIRTUAL, CD_MethodHandle, "asType",

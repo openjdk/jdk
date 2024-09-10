@@ -105,6 +105,24 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
     }
 
     /**
+     * Constructs a {@linkplain MethodTypeDesc} with the specified pre-validated return type,
+     * pre-validated trusted parameter types array, and a pre-validated descriptor string.
+     * <p>
+     * This API facilitates descriptor string reuse to avoid redundant hashing and allow faster
+     * descriptor string equality checks.
+     *
+     * @param descriptorString the descriptor string, may be null for uncached
+     * @param returnType a {@link ClassDesc} describing the return type
+     * @param trustedArgTypes {@link ClassDesc}s describing the trusted parameter types
+     */
+    public static MethodTypeDescImpl ofValidated(String descriptorString, ClassDesc returnType, ClassDesc[] trustedArgTypes) {
+        var ret = ofValidated(returnType, trustedArgTypes);
+        assert descriptorString == null || ret.computeDescriptorString().equals(descriptorString);
+        ret.cachedDescriptorString = descriptorString;
+        return ret;
+    }
+
+    /**
      * Creates a {@linkplain MethodTypeDescImpl} given a method descriptor string.
      *
      * @param descriptor the method descriptor string
@@ -113,7 +131,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
      * method descriptor
      * @jvms 4.3.3 Method Descriptors
      */
-    public static MethodTypeDescImpl ofDescriptor(String descriptor) {
+    public static MethodTypeDesc ofDescriptor(String descriptor) {
         int length = descriptor.length();
         int rightBracket, retTypeLength;
         if (descriptor.charAt(0) != '('
@@ -127,12 +145,10 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
 
         var returnType = resolveClassDesc(descriptor, rightBracket + 1, retTypeLength);
         if (length == 3 && returnType == CD_void) {
-            return (MethodTypeDescImpl) ConstantDescs.MTD_void;
+            return ConstantDescs.MTD_void;
         }
         var paramTypes = paramTypes(descriptor, 1, rightBracket);
-        var result = new MethodTypeDescImpl(returnType, paramTypes);
-        result.cachedDescriptorString = descriptor;
-        return result;
+        return ofValidated(descriptor, returnType, paramTypes);
     }
 
     private static ClassDesc[] paramTypes(String descriptor, int start, int end) {
@@ -286,7 +302,10 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         var desc = this.cachedDescriptorString;
         if (desc != null)
             return desc;
+        return this.cachedDescriptorString = computeDescriptorString();
+    }
 
+    private String computeDescriptorString() {
         int len = 2 + returnType.descriptorString().length();
         for (ClassDesc argType : argTypes) {
             len += argType.descriptorString().length();
@@ -295,9 +314,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         for (ClassDesc argType : argTypes) {
             sb.append(argType.descriptorString());
         }
-        desc = sb.append(')').append(returnType.descriptorString()).toString();
-        cachedDescriptorString = desc;
-        return desc;
+        return sb.append(')').append(returnType.descriptorString()).toString();
     }
 
     @Override

@@ -31,8 +31,6 @@ import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodType;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 import jdk.internal.access.JavaLangAccess;
@@ -102,13 +100,13 @@ public final class ConstantUtils {
     public static MethodTypeDesc methodTypeDesc(MethodType type) {
         var returnDesc = classDesc(type.returnType());
         if (type.parameterCount() == 0) {
-            return MethodTypeDescImpl.ofValidated(returnDesc, EMPTY_CLASSDESC);
+            return MethodTypeDescImpl.ofValidated(type.descriptorString(), returnDesc, EMPTY_CLASSDESC);
         }
         var paramDescs = new ClassDesc[type.parameterCount()];
         for (int i = 0; i < type.parameterCount(); i++) {
             paramDescs[i] = classDesc(type.parameterType(i));
         }
-        return MethodTypeDescImpl.ofValidated(returnDesc, paramDescs);
+        return MethodTypeDescImpl.ofValidated(type.descriptorString(), returnDesc, paramDescs);
     }
 
     /**

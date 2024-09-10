@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,22 +28,18 @@ package java.lang.invoke;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
 import java.lang.constant.MethodTypeDesc;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Supplier;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Stream;
 
+import jdk.internal.constant.ConstantUtils;
+import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.util.ReferencedKeySet;
 import jdk.internal.util.ReferenceKey;
 import jdk.internal.vm.annotation.Stable;
@@ -1296,7 +1292,7 @@ class MethodType
             return Optional.empty();
 
         if (parameterCount() == 0)
-            return Optional.of(MethodTypeDesc.of(retDesc.get()));
+            return Optional.of(MethodTypeDescImpl.ofValidated(methodDescriptor, retDesc.get(), ConstantUtils.EMPTY_CLASSDESC));
 
         var params = new ClassDesc[parameterCount()];
         for (int i = 0; i < params.length; i++) {
@@ -1305,7 +1301,7 @@ class MethodType
                 return Optional.empty();
             params[i] = paramDesc.get();
         }
-        return Optional.of(MethodTypeDesc.of(retDesc.get(), params));
+        return Optional.of(MethodTypeDescImpl.ofValidated(methodDescriptor, retDesc.get(), params));
     }
 
     //--- Serialization.

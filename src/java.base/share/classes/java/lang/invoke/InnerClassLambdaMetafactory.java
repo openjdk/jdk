@@ -567,6 +567,6 @@ import sun.invoke.util.Wrapper;
         for (int i = 0; i < params.length; i++) {
             params[i] = classDesc(mt.parameterType(i));
         }
-        return MethodTypeDescImpl.ofValidated(classDesc(mt.returnType()), params);
+        return MethodTypeDescImpl.ofValidated(mt.descriptorString(), classDesc(mt.returnType()), params);
     }
 }
