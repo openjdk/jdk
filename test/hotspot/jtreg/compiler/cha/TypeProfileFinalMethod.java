@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary test c1 to record type profile with CHA optimization
- * @requires (vm.opt.TieredStoAtLevel == null | vm.opt.TieredStopAtLevel == 4)
+ * @requires vm.flavor == "server" & (vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4)
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -43,7 +43,7 @@ import jdk.test.whitebox.WhiteBox;
 
 public class TypeProfileFinalMethod {
     public static void main(String[] args) throws Exception {
-       ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+       ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
            "-Xbootclasspath/a:.",
            "-Xbatch", "-XX:-UseOnStackReplacement",
            "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",
