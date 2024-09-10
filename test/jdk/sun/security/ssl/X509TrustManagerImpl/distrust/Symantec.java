@@ -47,11 +47,10 @@ public class Symantec {
     // Each of the roots have a test certificate chain stored in a file
     // named "<root>-chain.pem".
     private static final String[] rootsToTest = new String[]{
-            "geotrustprimarycag2", "geotrustprimarycag3",
-            "geotrustuniversalca", "thawteprimaryrootca",
-            "thawteprimaryrootcag2", "thawteprimaryrootcag3",
-            "verisignclass3g3ca", "verisignclass3g4ca",
-            "verisignclass3g5ca", "verisignuniversalrootca"
+            "geotrustprimarycag2", "geotrustprimarycag3", "geotrustuniversalca",
+            "thawteprimaryrootca", "thawteprimaryrootcag2", "thawteprimaryrootcag3",
+            "verisignclass3g3ca", "verisignclass3g4ca", "verisignclass3g5ca",
+            "verisignuniversalrootca"
     };
 
     // Each of the subCAs with a delayed distrust date have a test certificate
