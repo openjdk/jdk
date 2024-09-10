@@ -78,29 +78,30 @@ public class ForceGC {
         ReferenceQueue<Object> queue = new ReferenceQueue<>();
         Object obj = new Object();
         PhantomReference<Object> ref = new PhantomReference<>(obj, queue);
-        Reference.reachabilityFence(obj);
-        obj = null;
+        try {
+            obj = null;
 
-        int retries = (int)(timeout / 200);
-        for (; retries >= 0; retries--) {
-            if (booleanSupplier.getAsBoolean()) {
-                return true;
+            int retries = (int) (timeout / 200);
+            for (; retries >= 0; retries--) {
+                if (booleanSupplier.getAsBoolean()) {
+                    return true;
+                }
+
+                System.gc();
+
+                try {
+                    // The remove() will always block for the specified milliseconds
+                    // if the reference has already been removed from the queue.
+                    // But it is fine.  For most cases, the 1st GC is sufficient
+                    // to trigger and complete the cleanup.
+                    queue.remove(200L);
+                } catch (InterruptedException ie) {
+                    // ignore, the loop will try again
+                }
             }
-
-            System.gc();
-
-            try {
-                // The remove() will always block for the specified milliseconds
-                // if the reference has already been removed from the queue.
-                // But it is fine.  For most cases, the 1st GC is sufficient
-                // to trigger and complete the cleanup.
-                queue.remove(200L);
-            } catch (InterruptedException ie) {
-                // ignore, the loop will try again
-            }
+        } finally {
+            Reference.reachabilityFence(ref);
         }
-        Reference.reachabilityFence(ref);
-
         return booleanSupplier.getAsBoolean();
     }
 }
