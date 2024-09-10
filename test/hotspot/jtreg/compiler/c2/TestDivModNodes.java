@@ -31,7 +31,7 @@ import java.util.function.BiFunction;
 /*
  * @test
  * @summary Test DIV and MOD nodes are converted into DIVMOD where possible
- * @requires os.arch=="amd64" | os.arch=="x86_64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
  * @library /test/lib /
  * @run main/othervm -XX:+UseDivMod compiler.c2.TestDivModNodes
  * @run main/othervm -XX:-UseDivMod compiler.c2.TestDivModNodes
@@ -43,8 +43,14 @@ public class TestDivModNodes {
 
     @Test
     @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
-    @IR(counts = {IRNode.DIV_MOD_I, "1" }, applyIf = {"UseDivMod", "true"})
-    @IR(failOn = {IRNode.DIV_MOD_I}, applyIf = {"UseDivMod", "false"})
+    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"x64", "true"},
+            counts = {IRNode.DIV_MOD_I, "1"},
+            failOn = {IRNode.DIV_I, IRNode.MOD_I})
+    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"aarch64", "true"},
+            counts = {IRNode.MUL_I, "1", IRNode.SUB_I, "1"},
+            failOn = {IRNode.DIV_I, IRNode.MOD_I})
+    @IR(applyIf = {"UseDivMod", "false"},
+            counts = {IRNode.DIV_I, "1", IRNode.MOD_I, "1"})
     private static void testSignedIntDivMod(int dividend, int divisor) {
         int q = dividend / divisor;
         int r = dividend % divisor;
@@ -54,8 +60,14 @@ public class TestDivModNodes {
 
     @Test
     @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
-    @IR(counts = {IRNode.DIV_MOD_L, "1" }, applyIf = {"UseDivMod", "true"})
-    @IR(failOn = {IRNode.DIV_MOD_L}, applyIf = {"UseDivMod", "false"})
+    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"x64", "true"},
+            counts = {IRNode.DIV_MOD_L, "1"},
+            failOn = {IRNode.DIV_L, IRNode.MOD_L})
+    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"aarch64", "true"},
+            counts = {IRNode.MUL_L, "1", IRNode.SUB_L, "1"},
+            failOn = {IRNode.DIV_L, IRNode.MOD_L})
+    @IR(applyIf = {"UseDivMod", "false"},
+            counts = {IRNode.DIV_L, "1", IRNode.MOD_L, "1"})
     private static void testSignedLongDivMod(long dividend, long divisor) {
         long q = dividend / divisor;
         long r = dividend % divisor;
@@ -65,8 +77,14 @@ public class TestDivModNodes {
 
     @Test
     @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
-    @IR(counts = {IRNode.UDIV_MOD_I, "1" }, applyIf = {"UseDivMod", "true"})
-    @IR(failOn = {IRNode.UDIV_MOD_I}, applyIf = {"UseDivMod", "false"})
+    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"x64", "true"},
+            counts = {IRNode.UDIV_MOD_I, "1"},
+            failOn = {IRNode.UDIV_I, IRNode.UMOD_I})
+    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"aarch64", "true"},
+            counts = {IRNode.MUL_I, "1", IRNode.SUB_I, "1"},
+            failOn = {IRNode.UDIV_I, IRNode.UMOD_I})
+    @IR(applyIf = {"UseDivMod", "false"},
+            counts = {IRNode.UDIV_I, "1", IRNode.UMOD_I, "1"})
     private static void testUnsignedIntDivMod(int dividend, int divisor) {
         int q = Integer.divideUnsigned(dividend, divisor); // intrinsified on x86
         int r = Integer.remainderUnsigned(dividend, divisor); // intrinsified on x86
@@ -76,8 +94,14 @@ public class TestDivModNodes {
 
     @Test
     @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
-    @IR(counts = {IRNode.UDIV_MOD_L, "1" }, applyIf = {"UseDivMod", "true"})
-    @IR(failOn = {IRNode.UDIV_MOD_L}, applyIf = {"UseDivMod", "false"})
+    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"x64", "true"},
+            counts = {IRNode.UDIV_MOD_L, "1"},
+            failOn = {IRNode.UDIV_L, IRNode.UMOD_L})
+    @IR(applyIf = {"UseDivMod", "true"}, applyIfPlatform = {"aarch64", "true"},
+            counts = {IRNode.MUL_L, "1", IRNode.SUB_L, "1"},
+            failOn = {IRNode.UDIV_L, IRNode.MOD_L})
+    @IR(applyIf = {"UseDivMod", "false"},
+            counts = {IRNode.UDIV_L, "1", IRNode.UMOD_L, "1"})
     private static void testUnsignedLongDivMod(long dividend, long divisor) {
         long q = Long.divideUnsigned(dividend, divisor); // intrinsified on x86
         long r = Long.remainderUnsigned(dividend, divisor); // intrinsified on x86
