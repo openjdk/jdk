@@ -40,7 +40,7 @@ class CompressedKlassPointers : public AllStatic {
   friend class ArchiveBuilder;
 
   // Tiny-class-pointer mode
-  static int _tiny_cp; // -1, 0=true, 1=false
+  static int _tiny_cp; // -1 = uninitialized, 0 = true, 1 = false
 
   // We use a different narrow Klass pointer geometry depending on
   // whether we run in standard mode or in compact-object-header-mode (Lilliput):
