@@ -1149,7 +1149,6 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
   log_debug(gc, ergo, heap, ahs)(
       "Expanded the heap by %i regions, wanted to expand by %i regions",
       expanded_by, regions_to_expand);
-  }
 
   return true;
 }
