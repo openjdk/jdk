@@ -229,9 +229,13 @@ bool CollectedHeap::is_oop(oop object) const {
     return false;
   }
 
-  // With compact headers, we can't safely access the class, due
-  // to possibly forwarded objects.
-  if (!UseCompactObjectHeaders && !Metaspace::contains(object->klass_without_asserts())) {
+  // With compact headers, we can't safely access the Klass* when
+  // the object has been forwarded, because non-full-GC-forwarding
+  // temporarily overwrites the mark-word, and thus the Klass*, with
+  // the forwarding pointer, and here we have no way to make a
+  // distinction between Full-GC and regular GC forwarding.
+  bool can_access_klass = !UseCompactObjectHeaders || !object->is_forwarded();
+  if (can_access_klass && !Metaspace::contains(object->klass_without_asserts())) {
     return false;
   }
 
