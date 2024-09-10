@@ -469,12 +469,12 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   assert(region_attr.is_in_cset(),
          "Unexpected region attr type: %s", region_attr.get_type_str());
 
-  // NOTE: With compact headers, it is not safe to load the Klass* from o, because
-  // that would access the mark-word, and the mark-word might change at any time by
-  // concurrent promotion. The promoted mark-word would point to the forwardee, which
-  // may not yet have completed copying. Therefore we must load the Klass* from
-  // the mark-word that we have already loaded. This is safe, because we have checked
-  // that this is not yet forwarded in the caller.
+  // NOTE: With compact headers, it is not safe to load the Klass* from old, because
+  // that would access the mark-word, that might change at any time by concurrent
+  // workers.
+  // This mark word would refer to a forwardee, which may not yet have completed
+  // copying. Therefore we must load the Klass* from the mark-word that we already
+  // loaded. This is safe, because we only enter here if not yet forwarded.
   assert(!old_mark.is_forwarded(), "precondition");
   Klass* klass = UseCompactObjectHeaders
       ? old_mark.klass()

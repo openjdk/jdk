@@ -33,7 +33,6 @@
 
 class instanceOopDesc : public oopDesc {
  public:
-  // If compressed, the offset of the fields of the instance may not be aligned.
   static int base_offset_in_bytes() {
     if (UseCompactObjectHeaders) {
       return oopDesc::base_offset_in_bytes();

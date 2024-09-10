@@ -706,7 +706,7 @@ int BarrierSetC2::arraycopy_payload_base_offset(bool is_array) {
   int base_off = is_array ? arrayOopDesc::length_offset_in_bytes() :
                             instanceOopDesc::base_offset_in_bytes();
   // base_off:
-  // 8  - 32-bit VM
+  // 8  - 32-bit VM or 64-bit VM, compact headers
   // 12 - 64-bit VM, compressed klass
   // 16 - 64-bit VM, normal klass
   if (base_off % BytesPerLong != 0) {
