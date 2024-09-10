@@ -589,7 +589,7 @@ public enum SourceVersion {
     }
 
     /**
-     * Returns whether or not {@code s} is a keyword, boolean literal,
+     * Returns whether or not {@code s} is a keyword, a boolean literal,
      * or the null literal in the latest source version.
      * This method returns {@code false} for <i>contextual
      * keywords</i>.
@@ -606,7 +606,7 @@ public enum SourceVersion {
     }
 
     /**
-     * Returns whether or not {@code s} is a keyword, boolean literal,
+     * Returns whether or not {@code s} is a keyword, a boolean literal,
      * or the null literal in the given source version.
      * This method returns {@code false} for <i>contextual
      * keywords</i>.
