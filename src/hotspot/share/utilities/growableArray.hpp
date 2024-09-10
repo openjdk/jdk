@@ -800,11 +800,11 @@ public:
 };
 
 // Leaner GrowableArray for CHeap backed data arrays, with compile-time decided MemTag.
-template <typename E, MemTag F>
-class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> > {
-  friend class GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >;
+template <typename E, MemTag MT>
+class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, MT> > {
+  friend class GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, MT> >;
 
-  STATIC_ASSERT(F != mtNone);
+  STATIC_ASSERT(MT != mtNone);
 
   static E* allocate(int max, MemTag mem_tag) {
     if (max == 0) {
@@ -817,7 +817,7 @@ class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHe
   NONCOPYABLE(GrowableArrayCHeap);
 
   E* allocate() {
-    return allocate(this->_capacity, F);
+    return allocate(this->_capacity, MT);
   }
 
   void deallocate(E* mem) {
@@ -826,13 +826,13 @@ class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHe
 
 public:
   GrowableArrayCHeap(int initial_capacity = 0) :
-      GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >(
-          allocate(initial_capacity, F),
+      GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, MT> >(
+          allocate(initial_capacity, MT),
           initial_capacity) {}
 
   GrowableArrayCHeap(int initial_capacity, int initial_len, const E& filler) :
-      GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >(
-          allocate(initial_capacity, F),
+      GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, MT> >(
+          allocate(initial_capacity, MT),
           initial_capacity, initial_len, filler) {}
 
   ~GrowableArrayCHeap() {
@@ -840,11 +840,11 @@ public:
   }
 
   void* operator new(size_t size) {
-    return AnyObj::operator new(size, F);
+    return AnyObj::operator new(size, MT);
   }
 
   void* operator new(size_t size, const std::nothrow_t&  nothrow_constant) throw() {
-    return AnyObj::operator new(size, nothrow_constant, F);
+    return AnyObj::operator new(size, nothrow_constant, MT);
   }
   void operator delete(void *p) {
     AnyObj::operator delete(p);

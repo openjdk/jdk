@@ -30,22 +30,22 @@
 #include "memory/memRegion.hpp"
 #include "utilities/bitMap.inline.hpp"
 
-template<MemTag F>
-ObjectBitSet<F>::BitMapFragment::BitMapFragment(uintptr_t granule, BitMapFragment* next) :
-        _bits(_bitmap_granularity_size >> LogMinObjAlignmentInBytes, F, true /* clear */),
+template<MemTag MT>
+ObjectBitSet<MT>::BitMapFragment::BitMapFragment(uintptr_t granule, BitMapFragment* next) :
+        _bits(_bitmap_granularity_size >> LogMinObjAlignmentInBytes, MT, true /* clear */),
         _next(next) {
 }
 
-template<MemTag F>
-ObjectBitSet<F>::ObjectBitSet() :
+template<MemTag MT>
+ObjectBitSet<MT>::ObjectBitSet() :
         _bitmap_fragments(32, 8*K),
         _fragment_list(nullptr),
         _last_fragment_bits(nullptr),
         _last_fragment_granule(UINTPTR_MAX) {
 }
 
-template<MemTag F>
-ObjectBitSet<F>::~ObjectBitSet() {
+template<MemTag MT>
+ObjectBitSet<MT>::~ObjectBitSet() {
   BitMapFragment* current = _fragment_list;
   while (current != nullptr) {
     BitMapFragment* next = current->next();
@@ -56,13 +56,13 @@ ObjectBitSet<F>::~ObjectBitSet() {
   // ResizeableResourceHashtableStorage deletes the table.
 }
 
-template<MemTag F>
-inline BitMap::idx_t ObjectBitSet<F>::addr_to_bit(uintptr_t addr) const {
+template<MemTag MT>
+inline BitMap::idx_t ObjectBitSet<MT>::addr_to_bit(uintptr_t addr) const {
   return (addr & _bitmap_granularity_mask) >> LogMinObjAlignmentInBytes;
 }
 
-template<MemTag F>
-inline CHeapBitMap* ObjectBitSet<F>::get_fragment_bits(uintptr_t addr) {
+template<MemTag MT>
+inline CHeapBitMap* ObjectBitSet<MT>::get_fragment_bits(uintptr_t addr) {
   uintptr_t granule = addr >> _bitmap_granularity_shift;
   if (granule == _last_fragment_granule) {
     return _last_fragment_bits;
@@ -86,15 +86,15 @@ inline CHeapBitMap* ObjectBitSet<F>::get_fragment_bits(uintptr_t addr) {
   return bits;
 }
 
-template<MemTag F>
-inline void ObjectBitSet<F>::mark_obj(uintptr_t addr) {
+template<MemTag MT>
+inline void ObjectBitSet<MT>::mark_obj(uintptr_t addr) {
   CHeapBitMap* bits = get_fragment_bits(addr);
   const BitMap::idx_t bit = addr_to_bit(addr);
   bits->set_bit(bit);
 }
 
-template<MemTag F>
-inline bool ObjectBitSet<F>::is_marked(uintptr_t addr) {
+template<MemTag MT>
+inline bool ObjectBitSet<MT>::is_marked(uintptr_t addr) {
   CHeapBitMap* bits = get_fragment_bits(addr);
   const BitMap::idx_t bit = addr_to_bit(addr);
   return bits->at(bit);

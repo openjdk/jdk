@@ -39,8 +39,8 @@ class MemRegion;
  * allocated on-demand only, in fragments covering 64M heap ranges. Fragments are never deleted
  * during the lifetime of the ObjectBitSet. The underlying memory is allocated from C-Heap.
  */
-template<MemTag F>
-class ObjectBitSet : public CHeapObj<F> {
+template<MemTag MT>
+class ObjectBitSet : public CHeapObj<MT> {
   const static size_t _bitmap_granularity_shift = 26; // 64M
   const static size_t _bitmap_granularity_size = (size_t)1 << _bitmap_granularity_shift;
   const static size_t _bitmap_granularity_mask = _bitmap_granularity_size - 1;
@@ -52,7 +52,7 @@ class ObjectBitSet : public CHeapObj<F> {
     return hash ^ (hash >> 3);
   }
 
-  typedef ResizeableResourceHashtable<uintptr_t, CHeapBitMap*, AnyObj::C_HEAP, F,
+  typedef ResizeableResourceHashtable<uintptr_t, CHeapBitMap*, AnyObj::C_HEAP, MT,
                                       hash_segment> BitMapFragmentTable;
 
   CHeapBitMap* get_fragment_bits(uintptr_t addr);
@@ -81,8 +81,8 @@ class ObjectBitSet : public CHeapObj<F> {
   }
 };
 
-template<MemTag F>
-class ObjectBitSet<F>::BitMapFragment : public CHeapObj<F> {
+template<MemTag MT>
+class ObjectBitSet<MT>::BitMapFragment : public CHeapObj<MT> {
   CHeapBitMap _bits;
   BitMapFragment* _next;
 

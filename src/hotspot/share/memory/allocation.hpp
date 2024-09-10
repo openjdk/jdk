@@ -174,43 +174,43 @@ class CHeapObjBase {
 };
 
 // Uses the implicitly static new and delete operators of CHeapObjBase
-template<MemTag F>
+template<MemTag MT>
 class CHeapObj {
  public:
   ALWAYSINLINE void* operator new(size_t size) {
-    return CHeapObjBase::operator new(size, F);
+    return CHeapObjBase::operator new(size, MT);
   }
 
   ALWAYSINLINE void* operator new(size_t size,
                                   const NativeCallStack& stack) {
-    return CHeapObjBase::operator new(size, F, stack);
+    return CHeapObjBase::operator new(size, MT, stack);
   }
 
   ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t& nt,
                                   const NativeCallStack& stack) throw() {
-    return CHeapObjBase::operator new(size, F, nt, stack);
+    return CHeapObjBase::operator new(size, MT, nt, stack);
   }
 
   ALWAYSINLINE void* operator new(size_t size, const std::nothrow_t& nt) throw() {
-    return CHeapObjBase::operator new(size, F, nt);
+    return CHeapObjBase::operator new(size, MT, nt);
   }
 
   ALWAYSINLINE void* operator new[](size_t size) {
-    return CHeapObjBase::operator new[](size, F);
+    return CHeapObjBase::operator new[](size, MT);
   }
 
   ALWAYSINLINE void* operator new[](size_t size,
                                     const NativeCallStack& stack) {
-    return CHeapObjBase::operator new[](size, F, stack);
+    return CHeapObjBase::operator new[](size, MT, stack);
   }
 
   ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t& nt,
                                     const NativeCallStack& stack) throw() {
-    return CHeapObjBase::operator new[](size, F, nt, stack);
+    return CHeapObjBase::operator new[](size, MT, nt, stack);
   }
 
   ALWAYSINLINE void* operator new[](size_t size, const std::nothrow_t& nt) throw() {
-    return CHeapObjBase::operator new[](size, F, nt);
+    return CHeapObjBase::operator new[](size, MT, nt);
   }
 
   void operator delete(void* p)     {
