@@ -101,26 +101,30 @@ public class Timeout extends DNSTestBase {
                 return false;
             }
 
-            Duration expectedTime = Duration.ofMillis(TIMEOUT)
+            Duration minAllowedTime = Duration.ofMillis(TIMEOUT)
                     .multipliedBy((1 << RETRIES) - 1)
                     .minus(Duration.ofMillis((DNS_CLIENT_MIN_TIMEOUT - 1) * RETRIES));
+            Duration maxAllowedTime = Duration.ofMillis(TIMEOUT)
+                    .multipliedBy((1 << RETRIES) - 1)
+                    // max allowed timeout value is set to 1.75 * expected timeout
+                    .multipliedBy(7)
+                    .dividedBy(4);
+
             DNSTestUtils.debug("Elapsed (ms):  " + elapsedTime.toMillis());
-            DNSTestUtils.debug("Expected (ms): " + expectedTime.toMillis());
+            String expectedRangeMsg = "%s - %s"
+                    .formatted(minAllowedTime.toMillis(), maxAllowedTime.toMillis());
+            DNSTestUtils.debug("Expected range (ms): " + expectedRangeMsg);
 
             // Check that elapsed time is as long as expected, and
-            // not more than 67% greater. Given the min DNS timeout
-            // correction above the threshold value is equal to 61%.
-            if (elapsedTime.compareTo(expectedTime) >= 0 &&
-                    elapsedTime.multipliedBy(3)
-                            .compareTo(expectedTime.multipliedBy(5)) <= 0) {
-                // 3 * elapsedTime <= expectedTime*5
-                // elapsedTime <= 1.67 expectedTime
+            // not more than 75% greater.
+            if (elapsedTime.compareTo(minAllowedTime) >= 0 &&
+                elapsedTime.compareTo(maxAllowedTime) <= 0) {
                 System.out.println("elapsed time is as long as expected.");
                 return true;
             }
             throw new RuntimeException(
-                    "Failed: timeout in " + elapsedTime.toMillis()
-                            + " ms, expected " + expectedTime.toMillis() + " ms");
+                    "Failed: timeout in " + elapsedTime.toMillis() +
+                    " ms, expected to be in a range (ms): " + expectedRangeMsg);
         }
 
         return super.handleException(e);
