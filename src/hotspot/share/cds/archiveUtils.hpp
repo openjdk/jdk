@@ -269,15 +269,26 @@ public:
   int size_in_elems(size_t seg_idx);
   size_t segment_offset(size_t seg_idx);
 
-  HeapRootSegments() {}
-  HeapRootSegments(size_t base_offset, int roots_count, int max_size_in_bytes, int max_size_in_elems) :
-          _base_offset(base_offset),
-          _count((roots_count + max_size_in_elems - 1) / max_size_in_elems),
-          _roots_count(roots_count),
-          _max_size_in_bytes(max_size_in_bytes),
-          _max_size_in_elems(max_size_in_elems) {
-    assert(is_power_of_2(_max_size_in_bytes), "must be");
+  // Trivial copy assignments are allowed to copy the entire object representation.
+  // We also inline this class into archive header. Therefore, it is important to make
+  // sure any gaps in object representation are initialized to zeroes. This is why
+  // constructors memset before doing field assignments.
+  HeapRootSegments() {
+    memset(this, 0, sizeof(*this));
   }
+  HeapRootSegments(size_t base_offset, int roots_count, int max_size_in_bytes, int max_size_in_elems) {
+    assert(is_power_of_2(max_size_in_bytes), "must be");
+    memset(this, 0, sizeof(*this));
+    _base_offset = base_offset;
+    _count = (roots_count + max_size_in_elems - 1) / max_size_in_elems;
+    _roots_count = roots_count;
+    _max_size_in_bytes = max_size_in_bytes;
+    _max_size_in_elems = max_size_in_elems;
+  }
+
+  // This class is trivially copyable and assignable.
+  HeapRootSegments(const HeapRootSegments&) = default;
+  HeapRootSegments& operator=(const HeapRootSegments&) = default;
 };
 
 #endif // SHARE_CDS_ARCHIVEUTILS_HPP
