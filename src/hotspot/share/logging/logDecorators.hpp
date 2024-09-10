@@ -60,6 +60,7 @@ class outputStream;
 // declared above. For example, logging with 'uptime, level, tags' decorators results in:
 // [0,943s][info   ][logging] message.
 class LogDecorators {
+  friend class TestLogDecorators;
  public:
   enum Decorator {
 #define DECORATOR(name, abbr) name##_decorator,
@@ -71,9 +72,10 @@ class LogDecorators {
   };
 
   class DefaultDecorator {
+    friend class TestLogDecorators;
     LogSelection _selection;
     uint         _mask;
-  
+
     DefaultDecorator() : _selection(LogSelection::Invalid), _mask(0) {}
 
   public:
