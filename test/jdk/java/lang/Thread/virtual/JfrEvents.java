@@ -25,7 +25,7 @@
  * @test
  * @summary Basic test for JFR jdk.VirtualThreadXXX events
  * @requires vm.continuations
- * @modules jdk.jfr java.base/java.lang:+open
+ * @modules jdk.jfr java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @run junit/othervm --enable-native-access=ALL-UNNAMED JfrEvents
  */
@@ -50,7 +50,7 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 
 import jdk.test.lib.thread.VThreadPinner;
-import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.management
 import jdk.test.lib.thread.VThreadScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;

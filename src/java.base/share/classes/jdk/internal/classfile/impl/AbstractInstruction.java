@@ -94,7 +94,6 @@ public abstract sealed class AbstractInstruction
             FMT_Discontinued = "Discontinued[OP=%s]";
 
     final Opcode op;
-    final int size;
 
     @Override
     public Opcode opcode() {
@@ -103,12 +102,12 @@ public abstract sealed class AbstractInstruction
 
     @Override
     public int sizeInBytes() {
-        return size;
+        // Note: only lookupswitch and tableswitch have variable sizes
+        return op.sizeIfFixed();
     }
 
-    public AbstractInstruction(Opcode op, int size) {
+    AbstractInstruction(Opcode op) {
         this.op = op;
-        this.size = size;
     }
 
     @Override
@@ -118,8 +117,8 @@ public abstract sealed class AbstractInstruction
         final CodeImpl code;
         final int pos;
 
-        protected BoundInstruction(Opcode op, int size, CodeImpl code, int pos) {
-            super(op, size);
+        protected BoundInstruction(Opcode op, CodeImpl code, int pos) {
+            super(op);
             this.code = code;
             this.pos = pos;
         }
@@ -131,7 +130,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public void writeTo(DirectCodeBuilder writer) {
             // Override this if the instruction has any CP references or labels!
-            code.classReader.copyBytesTo(writer.bytecodesBufWriter, pos, size);
+            code.classReader.copyBytesTo(writer.bytecodesBufWriter, pos, op.sizeIfFixed());
         }
     }
 
@@ -139,7 +138,7 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements LoadInstruction {
 
         public BoundLoadInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
 
@@ -155,7 +154,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public int slot() {
-            return switch (size) {
+            return switch (sizeInBytes()) {
                 case 2 -> code.classReader.readU1(pos + 1);
                 case 4 -> code.classReader.readU2(pos + 2);
                 default -> throw new IllegalArgumentException("Unexpected op size: " + op.sizeIfFixed() + " -- " + op);
@@ -168,7 +167,7 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements StoreInstruction {
 
         public BoundStoreInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -183,10 +182,10 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public int slot() {
-            return switch (size) {
+            return switch (sizeInBytes()) {
                 case 2 -> code.classReader.readU1(pos + 1);
                 case 4 -> code.classReader.readU2(pos + 2);
-                default -> throw new IllegalArgumentException("Unexpected op size: " + size + " -- " + op);
+                default -> throw new IllegalArgumentException("Unexpected op size: " + sizeInBytes() + " -- " + op);
             };
         }
 
@@ -196,17 +195,17 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements IncrementInstruction {
 
         public BoundIncrementInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
         public int slot() {
-            return size == 6 ? code.classReader.readU2(pos + 2) : code.classReader.readU1(pos + 1);
+            return sizeInBytes() == 6 ? code.classReader.readU2(pos + 2) : code.classReader.readU1(pos + 1);
         }
 
         @Override
         public int constant() {
-            return size == 6 ? code.classReader.readS2(pos + 4) : (byte) code.classReader.readS1(pos + 2);
+            return sizeInBytes() == 6 ? code.classReader.readS2(pos + 4) : code.classReader.readS1(pos + 2);
         }
 
         @Override
@@ -220,7 +219,7 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements BranchInstruction {
 
         public BoundBranchInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -229,8 +228,8 @@ public abstract sealed class AbstractInstruction
         }
 
         public int branchByteOffset() {
-            return size == 3
-                   ? (int) (short) code.classReader.readU2(pos + 1)
+            return sizeInBytes() == 3
+                   ? code.classReader.readS2(pos + 1)
                    : code.classReader.readInt(pos + 1);
         }
 
@@ -256,22 +255,16 @@ public abstract sealed class AbstractInstruction
         // will always need size, cache everything to there
         private final int afterPad;
         private final int npairs;
+        private final int size;
 
         BoundLookupSwitchInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, size(code, code.codeStart, pos), code, pos);
-
-            this.afterPad = pos + 1 + ((4 - ((pos + 1 - code.codeStart) & 3)) & 3);
+            super(op, code, pos);
+            this.afterPad = code.codeStart + RawBytecodeHelper.align(pos + 1 - code.codeStart);
             this.npairs = code.classReader.readInt(afterPad + 4);
             if (npairs < 0 || npairs > code.codeLength >> 3) {
                 throw new IllegalArgumentException("Invalid lookupswitch npairs value: " + npairs);
             }
-        }
-
-        static int size(CodeImpl code, int codeStart, int pos) {
-            int afterPad = pos + 1 + ((4 - ((pos + 1 - codeStart) & 3)) & 3);
-            int pad = afterPad - (pos + 1);
-            int npairs = code.classReader.readInt(afterPad + 4);
-            return 1 + pad + 8 + npairs * 8;
+            this.size = afterPad + 8 + npairs * 8 - pos;
         }
 
         private int defaultOffset() {
@@ -279,10 +272,14 @@ public abstract sealed class AbstractInstruction
         }
 
         @Override
+        public int sizeInBytes() {
+            return size;
+        }
+
+        @Override
         public List<SwitchCase> cases() {
             var cases = new SwitchCase[npairs];
-            for (int i = 0; i < npairs; ++i) {
-                int z = afterPad + 8 + 8 * i;
+            for (int i = 0, z = afterPad + 8; i < npairs; ++i, z += 8) {
                 cases[i] = SwitchCase.of(code.classReader.readInt(z), offsetToLabel(code.classReader.readInt(z + 4)));
             }
             return List.of(cases);
@@ -308,25 +305,26 @@ public abstract sealed class AbstractInstruction
     public static final class BoundTableSwitchInstruction
             extends BoundInstruction implements TableSwitchInstruction {
 
-        BoundTableSwitchInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, size(code, code.codeStart, pos), code, pos);
-        }
+        private final int afterPad;
+        private final int low;
+        private final int high;
+        private final int size;
 
-        static int size(CodeImpl code, int codeStart, int pos) {
-            int ap = pos + 1 + ((4 - ((pos + 1 - codeStart) & 3)) & 3);
-            int pad = ap - (pos + 1);
-            int low = code.classReader.readInt(ap + 4);
-            int high = code.classReader.readInt(ap + 8);
+        BoundTableSwitchInstruction(Opcode op, CodeImpl code, int pos) {
+            super(op, code, pos);
+            afterPad = code.codeStart + RawBytecodeHelper.align(pos + 1 - code.codeStart);
+            low = code.classReader.readInt(afterPad + 4);
+            high = code.classReader.readInt(afterPad + 8);
             if (high < low || (long)high - low > code.codeLength >> 2) {
                 throw new IllegalArgumentException("Invalid tableswitch values low: " + low + " high: " + high);
             }
             int cnt = high - low + 1;
-            return 1 + pad + 12 + cnt * 4;
+            size = afterPad + 12 + cnt * 4 - pos;
         }
 
-        private int afterPadding() {
-            int p = pos;
-            return p + 1 + ((4 - ((p + 1 - code.codeStart) & 3)) & 3);
+        @Override
+        public int sizeInBytes() {
+            return size;
         }
 
         @Override
@@ -336,12 +334,12 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public int lowValue() {
-            return code.classReader.readInt(afterPadding() + 4);
+            return low;
         }
 
         @Override
         public int highValue() {
-            return code.classReader.readInt(afterPadding() + 8);
+            return high;
         }
 
         @Override
@@ -350,19 +348,17 @@ public abstract sealed class AbstractInstruction
             int high = highValue();
             int defOff = defaultOffset();
             var cases = new ArrayList<SwitchCase>(high - low + 1);
-            int z = afterPadding() + 12;
-            for (int i = lowValue(); i <= high; ++i) {
+            for (int i = low, z = afterPad + 12; i <= high; ++i, z += 4) {
                 int off = code.classReader.readInt(z);
                 if (defOff != off) {
                     cases.add(SwitchCase.of(i, offsetToLabel(off)));
                 }
-                z += 4;
             }
             return Collections.unmodifiableList(cases);
         }
 
         private int defaultOffset() {
-            return code.classReader.readInt(afterPadding());
+            return code.classReader.readInt(afterPad);
         }
 
         @Override
@@ -383,7 +379,7 @@ public abstract sealed class AbstractInstruction
         private FieldRefEntry fieldEntry;
 
         public BoundFieldInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -413,7 +409,7 @@ public abstract sealed class AbstractInstruction
         MemberRefEntry methodEntry;
 
         public BoundInvokeInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -453,7 +449,7 @@ public abstract sealed class AbstractInstruction
         InterfaceMethodRefEntry methodEntry;
 
         public BoundInvokeInterfaceInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -493,7 +489,7 @@ public abstract sealed class AbstractInstruction
         InvokeDynamicEntry indyEntry;
 
         BoundInvokeDynamicInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -523,7 +519,7 @@ public abstract sealed class AbstractInstruction
         ClassEntry classEntry;
 
         BoundNewObjectInstruction(CodeImpl code, int pos) {
-            super(Opcode.NEW, Opcode.NEW.sizeIfFixed(), code, pos);
+            super(Opcode.NEW, code, pos);
         }
 
         @Override
@@ -552,7 +548,7 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements NewPrimitiveArrayInstruction {
 
         public BoundNewPrimitiveArrayInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -571,7 +567,7 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements NewReferenceArrayInstruction {
 
         public BoundNewReferenceArrayInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -597,7 +593,7 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements NewMultiArrayInstruction {
 
         public BoundNewMultidimensionalArrayInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -630,7 +626,7 @@ public abstract sealed class AbstractInstruction
         ClassEntry typeEntry;
 
         public BoundTypeCheckInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -659,7 +655,7 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements ConstantInstruction.ArgumentConstantInstruction {
 
         public BoundArgumentConstantInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -668,7 +664,7 @@ public abstract sealed class AbstractInstruction
         }
 
         public int constantInt() {
-            return size == 3 ? code.classReader.readS2(pos + 1) : code.classReader.readS1(pos + 1);
+            return sizeInBytes() == 3 ? code.classReader.readS2(pos + 1) : code.classReader.readS1(pos + 1);
         }
 
         @Override
@@ -682,7 +678,7 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements ConstantInstruction.LoadConstantInstruction {
 
         public BoundLoadConstantInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -717,7 +713,7 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements DiscontinuedInstruction.JsrInstruction {
 
         public BoundJsrInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -726,7 +722,7 @@ public abstract sealed class AbstractInstruction
         }
 
         public int branchByteOffset() {
-            return size == 3
+            return sizeInBytes() == 3
                    ? code.classReader.readS2(pos + 1)
                    : code.classReader.readInt(pos + 1);
         }
@@ -747,7 +743,7 @@ public abstract sealed class AbstractInstruction
             extends BoundInstruction implements DiscontinuedInstruction.RetInstruction {
 
         public BoundRetInstruction(Opcode op, CodeImpl code, int pos) {
-            super(op, op.sizeIfFixed(), code, pos);
+            super(op, code, pos);
         }
 
         @Override
@@ -757,7 +753,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public int slot() {
-            return switch (size) {
+            return switch (sizeInBytes()) {
                 case 2 -> code.classReader.readU1(pos + 1);
                 case 4 -> code.classReader.readU2(pos + 2);
                 default -> throw new IllegalArgumentException("Unexpected op size: " + op.sizeIfFixed() + " -- " + op);
@@ -769,7 +765,7 @@ public abstract sealed class AbstractInstruction
     public abstract static sealed class UnboundInstruction extends AbstractInstruction {
 
         UnboundInstruction(Opcode op) {
-            super(op, op.sizeIfFixed());
+            super(op);
         }
 
         @Override

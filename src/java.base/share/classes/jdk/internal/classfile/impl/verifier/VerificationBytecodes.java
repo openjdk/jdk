@@ -24,9 +24,8 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
-import java.nio.ByteBuffer;
-
 import static java.lang.classfile.Opcode.OpcodeValues.*;
+
 import jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType;
 import static jdk.internal.classfile.impl.verifier.VerificationSignature.BasicType.*;
 
@@ -83,47 +82,14 @@ final class VerificationBytecodes {
         return 0 <= code && code < number_of_codes;
     }
 
-    static int wide_length_for(int code) {
-        return is_valid(code) ? _lengths[code] >> 4 : -1;
-    }
-
     static boolean is_store_into_local(int code) {
         return (ISTORE <= code && code <= ASTORE_3);
     }
 
     static final int _lengths[] = new int[number_of_codes];
-
-    static int special_length_at(int code, byte bytecode[], int bci, int end) {
-        switch (code) {
-            case WIDE:
-                if (bci + 1 >= end) {
-                    return -1;
-                }
-                return wide_length_for(bytecode[bci + 1] & 0xff);
-            case TABLESWITCH:
-                int aligned_bci = align(bci + 1);
-                if (aligned_bci + 3 * 4 >= end) {
-                    return -1;
-                }
-                ByteBuffer bb = ByteBuffer.wrap(bytecode, aligned_bci + 1 * 4, 2 * 4);
-                int lo = bb.getInt();
-                int hi = bb.getInt();
-                int len = aligned_bci - bci + (3 + hi - lo + 1) * 4;
-                return len > 0 ? len : -1;
-            case LOOKUPSWITCH:
-            case _fast_binaryswitch:
-            case _fast_linearswitch:
-                aligned_bci = align(bci + 1);
-                if (aligned_bci + 2 * 4 >= end) {
-                    return -1;
-                }
-                int npairs = ByteBuffer.wrap(bytecode, aligned_bci + 4, 4).getInt();
-                len = aligned_bci - bci + (2 + 2 * npairs) * 4;
-                return len > 0 ? len : -1;
-            default:
-                return 0;
-        }
-    }
+            case ClassFile.WIDE:
+            case ClassFile.TABLESWITCH:
+            case ClassFile.LOOKUPSWITCH:
 
     static int align(int n) {
         return (n + 3) & ~3;
