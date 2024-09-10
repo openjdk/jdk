@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,28 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.security.provider;
 
-/*
- * The SHAKE128 extendable output function.
- */
-public final class SHAKE128 extends SHA3 {
-    public SHAKE128(int d) {
-        super("SHAKE128", d, (byte) 0x1F, 32);
-    }
+#include <jni.h>
 
-    public void update(byte in) {
-        engineUpdate(in);
-    }
-    public void update(byte[] in, int off, int len) {
-        engineUpdate(in, off, len);
-    }
+typedef void (*upcall_func)(void);
 
-    public byte[] digest() {
-        return engineDigest();
-    }
-
-    public void reset() {
-        engineReset();
-    }
+JNIEXPORT void JNICALL
+Java_LingeredAppWithFFMUpcall_callJNI(JNIEnv *env, jclass cls, jlong upcallAddr) {
+  upcall_func upcall = (upcall_func)upcallAddr;
+  upcall();
 }
