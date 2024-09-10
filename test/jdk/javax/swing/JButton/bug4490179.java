@@ -29,11 +29,12 @@
  * @run main bug4490179
  */
 
+import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -43,9 +44,8 @@ public class bug4490179 {
     static JFrame frame;
     static JButton button;
     static volatile Point pt;
-    static volatile int buttonW;
-    static volatile int buttonH;
-    static volatile boolean passed = true;
+    private static final CountDownLatch anyButton = new CountDownLatch(1);
+    private static final CountDownLatch mouseButton1 = new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
@@ -56,25 +56,26 @@ public class bug4490179 {
                 frame = new JFrame("bug4490179");
                 button = new JButton("Button");
                 frame.getContentPane().add(button);
-                button.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        passed = false;
+                button.addActionListener(e -> {
+                    System.err.println("ActionEvent: " + e);
+                    if ((e.getModifiers() & InputEvent.BUTTON1_MASK) != 0) {
+                        mouseButton1.countDown();
                     }
+                    anyButton.countDown();
                 });
                 frame.pack();
                 frame.setLocationRelativeTo(null);
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.setVisible(true);
             });
             robot.waitForIdle();
             robot.delay(1000);
             SwingUtilities.invokeAndWait(() -> {
-                pt = button.getLocationOnScreen();
-                buttonW = button.getSize().width;
-                buttonH = button.getSize().height;
+                Point loc = button.getLocationOnScreen();
+                Dimension size = button.getSize();
+                pt = new Point(loc.x + size.width / 2, loc.y + size.height / 2);
             });
 
-            robot.mouseMove(pt.x + buttonW / 2, pt.y + buttonH / 2);
+            robot.mouseMove(pt.x, pt.y);
             robot.waitForIdle();
             robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
@@ -82,12 +83,15 @@ public class bug4490179 {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mousePress(InputEvent.BUTTON3_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON3_DOWN_MASK);
-            robot.delay(3000);
-            boolean result = passed;
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            if (anyButton.await(3, TimeUnit.SECONDS)) {
+                // Restore robot state
+                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+                throw new RuntimeException("Unexpected ActionEvent");
+            }
 
-            if (!result) {
-                throw new RuntimeException("Test Failed");
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            if (!mouseButton1.await(2, TimeUnit.SECONDS)) {
+                throw new RuntimeException("Missing ActionEvent for BUTTON1");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
