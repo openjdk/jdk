@@ -108,6 +108,11 @@ public class SinceChecker {
     private final JavaCompiler tool;
     private int errorCount = 0;
 
+    // packages to skip during the test
+    private static final Set<String> EXCLUDE_LIST = Set.of(
+            "java.lang.classfile"
+    );
+
     public static class IntroducedIn {
         public String introducedPreview;
         public String introducedStable;
@@ -274,6 +279,7 @@ public class SinceChecker {
             if (ed.getTargetModules() == null) {
                 String packageVersion = getPackageVersionFromFile(moduleDirectory, ed);
                 if (packageVersion != null) {
+                    if (EXCLUDE_LIST.contains(ed.getPackage().toString())) continue;
                     checkModuleOrPackage(javadocHelper, packageVersion, ed.getPackage(), ct, "Package: ");
                     analyzePackageCheck(ed.getPackage(), ct, javadocHelper);
                 } // Skip the package if packageVersion is null
