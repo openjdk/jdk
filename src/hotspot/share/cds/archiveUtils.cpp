@@ -384,11 +384,6 @@ int HeapRootSegments::size_in_elems(size_t seg_idx) {
   }
 }
 
-int HeapRootSegments::roots_offset(size_t seg_idx) {
-  assert(seg_idx < _count, "In range");
-  return (int)(seg_idx * _max_size_in_elems);
-}
-
 size_t HeapRootSegments::segment_offset(size_t seg_idx) {
   return _base_offset + seg_idx * _max_size_in_bytes;
 }

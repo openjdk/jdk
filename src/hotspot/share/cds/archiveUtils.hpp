@@ -267,7 +267,6 @@ public:
 
   size_t size_in_bytes(size_t seg_idx);
   int size_in_elems(size_t seg_idx);
-  int roots_offset(size_t seg_idx);
   size_t segment_offset(size_t seg_idx);
 
   HeapRootSegments() {}

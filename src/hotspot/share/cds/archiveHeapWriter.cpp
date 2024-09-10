@@ -182,7 +182,7 @@ void ArchiveHeapWriter::ensure_buffer_space(size_t min_bytes) {
   _buffer->at_grow(to_array_index(min_bytes));
 }
 
-objArrayOop ArchiveHeapWriter::manifest_root_segment(size_t offset, int element_count) {
+objArrayOop ArchiveHeapWriter::allocate_root_segment(size_t offset, int element_count) {
   HeapWord* mem = offset_to_buffered_address<HeapWord *>(offset);
   memset(mem, 0, objArrayOopDesc::object_size(element_count));
 
@@ -236,10 +236,10 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
            "Roots segment " SIZE_FORMAT " start is not aligned: " SIZE_FORMAT,
            segments.count(), oop_offset);
 
-    int seg_start = segments.roots_offset(seg_idx);
-    objArrayOop seg_oop = manifest_root_segment(oop_offset, size_elems);
+    int root_index = 0;
+    objArrayOop seg_oop = allocate_root_segment(oop_offset, size_elems);
     for (int i = 0; i < size_elems; i++) {
-      root_segment_at_put(seg_oop, i, roots->at(seg_start + i));
+      root_segment_at_put(seg_oop, i, roots->at(root_index++));
     }
 
     log_info(cds, heap)("archived obj root segment [%d] = " SIZE_FORMAT " bytes, obj = " PTR_FORMAT,
