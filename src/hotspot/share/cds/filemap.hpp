@@ -180,6 +180,13 @@ class FileMapHeader: private CDSFileMapHeaderBase {
   friend class VMStructs;
 
 private:
+  FileMapHeader() : CDSFileMapHeaderBase() {
+    // Make sure the entire header is deterministically initialized,
+    // otherwise header CRC would be different due to garbage in layout gaps.
+    // TODO: This is actually JDK-8339830, remove after testing.
+    memset(this, 0, sizeof(FileMapHeader));
+  }
+
   // The following fields record the states of the VM during dump time.
   // They are compared with the runtime states to see if the archive
   // can be used.
