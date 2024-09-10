@@ -72,6 +72,7 @@
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
 
+#include "cds/archiveHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "memory/classLoaderMetaspace.hpp"
@@ -729,9 +730,18 @@ size_t ShenandoahHeap::initial_capacity() const {
 }
 
 bool ShenandoahHeap::is_in(const void* p) const {
-  HeapWord* heap_base = (HeapWord*) base();
-  HeapWord* last_region_end = heap_base + ShenandoahHeapRegion::region_size_words() * num_regions();
-  return p >= heap_base && p < last_region_end;
+  if (is_in_reserved(p)) {
+    if (is_full_gc_move_in_progress()) {
+      // Full GC move is running, we do not have a consistent region
+      // information yet. But we know the pointer is in heap.
+      return true;
+    }
+    // Now check if we point to a live section in active region.
+    ShenandoahHeapRegion* r = heap_region_containing(p);
+    return (r->is_active() && p < r->top());
+  } else {
+    return false;
+  }
 }
 
 void ShenandoahHeap::maybe_uncommit(double shrink_before, size_t shrink_until) {
@@ -2481,4 +2491,81 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
   }
 
   return false;
+}
+
+HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
+#if INCLUDE_CDS_JAVA_HEAP
+  // CDS wants a continuous memory range to load a bunch of objects.
+  // This effectively bypasses normal allocation paths, and requires
+  // a bit of massaging to unbreak GC invariants.
+
+  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared(size);
+
+  // Easy case: a single regular region, no further adjustments needed.
+  if (!ShenandoahHeapRegion::requires_humongous(size)) {
+    return allocate_memory(req);
+  }
+
+  // Hard case: the requested size would cause a humongous allocation.
+  // We need to make sure it looks like regular allocation to the rest of GC.
+
+  // CDS code would guarantee no objects straddle multiple regions, as long as
+  // regions are as large as MIN_GC_REGION_ALIGNMENT. It is impractical at this
+  // point to deal with case when Shenandoah runs with smaller regions.
+  // TODO: This check can be dropped once MIN_GC_REGION_ALIGNMENT agrees more with Shenandoah.
+  if (ShenandoahHeapRegion::region_size_bytes() < ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT) {
+    return nullptr;
+  }
+
+  HeapWord* mem = allocate_memory(req);
+  size_t start_idx = heap_region_index_containing(mem);
+  size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
+
+  // Flip humongous -> regular.
+  {
+    ShenandoahHeapLocker locker(lock(), false);
+    for (size_t c = start_idx; c < start_idx + num_regions; c++) {
+      get_region(c)->make_regular_bypass();
+    }
+  }
+
+  return mem;
+#else
+  assert(false, "Archive heap loader should not be available, should not be here");
+  return nullptr;
+#endif // INCLUDE_CDS_JAVA_HEAP
+}
+
+void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
+  // Nothing to do here, except checking that heap looks fine.
+#ifdef ASSERT
+  HeapWord* start = archive_space.start();
+  HeapWord* end = archive_space.end();
+
+  // No unclaimed space between the objects.
+  // Objects are properly allocated in correct regions.
+  HeapWord* cur = start;
+  while (cur < end) {
+    oop oop = cast_to_oop(cur);
+    shenandoah_assert_in_correct_region(nullptr, oop);
+    cur += oop->size();
+  }
+
+  // No unclaimed tail at the end of archive space.
+  assert(cur == end,
+         "Archive space should be fully used: " PTR_FORMAT " " PTR_FORMAT,
+         p2i(cur), p2i(end));
+
+  // Region bounds are good.
+  ShenandoahHeapRegion* begin_reg = heap_region_containing(start);
+  ShenandoahHeapRegion* end_reg = heap_region_containing(end);
+  assert(begin_reg->is_regular(), "Must be");
+  assert(end_reg->is_regular(), "Must be");
+  assert(begin_reg->bottom() == start,
+         "Must agree: archive-space-start: " PTR_FORMAT ", begin-region-bottom: " PTR_FORMAT,
+         p2i(start), p2i(begin_reg->bottom()));
+  assert(end_reg->top() == end,
+         "Must agree: archive-space-end: " PTR_FORMAT ", end-region-top: " PTR_FORMAT,
+         p2i(end), p2i(end_reg->top()));
+#endif
 }

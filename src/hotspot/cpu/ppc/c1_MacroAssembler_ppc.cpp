@@ -86,8 +86,8 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(Rscratch, Roop);
-    lwz(Rscratch, in_bytes(Klass::access_flags_offset()), Rscratch);
-    testbitdi(CCR0, R0, Rscratch, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    lbz(Rscratch, in_bytes(Klass::misc_flags_offset()), Rscratch);
+    testbitdi(CCR0, R0, Rscratch, exact_log2(KlassFlags::_misc_is_value_based_class));
     bne(CCR0, slow_int);
   }
 
@@ -403,15 +403,4 @@ void C1_MacroAssembler::null_check(Register r, Label* Lnull) {
     cmpdi(CCR0, r, 0);
     bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CCR0, Assembler::equal), *Lnull);
   }
-}
-
-address C1_MacroAssembler::call_c_with_frame_resize(address dest, int frame_resize) {
-  if (frame_resize) { resize_frame(-frame_resize, R0); }
-#if defined(ABI_ELFv2)
-  address return_pc = call_c(dest, relocInfo::runtime_call_type);
-#else
-  address return_pc = call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, dest), relocInfo::runtime_call_type);
-#endif
-  if (frame_resize) { resize_frame(frame_resize, R0); }
-  return return_pc;
 }

@@ -113,7 +113,7 @@ jobject JNICALL jfr_get_event_writer(JNIEnv* env, jclass jvm);
 
 jobject JNICALL jfr_new_event_writer(JNIEnv* env, jclass jvm);
 
-jboolean JNICALL jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size);
+void JNICALL jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size);
 
 jlong JNICALL jfr_commit(JNIEnv* env, jclass cls, jlong next_position);
 void JNICALL jfr_flush(JNIEnv* env, jclass jvm);

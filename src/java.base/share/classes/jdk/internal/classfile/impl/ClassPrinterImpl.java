@@ -851,7 +851,7 @@ public final class ClassPrinterImpl {
                                 "type", newo.className().name().stringValue()));
                         case NewPrimitiveArrayInstruction newa -> in.with(leafs(
                                 "dimensions", 1,
-                                "descriptor", newa.typeKind().typeName()));
+                                "descriptor", newa.typeKind().upperBound().displayName()));
                         case NewReferenceArrayInstruction newa -> in.with(leafs(
                                 "dimensions", 1,
                                 "descriptor", newa.componentType().name().stringValue()));
@@ -1038,9 +1038,9 @@ public final class ClassPrinterImpl {
     private static Node typeAnnotationsToTree(Style style, String name, List<TypeAnnotation> annos) {
         return new ListNodeImpl(style, name, annos.stream().map(a ->
                 new MapNodeImpl(FLOW, "anno")
-                        .with(leaf("annotation class", a.className().stringValue()),
+                        .with(leaf("annotation class", a.annotation().className().stringValue()),
                               leaf("target info", a.targetInfo().targetType().name()))
-                        .with(elementValuePairsToTree(a.elements()))));
+                        .with(elementValuePairsToTree(a.annotation().elements()))));
 
     }
 

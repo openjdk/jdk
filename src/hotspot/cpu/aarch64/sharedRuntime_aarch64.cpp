@@ -66,6 +66,12 @@
 
 #define __ masm->
 
+#ifdef PRODUCT
+#define BLOCK_COMMENT(str) /* nothing */
+#else
+#define BLOCK_COMMENT(str) __ block_comment(str)
+#endif
+
 const int StackAlignmentInSlots = StackAlignmentInBytes / VMRegImpl::stack_slot_size;
 
 // FIXME -- this is used by C1
@@ -1811,7 +1817,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ br(Assembler::NE, slow_path_lock);
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      __ lightweight_lock(obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
+      __ lightweight_lock(lock_reg, obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
     }
     __ bind(count);
     __ increment(Address(rthread, JavaThread::held_monitor_count_offset()));
@@ -2175,7 +2181,8 @@ void SharedRuntime::generate_deopt_blob() {
     pad += 512; // Increase the buffer size when compiling for JVMCI
   }
 #endif
-  CodeBuffer buffer("deopt_blob", 2048+pad, 1024);
+  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  CodeBuffer buffer(name, 2048+pad, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words;
   OopMap* map = nullptr;
@@ -2559,20 +2566,23 @@ uint SharedRuntime::out_preserve_stack_slots() {
 // Generate a special Compile2Runtime blob that saves all registers,
 // and setup oopmap.
 //
-SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_type) {
+SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
+  assert(is_polling_page_id(id), "expected a polling page stub id");
+
   ResourceMark rm;
   OopMapSet *oop_maps = new OopMapSet();
   OopMap* map;
 
   // Allocate space for the code.  Setup code generation tools.
-  CodeBuffer buffer("handler_blob", 2048, 1024);
+  const char* name = SharedRuntime::stub_name(id);
+  CodeBuffer buffer(name, 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   address start   = __ pc();
   address call_pc = nullptr;
   int frame_size_in_words;
-  bool cause_return = (poll_type == POLL_AT_RETURN);
-  RegisterSaver reg_save(poll_type == POLL_AT_VECTOR_LOOP /* save_vectors */);
+  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
+  RegisterSaver reg_save(id == SharedStubId::polling_page_vectors_safepoint_handler_id /* save_vectors */);
 
   // When the signal occurred, the LR was either signed and stored on the stack (in which
   // case it will be restored from the stack before being used) or unsigned and not stored
@@ -2684,12 +2694,14 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 // but since this is generic code we don't know what they are and the caller
 // must do any gc of the args.
 //
-RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const char* name) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
   assert (StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
+  assert(is_resolve_id(id), "expected a resolve stub id");
 
   // allocate space for the code
   ResourceMark rm;
 
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 1000, 512);
   MacroAssembler* masm                = new MacroAssembler(&buffer);
 
@@ -2764,3 +2776,199 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   // frame_size_words or bytes??
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);
 }
+
+// Continuation point for throwing of implicit exceptions that are
+// not handled in the current activation. Fabricates an exception
+// oop and initiates normal exception dispatching in this
+// frame. Since we need to preserve callee-saved values (currently
+// only for C2, but done for C1 as well) we need a callee-saved oop
+// map and therefore have to make these stubs into RuntimeStubs
+// rather than BufferBlobs.  If the compiler needs all registers to
+// be preserved between the fault point and the exception handler
+// then it must assume responsibility for that in
+// AbstractCompiler::continuation_for_implicit_null_exception or
+// continuation_for_implicit_division_by_zero_exception. All other
+// implicit exceptions (e.g., NullPointerException or
+// AbstractMethodError on entry) are either at call sites or
+// otherwise assume that stack unwinding will be initiated, so
+// caller saved registers were assumed volatile in the compiler.
+
+RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+  assert(is_throw_id(id), "expected a throw stub id");
+
+  const char* name = SharedRuntime::stub_name(id);
+
+  // Information about frame layout at time of blocking runtime call.
+  // Note that we only have to preserve callee-saved registers since
+  // the compilers are responsible for supplying a continuation point
+  // if they expect all registers to be preserved.
+  // n.b. aarch64 asserts that frame::arg_reg_save_area_bytes == 0
+  enum layout {
+    rfp_off = 0,
+    rfp_off2,
+    return_off,
+    return_off2,
+    framesize // inclusive of return address
+  };
+
+  int insts_size = 512;
+  int locs_size  = 64;
+
+  ResourceMark rm;
+  const char* timer_msg = "SharedRuntime generate_throw_exception";
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+
+  CodeBuffer code(name, insts_size, locs_size);
+  OopMapSet* oop_maps  = new OopMapSet();
+  MacroAssembler* masm = new MacroAssembler(&code);
+
+  address start = __ pc();
+
+  // This is an inlined and slightly modified version of call_VM
+  // which has the ability to fetch the return PC out of
+  // thread-local storage and also sets up last_Java_sp slightly
+  // differently than the real call_VM
+
+  __ enter(); // Save FP and LR before call
+
+  assert(is_even(framesize/2), "sp not 16-byte aligned");
+
+  // lr and fp are already in place
+  __ sub(sp, rfp, ((uint64_t)framesize-4) << LogBytesPerInt); // prolog
+
+  int frame_complete = __ pc() - start;
+
+  // Set up last_Java_sp and last_Java_fp
+  address the_pc = __ pc();
+  __ set_last_Java_frame(sp, rfp, the_pc, rscratch1);
+
+  __ mov(c_rarg0, rthread);
+  BLOCK_COMMENT("call runtime_entry");
+  __ mov(rscratch1, runtime_entry);
+  __ blr(rscratch1);
+
+  // Generate oop map
+  OopMap* map = new OopMap(framesize, 0);
+
+  oop_maps->add_gc_map(the_pc - start, map);
+
+  __ reset_last_Java_frame(true);
+
+  // Reinitialize the ptrue predicate register, in case the external runtime
+  // call clobbers ptrue reg, as we may return to SVE compiled code.
+  __ reinitialize_ptrue();
+
+  __ leave();
+
+  // check for pending exceptions
+#ifdef ASSERT
+  Label L;
+  __ ldr(rscratch1, Address(rthread, Thread::pending_exception_offset()));
+  __ cbnz(rscratch1, L);
+  __ should_not_reach_here();
+  __ bind(L);
+#endif // ASSERT
+  __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+
+  // codeBlob framesize is in words (not VMRegImpl::slot_size)
+  RuntimeStub* stub =
+    RuntimeStub::new_runtime_stub(name,
+                                  &code,
+                                  frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps, false);
+  return stub;
+}
+
+#if INCLUDE_JFR
+
+static void jfr_prologue(address the_pc, MacroAssembler* masm, Register thread) {
+  __ set_last_Java_frame(sp, rfp, the_pc, rscratch1);
+  __ mov(c_rarg0, thread);
+}
+
+// The handle is dereferenced through a load barrier.
+static void jfr_epilogue(MacroAssembler* masm) {
+  __ reset_last_Java_frame(true);
+}
+
+// For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
+// It returns a jobject handle to the event writer.
+// The handle is dereferenced and the return value is the event writer oop.
+RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
+  enum layout {
+    rbp_off,
+    rbpH_off,
+    return_off,
+    return_off2,
+    framesize // inclusive of return address
+  };
+
+  int insts_size = 1024;
+  int locs_size = 64;
+  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_write_checkpoint_id);
+  CodeBuffer code(name, insts_size, locs_size);
+  OopMapSet* oop_maps = new OopMapSet();
+  MacroAssembler* masm = new MacroAssembler(&code);
+
+  address start = __ pc();
+  __ enter();
+  int frame_complete = __ pc() - start;
+  address the_pc = __ pc();
+  jfr_prologue(the_pc, masm, rthread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
+  jfr_epilogue(masm);
+  __ resolve_global_jobject(r0, rscratch1, rscratch2);
+  __ leave();
+  __ ret(lr);
+
+  OopMap* map = new OopMap(framesize, 1); // rfp
+  oop_maps->add_gc_map(the_pc - start, map);
+
+  RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
+    RuntimeStub::new_runtime_stub(name, &code, frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps, false);
+  return stub;
+}
+
+// For c2: call to return a leased buffer.
+RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
+  enum layout {
+    rbp_off,
+    rbpH_off,
+    return_off,
+    return_off2,
+    framesize // inclusive of return address
+  };
+
+  int insts_size = 1024;
+  int locs_size = 64;
+
+  const char* name = SharedRuntime::stub_name(SharedStubId::jfr_return_lease_id);
+  CodeBuffer code(name, insts_size, locs_size);
+  OopMapSet* oop_maps = new OopMapSet();
+  MacroAssembler* masm = new MacroAssembler(&code);
+
+  address start = __ pc();
+  __ enter();
+  int frame_complete = __ pc() - start;
+  address the_pc = __ pc();
+  jfr_prologue(the_pc, masm, rthread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), 1);
+  jfr_epilogue(masm);
+
+  __ leave();
+  __ ret(lr);
+
+  OopMap* map = new OopMap(framesize, 1); // rfp
+  oop_maps->add_gc_map(the_pc - start, map);
+
+  RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
+    RuntimeStub::new_runtime_stub(name, &code, frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps, false);
+  return stub;
+}
+
+#endif // INCLUDE_JFR
