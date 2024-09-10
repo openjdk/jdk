@@ -121,6 +121,7 @@ int LogFileStreamOutput::write_internal_line(const LogDecorations& decorations, 
   const bool use_decorations = !_decorators.is_empty();
 
   if (!_fold_multilines) {
+    const char* base = msg;
     int written_tmp = 0;
     while (true) {
       if (use_decorations) {
@@ -133,7 +134,7 @@ int LogFileStreamOutput::write_internal_line(const LogDecorations& decorations, 
         written += written_tmp;
         break;
       }
-      msg += written_tmp;
+      msg = base + written_tmp;
     }
   } else {
     if (use_decorations) {
