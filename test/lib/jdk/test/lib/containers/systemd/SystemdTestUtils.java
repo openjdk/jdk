@@ -43,7 +43,7 @@ public class SystemdTestUtils {
 
     private static final String CGROUPS_PROVIDER = Metrics.systemMetrics().getProvider();
     private static boolean CGROUPS_V2 = "cgroupv2".equals(CGROUPS_PROVIDER);
-    private static boolean RUN_AS_USER = !Platform.isRoot() && CGROUPS_V2;
+    public static boolean RUN_AS_USER = !Platform.isRoot() && CGROUPS_V2;
     private static final String SLICE_NAMESPACE_PREFIX = "jdk_internal";
     private static final String SLICE_D_MEM_CONFIG_FILE = "memory-limit.conf";
     private static final String SLICE_D_CPU_CONFIG_FILE = "cpu-limit.conf";
