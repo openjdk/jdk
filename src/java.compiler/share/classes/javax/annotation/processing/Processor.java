@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,7 +195,7 @@ import javax.lang.model.SourceVersion;
  * processors can operate on files.
  *
  * @apiNote Implementors of this interface may find it convenient
- * to extend {@link AbstractProcessor} rather than implementing this
+ * to extend {@link AbstractProcessor} rather than implement this
  * interface directly.
  *
  * @since 1.6

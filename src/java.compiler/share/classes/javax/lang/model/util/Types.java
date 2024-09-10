@@ -40,7 +40,7 @@ import javax.lang.model.type.*;
  * ExecutableType Executable types} and the pseudo-types for
  * {@linkplain TypeKind#PACKAGE packages} and {@linkplain
  * TypeKind#MODULE modules} are generally out of scope for these
- * methods. One or more out of scope arguments will typically result
+ * methods. One or more out-of-scope arguments will typically result
  * in a method throwing an {@link IllegalArgumentException}.
  *
  * <p>Where a method returns a type mirror or a collection of type
@@ -165,7 +165,7 @@ public interface Types {
      * the direct supertypes of a type mirror representing {@code
      * java.lang.Object}.
      *
-     * Annotations on the direct super types are preserved.
+     * Annotations on the direct supertypes are preserved.
      *
      * @param t  the type being examined
      * @return the direct supertypes, or an empty list if none
@@ -318,7 +318,7 @@ public interface Types {
      * Annotations on the type arguments are preserved.
      *
      * <p> If the containing type is a parameterized type,
-     * the number of type arguments must equal the
+     * the number of type arguments must be equal to the
      * number of {@code typeElem}'s formal type parameters.
      * If it is not parameterized or if it is {@code null}, this method is
      * equivalent to {@code getDeclaredType(typeElem, typeArgs)}.
@@ -354,7 +354,7 @@ public interface Types {
     /**
      * {@return a type mirror equivalent to the argument, but with no annotations}
      * If the type mirror is a composite type, such as an array type
-     * or a wildcard type, any constitute types, such as the
+     * or a wildcard type, any constituent types, such as the
      * component type of an array and the type of the bounds of a
      * wildcard type, also have no annotations, recursively.
      *
