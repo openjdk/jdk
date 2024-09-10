@@ -21,13 +21,15 @@
  * questions.
  */
 
-import java.awt.*;
+import java.awt.Checkbox;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.Graphics;
 
 /**
  * @test
  * @key headful
  * @bug 7090424
- * @author Sergey Bylokhov
  */
 public final class CheckboxRepaint extends Checkbox {
 

@@ -30,7 +30,6 @@ import java.awt.List;
  * @test
  * @key headful
  * @bug 7090424
- * @author Sergey Bylokhov
  */
 public final class ListRepaint extends List {
 

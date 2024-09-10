@@ -21,14 +21,15 @@
  * questions.
  */
 
-
-import java.awt.*;
+import java.awt.Button;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.Graphics;
 
 /**
  * @test
  * @key headful
  * @bug 7090424
- * @author Sergey Bylokhov
  */
 public final class ButtonRepaint extends Button {
 
