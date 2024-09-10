@@ -1310,7 +1310,7 @@ void os::check_core_prerequisites(char* buffer, size_t bufferSize, bool check_on
       jio_snprintf(buffer, bufferSize, ".\\hs_err_pid%u.mdmp", pid);
     }
 
-    if (check_only == false && dumpFile == nullptr &&
+    if (!check_only && dumpFile == nullptr &&
        (dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr))
                  == INVALID_HANDLE_VALUE) {
       jio_snprintf(buffer, bufferSize, "Failed to create minidump file (0x%x).", GetLastError());
@@ -1318,7 +1318,9 @@ void os::check_core_prerequisites(char* buffer, size_t bufferSize, bool check_on
     }
   }
 
-  VMError::record_coredump_status(buffer, status);
+  if (!check_only) {
+    VMError::record_coredump_status(buffer, status);
+  }
 }
 
 void os::abort(bool dump_core, void* siginfo, const void* context) {

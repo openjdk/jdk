@@ -140,7 +140,9 @@ void os::check_core_prerequisites(char* buffer, size_t bufferSize, bool check_on
     }
   }
 
-  VMError::record_coredump_status(buffer, status);
+  if (!check_only) {
+    VMError::record_coredump_status(buffer, status);
+  }
 }
 
 bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
