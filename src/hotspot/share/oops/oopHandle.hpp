@@ -27,7 +27,6 @@
 
 #include "metaprogramming/primitiveConversions.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "oops/accessDecorators.hpp"
 
 #include <type_traits>
 
@@ -62,7 +61,6 @@ public:
     ::swap(_obj, copy._obj);
   }
 
-  template <DecoratorSet decorators = DECORATORS_NONE>
   inline oop resolve() const;
   inline oop peek() const;
 
