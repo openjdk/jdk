@@ -89,8 +89,44 @@ public class CgroupSubsystemCpuControllerTest {
 
         assertNotNull(cpu.getCgroupPath());
         assertEquals(expectedPath, cpu.getCgroupPath());
-        assertEquals(2, cpu.setCgroupPaths.size());
-        List<String> expectedList = List.of("/a/b/c", "/a/b");
+        // All paths below /a/b/c/d => /, /a, /a/b, /a/b/c and /a/b
+        assertEquals(5, cpu.setCgroupPaths.size());
+        // The full hierarchy walk, plus one setPath() call to the expected path
+        // due to the lowest limit
+        List<String> expectedList = List.of("/a/b/c",
+                                            expectedPath,
+                                            "/a",
+                                            "/",
+                                            expectedPath);
+        assertEquals(expectedList, cpu.setCgroupPaths);
+    }
+
+    @Test
+    public void adjustedLimitTwoLowerLimits() {
+        String cgroupPath = "/a/b/c/d";
+        String pathWithLimit = "/a/b/c";
+        String expectedPath = "/a";
+        long hostCpus = CgroupMetrics.getTotalCpuCount0();
+        assumeTrue(hostCpus > 2); // Skip on systems < 3 host cpus.
+        Map<String, CpuLimit> limits = Map.of(cgroupPath, UNLIMITED,
+                                              pathWithLimit, new CpuLimit(10_000, 20_000), /* two cores */
+                                              "/a/b", UNLIMITED,
+                                              expectedPath, new CpuLimit(10_000, 10_000), /* one core */
+                                              "/", UNLIMITED);
+        MockCgroupSubsystemCpuController cpu = new MockCgroupSubsystemCpuController(true, cgroupPath, limits);
+        CgroupUtil.adjustController(cpu);
+
+        assertNotNull(cpu.getCgroupPath());
+        assertEquals(expectedPath, cpu.getCgroupPath());
+        // All paths below /a/b/c/d => /, /a, /a/b, /a/b/c and /a
+        assertEquals(5, cpu.setCgroupPaths.size());
+        // The full hierarchy walk, plus one setPath() call to the expected path
+        // due to the lowest limit
+        List<String> expectedList = List.of(pathWithLimit,
+                                            "/a/b",
+                                            expectedPath,
+                                            "/",
+                                            expectedPath);
         assertEquals(expectedList, cpu.setCgroupPaths);
     }
 

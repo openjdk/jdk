@@ -46,7 +46,9 @@ import jdk.internal.platform.CgroupUtil;
 public class CgroupSubsystemMemoryControllerTest {
 
     private static final Long UNLIMITED = -1L;
-    private static final Long FIVE_HUNDRED_MB = (long)500 * 1024 * 1024 * 1024;
+    private static final int MB = 1024 * 1024;
+    private static final Long FIVE_HUNDRED_MB = (long)500 * MB;
+    private static final Long FOUR_HUNDRED_MB = (long)400 * MB;
 
     @Test
     public void noAdjustementNeededIsNoop() {
@@ -83,14 +85,37 @@ public class CgroupSubsystemMemoryControllerTest {
                                               "/a/b", UNLIMITED,
                                               "/a", UNLIMITED,
                                               expectedPath, FIVE_HUNDRED_MB);
-        MockCgroupSubsystemMemoryController cpu = new MockCgroupSubsystemMemoryController(true, cgroupPath, limits);
-        CgroupUtil.adjustController(cpu);
+        MockCgroupSubsystemMemoryController memory = new MockCgroupSubsystemMemoryController(true, cgroupPath, limits);
+        CgroupUtil.adjustController(memory);
 
-        assertNotNull(cpu.getCgroupPath());
-        assertEquals(expectedPath, cpu.getCgroupPath());
-        assertEquals(4, cpu.setCgroupPaths.size());
-        List<String> expectedList = List.of("/a/b/c", "/a/b", "/a", "/");
-        assertEquals(expectedList, cpu.setCgroupPaths);
+        assertNotNull(memory.getCgroupPath());
+        assertEquals(expectedPath, memory.getCgroupPath());
+        // All paths below /a/b/c/d => /a/b/c, /a/b, /a, / and /
+        assertEquals(5, memory.setCgroupPaths.size());
+        List<String> expectedList = List.of("/a/b/c", "/a/b", "/a", "/", "/");
+        assertEquals(expectedList, memory.setCgroupPaths);
+    }
+
+    @Test
+    public void adjustedLimitTwoLimits() {
+        String cgroupPath = "/a/b/c/d/e";
+        String expectedPath = "/a";
+        Map<String, Long> limits = Map.of(cgroupPath, FIVE_HUNDRED_MB,
+                                          "/a/b/c/d", UNLIMITED,
+                                          "/a/b/c", UNLIMITED,
+                                          "/a/b", UNLIMITED,
+                                          expectedPath, FOUR_HUNDRED_MB,
+                                          "/", UNLIMITED);
+        MockCgroupSubsystemMemoryController memory = new MockCgroupSubsystemMemoryController(true, cgroupPath, limits);
+        CgroupUtil.adjustController(memory);
+
+        assertNotNull(memory.getCgroupPath());
+        assertEquals(expectedPath, memory.getCgroupPath());
+        // All paths below /a/b/c/d/e => /a/b/c/d, /a/b/c, /a/b, /a, / and /a
+        assertEquals(6, memory.setCgroupPaths.size());
+        List<String> expectedList = List.of("/a/b/c/d", "/a/b/c",
+                                            "/a/b", "/a", "/", "/a");
+        assertEquals(expectedList, memory.setCgroupPaths);
     }
 
     private static class MockCgroupSubsystemMemoryController implements CgroupSubsystemMemoryController {
