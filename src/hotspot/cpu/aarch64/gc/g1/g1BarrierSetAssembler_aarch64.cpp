@@ -207,7 +207,7 @@ static void generate_post_barrier_fast_path(MacroAssembler* masm,
                                             const Register tmp2,
                                             Label& done,
                                             bool new_val_may_be_null) {
-    // Does store cross heap regions?
+  // Does store cross heap regions?
   __ eor(tmp1, store_addr, new_val);                     // tmp1 := store address ^ new value
   __ lsr(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);   // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
   __ cbz(tmp1, done);
