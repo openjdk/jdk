@@ -334,7 +334,7 @@ public class SctpNet {
         loadSctpLibrary();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void loadSctpLibrary() {
         NIOUtil.load();   // loads nio & net native libraries
         java.security.AccessController.doPrivileged(

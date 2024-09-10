@@ -2805,7 +2805,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     /**
      * Exceptionally completes this CompletableFuture with
      * a {@link TimeoutException} if not otherwise completed
-     * before the given timeout.
+     * before the given timeout elapsed.
      *
      * @param timeout how long to wait before completing exceptionally
      *        with a TimeoutException, in units of {@code unit}
@@ -2825,7 +2825,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
 
     /**
      * Completes this CompletableFuture with the given value if not
-     * otherwise completed before the given timeout.
+     * otherwise completed before the given timeout elapsed.
      *
      * @param value the value to use upon timeout
      * @param timeout how long to wait before completing normally

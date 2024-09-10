@@ -165,10 +165,11 @@
  * In the reference implementation, access to restricted methods can be granted to
  * specific modules using the command line option {@code --enable-native-access=M1,M2, ... Mn},
  * where {@code M1}, {@code M2}, {@code ... Mn} are module names (for the unnamed module,
- * the special value {@code ALL-UNNAMED} can be used). If this option is specified,
- * access to restricted methods are only granted to the modules listed by that option.
- * If this option is not specified, access to restricted methods is enabled for all
- * modules, but access to restricted methods will result in runtime warnings.
+ * the special value {@code ALL-UNNAMED} can be used). Access to restricted methods
+ * from modules not listed by that option is deemed <em>illegal</em>. Clients can
+ * control how access to restricted methods is handled, using the command line
+ * option {@code --illegal-native-access}. If this option is not specified,
+ * illegal access to restricted methods will result in runtime warnings.
  *
  * @spec jni/index.html Java Native Interface Specification
  *

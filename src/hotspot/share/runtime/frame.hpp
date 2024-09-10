@@ -387,7 +387,9 @@ class frame {
   static int interpreter_frame_monitor_size();
   static int interpreter_frame_monitor_size_in_bytes();
 
+#ifdef ASSERT
   void interpreter_frame_verify_monitor(BasicObjectLock* value) const;
+#endif
 
   // Return/result value from this interpreter frame
   // If the method return type is T_OBJECT or T_ARRAY populates oop_result
@@ -431,15 +433,17 @@ class frame {
   void describe_pd(FrameValues& values, int frame_no);
 
  public:
-  void print_value() const { print_value_on(tty,nullptr); }
-  void print_value_on(outputStream* st, JavaThread *thread) const;
+  void print_value() const { print_value_on(tty); }
+  void print_value_on(outputStream* st) const;
   void print_on(outputStream* st) const;
   void interpreter_frame_print_on(outputStream* st) const;
   void print_on_error(outputStream* st, char* buf, int buflen, bool verbose = false) const;
   static void print_C_frame(outputStream* st, char* buf, int buflen, address pc);
 
+#ifndef PRODUCT
   // Add annotated descriptions of memory locations belonging to this frame to values
   void describe(FrameValues& values, int frame_no, const RegisterMap* reg_map=nullptr);
+#endif
 
   // Conversion from a VMReg to physical stack location
   template <typename RegisterMapT>
@@ -492,9 +496,11 @@ class frame {
 
   // Verification
   void verify(const RegisterMap* map) const;
+#ifdef ASSERT
   static bool verify_return_pc(address x);
   // Usage:
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
+#endif
 
 #include CPU_HEADER(frame)
 

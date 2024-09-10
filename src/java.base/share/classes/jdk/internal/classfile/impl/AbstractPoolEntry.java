@@ -409,60 +409,14 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         void writeTo(BufWriterImpl pool) {
+            pool.writeU1(tag);
             if (rawBytes != null) {
-                pool.writeU1(tag);
                 pool.writeU2(rawLen);
                 pool.writeBytes(rawBytes, offset, rawLen);
             }
             else {
                 // state == STRING and no raw bytes
-                if (stringValue.length() > 65535) {
-                    throw new IllegalArgumentException("string too long");
-                }
-                pool.writeU1(tag);
-                pool.writeU2(charLen);
-                for (int i = 0; i < charLen; ++i) {
-                    char c = stringValue.charAt(i);
-                    if (c >= '\001' && c <= '\177') {
-                        // Optimistic writing -- hope everything is bytes
-                        // If not, we bail out, and alternate path patches the length
-                        pool.writeU1((byte) c);
-                    }
-                    else {
-                        int charLength = stringValue.length();
-                        int byteLength = i;
-                        char c1;
-                        for (int j = i; j < charLength; ++j) {
-                            c1 = (stringValue).charAt(j);
-                            if (c1 >= '\001' && c1 <= '\177') {
-                                byteLength++;
-                            } else if (c1 > '\u07FF') {
-                                byteLength += 3;
-                            } else {
-                                byteLength += 2;
-                            }
-                        }
-                        if (byteLength > 65535) {
-                            throw new IllegalArgumentException();
-                        }
-                        int byteLengthFinal = byteLength;
-                        pool.patchInt(pool.size() - i - 2, 2, byteLengthFinal);
-                        for (int j = i; j < charLength; ++j) {
-                            c1 = (stringValue).charAt(j);
-                            if (c1 >= '\001' && c1 <= '\177') {
-                                pool.writeU1((byte) c1);
-                            } else if (c1 > '\u07FF') {
-                                pool.writeU1((byte) (0xE0 | c1 >> 12 & 0xF));
-                                pool.writeU1((byte) (0x80 | c1 >> 6 & 0x3F));
-                                pool.writeU1((byte) (0x80 | c1 & 0x3F));
-                            } else {
-                                pool.writeU1((byte) (0xC0 | c1 >> 6 & 0x1F));
-                                pool.writeU1((byte) (0x80 | c1 & 0x3F));
-                            }
-                        }
-                        break;
-                    }
-                }
+                pool.writeUTF(stringValue);
             }
         }
     }
@@ -533,15 +487,6 @@ public abstract sealed class AbstractPoolEntry {
 
         public String asInternalName() {
             return ref1.stringValue();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) { return true; }
-            if (o instanceof AbstractNamedEntry ne) {
-                return tag == ne.tag() && name().equals(ref1());
-            }
-            return false;
         }
     }
 
@@ -1039,34 +984,13 @@ public abstract sealed class AbstractPoolEntry {
 
     }
 
-    abstract static sealed class PrimitiveEntry<T extends ConstantDesc>
-            extends AbstractPoolEntry {
-        protected final T val;
+    public static final class IntegerEntryImpl extends AbstractPoolEntry implements IntegerEntry {
 
-        public PrimitiveEntry(ConstantPool constantPool, int tag, int index, T val) {
-            super(constantPool, tag, index, hash1(tag, val.hashCode()));
-            this.val = val;
-        }
-
-        public T value() {
-            return val;
-        }
-
-        public ConstantDesc constantValue() {
-            return value();
-        }
-
-        @Override
-        public String toString() {
-            return "" + tag() + value();
-        }
-    }
-
-    public static final class IntegerEntryImpl extends PrimitiveEntry<Integer>
-            implements IntegerEntry {
+        private final int val;
 
         IntegerEntryImpl(ConstantPool cpm, int index, int i) {
-            super(cpm, ClassFile.TAG_INTEGER, index, i);
+            super(cpm, ClassFile.TAG_INTEGER, index, hash1(ClassFile.TAG_INTEGER, Integer.hashCode(i)));
+            val = i;
         }
 
         @Override
@@ -1082,7 +1006,12 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public int intValue() {
-            return value();
+            return val;
+        }
+
+        @Override
+        public ConstantDesc constantValue() {
+            return val;
         }
 
         @Override
@@ -1095,11 +1024,14 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class FloatEntryImpl extends PrimitiveEntry<Float>
+    public static final class FloatEntryImpl extends AbstractPoolEntry
             implements FloatEntry {
 
+        private final float val;
+
         FloatEntryImpl(ConstantPool cpm, int index, float f) {
-            super(cpm, ClassFile.TAG_FLOAT, index, f);
+            super(cpm, ClassFile.TAG_FLOAT, index, hash1(ClassFile.TAG_FLOAT, Float.hashCode(f)));
+            val = f;
         }
 
         @Override
@@ -1115,7 +1047,12 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public float floatValue() {
-            return value();
+            return val;
+        }
+
+        @Override
+        public ConstantDesc constantValue() {
+            return val;
         }
 
         @Override
@@ -1128,10 +1065,13 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class LongEntryImpl extends PrimitiveEntry<Long> implements LongEntry {
+    public static final class LongEntryImpl extends AbstractPoolEntry implements LongEntry {
+
+        private final long val;
 
         LongEntryImpl(ConstantPool cpm, int index, long l) {
-            super(cpm, ClassFile.TAG_LONG, index, l);
+            super(cpm, ClassFile.TAG_LONG, index, hash1(ClassFile.TAG_LONG, Long.hashCode(l)));
+            val = l;
         }
 
         @Override
@@ -1147,7 +1087,12 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public long longValue() {
-            return value();
+            return val;
+        }
+
+        @Override
+        public ConstantDesc constantValue() {
+            return val;
         }
 
         @Override
@@ -1160,10 +1105,13 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class DoubleEntryImpl extends PrimitiveEntry<Double> implements DoubleEntry {
+    public static final class DoubleEntryImpl extends AbstractPoolEntry implements DoubleEntry {
+
+        private final double val;
 
         DoubleEntryImpl(ConstantPool cpm, int index, double d) {
-            super(cpm, ClassFile.TAG_DOUBLE, index, d);
+            super(cpm, ClassFile.TAG_DOUBLE, index, hash1(ClassFile.TAG_DOUBLE, Double.hashCode(d)));
+            val = d;
         }
 
         @Override
@@ -1179,7 +1127,12 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public double doubleValue() {
-            return value();
+            return val;
+        }
+
+        @Override
+        public ConstantDesc constantValue() {
+            return val;
         }
 
         @Override

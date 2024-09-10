@@ -463,6 +463,22 @@ public class HtmlIds {
     }
 
     /**
+     * Returns an id for text documenting a type parameter of a class or method.
+     *
+     * @param paramName the name of the type parameter
+     * @param owner the enclosing element
+     *
+     * @return the id
+     */
+    public HtmlId forTypeParam(String paramName, Element owner) {
+        if (utils.isExecutableElement(owner)) {
+            return HtmlId.of(forMember((ExecutableElement) owner).getFirst().name()
+                    + "-type-param-" + paramName);
+        }
+        return HtmlId.of("type-param-" + paramName);
+    }
+
+    /**
      * Returns an id for one of the kinds of section in the pages for item group summaries.
      *
      * <p>Note: while the use of simple names (that are not keywords)
