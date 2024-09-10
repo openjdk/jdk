@@ -1,5 +1,6 @@
 package jdk.internal.lang.stable;
 
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -29,7 +30,23 @@ public final class StableValueFactories {
 
     public static <T, R> Function<T, R> newCachingFunction(Set<? extends T> inputs,
                                                            Function<? super T, ? extends R> original) {
-        return CachingFunction.of(inputs, original);
+        if (inputs.isEmpty()) {
+            return EmptyCachingFunction.of(original);
+        }
+        return inputs instanceof EnumSet<?>
+                ? CachingEnumFunction.of(inputs, original)
+                : CachingFunction.of(inputs, original);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T, R extends Enum<R>> EnumSet<R> asEnumSet(Set<? extends T> original) {
+        return (EnumSet<R>) original;
+    }
+
+    public static <T extends Enum<T>, R> Function<T, R> newCachingEnumFunction(EnumSet<T> inputs,
+                                                                               Function<? super T, ? extends R> original) {
+
+        return CachingEnumFunction.of(inputs, original);
     }
 
     public static <T> StableValueImpl<T>[] ofArray(int size) {
