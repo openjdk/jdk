@@ -291,7 +291,7 @@ static void generate_post_barrier_fast_path(MacroAssembler* masm,
                                             Label& done,
                                             bool new_val_may_be_null) {
   CardTableBarrierSet* ct = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
-    // Does store cross heap regions?
+  // Does store cross heap regions?
   __ movptr(tmp, store_addr);                                    // tmp := store address
   __ xorptr(tmp, new_val);                                       // tmp := store address ^ new value
   __ shrptr(tmp, G1HeapRegion::LogOfHRGrainBytes);               // ((store address ^ new value) >> LogOfHRGrainBytes) == 0?

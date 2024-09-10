@@ -181,7 +181,7 @@ bool G1BarrierSetC2::g1_can_remove_post_barrier(GraphKit* kit,
     return false; // Cannot unalias unless there are precise offsets.
   }
   if (alloc == nullptr) {
-     return false; // No allocation found.
+    return false; // No allocation found.
   }
 
   Node* mem = store_ctrl;   // Start search from Store node.
@@ -329,7 +329,7 @@ Node* G1BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) co
 }
 
 Node* G1BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
-                                                         Node* new_val, const Type* value_type) const {
+                                                     Node* new_val, const Type* value_type) const {
   GraphKit* kit = access.kit();
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_val_at_resolved(access, expected_val, new_val, value_type);
@@ -339,7 +339,7 @@ Node* G1BarrierSetC2::atomic_cmpxchg_val_at_resolved(C2AtomicParseAccess& access
 }
 
 Node* G1BarrierSetC2::atomic_cmpxchg_bool_at_resolved(C2AtomicParseAccess& access, Node* expected_val,
-                                                          Node* new_val, const Type* value_type) const {
+                                                      Node* new_val, const Type* value_type) const {
   GraphKit* kit = access.kit();
   if (!access.is_oop()) {
     return BarrierSetC2::atomic_cmpxchg_bool_at_resolved(access, expected_val, new_val, value_type);
@@ -480,10 +480,10 @@ int G1BarrierSetC2::get_store_barrier(C2Access& access) const {
     return G1C2BarrierPre | G1C2BarrierPost;
   }
   GraphKit* kit = (static_cast<C2ParseAccess&>(access)).kit();
-  Node * ctl = kit->control();
+  Node* ctl = kit->control();
   Node* adr = access.addr().node();
   uint adr_idx = kit->C->get_alias_index(access.addr().type());
-  assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
+  assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory");
 
   bool can_remove_pre_barrier = g1_can_remove_pre_barrier(kit, &kit->gvn(), adr, access.type(), adr_idx);
 
