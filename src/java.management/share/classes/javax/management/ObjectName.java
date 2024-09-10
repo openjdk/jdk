@@ -1037,30 +1037,25 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
 
     /**
      * Deserializes an {@link ObjectName} from an {@link ObjectInputStream}.
-     * @serialData <ul>
-     *               <li>In the current serial form the string
-     *                   &quot;&lt;domain&gt;:&lt;properties&gt;&lt;wild&gt;&quot;,
-     *                   where: <ul>
-     *                            <li>&lt;domain&gt; represents the domain part
-     *                                of the {@link ObjectName}</li>
-     *                            <li>&lt;properties&gt; represents the list of
-     *                                properties, as returned by
-     *                                {@link #getKeyPropertyListString}
-     *                            <li>&lt;wild&gt; is empty if not
-     *                                <code>isPropertyPattern</code>, or
-     *                                is the character "<code>*</code>" if
-     *                                <code>isPropertyPattern</code>
-     *                                and &lt;properties&gt; is empty, or
-     *                                is "<code>,*</code>" if
-     *                                <code>isPropertyPattern</code> and
-     *                                &lt;properties&gt; is not empty.
-     *                            </li>
-     *                          </ul>
-     *                   The intent is that this string could be supplied
-     *                   to the {@link #ObjectName(String)} constructor to
-     *                   produce an equivalent {@link ObjectName}.
-     *               </li>
+     * @serialData The string &quot;&lt;domain&gt;:&lt;properties&gt;&lt;wild&gt;&quot;, where:
+     *             <ul>
+     *               <li>&lt;domain&gt; represents the domain part
+     *                   of the {@link ObjectName}</li>
+     *               <li>&lt;properties&gt; represents the list of
+     *                   properties, as returned by
+     *                   {@link #getKeyPropertyListString}</li>
+     *               <li>&lt;wild&gt; is empty if not
+     *                   <code>isPropertyPattern</code>, or
+     *                   is the character "<code>*</code>" if
+     *                   <code>isPropertyPattern</code>
+     *                   and &lt;properties&gt; is empty, or
+     *                   is "<code>,*</code>" if
+     *                   <code>isPropertyPattern</code> and
+     *                   &lt;properties&gt; is not empty.</li>
      *             </ul>
+     *             The intent is that this string could be supplied
+     *             to the {@link #ObjectName(String)} constructor to
+     *             produce an equivalent {@link ObjectName}.
      */
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException {
@@ -1079,30 +1074,25 @@ public class ObjectName implements Comparable<ObjectName>, QueryExp {
 
     /**
      * Serializes an {@link ObjectName} to an {@link ObjectOutputStream}.
-     * @serialData <ul>
-     *               <li>In the current serial form the string
-     *                   &quot;&lt;domain&gt;:&lt;properties&gt;&lt;wild&gt;&quot;,
-     *                   where: <ul>
-     *                            <li>&lt;domain&gt; represents the domain part
-     *                                of the {@link ObjectName}</li>
-     *                            <li>&lt;properties&gt; represents the list of
-     *                                properties, as returned by
-     *                                {@link #getKeyPropertyListString}
-     *                            <li>&lt;wild&gt; is empty if not
-     *                                <code>isPropertyPattern</code>, or
-     *                                is the character "<code>*</code>" if
-     *                                this <code>isPropertyPattern</code>
-     *                                and &lt;properties&gt; is empty, or
-     *                                is "<code>,*</code>" if
-     *                                <code>isPropertyPattern</code> and
-     *                                &lt;properties&gt; is not empty.
-     *                            </li>
-     *                          </ul>
-     *                   The intent is that this string could be supplied
-     *                   to the {@link #ObjectName(String)} constructor to
-     *                   produce an equivalent {@link ObjectName}.
-     *               </li>
+     * @serialData The string &quot;&lt;domain&gt;:&lt;properties&gt;&lt;wild&gt;&quot;, where:
+     *             <ul>
+     *               <li>&lt;domain&gt; represents the domain part
+     *                   of the {@link ObjectName}</li>
+     *               <li>&lt;properties&gt; represents the list of
+     *                   properties, as returned by
+     *                   {@link #getKeyPropertyListString}</li>
+     *               <li>&lt;wild&gt; is empty if not
+     *                   <code>isPropertyPattern</code>, or
+     *                   is the character "<code>*</code>" if
+     *                   this <code>isPropertyPattern</code>
+     *                   and &lt;properties&gt; is empty, or
+     *                   is "<code>,*</code>" if
+     *                   <code>isPropertyPattern</code> and
+     *                   &lt;properties&gt; is not empty.</li>
      *             </ul>
+     *             The intent is that this string could be supplied
+     *             to the {@link #ObjectName(String)} constructor to
+     *             produce an equivalent {@link ObjectName}.
      */
     private void writeObject(ObjectOutputStream out)
             throws IOException {
