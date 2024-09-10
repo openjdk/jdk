@@ -28,13 +28,12 @@ package javax.crypto;
 import jdk.internal.javac.PreviewFeature;
 
 import java.security.InvalidAlgorithmParameterException;
-import java.security.KDFParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>) for the
- * {@code KDF} class.
+ * Key Derivation Function ({@link KDF}) class.
  * <p>
  * All the abstract methods in this class must be implemented by each
  * cryptographic service provider who wishes to supply the implementation of a

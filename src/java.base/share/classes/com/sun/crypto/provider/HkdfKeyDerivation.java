@@ -34,14 +34,12 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
-import java.security.KDFParameters;
+import javax.crypto.KDFParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidParameterSpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -56,6 +54,16 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     protected final int hmacLen;
     protected final String hmacAlgName;
 
+    private static final int SHA256_HMAC_SIZE = 32;
+    private static final int SHA384_HMAC_SIZE = 48;
+    private static final int SHA512_HMAC_SIZE = 64;
+
+    private static final Integer[] SUPPORTED_HMAC_SIZES = new Integer[] {
+        SHA256_HMAC_SIZE,
+        SHA384_HMAC_SIZE,
+        SHA512_HMAC_SIZE
+    };
+
     /**
      * The sole constructor.
      *
@@ -66,13 +74,18 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *     if the initialization parameters are inappropriate for this
      *     {@code KDFSpi}
      */
-    HkdfKeyDerivation(String hmacAlgName, int hmacLen,
+    private HkdfKeyDerivation(String hmacAlgName, int hmacLen,
                       KDFParameters kdfParameters)
         throws InvalidAlgorithmParameterException {
         super(kdfParameters);
         if (kdfParameters != null) {
             throw new InvalidAlgorithmParameterException(
                 hmacAlgName + " does not support parameters");
+        }
+        // added to enforce valid values at reviewer's request
+        if (!Arrays.asList(SUPPORTED_HMAC_SIZES).contains(hmacLen)){
+            throw new InternalError(
+                "Subclass attempted to use an invalid hmacLen");
         }
         this.hmacAlgName = hmacAlgName;
         this.hmacLen = hmacLen;
@@ -252,6 +265,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 for (SecretKey workItem : localKeys) {
                     os.writeBytes(CipherCore.getKeyBytes(workItem));
                 }
+                // deliberately omitting os.flush(), since we are writing to
+                // memory, and toByteArray() reads like there isn't an explicit
+                // need for this call
                 return os.toByteArray();
             }
         } else if(keys != null) {
@@ -368,21 +384,21 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     public static final class HkdfSHA256 extends HkdfKeyDerivation {
         public HkdfSHA256(KDFParameters kdfParameters)
             throws InvalidAlgorithmParameterException {
-            super("HmacSHA256", 32, kdfParameters);
+            super("HmacSHA256", SHA256_HMAC_SIZE, kdfParameters);
         }
     }
 
     public static final class HkdfSHA384 extends HkdfKeyDerivation {
         public HkdfSHA384(KDFParameters kdfParameters)
             throws InvalidAlgorithmParameterException {
-            super("HmacSHA384", 48, kdfParameters);
+            super("HmacSHA384", SHA384_HMAC_SIZE, kdfParameters);
         }
     }
 
     public static final class HkdfSHA512 extends HkdfKeyDerivation {
         public HkdfSHA512(KDFParameters kdfParameters)
             throws InvalidAlgorithmParameterException {
-            super("HmacSHA512", 64, kdfParameters);
+            super("HmacSHA512", SHA512_HMAC_SIZE, kdfParameters);
         }
     }
 

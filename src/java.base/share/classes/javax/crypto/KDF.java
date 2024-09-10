@@ -31,12 +31,10 @@ import sun.security.jca.GetInstance.Instance;
 import sun.security.util.Debug;
 
 import java.security.InvalidAlgorithmParameterException;
-import java.security.KDFParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.Provider.Service;
-import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Iterator;
 import java.util.Objects;
@@ -51,7 +49,7 @@ import java.util.Objects;
  * <p>
  * The class has two derive methods, {@code deriveKey} and {@code deriveData}.
  * The {@code deriveKey} method accepts an algorithm {@code String} and
- * will return a {@code SecretKey} object with the specified algorithm. The
+ * returns a {@code SecretKey} object with the specified algorithm. The
  * {@code deriveData} method returns a byte array of raw data.
  * <p>
  * API Usage Example:
@@ -90,9 +88,9 @@ import java.util.Objects;
  * getParameters} method is called before the {@code deriveKey} or {@code
  * deriveData} methods, the first provider supporting the KDF algorithm and
  * optional {@code KDFParameters} is chosen. This provider may not support
- * the key material that is subsequently passed to the deriveKey or
- * deriveData methods. Therefore, it is recommended not to call the {@code
- * getProviderName} or {@code getParameters} methods until after a key
+ * the key material that is subsequently passed to the {@code deriveKey} or
+ * {@code deriveData} methods. Therefore, it is recommended not to call the
+ * {@code getProviderName} or {@code getParameters} methods until after a key
  * derivation operation. Once a provider is selected, it cannot be changed.
  *
  * @see KDFParameters
@@ -125,8 +123,9 @@ public final class KDF {
     // null once provider is selected
     private Iterator<Service> serviceIterator;
 
-    // This lock is intended to provide synchronization when the KDFSpi and
-    // Provider objects of the Delegate record are changed
+    // This lock provides mutual exclusion, preventing multiple threads from
+    // concurrently initializing the same instance (delayed provider selection)
+    // in a way which would corrupt the internal state.
     private final Object lock = new Object();
 
     /**

@@ -37,7 +37,7 @@ import javax.crypto.KDF;
 import javax.crypto.KDFSpi;
 import javax.crypto.SecretKey;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.KDFParameters;
+import javax.crypto.KDFParameters;
 import java.security.Provider;
 import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;

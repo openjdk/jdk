@@ -27,6 +27,7 @@ package java.security;
 
 import jdk.internal.event.SecurityProviderServiceEvent;
 
+import javax.crypto.KDFParameters;
 import javax.security.auth.login.Configuration;
 import java.io.*;
 import java.security.cert.CertStoreParameters;
