@@ -1196,9 +1196,14 @@ public final class StringConcatFactory {
 
         /**
          * Construct the MethodType of the coder method. The first parameter is the initialized coder.
-         * Only parameter types which can be UTF16 are added. Returns null if no such parameter exists.
+         * Only parameter types which can be UTF16 are added.
+         * Returns null if no such parameter exists or CompactStrings is off.
          */
         private static MethodTypeDesc coderArgsIfMaybeUTF16(MethodType concatArgs) {
+            if (JLA.stringInitCoder() != 0) {
+                return null;
+            }
+
             int parameterCount = concatArgs.parameterCount();
 
             int maybeUTF16Count = 0;
@@ -1242,7 +1247,7 @@ public final class StringConcatFactory {
             lookup = STR_LOOKUP;
             final MethodType concatArgs = erasedArgs(args);
 
-            // 1 argment use built-in method
+            // 1 argument use built-in method
             if (args.parameterCount() == 1) {
                 Object concat1 = JLA.stringConcat1(constants);
                 var handle = lookup.findVirtual(concat1.getClass(), METHOD_NAME, concatArgs);
@@ -1254,7 +1259,7 @@ public final class StringConcatFactory {
                 MethodHandlePair handlePair = weakConstructorHandle.get();
                 if (handlePair != null) {
                     try {
-                        var instance = handlePair.constructor.invoke(constants);
+                        var instance = handlePair.constructor.invokeBasic((Object)constants);
                         return handlePair.concatenator.bindTo(instance);
                     } catch (Throwable e) {
                         throw new StringConcatException("Exception while utilizing the hidden class", e);
@@ -1331,10 +1336,10 @@ public final class StringConcatFactory {
                 var hiddenClass = lookup.makeHiddenClassDefiner(CLASS_NAME, classBytes, Set.of(), DUMPER)
                                         .defineClass(true, null);
                 var constructor = lookup.findConstructor(hiddenClass, CONSTRUCTOR_METHOD_TYPE);
-                var concat      = lookup.findVirtual(hiddenClass, METHOD_NAME, concatArgs);
-                CACHE.put(concatArgs, new SoftReference<>(new MethodHandlePair(constructor, concat)));
-                var instance = hiddenClass.cast(constructor.invoke(constants));
-                return concat.bindTo(instance);
+                var concatenator = lookup.findVirtual(hiddenClass, METHOD_NAME, concatArgs);
+                CACHE.put(concatArgs, new SoftReference<>(new MethodHandlePair(constructor, concatenator)));
+                var instance = constructor.invokeBasic((Object)constants);
+                return concatenator.bindTo(instance);
             } catch (Throwable e) {
                 throw new StringConcatException("Exception while spinning the class", e);
             }

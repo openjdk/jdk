@@ -409,60 +409,14 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         void writeTo(BufWriterImpl pool) {
+            pool.writeU1(tag);
             if (rawBytes != null) {
-                pool.writeU1(tag);
                 pool.writeU2(rawLen);
                 pool.writeBytes(rawBytes, offset, rawLen);
             }
             else {
                 // state == STRING and no raw bytes
-                if (stringValue.length() > 65535) {
-                    throw new IllegalArgumentException("string too long");
-                }
-                pool.writeU1(tag);
-                pool.writeU2(charLen);
-                for (int i = 0; i < charLen; ++i) {
-                    char c = stringValue.charAt(i);
-                    if (c >= '\001' && c <= '\177') {
-                        // Optimistic writing -- hope everything is bytes
-                        // If not, we bail out, and alternate path patches the length
-                        pool.writeU1((byte) c);
-                    }
-                    else {
-                        int charLength = stringValue.length();
-                        int byteLength = i;
-                        char c1;
-                        for (int j = i; j < charLength; ++j) {
-                            c1 = (stringValue).charAt(j);
-                            if (c1 >= '\001' && c1 <= '\177') {
-                                byteLength++;
-                            } else if (c1 > '\u07FF') {
-                                byteLength += 3;
-                            } else {
-                                byteLength += 2;
-                            }
-                        }
-                        if (byteLength > 65535) {
-                            throw new IllegalArgumentException();
-                        }
-                        int byteLengthFinal = byteLength;
-                        pool.patchInt(pool.size() - i - 2, 2, byteLengthFinal);
-                        for (int j = i; j < charLength; ++j) {
-                            c1 = (stringValue).charAt(j);
-                            if (c1 >= '\001' && c1 <= '\177') {
-                                pool.writeU1((byte) c1);
-                            } else if (c1 > '\u07FF') {
-                                pool.writeU1((byte) (0xE0 | c1 >> 12 & 0xF));
-                                pool.writeU1((byte) (0x80 | c1 >> 6 & 0x3F));
-                                pool.writeU1((byte) (0x80 | c1 & 0x3F));
-                            } else {
-                                pool.writeU1((byte) (0xC0 | c1 >> 6 & 0x1F));
-                                pool.writeU1((byte) (0x80 | c1 & 0x3F));
-                            }
-                        }
-                        break;
-                    }
-                }
+                pool.writeUTF(stringValue);
             }
         }
     }
