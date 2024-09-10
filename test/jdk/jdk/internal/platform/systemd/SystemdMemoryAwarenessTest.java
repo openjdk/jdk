@@ -23,7 +23,9 @@
 
 import jdk.test.lib.containers.systemd.SystemdRunOptions;
 import jdk.test.lib.containers.systemd.SystemdTestUtils;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.whitebox.WhiteBox;
+import jtreg.SkippedException;
 
 /*
  * @test
@@ -55,22 +57,33 @@ public class SystemdMemoryAwarenessTest {
         // expected detected limit we test for, 512MB
         opts.sliceDMemoryLimit(String.format("%dM", expectedMemLimit));
         int physicalCpus = wb.hostCPUs();
-        if (physicalCpus < 3) {
-           System.err.println("WARNING: host system only has " + physicalCpus + " expected >= 3");
+        if (physicalCpus < 2) {
+           System.err.println("WARNING: host system only has " + physicalCpus +
+                              " cpus. Expected >= 2");
+           System.err.println("Effective CPU Count assertion will trivially pass");
         }
-        // 1 or 2 cores limit depending on physical CPUs
-        int coreLimit = Math.min(physicalCpus, 2);
+        // Use a CPU core limit of 1 for best coverage
+        int coreLimit = 1;
         System.out.println("DEBUG: Running test with a CPU limit of " + coreLimit);
         opts.cpuLimit(String.format("%d%%", coreLimit * 100));
         opts.sliceName(TEST_SLICE_NAME);
 
-        SystemdTestUtils.buildAndRunSystemdJava(opts)
-            .shouldHaveExitValue(0)
-            .shouldContain("Operating System Metrics:")
-            .shouldContain("Effective CPU Count: " + coreLimit)
-            .shouldContain(String.format("CPU Period: %dus", HUNDRED_THOUSEND))
-            .shouldContain(String.format("CPU Quota: %dus", (HUNDRED_THOUSEND * coreLimit)))
-            .shouldContain(String.format("Memory Limit: %d.00M", expectedMemLimit));
+        OutputAnalyzer out = SystemdTestUtils.buildAndRunSystemdJava(opts);
+        out.shouldHaveExitValue(0)
+           .shouldContain("Operating System Metrics:")
+           .shouldContain(String.format("Memory Limit: %d.00M", expectedMemLimit));
+        try {
+            out.shouldContain("Effective CPU Count: " + coreLimit)
+               .shouldContain(String.format("CPU Period: %dus", HUNDRED_THOUSEND))
+               .shouldContain(String.format("CPU Quota: %dus", (HUNDRED_THOUSEND * coreLimit)));
+        } catch (RuntimeException e) {
+            // CPU delegation needs to be enabled when run as user on cg v2
+            if (SystemdTestUtils.RUN_AS_USER) {
+                String hint = "When run as user on cg v2 cpu delegation needs to be configured!";
+                throw new SkippedException(hint);
+            }
+            throw e;
+        }
     }
 
 }
