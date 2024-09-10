@@ -327,8 +327,11 @@ public:
    */
   void verify_oops_from(oop obj) {
     _loc = obj;
-    Klass* klass = ShenandoahForwarding::klass(obj);
-    obj->oop_iterate_backwards(this, klass);
+    // oop_iterate() can not deal with forwarded objects, because
+    // it needs to load klass(), which may be overridden by the
+    // forwarding pointer.
+    oop fwd = ShenandoahForwarding::get_forwardee_raw(obj);
+    fwd->oop_iterate(this);
     _loc = nullptr;
   }
 

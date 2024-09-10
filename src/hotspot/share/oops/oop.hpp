@@ -100,12 +100,12 @@ class oopDesc {
   // For klass field compression
   static inline void set_klass_gap(HeapWord* mem, int z);
 
-  // size of object header, aligned to platform wordSize
+  // Size of object header, aligned to platform wordSize
   static int header_size() {
     if (UseCompactObjectHeaders) {
       return sizeof(markWord) / HeapWordSize;
     } else {
-      return sizeof(oopDesc) / HeapWordSize;
+      return sizeof(oopDesc)  / HeapWordSize;
     }
   }
 
@@ -337,7 +337,7 @@ class oopDesc {
       // of LoadNKlass instructions. This value could be any value that is not a valid
       // field offset. Use an offset halfway into the markWord, as the markWord is never
       // partially loaded from C2.
-      return mark_offset_in_bytes() + sizeof(markWord) / 2;
+      return 4;
     } else
 #endif
     {

@@ -153,8 +153,8 @@ bool oopDesc::is_objArray_noinline()    const { return is_objArray();    }
 bool oopDesc::is_typeArray_noinline()   const { return is_typeArray();   }
 
 bool oopDesc::has_klass_gap() {
-  // Only has a klass gap when compressed class pointers are used.
-  // Except when using compact headers.
+  // Only has a klass gap when compressed class pointers are used and not
+  // using compact headers.
   return UseCompressedClassPointers && !UseCompactObjectHeaders;
 }
 

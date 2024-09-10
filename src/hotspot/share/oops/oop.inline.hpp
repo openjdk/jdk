@@ -292,6 +292,8 @@ bool oopDesc::is_self_forwarded() const {
 
 // Used by scavengers
 void oopDesc::forward_to(oop p) {
+  assert(cast_from_oop<oopDesc*>(p) != this,
+         "must not be used for self-forwarding, use forward_to_self() instead");
   markWord m = markWord::encode_pointer_as_mark(p);
   assert(m.decode_pointer() == p, "encoding must be reversible");
   set_mark(m);
@@ -312,6 +314,8 @@ oop oopDesc::cas_set_forwardee(markWord new_mark, markWord compare, atomic_memor
 }
 
 oop oopDesc::forward_to_atomic(oop p, markWord compare, atomic_memory_order order) {
+  assert(cast_from_oop<oopDesc*>(p) != this,
+         "must not be used for self-forwarding, use forward_to_self_atomic() instead");
   markWord m = markWord::encode_pointer_as_mark(p);
   assert(forwardee(m) == p, "encoding must be reversible");
   return cas_set_forwardee(m, compare, order);
@@ -398,7 +402,7 @@ void oopDesc::oop_iterate_backwards(OopClosureType* cl) {
 template <typename OopClosureType>
 void oopDesc::oop_iterate_backwards(OopClosureType* cl, Klass* k) {
   // In this assert, we cannot safely access the Klass* with compact headers.
-  assert(UseCompactObjectHeaders || k == klass(), "wrong klass");
+  assert(k == klass(), "wrong klass");
   OopIteratorClosureDispatch::oop_oop_iterate_backwards(cl, this, k);
 }
 
