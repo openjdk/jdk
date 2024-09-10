@@ -302,7 +302,7 @@ class MallocTracker : AllStatic {
   }
 
   // MallocLimt: Given an allocation size s, check if mallocing this much
-  // under category f would hit either the global limit or the limit for category f.
+  // for MemTag would hit either the global limit or the limit for MemTag.
   static inline bool check_exceeds_limit(size_t s, MemTag mem_tag);
 
   // Given a pointer, look for the containing malloc block.

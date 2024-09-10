@@ -262,7 +262,7 @@ class MemTracker : AllStatic {
   static void tuning_statistics(outputStream* out);
 
   // MallocLimt: Given an allocation size s, check if mallocing this much
-  // under category f would hit either the global limit or the limit for mem_tag.
+  // for MemTag would hit either the global limit or the limit for MemTag.
   static inline bool check_exceeds_limit(size_t s, MemTag mem_tag);
 
   // Given an unknown pointer, check if it points into a known region; print region if found
