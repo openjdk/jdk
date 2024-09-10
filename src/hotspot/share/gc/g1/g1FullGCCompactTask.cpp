@@ -29,7 +29,7 @@
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
-#include "gc/shared/gcForwarding.inline.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
@@ -42,7 +42,7 @@ void G1FullGCCompactTask::G1CompactRegionClosure::clear_in_bitmap(oop obj) {
 
 size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
   size_t size = obj->size();
-  if (GCForwarding::is_forwarded(obj)) {
+  if (FullGCForwarding::is_forwarded(obj)) {
     G1FullGCCompactTask::copy_object_to_new_location(obj);
   }
 
@@ -53,13 +53,13 @@ size_t G1FullGCCompactTask::G1CompactRegionClosure::apply(oop obj) {
 }
 
 void G1FullGCCompactTask::copy_object_to_new_location(oop obj) {
-  assert(GCForwarding::is_forwarded(obj), "Sanity!");
-  assert(GCForwarding::forwardee(obj) != obj, "Object must have a new location");
+  assert(FullGCForwarding::is_forwarded(obj), "Sanity!");
+  assert(FullGCForwarding::forwardee(obj) != obj, "Object must have a new location");
 
   size_t size = obj->size();
   // Copy object and reinit its mark.
   HeapWord* obj_addr = cast_from_oop<HeapWord*>(obj);
-  HeapWord* destination = cast_from_oop<HeapWord*>(GCForwarding::forwardee(obj));
+  HeapWord* destination = cast_from_oop<HeapWord*>(FullGCForwarding::forwardee(obj));
   Copy::aligned_conjoint_words(obj_addr, destination, size);
 
   // There is no need to transform stack chunks - marking already did that.
@@ -122,7 +122,7 @@ void G1FullGCCompactTask::compact_humongous_obj(G1HeapRegion* src_hr) {
   size_t word_size = obj->size();
 
   uint num_regions = (uint)G1CollectedHeap::humongous_obj_size_in_regions(word_size);
-  HeapWord* destination = cast_from_oop<HeapWord*>(GCForwarding::forwardee(obj));
+  HeapWord* destination = cast_from_oop<HeapWord*>(FullGCForwarding::forwardee(obj));
 
   assert(collector()->mark_bitmap()->is_marked(obj), "Should only compact marked objects");
   collector()->mark_bitmap()->clear(obj);

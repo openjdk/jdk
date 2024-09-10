@@ -23,7 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
-#include "gc/shared/gcForwarding.inline.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "unittest.hpp"
 
@@ -37,7 +37,7 @@ TEST_VM(PreservedMarks, iterate_and_restore) {
 
   HeapWord fakeheap[32] = { nullptr };
   HeapWord* heap = align_up(fakeheap, 8 * sizeof(HeapWord));
-  GCForwarding::initialize();
+  FullGCForwarding::initialize();
 
   oop o1 = cast_to_oop(&heap[0]); o1->set_mark(originalMark());
   oop o2 = cast_to_oop(&heap[2]); o2->set_mark(originalMark());
@@ -61,10 +61,10 @@ TEST_VM(PreservedMarks, iterate_and_restore) {
   pm.push_if_necessary(o2, o2->mark());
 
   // Fake a move from o1->o3 and o2->o4.
-  GCForwarding::forward_to(o1, o3);
-  GCForwarding::forward_to(o2, o4);
-  ASSERT_EQ(GCForwarding::forwardee(o1), o3);
-  ASSERT_EQ(GCForwarding::forwardee(o2), o4);
+  FullGCForwarding::forward_to(o1, o3);
+  FullGCForwarding::forward_to(o2, o4);
+  ASSERT_EQ(FullGCForwarding::forwardee(o1), o3);
+  ASSERT_EQ(FullGCForwarding::forwardee(o2), o4);
   // Adjust will update the PreservedMarks stack to
   // make sure the mark is updated at the new location.
   pm.adjust_during_full_gc();

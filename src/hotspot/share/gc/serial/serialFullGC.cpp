@@ -43,7 +43,7 @@
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
-#include "gc/shared/gcForwarding.inline.hpp"
+#include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -231,7 +231,7 @@ class Compacter {
   static void forward_obj(oop obj, HeapWord* new_addr) {
     prefetch_write_scan(obj);
     if (cast_from_oop<HeapWord*>(obj) != new_addr) {
-      GCForwarding::forward_to(obj, cast_to_oop(new_addr));
+      FullGCForwarding::forward_to(obj, cast_to_oop(new_addr));
     } else {
       assert(obj->is_gc_marked(), "inv");
       // This obj will stay in-place. Fix the markword.
@@ -256,7 +256,7 @@ class Compacter {
     prefetch_read_scan(addr);
 
     oop obj = cast_to_oop(addr);
-    oop new_obj = GCForwarding::forwardee(obj);
+    oop new_obj = FullGCForwarding::forwardee(obj);
     HeapWord* new_addr = cast_from_oop<HeapWord*>(new_obj);
     assert(addr != new_addr, "inv");
     prefetch_write_copy(new_addr);
@@ -353,13 +353,13 @@ public:
       HeapWord* top = space->top();
 
       // Check if the first obj inside this space is forwarded.
-      if (!GCForwarding::is_forwarded(cast_to_oop(cur_addr))) {
+      if (!FullGCForwarding::is_forwarded(cast_to_oop(cur_addr))) {
         // Jump over consecutive (in-place) live-objs-chunk
         cur_addr = get_first_dead(i);
       }
 
       while (cur_addr < top) {
-        if (!GCForwarding::is_forwarded(cast_to_oop(cur_addr))) {
+        if (!FullGCForwarding::is_forwarded(cast_to_oop(cur_addr))) {
           cur_addr = *(HeapWord**) cur_addr;
           continue;
         }
@@ -625,8 +625,8 @@ template <class T> void SerialFullGC::adjust_pointer(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(Universe::heap()->is_in(obj), "should be in heap");
 
-    if (GCForwarding::is_forwarded(obj)) {
-      oop new_obj = GCForwarding::forwardee(obj);
+    if (FullGCForwarding::is_forwarded(obj)) {
+      oop new_obj = FullGCForwarding::forwardee(obj);
       assert(is_object_aligned(new_obj), "oop must be aligned");
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }

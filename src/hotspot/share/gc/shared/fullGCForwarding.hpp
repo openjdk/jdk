@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_GCFORWARDING_HPP
-#define SHARE_GC_SHARED_GCFORWARDING_HPP
+#ifndef SHARE_GC_SHARED_FULLGCFORWARDING_HPP
+#define SHARE_GC_SHARED_FULLGCFORWARDING_HPP
 
 #include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
@@ -31,7 +31,7 @@
 #include "oops/oopsHierarchy.hpp"
 
 /*
- * Implements forwarding for the full-GCs of Serial, Parallel, G1 and Shenandoah in
+ * Implements forwarding for the Full GCs of Serial, Parallel, G1 and Shenandoah in
  * a way that preserves upper N bits of object mark-words, which contain crucial
  * Klass* information when running with compact headers. The encoding is similar to
  * compressed-oops encoding: it basically subtracts the forwardee address from the
@@ -41,7 +41,7 @@
  * enough to address 8TB of heap. If the heap size exceeds that limit, we turn off
  * compact headers.
  */
-class GCForwarding : public AllStatic {
+class FullGCForwarding : public AllStatic {
   static const int NumLowBitsNarrow = LP64_ONLY(markWord::klass_shift) NOT_LP64(0 /*unused*/);
   static const int NumLowBitsWide   = BitsPerWord;
   static const int Shift            = markWord::lock_bits + markWord::lock_shift;
@@ -56,4 +56,4 @@ public:
   static inline bool is_forwarded(oop obj);
 };
 
-#endif // SHARE_GC_SHARED_GCFORWARDING_HPP
+#endif // SHARE_GC_SHARED_FULLGCFORWARDING_HPP

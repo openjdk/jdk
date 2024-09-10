@@ -77,8 +77,8 @@
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcBehaviours.hpp"
-#include "gc/shared/gcForwarding.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
@@ -1435,7 +1435,7 @@ jint G1CollectedHeap::initialize() {
 
   G1InitLogger::print();
 
-  GCForwarding::initialize();
+  FullGCForwarding::initialize();
 
   return JNI_OK;
 }

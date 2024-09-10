@@ -23,14 +23,14 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/gcForwarding.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "memory/memRegion.hpp"
 #include "runtime/globals_extension.hpp"
 
-HeapWord* GCForwarding::_heap_base = nullptr;
-int GCForwarding::_num_low_bits = 0;
+HeapWord* FullGCForwarding::_heap_base = nullptr;
+int FullGCForwarding::_num_low_bits = 0;
 
-void GCForwarding::initialize_flags(size_t max_heap_size) {
+void FullGCForwarding::initialize_flags(size_t max_heap_size) {
 #ifdef _LP64
   size_t max_narrow_heap_size = right_n_bits(NumLowBitsNarrow - Shift);
   if (UseCompactObjectHeaders && max_heap_size > max_narrow_heap_size * HeapWordSize) {
@@ -45,7 +45,7 @@ void GCForwarding::initialize_flags(size_t max_heap_size) {
 #endif
 }
 
-void GCForwarding::initialize() {
+void FullGCForwarding::initialize() {
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
     _num_low_bits = NumLowBitsNarrow;

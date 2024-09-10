@@ -27,8 +27,8 @@
 #include "gc/parallel/parallelArguments.hpp"
 #include "gc/parallel/parallelScavengeHeap.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
+#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/gcArguments.hpp"
-#include "gc/shared/gcForwarding.hpp"
 #include "gc/shared/genArguments.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "logging/log.hpp"
@@ -128,7 +128,7 @@ void ParallelArguments::initialize_heap_flags_and_sizes() {
     // Redo everything from the start
     initialize_heap_flags_and_sizes_one_pass();
   }
-  GCForwarding::initialize_flags(heap_reserved_size_bytes());
+  FullGCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 
 size_t ParallelArguments::heap_reserved_size_bytes() {
