@@ -121,6 +121,10 @@ public class ModelMBeanAttributeInfo
     implements DescriptorAccess {
 
         private static final long serialVersionUID = 6181543027787327345L;
+        /**
+         * @serialField attrDescriptor Descriptor The {@link Descriptor}
+         * containing the metadata corresponding to this attribute
+         */
         private static final ObjectStreamField[] serialPersistentFields =
         {
             new ObjectStreamField("attrDescriptor", Descriptor.class)

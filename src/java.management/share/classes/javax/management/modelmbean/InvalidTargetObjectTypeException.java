@@ -49,6 +49,9 @@ import java.security.AccessController;
 public class InvalidTargetObjectTypeException  extends Exception
 {
     private static final long serialVersionUID = 1190536278266811217L;
+    /**
+     * @serialField exception Exception Encapsulated {@link Exception}
+     */
     private static final ObjectStreamField[] serialPersistentFields =
     {
       new ObjectStreamField("exception", Exception.class)

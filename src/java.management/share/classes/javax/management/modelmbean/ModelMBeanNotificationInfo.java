@@ -101,6 +101,10 @@ public class ModelMBeanNotificationInfo
     implements DescriptorAccess {
 
     private static final long serialVersionUID = -7445681389570207141L;
+    /**
+     * @serialField notificationDescriptor Descriptor The descriptor
+     *   containing the appropriate metadata for this instance
+     */
     private static final ObjectStreamField[] serialPersistentFields =
     {
       new ObjectStreamField("notificationDescriptor", Descriptor.class)
