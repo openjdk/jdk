@@ -423,7 +423,7 @@ jint ShenandoahHeap::initialize() {
 
   ShenandoahInitLogger::print();
 
-  FullGCForwarding::initialize();
+  FullGCForwarding::initialize(_heap_region);
 
   return JNI_OK;
 }

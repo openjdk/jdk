@@ -45,8 +45,9 @@ void FullGCForwarding::initialize_flags(size_t max_heap_size) {
 #endif
 }
 
-void FullGCForwarding::initialize() {
+void FullGCForwarding::initialize(MemRegion heap) {
 #ifdef _LP64
+  _heap_base = heap.start();
   if (UseCompactObjectHeaders) {
     _num_low_bits = NumLowBitsNarrow;
   } else {

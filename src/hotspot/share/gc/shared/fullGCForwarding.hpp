@@ -50,7 +50,7 @@ class FullGCForwarding : public AllStatic {
   static int _num_low_bits;
 public:
   static void initialize_flags(size_t max_heap_size);
-  static void initialize();
+  static void initialize(MemRegion heap);
   static inline void forward_to(oop from, oop to);
   static inline oop forwardee(oop from);
   static inline bool is_forwarded(oop obj);
