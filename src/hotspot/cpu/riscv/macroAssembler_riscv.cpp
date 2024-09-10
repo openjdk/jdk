@@ -1454,10 +1454,16 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   xorr(crc, crc, tmp2);
 }
 
+
+// This improvement (vectorization) is based on java.base/share/native/libzip/zlib/zcrc32.c.
+// To make it, following steps are taken:
+//  1. in zcrc32.c, modify N to 16 and related code,
+//  2. re-generate the tables needed, we use tables of (N == 16, W == 4)
+//  3. finally vectorize the code (original implementation in zcrc32.c is just scalar code).
+// New tables for vector version is after table3.
 void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register len, const int64_t unroll_words,
                                          Register tmp1, Register tmp2, Register tmp3, Register tmp4,
-                                         Register table0, Register table3) {
-
+                                         Register table0, Register table3, const int64_t single_talbe_size) {
     const int N = 16, W = 4;
     const Register blks = tmp2;
     const Register tmpTable = tmp3, tableN16 = tmp4;
@@ -1465,8 +1471,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
     Label VectorLoop;
     Label LastBlock;
 
-    // prepare
-    add(tableN16, table3, 1*256*sizeof(juint), tmp1);
+    add(tableN16, table3, 1*single_talbe_size*sizeof(juint), tmp1);
     addi(len, len, unroll_words);
 
     if (MaxVectorSize == 16) {
@@ -1478,10 +1483,10 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
       vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
     }
     vmv_v_x(vcrc, zr);
-    slli(crc, crc, 32);
-    srli(crc, crc, 32);
+    zext_w(crc, crc);
     vmv_s_x(vcrc, crc);
 
+    // multiple of 64
     srli(blks, len, 6);
     slli(t1, blks, 6);
     sub(len, len, t1);
@@ -1504,7 +1509,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
 
       mv(tmp1, 1);
       for (int k = 1; k < W; k++) {
-        addi(tmpTable, tmpTable, 256*4);
+        addi(tmpTable, tmpTable, single_talbe_size*4);
 
         slli(t1, tmp1, 3);
         vsrl_vx(vtmp, vword, t1);
@@ -1559,6 +1564,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
   Label L_by16_loop, L_unroll_loop, L_vector_or_unroll_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
 
+  const int64_t single_talbe_size = 256;
   const int64_t unroll = 16;
   const int64_t unroll_words = unroll*wordSize;
   mv(tmp5, right_32_bits);
@@ -1567,9 +1573,9 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 
   const ExternalAddress table_addr = StubRoutines::crc_table_addr();
   la(table0, table_addr);
-  add(table1, table0, 1*256*sizeof(juint), tmp1);
-  add(table2, table0, 2*256*sizeof(juint), tmp1);
-  add(table3, table2, 1*256*sizeof(juint), tmp1);
+  add(table1, table0, 1*single_talbe_size*sizeof(juint), tmp1);
+  add(table2, table0, 2*single_talbe_size*sizeof(juint), tmp1);
+  add(table3, table2, 1*single_talbe_size*sizeof(juint), tmp1);
 
   if (UseRVV) {
     sub(tmp1, len, unroll_words);
@@ -1586,7 +1592,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   align(CodeEntryAlignment);
   bind(L_vector_or_unroll_entry);
   if (UseRVV) {
-    vector_update_crc32(crc, buf, len, unroll_words, tmp1, tmp2, tmp3, tmp4, table0, table3);
+    vector_update_crc32(crc, buf, len, unroll_words, tmp1, tmp2, tmp3, tmp4, table0, table3, single_talbe_size);
 
     addiw(len, len, -4);
     bge(len, zr, L_by4_loop);

@@ -277,7 +277,12 @@ ATTRIBUTE_ALIGNED(4096) juint StubRoutines::riscv::_crc_table[] =
     0xe9dbf6c3UL, 0x516791a6UL, 0xccb0a91fUL, 0x740cce7aUL, 0x66b96194UL,
     0xde0506f1UL,
 
-    // tables for vector version
+    // Tables for vector version
+    // This improvement (vectorization) is based on java.base/share/native/libzip/zlib/zcrc32.c.
+    // To make it, following steps are taken:
+    //  1. in zcrc32.c, modify N to 16 and related code,
+    //  2. re-generate the tables needed, we use tables of (N == 16, W == 4)
+    //  3. finally vectorize the code (original implementation in zcrc32.c is just scalar code).
     0x00000000, 0x8f352d95, 0xc51b5d6b, 0x4a2e70fe, 0x5147bc97,
     0xde729102, 0x945ce1fc, 0x1b69cc69, 0xa28f792e, 0x2dba54bb,
     0x67942445, 0xe8a109d0, 0xf3c8c5b9, 0x7cfde82c, 0x36d398d2,
