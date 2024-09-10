@@ -222,7 +222,7 @@ instruct zCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rax_
     z_color(masm, this, $oldval$$Register);
     __ lock();
     __ cmpxchgptr($tmp$$Register, mem_addr);
-    __ setCC(Assembler::equal, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
 
   ins_pipe(pipe_cmpxchg);

@@ -1029,7 +1029,7 @@ private:
   void popp(Register src);
 
   // New Zero Upper setcc instruction.
-  void esetzuCC(Condition cc, Register dst);
+  void esetzucc(Condition cc, Register dst);
 
 #endif
   void vzeroupper_uncached();

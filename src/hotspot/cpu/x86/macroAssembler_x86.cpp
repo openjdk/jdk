@@ -10422,9 +10422,9 @@ void MacroAssembler::restore_legacy_gprs() {
   addq(rsp, 16 * wordSize);
 }
 
-void MacroAssembler::setCC(Assembler::Condition comparison, Register dst) {
+void MacroAssembler::setcc(Assembler::Condition comparison, Register dst) {
   if (VM_Version::supports_apx_f()) {
-    esetzuCC(comparison, dst);
+    esetzucc(comparison, dst);
   } else {
     setb(comparison, dst);
     movzbl(dst, dst);

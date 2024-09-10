@@ -14727,7 +14727,7 @@ void Assembler::xorq(Address dst, Register src) {
   emit_operand(src, dst, 0);
 }
 
-void Assembler::esetzuCC(Condition cc, Register dst) {
+void Assembler::esetzucc(Condition cc, Register dst) {
   assert(VM_Version::supports_apx_f(), "");
   assert(0 <= cc && cc < 16, "illegal cc");
 
