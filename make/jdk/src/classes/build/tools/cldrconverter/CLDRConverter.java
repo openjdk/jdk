@@ -1372,7 +1372,7 @@ public class CLDRConverter {
     private static void generateTZDBShortNamesMap() throws IOException {
         Files.walk(Path.of(tzDataDir), 1, FileVisitOption.FOLLOW_LINKS)
             .filter(p -> p.toFile().isFile())
-            .filter(p -> p.getFileName().toString().matches("africa|antarctica|asia|australasia|backward|backzone|etcetera|europe|factory|northamerica|southamerica"))
+            .filter(p -> p.getFileName().toString().matches("africa|antarctica|asia|australasia|backward|etcetera|europe|northamerica|southamerica"))
             .forEach(p -> {
                 try {
                     String zone = null;
