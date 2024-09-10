@@ -121,26 +121,6 @@ void VM_Version::setup_cpu_available_features() {
     os_aux_features();
   }
 
-  // Linux kernel require Zifencei
-  if (!ext_Zifencei.enabled()) {
-    ext_Zifencei.enable_feature();
-  }
-
-  if (UseCtxFencei) {
-    // Note that we can set this up only for effected threads
-    // via PR_RISCV_SCOPE_PER_THREAD, i.e. on VM attach/deattach.
-    int ret = prctl(PR_RISCV_SET_ICACHE_FLUSH_CTX, PR_RISCV_CTX_SW_FENCEI_ON, PR_RISCV_SCOPE_PER_PROCESS);
-    if (ret == 0) {
-      if (FLAG_IS_DEFAULT(UseCtxFencei)) {
-        FLAG_SET_DEFAULT(UseCtxFencei, true);
-      }
-      log_debug(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) enabled.");
-    } else {
-      FLAG_SET_ERGO(UseCtxFencei, false);
-      log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) disabled, unsupported by kernel.");
-    }
-  }
-
   char* uarch = os_uarch_additional_features();
   vendor_features();
 
@@ -192,6 +172,24 @@ void VM_Version::setup_cpu_available_features() {
       }
     }
     i++;
+  }
+
+  // Linux kernel require Zifencei
+  if (!ext_Zifencei.enabled()) {
+    log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
+    ext_Zifencei.enable_feature();
+  }
+
+  if (UseCtxFencei) {
+    // Note that we can set this up only for effected threads
+    // via PR_RISCV_SCOPE_PER_THREAD, i.e. on VM attach/deattach.
+    int ret = prctl(PR_RISCV_SET_ICACHE_FLUSH_CTX, PR_RISCV_CTX_SW_FENCEI_ON, PR_RISCV_SCOPE_PER_PROCESS);
+    if (ret == 0) {
+      log_debug(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) enabled.");
+    } else {
+      FLAG_SET_ERGO(UseCtxFencei, false);
+      log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) disabled, unsupported by kernel.");
+    }
   }
 
   _features_string = os::strdup(buf);
