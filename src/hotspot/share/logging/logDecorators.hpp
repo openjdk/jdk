@@ -55,7 +55,6 @@ class outputStream;
   DECORATOR(level,        l)    \
   DECORATOR(tags,         tg)
 
-
 // LogDecorators represents a selection of decorators that should be prepended to
 // each log message for a given output. Decorators are always prepended in the order
 // declared above. For example, logging with 'uptime, level, tags' decorators results in:
@@ -78,16 +77,14 @@ class LogDecorators {
     DefaultDecorator() : _selection(LogSelection::Invalid), _mask(0) {}
 
   public:
-    static const DefaultDecorator Invalid;
-
     template<typename... Tags>
     DefaultDecorator(LogLevelType level, uint mask, LogTagType first, Tags... rest) : _selection(LogSelection::Invalid), _mask(mask) {
-      static_assert(sizeof...(rest) <= LogTag::MaxTags + 1,
+      static_assert(1 + sizeof...(rest) <= LogTag::MaxTags + 1,
                     "Too many tags specified!");
 
       LogTagType tag_arr[LogTag::MaxTags + 1] = { first, rest... };
 
-      assert(tag_arr[LogTag::MaxTags] == LogTag::__NO_TAG,
+      assert(tag_arr[sizeof...(rest)] == LogTag::__NO_TAG,
              "Too many tags specified! Can only have up to " SIZE_FORMAT " tags in a tag set.", LogTag::MaxTags);
 
       _selection = LogSelection(tag_arr, false, level);
@@ -95,16 +92,14 @@ class LogDecorators {
 
     const LogSelection& selection() const { return _selection; }
     uint mask()                     const { return _mask; }
-
-    bool operator==(const DefaultDecorator& ref) const;
-    bool operator!=(const DefaultDecorator& ref) const;
   };
 
  private:
   uint _decorators;
   static const char* _name[][2];
-  static const uint DefaultDecoratorsMask = (1 << uptime_decorator) | (1 << level_decorator) | (1 << tags_decorator);
-  static LogDecorators::DefaultDecorator DefaultDecorators[];
+  static const uint defaultsMask = (1 << uptime_decorator) | (1 << level_decorator) | (1 << tags_decorator);
+  static const LogDecorators::DefaultDecorator default_decorators[];
+  static const size_t number_of_default_decorators;
 
   static uint mask(LogDecorators::Decorator decorator) {
     return 1 << decorator;
@@ -117,7 +112,7 @@ class LogDecorators {
 
   constexpr LogDecorators(uint mask) : _decorators(mask) {}
 
-  LogDecorators() : _decorators(DefaultDecoratorsMask) {}
+  LogDecorators() : _decorators(defaultsMask) {}
 
   void clear() {
     _decorators = 0;
@@ -132,37 +127,11 @@ class LogDecorators {
   }
 
   template<typename... Decorators>
-  static uint mask_from_decorators(LogDecorators::Decorator first, Decorators... rest) {
-    uint bitmask = 0;
-    LogDecorators::Decorator decorators[1 + sizeof...(rest)] = { first, rest... };
-    for (const auto decorator : decorators) {
-      if (decorator == NoDecorators) return 0;
-      bitmask |= mask(decorator);
-    }
-    return bitmask;
-  }
+  static uint mask_from_decorators(LogDecorators::Decorator first, Decorators... rest);
 
   // Check if we have some default decorators for a given LogSelection. If that is the case,
   // the output parameter mask will contain the defaults-specified decorators mask
-  static bool has_default_decorator(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults = DefaultDecorators) {
-    size_t max_specificity = 0;
-    for (size_t i = 0; DefaultDecorators[i] != DefaultDecorator::Invalid; ++i) {
-      const bool ignore_level = DefaultDecorators[i].selection().level() == LogLevelType::NotMentioned;
-      const bool level_matches = ignore_level || selection.level() == DefaultDecorators[i].selection().level();
-      if (!level_matches) continue;
-      if (!selection.superset_of(DefaultDecorators[i].selection())) {
-        continue;
-      }
-      size_t specificity = DefaultDecorators[i].selection().ntags();
-      if (specificity > max_specificity) {
-        *mask = DefaultDecorators[i].mask();
-        max_specificity = specificity;
-      } else if (specificity == max_specificity) {
-        *mask |= DefaultDecorators[i].mask();
-      }
-    }
-    return max_specificity > 0;
-  }
+  static bool has_default_decorator(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults = default_decorators);
 
   static LogDecorators::Decorator from_string(const char* str);
 

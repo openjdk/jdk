@@ -26,8 +26,8 @@
 #include "runtime/os.hpp"
 #include "logDecorators.hpp"
 
+const LogLevelType AnyLevel = LogLevelType::NotMentioned;
 #define DEFAULT_DECORATORS \
-  DEFAULT_VALUE(mask_from_decorators(pid_decorator, time_decorator), NotMentioned, LOG_TAGS(ref, gc, jit, jni, jfr)) \
   DEFAULT_VALUE(mask_from_decorators(NoDecorators), Trace, LOG_TAGS(jit))
 
 template <LogDecorators::Decorator d>
@@ -50,14 +50,12 @@ const char* LogDecorators::_name[][2] = {
 #undef DECORATOR
 };
 
-const LogDecorators::DefaultDecorator LogDecorators::DefaultDecorator::Invalid;
-
-LogDecorators::DefaultDecorator LogDecorators::DefaultDecorators[] = {
+const LogDecorators::DefaultDecorator LogDecorators::default_decorators[] = {
 #define DEFAULT_VALUE(mask, level, ...) LogDecorators::DefaultDecorator(LogLevel::level, mask, __VA_ARGS__),
   DEFAULT_DECORATORS
 #undef DEFAULT_VALUE
-  LogDecorators::DefaultDecorator::Invalid
 };
+const size_t LogDecorators::number_of_default_decorators = sizeof(default_decorators) / sizeof(LogDecorators::DefaultDecorator);
 
 LogDecorators::Decorator LogDecorators::from_string(const char* str) {
   for (size_t i = 0; i < Count; i++) {
@@ -71,7 +69,7 @@ LogDecorators::Decorator LogDecorators::from_string(const char* str) {
 
 bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
   if (decorator_args == nullptr || strlen(decorator_args) == 0) {
-    //No decorators supplied, keep default decorators
+    // No decorators supplied, keep default decorators
     return true;
   }
 
@@ -108,11 +106,34 @@ bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
   return result;
 }
 
-
-bool LogDecorators::DefaultDecorator::operator==(const DefaultDecorator &ref) const {
-  return this->_selection == ref._selection && this->_mask == ref._mask;
+bool LogDecorators::has_default_decorator(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults) {
+  size_t max_specificity = 0;
+  for (size_t i = 0; i < number_of_default_decorators; ++i) {
+    auto current_default = defaults[i];
+    const bool ignore_level = current_default.selection().level() == AnyLevel;
+    const bool level_matches = ignore_level || selection.level() == current_default.selection().level();
+    if (!level_matches) continue;
+    if (!selection.superset_of(current_default.selection())) {
+      continue;
+    }
+    size_t specificity = current_default.selection().ntags();
+    if (specificity > max_specificity) {
+      *mask = current_default.mask();
+      max_specificity = specificity;
+    } else if (specificity == max_specificity) {
+      *mask |= current_default.mask();
+    }
+  }
+  return max_specificity > 0;
 }
 
-bool LogDecorators::DefaultDecorator::operator!=(const DefaultDecorator &ref) const {
-  return !operator==(ref);
+template<typename... Decorators>
+uint LogDecorators::mask_from_decorators(LogDecorators::Decorator first, Decorators... rest) {
+  uint bitmask = 0;
+  LogDecorators::Decorator decorators[1 + sizeof...(rest)] = { first, rest... };
+  for (const LogDecorators::Decorator decorator : decorators) {
+    if (decorator == NoDecorators) return 0;
+    bitmask |= mask(decorator);
+  }
+  return bitmask;
 }
