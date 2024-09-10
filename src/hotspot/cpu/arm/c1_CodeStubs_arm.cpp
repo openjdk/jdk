@@ -235,7 +235,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
          "not enough room for call");
   assert((_bytes_to_copy & 3) == 0, "must copy a multiple of four bytes");
   Label call_patch;
-  bool is_load = (_id == C1StubId::load_klass_id) || (_id == C1StubId::load_mirror_id) || (_id == C1StubId::load_appendix_id);
+  bool is_load = (_id == load_klass_id) || (_id == load_mirror_id) || (_id == load_appendix_id);
 
 
   if (is_load && !VM_Version::supports_movw()) {
@@ -262,7 +262,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   }
   if (is_load) {
     address start = __ pc();
-    if (_id == C1StubId::load_mirror_id || _id == C1StubId::load_appendix_id) {
+    if (_id == load_mirror_id || _id == load_appendix_id) {
       __ patchable_mov_oop(_obj, (jobject)Universe::non_oop_word(), _index);
     } else {
       __ patchable_mov_metadata(_obj, (Metadata*)Universe::non_oop_word(), _index);
@@ -282,7 +282,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   address end_of_patch = __ pc();
 
   int bytes_to_skip = 0;
-  if (_id == C1StubId::load_mirror_id) {
+  if (_id == load_mirror_id) {
     int offset = __ offset();
     if (CommentedAssembly) {
       __ block_comment(" being_initialized check");
@@ -322,10 +322,10 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   address target = nullptr;
   relocInfo::relocType reloc_type = relocInfo::none;
   switch (_id) {
-    case access_field_id:  target = Runtime1::entry_for(C1StubId::access_field_patching_id); break;
-    case load_klass_id:    target = Runtime1::entry_for(C1StubId::load_klass_patching_id); reloc_type = relocInfo::metadata_type; break;
-    case load_mirror_id:   target = Runtime1::entry_for(C1StubId::load_mirror_patching_id); reloc_type = relocInfo::oop_type; break;
-    case load_appendix_id: target = Runtime1::entry_for(C1StubId::load_appendix_patching_id); reloc_type = relocInfo::oop_type; break;
+    case access_field_id:  target = Runtime1::entry_for(access_field_patching_id); break;
+    case load_klass_id:    target = Runtime1::entry_for(load_klass_patching_id); reloc_type = relocInfo::metadata_type; break;
+    case load_mirror_id:   target = Runtime1::entry_for(load_mirror_patching_id); reloc_type = relocInfo::oop_type; break;
+    case load_appendix_id: target = Runtime1::entry_for(load_appendix_patching_id); reloc_type = relocInfo::oop_type; break;
     default: ShouldNotReachHere();
   }
   __ bind(call_patch);

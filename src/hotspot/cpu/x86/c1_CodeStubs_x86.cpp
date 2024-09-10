@@ -313,7 +313,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   if (CommentedAssembly) {
     __ block_comment(" patch template");
   }
-  if (_id == C1StubId::load_klass_id) {
+  if (_id == load_klass_id) {
     // produce a copy of the load klass instruction for use by the being initialized case
 #ifdef ASSERT
     address start = __ pc();
@@ -327,7 +327,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
       assert(a_byte == *start++, "should be the same code");
     }
 #endif
-  } else if (_id == C1StubId::load_mirror_id) {
+  } else if (_id == load_mirror_id) {
     // produce a copy of the load mirror instruction for use by the being
     // initialized case
 #ifdef ASSERT
@@ -354,7 +354,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
   address end_of_patch = __ pc();
   int bytes_to_skip = 0;
-  if (_id == C1StubId::load_mirror_id) {
+  if (_id == load_mirror_id) {
     int offset = __ offset();
     if (CommentedAssembly) {
       __ block_comment(" being_initialized check");
@@ -429,7 +429,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   for (int j = __ offset() ; j < jmp_off + 5 ; j++ ) {
     __ nop();
   }
-  if (_id == C1StubId::load_klass_id || _id == C1StubId::load_mirror_id || _id == C1StubId::load_appendix_id) {
+  if (_id == load_klass_id || _id == load_mirror_id || _id == load_appendix_id) {
     CodeSection* cs = __ code_section();
     RelocIterator iter(cs, (address)_pc_start, (address)(_pc_start + 1));
     relocInfo::change_reloc_info_for_address(&iter, (address) _pc_start, reloc_type, relocInfo::none);

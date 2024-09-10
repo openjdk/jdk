@@ -288,7 +288,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
   int being_initialized_entry = __ offset();
 
-  if (_id == C1StubId::load_klass_id) {
+  if (_id == load_klass_id) {
     // Produce a copy of the load klass instruction for use by the case being initialized.
 #ifdef ASSERT
     address start = __ pc();
@@ -303,7 +303,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
       assert(a_byte == *start++, "should be the same code");
     }
 #endif
-  } else if (_id == C1StubId::load_mirror_id || _id == C1StubId::load_appendix_id) {
+  } else if (_id == load_mirror_id || _id == load_appendix_id) {
     // Produce a copy of the load mirror instruction for use by the case being initialized.
 #ifdef ASSERT
     address start = __ pc();
@@ -329,7 +329,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
 
   address end_of_patch = __ pc();
   int bytes_to_skip = 0;
-  if (_id == C1StubId::load_mirror_id) {
+  if (_id == load_mirror_id) {
     int offset = __ offset();
     if (CommentedAssembly) {
       __ block_comment(" being_initialized check");
@@ -395,7 +395,7 @@ void PatchingStub::emit_code(LIR_Assembler* ce) {
   assert(_patch_info_offset == (patch_info_pc - __ pc()), "must not change");
   ce->add_call_info_here(_info);
   __ z_brcl(Assembler::bcondAlways, _patch_site_entry);
-  if (_id == C1StubId::load_klass_id || _id == C1StubId::load_mirror_id || _id == C1StubId::load_appendix_id) {
+  if (_id == load_klass_id || _id == load_mirror_id || _id == load_appendix_id) {
     CodeSection* cs = __ code_section();
     address pc = (address)_pc_start;
     RelocIterator iter(cs, pc, pc + 1);
