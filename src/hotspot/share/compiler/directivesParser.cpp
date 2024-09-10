@@ -348,7 +348,7 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
           } else {
             error(VALUE_ERROR, "Unrecognized tag name detected in TraceAutoVectorization: %s", validator.what());
           }
-	} else if (strncmp(option_key->name, "TraceMergeStores", 16) == 0) {
+        } else if (strncmp(option_key->name, "TraceMergeStores", 16) == 0) {
           TraceMergeStores::TagValidator validator(s, false);
 
           valid = validator.is_valid();

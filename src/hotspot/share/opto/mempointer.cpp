@@ -217,8 +217,8 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc LP64_
     case Op_LShiftI: // ConvI2L(a << conI) != ConvI2L(a) << ConvI2L(conI)
       break; // Analysis below.
 
+    // All other operations are assumed not safe to decompose, or simply cannot be decomposed
     default:
-      assert(false, "case not covered explicitly");
       return false;
   }
 
