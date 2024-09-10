@@ -68,6 +68,7 @@ address CompilerToVM::Data::SharedRuntime_deopt_blob_unpack;
 address CompilerToVM::Data::SharedRuntime_deopt_blob_unpack_with_exception_in_tls;
 address CompilerToVM::Data::SharedRuntime_deopt_blob_uncommon_trap;
 address CompilerToVM::Data::SharedRuntime_polling_page_return_handler;
+address CompilerToVM::Data::SharedRuntime_throw_delayed_StackOverflowError_entry;
 
 address CompilerToVM::Data::nmethod_entry_barrier;
 int CompilerToVM::Data::thread_disarmed_guard_value_offset;
@@ -158,6 +159,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   SharedRuntime_deopt_blob_unpack_with_exception_in_tls = SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   SharedRuntime_deopt_blob_uncommon_trap = SharedRuntime::deopt_blob()->uncommon_trap();
   SharedRuntime_polling_page_return_handler = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+  SharedRuntime_throw_delayed_StackOverflowError_entry = SharedRuntime::throw_delayed_StackOverflowError_entry();
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm != nullptr) {

@@ -433,8 +433,8 @@ class frame {
   void describe_pd(FrameValues& values, int frame_no);
 
  public:
-  void print_value() const { print_value_on(tty,nullptr); }
-  void print_value_on(outputStream* st, JavaThread *thread) const;
+  void print_value() const { print_value_on(tty); }
+  void print_value_on(outputStream* st) const;
   void print_on(outputStream* st) const;
   void interpreter_frame_print_on(outputStream* st) const;
   void print_on_error(outputStream* st, char* buf, int buflen, bool verbose = false) const;

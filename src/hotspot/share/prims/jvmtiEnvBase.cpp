@@ -56,6 +56,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/synchronizer.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -1465,7 +1466,6 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
 
   ThreadsListHandle tlh(current_thread);
   JavaThread *owning_thread = nullptr;
-  ObjectMonitor *mon = nullptr;
   jvmtiMonitorUsage ret = {
       nullptr, 0, 0, nullptr, 0, nullptr
   };
@@ -1495,9 +1495,11 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
   ResourceMark rm(current_thread);
   GrowableArray<JavaThread*>* wantList = nullptr;
 
-  if (mark.has_monitor()) {
-    mon = mark.monitor();
-    assert(mon != nullptr, "must have monitor");
+  ObjectMonitor* mon = mark.has_monitor()
+      ? ObjectSynchronizer::read_monitor(current_thread, hobj(), mark)
+      : nullptr;
+
+  if (mon != nullptr) {
     // this object has a heavyweight monitor
     nWant = mon->contentions(); // # of threads contending for monitor entry, but not re-entry
     nWait = mon->waiters();     // # of threads waiting for notification,

@@ -55,7 +55,7 @@ public class TestVoidHtmlElements {
     }
 
     private static void check(HtmlTag htmlTag) {
-        boolean elementIsVoid = new HtmlTree(htmlTag).isVoid();
+        boolean elementIsVoid = HtmlTree.of(htmlTag).isVoid();
         boolean elementHasNoEndTag = htmlTag.endKind == HtmlTag.EndKind.NONE;
         if (elementIsVoid != elementHasNoEndTag) {
             throw new AssertionError(htmlTag + ", " + elementIsVoid + ", " + elementHasNoEndTag);

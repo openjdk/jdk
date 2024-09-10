@@ -24,7 +24,10 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CustomAttribute;
+import java.lang.classfile.FieldBuilder;
+import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.PseudoInstruction;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.constant.ClassDesc;
@@ -50,8 +53,11 @@ import jdk.internal.access.SharedSecrets;
 import static java.lang.classfile.ClassFile.ACC_STATIC;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.components.ClassPrinter;
-import java.nio.ByteBuffer;
 import java.util.function.Consumer;
+
+import static jdk.internal.constant.PrimitiveClassDescImpl.CD_double;
+import static jdk.internal.constant.PrimitiveClassDescImpl.CD_long;
+import static jdk.internal.constant.PrimitiveClassDescImpl.CD_void;
 
 /**
  * Helper to create and manipulate type descriptors, where type descriptors are
@@ -63,19 +69,51 @@ public class Util {
     private Util() {
     }
 
+    public static <T> Consumer<Consumer<T>> writingAll(Iterable<T> container) {
+        record ForEachConsumer<T>(Iterable<T> container) implements Consumer<Consumer<T>> {
+            @Override
+            public void accept(Consumer<T> consumer) {
+                container.forEach(consumer);
+            }
+        }
+        return new ForEachConsumer<>(container);
+    }
+
+    public static Consumer<MethodBuilder> buildingCode(Consumer<? super CodeBuilder> codeHandler) {
+        record WithCodeMethodHandler(Consumer<? super CodeBuilder> codeHandler) implements Consumer<MethodBuilder> {
+            @Override
+            public void accept(MethodBuilder builder) {
+                builder.withCode(codeHandler);
+            }
+        }
+        return new WithCodeMethodHandler(codeHandler);
+    }
+
+    public static Consumer<FieldBuilder> buildingFlags(int flags) {
+        record WithFlagFieldHandler(int flags) implements Consumer<FieldBuilder> {
+            @Override
+            public void accept(FieldBuilder builder) {
+                builder.withFlags(flags);
+            }
+        }
+        return new WithFlagFieldHandler(flags);
+    }
+
     private static final int ATTRIBUTE_STABILITY_COUNT = AttributeMapper.AttributeStability.values().length;
 
     public static boolean isAttributeAllowed(final Attribute<?> attr,
-                                             final ClassFile.AttributesProcessingOption processingOption) {
+                                             final ClassFileImpl context) {
         return attr instanceof BoundAttribute
-                ? ATTRIBUTE_STABILITY_COUNT - attr.attributeMapper().stability().ordinal() > processingOption.ordinal()
+                ? ATTRIBUTE_STABILITY_COUNT - attr.attributeMapper().stability().ordinal() > context.attributesProcessingOption().ordinal()
                 : true;
     }
 
     public static int parameterSlots(MethodTypeDesc mDesc) {
-        int count = 0;
-        for (int i = 0; i < mDesc.parameterCount(); i++) {
-            count += slotSize(mDesc.parameterType(i));
+        int count = mDesc.parameterCount();
+        for (int i = count - 1; i >= 0; i--) {
+            if (isDoubleSlot(mDesc.parameterType(i))) {
+                count++;
+            }
         }
         return count;
     }
@@ -85,17 +123,13 @@ public class Util {
         int count = ((flags & ACC_STATIC) != 0) ? 0 : 1;
         for (int i = 0; i < result.length; i++) {
             result[i] = count;
-            count += slotSize(mDesc.parameterType(i));
+            count += paramSlotSize(mDesc.parameterType(i));
         }
         return result;
     }
 
     public static int maxLocals(int flags, MethodTypeDesc mDesc) {
-        int count = ((flags & ACC_STATIC) != 0) ? 0 : 1;
-        for (int i = 0; i < mDesc.parameterCount(); i++) {
-            count += slotSize(mDesc.parameterType(i));
-        }
-        return count;
+        return parameterSlots(mDesc) + ((flags & ACC_STATIC) == 0 ? 1 : 0) ;
     }
 
     /**
@@ -152,8 +186,12 @@ public class Util {
 
     public static void checkKind(Opcode op, Opcode.Kind k) {
         if (op.kind() != k)
-            throw new IllegalArgumentException(
-                    String.format("Wrong opcode kind specified; found %s(%s), expected %s", op, op.kind(), k));
+            throw badOpcodeKindException(op, k);
+    }
+
+    public static IllegalArgumentException badOpcodeKindException(Opcode op, Opcode.Kind k) {
+        return new IllegalArgumentException(
+                String.format("Wrong opcode kind specified; found %s(%s), expected %s", op, op.kind(), k));
     }
 
     public static int flagsToBits(AccessFlag.Location location, Collection<AccessFlag> flags) {
@@ -191,7 +229,7 @@ public class Util {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
+    private static <T extends Attribute<T>> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
         if (attr instanceof CustomAttribute<?> ca) {
             var mapper = (AttributeMapper<T>) ca.attributeMapper();
             mapper.writeAttribute(writer, (T) ca);
@@ -216,16 +254,15 @@ public class Util {
     }
 
     public static int slotSize(ClassDesc desc) {
-        return switch (desc.descriptorString().charAt(0)) {
-            case 'V' -> 0;
-            case 'D','J' -> 2;
-            default -> 1;
-        };
+        return desc == CD_void ? 0 : isDoubleSlot(desc) ? 2 : 1;
+    }
+
+    public static int paramSlotSize(ClassDesc desc) {
+        return isDoubleSlot(desc) ? 2 : 1;
     }
 
     public static boolean isDoubleSlot(ClassDesc desc) {
-        char ch = desc.descriptorString().charAt(0);
-        return ch == 'D' || ch == 'J';
+        return desc == CD_double || desc == CD_long;
     }
 
     public static void dumpMethod(SplitConstantPool cp,
@@ -233,7 +270,7 @@ public class Util {
                                   String methodName,
                                   MethodTypeDesc methodDesc,
                                   int acc,
-                                  ByteBuffer bytecode,
+                                  RawBytecodeHelper.CodeRange bytecode,
                                   Consumer<String> dump) {
 
         // try to dump debug info about corrupted bytecode
@@ -246,8 +283,8 @@ public class Util {
                                 public void writeBody(BufWriterImpl b) {
                                     b.writeU2(-1);//max stack
                                     b.writeU2(-1);//max locals
-                                    b.writeInt(bytecode.limit());
-                                    b.writeBytes(bytecode.array(), 0, bytecode.limit());
+                                    b.writeInt(bytecode.length());
+                                    b.writeBytes(bytecode.array(), 0, bytecode.length());
                                     b.writeU2(0);//exception handlers
                                     b.writeU2(0);//attributes
                                 }
@@ -255,13 +292,16 @@ public class Util {
             ClassPrinter.toYaml(clm.methods().get(0).code().get(), ClassPrinter.Verbosity.TRACE_ALL, dump);
         } catch (Error | Exception _) {
             // fallback to bytecode hex dump
-            bytecode.rewind();
-            while (bytecode.position() < bytecode.limit()) {
-                dump.accept("%n%04x:".formatted(bytecode.position()));
-                for (int i = 0; i < 16 && bytecode.position() < bytecode.limit(); i++) {
-                    dump.accept(" %02x".formatted(bytecode.get()));
-                }
+            dumpBytesHex(dump, bytecode.array(), bytecode.length());
+        }
+    }
+
+    public static void dumpBytesHex(Consumer<String> dump, byte[] bytes, int length) {
+        for (int i = 0; i < length; i++) {
+            if (i % 16 == 0) {
+                dump.accept("%n%04x:".formatted(i));
             }
+            dump.accept(" %02x".formatted(bytes[i]));
         }
     }
 
