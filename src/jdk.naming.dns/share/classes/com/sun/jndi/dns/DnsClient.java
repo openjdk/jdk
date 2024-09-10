@@ -440,7 +440,7 @@ public class DnsClient {
                 // use 1L below to ensure conversion to long and avoid potential
                 // integer overflow (timeout is an int).
                 // no point in supporting timeout > Integer.MAX_VALUE, clamp if needed
-                long pktTimeout = Math.clamp(timeout * (1L << retry), 0, Integer.MAX_VALUE);
+                long pktTimeout = Math.clamp(timeout * (1L << retry), 0L, Integer.MAX_VALUE);
                 udpChannel.write(opkt);
 
                 // timeout remaining after successive 'blockingReceive()'
@@ -476,7 +476,7 @@ public class DnsClient {
                     }
                     long elapsedMillis = TimeUnit.NANOSECONDS
                                                  .toMillis(System.nanoTime() - start);
-                    timeoutLeft = pktTimeout - Math.clamp(elapsedMillis, 0, Integer.MAX_VALUE);
+                    timeoutLeft = pktTimeout - elapsedMillis;
                 } while (timeoutLeft > MIN_TIMEOUT);
                 // no matching packets received within the timeout
                 throw new SocketTimeoutException();
