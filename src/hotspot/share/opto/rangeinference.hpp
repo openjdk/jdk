@@ -109,7 +109,7 @@ U cardinality_from_bounds(const RangeInt<S>& srange, const RangeInt<U>& urange) 
     return urange._hi - urange._lo;
   }
 
-  return urange._hi - U(srange._lo) + U(srange._hi) - urange._lo + 1;
+  return (urange._hi - U(srange._lo)) + (U(srange._hi) - urange._lo) + 1;
 }
 
 template <class CT, class S, class U>

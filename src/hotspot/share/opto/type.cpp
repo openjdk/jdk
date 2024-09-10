@@ -1630,10 +1630,6 @@ bool TypeInt::contains(const TypeInt* t) const {
   return int_type_subset(this, t);
 }
 
-bool TypeInt::properly_contains(const TypeInt* t) const {
-  return int_type_subset(this, t) && !int_type_equal(this, t);
-}
-
 const Type* TypeInt::xmeet(const Type* t) const {
   return int_type_xmeet(this, t, TypeInt::try_make, _is_dual);
 }
@@ -1756,10 +1752,6 @@ bool TypeLong::contains(jlong i) const {
 
 bool TypeLong::contains(const TypeLong* t) const {
   return int_type_subset(this, t);
-}
-
-bool TypeLong::properly_contains(const TypeLong* t) const {
-  return int_type_subset(this, t) && !int_type_equal(this, t);
 }
 
 const Type *TypeLong::xmeet(const Type* t) const {

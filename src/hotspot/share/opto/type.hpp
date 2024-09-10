@@ -580,11 +580,69 @@ public:
   static const TypeInteger* minus_1(BasicType type);
 };
 
-
-
-//------------------------------TypeInt----------------------------------------
-// Class of integer ranges, the set of integers between a lower bound and an
-// upper bound, inclusive.
+/**
+ * Definition:
+ *
+ * A TypeInt represents a set of jint values. An jint v is an element of a
+ * TypeInt iff:
+ *
+ * v >= _lo && v <= _hi && juint(v) >= _ulo && juint(v) <= _uhi && _bits.is_satisfied_by(v)
+ *
+ * Multiple set of parameters can represent the same set.
+ * E.g: consider 2 TypeInt t1, t2
+ *
+ * t1._lo = 2, t1._hi = 7, t1._ulo = 0, t1._uhi = 5, t1._bits._zeros = 0x0, t1._bits._ones = 0x1
+ * t2._lo = 3, t2._hi = 5, t2._ulo = 3, t2._uhi = 5, t2._bits._zeros = 0xFFFFFFF8, t2._bits._ones = 0x1
+ *
+ * Then, t1 and t2 both represent the set {3, 5}. We can also see that the
+ * constraints of t2 are optimal. I.e there exists no TypeInt t3 which also
+ * represents {3, 5} such that:
+ *
+ * t3._lo > t2._lo || t3._hi < t2._hi || t3._ulo > t2._ulo || t3._uhi < t2._uhi ||
+ *     (t3._bits._zeros & t2._bis._zeros) != t3._bits._zeros || (t3._bits._ones & t2._bits._ones) != t3._bits._ones
+ *
+ * The last 2 conditions mean that the bits in t3._bits._zeros is not a subset
+ * of those in t2._bits._zeros, the same applies to _bits._ones
+ *
+ * As a result, every TypeInt is canonicalized to its optimal form upon
+ * construction. This makes it easier to reason about them in optimizations.
+ * E.g a TypeInt t with t._lo < 0 will definitely contain negative values. It
+ * also makes it trivial to determine if a TypeInt instance is a subset of
+ * another.
+ *
+ * Properties:
+ *
+ * 1. Since every TypeInt instance is canonicalized, all the bounds must also
+ * be elements of such TypeInt. Or else, we can tighted the bounds by narrowing
+ * it by one, which contradicts the assumption of the TypeInt being canonical.
+ *
+ * 2. Either _lo == jint(_lo) and _hi == jint(_uhi), or all elements of a
+ * TypeInt lie in the intervals [_lo, jint(_uhi)] or [jint(_ulo), _hi]
+ *
+ * Proof: For 2 jint value x, y such that they are both >= 0 or < 0. Then:
+ *
+ * x <= y iff juint(x) <= juint(y)
+ *
+ * Then, we have:
+ *
+ * For a TypeInt t, there are 3 possible cases:
+ *
+ * a. t._lo >= 0. Since 0 <= t._lo <= jint(t._ulo), we have:
+ *
+ * juint(t._lo) <= juint(jint(t._ulo)) == t._ulo <= juint(t._lo)
+ *
+ * Which means that t._lo == jint(t._ulo). Similarly, t._hi == jint(t._uhi).
+ *
+ * b. t._hi < 0. Similarly, t._lo == jint(t._ulo) and t._hi == jint(t._uhi)
+ *
+ * c. t._lo < 0, t._hi >= 0. Then jint(t._ulo) >= 0 and jint(t._uhi) < 0. In
+ * this case, all elements of t belongs to either [t._lo, jint(t._uhi)] or
+ * [jint(t._ulo), t._hi].
+ *
+ * This property is useful for our analysis of TypeInt values. Additionally, it
+ * can be seen that _lo and jint(_uhi) are both < 0 or >= 0, and the same
+ * applies to jint(_ulo) and _hi.
+ */
 class TypeInt : public TypeInteger {
   TypeInt(const TypeIntPrototype<jint, juint>& t, int w, bool dual);
   static const Type* try_make(const TypeIntPrototype<jint, juint>& t, int w, bool dual);
@@ -617,8 +675,6 @@ public:
   // argument are also elements of this type)
   bool contains(jint i) const;
   bool contains(const TypeInt* t) const;
-  // Excluding the cases where this and t are the same
-  bool properly_contains(const TypeInt* t) const;
 
   virtual bool is_finite() const;  // Has a finite value
 
@@ -663,10 +719,7 @@ public:
 #endif
 };
 
-
-//------------------------------TypeLong---------------------------------------
-// Class of long integer ranges, the set of integers between a lower bound and
-// an upper bound, inclusive.
+// Similar to TypeInt
 class TypeLong : public TypeInteger {
   TypeLong(const TypeIntPrototype<jlong, julong>& t, int w, bool dual);
   static const Type* try_make(const TypeIntPrototype<jlong, julong>& t, int w, bool dual);
@@ -700,8 +753,6 @@ public:
   // argument are also elements of this type)
   bool contains(jlong i) const;
   bool contains(const TypeLong* t) const;
-  // Excluding the cases where this and t are the same
-  bool properly_contains(const TypeLong* t) const;
 
   // Check for positive 32-bit value.
   int is_positive_int() const { return _lo >= 0 && _hi <= (jlong)max_jint; }

@@ -45,10 +45,11 @@ public:
 
 // In the canonical form, [lo, hi] intersects with [ulo, uhi] can result in 2
 // cases:
-// - [lo, hi] is the same as [ulo, uhi], lo and hi are both >= 0 or both < 0
+// - [lo, hi] is the same as [ulo, uhi], lo and hi are both >= 0 or both < 0.
 // - [lo, hi] is not the same as [ulo, uhi], which results in the intersections
-// being [lo, uhi] and [ulo, hi], lo and uhi are < 0 while ulo and hi are >= 0
-// This class deals with each interval with both bounds being >= 0 or < 0
+// being [lo, uhi] and [ulo, hi], lo and uhi are < 0 while ulo and hi are >= 0.
+// This class deals with each interval with both bounds being >= 0 or < 0 in
+// the signed domain.
 template <class U>
 class SimpleCanonicalResult {
   static_assert(std::is_unsigned<U>::value, "bit info should be unsigned");
@@ -288,11 +289,17 @@ TypeIntPrototype<S, U>::canonicalize_constraints() const {
   }
 
   // Trivially canonicalize the bounds so that srange._lo and urange._hi are
-  // both < 0 or >= 0. The same for srange._hi and urange._ulo
+  // both < 0 or >= 0. The same for srange._hi and urange._ulo. See TypeInt for
+  // detailed explanation.
   if (S(urange._lo) > S(urange._hi)) {
+    // This means that S(urange._lo) >= 0 and S(urange._hi) < 0
     if (S(urange._hi) < srange._lo) {
+      // This means that there should be no element in the interval
+      // [min_S, S(urange._hi)], tighten urange._hi to max_S
       urange._hi = std::numeric_limits<S>::max();
     } else if (S(urange._lo) > srange._hi) {
+      // This means that there should be no element in the interval
+      // [S(urange._lo), max_S], tighten urange._lo to min_S
       urange._lo = std::numeric_limits<S>::min();
     }
   }
@@ -446,47 +453,47 @@ template const Type* int_type_xmeet(const TypeLong* i1, const Type* t2,
 // first, after WidenMax attempts, if the type has still not converged we speed up the
 // convergence by abandoning the bounds
 template <class CT>
-const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt) {
+const Type* int_type_widen(const CT* new_type, const CT* old_type, const CT* limit_type) {
   using S = std::remove_const_t<decltype(CT::_lo)>;
   using U = std::remove_const_t<decltype(CT::_ulo)>;
 
-  if (ot == nullptr) {
-    return nt;
+  if (old_type == nullptr) {
+    return new_type;
   }
 
   // If new guy is equal to old guy, no widening
-  if (int_type_equal(nt, ot)) {
-    return ot;
+  if (int_type_equal(new_type, old_type)) {
+    return old_type;
   }
 
   // If old guy contains new, then we probably widened too far & dropped to
   // bottom. Return the wider fellow.
-  if (int_type_subset(ot, nt)) {
-    return ot;
+  if (int_type_subset(old_type, new_type)) {
+    return old_type;
   }
 
   // Neither contains each other, weird?
   // fatal("Integer value range is not subset");
   // return this;
-  if (!int_type_subset(nt, ot)) {
+  if (!int_type_subset(new_type, old_type)) {
     return CT::TYPE_DOMAIN;
   }
 
   // If old guy was a constant, do not bother
-  if (ot->singleton()) {
-    return nt;
+  if (old_type->singleton()) {
+    return new_type;
   }
 
   // If new guy contains old, then we widened
   // If new guy is already wider than old, no widening
-  if (nt->_widen > ot->_widen) {
-    return nt;
+  if (new_type->_widen > old_type->_widen) {
+    return new_type;
   }
 
-  if (nt->_widen < Type::WidenMax) {
+  if (new_type->_widen < Type::WidenMax) {
     // Returned widened new guy
-    TypeIntPrototype<S, U> prototype{{nt->_lo, nt->_hi}, {nt->_ulo, nt->_uhi}, nt->_bits};
-    return CT::try_make(prototype, nt->_widen + 1);
+    TypeIntPrototype<S, U> prototype{{new_type->_lo, new_type->_hi}, {new_type->_ulo, new_type->_uhi}, new_type->_bits};
+    return CT::try_make(prototype, new_type->_widen + 1);
   }
 
   // Speed up the convergence by abandoning the bounds, there are only a couple of bits so
@@ -495,63 +502,63 @@ const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt) {
   S max = std::numeric_limits<S>::max();
   U umin = std::numeric_limits<U>::min();
   U umax = std::numeric_limits<U>::max();
-  U zeros = nt->_bits._zeros;
-  U ones = nt->_bits._ones;
-  if (lt != nullptr) {
-    min = lt->_lo;
-    max = lt->_hi;
-    umin = lt->_ulo;
-    umax = lt->_uhi;
-    zeros |= lt->_bits._zeros;
-    ones |= lt->_bits._ones;
+  U zeros = new_type->_bits._zeros;
+  U ones = new_type->_bits._ones;
+  if (limit_type != nullptr) {
+    min = limit_type->_lo;
+    max = limit_type->_hi;
+    umin = limit_type->_ulo;
+    umax = limit_type->_uhi;
+    zeros |= limit_type->_bits._zeros;
+    ones |= limit_type->_bits._ones;
   }
   TypeIntPrototype<S, U> prototype{{min, max}, {umin, umax}, {zeros, ones}};
   return CT::try_make(prototype, Type::WidenMax);
 }
-template const Type* int_type_widen(const TypeInt* nt, const TypeInt* ot, const TypeInt* lt);
-template const Type* int_type_widen(const TypeLong* nt, const TypeLong* ot, const TypeLong* lt);
+template const Type* int_type_widen(const TypeInt* new_type, const TypeInt* old_type, const TypeInt* limit_type);
+template const Type* int_type_widen(const TypeLong* new_type, const TypeLong* old_type, const TypeLong* limit_type);
 
 // Called by PhiNode::Value during GVN, monotonically narrow the value set, only
 // narrow if the bits change or if the bounds are tightened enough to avoid
 // slow convergence
 template <class CT>
-const Type* int_type_narrow(const CT* nt, const CT* ot) {
+const Type* int_type_narrow(const CT* new_type, const CT* old_type) {
   using S = decltype(CT::_lo);
   using U = decltype(CT::_ulo);
 
-  if (nt->singleton() || ot == nullptr) {
-    return nt;
+  if (new_type->singleton() || old_type == nullptr) {
+    return new_type;
   }
 
   // If new guy is equal to old guy, no narrowing
-  if (int_type_equal(nt, ot)) {
-    return ot;
+  if (int_type_equal(new_type, old_type)) {
+    return old_type;
   }
 
   // If old guy was maximum range, allow the narrowing
-  if (int_type_equal(ot, CT::TYPE_DOMAIN)) {
-    return nt;
+  if (int_type_equal(old_type, CT::TYPE_DOMAIN)) {
+    return new_type;
   }
 
   // Doesn't narrow; pretty weird
-  if (!int_type_subset(ot, nt)) {
-    return nt;
+  if (!int_type_subset(old_type, new_type)) {
+    return new_type;
   }
 
   // Bits change
-  if (ot->_bits._zeros != nt->_bits._zeros || ot->_bits._ones != nt->_bits._ones) {
-    return nt;
+  if (old_type->_bits._zeros != new_type->_bits._zeros || old_type->_bits._ones != new_type->_bits._ones) {
+    return new_type;
   }
 
   // Only narrow if the range shrinks a lot
-  U oc = cardinality_from_bounds(RangeInt<S>{ot->_lo, ot->_hi},
-                                 RangeInt<U>{ot->_ulo, ot->_uhi});
-  U nc = cardinality_from_bounds(RangeInt<S>{nt->_lo, nt->_hi},
-                                 RangeInt<U>{nt->_ulo, nt->_uhi});
-  return (nc > (oc >> 1) + (SMALLINT * 2)) ? ot : nt;
+  U oc = cardinality_from_bounds(RangeInt<S>{old_type->_lo, old_type->_hi},
+                                 RangeInt<U>{old_type->_ulo, old_type->_uhi});
+  U nc = cardinality_from_bounds(RangeInt<S>{new_type->_lo, new_type->_hi},
+                                 RangeInt<U>{new_type->_ulo, new_type->_uhi});
+  return (nc > (oc >> 1) + (SMALLINT * 2)) ? old_type : new_type;
 }
-template const Type* int_type_narrow(const TypeInt* nt, const TypeInt* ot);
-template const Type* int_type_narrow(const TypeLong* nt, const TypeLong* ot);
+template const Type* int_type_narrow(const TypeInt* new_type, const TypeInt* old_type);
+template const Type* int_type_narrow(const TypeLong* new_type, const TypeLong* old_type);
 
 
 #ifndef PRODUCT
