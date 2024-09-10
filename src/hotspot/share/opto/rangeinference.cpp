@@ -473,8 +473,6 @@ const Type* int_type_widen(const CT* new_type, const CT* old_type, const CT* lim
   }
 
   // Neither contains each other, weird?
-  // fatal("Integer value range is not subset");
-  // return this;
   if (!int_type_subset(new_type, old_type)) {
     return CT::TYPE_DOMAIN;
   }
