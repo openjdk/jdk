@@ -1642,10 +1642,11 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     srli(tmp2, tmp1, 24);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
-    j(L_exit);
 
   // put vector code here, otherwise "offset is too large" error occurs.
   if (UseRVV) {
+    j(L_exit); // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
+
     bind(L_vector_entry);
     vector_update_crc32(crc, buf, len, unroll_words, tmp1, tmp2, tmp3, tmp4, table0, table3, single_table_size);
 
@@ -1653,7 +1654,6 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     bge(len, zr, L_by4_loop);
     addiw(len, len, 4);
     bgt(len, zr, L_by1_loop);
-    j(L_exit);
   }
 
   bind(L_exit);
