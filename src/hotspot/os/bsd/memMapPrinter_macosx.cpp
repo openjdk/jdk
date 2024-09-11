@@ -119,13 +119,13 @@ public:
 
   static const char* get_inherit_mode(int mode) {
       switch (mode) {
-        case VM_INHERIT_COPY: 
+        case VM_INHERIT_COPY:
           return "copy";
-        case VM_INHERIT_SHARE: 
+        case VM_INHERIT_SHARE:
           return "share";
-        case VM_INHERIT_NONE: 
+        case VM_INHERIT_NONE:
           return "none";
-        case VM_INHERIT_DONATE_COPY: 
+        case VM_INHERIT_DONATE_COPY:
           return "copy-and-delete";
         default:
           return "(unknown)";
