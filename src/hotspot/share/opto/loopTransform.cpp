@@ -3154,7 +3154,7 @@ void PhaseIdealLoop::ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode
     Node* n = wq.at(i);
     assert(is_dominator(compute_early_ctrl(n, get_ctrl(n)), pre_end), "node pinned on loop exit test?");
     set_ctrl(n, control);
-    for (uint j = 0; j < n->req(); ++j) {
+    for (uint j = 0; j < n->req(); j++) {
       Node* in = n->in(j);
       if (in != nullptr && has_ctrl(in) && !is_dominator(get_ctrl(in), pre_end)) {
         wq.push(in);
