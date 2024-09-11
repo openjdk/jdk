@@ -379,6 +379,7 @@ ciInstance* ciEnv::get_or_create_exception(jobject& handle, Symbol* name) {
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
     } else {
+      OrderAccess::storestore(); // Ensure handle is fully constructed before publishing
       handle = objh;
     }
   }
