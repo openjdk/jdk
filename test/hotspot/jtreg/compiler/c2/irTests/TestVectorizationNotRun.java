@@ -51,8 +51,7 @@ public class TestVectorizationNotRun {
     static long[] longArray = new long[size];
 
     @Test
-    @IR(applyIf = {"UseCompactObjectHeaders", "false"},
-        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void test(byte[] dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
             if ((i < 0) || (8 > sizeBytes - i)) {

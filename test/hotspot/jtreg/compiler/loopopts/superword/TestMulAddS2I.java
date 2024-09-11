@@ -166,7 +166,7 @@ public class TestMulAddS2I {
         applyIf = { "UseCompactObjectHeaders", "false" },
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"asimd", "true"},
-        applyIfAnd = {"MaxVectorSize", "16", "UseCompactObjectHeaders", "false" }, // AD file requires vector_length = 16
+        applyIfAnd = {"MaxVectorSize", "16", "UseCompactObjectHeaders", "false"}, // AD file requires vector_length = 16
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         applyIf = { "UseCompactObjectHeaders", "false" },

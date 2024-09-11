@@ -147,8 +147,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(applyIf = {"UseCompactObjectHeaders", "false"},
-        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteLong1(byte[] dest, long[] src) {
         for (int i = 0; i < src.length; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i, src[i]);
@@ -161,8 +160,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(applyIf = {"UseCompactObjectHeaders", "false"},
-        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteLong2(byte[] dest, long[] src) {
         for (int i = 1; i < src.length; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i - 1), src[i]);
@@ -175,8 +173,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(applyIf = {"UseCompactObjectHeaders", "false"},
-        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteLong3(byte[] dest, long[] src) {
         for (int i = 0; i < src.length - 1; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + 1), src[i]);
@@ -205,8 +202,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(applyIf = {"UseCompactObjectHeaders", "false"},
-        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteLong5(byte[] dest, long[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i + baseOffset), src[i]);
@@ -220,8 +216,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(applyIf = {"UseCompactObjectHeaders", "false"},
-        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteByte1(byte[] dest, byte[] src) {
         for (int i = 0; i < src.length / 8; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i, UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
@@ -234,8 +229,7 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(applyIf = {"UseCompactObjectHeaders", "false"},
-        counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
     public static void testByteByte2(byte[] dest, byte[] src) {
         for (int i = 1; i < src.length / 8; i++) {
             UNSAFE.putLongUnaligned(dest, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * (i - 1), UNSAFE.getLongUnaligned(src, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 8 * i));
