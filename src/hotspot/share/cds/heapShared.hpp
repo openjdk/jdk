@@ -143,13 +143,13 @@ class HeapShared: AllStatic {
   friend class VerifySharedOopClosure;
 
 public:
-  // Can this VM write a heap region into the CDS archive? Currently only G1+compressed{oops,cp}
+  // Can this VM write a heap region into the CDS archive? Currently only {G1|Parallel|Serial}+compressed_cp
   static bool can_write() {
     CDS_JAVA_HEAP_ONLY(
       if (_disable_writing) {
         return false;
       }
-      return (UseG1GC && UseCompressedClassPointers);
+      return (UseG1GC || UseParallelGC || UseSerialGC) && UseCompressedClassPointers;
     )
     NOT_CDS_JAVA_HEAP(return false;)
   }
