@@ -23,7 +23,7 @@
 
 import jdk.test.lib.RandomFactory;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.FieldSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.math.BigInteger;
 import java.math.MutableBigIntegerBox;
@@ -47,12 +47,15 @@ public class MutableBigIntegerShiftTests {
 
     static final int ORDER_SMALL = 60;
     static final int ORDER_MEDIUM = 100;
-    static final int[] ORDERS = { ORDER_SMALL, ORDER_MEDIUM };
 
     private static final Random random = RandomFactory.getRandom();
 
+    private static int[] orders() {
+        return new int[] { ORDER_SMALL, ORDER_MEDIUM };
+    }
+
     @ParameterizedTest
-    @FieldSource("ORDERS")
+    @MethodSource("orders")
     public void shift(int order) {
         for (int i = 0; i < 100; i++) {
             MutableBigIntegerBox x = fetchNumber(order);
