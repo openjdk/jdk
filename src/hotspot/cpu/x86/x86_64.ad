@@ -6408,7 +6408,7 @@ instruct cmovL_reg(cmpOp cop, rFlagsReg cr, rRegL dst, rRegL src)
 
   ins_cost(200); // XXX
   format %{ "jn$cop     skip\t# signed cmove long\n\t"
-            "movl       $dst, $src\n"
+            "movq       $dst, $src\n"
     "skip:" %}
   ins_encode %{
     Label Lskip;
