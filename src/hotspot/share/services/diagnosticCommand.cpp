@@ -1193,6 +1193,10 @@ SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
   const char* name = _filename.value();
+  if (name == NULL || *name == 0) {
+    output()->print_cr("filename is empty or not specified.  No file written");
+    return;
+  }
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {
