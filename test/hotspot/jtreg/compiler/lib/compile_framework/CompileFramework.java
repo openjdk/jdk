@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CompileFramework {
-    private static final int COMPILE_TIMEOUT = 60;
+    private static final int COMPILE_TIMEOUT = 1000;
     private static final boolean VERBOSE = Boolean.getBoolean("CompileFrameworkVerbose");
 
     private List<SourceCode> sourceCodes = new ArrayList<SourceCode>();
