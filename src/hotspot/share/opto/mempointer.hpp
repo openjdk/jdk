@@ -117,12 +117,12 @@
 //          = new_con + sum(new_summands)
 //
 //    We call a decomposition safe if either:
-//      S1) No matter the values of the summand variables:
-//            mp1 = mp2
+//      SAFE1) No matter the values of the summand variables:
+//               mp1 = mp2
 //
-//      S2) The pointer is on an array with a known array_element_size_in_bytes,
-//          and there is an integer x, such that:
-//            mp1 = mp2 + x * array_element_size_in_bytes * 2^32
+//      SAFE2) The pointer is on an array with a known array_element_size_in_bytes,
+//             and there is an integer x, such that:
+//               mp1 = mp2 + x * array_element_size_in_bytes * 2^32
 //
 //    Note: MemPointerDecomposedFormParser::is_safe_to_decompose_op checks that all
 //          decompositions we apply are safe.
@@ -131,49 +131,82 @@
 //  Statement:
 //    Given two pointers p1 and p2, and their respective MemPointers mp1 and mp2.
 //    If these conditions hold:
-//      1) All summands of mp1 and mp2 are identical.
-//      2) The constants do not differ too much: abs(mp1.con - mp2.con) < 2^31
-//      3) Both p1 and p2 are within the bounds of the same memory object.
+//      S1) Both p1 and p2 are within the bounds of the same memory object.
+//      S2) The constants do not differ too much: abs(mp1.con - mp2.con) < 2^31
+//      S3) All summands of mp1 and mp2 are identical.
 //
 //    Then the ponter difference between p1 and p2 is identical to the difference between
 //    mp1 and mp2:
 //      p1 - p2 = mp1 - mp2
 //
-//    Note: MemPointerDecomposedForm::get_aliasing_with relies on this statememt to
+//    Note: MemPointerDecomposedForm::get_aliasing_with relies on this Statement to
 //          prove the correctness of its aliasing computation between two MemPointers.
 //
 //
 //  Proof Statement:
-//    If only decompositions of type (S1) were used, then trivially:
+//    Case 0: no decompositions were used:
+//      mp1 = 0 + 1 * p1 = p1
+//      mp2 = 0 + 1 * p2 = p2
+//      =>
+//      p1 - p2 = mp1 - mp2
+//
+//    Case 1: only decompositions of type (SAFE1) were used:
+//      We make an induction proof over the decompositions from p1 to mp1, starting with
+//      the trivial decompoisition:
+//        mp1_0 = 0 + 1 * p1 = p1
+//      and then for the i'th decomposition, we know that
+//        mp1_i = mp1_{i+1}
+//      and hence, if mp1 was decomposed with n decompositions from p1:
+//        p1 = mp1_0 = mp1_i = mp1_n = mp1
+//      The analogue can be proven for p2 and mp2:
+//        p2 = mp2
+//
 //      p1 = mp1
 //      p2 = mp2
 //      =>
 //      p1 - p2 = mp1 - mp2
 //
-//    If decompositions of type (S2) were used, then we can prove via induction over all
-//    decomposition steps that there must be some x1 and x2, such that:
-//      p1 = mp1 + x1 * array_element_size_in_bytes * 2^32
-//      p2 = mp2 + x2 * array_element_size_in_bytes * 2^32
+//    Case 2: decompositions of type (SAFE2) were used, and possibly also decompositions of
+//            type (SAFE1).
+//       Given we have (SAFE2) decompositions, we know that we are operating on an array of
+//       known array_element_size_in_bytes. We can weaken the guarantees from (SAFE1)
+//       decompositions to the same guarantee as (SAFE2) decompositions, hence all applied
+//       decompositions satisfy:
+//         mp1_i = mp1_{i+1} + x1_i * array_element_size_in_bytes * 2^32
+//       where x_i = 0 for (SAFE1) decompositions.
 //
-//    And hence, there must be an x, such that:
-//      p1 - p2 = mp1 - mp2 + x * array_element_size_in_bytes * 2^32
+//      We make an induction proof over the decompositions from p1 to mp1, starting with
+//      the trivial decompoisition:
+//        mp1_0 = 0 + 1 * p1 = p1
+//      and then for the i'th decomposition, we know that
+//        mp1_i = mp1_{i+1} + x1_i * array_element_size_in_bytes * 2^32
+//      and hence, if mp1 was decomposed with n decompositions from p1:
+//        p1 = mp1 + x1 * array_element_size_in_bytes * 2^32
+//      where x1 = sum(x1_i).
+//      The analogue can be proven for p2 and mp2:
+//        p2 = mp2 + x2 * array_element_size_in_bytes * 2^32
 //
-//    If "x = 0", then it follows:
-//      p1 - p2 = mp1 - mp2
+//      And hence, there must be an x, such that:
+//        p1 - p2 = mp1 - mp2 + x * array_element_size_in_bytes * 2^32
 //
-//    If "x != 0", then:
-//      abs(p1 - p2) =  abs(mp1 - mp2 + x * array_element_size_in_bytes * 2^32)
-//                   >= abs(x * array_element_size_in_bytes * 2^32) - abs(mp1 - mp2)
-//                   >= array_element_size_in_bytes * 2^32          - abs(mp1 - mp2)
-//                   >  array_element_size_in_bytes * 2^32          - 2^31
-//                   >= array_element_size_in_bytes * 2^31
-//                   >= max_possible_array_size_in_bytes
-//                   >= array_size_in_bytes
+//      If "x = 0", then it follows:
+//        p1 - p2 = mp1 - mp2
 //
-//      Thus we get a contradiction: p1 and p2 have a distance greater than the array
-//      size, and hence at least one of the two must be out of bounds. But condition 3
-//      of the statement requires that both p1 and p2 are both in bounds of the same
-//      memory object.
+//      If "x != 0", then:
+//        abs(p1 - p2) =  abs(mp1 - mp2 + x * array_element_size_in_bytes * 2^32)
+//                     >= abs(x * array_element_size_in_bytes * 2^32) - abs(mp1 - mp2)
+//                            -- apply x != 0 --
+//                     >= array_element_size_in_bytes * 2^32          - abs(mp1 - mp2)
+//                                                               -- apply S2 and S3 --
+//                     >  array_element_size_in_bytes * 2^32          - 2^31
+//                     >= array_element_size_in_bytes * 2^31
+//                     >= max_possible_array_size_in_bytes
+//                     >= array_size_in_bytes
+//
+//        Thus we get a contradiction: p1 and p2 have a distance greater than the array
+//        size, and hence at least one of the two must be out of bounds. But condition S1
+//        of the Statement requires that both p1 and p2 are both in bounds of the same
+//        memory object.
 
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
