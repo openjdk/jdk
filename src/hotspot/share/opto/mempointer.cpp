@@ -192,11 +192,12 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc LP64_
 #ifndef _LP64
   // On 32-bit platforms, the pointer has 32bits, and thus any higher bits will always
   // be truncated. Thus, it does not matter if we have int or long overflows.
+  // Simply put: all decompositions are (SAFE1).
   return true;
 #else
 
   switch(opc) {
-    // These operations are always safe to decompose:
+    // These operations are always safe to decompose, i.e. (SAFE1):
     case Op_ConI:
     case Op_ConL:
     case Op_AddP:
@@ -226,29 +227,63 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc LP64_
   const TypeAryPtr* ary_ptr_t = _mem->adr_type()->isa_aryptr();
   if (ary_ptr_t != nullptr) {
     // Array accesses that are not Unsafe always have a RangeCheck which ensures
-    // that there is no int overflow.
+    // that there is no int overflow. And without overflows, all decompositions
+    // are (SAFE1).
     if (!_mem->is_unsafe_access()) {
       return true;
     }
 
-    // Intuition: what happens if a AddI, SubI, MulI or LShiftI (with constant) overflows
-    //            the int range? TODO: generalize this a bit and write the proof!
+    // Intuition: In general, the decomposition of AddI, SubI, MulI or LShiftI is not safe,
+    //            because of overflows. But under some conditions, we can prove that such a
+    //            decomposition is (SAFE2). Intuitively, we want to prove that an overflow
+    //            would mean that the pointers have such a large distance, that at least one
+    //            must lie out of bounds. In the proof of the "Statement", we thus get a
+    //            contradiction with the condition that both pointers are in bounds.
     //
-    // Idea: pointer = con + sum(other_summands) + summand
-    //                 -------------------------   -------
-    //                 rest                        scale * ConvI2L(op)
+    // We prove that the decomposition of AddI, SubI, MulI (with constant) and ShiftI (with
+    // constant) is (SAFE2), under the condition:
     //
-    //       ... and so ...:
+    //   abs(scale) % array_element_size_in_bytes = 0
     //
-    //         scale * ConvI2L(a + b)     =  scale * ConvI2L(a) + scale * ConvI2L(b)  +  scale * x * 2^32
-    //         scale * ConvI2L(a - b)     =  scale * ConvI2L(a) - scale * ConvI2L(b)  +  scale * x * 2^32
-    //         scale * ConvI2L(a * con)   =  scale * con * ConvI2L(a)                 +  scale * x * 2^32
-    //         scale * ConvI2L(a << con)  =  scale * (1 << con) * ConvI2L(a)          +  scale * x * 2^32
-    //         \_______________________/     \_____________________________________/     \______________/
-    //           before decomposition               after decomposition                 overflow correction
+    // First, we describe how the decomposition works:
     //
+    //   mp_i = con + sum(other_summands) + summand
+    //          -------------------------   -------
+    //          rest                        scale * ConvI2L(op)
     //
-    //  TODO what scale are we talking about??? scaleI or scaleL or scale??? not sure
+    //  We decompose the summand depending on the op, where we know that there is some
+    //  integer y, such that:
+    //
+    //    scale * ConvI2L(a + b)     =  scale * ConvI2L(a) + scale * ConvI2L(b)  +  scale * y * 2^32
+    //    scale * ConvI2L(a - b)     =  scale * ConvI2L(a) - scale * ConvI2L(b)  +  scale * y * 2^32
+    //    scale * ConvI2L(a * con)   =  scale * con * ConvI2L(a)                 +  scale * y * 2^32
+    //    scale * ConvI2L(a << con)  =  scale * (1 << con) * ConvI2L(a)          +  scale * y * 2^32
+    //    \_______________________/     \_____________________________________/     \______________/
+    //      before decomposition               after decomposition                 overflow correction
+    //
+    //  Thus, for AddI and SubI, we get:
+    //    summand = new_summand1 + new_summand2 + scale * y * 2^32
+    //
+    //    mp_{i+1} = con + sum(other_summands) + new_summand1 + new_summand2
+    //             = con + sum(other_summands) + summand - scale * y * 2^32
+    //             = mp_i                                - scale * y * 2^32
+    //
+    //  And for MulI and ShiftI we get:
+    //    summand = new_summand + scale * y * 2^32
+    //
+    //    mp_{i+1} = con + sum(other_summands) + new_summand
+    //             = con + sum(other_summands) + summand - scale * y * 2^32
+    //             = mp_i                                - scale * y * 2^32
+    //
+    //  Further:
+    //    abs(scale) % array_element_size_in_bytes = 0
+    //  implies that there is some integer z, such that:
+    //    z * array_element_size_in_bytes = scale
+    //
+    //  And hence, with "x = y * z":
+    //    mp_i = mp_{i+1} + scale                           * y * 2^32
+    //         = mp_{i+1} + z * array_element_size_in_bytes * y * 2^32
+    //         = mp_{i+1} + x * array_element_size_in_bytes     * 2^32
     //
     BasicType array_element_bt = ary_ptr_t->elem()->array_element_basic_type();
     if (is_java_primitive(array_element_bt)) {

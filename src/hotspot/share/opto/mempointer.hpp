@@ -109,20 +109,24 @@
 //   such "safe decompositions".
 //
 //
-//  Definition: Safe decomposition
+//  Definition: Safe decomposition (from some mp_i to mp_{i+1})
 //    We decompose summand in:
-//      mp1 = con + summand                     + sum(other_summands)
-//    Resulting in: +-------------------------+
-//      mp2 = con + dec_con + sum(dec_summands) + sum(other_summands)
-//          = new_con + sum(new_summands)
+//      mp_i     = con + summand                     + sum(other_summands)
+//    Resulting in:      +-------------------------+
+//      mp_{i+1} = con + dec_con + sum(dec_summands) + sum(other_summands)
+//               = new_con + sum(new_summands)
 //
 //    We call a decomposition safe if either:
 //      SAFE1) No matter the values of the summand variables:
-//               mp1 = mp2
+//               mp_i = mp_{i+1}
 //
 //      SAFE2) The pointer is on an array with a known array_element_size_in_bytes,
 //             and there is an integer x, such that:
-//               mp1 = mp2 + x * array_element_size_in_bytes * 2^32
+//               mp_i = mp_{i+1} + x * array_element_size_in_bytes * 2^32
+//
+//             Note: if "x = 0", we have "mp1 = mp2", and if "x != 0", then mp1 and mp2
+//                   have a distance at least twice as large as the array size, and so
+//                   at least one of mp1 or mp2 must be out of bounds of the array.
 //
 //    Note: MemPointerDecomposedFormParser::is_safe_to_decompose_op checks that all
 //          decompositions we apply are safe.
