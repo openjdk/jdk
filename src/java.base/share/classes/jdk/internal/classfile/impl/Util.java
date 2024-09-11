@@ -102,9 +102,9 @@ public class Util {
     private static final int ATTRIBUTE_STABILITY_COUNT = AttributeMapper.AttributeStability.values().length;
 
     public static boolean isAttributeAllowed(final Attribute<?> attr,
-                                             final ClassFile.AttributesProcessingOption processingOption) {
+                                             final ClassFileImpl context) {
         return attr instanceof BoundAttribute
-                ? ATTRIBUTE_STABILITY_COUNT - attr.attributeMapper().stability().ordinal() > processingOption.ordinal()
+                ? ATTRIBUTE_STABILITY_COUNT - attr.attributeMapper().stability().ordinal() > context.attributesProcessingOption().ordinal()
                 : true;
     }
 
