@@ -1085,16 +1085,17 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
 
 bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_workers, double* expand_time_ms) {
   // Save temporary value to mitigate race conditions in case
-  // CurrentMaxExpansionSize is overwritten during the lifetime of this
+  // CurrentMaxHeapSize is overwritten during the lifetime of this
   // function. It is still possible for the timing of the write to override a
-  // more recent CurrentMaxExpansionSize value, but this is tolerable for one
+  // more recent CurrentMaxHeapSize value, but this is tolerable for one
   // iteration.
   const size_t current_max_expansion_size = CurrentMaxHeapSize - capacity();
   log_debug(ahs)("expand() of size: " SIZE_FORMAT
                  " called with SoftMaxHeapSize: " SIZE_FORMAT
-                 "B, CurrentMaxExpansionSize: " SIZE_FORMAT
+                 "B, CurrentMaxHeapSize" SIZE_FORMAT
+                 "B, current_max_expansion_size: " SIZE_FORMAT
                  "B, and current heap size: " SIZE_FORMAT "B.",
-                 expand_bytes, SoftMaxHeapSize, current_max_expansion_size,
+                 expand_bytes, SoftMaxHeapSize, CurrentMaxHeapSize, current_max_expansion_size,
                  capacity());
   size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
   aligned_expand_bytes = align_up(aligned_expand_bytes, G1HeapRegion::GrainBytes);
