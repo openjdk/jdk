@@ -1922,7 +1922,7 @@ void ShenandoahHeap::recycle_trash() {
 void ShenandoahHeap::do_class_unloading() {
   _unloader.unload();
   if (mode()->is_generational()) {
-    old_generation()->set_parseable(false);
+    old_generation()->set_parsable(false);
   }
 }
 

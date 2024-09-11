@@ -96,8 +96,8 @@ void ShenandoahGenerationalFullGC::rebuild_remembered_set(ShenandoahHeap* heap) 
   // Rebuilding the remembered set recomputes all the card offsets for objects.
   // The adjust pointers phase coalesces and fills all necessary regions. In case
   // we came to the full GC from an incomplete global cycle, we need to indicate
-  // that the old regions are parseable.
-  heap->old_generation()->set_parseable(true);
+  // that the old regions are parsable.
+  heap->old_generation()->set_parsable(true);
 }
 
 void ShenandoahGenerationalFullGC::balance_generations_after_gc(ShenandoahHeap* heap) {

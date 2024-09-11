@@ -33,6 +33,7 @@
 #include "utilities/stack.hpp"
 
 class ShenandoahHeap;
+class ShenandoahMarkingContext;
 
 #ifdef _WINDOWS
 #pragma warning( disable : 4522 )
@@ -71,8 +72,8 @@ public:
     _verify_remembered_before_updating_references,
 
     // Old objects should be registered and RS cards within *read-write* RS are dirty for all
-    // inter-generational pointers.
-    // TODO: This differs from the previous mode by update-watermark() vs top() end range?
+    // inter-generational pointers. Differs from previous verification modes by using top instead
+    // of update watermark and not using the marking context.
     _verify_remembered_after_full_gc
   } VerifyRememberedSet;
 
@@ -231,12 +232,15 @@ public:
   // Check that generation usages are accurate before rebuilding free set
   void verify_before_rebuilding_free_set();
 private:
-   void help_verify_region_rem_set(ShenandoahHeapRegion* r, ShenandoahMarkingContext* ctx,
-                                    HeapWord* from, HeapWord* top, HeapWord* update_watermark, const char* message);
+  template<typename Scanner>
+  void help_verify_region_rem_set(Scanner* scanner, ShenandoahHeapRegion* r, ShenandoahMarkingContext* ctx,
+                                  HeapWord* update_watermark, const char* message);
 
   void verify_rem_set_before_mark();
   void verify_rem_set_before_update_ref();
   void verify_rem_set_after_full_gc();
+
+  ShenandoahMarkingContext* get_marking_context_for_old();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP

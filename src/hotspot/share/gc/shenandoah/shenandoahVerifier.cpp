@@ -120,9 +120,6 @@ private:
       //
       // For performance reasons, only fully verify non-marked field values.
       // We are here when the host object for *p is already marked.
-
-      // TODO: We should consider specializing this closure by generation ==/!= null,
-      // to avoid in_generation check on fast path here for non-generational mode.
       if (in_generation(obj) && _map->par_mark(obj)) {
         verify_oop_at(p, obj);
         _stack->push(ShenandoahVerifierTask(obj));
@@ -255,29 +252,21 @@ private:
     }
 
     // ------------ obj and fwd are safe at this point --------------
-    // We allow for marked or old here for two reasons:
-    //  1. If this is a young collect, old objects wouldn't be marked. We've
-    //     recently change the verifier traversal to only follow young objects
-    //     during a young collect so this _shouldn't_ be necessary.
-    //  2. At present, we do not clear dead objects from the remembered set.
-    //     Everything in the remembered set is old (ipso facto), so allowing for
-    //     'marked_or_old' covers the case of stale objects in rset.
-    // TODO: Just use 'is_marked' here.
     switch (_options._verify_marked) {
       case ShenandoahVerifier::_verify_marked_disable:
         // skip
         break;
       case ShenandoahVerifier::_verify_marked_incomplete:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->marking_context()->is_marked_or_old(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->marking_context()->is_marked(obj),
                "Must be marked in incomplete bitmap");
         break;
       case ShenandoahVerifier::_verify_marked_complete:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked_or_old(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked(obj),
                "Must be marked in complete bitmap");
         break;
       case ShenandoahVerifier::_verify_marked_complete_except_references:
       case ShenandoahVerifier::_verify_marked_complete_satb_empty:
-        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked_or_old(obj),
+        check(ShenandoahAsserts::_safe_all, obj, _heap->complete_marking_context()->is_marked(obj),
               "Must be marked in complete bitmap, except j.l.r.Reference referents");
         break;
       default:
@@ -1210,8 +1199,7 @@ void ShenandoahVerifier::verify_after_fullgc() {
   );
 }
 
-// TODO: Why this closure does not visit metadata?
-class ShenandoahVerifyNoForwared : public BasicOopIterateClosure {
+class ShenandoahVerifyNoForwarded : public BasicOopIterateClosure {
 private:
   template <class T>
   void do_oop_work(T* p) {
@@ -1231,7 +1219,6 @@ public:
   void do_oop(oop* p)       { do_oop_work(p); }
 };
 
-// TODO: Why this closure does not visit metadata?
 class ShenandoahVerifyInToSpaceClosure : public BasicOopIterateClosure {
 private:
   template <class T>
@@ -1270,37 +1257,32 @@ void ShenandoahVerifier::verify_roots_in_to_space() {
 }
 
 void ShenandoahVerifier::verify_roots_no_forwarded() {
-  ShenandoahVerifyNoForwared cl;
+  ShenandoahVerifyNoForwarded cl;
   ShenandoahRootVerifier::roots_do(&cl);
 }
 
+template<typename Scanner>
 class ShenandoahVerifyRemSetClosure : public BasicOopIterateClosure {
 protected:
-  bool                        const _init_mark;
   ShenandoahGenerationalHeap* const _heap;
-  ShenandoahScanRemembered*   const _scanner;
+  Scanner*   const _scanner;
+  const char* _message;
 
 public:
   // Argument distinguishes between initial mark or start of update refs verification.
-  explicit ShenandoahVerifyRemSetClosure(bool init_mark) :
-            _init_mark(init_mark),
+  explicit ShenandoahVerifyRemSetClosure(Scanner* scanner, const char* message) :
             _heap(ShenandoahGenerationalHeap::heap()),
-            _scanner(_heap->old_generation()->card_scan()) {}
+            _scanner(scanner),
+            _message(message) {}
 
   template<class T>
   inline void work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      if (_heap->is_in_young(obj)) {
-        size_t card_index = _scanner->card_index_for_addr((HeapWord*) p);
-        if (_init_mark && !_scanner->is_card_dirty(card_index)) {
-          ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
-                                           "Verify init-mark remembered set violation", "clean card should be dirty", __FILE__, __LINE__);
-        } else if (!_init_mark && !_scanner->is_write_card_dirty(card_index)) {
-          ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
-                                           "Verify init-update-refs remembered set violation", "clean card should be dirty", __FILE__, __LINE__);
-        }
+      if (_heap->is_in_young(obj) && !_scanner->is_card_dirty((HeapWord*) p)) {
+        ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, p, nullptr,
+                                         _message, "clean card should be dirty", __FILE__, __LINE__);
       }
     }
   }
@@ -1309,20 +1291,27 @@ public:
   void do_oop(oop* p)       override { work(p); }
 };
 
-void ShenandoahVerifier::help_verify_region_rem_set(ShenandoahHeapRegion* r, ShenandoahMarkingContext* ctx, HeapWord* from,
-                                                    HeapWord* top, HeapWord* registration_watermark, const char* message) {
-  ShenandoahScanRemembered* scanner = ShenandoahGenerationalHeap::heap()->old_generation()->card_scan();
-  ShenandoahVerifyRemSetClosure check_interesting_pointers(false);
+ShenandoahMarkingContext* ShenandoahVerifier::get_marking_context_for_old() {
+  shenandoah_assert_generations_reconciled();
+  if (_heap->old_generation()->is_mark_complete() || _heap->gc_generation()->is_global()) {
+    return _heap->complete_marking_context();
+  }
+  return nullptr;
+}
 
+template<typename Scanner>
+void ShenandoahVerifier::help_verify_region_rem_set(Scanner* scanner, ShenandoahHeapRegion* r, ShenandoahMarkingContext* ctx,
+                                                    HeapWord* registration_watermark, const char* message) {
+  ShenandoahVerifyRemSetClosure<Scanner> check_interesting_pointers(scanner, message);
+  HeapWord* from = r->bottom();
   HeapWord* obj_addr = from;
   if (r->is_humongous_start()) {
     oop obj = cast_to_oop(obj_addr);
     if ((ctx == nullptr) || ctx->is_marked(obj)) {
-      size_t card_index = scanner->card_index_for_addr(obj_addr);
       // For humongous objects, the typical object is an array, so the following checks may be overkill
       // For regular objects (not object arrays), if the card holding the start of the object is dirty,
       // we do not need to verify that cards spanning interesting pointers within this object are dirty.
-      if (!scanner->is_write_card_dirty(card_index) || obj->is_objArray()) {
+      if (!scanner->is_card_dirty(obj_addr) || obj->is_objArray()) {
         obj->oop_iterate(&check_interesting_pointers);
       }
       // else, object's start is marked dirty and obj is not an objArray, so any interesting pointers are covered
@@ -1334,14 +1323,14 @@ void ShenandoahVerifier::help_verify_region_rem_set(ShenandoahHeapRegion* r, She
                                        "object not properly registered", __FILE__, __LINE__);
     }
   } else if (!r->is_humongous()) {
+    HeapWord* top = r->top();
     while (obj_addr < top) {
       oop obj = cast_to_oop(obj_addr);
       // ctx->is_marked() returns true if mark bit set or if obj above TAMS.
       if ((ctx == nullptr) || ctx->is_marked(obj)) {
-        size_t card_index = scanner->card_index_for_addr(obj_addr);
         // For regular objects (not object arrays), if the card holding the start of the object is dirty,
         // we do not need to verify that cards spanning interesting pointers within this object are dirty.
-        if (!scanner->is_write_card_dirty(card_index) || obj->is_objArray()) {
+        if (!scanner->is_card_dirty(obj_addr) || obj->is_objArray()) {
           obj->oop_iterate(&check_interesting_pointers);
         }
         // else, object's start is marked dirty and obj is not an objArray, so any interesting pointers are covered
@@ -1360,88 +1349,52 @@ void ShenandoahVerifier::help_verify_region_rem_set(ShenandoahHeapRegion* r, She
   }
 }
 
+class ShenandoahWriteTableScanner {
+private:
+  ShenandoahScanRemembered* _scanner;
+public:
+  explicit ShenandoahWriteTableScanner(ShenandoahScanRemembered* scanner) : _scanner(scanner) {}
+
+  bool is_card_dirty(HeapWord* obj_addr) {
+    return _scanner->is_write_card_dirty(obj_addr);
+  }
+
+  bool verify_registration(HeapWord* obj_addr, ShenandoahMarkingContext* ctx) {
+    return _scanner->verify_registration(obj_addr, ctx);
+  }
+};
+
 // Assure that the remember set has a dirty card everywhere there is an interesting pointer.
 // This examines the read_card_table between bottom() and top() since all PLABS are retired
 // before the safepoint for init_mark.  Actually, we retire them before update-references and don't
 // restore them until the start of evacuation.
 void ShenandoahVerifier::verify_rem_set_before_mark() {
   shenandoah_assert_safepoint();
-  assert(_heap->mode()->is_generational(), "Only verify remembered set for generational operational modes");
+  shenandoah_assert_generational();
 
-  ShenandoahScanRemembered* scanner = ShenandoahGenerationalHeap::heap()->old_generation()->card_scan();
-  ShenandoahVerifyRemSetClosure check_interesting_pointers(true);
-  ShenandoahMarkingContext* ctx;
-
+  ShenandoahMarkingContext* ctx = get_marking_context_for_old();
   ShenandoahOldGeneration* old_generation = _heap->old_generation();
+
   log_debug(gc)("Verifying remembered set at %s mark", old_generation->is_doing_mixed_evacuations() ? "mixed" : "young");
 
-  shenandoah_assert_generations_reconciled();
-  if (old_generation->is_mark_complete() || _heap->gc_generation()->is_global()) {
-    ctx = _heap->complete_marking_context();
-  } else {
-    ctx = nullptr;
-  }
-
+  ShenandoahScanRemembered* scanner = old_generation->card_scan();
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
-    HeapWord* tams = (ctx != nullptr) ? ctx->top_at_mark_start(r) : nullptr;
-
-    // TODO: Is this replaceable with call to help_verify_region_rem_set?
-
     if (r->is_old() && r->is_active()) {
-      HeapWord* obj_addr = r->bottom();
-      if (r->is_humongous_start()) {
-        oop obj = cast_to_oop(obj_addr);
-        if ((ctx == nullptr) || ctx->is_marked(obj)) {
-          // For humongous objects, the typical object is an array, so the following checks may be overkill
-          // For regular objects (not object arrays), if the card holding the start of the object is dirty,
-          // we do not need to verify that cards spanning interesting pointers within this object are dirty.
-          if (!scanner->is_card_dirty(obj_addr) || obj->is_objArray()) {
-            obj->oop_iterate(&check_interesting_pointers);
-          }
-          // else, object's start is marked dirty and obj is not an objArray, so any interesting pointers are covered
-        }
-        // else, this humongous object is not marked so no need to verify its internal pointers
-        if (!scanner->verify_registration(obj_addr, ctx)) {
-          ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, nullptr, nullptr,
-                                           "Verify init-mark remembered set violation", "object not properly registered", __FILE__, __LINE__);
-        }
-      } else if (!r->is_humongous()) {
-        HeapWord* top = r->top();
-        while (obj_addr < top) {
-          oop obj = cast_to_oop(obj_addr);
-          // ctx->is_marked() returns true if mark bit set (TAMS not relevant during init mark)
-          if ((ctx == nullptr) || ctx->is_marked(obj)) {
-            // For regular objects (not object arrays), if the card holding the start of the object is dirty,
-            // we do not need to verify that cards spanning interesting pointers within this object are dirty.
-            if (!scanner->is_card_dirty(obj_addr) || obj->is_objArray()) {
-              obj->oop_iterate(&check_interesting_pointers);
-            }
-            // else, object's start is marked dirty and obj is not an objArray, so any interesting pointers are covered
-            if (!scanner->verify_registration(obj_addr, ctx)) {
-              ShenandoahAsserts::print_failure(ShenandoahAsserts::_safe_all, obj, nullptr, nullptr,
-                                               "Verify init-mark remembered set violation", "object not properly registered", __FILE__, __LINE__);
-            }
-            obj_addr += obj->size();
-          } else {
-            // This object is not live so we don't verify dirty cards contained therein
-            assert(tams != nullptr, "If object is not live, ctx and tams should be non-null");
-            obj_addr = ctx->get_next_marked_addr(obj_addr, tams);
-          }
-        }
-      } // else, we ignore humongous continuation region
-    } // else, this is not an OLD region so we ignore it
-  } // all regions have been processed
+      help_verify_region_rem_set(scanner, r, ctx, r->end(), "Verify init-mark remembered set violation");
+    }
+  }
 }
 
 void ShenandoahVerifier::verify_rem_set_after_full_gc() {
   shenandoah_assert_safepoint();
-  assert(_heap->mode()->is_generational(), "Only verify remembered set for generational operational modes");
+  shenandoah_assert_generational();
 
+  ShenandoahWriteTableScanner scanner(ShenandoahGenerationalHeap::heap()->old_generation()->card_scan());
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_old() && !r->is_cset()) {
-      help_verify_region_rem_set(r, nullptr, r->bottom(), r->top(), r->top(), "Remembered set violation at end of Full GC");
+      help_verify_region_rem_set(&scanner, r, nullptr, r->top(), "Remembered set violation at end of Full GC");
     }
   }
 }
@@ -1452,22 +1405,14 @@ void ShenandoahVerifier::verify_rem_set_after_full_gc() {
 // all PLABS are retired immediately before the start of update refs.
 void ShenandoahVerifier::verify_rem_set_before_update_ref() {
   shenandoah_assert_safepoint();
-  assert(_heap->mode()->is_generational(), "Only verify remembered set for generational operational modes");
+  shenandoah_assert_generational();
 
-  ShenandoahMarkingContext* ctx;
-
-  shenandoah_assert_generations_reconciled();
-  if (_heap->old_generation()->is_mark_complete() || _heap->gc_generation()->is_global()) {
-    ctx = _heap->complete_marking_context();
-  } else {
-    ctx = nullptr;
-  }
-
+  ShenandoahMarkingContext* ctx = get_marking_context_for_old();
+  ShenandoahWriteTableScanner scanner(_heap->old_generation()->card_scan());
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_old() && !r->is_cset()) {
-      help_verify_region_rem_set(r, ctx, r->bottom(), r->top(), r->get_update_watermark(),
-                                 "Remembered set violation at init-update-references");
+      help_verify_region_rem_set(&scanner, r, ctx, r->get_update_watermark(), "Remembered set violation at init-update-references");
     }
   }
 }

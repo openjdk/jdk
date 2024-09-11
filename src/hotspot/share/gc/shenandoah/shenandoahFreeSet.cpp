@@ -876,14 +876,6 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
       // allocation request is for evacuation or promotion.  Individual threads limit their use of PLAB memory for
       // promotions, so we already have an assurance that any additional memory set aside for old-gen will be used
       // only for old-gen evacuations.
-
-      // TODO:
-      // if (GC is idle (out of cycle) and mutator allocation fails and there is memory reserved in Collector
-      // or OldCollector sets, transfer a region of memory so that we can satisfy the allocation request, and
-      // immediately trigger the start of GC.  Is better to satisfy the allocation than to trigger out-of-cycle
-      // allocation failure (even if this means we have a little less memory to handle evacuations during the
-      // subsequent GC pass).
-
       if (allow_new_region) {
         // Try to steal an empty region from the mutator view.
         idx_t rightmost_mutator = _partitions.rightmost_empty(ShenandoahFreeSetPartitionId::Mutator);
@@ -1071,10 +1063,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
       // For GC allocations, we advance update_watermark because the objects relocated into this memory during
       // evacuation are not updated during evacuation.  For both young and old regions r, it is essential that all
       // PLABs be made parsable at the end of evacuation.  This is enabled by retiring all plabs at end of evacuation.
-      // TODO: Making a PLAB parsable involves placing a filler object in its remnant memory but does not require
-      // that the PLAB be disabled for all future purposes.  We may want to introduce a new service to make the
-      // PLABs parsable while still allowing the PLAB to serve future allocation requests that arise during the
-      // next evacuation pass.
       r->set_update_watermark(r->top());
       if (r->is_old()) {
         _partitions.increase_used(ShenandoahFreeSetPartitionId::OldCollector, req.actual_size() * HeapWordSize);
@@ -1752,9 +1740,6 @@ void ShenandoahFreeSet::establish_old_collector_alloc_bias() {
   // Densely packing regions reduces the effort to search for a region that has sufficient memory to satisfy a new allocation
   // request.  Regions become sparsely distributed following a Full GC, which tends to slide all regions to the front of the
   // heap rather than allowing survivor regions to remain at the high end of the heap where we intend for them to congregate.
-
-  // TODO: In the future, we may modify Full GC so that it slides old objects to the end of the heap and young objects to the
-  // front of the heap. If this is done, we can always search survivor Collector and OldCollector regions right to left.
   _partitions.set_bias_from_left_to_right(ShenandoahFreeSetPartitionId::OldCollector,
                                           (available_in_second_half > available_in_first_half));
 }

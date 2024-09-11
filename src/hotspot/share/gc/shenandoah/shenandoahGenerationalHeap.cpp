@@ -733,7 +733,7 @@ void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) 
   // This is not cancellable
   ShenandoahGlobalCoalesceAndFill coalesce(phase);
   workers()->run_task(&coalesce);
-  old_generation()->set_parseable(true);
+  old_generation()->set_parsable(true);
 }
 
 template<bool CONCURRENT>
@@ -1065,14 +1065,14 @@ void ShenandoahGenerationalHeap::complete_degenerated_cycle() {
   // transient state. Otherwise, these actions have no effect.
   reset_generation_reserves();
 
-  if (!old_generation()->is_parseable()) {
+  if (!old_generation()->is_parsable()) {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_coalesce_and_fill);
     coalesce_and_fill_old_regions(false);
   }
 }
 
 void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
-  if (!old_generation()->is_parseable()) {
+  if (!old_generation()->is_parsable()) {
     // Class unloading may render the card offsets unusable, so we must rebuild them before
     // the next remembered set scan. We _could_ let the control thread do this sometime after
     // the global cycle has completed and before the next young collection, but under memory

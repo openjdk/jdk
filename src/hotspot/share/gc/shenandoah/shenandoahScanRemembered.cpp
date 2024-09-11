@@ -82,19 +82,25 @@ void ShenandoahDirectCardMarkRememberedSet::mark_range_as_clean(size_t card_inde
   }
 }
 
-bool ShenandoahDirectCardMarkRememberedSet::is_card_dirty(HeapWord *p) const {
+bool ShenandoahDirectCardMarkRememberedSet::is_card_dirty(HeapWord* p) const {
   size_t index = card_index_for_addr(p);
   CardValue* bp = &(_card_table->read_byte_map())[index];
   return (bp[0] == CardTable::dirty_card_val());
 }
 
-void ShenandoahDirectCardMarkRememberedSet::mark_card_as_dirty(HeapWord *p) {
+bool ShenandoahDirectCardMarkRememberedSet::is_write_card_dirty(HeapWord* p) const {
+  size_t index = card_index_for_addr(p);
+  CardValue* bp = &(_card_table->write_byte_map())[index];
+  return (bp[0] == CardTable::dirty_card_val());
+}
+
+void ShenandoahDirectCardMarkRememberedSet::mark_card_as_dirty(HeapWord* p) {
   size_t index = card_index_for_addr(p);
   CardValue* bp = &(_card_table->write_byte_map())[index];
   bp[0] = CardTable::dirty_card_val();
 }
 
-void ShenandoahDirectCardMarkRememberedSet::mark_range_as_dirty(HeapWord *p, size_t num_heap_words) {
+void ShenandoahDirectCardMarkRememberedSet::mark_range_as_dirty(HeapWord* p, size_t num_heap_words) {
   CardValue* bp = &(_card_table->write_byte_map_base())[uintptr_t(p) >> _card_shift];
   CardValue* end_bp = &(_card_table->write_byte_map_base())[uintptr_t(p + num_heap_words) >> _card_shift];
   // If (p + num_heap_words) is not aligned on card boundary, we also need to dirty last card.
@@ -106,13 +112,13 @@ void ShenandoahDirectCardMarkRememberedSet::mark_range_as_dirty(HeapWord *p, siz
   }
 }
 
-void ShenandoahDirectCardMarkRememberedSet::mark_card_as_clean(HeapWord *p) {
+void ShenandoahDirectCardMarkRememberedSet::mark_card_as_clean(HeapWord* p) {
   size_t index = card_index_for_addr(p);
   CardValue* bp = &(_card_table->write_byte_map())[index];
   bp[0] = CardTable::clean_card_val();
 }
 
-void ShenandoahDirectCardMarkRememberedSet::mark_range_as_clean(HeapWord *p, size_t num_heap_words) {
+void ShenandoahDirectCardMarkRememberedSet::mark_range_as_clean(HeapWord* p, size_t num_heap_words) {
   CardValue* bp = &(_card_table->write_byte_map_base())[uintptr_t(p) >> _card_shift];
   CardValue* end_bp = &(_card_table->write_byte_map_base())[uintptr_t(p + num_heap_words) >> _card_shift];
   // If (p + num_heap_words) is not aligned on card boundary, we also need to clean last card.
@@ -147,7 +153,7 @@ void ShenandoahCardCluster::register_object(HeapWord* address) {
 
 void ShenandoahCardCluster::register_object_without_lock(HeapWord* address) {
   size_t card_at_start = _rs->card_index_for_addr(address);
-  HeapWord *card_start_address = _rs->addr_for_card_index(card_at_start);
+  HeapWord* card_start_address = _rs->addr_for_card_index(card_at_start);
   uint8_t offset_in_card = address - card_start_address;
 
   if (!starts_object(card_at_start)) {
@@ -165,7 +171,7 @@ void ShenandoahCardCluster::register_object_without_lock(HeapWord* address) {
 void ShenandoahCardCluster::coalesce_objects(HeapWord* address, size_t length_in_words) {
 
   size_t card_at_start = _rs->card_index_for_addr(address);
-  HeapWord *card_start_address = _rs->addr_for_card_index(card_at_start);
+  HeapWord* card_start_address = _rs->addr_for_card_index(card_at_start);
   size_t card_at_end = card_at_start + ((address + length_in_words) - card_start_address) / CardTable::card_size_in_words();
 
   if (card_at_start == card_at_end) {
@@ -291,7 +297,7 @@ HeapWord* ShenandoahCardCluster::block_start(const size_t card_index) const {
   return p;
 }
 
-size_t ShenandoahScanRemembered::card_index_for_addr(HeapWord *p) {
+size_t ShenandoahScanRemembered::card_index_for_addr(HeapWord* p) {
   return _rs->card_index_for_addr(p);
 }
 
@@ -307,35 +313,39 @@ bool ShenandoahScanRemembered::is_write_card_dirty(size_t card_index) {
   return _rs->is_write_card_dirty(card_index);
 }
 
-bool ShenandoahScanRemembered::is_card_dirty(HeapWord *p) {
+bool ShenandoahScanRemembered::is_card_dirty(HeapWord* p) {
   return _rs->is_card_dirty(p);
 }
 
-void ShenandoahScanRemembered::mark_card_as_dirty(HeapWord *p) {
+void ShenandoahScanRemembered::mark_card_as_dirty(HeapWord* p) {
   _rs->mark_card_as_dirty(p);
 }
 
-void ShenandoahScanRemembered::mark_range_as_dirty(HeapWord *p, size_t num_heap_words) {
+bool ShenandoahScanRemembered::is_write_card_dirty(HeapWord* p) {
+  return _rs->is_write_card_dirty(p);
+}
+
+void ShenandoahScanRemembered::mark_range_as_dirty(HeapWord* p, size_t num_heap_words) {
   _rs->mark_range_as_dirty(p, num_heap_words);
 }
 
-void ShenandoahScanRemembered::mark_card_as_clean(HeapWord *p) {
+void ShenandoahScanRemembered::mark_card_as_clean(HeapWord* p) {
   _rs->mark_card_as_clean(p);
 }
 
-void ShenandoahScanRemembered:: mark_range_as_clean(HeapWord *p, size_t num_heap_words) {
+void ShenandoahScanRemembered:: mark_range_as_clean(HeapWord* p, size_t num_heap_words) {
   _rs->mark_range_as_clean(p, num_heap_words);
 }
 
-void ShenandoahScanRemembered::reset_object_range(HeapWord *from, HeapWord *to) {
+void ShenandoahScanRemembered::reset_object_range(HeapWord* from, HeapWord* to) {
   _scc->reset_object_range(from, to);
 }
 
-void ShenandoahScanRemembered::register_object(HeapWord *addr) {
+void ShenandoahScanRemembered::register_object(HeapWord* addr) {
   _scc->register_object(addr);
 }
 
-void ShenandoahScanRemembered::register_object_without_lock(HeapWord *addr) {
+void ShenandoahScanRemembered::register_object_without_lock(HeapWord* addr) {
   _scc->register_object_without_lock(addr);
 }
 
@@ -443,11 +453,11 @@ bool ShenandoahScanRemembered::verify_registration(HeapWord* address, Shenandoah
   return true;
 }
 
-void ShenandoahScanRemembered::coalesce_objects(HeapWord *addr, size_t length_in_words) {
+void ShenandoahScanRemembered::coalesce_objects(HeapWord* addr, size_t length_in_words) {
   _scc->coalesce_objects(addr, length_in_words);
 }
 
-void ShenandoahScanRemembered::mark_range_as_empty(HeapWord *addr, size_t length_in_words) {
+void ShenandoahScanRemembered::mark_range_as_empty(HeapWord* addr, size_t length_in_words) {
   _rs->mark_range_as_clean(addr, length_in_words);
   _scc->clear_objects_in_range(addr, length_in_words);
 }

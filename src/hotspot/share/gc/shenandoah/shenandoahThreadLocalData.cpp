@@ -59,6 +59,5 @@ ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {
     delete _plab;
   }
 
-  // TODO: Preserve these stats somewhere for mutator threads.
   delete _evacuation_stats;
 }

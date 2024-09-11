@@ -180,7 +180,7 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
     _pad_for_promote_in_place(0),
     _promotable_humongous_regions(0),
     _promotable_regular_regions(0),
-    _is_parseable(true),
+    _is_parsable(true),
     _card_scan(nullptr),
     _state(WAITING_FOR_BOOTSTRAP),
     _growth_before_compaction(INITIAL_GROWTH_BEFORE_COMPACTION),
@@ -316,8 +316,7 @@ size_t ShenandoahOldGeneration::usage_trigger_threshold() const {
 }
 
 bool ShenandoahOldGeneration::contains(ShenandoahHeapRegion* region) const {
-  // TODO: Should this be region->is_old() instead?
-  return !region->is_young();
+  return region->is_old();
 }
 
 void ShenandoahOldGeneration::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) {
@@ -709,13 +708,13 @@ void ShenandoahOldGeneration::parallel_region_iterate_free(ShenandoahHeapRegionC
   ShenandoahGeneration::parallel_region_iterate_free(&exclude_cl);
 }
 
-void ShenandoahOldGeneration::set_parseable(bool parseable) {
-  _is_parseable = parseable;
-  if (_is_parseable) {
+void ShenandoahOldGeneration::set_parsable(bool parsable) {
+  _is_parsable = parsable;
+  if (_is_parsable) {
     // The current state would have been chosen during final mark of the global
     // collection, _before_ any decisions about class unloading have been made.
     //
-    // After unloading classes, we have made the old generation regions parseable.
+    // After unloading classes, we have made the old generation regions parsable.
     // We can skip filling or transition to a state that knows everything has
     // already been filled.
     switch (state()) {
@@ -726,16 +725,15 @@ void ShenandoahOldGeneration::set_parseable(bool parseable) {
         assert(_old_heuristics->unprocessed_old_collection_candidates() == 0, "Expected no mixed collection candidates");
         assert(_old_heuristics->coalesce_and_fill_candidates_count() > 0, "Expected coalesce and fill candidates");
         // When the heuristic put the old generation in this state, it didn't know
-        // that we would unload classes and make everything parseable. But, we know
+        // that we would unload classes and make everything parsable. But, we know
         // that now so we can override this state.
-        // TODO: It would be nicer if we didn't have to 'correct' this situation.
         abandon_collection_candidates();
         transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
         break;
       default:
         // We can get here during a full GC. The full GC will cancel anything
         // happening in the old generation and return it to the waiting for bootstrap
-        // state. The full GC will then record that the old regions are parseable
+        // state. The full GC will then record that the old regions are parsable
         // after rebuilding the remembered set.
         assert(is_idle(), "Unexpected state %s at end of global GC", state_name());
         break;

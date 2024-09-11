@@ -681,32 +681,10 @@ void ShenandoahConcurrentGC::op_final_mark() {
     // Notify JVMTI that the tagmap table will need cleaning.
     JvmtiTagMap::set_needs_cleaning();
 
-    // The collection set is chosen by prepare_regions_and_collection_set().
-    //
-    // TODO: Under severe memory overload conditions that can be checked here, we may want to limit
-    // the inclusion of old-gen candidates within the collection set.  This would allow us to prioritize efforts on
-    // evacuating young-gen,  This remediation is most appropriate when old-gen availability is very high (so there
-    // are negligible negative impacts from delaying completion of old-gen evacuation) and when young-gen collections
-    // are "under duress" (as signalled by very low availability of memory within young-gen, indicating that/ young-gen
-    // collections are not triggering frequently enough).
+    // The collection set is chosen by prepare_regions_and_collection_set(). Additionally, certain parameters have been
+    // established to govern the evacuation efforts that are about to begin.  Refer to comments on reserve members in
+    // ShenandoahGeneration and ShenandoahOldGeneration for more detail.
     _generation->prepare_regions_and_collection_set(true /*concurrent*/);
-
-    // Upon return from prepare_regions_and_collection_set(), certain parameters have been established to govern the
-    // evacuation efforts that are about to begin.  In particular:
-    //
-    // heap->get_promoted_reserve() represents the amount of memory within old-gen's available memory that has
-    //   been set aside to hold objects promoted from young-gen memory.  This represents an estimated percentage
-    //   of the live young-gen memory within the collection set.  If there is more data ready to be promoted than
-    //   can fit within this reserve, the promotion of some objects will be deferred until a subsequent evacuation
-    //   pass.
-    //
-    // heap->get_old_evac_reserve() represents the amount of memory within old-gen's available memory that has been
-    //  set aside to hold objects evacuated from the old-gen collection set.
-    //
-    // heap->get_young_evac_reserve() represents the amount of memory within young-gen's available memory that has
-    //  been set aside to hold objects evacuated from the young-gen collection set.  Conservatively, this value
-    //  equals the entire amount of live young-gen memory within the collection set, even though some of this memory
-    //  will likely be promoted.
 
     // Has to be done after cset selection
     heap->prepare_concurrent_roots();
