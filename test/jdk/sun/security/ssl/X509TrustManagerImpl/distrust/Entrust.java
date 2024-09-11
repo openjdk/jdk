@@ -50,35 +50,19 @@ public class Entrust {
             "entrust2048ca", "affirmtrustcommercialca", "affirmtrustnetworkingca",
             "affirmtrustpremiumca", "affirmtrustpremiumeccca"};
 
-    // A date that is after the restrictions take effect
-    private static final Date NOVEMBER_1_2024 =
-            Date.from(LocalDate.of(2024, 11, 1)
-                    .atStartOfDay(ZoneOffset.UTC)
-                    .toInstant());
-
-    // A date that is a second before the restrictions take effect
-    private static final Date BEFORE_NOVEMBER_1_2024 =
-            Date.from(LocalDate.of(2024, 11, 1)
-                    .atStartOfDay(ZoneOffset.UTC)
-                    .minusSeconds(1)
-                    .toInstant());
+    // Date when the restrictions take effect
+    private static final ZonedDateTime DISTRUST_DATE =
+            LocalDate.of(2024, 11, 1).atStartOfDay(ZoneOffset.UTC);
 
     public static void main(String[] args) throws Exception {
-        boolean before = args[0].equals("before");
-        boolean policyOn = args[1].equals("policyOn");
-        boolean isValid = args[2].equals("valid");
+        Distrust distrust = new Distrust(args);
 
         X509TrustManager[] tms = new X509TrustManager[]{
-                Distrust.getTMF("PKIX", null),
-                Distrust.getTMF("SunX509", null)
+                distrust.getTMF("PKIX", null),
+                distrust.getTMF("SunX509", null)
         };
 
-        if (!policyOn) {
-            // disable policy (default is on)
-            Distrust.disableDistrustPolicy();
-        }
-
-        Date notBefore = before ? BEFORE_NOVEMBER_1_2024 : NOVEMBER_1_2024;
-        Distrust.testCertificateChain(certPath, notBefore, isValid, tms, rootsToTest);
+        Date notBefore = distrust.getNotBefore(DISTRUST_DATE);
+        distrust.testCertificateChain(certPath, notBefore, tms, rootsToTest);
     }
 }

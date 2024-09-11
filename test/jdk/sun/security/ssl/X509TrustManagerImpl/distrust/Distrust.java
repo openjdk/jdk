@@ -25,6 +25,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.*;
+import java.time.ZonedDateTime;
 import java.util.*;
 import javax.net.ssl.*;
 import sun.security.validator.Validator;
@@ -40,7 +41,27 @@ public final class Distrust {
     private static final String TEST_SRC = System.getProperty("test.src", ".");
     private static CertificateFactory cf;
 
-    public static void testCodeSigningChain(String certPath, String name, Date validationDate)
+    private final boolean before;
+    private final boolean policyOn;
+    private final boolean isValid;
+
+    public Distrust(String[] args) {
+        before = args[0].equals("before");
+        policyOn = args[1].equals("policyOn");
+        isValid = args[2].equals("valid");
+
+        if (!policyOn) {
+            // disable policy (default is on)
+            Security.setProperty("jdk.security.caDistrustPolicies", "");
+        }
+    }
+
+    public Date getNotBefore(ZonedDateTime distrustDate) {
+        ZonedDateTime notBefore = before ? distrustDate.minusSeconds(1) : distrustDate;
+        return Date.from(notBefore.toInstant());
+    }
+
+    public void testCodeSigningChain(String certPath, String name, Date validationDate)
             throws Exception {
         System.err.println("Testing " + name + " code-signing chain");
         Validator v = Validator.getInstance(Validator.TYPE_PKIX,
@@ -51,8 +72,8 @@ public final class Distrust {
         v.validate(loadCertificateChain(certPath, name));
     }
 
-    public static void testCertificateChain(String certPath, Date notBefore, boolean isValid,
-                                            X509TrustManager[] tms, String... tests) throws Exception {
+    public void testCertificateChain(String certPath, Date notBefore, X509TrustManager[] tms,
+                                     String... tests) throws Exception {
         for (String test : tests) {
             System.err.println("Testing " + test);
             X509Certificate[] chain = loadCertificateChain(certPath, test);
@@ -63,8 +84,7 @@ public final class Distrust {
         }
     }
 
-    public static X509TrustManager getTMF(String type,
-                                          PKIXBuilderParameters params) throws Exception {
+    public X509TrustManager getTMF(String type, PKIXBuilderParameters params) throws Exception {
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(type);
         if (params == null) {
             tmf.init((KeyStore) null);
@@ -78,7 +98,7 @@ public final class Distrust {
         throw new RuntimeException("No TrustManager for " + type);
     }
 
-    public static PKIXBuilderParameters getParams() throws Exception {
+    public PKIXBuilderParameters getParams() throws Exception {
         PKIXBuilderParameters pbp =
                 new PKIXBuilderParameters(SecurityUtils.getCacertsKeyStore(),
                         new X509CertSelector());
@@ -86,7 +106,7 @@ public final class Distrust {
         return pbp;
     }
 
-    public static void testTM(X509TrustManager xtm, X509Certificate[] chain,
+    public void testTM(X509TrustManager xtm, X509Certificate[] chain,
                               Date notBefore, boolean valid) {
         // Check if TLS Server certificate (the first element of the chain)
         // is issued after the specified notBefore date (should be rejected
@@ -123,11 +143,7 @@ public final class Distrust {
         }
     }
 
-    public static void disableDistrustPolicy() {
-        Security.setProperty("jdk.security.caDistrustPolicies", "");
-    }
-
-    private static X509Certificate[] loadCertificateChain(String certPath, String name)
+    private X509Certificate[] loadCertificateChain(String certPath, String name)
             throws Exception {
         if (cf == null) {
             cf = CertificateFactory.getInstance("X.509");

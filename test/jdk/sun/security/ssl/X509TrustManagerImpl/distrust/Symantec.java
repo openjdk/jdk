@@ -57,65 +57,39 @@ public class Symantec {
     // chain stored in a file named "<subCA>-chain.pem".
     private static String[] subCAsToTest = new String[]{"appleistca8g1"};
 
-    // A date that is after the restrictions take affect
-    private static final Date APRIL_17_2019 =
-            Date.from(LocalDate.of(2019, 4, 17)
-                    .atStartOfDay(ZoneOffset.UTC)
-                    .toInstant());
+    // Date when the restrictions take effect
+    private static final ZonedDateTime ROOTS_DISTRUST_DATE =
+            LocalDate.of(2019, 4, 17).atStartOfDay(ZoneOffset.UTC);
 
-    // A date that is a second before the restrictions take affect
-    private static final Date BEFORE_APRIL_17_2019 =
-            Date.from(LocalDate.of(2019, 4, 17)
-                    .atStartOfDay(ZoneOffset.UTC)
-                    .minusSeconds(1)
-                    .toInstant());
-
-    // A date that is after the subCA restrictions take affect
-    private static final Date JANUARY_1_2020 =
-            Date.from(LocalDate.of(2020, 1, 1)
-                    .atStartOfDay(ZoneOffset.UTC)
-                    .toInstant());
-
-    // A date that is a second before the subCA restrictions take affect
-    private static final Date BEFORE_JANUARY_1_2020 =
-            Date.from(LocalDate.of(2020, 1, 1)
-                    .atStartOfDay(ZoneOffset.UTC)
-                    .minusSeconds(1)
-                    .toInstant());
+    // Date when the subCA restrictions take effect
+    private static final ZonedDateTime SUBCA_DISTRUST_DATE =
+            LocalDate.of(2020, 1, 1).atStartOfDay(ZoneOffset.UTC);
 
     public static void main(String[] args) throws Exception {
-        boolean before = args[0].equals("before");
-        boolean policyOn = args[1].equals("policyOn");
-        boolean isValid = args[2].equals("valid");
-
-        if (!policyOn) {
-            // disable policy (default is on)
-            Distrust.disableDistrustPolicy();
-        }
-
+        Distrust distrust = new Distrust(args);
         X509TrustManager[] tms = new X509TrustManager[]{
-                Distrust.getTMF("PKIX", null),
-                Distrust.getTMF("SunX509", null)
+                distrust.getTMF("PKIX", null),
+                distrust.getTMF("SunX509", null)
         };
 
         // test chains issued through roots
-        Date notBefore = before ? BEFORE_APRIL_17_2019 : APRIL_17_2019;
-        Distrust.testCertificateChain(certPath, notBefore, isValid, tms, rootsToTest);
+        Date notBefore = distrust.getNotBefore(ROOTS_DISTRUST_DATE);
+        distrust.testCertificateChain(certPath, notBefore, tms, rootsToTest);
 
         // test chain if params are passed to TrustManager
         System.err.println("Testing verisignuniversalrootca with params");
         X509TrustManager[] tmsParams = new X509TrustManager[]{
-                Distrust.getTMF("PKIX", Distrust.getParams())
+                distrust.getTMF("PKIX", distrust.getParams())
         };
-        Distrust.testCertificateChain(certPath, notBefore, isValid, tmsParams,
+        distrust.testCertificateChain(certPath, notBefore, tmsParams,
                 "verisignuniversalrootca");
 
         // test code-signing chain (should be valid as restrictions don't apply)
         Date validationDate = new Date(1544197375493L);
-        Distrust.testCodeSigningChain(certPath, "verisignclass3g5ca-codesigning", validationDate);
+        distrust.testCodeSigningChain(certPath, "verisignclass3g5ca-codesigning", validationDate);
 
         // test chains issued through subCAs
-        notBefore = before ? BEFORE_JANUARY_1_2020 : JANUARY_1_2020;
-        Distrust.testCertificateChain(certPath, notBefore, isValid, tms, subCAsToTest);
+        notBefore = distrust.getNotBefore(SUBCA_DISTRUST_DATE);
+        distrust.testCertificateChain(certPath, notBefore, tms, subCAsToTest);
     }
 }
