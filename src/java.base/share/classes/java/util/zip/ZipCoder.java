@@ -158,7 +158,7 @@ class ZipCoder {
         return hsh;
     }
 
-    protected boolean hasTrailingSlash(byte[] a, int end) {
+    boolean hasTrailingSlash(byte[] a, int end) {
         byte[] slashBytes = slashBytes();
         return end >= slashBytes.length &&
             Arrays.mismatch(a, end - slashBytes.length, end, slashBytes, 0, slashBytes.length) == -1;
@@ -298,7 +298,7 @@ class ZipCoder {
         }
 
         @Override
-        protected boolean hasTrailingSlash(byte[] a, int end) {
+        boolean hasTrailingSlash(byte[] a, int end) {
             return end > 0 && a[end - 1] == '/';
         }
 
