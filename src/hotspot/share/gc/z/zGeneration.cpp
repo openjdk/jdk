@@ -1286,6 +1286,10 @@ void ZGenerationOld::set_soft_reference_policy(bool clear) {
   _reference_processor.set_soft_reference_policy(clear);
 }
 
+bool ZGenerationOld::uses_clear_all_soft_reference_policy() const {
+  return _reference_processor.uses_clear_all_soft_reference_policy();
+}
+
 class ZRendezvousHandshakeClosure : public HandshakeClosure {
 public:
   ZRendezvousHandshakeClosure()

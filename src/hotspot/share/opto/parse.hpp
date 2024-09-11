@@ -358,7 +358,7 @@ class Parse : public GraphKit {
   bool          _wrote_volatile;     // Did we write a volatile field?
   bool          _wrote_stable;       // Did we write a @Stable field?
   bool          _wrote_fields;       // Did we write any field?
-  Node*         _alloc_with_final;   // An allocation node with final field
+  Node*         _alloc_with_final_or_stable; // An allocation node with final or @Stable field
 
   // Variables which track Java semantics during bytecode parsing:
 
@@ -403,10 +403,10 @@ class Parse : public GraphKit {
   void      set_wrote_stable(bool z)  { _wrote_stable = z; }
   bool         wrote_fields() const   { return _wrote_fields; }
   void     set_wrote_fields(bool z)   { _wrote_fields = z; }
-  Node*    alloc_with_final() const   { return _alloc_with_final; }
-  void set_alloc_with_final(Node* n)  {
-    assert((_alloc_with_final == nullptr) || (_alloc_with_final == n), "different init objects?");
-    _alloc_with_final = n;
+  Node*    alloc_with_final_or_stable() const   { return _alloc_with_final_or_stable; }
+  void set_alloc_with_final_or_stable(Node* n)  {
+    assert((_alloc_with_final_or_stable == nullptr) || (_alloc_with_final_or_stable == n), "different init objects?");
+    _alloc_with_final_or_stable = n;
   }
 
   Block*             block()    const { return _block; }

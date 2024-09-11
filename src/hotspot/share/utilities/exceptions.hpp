@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,6 +310,9 @@ class Exceptions {
 
 #define THROW_NULL(name)                    THROW_(name, nullptr)
 #define THROW_MSG_NULL(name, message)       THROW_MSG_(name, message, nullptr)
+
+#define THROW_HANDLE_NULL(e)                THROW_HANDLE_(e, nullptr)
+#define THROW_ARG_NULL(name, signature, arg) THROW_ARG_(name, signature, arg, nullptr)
 
 // The CATCH macro checks that no exception has been thrown by a function; it is used at
 // call sites about which is statically known that the callee cannot throw an exception
