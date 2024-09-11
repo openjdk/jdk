@@ -988,7 +988,7 @@ public:
   SystemMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.map"; }
   static const char* description() {
-    return "Prints an annotated process memory map of the VM process (linux only).";
+    return "Prints an annotated process memory map of the VM process (linux and Windows only).";
   }
   static const char* impact() { return "Medium; can be high for very large java heaps."; }
   static const JavaPermission permission() {
@@ -1006,7 +1006,7 @@ public:
   SystemDumpMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.dump_map"; }
   static const char* description() {
-    return "Dumps an annotated process memory map to an output file (linux only).";
+    return "Dumps an annotated process memory map to an output file (linux and Windows only).";
   }
   static const char* impact() { return "Medium; can be high for very large java heaps."; }
   static const JavaPermission permission() {

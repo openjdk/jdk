@@ -95,7 +95,7 @@ public:
     } else if (mem_info.State == MEM_RESERVE) {
       out.put('r');
     } else {
-         fatal("Unknown Windows memory state value: 0x%x", mem_info.State);
+      fatal("Unknown Windows memory state value: 0x%x", mem_info.State);
     }
   }
 
