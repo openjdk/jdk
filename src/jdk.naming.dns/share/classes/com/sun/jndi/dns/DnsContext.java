@@ -182,7 +182,7 @@ public class DnsContext extends ComponentDirContext {
         } else if (propName.equals(RETRIES)) {
             int val = Integer.parseInt((String) propVal);
             if (retries != val) {
-                retries = Math.clamp(val, 1, 31);
+                retries = Math.clamp(val, 1, 30);
                 resolver = null;
             }
         }
@@ -261,7 +261,7 @@ public class DnsContext extends ComponentDirContext {
         val = (String) environment.get(RETRIES);
         retries = (val == null)
             ? DEFAULT_RETRIES
-            : Math.clamp(Integer.parseInt(val), 1, 31);
+            : Math.clamp(Integer.parseInt(val), 1, 30);
     }
 
     private CT getLookupCT(String attrId)
