@@ -288,54 +288,25 @@ public:
 //
 //   summand = scale * variable
 //
-// On 32-bit platforms, we trivially use 32-bit jint values for the address computation:
-//
-//   summand = scaleI * variable                    // 32-bit variable
-//   scale = scaleI
-//
-// On 64-bit platforms, we have a mix of 64-bit jlong and 32-bit jint values for the
-// address computation:
-//
-//   summand = scaleL * ConvI2L(scaleI * variable)  // 32-bit variable
-//   scale = scaleL * scaleI
-//
-//   summand = scaleL * variable                    // 64-bit variable
-//   scale = scaleL
-//
-// For simplicity, we only allow 32-bit jint scales, wrapped in NoOverflowInt. During
-// the decomposition into the summands, we might encounter a scale that overflows the
-// jint-range. Then, the scale becomes NaN, which indicates that we cannot decompose
-// the pointer using this summand.
-//
-// Note: we only need scaleL during the decomposition of the pointer. We need to check
-//       if decomposing a summand further is safe (i.e. if there cannot be an overflow),
-//       see MemPointerDecomposedFormParser::is_safe_to_decompose_op. But during aliasing
-//       computation, we fully rely on scale, and do not need scaleL any more.
-//
 class MemPointerSummand : public StackObj {
 private:
   Node* _variable;
   NoOverflowInt _scale;
-  LP64_ONLY( NoOverflowInt _scaleL; )
 
 public:
   MemPointerSummand() :
       _variable(nullptr),
-      _scale(NoOverflowInt::make_NaN())
-      LP64_ONLY( COMMA _scaleL(NoOverflowInt::make_NaN()) ) {}
-  MemPointerSummand(Node* variable, const NoOverflowInt scale LP64_ONLY( COMMA const NoOverflowInt scaleL )) :
+      _scale(NoOverflowInt::make_NaN()) {}
+  MemPointerSummand(Node* variable, const NoOverflowInt scale) :
       _variable(variable),
       _scale(scale)
-      LP64_ONLY( COMMA _scaleL(scaleL) )
   {
     assert(_variable != nullptr, "must have variable");
     assert(!_scale.is_zero(), "non-zero scale");
-    LP64_ONLY( assert(!_scaleL.is_zero(), "non-zero scaleL") );
   }
 
   Node* variable() const { return _variable; }
   NoOverflowInt scale() const { return _scale; }
-  LP64_ONLY( NoOverflowInt scaleL() const { return _scaleL; } )
 
   static int cmp_for_sort(MemPointerSummand* p1, MemPointerSummand* p2) {
     if (p1->variable() == nullptr) {
@@ -363,11 +334,6 @@ public:
 #ifndef PRODUCT
   void print_on(outputStream* st) const {
     st->print("Summand[");
-#ifdef _LP64
-    st->print("(scaleL = ");
-    _scaleL.print_on(st);
-    st->print(") ");
-#endif
     _scale.print_on(st);
     tty->print(" * [%d %s]]", _variable->_idx, _variable->Name());
   }
@@ -399,8 +365,7 @@ public:
   // Default / trivial: pointer = 0 + 1 * pointer
   MemPointerDecomposedForm(Node* pointer) : _pointer(pointer), _con(NoOverflowInt(0)) {
     assert(pointer != nullptr, "pointer must be non-null");
-    const NoOverflowInt one(1);
-    _summands[0] = MemPointerSummand(pointer, one LP64_ONLY( COMMA one ));
+    _summands[0] = MemPointerSummand(pointer, NoOverflowInt(1));
   }
 
 private:
@@ -412,7 +377,6 @@ private:
       MemPointerSummand s = summands.at(i);
       assert(s.variable() != nullptr, "variable cannot be null");
       assert(!s.scale().is_NaN(), "non-NaN scale");
-      LP64_ONLY( assert(!s.scaleL().is_NaN(), "non-NaN scaleL"); )
       _summands[i] = s;
     }
   }
@@ -479,7 +443,7 @@ private:
   MemPointerDecomposedForm parse_decomposed_form();
   void parse_sub_expression(const MemPointerSummand summand);
 
-  bool is_safe_to_decompose_op(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const;
+  bool is_safe_to_decompose_op(const int opc, const NoOverflowInt scale) const;
 };
 
 // Facility to parse the pointer of a Load or Store, so that aliasing between two such

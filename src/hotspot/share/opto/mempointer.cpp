@@ -34,8 +34,7 @@ MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form()
   Node* pointer = _mem->in(MemNode::Address);
 
   // Start with the trivial summand.
-  const NoOverflowInt one(1);
-  _worklist.push(MemPointerSummand(pointer, one LP64_ONLY( COMMA one )));
+  _worklist.push(MemPointerSummand(pointer, NoOverflowInt(1)));
 
   // Decompose the summands until only terminal summands remain. This effectively
   // parses the pointer expression recursively.
@@ -69,7 +68,7 @@ MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form()
     }
     // Keep summands with non-zero scale.
     if (!scale.is_zero()) {
-      _summands.at_put(pos_put++, MemPointerSummand(variable, scale LP64_ONLY( COMMA NoOverflowInt(1) )));
+      _summands.at_put(pos_put++, MemPointerSummand(variable, scale));
     }
   }
   _summands.trunc_to(pos_put);
@@ -83,11 +82,10 @@ MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form()
 void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSummand summand) {
   Node* n = summand.variable();
   const NoOverflowInt scale = summand.scale();
-  LP64_ONLY( const NoOverflowInt scaleL = summand.scaleL(); )
   const NoOverflowInt one(1);
 
   int opc = n->Opcode();
-  if (is_safe_to_decompose_op(opc LP64_ONLY( COMMA scaleL ))) {
+  if (is_safe_to_decompose_op(opc, scale)) {
     switch (opc) {
       case Op_ConI:
       case Op_ConL:
@@ -105,8 +103,8 @@ void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSumman
         // Decompose addition.
         Node* a = n->in((opc == Op_AddP) ? 2 : 1);
         Node* b = n->in((opc == Op_AddP) ? 3 : 2);
-        _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
-        _worklist.push(MemPointerSummand(b, scale LP64_ONLY( COMMA scaleL )));
+        _worklist.push(MemPointerSummand(a, scale));
+        _worklist.push(MemPointerSummand(b, scale));
         return;
       }
       case Op_SubL:
@@ -117,11 +115,9 @@ void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSumman
         Node* b = n->in(2);
 
         NoOverflowInt sub_scale = NoOverflowInt(-1) * scale;
-        LP64_ONLY( NoOverflowInt sub_scaleL = (opc == Op_SubL) ? scaleL * NoOverflowInt(-1)
-                                                               : scaleL; )
 
-        _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
-        _worklist.push(MemPointerSummand(b, sub_scale LP64_ONLY( COMMA sub_scaleL )));
+        _worklist.push(MemPointerSummand(a, scale));
+        _worklist.push(MemPointerSummand(b, sub_scale));
         return;
       }
       case Op_MulL:
@@ -134,31 +130,25 @@ void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSumman
         Node* con      = n->in(2);
         if (!con->is_Con()) { break; }
         NoOverflowInt factor;
-        LP64_ONLY( NoOverflowInt factorL; )
         switch (opc) {
           case Op_MulL:    // variable * con
             factor = NoOverflowInt(con->get_long());
-            LP64_ONLY( factorL = factor; )
             break;
           case Op_MulI:    // variable * con
             factor = NoOverflowInt(con->get_int());
-            LP64_ONLY( factorL = one; )
             break;
           case Op_LShiftL: // variable << con = variable * (1 << con)
             factor = one << NoOverflowInt(con->get_int());
-            LP64_ONLY( factorL = factor; )
             break;
           case Op_LShiftI: // variable << con = variable * (1 << con)
             factor = one << NoOverflowInt(con->get_int());
-            LP64_ONLY( factorL = one; )
             break;
         }
 
         // Accumulate scale.
         NoOverflowInt new_scale = scale * factor;
-        LP64_ONLY( NoOverflowInt new_scaleL = scaleL * factorL; )
 
-        _worklist.push(MemPointerSummand(variable, new_scale LP64_ONLY( COMMA new_scaleL )));
+        _worklist.push(MemPointerSummand(variable, new_scale));
         return;
       }
       case Op_CastII:
@@ -176,7 +166,7 @@ void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSumman
       {
         // Decompose: look through.
         Node* a = n->in(1);
-        _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
+        _worklist.push(MemPointerSummand(a, scale));
         return;
       }
     }
@@ -188,7 +178,7 @@ void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSumman
 
 // Check if the decomposition of operation opc is guaranteed to be safe.
 // Please refer to the definition of "safe decomposition" in mempointer.hpp
-bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const {
+bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc, const NoOverflowInt scale) const {
 #ifndef _LP64
   // On 32-bit platforms, the pointer has 32bits, and thus any higher bits will always
   // be truncated. Thus, it does not matter if we have int or long overflows.
@@ -288,7 +278,7 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc LP64_
     BasicType array_element_bt = ary_ptr_t->elem()->array_element_basic_type();
     if (is_java_primitive(array_element_bt)) {
       NoOverflowInt array_element_size_in_bytes = NoOverflowInt(type2aelembytes(array_element_bt));
-      if (scaleL.is_multiple_of(array_element_size_in_bytes)) {
+      if (scale.is_multiple_of(array_element_size_in_bytes)) {
         return true;
       }
     }
