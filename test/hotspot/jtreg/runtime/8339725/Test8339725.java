@@ -33,10 +33,12 @@
  */
 
 import java.util.Base64;
+
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
@@ -45,18 +47,11 @@ import java.lang.reflect.Constructor;
 
 public class Test8339725 {
     public static void main(String[] args) throws Exception {
-        test("-XX:+UseG1GC");
-        test("-XX:+UseZGC");
-    }
-
-    public static void test(String gcArg) throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-            "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("agent8339725"),
-            "-Xmx50m",
-            gcArg,
-            "Test");
+                "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("agent8339725"),
+                "-Xmx20m",
+                "Test");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        System.out.println(output.getOutput());
         output.shouldContain("OutOfMemoryError");
     }
 }

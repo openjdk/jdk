@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +22,18 @@
  * questions.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 #include <jvmti.h>
 #include <jni.h>
 #include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 static jvmtiEnv *_jvmti;
 static JavaVM *_jvm;
 
 #define BUFFER_SIZE 100000
-static size_t ring_buffer[BUFFER_SIZE] = {0};
-static volatile int ring_buffer_idx = 0;
+static jmethodID ring_buffer[BUFFER_SIZE] = {0};
 
 void get_method_details(jmethodID method) {
   jclass method_class;
@@ -49,9 +49,9 @@ void* read_ringbuffer(void* arg) {
   JNIEnv *env;
   _jvm->AttachCurrentThreadAsDaemon((void **)&env, NULL);
   for (;;) {
-    size_t id = ring_buffer[rand() % BUFFER_SIZE];
-    if (id > 0) {
-      get_method_details((jmethodID)id);
+    jmethodID id = ring_buffer[rand() % BUFFER_SIZE];
+    if (id != (jmethodID)0) {
+      get_method_details(id);
     }
   }
   return NULL;
@@ -62,6 +62,7 @@ static void JNICALL ClassPrepareCallback(jvmtiEnv *jvmti_env,
                                          jthread thread,
                                          jclass klass) {
   static bool reader_created = false;
+  static int ring_buffer_idx = 0;
 
   char *class_name = NULL;
   if (jvmti_env->GetClassSignature(klass, &class_name, NULL) != JVMTI_ERROR_NONE) {
@@ -83,7 +84,7 @@ static void JNICALL ClassPrepareCallback(jvmtiEnv *jvmti_env,
   jint method_count;
   jmethodID *methods;
   if (jvmti_env->GetClassMethods(klass, &method_count, &methods) == JVMTI_ERROR_NONE) {
-    ring_buffer[ring_buffer_idx++] = (size_t)methods[0];
+    ring_buffer[ring_buffer_idx++] = methods[0];
     ring_buffer_idx = ring_buffer_idx % BUFFER_SIZE;
     jvmti_env->Deallocate((unsigned char *)methods);
   }
