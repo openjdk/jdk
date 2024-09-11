@@ -25,7 +25,6 @@
  * @test
  * @bug 5102804
  * @summary Tests memory leak
- * @author Sergey Malenkov
  * @run main/othervm -Xms16m -Xmx16m Test5102804
  */
 

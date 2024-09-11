@@ -25,7 +25,6 @@
  * @test
  * @bug 4646747
  * @summary Tests that persistence delegate is correct after memory stress
- * @author Mark Davidson
  * @run main/othervm -Xms16m -Xmx16m Test4646747
  */
 

@@ -25,8 +25,6 @@
  * @bug 4076287
  * @summary Invoking get on a SoftReference shouldn't pin the referent
  * @run main/othervm -Xms16m -Xmx16m Pin
- * @author Peter Jones
- * @author Mark Reinhold
  */
 
 
