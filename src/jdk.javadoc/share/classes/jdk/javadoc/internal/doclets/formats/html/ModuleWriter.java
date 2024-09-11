@@ -194,7 +194,7 @@ public class ModuleWriter extends HtmlDocletWriter {
      */
     protected void buildContent() {
         Content moduleContent = getContentHeader();
-        moduleContent.add(new HtmlTree(HtmlTag.HR));
+        moduleContent.add(HtmlTree.HR());
         Content div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
         addModuleSignature(div);
         buildModuleDescription(div);
@@ -825,7 +825,7 @@ public class ModuleWriter extends HtmlDocletWriter {
             }
             // Only display the implementation details in the "all" mode.
             if (moduleMode == ModuleMode.ALL && !implSet.isEmpty()) {
-                desc.add(new HtmlTree(HtmlTag.BR));
+                desc.add(HtmlTree.BR());
                 desc.add("(");
                 var implSpan = HtmlTree.SPAN(HtmlStyles.implementationLabel, contents.implementation);
                 desc.add(implSpan);

@@ -65,11 +65,13 @@ import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import jdk.internal.javac.Restricted;
+import jdk.internal.loader.NativeLibraries;
 import jdk.internal.logger.LoggerFinderLoader.TemporaryLoggerFinder;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.CarrierThreadLocal;
@@ -2641,6 +2643,14 @@ public final class System {
                 return new StringConcatHelper.Concat1(constants);
             }
 
+            public byte stringInitCoder() {
+                return String.COMPACT_STRINGS ? String.LATIN1 : String.UTF16;
+            }
+
+            public byte stringCoder(String str) {
+                return str.coder();
+            }
+
             public int getCharsLatin1(long i, int index, byte[] buf) {
                 return StringLatin1.getChars(i, index, buf);
             }
@@ -2662,8 +2672,8 @@ public final class System {
             }
 
             @Override
-            public long findNative(ClassLoader loader, String entry) {
-                return ClassLoader.findNativeInternal(loader, entry);
+            public NativeLibraries nativeLibrariesFor(ClassLoader loader) {
+                return ClassLoader.nativeLibrariesFor(loader);
             }
 
             @Override
@@ -2759,6 +2769,10 @@ public final class System {
                 } else {
                     throw new WrongThreadException();
                 }
+            }
+
+            public Executor virtualThreadDefaultScheduler() {
+                return VirtualThread.defaultScheduler();
             }
 
             public StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,
