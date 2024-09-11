@@ -1479,7 +1479,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
     } else if (MaxVectorSize == 32) {
       vsetivli(zr, N, Assembler::e32, Assembler::m2, Assembler::ma, Assembler::ta);
     } else {
-      assert(MaxVectorSize > 32);
+      assert(MaxVectorSize > 32, "sanity");
       vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
     }
     vmv_v_x(vcrc, zr);
@@ -1562,7 +1562,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
   assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
-  Label L_by16_loop, L_unroll_loop, L_vector_or_unroll_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
+  Label L_by16_loop, L_vector_entry, L_unroll_loop, L_unroll_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
 
   const int64_t single_talbe_size = 256;
   const int64_t unroll = 16;
@@ -1578,11 +1578,12 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   add(table3, table2, 1*single_talbe_size*sizeof(juint), tmp1);
 
   if (UseRVV) {
-    sub(tmp1, len, unroll_words);
-    bge(tmp1, zr, L_vector_or_unroll_entry);
-  } else {
-    bge(len, zr, L_vector_or_unroll_entry);
+    const int64_t tmp_limit = MaxVectorSize >= 32 ? unroll_words*2 : unroll_words*4;
+    sub(tmp1, len, tmp_limit);
+    bge(tmp1, zr, L_vector_entry);
   }
+  bge(len, zr, L_unroll_loop_entry);
+
   addiw(len, len, unroll_words-4);
   bge(len, zr, L_by4_loop);
   addiw(len, len, 4);
@@ -1590,36 +1591,25 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   j(L_exit);
 
   align(CodeEntryAlignment);
-  bind(L_vector_or_unroll_entry);
-  if (UseRVV) {
-    vector_update_crc32(crc, buf, len, unroll_words, tmp1, tmp2, tmp3, tmp4, table0, table3, single_talbe_size);
+  bind(L_unroll_loop_entry);
+    const Register buf_end = tmp3;
+    add(buf_end, buf, len); // buf_end will be used as endpoint for loop below
+    andi(len, len, unroll_words-1); // len = (len % unroll_words)
+    sub(len, len, unroll_words); // Length after all iterations
+  bind(L_unroll_loop);
+    for (int i = 0; i < unroll; i++) {
+      ld(tmp1, Address(buf, i*wordSize));
+      update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, false);
+      update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, true);
+    }
 
-    addiw(len, len, -4);
+    addi(buf, buf, unroll_words);
+    ble(buf, buf_end, L_unroll_loop);
+    addiw(len, len, unroll_words-4);
     bge(len, zr, L_by4_loop);
     addiw(len, len, 4);
     bgt(len, zr, L_by1_loop);
     j(L_exit);
-  } else {
-      const Register buf_end = tmp3;
-      add(buf_end, buf, len); // buf_end will be used as endpoint for loop below
-      andi(len, len, unroll_words-1); // len = (len % unroll_words)
-      sub(len, len, unroll_words); // Length after all iterations
-    bind(L_unroll_loop);
-      for (int i = 0; i < unroll; i++) {
-        ld(tmp1, Address(buf, i*wordSize));
-        update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, false);
-        update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, true);
-      }
-
-      addi(buf, buf, unroll_words);
-      ble(buf, buf_end, L_unroll_loop);
-
-      addiw(len, len, unroll_words-4);
-      bge(len, zr, L_by4_loop);
-      addiw(len, len, 4);
-      bgt(len, zr, L_by1_loop);
-      j(L_exit);
-  }
 
   bind(L_by4_loop);
     lwu(tmp1, Address(buf));
@@ -1652,6 +1642,19 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     srli(tmp2, tmp1, 24);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
+    j(L_exit);
+
+  // put vector code here, otherwise "offset is too large" error occurs.
+  if (UseRVV) {
+    bind(L_vector_entry);
+    vector_update_crc32(crc, buf, len, unroll_words, tmp1, tmp2, tmp3, tmp4, table0, table3, single_talbe_size);
+
+    addiw(len, len, -4);
+    bge(len, zr, L_by4_loop);
+    addiw(len, len, 4);
+    bgt(len, zr, L_by1_loop);
+    j(L_exit);
+  }
 
   bind(L_exit);
     andn(crc, tmp5, crc);
