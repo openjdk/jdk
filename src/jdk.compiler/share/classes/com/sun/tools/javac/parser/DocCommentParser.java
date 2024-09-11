@@ -295,6 +295,7 @@ public class DocCommentParser {
                         markdown.update();
                         if (markdown.isIndentedCodeBlock()) {
                             markdown.skipLine();
+                            lastNonWhite = bp - 1; // don't include newline or EOF
                         }
                     }
                 }

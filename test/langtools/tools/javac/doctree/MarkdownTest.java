@@ -411,6 +411,32 @@ DocComment[DOC_COMMENT, pos:0
 ]
 */
 
+    ///     Indented Code Block
+    /// Lorum ipsum.
+    void indentedCodeBlock_leading() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: empty
+  body: 1
+    RawText[MARKDOWN, pos:0, ____Indented_Code_Block|Lorum_ipsum.]
+  block tags: empty
+]
+*/
+
+    /// Lorum ipsum.
+    ///
+    ///     Indented Code Block
+    void indentedCodeBlock_trailing() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 1
+    RawText[MARKDOWN, pos:0, Lorum_ipsum.]
+  body: 1
+    RawText[MARKDOWN, pos:18, Indented_Code_Block]
+  block tags: empty
+]
+*/
+
     ///123.
     ///
     ///```

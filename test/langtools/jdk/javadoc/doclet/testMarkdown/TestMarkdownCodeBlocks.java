@@ -486,4 +486,61 @@ public class TestMarkdownCodeBlocks extends JavadocTester {
                     <dd><code><a href="NullPointerException.html" title="class in p">NullPointerException</a></code> - if other is <code>null</code></dd>
                     </dl>""");
     }
+
+    @Test
+    public void testLeadingCodeBlock(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package p;
+                    ///     Leading code block
+                    /// Lorum ipsum.
+                    public class C { }
+                    """);
+
+        javadoc("-d", base.resolve("api").toString(),
+                "--no-platform-links",
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        // check first sentence is empty in package summary file
+        checkOutput("p/package-summary.html", true,
+                """
+                    <div class="col-first even-row-color class-summary class-summary-tab2"><a href="C.html" title="class in p">C</a></div>
+                    <div class="col-last even-row-color class-summary class-summary-tab2">&nbsp;</div>""");
+
+        checkOutput("p/C.html", true,
+                """
+                    <div class="block"><pre><code>Leading code block
+                    </code></pre>
+                    <p>Lorum ipsum.</p>""");
+
+    }
+
+    @Test
+    public void testTrailingCodeBlock(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package p;
+                    /// Lorum ipsum.
+                    ///
+                    ///     Trailing code block
+                    public class C { }
+                    """);
+
+        javadoc("-d", base.resolve("api").toString(),
+                "--no-platform-links",
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <div class="block"><p>Lorum ipsum.</p>
+                    <pre><code>Trailing code block
+                    </code></pre>
+                    </div>""");
+    }
 }
