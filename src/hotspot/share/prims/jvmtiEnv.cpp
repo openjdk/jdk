@@ -3214,8 +3214,7 @@ JvmtiEnv::GetMethodDeclaringClass(Method* method, jclass* declaring_class_ptr) {
   NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
   Klass* k = method->method_holder();
   Handle holder(Thread::current(), k->klass_holder()); // keep the klass alive
-  // Cannot check klass_holder == nullptr because klass could have null loader holder
-  (*declaring_class_ptr) = k->is_loader_alive() ? get_jni_class_non_null(k) : nullptr;
+  (*declaring_class_ptr) = get_jni_class_non_null(k);
   return JVMTI_ERROR_NONE;
 } /* end GetMethodDeclaringClass */
 
