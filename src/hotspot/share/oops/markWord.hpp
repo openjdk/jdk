@@ -286,7 +286,6 @@ class markWord {
   inline Klass* klass_without_asserts() const;
   inline narrowKlass narrow_klass() const;
   inline markWord set_narrow_klass(narrowKlass nklass) const;
-  inline markWord set_klass(Klass* klass) const;
 
   // Prototype mark for initialization
   static markWord prototype() {

@@ -199,6 +199,7 @@ public:
   // |----CDS---| |--------------------class space---------------------------|
 
   static inline bool is_in_encoding_range(const void* p) {
+    check_init(_base);
     return p >= _base && p < (_base + _range);
   }
 };

@@ -51,6 +51,15 @@ inline bool Klass::is_loader_alive() const {
   return class_loader_data()->is_alive();
 }
 
+inline markWord Klass::prototype_header() const {
+  assert(UseCompactObjectHeaders, "only use with compact object headers");
+  // You only need prototypes for allocating objects. If the class is not instantiable, it won't live in
+  // class space and have no narrow Klass ID. But in that case we should not need the prototype.
+  assert(_prototype_header.narrow_klass() > 0, "Klass " PTR_FORMAT ": invalid prototype (" UINT64_FORMAT ")",
+         p2i(this), _prototype_header.value());
+  return _prototype_header;
+}
+
 inline void Klass::set_prototype_header(markWord header) {
   assert(UseCompactObjectHeaders, "only with compact headers");
   _prototype_header = header;

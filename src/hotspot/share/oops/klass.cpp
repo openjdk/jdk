@@ -247,11 +247,18 @@ Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signatur
   return nullptr;
 }
 
-static markWord make_prototype(Klass* kls) {
+static markWord make_prototype(const Klass* kls) {
   markWord prototype = markWord::prototype();
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
-    prototype = prototype.set_klass(kls);
+    // With compact object headers, the narrow Klass ID is part of the mark word.
+    // We therfore seed the mark word with the narrow Klass ID.
+    // Note that only those Klass that can be instantiated have a narrow Klass ID.
+    // For those who don't, we leave the klass bits empty and assert if someone
+    // tries to use those.
+    const narrowKlass nk = CompressedKlassPointers::is_in_encoding_range(kls) ?
+        CompressedKlassPointers::encode(const_cast<Klass*>(kls)) : 0;
+    prototype = prototype.set_narrow_klass(nk);
   }
 #endif
   return prototype;

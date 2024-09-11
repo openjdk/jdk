@@ -31,6 +31,7 @@
 narrowKlass markWord::narrow_klass() const {
 #ifdef _LP64
   assert(UseCompactObjectHeaders, "only used with compact object headers");
+  const narrowKlass nk = value() >> klass_shift;
   return narrowKlass(value() >> klass_shift);
 #else
   ShouldNotReachHere();
@@ -75,18 +76,6 @@ Klass* markWord::klass_without_asserts() const {
 #else
   ShouldNotReachHere();
   return nullptr;
-#endif
-}
-
-markWord markWord::set_klass(Klass* klass) const {
-#ifdef _LP64
-  assert(UseCompactObjectHeaders, "only used with compact object headers");
-  assert(UseCompressedClassPointers, "expect compressed klass pointers");
-  narrowKlass nklass = CompressedKlassPointers::encode(const_cast<Klass*>(klass));
-  return set_narrow_klass(nklass);
-#else
-  ShouldNotReachHere();
-  return markWord();
 #endif
 }
 
