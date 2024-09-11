@@ -192,7 +192,7 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   C1StubId enter_id = ce->compilation()->has_fpu_code() ?
                               C1StubId::monitorenter_id :
                               C1StubId::monitorenter_nofpu_id;
-  __ call(Runtime1::entry_for(C1StubId::enter_id), relocInfo::runtime_call_type);
+  __ call(Runtime1::entry_for(enter_id), relocInfo::runtime_call_type);
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
   __ b(_continuation);

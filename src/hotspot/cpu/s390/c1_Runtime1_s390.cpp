@@ -391,7 +391,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
           Register t0 = obj;
           __ mem2reg_opt(t0, Address(klass, Klass::layout_helper_offset()), false);
           __ z_sra(t0, Klass::_lh_array_tag_shift);
-          int tag = ((id == new_type_array_id)
+          int tag = ((id == C1StubId::new_type_array_id)
                      ? Klass::_lh_array_tag_type_value
                      : Klass::_lh_array_tag_obj_value);
           __ compare32_and_branch(t0, tag, Assembler::bcondEqual, ok);
@@ -775,7 +775,7 @@ OopMapSet* Runtime1::generate_code_for(C1StubId id, StubAssembler* sasm) {
 
     default:
       {
-        __ should_not_reach_here(FILE_AND_LINE, id);
+        __ should_not_reach_here(FILE_AND_LINE, (int)id);
       }
       break;
   }

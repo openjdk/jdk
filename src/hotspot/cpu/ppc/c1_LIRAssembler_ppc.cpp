@@ -222,7 +222,7 @@ int LIR_Assembler::emit_unwind_handler() {
   }
 
   // Dispatch to the unwind logic.
-  address unwind_stub = Runtime1::entry_for(C1StubID::unwind_exception_id);
+  address unwind_stub = Runtime1::entry_for(C1StubId::unwind_exception_id);
   //__ load_const_optimized(R0, unwind_stub);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(unwind_stub));
   if (preserve_exception) { __ mr(Rexception, Rexception_save); }
