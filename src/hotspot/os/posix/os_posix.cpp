@@ -987,6 +987,44 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   return agent_entry_name;
 }
 
+
+// Sleep forever; naked call to OS-specific sleep; use with CAUTION
+void os::infinite_sleep() {
+  while (true) {    // sleep forever ...
+    ::sleep(100);   // ... 100 seconds at a time
+  }
+}
+
+void os::naked_short_nanosleep(jlong ns) {
+  struct timespec req;
+  assert(ns > -1 && ns < NANOUNITS, "Un-interruptable sleep, short time use only");
+  req.tv_sec = 0;
+  req.tv_nsec = ns;
+  ::nanosleep(&req, nullptr);
+  return;
+}
+
+void os::naked_short_sleep(jlong ms) {
+  assert(ms < MILLIUNITS, "Un-interruptable sleep, short time use only");
+  os::naked_short_nanosleep(millis_to_nanos(ms));
+  return;
+}
+
+char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_attr_t* attr) {
+  size_t stack_size = 0;
+  size_t guard_size = 0;
+  int detachstate = 0;
+  pthread_attr_getstacksize(attr, &stack_size);
+  pthread_attr_getguardsize(attr, &guard_size);
+  // Work around glibc stack guard issue, see os::create_thread() in os_linux.cpp.
+  LINUX_ONLY(if (os::Linux::adjustStackSizeForGuardPages()) stack_size -= guard_size;)
+  pthread_attr_getdetachstate(attr, &detachstate);
+  jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
+    stack_size / K, guard_size / K,
+    (detachstate == PTHREAD_CREATE_DETACHED ? "detached" : "joinable"));
+  return buf;
+}
+
 char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
 
   if (filename == nullptr || outbuf == nullptr || outbuflen < 1) {
@@ -1025,43 +1063,6 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     }
   }
   return result;
-}
-
-// Sleep forever; naked call to OS-specific sleep; use with CAUTION
-void os::infinite_sleep() {
-  while (true) {    // sleep forever ...
-    ::sleep(100);   // ... 100 seconds at a time
-  }
-}
-
-void os::naked_short_nanosleep(jlong ns) {
-  struct timespec req;
-  assert(ns > -1 && ns < NANOUNITS, "Un-interruptable sleep, short time use only");
-  req.tv_sec = 0;
-  req.tv_nsec = ns;
-  ::nanosleep(&req, nullptr);
-  return;
-}
-
-void os::naked_short_sleep(jlong ms) {
-  assert(ms < MILLIUNITS, "Un-interruptable sleep, short time use only");
-  os::naked_short_nanosleep(millis_to_nanos(ms));
-  return;
-}
-
-char* os::Posix::describe_pthread_attr(char* buf, size_t buflen, const pthread_attr_t* attr) {
-  size_t stack_size = 0;
-  size_t guard_size = 0;
-  int detachstate = 0;
-  pthread_attr_getstacksize(attr, &stack_size);
-  pthread_attr_getguardsize(attr, &guard_size);
-  // Work around glibc stack guard issue, see os::create_thread() in os_linux.cpp.
-  LINUX_ONLY(if (os::Linux::adjustStackSizeForGuardPages()) stack_size -= guard_size;)
-  pthread_attr_getdetachstate(attr, &detachstate);
-  jio_snprintf(buf, buflen, "stacksize: " SIZE_FORMAT "k, guardsize: " SIZE_FORMAT "k, %s",
-    stack_size / K, guard_size / K,
-    (detachstate == PTHREAD_CREATE_DETACHED ? "detached" : "joinable"));
-  return buf;
 }
 
 int os::stat(const char *path, struct stat *sbuf) {
