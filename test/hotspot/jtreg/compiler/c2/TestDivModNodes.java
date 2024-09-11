@@ -30,6 +30,7 @@ import java.util.Random;
 
 /*
  * @test
+ * @bug 8332442
  * @summary Test that DIV and MOD nodes are converted into DIVMOD where possible
  * @library /test/lib /
  * @requires vm.compiler2.enabled
@@ -46,6 +47,22 @@ public class TestDivModNodes {
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:-UseDivMod");
         TestFramework.runWithFlags("-XX:+UseDivMod");
+    }
+
+    private static int nextNonZeroInt() {
+        int i;
+        do {
+            i = RANDOM.nextInt();
+        } while (i == 0);
+        return i;
+    }
+
+    private static long nextNonZeroLong() {
+        long i;
+        do {
+            i = RANDOM.nextLong();
+        } while (i == 0);
+        return i;
     }
 
     @Test
@@ -65,7 +82,7 @@ public class TestDivModNodes {
     @Run(test = "testSignedIntDivMod")
     private static void runSignedIntDivMod() {
         int dividend = RANDOM.nextInt();
-        int divisor = RANDOM.nextInt();
+        int divisor = nextNonZeroInt();
         testSignedIntDivMod(dividend, divisor);
 
         verifyResult(dividend, divisor,
@@ -91,7 +108,7 @@ public class TestDivModNodes {
     @Run(test = "testSignedLongDivMod")
     private static void runSignedLongDivMod() {
         long dividend = RANDOM.nextLong();
-        long divisor = RANDOM.nextLong();
+        long divisor = nextNonZeroLong();
         testSignedLongDivMod(dividend, divisor);
 
         verifyResult(dividend, divisor,
@@ -116,7 +133,7 @@ public class TestDivModNodes {
     @Run(test = "testUnsignedIntDivMod")
     private static void runUnsignedIntDivMod() {
         int dividend = RANDOM.nextInt();
-        int divisor = RANDOM.nextInt();
+        int divisor = nextNonZeroInt();
         testUnsignedIntDivMod(dividend, divisor);
 
         verifyResult(dividend, divisor,
@@ -141,7 +158,7 @@ public class TestDivModNodes {
     @Run(test = "testUnsignedLongDivMod")
     private static void runUnsignedLongDivMod() {
         long dividend = RANDOM.nextLong();
-        long divisor = RANDOM.nextLong();
+        long divisor = nextNonZeroLong();
         testUnsignedLongDivMod(dividend, divisor);
 
         verifyResult(dividend, divisor,
