@@ -180,37 +180,6 @@ bool OptoRuntime::generate(ciEnv* env) {
 
   OPTO_STUBS_DO(GEN_OPTO_BLOB, GEN_OPTO_STUB, GEN_OPTO_JVMTI_STUB)
 
-    /*
-  generate_uncommon_trap_blob();
-  generate_exception_blob();
-
-  // Note: tls: Means fetching the return oop out of the thread-local storage
-  //
-  //   variable/name                       type-function-gen              , runtime method                  ,fncy_jp, tls,retpc
-  // -------------------------------------------------------------------------------------------------------------------------------
-  gen(env, _new_instance_Java              , new_instance_Type            , new_instance_C                  ,    0 , true, false);
-  gen(env, _new_array_Java                 , new_array_Type               , new_array_C                     ,    0 , true, false);
-  gen(env, _new_array_nozero_Java          , new_array_Type               , new_array_nozero_C              ,    0 , true, false);
-  gen(env, _multianewarray2_Java           , multianewarray2_Type         , multianewarray2_C               ,    0 , true, false);
-  gen(env, _multianewarray3_Java           , multianewarray3_Type         , multianewarray3_C               ,    0 , true, false);
-  gen(env, _multianewarray4_Java           , multianewarray4_Type         , multianewarray4_C               ,    0 , true, false);
-  gen(env, _multianewarray5_Java           , multianewarray5_Type         , multianewarray5_C               ,    0 , true, false);
-  gen(env, _multianewarrayN_Java           , multianewarrayN_Type         , multianewarrayN_C               ,    0 , true, false);
-#if INCLUDE_JVMTI
-  gen(env, _notify_jvmti_vthread_start     , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_start, 0, true, false);
-  gen(env, _notify_jvmti_vthread_end       , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_end,   0, true, false);
-  gen(env, _notify_jvmti_vthread_mount     , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_mount, 0, true, false);
-  gen(env, _notify_jvmti_vthread_unmount   , notify_jvmti_vthread_Type    , SharedRuntime::notify_jvmti_vthread_unmount, 0, true, false);
-#endif
-  gen(env, _complete_monitor_locking_Java  , complete_monitor_enter_Type  , SharedRuntime::complete_monitor_locking_C, 0, false, false);
-  gen(env, _monitor_notify_Java            , monitor_notify_Type          , monitor_notify_C                ,    0 , false, false);
-  gen(env, _monitor_notifyAll_Java         , monitor_notify_Type          , monitor_notifyAll_C             ,    0 , false, false);
-  gen(env, _rethrow_Java                   , rethrow_Type                 , rethrow_C                       ,    2 , true , true );
-
-  gen(env, _slow_arraycopy_Java            , slow_arraycopy_Type          , SharedRuntime::slow_arraycopy_C ,    0 , false, false);
-  gen(env, _register_finalizer_Java        , register_finalizer_Type      , register_finalizer              ,    0 , false, false);
-
-  */
   return true;
 }
 
