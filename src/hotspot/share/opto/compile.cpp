@@ -3166,9 +3166,9 @@ void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
     return;
   }
 
-  // Check if a%b and a/b both exist
+  // Check if "a % b" and "a / b" both exist
   Node* d = n->find_similar(Op_DivIL(bt, is_unsigned));
-  if (!d) {
+  if (d == nullptr) {
     return;
   }
 
@@ -3178,7 +3178,7 @@ void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
     d->subsume_by(divmod->div_proj(), this);
     n->subsume_by(divmod->mod_proj(), this);
   } else {
-    // replace a%b with a-((a/b)*b)
+    // replace "a % b" with "a - ((a / b) *b)"
     Node* mult = MulNode::make(d, d->in(2), bt);
     Node* sub = SubNode::make(d->in(1), mult, bt);
     n->subsume_by(sub, this);
