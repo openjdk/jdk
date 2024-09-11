@@ -35,7 +35,7 @@ import java.awt.event.MouseEvent;
  * @test
  * @bug 4328557
  * @summary Tests that MouseDragged and MouseReleased are triggered on choice
- * @library /open/test/jdk/lib/client
+ * @library /lib/client
  * @build ExtendedRobot
  * @key headful
  * @run main ChoiceMouseDragTest
