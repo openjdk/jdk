@@ -142,8 +142,8 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             for (int i = parentBsmSize; i < bsmSize; i++)
                 bootstrapMethodEntry(i).writeTo(buf);
             int attrLen = buf.size() - pos;
-            buf.patchInt(pos + 2, 4, attrLen - 6);
-            buf.patchInt(pos + 6, 2, bsmSize);
+            buf.patchInt(pos + 2, attrLen - 6);
+            buf.patchU2(pos + 6, bsmSize);
         }
         else {
             UnboundAttribute<BootstrapMethodsAttribute> a

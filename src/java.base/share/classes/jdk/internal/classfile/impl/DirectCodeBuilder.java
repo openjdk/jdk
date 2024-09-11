@@ -103,7 +103,7 @@ public final class DirectCodeBuilder
             handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, context, original, false));
             cb.buildContent();
         } catch (LabelOverflowException loe) {
-            if (context.shortJumpsOption() == ClassFile.ShortJumpsOption.FIX_SHORT_JUMPS) {
+            if (context.fixShortJumps()) {
                 handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, context, original, true));
                 cb.buildContent();
             }
@@ -122,7 +122,7 @@ public final class DirectCodeBuilder
         setOriginal(original);
         this.methodInfo = methodInfo;
         this.transformFwdJumps = transformFwdJumps;
-        this.transformBackJumps = context.shortJumpsOption() == ClassFile.ShortJumpsOption.FIX_SHORT_JUMPS;
+        this.transformBackJumps = context.fixShortJumps();
         bytecodesBufWriter = (original instanceof CodeImpl cai) ? new BufWriterImpl(constantPool, context, cai.codeLength())
                 : new BufWriterImpl(constantPool, context);
         this.startLabel = new LabelImpl(this, 0);
@@ -195,7 +195,7 @@ public final class DirectCodeBuilder
             int endPc = labelToBci(h.tryEnd());
             int handlerPc = labelToBci(h.handler());
             if (startPc == -1 || endPc == -1 || handlerPc == -1) {
-                if (context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS) {
+                if (context.dropDeadLabels()) {
                     handlersSize--;
                 } else {
                     throw new IllegalArgumentException("Unbound label in exception handler");
@@ -209,7 +209,7 @@ public final class DirectCodeBuilder
             }
         }
         if (handlersSize < handlers.size())
-            buf.patchInt(pos, 2, handlersSize);
+            buf.patchU2(pos, handlersSize);
     }
 
     private void buildContent() {
@@ -219,7 +219,7 @@ public final class DirectCodeBuilder
         // Backfill branches for which Label didn't have position yet
         processDeferredLabels();
 
-        if (context.debugElementsOption() == ClassFile.DebugElementsOption.PASS_DEBUG) {
+        if (context.passDebugElements()) {
             if (!characterRanges.isEmpty()) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.characterRangeTable()) {
 
@@ -232,7 +232,7 @@ public final class DirectCodeBuilder
                             var start = labelToBci(cr.startScope());
                             var end = labelToBci(cr.endScope());
                             if (start == -1 || end == -1) {
-                                if (context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS) {
+                                if (context.dropDeadLabels()) {
                                     crSize--;
                                 } else {
                                     throw new IllegalArgumentException("Unbound label in character range");
@@ -246,7 +246,7 @@ public final class DirectCodeBuilder
                             }
                         }
                         if (crSize < characterRanges.size())
-                            b.patchInt(pos, 2, crSize);
+                            b.patchU2(pos, crSize);
                     }
                 };
                 attributes.withAttribute(a);
@@ -261,7 +261,7 @@ public final class DirectCodeBuilder
                         b.writeU2(lvSize);
                         for (LocalVariable l : localVariables) {
                             if (!Util.writeLocalVariable(b, l)) {
-                                if (context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS) {
+                                if (context.dropDeadLabels()) {
                                     lvSize--;
                                 } else {
                                     throw new IllegalArgumentException("Unbound label in local variable type");
@@ -269,7 +269,7 @@ public final class DirectCodeBuilder
                             }
                         }
                         if (lvSize < localVariables.size())
-                            b.patchInt(pos, 2, lvSize);
+                            b.patchU2(pos, lvSize);
                     }
                 };
                 attributes.withAttribute(a);
@@ -284,7 +284,7 @@ public final class DirectCodeBuilder
                         b.writeU2(localVariableTypes.size());
                         for (LocalVariableType l : localVariableTypes) {
                             if (!Util.writeLocalVariable(b, l)) {
-                                if (context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS) {
+                                if (context.dropDeadLabels()) {
                                     lvtSize--;
                                 } else {
                                     throw new IllegalArgumentException("Unbound label in local variable type");
@@ -292,7 +292,7 @@ public final class DirectCodeBuilder
                             }
                         }
                         if (lvtSize < localVariableTypes.size())
-                            b.patchInt(pos, 2, lvtSize);
+                            b.patchU2(pos, lvtSize);
                     }
                 };
                 attributes.withAttribute(a);
@@ -357,24 +357,21 @@ public final class DirectCodeBuilder
                 }
 
                 if (codeAndExceptionsMatch(codeLength)) {
-                    switch (context.stackMapsOption()) {
-                        case STACK_MAPS_WHEN_REQUIRED -> {
-                            attributes.withAttribute(original.findAttribute(Attributes.stackMapTable()).orElse(null));
-                            writeCounters(true, buf);
-                        }
-                        case GENERATE_STACK_MAPS ->
-                            generateStackMaps(buf);
-                        case DROP_STACK_MAPS ->
-                            writeCounters(true, buf);
+                    if (context.stackMapsWhenRequired()) {
+                        attributes.withAttribute(original.findAttribute(Attributes.stackMapTable()).orElse(null));
+                        writeCounters(true, buf);
+                    } else if (context.generateStackMaps()) {
+                        generateStackMaps(buf);
+                    } else if (context.dropStackMaps()) {
+                        writeCounters(true, buf);
                     }
                 } else {
-                    switch (context.stackMapsOption()) {
-                        case STACK_MAPS_WHEN_REQUIRED ->
-                            tryGenerateStackMaps(false, buf);
-                        case GENERATE_STACK_MAPS ->
-                            generateStackMaps(buf);
-                        case DROP_STACK_MAPS ->
-                            writeCounters(false, buf);
+                    if (context.stackMapsWhenRequired()) {
+                        tryGenerateStackMaps(false, buf);
+                    } else if (context.generateStackMaps()) {
+                        generateStackMaps(buf);
+                    } else if (context.dropStackMaps()) {
+                        writeCounters(false, buf);
                     }
                 }
 
@@ -455,8 +452,7 @@ public final class DirectCodeBuilder
     private void writeLabelOffset(int nBytes, int instructionPc, Label label) {
         int targetBci = labelToBci(label);
         if (targetBci == -1) {
-            int pc = curPc();
-            bytecodesBufWriter.writeIntBytes(nBytes, 0);
+            int pc = bytecodesBufWriter.skip(nBytes);
             if (deferredLabels == null)
                 deferredLabels = new ArrayList<>();
             deferredLabels.add(new DeferredLabel(pc, nBytes, instructionPc, label));
@@ -472,8 +468,13 @@ public final class DirectCodeBuilder
         if (deferredLabels != null) {
             for (DeferredLabel dl : deferredLabels) {
                 int branchOffset = labelToBci(dl.label) - dl.instructionPc;
-                if (dl.size == 2 && (short)branchOffset != branchOffset) throw new LabelOverflowException();
-                bytecodesBufWriter.patchInt(dl.labelPc, dl.size, branchOffset);
+                if (dl.size == 2) {
+                    if ((short)branchOffset != branchOffset) throw new LabelOverflowException();
+                    bytecodesBufWriter.patchU2(dl.labelPc, branchOffset);
+                } else {
+                    assert dl.size == 4;
+                    bytecodesBufWriter.patchInt(dl.labelPc, branchOffset);
+                }
             }
         }
     }
@@ -543,11 +544,11 @@ public final class DirectCodeBuilder
         writeBytecode(LOOKUPSWITCH);
         int pad = 4 - (curPc() % 4);
         if (pad != 4)
-            bytecodesBufWriter.writeIntBytes(pad, 0);
+            bytecodesBufWriter.skip(pad); // padding content can be anything
         writeLabelOffset(4, instructionPc, defaultTarget);
         bytecodesBufWriter.writeInt(cases.size());
         cases = new ArrayList<>(cases);
-        cases.sort(new Comparator<SwitchCase>() {
+        cases.sort(new Comparator<>() {
             @Override
             public int compare(SwitchCase c1, SwitchCase c2) {
                 return Integer.compare(c1.caseValue(), c2.caseValue());
@@ -564,7 +565,7 @@ public final class DirectCodeBuilder
         writeBytecode(TABLESWITCH);
         int pad = 4 - (curPc() % 4);
         if (pad != 4)
-            bytecodesBufWriter.writeIntBytes(pad, 0);
+            bytecodesBufWriter.skip(pad); // padding content can be anything
         writeLabelOffset(4, instructionPc, defaultTarget);
         bytecodesBufWriter.writeInt(low);
         bytecodesBufWriter.writeInt(high);
