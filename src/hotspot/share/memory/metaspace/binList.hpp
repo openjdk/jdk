@@ -199,7 +199,6 @@ public:
         local_counter.add(s);
         b_last = b;
       }
-      if (UseNewCode)printf("\n");
     }
     local_counter.check(_counter);
   }
