@@ -29,9 +29,29 @@ import jdk.vm.ci.meta.Constant;
  */
 public interface HotSpotConstant extends Constant {
 
+    /**
+     * Determines if this constant is compressed.
+     */
     boolean isCompressed();
 
+    /**
+     * Determines if this constant is compressible.
+     */
+    boolean isCompressible();
+
+    /**
+     * Gets a compressed version of this uncompressed constant.
+     * 
+     * @throws IllegalArgumentException if this is a compressed constant
+     *         or this constant is not compressible
+     */
     Constant compress();
 
+    /**
+     * Gets an uncompressed version of this compressed constant.
+     * 
+     * @throws IllegalArgumentException if this is an uncompressed constant
+     *         or this constant is not compressible
+     */
     Constant uncompress();
 }

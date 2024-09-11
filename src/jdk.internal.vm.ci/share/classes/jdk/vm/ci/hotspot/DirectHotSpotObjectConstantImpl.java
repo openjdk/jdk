@@ -51,13 +51,17 @@ final class DirectHotSpotObjectConstantImpl extends HotSpotObjectConstantImpl {
 
     @Override
     public JavaConstant compress() {
-        assert !compressed;
+        if (compressed) {
+            throw new IllegalArgumentException("already compressed: " + this);
+        }
         return new DirectHotSpotObjectConstantImpl(object, true);
     }
 
     @Override
     public JavaConstant uncompress() {
-        assert compressed;
+        if (!compressed) {
+            throw new IllegalArgumentException("not compressed: " + this);
+        }
         return new DirectHotSpotObjectConstantImpl(object, false);
     }
 
