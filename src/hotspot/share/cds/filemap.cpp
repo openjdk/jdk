@@ -2385,7 +2385,7 @@ bool FileMapInfo::validate_aot_class_linking() {
   // These checks need to be done after FileMapInfo::initialize(), which gets called before Universe::heap()
   // is available.
   if (header()->has_aot_linked_classes()) {
-    CDSConfig::set_has_aot_linked_classes(is_static(), true);
+    CDSConfig::set_has_aot_linked_classes(true);
     if (JvmtiExport::should_post_class_file_load_hook()) {
       log_error(cds)("CDS archive has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.");
       return false;
