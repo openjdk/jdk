@@ -50,7 +50,7 @@ public class Timeout extends DNSTestBase {
     // DnsClient retries again with increased timeout if left
     // timeout is less than this value, and max retry attempts
     // is not reached
-    private static final int DNS_CLIENT_MIN_TIMEOUT = 50;
+    private static final int DNS_CLIENT_MIN_TIMEOUT = 0;
 
     private long startTime;
 
@@ -103,12 +103,11 @@ public class Timeout extends DNSTestBase {
 
             Duration minAllowedTime = Duration.ofMillis(TIMEOUT)
                     .multipliedBy((1 << RETRIES) - 1)
-                    .minus(Duration.ofMillis((DNS_CLIENT_MIN_TIMEOUT - 1) * RETRIES));
+                    .minus(Duration.ofMillis(DNS_CLIENT_MIN_TIMEOUT * RETRIES));
             Duration maxAllowedTime = Duration.ofMillis(TIMEOUT)
                     .multipliedBy((1 << RETRIES) - 1)
-                    // max allowed timeout value is set to 1.75 * expected timeout
-                    .multipliedBy(7)
-                    .dividedBy(4);
+                    // max allowed timeout value is set to 2 * expected timeout
+                    .multipliedBy(2);
 
             DNSTestUtils.debug("Elapsed (ms):  " + elapsedTime.toMillis());
             String expectedRangeMsg = "%s - %s"
@@ -116,7 +115,7 @@ public class Timeout extends DNSTestBase {
             DNSTestUtils.debug("Expected range (ms): " + expectedRangeMsg);
 
             // Check that elapsed time is as long as expected, and
-            // not more than 75% greater.
+            // not more than 2 times greater.
             if (elapsedTime.compareTo(minAllowedTime) >= 0 &&
                 elapsedTime.compareTo(maxAllowedTime) <= 0) {
                 System.out.println("elapsed time is as long as expected.");

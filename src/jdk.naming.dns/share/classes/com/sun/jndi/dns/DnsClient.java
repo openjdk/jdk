@@ -96,7 +96,7 @@ public class DnsClient {
 
     private static final int DEFAULT_PORT = 53;
     private static final int TRANSACTION_ID_BOUND = 0x10000;
-    private static final int MIN_TIMEOUT = 50; // msec after which there are no retries.
+    private static final int MIN_TIMEOUT = 0; // msec after which there are no retries.
     private static final SecureRandom random = JCAUtil.getSecureRandom();
     private InetAddress[] servers;
     private int[] serverPorts;
