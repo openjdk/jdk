@@ -49,7 +49,7 @@ public class Test8339725 {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("agent8339725"),
-                "-Xmx20m",
+                "-Xmx50m",
                 "Test");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("OutOfMemoryError");
