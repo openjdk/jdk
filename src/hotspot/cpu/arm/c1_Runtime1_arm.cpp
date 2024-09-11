@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -504,11 +504,11 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
       {
         __ set_info("register_finalizer", dont_gc_arguments);
 
-        // Do not call runtime if JVM_ACC_HAS_FINALIZER flag is not set
+        // Do not call runtime if has_finalizer flag is not set
         __ load_klass(Rtemp, R0);
-        __ ldr_u32(Rtemp, Address(Rtemp, Klass::access_flags_offset()));
+        __ ldrb(Rtemp, Address(Rtemp, Klass::misc_flags_offset()));
 
-        __ tst(Rtemp, JVM_ACC_HAS_FINALIZER);
+        __ tst(Rtemp, KlassFlags::_misc_has_finalizer);
         __ bx(LR, eq);
 
         // Call VM

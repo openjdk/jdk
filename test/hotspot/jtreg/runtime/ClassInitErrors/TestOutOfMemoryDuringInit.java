@@ -44,6 +44,10 @@ public class TestOutOfMemoryDuringInit {
         static void forceInit() { }
         static {
             while (theList != null) {
+                // Use the minimal allocation size to push heap occupation to
+                // the limit, ensuring there is not enough memory to create the
+                // ExceptionInInitializerError that the VM tries to create when
+                // the clinit throws the OOM.
                 theList.add(new Object());
             }
         }

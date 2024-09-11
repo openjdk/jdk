@@ -1324,7 +1324,7 @@ public class ZipFile implements ZipConstants, Closeable {
                             tag, cenPos));
                 }
 
-                if (tag == ZIP64_EXTID) {
+                if (tag == EXTID_ZIP64) {
                     // Get the compressed size;
                     long csize = CENSIZ(cen, cenPos);
                     // Get the uncompressed size;
@@ -1360,7 +1360,7 @@ public class ZipFile implements ZipConstants, Closeable {
                                                 long size, long locoff, int diskNo)
                 throws ZipException {
             byte[] cen = this.cen;
-            // if ZIP64_EXTID blocksize == 0, which may occur with some older
+            // if EXTID_ZIP64 blocksize == 0, which may occur with some older
             // versions of Apache Ant and Commons Compress, validate csize and size
             // to make sure neither field == ZIP64_MAGICVAL
             if (blockSize == 0) {
@@ -1368,7 +1368,7 @@ public class ZipFile implements ZipConstants, Closeable {
                         locoff == ZIP64_MAGICVAL || diskNo == ZIP64_MAGICCOUNT) {
                     zerror("Invalid CEN header (invalid zip64 extra data field size)");
                 }
-                // Only validate the ZIP64_EXTID data if the block size > 0
+                // Only validate the EXTID_ZIP64 data if the block size > 0
                 return;
             }
             // Validate the Zip64 Extended Information Extra Field (0x0001)

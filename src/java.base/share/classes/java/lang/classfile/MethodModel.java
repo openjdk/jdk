@@ -42,7 +42,7 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodModel
-        extends WritableElement<MethodModel>, CompoundElement<MethodElement>, AttributedElement, ClassElement
+        extends CompoundElement<MethodElement>, AttributedElement, ClassElement
         permits BufferedMethodBuilder.Model, MethodImpl {
 
     /** {@return the access flags} */

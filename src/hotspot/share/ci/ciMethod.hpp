@@ -360,10 +360,13 @@ class ciMethod : public ciMetadata {
   bool is_unboxing_method() const;
   bool is_vector_method() const;
   bool is_object_initializer() const;
+  bool is_scoped() const;
 
   bool can_be_statically_bound(ciInstanceKlass* context) const;
 
   bool can_omit_stack_trace() const;
+
+  bool equals(const ciMethod* m) const;
 
   // Replay data methods
   static void dump_name_as_ascii(outputStream* st, Method* method);

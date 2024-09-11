@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,8 +54,8 @@ typedef jint (WINAPI* EnqueueOperationFunc)
 static HANDLE
 doPrivilegedOpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId);
 
-/* convert jstring to C string */
-static void jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len);
+/* Converts jstring to C string, returns JNI_FALSE if the string has been truncated. */
+static jboolean jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, size_t cstr_buf_size);
 
 
 /*
@@ -75,9 +75,9 @@ typedef struct {
    char jvmLib[MAX_LIBNAME_LENGTH];         /* "jvm.dll" */
    char func1[MAX_FUNC_LENGTH];
    char func2[MAX_FUNC_LENGTH];
-   char cmd[MAX_CMD_LENGTH];                /* "load", "dump", ...      */
-   char arg[MAX_ARGS][MAX_ARG_LENGTH];      /* arguments to command     */
-   char pipename[MAX_PIPE_NAME_LENGTH];
+   char cmd[MAX_CMD_LENGTH + 1];            /* "load", "dump", ...      */
+   char arg[MAX_ARGS][MAX_ARG_LENGTH + 1];  /* arguments to command     */
+   char pipename[MAX_PIPE_NAME_LENGTH + 1];
 } DataBlock;
 
 /*
@@ -377,7 +377,6 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_readPipe
     return (jint)nread;
 }
 
-
 /*
  * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    enqueue
@@ -410,7 +409,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
     /*
      * Command and arguments
      */
-    jstring_to_cstring(env, cmd, data.cmd, MAX_CMD_LENGTH);
+    if (!jstring_to_cstring(env, cmd, data.cmd, sizeof(data.cmd))) {
+        JNU_ThrowByName(env, "com/sun/tools/attach/AttachOperationFailedException",
+                        "command is too long");
+        return;
+    }
     argsLen = (*env)->GetArrayLength(env, args);
 
     if (argsLen > 0) {
@@ -423,7 +426,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
             if (obj == NULL) {
                 data.arg[i][0] = '\0';
             } else {
-                jstring_to_cstring(env, obj, data.arg[i], MAX_ARG_LENGTH);
+                if (!jstring_to_cstring(env, obj, data.arg[i], sizeof(data.arg[i]))) {
+                    JNU_ThrowByName(env, "com/sun/tools/attach/AttachOperationFailedException",
+                                    "argument is too long");
+                    return;
+                }
             }
             if ((*env)->ExceptionOccurred(env)) return;
         }
@@ -433,7 +440,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
     }
 
     /* pipe name */
-    jstring_to_cstring(env, pipename, data.pipename, MAX_PIPE_NAME_LENGTH);
+    if (!jstring_to_cstring(env, pipename, data.pipename, sizeof(data.pipename))) {
+        JNU_ThrowByName(env, "com/sun/tools/attach/AttachOperationFailedException",
+                        "pipe name is too long");
+        return;
+    }
 
     /*
      * Allocate memory in target process for data and code stub
@@ -615,21 +626,28 @@ doPrivilegedOpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProc
     return hProcess;
 }
 
-/* convert jstring to C string */
-static void jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len) {
+/* Converts jstring to C string, returns JNI_FALSE if the string has been truncated. */
+static jboolean jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, size_t cstr_buf_size) {
     jboolean isCopy;
     const char* str;
+    jboolean result = JNI_TRUE;
 
     if (jstr == NULL) {
         cstr[0] = '\0';
     } else {
         str = JNU_GetStringPlatformChars(env, jstr, &isCopy);
-        if ((*env)->ExceptionOccurred(env)) return;
+        if ((*env)->ExceptionOccurred(env)) {
+            return result;
+        }
+        if (strlen(str) >= cstr_buf_size) {
+            result = JNI_FALSE;
+        }
 
-        strncpy(cstr, str, len);
-        cstr[len-1] = '\0';
+        strncpy(cstr, str, cstr_buf_size);
+        cstr[cstr_buf_size - 1] = '\0';
         if (isCopy) {
             JNU_ReleaseStringPlatformChars(env, jstr, str);
         }
     }
+    return result;
 }

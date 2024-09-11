@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,17 +46,17 @@ import jdk.test.lib.thread.VThreadPinner;
 public class PinALot {
 
     public static void main(String[] args) throws Exception {
-        int iterations = 1_000_000;
+        int iterations;
         if (args.length > 0) {
             iterations = Integer.parseInt(args[0]);
+        } else {
+            iterations = 1_000_000;
         }
-        final int ITERATIONS = iterations;
 
         AtomicInteger count = new AtomicInteger();
-
         Thread thread = Thread.ofVirtual().start(() -> {
             VThreadPinner.runPinned(() -> {
-                while (count.incrementAndGet() < ITERATIONS) {
+                while (count.incrementAndGet() < iterations) {
                     LockSupport.parkNanos(1);
                 }
             });
@@ -65,12 +65,12 @@ public class PinALot {
         boolean terminated;
         do {
             terminated = thread.join(Duration.ofSeconds(1));
-            System.out.println(Instant.now() + " => " + count.get());
+            System.out.println(Instant.now() + " => " + count.get() + " of " + iterations);
         } while (!terminated);
 
         int countValue = count.get();
-        if (countValue != ITERATIONS) {
-            throw new RuntimeException("count = " + countValue);
+        if (countValue != iterations) {
+            throw new RuntimeException("Thread terminated, count=" + countValue);
         }
     }
 }
