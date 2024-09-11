@@ -1185,6 +1185,7 @@ public:
   Node *dom_lca_internal( Node *n1, Node *n2 ) const;
 
   Node* dominated_node(Node* c1, Node* c2) {
+    assert(is_dominator(c1, c2) || is_dominator(c2, c1), "nodes must be related");
     return is_dominator(c1, c2) ? c2 : c1;
   }
 
@@ -1794,7 +1795,7 @@ public:
 
   void pin_array_access_nodes_dependent_on(Node* ctrl);
 
-  void ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node, Node*& control);
+  Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
 };
 
 

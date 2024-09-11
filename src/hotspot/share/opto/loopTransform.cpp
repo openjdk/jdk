@@ -2790,7 +2790,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // Find the main loop limit; we will trim it's iterations
   // to not ever trip end tests
   Node *main_limit = cl->limit();
-  Node* main_limit_c = get_ctrl(main_limit);
+  Node* main_limit_ctrl = get_ctrl(main_limit);
 
   // Check graph shape. Cannot optimize a loop if zero-trip
   // Opaque1 node is optimized away and then another round
@@ -2823,7 +2823,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   }
   Opaque1Node *pre_opaq = (Opaque1Node*)pre_opaq1;
   Node *pre_limit = pre_opaq->in(1);
-  Node* pre_limit_c = get_ctrl(pre_limit);
+  Node* pre_limit_ctrl = get_ctrl(pre_limit);
 
   // Where do we put new limit calculations
   Node* pre_ctrl = pre_end->loopnode()->in(LoopNode::EntryControl);
@@ -2831,7 +2831,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // have control above the pre loop, but there's no guarantee that they do. There's no guarantee either that the pre
   // loop limit has control that's out of loop (a previous round of range check elimination could have set a limit that's
   // not loop invariant).
-  Node* new_limit_ctrl = dominated_node(pre_ctrl, pre_limit_c);
+  Node* new_limit_ctrl = dominated_node(pre_ctrl, pre_limit_ctrl);
 
   // Ensure the original loop limit is available from the
   // pre-loop Opaque1 node.
@@ -2891,14 +2891,14 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
       Node *limit  = cmp->in(2);
       int scale_con= 1;        // Assume trip counter not scaled
 
-      Node *limit_c = get_ctrl(limit);
-      if (loop->is_member(get_loop(limit_c))) {
+      Node *limit_ctrl = get_ctrl(limit);
+      if (loop->is_member(get_loop(limit_ctrl))) {
         // Compare might have operands swapped; commute them
         b_test = b_test.commute();
         rc_exp = cmp->in(2);
         limit  = cmp->in(1);
-        limit_c = get_ctrl(limit);
-        if (loop->is_member(get_loop(limit_c))) {
+        limit_ctrl = get_ctrl(limit);
+        if (loop->is_member(get_loop(limit_ctrl))) {
           continue;             // Both inputs are loop varying; cannot RCE
         }
       }
@@ -2907,11 +2907,11 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
       // 'limit' maybe pinned below the zero trip test (probably from a
       // previous round of rce), in which case, it can't be used in the
       // zero trip test expression which must occur before the zero test's if.
-      if (is_dominator(ctrl, limit_c)) {
+      if (is_dominator(ctrl, limit_ctrl)) {
         continue;  // Don't rce this check but continue looking for other candidates.
       }
 
-      assert(is_dominator(compute_early_ctrl(limit, limit_c), pre_end), "node pinned on loop exit test?");
+      assert(is_dominator(compute_early_ctrl(limit, limit_ctrl), pre_end), "node pinned on loop exit test?");
 
       // Check for scaled induction variable plus an offset
       Node *offset = nullptr;
@@ -2920,25 +2920,25 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
         continue;
       }
 
-      Node *offset_c = get_ctrl(offset);
-      if (loop->is_member(get_loop(offset_c))) {
+      Node *offset_ctrl = get_ctrl(offset);
+      if (loop->is_member(get_loop(offset_ctrl))) {
         continue;               // Offset is not really loop invariant
       }
       // Here we know 'offset' is loop invariant.
 
       // As above for the 'limit', the 'offset' maybe pinned below the
       // zero trip test.
-      if (is_dominator(ctrl, offset_c)) {
+      if (is_dominator(ctrl, offset_ctrl)) {
         continue; // Don't rce this check but continue looking for other candidates.
       }
 
       // offset and limit can have control set below the pre loop when they are not loop invariant in the pre loop.
       // Update their control (and the control of inputs as needed) to be above pre_end
-      ensure_node_and_inputs_are_above_pre_end(pre_end, offset, offset_c);
-      ensure_node_and_inputs_are_above_pre_end(pre_end, limit, limit_c);
+      offset_ctrl = ensure_node_and_inputs_are_above_pre_end(pre_end, offset);
+      limit_ctrl = ensure_node_and_inputs_are_above_pre_end(pre_end, limit);
 
       // offset and limit could have control below new_limit_ctrl if they are not loop invariant in the pre loop.
-      new_limit_ctrl = dominated_node(new_limit_ctrl, offset_c, limit_c);
+      new_limit_ctrl = dominated_node(new_limit_ctrl, offset_ctrl, limit_ctrl);
 
 #ifdef ASSERT
       if (TraceRangeLimitCheck) {
@@ -3140,11 +3140,12 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
 }
 
 // Adjust control for node and its inputs (and inputs of its inputs) to be above the pre end
-void PhaseIdealLoop::ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node, Node*& control) {
+Node* PhaseIdealLoop::ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node) {
+  Node* control = get_ctrl(node);
   assert(is_dominator(compute_early_ctrl(node, control), pre_end), "node pinned on loop exit test?");
 
   if (is_dominator(control, pre_end)) {
-    return;
+    return control;
   }
   control = pre_end->in(0);
   ResourceMark rm;
@@ -3161,6 +3162,7 @@ void PhaseIdealLoop::ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode
       }
     }
   }
+  return control;
 }
 
 bool IdealLoopTree::compute_has_range_checks() const {
