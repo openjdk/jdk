@@ -41,7 +41,7 @@ public interface HotSpotConstant extends Constant {
 
     /**
      * Gets a compressed version of this uncompressed constant.
-     * 
+     *
      * @throws IllegalArgumentException if this is a compressed constant
      *         or this constant is not compressible
      */
@@ -49,7 +49,7 @@ public interface HotSpotConstant extends Constant {
 
     /**
      * Gets an uncompressed version of this compressed constant.
-     * 
+     *
      * @throws IllegalArgumentException if this is an uncompressed constant
      *         or this constant is not compressible
      */
