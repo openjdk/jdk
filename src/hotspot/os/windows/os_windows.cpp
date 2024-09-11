@@ -5324,11 +5324,16 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
   }
 
   char* result = nullptr;
-  ALLOW_C_FUNCTION(::_fullpath, result = ::_fullpath(outbuf, filename, outbuflen);)
-  if (result == nullptr) {
-    errno = ENAMETOOLONG;
+  ALLOW_C_FUNCTION(::_fullpath, char* p = ::_fullpath(nullptr, filename, 0);)
+  if (p != nullptr) {
+    if (strlen(p) < outbuflen) {
+      strcpy(outbuf, p);
+      result = outbuf;
+    } else {
+      errno = ENAMETOOLONG;
+    }
+    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
   }
-  return result;
 }
 
 // Map a block of memory.
