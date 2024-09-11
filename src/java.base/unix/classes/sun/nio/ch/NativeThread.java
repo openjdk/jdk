@@ -93,7 +93,6 @@ public class NativeThread {
     private static native void init();
 
     static {
-        IOUtil.load();
         init();
     }
 

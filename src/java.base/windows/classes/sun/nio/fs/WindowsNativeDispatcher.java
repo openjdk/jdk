@@ -1094,7 +1094,6 @@ class WindowsNativeDispatcher {
     private static native void initIDs();
 
     static {
-        jdk.internal.loader.BootLoader.loadLibrary("net");
         initIDs();
     }
 

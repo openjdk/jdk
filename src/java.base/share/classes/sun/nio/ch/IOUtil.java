@@ -570,11 +570,13 @@ public final class IOUtil {
     private static native void initIDs();
 
     /**
-     * Used to trigger loading of native libraries
+     * Used to trigger initialization of static final fields and of
+     * FileDescriptor field IDs in the native layer
      */
     public static void load() { }
 
     static {
+        // Initialize FileDescriptor field IDs in the native layer
         initIDs();
 
         IOV_MAX = iovMax();

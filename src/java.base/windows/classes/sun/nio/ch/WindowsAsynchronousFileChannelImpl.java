@@ -745,8 +745,4 @@ public class WindowsAsynchronousFileChannelImpl
 
     private static native int lockFile(long handle, long position, long size,
         boolean shared, long overlapped) throws IOException;
-
-    static {
-        IOUtil.load();
-    }
 }

@@ -37,10 +37,6 @@
 #include "net_util.h"
 #include "sun_nio_ch_NIOUtil.h"
 
-JNIEXPORT jboolean JNICALL
-Java_sun_security_provider_NativeSeedGenerator_nativeGenerateSeed
-(JNIEnv *env, jclass clazz, jbyteArray randArray);
-
 /**************************************************************
  * NIOUtil.c
  */
