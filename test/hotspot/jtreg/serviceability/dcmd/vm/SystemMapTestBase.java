@@ -100,13 +100,52 @@ public class SystemMapTestBase {
         wincommitted + "STACK-\\d+-main.*"
     };
 
+    // macOS:
+
+    private static final String shouldMatchUnconditionally_macOS[] = {
+        // java launcher
+        regexBase_committed + "/bin/java",
+        // libjvm
+        regexBase_committed + "/lib/.*/libjvm.so",
+        // heap segment, should be part of all user space apps on all architectures OpenJDK supports.
+        regexBase_committed + "\\[heap\\]",
+        // we should see the hs-perf data file, and it should appear as shared as well as committed
+        regexBase_shared_and_committed + "hsperfdata_.*"
+    };
+
+    private static final String shouldMatchIfNMTIsEnabled_macOS[] = {
+        regexBase_java_heap + "JAVAHEAP.*",
+        // metaspace
+        regexBase_committed + "META.*",
+        // parts of metaspace should be uncommitted
+        regexBase + "-" + space + "META.*",
+        // code cache
+        regexBase_committed + "CODE.*",
+        // Main thread stack
+        regexBase_committed + "STACK.*main.*"
+    };
+
     private static final boolean isWindows = Platform.isWindows();
+    private static final boolean isMacOS = Platform.isOSX();
 
     protected static String[] shouldMatchUnconditionally() {
-        return isWindows ? shouldMatchUnconditionally_windows : shouldMatchUnconditionally_linux;
+        if (isWindows) {
+            return shouldMatchUnconditionally_windows;
+        } else if (isMacOS) {
+            return shouldMatchUnconditionally_macOS;
+        } else {
+            return shouldMatchUnconditionally_linux;
+        }
     }
     protected static String[] shouldMatchIfNMTIsEnabled() {
-        return isWindows ? shouldMatchIfNMTIsEnabled_windows : shouldMatchIfNMTIsEnabled_linux;
+        return isWindows ?  : shouldMatchIfNMTIsEnabled_linux;
+        if (isWindows) {
+            return shouldMatchIfNMTIsEnabled_windows;
+        } else if (isMacOS) {
+            return shouldMatchIfNMTIsEnabled_macOS;
+        } else {
+            return shouldMatchIfNMTIsEnabled_linux;
+        }
     }
 
 }
