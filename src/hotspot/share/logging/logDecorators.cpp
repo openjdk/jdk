@@ -126,14 +126,3 @@ bool LogDecorators::has_default_decorator(const LogSelection& selection, uint* m
   }
   return max_specificity > 0;
 }
-
-template<typename... Decorators>
-uint LogDecorators::mask_from_decorators(LogDecorators::Decorator first, Decorators... rest) {
-  uint bitmask = 0;
-  LogDecorators::Decorator decorators[1 + sizeof...(rest)] = { first, rest... };
-  for (const LogDecorators::Decorator decorator : decorators) {
-    if (decorator == NoDecorators) return 0;
-    bitmask |= mask(decorator);
-  }
-  return bitmask;
-}

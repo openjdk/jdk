@@ -129,7 +129,15 @@ class LogDecorators {
   }
 
   template<typename... Decorators>
-  static uint mask_from_decorators(LogDecorators::Decorator first, Decorators... rest);
+  static uint mask_from_decorators(LogDecorators::Decorator first, Decorators... rest) {
+    uint bitmask = 0;
+    LogDecorators::Decorator decorators[1 + sizeof...(rest)] = { first, rest... };
+    for (const LogDecorators::Decorator decorator : decorators) {
+      if (decorator == NoDecorators) return 0;
+      bitmask |= mask(decorator);
+    }
+    return bitmask;
+  }
 
   // Check if we have some default decorators for a given LogSelection. If that is the case,
   // the output parameter mask will contain the defaults-specified decorators mask
