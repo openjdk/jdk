@@ -22,6 +22,8 @@
  * questions.
  */
 
+#include <atomic>
+
 #include <jvmti.h>
 #include <jni.h>
 #include <pthread.h>
@@ -33,7 +35,7 @@ static jvmtiEnv *_jvmti;
 static JavaVM *_jvm;
 
 #define BUFFER_SIZE 100000
-static jmethodID ring_buffer[BUFFER_SIZE] = {0};
+static std::atomic<jmethodID> ring_buffer[BUFFER_SIZE];
 
 void get_method_details(jmethodID method) {
   jclass method_class;
@@ -49,7 +51,7 @@ void* read_ringbuffer(void* arg) {
   JNIEnv *env;
   _jvm->AttachCurrentThreadAsDaemon((void **)&env, NULL);
   for (;;) {
-    jmethodID id = ring_buffer[rand() % BUFFER_SIZE];
+    jmethodID id = ring_buffer[rand() % BUFFER_SIZE].load(std::memory_order_relaxed);
     if (id != (jmethodID)0) {
       get_method_details(id);
     }
@@ -84,13 +86,17 @@ static void JNICALL ClassPrepareCallback(jvmtiEnv *jvmti_env,
   jint method_count;
   jmethodID *methods;
   if (jvmti_env->GetClassMethods(klass, &method_count, &methods) == JVMTI_ERROR_NONE) {
-    ring_buffer[ring_buffer_idx++] = methods[0];
+    ring_buffer[ring_buffer_idx++].store(methods[0], std::memory_order_relaxed);
     ring_buffer_idx = ring_buffer_idx % BUFFER_SIZE;
     jvmti_env->Deallocate((unsigned char *)methods);
   }
 }
 
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+  for (int i = 0; i < BUFFER_SIZE; i++) {
+    ring_buffer[i].store(0, std::memory_order_relaxed);
+  }
+
   jvmtiEventCallbacks callbacks;
   jvmtiError error;
 
