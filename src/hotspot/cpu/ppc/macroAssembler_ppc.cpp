@@ -2871,7 +2871,8 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
 
     bind(monitor_locked);
     if (UseObjectMonitorTable) {
-      std(mark, BasicLock::object_monitor_cache_offset_in_bytes(), box);
+      addi(tmp1, owner_addr, -in_bytes(ObjectMonitor::owner_offset())); // restore monitor address
+      std(tmp1, BasicLock::object_monitor_cache_offset_in_bytes(), box);
     }
   }
 
