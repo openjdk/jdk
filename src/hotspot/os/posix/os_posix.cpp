@@ -891,46 +891,6 @@ void os::funlockfile(FILE* fp) {
   ::funlockfile(fp);
 }
 
-char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
-
-  if (filename == nullptr || outbuf == nullptr || outbuflen < 1) {
-    assert(false, "os::realpath: invalid arguments.");
-    errno = EINVAL;
-    return nullptr;
-  }
-
-  char* result = nullptr;
-
-  // This assumes platform realpath() is implemented according to POSIX.1-2008.
-  // POSIX.1-2008 allows to specify null for the output buffer, in which case
-  // output buffer is dynamically allocated and must be ::free()'d by the caller.
-  ALLOW_C_FUNCTION(::realpath, char* p = ::realpath(filename, nullptr);)
-  if (p != nullptr) {
-    if (strlen(p) < outbuflen) {
-      strcpy(outbuf, p);
-      result = outbuf;
-    } else {
-      errno = ENAMETOOLONG;
-    }
-    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
-  } else {
-    // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
-    // returns EINVAL, this may indicate that realpath is not POSIX.1-2008 compatible and
-    // that it complains about the null we handed down as user buffer.
-    // In this case, use the user provided buffer but at least check whether realpath caused
-    // a memory overwrite.
-    if (errno == EINVAL) {
-      outbuf[outbuflen - 1] = '\0';
-      ALLOW_C_FUNCTION(::realpath, p = ::realpath(filename, outbuf);)
-      if (p != nullptr) {
-        guarantee(outbuf[outbuflen - 1] == '\0', "realpath buffer overwrite detected.");
-        result = p;
-      }
-    }
-  }
-  return result;
-}
-
 DIR* os::opendir(const char* dirname) {
   assert(dirname != nullptr, "just checking");
   return ::opendir(dirname);
@@ -1025,6 +985,46 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
     strncat(agent_entry_name, lib_name, name_len);
   }
   return agent_entry_name;
+}
+
+char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
+
+  if (filename == nullptr || outbuf == nullptr || outbuflen < 1) {
+    assert(false, "os::realpath: invalid arguments.");
+    errno = EINVAL;
+    return nullptr;
+  }
+
+  char* result = nullptr;
+
+  // This assumes platform realpath() is implemented according to POSIX.1-2008.
+  // POSIX.1-2008 allows to specify null for the output buffer, in which case
+  // output buffer is dynamically allocated and must be ::free()'d by the caller.
+  ALLOW_C_FUNCTION(::realpath, char* p = ::realpath(filename, nullptr);)
+  if (p != nullptr) {
+    if (strlen(p) < outbuflen) {
+      strcpy(outbuf, p);
+      result = outbuf;
+    } else {
+      errno = ENAMETOOLONG;
+    }
+    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
+  } else {
+    // Fallback for platforms struggling with modern Posix standards (AIX 5.3, 6.1). If realpath
+    // returns EINVAL, this may indicate that realpath is not POSIX.1-2008 compatible and
+    // that it complains about the null we handed down as user buffer.
+    // In this case, use the user provided buffer but at least check whether realpath caused
+    // a memory overwrite.
+    if (errno == EINVAL) {
+      outbuf[outbuflen - 1] = '\0';
+      ALLOW_C_FUNCTION(::realpath, p = ::realpath(filename, outbuf);)
+      if (p != nullptr) {
+        guarantee(outbuf[outbuflen - 1] == '\0', "realpath buffer overwrite detected.");
+        result = p;
+      }
+    }
+  }
+  return result;
 }
 
 // Sleep forever; naked call to OS-specific sleep; use with CAUTION
