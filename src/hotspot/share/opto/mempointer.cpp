@@ -187,66 +187,7 @@ void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSumman
 }
 
 // Check if the decomposition of operation opc is guaranteed to be safe.
-//
-// TODO
-//
-//  Definition: Safe decomposition
-//    We decompose summand in:
-//      mp1 = con + summand                     + sum(other_summands)
-//    Resulting in: +-------------------------+
-//      mp2 = con + dec_con + sum(dec_summands) + sum(other_summands)
-//          = new_con + sum(new_summands)
-//
-//    We call a decomposition safe if either:
-//      S1) No matter the values of the summand variables:
-//            mp1 = mp2
-//
-//      S2) The pointer is on an array with a known array_element_size_in_bytes,
-//          and there is an integer x, such that:
-//            mp1 = mp2 + x * array_element_size_in_bytes * 2^32
-//
-//
-//  Statement:
-//    Given two pointers p1 and p2, and their MemPointers mp1 and mp2.
-//    If the two MemPointers satisfy these conditions:
-//      1) All summands are identical.
-//      2) The constants do not differ too much: abs(mp1.con - mp2.con) < 2^31
-//
-//    Then the ponter difference between p1 and p2 is identical to the difference between
-//    mp1 and mp2:
-//      p1 - p2 = mp1 - mp2
-//
-//
-//  Proof Statement:
-//    If only decompositions of type (S1) were used, then trivially:
-//      p1 = mp1
-//      p2 = mp2
-//      =>
-//      p1 - p2 = mp1 - mp2
-//
-//    If decompositions of type (S2) were used, then we can prove via induction over all
-//    decomposition steps that there must be some x1 and x2, such that:
-//      p1 = mp1 + x1 * array_element_size_in_bytes * 2^32
-//      p2 = mp2 + x2 * array_element_size_in_bytes * 2^32
-//
-//    And hence, there must be an x, such that:
-//      p1 - p2 = mp1 - mp2 + x * array_element_size_in_bytes * 2^32
-//
-//    If "x = 0", then it follows:
-//      p1 - p2 = mp1 - mp2
-//
-//    If "x != 0", then:
-//      abs(p1 - p2) =  abs(mp1 - mp2 + x * array_element_size_in_bytes * 2^32)
-//                   >= abs(x * array_element_size_in_bytes * 2^32) - abs(mp1 - mp2)
-//                   >= array_element_size_in_bytes * 2^32          - abs(mp1 - mp2)
-//                   >  array_element_size_in_bytes * 2^32          - 2^31
-//                   >= array_element_size_in_bytes * 2^31
-//                   >= max_possible_array_size_in_bytes
-//                   >= array_size_in_bytes
-//
-//
-// TODO
-//
+// Please refer to the definition of "safe decomposition" in mempointer.hpp
 bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const {
 #ifndef _LP64
   // On 32-bit platforms, the pointer has 32bits, and thus any higher bits will always
@@ -322,6 +263,7 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc LP64_
 #endif
 }
 
+// TODO add proof based on "Statement"
 MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerDecomposedForm& other
                                                                NOT_PRODUCT( COMMA const TraceMemPointer& trace) ) const {
 #ifndef PRODUCT

@@ -31,6 +31,8 @@
 // The MemPointer is a shared facility to parse pointers and check the aliasing of pointers,
 // e.g. checking if two stores are adjacent.
 //
+// -----------------------------------------------------------------------------------------
+//
 // MemPointerDecomposedForm:
 //   When the pointer is parsed, it is decomposed into a constant and a sum of summands:
 //
@@ -85,6 +87,8 @@
 //   are terminal, see MemPointerDecomposedFormParser::parse_sub_expression. This effectively parses
 //   the pointer expression recursively.
 //
+// -----------------------------------------------------------------------------------------
+//
 //   We have to be careful on 64bit systems with ConvI2L: decomposing its input is not
 //   correct in general, overflows may not be preserved in the decomposed form:
 //
@@ -93,8 +97,83 @@
 //     MulI:     ConvI2L(a *  conI) != ConvI2L(a) *  ConvI2L(conI)
 //     LShiftI:  ConvI2L(a << conI) != ConvI2L(a) << ConvI2L(conI)
 //
-//   However, there are some cases where we can prove that the decomposition is safe,
-//   see MemPointerDecomposedFormParser::is_safe_to_decompose_op.
+//   If we want to prove the correctness of MemPointerAliasing, we need some guarantees,
+//   that the MemPointers adequately represent the underlying pointers, such that we can
+//   compute the aliasing based on the summands and constants.
+//
+// -----------------------------------------------------------------------------------------
+//
+//   Below, we will formulate a "Statement" that helps us to prove the correctness of the
+//   MemPointerAliasing computations. To prove the "Statement", we need to define the idea
+//   of a "safe decomposition", and then prove that all the decompositions we apply are
+//   such "safe decompositions".
+//
+//
+//  Definition: Safe decomposition
+//    We decompose summand in:
+//      mp1 = con + summand                     + sum(other_summands)
+//    Resulting in: +-------------------------+
+//      mp2 = con + dec_con + sum(dec_summands) + sum(other_summands)
+//          = new_con + sum(new_summands)
+//
+//    We call a decomposition safe if either:
+//      S1) No matter the values of the summand variables:
+//            mp1 = mp2
+//
+//      S2) The pointer is on an array with a known array_element_size_in_bytes,
+//          and there is an integer x, such that:
+//            mp1 = mp2 + x * array_element_size_in_bytes * 2^32
+//
+//    Note: MemPointerDecomposedFormParser::is_safe_to_decompose_op checks that all
+//          decompositions we apply are safe.
+//
+//
+//  Statement:
+//    Given two pointers p1 and p2, and their respective MemPointers mp1 and mp2.
+//    If these conditions hold:
+//      1) All summands of mp1 and mp2 are identical.
+//      2) The constants do not differ too much: abs(mp1.con - mp2.con) < 2^31
+//      3) Both p1 and p2 are within the bounds of the same memory object.
+//
+//    Then the ponter difference between p1 and p2 is identical to the difference between
+//    mp1 and mp2:
+//      p1 - p2 = mp1 - mp2
+//
+//    Note: MemPointerDecomposedForm::get_aliasing_with relies on this statememt to
+//          prove the correctness of its aliasing computation between two MemPointers.
+//
+//
+//  Proof Statement:
+//    If only decompositions of type (S1) were used, then trivially:
+//      p1 = mp1
+//      p2 = mp2
+//      =>
+//      p1 - p2 = mp1 - mp2
+//
+//    If decompositions of type (S2) were used, then we can prove via induction over all
+//    decomposition steps that there must be some x1 and x2, such that:
+//      p1 = mp1 + x1 * array_element_size_in_bytes * 2^32
+//      p2 = mp2 + x2 * array_element_size_in_bytes * 2^32
+//
+//    And hence, there must be an x, such that:
+//      p1 - p2 = mp1 - mp2 + x * array_element_size_in_bytes * 2^32
+//
+//    If "x = 0", then it follows:
+//      p1 - p2 = mp1 - mp2
+//
+//    If "x != 0", then:
+//      abs(p1 - p2) =  abs(mp1 - mp2 + x * array_element_size_in_bytes * 2^32)
+//                   >= abs(x * array_element_size_in_bytes * 2^32) - abs(mp1 - mp2)
+//                   >= array_element_size_in_bytes * 2^32          - abs(mp1 - mp2)
+//                   >  array_element_size_in_bytes * 2^32          - 2^31
+//                   >= array_element_size_in_bytes * 2^31
+//                   >= max_possible_array_size_in_bytes
+//                   >= array_size_in_bytes
+//
+//      Thus we get a contradiction: p1 and p2 have a distance greater than the array
+//      size, and hence at least one of the two must be out of bounds. But condition 3
+//      of the statement requires that both p1 and p2 are both in bounds of the same
+//      memory object.
 
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
