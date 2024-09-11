@@ -28,110 +28,95 @@
 #include <jni.h>
 #include <pthread.h>
 
-static jvmtiEnv *jvmti;
+static jvmtiEnv *_jvmti;
 static JavaVM *_jvm;
-static JNIEnv *_rb_env;
 
 #define BUFFER_SIZE 100000
 static size_t ring_buffer[BUFFER_SIZE] = {0};
 static volatile int ring_buffer_idx = 0;
-static int reader_created = 0;
 
-void *get_method_details(void *arg)
-{
-    jmethodID method = (jmethodID)arg;
-
-    jclass method_class;
-    char *class_name = NULL;
-
-    jvmtiError err = JVMTI_ERROR_NONE;
-
-    // For JVM 17, 21, 22 calling GetMethodDeclaringClass is enough.
-    if ((err = jvmti->GetMethodDeclaringClass(method, &method_class)) == 0)
-    {
-        // JVM 8 needs this to crash
-        jvmti->GetClassSignature(method_class, &class_name, NULL);
-        jvmti->Deallocate((unsigned char *)class_name);
+void get_method_details(jmethodID method) {
+  jclass method_class;
+  char *class_name = NULL;
+  if (_jvmti->GetMethodDeclaringClass(method, &method_class) == JVMTI_ERROR_NONE) {
+    if (_jvmti->GetClassSignature(method_class, &class_name, NULL) == JVMTI_ERROR_NONE) {
+      _jvmti->Deallocate((unsigned char *)class_name);
     }
-    return NULL;
+  }
 }
 
-void *read_ringbuffer(void *arg)
-{
-    JNIEnv *env;
-    _jvm->AttachCurrentThread((void **)&env, NULL);
-    _rb_env = env;
-
-    for (;;)
-    {
-        size_t id = ring_buffer[rand() % BUFFER_SIZE];
-        if (id > 0)
-        {
-            get_method_details((void *)id);
-        }
+void* read_ringbuffer(void* arg) {
+  JNIEnv *env;
+  _jvm->AttachCurrentThreadAsDaemon((void **)&env, NULL);
+  for (;;) {
+    size_t id = ring_buffer[rand() % BUFFER_SIZE];
+    if (id > 0) {
+      get_method_details((jmethodID)id);
     }
-    return NULL;
+  }
+  return NULL;
 }
 
 static void JNICALL ClassPrepareCallback(jvmtiEnv *jvmti_env,
                                          JNIEnv *jni_env,
                                          jthread thread,
-                                         jclass klass)
-{
-    if (reader_created == 0)
-    {
-        pthread_t tid;
-        pthread_create(&tid, NULL, read_ringbuffer, NULL);
+                                         jclass klass) {
+  static bool reader_created = false;
 
-        reader_created = 1;
-    }
+  char *class_name = NULL;
+  if (jvmti_env->GetClassSignature(klass, &class_name, NULL) != JVMTI_ERROR_NONE) {
+    return;
+  }
+  // We only care MyClass and only one thread loads it
+  bool is_my_class = strcmp(class_name, "LMyClass;") == 0;
+  jvmti_env->Deallocate((unsigned char *)class_name);
+  if (!is_my_class) {
+    return;
+  }
 
-    // Get the list of methods
-    jint method_count;
-    jmethodID *methods;
-    if (jvmti_env->GetClassMethods(klass, &method_count, &methods) == JVMTI_ERROR_NONE)
-    {
-        for (int i = 0; i < method_count; i++)
-        {
-            ring_buffer[ring_buffer_idx++] = (size_t)methods[i];
-            ring_buffer_idx = ring_buffer_idx % BUFFER_SIZE;
-        }
-        jvmti_env->Deallocate((unsigned char *)methods);
-    }
+  if (!reader_created) {
+    pthread_t tid;
+    pthread_create(&tid, NULL, read_ringbuffer, NULL);
+    reader_created = true;
+  }
+
+  jint method_count;
+  jmethodID *methods;
+  if (jvmti_env->GetClassMethods(klass, &method_count, &methods) == JVMTI_ERROR_NONE) {
+    ring_buffer[ring_buffer_idx++] = (size_t)methods[0];
+    ring_buffer_idx = ring_buffer_idx % BUFFER_SIZE;
+    jvmti_env->Deallocate((unsigned char *)methods);
+  }
 }
 
-JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved)
-{
-    jvmtiEventCallbacks callbacks;
-    jvmtiError error;
+JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
+  jvmtiEventCallbacks callbacks;
+  jvmtiError error;
 
-    _jvm = jvm;
+  _jvm = jvm;
 
-    if (jvm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_0) != JNI_OK)
-    {
-        fprintf(stderr, "Unable to access JVMTI!\n");
-        return JNI_ERR;
-    }
+  if (jvm->GetEnv((void **)&_jvmti, JVMTI_VERSION_1_0) != JNI_OK) {
+    fprintf(stderr, "Unable to access JVMTI!\n");
+    return JNI_ERR;
+  }
 
-    // Set up the event callbacks
-    memset(&callbacks, 0, sizeof(callbacks));
-    callbacks.ClassPrepare = &ClassPrepareCallback;
+  // Set up the event callbacks
+  memset(&callbacks, 0, sizeof(callbacks));
+  callbacks.ClassPrepare = &ClassPrepareCallback;
 
-    // Register the callbacks
-    error = jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
-    if (error != JVMTI_ERROR_NONE)
-    {
-        fprintf(stderr, "Error setting event callbacks: %d\n", error);
-        return JNI_ERR;
-    }
+  // Register the callbacks
+  error = _jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
+  if (error != JVMTI_ERROR_NONE) {
+    fprintf(stderr, "Error setting event callbacks: %d\n", error);
+    return JNI_ERR;
+  }
 
-    // Enable the ClassPrepare event
-    error = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL);
-    if (error != JVMTI_ERROR_NONE)
-    {
-        fprintf(stderr, "Error enabling ClassPrepare event: %d\n", error);
-        return JNI_ERR;
-    }
+  // Enable the ClassPrepare event
+  error = _jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_PREPARE, NULL);
+  if (error != JVMTI_ERROR_NONE) {
+    fprintf(stderr, "Error enabling ClassPrepare event: %d\n", error);
+    return JNI_ERR;
+  }
 
-    return JNI_OK;
+  return JNI_OK;
 }

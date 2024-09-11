@@ -29,10 +29,7 @@
  * @requires vm.jvmti
  * @requires os.family == "linux"
  * @library /test/lib
- * @library /
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run main/othervm/native -agentlib:agent8339725 Test8339725
+ * @run main/othervm/timeout=300 Test8339725
  */
 
 import java.util.Base64;
@@ -40,7 +37,11 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
+import java.io.IOException;
+import java.lang.reflect.Constructor;
 
 public class Test8339725 {
     public static void main(String[] args) throws Exception {
@@ -49,8 +50,11 @@ public class Test8339725 {
     }
 
     public static void test(String gcArg) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("agent8339725"), "-Xmx100m", gcArg, "Test");
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+            "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("agent8339725"),
+            "-Xmx50m",
+            gcArg,
+            "Test");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getOutput());
         output.shouldContain("OutOfMemoryError");
@@ -60,10 +64,12 @@ public class Test8339725 {
 class Test {
     public static void main(String[] args) throws Exception {
         long last = System.nanoTime();
-        for (int i = 0;; i++) {
+        for (;;) {
             CustomClassLoader loader = new CustomClassLoader();
-            Class<?> k = loader.findClass("TemplateFFFFFFFF");
-            Object o = k.getDeclaredConstructor().newInstance();
+            Class<?> k = loader.findClass("MyClass");
+            Constructor<?> c = k.getDeclaredConstructor();
+            c.setAccessible(true);
+            c.newInstance();
 
             // call gc every ~1 second.
             if ((System.nanoTime() - last) >= 1e9) {
@@ -75,14 +81,28 @@ class Test {
 }
 
 class CustomClassLoader extends ClassLoader {
+    static byte[] BYTES;
+
+    static {
+        try (InputStream in = CustomClassLoader.class.getResourceAsStream("MyClass.class")) {
+            try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                byte[] buf = new byte[4096];
+                int len;
+                while ((len = in.read(buf)) != -1) {
+                    baos.write(buf, 0, len);
+                }
+                BYTES = baos.toByteArray();
+            }
+        } catch (Throwable t) {
+            throw new RuntimeException(t);
+        }
+    }
+
     @Override
     public Class findClass(String name) throws ClassNotFoundException {
-        byte[] b = Base64.getDecoder()
-                .decode("yv66vgAAADQADgoAAwALBwAMBwANAQAGPGluaXQ+AQADKClWAQAEQ29kZQEAD0xpbmVOdW1iZXJU" +
-                        "YWJsZQEAEmRvVGVtcGxhdGVGRkZGRkZGRgEAClNvdXJjZUZpbGUBABVUZW1wbGF0ZUZGRkZGRkZG" +
-                        "LmphdmEMAAQABQEAEFRlbXBsYXRlRkZGRkZGRkYBABBqYXZhL2xhbmcvT2JqZWN0ACEAAgADAAAA" +
-                        "AAACAAEABAAFAAEABgAAAB0AAQABAAAABSq3AAGxAAAAAQAHAAAABgABAAAAAQABAAgABQABAAYA" +
-                        "AAAZAAAAAQAAAAGxAAAAAQAHAAAABgABAAAAAwABAAkAAAACAAo=");
-        return defineClass(name, b, 0, b.length);
+        return defineClass(name, BYTES, 0, BYTES.length);
     }
+}
+
+class MyClass {
 }
