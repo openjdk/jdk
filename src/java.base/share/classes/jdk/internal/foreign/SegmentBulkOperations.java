@@ -164,13 +164,13 @@ public final class SegmentBulkOperations {
         src.checkAccess(srcFromOffset, srcBytes, true);
         dst.checkAccess(dstFromOffset, dstBytes, true);
 
-        final long bytes = Math.min(srcBytes, dstBytes);
+        final long length = Math.min(srcBytes, dstBytes);
         final boolean srcAndDstBytesDiffer = srcBytes != dstBytes;
 
-        if (bytes == 0) {
+        if (length == 0) {
             return srcAndDstBytesDiffer ? 0 : -1;
-        } else if (bytes < NATIVE_THRESHOLD_MISMATCH) {
-            return mismatch(src, srcFromOffset, dst, dstFromOffset, 0, (int) bytes, srcAndDstBytesDiffer);
+        } else if (length < NATIVE_THRESHOLD_MISMATCH) {
+            return mismatch(src, srcFromOffset, dst, dstFromOffset, 0, (int) length, srcAndDstBytesDiffer);
         } else {
             long i;
             if (SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset) !=
@@ -180,13 +180,13 @@ public final class SegmentBulkOperations {
             i = vectorizedMismatchLargeForBytes(src.sessionImpl(), dst.sessionImpl(),
                     src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset,
                     dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset,
-                    bytes);
+                    length);
             if (i >= 0) {
                 return i;
             }
             final long remaining = ~i;
             assert remaining < 8 : "remaining greater than 7: " + remaining;
-            i = bytes - remaining;
+            i = length - remaining;
             return mismatch(src, srcFromOffset + i, dst, dstFromOffset + i, i, (int) remaining, srcAndDstBytesDiffer);
         }
     }
@@ -195,64 +195,53 @@ public final class SegmentBulkOperations {
     @ForceInline
     private static long mismatch(AbstractMemorySegmentImpl src, long srcFromOffset,
                                  AbstractMemorySegmentImpl dst, long dstFromOffset,
-                                 long start, int bytes, boolean srcAndDstBytesDiffer) {
-        // For bytes == 64, it is better to not do bulk checks
-        final int bulkLimit = NATIVE_THRESHOLD_MISMATCH > 64
-                ? (bytes & (NATIVE_THRESHOLD_MISMATCH - 64))
-                : 0;
+                                 long start, int length, boolean srcAndDstBytesDiffer) {
         int offset = 0;
-        for (; offset < bulkLimit; offset += 64) {
-            // Manually unroll looping in chunks of 64 bytes
+        // Currently, we do not benefit from super-word optimization on Aarch64 so
+        // instead we manually unroll the loop.
+        // This gives about 15% performance increase for large values of `length`.
+        if (Architecture.isAARCH64() && NATIVE_THRESHOLD_MISMATCH > 64) {
 
-            // The creation of long arrays will be optimized away
-            long[] s = new long[8];
-            // Grouping reads from the same source together improves performance
-            s[0] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, !Architecture.isLittleEndian());
-            s[1] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 8, !Architecture.isLittleEndian());
-            s[2] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 16, !Architecture.isLittleEndian());
-            s[3] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 24, !Architecture.isLittleEndian());
-            s[4] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 32, !Architecture.isLittleEndian());
-            s[5] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 40, !Architecture.isLittleEndian());
-            s[6] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 48, !Architecture.isLittleEndian());
-            s[7] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 56, !Architecture.isLittleEndian());
+            // 0...X...000000
+            final int bulkLimit = length & (NATIVE_THRESHOLD_MISMATCH - 64);
+            for (; offset < bulkLimit; offset += 64) {
+                // Manually unroll looping in chunks of 64 bytes
 
-            long[] d = new long[8];
-            d[0] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, !Architecture.isLittleEndian());
-            d[1] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 8, !Architecture.isLittleEndian());
-            d[2] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 16, !Architecture.isLittleEndian());
-            d[3] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 24, !Architecture.isLittleEndian());
-            d[4] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 32, !Architecture.isLittleEndian());
-            d[5] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 40, !Architecture.isLittleEndian());
-            d[6] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 48, !Architecture.isLittleEndian());
-            d[7] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 56, !Architecture.isLittleEndian());
+                // The creation of long arrays will be optimized away
+                final long[] s = new long[8];
+                // Grouping reads from the same source together improves performance
+                s[0] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset,      !Architecture.isLittleEndian());
+                s[1] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset +  8, !Architecture.isLittleEndian());
+                s[2] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 16, !Architecture.isLittleEndian());
+                s[3] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 24, !Architecture.isLittleEndian());
+                s[4] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 32, !Architecture.isLittleEndian());
+                s[5] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 40, !Architecture.isLittleEndian());
+                s[6] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 48, !Architecture.isLittleEndian());
+                s[7] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 56, !Architecture.isLittleEndian());
 
-            // Explicitly checking each index retains performance
-            if (s[0] != d[0]) {
-                return start + offset + mismatch(s[0], d[0]);
-            }
-            if (s[1] != d[1]) {
-                return start + offset + mismatch(s[1], d[1]);
-            }
-            if (s[2] != d[2]) {
-                return start + offset + mismatch(s[2], d[2]);
-            }
-            if (s[3] != d[3]) {
-                return start + offset + mismatch(s[3], d[3]);
-            }
-            if (s[4] != d[4]) {
-                return start + offset + mismatch(s[4], d[4]);
-            }
-            if (s[5] != d[5]) {
-                return start + offset + mismatch(s[5], d[5]);
-            }
-            if (s[6] != d[6]) {
-                return start + offset + mismatch(s[6], d[6]);
-            }
-            if (s[7] != d[7]) {
-                return start + offset + mismatch(s[7], d[7]);
+                final long[] d = new long[8];
+                d[0] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset,      !Architecture.isLittleEndian());
+                d[1] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset +  8, !Architecture.isLittleEndian());
+                d[2] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 16, !Architecture.isLittleEndian());
+                d[3] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 24, !Architecture.isLittleEndian());
+                d[4] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 32, !Architecture.isLittleEndian());
+                d[5] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 40, !Architecture.isLittleEndian());
+                d[6] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 48, !Architecture.isLittleEndian());
+                d[7] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 56, !Architecture.isLittleEndian());
+
+                // Explicitly checking each index retains performance
+                if (s[0] != d[0]) { return start + offset +      mismatch(s[0], d[0]); }
+                if (s[1] != d[1]) { return start + offset +  8 + mismatch(s[1], d[1]); }
+                if (s[2] != d[2]) { return start + offset + 16 + mismatch(s[2], d[2]); }
+                if (s[3] != d[3]) { return start + offset + 24 + mismatch(s[3], d[3]); }
+                if (s[4] != d[4]) { return start + offset + 32 + mismatch(s[4], d[4]); }
+                if (s[5] != d[5]) { return start + offset + 40 + mismatch(s[5], d[5]); }
+                if (s[6] != d[6]) { return start + offset + 48 + mismatch(s[6], d[6]); }
+                if (s[7] != d[7]) { return start + offset + 56 + mismatch(s[7], d[7]); }
             }
         }
-        int remaining = bytes - offset;
+        int remaining = length - offset;
+        // 0...XXX000
         for (; remaining >= 8; remaining -= 8) {
             final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, !Architecture.isLittleEndian());
             final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, !Architecture.isLittleEndian());
@@ -290,7 +279,7 @@ public final class SegmentBulkOperations {
                 return start + offset;
             }
         }
-        return srcAndDstBytesDiffer ? (start + bytes) : -1;
+        return srcAndDstBytesDiffer ? (start + length) : -1;
         // We have now fully handled 0...0X...XXXX
     }
 
@@ -323,9 +312,9 @@ public final class SegmentBulkOperations {
      * Mismatch over long lengths.
      */
     private static long vectorizedMismatchLargeForBytes(MemorySessionImpl aSession, MemorySessionImpl bSession,
-                                                       Object a, long aOffset,
-                                                       Object b, long bOffset,
-                                                       long length) {
+                                                        Object a, long aOffset,
+                                                        Object b, long bOffset,
+                                                        long length) {
         long off = 0;
         long remaining = length;
         int i, size;
@@ -350,7 +339,6 @@ public final class SegmentBulkOperations {
         }
         return ~remaining;
     }
-
 
     static final String PROPERTY_PATH = "java.lang.foreign.native.threshold.power.";
 
