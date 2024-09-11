@@ -174,7 +174,7 @@ public:
       log_trace_symboltable_helper(&value, "Freeing permanent symbol");
       size_t alloc_size = SymbolTableHash::get_dynamic_node_size(value.byte_size());
       if (!SymbolTable::arena()->Afree(memory, alloc_size)) {
-        // Can't print the now free'd symbol's value, but we just printed it above.
+        // Can't access the symbol after Afree, but we just printed it above.
         NOT_PRODUCT(log_trace(symboltable)(" - Leaked permanent symbol");)
       }
     }
