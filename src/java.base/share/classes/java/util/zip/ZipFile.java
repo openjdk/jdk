@@ -676,26 +676,25 @@ public class ZipFile implements ZipConstants, Closeable {
                 : new ZipEntry(name);
 
         e.flag = CENFLG(cen, pos);
-        e.method = CENHOW(cen, pos);
         e.xdostime = CENTIM(cen, pos);
         e.crc = CENCRC(cen, pos);
-        e.csize = CENSIZ(cen, pos);
         e.size = CENLEN(cen, pos);
+        e.csize = CENSIZ(cen, pos);
+        e.method = CENHOW(cen, pos);
         if (CENVEM_FA(cen, pos) == FILE_ATTRIBUTES_UNIX) {
             // read all bits in this field, including sym link attributes
             e.externalFileAttributes = CENATX_PERMS(cen, pos) & 0xFFFF;
         }
 
+        int nlen = CENNAM(cen, pos);
         int elen = CENEXT(cen, pos);
         int clen = CENCOM(cen, pos);
 
         if (elen != 0) {
-            int nlen = CENNAM(cen, pos);
             int start = pos + CENHDR + nlen;
             e.setExtra0(Arrays.copyOfRange(cen, start, start + elen), true, false);
         }
         if (clen != 0) {
-            int nlen = CENNAM(cen, pos);
             int start = pos + CENHDR + nlen + elen;
             ZipCoder zc = res.zsrc.zipCoderForPos(pos);
             e.comment = zc.toString(cen, start, clen);
