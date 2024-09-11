@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2024, Red Hat, Inc.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,25 +21,19 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef CGROUP_UTIL_LINUX_HPP
-#define CGROUP_UTIL_LINUX_HPP
+package jdk.internal.access.foreign;
 
-#include "utilities/globalDefinitions.hpp"
-#include "cgroupSubsystem_linux.hpp"
+import java.io.FileDescriptor;
 
-class CgroupUtil: AllStatic {
-
-  public:
-    static int processor_count(CgroupCpuController* cpu, int host_cpus);
-    // Given a memory controller, adjust its path to a point in the hierarchy
-    // that represents the closest memory limit.
-    static void adjust_controller(CgroupMemoryController* m);
-    // Given a cpu controller, adjust its path to a point in the hierarchy
-    // that represents the closest cpu limit.
-    static void adjust_controller(CgroupCpuController* c);
-};
-
-#endif // CGROUP_UTIL_LINUX_HPP
+/**
+ * This proxy interface is required to allow access to @{code MappedMemoryUtils} methods from {@code ScopedMemoryAccess}.
+ * This allows to avoid pesky initialization issues in the middle of memory mapped scoped methods.
+ */
+public interface MappedMemoryUtilsProxy {
+    boolean isLoaded(long address, boolean isSync, long size);
+    void load(long address, boolean isSync, long size);
+    void unload(long address, boolean isSync, long size);
+    void force(FileDescriptor fd, long address, boolean isSync, long index, long length);
+}
