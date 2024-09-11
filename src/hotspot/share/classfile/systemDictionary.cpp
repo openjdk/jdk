@@ -285,8 +285,7 @@ Symbol* SystemDictionary::class_name_symbol(const char* name, Symbol* exception,
     return nullptr;
   }
   // Callers should ensure that the name is never an illegal UTF8 string.
-  assert(UTF8::is_legal_utf8((const unsigned char*)name,
-                             static_cast<int>(name_len), false),
+  assert(UTF8::is_legal_utf8((const unsigned char*)name, name_len, false),
          "Class name is not a valid utf8 string.");
 
   // Make a new symbol for the class name.
