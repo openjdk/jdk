@@ -2891,7 +2891,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
       Node *limit  = cmp->in(2);
       int scale_con= 1;        // Assume trip counter not scaled
 
-      Node *limit_ctrl = get_ctrl(limit);
+      Node* limit_ctrl = get_ctrl(limit);
       if (loop->is_member(get_loop(limit_ctrl))) {
         // Compare might have operands swapped; commute them
         b_test = b_test.commute();
