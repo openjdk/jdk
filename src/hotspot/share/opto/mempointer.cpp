@@ -227,8 +227,8 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc, cons
     //            because of overflows. But under some conditions, we can prove that such a
     //            decomposition is (SAFE2). Intuitively, we want to prove that an overflow
     //            would mean that the pointers have such a large distance, that at least one
-    //            must lie out of bounds. In the proof of the "Statement", we thus get a
-    //            contradiction with the condition that both pointers are in bounds.
+    //            must lie out of bounds. In the proof of the "MemPointer Lemma", we thus
+    //            get a contradiction with the condition that both pointers are in bounds.
     //
     // We prove that the decomposition of AddI, SubI, MulI (with constant) and ShiftI (with
     // constant) is (SAFE2), under the condition:
@@ -288,7 +288,12 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc, cons
 #endif
 }
 
-// TODO add proof based on "Statement"
+// Compute the aliasing between two MemPointerDecomposedForm. We use the "MemPointer Lemma" to
+// prove that the computed aliasing also applies for the underlying pointers.
+//
+// Pre-Condition:
+//   We assume that both pointers are in-bounds of their respective memory object.
+//
 MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerDecomposedForm& other
                                                                NOT_PRODUCT( COMMA const TraceMemPointer& trace) ) const {
 #ifndef PRODUCT
@@ -299,7 +304,7 @@ MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerD
   }
 #endif
 
-  // Check if all summands are the same:
+  // "MemPointer Lemma" condition S2: check if all summands are the same:
   for (uint i = 0; i < SUMMANDS_SIZE; i++) {
     const MemPointerSummand s1 = summands_at(i);
     const MemPointerSummand s2 = other.summands_at(i);
@@ -313,10 +318,11 @@ MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerD
     }
   }
 
-  // Compute distance:
+  // "MemPointer Lemma" condition S3: check that the constants do not differ too much:
   const NoOverflowInt distance = other.con() - con();
-  // TODO why 2_to_30 ?
-  if (distance.is_NaN() || !distance.is_abs_less_than_2_to_30()) {
+  // We must check that: abs(distance) < 2^32
+  // However, this is only false if: distance = min_jint
+  if (distance.is_NaN() || distance.value() == min_jint) {
 #ifndef PRODUCT
     if (trace.is_trace_aliasing()) {
       tty->print("  -> Aliasing unknown, bad distance: ");
@@ -327,6 +333,15 @@ MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerD
     return MemPointerAliasing::make_unknown();
   }
 
+  // "MemPointer Lemma" condition S1:
+  //   Given that all summands are the same, we know that both pointers point into the
+  //   same memory object. With the Pre-Condition, we know that both pointers are in
+  //   bounds of that same memory object.
+
+  // Hence, all 3 conditions of the "MemoryPointer Lemma" are established, and hence
+  // we know that the distance between the underlying pointers is equal to the distance
+  // we computed for the MemPointers:
+  //   p_other - p_this = distance = other.con - this.con
 #ifndef PRODUCT
     if (trace.is_trace_aliasing()) {
       tty->print_cr("  -> Aliasing always, distance = %d.", distance.value());

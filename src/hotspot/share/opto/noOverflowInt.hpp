@@ -86,13 +86,6 @@ public:
     return a.value() == b.value();
   }
 
-  bool is_abs_less_than_2_to_30() const {
-    const NoOverflowInt i = abs();
-    if (i.is_NaN()) { return false; }
-    const jint max_value = 1 << 30;
-    return i.value() < max_value;
-  }
-
   NoOverflowInt abs() const {
     if (is_NaN()) { return make_NaN(); }
     if (value() >= 0) { return *this; }

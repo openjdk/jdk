@@ -103,10 +103,10 @@
 //
 // -----------------------------------------------------------------------------------------
 //
-//   Below, we will formulate a "Statement" that helps us to prove the correctness of the
-//   MemPointerAliasing computations. To prove the "Statement", we need to define the idea
-//   of a "safe decomposition", and then prove that all the decompositions we apply are
-//   such "safe decompositions".
+//   Below, we will formulate a "MemPointer Lemma" that helps us to prove the correctness of
+//   the MemPointerAliasing computations. To prove the "MemPointer Lemma", we need to define
+//   the idea of a "safe decomposition", and then prove that all the decompositions we apply
+//   are such "safe decompositions".
 //
 //
 //  Definition: Safe decomposition (from some mp_i to mp_{i+1})
@@ -132,7 +132,7 @@
 //          decompositions we apply are safe.
 //
 //
-//  Statement:
+//  MemPointer Lemma:
 //    Given two pointers p1 and p2, and their respective MemPointers mp1 and mp2.
 //    If these conditions hold:
 //      S1) Both p1 and p2 are within the bounds of the same memory object.
@@ -143,11 +143,11 @@
 //    mp1 and mp2:
 //      p1 - p2 = mp1 - mp2
 //
-//    Note: MemPointerDecomposedForm::get_aliasing_with relies on this Statement to
+//    Note: MemPointerDecomposedForm::get_aliasing_with relies on this MemPointer Lemma to
 //          prove the correctness of its aliasing computation between two MemPointers.
 //
 //
-//  Proof Statement:
+//  Proof of the "MemPointer Lemma":
 //    Case 0: no decompositions were used:
 //      mp1 = 0 + 1 * p1 = p1
 //      mp2 = 0 + 1 * p2 = p2
@@ -209,8 +209,8 @@
 //
 //        Thus we get a contradiction: p1 and p2 have a distance greater than the array
 //        size, and hence at least one of the two must be out of bounds. But condition S1
-//        of the Statement requires that both p1 and p2 are both in bounds of the same
-//        memory object.
+//        of the MemPointer Lemma requires that both p1 and p2 are both in bounds of the
+//        same memory object.
 
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
