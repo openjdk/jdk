@@ -68,7 +68,8 @@ template <typename T> class Array;
 // In such situations, the JVM will refuse to load the AOTCache.
 //
 class AOTClassLinker :  AllStatic {
-  using ClassesTable = ResourceHashtable<InstanceKlass*, bool, 15889, AnyObj::C_HEAP, mtClassShared>;
+  static const int TABLE_SIZE = 15889; // prime number
+  using ClassesTable = ResourceHashtable<InstanceKlass*, bool, TABLE_SIZE, AnyObj::C_HEAP, mtClassShared>;
 
   // Classes loaded inside vmClasses::resolve_all()
   static ClassesTable* _vm_classes;

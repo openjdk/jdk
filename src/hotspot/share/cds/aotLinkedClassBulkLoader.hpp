@@ -52,7 +52,7 @@ class AOTLinkedClassBulkLoader :  AllStatic {
   static void load_classes_in_loader(JavaThread* current, LoaderKind loader_kind, oop class_loader_oop);
   static void load_classes_in_loader_impl(LoaderKind loader_kind, oop class_loader_oop, TRAPS);
   static void load_table(AOTLinkedClassTable* table, LoaderKind loader_kind, Handle loader, TRAPS);
-  static void initiate_loading(JavaThread* current, const char* category, Handle loader, Array<InstanceKlass*>* classes);
+  static void initiate_loading(JavaThread* current, const char* category, Handle initiating_loader, Array<InstanceKlass*>* classes);
   static void load_classes_impl(LoaderKind loader_kind, Array<InstanceKlass*>* classes, const char* category, Handle loader, TRAPS);
   static void init_classes_reachable_from_mirrors(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
 

@@ -195,26 +195,29 @@ void AOTLinkedClassBulkLoader::load_classes_impl(LoaderKind loader_kind, Array<I
   }
 }
 
-// Initiate loading of the <classes> in the <loader>. The <classes> should have already been loaded
-// by a parent loader of the <loader>. This is necessary for handling pre-resolved CP entries.
+// Initiate loading of the <classes> in the <initiating_loader>. The <classes> should have already been loaded
+// by a parent loader of the <initiating_loader>. This is necessary for handling pre-resolved CP entries.
 //
 // For example, we initiate the loading of java/lang/String in the AppClassLoader. This will allow
 // any App classes to have a pre-resolved ConstantPool entry that references java/lang/String.
 //
 // TODO: we can limit the number of initiated classes to only those that are actually referenced by
-// AOT-linked classes loaded by <loader>.
+// AOT-linked classes loaded by <initiating_loader>.
 void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char* category,
-                                                Handle loader, Array<InstanceKlass*>* classes) {
+                                                Handle initiating_loader, Array<InstanceKlass*>* classes) {
   if (classes == nullptr) {
     return;
   }
 
-  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(loader());
+  assert(initiating_loader() == SystemDictionary::java_platform_loader() ||
+         initiating_loader() == SystemDictionary::java_system_loader(), "must be");
+  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(initiating_loader());
   MonitorLocker mu1(SystemDictionary_lock);
 
   for (int i = 0; i < classes->length(); i++) {
     InstanceKlass* ik = classes->at(i);
     assert(ik->is_loaded(), "must have already been loaded by a parent loader");
+    assert(ik->class_loader() != initiating_loader(), "must be a parent loader");
     if (ik->is_public() && !ik->is_hidden()) {
       if (log_is_enabled(Info, cds, aot, load)) {
         ResourceMark rm(current);
