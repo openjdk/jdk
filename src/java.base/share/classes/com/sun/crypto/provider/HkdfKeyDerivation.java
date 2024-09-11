@@ -342,16 +342,18 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     private byte[] hkdfExpand(byte[] prk, byte[] info, int outLen)
         throws InvalidKeyException, NoSuchAlgorithmException {
         byte[] kdfOutput;
+
+        if (prk == null || prk.length < hmacLen) {
+            throw new InvalidKeyException(
+                "prk must be at least " + hmacLen + " bytes");
+        }
+
         SecretKey pseudoRandomKey = new SecretKeySpec(prk, hmacAlgName);
 
         Mac hmacObj = Mac.getInstance(hmacAlgName);
 
         // Calculate the number of rounds of HMAC that are needed to
         // meet the requested data.  Then set up the buffers we will need.
-        if (CipherCore.getKeyBytes(pseudoRandomKey).length < hmacLen) {
-            throw new InvalidKeyException(
-                "prk must be at least " + hmacLen + " bytes");
-        }
         hmacObj.init(pseudoRandomKey);
         int rounds = (outLen + hmacLen - 1) / hmacLen;
         kdfOutput = new byte[outLen];

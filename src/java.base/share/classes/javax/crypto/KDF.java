@@ -125,13 +125,13 @@ public final class KDF {
     // in a way which would corrupt the internal state.
     private final Object lock = new Object();
 
-    /**
-     * Instantiates a {@code KDF} object. This constructor is called when a
-     * provider is supplied to {@code getInstance}.
-     *
-     * @param delegate the delegate
-     * @param algorithm the algorithm
-     */
+
+    // Instantiates a {@code KDF} object. This constructor is called when a
+    // provider is supplied to {@code getInstance}.
+    //
+    // @param delegate the delegate
+    // @param algorithm the algorithm
+    // @param kdfParameters the parameters
     private KDF(Delegate delegate, String algorithm, KDFParameters kdfParameters) {
         this.pairOfSpiAndProv = delegate;
         this.algorithm = algorithm;
@@ -140,15 +140,13 @@ public final class KDF {
         serviceIterator = null;
     }
 
-    /**
-     * Instantiates a {@code KDF} object. This constructor is called when a
-     * provider is not supplied to {@code getInstance}.
-     *
-     * @param firstPairOfSpiAndProv the delegate
-     * @param t the service iterator
-     * @param algorithm the algorithm
-     * @param kdfParameters the algorithm parameters
-     */
+    // Instantiates a {@code KDF} object. This constructor is called when a
+    // provider is not supplied to {@code getInstance}.
+    //
+    // @param firstPairOfSpiAndProv the delegate
+    // @param t the service iterator
+    // @param algorithm the algorithm
+    // @param kdfParameters the algorithm parameters
     private KDF(Delegate firstPairOfSpiAndProv, Iterator<Service> t, String algorithm,
                 KDFParameters kdfParameters) {
         this.firstPairOfSpiAndProv = firstPairOfSpiAndProv;
