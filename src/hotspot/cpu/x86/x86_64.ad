@@ -6414,7 +6414,7 @@ instruct cmovL_reg(cmpOp cop, rFlagsReg cr, rRegL dst, rRegL src)
     Label Lskip;
     // Invert sense of branch from sense of CMOV
     __ jccb((Assembler::Condition)($cop$$cmpcode^1), Lskip);
-    __ movl($dst$$Register, $src$$Register);
+    __ movq($dst$$Register, $src$$Register);
     __ bind(Lskip);
   %}
   ins_pipe(pipe_slow);
