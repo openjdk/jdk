@@ -22,14 +22,15 @@
  */
 
 import jdk.test.lib.RandomFactory;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.FieldSource;
 
 import java.math.BigInteger;
 import java.math.MutableBigIntegerBox;
+import java.util.Arrays;
 import java.util.Random;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static java.math.MutableBigIntegerBox.*;
 
 /**
@@ -40,43 +41,26 @@ import static java.math.MutableBigIntegerBox.*;
  * @build jdk.test.lib.RandomFactory
  * @build java.base/java.math.MutableBigIntegerBox
  * @key randomness
- * @run junit/othervm -DmaxDurationMillis=3000 MutableBigIntegerShiftTests
+ * @run junit MutableBigIntegerShiftTests
  */
 public class MutableBigIntegerShiftTests {
 
-    private static final int DEFAULT_MAX_DURATION_MILLIS = 3_000;
-
     static final int ORDER_SMALL = 60;
     static final int ORDER_MEDIUM = 100;
+    static final int[] ORDERS = { ORDER_SMALL, ORDER_MEDIUM };
 
-    private static int maxDurationMillis;
-    private static Random random = RandomFactory.getRandom();
+    private static final Random random = RandomFactory.getRandom();
 
-    static boolean failure = false;
-
-    @BeforeAll
-    static void setMaxDurationMillis() {
-        maxDurationMillis = Math.max(maxDurationMillis(), 0);
-    }
-
-    public static void shift(int order) {
+    @ParameterizedTest
+    @FieldSource("ORDERS")
+    public void shift(int order) {
         for (int i = 0; i < 100; i++) {
             MutableBigIntegerBox x = fetchNumber(order);
-            int n = Math.abs(random.nextInt() % 200);
+            int n = random.nextInt(200);
 
-            assertTrue(x.shiftLeft(n).compare
-                    (x.multiply(new MutableBigIntegerBox(BigInteger.TWO.pow(n)))) == 0,
-                    "Inconsistent left shift: " + x + "<<" + n + " != " + x + "*2^" + n);
-
-            assertTrue(x.shiftLeft(n).shiftRight(n).compare(x) == 0,
-                    "Inconsistent left shift: (" + x + "<<" + n + ")>>" + n + " != " + x);
+            assertEquals(x.multiply(new MutableBigIntegerBox(BigInteger.TWO.pow(n))), x.shiftLeft(n));
+            assertEquals(x, x.shiftLeft(n).shiftRight(n));
         }
-    }
-
-    @Test
-    public static void testShift() {
-        shift(ORDER_SMALL);
-        shift(ORDER_MEDIUM);
     }
 
     /*
@@ -104,8 +88,7 @@ public class MutableBigIntegerShiftTests {
             case 2: // All bits set in number
                 int numInts = (order + 31) >> 5;
                 int[] fullBits = new int[numInts];
-                for(int i = 0; i < numInts; i++)
-                    fullBits[i] = -1;
+                Arrays.fill(fullBits, -1);
 
                 fullBits[0] &= -1 >>> -order;
                 result = new MutableBigIntegerBox(fullBits);
@@ -150,14 +133,5 @@ public class MutableBigIntegerShiftTests {
         }
 
         return result;
-    }
-
-    private static int maxDurationMillis() {
-        try {
-            return Integer.parseInt(System.getProperty("maxDurationMillis",
-                    Integer.toString(DEFAULT_MAX_DURATION_MILLIS)));
-        } catch (NumberFormatException ignore) {
-        }
-        return DEFAULT_MAX_DURATION_MILLIS;
     }
 }

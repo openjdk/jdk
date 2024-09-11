@@ -23,6 +23,8 @@
 
 package java.math;
 
+import java.util.Arrays;
+
 /**
  * A class for tests.
  */
@@ -158,6 +160,20 @@ public class MutableBigIntegerBox {
      */
     public int compare(MutableBigIntegerBox b) {
         return val.compare(b.val);
+    }
+
+    /**
+     * Compares this MutableBigIntegerBox with the specified Object for equality.
+     *
+     * @param  x Object to which this MutableBigIntegerBox is to be compared.
+     * @return {@code true} if and only if the specified Object is a
+     *         MutableBigIntegerBox whose value is numerically equal to this MutableBigIntegerBox.
+     */
+    @Override
+    public boolean equals(Object x) {
+        return (x instanceof MutableBigIntegerBox xInt)
+                && Arrays.equals(val.value, val.offset, val.offset + val.intLen,
+                        xInt.val.value, xInt.val.offset, xInt.val.offset + xInt.val.intLen);
     }
 
     @Override
