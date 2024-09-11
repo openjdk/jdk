@@ -22,6 +22,7 @@
  *
  */
 
+#include "precompiled.hpp"
 #include "opto/noOverflowInt.hpp"
 #include "unittest.hpp"
 
