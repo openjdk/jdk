@@ -851,6 +851,7 @@ public:
     assert(is_old(), "must be");
     Method* new_method = method_holder()->method_with_idnum(orig_method_idnum());
     assert(this != new_method, "sanity check");
+    assert(new_method != nullptr || is_deleted(), "must be");
     return (new_method == nullptr || is_deleted()) ? Universe::throw_no_such_method_error() : new_method;
   }
 
