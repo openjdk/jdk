@@ -2920,7 +2920,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
         continue;
       }
 
-      Node *offset_ctrl = get_ctrl(offset);
+      Node* offset_ctrl = get_ctrl(offset);
       if (loop->is_member(get_loop(offset_ctrl))) {
         continue;               // Offset is not really loop invariant
       }
