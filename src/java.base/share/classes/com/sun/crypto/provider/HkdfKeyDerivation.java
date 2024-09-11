@@ -51,8 +51,8 @@ import java.util.List;
  */
 abstract class HkdfKeyDerivation extends KDFSpi {
 
-    protected final int hmacLen;
-    protected final String hmacAlgName;
+    private final int hmacLen;
+    private final String hmacAlgName;
 
     private static final int SHA256_HMAC_SIZE = 32;
     private static final int SHA384_HMAC_SIZE = 48;
@@ -102,9 +102,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *     results in something invalid, ie - a key of inappropriate length
      *     for the specified algorithm
      * @throws NoSuchAlgorithmException
-     *     if {@code alg} is empty or invalid
-     * @throws IllegalArgumentException
-     *     if {@code alg} is {@code null} or empty
+     *     if {@code alg} is empty
+     * @throws NullPointerException
+     *     if {@code alg} is {@code null}
      */
     @Override
     protected SecretKey engineDeriveKey(String alg,
@@ -138,7 +138,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      */
     @Override
     protected byte[] engineDeriveData(AlgorithmParameterSpec derivationSpec)
-        throws InvalidAlgorithmParameterException {
+                throws InvalidAlgorithmParameterException {
         List<SecretKey> ikms, salts;
         byte[] inputKeyMaterial, salt, pseudoRandomKey, info;
         int length;
@@ -164,7 +164,10 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             // perform extract
             try {
-                return hkdfExtract(inputKeyMaterial, salt);
+                byte[] result = hkdfExtract(inputKeyMaterial, salt);
+                Arrays.fill(inputKeyMaterial, (byte)0x00);
+                Arrays.fill(salt, (byte)0x00);
+                return result;
             } catch (InvalidKeyException ike) {
                 throw new InvalidAlgorithmParameterException(
                     "an HKDF Extract could not be initialized with the given "
@@ -195,7 +198,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             // perform expand
             try {
-                return hkdfExpand(pseudoRandomKey, info, length);
+                byte[] result = hkdfExpand(pseudoRandomKey, info, length);
+                Arrays.fill(pseudoRandomKey, (byte) 0x00);
+                return result;
             } catch (InvalidKeyException ike) {
                 throw new InvalidAlgorithmParameterException(
                     "an HKDF Expand could not be initialized with the given "
@@ -235,7 +240,11 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             // perform extract and then expand
             try {
                 pseudoRandomKey = hkdfExtract(inputKeyMaterial, salt);
-                return hkdfExpand(pseudoRandomKey, info, length);
+                byte[] result = hkdfExpand(pseudoRandomKey, info, length);
+                Arrays.fill(inputKeyMaterial, (byte)0x00);
+                Arrays.fill(salt, (byte)0x00);
+                Arrays.fill(pseudoRandomKey, (byte)0x00);
+                return result;
             } catch (InvalidKeyException ike) {
                 throw new InvalidAlgorithmParameterException(
                     "an HKDF ExtractThenExpand could not be initialized with "
@@ -252,6 +261,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             "an HKDF derivation requires a valid HKDFParameterSpec");
     }
 
+    // throws an InvalidKeyException if any key is unextractable
     private byte[] consolidateKeyMaterial(List<SecretKey> keys)
         throws InvalidKeyException {
         if (keys != null && !keys.isEmpty()) {
@@ -271,7 +281,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 return os.toByteArray();
             }
         } else if(keys != null) {
-                return null;
+                return new byte[0];
         } else {
             throw new InvalidKeyException(
                 "List of key segments could not be consolidated");
@@ -296,7 +306,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     private byte[] hkdfExtract(byte[] inputKeyMaterial, byte[] salt)
         throws InvalidKeyException, NoSuchAlgorithmException {
 
-        if (salt == null) {
+        if (salt == null || salt.length == 0) {
             salt = new byte[hmacLen];
         }
         Mac hmacObj = Mac.getInstance(hmacAlgName);
@@ -343,9 +353,6 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 "prk must be at least " + hmacLen + " bytes");
         }
         hmacObj.init(pseudoRandomKey);
-        if (info == null) {
-            info = new byte[0];
-        }
         int rounds = (outLen + hmacLen - 1) / hmacLen;
         kdfOutput = new byte[outLen];
         int i = 0;
@@ -353,7 +360,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         try {
             while (i < rounds) {
                 if (i > 0) {
-                    hmacObj.update(kdfOutput, Math.max(0,offset - hmacLen), hmacLen); // add T(i-1)
+                    hmacObj.update(kdfOutput, offset - hmacLen, hmacLen); // add T(i-1)
                 }
                 hmacObj.update(info);                   // Add info
                 hmacObj.update((byte) ++i);             // Add round number
@@ -362,6 +369,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     byte[] tmp = hmacObj.doFinal();
                     System.arraycopy(tmp, 0, kdfOutput, offset,
                                      outLen - offset);
+                    Arrays.fill(tmp, (byte)0x00);
                     offset = outLen;
                 } else {
                     hmacObj.doFinal(kdfOutput, offset);

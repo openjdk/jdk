@@ -33,6 +33,7 @@ import sun.security.util.Debug;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.Security;
 import java.security.Provider;
 import java.security.Provider.Service;
 import java.security.spec.AlgorithmParameterSpec;
@@ -48,9 +49,9 @@ import java.util.Objects;
  * of methods.
  * <p>
  * The class has two derive methods, {@code deriveKey} and {@code deriveData}.
- * The {@code deriveKey} method accepts an algorithm {@code String} and
- * returns a {@code SecretKey} object with the specified algorithm. The
- * {@code deriveData} method returns a byte array of raw data.
+ * The {@code deriveKey} method accepts an algorithm name and returns a
+ * {@code SecretKey} object with the specified algorithm. The {@code deriveData}
+ * method returns a byte array of raw data.
  * <p>
  * API Usage Example:
  * {@snippet lang = java:
@@ -80,18 +81,14 @@ import java.util.Objects;
  * to those methods - for example, the key material may reside on a
  * hardware device that only a specific {@code KDF} provider can utilize.
  * <p>
- * If a provider is not specified in the {@code getInstance} method when
- * instantiating a {@code KDF} object, the provider is selected the first time
- * the {@code deriveKey} or {@code deriveData} method is called, and a provider
- * is chosen that supports the parameters passed to the {@code deriveKey} or
- * {@code deriveData} method. If the {@code getProviderName} or {@code
- * getParameters} method is called before the {@code deriveKey} or {@code
- * deriveData} methods, the first provider supporting the KDF algorithm and
- * optional {@code KDFParameters} is chosen. This provider may not support
- * the key material that is subsequently passed to the {@code deriveKey} or
- * {@code deriveData} methods. Therefore, it is recommended not to call the
- * {@code getProviderName} or {@code getParameters} methods until after a key
- * derivation operation. Once a provider is selected, it cannot be changed.
+ * If the {@code getProviderName} or {@code getParameters} method is called
+ * before the {@code deriveKey} or {@code deriveData} methods, the first
+ * provider supporting the KDF algorithm and optional {@code KDFParameters} is
+ * chosen. This provider may not support the key material that is subsequently
+ * passed to the {@code deriveKey} or {@code deriveData} methods. Therefore, it
+ * is recommended not to call the {@code getProviderName} or
+ * {@code getParameters} methods until after a key derivation operation. Once a
+ * provider is selected, it cannot be changed.
  *
  * @see KDFParameters
  * @see SecretKey
@@ -215,6 +212,17 @@ public final class KDF {
      *
      * @return a {@code KDF} object
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.provider.preferred}
+     * {@link Security#getProperty(String) Security} property to determine
+     * the preferred provider order for the specified algorithm. This
+     * may be different than the order of providers returned by
+     * {@link Security#getProviders() Security.getProviders()}.
+     * See also the Cipher Transformations section of the {@extLink
+     * security_guide_jdk_providers JDK Providers} document for information
+     * on the transformation defaults used by JDK providers.
+     *
      * @throws NoSuchAlgorithmException
      *     if no {@code Provider} supports a {@code KDF} implementation for the
      *     specified algorithm
@@ -321,6 +329,17 @@ public final class KDF {
      *
      * @return a {@code KDF} object
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.provider.preferred}
+     * {@link Security#getProperty(String) Security} property to determine
+     * the preferred provider order for the specified algorithm. This
+     * may be different than the order of providers returned by
+     * {@link Security#getProviders() Security.getProviders()}.
+     * See also the Cipher Transformations section of the {@extLink
+     * security_guide_jdk_providers JDK Providers} document for information
+     * on the transformation defaults used by JDK providers.
+     *
      * @throws NoSuchAlgorithmException
      *     if no {@code Provider} supports a {@code KDF} implementation for the
      *     specified algorithm
@@ -348,7 +367,7 @@ public final class KDF {
                     lastException = new NoSuchAlgorithmException(
                         new InvalidAlgorithmParameterException(
                             "No provider can be found that supports the "
-                            + "specified parameters"));
+                            + "specified algorithm and parameters"));
                     if (!skipDebug && pdebug != null) {
                         pdebug.println(
                             "obj was not an instance of KDFSpi (should not "
@@ -367,7 +386,7 @@ public final class KDF {
                     new NoSuchAlgorithmException(
                         new InvalidAlgorithmParameterException(
                             "No provider can be found that supports the "
-                            + "specified parameters"));
+                            + "specified algorithm and parameters"));
                 if (!skipDebug && pdebug != null) {
                     pdebug.println(e.toString());
                 }
@@ -408,8 +427,8 @@ public final class KDF {
      *     if the specified provider is not registered in the security provider
      *     list
      * @throws InvalidAlgorithmParameterException
-     *     if no {@code Provider} supports a {@code KDFSpi} implementation for
-     *     the specified algorithm and parameters
+     *     if the specified provider does not support a {@code KDFSpi}
+     *     implementation for the specified algorithm and parameters
      * @throws NullPointerException
      *     if the {@code algorithm} or {@code provider} is {@code null}
      */
@@ -461,8 +480,8 @@ public final class KDF {
      *     if the specified provider does not support the specified {@code KDF}
      *     algorithm
      * @throws InvalidAlgorithmParameterException
-     *     if no {@code Provider} supports a {@code KDFSpi} implementation for
-     *     the specified algorithm and parameters
+     *     if the specified provider does not support a {@code KDFSpi}
+     *     implementation for the specified algorithm and parameters
      * @throws NullPointerException
      *     if the {@code algorithm} or {@code provider} is {@code null}
      */
@@ -501,9 +520,6 @@ public final class KDF {
 
     /**
      * Derives a key, returned as a {@code SecretKey}.
-     * <p>
-     * The {@code deriveKey} method may be called multiple times on a particular
-     * {@code KDF} instance, but it is not considered thread-safe.
      *
      * @param alg
      *     the algorithm of the resultant {@code SecretKey} object
@@ -543,9 +559,6 @@ public final class KDF {
 
     /**
      * Obtains raw data from a key derivation function.
-     * <p>
-     * The {@code deriveData} method may be called multiple times on a
-     * particular {@code KDF} instance, but it is not considered thread-safe.
      *
      * @param derivationSpec
      *     the object describing the inputs to the derivation function
