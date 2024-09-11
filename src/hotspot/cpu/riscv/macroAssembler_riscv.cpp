@@ -1463,7 +1463,7 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
 // New tables for vector version is after table3.
 void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register len, const int64_t unroll_words,
                                          Register tmp1, Register tmp2, Register tmp3, Register tmp4,
-                                         Register table0, Register table3, const int64_t single_talbe_size) {
+                                         Register table0, Register table3, const int64_t single_table_size) {
     const int N = 16, W = 4;
     const Register blks = tmp2;
     const Register tmpTable = tmp3, tableN16 = tmp4;
@@ -1471,7 +1471,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
     Label VectorLoop;
     Label LastBlock;
 
-    add(tableN16, table3, 1*single_talbe_size*sizeof(juint), tmp1);
+    add(tableN16, table3, 1*single_table_size*sizeof(juint), tmp1);
     addi(len, len, unroll_words);
 
     if (MaxVectorSize == 16) {
@@ -1509,7 +1509,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
 
       mv(tmp1, 1);
       for (int k = 1; k < W; k++) {
-        addi(tmpTable, tmpTable, single_talbe_size*4);
+        addi(tmpTable, tmpTable, single_table_size*4);
 
         slli(t1, tmp1, 3);
         vsrl_vx(vtmp, vword, t1);
@@ -1564,7 +1564,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
   Label L_by16_loop, L_vector_entry, L_unroll_loop, L_unroll_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
 
-  const int64_t single_talbe_size = 256;
+  const int64_t single_table_size = 256;
   const int64_t unroll = 16;
   const int64_t unroll_words = unroll*wordSize;
   mv(tmp5, right_32_bits);
@@ -1573,9 +1573,9 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 
   const ExternalAddress table_addr = StubRoutines::crc_table_addr();
   la(table0, table_addr);
-  add(table1, table0, 1*single_talbe_size*sizeof(juint), tmp1);
-  add(table2, table0, 2*single_talbe_size*sizeof(juint), tmp1);
-  add(table3, table2, 1*single_talbe_size*sizeof(juint), tmp1);
+  add(table1, table0, 1*single_table_size*sizeof(juint), tmp1);
+  add(table2, table0, 2*single_table_size*sizeof(juint), tmp1);
+  add(table3, table2, 1*single_table_size*sizeof(juint), tmp1);
 
   if (UseRVV) {
     const int64_t tmp_limit = MaxVectorSize >= 32 ? unroll_words*2 : unroll_words*4;
@@ -1647,7 +1647,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   // put vector code here, otherwise "offset is too large" error occurs.
   if (UseRVV) {
     bind(L_vector_entry);
-    vector_update_crc32(crc, buf, len, unroll_words, tmp1, tmp2, tmp3, tmp4, table0, table3, single_talbe_size);
+    vector_update_crc32(crc, buf, len, unroll_words, tmp1, tmp2, tmp3, tmp4, table0, table3, single_table_size);
 
     addiw(len, len, -4);
     bge(len, zr, L_by4_loop);

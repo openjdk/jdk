@@ -1321,7 +1321,7 @@ public:
   void update_byte_crc32(Register crc, Register val, Register table);
   void vector_update_crc32(Register crc, Register buf, Register len, const int64_t unroll_words,
                            Register tmp1, Register tmp2, Register tmp3, Register tmp4,
-                           Register table0, Register table3, const int64_t single_talbe_size);
+                           Register table0, Register table3, const int64_t single_table_size);
 
 #ifdef COMPILER2
   void mul_add(Register out, Register in, Register offset,
