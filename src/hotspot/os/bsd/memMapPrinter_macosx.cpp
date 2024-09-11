@@ -48,49 +48,186 @@ static const int MAX_REGIONS_RETURNED = 1000000;
 
 class MappingInfo {
 public:
-  stringStream _ap_buffer;
-  stringStream _state_buffer;
+  const char* _address;
+  size_t _size;
+  stringStream _share_buffer;
   stringStream _type_buffer;
   stringStream _protect_buffer;
   stringStream _file_name;
+  const char* _tag_text;
 
   MappingInfo() {}
 
   void process(const proc_regionwithpathinfo& mem_info) {
-    _ap_buffer.reset();
-    _state_buffer.reset();
+    _share_buffer.reset();
     _protect_buffer.reset();
     _type_buffer.reset();
     _file_name.reset();
-
-    const char *path = mem_info.prp_vip.vip_path;
-    if (path != nullptr) {
-      _file_name.print("%s", path);
-    }
+    _tag_text = "";
 
     const proc_regioninfo& rinfo = mem_info.prp_prinfo;
+
+    _address = (const char*) rinfo.pri_address;
+    _size = rinfo.pri_size;
+
+    const char* path = mem_info.prp_vip.vip_path;
+    if (path != nullptr) {
+      _file_name.print_raw(path);
+    } else {
+      char buf[PATH_MAX];
+      buf[0] = 0;
+      proc_regionfilename(getpid(), (uint64_t) _address, buf, sizeof(buf));
+      if (buf[0] != 0) {
+        _file_name.print_raw("-> ");
+        _file_name.print_raw(buf);
+      }
+    }
+
     char prot[4];
     char max_prot[4];
     rwbits(rinfo.pri_protection, prot);
     rwbits(rinfo.pri_max_protection, max_prot);
     _protect_buffer.print("%s/%s", prot, max_prot);
 
-    _state_buffer.print("%s", sharemode(rinfo));
-
-    if (mem_info.prp_vip.vip_path[0] == 0 && mem_info.prp_vip.vip_vi.vi_stat.vst_ino != 0) {
-      _ap_buffer.print("path null inode %lld", mem_info.prp_vip.vip_vi.vi_stat.vst_ino);
-    }
+    get_share_mode(_share_buffer, rinfo);
+    _tag_text = tagToStr(rinfo.pri_user_tag);
   }
 
-  const char* sharemode(const proc_regioninfo& rinfo) {
+  static void get_share_mode(outputStream& out, const proc_regioninfo& rinfo) {
     static const char* share_strings[] = {
       "cow", "prv", "---", "shr", "tsh", "pva", "sha", "lrg"
     };
-    assert(rinfo.pri_share_mode >= SM_COW && rinfo.pri_share_mode <= SM_LARGE_PAGE, "invalid pri_share_mode (%d)", rinfo.pri_share_mode);
-    return share_strings[rinfo.pri_share_mode - 1];
+    const bool valid_share_mode = rinfo.pri_share_mode >= SM_COW && rinfo.pri_share_mode <= SM_LARGE_PAGE;
+    assert(valid_share_mode, "invalid pri_share_mode (%d)", rinfo.pri_share_mode);
+    if (valid_share_mode) {
+      int share_mode = rinfo.pri_share_mode;
+      //share_mode = share_mode == SM_LARGE_PAGE || share_mode == SM_PRIVATE_ALIASED ? SM_PRIVATE;
+      out.print_raw(share_strings[share_mode - 1]);
+    } else {
+      out.print_raw("???");
+    }
+    if (rinfo.pri_flags & PROC_REGION_SHARED) {
+        out.print_raw("-shared");
+    }
+    if (rinfo.pri_flags & PROC_REGION_SUBMAP) {
+        out.print_raw("-submap");
+    }
+    if ((rinfo.pri_flags & (PROC_REGION_SHARED | PROC_REGION_SUBMAP)) != rinfo.pri_flags) {
+      out.print("***** flags = 0x%x", rinfo.pri_flags);
+    }
   }
 
-  void rwbits(int rw, char bits[4]) {
+  static const char* get_inherit_mode(int mode) {
+      switch (mode) {
+        case VM_INHERIT_COPY: 
+          return "copy";
+        case VM_INHERIT_SHARE: 
+          return "share";
+        case VM_INHERIT_NONE: 
+          return "none";
+        case VM_INHERIT_DONATE_COPY: 
+          return "copy-and-delete";
+        default:
+          return "(unknown)";
+      }
+  }
+
+  static const char* tagToStr(uint32_t user_tag) {
+    switch (user_tag) {
+      case 0:
+        return 0;
+      case VM_MEMORY_MALLOC:
+        return "MALLOC";
+      case VM_MEMORY_MALLOC_SMALL:
+        return "MALLOC_SMALL";
+      case VM_MEMORY_MALLOC_LARGE:
+        return "MALLOC_LARGE";
+      case VM_MEMORY_MALLOC_HUGE:
+        return "MALLOC_HUGE";
+      case VM_MEMORY_SBRK:
+        return "SBRK";
+      case VM_MEMORY_REALLOC:
+        return "REALLOC";
+      case VM_MEMORY_MALLOC_TINY:
+        return "MALLOC_TINY";
+      case VM_MEMORY_MALLOC_LARGE_REUSABLE:
+        return "MALLOC_LARGE_REUSABLE";
+      case VM_MEMORY_MALLOC_LARGE_REUSED:
+        return "MALLOC_LARGE_REUSED";
+      case VM_MEMORY_ANALYSIS_TOOL:
+        return "ANALYSIS_TOOL";
+      case VM_MEMORY_MALLOC_NANO:
+        return "MALLOC_NANO";
+      case VM_MEMORY_MALLOC_MEDIUM:
+        return "MALLOC_MEDIUM";
+      case VM_MEMORY_MALLOC_PROB_GUARD:
+        return "MALLOC_PROB_GUARD";
+      case VM_MEMORY_MACH_MSG:
+        return "MACH_MSG";
+      case VM_MEMORY_IOKIT:
+        return "IOKIT";
+      case VM_MEMORY_STACK:
+        return "STACK";
+      case VM_MEMORY_GUARD:
+        return "MEMORY_GUARD";
+      case VM_MEMORY_SHARED_PMAP:
+        return "SHARED_PMAP";
+      case VM_MEMORY_DYLIB:
+        return "DYLIB";
+      case VM_MEMORY_UNSHARED_PMAP:
+        return "UNSHARED_PMAP";
+      case VM_MEMORY_APPKIT:
+        return "AppKit";
+      case VM_MEMORY_FOUNDATION:
+        return "Foundation";
+      case VM_MEMORY_COREGRAPHICS:
+        return "CoreGraphics";
+      case VM_MEMORY_CARBON: /* is also VM_MEMORY_CORESERVICES */
+        return "Carbon";
+      case VM_MEMORY_JAVA:
+        return "Java";
+      case VM_MEMORY_COREDATA:
+        return "CoreData";
+      case VM_MEMORY_COREDATA_OBJECTIDS:
+        return "COREDATA_OBJECTIDS";
+      case VM_MEMORY_ATS:
+        return "ATS";
+      case VM_MEMORY_DYLD:
+        return "DYLD";
+      case VM_MEMORY_DYLD_MALLOC:
+        return "DYLD_MALLOC";
+      case VM_MEMORY_SQLITE:
+        return "SQLITE";
+      case VM_MEMORY_JAVASCRIPT_CORE:
+        return "JAVASCRIPT_CORE";
+      case VM_MEMORY_JAVASCRIPT_JIT_EXECUTABLE_ALLOCATOR:
+        return "JAVASCRIPT_JIT_EXECUTABLE_ALLOCATOR";
+      case VM_MEMORY_JAVASCRIPT_JIT_REGISTER_FILE:
+        return "JAVASCRIPT_JIT_REGISTER_FILE";
+      case VM_MEMORY_OPENCL:
+        return "OPENCL";
+      case VM_MEMORY_COREIMAGE:
+        return "CoreImage";
+      case VM_MEMORY_IMAGEIO:
+        return "ImageIO";
+      case VM_MEMORY_COREPROFILE:
+        return "CoreProfile";
+      case VM_MEMORY_APPLICATION_SPECIFIC_1:
+        return "APPLICATION_SPECIFIC_1";
+      case VM_MEMORY_APPLICATION_SPECIFIC_16:
+        return "APPLICATION_SPECIFIC_16";
+      case VM_MEMORY_OS_ALLOC_ONCE:
+        return "OS_ALLOC_ONCE";
+      case VM_MEMORY_GENEALOGY:
+        return "GENEALOGY";
+      default:
+        static char buffer[30];
+        snprintf(buffer, sizeof(buffer), "user_tag=0x%x(%d)", user_tag, user_tag);
+        return buffer;
+    }
+  }
+
+  static void rwbits(int rw, char bits[4]) {
     bits[0] = rw & VM_PROT_READ ? 'r' : '-';
     bits[1] = rw & VM_PROT_WRITE ? 'w' : '-';
     bits[2] = rw & VM_PROT_EXECUTE ? 'x' : '-';
@@ -111,7 +248,15 @@ public:
   ProcSmapsSummary() : _num_mappings(0), _vsize(0), _rss(0), _committed(0), _shared(0),
                      _swapped_out(0), _hugetlb(0), _thp(0) {}
   void add_mapping(const proc_regioninfo& region_info, const MappingInfo& mapping_info) {
- 
+    _num_mappings++;
+    _vsize += mapping_info._size;
+    _rss += region_info.pri_pages_resident;
+   // _committed += region_info.pri_pages_resident + region_info.pri_pages_swapped_out;
+    _shared += region_info.pri_shared_pages_resident;
+    _swapped_out += region_info.pri_pages_swapped_out;
+  //  _hugetlb += region_info.pri_;
+   //
+   // _thp += info.anonhugepages;
   }
 
   void print_on(const MappingPrintSession& session) const {
@@ -140,18 +285,20 @@ public:
   if (st->fill_to(n) == 0) {  \
     st->print(" ");           \
   }
-    st->print(PTR_FORMAT "-" PTR_FORMAT, (size_t)region_info.pri_address, (size_t)(region_info.pri_address + region_info.pri_size));
+    st->print(PTR_FORMAT "-" PTR_FORMAT, (size_t)mapping_info._address, (size_t)(mapping_info._address + mapping_info._size));
     INDENT_BY(38);
-    st->print("%12zu", (size_t)region_info.pri_size);
-    INDENT_BY(51);
     st->print("%s", mapping_info._protect_buffer.base());
-    INDENT_BY(58);
-    st->print("%s-%s", mapping_info._state_buffer.base(), mapping_info._type_buffer.base());
-    INDENT_BY(60);
-   // st->print("%#9llx", reinterpret_cast<const unsigned long long>(mem_info.BaseAddress) - reinterpret_cast<const unsigned long long>(mem_info.AllocationBase));
-  //  INDENT_BY(72);
-    if (_session.print_nmt_info_for_region((const void*)region_info.pri_address, (const void*)(region_info.pri_address + region_info.pri_size))) {
+    INDENT_BY(45);
+    st->print("%s", mapping_info._share_buffer.base());
+    st->print("%s", mapping_info._type_buffer.base());
+    INDENT_BY(55);
+    if (_session.print_nmt_info_for_region((const void*)mapping_info._address, (const void*)(mapping_info._address + mapping_info._size))) {
       st->print(" ");
+    } else {
+      const char* tag = mapping_info._tag_text;
+      if (tag != NULL) {
+        st->print("[%s] ", tag);
+      }
     }
     st->print_raw(mapping_info._file_name.base());
   #undef INDENT_BY
@@ -185,9 +332,9 @@ public:
     outputStream* st = _session.out();
     //            0         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6         7
     //            012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-    //            0x0000000414000000-0x0000000453000000 123456789012 rw-p 123456789012 123456789012 16g  thp,thpadv       STACK-340754-Monitor-Deflation-Thread /shared/tmp.txt
-    st->print_cr("from               to                        vsize prot          rss      hugetlb pgsz notes            info                                  file");
-    st->print_cr("========================================================================================================================================================================");
+    //            0x0000000100ce8000-0x0000000100cf0000 rw-/rwx shr      INTERN /private/var/folders/lj/2hwcbc415h97gjtdm2rdgj7m0000gn/T/hsperfdata_simont/87218
+    st->print_cr("from               to                 prot             vminfo/file");
+    st->print_cr("======================================================================================================");
   }
 };
 
@@ -204,24 +351,26 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
 
   proc_regionwithpathinfo region_info;
   MappingInfo mapping_info;
-  uint64_t address = 0;
+  const char* address = 0;
   int region_count = 0;
   while (true) {
     if (++region_count > MAX_REGIONS_RETURNED) {
       st->print_cr("limit of %d regions reached (results inaccurate)", region_count);
       break;
     }
-    int retval = proc_pidinfo(pid, PROC_PIDREGIONPATHINFO, address, &region_info, sizeof(region_info));
+    int retval = proc_pidinfo(pid, PROC_PIDREGIONPATHINFO, (uint64_t)address, &region_info, sizeof(region_info));
     if (retval <= 0) {
       break;
-    } else if (retval < sizeof(region_info)) {
+    } else if (retval < (int)sizeof(region_info)) {
       fatal("proc_pidinfo() returned %d", retval);
     }
     mapping_info.process(region_info);
-    printer.print_single_mapping(region_info.prp_prinfo, mapping_info);
+    if (region_info.prp_prinfo.pri_share_mode != SM_EMPTY) {
+      printer.print_single_mapping(region_info.prp_prinfo, mapping_info);
+    }
     summary.add_mapping(region_info.prp_prinfo, mapping_info);
-    assert(region_info.prp_prinfo.pri_size > 0, "size of region is 0");
-    address = region_info.prp_prinfo.pri_address + region_info.prp_prinfo.pri_size;
+    assert(mapping_info._size > 0, "size of region is 0");
+    address = mapping_info._address + mapping_info._size;
   }
   st->cr();
   summary.print_on(session);
