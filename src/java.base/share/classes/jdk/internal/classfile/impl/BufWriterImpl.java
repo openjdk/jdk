@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +26,6 @@
 package jdk.internal.classfile.impl;
 
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import java.lang.classfile.BufWriter;
@@ -34,7 +34,11 @@ import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.PoolEntry;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+
 public final class BufWriterImpl implements BufWriter {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private final ConstantPoolBuilder constantPool;
     private final ClassFileImpl context;
@@ -152,6 +156,52 @@ public final class BufWriterImpl implements BufWriter {
         writeBytes(other.elems, 0, other.offset);
     }
 
+    @SuppressWarnings("deprecation")
+    void writeUTF(String str) {
+        int strlen = str.length();
+        int countNonZeroAscii = JLA.countNonZeroAscii(str);
+        int utflen = strlen;
+        if (countNonZeroAscii != strlen) {
+            for (int i = countNonZeroAscii; i < strlen; i++) {
+                int c = str.charAt(i);
+                if (c >= 0x80 || c == 0)
+                    utflen += (c >= 0x800) ? 2 : 1;
+            }
+        }
+        if (utflen > 65535) {
+            throw new IllegalArgumentException("string too long");
+        }
+        reserveSpace(utflen + 2);
+
+        int offset = this.offset;
+        byte[] elems = this.elems;
+
+        elems[offset    ] = (byte) (utflen >> 8);
+        elems[offset + 1] = (byte)  utflen;
+        offset += 2;
+
+        str.getBytes(0, countNonZeroAscii, elems, offset);
+        offset += countNonZeroAscii;
+
+        for (int i = countNonZeroAscii; i < strlen; ++i) {
+            char c = str.charAt(i);
+            if (c >= '\001' && c <= '\177') {
+                elems[offset++] = (byte) c;
+            } else if (c > '\u07FF') {
+                elems[offset    ] = (byte) (0xE0 | c >> 12 & 0xF);
+                elems[offset + 1] = (byte) (0x80 | c >> 6 & 0x3F);
+                elems[offset + 2] = (byte) (0x80 | c      & 0x3F);
+                offset += 3;
+            } else {
+                elems[offset    ] = (byte) (0xC0 | c >> 6 & 0x1F);
+                elems[offset + 1] = (byte) (0x80 | c      & 0x3F);
+                offset += 2;
+            }
+        }
+
+        this.offset = offset;
+    }
+
     @Override
     public void writeBytes(byte[] arr, int start, int length) {
         reserveSpace(length);
@@ -167,12 +217,38 @@ public final class BufWriterImpl implements BufWriter {
         this.offset = prevOffset;
     }
 
+    public void patchU2(int offset, int x) {
+        byte[] elems = this.elems;
+        elems[offset    ] = (byte) (x >> 8);
+        elems[offset + 1] = (byte)  x;
+    }
+
+    public void patchInt(int offset, int x) {
+        byte[] elems = this.elems;
+        elems[offset    ] = (byte) (x >> 24);
+        elems[offset + 1] = (byte) (x >> 16);
+        elems[offset + 2] = (byte) (x >> 8);
+        elems[offset + 3] = (byte)  x;
+    }
+
     @Override
     public void writeIntBytes(int intSize, long intValue) {
         reserveSpace(intSize);
         for (int i = 0; i < intSize; i++) {
             elems[offset++] = (byte) ((intValue >> 8 * (intSize - i - 1)) & 0xFF);
         }
+    }
+
+    /**
+     * Skip a few bytes in the output buffer. The skipped area has undefined value.
+     * @param bytes number of bytes to skip
+     * @return the index, for later patching
+     */
+    public int skip(int bytes) {
+        int now = offset;
+        reserveSpace(bytes);
+        offset += bytes;
+        return now;
     }
 
     @Override
@@ -196,8 +272,8 @@ public final class BufWriterImpl implements BufWriter {
         return offset;
     }
 
-    public ByteBuffer asByteBuffer() {
-        return ByteBuffer.wrap(elems, 0, offset).slice();
+    public RawBytecodeHelper.CodeRange bytecodeView() {
+        return RawBytecodeHelper.of(elems, offset);
     }
 
     public void copyTo(byte[] array, int bufferOffset) {

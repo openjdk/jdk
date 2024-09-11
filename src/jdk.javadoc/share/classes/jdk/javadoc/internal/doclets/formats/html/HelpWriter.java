@@ -105,11 +105,11 @@ public class HelpWriter extends HtmlDocletWriter {
         tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, mainHeading);
         tableOfContents.pushNestedList();
         content.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyles.title, mainHeading))
-                .add(new HtmlTree(HtmlTag.HR))
+                .add(HtmlTree.HR())
                 .add(getNavigationSection())
-                .add(new HtmlTree(HtmlTag.HR))
+                .add(HtmlTree.HR())
                 .add(getPageKindSection())
-                .add(new HtmlTree(HtmlTag.HR))
+                .add(HtmlTree.HR())
                 .add(HtmlTree.SPAN(HtmlStyles.helpFootnote,
                         getContent("doclet.help.footnote")));
         tableOfContents.popNestedList();
@@ -255,7 +255,7 @@ public class HelpWriter extends HtmlDocletWriter {
                         getContent("doclet.help.class_interface.implementations"),
                         getContent("doclet.help.class_interface.declaration"),
                         getContent("doclet.help.class_interface.description")))
-                .add(new HtmlTree(HtmlTag.BR))
+                .add(HtmlTree.BR())
                 .add(newHelpSectionList(
                         contents.nestedClassSummary,
                         contents.enumConstantSummary,
@@ -265,7 +265,7 @@ public class HelpWriter extends HtmlDocletWriter {
                         contents.methodSummary,
                         contents.annotateTypeRequiredMemberSummaryLabel,
                         contents.annotateTypeOptionalMemberSummaryLabel))
-                .add(new HtmlTree(HtmlTag.BR))
+                .add(HtmlTree.BR())
                 .add(newHelpSectionList(
                         contents.enumConstantDetailLabel,
                         contents.fieldDetailsLabel,

@@ -1651,7 +1651,7 @@ void Parse::merge_new_path(int target_bci) {
 // The ex_oop must be pushed on the stack, unlike throw_to_exit.
 void Parse::merge_exception(int target_bci) {
 #ifdef ASSERT
-  if (target_bci < bci()) {
+  if (target_bci <= bci()) {
     C->set_exception_backedge();
   }
 #endif
