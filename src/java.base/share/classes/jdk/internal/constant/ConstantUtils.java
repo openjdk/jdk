@@ -100,13 +100,13 @@ public final class ConstantUtils {
     public static MethodTypeDesc methodTypeDesc(MethodType type) {
         var returnDesc = classDesc(type.returnType());
         if (type.parameterCount() == 0) {
-            return MethodTypeDescImpl.ofValidated(type.descriptorString(), returnDesc, EMPTY_CLASSDESC);
+            return MethodTypeDescImpl.ofValidated(returnDesc, EMPTY_CLASSDESC);
         }
         var paramDescs = new ClassDesc[type.parameterCount()];
         for (int i = 0; i < type.parameterCount(); i++) {
             paramDescs[i] = classDesc(type.parameterType(i));
         }
-        return MethodTypeDescImpl.ofValidated(type.descriptorString(), returnDesc, paramDescs);
+        return MethodTypeDescImpl.ofValidated(returnDesc, paramDescs);
     }
 
     /**

@@ -1271,9 +1271,19 @@ class MethodType
         return toMethodDescriptorString();
     }
 
-    /*non-public*/
-    static String toFieldDescriptorString(Class<?> cls) {
-        return BytecodeDescriptor.unparse(cls);
+    /**
+     * Creates a method type descriptor derived from this one, evaluating the
+     * descriptor string eagerly and caching it in both objects.
+     */
+    MethodTypeDesc sharedStringDesc(ClassDesc returnType, ClassDesc[] parameterTypes) {
+        MethodTypeDesc ret;
+        var md = this.methodDescriptor;
+        if (md == null) {
+            ret = MethodTypeDescImpl.ofValidated(returnType, parameterTypes);
+            this.methodDescriptor = ret.descriptorString();
+            return ret;
+        }
+        return MethodTypeDescImpl.ofValidated(md, returnType, parameterTypes);
     }
 
     /**

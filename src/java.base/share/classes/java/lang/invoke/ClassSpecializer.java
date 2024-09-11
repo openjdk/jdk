@@ -982,6 +982,6 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
         for (int i = 0; i < params.length; i++) {
             params[i] = classDesc(mt.parameterType(i));
         }
-        return MethodTypeDescImpl.ofValidated(mt.descriptorString(), classDesc(mt.returnType()), params);
+        return mt.sharedStringDesc(classDesc(mt.returnType()), params);
     }
 }
