@@ -3135,8 +3135,8 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // new main_limit can push Bool/Cmp nodes down (when one of the eliminated condition has parameters that are not loop
   // invariant in the pre loop.
   set_ctrl(opqzm, new_limit_ctrl);
-  set_ctrl(iffm->in(1), new_limit_ctrl);
   set_ctrl(iffm->in(1)->in(1), new_limit_ctrl);
+  set_ctrl(iffm->in(1), new_limit_ctrl);
 }
 
 // Adjust control for node and its inputs (and inputs of its inputs) to be above the pre end
