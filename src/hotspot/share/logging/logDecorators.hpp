@@ -86,8 +86,10 @@ class LogDecorators {
 
       LogTagType tag_arr[LogTag::MaxTags + 1] = { first, rest... };
 
-      assert(tag_arr[sizeof...(rest)] == LogTag::__NO_TAG,
-             "Too many tags specified! Can only have up to " SIZE_FORMAT " tags in a tag set.", LogTag::MaxTags);
+      if (sizeof...(rest) == LogTag::MaxTags) {
+        assert(tag_arr[sizeof...(rest)] == LogTag::__NO_TAG,
+               "Too many tags specified! Can only have up to " SIZE_FORMAT " tags in a tag set.", LogTag::MaxTags);
+      }
 
       _selection = LogSelection(tag_arr, false, level);
     }
