@@ -1885,7 +1885,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // Reaching this point means we did not find "name".
             // Return the position of "name/" if we found it
             if (dirPos != -1) {
-                return new EntryPos(name +"/", dirPos);
+                return new EntryPos(name + "/", dirPos);
             }
             // No entry found
             return null;
