@@ -349,7 +349,7 @@ public class ZipFile implements ZipConstants, Closeable {
             ensureOpen();
             EntryPos pos = res.zsrc.getEntryPos(name, true);
             if (pos != null) {
-                entry = getZipEntry(pos);
+                entry = getZipEntry(pos.name, pos.pos);
             }
         }
         return entry;
@@ -546,7 +546,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 }
                 // each "entry" has 3 ints in table entries
                 int pos = res.zsrc.getEntryPos(i++ * 3);
-                return (T)getZipEntry(new EntryPos(getEntryName(pos), pos));
+                return (T)getZipEntry(getEntryName(pos), pos);
             }
         }
 
@@ -618,7 +618,7 @@ public class ZipFile implements ZipConstants, Closeable {
         synchronized (this) {
             ensureOpen();
             return StreamSupport.stream(new EntrySpliterator<>(0, res.zsrc.total,
-                pos -> getZipEntry(new EntryPos(getEntryName(pos), pos))), false);
+                pos -> getZipEntry(getEntryName(pos), pos)), false);
        }
     }
 
@@ -661,7 +661,7 @@ public class ZipFile implements ZipConstants, Closeable {
         synchronized (this) {
             ensureOpen();
             return StreamSupport.stream(new EntrySpliterator<>(0, res.zsrc.total,
-                pos -> (JarEntry)getZipEntry(new EntryPos(getEntryName(pos), pos))), false);
+                pos -> (JarEntry)getZipEntry(getEntryName(pos), pos)), false);
         }
     }
 
@@ -669,9 +669,7 @@ public class ZipFile implements ZipConstants, Closeable {
     private int lastEntryPos;
 
     /* Check ensureOpen() before invoking this method */
-    private ZipEntry getZipEntry(EntryPos entryPos) {
-        String name = entryPos.name;
-        int pos  = entryPos.pos;
+    private ZipEntry getZipEntry(String name, int pos) {
         byte[] cen = res.zsrc.cen;
         ZipEntry e = this instanceof JarFile jarFile
                 ? Source.JUJA.entryFor(jarFile, name)
