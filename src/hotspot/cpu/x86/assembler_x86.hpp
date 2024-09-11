@@ -791,9 +791,11 @@ private:
   void evex_prefix(bool vex_r, bool vex_b, bool vex_x, bool evex_v, bool evex_r, bool evex_b,
                        bool eevex_x, int nds_enc, VexSimdPrefix pre, VexOpcode opc, bool no_flags = false);
 
-  void evex_prefix_ndd(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false);
+  void evex_prefix_ndd(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
+                       InstructionAttr *attributes, bool no_flags = false);
 
-  void evex_prefix_nf(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false);
+  void evex_prefix_nf(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
+                      InstructionAttr *attributes, bool no_flags = false);
 
   void vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc,
                   InstructionAttr *attributes, bool nds_is_ndd = false, bool no_flags = false);
@@ -2499,8 +2501,6 @@ private:
   void exorb(Register dst, Address src1, Register src2, bool no_flags);
   void xorb(Register dst, Address src);
   void exorb(Register dst, Register src1, Address src2, bool no_flags);
-  void xorw(Register dst, Register src);
-  void exorw(Register dst, Register src1, Register src2, bool no_flags);
   void xorw(Register dst, Address src);
   void exorw(Register dst, Register src1, Address src2, bool no_flags);
 

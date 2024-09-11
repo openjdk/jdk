@@ -7483,17 +7483,6 @@ void Assembler::exorb(Register dst, Address src1, Register src2, bool no_flags) 
   emit_operand(src2, src1, 0);
 }
 
-void Assembler::xorw(Register dst, Register src) {
-  (void)prefix_and_encode(dst->encoding(), src->encoding());
-  emit_arith(0x33, 0xC0, dst, src);
-}
-
-void Assembler::exorw(Register dst, Register src1, Register src2, bool no_flags) {
-  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
-  (void) evex_prefix_and_encode_ndd(src1->encoding(), dst->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3C, &attributes, no_flags);
-  emit_arith(0x33, 0xC0, src1, src2);
-}
-
 void Assembler::xorw(Register dst, Address src) {
   InstructionMark im(this);
   emit_int8(0x66);
