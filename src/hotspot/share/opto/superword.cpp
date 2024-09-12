@@ -1870,7 +1870,20 @@ bool SuperWord::schedule_and_apply() const {
     SuperWordVTransformBuilder builder(_packset, vtransform);
   }
 
+  // Schedule
   if (!vtransform.schedule()) { return false; }
+
+  // Cost-model
+  float scalar_cost = _vloop_analyzer.cost();
+  float vector_cost = vtransform.cost();
+#ifndef PRODUCT
+  if (is_trace_superword_any()) {
+    tty->print_cr("\nSuperWord: scalar_cost = %.2f vs vector_cost = %.2f",
+                  scalar_cost, vector_cost);
+  }
+#endif
+  if (vector_cost >= scalar_cost) { return false; }
+
   vtransform.apply();
   return true;
 }

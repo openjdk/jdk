@@ -479,6 +479,9 @@ private:
   // Map bb_idx -> index in _vpointers. -1 if not mapped.
   GrowableArray<int> _bb_idx_to_vpointer;
 
+  // Mark all nodes that are part of any pointers expression.
+  VectorSet _bb_idx_to_is_in_pointer_expression;
+
 public:
   VLoopVPointers(Arena* arena,
                  const VLoop& vloop,
@@ -496,6 +499,10 @@ public:
   void compute_vpointers();
   const VPointer& vpointer(const MemNode* mem) const;
   NOT_PRODUCT( void print() const; )
+
+  bool is_in_pointer_expression(int bb_idx) const {
+    return _bb_idx_to_is_in_pointer_expression.test(bb_idx);
+  }
 
 private:
   void count_vpointers();
@@ -662,9 +669,14 @@ public:
   const VLoopVPointers& vpointers()              const { return _vpointers; }
   const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
 
+  // Compute the cost of the (scalar) body.
+  float cost() const;
+
 private:
   bool setup_submodules();
   VStatus setup_submodules_helper();
+
+  bool has_zero_cost(Node* n) const;
 };
 
 // A vectorization pointer (VPointer) has information about an address for

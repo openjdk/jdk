@@ -200,12 +200,20 @@ void VLoopVPointers::allocate_vpointers_array() {
 }
 
 void VLoopVPointers::compute_and_cache_vpointers() {
+  Node_Stack nstack(_vloop.estimated_body_length());
   int pointers_idx = 0;
   _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
     // Placement new: construct directly into the array.
-    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop);
+    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop, &nstack);
     _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
     pointers_idx++;
+
+    // Process the nodes in the pointer expression:
+    while (nstack.is_nonempty()) {
+      Node* n = nstack.node();
+      nstack.pop();
+      _bb_idx_to_is_in_pointer_expression.set(_body.bb_idx(n));
+    }
   });
 }
 
@@ -403,6 +411,41 @@ void VLoopDependencyGraph::PredsIterator::next() {
   } else {
     _current = nullptr; // done
   }
+}
+
+bool VLoopAnalyzer::has_zero_cost(Node* n) const {
+  // Outside body?
+  if (!_vloop.in_bb(n)) { return true; }
+
+  // Part of pointer expression
+  int bb_idx = _body.bb_idx(n);
+  if (vpointers().is_in_pointer_expression(bb_idx)) { return true; }
+
+  if (n->is_AddP() || // Pointer expression
+      n->is_CFG() ||  // CFG
+      n->is_Phi() ||  // CFG
+      n->is_Cmp() ||  // CFG
+      n->is_Bool()) { // CFG
+    return true;
+  }
+
+  // All other nodes have a non-zero cost.
+  return false;
+}
+
+// Compute the cost over all operations in the (scalar) loop.
+float VLoopAnalyzer::cost() const {
+  float sum = 0;
+  for (int j = 0; j < body().body().length(); j++) {
+    Node* n = body().body().at(j);
+
+    if (!has_zero_cost(n)) {
+      tty->print_cr("VLoopBody::cost: %d %s", n->_idx, n->Name());
+      sum += 1;
+    }
+  }
+
+  return sum;
 }
 
 #ifndef PRODUCT

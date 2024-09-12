@@ -109,6 +109,18 @@ bool VTransformGraph::schedule() {
   return true;
 }
 
+float VTransformGraph::cost() const {
+  assert(is_scheduled(), "must already be scheduled");
+  float sum = 0;
+  for (int i = 0; i < _schedule.length(); i++) {
+    VTransformNode* vtn = _schedule.at(i);
+    float c = vtn->cost(_vloop_analyzer);
+    tty->print("vcost: %.2f ", c); vtn->print();
+    sum += c;
+  }
+  return sum;
+}
+
 // Push all "root" nodes, i.e. those that have no inputs (req or dependency):
 void VTransformGraph::collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const {
   for (int i = 0; i < _vtnodes.length(); i++) {
