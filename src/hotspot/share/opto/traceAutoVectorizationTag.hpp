@@ -44,6 +44,7 @@
   flags(SW_VERBOSE,           "Trace SuperWord verbose (all SW tags enabled)") \
   flags(ALIGN_VECTOR,         "Trace AlignVector") \
   flags(VTRANSFORM,           "Trace VTransform Graph") \
+  flags(COST,                 "Trace cost of VLoop (scalar) and VTransform (vector)") \
   flags(ALL,                  "Trace everything (very verbose)")
 
 #define table_entry(name, description) name,

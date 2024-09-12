@@ -111,6 +111,12 @@ bool VTransformGraph::schedule() {
 
 float VTransformGraph::cost() const {
   assert(is_scheduled(), "must already be scheduled");
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("VTransformGraph::cost:");
+  }
+#endif
+
   // TODO: determine what nodes are inside the loop: only count those!
   //       must be connected up and down... so far can only do up...
   //       but need down when we are doing the reductions anyway.
@@ -118,11 +124,20 @@ float VTransformGraph::cost() const {
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
     float c = vtn->cost(_vloop_analyzer);
-    if (c != 0) {
-      tty->print("vcost: %.2f ", c); vtn->print();
-    }
     sum += c;
+#ifndef PRODUCT
+    if (c != 0 && _vloop.is_trace_cost()) {
+      tty->print("  cost = %.2f for ", c);
+      vtn->print();
+    }
+#endif
   }
+
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  total_cost = %.2f", sum);
+  }
+#endif
   return sum;
 }
 

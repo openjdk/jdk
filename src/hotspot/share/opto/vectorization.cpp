@@ -435,16 +435,32 @@ bool VLoopAnalyzer::has_zero_cost(Node* n) const {
 
 // Compute the cost over all operations in the (scalar) loop.
 float VLoopAnalyzer::cost() const {
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("VLoopAnalyzer::cost:");
+  }
+#endif
+
   float sum = 0;
   for (int j = 0; j < body().body().length(); j++) {
     Node* n = body().body().at(j);
-
     if (!has_zero_cost(n)) {
-      tty->print_cr("VLoopBody::cost: %d %s", n->_idx, n->Name());
-      sum += 1;
+      float c = 1;
+      sum += c;
+
+#ifndef PRODUCT
+      if (_vloop.is_trace_cost()) {
+        tty->print_cr("  cost = %.2f for %d %s", c, n->_idx, n->Name());
+      }
+#endif
     }
   }
 
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  total_cost = %.2f", sum);
+  }
+#endif
   return sum;
 }
 

@@ -166,6 +166,10 @@ public:
   bool is_trace_pointer_analysis() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
   }
+
+  bool is_trace_cost() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::COST);
+  }
 #endif
 
   // Is the node in the basic block of the loop?

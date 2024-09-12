@@ -533,7 +533,8 @@ class SuperWord : public ResourceObj {
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_INFO) ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_VERBOSE) ||
+           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::COST);
   }
 
   bool is_trace_align_vector() const {
