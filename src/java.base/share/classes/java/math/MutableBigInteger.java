@@ -706,7 +706,7 @@ class MutableBigInteger {
      * less than 32.
      * Assumes that intLen > 0, n > 0 for speed
      */
-    private final void primitiveRightShift(int n) {
+    private void primitiveRightShift(int n) {
         primitiveRightShift(n, value, offset);
     }
 
@@ -719,7 +719,7 @@ class MutableBigInteger {
      * the caller has to make sure that
      * {@code (resPos <= offset || resPos >= offset + intLen)}.
      */
-    private final void primitiveRightShift(int n, int[] result, int resPos) {
+    private void primitiveRightShift(int n, int[] result, int resPos) {
         int[] val = value;
         int n2 = 32 - n;
 
@@ -737,7 +737,7 @@ class MutableBigInteger {
      * less than 32.
      * Assumes that intLen > 0, n > 0 for speed
      */
-    private final void primitiveLeftShift(int n) {
+    private void primitiveLeftShift(int n) {
         primitiveLeftShift(n, value, offset);
     }
 
@@ -748,18 +748,19 @@ class MutableBigInteger {
      * The result can be the value array of this MutableBigInteger,
      * but for speed the copy is not performed safely, so, in that case
      * the caller has to make sure that
-     * {@code (resPos <= offset || resPos >= offset + intLen)}.
+     * {@code (resFrom <= offset || resFrom >= offset + intLen)}.
      */
-    private final void primitiveLeftShift(int n, int[] result, int resPos) {
+    private void primitiveLeftShift(int n, int[] result, int resFrom) {
         int[] val = value;
         int n2 = 32 - n;
         final int m = intLen - 1;
-        for (int i = 0, c = val[offset + i]; i < m; i++) {
-            int b = c;
-            c = val[offset + i + 1];
-            result[resPos + i] = (b << n) | (c >>> n2);
+        int b = val[offset];
+        for (int i = 0; i < m; i++) {
+            int c = val[offset + i + 1];
+            result[resFrom + i] = (b << n) | (c >>> n2);
+            b = c;
         }
-        result[resPos + m] = val[offset + m] << n;
+        result[resFrom + m] = b << n;
     }
 
     /**

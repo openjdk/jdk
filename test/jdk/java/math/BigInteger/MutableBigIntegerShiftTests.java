@@ -45,8 +45,8 @@ import static java.math.MutableBigIntegerBox.*;
  */
 public class MutableBigIntegerShiftTests {
 
-    static final int ORDER_SMALL = 60;
-    static final int ORDER_MEDIUM = 100;
+    private static final int ORDER_SMALL = 60;
+    private static final int ORDER_MEDIUM = 100;
 
     private static final Random random = RandomFactory.getRandom();
 
