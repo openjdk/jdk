@@ -142,6 +142,11 @@ class RegisterSet {
     }
     return count;
   }
+
+  static RegisterSet from(RegSet set) {
+    assert(set.size(), "RegSet must not be empty");
+    return RegisterSet(set.bits());
+  }
 };
 
 #if R9_IS_SCRATCHED
@@ -156,6 +161,10 @@ class FloatRegisterSet {
   int _encoding;
 
  public:
+
+  FloatRegisterSet() {
+    _encoding = 0;
+  }
 
   FloatRegisterSet(FloatRegister reg) {
     if (reg->hi_bit() == 0) {
@@ -183,6 +192,14 @@ class FloatRegisterSet {
   int encoding_d() const {
     assert((_encoding & 0xFF) <= 16, "no more than 16 double registers" );
     return (_encoding & 0xFFFFFF00) | ((_encoding & 0xFF) << 1);
+  }
+
+  static FloatRegisterSet from(FloatRegSet set) {
+    assert(set.size(), "FloatRegSet must not be empty");
+    // the vector load/store instructions operate on a set of consecutive registers.
+    // for the sake of simplicity, write all registers between the first and last in the set
+    size_t range =  (*set.rbegin())->encoding() - (*set.begin())->encoding() + 1;
+    return  FloatRegisterSet(*set.begin(), range);
   }
 
 };
