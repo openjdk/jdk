@@ -96,7 +96,6 @@ public class TestAlwaysPreTouchStacks {
       Collections.addAll(vmArgs, "TestAlwaysPreTouchStacks", "test");
       ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(vmArgs);
       OutputAnalyzer output = new OutputAnalyzer(pb.start());
-      output.reportDiagnosticSummary();
 
       output.shouldHaveExitValue(0);
 
@@ -130,6 +129,7 @@ public class TestAlwaysPreTouchStacks {
           long max_reserved = memoryCeilingMB * 3 * MB;
           long min_reserved = memoryCeilingMB * MB;
           if (reserved >= max_reserved || reserved < min_reserved) {
+              output.reportDiagnosticSummary();
               throw new RuntimeException("Total reserved stack sizes outside of our expectations (" + reserved +
                                           ", expected " + min_reserved + ".." + max_reserved + ")");
           }
@@ -138,6 +138,7 @@ public class TestAlwaysPreTouchStacks {
         }
       }
       if (!foundLine) {
+          output.reportDiagnosticSummary();
           throw new RuntimeException("Did not find expected NMT output");
       }
       return new ReservedCommitted(reserved, committed);
@@ -166,15 +167,18 @@ public class TestAlwaysPreTouchStacks {
           ReservedCommitted pretouch_result = runPreTouchTest(true);
           ReservedCommitted no_pretouch_result = runPreTouchTest(false);
           if (pretouch_result.reserved == 0 || no_pretouch_result.reserved == 0) {
+            output.reportDiagnosticSummary();
             throw new RuntimeException("Could not run with PreTouch flag.");
           }
           double ratio_with = ((double)pretouch_result.committed) / pretouch_result.reserved;
           double ratio_without = ((double)no_pretouch_result.committed) / no_pretouch_result.reserved;
           System.out.println("ratio with PreTouch: " + ratio_with + " w/out: " + ratio_without);
-          if (ratio_without > 0.50){
+          if (ratio_without > 0.50) {
+            output.reportDiagnosticSummary();
             throw new RuntimeException("Expected a lower ratio between stack committed and reserved.");
           }
           if (ratio_with < ratio_without) {
+            output.reportDiagnosticSummary();
             throw new RuntimeException("Expected a higher ratio between stack committed and reserved.");
           }
       }
