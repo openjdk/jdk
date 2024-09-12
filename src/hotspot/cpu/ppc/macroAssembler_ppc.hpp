@@ -478,7 +478,7 @@ class MacroAssembler: public Assembler {
     MemBarRel  = 1,
     MemBarAcq  = 2,
     MemBarFenceAfter = 4 // use powers of 2
-  };
+  };∂
  private:
   // Helper functions for word/sub-word atomics.
   void atomic_get_and_modify_generic(Register dest_current_value, Register exchange_value,
@@ -486,12 +486,10 @@ class MacroAssembler: public Assembler {
                                      bool cmpxchgx_hint, bool is_add, int size);
   void cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
                          RegisterOrConstant compare_value, Register exchange_value,
-                         Register addr_base, Register tmp1, Register tmp2,
-                         Label &retry, Label &failed, bool cmpxchgx_hint, int size);
+                         Register addr_base,Label &retry, Label &failed, bool cmpxchgx_hint, int size);
   void cmpxchg_generic(ConditionRegister flag, Register dest_current_value,
                        RegisterOrConstant compare_value, Register exchange_value,
-                       Register addr_base, Register tmp1, Register tmp2,
-                       int semantics, bool cmpxchgx_hint, Register int_flag_success,
+                       Register addr_base, int semantics, bool cmpxchgx_hint, Register int_flag_success,
                        Label* failed_ext, bool contention_hint, bool weak, int size);
  public:
   // Temps and addr_base are killed if processor does not support Power 8 instructions.
