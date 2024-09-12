@@ -72,7 +72,7 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
     static final int MOUSE_RELEASE_TIMEOUT = 2000;
 
     public static void main(String[] args) throws Exception {
-        EventQueue.invokeAndWait(()->test = new DropActionChangeTest());
+        EventQueue.invokeAndWait(() -> test = new DropActionChangeTest());
         EventQueue.invokeAndWait(test::init);
         try {
             test.start();
@@ -101,8 +101,8 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
                         "drop action=" + e.getDropAction());
                 if (e.getDropAction() != DnDConstants.ACTION_MOVE) {
                     System.err.println("FAILURE: wrong drop action:"
-                                       + e.getDropAction()+", It should be "
-                                       +DnDConstants.ACTION_MOVE);
+                                       + e.getDropAction() + ", It should be "
+                                       + DnDConstants.ACTION_MOVE);
                     failed = true;
                 }
                 synchronized (LOCK) {
@@ -138,6 +138,15 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
         new DropTarget(panel, dtl);
 
         frame.setVisible(true);
+    }
+
+    private static void disposeFrame() {
+        if (frame != null) {
+            frame.dispose();
+        }
+        if (test != null) {
+            test.dispose();
+        }
     }
 
     public void start() {
@@ -191,24 +200,18 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
 
         System.err.println("Test passed!");
     }
-    private static void disposeFrame() {
-        if(frame != null) {
-            frame.dispose();
-        }
-        if(test != null) {
-            test.dispose();
-        }
-    }
+
     private static void captureScreen(String str) {
         try {
             final Rectangle screenBounds = new Rectangle(
                     Toolkit.getDefaultToolkit().getScreenSize());
-            ImageIO.write(robot.createScreenCapture(screenBounds),
-                          "png", new File(str+"Failure_Screen.png"));
+            ImageIO.write(robot.createScreenCapture(screenBounds), "png",
+                          new File(str + "Failure_Screen.png"));
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
     public void reset() {
         clickedComponent = null;
     }
@@ -251,7 +254,7 @@ class Util {
     }
 
     public static void doDrag(Robot robot, Point startPoint, Point endPoint) {
-        robot.waitForIdle();
+       robot.waitForIdle();
        for (Point p = new Point(startPoint); !p.equals(endPoint);
                 p.translate(Util.sign(endPoint.x - p.x),
                             Util.sign(endPoint.y - p.y))) {
