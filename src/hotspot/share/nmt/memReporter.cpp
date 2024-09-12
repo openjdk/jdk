@@ -487,7 +487,35 @@ void MemSummaryDiffReporter::report_diff() {
   print_virtual_memory_diff(_current_baseline.total_reserved_memory(),
     _current_baseline.total_committed_memory(), _early_baseline.total_reserved_memory(),
     _early_baseline.total_committed_memory());
+  out->cr();
+  out->cr();
 
+  // malloc diff
+  const size_t early_malloced_bytes =
+    _early_baseline.malloc_memory_snapshot()->total();
+  const size_t early_count =
+    _early_baseline.malloc_memory_snapshot()->total_count();
+  const size_t current_malloced_bytes =
+    _current_baseline.malloc_memory_snapshot()->total();
+  const size_t current_count =
+    _current_baseline.malloc_memory_snapshot()->total_count();
+  print_malloc_diff(current_malloced_bytes, current_count, early_malloced_bytes,
+                    early_count, mtNone);
+  out->cr();
+  out->cr();
+
+  // mmap diff
+  out->print("mmap: ");
+  const size_t early_reserved =
+    _early_baseline.virtual_memory_snapshot()->total_reserved();
+  const size_t early_committed =
+    _early_baseline.virtual_memory_snapshot()->total_committed();
+  const size_t current_reserved =
+    _current_baseline.virtual_memory_snapshot()->total_reserved();
+  const size_t current_committed =
+    _current_baseline.virtual_memory_snapshot()->total_committed();
+  print_virtual_memory_diff(current_reserved, current_committed, early_reserved,
+                            early_committed);
   out->cr();
   out->cr();
 

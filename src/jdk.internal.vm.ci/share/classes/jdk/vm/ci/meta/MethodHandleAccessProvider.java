@@ -45,7 +45,9 @@ public interface MethodHandleAccessProvider {
         /** The method {@code MethodHandle.linkToVirtual}. */
         LINK_TO_VIRTUAL,
         /** The method {@code MethodHandle.linkToInterface}. */
-        LINK_TO_INTERFACE
+        LINK_TO_INTERFACE,
+        /** The method {@code MethodHandle.linkToNative}. */
+        LINK_TO_NATIVE
     }
 
     /**

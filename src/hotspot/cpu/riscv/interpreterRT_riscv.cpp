@@ -74,6 +74,16 @@ InterpreterRuntime::SignatureHandlerGenerator::SignatureHandlerGenerator(
   _stack_offset = 0;
 }
 
+// The C ABI specifies:
+// "integer scalars narrower than XLEN bits are widened according to the sign
+// of their type up to 32 bits, then sign-extended to XLEN bits."
+// Applies for both passed in register and stack.
+//
+// Java uses 32-bit stack slots; jint, jshort, jchar, jbyte uses one slot.
+// Native uses 64-bit stack slots for all integer scalar types.
+//
+// lw loads the Java stack slot, sign-extends and
+// sd store this widened integer into a 64 bit native stack slot.
 void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
   const Address src(from(), Interpreter::local_offset_in_bytes(offset()));
 
@@ -82,7 +92,7 @@ void InterpreterRuntime::SignatureHandlerGenerator::pass_int() {
     __ lw(reg, src);
   } else {
     __ lw(x10, src);
-    __ sw(x10, Address(to(), next_stack_offset()));
+    __ sd(x10, Address(to(), next_stack_offset()));
   }
 }
 

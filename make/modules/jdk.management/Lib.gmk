@@ -44,10 +44,12 @@ endif
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_EXT, \
     NAME := management_ext, \
     OPTIMIZATION := $(LIBMANAGEMENT_EXT_OPTIMIZATION), \
+    DISABLED_WARNINGS_gcc_DiagnosticCommandImpl.c := unused-variable, \
+    DISABLED_WARNINGS_clang_DiagnosticCommandImpl.c := unused-variable, \
     DISABLED_WARNINGS_clang_UnixOperatingSystem.c := format-nonliteral, \
     CFLAGS := $(LIBMANAGEMENT_EXT_CFLAGS), \
     JDK_LIBS := java.base:libjava java.base:libjvm, \
-    LIBS_aix := -lperfstat,\
+    LIBS_aix := -lperfstat, \
     LIBS_windows := advapi32.lib psapi.lib, \
 ))
 

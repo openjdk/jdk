@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,15 +34,20 @@
  *         MemoryNotificationInfo.from(CompositeData)
  *     returns correct results:
  *     1. null, if CompositeData is null;
- *     2. trows IllegalArgumentException, if CompositeData doest not represnt
+ *     2. throws IllegalArgumentException, if CompositeData does not represent
  *        MemoryNotificationInfo;
- *     3. correct MemoryNotificationInfo object, if CompositeData is correst (i.e
+ *     3. correct MemoryNotificationInfo object, if CompositeData is correct, i.e
  *        all attributes of the CompositeData must have correct values: pool name,
  *        count; init, used, committed, max (from MemoryUsage).
  * COMMENT
  *     Updated according to:
  *     5024531 Fix MBeans design flaw that restricts to use JMX CompositeData
  *
+ * Avoid running with -Xcomp due to rare failure where the MemoryPool does not
+ * increase in usage and send Notification.  Likely the timing changes so "eatMemory"
+ * completes before Notification/threshold processing.
+ *
+ * @requires vm.compMode != "Xcomp"
  * @library /vmTestbase
  *          /test/lib
  * @run main/othervm

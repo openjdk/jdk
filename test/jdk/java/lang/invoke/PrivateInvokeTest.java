@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,6 @@ public class PrivateInvokeTest {
         String vstr = System.getProperty(THIS_CLASS.getSimpleName()+".verbose");
         if (vstr == null)
             vstr = System.getProperty(THIS_CLASS.getName()+".verbose");
-        if (vstr == null)
-            vstr = System.getProperty("test.verbose");
         if (vstr != null)  verbose = Integer.parseInt(vstr);
     }
     private static int referenceKind(Method m) {

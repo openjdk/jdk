@@ -31,7 +31,7 @@
  * @requires vm.flagless
  * @comment Run with the smallest stack possible to limit the execution time.
  *          This is the smallest stack that is supported by all platforms.
- * @run main/othervm -Xss240K -Xint TestStackOverflowDuringInit
+ * @run main/othervm -Xss384K -Xint TestStackOverflowDuringInit
  */
 
 import java.io.ByteArrayOutputStream;

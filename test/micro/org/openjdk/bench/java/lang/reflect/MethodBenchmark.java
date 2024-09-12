@@ -36,8 +36,9 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
- * Benchmark measuring the speed of Method/Method.getExceptionTypes() and
- * getParameterTypes(), in cases where the result array is length zero.
+ * Benchmark measuring the speed of Method/Method.getExceptionTypes(),
+ * getParameterTypes() in cases where the result array is length zero,
+ * and hashCode().
  */
 @BenchmarkMode(Mode.AverageTime)
 @State(Scope.Benchmark)
@@ -50,6 +51,7 @@ public class MethodBenchmark {
     Method emptyParametersMethod;
     Method oneExceptionMethod;
     Method oneParameterMethod;
+    Method hashCodeMethod;
 
     public MethodBenchmark() {
         try {
@@ -58,6 +60,8 @@ public class MethodBenchmark {
 
             emptyExceptionsMethod = emptyParametersMethod;
             oneExceptionMethod = oneParameterMethod;
+
+            hashCodeMethod = String.class.getDeclaredMethod("toString");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -81,5 +85,10 @@ public class MethodBenchmark {
     @Benchmark
     public Object[] getParameterTypesEmpty() throws Exception {
         return emptyParametersMethod.getParameterTypes();
+    }
+
+    @Benchmark
+    public int getMethodHashCode() {
+        return hashCodeMethod.hashCode();
     }
 }

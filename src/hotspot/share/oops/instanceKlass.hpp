@@ -25,6 +25,7 @@
 #ifndef SHARE_OOPS_INSTANCEKLASS_HPP
 #define SHARE_OOPS_INSTANCEKLASS_HPP
 
+#include "memory/allocation.hpp"
 #include "memory/referenceType.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constMethod.hpp"
@@ -144,6 +145,8 @@ class InstanceKlass: public Klass {
  protected:
   InstanceKlass(const ClassFileParser& parser, KlassKind kind = Kind, ReferenceType reference_type = REF_NONE);
 
+  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, bool use_class_space, TRAPS) throw();
+
  public:
   InstanceKlass();
 
@@ -224,10 +227,6 @@ class InstanceKlass: public Klass {
   u2              _static_oop_field_count;  // number of static oop fields in this klass
 
   volatile u2     _idnum_allocated_count;   // JNI/JVMTI: increments with the addition of methods, old ids don't change
-
-  // _is_marked_dependent can be set concurrently, thus cannot be part of the
-  // _misc_flags.
-  bool            _is_marked_dependent;     // used for marking during flushing and deoptimization
 
   // Class states are defined as ClassState (see above).
   // Place the _init_state here to utilize the unused 2-byte after

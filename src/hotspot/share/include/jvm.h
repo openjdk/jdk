@@ -180,6 +180,9 @@ JVM_IsContinuationsSupported(void);
 JNIEXPORT jboolean JNICALL
 JVM_IsForeignLinkerSupported(void);
 
+JNIEXPORT jboolean JNICALL
+JVM_IsStaticallyLinked(void);
+
 JNIEXPORT void JNICALL
 JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
 
@@ -294,9 +297,6 @@ JVM_HoldsLock(JNIEnv *env, jclass threadClass, jobject obj);
 
 JNIEXPORT jobject JNICALL
 JVM_GetStackTrace(JNIEnv *env, jobject thread);
-
-JNIEXPORT void JNICALL
-JVM_DumpAllStacks(JNIEnv *env, jclass unused);
 
 JNIEXPORT jobjectArray JNICALL
 JVM_GetAllThreads(JNIEnv *env, jclass dummy);
@@ -551,12 +551,6 @@ JVM_GetClassInterfaces(JNIEnv *env, jclass cls);
 
 JNIEXPORT jboolean JNICALL
 JVM_IsInterface(JNIEnv *env, jclass cls);
-
-JNIEXPORT jobjectArray JNICALL
-JVM_GetClassSigners(JNIEnv *env, jclass cls);
-
-JNIEXPORT void JNICALL
-JVM_SetClassSigners(JNIEnv *env, jclass cls, jobjectArray signers);
 
 JNIEXPORT jobject JNICALL
 JVM_GetProtectionDomain(JNIEnv *env, jclass cls);
