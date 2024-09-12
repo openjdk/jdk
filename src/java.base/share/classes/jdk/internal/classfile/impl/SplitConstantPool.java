@@ -440,9 +440,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         int hash = AbstractPoolEntry.hashString(Util.internalNameHash(desc));
 
         while (true) {
-            EntryMap<PoolEntry> map = map();
+            EntryMap map = map();
             for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
-                PoolEntry e = map.getElementByToken(token);
+                PoolEntry e = entryByIndex(map.getIndexByToken(token));
                 if (e.tag() == ClassFile.TAG_UTF8
                         && e instanceof AbstractPoolEntry.Utf8EntryImpl utf
                         && utf.length() + 2 == desc.length()) {

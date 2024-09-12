@@ -31,13 +31,14 @@
  * @build java.base/jdk.internal.classfile.impl.*
  * @run junit UtilTest
  */
-import java.lang.classfile.ClassFile;
 import java.lang.classfile.Opcode;
 import java.lang.constant.MethodTypeDesc;
-import java.lang.invoke.MethodHandles;
-import java.util.BitSet;
+import java.util.Arrays;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 
+import jdk.internal.classfile.impl.RawBytecodeHelper;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.classfile.impl.UtilAccess;
 import jdk.internal.constant.ConstantUtils;
