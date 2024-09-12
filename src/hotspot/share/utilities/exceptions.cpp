@@ -288,7 +288,7 @@ void Exceptions::fthrow(JavaThread* thread, const char* file, int line, Symbol* 
   // parameter controls a check for a specific character appearing in the "name", which is only
   // allowed for classfile versions <= 47. We pass `true` so that we allow such strings as this code
   // know nothing about the actual string content.
-  assert(UTF8::is_legal_utf8((const unsigned char*)msg, (int)strlen(msg), true), "must be");
+  assert(UTF8::is_legal_utf8((const unsigned char*)msg, strlen(msg), true), "must be");
   _throw_msg(thread, file, line, h_name, msg);
 }
 
