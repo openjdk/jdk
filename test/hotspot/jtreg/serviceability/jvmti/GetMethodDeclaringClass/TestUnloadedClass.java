@@ -32,17 +32,13 @@
  * @run main/othervm/timeout=300 TestUnloadedClass
  */
 
-import java.util.Base64;
-
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 
 public class TestUnloadedClass {
