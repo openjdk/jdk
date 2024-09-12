@@ -5334,6 +5334,7 @@ char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
     }
     ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
   }
+  return result;
 }
 
 // Map a block of memory.
