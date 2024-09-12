@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,37 +57,9 @@ import java.lang.System.Logger.Level;
  *
  * @since 1.5
  */
-@SuppressWarnings("serial")  // serialVersionUID must be constant
 public class MBeanServerNotificationFilter extends NotificationFilterSupport {
 
-    // Serialization compatibility stuff:
-    // Two serial forms are supported in this class. The selected form depends
-    // on system property "jmx.serial.form":
-    //  - "1.0" for JMX 1.0
-    //  - any other value for JMX 1.1 and higher
-    //
-    // Serial version for old serial form
-    private static final long oldSerialVersionUID = 6001782699077323605L;
-    //
-    // Serial version for new serial form
-    private static final long newSerialVersionUID = 2605900539589789736L;
-    //
-    // Serializable fields in old serial form
-    private static final ObjectStreamField[] oldSerialPersistentFields =
-    {
-      new ObjectStreamField("mySelectObjNameList", Vector.class),
-      new ObjectStreamField("myDeselectObjNameList", Vector.class)
-    };
-    //
-    // Serializable fields in new serial form
-    private static final ObjectStreamField[] newSerialPersistentFields =
-    {
-      new ObjectStreamField("selectedNames", List.class),
-      new ObjectStreamField("deselectedNames", List.class)
-    };
-    //
-    // Actual serial version and serial form
-    private static final long serialVersionUID;
+    private static final long serialVersionUID = 2605900539589789736L;
     /**
      * @serialField selectedNames List List of {@link ObjectName}s of interest
      *         <ul>
@@ -102,27 +74,11 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
      *         <li>Empty vector means that no {@link ObjectName} is explicitly deselected</li>
      *         </ul>
      */
-    private static final ObjectStreamField[] serialPersistentFields;
-    private static boolean compat = false;
-    static {
-        try {
-            GetPropertyAction act = new GetPropertyAction("jmx.serial.form");
-            @SuppressWarnings("removal")
-            String form = AccessController.doPrivileged(act);
-            compat = (form != null && form.equals("1.0"));
-        } catch (Exception e) {
-            // OK : Too bad, no compat with 1.0
-        }
-        if (compat) {
-            serialPersistentFields = oldSerialPersistentFields;
-            serialVersionUID = oldSerialVersionUID;
-        } else {
-            serialPersistentFields = newSerialPersistentFields;
-            serialVersionUID = newSerialVersionUID;
-        }
-    }
-    //
-    // END Serialization compatibility stuff
+    private static final ObjectStreamField[] serialPersistentFields =
+    {
+      new ObjectStreamField("selectedNames", List.class),
+      new ObjectStreamField("deselectedNames", List.class)
+    };
 
     //
     // Private members
@@ -405,28 +361,7 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
      */
     private void readObject(ObjectInputStream in)
             throws IOException, ClassNotFoundException {
-      if (compat)
-      {
-        // Read an object serialized in the old serial form
-        //
-        ObjectInputStream.GetField fields = in.readFields();
-        selectedNames = cast(fields.get("mySelectObjNameList", null));
-        if (fields.defaulted("mySelectObjNameList"))
-        {
-          throw new NullPointerException("mySelectObjNameList");
-        }
-        deselectedNames = cast(fields.get("myDeselectObjNameList", null));
-        if (fields.defaulted("myDeselectObjNameList"))
-        {
-          throw new NullPointerException("myDeselectObjNameList");
-        }
-      }
-      else
-      {
-        // Read an object serialized in the new serial form
-        //
-        in.defaultReadObject();
-      }
+      in.defaultReadObject();
     }
 
 
@@ -435,20 +370,6 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
      */
     private void writeObject(ObjectOutputStream out)
             throws IOException {
-      if (compat)
-      {
-        // Serializes this instance in the old serial form
-        //
-        ObjectOutputStream.PutField fields = out.putFields();
-        fields.put("mySelectObjNameList", selectedNames);
-        fields.put("myDeselectObjNameList", deselectedNames);
-        out.writeFields();
-      }
-      else
-      {
-        // Serializes this instance in the new serial form
-        //
-        out.defaultWriteObject();
-      }
+      out.defaultWriteObject();
     }
 }

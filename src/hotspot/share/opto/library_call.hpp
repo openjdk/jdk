@@ -156,9 +156,11 @@ class LibraryCallKit : public GraphKit {
                                          region, null_path,
                                          offset);
   }
-  Node* generate_access_flags_guard(Node* kls,
-                                    int modifier_mask, int modifier_bits,
-                                    RegionNode* region);
+  Node* generate_klass_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region,
+                                   ByteSize offset, const Type* type, BasicType bt);
+  Node* generate_misc_flags_guard(Node* kls,
+                                  int modifier_mask, int modifier_bits,
+                                  RegionNode* region);
   Node* generate_interface_guard(Node* kls, RegionNode* region);
   Node* generate_hidden_class_guard(Node* kls, RegionNode* region);
   Node* generate_array_guard(Node* kls, RegionNode* region) {
@@ -241,6 +243,7 @@ class LibraryCallKit : public GraphKit {
   const Type* scopedValueCache_type();
   Node* scopedValueCache_helper();
   bool inline_native_setScopedValueCache();
+  bool inline_native_Continuation_pinning(bool unpin);
 
   bool inline_native_time_funcs(address method, const char* funcName);
 #if INCLUDE_JVMTI

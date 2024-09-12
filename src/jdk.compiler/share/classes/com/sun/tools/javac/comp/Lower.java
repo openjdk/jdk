@@ -62,6 +62,7 @@ import com.sun.tools.javac.tree.JCTree.JCBreak;
 import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCExpressionStatement;
+
 import static com.sun.tools.javac.tree.JCTree.JCOperatorExpression.OperandPos.LEFT;
 import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
 
@@ -1828,11 +1829,10 @@ public class Lower extends TreeTranslator {
      *                       due to protection?
      */
     JCExpression makeOwnerThis(DiagnosticPosition pos, Symbol sym, boolean preciseMatch) {
-        Symbol c = sym.owner;
         if (preciseMatch ? sym.isMemberOf(currentClass, types)
                          : currentClass.isSubClass(sym.owner, types)) {
             // in this case, `this' works fine
-            return make.at(pos).This(c.erasure(types));
+            return make.at(pos).This(currentClass.erasure(types));
         } else {
             // need to go via this$n
             return makeOwnerThisN(pos, sym, preciseMatch);
@@ -2630,7 +2630,7 @@ public class Lower extends TreeTranslator {
         StringBuilder sb = new StringBuilder();
 
         LowerSignatureGenerator() {
-            super(types);
+            types.super();
         }
 
         @Override
@@ -3330,6 +3330,9 @@ public class Lower extends TreeTranslator {
     /** Expand a boxing or unboxing conversion if needed. */
     @SuppressWarnings("unchecked") // XXX unchecked
     <T extends JCExpression> T boxIfNeeded(T tree, Type type) {
+        Assert.check(!type.hasTag(VOID));
+        if (type.hasTag(NONE))
+            return tree;
         boolean havePrimitive = tree.type.isPrimitive();
         if (havePrimitive == type.isPrimitive())
             return tree;
@@ -3846,6 +3849,9 @@ public class Lower extends TreeTranslator {
         Type prevRestype = currentRestype;
         try {
             currentRestype = types.erasure(tree.getDescriptorType(types)).getReturnType();
+            // represent void results as NO_TYPE, to avoid unnecessary boxing in boxIfNeeded
+            if (currentRestype.hasTag(VOID))
+                currentRestype = Type.noType;
             tree.body = tree.getBodyKind() == BodyKind.EXPRESSION ?
                     translate((JCExpression) tree.body, currentRestype) :
                     translate(tree.body);

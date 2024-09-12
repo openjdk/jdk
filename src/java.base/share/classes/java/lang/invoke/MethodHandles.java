@@ -2206,7 +2206,7 @@ public class MethodHandles {
          * @jvms 5.3.5 Deriving a {@code Class} from a {@code class} File Representation
          * @jvms 5.4 Linking
          * @jvms 5.5 Initialization
-         * @jls 12.7 Unloading of Classes and Interface
+         * @jls 12.7 Unloading of Classes and Interfaces
          */
         public Lookup defineHiddenClassWithClassData(byte[] bytes, Object classData, boolean initialize, ClassOption... options)
                 throws IllegalAccessException

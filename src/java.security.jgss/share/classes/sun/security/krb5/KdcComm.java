@@ -62,15 +62,18 @@ public final class KdcComm {
     // them can also be defined in a realm, which overrides value here.
 
     /**
-     * max retry time for a single KDC, default Krb5.KDC_RETRY_LIMIT (3)
+     * max retry time for a single KDC, default Krb5.KDC_RETRY_LIMIT (3),
+     * Must be > 0.
      */
     private static int defaultKdcRetryLimit;
     /**
-     * timeout requesting a ticket from KDC, in millisec, default 30 sec
+     * timeout requesting a ticket from KDC, in millisec, default
+     * Krb5.KDC_TIMEOUT (30000). Must be > 0.
      */
     private static int defaultKdcTimeout;
     /**
-     * max UDP packet size, default unlimited (-1)
+     * max UDP packet size, default Krb5.KDC_DEFAULT_UDP_PREF_LIMIT (1465).
+     * Must be >= 0 and <= Krb5.KDC_HARD_UDP_LIMIT (32700).
      */
     private static int defaultUdpPrefLimit;
 
@@ -146,9 +149,9 @@ public final class KdcComm {
             timeout = parseTimeString(temp);
 
             temp = cfg.get("libdefaults", "max_retries");
-            max_retries = parsePositiveIntString(temp);
+            max_retries = parseNonNegativeIntString(temp);
             temp = cfg.get("libdefaults", "udp_preference_limit");
-            udp_pref_limit = parsePositiveIntString(temp);
+            udp_pref_limit = parseNonNegativeIntString(temp);
         } catch (Exception exc) {
            // ignore any exceptions; use default values
            if (DEBUG != null) {
@@ -157,7 +160,7 @@ public final class KdcComm {
                                     exc.getMessage());
            }
         }
-        defaultKdcTimeout = timeout > 0 ? timeout : 30*1000; // 30 seconds
+        defaultKdcTimeout = timeout > 0 ? timeout : Krb5.KDC_TIMEOUT;
         defaultKdcRetryLimit =
                 max_retries > 0 ? max_retries : Krb5.KDC_RETRY_LIMIT;
 
@@ -175,11 +178,11 @@ public final class KdcComm {
     /**
      * The instance fields
      */
-    private String realm;
+    private final String realm;
 
     public KdcComm(String realm) throws KrbException {
         if (realm == null) {
-           realm = Config.getInstance().getDefaultRealm();
+            realm = Config.getInstance().getDefaultRealm();
             if (realm == null) {
                 throw new KrbException(Krb5.KRB_ERR_GENERIC,
                                        "Cannot find default realm");
@@ -191,11 +194,10 @@ public final class KdcComm {
     public byte[] send(KrbKdcReq req)
         throws IOException, KrbException {
         int udpPrefLimit = getRealmSpecificValue(
-                realm, "udp_preference_limit", defaultUdpPrefLimit);
+                realm, "udp_preference_limit", defaultUdpPrefLimit, false);
 
         byte[] obuf = req.encoding();
-        boolean useTCP = (udpPrefLimit > 0 &&
-             (obuf != null && obuf.length > udpPrefLimit));
+        boolean useTCP = obuf != null && obuf.length > udpPrefLimit;
 
         return send(req, useTCP);
     }
@@ -206,14 +208,6 @@ public final class KdcComm {
         if (req == null)
             return null;
         Config cfg = Config.getInstance();
-
-        if (realm == null) {
-            realm = cfg.getDefaultRealm();
-            if (realm == null) {
-                throw new KrbException(Krb5.KRB_ERR_GENERIC,
-                                       "Cannot find default realm");
-            }
-        }
 
         String kdcList = cfg.getKDCList(realm);
         if (kdcList == null) {
@@ -296,9 +290,9 @@ public final class KdcComm {
 
         int port = Krb5.KDC_INET_DEFAULT_PORT;
         int retries = getRealmSpecificValue(
-                realm, "max_retries", defaultKdcRetryLimit);
+                realm, "max_retries", defaultKdcRetryLimit, true);
         int timeout = getRealmSpecificValue(
-                realm, "kdc_timeout", defaultKdcTimeout);
+                realm, "kdc_timeout", defaultKdcTimeout, true);
         if (badPolicy == BpType.TRY_LESS &&
                 KdcAccessibility.isBad(tempKdc)) {
             if (retries > tryLessMaxRetries) {
@@ -339,7 +333,7 @@ public final class KdcComm {
             }
         }
         if (portStr != null) {
-            int tempPort = parsePositiveIntString(portStr);
+            int tempPort = parseNonNegativeIntString(portStr);
             if (tempPort > 0)
                 port = tempPort;
         }
@@ -444,10 +438,10 @@ public final class KdcComm {
             return -1;
         }
         if (s.endsWith("s")) {
-            int seconds = parsePositiveIntString(s.substring(0, s.length()-1));
+            int seconds = parseNonNegativeIntString(s.substring(0, s.length()-1));
             return (seconds < 0) ? -1 : (seconds*1000);
         } else {
-            return parsePositiveIntString(s);
+            return parseNonNegativeIntString(s);
         }
     }
 
@@ -461,9 +455,11 @@ public final class KdcComm {
      * the global setting if null
      * @param key the key for the setting
      * @param defValue default value
+     * @param mustBePositive true if value must be >0, false if value must be >=0
      * @return a value for the key
      */
-    private int getRealmSpecificValue(String realm, String key, int defValue) {
+    private int getRealmSpecificValue(String realm, String key, int defValue,
+            boolean mustBePositive) {
         int v = defValue;
 
         if (realm == null) return v;
@@ -475,18 +471,22 @@ public final class KdcComm {
             if (key.equals("kdc_timeout")) {
                 temp = parseTimeString(value);
             } else {
-                temp = parsePositiveIntString(value);
+                temp = parseNonNegativeIntString(value);
             }
         } catch (Exception exc) {
             // Ignored, defValue will be picked up
         }
 
-        if (temp > 0) v = temp;
+        if (mustBePositive) {
+            if (temp > 0) v = temp;
+        } else {
+            if (temp >= 0) v = temp;
+        }
 
         return v;
     }
 
-    private static int parsePositiveIntString(String intString) {
+    private static int parseNonNegativeIntString(String intString) {
         if (intString == null)
             return -1;
 

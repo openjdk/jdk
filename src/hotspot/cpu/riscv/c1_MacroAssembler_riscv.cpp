@@ -64,13 +64,13 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(hdr, obj);
-    lwu(hdr, Address(hdr, Klass::access_flags_offset()));
-    test_bit(temp, hdr, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    lbu(hdr, Address(hdr, Klass::misc_flags_offset()));
+    test_bit(temp, hdr, exact_log2(KlassFlags::_misc_is_value_based_class));
     bnez(temp, slow_case, true /* is_far */);
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(obj, hdr, temp, t1, slow_case);
+    lightweight_lock(disp_hdr, obj, hdr, temp, t1, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     Label done;
     // Load object header

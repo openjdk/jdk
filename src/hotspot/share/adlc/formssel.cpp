@@ -210,15 +210,16 @@ bool InstructForm::is_pinned(FormDict &globals) {
   if ( ! _matrule)  return false;
 
   int  index   = 0;
-  if (_matrule->find_type("Goto",          index)) return true;
-  if (_matrule->find_type("If",            index)) return true;
-  if (_matrule->find_type("CountedLoopEnd",index)) return true;
-  if (_matrule->find_type("Return",        index)) return true;
-  if (_matrule->find_type("Rethrow",       index)) return true;
-  if (_matrule->find_type("TailCall",      index)) return true;
-  if (_matrule->find_type("TailJump",      index)) return true;
-  if (_matrule->find_type("Halt",          index)) return true;
-  if (_matrule->find_type("Jump",          index)) return true;
+  if (_matrule->find_type("Goto",             index)) return true;
+  if (_matrule->find_type("If",               index)) return true;
+  if (_matrule->find_type("CountedLoopEnd",   index)) return true;
+  if (_matrule->find_type("Return",           index)) return true;
+  if (_matrule->find_type("Rethrow",          index)) return true;
+  if (_matrule->find_type("TailCall",         index)) return true;
+  if (_matrule->find_type("TailJump",         index)) return true;
+  if (_matrule->find_type("ForwardException", index)) return true;
+  if (_matrule->find_type("Halt",             index)) return true;
+  if (_matrule->find_type("Jump",             index)) return true;
 
   return is_parm(globals);
 }
@@ -228,12 +229,13 @@ bool InstructForm::is_projection(FormDict &globals) {
   if ( ! _matrule)  return false;
 
   int  index   = 0;
-  if (_matrule->find_type("Goto",    index)) return true;
-  if (_matrule->find_type("Return",  index)) return true;
-  if (_matrule->find_type("Rethrow", index)) return true;
-  if (_matrule->find_type("TailCall",index)) return true;
-  if (_matrule->find_type("TailJump",index)) return true;
-  if (_matrule->find_type("Halt",    index)) return true;
+  if (_matrule->find_type("Goto",             index)) return true;
+  if (_matrule->find_type("Return",           index)) return true;
+  if (_matrule->find_type("Rethrow",          index)) return true;
+  if (_matrule->find_type("TailCall",         index)) return true;
+  if (_matrule->find_type("TailJump",         index)) return true;
+  if (_matrule->find_type("ForwardException", index)) return true;
+  if (_matrule->find_type("Halt",             index)) return true;
 
   return false;
 }
@@ -376,6 +378,7 @@ bool InstructForm::is_ideal_return() const {
   if (_matrule->find_type("Rethrow",index)) return true;
   if (_matrule->find_type("TailCall",index)) return true;
   if (_matrule->find_type("TailJump",index)) return true;
+  if (_matrule->find_type("ForwardException", index)) return true;
 
   return false;
 }
@@ -894,6 +897,7 @@ uint InstructForm::oper_input_base(FormDict &globals) {
       strcmp(_matrule->_opType,"Rethrow"   )==0 ||
       strcmp(_matrule->_opType,"TailCall"  )==0 ||
       strcmp(_matrule->_opType,"TailJump"  )==0 ||
+      strcmp(_matrule->_opType,"ForwardException")==0 ||
       strcmp(_matrule->_opType,"SafePoint" )==0 ||
       strcmp(_matrule->_opType,"Halt"      )==0 )
     return AdlcVMDeps::Parms;   // Skip the machine-state edges
