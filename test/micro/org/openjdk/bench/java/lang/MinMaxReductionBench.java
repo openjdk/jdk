@@ -77,7 +77,7 @@ public class MinMaxReductionBench {
     @Setup
     public void setup() {
         maxIntA = distributeIntRandomIncrement(size, probability);
-        minIntA = negate(distributeIntRandomIncrement(size, probability);
+        minIntA = negate(distributeIntRandomIncrement(size, probability));
         maxIntB = distributeIntRandomIncrement(size, probability);
         minIntB = negate(distributeIntRandomIncrement(size, probability));
         maxIntC = distributeIntRandomIncrement(size, probability);
