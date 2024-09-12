@@ -80,7 +80,7 @@ static bool range_intersects(const void* from1, const void* to1, const void* fro
   return MAX2(from1, from2) < MIN2(to1, to2);
 }
 
-// A Cache that correlates range with MEMFLAG, optimized to be iterated quickly
+// A Cache that correlates range with MemTag, optimized to be iterated quickly
 // (cache friendly).
 class CachedNMTInformation : public VirtualMemoryWalker {
   struct Range { const void* from; const void* to; };

@@ -46,8 +46,8 @@ void* GrowableArrayCHeapAllocator::allocate(int max, int element_size, MemTag me
   assert(max >= 0, "integer overflow");
   size_t byte_size = element_size * (size_t) max;
 
-  // memory type has to be specified for C heap allocation
-  assert(mem_tag != mtNone, "memory type not specified for C heap object");
+  // memory tag has to be specified for C heap allocation
+  assert(mem_tag != mtNone, "memory tag not specified for C heap object");
   return (void*)AllocateHeap(byte_size, mem_tag);
 }
 

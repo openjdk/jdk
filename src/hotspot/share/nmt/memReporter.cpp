@@ -176,7 +176,7 @@ void MemSummaryReporter::report() {
   out->cr();
   out->cr();
 
-  // Summary by memory type
+  // Summary by memory tag
   for (int index = 0; index < mt_number_of_tags; index ++) {
     MemTag mem_tag = NMTUtil::index_to_tag(index);
     // thread stack is reported as part of thread category
@@ -340,7 +340,7 @@ int MemDetailReporter::report_malloc_sites() {
     _stackprinter.print_stack(stack);
     MemTag mem_tag = malloc_site->mem_tag();
     assert(NMTUtil::tag_is_valid(mem_tag) && mem_tag != mtNone,
-      "Must have a valid memory type");
+      "Must have a valid memory tag");
     INDENT_BY(29,
       out->print("(");
       print_malloc(malloc_site->counter(), mem_tag);
@@ -519,7 +519,7 @@ void MemSummaryDiffReporter::report_diff() {
   out->cr();
   out->cr();
 
-  // Summary diff by memory type
+  // Summary diff by memory tag
   for (int index = 0; index < mt_number_of_tags; index ++) {
     MemTag mem_tag = NMTUtil::index_to_tag(index);
     // thread stack is reported as part of thread category
@@ -848,8 +848,8 @@ void MemDetailDiffReporter::diff_virtual_memory_sites() const {
         old_virtual_memory_site(early_site);
         early_site = early_itr.next();
       } else if (early_site->mem_tag() != current_site->mem_tag()) {
-        // This site was originally allocated with one memory type, then released,
-        // then re-allocated at the same site (as far as we can tell) with a different memory type.
+        // This site was originally allocated with one memory tag, then released,
+        // then re-allocated at the same site (as far as we can tell) with a different memory tag.
         old_virtual_memory_site(early_site);
         early_site = early_itr.next();
         new_virtual_memory_site(current_site);

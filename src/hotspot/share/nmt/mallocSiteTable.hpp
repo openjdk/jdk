@@ -65,7 +65,7 @@ class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
 
   MallocSiteHashtableEntry(NativeCallStack stack, MemTag mem_tag):
     _malloc_site(stack, mem_tag), _hash(stack.calculate_hash()), _next(nullptr) {
-    assert(mem_tag != mtNone, "Expect a real memory type");
+    assert(mem_tag != mtNone, "Expect a real memory tag");
   }
 
   inline const MallocSiteHashtableEntry* next() const {

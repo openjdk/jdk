@@ -94,7 +94,7 @@ private:
   public:
     IntervalState() : type_flag{0,0}, sidx() {}
     IntervalState(const StateType type, const RegionData data) {
-      assert(!(type == StateType::Released) || data.mem_tag == mtNone, "Released type must have flag mtNone");
+      assert(!(type == StateType::Released) || data.mem_tag == mtNone, "Released type must have memory tag mtNone");
       type_flag[0] = static_cast<uint8_t>(type);
       type_flag[1] = static_cast<uint8_t>(data.mem_tag);
       sidx = data.stack_idx;

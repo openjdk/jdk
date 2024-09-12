@@ -89,7 +89,7 @@ public:
   // bookkeeping overhead, including this storage object.
   size_t total_memory_usage() const;
 
-  // The memory type for allocations.
+  // The memory tag for allocations.
   MemTag mem_tag() const;
 
   enum EntryStatus {
@@ -273,7 +273,7 @@ private:
   // mutable because this gets set even for const iteration.
   mutable int _concurrent_iteration_count;
 
-  // The memory type for allocations.
+  // The memory tag for allocations.
   MemTag _mem_tag;
 
   // Flag indicating this storage object is a candidate for empty block deletion.

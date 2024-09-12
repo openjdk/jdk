@@ -641,7 +641,7 @@ class ResourceBitMap : public GrowableBitMap<ResourceBitMap> {
 
 // A BitMap with storage in the CHeap.
 class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
-  // NMT memory type
+  // NMT memory tag
   const MemTag _mem_tag;
 
   // Don't allow copy or assignment, to prevent the

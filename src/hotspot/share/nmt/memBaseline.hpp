@@ -53,7 +53,7 @@ class MemBaseline {
     by_address,      // by memory address
     by_size,         // by memory size
     by_site,         // by call site where the memory is allocated from
-    by_site_and_type // by call site and memory type
+    by_site_and_type // by call site and memory tag
   };
 
  private:
@@ -203,7 +203,7 @@ class MemBaseline {
   void malloc_sites_to_size_order();
   // Sort allocation sites in call site address order
   void malloc_sites_to_allocation_site_order();
-  // Sort allocation sites in call site address and memory type order
+  // Sort allocation sites in call site address and memory tag order
   void malloc_sites_to_allocation_site_and_type_order();
 
   // Sort allocation sites in reserved size order

@@ -150,10 +150,10 @@ class VirtualMemorySummary : AllStatic {
     as_snapshot()->by_type(mem_tag)->release_memory(size);
   }
 
-  // Move virtual memory from one memory type to another.
-  // Virtual memory can be reserved before it is associated with a memory type, and tagged
+  // Move virtual memory from one memory tag to another.
+  // Virtual memory can be reserved before it is associated with a memory tag, and tagged
   // as 'unknown'. Once the memory is tagged, the virtual memory will be moved from 'unknown'
-  // type to specified memory type.
+  // type to specified memory tag.
   static inline void move_reserved_memory(MemTag from, MemTag to, size_t size) {
     as_snapshot()->by_type(from)->release_memory(size);
     as_snapshot()->by_type(to)->reserve_memory(size);
@@ -390,7 +390,7 @@ class VirtualMemoryTracker : AllStatic {
 
   // Given an existing memory mapping registered with NMT, split the mapping in
   //  two. The newly created two mappings will be registered under the call
-  //  stack and the memory types of the original section.
+  //  stack and the memory tag of the original section.
   static bool split_reserved_region(address addr, size_t size, size_t split, MemTag mem_tag, MemTag split_type);
 
   // Walk virtual memory data structure for creating baseline, etc.

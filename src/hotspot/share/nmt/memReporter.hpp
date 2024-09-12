@@ -138,7 +138,7 @@ class MemSummaryReporter : public MemReporterBase {
   // Generate summary report
   virtual void report();
  private:
-  // Report summary for each memory type
+  // Report summary for each memory tag
   void report_summary_of_type(MemTag mem_tag, MallocMemory* malloc_memory,
     VirtualMemory* virtual_memory);
 

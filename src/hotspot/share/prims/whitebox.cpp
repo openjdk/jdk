@@ -676,7 +676,7 @@ WB_END
 
 #endif // INCLUDE_G1GC
 
-// Alloc memory using the test memory type so that we can use that to see if
+// Alloc memory using the test memory tag so that we can use that to see if
 // NMT picks it up correctly
 WB_ENTRY(jlong, WB_NMTMalloc(JNIEnv* env, jobject o, jlong size))
   jlong addr = 0;
@@ -692,7 +692,7 @@ WB_ENTRY(jlong, WB_NMTMallocWithPseudoStack(JNIEnv* env, jobject o, jlong size, 
   return (jlong)(uintptr_t)os::malloc(size, mtTest, stack);
 WB_END
 
-// Alloc memory with pseudo call stack and specific memory type.
+// Alloc memory with pseudo call stack and specific memory tag.
 WB_ENTRY(jlong, WB_NMTMallocWithPseudoStackAndType(JNIEnv* env, jobject o, jlong size, jint pseudo_stack, jint mem_tag))
   address pc = (address)(size_t)pseudo_stack;
   NativeCallStack stack(&pc, 1);

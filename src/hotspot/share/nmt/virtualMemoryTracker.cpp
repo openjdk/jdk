@@ -294,7 +294,7 @@ size_t ReservedMemoryRegion::committed_size() const {
 
 void ReservedMemoryRegion::set_mem_tag(MemTag new_mem_tag) {
   assert((mem_tag() == mtNone || mem_tag() == new_mem_tag),
-         "Overwrite memory type for region [" INTPTR_FORMAT "-" INTPTR_FORMAT "), %u->%u.",
+         "Overwrite memory tag for region [" INTPTR_FORMAT "-" INTPTR_FORMAT "), %u->%u.",
          p2i(base()), p2i(end()), (unsigned)mem_tag(), (unsigned)new_mem_tag);
   if (mem_tag() != new_mem_tag) {
     VirtualMemorySummary::move_reserved_memory(mem_tag(), new_mem_tag, size());
@@ -422,7 +422,7 @@ void VirtualMemoryTracker::set_reserved_region_type(address addr, MemTag mem_tag
   if (reserved_rgn != nullptr) {
     assert(reserved_rgn->contain_address(addr), "Containment");
     if (reserved_rgn->mem_tag() != mem_tag) {
-      assert(reserved_rgn->mem_tag() == mtNone, "Overwrite memory type (should be mtNone, is: \"%s\")",
+      assert(reserved_rgn->mem_tag() == mtNone, "Overwrite memory tag (should be mtNone, is: \"%s\")",
              NMTUtil::tag_to_name(reserved_rgn->mem_tag()));
       reserved_rgn->set_mem_tag(mem_tag);
     }
