@@ -1087,16 +1087,6 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @Override
-    public String getString(long offset, int length, Charset charset) {
-        if (length < 0) {
-            throw new IllegalArgumentException();
-        }
-        Objects.requireNonNull(charset);
-
-        return StringSupport.read(this, offset, length, charset);
-    }
-
-    @Override
     public void setString(long offset, String str) {
         Objects.requireNonNull(str);
         setString(offset, str, sun.nio.cs.UTF_8.INSTANCE);
