@@ -669,7 +669,7 @@ class os: AllStatic {
   static void funlockfile(FILE* fp);
 
   // A safe implementation of realpath which will not cause a buffer overflow if the resolved path
-  //   is longer than PATH_MAX.
+  // is longer than PATH_MAX.
   // On success, returns 'outbuf', which now contains the path.
   // On error, it will return null and set errno. The content of 'outbuf' is undefined.
   // On truncation error ('outbuf' too small), it will return null and set errno to ENAMETOOLONG.
