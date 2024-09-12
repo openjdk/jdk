@@ -851,7 +851,7 @@ public final class ClassPrinterImpl {
                                 "type", newo.className().name().stringValue()));
                         case NewPrimitiveArrayInstruction newa -> in.with(leafs(
                                 "dimensions", 1,
-                                "descriptor", newa.typeKind().typeName()));
+                                "descriptor", newa.typeKind().upperBound().displayName()));
                         case NewReferenceArrayInstruction newa -> in.with(leafs(
                                 "dimensions", 1,
                                 "descriptor", newa.componentType().name().stringValue()));

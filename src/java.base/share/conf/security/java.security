@@ -1330,6 +1330,9 @@ jdk.sasl.disabledMechanisms=
 #        A4FE7C7F15155F3F0AEF7AAA83CF6E06DEB97CA3F909DF920AC1490882D488ED
 #        Distrust after December 31, 2019.
 #
+#   ENTRUST_TLS : Distrust TLS Server certificates anchored by
+#   an Entrust root CA and issued after October 31, 2024.
+#
 # Leading and trailing whitespace surrounding each value are ignored.
 # Unknown values are ignored. If the property is commented out or set to the
 # empty String, no policies are enforced.
@@ -1341,7 +1344,7 @@ jdk.sasl.disabledMechanisms=
 # jdk.certpath.disabledAlgorithms; those restrictions are still enforced even
 # if this property is not enabled.
 #
-jdk.security.caDistrustPolicies=SYMANTEC_TLS
+jdk.security.caDistrustPolicies=SYMANTEC_TLS,ENTRUST_TLS
 
 #
 # FilePermission path canonicalization

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,12 @@
  * @build java.base/jdk.internal.classfile.impl.*
  * @run junit UtilTest
  */
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Opcode;
 import java.lang.constant.MethodTypeDesc;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.lang.invoke.MethodHandles;
+import java.util.BitSet;
+
 
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.classfile.impl.UtilAccess;
@@ -131,10 +134,20 @@ class UtilTest {
         assertArrayEquals(powers, UtilAccess.powersTable());
     }
 
-    //
     @Test
-    void testModularMultiplicativeInverse() {
-        assertEquals(1, 31 * UtilAccess.reverse31());
-        assertEquals(1, 31L * Integer.toUnsignedLong(UtilAccess.reverse31()) % (1L << 32));
+    void testOpcodeLengthTable() {
+        var lengths = new byte[0x100];
+        Arrays.fill(lengths, (byte) -1);
+        for (var op : Opcode.values()) {
+            if (!op.isWide()) {
+                lengths[op.bytecode()] = (byte) op.sizeIfFixed();
+            } else {
+                // Wide pseudo-opcodes have double the length as normal variants
+                // Must match logic in checkSpecialInstruction()
+                assertEquals(op.sizeIfFixed(), lengths[op.bytecode() & 0xFF] * 2, op + " size");
+            }
+        }
+
+        assertArrayEquals(lengths, RawBytecodeHelper.LENGTHS);
     }
 }

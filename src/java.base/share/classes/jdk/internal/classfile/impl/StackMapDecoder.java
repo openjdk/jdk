@@ -35,9 +35,10 @@ import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.TreeMap;
 
 import static java.lang.classfile.ClassFile.*;
 
@@ -46,6 +47,7 @@ public class StackMapDecoder {
     private static final int
                     SAME_LOCALS_1_STACK_ITEM_EXTENDED = 247,
                     SAME_EXTENDED = 251;
+    private static final StackMapFrameInfo[] NO_STACK_FRAME_INFOS = new StackMapFrameInfo[0];
 
     private final ClassReader classReader;
     private final int pos;
@@ -103,15 +105,20 @@ public class StackMapDecoder {
                 mi.methodTypeSymbol(),
                 (mi.methodFlags() & ACC_STATIC) != 0);
         int prevOffset = -1;
-        var map = new TreeMap<Integer, StackMapFrameInfo>();
+        // avoid using method handles due to early bootstrap
+        StackMapFrameInfo[] infos = entries.toArray(NO_STACK_FRAME_INFOS);
         //sort by resolved label offsets first to allow unordered entries
-        for (var fr : entries) {
-            map.put(dcb.labelToBci(fr.target()), fr);
-        }
-        b.writeU2(map.size());
-        for (var me : map.entrySet()) {
-            int offset = me.getKey();
-            var fr = me.getValue();
+        Arrays.sort(infos, new Comparator<StackMapFrameInfo>() {
+            public int compare(final StackMapFrameInfo o1, final StackMapFrameInfo o2) {
+                return Integer.compare(dcb.labelToBci(o1.target()), dcb.labelToBci(o2.target()));
+            }
+        });
+        b.writeU2(infos.length);
+        for (var fr : infos) {
+            int offset = dcb.labelToBci(fr.target());
+            if (offset == prevOffset) {
+                throw new IllegalArgumentException("Duplicated stack frame bytecode index: " + offset);
+            }
             writeFrame(buf, offset - prevOffset - 1, prevLocals, fr);
             prevOffset = offset;
             prevLocals = fr.locals();

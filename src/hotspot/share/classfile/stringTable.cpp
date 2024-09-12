@@ -686,7 +686,7 @@ static void print_string(Thread* current, outputStream* st, oop s) {
     st->print("%d: ", length);
   } else {
     ResourceMark rm(current);
-    int utf8_length = length;
+    size_t utf8_length = length;
     char* utf8_string;
 
     if (!is_latin1) {
@@ -697,7 +697,7 @@ static void print_string(Thread* current, outputStream* st, oop s) {
       utf8_string = UNICODE::as_utf8(bytes, utf8_length);
     }
 
-    st->print("%d: ", utf8_length);
+    st->print("%zu: ", utf8_length);
     HashtableTextDump::put_utf8(st, utf8_string, utf8_length);
   }
   st->cr();

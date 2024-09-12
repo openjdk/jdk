@@ -5741,11 +5741,23 @@ void Parker::unpark() {
   SetEvent(_ParkHandle);
 }
 
+// Platform Mutex/Monitor implementation
+
+PlatformMutex::PlatformMutex() {
+  InitializeCriticalSection(&_mutex);
+}
+
 PlatformMutex::~PlatformMutex() {
   DeleteCriticalSection(&_mutex);
 }
 
-// Platform Monitor implementation
+PlatformMonitor::PlatformMonitor() {
+  InitializeConditionVariable(&_cond);
+}
+
+PlatformMonitor::~PlatformMonitor() {
+  // There is no DeleteConditionVariable API
+}
 
 // Must already be locked
 int PlatformMonitor::wait(uint64_t millis) {

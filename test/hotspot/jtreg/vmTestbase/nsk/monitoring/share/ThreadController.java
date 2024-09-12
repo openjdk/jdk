@@ -665,7 +665,6 @@ class SleepingThread extends BaseThread {
         // jdk.internal.event.ThreadSleepEvent not accessible
         expectedMethods.add("jdk.internal.event.ThreadSleepEvent.<clinit>");
         expectedMethods.add("jdk.internal.event.ThreadSleepEvent.isEnabled");
-        expectedMethods.add("jdk.internal.event.ThreadSleepEvent.isTurnedOn");
         expectedMethods.add(SleepingThread.class.getName() + ".run");
 
         switch (controller.invocationType) {
