@@ -72,9 +72,9 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
   //      zeros = 0100
   //      ones  = 1001
   // zero_violation = 0100, i.e the second bit should be zero, but it is 1 in
-  // lo. Similarly, one_violation = 0001, i.e the forth bit should be one, but
-  // it is 0 in lo. These make lo not satisfy the bit constraints, which
-  // results in us having to find the smallest value that satisfies bits
+  // lo. Similarly, one_violation = 0001, i.e the LSB should be one, but it is
+  // 0 in lo. These make lo not satisfy the bit constraints, which results in
+  // us having to find the smallest value that satisfies bits
   U zero_violation = lo & bits._zeros;
   U one_violation = ~lo & bits._ones;
   if (zero_violation == one_violation) {
@@ -83,10 +83,10 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     return lo;
   }
 
-  // The principal here is that, consider the first bit in result that is
+  // The principle here is that, consider the first bit in result that is
   // different from the corresponding bit in lo, since result is larger than lo
-  // the bit must be unset in lo and set in result. As result should be the
-  // smallest value, the position of this bit should be as low as possible
+  // the bit must be 0 in lo and 1 in result. As result should be the smallest
+  // value, this bit should be the rightmost one possible.
   // E.g:      1 2 3 4 5 6
   //      lo = 1 0 0 1 1 0
   //       x = 1 0 1 0 1 0
@@ -113,8 +113,8 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     //           1 1 0 0 0 0 0 0
     // This value must satisfy zeros, because all bits before the 2nd bit have
     // already satisfied zeros, and all bits after the 2nd bit are all 0 now.
-    // Continue the logic with each set bit in ones, we will set each bit in
-    // our new lo (11000000 -> 11001000 -> 11001010). The final value is our
+    // Continue the logic with each 1 bit in ones, we will set each bit in our
+    // new lo (11000000 -> 11001000 -> 11001010). The final value is our
     // result.
     // Implementationwise, from 11000000 we can just | with ones to obtain the
     // final result.
@@ -134,9 +134,9 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
 
   // This is more difficult because trying to unset a bit requires us to flip
   // some bits before it (higher bits).
-  // Consider the first bit that is change, it must not be set already, and it
-  // must not be set in zeros. As a result, it must be the last bit before the
-  // first bit violation that is unset in both zeros and lo.
+  // Consider the first bit that is changed, it must not be 1 already, and it
+  // must not be 1 in zeros. As a result, it must be the last bit before the
+  // first bit violation that is 0 in both zeros and lo.
   // E.g:      1 2 3 4 5 6 7 8
   //      lo = 1 0 0 0 1 1 1 0
   //   zeros = 0 0 0 1 0 1 0 0
