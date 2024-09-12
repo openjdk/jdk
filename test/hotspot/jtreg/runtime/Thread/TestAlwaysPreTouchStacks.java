@@ -167,18 +167,15 @@ public class TestAlwaysPreTouchStacks {
           ReservedCommitted pretouch_result = runPreTouchTest(true);
           ReservedCommitted no_pretouch_result = runPreTouchTest(false);
           if (pretouch_result.reserved == 0 || no_pretouch_result.reserved == 0) {
-            output.reportDiagnosticSummary();
             throw new RuntimeException("Could not run with PreTouch flag.");
           }
           double ratio_with = ((double)pretouch_result.committed) / pretouch_result.reserved;
           double ratio_without = ((double)no_pretouch_result.committed) / no_pretouch_result.reserved;
           System.out.println("ratio with PreTouch: " + ratio_with + " w/out: " + ratio_without);
           if (ratio_without > 0.50) {
-            output.reportDiagnosticSummary();
             throw new RuntimeException("Expected a lower ratio between stack committed and reserved.");
           }
           if (ratio_with < ratio_without) {
-            output.reportDiagnosticSummary();
             throw new RuntimeException("Expected a higher ratio between stack committed and reserved.");
           }
       }
