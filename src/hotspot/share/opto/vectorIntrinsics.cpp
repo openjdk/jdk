@@ -758,7 +758,6 @@ bool LibraryCallKit::inline_vector_shuffle_to_vector() {
 }
 
 // public static
-// public static
 // <E,
 //  SH extends VectorShuffle<E>>
 // SH shuffleWrapIndexes(Class<E> eClass, Class<? extends SH> shClass, SH sh, int length,
@@ -782,6 +781,7 @@ bool LibraryCallKit::inline_vector_shuffle_wrap_indexes() {
 
   int num_elem = vlen->get_con();
   if ((num_elem < 4) || !is_power_of_2(num_elem)) {
+    log_if_needed("  ** vlen < 4 or not power of two=%d", num_elem);
     return false;
   }
 
@@ -2103,6 +2103,13 @@ static address get_svml_address(int vop, int bits, BasicType bt, char* name_ptr,
   return addr;
 }
 
+//    public static
+//    <V extends Vector<E>,
+//     M  extends VectorMask<E>,
+//     E>
+//    V selectFromOp(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
+//                   int length, V v1, V v2, M m,
+//                   VectorSelectFromOp<V, M> defaultImpl)
 bool LibraryCallKit::inline_vector_select_from() {
   const TypeInstPtr* vector_klass  = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* mask_klass    = gvn().type(argument(1))->isa_instptr();
@@ -2133,6 +2140,10 @@ bool LibraryCallKit::inline_vector_select_from() {
   BasicType elem_bt = elem_type->basic_type();
 
   int num_elem = vlen->get_con();
+  if ((num_elem < 4) || !is_power_of_2(num_elem)) {
+    log_if_needed("  ** vlen < 4 or not power of two=%d", num_elem);
+    return false;
+  }
 
   int cast_vopc = VectorCastNode::opcode(-1, elem_bt); // from vector of type elem_bt
   if (!arch_supports_vector(Op_VectorLoadShuffle, num_elem, elem_bt, VecMaskNotUsed)||
@@ -2151,6 +2162,7 @@ bool LibraryCallKit::inline_vector_select_from() {
        mask_klass->const_oop() == nullptr ||
        !is_klass_initialized(mask_klass))) {
     log_if_needed("  ** mask_klass argument not initialized");
+    return false; // not supported
   }
   VectorMaskUseType checkFlags = (VectorMaskUseType)(is_masked_op ? (VecMaskUseLoad | VecMaskUsePred) : VecMaskNotUsed);
   if (!arch_supports_vector(Op_VectorRearrange, num_elem, elem_bt, checkFlags)) {
@@ -2159,19 +2171,17 @@ bool LibraryCallKit::inline_vector_select_from() {
        (!arch_supports_vector(Op_VectorRearrange, num_elem, elem_bt, VecMaskNotUsed) ||
         !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)     ||
         !arch_supports_vector(Op_Replicate, num_elem, elem_bt, VecMaskNotUsed))) {
-      log_if_needed("  ** not supported: arity=2 op=selectFrom vlen=%d etype=%s ismask=no",
-                      num_elem, type2name(elem_bt));
+      log_if_needed("  ** not supported: op=selectFrom vlen=%d etype=%s is_masked_op=%d",
+                      num_elem, type2name(elem_bt), is_masked_op);
       return false; // not supported
     }
   }
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
 
-  //ciKlass* shbox_klass = shuffle_klass->const_oop()->as_instance()->java_lang_Class_klass();
-  //const TypeInstPtr* shbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, shbox_klass);
-
-//  Node* shuffle = unbox_vector(argument(6), shbox_type, shuffle_bt, num_elem);
+  // v1 is the index vector
   Node* v1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+  // v2 is the vector being rearranged
   Node* v2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
 
   if (v1 == nullptr || v2 == nullptr) {
@@ -2184,42 +2194,53 @@ bool LibraryCallKit::inline_vector_select_from() {
     const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
     mask = unbox_vector(argument(6), mbox_type, elem_bt, num_elem);
     if (mask == nullptr) {
-      log_if_needed("  ** not supported: arity=3 op=shuffle/rearrange vlen=%d etype=%s ismask=useload is_masked_op=1",
+      log_if_needed("  ** not supported: op=selectFrom vlen=%d etype=%s is_masked_op=1",
                       num_elem, type2name(elem_bt));
       return false;
     }
   }
 
-  // cast element type to byte type
+  // cast index vector from elem_bt vector to byte vector
   const Type * byte_bt = Type::get_const_basic_type(T_BYTE);
   const TypeVect * byte_vt  = TypeVect::make(byte_bt, num_elem);
-
   Node* byte_shuffle = gvn().transform(VectorCastNode::make(cast_vopc, v1, T_BYTE, num_elem));
 
+  // wrap the byte vector lanes to (num_elem - 1) to form the shuffle vector where num_elem is vector length
+  // this is a simple AND operation as we come here only for power of two vector length
   Node* mod_val = gvn().makecon(TypeInt::make(num_elem-1));
   Node* bcast_mod  = gvn().transform(VectorNode::scalar2vector(mod_val, num_elem, byte_bt));
   byte_shuffle = gvn().transform(VectorNode::make(Op_AndV, byte_shuffle, bcast_mod, byte_vt));
 
+  // load the shuffle to use in rearrange
   const TypeVect * shuffle_vt  = TypeVect::make(elem_bt, num_elem);
   Node* load_shuffle = gvn().transform(new VectorLoadShuffleNode(byte_shuffle, shuffle_vt));
 
+  // and finally rearrange
   Node* rearrange = new VectorRearrangeNode(v2, load_shuffle);
   if (is_masked_op) {
     if (use_predicate) {
+      // masked rearrange is supported so use that directly
       rearrange->add_req(mask);
       rearrange->add_flag(Node::Flag_is_predicated_vector);
     } else {
+      // masked rearrange is not supported so emulate usig blend
       const TypeVect* vt = v1->bottom_type()->is_vect();
       rearrange = gvn().transform(rearrange);
+
+      // create a zero vector with each lane element set as zero
       Node* zero = gvn().makecon(Type::get_zero_type(elem_bt));
       Node* zerovec = gvn().transform(VectorNode::scalar2vector(zero, num_elem, Type::get_const_basic_type(elem_bt)));
+
+      // For each lane for which mask is set, blend in the rearranged lane into zero vector
       rearrange = new VectorBlendNode(zerovec, rearrange, mask);
     }
   }
   rearrange = gvn().transform(rearrange);
 
+  // box the result
   Node* box = box_vector(rearrange, vbox_type, elem_bt, num_elem);
   set_result(box);
+
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;
 }
