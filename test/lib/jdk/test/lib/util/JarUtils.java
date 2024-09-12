@@ -324,11 +324,14 @@ public final class JarUtils {
      * Remove entries from a ZIP file.
      *
      * Each entry can be a name or a name ending with "*".
+     *
+     * @return number of removed entries
+     * @throws IOException if there is any I/O error
      */
-    public static void deleteEntries(Path jarfile, String... patterns)
-            throws IOException
-    {
+    public static int deleteEntries(Path jarfile, String... patterns)
+            throws IOException {
         Path tmpfile = Files.createTempFile("jar", "jar");
+        int count = 0;
 
         try (OutputStream out = Files.newOutputStream(tmpfile);
              JarOutputStream jos = new JarOutputStream(out)) {
@@ -341,14 +344,21 @@ public final class JarUtils {
                         if (pattern.endsWith("*")) {
                             if (name.startsWith(pattern.substring(
                                     0, pattern.length() - 1))) {
+                                // Go directly to next entry. This
+                                // one is not written into `jos` and
+                                // therefore removed.
+                                count++;
                                 continue top;
                             }
                         } else {
                             if (name.equals(pattern)) {
+                                // Same as above
+                                count++;
                                 continue top;
                             }
                         }
                     }
+                    // No pattern matched, file retained
                     jos.putNextEntry(copyEntry(jentry));
                     jf.getInputStream(jentry).transferTo(jos);
                 }
@@ -357,6 +367,8 @@ public final class JarUtils {
 
         // replace the original JAR file
         Files.move(tmpfile, jarfile, StandardCopyOption.REPLACE_EXISTING);
+
+        return count;
     }
 
     private static void updateEntry(JarOutputStream jos, String name, Object content)

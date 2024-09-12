@@ -35,6 +35,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class RemovedFiles {
+
+    private static final String NONEXISTENT_ENTRIES_FOUND
+            = "Nonexistent signed entries detected. See details in -verbose output.";
+
     public static void main(String[] args) throws Exception {
         JarUtils.createJarFile(
                 Path.of("a.jar"),
@@ -46,19 +50,19 @@ public class RemovedFiles {
 
         // All is fine at the beginning.
         SecurityTools.jarsigner("-verify a.jar")
-                .shouldNotContain("Nonexistent signed entries detected. See details in -verbose output.");
+                .shouldNotContain(NONEXISTENT_ENTRIES_FOUND);
 
         // Remove an entry after signing. There will be a warning.
         JarUtils.deleteEntries(Path.of("a.jar"), "a");
         SecurityTools.jarsigner("-verify a.jar")
-                .shouldContain("Nonexistent signed entries detected. See details in -verbose output.");
+                .shouldContain(NONEXISTENT_ENTRIES_FOUND);
         SecurityTools.jarsigner("-verify -verbose a.jar")
-                .shouldContain("Nonexistent signed entries detected. See details in -verbose output.")
+                .shouldContain(NONEXISTENT_ENTRIES_FOUND)
                 .shouldContain("Warning: nonexistent signed entries: [a]");
 
         // Re-sign will not clear the warning.
         SecurityTools.jarsigner("-storepass changeit -keystore ks a.jar x");
         SecurityTools.jarsigner("-verify a.jar")
-                .shouldContain("Nonexistent signed entries detected. See details in -verbose output.");
+                .shouldContain(NONEXISTENT_ENTRIES_FOUND);
     }
 }

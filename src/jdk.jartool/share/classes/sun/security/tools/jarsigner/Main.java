@@ -1327,7 +1327,6 @@ public class Main {
         if (hasNonexistentEntries) {
             warnings.add(rb.getString("nonexistent.entries.found"));
         }
-
         if (externalFileAttributesDetected) {
             warnings.add(rb.getString("external.file.attributes.detected"));
         }
