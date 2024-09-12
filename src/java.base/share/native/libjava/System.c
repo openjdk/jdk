@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,7 @@ Java_jdk_internal_util_SystemProps_00024Raw_platformProperties(JNIEnv *env, jcla
 
     // Get the platform specific values
     sprops = GetJavaProperties(env);
+    JNU_CHECK_EXCEPTION_RETURN(env, NULL); // Checks working directory
     CHECK_NULL_RETURN(sprops, NULL);
 
     /*
