@@ -64,7 +64,7 @@ import sun.java2d.cmm.ProfileDeferralInfo;
  * A representation of color profile data for device independent and device
  * dependent color spaces based on the International Color Consortium
  * Specification ICC.1:2001-12, File Format for Color Profiles, (see
- * <a href="http://www.color.org"> http://www.color.org</a>).
+ * <a href="https://www.color.org"> https://www.color.org</a>).
  * <p>
  * An {@code ICC_ColorSpace} object can be constructed from an appropriate
  * {@code ICC_Profile}. Typically, an {@code ICC_ColorSpace} would be associated
