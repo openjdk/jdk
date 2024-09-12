@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 8186211
  * @summary Tests various ldc, ldc_w, ldc2_w instructions of CONSTANT_Dynamic.
- * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @compile CondyUseLDC_W.jasm
@@ -42,7 +41,7 @@ public class CondyLDCTest {
     public static void main(String args[]) throws Throwable {
         // 1. Test a ldc_w instruction can be used with condy's which generate
         //    loadable constants of the following types: byte, char, short, float, integer, boolean.
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xverify:all",
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-Xverify:all",
                                                                              "CondyUseLDC_W");
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
         oa.shouldNotContain("VerifyError");
@@ -50,7 +49,7 @@ public class CondyLDCTest {
 
         // 2. Test ldc2_w of a condy which returns a dynamically generated
         //    float constant, generates a VerifyError.
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xverify:all",
+        pb = ProcessTools.createTestJavaProcessBuilder("-Xverify:all",
                                                               "CondyBadLDC2_W");
         oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("java.lang.VerifyError: Illegal type at constant pool entry");
@@ -59,7 +58,7 @@ public class CondyLDCTest {
 
         // 3. Test a ldc of a condy which returns a dynamically generated
         //    double constant, generates a VerifyError.
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xverify:all",
+        pb = ProcessTools.createTestJavaProcessBuilder("-Xverify:all",
                                                               "CondyBadLDC");
         oa = new OutputAnalyzer(pb.start());
         oa.shouldContain("java.lang.VerifyError: Illegal type at constant pool entry");

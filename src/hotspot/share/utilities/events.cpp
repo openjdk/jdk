@@ -151,7 +151,9 @@ void UnloadingEventLog::log(Thread* thread, InstanceKlass* ik) {
   ik->name()->print_value_on(&st);
 }
 
-void ExceptionsEventLog::log(Thread* thread, Handle h_exception, const char* message, const char* file, int line) {
+void ExceptionsEventLog::log(Thread* thread, Handle h_exception,
+                             const char* message, const char* file, int line,
+                             int message_length_limit) {
   if (!should_log()) return;
 
   double timestamp = fetch_timestamp();
@@ -163,8 +165,11 @@ void ExceptionsEventLog::log(Thread* thread, Handle h_exception, const char* mes
                   _records[index].data.size());
   st.print("Exception <");
   h_exception->print_value_on(&st);
-  st.print("%s%s> (" PTR_FORMAT ") \n"
+  if (message != nullptr) {
+    int len = message_length_limit > 0 ? message_length_limit : (int)strlen(message);
+    st.print(": %.*s", len, message);
+  }
+  st.print("> (" PTR_FORMAT ") \n"
            "thrown [%s, line %d]",
-           message ? ": " : "", message ? message : "",
            p2i(h_exception()), file, line);
 }

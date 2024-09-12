@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -222,8 +222,6 @@ StubFrame::~StubFrame() {
 // Implementation of Runtime1
 
 #define __ sasm->
-
-const int float_regs_as_doubles_size_in_slots = pd_nof_fpu_regs_frame_map * 2;
 
 // Stack layout for saving/restoring  all the registers needed during a runtime
 // call (this includes deoptimization)
@@ -799,8 +797,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Label register_finalizer;
         Register t = x15;
         __ load_klass(t, x10);
-        __ lwu(t, Address(t, Klass::access_flags_offset()));
-        __ test_bit(t0, t, exact_log2(JVM_ACC_HAS_FINALIZER));
+        __ lbu(t, Address(t, Klass::misc_flags_offset()));
+        __ test_bit(t0, t, exact_log2(KlassFlags::_misc_has_finalizer));
         __ bnez(t0, register_finalizer);
         __ ret();
 
