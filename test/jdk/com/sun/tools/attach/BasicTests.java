@@ -23,6 +23,8 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.List;
@@ -213,7 +215,8 @@ public class BasicTests {
 
             System.out.println(" - Test: End-to-end connection with agent");
 
-            ServerSocket ss = new ServerSocket(0);
+            ServerSocket ss = new ServerSocket();
+            ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             int port = ss.getLocalPort();
 
             System.out.println(" - Loading Agent.jar into target VM ...");
@@ -231,7 +234,8 @@ public class BasicTests {
 
             System.out.println(" - Test: End-to-end connection with RedefineAgent");
 
-            ServerSocket ss2 = new ServerSocket(0);
+            ServerSocket ss2 = new ServerSocket();
+            ss2.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
             int port2 = ss2.getLocalPort();
 
             System.out.println(" - Loading RedefineAgent.jar into target VM ...");

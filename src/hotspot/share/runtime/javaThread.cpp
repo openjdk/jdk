@@ -409,9 +409,9 @@ void JavaThread::check_for_valid_safepoint_state() {
 
 // A JavaThread is a normal Java thread
 
-JavaThread::JavaThread() :
+JavaThread::JavaThread(MEMFLAGS flags) :
+  Thread(flags),
   // Initialize fields
-
   _on_thread_list(false),
   DEBUG_ONLY(_java_call_counter(0) COMMA)
   _entry_point(nullptr),
@@ -470,8 +470,8 @@ JavaThread::JavaThread() :
 #endif // INCLUDE_JVMCI
 
   _exception_oop(oop()),
-  _exception_pc(0),
-  _exception_handler_pc(0),
+  _exception_pc(nullptr),
+  _exception_handler_pc(nullptr),
   _is_method_handle_return(0),
 
   _jni_active_critical(0),
@@ -483,7 +483,7 @@ JavaThread::JavaThread() :
   _frames_to_pop_failed_realloc(0),
 
   _cont_entry(nullptr),
-  _cont_fastpath(0),
+  _cont_fastpath(nullptr),
   _cont_fastpath_thread_state(1),
   _held_monitor_count(0),
   _jni_monitor_count(0),
@@ -504,7 +504,8 @@ JavaThread::JavaThread() :
 
   _SleepEvent(ParkEvent::Allocate(this)),
 
-  _lock_stack(this) {
+  _lock_stack(this),
+  _om_cache(this) {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
@@ -525,12 +526,11 @@ JavaThread::JavaThread() :
   assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");
 }
 
-JavaThread::JavaThread(bool is_attaching_via_jni) : JavaThread() {
-  if (is_attaching_via_jni) {
-    _jni_attach_state = _attaching_via_jni;
-  }
+JavaThread* JavaThread::create_attaching_thread() {
+  JavaThread* jt = new JavaThread();
+  jt->_jni_attach_state = _attaching_via_jni;
+  return jt;
 }
-
 
 // interrupt support
 
@@ -634,8 +634,7 @@ void JavaThread::block_if_vm_exited() {
   }
 }
 
-JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) : JavaThread() {
-  _jni_attach_state = _not_attaching_via_jni;
+JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz, MEMFLAGS flags) : JavaThread(flags) {
   set_entry_point(entry_point);
   // Create the native thread itself.
   // %note runtime_23
@@ -804,6 +803,8 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   elapsedTimer _timer_exit_phase2;
   elapsedTimer _timer_exit_phase3;
   elapsedTimer _timer_exit_phase4;
+
+  om_clear_monitor_cache();
 
   if (log_is_enabled(Debug, os, thread, timer)) {
     _timer_exit_phase1.start();
@@ -1860,6 +1861,9 @@ JvmtiThreadState* JavaThread::rebind_to_jvmti_thread_state_of(oop thread_oop) {
   // bind new JvmtiThreadState to JavaThread
   JvmtiThreadState::bind_to(java_lang_Thread::jvmti_thread_state(thread_oop), this);
 
+  // enable interp_only_mode for virtual or carrier thread if it has pending bit
+  JvmtiThreadState::process_pending_interp_only(this);
+
   return jvmti_thread_state();
 }
 #endif
@@ -1902,7 +1906,7 @@ void JavaThread::trace_frames() {
   int frame_no = 1;
   for (StackFrameStream fst(this, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
     tty->print("  %d. ", frame_no++);
-    fst.current()->print_value_on(tty, this);
+    fst.current()->print_value_on(tty);
     tty->cr();
   }
 }

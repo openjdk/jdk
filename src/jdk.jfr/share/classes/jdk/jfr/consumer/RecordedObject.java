@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,6 +154,9 @@ public sealed class RecordedObject
 
     private static final record UnsignedValue(Object value) {
     }
+    static final Integer INTEGER_MINUS_ONE = Integer.valueOf(-1);
+    static final Integer INTEGER_ZERO = Integer.valueOf(0);
+    static final Long LONG_MINUS_ONE = Long.valueOf(-1L);
 
     final Object[] objects;
     final ObjectContext objectContext;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,7 +420,12 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
 void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) {
   __ block_comment("save_live_registers");
 
-  __ pusha();         // integer registers
+  // Push CPU state in multiple of 16 bytes
+#ifdef _LP64
+  __ save_legacy_gprs();
+#else
+  __ pusha();
+#endif
 
   // assert(float_regs_as_doubles_off % 2 == 0, "misaligned offset");
   // assert(xmm_regs_as_doubles_off % 2 == 0, "misaligned offset");
@@ -560,7 +565,12 @@ void C1_MacroAssembler::restore_live_registers(bool restore_fpu_registers) {
   __ block_comment("restore_live_registers");
 
   restore_fpu(this, restore_fpu_registers);
+#ifdef _LP64
+  __ restore_legacy_gprs();
+#else
   __ popa();
+#endif
+
 }
 
 
@@ -1156,8 +1166,7 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         Label register_finalizer;
         Register t = rsi;
         __ load_klass(t, rax, rscratch1);
-        __ movl(t, Address(t, Klass::access_flags_offset()));
-        __ testl(t, JVM_ACC_HAS_FINALIZER);
+        __ testb(Address(t, Klass::misc_flags_offset()), KlassFlags::_misc_has_finalizer);
         __ jcc(Assembler::notZero, register_finalizer);
         __ ret(0);
 

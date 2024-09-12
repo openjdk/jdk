@@ -378,6 +378,26 @@ public class IRNode {
         beforeMatchingNameRegex(CAST_LL, "CastLL");
     }
 
+    public static final String CBNZW_HI = PREFIX + "CBNZW_HI" + POSTFIX;
+    static {
+        optoOnly(CBNZW_HI, "cbwhi");
+    }
+
+    public static final String CBZW_LS = PREFIX + "CBZW_LS" + POSTFIX;
+    static {
+        optoOnly(CBZW_LS, "cbwls");
+    }
+
+    public static final String CBZ_LS = PREFIX + "CBZ_LS" + POSTFIX;
+    static {
+        optoOnly(CBZ_LS, "cbls");
+    }
+
+    public static final String CBZ_HI = PREFIX + "CBZ_HI" + POSTFIX;
+    static {
+        optoOnly(CBZ_HI, "cbhi");
+    }
+
     public static final String CHECKCAST_ARRAY = PREFIX + "CHECKCAST_ARRAY" + POSTFIX;
     static {
         String regex = "(((?i:cmp|CLFI|CLR).*precise \\[.*:|.*(?i:mov|mv|or).*precise \\[.*:.*\\R.*(cmp|CMP|CLR))" + END;
@@ -419,7 +439,7 @@ public class IRNode {
 
     public static final String CMP_U = PREFIX + "CMP_U" + POSTFIX;
     static {
-        beforeMatchingNameRegex(CMP_U, "CmpU");
+        beforeMatchingNameRegex(CMP_U, "CmpU\\b");
     }
 
     public static final String CMP_U3 = PREFIX + "CMP_U3" + POSTFIX;
@@ -2211,6 +2231,21 @@ public class IRNode {
     public static final String X86_TESTL_REG = PREFIX + "X86_TESTL_REG" + POSTFIX;
     static {
         machOnlyNameRegex(X86_TESTL_REG, "testL_reg");
+    }
+
+    public static final String X86_CMOVEL_IMM01 = PREFIX + "X86_CMOVEL_IMM01" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_CMOVEL_IMM01, "cmovL_imm_01");
+    }
+
+    public static final String X86_CMOVEL_IMM01U = PREFIX + "X86_CMOVEL_IMM01U" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_CMOVEL_IMM01U, "cmovL_imm_01U");
+    }
+
+    public static final String X86_CMOVEL_IMM01UCF = PREFIX + "X86_CMOVEL_IMM01UCF" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_CMOVEL_IMM01UCF, "cmovL_imm_01UCF");
     }
 
     /*

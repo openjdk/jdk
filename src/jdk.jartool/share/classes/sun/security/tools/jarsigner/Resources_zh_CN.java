@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"key.bit.disabled", "%d \u4F4D\u5BC6\u94A5\uFF08\u7981\u7528\uFF09"},
         {"key.bit.eccurve.disabled", "%1$d \u4F4D %2$s \u5BC6\u94A5\uFF08\u7981\u7528\uFF09"},
         {"unknown.size", "\u672A\u77E5\u5927\u5C0F"},
-        {"extra.attributes.detected", "\u68C0\u6D4B\u5230 POSIX \u6587\u4EF6\u6743\u9650\u548C/\u6216 symlink \u5C5E\u6027\u3002\u8FD9\u4E9B\u5C5E\u6027\u5728\u8FDB\u884C\u7B7E\u540D\u65F6\u4F1A\u88AB\u5FFD\u7565\uFF0C\u4E0D\u53D7\u8BE5\u7B7E\u540D\u7684\u4FDD\u62A4\u3002"},
+        {"external.file.attributes.detected", "\u68C0\u6D4B\u5230 POSIX \u6587\u4EF6\u6743\u9650\u548C/\u6216 symlink \u5C5E\u6027\u3002\u8FD9\u4E9B\u5C5E\u6027\u5728\u8FDB\u884C\u7B7E\u540D\u65F6\u4F1A\u88AB\u5FFD\u7565\uFF0C\u4E0D\u53D7\u8BE5\u7B7E\u540D\u7684\u4FDD\u62A4\u3002"},
 
         {"jarsigner.", "jarsigner: "},
         {"signature.filename.must.consist.of.the.following.characters.A.Z.0.9.or.",

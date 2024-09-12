@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,15 +29,12 @@ import java.util.List;
 import java.util.Optional;
 
 import java.lang.classfile.Annotation;
-import java.lang.classfile.AnnotationElement;
 import java.lang.classfile.AnnotationValue;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributeMapper;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.Label;
 import java.lang.classfile.TypeAnnotation;
 import java.lang.classfile.attribute.AnnotationDefaultAttribute;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
@@ -93,9 +90,11 @@ import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.PackageEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 
+import jdk.internal.access.SharedSecrets;
+
 public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         extends AbstractElement
-        implements Attribute<T> {
+        implements Attribute<T>, Util.Writable {
     protected final AttributeMapper<T> mapper;
 
     public UnboundAttribute(AttributeMapper<T> mapper) {
@@ -114,7 +113,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
     @Override
     @SuppressWarnings("unchecked")
-    public void writeTo(BufWriter buf) {
+    public void writeTo(BufWriterImpl buf) {
         mapper.writeAttribute(buf, (T) this);
     }
 
@@ -628,7 +627,13 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundRuntimeInvisibleParameterAnnotationsAttribute(List<List<Annotation>> elements) {
             super(Attributes.runtimeInvisibleParameterAnnotations());
-            this.elements = List.copyOf(elements);
+            // deep copy
+            var array = elements.toArray().clone();
+            for (int i = 0; i < array.length; i++) {
+                array[i] = List.copyOf((List<?>) array[i]);
+            }
+
+            this.elements = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
         }
 
         @Override
@@ -751,75 +756,10 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
     public record UnboundTypeAnnotation(TargetInfo targetInfo,
                                         List<TypePathComponent> targetPath,
-                                        Utf8Entry className,
-                                        List<AnnotationElement> elements) implements TypeAnnotation {
+                                        Annotation annotation) implements TypeAnnotation {
 
-        public UnboundTypeAnnotation(TargetInfo targetInfo, List<TypePathComponent> targetPath,
-                                     Utf8Entry className, List<AnnotationElement> elements) {
-            this.targetInfo = targetInfo;
-            this.targetPath = List.copyOf(targetPath);
-            this.className = className;
-            this.elements = List.copyOf(elements);
-        }
-
-        private int labelToBci(LabelContext lr, Label label) {
-            //helper method to avoid NPE
-            if (lr == null) throw new IllegalArgumentException("Illegal targetType '%s' in TypeAnnotation outside of Code attribute".formatted(targetInfo.targetType()));
-            return lr.labelToBci(label);
-        }
-
-        @Override
-        public void writeTo(BufWriter buf) {
-            LabelContext lr = ((BufWriterImpl) buf).labelContext();
-            // target_type
-            buf.writeU1(targetInfo.targetType().targetTypeValue());
-
-            // target_info
-            switch (targetInfo) {
-                case TypeParameterTarget tpt -> buf.writeU1(tpt.typeParameterIndex());
-                case SupertypeTarget st -> buf.writeU2(st.supertypeIndex());
-                case TypeParameterBoundTarget tpbt -> {
-                    buf.writeU1(tpbt.typeParameterIndex());
-                    buf.writeU1(tpbt.boundIndex());
-                }
-                case EmptyTarget et -> {
-                    // nothing to write
-                }
-                case FormalParameterTarget fpt -> buf.writeU1(fpt.formalParameterIndex());
-                case ThrowsTarget tt -> buf.writeU2(tt.throwsTargetIndex());
-                case LocalVarTarget lvt -> {
-                    buf.writeU2(lvt.table().size());
-                    for (var e : lvt.table()) {
-                        int startPc = labelToBci(lr, e.startLabel());
-                        buf.writeU2(startPc);
-                        buf.writeU2(labelToBci(lr, e.endLabel()) - startPc);
-                        buf.writeU2(e.index());
-                    }
-                }
-                case CatchTarget ct -> buf.writeU2(ct.exceptionTableIndex());
-                case OffsetTarget ot -> buf.writeU2(labelToBci(lr, ot.target()));
-                case TypeArgumentTarget tat -> {
-                    buf.writeU2(labelToBci(lr, tat.target()));
-                    buf.writeU1(tat.typeArgumentIndex());
-                }
-            }
-
-            // target_path
-            buf.writeU1(targetPath().size());
-            for (TypePathComponent component : targetPath()) {
-                buf.writeU1(component.typePathKind().tag());
-                buf.writeU1(component.typeArgumentIndex());
-            }
-
-            // type_index
-            buf.writeIndex(className);
-
-            // element_value_pairs
-            buf.writeU2(elements.size());
-            for (AnnotationElement pair : elements()) {
-                buf.writeIndex(pair.name());
-                pair.value().writeTo(buf);
-            }
+        public UnboundTypeAnnotation {
+            targetPath = List.copyOf(targetPath);
         }
     }
 
@@ -904,16 +844,15 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             super(mapper);
         }
 
-        public abstract void writeBody(BufWriter b);
+        public abstract void writeBody(BufWriterImpl b);
 
         @Override
-        public void writeTo(BufWriter b) {
+        public void writeTo(BufWriterImpl b) {
             b.writeIndex(b.constantPool().utf8Entry(mapper.name()));
-            b.writeInt(0);
-            int start = b.size();
+            int lengthIndex = b.skip(4);
             writeBody(b);
-            int written = b.size() - start;
-            b.patchInt(start - 4, 4, written);
+            int written = b.size() - lengthIndex - 4;
+            b.patchInt(lengthIndex, written);
         }
     }
 

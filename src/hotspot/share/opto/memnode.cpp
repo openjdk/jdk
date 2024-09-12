@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,23 +428,31 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
 // Used by MemNode::find_previous_store to prove that the
 // control input of a memory operation predates (dominates)
 // an allocation it wants to look past.
-bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
-  if (dom == nullptr || dom->is_top() || sub == nullptr || sub->is_top())
-    return false; // Conservative answer for dead code
+// Returns 'DomResult::Dominate' if all control inputs of 'dom'
+// dominate 'sub', 'DomResult::NotDominate' if not,
+// and 'DomResult::EncounteredDeadCode' if we can't decide due to
+// dead code, but at the end of IGVN, we know the definite result
+// once the dead code is cleaned up.
+Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub) {
+  if (dom == nullptr || dom->is_top() || sub == nullptr || sub->is_top()) {
+    return DomResult::EncounteredDeadCode; // Conservative answer for dead code
+  }
 
   // Check 'dom'. Skip Proj and CatchProj nodes.
   dom = dom->find_exact_control(dom);
-  if (dom == nullptr || dom->is_top())
-    return false; // Conservative answer for dead code
+  if (dom == nullptr || dom->is_top()) {
+    return DomResult::EncounteredDeadCode; // Conservative answer for dead code
+  }
 
   if (dom == sub) {
     // For the case when, for example, 'sub' is Initialize and the original
     // 'dom' is Proj node of the 'sub'.
-    return false;
+    return DomResult::NotDominate;
   }
 
-  if (dom->is_Con() || dom->is_Start() || dom->is_Root() || dom == sub)
-    return true;
+  if (dom->is_Con() || dom->is_Start() || dom->is_Root() || dom == sub) {
+    return DomResult::Dominate;
+  }
 
   // 'dom' dominates 'sub' if its control edge and control edges
   // of all its inputs dominate or equal to sub's control edge.
@@ -457,16 +466,19 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
   // Get control edge of 'sub'.
   Node* orig_sub = sub;
   sub = sub->find_exact_control(sub->in(0));
-  if (sub == nullptr || sub->is_top())
-    return false; // Conservative answer for dead code
+  if (sub == nullptr || sub->is_top()) {
+    return DomResult::EncounteredDeadCode; // Conservative answer for dead code
+  }
 
   assert(sub->is_CFG(), "expecting control");
 
-  if (sub == dom)
-    return true;
+  if (sub == dom) {
+    return DomResult::Dominate;
+  }
 
-  if (sub->is_Start() || sub->is_Root())
-    return false;
+  if (sub->is_Start() || sub->is_Root()) {
+    return DomResult::NotDominate;
+  }
 
   {
     // Check all control edges of 'dom'.
@@ -480,41 +492,47 @@ bool MemNode::all_controls_dominate(Node* dom, Node* sub) {
 
     for (uint next = 0; next < dom_list.size(); next++) {
       Node* n = dom_list.at(next);
-      if (n == orig_sub)
-        return false; // One of dom's inputs dominated by sub.
+      if (n == orig_sub) {
+        return DomResult::NotDominate; // One of dom's inputs dominated by sub.
+      }
       if (!n->is_CFG() && n->pinned()) {
         // Check only own control edge for pinned non-control nodes.
         n = n->find_exact_control(n->in(0));
-        if (n == nullptr || n->is_top())
-          return false; // Conservative answer for dead code
+        if (n == nullptr || n->is_top()) {
+          return DomResult::EncounteredDeadCode; // Conservative answer for dead code
+        }
         assert(n->is_CFG(), "expecting control");
         dom_list.push(n);
       } else if (n->is_Con() || n->is_Start() || n->is_Root()) {
         only_dominating_controls = true;
       } else if (n->is_CFG()) {
-        if (n->dominates(sub, nlist))
+        DomResult dom_result = n->dominates(sub, nlist);
+        if (dom_result == DomResult::Dominate) {
           only_dominating_controls = true;
-        else
-          return false;
+        } else {
+          return dom_result;
+        }
       } else {
         // First, own control edge.
         Node* m = n->find_exact_control(n->in(0));
         if (m != nullptr) {
-          if (m->is_top())
-            return false; // Conservative answer for dead code
+          if (m->is_top()) {
+            return DomResult::EncounteredDeadCode; // Conservative answer for dead code
+          }
           dom_list.push(m);
         }
         // Now, the rest of edges.
         uint cnt = n->req();
         for (uint i = 1; i < cnt; i++) {
           m = n->find_exact_control(n->in(i));
-          if (m == nullptr || m->is_top())
+          if (m == nullptr || m->is_top()) {
             continue;
+          }
           dom_list.push(m);
         }
       }
     }
-    return only_dominating_controls;
+    return only_dominating_controls ? DomResult::Dominate : DomResult::NotDominate;
   }
 }
 
@@ -726,16 +744,18 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
     } else if (mem->is_Proj() && mem->in(0)->is_Initialize()) {
       InitializeNode* st_init = mem->in(0)->as_Initialize();
       AllocateNode*  st_alloc = st_init->allocation();
-      if (st_alloc == nullptr)
+      if (st_alloc == nullptr) {
         break;              // something degenerated
+      }
       bool known_identical = false;
       bool known_independent = false;
-      if (alloc == st_alloc)
+      if (alloc == st_alloc) {
         known_identical = true;
-      else if (alloc != nullptr)
+      } else if (alloc != nullptr) {
         known_independent = true;
-      else if (all_controls_dominate(this, st_alloc))
+      } else if (all_controls_dominate(this, st_alloc)) {
         known_independent = true;
+      }
 
       if (known_independent) {
         // The bases are provably independent: Either they are
@@ -1566,8 +1586,9 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
   }
 
   if (!mem->is_Phi()) {
-    if (!MemNode::all_controls_dominate(mem, base->in(0)))
+    if (!MemNode::all_controls_dominate(mem, base->in(0))) {
       return false;
+    }
   } else if (base->in(0) != mem->in(0)) {
     if (!MemNode::all_controls_dominate(mem, base->in(0))) {
       return false;
@@ -1658,35 +1679,49 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
 
   // Select Region to split through.
   Node* region;
+  DomResult dom_result = DomResult::Dominate;
   if (!base_is_phi) {
     assert(mem->is_Phi(), "sanity");
     region = mem->in(0);
     // Skip if the region dominates some control edge of the address.
-    if (!MemNode::all_controls_dominate(address, region))
-      return nullptr;
+    // We will check `dom_result` later.
+    dom_result = MemNode::maybe_all_controls_dominate(address, region);
   } else if (!mem->is_Phi()) {
     assert(base_is_phi, "sanity");
     region = base->in(0);
     // Skip if the region dominates some control edge of the memory.
-    if (!MemNode::all_controls_dominate(mem, region))
-      return nullptr;
+    // We will check `dom_result` later.
+    dom_result = MemNode::maybe_all_controls_dominate(mem, region);
   } else if (base->in(0) != mem->in(0)) {
     assert(base_is_phi && mem->is_Phi(), "sanity");
-    if (MemNode::all_controls_dominate(mem, base->in(0))) {
+    dom_result = MemNode::maybe_all_controls_dominate(mem, base->in(0));
+    if (dom_result == DomResult::Dominate) {
       region = base->in(0);
-    } else if (MemNode::all_controls_dominate(address, mem->in(0))) {
-      region = mem->in(0);
     } else {
-      return nullptr; // complex graph
+      dom_result = MemNode::maybe_all_controls_dominate(address, mem->in(0));
+      if (dom_result == DomResult::Dominate) {
+        region = mem->in(0);
+      }
+      // Otherwise we encountered a complex graph.
     }
   } else {
     assert(base->in(0) == mem->in(0), "sanity");
     region = mem->in(0);
   }
 
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  if (dom_result != DomResult::Dominate) {
+    if (dom_result == DomResult::EncounteredDeadCode) {
+      // There is some dead code which eventually will be removed in IGVN.
+      // Once this is the case, we get an unambiguous dominance result.
+      // Push the node to the worklist again until the dead code is removed.
+      igvn->_worklist.push(this);
+    }
+    return nullptr;
+  }
+
   Node* phi = nullptr;
   const Type* this_type = this->bottom_type();
-  PhaseIterGVN* igvn = phase->is_IterGVN();
   if (t_oop != nullptr && (t_oop->is_known_instance_field() || load_boxed_values)) {
     int this_index = C->get_alias_index(t_oop);
     int this_offset = t_oop->offset();
@@ -1945,6 +1980,12 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
     // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
     assert(this->Opcode() == Op_LoadI, "must load an int from _access_flags");
     return TypeInt::make(klass->access_flags());
+  }
+  if (tkls->offset() == in_bytes(Klass::misc_flags_offset())) {
+    // The field is Klass::_misc_flags.  Return its (constant) value.
+    // (Folds up the 2nd indirection in Reflection.getClassAccessFlags(aClassConstant).)
+    assert(this->Opcode() == Op_LoadUB, "must load an unsigned byte from _misc_flags");
+    return TypeInt::make(klass->misc_flags());
   }
   if (tkls->offset() == in_bytes(Klass::layout_helper_offset())) {
     // The field is Klass::_layout_helper.  Return its constant value if known.
@@ -2723,13 +2764,13 @@ uint StoreNode::hash() const {
 //
 class ArrayPointer {
 private:
-  const bool _is_valid;          // The parsing succeeded
   const Node* _pointer;          // The final pointer to the position in the array
   const Node* _base;             // Base address of the array
   const jlong _constant_offset;  // Sum of collected constant offsets
   const Node* _int_offset;       // (optional) Offset behind LShiftL and ConvI2L
-  const jint  _int_offset_shift; // (optional) Shift value for int_offset
   const GrowableArray<Node*>* _other_offsets; // List of other AddP offsets
+  const jint _int_offset_shift; // (optional) Shift value for int_offset
+  const bool _is_valid;          // The parsing succeeded
 
   ArrayPointer(const bool is_valid,
                const Node* pointer,
@@ -2738,13 +2779,13 @@ private:
                const Node* int_offset,
                const jint int_offset_shift,
                const GrowableArray<Node*>* other_offsets) :
-      _is_valid(is_valid),
       _pointer(pointer),
       _base(base),
       _constant_offset(constant_offset),
       _int_offset(int_offset),
+      _other_offsets(other_offsets),
       _int_offset_shift(int_offset_shift),
-      _other_offsets(other_offsets)
+      _is_valid(is_valid)
   {
     assert(_pointer != nullptr, "must always have pointer");
     assert(is_valid == (_base != nullptr), "have base exactly if valid");
@@ -2862,7 +2903,7 @@ public:
                _pointer->_idx, _pointer->Name(),
                _base->_idx, _base->Name(),
                (long long)_constant_offset);
-    if (_int_offset != 0) {
+    if (_int_offset != nullptr) {
       tty->print(" + I2L[%d %s] << %d",
                  _int_offset->_idx, _int_offset->Name(), _int_offset_shift);
     }
@@ -2881,14 +2922,14 @@ public:
 //
 //   RangeCheck[i+0]           RangeCheck[i+0]
 //   StoreB[i+0]
-//   RangeCheck[i+1]           RangeCheck[i+1]
+//   RangeCheck[i+3]           RangeCheck[i+3]
 //   StoreB[i+1]         -->   pass:             fail:
 //   StoreB[i+2]               StoreI[i+0]       StoreB[i+0]
 //   StoreB[i+3]
 //
 // The 4 StoreB are merged into a single StoreI node. We have to be careful with RangeCheck[i+1]: before
 // the optimization, if this RangeCheck[i+1] fails, then we execute only StoreB[i+0], and then trap. After
-// the optimization, the new StoreI[i+0] is on the passing path of RangeCheck[i+1], and StoreB[i+0] on the
+// the optimization, the new StoreI[i+0] is on the passing path of RangeCheck[i+3], and StoreB[i+0] on the
 // failing path.
 //
 // Note: For normal array stores, every store at first has a RangeCheck. But they can be removed with:
@@ -2900,11 +2941,11 @@ public:
 //                              RangeCheck[i+0]                         RangeCheck[i+0] <- before first store
 //                              StoreB[i+0]                             StoreB[i+0]     <- first store
 //                              RangeCheck[i+1]     --> smeared -->     RangeCheck[i+3] <- only RC between first and last store
-//                              StoreB[i+0]                             StoreB[i+1]     <- second store
+//                              StoreB[i+1]                             StoreB[i+1]     <- second store
 //                              RangeCheck[i+2]     --> removed
-//                              StoreB[i+0]                             StoreB[i+2]
+//                              StoreB[i+2]                             StoreB[i+2]
 //                              RangeCheck[i+3]     --> removed
-//                              StoreB[i+0]                             StoreB[i+3]     <- last store
+//                              StoreB[i+3]                             StoreB[i+3]     <- last store
 //
 //                              Thus, it is a common pattern that between the first and last store in a chain
 //                              of adjacent stores there remains exactly one RangeCheck, located between the
@@ -2984,6 +3025,9 @@ StoreNode* MergePrimitiveArrayStores::run() {
       type2aelembytes(bt) != _store->memory_size()) {
     return nullptr;
   }
+  if (_store->is_unsafe_access()) {
+    return nullptr;
+  }
 
   // The _store must be the "last" store in a chain. If we find a use we could merge with
   // then that use or a store further down is the "last" store.
@@ -3017,11 +3061,13 @@ bool MergePrimitiveArrayStores::is_compatible_store(const StoreNode* other_store
   int opc = _store->Opcode();
   assert(opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI, "precondition");
   assert(_store->adr_type()->isa_aryptr() != nullptr, "must be array store");
+  assert(!_store->is_unsafe_access(), "no unsafe accesses");
 
   if (other_store == nullptr ||
       _store->Opcode() != other_store->Opcode() ||
       other_store->adr_type() == nullptr ||
-      other_store->adr_type()->isa_aryptr() == nullptr) {
+      other_store->adr_type()->isa_aryptr() == nullptr ||
+      other_store->is_unsafe_access()) {
     return false;
   }
 
@@ -3067,6 +3113,11 @@ bool MergePrimitiveArrayStores::is_adjacent_input_pair(const Node* n1, const Nod
   }
 
   // Pattern: [n1 = base >> shift, n2 = base >> (shift + memory_size)]
+#ifndef VM_LITTLE_ENDIAN
+  // Pattern: [n1 = base >> (shift + memory_size), n2 = base >> shift]
+  // Swapping n1 with n2 gives same pattern as on little endian platforms.
+  swap(n1, n2);
+#endif // !VM_LITTLE_ENDIAN
   Node const* base_n2;
   jint shift_n2;
   if (!is_con_RShift(n2, base_n2, shift_n2)) {
@@ -3281,8 +3332,13 @@ Node* MergePrimitiveArrayStores::make_merged_input_value(const Node_List& merge_
     jlong mask = (((jlong)1) << bits_per_store) - 1;
     for (uint i = 0; i < merge_list.size(); i++) {
       jlong con_i = merge_list.at(i)->in(MemNode::ValueIn)->get_int();
+#ifdef VM_LITTLE_ENDIAN
       con = con << bits_per_store;
       con = con | (mask & con_i);
+#else // VM_LITTLE_ENDIAN
+      con_i = (mask & con_i) << (i * bits_per_store);
+      con = con | con_i;
+#endif // VM_LITTLE_ENDIAN
     }
     merged_input_value = _phase->longcon(con);
   } else {
@@ -3290,16 +3346,22 @@ Node* MergePrimitiveArrayStores::make_merged_input_value(const Node_List& merge_
     //             |                                  |
     //           _store                             first
     //
-    merged_input_value = first->in(MemNode::ValueIn);
-    Node const* base_last;
-    jint shift_last;
-    bool is_true = is_con_RShift(_store->in(MemNode::ValueIn), base_last, shift_last);
+    Node* hi = _store->in(MemNode::ValueIn);
+    Node* lo = first->in(MemNode::ValueIn);
+#ifndef VM_LITTLE_ENDIAN
+    // `_store` and `first` are swapped in the diagram above
+    swap(hi, lo);
+#endif // !VM_LITTLE_ENDIAN
+    Node const* hi_base;
+    jint hi_shift;
+    merged_input_value = lo;
+    bool is_true = is_con_RShift(hi, hi_base, hi_shift);
     assert(is_true, "must detect con RShift");
-    if (merged_input_value != base_last && merged_input_value->Opcode() == Op_ConvL2I) {
+    if (merged_input_value != hi_base && merged_input_value->Opcode() == Op_ConvL2I) {
       // look through
       merged_input_value = merged_input_value->in(1);
     }
-    if (merged_input_value != base_last) {
+    if (merged_input_value != hi_base) {
       // merged_input_value is not the base
       return nullptr;
     }
@@ -3473,7 +3535,6 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-#ifdef VM_LITTLE_ENDIAN
   if (MergeStores && UseUnalignedAccesses) {
     if (phase->C->post_loop_opts_phase()) {
       MergePrimitiveArrayStores merge(phase, this);
@@ -3483,7 +3544,6 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->C->record_for_post_loop_opts_igvn(this);
     }
   }
-#endif
 
   return nullptr;                  // No further progress
 }
@@ -4552,8 +4612,9 @@ bool InitializeNode::detect_init_independence(Node* value, PhaseGVN* phase) {
       // must have preceded the init, or else be equal to the init.
       // Even after loop optimizations (which might change control edges)
       // a store is never pinned *before* the availability of its inputs.
-      if (!MemNode::all_controls_dominate(n, this))
+      if (!MemNode::all_controls_dominate(n, this)) {
         return false;                  // failed to prove a good control
+      }
     }
 
     // Check data edges for possible dependencies on 'this'.

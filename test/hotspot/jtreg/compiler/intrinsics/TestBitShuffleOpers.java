@@ -31,7 +31,7 @@
  *            (vm.cpu.features ~= ".*bmi2.*" & vm.cpu.features ~= ".*bmi1.*" &
  *             vm.cpu.features ~= ".*sse2.*")) |
  *            (os.arch=="aarch64" & vm.cpu.features ~= ".*svebitperm.*") |
- *            (os.arch=="riscv64" & vm.cpu.features ~= ".*v,.*"))
+ *            (os.arch=="riscv64" & vm.cpu.features ~= ".*rvv.*"))
  * @library /test/lib /
  * @run driver compiler.intrinsics.TestBitShuffleOpers
  */

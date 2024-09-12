@@ -26,10 +26,13 @@
 package com.sun.tools.javac.comp;
 
 
+import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Type.TypeVar;
+import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
@@ -45,6 +48,8 @@ import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 import static com.sun.tools.javac.code.TypeTag.VOID;
 import static com.sun.tools.javac.comp.CompileStates.CompileState;
 import com.sun.tools.javac.tree.JCTree.JCBreak;
+
+import javax.lang.model.type.TypeKind;
 
 /** This pass translates Generic Java to conventional Java.
  *
@@ -75,6 +80,7 @@ public class TransTypes extends TreeTranslator {
     private Attr attr;
     private final Resolve resolve;
     private final CompileStates compileStates;
+    private final Target target;
 
     @SuppressWarnings("this-escape")
     protected TransTypes(Context context) {
@@ -89,6 +95,7 @@ public class TransTypes extends TreeTranslator {
         resolve = Resolve.instance(context);
         annotate = Annotate.instance(context);
         attr = Attr.instance(context);
+        target = Target.instance(context);
     }
 
     /** Construct an attributed tree for a cast of expression to target type,
@@ -539,6 +546,268 @@ public class TransTypes extends TreeTranslator {
         }
     }
 
+    @Override
+    public void visitReference(JCMemberReference tree) {
+        if (needsConversionToLambda(tree)) {
+            // Convert to a lambda, and process as such
+            MemberReferenceToLambda conv = new MemberReferenceToLambda(tree);
+            result = translate(conv.lambda());
+        } else {
+            Type t = types.skipTypeVars(tree.expr.type, false);
+            Type receiverTarget = t.isCompound() ? erasure(tree.sym.owner.type) : erasure(t);
+            if (tree.kind == ReferenceKind.UNBOUND) {
+                tree.expr = make.Type(receiverTarget);
+            } else {
+                tree.expr = translate(tree.expr, receiverTarget);
+            }
+            if (!tree.type.isIntersection()) {
+                tree.type = erasure(tree.type);
+            } else {
+                tree.type = types.erasure(types.findDescriptorSymbol(tree.type.tsym).owner.type);
+            }
+            result = tree;
+        }
+    }
+    // where
+    boolean needsVarArgsConversion(JCMemberReference tree) {
+        return tree.varargsElement != null;
+    }
+
+    /**
+     * @return Is this an array operation like clone()
+     */
+    boolean isArrayOp(JCMemberReference tree) {
+        return tree.sym.owner == syms.arrayClass;
+    }
+
+    boolean receiverAccessible(JCMemberReference tree) {
+        //hack needed to workaround 292 bug (7087658)
+        //when 292 issue is fixed we should remove this and change the backend
+        //code to always generate a method handle to an accessible method
+        return tree.ownerAccessible;
+    }
+
+    /**
+     * Erasure destroys the implementation parameter subtype
+     * relationship for intersection types.
+     * Have similar problems for union types too.
+     */
+    boolean interfaceParameterIsIntersectionOrUnionType(JCMemberReference tree) {
+        List<Type> tl = tree.getDescriptorType(types).getParameterTypes();
+        for (; tl.nonEmpty(); tl = tl.tail) {
+            Type pt = tl.head;
+            if (isIntersectionOrUnionType(pt))
+                return true;
+        }
+        return false;
+    }
+
+    boolean isIntersectionOrUnionType(Type t) {
+        return switch (t.getKind()) {
+            case INTERSECTION, UNION -> true;
+            case TYPEVAR -> {
+                TypeVar tv = (TypeVar) t;
+                yield isIntersectionOrUnionType(tv.getUpperBound());
+            }
+            default -> false;
+        };
+    }
+
+    private boolean isProtectedInSuperClassOfEnclosingClassInOtherPackage(Symbol targetReference,
+                                                                          Symbol currentClass) {
+        return ((targetReference.flags() & PROTECTED) != 0 &&
+                targetReference.packge() != currentClass.packge());
+    }
+
+    /**
+     * This method should be called only when target release <= 14
+     * where LambdaMetaFactory does not spin nestmate classes.
+     *
+     * This method should be removed when --release 14 is not supported.
+     */
+    boolean isPrivateInOtherClass(JCMemberReference tree) {
+        return (tree.sym.flags() & PRIVATE) != 0 &&
+                !types.isSameType(
+                        types.erasure(tree.sym.enclClass().asType()),
+                        types.erasure(env.enclClass.sym.asType()));
+    }
+
+    /**
+     * Does this reference need to be converted to a lambda
+     * (i.e. var args need to be expanded or "super" is used)
+     */
+    boolean needsConversionToLambda(JCMemberReference tree) {
+        return interfaceParameterIsIntersectionOrUnionType(tree) ||
+                tree.hasKind(ReferenceKind.SUPER) ||
+                needsVarArgsConversion(tree) ||
+                isArrayOp(tree) ||
+                (!target.runtimeUseNestAccess() && isPrivateInOtherClass(tree)) ||
+                isProtectedInSuperClassOfEnclosingClassInOtherPackage(tree.sym, env.enclClass.sym) ||
+                !receiverAccessible(tree) ||
+                (tree.getMode() == ReferenceMode.NEW &&
+                        tree.kind != ReferenceKind.ARRAY_CTOR &&
+                        (tree.sym.owner.isDirectlyOrIndirectlyLocal() || tree.sym.owner.isInner()));
+    }
+
+    /**
+     * Converts a method reference which cannot be used directly into a lambda
+     */
+    private class MemberReferenceToLambda {
+
+        private final JCMemberReference tree;
+        private final ListBuffer<JCExpression> args = new ListBuffer<>();
+        private final ListBuffer<JCVariableDecl> params = new ListBuffer<>();
+        private final MethodSymbol owner = new MethodSymbol(0, names.empty, Type.noType, env.enclClass.sym);
+
+        private JCExpression receiverExpression = null;
+
+        MemberReferenceToLambda(JCMemberReference tree) {
+            this.tree = tree;
+        }
+
+        JCExpression lambda() {
+            int prevPos = make.pos;
+            try {
+                make.at(tree);
+
+                //body generation - this can be either a method call or a
+                //new instance creation expression, depending on the member reference kind
+                VarSymbol rcvr = addParametersReturnReceiver();
+                JCExpression expr = (tree.getMode() == ReferenceMode.INVOKE)
+                        ? expressionInvoke(rcvr)
+                        : expressionNew();
+
+                JCLambda slam = make.Lambda(params.toList(), expr);
+                slam.target = tree.target;
+                slam.type = tree.type;
+                slam.pos = tree.pos;
+                slam.wasMethodReference = true;
+                if (receiverExpression != null) {
+                    // use a let expression so that the receiver expression is evaluated eagerly
+                    return make.at(tree.pos).LetExpr(
+                            make.VarDef(rcvr, receiverExpression), slam).setType(tree.type);
+                } else {
+                    return slam;
+                }
+            } finally {
+                make.at(prevPos);
+            }
+        }
+
+        /**
+         * Generate the parameter list for the converted member reference.
+         *
+         * @return The receiver variable symbol, if any
+         */
+        VarSymbol addParametersReturnReceiver() {
+            List<Type> descPTypes = tree.getDescriptorType(types).getParameterTypes();
+
+            // Determine the receiver, if any
+            VarSymbol rcvr;
+            switch (tree.kind) {
+                case BOUND:
+                    // The receiver is explicit in the method reference
+                    rcvr = new VarSymbol(SYNTHETIC, names.fromString("rec$"), tree.getQualifierExpression().type, owner);
+                    rcvr.pos = tree.pos;
+                    receiverExpression = attr.makeNullCheck(tree.getQualifierExpression());
+                    break;
+                case UNBOUND:
+                    // The receiver is the first parameter, extract it and
+                    // adjust the SAM and unerased type lists accordingly
+                    rcvr = addParameter("rec$", descPTypes.head, false);
+                    descPTypes = descPTypes.tail;
+                    break;
+                default:
+                    rcvr = null;
+                    break;
+            }
+            List<Type> implPTypes = tree.sym.type.getParameterTypes();
+            int implSize = implPTypes.size();
+            int samSize = descPTypes.size();
+            // Last parameter to copy from referenced method, exclude final var args
+            int last = needsVarArgsConversion(tree) ? implSize - 1 : implSize;
+
+            for (int i = 0; implPTypes.nonEmpty() && i < last; ++i) {
+                // Use the descriptor parameter type
+                Type parmType = descPTypes.head;
+                addParameter("x$" + i, parmType, true);
+
+                // Advance to the next parameter
+                implPTypes = implPTypes.tail;
+                descPTypes = descPTypes.tail;
+            }
+            // Flatten out the var args
+            for (int i = last; i < samSize; ++i) {
+                addParameter("xva$" + i, tree.varargsElement, true);
+            }
+
+            return rcvr;
+        }
+
+        /**
+         * determine the receiver of the method call - the receiver can
+         * be a type qualifier, the synthetic receiver parameter or 'super'.
+         */
+        private JCExpression expressionInvoke(VarSymbol rcvr) {
+            JCExpression qualifier =
+                    (rcvr != null) ?
+                            make.Ident(rcvr) :
+                            tree.getQualifierExpression();
+
+            //create the qualifier expression
+            JCFieldAccess select = make.Select(qualifier, tree.sym.name);
+            select.sym = tree.sym;
+            select.type = tree.referentType;
+
+            //create the method call expression
+            JCExpression apply = make.Apply(List.nil(), select,
+                            args.toList()).setType(tree.referentType.getReturnType());
+
+            TreeInfo.setVarargsElement(apply, tree.varargsElement);
+            return apply;
+        }
+
+        /**
+         * Lambda body to use for a 'new'.
+         */
+        private JCExpression expressionNew() {
+            if (tree.kind == ReferenceKind.ARRAY_CTOR) {
+                //create the array creation expression
+                JCNewArray newArr = make.NewArray(
+                        make.Type(types.elemtype(tree.getQualifierExpression().type)),
+                        List.of(make.Ident(params.first())),
+                        null);
+                newArr.type = tree.getQualifierExpression().type;
+                return newArr;
+            } else {
+                //create the instance creation expression
+                //note that method reference syntax does not allow an explicit
+                //enclosing class (so the enclosing class is null)
+                // but this may need to be patched up later with the proxy for the outer this
+                JCNewClass newClass = make.NewClass(null,
+                        List.nil(),
+                        make.Type(tree.getQualifierExpression().type),
+                        args.toList(),
+                        null);
+                newClass.constructor = tree.sym;
+                newClass.constructorType = tree.sym.erasure(types);
+                newClass.type = tree.getQualifierExpression().type;
+                TreeInfo.setVarargsElement(newClass, tree.varargsElement);
+                return newClass;
+            }
+        }
+
+        private VarSymbol addParameter(String name, Type p, boolean genArg) {
+            VarSymbol vsym = new VarSymbol(PARAMETER | SYNTHETIC, names.fromString(name), p, owner);
+            vsym.pos = tree.pos;
+            params.append(make.VarDef(vsym, null));
+            if (genArg) {
+                args.append(make.Ident(vsym));
+            }
+            return vsym;
+        }
+    }
+
     public void visitSwitch(JCSwitch tree) {
         Type selsuper = types.supertype(tree.selector.type);
         boolean enumSwitch = selsuper != null &&
@@ -858,24 +1127,6 @@ public class TransTypes extends TreeTranslator {
             tree.type = erasure(tree.type);
             result = tree;
         }
-    }
-
-    public void visitReference(JCMemberReference tree) {
-        Type t = types.skipTypeVars(tree.expr.type, false);
-        Type receiverTarget = t.isCompound() ? erasure(tree.sym.owner.type) : erasure(t);
-        if (tree.kind == ReferenceKind.UNBOUND) {
-            tree.expr = make.Type(receiverTarget);
-        } else {
-            tree.expr = translate(tree.expr, receiverTarget);
-        }
-        if (!tree.type.isIntersection()) {
-            tree.type = erasure(tree.type);
-        } else {
-            tree.type = types.erasure(types.findDescriptorSymbol(tree.type.tsym).owner.type);
-        }
-        if (tree.varargsElement != null)
-            tree.varargsElement = erasure(tree.varargsElement);
-        result = tree;
     }
 
     public void visitTypeArray(JCArrayTypeTree tree) {

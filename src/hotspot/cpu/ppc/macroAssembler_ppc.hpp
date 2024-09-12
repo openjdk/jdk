@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,6 +178,8 @@ class MacroAssembler: public Assembler {
   void inline set_cmp3(Register dst);
   // set dst to (treat_unordered_like_less ? -1 : +1)
   void inline set_cmpu3(Register dst, bool treat_unordered_like_less);
+  // Branch-free implementation to convert !=0 to 1.
+  void inline normalize_bool(Register dst, Register temp = R0, bool is_64bit = false);
 
   inline void pd_patch_instruction(address branch, address target, const char* file, int line);
   NOT_PRODUCT(static void pd_print_patched_instruction(address branch);)
@@ -298,7 +300,9 @@ class MacroAssembler: public Assembler {
                              bool include_fp_regs = true, bool include_R3_RET_reg = true);
   void restore_volatile_gprs(Register src_base, int offset,
                              bool include_fp_regs = true, bool include_R3_RET_reg = true);
-  void save_LR_CR(   Register tmp);     // tmp contains LR on return.
+  void save_LR(Register tmp);
+  void restore_LR(Register tmp);
+  void save_LR_CR(Register tmp);     // tmp contains LR on return.
   void restore_LR_CR(Register tmp);
 
   // Get current PC using bl-next-instruction trick.
@@ -355,7 +359,7 @@ class MacroAssembler: public Assembler {
   address call_c(Register function_entry);
   // For tail calls: only branch, don't link, so callee returns to caller of this function.
   address call_c_and_return_to_caller(Register function_entry);
-  address call_c(address function_entry, relocInfo::relocType rt);
+  address call_c(address function_entry, relocInfo::relocType rt = relocInfo::none);
 #else
   // Call a C function via a function descriptor and use full C
   // calling conventions. Updates and returns _last_calls_return_pc.
@@ -363,6 +367,9 @@ class MacroAssembler: public Assembler {
   // For tail calls: only branch, don't link, so callee returns to caller of this function.
   address call_c_and_return_to_caller(Register function_descriptor);
   address call_c(const FunctionDescriptor* function_descriptor, relocInfo::relocType rt);
+  address call_c(address function_entry, relocInfo::relocType rt = relocInfo::none) {
+    return call_c((const FunctionDescriptor*)function_entry, rt);
+  }
   address call_c_using_toc(const FunctionDescriptor* function_descriptor, relocInfo::relocType rt,
                            Register toc);
 #endif
@@ -478,13 +485,14 @@ class MacroAssembler: public Assembler {
                                      Register addr_base, Register tmp1, Register tmp2, Register tmp3,
                                      bool cmpxchgx_hint, bool is_add, int size);
   void cmpxchg_loop_body(ConditionRegister flag, Register dest_current_value,
-                         Register compare_value, Register exchange_value,
+                         RegisterOrConstant compare_value, Register exchange_value,
                          Register addr_base, Register tmp1, Register tmp2,
                          Label &retry, Label &failed, bool cmpxchgx_hint, int size);
-  void cmpxchg_generic(ConditionRegister flag,
-                       Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
-                       Register tmp1, Register tmp2,
-                       int semantics, bool cmpxchgx_hint, Register int_flag_success, bool contention_hint, bool weak, int size);
+  void cmpxchg_generic(ConditionRegister flag, Register dest_current_value,
+                       RegisterOrConstant compare_value, Register exchange_value,
+                       Register addr_base, Register tmp1, Register tmp2,
+                       int semantics, bool cmpxchgx_hint, Register int_flag_success,
+                       Label* failed_ext, bool contention_hint, bool weak, int size);
  public:
   // Temps and addr_base are killed if processor does not support Power 8 instructions.
   // Result will be sign extended.
@@ -524,33 +532,37 @@ class MacroAssembler: public Assembler {
                   Register tmp, bool cmpxchgx_hint);
   // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
-  void cmpxchgb(ConditionRegister flag,
-                Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
-                Register tmp1, Register tmp2, int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, bool contention_hint = false, bool weak = false) {
+  void cmpxchgb(ConditionRegister flag, Register dest_current_value,
+                RegisterOrConstant compare_value, Register exchange_value,
+                Register addr_base, Register tmp1, Register tmp2,
+                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
+                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
     cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
-                    semantics, cmpxchgx_hint, int_flag_success, contention_hint, weak, 1);
+                    semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 1);
   }
   // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
-  void cmpxchgh(ConditionRegister flag,
-                Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
-                Register tmp1, Register tmp2, int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, bool contention_hint = false, bool weak = false) {
+  void cmpxchgh(ConditionRegister flag, Register dest_current_value,
+                RegisterOrConstant compare_value, Register exchange_value,
+                Register addr_base, Register tmp1, Register tmp2,
+                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
+                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
     cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
-                    semantics, cmpxchgx_hint, int_flag_success, contention_hint, weak, 2);
+                    semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 2);
   }
-  void cmpxchgw(ConditionRegister flag,
-                Register dest_current_value, Register compare_value, Register exchange_value, Register addr_base,
-                int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, bool contention_hint = false, bool weak = false) {
+  void cmpxchgw(ConditionRegister flag, Register dest_current_value,
+                RegisterOrConstant compare_value, Register exchange_value,
+                Register addr_base,
+                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
+                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
     cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, noreg, noreg,
-                    semantics, cmpxchgx_hint, int_flag_success, contention_hint, weak, 4);
+                    semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 4);
   }
-  void cmpxchgd(ConditionRegister flag,
-                Register dest_current_value, RegisterOrConstant compare_value, Register exchange_value,
-                Register addr_base, int semantics, bool cmpxchgx_hint = false,
-                Register int_flag_success = noreg, Label* failed = nullptr, bool contention_hint = false, bool weak = false);
+  void cmpxchgd(ConditionRegister flag, Register dest_current_value,
+                RegisterOrConstant compare_value, Register exchange_value,
+                Register addr_base,
+                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
+                Label* failed = nullptr, bool contention_hint = false, bool weak = false);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -601,6 +613,33 @@ class MacroAssembler: public Assembler {
                            Register temp1_reg,
                            Register temp2_reg,
                            Label& L_success);
+
+  void repne_scan(Register addr, Register value, Register count, Register scratch);
+
+  // As above, but with a constant super_klass.
+  // The result is in Register result, not the condition codes.
+  void lookup_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register temp1,
+                                     Register temp2,
+                                     Register temp3,
+                                     Register temp4,
+                                     Register result,
+                                     u1 super_klass_slot);
+
+  void verify_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register result,
+                                     Register temp1,
+                                     Register temp2,
+                                     Register temp3);
+
+  void lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                               Register r_array_base,
+                                               Register r_array_index,
+                                               Register r_bitmap,
+                                               Register result,
+                                               Register temp1);
 
   void clinit_barrier(Register klass,
                       Register thread,

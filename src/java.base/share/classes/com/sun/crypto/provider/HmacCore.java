@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,12 @@
 
 package com.sun.crypto.provider;
 
-import java.util.Arrays;
-
 import java.nio.ByteBuffer;
-
+import java.security.*;
+import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 import javax.crypto.MacSpi;
 import javax.crypto.SecretKey;
-import java.security.*;
-import java.security.spec.*;
-
-import sun.security.x509.AlgorithmId;
 
 /**
  * This class constitutes the core of HMAC-<MD> algorithms, where
@@ -87,8 +83,7 @@ abstract class HmacCore extends MacSpi implements Cloneable {
                                 break;
                             }
                         }
-                    } catch (NoSuchAlgorithmException nsae) {
-                        continue;
+                    } catch (NoSuchAlgorithmException ignored) {
                     }
                 }
                 if (md == null) {
@@ -169,7 +164,7 @@ abstract class HmacCore extends MacSpi implements Cloneable {
      * @param input the input byte to be processed.
      */
     protected void engineUpdate(byte input) {
-        if (first == true) {
+        if (first) {
             // compute digest for 1st pass; start with inner pad
             md.update(k_ipad);
             first = false;
@@ -187,8 +182,8 @@ abstract class HmacCore extends MacSpi implements Cloneable {
      * @param offset the offset in <code>input</code> where the input starts.
      * @param len the number of bytes to process.
      */
-    protected void engineUpdate(byte input[], int offset, int len) {
-        if (first == true) {
+    protected void engineUpdate(byte[] input, int offset, int len) {
+        if (first) {
             // compute digest for 1st pass; start with inner pad
             md.update(k_ipad);
             first = false;
@@ -205,7 +200,7 @@ abstract class HmacCore extends MacSpi implements Cloneable {
      * @param input the input byte buffer.
      */
     protected void engineUpdate(ByteBuffer input) {
-        if (first == true) {
+        if (first) {
             // compute digest for 1st pass; start with inner pad
             md.update(k_ipad);
             first = false;
@@ -221,7 +216,7 @@ abstract class HmacCore extends MacSpi implements Cloneable {
      * @return the HMAC result.
      */
     protected byte[] engineDoFinal() {
-        if (first == true) {
+        if (first) {
             // compute digest for 1st pass; start with inner pad
             md.update(k_ipad);
         } else {
@@ -250,7 +245,7 @@ abstract class HmacCore extends MacSpi implements Cloneable {
      * HMAC was initialized with.
      */
     protected void engineReset() {
-        if (first == false) {
+        if (!first) {
             md.reset();
             first = true;
         }

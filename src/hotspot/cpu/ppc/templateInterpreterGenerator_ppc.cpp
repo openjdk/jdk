@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 
   address entry = __ function_entry();
 
-  __ save_LR_CR(R0);
+  __ save_LR(R0);
   __ save_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
   // We use target_sp for storing arguments in the C frame.
   __ mr(target_sp, R1_SP);
@@ -311,7 +311,7 @@ address TemplateInterpreterGenerator::generate_slow_signature_handler() {
 
   __ pop_frame();
   __ restore_nonvolatile_gprs(R1_SP, _spill_nonvolatiles_neg(r14));
-  __ restore_LR_CR(R0);
+  __ restore_LR(R0);
 
   __ blr();
 
@@ -372,9 +372,7 @@ address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type
   switch (type) {
   case T_BOOLEAN:
     // convert !=0 to 1
-    __ neg(R0, R3_RET);
-    __ orr(R0, R3_RET, R0);
-    __ srwi(R3_RET, R0, 31);
+    __ normalize_bool(R3_RET);
     break;
   case T_BYTE:
      // sign extend 8 bits
@@ -441,7 +439,7 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
   __ set_top_ijava_frame_at_SP_as_last_Java_frame(R1_SP, R12_scratch2/*tmp*/);
 
   // Push a new C frame and save LR.
-  __ save_LR_CR(R0);
+  __ save_LR(R0);
   __ push_frame_reg_args(0, R11_scratch1);
 
   // This is not a leaf but we have a JavaFrameAnchor now and we will
@@ -451,7 +449,7 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 
   // Pop the C frame and restore LR.
   __ pop_frame();
-  __ restore_LR_CR(R0);
+  __ restore_LR(R0);
 
   // Reset JavaFrameAnchor from call_VM_leaf above.
   __ reset_last_Java_frame();
@@ -785,8 +783,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rmem_f
   __ bgt(CCR0/*is_stack_overflow*/, done);
 
   // The stack overflows. Load target address of the runtime stub and call it.
-  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "generated in wrong order");
-  __ load_const_optimized(Rscratch1, (StubRoutines::throw_StackOverflowError_entry()), R0);
+  assert(SharedRuntime::throw_StackOverflowError_entry() != nullptr, "generated in wrong order");
+  __ load_const_optimized(Rscratch1, (SharedRuntime::throw_StackOverflowError_entry()), R0);
   __ mtctr(Rscratch1);
   // Restore caller_sp (c2i adapter may exist, but no shrinking of interpreted caller frame).
 #ifdef ASSERT
@@ -1126,14 +1124,14 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     //__ call_c_and_return_to_caller(R12_scratch2);
 
     // Push a new C frame and save LR.
-    __ save_LR_CR(R0);
+    __ save_LR(R0);
     __ push_frame_reg_args(0, R11_scratch1);
 
     __ call_VM_leaf(runtime_entry);
 
     // Pop the C frame and restore LR.
     __ pop_frame();
-    __ restore_LR_CR(R0);
+    __ restore_LR(R0);
   }
 
   // Restore caller sp for c2i case (from compiled) and for resized sender frame (from interpreted).
@@ -1466,13 +1464,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // native result across the call. No oop is present.
 
   __ mr(R3_ARG1, R16_thread);
-#if defined(ABI_ELFv2)
-  __ call_c(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans),
-            relocInfo::none);
-#else
-  __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, JavaThread::check_special_condition_for_native_trans),
-            relocInfo::none);
-#endif
+  __ call_c(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
 
   __ bind(sync_check_done);
 

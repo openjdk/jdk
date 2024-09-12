@@ -299,7 +299,7 @@ bool MallocTracker::print_pointer_information(const void* p, outputStream* st) {
                  block->size(), NMTUtil::flag_to_enum_name(block->flags()));
     if (MemTracker::tracking_level() == NMT_detail) {
       NativeCallStack ncs;
-      if (block->get_stack(ncs)) {
+      if (MallocSiteTable::access_stack(ncs, *block)) {
         ncs.print_on(st);
         st->cr();
       }

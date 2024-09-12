@@ -166,7 +166,9 @@ public final class TypeLibrary {
             for (ValueDescriptor v : type.getFields()) {
                 values.add(invokeAnnotation(annotation, v.getName()));
             }
-            return PrivateAccess.getInstance().newAnnotation(type, values, annotation.annotationType().getClassLoader() == null);
+            // Only annotation classes in the boot class loader can always be resolved.
+            boolean bootClassLoader = annotationType.getClassLoader() == null;
+            return PrivateAccess.getInstance().newAnnotation(type, values, bootClassLoader);
         }
         return null;
     }
@@ -220,7 +222,7 @@ public final class TypeLibrary {
             long id = Type.getTypeId(clazz);
             Type t;
             if (eventType) {
-                t = new PlatformEventType(typeName, id, clazz.getClassLoader() == null, true);
+                t = new PlatformEventType(typeName, id, Utils.isJDKClass(clazz), true);
             } else {
                 t = new Type(typeName, superType, id);
             }
@@ -283,7 +285,7 @@ public final class TypeLibrary {
         }
         addAnnotations(clazz, type, dynamicAnnotations);
 
-        if (clazz.getClassLoader() == null) {
+        if (Utils.isJDKClass(clazz)) {
             type.log("Added", LogTag.JFR_SYSTEM_METADATA, LogLevel.INFO);
         } else {
             type.log("Added", LogTag.JFR_METADATA, LogLevel.INFO);

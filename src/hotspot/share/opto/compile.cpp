@@ -713,10 +713,9 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
-  if (ProfileTraps RTM_OPT_ONLY( || UseRTMLocking )) {
+  if (ProfileTraps) {
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
-    // Need MDO to record RTM code generation state.
     method()->ensure_method_data();
   }
 
@@ -755,14 +754,14 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
       init_tf(TypeFunc::make(domain, range));
       StartNode* s = new StartOSRNode(root(), domain);
       initial_gvn()->set_type_bottom(s);
-      init_start(s);
+      verify_start(s);
       cg = CallGenerator::for_osr(method(), entry_bci());
     } else {
       // Normal case.
       init_tf(TypeFunc::make(method()));
       StartNode* s = new StartNode(root(), tf()->domain());
       initial_gvn()->set_type_bottom(s);
-      init_start(s);
+      verify_start(s);
       if (method()->intrinsic_id() == vmIntrinsics::_Reference_get) {
         // With java.lang.ref.reference.get() we must go through the
         // intrinsic - even when get() is the root
@@ -1062,12 +1061,13 @@ void Compile::Init(bool aliasing) {
 
   set_do_vector_loop(false);
   set_has_monitors(false);
+  set_has_scoped_access(false);
 
   if (AllowVectorizeOnDemand) {
     if (has_method() && _directive->VectorizeOption) {
       set_do_vector_loop(true);
       NOT_PRODUCT(if (do_vector_loop() && Verbose) {tty->print("Compile::Init: do vectorized loops (SIMD like) for method %s\n",  method()->name()->as_quoted_ascii());})
-    } else if (has_method() && method()->name() != 0 &&
+    } else if (has_method() && method()->name() != nullptr &&
                method()->intrinsic_id() == vmIntrinsics::_forEachRemaining) {
       set_do_vector_loop(true);
     }
@@ -1075,25 +1075,8 @@ void Compile::Init(bool aliasing) {
   set_use_cmove(UseCMoveUnconditionally /* || do_vector_loop()*/); //TODO: consider do_vector_loop() mandate use_cmove unconditionally
   NOT_PRODUCT(if (use_cmove() && Verbose && has_method()) {tty->print("Compile::Init: use CMove without profitability tests for method %s\n",  method()->name()->as_quoted_ascii());})
 
-  set_rtm_state(NoRTM); // No RTM lock eliding by default
   _max_node_limit = _directive->MaxNodeLimitOption;
 
-#if INCLUDE_RTM_OPT
-  if (UseRTMLocking && has_method() && (method()->method_data_or_null() != nullptr)) {
-    int rtm_state = method()->method_data()->rtm_state();
-    if (method_has_option(CompileCommandEnum::NoRTMLockEliding) || ((rtm_state & NoRTM) != 0)) {
-      // Don't generate RTM lock eliding code.
-      set_rtm_state(NoRTM);
-    } else if (method_has_option(CompileCommandEnum::UseRTMLockEliding) || ((rtm_state & UseRTM) != 0) || !UseRTMDeopt) {
-      // Generate RTM lock eliding code without abort ratio calculation code.
-      set_rtm_state(UseRTM);
-    } else if (UseRTMDeopt) {
-      // Generate RTM lock eliding code and include abort ratio calculation
-      // code if UseRTMDeopt is on.
-      set_rtm_state(ProfileRTM);
-    }
-  }
-#endif
   if (VM_Version::supports_fast_class_init_checks() && has_method() && !is_osr_compilation() && method()->needs_clinit_barrier()) {
     set_clinit_barrier_on_entry(true);
   }
@@ -1122,13 +1105,12 @@ void Compile::Init(bool aliasing) {
   probe_alias_cache(nullptr)->_index = AliasIdxTop;
 }
 
-//---------------------------init_start----------------------------------------
-// Install the StartNode on this compile object.
-void Compile::init_start(StartNode* s) {
-  if (failing())
-    return; // already failing
-  assert(s == start(), "");
+#ifdef ASSERT
+// Verify that the current StartNode is valid.
+void Compile::verify_start(StartNode* s) const {
+  assert(failing() || s == start(), "should be StartNode");
 }
+#endif
 
 /**
  * Return the 'StartNode'. We must not have a pending failure, since the ideal graph
@@ -1717,6 +1699,8 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
       if (flat->offset() == in_bytes(Klass::modifier_flags_offset()))
         alias_type(idx)->set_rewritable(false);
       if (flat->offset() == in_bytes(Klass::access_flags_offset()))
+        alias_type(idx)->set_rewritable(false);
+      if (flat->offset() == in_bytes(Klass::misc_flags_offset()))
         alias_type(idx)->set_rewritable(false);
       if (flat->offset() == in_bytes(Klass::java_mirror_offset()))
         alias_type(idx)->set_rewritable(false);
@@ -3222,7 +3206,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     frc.inc_double_count();
     break;
   case Op_Opaque1:              // Remove Opaque Nodes before matching
-  case Op_Opaque3:
     n->subsume_by(n->in(1), this);
     break;
   case Op_CallStaticJava:
@@ -5214,7 +5197,20 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
     ss.print(" %d", iter);
   }
   if (n != nullptr) {
-    ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
+    ss.print(": %d %s", n->_idx, NodeClassNames[n->Opcode()]);
+    if (n->is_Call()) {
+      CallNode* call = n->as_Call();
+      if (call->_name != nullptr) {
+        // E.g. uncommon traps etc.
+        ss.print(" - %s", call->_name);
+      } else if (call->is_CallJava()) {
+        CallJavaNode* call_java = call->as_CallJava();
+        if (call_java->method() != nullptr) {
+          ss.print(" -");
+          call_java->method()->print_short_name(&ss);
+        }
+      }
+    }
   }
 
   const char* name = ss.as_string();

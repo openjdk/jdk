@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,19 +27,19 @@
 
 #include "gc/g1/g1HeapRegionBounds.hpp"
 
-size_t HeapRegionBounds::min_size() {
+size_t G1HeapRegionBounds::min_size() {
   return MIN_REGION_SIZE;
 }
 
-size_t HeapRegionBounds::max_ergonomics_size() {
+size_t G1HeapRegionBounds::max_ergonomics_size() {
   return MAX_ERGONOMICS_SIZE;
 }
 
-size_t HeapRegionBounds::max_size() {
+size_t G1HeapRegionBounds::max_size() {
   return MAX_REGION_SIZE;
 }
 
-size_t HeapRegionBounds::target_number() {
+size_t G1HeapRegionBounds::target_number() {
   return TARGET_REGION_NUMBER;
 }
 

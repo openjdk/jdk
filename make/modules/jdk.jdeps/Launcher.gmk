@@ -51,3 +51,12 @@ $(eval $(call SetupBuildLauncher, jdeprscan, \
     MAIN_CLASS := com.sun.tools.jdeprscan.Main, \
     CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
 ))
+
+################################################################################
+## Build jnativescan
+################################################################################
+
+$(eval $(call SetupBuildLauncher, jnativescan, \
+    MAIN_CLASS := com.sun.tools.jnativescan.Main, \
+    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
+))

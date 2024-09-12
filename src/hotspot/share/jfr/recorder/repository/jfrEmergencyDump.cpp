@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,7 +497,7 @@ static bool prepare_for_emergency_dump(Thread* thread) {
     Service_lock->unlock();
   }
 
-  if (UseNotificationThread && Notification_lock->owned_by_self()) {
+  if (Notification_lock->owned_by_self()) {
     Notification_lock->unlock();
   }
 

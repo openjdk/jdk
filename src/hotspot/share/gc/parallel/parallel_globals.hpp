@@ -36,10 +36,6 @@
           "any dead space)")                                                \
           range(0, max_uintx)                                               \
                                                                             \
-  product(uintx, HeapFirstMaximumCompactionCount, 3,                        \
-          "The collection count for the first maximum compaction")          \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(bool, UseMaximumCompactionOnSystemGC, true,                       \
           "Use maximum compaction in the Parallel Old garbage collector "   \
           "for a system GC")                                                \

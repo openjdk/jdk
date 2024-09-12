@@ -2836,7 +2836,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
     offset += NativeCall::displacement_offset;
     break;
   case lir_icvirtual_call:
-    offset += NativeCall::displacement_offset + NativeMovConstReg::instruction_size;
+    offset += NativeCall::displacement_offset + NativeMovConstReg::instruction_size_rex;
     break;
   default: ShouldNotReachHere();
   }
@@ -2873,7 +2873,7 @@ void LIR_Assembler::emit_static_call_stub() {
   int start = __ offset();
 
   // make sure that the displacement word of the call ends up word aligned
-  __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size + NativeCall::displacement_offset);
+  __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size_rex + NativeCall::displacement_offset);
   __ relocate(static_stub_Relocation::spec(call_pc));
   __ mov_metadata(rbx, (Metadata*)nullptr);
   // must be set to -1 at code generation time

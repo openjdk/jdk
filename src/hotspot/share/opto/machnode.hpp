@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,6 @@ class MachSpillCopyNode;
 class Matcher;
 class PhaseRegAlloc;
 class RegMask;
-class RTMLockingCounters;
 class State;
 
 //---------------------------MachOper------------------------------------------
@@ -802,8 +801,6 @@ public:
 class MachFastLockNode : public MachNode {
   virtual uint size_of() const { return sizeof(*this); } // Size is bigger
 public:
-  RTMLockingCounters*       _rtm_counters; // RTM lock counters for inflated locks
-  RTMLockingCounters* _stack_rtm_counters; // RTM lock counters for stack locks
   MachFastLockNode() : MachNode() {}
 };
 
@@ -869,6 +866,10 @@ public:
   Node *monitor_box(const JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
     return in(_jvmadj + jvms->monitor_box_offset(idx));
+  }
+  Node* scalarized_obj(const JVMState* jvms, uint idx) const {
+    assert(verify_jvms(jvms), "jvms must match");
+    return in(_jvmadj + jvms->scloff() + idx);
   }
   void  set_local(const JVMState* jvms, uint idx, Node *c) {
     assert(verify_jvms(jvms), "jvms must match");
@@ -1087,7 +1088,7 @@ public:
 
   uint _block_num;
 
-  labelOper() : _label(0), _block_num(0) {}
+  labelOper() : _label(nullptr), _block_num(0) {}
 
   labelOper(Label* label, uint block_num) : _label(label), _block_num(block_num) {}
 

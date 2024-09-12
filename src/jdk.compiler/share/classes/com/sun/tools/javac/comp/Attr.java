@@ -950,7 +950,6 @@ public class Attr extends JCTree.Visitor {
                 Optional.ofNullable(env.info.attributionMode.isSpeculative ?
                         argumentAttr.withLocalCacheContext() : null);
         boolean ctorProloguePrev = env.info.ctorPrologue;
-        env.info.ctorPrologue = false;
         try {
             // Local and anonymous classes have not been entered yet, so we need to
             // do it now.
@@ -995,7 +994,7 @@ public class Attr extends JCTree.Visitor {
         Lint lint = env.info.lint.augment(m);
         Lint prevLint = chk.setLint(lint);
         boolean ctorProloguePrev = env.info.ctorPrologue;
-        env.info.ctorPrologue = false;
+        Assert.check(!env.info.ctorPrologue);
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
             deferredLintHandler.flush(tree.pos(), lint);
@@ -4647,9 +4646,6 @@ public class Attr extends JCTree.Visitor {
                      Type pt,
                      Env<AttrContext> env,
                      ResultInfo resultInfo) {
-            if (pt.isErroneous()) {
-                return types.createErrorType(site);
-            }
             Type owntype; // The computed type of this identifier occurrence.
             switch (sym.kind) {
             case TYP:
@@ -4756,6 +4752,10 @@ public class Attr extends JCTree.Visitor {
                 chk.checkSunAPI(tree.pos(), sym);
                 chk.checkProfile(tree.pos(), sym);
                 chk.checkPreview(tree.pos(), env.info.scope.owner, sym);
+            }
+
+            if (pt.isErroneous()) {
+                owntype = types.createErrorType(owntype);
             }
 
             // If symbol is a variable, check that its type and
@@ -5081,6 +5081,14 @@ public class Attr extends JCTree.Visitor {
                 }
                 owntype = types.createErrorType(tree.type);
             }
+        } else if (clazztype.hasTag(ERROR)) {
+            ErrorType parameterizedErroneous =
+                    new ErrorType(clazztype.getOriginalType(),
+                                  clazztype.tsym,
+                                  clazztype.getMetadata());
+
+            parameterizedErroneous.typarams_field = actuals;
+            owntype = parameterizedErroneous;
         }
         result = check(tree, owntype, KindSelector.TYP, resultInfo);
     }
@@ -5241,14 +5249,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitAnnotatedType(JCAnnotatedType tree) {
         attribAnnotationTypes(tree.annotations, env);
-        Type underlyingType =
-                attribTree(tree.underlyingType, env, new ResultInfo(KindSelector.TYP_PCK, Type.noType));
-        if (underlyingType.hasTag(PACKAGE)) {
-            // Type annotations are not admissible on packages, but we handle packages here to
-            // report better diagnostics later in validateAnnotatedType.
-            result = tree.type = underlyingType;
-            return;
-        }
+        Type underlyingType = attribType(tree.underlyingType, env);
         Type annotatedType = underlyingType.preannotatedType();
 
         if (!env.info.isNewClass)
@@ -5258,7 +5259,18 @@ public class Attr extends JCTree.Visitor {
 
     public void visitErroneous(JCErroneous tree) {
         if (tree.errs != null) {
-            Env<AttrContext> errEnv = env.dup(env.tree, env.info.dup());
+            WriteableScope newScope = env.info.scope;
+
+            if (env.tree instanceof JCClassDecl) {
+                Symbol fakeOwner =
+                    new MethodSymbol(BLOCK, names.empty, null,
+                        env.info.scope.owner);
+                newScope = newScope.dupUnshared(fakeOwner);
+            }
+
+            Env<AttrContext> errEnv =
+                    env.dup(env.tree,
+                            env.info.dup(newScope));
             errEnv.info.returnResult = unknownExprInfo;
             for (JCTree err : tree.errs)
                 attribTree(err, errEnv, new ResultInfo(KindSelector.ERR, pt()));
@@ -5868,8 +5880,10 @@ public class Attr extends JCTree.Visitor {
                             Fragment annotationFragment = onlyTypeAnnotations.size() == 1 ?
                                     Fragments.TypeAnnotation1(onlyTypeAnnotations.head) :
                                     Fragments.TypeAnnotation(onlyTypeAnnotations);
+                            JCDiagnostic.AnnotatedType annotatedType = new JCDiagnostic.AnnotatedType(
+                                    type.stripMetadata().annotatedType(onlyTypeAnnotations));
                             log.error(at.underlyingType.pos(), Errors.TypeAnnotationInadmissible(annotationFragment,
-                                    type.tsym.owner, type.stripMetadata().annotatedType(onlyTypeAnnotations)));
+                                    type.tsym.owner, annotatedType));
                         }
                         repeat = false;
                     }

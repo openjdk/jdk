@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -925,23 +925,23 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     /**
-     * Gets the {@code jobject} value wrapped by {@code peerObject}. The returned "naked" value is
-     * only valid as long as {@code peerObject} is valid. Note that the latter may be shorter than
-     * the lifetime of {@code peerObject}. As such, this method should only be used to pass an
-     * object parameter across a JNI call from the JVMCI shared library to HotSpot. This method must
-     * only be called from within the JVMCI shared library.
+     * Gets the {@code jobject} value wrapped by {@code peerObject}. The returned value is
+     * a JNI local reference whose lifetime is scoped by the nearest Java caller (from
+     * HotSpot's perspective). You can use {@code PushLocalFrame} and {@code PopLocalFrame} to
+     * shorten the lifetime of the reference. The current thread's state must be
+     * {@code _thread_in_native}. A call from the JVMCI shared library (e.g. libgraal) is in such
+     * a state.
      *
-     * @param peerObject a reference to an object in the peer runtime
-     * @return the {@code jobject} value wrapped by {@code peerObject}
+     * @param peerObject a reference to an object in the HotSpot heap
+     * @return the {@code jobject} value unpacked from {@code peerObject}
      * @throws IllegalArgumentException if the current runtime is not the JVMCI shared library or
-     *             {@code peerObject} is not a peer object reference
+     *             {@code peerObject} is not a HotSpot heap object reference
+     * @throws IllegalStateException if not called from within the JVMCI shared library
+     *         or if there is no Java caller frame on the stack
+     *         (i.e., JavaThread::has_last_Java_frame returns false)
      */
     public long getJObjectValue(HotSpotObjectConstant peerObject) {
-        if (peerObject instanceof IndirectHotSpotObjectConstantImpl) {
-            IndirectHotSpotObjectConstantImpl remote = (IndirectHotSpotObjectConstantImpl) peerObject;
-            return remote.getHandle();
-        }
-        throw new IllegalArgumentException("Cannot get jobject value for " + peerObject + " (" + peerObject.getClass().getName() + ")");
+        return compilerToVm.getJObjectValue((HotSpotObjectConstantImpl)peerObject);
     }
 
     @Override
@@ -985,6 +985,12 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     @VMEntryPoint
     private boolean isGCSupported(int gcIdentifier) {
         return getCompiler().isGCSupported(gcIdentifier);
+    }
+
+    @SuppressWarnings("try")
+    @VMEntryPoint
+    private boolean isIntrinsicSupported(int intrinsicIdentifier) {
+        return getCompiler().isIntrinsicSupported(intrinsicIdentifier);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,9 +190,8 @@ final class GHASH implements Cloneable, GCM {
 
         // If ct is a direct bytebuffer, send it directly to the intrinsic
         if (ct.isDirect()) {
-            int processed = inLen;
             processBlocksDirect(ct, inLen);
-            return processed;
+            return inLen;
         } else if (!ct.isReadOnly()) {
             // If a non-read only heap bytebuffer, use the array update method
             int processed = update(ct.array(),
@@ -273,7 +272,7 @@ final class GHASH implements Cloneable, GCM {
     /*
      * This is an intrinsified method.  The method's argument list must match
      * the hotspot signature.  This method and methods called by it, cannot
-     * throw exceptions or allocate arrays as it will breaking intrinsics
+     * throw exceptions or allocate arrays as it will break intrinsics.
      */
     @IntrinsicCandidate
     private static void processBlocks(byte[] data, int inOfs, int blocks,
