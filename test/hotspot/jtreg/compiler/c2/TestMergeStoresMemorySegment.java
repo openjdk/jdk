@@ -141,7 +141,6 @@ public class TestMergeStoresMemorySegment {
         for (String unaligned : new String[]{"-XX:-UseUnalignedAccesses", "-XX:+UseUnalignedAccesses"}) {
             TestFramework framework = new TestFramework(TestMergeStoresMemorySegmentImpl.class);
             framework.addFlags("-DmemorySegmentProviderNameForTestVM=" + args[0], unaligned);
-            framework.setDefaultWarmup(100);
             framework.start();
         }
     }
