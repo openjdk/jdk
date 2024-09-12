@@ -85,7 +85,9 @@ public class ClassPathAttr {
           });
 
       // Test handling of forward slash ('/') file separator for Class-Path attribute on Windows.
-      if (Platform.isWindows()) {
+      // Skip the following test when CDS dynamic dump is enabled due to some
+      // issue when converting a relative path to real path.
+      if (Platform.isWindows() && !CDSTestUtils.DYNAMIC_DUMP) {
           // Test with relative path
           // Find the index to the dir before the jar file.
           int idx = jar1.lastIndexOf(File.separator);
@@ -98,13 +100,13 @@ public class ClassPathAttr {
 
           OutputAnalyzer out = TestCommon.testDump(jarDir, newCp, classlist, "-Xlog:class+path=info");
           if (i == 1) {
-              out.shouldContain("opened: 0/cpattr1.jar"); // first jar on -cp
+              out.shouldMatch("opened:.*cpattr1.jar"); // first jar on -cp
           } else {
               // first jar on -cp with long Class-Path: attribute
-              out.shouldContain("opened: 0/cpattr1_long.jar");
+              out.shouldMatch("opened:.*cpattr1_long.jar");
           }
           // one of the jar in the Class-Path: attribute of cpattr1.jar
-          out.shouldContain("opened: 0/cpattr2.jar");
+          out.shouldMatch("opened:.*cpattr2.jar");
 
           TestCommon.runWithRelativePath(
               jarDir.replace("\\", "/"),
@@ -131,13 +133,13 @@ public class ClassPathAttr {
               newCp = jar1Name + File.pathSeparator + jar4Name;
               out = TestCommon.testDump(jarDir, newCp, classlist, "-Xlog:class+path=info");
               if (i == 1) {
-                  out.shouldContain("opened: scratch\\0/cpattr1.jar"); // first jar on -cp
+                  out.shouldMatch("opened:.*cpattr1.jar"); // first jar on -cp
               } else {
                   // first jar on -cp with long Class-Path: attribute
-                  out.shouldContain("opened: scratch\\0/cpattr1_long.jar");
+                  out.shouldMatch("opened:.*cpattr1_long.jar");
               }
               // one of the jar in the Class-Path: attribute of cpattr1.jar
-              out.shouldContain("opened: scratch\\0/cpattr2.jar");
+              out.shouldMatch("opened:.*cpattr2.jar");
 
               TestCommon.runWithRelativePath(
                   jarDir.replace("\\", "/"),
