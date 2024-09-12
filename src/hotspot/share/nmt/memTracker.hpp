@@ -215,7 +215,7 @@ class MemTracker : AllStatic {
     }
   }
 
-  static inline void record_virtual_memory_type(void* addr, MemTag mem_tag) {
+  static inline void record_virtual_memory_tag(void* addr, MemTag mem_tag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
