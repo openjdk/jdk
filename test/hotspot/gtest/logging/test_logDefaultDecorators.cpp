@@ -32,13 +32,14 @@ class TestLogDecorators : public testing::Test {
   using DefaultDecorator = LogDecorators::DefaultDecorator;
   using LD = LogDecorators;
 
-  DefaultDecorator defaults[6] = {
+  static const size_t defaults_cnt = 6;
+  DefaultDecorator defaults[defaults_cnt] = {
     { LogLevelType::Trace, LD::mask_from_decorators(LD::pid_decorator), LogTagType::_gc },
     { LogLevelType::Trace, LD::mask_from_decorators(LD::NoDecorators), LogTagType::_jit },
-    { LogLevelType::NotMentioned, LD::mask_from_decorators(LD::pid_decorator, LD::tid_decorator), LogTagType::__NO_TAG },
+    { LogLevelType::NotMentioned, LD::mask_from_decorators(LD::pid_decorator, LD::tid_decorator), LogTagType::_ref },
     { LogLevelType::Trace, LD::mask_from_decorators(LD::time_decorator), LogTagType::_gc },
     { LogLevelType::Debug, LD::mask_from_decorators(LD::pid_decorator), LogTagType::_compilation },
-    { LogLevelType::Trace, LD::mask_from_decorators(LD::uptimemillis_decorator), LogTagType::_compilation, LogTagType::_codecache }
+    { LogLevelType::Debug, LD::mask_from_decorators(LD::uptimemillis_decorator), LogTagType::_compilation, LogTagType::_codecache }
   };
 
 public:
@@ -49,26 +50,71 @@ public:
 
     // Log selection with matching tag exactly should find default
     tags[0] = LogTagType::_jit;
-    bool result = LD::has_default_decorator(LogSelection(tags, false, LogLevelType::Trace), &out_mask, defaults);
+    bool result = LD::has_default_decorator(LogSelection(tags, false, LogLevelType::Trace), &out_mask, defaults, defaults_cnt);
     EXPECT_TRUE(result);
     EXPECT_EQ(LD::mask_from_decorators(LD::NoDecorators), out_mask);
 
 
     // Wildcards are ignored
     tags[0] = LogTag::__NO_TAG;
-    result = LD::has_default_decorator(LogSelection(tags, true, LogLevelType::Trace), &out_mask, defaults);
+    result = LD::has_default_decorator(LogSelection(tags, true, LogLevelType::Trace), &out_mask, defaults, defaults_cnt);
     EXPECT_FALSE(result);
 
 
     // If several defaults match with the same specificity, all defaults are applied
     tags[0] = LogTagType::_gc;
-    result = LD::has_default_decorator(LogSelection(tags, false, LogLevelType::Trace), &out_mask, defaults);
+    result = LD::has_default_decorator(LogSelection(tags, false, LogLevelType::Trace), &out_mask, defaults, defaults_cnt);
     EXPECT_TRUE(result);
     EXPECT_EQ(LD::mask_from_decorators(LD::pid_decorator, LD::time_decorator), out_mask);
+
+
+    // If several defaults match but one has higher specificity, only its defaults are applied
+    tags[0] = LogTagType::_compilation;
+    tags[1] = LogTagType::_codecache;
+    result = LD::has_default_decorator(LogSelection(tags, false, LogLevelType::Debug), &out_mask, defaults, defaults_cnt);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(LD::mask_from_decorators(LD::uptimemillis_decorator), out_mask);
+
+    // If a level is not specified to match (via AnyTag or NotMentioned), it should not be taken into account
+    tags[0] = LogTagType::_ref;
+    tags[1] = LogTagType::__NO_TAG;
+    result = LD::has_default_decorator(LogSelection(tags, false, LogLevelType::Info), &out_mask, defaults, defaults_cnt);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(LD::mask_from_decorators(LD::pid_decorator, LD::tid_decorator), out_mask);
+    result = LD::has_default_decorator(LogSelection(tags, false, LogLevelType::Trace), &out_mask, defaults, defaults_cnt);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(LD::mask_from_decorators(LD::pid_decorator, LD::tid_decorator), out_mask);
+
+
+    // In spite of the previous, higher specificities should still prevail
+    defaults[5] = { LogLevelType::Debug, LD::mask_from_decorators(LD::uptimemillis_decorator), LogTagType::_ref, LogTagType::_codecache };
+    tags[1] = LogTagType::_codecache;
+    result = LD::has_default_decorator(LogSelection(tags, false, LogLevelType::Debug), &out_mask, defaults, defaults_cnt);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(LD::mask_from_decorators(LD::uptimemillis_decorator), out_mask);
+  }
+
+  void test_mask_from_decorators() {
+    // Single tags should yield 2^{decorator_value_in_enum}
+    EXPECT_EQ(LD::mask_from_decorators(LD::time_decorator), (uint)(1 << LD::time_decorator));
+    EXPECT_EQ(LD::mask_from_decorators(LD::pid_decorator),  (uint)(1 << LD::pid_decorator));
+    EXPECT_EQ(LD::mask_from_decorators(LD::tid_decorator),  (uint)(1 << LD::tid_decorator));
+    EXPECT_EQ(LD::mask_from_decorators(LD::tags_decorator), (uint)(1 << LD::tags_decorator));
+
+    // NoDecorators should yield an empty mask
+    EXPECT_EQ(LD::mask_from_decorators(LD::NoDecorators), 0U);
+
+    // Combinations of decorators should fill the mask accordingly to their bitmask positions
+    uint mask = (1 << LD::time_decorator) | (1 << LD::uptimemillis_decorator) | (1 << LD::tid_decorator);
+    EXPECT_EQ(LD::mask_from_decorators(LD::time_decorator, LD::uptimemillis_decorator, LD::tid_decorator), mask);
+
+    // If a combination has NoDecorators in it, it takes precedence and the mask is zero
+    EXPECT_EQ(LD::mask_from_decorators(LD::time_decorator, LD::NoDecorators, LD::tid_decorator), 0U);
   }
 };
 
 TEST_VM_F(TestLogDecorators, MaskFromDecorators) {
+  test_mask_from_decorators();
 }
 
 TEST_VM_F(TestLogDecorators, HasDefaultDecorators) {

@@ -106,9 +106,9 @@ bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
   return result;
 }
 
-bool LogDecorators::has_default_decorator(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults) {
+bool LogDecorators::has_default_decorator(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults, size_t defaults_cnt) {
   size_t max_specificity = 0;
-  for (size_t i = 0; i < number_of_default_decorators; ++i) {
+  for (size_t i = 0; i < defaults_cnt; ++i) {
     auto current_default = defaults[i];
     const bool ignore_level = current_default.selection().level() == AnyLevel;
     const bool level_matches = ignore_level || selection.level() == current_default.selection().level();
