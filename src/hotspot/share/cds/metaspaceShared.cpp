@@ -550,6 +550,8 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   _pending_method_handle_intrinsics = new (mtClassShared) GrowableArray<Method*>(256, mtClassShared);
   if (CDSConfig::is_dumping_aot_linked_classes()) {
+    // When dumping AOT-linked classes, some classes may have direct references to a method handle
+    // intrinsic. The easiest thing is to save all of them into the AOT cache.
     SystemDictionary::get_all_method_handle_intrinsics(_pending_method_handle_intrinsics);
   }
 
