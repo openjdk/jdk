@@ -1472,7 +1472,6 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
     Label LastBlock;
 
     add(tableN16, table3, 1*single_table_size*sizeof(juint), tmp1);
-    addi(len, len, unroll_words);
 
     if (MaxVectorSize == 16) {
       vsetivli(zr, N, Assembler::e32, Assembler::m4, Assembler::ma, Assembler::ta);
@@ -1568,7 +1567,6 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   const int64_t unroll = 16;
   const int64_t unroll_words = unroll*wordSize;
   mv(tmp5, right_32_bits);
-  subw(len, len, unroll_words);
   andn(crc, tmp5, crc);
 
   const ExternalAddress table_addr = StubRoutines::crc_table_addr();
@@ -1578,10 +1576,11 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   add(table3, table2, 1*single_table_size*sizeof(juint), tmp1);
 
   if (UseRVV) {
-    const int64_t tmp_limit = MaxVectorSize >= 32 ? unroll_words*2 : unroll_words*4;
+    const int64_t tmp_limit = MaxVectorSize >= 32 ? unroll_words*3 : unroll_words*5;
     sub(tmp1, len, tmp_limit);
     bge(tmp1, zr, L_vector_entry);
   }
+  subw(len, len, unroll_words);
   bge(len, zr, L_unroll_loop_entry);
 
   addiw(len, len, unroll_words-4);
