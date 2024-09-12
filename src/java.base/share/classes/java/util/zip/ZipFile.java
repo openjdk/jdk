@@ -347,6 +347,9 @@ public class ZipFile implements ZipConstants, Closeable {
         ZipEntry entry = null;
         synchronized (this) {
             ensureOpen();
+            // Look up the name and CEN header position of the entry.
+            // The resolved name may include a trailing slash.
+            // See Source::getEntryPos for details.
             EntryPos pos = res.zsrc.getEntryPos(name, true);
             if (pos != null) {
                 entry = getZipEntry(pos.name, pos.pos);
