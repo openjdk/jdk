@@ -82,7 +82,7 @@ public final class ClassReaderImpl
         this.buffer = classfileBytes;
         this.classfileLength = classfileBytes.length;
         this.context = context;
-        this.attributeMapper = this.context.attributeMapperOption().attributeMapper();
+        this.attributeMapper = this.context.attributeMapper();
         if (classfileLength < 4 || readInt(0) != 0xCAFEBABE) {
             throw new IllegalArgumentException("Bad magic number");
         }

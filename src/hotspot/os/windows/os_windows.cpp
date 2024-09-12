@@ -1776,14 +1776,14 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch_str != nullptr) {
-    ::_snprintf(ebuf, ebuflen - 1,
-                "Can't load %s-bit .dll on a %s-bit platform",
-                lib_arch_str, running_arch_str);
+    os::snprintf(ebuf, ebuflen - 1,
+                 "Can't load %s-bit .dll on a %s-bit platform",
+                 lib_arch_str, running_arch_str);
   } else {
     // don't know what architecture this dll was build for
-    ::_snprintf(ebuf, ebuflen - 1,
-                "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
-                lib_arch, running_arch_str);
+    os::snprintf(ebuf, ebuflen - 1,
+                 "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
+                 lib_arch, running_arch_str);
   }
   JFR_ONLY(load_event.set_error_msg(ebuf);)
   return nullptr;
@@ -5741,11 +5741,23 @@ void Parker::unpark() {
   SetEvent(_ParkHandle);
 }
 
+// Platform Mutex/Monitor implementation
+
+PlatformMutex::PlatformMutex() {
+  InitializeCriticalSection(&_mutex);
+}
+
 PlatformMutex::~PlatformMutex() {
   DeleteCriticalSection(&_mutex);
 }
 
-// Platform Monitor implementation
+PlatformMonitor::PlatformMonitor() {
+  InitializeConditionVariable(&_cond);
+}
+
+PlatformMonitor::~PlatformMonitor() {
+  // There is no DeleteConditionVariable API
+}
 
 // Must already be locked
 int PlatformMonitor::wait(uint64_t millis) {

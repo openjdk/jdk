@@ -51,6 +51,7 @@ import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
@@ -188,10 +189,52 @@ public abstract sealed class AbstractMemorySegmentImpl
         return StreamSupport.stream(spliterator(elementLayout), false);
     }
 
+    // FILL_NATIVE_THRESHOLD must be a power of two and should be greater than 2^3
+    // Update the value for Aarch64 once 8338975 is fixed.
+    private static final long FILL_NATIVE_THRESHOLD = 1L << (Architecture.isAARCH64() ? 10 : 5);
+
     @Override
-    public final MemorySegment fill(byte value){
-        checkAccess(0, length, false);
-        SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
+    @ForceInline
+    public final MemorySegment fill(byte value) {
+        checkReadOnly(false);
+        if (length == 0) {
+            // Implicit state check
+            checkValidState();
+        } else if (length < FILL_NATIVE_THRESHOLD) {
+            // 0 <= length < FILL_NATIVE_LIMIT : 0...0X...XXXX
+
+            // Handle smaller segments directly without transitioning to native code
+            final long u = Byte.toUnsignedLong(value);
+            final long longValue = u << 56 | u << 48 | u << 40 | u << 32 | u << 24 | u << 16 | u << 8 | u;
+
+            int offset = 0;
+            // 0...0X...X000
+            final int limit = (int) (length & (FILL_NATIVE_THRESHOLD - 8));
+            for (; offset < limit; offset += 8) {
+                SCOPED_MEMORY_ACCESS.putLong(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, longValue);
+            }
+            int remaining = (int) length - limit;
+            // 0...0X00
+            if (remaining >= 4) {
+                SCOPED_MEMORY_ACCESS.putInt(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, (int) longValue);
+                offset += 4;
+                remaining -= 4;
+            }
+            // 0...00X0
+            if (remaining >= 2) {
+                SCOPED_MEMORY_ACCESS.putShort(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, (short) longValue);
+                offset += 2;
+                remaining -= 2;
+            }
+            // 0...000X
+            if (remaining == 1) {
+                SCOPED_MEMORY_ACCESS.putByte(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, value);
+            }
+            // We have now fully handled 0...0X...XXXX
+        } else {
+            // Handle larger segments via native calls
+            SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
+        }
         return this;
     }
 
@@ -261,20 +304,25 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public final Optional<MemorySegment> asOverlappingSlice(MemorySegment other) {
-        AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
-        if (unsafeGetBase() == that.unsafeGetBase()) {  // both either native or heap
+        final AbstractMemorySegmentImpl that = (AbstractMemorySegmentImpl)Objects.requireNonNull(other);
+        if (overlaps(that)) {
+            final long offsetToThat = that.address() - this.address();
+            final long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
+            return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
+        }
+        return Optional.empty();
+    }
+
+    @ForceInline
+    private boolean overlaps(AbstractMemorySegmentImpl that) {
+        if (unsafeGetBase() == that.unsafeGetBase()) {  // both either native or the same heap segment
             final long thisStart = this.unsafeGetOffset();
             final long thatStart = that.unsafeGetOffset();
             final long thisEnd = thisStart + this.byteSize();
             final long thatEnd = thatStart + that.byteSize();
-
-            if (thisStart < thatEnd && thisEnd > thatStart) {  //overlap occurs
-                long offsetToThat = that.address() - this.address();
-                long newOffset = offsetToThat >= 0 ? offsetToThat : 0;
-                return Optional.of(asSlice(newOffset, Math.min(this.byteSize() - newOffset, that.byteSize() + offsetToThat)));
-            }
+            return (thisStart < thatEnd && thisEnd > thatStart); //overlap occurs?
         }
-        return Optional.empty();
+        return false;
     }
 
     @Override
@@ -599,6 +647,64 @@ public abstract sealed class AbstractMemorySegmentImpl
         } else {
             // heap buffer, return the underlying array
             return NIO_ACCESS.getBufferBase(buffer);
+        }
+    }
+
+    // COPY_NATIVE_THRESHOLD must be a power of two and should be greater than 2^3
+    private static final long COPY_NATIVE_THRESHOLD = 1 << 6;
+
+    @ForceInline
+    public static void copy(AbstractMemorySegmentImpl src, long srcOffset,
+                            AbstractMemorySegmentImpl dst, long dstOffset,
+                            long size) {
+
+        Utils.checkNonNegativeIndex(size, "size");
+        // Implicit null check for src and dst
+        src.checkAccess(srcOffset, size, true);
+        dst.checkAccess(dstOffset, size, false);
+
+        if (size <= 0) {
+            // Do nothing
+        } else if (size < COPY_NATIVE_THRESHOLD && !src.overlaps(dst)) {
+            // 0 < size < FILL_NATIVE_LIMIT : 0...0X...XXXX
+            //
+            // Strictly, we could check for !src.asSlice(srcOffset, size).overlaps(dst.asSlice(dstOffset, size) but
+            // this is a bit slower and it likely very unusual there is any difference in the outcome. Also, if there
+            // is an overlap, we could tolerate one particular direction of overlap (but not the other).
+
+            // 0...0X...X000
+            final int limit = (int) (size & (COPY_NATIVE_THRESHOLD - 8));
+            int offset = 0;
+            for (; offset < limit; offset += 8) {
+                final long v = SCOPED_MEMORY_ACCESS.getLong(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset);
+                SCOPED_MEMORY_ACCESS.putLong(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
+            }
+            int remaining = (int) size - offset;
+            // 0...0X00
+            if (remaining >= 4) {
+                final int v = SCOPED_MEMORY_ACCESS.getInt(src.sessionImpl(), src.unsafeGetBase(),src.unsafeGetOffset() + srcOffset + offset);
+                SCOPED_MEMORY_ACCESS.putInt(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
+                offset += 4;
+                remaining -= 4;
+            }
+            // 0...00X0
+            if (remaining >= 2) {
+                final short v = SCOPED_MEMORY_ACCESS.getShort(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset);
+                SCOPED_MEMORY_ACCESS.putShort(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
+                offset += 2;
+                remaining -=2;
+            }
+            // 0...000X
+            if (remaining == 1) {
+                final byte v = SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset);
+                SCOPED_MEMORY_ACCESS.putByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
+            }
+            // We have now fully handled 0...0X...XXXX
+        } else {
+            // For larger sizes, the transition to native code pays off
+            SCOPED_MEMORY_ACCESS.copyMemory(src.sessionImpl(), dst.sessionImpl(),
+                    src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset,
+                    dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, size);
         }
     }
 

@@ -1859,7 +1859,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
       __ stw(R11_scratch1, simm16_offs, tmp);
     }
 #endif
-    __ call_c_with_frame_resize(copyfunc_addr, /*stub does not need resized frame*/ 0);
+    __ call_c(copyfunc_addr, relocInfo::runtime_call_type);
 
     __ nand(tmp, R3_RET, R3_RET);
     __ subf(length, tmp, length);
@@ -2057,7 +2057,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         int sco_offset = in_bytes(Klass::super_check_offset_offset());
         __ lwz(chk_off, sco_offset, super_k);
 
-        __ call_c_with_frame_resize(copyfunc_addr, /*stub does not need resized frame*/ 0);
+        __ call_c(copyfunc_addr, relocInfo::runtime_call_type);
 
 #ifndef PRODUCT
         if (PrintC1Statistics) {
@@ -2181,7 +2181,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   // Arraycopy stubs takes a length in number of elements, so don't scale it.
   __ mr(len, length);
-  __ call_c_with_frame_resize(entry, /*stub does not need resized frame*/ 0);
+  __ call_c(entry, relocInfo::runtime_call_type);
 
   if (stub != nullptr) {
     __ bind(*stub->continuation());
@@ -2620,7 +2620,7 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     __ cmpxchgw(BOOL_RESULT, /*current_value=*/R0, cmp_value, new_value, addr,
                 MacroAssembler::MemBarNone,
                 MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, /*check without ldarx first*/true);
+                noreg, nullptr, /*check without ldarx first*/true);
   }
 
   if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -2862,7 +2862,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
     return;
   }
 
-  __ call_c_with_frame_resize(dest, /*no resizing*/ 0);
+  __ call_c(dest, relocInfo::runtime_call_type);
   if (info != nullptr) {
     add_call_info_here(info);
   }

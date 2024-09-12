@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -223,7 +223,7 @@ import sun.security.util.SecurityConstants;
  * or a fully qualified name as defined by
  * <cite>The Java Language Specification</cite>.
  *
- * @jls 6.7 Fully Qualified Names
+ * @jls 6.7 Fully Qualified Names and Canonical Names
  * @jls 13.1 The Form of a Binary
  * @see      #resolveClass(Class)
  * @since 1.0
@@ -2450,7 +2450,8 @@ public abstract class ClassLoader {
      * @param javaName the native method's declared name
      */
     static long findNative(ClassLoader loader, Class<?> clazz, String entryName, String javaName) {
-        long addr = findNativeInternal(loader, entryName);
+        NativeLibraries nativeLibraries = nativeLibrariesFor(loader);
+        long addr = nativeLibraries.find(entryName);
         if (addr != 0 && loader != null) {
             Reflection.ensureNativeAccess(clazz, clazz, javaName, true);
         }
@@ -2462,11 +2463,11 @@ public abstract class ClassLoader {
      * to avoid a restricted check, as that check has already been performed when
      * obtaining the lookup.
      */
-    static long findNativeInternal(ClassLoader loader, String entryName) {
+    static NativeLibraries nativeLibrariesFor(ClassLoader loader) {
         if (loader == null) {
-            return BootLoader.getNativeLibraries().find(entryName);
+            return BootLoader.getNativeLibraries();
         } else {
-            return loader.libraries.find(entryName);
+            return loader.libraries;
         }
     }
 
