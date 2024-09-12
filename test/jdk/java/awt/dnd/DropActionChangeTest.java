@@ -62,17 +62,17 @@ import javax.swing.JFrame;
 public class DropActionChangeTest extends JFrame implements AWTEventListener {
     private static Robot robot;
     private static Frame frame;
-    private static DropActionChangeTest test;
+    private static volatile DropActionChangeTest test;
     Panel panel;
     private volatile boolean failed;
     private volatile boolean dropEnd;
     private volatile Component clickedComponent;
     private final Object LOCK = new Object();
-    static final int DROP_COMPLETION_TIMEOUT = 5000;
+    static final int DROP_COMPLETION_TIMEOUT = 8000;
     static final int MOUSE_RELEASE_TIMEOUT = 2000;
 
     public static void main(String[] args) throws Exception {
-        test = new DropActionChangeTest();
+        EventQueue.invokeAndWait(()->test = new DropActionChangeTest());
         EventQueue.invokeAndWait(test::init);
         try {
             test.start();
@@ -97,7 +97,7 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
 
         final DragSourceListener dsl = new DragSourceAdapter() {
             public void dragDropEnd(DragSourceDropEvent e) {
-                System.err.println("DragSourseListener.dragDropEnd(): " +
+                System.err.println("DragSourceListener.dragDropEnd(): " +
                         "drop action=" + e.getDropAction());
                 if (e.getDropAction() != DnDConstants.ACTION_MOVE) {
                     System.err.println("FAILURE: wrong drop action:"
@@ -144,6 +144,8 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
         try {
             robot = new Robot();
             robot.setAutoDelay(100);
+            robot.waitForIdle();
+            robot.delay(500);
 
             AtomicReference<Point> startPointRef = new AtomicReference<>();
             EventQueue.invokeAndWait(()-> startPointRef.set(panel.getLocationOnScreen()));
@@ -166,14 +168,16 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
                 robot.mouseMove(startPoint.x, startPoint.y);
                 robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                 Util.doDrag(robot, startPoint, medPoint);
+                robot.delay(500);
                 robot.keyRelease(KeyEvent.VK_CONTROL);
                 Util.doDrag(robot, medPoint, endPoint);
+                robot.delay(500);
                 robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
                 LOCK.wait(DROP_COMPLETION_TIMEOUT);
             }
             if (!dropEnd) {
-                captureScreen();
-                System.err.println("DragSourseListener.dragDropEnd() was not called, returning");
+                captureScreen("No_Drop_End_");
+                System.err.println("DragSourceListener.dragDropEnd() was not called, returning");
                 return;
             }
         } catch (Throwable e) {
@@ -181,7 +185,7 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
         }
 
         if (failed) {
-            captureScreen();
+            captureScreen("Wrong_Drop_Action_");
             throw new RuntimeException("Wrong drop action!");
         }
 
@@ -195,12 +199,12 @@ public class DropActionChangeTest extends JFrame implements AWTEventListener {
             test.dispose();
         }
     }
-    private static void captureScreen() {
+    private static void captureScreen(String str) {
         try {
             final Rectangle screenBounds = new Rectangle(
                     Toolkit.getDefaultToolkit().getScreenSize());
             ImageIO.write(robot.createScreenCapture(screenBounds),
-                          "png", new File("Failure_Screen.png"));
+                          "png", new File(str+"Failure_Screen.png"));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -247,15 +251,11 @@ class Util {
     }
 
     public static void doDrag(Robot robot, Point startPoint, Point endPoint) {
+        robot.waitForIdle();
        for (Point p = new Point(startPoint); !p.equals(endPoint);
                 p.translate(Util.sign(endPoint.x - p.x),
                             Util.sign(endPoint.y - p.y))) {
            robot.mouseMove(p.x, p.y);
-           try {
-               Thread.sleep(100);
-           } catch (InterruptedException e) {
-             e.printStackTrace();
-           }
        }
     }
 }
