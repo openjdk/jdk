@@ -294,8 +294,7 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
                     // find the first element that is greater than or equal to
                     // the partition element starting from the left Index.
                     //
-                    // Nasty to have to cast here. Would it be quicker
-                    // to copy the vectors into arrays and sort the arrays?
+                    // Would it be quicker to copy the into array and sort it?
                     while ((lo < hi0) && lt(v.get(lo), mid)) {
                         ++lo;
                     }
