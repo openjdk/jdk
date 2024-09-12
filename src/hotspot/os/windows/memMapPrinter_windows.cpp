@@ -169,12 +169,14 @@ public:
   }
     st->print(PTR_FORMAT "-" PTR_FORMAT, mem_info.BaseAddress, static_cast<const char*>(mem_info.BaseAddress) + mem_info.RegionSize);
     INDENT_BY(38);
+    st->print("%12zu", mem_info.RegionSize);
+    INDENT_BY(51);
     st->print("%s", mapping_info._protect_buffer.base());
-    INDENT_BY(44);
+    INDENT_BY(57);
     st->print("%s-%s", mapping_info._state_buffer.base(), mapping_info._type_buffer.base());
-    INDENT_BY(47);
-    st->print("%#9llx", reinterpret_cast<const unsigned long long>(mem_info.BaseAddress) - reinterpret_cast<const unsigned long long>(mem_info.AllocationBase));
-    INDENT_BY(59);
+    INDENT_BY(63);
+    st->print("%#11llx", reinterpret_cast<const unsigned long long>(mem_info.BaseAddress) - reinterpret_cast<const unsigned long long>(mem_info.AllocationBase));
+    INDENT_BY(72);
     if (_session.print_nmt_info_for_region(mem_info.BaseAddress, static_cast<const char*>(mem_info.BaseAddress) + mem_info.RegionSize)) {
       st->print(" ");
     }
@@ -205,11 +207,11 @@ public:
 
   void print_header() const {
     outputStream* st = _session.out();
-    //            0         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6         7
-    //            012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-    //            0x00007ffd5bd64000-0x00007ffd5c250000      5160960 r---  c-img 0x10d4000 C:\work\jdk\build\work-fastdebug\jdk\bin\server\jvm.dll
-    st->print_cr("from               to                 prot  state    offset vminfo/file");
-    st->print_cr("=======================================================================");
+    //            0         1         2         3         4         5         6         7         8         9         0         1         2         3         
+    //            01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+    //            0x00007ffb24565000-0x00007ffb24a7e000      5345280 r--   c-img   0x1155000 C:\work\jdk\build\fastdebug\jdk\bin\server\jvm.dll
+    st->print_cr("from               to                        vsize prot  state      offset vminfo/file");
+    st->print_cr("===========================================================================================");
   }
 };
 
