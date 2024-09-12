@@ -178,6 +178,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 throw new ProviderException(
                     "could not instantiate a Mac with the provided algorithm",
                     nsae);
+            } finally {
+                Arrays.fill(inputKeyMaterial, (byte)0x00);
+                Arrays.fill(salt, (byte)0x00);
             }
         } else if (derivationSpec instanceof HKDFParameterSpec.Expand) {
             HKDFParameterSpec.Expand anExpand =
@@ -211,6 +214,8 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 throw new ProviderException(
                     "could not instantiate a Mac with the provided algorithm",
                     nsae);
+            } finally {
+                Arrays.fill(pseudoRandomKey, (byte) 0x00);
             }
         } else if (derivationSpec instanceof HKDFParameterSpec.ExtractThenExpand) {
             HKDFParameterSpec.ExtractThenExpand anExtractThenExpand =
@@ -238,6 +243,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     "Requested length exceeds maximum allowed length");
             }
             // perform extract and then expand
+            pseudoRandomKey = null;
             try {
                 pseudoRandomKey = hkdfExtract(inputKeyMaterial, salt);
                 byte[] result = hkdfExpand(pseudoRandomKey, info, length);
@@ -255,6 +261,12 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 throw new ProviderException(
                     "could not instantiate a Mac with the provided algorithm",
                     nsae);
+            } finally {
+                Arrays.fill(inputKeyMaterial, (byte)0x00);
+                Arrays.fill(salt, (byte)0x00);
+                if(pseudoRandomKey != null) {
+                    Arrays.fill(pseudoRandomKey, (byte)0x00);
+                }
             }
         }
         throw new InvalidAlgorithmParameterException(
@@ -294,8 +306,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      * @param inputKeyMaterial
      *     the input keying material used for the HKDF-Extract operation.
      * @param salt
-     *     the salt value used for HKDF-Extract; {@code null} if no salt value
-     *     is provided.
+     *     the salt value used for HKDF-Extract
      *
      * @return a byte array containing the pseudorandom key (PRK)
      *
@@ -306,17 +317,15 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     private byte[] hkdfExtract(byte[] inputKeyMaterial, byte[] salt)
         throws InvalidKeyException, NoSuchAlgorithmException {
 
-        if (salt == null || salt.length == 0) {
+        // salt will not be null
+        if (salt.length == 0) {
             salt = new byte[hmacLen];
         }
         Mac hmacObj = Mac.getInstance(hmacAlgName);
         hmacObj.init(new SecretKeySpec(salt, hmacAlgName));
 
-        if (inputKeyMaterial == null) {
-            return hmacObj.doFinal();
-        } else {
-            return hmacObj.doFinal(inputKeyMaterial);
-        }
+        // inputKeyMaterial will not be null
+        return hmacObj.doFinal(inputKeyMaterial);
     }
 
     /**

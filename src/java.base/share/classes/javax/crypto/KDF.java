@@ -80,6 +80,11 @@ import java.util.Objects;
  * ensure that the selected provider can handle the key material that is passed
  * to those methods - for example, the key material may reside on a
  * hardware device that only a specific {@code KDF} provider can utilize.
+ * Once initiated, the selection process traverses the list of registered
+ * security providers, starting with the most preferred {@code Provider}. A new
+ * {@code KDF} object encapsulating the {@code KDFSpi} implementation from the
+ * first provider that supports the specified algorithm and optional
+ * parameters is returned.
  * <p>
  * If the {@code getProviderName} or {@code getParameters} method is called
  * before the {@code deriveKey} or {@code deriveData} methods, the first
@@ -217,9 +222,6 @@ public final class KDF {
      * the preferred provider order for the specified algorithm. This
      * may be different than the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
-     * See also the Cipher Transformations section of the {@extLink
-     * security_guide_jdk_providers JDK Providers} document for information
-     * on the transformation defaults used by JDK providers.
      *
      * @throws NoSuchAlgorithmException
      *     if no {@code Provider} supports a {@code KDF} implementation for the
@@ -277,8 +279,7 @@ public final class KDF {
 
     /**
      * Returns a {@code KDF} object that implements the specified algorithm from
-     * the specified security provider. The specified provider must be
-     * registered in the security provider list.
+     * the specified security provider.
      *
      * @param algorithm
      *     the key derivation algorithm to use.
@@ -334,9 +335,6 @@ public final class KDF {
      * the preferred provider order for the specified algorithm. This
      * may be different than the order of providers returned by
      * {@link Security#getProviders() Security.getProviders()}.
-     * See also the Cipher Transformations section of the {@extLink
-     * security_guide_jdk_providers JDK Providers} document for information
-     * on the transformation defaults used by JDK providers.
      *
      * @throws NoSuchAlgorithmException
      *     if no {@code Provider} supports a {@code KDF} implementation for the
@@ -353,7 +351,7 @@ public final class KDF {
         Objects.requireNonNull(algorithm, "algorithm must not be null");
         // make sure there is at least one service from a signed provider
         Iterator<Service> t = GetInstance.getServices("KDF", algorithm);
-        NoSuchAlgorithmException lastException = null;
+        InvalidAlgorithmParameterException lastException = null;
         while (t.hasNext()) {
             Service s = t.next();
             if (!JceSecurity.canUseProvider(s.getProvider())) {
@@ -362,10 +360,9 @@ public final class KDF {
             try {
                 Object obj = s.newInstance(kdfParameters);
                 if (!(obj instanceof KDFSpi spiObj)) {
-                    lastException = new NoSuchAlgorithmException(
-                        new InvalidAlgorithmParameterException(
+                    lastException = new InvalidAlgorithmParameterException(
                             "No provider can be found that supports the "
-                            + "specified algorithm and parameters"));
+                            + "specified algorithm and parameters");
                     if (!skipDebug && pdebug != null) {
                         pdebug.println(
                             "obj was not an instance of KDFSpi (should not "
@@ -381,10 +378,9 @@ public final class KDF {
                 }
             } catch (NoSuchAlgorithmException e) {
                 lastException =
-                    new NoSuchAlgorithmException(
                         new InvalidAlgorithmParameterException(
                             "No provider can be found that supports the "
-                            + "specified algorithm and parameters"));
+                            + "specified algorithm and parameters");
                 if (!skipDebug && pdebug != null) {
                     pdebug.println(e.toString());
                 }
@@ -392,7 +388,7 @@ public final class KDF {
             }
         }
         if (lastException != null) {
-            return handleException(lastException);
+            throw lastException;
         } else {
             throw new NoSuchAlgorithmException(
                 "Algorithm " + algorithm + " not available");
@@ -458,7 +454,6 @@ public final class KDF {
     /**
      * Returns a {@code KDF} object that implements the specified algorithm from
      * the specified provider and is initialized with the specified parameters.
-     * The specified provider must be registered in the security provider list.
      *
      * @param algorithm
      *     the key derivation algorithm to use.
