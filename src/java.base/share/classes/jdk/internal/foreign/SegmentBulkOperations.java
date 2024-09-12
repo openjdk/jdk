@@ -201,7 +201,7 @@ public final class SegmentBulkOperations {
         // instead we manually unroll the loop.
         // This gives about 20% performance increase for large values of `length`.
         // Om non-Aarch64 architectures, the unroll code will be eliminated at compile time.
-        if (Architecture.isX64() && NATIVE_THRESHOLD_MISMATCH > 64) {
+        if (Architecture.isAARCH64() && NATIVE_THRESHOLD_MISMATCH > 64) {
 
             // 0...X...000000
             final int bulkLimit = length & (NATIVE_THRESHOLD_MISMATCH - 64);
