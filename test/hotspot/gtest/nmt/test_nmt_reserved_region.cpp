@@ -47,7 +47,7 @@ TEST_VM(NMT, ReservedRegionCopy) {
   CommittedRegionIterator itr = region2.iterate_committed_regions();
   const CommittedMemoryRegion* rgn = itr.next();
   ASSERT_EQ(rgn->base(), dummy1); // Now we should see dummy1
-  ASSERT_EQ(region2.mem_tag(), mtThreadStack); // Should be correct flag
+  ASSERT_EQ(region2.mem_tag(), mtThreadStack); // Should be correct memory tag
   ASSERT_EQ(region2.call_stack()->get_frame(0), dummy1); // Check the stack
   rgn = itr.next();
   ASSERT_EQ(rgn, (const CommittedMemoryRegion*)nullptr); // and nothing else

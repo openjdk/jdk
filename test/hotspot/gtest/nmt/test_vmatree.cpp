@@ -424,7 +424,7 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
   const size_t page_size = tr->page_size;
   VMATree tree;
   NCS ncss(true);
-  constexpr const int candidates_len_flags = 4;
+  constexpr const int candidates_len_tags = 4;
   constexpr const int candidates_len_stacks = 2;
 
   NativeCallStack candidate_stacks[candidates_len_stacks] = {
@@ -432,7 +432,7 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
     make_stack(0xB),
   };
 
-  const MemTag candidate_flags[candidates_len_flags] = {
+  const MemTag candidate_tags[candidates_len_tags] = {
     mtNMT,
     mtTest,
   };
@@ -456,7 +456,7 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
     const size_t start = page_start * page_size;
     const size_t size = num_pages * page_size;
 
-    const MemTag mem_tag = candidate_flags[os::random() % candidates_len_flags];
+    const MemTag mem_tag = candidate_tags[os::random() % candidates_len_tags];
     const NativeCallStack stack = candidate_stacks[os::random() % candidates_len_stacks];
 
     const NCS::StackIndex si = ncss.push(stack);
