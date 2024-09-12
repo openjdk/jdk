@@ -35,6 +35,8 @@
 
 package java.util.concurrent.atomic;
 
+import jdk.internal.reflect.MethodHandlesInternal;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.Arrays;
@@ -138,15 +140,8 @@ abstract class Striped64 extends Number {
         }
 
         // VarHandle mechanics
-        private static final VarHandle VALUE;
-        static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                VALUE = l.findVarHandle(Cell.class, "value", long.class);
-            } catch (ReflectiveOperationException e) {
-                throw new ExceptionInInitializerError(e);
-            }
-        }
+        private static final VarHandle VALUE = MethodHandlesInternal.findVarHandleOrThrow(
+                MethodHandles.lookup(), Cell.class, "value", long.class);
     }
 
     /** Number of CPUS, to place bound on table size */
@@ -381,14 +376,14 @@ abstract class Striped64 extends Number {
     private static final VarHandle CELLSBUSY;
     private static final VarHandle THREAD_PROBE;
     static {
-        try {
-            MethodHandles.Lookup l1 = MethodHandles.lookup();
-            BASE = l1.findVarHandle(Striped64.class,
-                    "base", long.class);
-            CELLSBUSY = l1.findVarHandle(Striped64.class,
-                    "cellsBusy", int.class);
+        MethodHandles.Lookup l1 = MethodHandles.lookup();
+
+        BASE = MethodHandlesInternal.findVarHandleOrThrow(
+                l1, Striped64.class, "base", long.class);
+        CELLSBUSY = MethodHandlesInternal.findVarHandleOrThrow(
+                l1, Striped64.class, "cellsBusy", int.class);
             @SuppressWarnings("removal")
-            MethodHandles.Lookup l2 = java.security.AccessController.doPrivileged(
+        MethodHandles.Lookup l2 = java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction<>() {
                         public MethodHandles.Lookup run() {
                             try {
@@ -397,11 +392,8 @@ abstract class Striped64 extends Number {
                                 throw new ExceptionInInitializerError(e);
                             }
                         }});
-            THREAD_PROBE = l2.findVarHandle(Thread.class,
-                    "threadLocalRandomProbe", int.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        THREAD_PROBE = MethodHandlesInternal.findVarHandleOrThrow(
+                l2, Thread.class, "threadLocalRandomProbe", int.class);
     }
 
 }

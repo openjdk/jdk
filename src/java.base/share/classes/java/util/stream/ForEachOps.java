@@ -24,6 +24,8 @@
  */
 package java.util.stream;
 
+import jdk.internal.reflect.MethodHandlesInternal;
+
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.concurrent.CountedCompleter;
@@ -370,15 +372,8 @@ final class ForEachOps {
         private Node<T> node;
 
         private ForEachOrderedTask<S, T> next;
-        private static final VarHandle NEXT;
-        static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                NEXT = l.findVarHandle(ForEachOrderedTask.class, "next", ForEachOrderedTask.class);
-            } catch (Exception e) {
-                throw new InternalError(e);
-            }
-        }
+        private static final VarHandle NEXT = MethodHandlesInternal.findVarHandleOrThrow(
+                MethodHandles.lookup(),ForEachOrderedTask.class, "next", ForEachOrderedTask.class);
 
         protected ForEachOrderedTask(PipelineHelper<T> helper,
                                      Spliterator<S> spliterator,

@@ -2435,8 +2435,8 @@ public abstract sealed class VarHandle implements Constable
                 throws ReflectiveOperationException {
             return switch (kind) {
                 case FIELD        -> lookup.findVarHandle(declaringClass.resolveConstantDesc(lookup),
-                                                          constantName(),
-                                                          varType.resolveConstantDesc(lookup));
+                        constantName(),
+                        varType.resolveConstantDesc(lookup));
                 case STATIC_FIELD -> lookup.findStaticVarHandle(declaringClass.resolveConstantDesc(lookup),
                                                           constantName(),
                                                           varType.resolveConstantDesc(lookup));

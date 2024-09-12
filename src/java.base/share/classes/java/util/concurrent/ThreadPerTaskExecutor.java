@@ -38,6 +38,7 @@ import java.util.stream.Stream;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.reflect.MethodHandlesInternal;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.ThreadContainers;
 
@@ -48,15 +49,8 @@ import jdk.internal.vm.ThreadContainers;
 class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final Permission MODIFY_THREAD = new RuntimePermission("modifyThread");
-    private static final VarHandle STATE;
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            STATE = l.findVarHandle(ThreadPerTaskExecutor.class, "state", int.class);
-        } catch (Exception e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
+    private static final VarHandle STATE = MethodHandlesInternal.findVarHandleOrThrow(
+            MethodHandles.lookup(), ThreadPerTaskExecutor.class, "state", int.class);
 
     private final ThreadFactory factory;
     private final Set<Thread> threads = ConcurrentHashMap.newKeySet();
@@ -506,14 +500,10 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
         private static final VarHandle EXCEPTION;
         private static final VarHandle EXCEPTION_COUNT;
         static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                RESULT = l.findVarHandle(AnyResultHolder.class, "result", Object.class);
-                EXCEPTION = l.findVarHandle(AnyResultHolder.class, "exception", Throwable.class);
-                EXCEPTION_COUNT = l.findVarHandle(AnyResultHolder.class, "exceptionCount", int.class);
-            } catch (Exception e) {
-                throw new InternalError(e);
-            }
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            RESULT = MethodHandlesInternal.findVarHandleOrThrow(l, AnyResultHolder.class, "result", Object.class);
+            EXCEPTION = MethodHandlesInternal.findVarHandleOrThrow(l, AnyResultHolder.class, "exception", Throwable.class);
+            EXCEPTION_COUNT = MethodHandlesInternal.findVarHandleOrThrow(l, AnyResultHolder.class, "exceptionCount", int.class);
         }
         private static final Object NULL = new Object();
 

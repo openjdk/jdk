@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.reflect.MethodHandlesInternal;
 
 /**
  * A "shared" thread container. A shared thread container doesn't have an owner
@@ -41,15 +42,11 @@ public class SharedThreadContainer extends ThreadContainer implements AutoClosea
     private static final VarHandle CLOSED;
     private static final VarHandle VIRTUAL_THREADS;
     static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            CLOSED = l.findVarHandle(SharedThreadContainer.class,
-                    "closed", boolean.class);
-            VIRTUAL_THREADS = l.findVarHandle(SharedThreadContainer.class,
-                    "virtualThreads", Set.class);
-        } catch (Exception e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        MethodHandles.Lookup l = MethodHandles.lookup();
+        CLOSED = MethodHandlesInternal.findVarHandleOrThrow(
+                l, SharedThreadContainer.class, "closed", boolean.class);
+        VIRTUAL_THREADS = MethodHandlesInternal.findVarHandleOrThrow(
+                l, SharedThreadContainer.class, "virtualThreads", Set.class);
     }
 
     // name of container, used by toString

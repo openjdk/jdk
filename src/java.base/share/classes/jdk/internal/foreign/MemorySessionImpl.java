@@ -36,6 +36,7 @@ import java.util.Objects;
 
 import jdk.internal.foreign.GlobalSession.HeapSession;
 import jdk.internal.misc.ScopedMemoryAccess;
+import jdk.internal.reflect.MethodHandlesInternal;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -57,7 +58,9 @@ public abstract sealed class MemorySessionImpl
     static final int OPEN = 0;
     static final int CLOSED = -1;
 
-    static final VarHandle STATE;
+    static final VarHandle STATE = MethodHandlesInternal.findVarHandleOrThrow(
+            MethodHandles.lookup(), MemorySessionImpl.class, "state", int.class);
+
     static final int MAX_FORKS = Integer.MAX_VALUE;
 
     static final ScopedMemoryAccess.ScopedAccessError ALREADY_CLOSED = new ScopedMemoryAccess.ScopedAccessError(MemorySessionImpl::alreadyClosed);
@@ -68,14 +71,6 @@ public abstract sealed class MemorySessionImpl
     final ResourceList resourceList;
     final Thread owner;
     int state = OPEN;
-
-    static {
-        try {
-            STATE = MethodHandles.lookup().findVarHandle(MemorySessionImpl.class, "state", int.class);
-        } catch (Exception ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
-    }
 
     public Arena asArena() {
         return new ArenaImpl(this);

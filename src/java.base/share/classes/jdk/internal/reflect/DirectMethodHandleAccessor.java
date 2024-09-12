@@ -310,17 +310,10 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
                 }
             }
 
-            static final JavaLangInvokeAccess JLIA;
-            static final MethodHandle NATIVE_ACCESSOR_INVOKE;
-            static {
-                try {
-                    JLIA = SharedSecrets.getJavaLangInvokeAccess();
-                    NATIVE_ACCESSOR_INVOKE = MethodHandles.lookup().findVirtual(NativeAccessor.class, "invoke",
-                            genericMethodType(1, true));
-                } catch (NoSuchMethodException|IllegalAccessException e) {
-                    throw new InternalError(e);
-                }
-            }
+            static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
+            static final MethodHandle NATIVE_ACCESSOR_INVOKE = MethodHandlesInternal.findVirtualOrThrow(
+                    MethodHandles.lookup(), NativeAccessor.class, "invoke",
+                    genericMethodType(1, true));
         }
     }
 

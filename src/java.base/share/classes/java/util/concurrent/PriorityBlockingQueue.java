@@ -53,6 +53,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.reflect.MethodHandlesInternal;
 import jdk.internal.util.ArraysSupport;
 
 /**
@@ -1093,15 +1094,10 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     }
 
     // VarHandle mechanics
-    private static final VarHandle ALLOCATIONSPINLOCK;
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            ALLOCATIONSPINLOCK = l.findVarHandle(PriorityBlockingQueue.class,
-                                                 "allocationSpinLock",
-                                                 int.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
+    private static final VarHandle ALLOCATIONSPINLOCK = MethodHandlesInternal.findVarHandleOrThrow(
+            MethodHandles.lookup(),
+            PriorityBlockingQueue.class,
+            "allocationSpinLock",
+            int.class);
+
 }

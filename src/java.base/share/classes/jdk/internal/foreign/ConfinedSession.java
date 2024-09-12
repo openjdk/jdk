@@ -28,6 +28,7 @@ package jdk.internal.foreign;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 
+import jdk.internal.reflect.MethodHandlesInternal;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -40,15 +41,8 @@ final class ConfinedSession extends MemorySessionImpl {
 
     private int asyncReleaseCount = 0;
 
-    static final VarHandle ASYNC_RELEASE_COUNT;
-
-    static {
-        try {
-            ASYNC_RELEASE_COUNT = MethodHandles.lookup().findVarHandle(ConfinedSession.class, "asyncReleaseCount", int.class);
-        } catch (Throwable ex) {
-            throw new ExceptionInInitializerError(ex);
-        }
-    }
+    static final VarHandle ASYNC_RELEASE_COUNT= MethodHandlesInternal.findVarHandleOrThrow(
+            MethodHandles.lookup(), ConfinedSession.class, "asyncReleaseCount", int.class);
 
     public ConfinedSession(Thread owner) {
         super(owner, new ConfinedResourceList());
