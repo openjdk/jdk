@@ -54,7 +54,7 @@ template<
     class STORAGE,
     typename K, typename V,
     AnyObj::allocation_type ALLOC_TYPE,
-    MemTag MEM_TYPE,
+    MemTag MEM_TAG,
     unsigned (*HASH)  (K const&),
     bool     (*EQUALS)(K const&, K const&)
     >
@@ -153,7 +153,7 @@ class ResourceHashtableBase : public STORAGE {
     assert(*lookup_node(hv, key) == nullptr, "use put_if_absent");
     Node** ptr = bucket_at(index);
     if (ALLOC_TYPE == AnyObj::C_HEAP) {
-      *ptr = new (MEM_TYPE) Node(hv, key, value, *ptr);
+      *ptr = new (MEM_TAG) Node(hv, key, value, *ptr);
     } else {
       *ptr = new Node(hv, key, value, *ptr);
     }
@@ -174,7 +174,7 @@ class ResourceHashtableBase : public STORAGE {
       return false;
     } else {
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
-        *ptr = new (MEM_TYPE) Node(hv, key, value);
+        *ptr = new (MEM_TAG) Node(hv, key, value);
       } else {
         *ptr = new Node(hv, key, value);
       }
@@ -193,7 +193,7 @@ class ResourceHashtableBase : public STORAGE {
     Node** ptr = lookup_node(hv, key);
     if (*ptr == nullptr) {
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
-        *ptr = new (MEM_TYPE) Node(hv, key);
+        *ptr = new (MEM_TAG) Node(hv, key);
       } else {
         *ptr = new Node(hv, key);
       }
@@ -215,7 +215,7 @@ class ResourceHashtableBase : public STORAGE {
     Node** ptr = lookup_node(hv, key);
     if (*ptr == nullptr) {
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
-        *ptr = new (MEM_TYPE) Node(hv, key, value);
+        *ptr = new (MEM_TAG) Node(hv, key, value);
       } else {
         *ptr = new Node(hv, key, value);
       }
