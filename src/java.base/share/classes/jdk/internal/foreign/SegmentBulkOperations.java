@@ -200,7 +200,7 @@ public final class SegmentBulkOperations {
         // Currently, we do not benefit from super-word optimization on Aarch64 so
         // instead we manually unroll the loop.
         // This gives about 20% performance increase for large values of `length`.
-        // Om non-Aarch64 architectures, the unroll code will be eliminated at compile time.
+        // On non-Aarch64 architectures, the unroll code will be eliminated at compile time.
         if (Architecture.isAARCH64() && NATIVE_THRESHOLD_MISMATCH > 64) {
 
             // 0...X...000000
