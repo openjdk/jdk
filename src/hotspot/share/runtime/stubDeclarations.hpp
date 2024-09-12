@@ -117,7 +117,7 @@
 // blobs of different types. The former may include some JVMTI stubs.
 //
 // n.b. blobs and stub defines are generated in the order defined by
-// OPTO_STUBS_DO, allowing dependencies from any givem stub on its
+// C2_STUBS_DO, allowing dependencies from any givem stub on its
 // predecessors to be guaranteed. That explains the initial placement
 // of the blob declarations and intermediate placement of the jvmti
 // stubs.
@@ -125,14 +125,14 @@
 #ifdef COMPILER2
 // do_jvmti_stub(name)
 #if INCLUDE_JVMTI
-#define OPTO_JVMTI_STUBS_DO(do_jvmti_stub)                             \
+#define C2_JVMTI_STUBS_DO(do_jvmti_stub)                               \
   do_jvmti_stub(notify_jvmti_vthread_start)                            \
   do_jvmti_stub(notify_jvmti_vthread_end)                              \
   do_jvmti_stub(notify_jvmti_vthread_mount)                            \
   do_jvmti_stub(notify_jvmti_vthread_unmount)                          \
 
 #else
-#define OPTO_JVMTI_STUBS_DO(do_jvmti_stub)
+#define C2_JVMTI_STUBS_DO(do_jvmti_stub)
 #endif // INCLUDE_JVMTI
 
 // do_blob(name, type)
@@ -142,7 +142,7 @@
 // n.b. non-jvmti stubs may employ a special type of jump (0, 1 or 2)
 // and require access to TLS and the return pc. jvmti stubs always
 // employ jump 0, and require no special access
-#define OPTO_STUBS_DO(do_blob, do_stub, do_jvmti_stub)                 \
+#define C2_STUBS_DO(do_blob, do_stub, do_jvmti_stub)                   \
   do_blob(uncommon_trap, UncommonTrapBlob*)                            \
   do_blob(exception, ExceptionBlob*)                                   \
   do_stub(new_instance, 0, true, false)                                \
@@ -153,7 +153,7 @@
   do_stub(multianewarray4, 0, true, false)                             \
   do_stub(multianewarray5, 0, true, false)                             \
   do_stub(multianewarrayN, 0, true, false)                             \
-  OPTO_JVMTI_STUBS_DO(do_jvmti_stub)                                   \
+  C2_JVMTI_STUBS_DO(do_jvmti_stub)                                     \
   do_stub(complete_monitor_locking, 0, false, false)                   \
   do_stub(monitor_notify, 0, false, false)                             \
   do_stub(monitor_notifyAll, 0, false, false)                          \
@@ -162,7 +162,7 @@
   do_stub(register_finalizer, 0, false, false)                         \
 
 #else
-#define OPTO_STUBS_DO(do_blob, do_stub, do_jvmti_stub)
+#define C2_STUBS_DO(do_blob, do_stub, do_jvmti_stub)
 #endif
 
 // generate a stub or blob id enum tag from a name

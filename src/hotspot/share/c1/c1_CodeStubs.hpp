@@ -264,7 +264,7 @@ class NewInstanceStub: public CodeStub {
   LIR_Opr          _klass_reg;
   LIR_Opr          _result;
   CodeEmitInfo*    _info;
-  C1StubId _stub_id;
+  C1StubId         _stub_id;
 
  public:
   NewInstanceStub(LIR_Opr klass_reg, LIR_Opr result, ciInstanceKlass* klass, CodeEmitInfo* info, C1StubId stub_id);
@@ -515,7 +515,7 @@ public:
 class SimpleExceptionStub: public CodeStub {
  private:
   LIR_Opr          _obj;
-  C1StubId _stub;
+  C1StubId         _stub;
   CodeEmitInfo*    _info;
 
  public:

@@ -101,37 +101,37 @@ typedef const TypeFunc*(*TypeFunc_generator)();
 
 // define OptoStubId enum tags: uncommon_trap_id etc
 
-#define OPTO_BLOB_ID_ENUM_DECLARE(name, type) STUB_ID_NAME(name),
-#define OPTO_STUB_ID_ENUM_DECLARE(name, f, t, r) STUB_ID_NAME(name),
-#define OPTO_JVMTI_STUB_ID_ENUM_DECLARE(name) STUB_ID_NAME(name),
+#define C2_BLOB_ID_ENUM_DECLARE(name, type) STUB_ID_NAME(name),
+#define C2_STUB_ID_ENUM_DECLARE(name, f, t, r) STUB_ID_NAME(name),
+#define C2_JVMTI_STUB_ID_ENUM_DECLARE(name) STUB_ID_NAME(name),
 enum class OptoStubId :int {
   NO_STUBID = -1,
-  OPTO_STUBS_DO(OPTO_BLOB_ID_ENUM_DECLARE, OPTO_STUB_ID_ENUM_DECLARE, OPTO_JVMTI_STUB_ID_ENUM_DECLARE)
+  C2_STUBS_DO(C2_BLOB_ID_ENUM_DECLARE, C2_STUB_ID_ENUM_DECLARE, C2_JVMTI_STUB_ID_ENUM_DECLARE)
   NUM_STUBIDS
 };
-#undef OPTO_BLOB_ID_ENUM_DECLARE
-#undef OPTO_STUB_ID_ENUM_DECLARE
-#undef OPTO_JVMTI_STUB_ID_ENUM_DECLARE
+#undef C2_BLOB_ID_ENUM_DECLARE
+#undef C2_STUB_ID_ENUM_DECLARE
+#undef C2_JVMTI_STUB_ID_ENUM_DECLARE
 
 class OptoRuntime : public AllStatic {
   friend class Matcher;  // allow access to stub names
 
  private:
   // declare opto stub address/blob holder static fields
-#define OPTO_BLOB_FIELD_DECLARE(name, type) \
+#define C2_BLOB_FIELD_DECLARE(name, type) \
   static type        BLOB_FIELD_NAME(name);
-#define OPTO_STUB_FIELD_NAME(name) _ ## name ## _Java
-#define OPTO_STUB_FIELD_DECLARE(name, f, t, r) \
-  static address     OPTO_STUB_FIELD_NAME(name) ;
-#define OPTO_JVMTI_STUB_FIELD_DECLARE(name) \
+#define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
+#define C2_STUB_FIELD_DECLARE(name, f, t, r) \
+  static address     C2_STUB_FIELD_NAME(name) ;
+#define C2_JVMTI_STUB_FIELD_DECLARE(name) \
   static address     STUB_FIELD_NAME(name);
 
-  OPTO_STUBS_DO(OPTO_BLOB_FIELD_DECLARE, OPTO_STUB_FIELD_DECLARE, OPTO_JVMTI_STUB_FIELD_DECLARE)
+  C2_STUBS_DO(C2_BLOB_FIELD_DECLARE, C2_STUB_FIELD_DECLARE, C2_JVMTI_STUB_FIELD_DECLARE)
 
-#undef OPTO_BLOB_FIELD_DECLARE
-#undef OPTO_STUB_FIELD_NAME
-#undef OPTO_STUB_FIELD_DECLARE
-#undef OPTO_JVMTI_STUB_FIELD_DECLARE
+#undef C2_BLOB_FIELD_DECLARE
+#undef C2_STUB_FIELD_NAME
+#undef C2_STUB_FIELD_DECLARE
+#undef C2_JVMTI_STUB_FIELD_DECLARE
 
   // Stub names indexed by sharedStubId
   static const char *_stub_names[];
@@ -157,6 +157,13 @@ class OptoRuntime : public AllStatic {
   static void multianewarray4_C(Klass* klass, int len1, int len2, int len3, int len4, JavaThread* current);
   static void multianewarray5_C(Klass* klass, int len1, int len2, int len3, int len4, int len5, JavaThread* current);
   static void multianewarrayN_C(Klass* klass, arrayOopDesc* dims, JavaThread* current);
+
+  // local methods passed as arguments to stub generator that forward
+  // control to corresponding JRT methods of SharedRuntime
+  static void slow_arraycopy_C(oopDesc* src,  jint src_pos,
+                               oopDesc* dest, jint dest_pos,
+                               jint length, JavaThread* thread);
+  static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
 public:
   static void monitor_notify_C(oopDesc* obj, JavaThread* current);

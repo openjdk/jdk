@@ -88,27 +88,27 @@
 // At command line specify the parameters: -XX:+FullGCALot -XX:FullGCALotStart=100000000
 
 
-#define OPTO_BLOB_FIELD_DEFINE(name, type) \
+#define C2_BLOB_FIELD_DEFINE(name, type) \
   type OptoRuntime:: BLOB_FIELD_NAME(name)  = nullptr;
-#define OPTO_STUB_FIELD_NAME(name) _ ## name ## _Java
-#define OPTO_STUB_FIELD_DEFINE(name, f, t, r) \
-  address OptoRuntime:: OPTO_STUB_FIELD_NAME(name) = nullptr;
-#define OPTO_JVMTI_STUB_FIELD_DEFINE(name) \
+#define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
+#define C2_STUB_FIELD_DEFINE(name, f, t, r) \
+  address OptoRuntime:: C2_STUB_FIELD_NAME(name) = nullptr;
+#define C2_JVMTI_STUB_FIELD_DEFINE(name) \
   address OptoRuntime:: STUB_FIELD_NAME(name) = nullptr;
-OPTO_STUBS_DO(OPTO_BLOB_FIELD_DEFINE, OPTO_STUB_FIELD_DEFINE, OPTO_JVMTI_STUB_FIELD_DEFINE)
-#undef OPTO_BLOB_FIELD_DEFINE
-#undef OPTO_STUB_FIELD_DEFINE
-#undef OPTO_JVMTI_STUB_FIELD_DEFINE
+C2_STUBS_DO(C2_BLOB_FIELD_DEFINE, C2_STUB_FIELD_DEFINE, C2_JVMTI_STUB_FIELD_DEFINE)
+#undef C2_BLOB_FIELD_DEFINE
+#undef C2_STUB_FIELD_DEFINE
+#undef C2_JVMTI_STUB_FIELD_DEFINE
 
-#define OPTO_BLOB_NAME_DEFINE(name, type)  "Opto Runtime " # name "_blob",
-#define OPTO_STUB_NAME_DEFINE(name, f, t, r)  "Opto Runtime " # name,
-#define OPTO_JVMTI_STUB_NAME_DEFINE(name)  "Opto Runtime " # name,
+#define C2_BLOB_NAME_DEFINE(name, type)  "C2 Runtime " # name "_blob",
+#define C2_STUB_NAME_DEFINE(name, f, t, r)  "C2 Runtime " # name,
+#define C2_JVMTI_STUB_NAME_DEFINE(name)  "C2 Runtime " # name,
 const char* OptoRuntime::_stub_names[] = {
-  OPTO_STUBS_DO(OPTO_BLOB_NAME_DEFINE, OPTO_STUB_NAME_DEFINE, OPTO_JVMTI_STUB_NAME_DEFINE)
+  C2_STUBS_DO(C2_BLOB_NAME_DEFINE, C2_STUB_NAME_DEFINE, C2_JVMTI_STUB_NAME_DEFINE)
 };
-#undef OPTO_BLOB_NAME_DEFINE
-#undef OPTO_STUB_NAME_DEFINE
-#undef OPTO_JVMTI_STUB_NAME_DEFINE
+#undef C2_BLOB_NAME_DEFINE
+#undef C2_STUB_NAME_DEFINE
+#undef C2_JVMTI_STUB_NAME_DEFINE
 
 // This should be called in an assertion at the start of OptoRuntime routines
 // which are entered from compiled code (all of them)
@@ -131,14 +131,14 @@ static bool check_compiled_frame(JavaThread* thread) {
   if (var == nullptr) { return false; }
 */
 
-#define GEN_OPTO_BLOB(name, type)                    \
+#define GEN_C2_BLOB(name, type)                    \
   generate_ ## name ## _blob();
 
 // a few helper macros to conjure up generate_stub call arguments
-#define OPTO_STUB_FIELD_NAME(name) _ ## name ## _Java
-#define OPTO_STUB_TYPEFUNC(name) name ## _Type
-#define OPTO_STUB_C_FUNC(name) CAST_FROM_FN_PTR(address, name ## _C)
-#define OPTO_STUB_NAME(name) stub_name(OptoStubId::name ## _id)
+#define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
+#define C2_STUB_TYPEFUNC(name) name ## _Type
+#define C2_STUB_C_FUNC(name) CAST_FROM_FN_PTR(address, name ## _C)
+#define C2_STUB_NAME(name) stub_name(OptoStubId::name ## _id)
 
 // Almost all the C functions targeted from the generated stubs are
 // implemented locally to OptoRuntime with names that can be generated
@@ -149,28 +149,25 @@ static bool check_compiled_frame(JavaThread* thread) {
 // defines temporarily rebind the generated names to reference the
 // relevant implementations.
 
-#define complete_monitor_locking_C SharedRuntime::complete_monitor_locking_C
-#define slow_arraycopy_C SharedRuntime::slow_arraycopy_C
-
-#define GEN_OPTO_STUB(name, fancy_jump, pass_tls, pass_retpc  )         \
-  OPTO_STUB_FIELD_NAME(name) =                                          \
+#define GEN_C2_STUB(name, fancy_jump, pass_tls, pass_retpc  )         \
+  C2_STUB_FIELD_NAME(name) =                                          \
     generate_stub(env,                                                  \
-                  OPTO_STUB_TYPEFUNC(name),                             \
-                  OPTO_STUB_C_FUNC(name),                               \
-                  OPTO_STUB_NAME(name),                                 \
+                  C2_STUB_TYPEFUNC(name),                             \
+                  C2_STUB_C_FUNC(name),                               \
+                  C2_STUB_NAME(name),                                 \
                   fancy_jump,                                           \
                   pass_tls,                                             \
                   pass_retpc);                                          \
-  if (OPTO_STUB_FIELD_NAME(name) == nullptr) { return false; }          \
+  if (C2_STUB_FIELD_NAME(name) == nullptr) { return false; }          \
 
-#define OPTO_JVMTI_STUB_C_FUNC(name) CAST_FROM_FN_PTR(address, SharedRuntime::name)
+#define C2_JVMTI_STUB_C_FUNC(name) CAST_FROM_FN_PTR(address, SharedRuntime::name)
 
-#define GEN_OPTO_JVMTI_STUB(name)                                       \
+#define GEN_C2_JVMTI_STUB(name)                                       \
   STUB_FIELD_NAME(name) =                                               \
     generate_stub(env,                                                  \
                   notify_jvmti_vthread_Type,                            \
-                  OPTO_JVMTI_STUB_C_FUNC(name),                         \
-                  OPTO_STUB_NAME(name),                                 \
+                  C2_JVMTI_STUB_C_FUNC(name),                         \
+                  C2_STUB_NAME(name),                                 \
                   0,                                                    \
                   true,                                                 \
                   false);                                               \
@@ -178,24 +175,21 @@ static bool check_compiled_frame(JavaThread* thread) {
 
 bool OptoRuntime::generate(ciEnv* env) {
 
-  OPTO_STUBS_DO(GEN_OPTO_BLOB, GEN_OPTO_STUB, GEN_OPTO_JVMTI_STUB)
+  C2_STUBS_DO(GEN_C2_BLOB, GEN_C2_STUB, GEN_C2_JVMTI_STUB)
 
   return true;
 }
 
-#undef GEN_OPTO_BLOB
+#undef GEN_C2_BLOB
 
-#undef OPTO_STUB_FIELD_NAME
-#undef OPTO_STUB_TYPEFUNC
-#undef OPTO_STUB_C_FUNC
-#undef OPTO_STUB_NAME
-#undef GEN_OPTO_STUB
+#undef C2_STUB_FIELD_NAME
+#undef C2_STUB_TYPEFUNC
+#undef C2_STUB_C_FUNC
+#undef C2_STUB_NAME
+#undef GEN_C2_STUB
 
-#undef complete_monitor_locking_C
-#undef slow_arraycopy_C
-
-#undef OPTO_JVMTI_STUB_C_FUNC
-#undef GEN_OPTO_JVMTI_STUB
+#undef C2_JVMTI_STUB_C_FUNC
+#undef GEN_C2_JVMTI_STUB
 // #undef gen
 
 
@@ -224,6 +218,19 @@ const char* OptoRuntime::stub_name(address entry) {
   // Fast implementation for product mode (maybe it should be inlined too)
   return "runtime stub";
 #endif
+}
+
+// local methods passed as arguments to stub generator that forward
+// control to corresponding JRT methods of SharedRuntime
+
+void OptoRuntime::slow_arraycopy_C(oopDesc* src,  jint src_pos,
+                                   oopDesc* dest, jint dest_pos,
+                                   jint length, JavaThread* thread) {
+  SharedRuntime::slow_arraycopy_C(src,  src_pos, dest, dest_pos, length, thread);
+}
+
+void OptoRuntime::complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current) {
+  SharedRuntime::complete_monitor_locking_C(obj, lock, current);
 }
 
 
