@@ -1,0 +1,10 @@
+#
+# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+# ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
+#
+
+###########################################################################
+#
+# See doccheck/test/ProblemList.txt for documentation on this file and its purpose.
+#
+#############################################################################

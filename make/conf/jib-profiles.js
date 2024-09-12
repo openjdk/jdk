@@ -1069,6 +1069,52 @@ var getJibProfilesProfiles = function (input, common, data) {
             runTestPrebuiltSrcFullExtra);
     }
 
+    var testOnlyProfilesPrebuiltDocs = {
+        "run-test-prebuilt-docs": {
+            target_os: input.build_os,
+            target_cpu: input.build_cpu,
+            src: "src.conf",
+            dependencies: [
+                "jtreg", "gnumake", "boot_jdk", "devkit", "jib",
+                "jcov", testedProfileJdk, testedProfileTest, "docs.doc_api_spec",
+            ],
+            make_args: testOnlyMake,
+            environment: {
+                "BOOT_JDK": common.boot_jdk_home,
+                "JT_HOME": input.get("jtreg", "home_path"),
+                "JDK_IMAGE_DIR": input.get(testedProfileJdk, "home_path"),
+                "TEST_IMAGE_DIR": input.get(testedProfileTest, "home_path"),
+                "SYMBOLS_IMAGE_DIR": input.get(testedProfile + ".jdk_symbols", "home_path"),
+            },
+            labels: "test-docs",
+        }
+    };
+
+    if (!testedProfile.endsWith("-jcov")) {
+        testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"]["dependencies"].push(testedProfile + ".jdk_symbols");
+    }
+
+    if (input.profile == "run-test-prebuilt-docs") {
+        if (profiles[testedProfile] == null && profiles[testImageProfile] == null) {
+            error("testedProfile is not defined: " + testedProfile + " " + testImageProfile);
+        }
+    }
+
+    if (profiles[testedProfile] != null) {
+        testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"]["target_os"] = profiles[testedProfile]["target_os"];
+        testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"]["target_cpu"] = profiles[testedProfile]["target_cpu"];
+    } else if (profiles[testImageProfile] != null) {
+        testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"]["target_os"] = profiles[testImageProfile]["target_os"];
+        testOnlyProfilesPrebuiltDocs["run-test-prebuilt-docs"]["target_cpu"] = profiles[testImageProfile]["target_cpu"];
+    }
+
+    profiles = concatObjects(profiles, testOnlyProfilesPrebuiltDocs);
+
+    if (!new java.io.File(__DIR__, "../../README.md").exists()) {
+        profiles["run-test-prebuilt-docs"] = concatObjects(profiles["run-test-prebuilt-docs"],
+            runTestPrebuiltSrcFullExtra);
+    }
+
     // Generate the missing platform attributes
     profiles = generatePlatformAttributes(profiles);
     profiles = generateDefaultMakeTargetsConfigureArg(common, profiles);
