@@ -191,8 +191,8 @@ private:
     // This class was not loaded from a classfile in the module image
     // or classpath.
     _is_generated_shared_class             = 1 << 5,
-    // The archived mirror is already initialized. No need to call <clinit>
-    _has_preinitialized_mirror             = 1 << 6,
+    // The archived mirror is already initialized dur AOT-cache assembly. No need to call <clinit>
+    _has_aot_initialized_mirror            = 1 << 6,
   };
 #endif
 
@@ -375,11 +375,11 @@ protected:
     NOT_CDS(return false;)
   }
 
-  void set_has_preinitialized_mirror() {
-    CDS_ONLY(_shared_class_flags |= _has_preinitialized_mirror;)
+  void set_has_aot_initialized_mirror() {
+    CDS_ONLY(_shared_class_flags |= _has_aot_initialized_mirror;)
   }
-  bool has_preinitialized_mirror() const {
-    CDS_ONLY(return (_shared_class_flags & _has_preinitialized_mirror) != 0;)
+  bool has_aot_initialized_mirror() const {
+    CDS_ONLY(return (_shared_class_flags & _has_aot_initialized_mirror) != 0;)
     NOT_CDS(return false;)
   }
 

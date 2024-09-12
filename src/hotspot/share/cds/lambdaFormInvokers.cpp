@@ -101,7 +101,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
     // The base archive may have some pre-resolved CP entries that point to the lambda form holder
     // classes in the base archive. If we generate new versions of these classes, those CP entries
     // will be pointing to invalid classes.
-    log_info(cds)("Base archive already have aot-linked lambda form holder classes. Cannot regenerate.");
+    log_info(cds)("Base archive already has aot-linked lambda form holder classes. Cannot regenerate.");
     return;
   }
 
