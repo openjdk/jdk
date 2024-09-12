@@ -24,7 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.ConstantDesc;
+import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
@@ -399,6 +399,20 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     }
 
     @Override
+    public Utf8Entry utf8Entry(ClassDesc desc) {
+        var utf8 = utf8Entry(desc.descriptorString());
+        utf8.typeSym = desc;
+        return utf8;
+    }
+
+    @Override
+    public Utf8Entry utf8Entry(MethodTypeDesc desc) {
+        var utf8 = utf8Entry(desc.descriptorString());
+        utf8.typeSym = desc;
+        return utf8;
+    }
+
+    @Override
     public AbstractPoolEntry.Utf8EntryImpl utf8Entry(String s) {
         int hash = AbstractPoolEntry.hashString(s.hashCode());
         var ce = tryFindUtf8(hash, s);
@@ -480,9 +494,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public MethodTypeEntry methodTypeEntry(MethodTypeDesc descriptor) {
-        var ret = (AbstractPoolEntry.MethodTypeEntryImpl)methodTypeEntry(utf8Entry(descriptor.descriptorString()));
-        ret.sym = descriptor;
-        return ret;
+        return methodTypeEntry(utf8Entry(descriptor));
     }
 
     @Override
