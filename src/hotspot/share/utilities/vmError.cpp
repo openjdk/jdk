@@ -717,8 +717,11 @@ void VMError::report(outputStream* st, bool _verbose) {
   address lastpc = nullptr;
 
   BEGIN
-  if (MemTracker::enabled() && NmtGuard::is_owner()) {
+  if (MemTracker::enabled() && NMT_lock != nullptr && NMT_lock->owned_by_self()) {
+    // Avoid reentrancy due to mallocs in detailed mode.
     MemTracker::reduce_tracking_to_summary();
+    // Manually unlock if already holding lock when upon entering error reporting.
+    NMT_lock->unlock();
   }
 
   STEP("printing fatal error message")

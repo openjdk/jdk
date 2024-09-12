@@ -29,10 +29,6 @@
 
 #include "memory/allStatic.hpp"
 #include "nmt/memflags.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/javaThread.hpp"
-#include "runtime/os.hpp"
-#include "runtime/semaphore.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -139,47 +135,6 @@ class NMTUtil : AllStatic {
     const char* human_readable; // e.g. "Native Memory Tracking"
   };
   static S _strings[mt_number_of_types];
-};
-
-class NmtGuard : public StackObj {
-private:
-    static Semaphore _nmt_semaphore;
-    static intx volatile _owner;
-    static size_t _count;
-
-public:
-    NmtGuard() {
-      intx const current =  os::current_thread_id();
-      intx const owner = Atomic::load(&_owner);
-
-      if (owner != current) {
-        _nmt_semaphore.wait();
-        Atomic::store(&_owner, current);
-      }
-      _count++;
-    }
-
-    ~NmtGuard() {
-      assert_locked();
-      _count--;
-
-      if (_count == 0) {
-        Atomic::store(&_owner, (intx) -1);
-        _nmt_semaphore.signal();
-      }
-    }
-
-    static bool is_owner() {
-      intx const current = os::current_thread_id();
-      intx const owner = Atomic::load(&_owner);
-      return current == owner;
-    }
-
-    static void assert_locked() {
-#ifdef DEBUG
-      assert(is_owner(), "NMT lock should be acquired in this section. Current TID %ld, owner TID %ld", os::current_thread_id(), Atomic::load(&_owner));
-#endif
-    }
 };
 
 #endif // SHARE_NMT_NMTCOMMON_HPP

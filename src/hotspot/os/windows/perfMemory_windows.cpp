@@ -32,6 +32,7 @@
 #include "os_windows.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
 #include "utilities/exceptions.hpp"
@@ -1803,7 +1804,7 @@ void PerfMemory::detach(char* addr, size_t bytes) {
 
   if (MemTracker::enabled()) {
     // it does not go through os api, the operation has to record from here
-    NmtGuard guard;
+    NMTMutexLocker ml;
     remove_file_mapping(addr);
     MemTracker::record_virtual_memory_release((address)addr, bytes);
   } else {

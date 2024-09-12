@@ -37,6 +37,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
 #include "utilities/debug.hpp"
@@ -62,10 +63,10 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
 }
 
 void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
-  // Use NmtGuard to make sure that mtChunks don't get deallocated while the
+  // Use NMT_lock to make sure that mtChunks don't get deallocated while the
   // copy is going on, because their size is adjusted using this
   // buffer in make_adjustment().
-  NmtGuard guard;
+  NMTMutexLocker ml;
   s->_all_mallocs = _all_mallocs;
   size_t total_size = 0;
   size_t total_count = 0;

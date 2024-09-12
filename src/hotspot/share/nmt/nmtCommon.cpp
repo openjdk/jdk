@@ -36,15 +36,6 @@ NMTUtil::S NMTUtil::_strings[] = {
   MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_NAME)
 };
 
-// The underlying semaphore used by the NmtGuard lock. Set the count to 1 so that it can be used as a mutex.
-Semaphore NmtGuard::_nmt_semaphore(1);
-
-// Track the lock's owner. -1 means the lock is free/unowned.
-intx volatile NmtGuard::_owner((intx) -1);
-
-// Allow reentrancy. Count the number of acquisitions.
-size_t NmtGuard::_count(0);
-
 const char* NMTUtil::scale_name(size_t scale) {
   switch(scale) {
     case 1: return "";

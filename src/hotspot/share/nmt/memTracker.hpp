@@ -124,7 +124,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      NmtGuard guard;
+      NMTMutexLocker ml;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
     }
   }
@@ -150,7 +150,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      NmtGuard guard;
+      NMTMutexLocker ml;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
@@ -161,7 +161,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      NmtGuard guard;
+      NMTMutexLocker ml;
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
   }
@@ -169,7 +169,7 @@ class MemTracker : AllStatic {
   static inline MemoryFileTracker::MemoryFile* register_file(const char* descriptive_name) {
     assert_post_init();
     if (!enabled()) return nullptr;
-    NmtGuard guard;
+    NMTMutexLocker ml;
     return MemoryFileTracker::Instance::make_file(descriptive_name);
   }
 
@@ -177,7 +177,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    NmtGuard guard;
+    NMTMutexLocker ml;
     MemoryFileTracker::Instance::free_file(file);
   }
 
@@ -186,7 +186,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    NmtGuard guard;
+    NMTMutexLocker ml;
     MemoryFileTracker::Instance::allocate_memory(file, offset, size, stack, flag);
   }
 
@@ -195,7 +195,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     assert(file != nullptr, "must be");
-    NmtGuard guard;
+    NMTMutexLocker ml;
     MemoryFileTracker::Instance::free_memory(file, offset, size);
   }
 
@@ -209,7 +209,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      NmtGuard guard;
+      NMTMutexLocker ml;
       VirtualMemoryTracker::split_reserved_region((address)addr, size, split, flag, split_flag);
     }
   }
@@ -218,7 +218,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      NmtGuard guard;
+      NMTMutexLocker ml;
       VirtualMemoryTracker::set_reserved_region_type((address)addr, flag);
     }
   }

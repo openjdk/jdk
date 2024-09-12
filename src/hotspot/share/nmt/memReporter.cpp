@@ -31,6 +31,7 @@
 #include "nmt/memoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -465,7 +466,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
 void MemDetailReporter::report_memory_file_allocations() {
   stringStream st;
   {
-    NmtGuard guard;
+    NMTMutexLocker ml;
     MemoryFileTracker::Instance::print_all_reports_on(&st, scale());
   }
   output()->print_raw(st.freeze());

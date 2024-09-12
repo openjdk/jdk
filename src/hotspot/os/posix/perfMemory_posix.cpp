@@ -34,6 +34,7 @@
 #include "os_posix.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
 #include "utilities/exceptions.hpp"
@@ -1086,7 +1087,7 @@ static char* mmap_create_shared(size_t size) {
 static void unmap_shared(char* addr, size_t bytes) {
   int res;
   if (MemTracker::enabled()) {
-    NmtGuard guard;
+    NMTMutexLocker ml;
     res = ::munmap(addr, bytes);
     if (res == 0) {
       MemTracker::record_virtual_memory_release((address)addr, bytes);

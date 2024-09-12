@@ -29,6 +29,7 @@
 #include "nmt/nativeCallStackPrinter.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 
@@ -620,7 +621,7 @@ public:
   SnapshotThreadStackWalker() {}
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
-    NmtGuard::assert_locked();
+    assert_lock_strong(NMT_lock);
     if (rgn->flag() == mtThreadStack) {
       address stack_bottom = rgn->thread_stack_uncommitted_bottom();
       address committed_start;
@@ -661,7 +662,7 @@ void VirtualMemoryTracker::snapshot_thread_stacks() {
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   assert(_reserved_regions != nullptr, "Sanity check");
-  NmtGuard guard;
+  NMTMutexLocker ml;
   // Check that the _reserved_regions haven't been deleted.
   if (_reserved_regions != nullptr) {
     LinkedListNode<ReservedMemoryRegion>* head = _reserved_regions->head();
