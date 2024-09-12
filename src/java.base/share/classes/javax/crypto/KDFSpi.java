@@ -45,14 +45,16 @@ import java.security.spec.AlgorithmParameterSpec;
  * throw an {@code InvalidAlgorithmParameterException} if the supplied
  * parameters are inappropriate.
  * <p>
- * Implementations which do not support {@code KDFParameters} may require
+ * Implementations which do not support {@code KDFParameters} must require
  * {@code null} to be passed, otherwise an {@code InvalidAlgorithmParameterException}
- * may be thrown. On the other hand, implementations which require
+ * will be thrown. On the other hand, implementations which require
  * {@code KDFParameters} should throw an {@code InvalidAlgorithmParameterException}
- * upon receiving a {@code null} value. Furthermore, implementations may
- * return parameters with additional default values or random parameter
- * values used by the underlying {@code KDF} algorithm. See
- * {@link KDFSpi#engineGetParameters()} for more details.
+ * upon receiving a {@code null} value or {@code KDFParameters} which are not
+ * supported by the implementation.
+ * <p>
+ * To aid the caller, implementations may return parameters with additional
+ * default values or supply random values as used by the underlying {@code KDF}
+ * algorithm. See {@link KDFSpi#engineGetParameters()} for more details.
  *
  * @see KDF
  * @see KDFParameters
