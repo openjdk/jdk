@@ -84,7 +84,10 @@ public:
     const DWORD bits = PAGE_NOACCESS | PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE
                         | PAGE_WRITECOPY | PAGE_EXECUTE_WRITECOPY | PAGE_EXECUTE
                         | PAGE_GUARD | PAGE_NOCACHE | PAGE_WRITECOMBINE;
-    assert((prot & bits) == prot, "Unknown Windows memory protection value: 0x%x unknown bits: 0x%x", prot, prot & ~bits);
+    if ((prot & bits) != prot) {
+      out.print_cr("Unknown Windows memory protection value: 0x%x unknown bits: 0x%x", prot, prot & ~bits);
+      assert(false, "Unknown Windows memory protection value: 0x%x unknown bits: 0x%x", prot, prot & ~bits);
+    }
   }
 
   void get_state_string(outputStream& out, MEMORY_BASIC_INFORMATION& mem_info) {
@@ -95,7 +98,8 @@ public:
     } else if (mem_info.State == MEM_RESERVE) {
       out.put('r');
     } else {
-      fatal("Unknown Windows memory state value: 0x%x", mem_info.State);
+      out.print_cr("Unknown Windows memory state value: 0x%x", mem_info.State);
+      assert(false, "Unknown Windows memory state value: 0x%x", mem_info.State);
     }
   }
 
@@ -109,7 +113,8 @@ public:
     } else if (mem_info.Type == 0 && mem_info.State == MEM_FREE) {
       out.print("---");
     } else {
-      fatal("Unknown Windows memory type 0x%x", mem_info.Type);
+      out.print_cr("Unknown Windows memory type 0x%x", mem_info.Type);
+      assert(false, "Unknown Windows memory type 0x%x", mem_info.Type);
     }
   }
 };
@@ -164,14 +169,12 @@ public:
   }
     st->print(PTR_FORMAT "-" PTR_FORMAT, mem_info.BaseAddress, static_cast<const char*>(mem_info.BaseAddress) + mem_info.RegionSize);
     INDENT_BY(38);
-    st->print("%12zu", mem_info.RegionSize);
-    INDENT_BY(51);
     st->print("%s", mapping_info._protect_buffer.base());
-    INDENT_BY(57);
+    INDENT_BY(44);
     st->print("%s-%s", mapping_info._state_buffer.base(), mapping_info._type_buffer.base());
-    INDENT_BY(60);
+    INDENT_BY(47);
     st->print("%#9llx", reinterpret_cast<const unsigned long long>(mem_info.BaseAddress) - reinterpret_cast<const unsigned long long>(mem_info.AllocationBase));
-    INDENT_BY(72);
+    INDENT_BY(59);
     if (_session.print_nmt_info_for_region(mem_info.BaseAddress, static_cast<const char*>(mem_info.BaseAddress) + mem_info.RegionSize)) {
       st->print(" ");
     }
@@ -205,8 +208,8 @@ public:
     //            0         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6         7
     //            012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
     //            0x00007ffd5bd64000-0x00007ffd5c250000      5160960 r---  c-img 0x10d4000 C:\work\jdk\build\work-fastdebug\jdk\bin\server\jvm.dll
-    st->print_cr("from               to                        vsize prot  state    offset vm info/file");
-    st->print_cr("=============================================================================================================================");
+    st->print_cr("from               to                 prot  state    offset vminfo/file");
+    st->print_cr("=======================================================================");
   }
 };
 
