@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import java.util.function.UnaryOperator;
 
 import jdk.internal.foreign.StringSupport;
@@ -73,6 +72,13 @@ public class TestStringEncoding {
                         int expectedByteLength =
                                 testString.getBytes(charset).length +
                                         terminatorSize;
+
+                        assertEquals(text.byteSize(), expectedByteLength);
+
+                        String roundTrip = text.getString(0, charset);
+                        if (charset.newEncoder().canEncode(testString)) {
+                            assertEquals(roundTrip, testString);
+                        }
                     }
                 }
             } else {
@@ -486,5 +492,4 @@ public class TestStringEncoding {
         }
         return values.toArray(Object[][]::new);
     }
-
 }
