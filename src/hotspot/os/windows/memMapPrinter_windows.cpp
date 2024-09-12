@@ -207,7 +207,7 @@ public:
 
   void print_header() const {
     outputStream* st = _session.out();
-    //            0         1         2         3         4         5         6         7         8         9         0         1         2         3         
+    //            0         1         2         3         4         5         6         7         8         9         0         1         2         3
     //            01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
     //            0x00007ffb24565000-0x00007ffb24a7e000      5345280 r--   c-img   0x1155000 C:\work\jdk\build\fastdebug\jdk\bin\server\jvm.dll
     st->print_cr("from               to                        vsize prot  state      offset vminfo/file");
