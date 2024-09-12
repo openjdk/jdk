@@ -7507,20 +7507,6 @@ instruct weakCompareAndSwapB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   ins_pipe(pipe_class_default);
 %}
 
-instruct weakCompareAndSwapB4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, flagsRegCR0 cr0) %{
-  match(Set res (WeakCompareAndSwapB mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst );
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP cr0); // TEMP_DEF to avoid jump
-  format %{ "weak CMPXCHGB $res, $mem_ptr, $src1, $src2; as bool" %}
-  ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
-                MacroAssembler::MemBarNone,
-                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 instruct weakCompareAndSwapB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapB mem_ptr (Binary src1 src2)));
   predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) );
@@ -7535,19 +7521,7 @@ instruct weakCompareAndSwapB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   ins_pipe(pipe_class_default);
 %}
 
-instruct weakCompareAndSwapB4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, flagsRegCR0 cr0) %{
-  match(Set res (WeakCompareAndSwapB mem_ptr (Binary src1 src2)));
-  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) );
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP cr0); // TEMP_DEF to avoid jump
-  format %{ "weak CMPXCHGB acq $res, $mem_ptr, $src1, $src2; as bool" %}
-  ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
-                support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
-                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
+
 
 instruct weakCompareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapS mem_ptr (Binary src1 src2)));
@@ -7563,38 +7537,10 @@ instruct weakCompareAndSwapS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   ins_pipe(pipe_class_default);
 %}
 
-instruct weakCompareAndSwapS4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, flagsRegCR0 cr0) %{
-  match(Set res (WeakCompareAndSwapS mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP cr0); // TEMP_DEF to avoid jump
-  format %{ "weak CMPXCHGH $res, $mem_ptr, $src1, $src2; as bool" %}
-  ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
-                MacroAssembler::MemBarNone,
-                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 instruct weakCompareAndSwapS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapS mem_ptr (Binary src1 src2)));
   predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) );
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
-  format %{ "weak CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as bool" %}
-  ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CCR0, R0, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
-                support_IRIW_for_not_multiple_copy_atomic_cpu ? MacroAssembler::MemBarAcq : MacroAssembler::MemBarFenceAfter,
-                MacroAssembler::cmpxchgx_hint_atomic_update(), $res$$Register, nullptr, true, /*weak*/ true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct weakCompareAndSwapS4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, flagsRegCR0 cr0) %{
-  match(Set res (WeakCompareAndSwapS mem_ptr (Binary src1 src2)));
-  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) );
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
     // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
@@ -7742,19 +7688,6 @@ instruct compareAndExchangeB_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndExchangeB4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, flagsRegCR0 cr0) %{
-  match(Set res (CompareAndExchangeB mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP cr0);
-  format %{ "CMPXCHGB $res, $mem_ptr, $src1, $src2; as int" %}
-  ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, nullptr, true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
 
 instruct compareAndExchangeB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeB mem_ptr (Binary src1 src2)));
@@ -7776,25 +7709,6 @@ instruct compareAndExchangeB_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndExchangeB4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, flagsRegCR0 cr0) %{
-  match(Set res (CompareAndExchangeB mem_ptr (Binary src1 src2)));
-  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) );
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP cr0);
-  format %{ "CMPXCHGB acq $res, $mem_ptr, $src1, $src2; as int" %}
-  ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgb(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, nullptr, true);
-    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      __ isync();
-    } else {
-      // isync would be sufficient in case of CompareAndExchangeAcquire, but we currently don't optimize for that.
-      __ sync();
-    }
-  %}
-  ins_pipe(pipe_class_default);
-%}
 
 instruct compareAndExchangeS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeS mem_ptr (Binary src1 src2)));
@@ -7810,19 +7724,6 @@ instruct compareAndExchangeS_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iReg
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndExchangeS4_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, flagsRegCR0 cr0) %{
-  match(Set res (CompareAndExchangeS mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP cr0);
-  format %{ "CMPXCHGH $res, $mem_ptr, $src1, $src2; as int" %}
-  ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, nullptr, true);
-  %}
-  ins_pipe(pipe_class_default);
-%}
 
 instruct compareAndExchangeS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeS mem_ptr (Binary src1 src2)));
@@ -7844,25 +7745,6 @@ instruct compareAndExchangeS_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
   ins_pipe(pipe_class_default);
 %}
 
-instruct compareAndExchangeS4_acq_regP_regI_regI(iRegIdst res, rarg3RegP mem_ptr, iRegIsrc src1, rarg4RegI src2, flagsRegCR0 cr0) %{
-  match(Set res (CompareAndExchangeS mem_ptr (Binary src1 src2)));
-  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) );
-  effect(TEMP_DEF res, USE_KILL src2, USE_KILL mem_ptr, TEMP cr0);
-  format %{ "CMPXCHGH acq $res, $mem_ptr, $src1, $src2; as int" %}
-  ins_encode %{
-    // CmpxchgX sets CCR0 to cmpX(src1, src2) and Rres to 'true'/'false'.
-    __ cmpxchgh(CCR0, $res$$Register, $src1$$Register, $src2$$Register, $mem_ptr$$Register,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, nullptr, true);
-    if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-      __ isync();
-    } else {
-      // isync would be sufficient in case of CompareAndExchangeAcquire, but we currently don't optimize for that.
-      __ sync();
-    }
-  %}
-  ins_pipe(pipe_class_default);
-%}
 
 instruct compareAndExchangeI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc src1, iRegIsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeI mem_ptr (Binary src1 src2)));
