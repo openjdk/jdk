@@ -27,9 +27,9 @@
  * @bug 8339725
  * @summary Stress test GetMethodDeclaringClass
  * @requires vm.jvmti
- * @requires os.family == "linux"
+ * @requires (os.family == "linux") & (vm.debug != true)
  * @library /test/lib
- * @run main/othervm/timeout=300 Test8339725
+ * @run main/othervm/timeout=300 TestUnloadedClass
  */
 
 import java.util.Base64;
@@ -45,10 +45,10 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 
-public class Test8339725 {
+public class TestUnloadedClass {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("agent8339725"),
+                "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("TestUnloadedClass"),
                 "-Xmx50m",
                 "Test");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
