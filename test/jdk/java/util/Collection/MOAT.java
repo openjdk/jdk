@@ -246,6 +246,7 @@ public class MOAT {
             testCollection(list);
             testImmutableList(list);
             testListMutatorsAlwaysThrow(list);
+            testImmutableListMutatorsAlwaysThrow(list);
             if (list.size() >= 1) {
                 // test subLists
                 List<Integer> headList = list.subList(0, list.size() - 1);
@@ -562,6 +563,12 @@ public class MOAT {
         testCollMutatorsAlwaysThrow(c);
         THROWS(UnsupportedOperationException.class,
                 () -> c.addAll(0, Collections.emptyList()));
+    }
+
+    private static void testImmutableListMutatorsAlwaysThrow(List<Integer> c) {
+        THROWS(UnsupportedOperationException.class,
+                c::removeFirst,
+                c::removeLast);
     }
 
     /**

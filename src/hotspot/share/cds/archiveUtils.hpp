@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,8 @@ class VirtualSpace;
 // fixed, but _ptr_end can be expanded as more objects are dumped.
 class ArchivePtrMarker : AllStatic {
   static CHeapBitMap*  _ptrmap;
+  static CHeapBitMap*  _rw_ptrmap;
+  static CHeapBitMap*  _ro_ptrmap;
   static VirtualSpace* _vs;
 
   // Once _ptrmap is compacted, we don't allow bit marking anymore. This is to
@@ -53,6 +55,7 @@ class ArchivePtrMarker : AllStatic {
 
 public:
   static void initialize(CHeapBitMap* ptrmap, VirtualSpace* vs);
+  static void initialize_rw_ro_maps(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap);
   static void mark_pointer(address* ptr_loc);
   static void clear_pointer(address* ptr_loc);
   static void compact(address relocatable_base, address relocatable_end);
@@ -73,8 +76,18 @@ public:
     return _ptrmap;
   }
 
+  static CHeapBitMap* rw_ptrmap() {
+    return _rw_ptrmap;
+  }
+
+  static CHeapBitMap* ro_ptrmap() {
+    return _ro_ptrmap;
+  }
+
   static void reset_map_and_vs() {
     _ptrmap = nullptr;
+    _rw_ptrmap = nullptr;
+    _ro_ptrmap = nullptr;
     _vs = nullptr;
   }
 };
@@ -202,7 +215,10 @@ public:
     _dump_region->append_intptr_t((intptr_t)tag);
   }
 
-  void do_region(u_char* start, size_t size);
+  char* region_top() {
+    return _dump_region->top();
+  }
+
   bool reading() const { return false; }
 };
 
@@ -225,8 +241,8 @@ public:
   void do_int(int* p);
   void do_bool(bool *p);
   void do_tag(int tag);
-  void do_region(u_char* start, size_t size);
   bool reading() const { return true; }
+  char* region_top() { return nullptr; }
 };
 
 class ArchiveUtils {

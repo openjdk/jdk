@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,9 @@ import jdk.internal.javac.PreviewFeature;
 public sealed interface ArrayLoadInstruction extends Instruction
         permits AbstractInstruction.UnboundArrayLoadInstruction {
     /**
-     * {@return the component type of the array}
+     * {@return the component type of the array} The {@link TypeKind#BYTE byte}
+     * type load instruction {@link Opcode#BALOAD baload} also operates on
+     * {@link TypeKind#BOOLEAN boolean} arrays.
      */
     TypeKind typeKind();
 
@@ -54,6 +56,8 @@ public sealed interface ArrayLoadInstruction extends Instruction
      *
      * @param op the opcode for the specific type of array load instruction,
      *           which must be of kind {@link Opcode.Kind#ARRAY_LOAD}
+     * @throws IllegalArgumentException if the opcode kind is not
+     *         {@link Opcode.Kind#ARRAY_LOAD}.
      */
     static ArrayLoadInstruction of(Opcode op) {
         Util.checkKind(op, Opcode.Kind.ARRAY_LOAD);

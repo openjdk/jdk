@@ -34,7 +34,7 @@ import java.util.List;
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
 import static sun.security.util.SecurityProviderConstants.*;
 
-/**
+/*
  * The "SunJCE" Cryptographic Service Provider.
  *
  * @author Jan Luehe

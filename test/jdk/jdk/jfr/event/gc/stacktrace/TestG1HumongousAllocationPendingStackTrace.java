@@ -29,7 +29,9 @@ package jdk.jfr.event.gc.stacktrace;
  *
  * @requires vm.gc == "null" | vm.gc == "G1"
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseG1GC -Xlog:gc* -Xmx64M -XX:InitiatingHeapOccupancyPercent=100 jdk.jfr.event.gc.stacktrace.TestG1HumongousAllocationPendingStackTrace
+ * @run main/othervm -XX:+UseG1GC -Xlog:gc* -Xmx64M -XX:InitiatingHeapOccupancyPercent=100
+ *                   -XX:FlightRecorderOptions:stackdepth=256
+ *                   jdk.jfr.event.gc.stacktrace.TestG1HumongousAllocationPendingStackTrace
  */
 public class TestG1HumongousAllocationPendingStackTrace {
 

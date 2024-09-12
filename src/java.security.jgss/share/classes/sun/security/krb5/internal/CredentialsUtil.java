@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,14 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 /**
  * This class is a utility that contains much of the TGS-Exchange
  * protocol. It is used by ../Credentials.java for service ticket
  * acquisition in both the normal and the x-realm case.
  */
 public class CredentialsUtil {
-
-    private static boolean DEBUG = sun.security.krb5.internal.Krb5.DEBUG;
 
     private static enum S4U2Type {
         NONE, SELF, PROXY
@@ -193,8 +193,8 @@ public class CredentialsUtil {
         for (cTgt = localTGT, i = 0; i < realms.length;) {
             tempService = PrincipalName.tgsService(serviceRealm, realms[i]);
 
-            if (DEBUG) {
-                System.out.println(
+            if (DEBUG != null) {
+                DEBUG.println(
                         ">>> Credentials acquireServiceCreds: main loop: ["
                         + i +"] tempService=" + tempService);
             }
@@ -206,8 +206,8 @@ public class CredentialsUtil {
             }
 
             if (newTgt == null) {
-                if (DEBUG) {
-                    System.out.println(">>> Credentials acquireServiceCreds: "
+                if (DEBUG != null) {
+                    DEBUG.println(">>> Credentials acquireServiceCreds: "
                             + "no tgt; searching thru capath");
                 }
 
@@ -217,8 +217,8 @@ public class CredentialsUtil {
                 for (newTgt = null, k = i+1;
                         newTgt == null && k < realms.length; k++) {
                     tempService = PrincipalName.tgsService(realms[k], realms[i]);
-                    if (DEBUG) {
-                        System.out.println(
+                    if (DEBUG != null) {
+                        DEBUG.println(
                                 ">>> Credentials acquireServiceCreds: "
                                 + "inner loop: [" + k
                                 + "] tempService=" + tempService);
@@ -232,8 +232,8 @@ public class CredentialsUtil {
             } // Ends 'if (newTgt == null)'
 
             if (newTgt == null) {
-                if (DEBUG) {
-                    System.out.println(">>> Credentials acquireServiceCreds: "
+                if (DEBUG != null) {
+                    DEBUG.println(">>> Credentials acquireServiceCreds: "
                             + "no tgt; cannot get creds");
                 }
                 break;
@@ -245,16 +245,16 @@ public class CredentialsUtil {
              */
             newTgtRealm = newTgt.getServer().getInstanceComponent();
             if (okAsDelegate[0] && !newTgt.checkDelegate()) {
-                if (DEBUG) {
-                    System.out.println(">>> Credentials acquireServiceCreds: " +
+                if (DEBUG != null) {
+                    DEBUG.println(">>> Credentials acquireServiceCreds: " +
                             "global OK-AS-DELEGATE turned off at " +
                             newTgt.getServer());
                 }
                 okAsDelegate[0] = false;
             }
 
-            if (DEBUG) {
-                System.out.println(">>> Credentials acquireServiceCreds: "
+            if (DEBUG != null) {
+                DEBUG.println(">>> Credentials acquireServiceCreds: "
                         + "got tgt");
             }
 
@@ -283,8 +283,8 @@ public class CredentialsUtil {
                 i = k;
                 cTgt = newTgt;
 
-                if (DEBUG) {
-                    System.out.println(">>> Credentials acquireServiceCreds: "
+                if (DEBUG != null) {
+                    DEBUG.println(">>> Credentials acquireServiceCreds: "
                             + "continuing with main loop counter reset to " + i);
                 }
                 continue;
@@ -453,10 +453,10 @@ public class CredentialsUtil {
         String serviceRealm = refSname.getRealmString();
         if (!serviceRealm.equals(tgtRealm)) {
             // This is a cross-realm service request
-            if (DEBUG) {
-                System.out.println(">>> serviceCredsSingle:" +
+            if (DEBUG != null) {
+                DEBUG.println(">>> serviceCredsSingle:" +
                         " cross-realm authentication");
-                System.out.println(">>> serviceCredsSingle:" +
+                DEBUG.println(">>> serviceCredsSingle:" +
                         " obtaining credentials from " + tgtRealm +
                         " to " + serviceRealm);
             }
@@ -465,8 +465,8 @@ public class CredentialsUtil {
             if (newTgt == null) {
                 throw new KrbException("No service creds");
             }
-            if (DEBUG) {
-                System.out.println(">>> Cross-realm TGT Credentials" +
+            if (DEBUG != null) {
+                DEBUG.println(">>> Cross-realm TGT Credentials" +
                         " serviceCredsSingle: ");
                 Credentials.printDebug(newTgt);
             }
@@ -475,16 +475,16 @@ public class CredentialsUtil {
             }
             asCreds = newTgt;
             cname = asCreds.getClient();
-        } else if (DEBUG) {
-            System.out.println(">>> Credentials serviceCredsSingle:" +
+        } else if (DEBUG != null) {
+            DEBUG.println(">>> Credentials serviceCredsSingle:" +
                     " same realm");
         }
         KrbTgsReq req = new KrbTgsReq(options, asCreds, cname, clientAlias,
                 refSname, sname, additionalCreds, extraPAs);
         theCreds = req.sendAndGetCreds();
         if (theCreds != null) {
-            if (DEBUG) {
-                System.out.println(">>> TGS credentials serviceCredsSingle:");
+            if (DEBUG != null) {
+                DEBUG.println(">>> TGS credentials serviceCredsSingle:");
                 Credentials.printDebug(theCreds);
             }
             if (!okAsDelegate[0]) {
@@ -502,8 +502,8 @@ public class CredentialsUtil {
     private static void handleS4U2SelfReferral(PAData[] pas,
             PrincipalName user, Credentials newCreds)
                     throws Asn1Exception, KrbException, IOException {
-        if (DEBUG) {
-            System.out.println(">>> Handling S4U2Self referral");
+        if (DEBUG != null) {
+            DEBUG.println(">>> Handling S4U2Self referral");
         }
         for (int i = 0; i < pas.length; i++) {
             PAData pa = pas[i];
@@ -539,8 +539,8 @@ public class CredentialsUtil {
     private static String handleS4U2ProxyReferral(Credentials asCreds,
             Credentials[] credsInOut, PrincipalName sname)
                     throws KrbException, IOException {
-        if (DEBUG) {
-            System.out.println(">>> Handling S4U2Proxy referral");
+        if (DEBUG != null) {
+            DEBUG.println(">>> Handling S4U2Proxy referral");
         }
         Credentials refTGT = null;
         // Get a credential for the middle service to the backend so we know

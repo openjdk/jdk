@@ -55,7 +55,9 @@ import java.lang.reflect.TypeVariable;
 import java.lang.constant.Constable;
 import java.net.URL;
 import java.security.AccessController;
+import java.security.Permissions;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -70,6 +72,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
@@ -1109,8 +1112,8 @@ public final class Class<T> implements java.io.Serializable,
     // will throw NoSuchFieldException
     private final ClassLoader classLoader;
 
-    // Set by VM
-    private transient Object classData;
+    private transient Object classData; // Set by VM
+    private transient Object[] signers; // Read by VM, mutable
 
     // package-private
     Object getClassData() {
@@ -1244,7 +1247,7 @@ public final class Class<T> implements java.io.Serializable,
      * @return the fully qualified package name
      *
      * @since 9
-     * @jls 6.7 Fully Qualified Names
+     * @jls 6.7 Fully Qualified Names and Canonical Names
      */
     public String getPackageName() {
         String pn = this.packageName;
@@ -1457,7 +1460,7 @@ public final class Class<T> implements java.io.Serializable,
      * programming language and JVM modeling in core reflection</a>
      * @since 1.1
      * @jls 8.1.1 Class Modifiers
-     * @jls 9.1.1. Interface Modifiers
+     * @jls 9.1.1 Interface Modifiers
      * @jvms 4.1 The {@code ClassFile} Structure
      */
     @IntrinsicCandidate
@@ -1509,14 +1512,19 @@ public final class Class<T> implements java.io.Serializable,
      *          a primitive type or void.
      * @since   1.1
      */
-    public native Object[] getSigners();
-
+    public Object[] getSigners() {
+        var signers = this.signers;
+        return signers == null ? null : signers.clone();
+    }
 
     /**
      * Set the signers of this class.
      */
-    native void setSigners(Object[] signers);
-
+    void setSigners(Object[] signers) {
+        if (!isPrimitive() && !isArray()) {
+            this.signers = signers;
+        }
+    }
 
     /**
      * If this {@code Class} object represents a local or anonymous
@@ -1986,7 +1994,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return {@code true} if and only if this class is a local class.
      * @since 1.5
-     * @jls 14.3 Local Class Declarations
+     * @jls 14.3 Local Class and Interface Declarations
      */
     public boolean isLocalClass() {
         return isLocalOrAnonymousClass() &&
@@ -1999,7 +2007,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return {@code true} if and only if this class is a member class.
      * @since 1.5
-     * @jls 8.5 Member Type Declarations
+     * @jls 8.5 Member Class and Interface Declarations
      */
     public boolean isMemberClass() {
         return !isLocalOrAnonymousClass() && getDeclaringClass0() != null;
@@ -2536,7 +2544,7 @@ public final class Class<T> implements java.io.Serializable,
      *         </ul>
      *
      * @since 1.1
-     * @jls 8.5 Member Type Declarations
+     * @jls 8.5 Member Class and Interface Declarations
      */
     @CallerSensitive
     public Class<?>[] getDeclaredClasses() throws SecurityException {
@@ -3214,10 +3222,6 @@ public final class Class<T> implements java.io.Serializable,
         return true;
     }
 
-
-    /** protection domain returned when the internal domain is null */
-    private static java.security.ProtectionDomain allPermDomain;
-
     /**
      * Returns the {@code ProtectionDomain} of this class.  If there is a
      * security manager installed, this method first calls the security
@@ -3238,7 +3242,7 @@ public final class Class<T> implements java.io.Serializable,
      * @see java.lang.RuntimePermission
      * @since 1.2
      */
-    public java.security.ProtectionDomain getProtectionDomain() {
+    public ProtectionDomain getProtectionDomain() {
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -3247,26 +3251,30 @@ public final class Class<T> implements java.io.Serializable,
         return protectionDomain();
     }
 
-    // package-private
-    java.security.ProtectionDomain protectionDomain() {
-        java.security.ProtectionDomain pd = getProtectionDomain0();
-        if (pd == null) {
-            if (allPermDomain == null) {
-                java.security.Permissions perms =
-                    new java.security.Permissions();
-                perms.add(SecurityConstants.ALL_PERMISSION);
-                allPermDomain =
-                    new java.security.ProtectionDomain(null, perms);
-            }
-            pd = allPermDomain;
+    /** Holder for the protection domain returned when the internal domain is null */
+    private static class Holder {
+        private static final ProtectionDomain allPermDomain;
+        static {
+            Permissions perms = new Permissions();
+            perms.add(SecurityConstants.ALL_PERMISSION);
+            allPermDomain = new ProtectionDomain(null, perms);
         }
-        return pd;
+    }
+
+    // package-private
+    ProtectionDomain protectionDomain() {
+        ProtectionDomain pd = getProtectionDomain0();
+        if (pd == null) {
+            return Holder.allPermDomain;
+        } else {
+            return pd;
+        }
     }
 
     /**
      * Returns the ProtectionDomain of this class.
      */
-    private native java.security.ProtectionDomain getProtectionDomain0();
+    private native ProtectionDomain getProtectionDomain0();
 
     /*
      * Return the Virtual Machine's Class object for the named
@@ -4639,7 +4647,7 @@ public final class Class<T> implements java.io.Serializable,
             return Wrapper.forPrimitiveType(this).basicTypeString();
 
         if (isArray()) {
-            return "[" + componentType.descriptorString();
+            return "[".concat(componentType.descriptorString());
         } else if (isHidden()) {
             String name = getName();
             int index = name.indexOf('/');
@@ -4652,11 +4660,7 @@ public final class Class<T> implements java.io.Serializable,
                     .toString();
         } else {
             String name = getName().replace('.', '/');
-            return new StringBuilder(name.length() + 2)
-                    .append('L')
-                    .append(name)
-                    .append(';')
-                    .toString();
+            return StringConcatHelper.concat("L", name, ";");
         }
     }
 
@@ -4709,7 +4713,7 @@ public final class Class<T> implements java.io.Serializable,
     public Optional<ClassDesc> describeConstable() {
         Class<?> c = isArray() ? elementType() : this;
         return c.isHidden() ? Optional.empty()
-                            : Optional.of(ClassDesc.ofDescriptor(descriptorString()));
+                            : Optional.of(ConstantUtils.classDesc(this));
    }
 
     /**
@@ -4719,6 +4723,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @since 15
      * @see MethodHandles.Lookup#defineHiddenClass
+     * @see Class##hiddenClasses Hidden Classes
      */
     @IntrinsicCandidate
     public native boolean isHidden();

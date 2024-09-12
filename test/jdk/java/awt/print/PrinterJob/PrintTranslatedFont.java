@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,237 +21,126 @@
  * questions.
  */
 
-/**
+import java.awt.Button;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Panel;
+import java.awt.geom.AffineTransform;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+
+import javax.swing.JOptionPane;
+
+/*
  * @test
  * @bug 6359734
  * @key printer
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @summary Test that fonts with a translation print where they should.
  * @run main/manual PrintTranslatedFont
  */
+public class PrintTranslatedFont extends Frame {
+    private static final String INSTRUCTIONS =
+            "This test should print a page which contains the same\n" +
+            "content as the test window on the screen, in particular the lines\n" +
+            "should be immediately under the text\n\n" +
+            "If an exception is thrown, or the page doesn't print properly\n" +
+            "then the test fails";
 
+    public static void main(String[] args) throws Exception {
+        if (PrinterJob.lookupPrintServices().length == 0) {
+            throw new RuntimeException("Printer not configured or available.");
+        }
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.*;
-import java.awt.print.*;
-import java.text.*;
+        PassFailJFrame.builder()
+                .instructions(INSTRUCTIONS)
+                .testUI(PrintTranslatedFont::new)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
+                .columns(45)
+                .build()
+                .awaitAndCheck();
+    }
 
-public class PrintTranslatedFont extends Frame implements ActionListener {
+    public PrintTranslatedFont() {
+        super("PrintTranslatedFont");
 
- private TextCanvas c;
+        TextCanvas c = new TextCanvas();
+        add("Center", c);
 
- public static void main(String args[]) {
-
-  String[] instructions =
-        {
-         "You must have a printer available to perform this test",
-         "This test should print a page which contains the same",
-         "content as the test window on the screen, in particular the lines",
-         "should be immediately under the text",
-         "You should also monitor the command line to see if any exceptions",
-         "were thrown",
-         "If an exception is thrown, or the page doesn't print properly",
-         "then the test fails",
-       };
-      Sysout.createDialog( );
-      Sysout.printInstructions( instructions );
-
-    PrintTranslatedFont f = new PrintTranslatedFont();
-    f.show();
- }
-
- public PrintTranslatedFont() {
-    super("JDK 1.2 drawString Printing");
-
-    c = new TextCanvas();
-    add("Center", c);
-
-    Button printButton = new Button("Print");
-    printButton.addActionListener(this);
-    add("South", printButton);
-
-    addWindowListener(new WindowAdapter() {
-       public void windowClosing(WindowEvent e) {
-             System.exit(0);
+        Button b = new Button("Print");
+        add("South", b);
+        b.addActionListener(e -> {
+            PrinterJob pj = PrinterJob.getPrinterJob();
+            if (pj.printDialog()) {
+                pj.setPrintable(c);
+                try {
+                    pj.print();
+                } catch (PrinterException ex) {
+                    ex.printStackTrace();
+                    String msg = "PrinterException: " + ex.getMessage();
+                    JOptionPane.showMessageDialog(b, msg, "Error occurred",
+                            JOptionPane.ERROR_MESSAGE);
+                    PassFailJFrame.forceFail(msg);
+                }
             }
-    });
+        });
 
-    pack();
- }
-
- public void actionPerformed(ActionEvent e) {
-
-   PrinterJob pj = PrinterJob.getPrinterJob();
-
-   if (pj != null && pj.printDialog()) {
-
-       pj.setPrintable(c);
-       try {
-            pj.print();
-      } catch (PrinterException pe) {
-      } finally {
-         System.err.println("PRINT RETURNED");
-      }
-   }
- }
-
- class TextCanvas extends Panel implements Printable {
-
-    public int print(Graphics g, PageFormat pgFmt, int pgIndex) {
-
-      if (pgIndex > 0)
-         return Printable.NO_SUCH_PAGE;
-
-      Graphics2D g2d = (Graphics2D)g;
-      g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
-
-      paint(g);
-
-      return Printable.PAGE_EXISTS;
+        pack();
     }
 
-    public void paint(Graphics g1) {
-        Graphics2D g = (Graphics2D)g1;
+    private static class TextCanvas extends Panel implements Printable {
+        @Override
+        public void paint(Graphics g) {
+            Graphics2D g2d = (Graphics2D) g;
+            paint(g2d);
+        }
 
-          Font f = new Font("Dialog", Font.PLAIN, 20);
-          int tx = 20;
-          int ty = 20;
-          AffineTransform at = AffineTransform.getTranslateInstance(tx, ty);
-          f = f.deriveFont(at);
-          g.setFont(f);
+        @Override
+        public int print(Graphics g, PageFormat pgFmt, int pgIndex) {
+            if (pgIndex > 0) {
+                return Printable.NO_SUCH_PAGE;
+            }
 
-          FontMetrics fm = g.getFontMetrics();
-          String str = "Basic ascii string";
-          int sw = fm.stringWidth(str);
-          int posx = 20, posy = 40;
-          g.drawString(str, posx, posy);
-          g.drawLine(posx+tx, posy+ty+2, posx+tx+sw, posy+ty+2);
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
+            paint(g2d);
+            return Printable.PAGE_EXISTS;
+        }
 
-          posx = 20; posy = 70;
-          str = "Test string compound printing \u2203\u2200";
-          sw = fm.stringWidth(str);
-          g.drawString(str, posx, posy);
-          g.drawLine(posx+tx, posy+ty+2, posx+tx+sw, posy+ty+2);
+        private void paint(Graphics2D g2d) {
+            Font f = new Font("Dialog", Font.PLAIN, 20);
+            int tx = 20;
+            int ty = 20;
+            AffineTransform at = AffineTransform.getTranslateInstance(tx, ty);
+            f = f.deriveFont(at);
+            g2d.setFont(f);
+
+            FontMetrics fm = g2d.getFontMetrics();
+            String str = "Basic ascii string";
+            int sw = fm.stringWidth(str);
+            int posx = 20;
+            int posy = 40;
+            g2d.drawString(str, posx, posy);
+            g2d.drawLine(posx + tx, posy + ty + 2, posx + tx + sw, posy + ty + 2);
+
+            posx = 20;
+            posy = 70;
+            str = "Test string compound printing \u2203\u2200";
+            sw = fm.stringWidth(str);
+            g2d.drawString(str, posx, posy);
+            g2d.drawLine(posx + tx, posy + ty + 2, posx + tx + sw, posy + ty + 2);
+        }
+
+        @Override
+        public Dimension getPreferredSize() {
+            return new Dimension(450, 250);
+        }
     }
-
-     public Dimension getPreferredSize() {
-        return new Dimension(450, 250);
-    }
- }
-
 }
-
-class Sysout
- {
-   private static TestDialog dialog;
-
-   public static void createDialogWithInstructions( String[] instructions )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      dialog.printInstructions( instructions );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-   public static void createDialog( )
-    {
-      dialog = new TestDialog( new Frame(), "Instructions" );
-      String[] defInstr = { "Instructions will appear here. ", "" } ;
-      dialog.printInstructions( defInstr );
-      dialog.show();
-      println( "Any messages for the tester will display here." );
-    }
-
-
-   public static void printInstructions( String[] instructions )
-    {
-      dialog.printInstructions( instructions );
-    }
-
-
-   public static void println( String messageIn )
-    {
-      dialog.displayMessage( messageIn );
-    }
-
- }// Sysout  class
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog {
-
-   TextArea instructionsText;
-   TextArea messageText;
-   int maxStringLength = 80;
-
-   //DO NOT call this directly, go through Sysout
-   public TestDialog( Frame frame, String name )
-    {
-      super( frame, name );
-      int scrollBoth = TextArea.SCROLLBARS_BOTH;
-      instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-      add( "North", instructionsText );
-
-      messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-      add("Center", messageText);
-
-      pack();
-
-      show();
-    }// TestDialog()
-
-   //DO NOT call this directly, go through Sysout
-   public void printInstructions( String[] instructions )
-    {
-      //Clear out any current instructions
-      instructionsText.setText( "" );
-
-      //Go down array of instruction strings
-
-      String printStr, remainingStr;
-      for( int i=0; i < instructions.length; i++ )
-       {
-         //chop up each into pieces maxSringLength long
-         remainingStr = instructions[ i ];
-         while( remainingStr.length() > 0 )
-          {
-            //if longer than max then chop off first max chars to print
-            if( remainingStr.length() >= maxStringLength )
-             {
-               //Try to chop on a word boundary
-               int posOfSpace = remainingStr.
-                  lastIndexOf( ' ', maxStringLength - 1 );
-
-               if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-               printStr = remainingStr.substring( 0, posOfSpace + 1 );
-               remainingStr = remainingStr.substring( posOfSpace + 1 );
-             }
-            //else just print
-            else
-             {
-               printStr = remainingStr;
-               remainingStr = "";
-             }
-
-            instructionsText.append( printStr + "\n" );
-
-          }// while
-
-       }// for
-
-    }//printInstructions()
-
-   //DO NOT call this directly, go through Sysout
-   public void displayMessage( String messageIn )
-    {
-      messageText.append( messageIn + "\n" );
-    }
-
- }// TestDialog  class

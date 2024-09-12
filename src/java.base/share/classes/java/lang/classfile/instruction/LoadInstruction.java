@@ -73,6 +73,8 @@ public sealed interface LoadInstruction extends Instruction
      * @param op the opcode for the specific type of load instruction,
      *           which must be of kind {@link Opcode.Kind#LOAD}
      * @param slot the local variable slot to load from
+     * @throws IllegalArgumentException if the opcode kind is not
+     *         {@link Opcode.Kind#LOAD}.
      */
     static LoadInstruction of(Opcode op, int slot) {
         Util.checkKind(op, Opcode.Kind.LOAD);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,8 @@
  *
  */
 #include "precompiled.hpp"
-#include "memory/allocation.hpp"
-#include "memory/allocation.inline.hpp"
 #include "memory/guardedMemory.hpp"
+#include "nmt/memflags.hpp"
 #include "runtime/os.hpp"
 
 void* GuardedMemory::wrap_copy(const void* ptr, const size_t len, const void* tag) {
@@ -33,7 +32,9 @@ void* GuardedMemory::wrap_copy(const void* ptr, const size_t len, const void* ta
   if (outerp != nullptr) {
     GuardedMemory guarded(outerp, len, tag);
     void* innerp = guarded.get_user_ptr();
-    memcpy(innerp, ptr, len);
+    if (ptr != nullptr) {
+      memcpy(innerp, ptr, len);
+    }
     return innerp;
   }
   return nullptr; // OOM

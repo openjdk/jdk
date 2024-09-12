@@ -652,7 +652,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
                         Rectangle bounds = rootWidget.getBounds();
                         if (bounds != null) {
                             Point location = rootWidget.getLocation();
-                            centerRectangle(new Rectangle(location.x, location.y, bounds.width, bounds.height));
+                            centerRectangle(new Rectangle(location.x, location.y, bounds.width, bounds.height), false);
                         }
                     }
                 }
@@ -872,7 +872,7 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
     private void gotoBlock(final Block block) {
         BlockWidget bw = getWidget(block.getInputBlock());
         if (bw != null) {
-            centerRectangle(bw.getBounds());
+            centerRectangle(bw.getBounds(), true);
         }
     }
 
@@ -919,26 +919,28 @@ public class DiagramScene extends ObjectScene implements DiagramViewer, DoubleCl
             }
         }
         if (overallRect != null) {
-            centerRectangle(overallRect);
+            centerRectangle(overallRect, true);
         }
     }
 
-    private void centerRectangle(Rectangle r) {
+    private void centerRectangle(Rectangle r, boolean zoomToFit) {
         Rectangle rect = convertSceneToView(r);
         Rectangle viewRect = scrollPane.getViewport().getViewRect();
-
-        double factor = Math.min(viewRect.getWidth() / rect.getWidth(),  viewRect.getHeight() / rect.getHeight());
-        double zoomFactor = getZoomFactor();
-        double newZoomFactor = zoomFactor * factor;
-        if (factor < 1.0 || zoomFactor < 1.0) {
-            newZoomFactor = Math.min(1.0, newZoomFactor);
-            centredZoom(newZoomFactor, null);
-            factor = newZoomFactor / zoomFactor;
-            rect.x *= factor;
-            rect.y *= factor;
-            rect.width *= factor;
-            rect.height *= factor;
+        if (zoomToFit) {
+            double factor = Math.min(viewRect.getWidth() / rect.getWidth(),  viewRect.getHeight() / rect.getHeight());
+            double zoomFactor = getZoomFactor();
+            double newZoomFactor = zoomFactor * factor;
+            if (factor < 1.0 || zoomFactor < 1.0) {
+                newZoomFactor = Math.min(1.0, newZoomFactor);
+                centredZoom(newZoomFactor, null);
+                factor = newZoomFactor / zoomFactor;
+                rect.x *= factor;
+                rect.y *= factor;
+                rect.width *= factor;
+                rect.height *= factor;
+            }
         }
+
         viewRect.x = rect.x + rect.width / 2 - viewRect.width / 2;
         viewRect.y = rect.y + rect.height / 2 - viewRect.height / 2;
         // Ensure to be within area

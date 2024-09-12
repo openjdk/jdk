@@ -47,7 +47,8 @@ import java.util.stream.Collectors;
  */
 class TypePrinter extends Printer {
 
-    private static final String OBJECT = "Object";
+     //only used in erroneous/non-standard circumstances; OK to use a FQN:
+    private static final String OBJECT = "java.lang.Object";
 
     private final JavacMessages messages;
     private final Types types;

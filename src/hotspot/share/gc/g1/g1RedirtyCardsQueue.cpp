@@ -65,10 +65,12 @@ void G1RedirtyCardsLocalQueueSet::enqueue(void* value) {
   }
 }
 
-void G1RedirtyCardsLocalQueueSet::flush() {
+BufferNodeList G1RedirtyCardsLocalQueueSet::flush() {
   flush_queue(_queue);
+  BufferNodeList cur_buffers = _buffers;
   _shared_qset->add_bufferlist(_buffers);
   _buffers = BufferNodeList();
+  return cur_buffers;
 }
 
 // G1RedirtyCardsLocalQueueSet::Queue

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "gc/shared/gcStats.hpp"
 #include "gc/shared/gcUtil.hpp"
 #include "utilities/align.hpp"
 
@@ -72,8 +71,8 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // Footprint statistics
   AdaptiveWeightedAverage* _avg_base_footprint;
 
-  // Statistical data gathered for GC
-  GCStats _gc_stats;
+  // Statistics for promoted objs
+  AdaptivePaddedNoZeroDevAverage*   _avg_promoted;
 
   // Variable for estimating the major and minor pause times.
   // These variables represent linear least-squares fits of
@@ -146,8 +145,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   // Footprint accessors
   size_t live_space() const {
-    return (size_t)(avg_base_footprint()->average() +
-                    avg_young_live()->average() +
+    return (size_t)(avg_young_live()->average() +
                     avg_old_live()->average());
   }
   size_t free_space() const {
@@ -166,7 +164,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
  public:
   // Accessors for use by performance counters
   AdaptivePaddedNoZeroDevAverage*  avg_promoted() const {
-    return _gc_stats.avg_promoted();
+    return _avg_promoted;
   }
   AdaptiveWeightedAverage* avg_base_footprint() const {
     return _avg_base_footprint;

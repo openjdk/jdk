@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,18 +122,18 @@ public class Instrumentor {
                                 // load method parameters
                                 for (int i = 0; i < mt.parameterCount(); i++) {
                                     TypeKind kind = TypeKind.from(mt.parameterType(i));
-                                    cb.loadInstruction(kind, ptr);
+                                    cb.loadLocal(kind, ptr);
                                     ptr += kind.slotSize();
                                 }
 
-                                cb.invokeInstruction(isStatic ? Opcode.INVOKESTATIC : Opcode.INVOKESPECIAL,
+                                cb.invoke(isStatic ? Opcode.INVOKESTATIC : Opcode.INVOKESPECIAL,
                                         model.thisClass().asSymbol(), newName, mt, false);
-                                cb.returnInstruction(TypeKind.from(mt.returnType()));
+                                cb.return_(TypeKind.from(mt.returnType()));
                             }));
                         }
                     }));
 
-                    builder.withMethod(newName, mt, mm.flags().flagsMask(), mm::forEachElement);
+                    builder.withMethod(newName, mt, mm.flags().flagsMask(), mm::forEach);
                 } else {
                     builder.accept(element);
                 }
@@ -148,7 +148,7 @@ public class Instrumentor {
     }
 
     public synchronized byte[] apply() {
-        var bytes = ClassFile.of().transform(model, transform);
+        var bytes = ClassFile.of().transformClass(model, transform);
 
         return dirty.get() ? bytes : null;
     }

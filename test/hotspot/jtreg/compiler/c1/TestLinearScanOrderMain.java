@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8207355
  * @compile TestLinearScanOrder.jasm
  * @run main/othervm -Xcomp -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:NMethodSizeLimit=655360
  *                   -XX:CompileCommand=compileonly,compiler.c1.TestLinearScanOrder::test
  *                   compiler.c1.TestLinearScanOrderMain
  */

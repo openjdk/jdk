@@ -23,16 +23,22 @@
  */
 
 #include "precompiled.hpp"
+#include "code/vmreg.inline.hpp"
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/block.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
 #include "opto/macro.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/output.hpp"
+#include "opto/regalloc.hpp"
 #include "opto/runtime.hpp"
 #include "utilities/macros.hpp"
+#include CPU_HEADER(gc/shared/barrierSetAssembler)
 
 // By default this is a no-op.
 void BarrierSetC2::resolve_address(C2Access& access) const { }
@@ -75,6 +81,53 @@ bool C2Access::needs_cpu_membar() const {
   }
 
   return false;
+}
+
+static BarrierSetC2State* barrier_set_state() {
+  return reinterpret_cast<BarrierSetC2State*>(Compile::current()->barrier_set_state());
+}
+
+RegMask& BarrierStubC2::live() const {
+  return *barrier_set_state()->live(_node);
+}
+
+BarrierStubC2::BarrierStubC2(const MachNode* node)
+  : _node(node),
+    _entry(),
+    _continuation(),
+    _preserve(live()) {}
+
+Label* BarrierStubC2::entry() {
+  // The _entry will never be bound when in_scratch_emit_size() is true.
+  // However, we still need to return a label that is not bound now, but
+  // will eventually be bound. Any eventually bound label will do, as it
+  // will only act as a placeholder, so we return the _continuation label.
+  return Compile::current()->output()->in_scratch_emit_size() ? &_continuation : &_entry;
+}
+
+Label* BarrierStubC2::continuation() {
+  return &_continuation;
+}
+
+void BarrierStubC2::preserve(Register r) {
+  const VMReg vm_reg = r->as_VMReg();
+  assert(vm_reg->is_Register(), "r must be a general-purpose register");
+  _preserve.Insert(OptoReg::as_OptoReg(vm_reg));
+}
+
+void BarrierStubC2::dont_preserve(Register r) {
+  VMReg vm_reg = r->as_VMReg();
+  assert(vm_reg->is_Register(), "r must be a general-purpose register");
+  // Subtract the given register and all its sub-registers (e.g. {R11, R11_H}
+  // for r11 in aarch64).
+  do {
+    _preserve.Remove(OptoReg::as_OptoReg(vm_reg));
+    vm_reg = vm_reg->next();
+  } while (vm_reg->is_Register() && !vm_reg->is_concrete());
+}
+
+const RegMask& BarrierStubC2::preserve_set() const {
+  return _preserve;
 }
 
 Node* BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {
@@ -761,7 +814,57 @@ Node* BarrierSetC2::obj_allocate(PhaseMacroExpand* macro, Node* mem, Node* toobi
   return old_tlab_top;
 }
 
+static const TypeFunc* clone_type() {
+  // Create input type (domain)
+  int argcnt = NOT_LP64(3) LP64_ONLY(4);
+  const Type** const domain_fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  domain_fields[argp++] = TypeInstPtr::NOTNULL;  // src
+  domain_fields[argp++] = TypeInstPtr::NOTNULL;  // dst
+  domain_fields[argp++] = TypeX_X;               // size lower
+  LP64_ONLY(domain_fields[argp++] = Type::HALF); // size upper
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* const domain = TypeTuple::make(TypeFunc::Parms + argcnt, domain_fields);
+
+  // Create result type (range)
+  const Type** const range_fields = TypeTuple::fields(0);
+  const TypeTuple* const range = TypeTuple::make(TypeFunc::Parms + 0, range_fields);
+
+  return TypeFunc::make(domain, range);
+}
+
 #define XTOP LP64_ONLY(COMMA phase->top())
+
+void BarrierSetC2::clone_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
+                                    address clone_addr, const char* clone_name) const {
+  Node* const ctrl = ac->in(TypeFunc::Control);
+  Node* const mem  = ac->in(TypeFunc::Memory);
+  Node* const src  = ac->in(ArrayCopyNode::Src);
+  Node* const dst  = ac->in(ArrayCopyNode::Dest);
+  Node* const size = ac->in(ArrayCopyNode::Length);
+
+  assert(size->bottom_type()->base() == Type_X,
+         "Should be of object size type (int for 32 bits, long for 64 bits)");
+
+  // The native clone we are calling here expects the object size in words.
+  // Add header/offset size to payload size to get object size.
+  Node* const base_offset = phase->MakeConX(arraycopy_payload_base_offset(ac->is_clone_array()) >> LogBytesPerLong);
+  Node* const full_size = phase->transform_later(new AddXNode(size, base_offset));
+  // HeapAccess<>::clone expects size in heap words.
+  // For 64-bits platforms, this is a no-operation.
+  // For 32-bits platforms, we need to multiply full_size by HeapWordsPerLong (2).
+  Node* const full_size_in_heap_words = phase->transform_later(new LShiftXNode(full_size, phase->intcon(LogHeapWordsPerLong)));
+
+  Node* const call = phase->make_leaf_call(ctrl,
+                                           mem,
+                                           clone_type(),
+                                           clone_addr,
+                                           clone_name,
+                                           TypeRawPtr::BOTTOM,
+                                           src, dst, full_size_in_heap_words XTOP);
+  phase->transform_later(call);
+  phase->igvn().replace_node(ac, call);
+}
 
 void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
   Node* ctrl = ac->in(TypeFunc::Control);
@@ -788,3 +891,87 @@ void BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac
 }
 
 #undef XTOP
+
+void BarrierSetC2::compute_liveness_at_stubs() const {
+  ResourceMark rm;
+  Compile* const C = Compile::current();
+  Arena* const A = Thread::current()->resource_area();
+  PhaseCFG* const cfg = C->cfg();
+  PhaseRegAlloc* const regalloc = C->regalloc();
+  RegMask* const live = NEW_ARENA_ARRAY(A, RegMask, cfg->number_of_blocks() * sizeof(RegMask));
+  BarrierSetAssembler* const bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  BarrierSetC2State* bs_state = barrier_set_state();
+  Block_List worklist;
+
+  for (uint i = 0; i < cfg->number_of_blocks(); ++i) {
+    new ((void*)(live + i)) RegMask();
+    worklist.push(cfg->get_block(i));
+  }
+
+  while (worklist.size() > 0) {
+    const Block* const block = worklist.pop();
+    RegMask& old_live = live[block->_pre_order];
+    RegMask new_live;
+
+    // Initialize to union of successors
+    for (uint i = 0; i < block->_num_succs; i++) {
+      const uint succ_id = block->_succs[i]->_pre_order;
+      new_live.OR(live[succ_id]);
+    }
+
+    // Walk block backwards, computing liveness
+    for (int i = block->number_of_nodes() - 1; i >= 0; --i) {
+      const Node* const node = block->get_node(i);
+
+      // If this node tracks out-liveness, update it
+      if (!bs_state->needs_livein_data()) {
+        RegMask* const regs = bs_state->live(node);
+        if (regs != nullptr) {
+          regs->OR(new_live);
+        }
+      }
+
+      // Remove def bits
+      const OptoReg::Name first = bs->refine_register(node, regalloc->get_reg_first(node));
+      const OptoReg::Name second = bs->refine_register(node, regalloc->get_reg_second(node));
+      if (first != OptoReg::Bad) {
+        new_live.Remove(first);
+      }
+      if (second != OptoReg::Bad) {
+        new_live.Remove(second);
+      }
+
+      // Add use bits
+      for (uint j = 1; j < node->req(); ++j) {
+        const Node* const use = node->in(j);
+        const OptoReg::Name first = bs->refine_register(use, regalloc->get_reg_first(use));
+        const OptoReg::Name second = bs->refine_register(use, regalloc->get_reg_second(use));
+        if (first != OptoReg::Bad) {
+          new_live.Insert(first);
+        }
+        if (second != OptoReg::Bad) {
+          new_live.Insert(second);
+        }
+      }
+
+      // If this node tracks in-liveness, update it
+      if (bs_state->needs_livein_data()) {
+        RegMask* const regs = bs_state->live(node);
+        if (regs != nullptr) {
+          regs->OR(new_live);
+        }
+      }
+    }
+
+    // Now at block top, see if we have any changes
+    new_live.SUBTRACT(old_live);
+    if (new_live.is_NotEmpty()) {
+      // Liveness has refined, update and propagate to prior blocks
+      old_live.OR(new_live);
+      for (uint i = 1; i < block->num_preds(); ++i) {
+        Block* const pred = cfg->get_block_for_node(block->pred(i));
+        worklist.push(pred);
+      }
+    }
+  }
+}

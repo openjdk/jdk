@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -80,7 +80,6 @@ define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
 // Platform dependent flag handling: flags only defined on this platform.
 #define ARCH_FLAGS(develop,                                                 \
                    product,                                                 \
-                   notproduct,                                              \
                    range,                                                   \
                    constraint)                                              \
                                                                             \

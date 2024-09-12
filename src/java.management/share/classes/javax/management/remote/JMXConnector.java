@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,12 +115,6 @@ public interface JMXConnector extends Closeable {
      * {@link JMXServerErrorException}, which is seen by the
      * client.</p>
      *
-     * <p>Calling this method is equivalent to calling
-     * {@link #getMBeanServerConnection(Subject) getMBeanServerConnection(null)}
-     * meaning that no delegation subject is specified and that all the
-     * operations called on the <code>MBeanServerConnection</code> must
-     * use the authenticated subject, if any.</p>
-     *
      * @return an object that implements the
      * <code>MBeanServerConnection</code> interface by forwarding its
      * methods to the remote MBean server.
@@ -135,49 +129,37 @@ public interface JMXConnector extends Closeable {
             throws IOException;
 
     /**
-     * <p>Returns an <code>MBeanServerConnection</code> object representing
-     * a remote MBean server on which operations are performed on behalf of
-     * the supplied delegation subject. For a given <code>JMXConnector</code>
-     * and <code>Subject</code>, two successful calls to this method will
-     * usually return the same <code>MBeanServerConnection</code> object,
-     * though this is not required.</p>
+     * <p>When {@code delegationSubject} is {@code null}, calling his method
+     * is equivalent to calling {@link #getMBeanServerConnection()}.
      *
-     * <p>For each method in the returned
-     * <code>MBeanServerConnection</code>, calling the method causes
-     * the corresponding method to be called in the remote MBean
-     * server on behalf of the given delegation subject instead of the
-     * authenticated subject. The value returned by the MBean server
-     * method is the value returned to the client. If the MBean server
-     * method produces an <code>Exception</code>, the same
-     * <code>Exception</code> is seen by the client. If the MBean
-     * server method, or the attempt to call it, produces an
-     * <code>Error</code>, the <code>Error</code> is wrapped in a
-     * {@link JMXServerErrorException}, which is seen by the
-     * client.</p>
+     * @implSpec The default implementation of this method throws
+     * {@code UnsupportedOperationException} if {@code delegationSubject} is
+     * non-null. Otherwise it calls {@link getMBeanServerConnection()}.
      *
-     * @param delegationSubject the <code>Subject</code> on behalf of
-     * which requests will be performed.  Can be null, in which case
-     * requests will be performed on behalf of the authenticated
-     * Subject, if any.
+     * @param delegationSubject must be {@code null}.
      *
      * @return an object that implements the <code>MBeanServerConnection</code>
-     * interface by forwarding its methods to the remote MBean server on behalf
-     * of a given delegation subject.
+     * interface by forwarding its methods to the remote MBean server.
      *
      * @exception IOException if a valid <code>MBeanServerConnection</code>
      * cannot be created, for instance because the connection to the remote
      * MBean server has not yet been established (with the {@link #connect(Map)
      * connect} method), or it has been closed, or it has broken.
      *
+     * @exception UnsupportedOperationException if {@code delegationSubject} is non-null.
+     *
      * @deprecated This method supported the legacy Subject Delegation feature,
-     * and is only useful in conjunction with other APIs which are deprecated and
-     * subject to removal in a future release. Consequently, this method is also
-     * deprecated and subject to removal. There is no replacement.
+     * which has been removed.  There is no replacement.
      */
     @Deprecated(since="21", forRemoval=true)
-    public MBeanServerConnection getMBeanServerConnection(
-                                               Subject delegationSubject)
-            throws IOException;
+    public default MBeanServerConnection getMBeanServerConnection(Subject delegationSubject)
+            throws IOException {
+
+        if (delegationSubject != null) {
+            throw new UnsupportedOperationException("Subject Delegation has been removed.");
+        }
+        return getMBeanServerConnection();
+    }
 
     /**
      * <p>Closes the client connection to its server.  Any ongoing or new

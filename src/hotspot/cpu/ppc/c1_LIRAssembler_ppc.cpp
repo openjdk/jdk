@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1827,18 +1827,17 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   int flags = op->flags();
   ciArrayKlass* default_type = op->expected_type();
-  BasicType basic_type = default_type != nullptr ? default_type->element_type()->basic_type() : T_ILLEGAL;
+  BasicType basic_type = (default_type != nullptr) ? default_type->element_type()->basic_type() : T_ILLEGAL;
   if (basic_type == T_ARRAY) basic_type = T_OBJECT;
 
   // Set up the arraycopy stub information.
   ArrayCopyStub* stub = op->stub();
-  const int frame_resize = frame::native_abi_reg_args_size - sizeof(frame::java_abi); // C calls need larger frame.
 
   // Always do stub if no type information is available. It's ok if
   // the known type isn't loaded since the code sanity checks
   // in debug mode and the type isn't required when we know the exact type
   // also check that the type is an array type.
-  if (op->expected_type() == nullptr) {
+  if (default_type == nullptr) {
     assert(src->is_nonvolatile() && src_pos->is_nonvolatile() && dst->is_nonvolatile() && dst_pos->is_nonvolatile() &&
            length->is_nonvolatile(), "must preserve");
     address copyfunc_addr = StubRoutines::generic_arraycopy();
@@ -1860,7 +1859,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
       __ stw(R11_scratch1, simm16_offs, tmp);
     }
 #endif
-    __ call_c_with_frame_resize(copyfunc_addr, /*stub does not need resized frame*/ 0);
+    __ call_c(copyfunc_addr, relocInfo::runtime_call_type);
 
     __ nand(tmp, R3_RET, R3_RET);
     __ subf(length, tmp, length);
@@ -1873,7 +1872,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     return;
   }
 
-  assert(default_type != nullptr && default_type->is_array_klass(), "must be true at this point");
+  assert(default_type != nullptr && default_type->is_array_klass() && default_type->is_loaded(), "must be true at this point");
   Label cont, slow, copyfunc;
 
   bool simple_check_flag_set = flags & (LIR_OpArrayCopy::src_null_check |
@@ -1968,7 +1967,11 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   int shift = shift_amount(basic_type);
 
   if (!(flags & LIR_OpArrayCopy::type_check)) {
-    __ b(cont);
+    if (stub != nullptr) {
+      __ b(cont);
+      __ bind(slow);
+      __ b(*stub->entry());
+    }
   } else {
     // We don't know the array types are compatible.
     if (basic_type != T_OBJECT) {
@@ -2054,7 +2057,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         int sco_offset = in_bytes(Klass::super_check_offset_offset());
         __ lwz(chk_off, sco_offset, super_k);
 
-        __ call_c_with_frame_resize(copyfunc_addr, /*stub does not need resized frame*/ 0);
+        __ call_c(copyfunc_addr, relocInfo::runtime_call_type);
 
 #ifndef PRODUCT
         if (PrintC1Statistics) {
@@ -2089,9 +2092,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
         __ add(dst_pos, tmp, dst_pos);
       }
     }
+    __ bind(slow);
+    __ b(*stub->entry());
   }
-  __ bind(slow);
-  __ b(*stub->entry());
   __ bind(cont);
 
 #ifdef ASSERT
@@ -2104,7 +2107,7 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // subtype which we can't check or src is the same array as dst
     // but not necessarily exactly of type default_type.
     Label known_ok, halt;
-    metadata2reg(op->expected_type()->constant_encoding(), tmp);
+    metadata2reg(default_type->constant_encoding(), tmp);
     if (UseCompressedClassPointers) {
       // Tmp holds the default type. It currently comes uncompressed after the
       // load of a constant, so encode it.
@@ -2178,9 +2181,11 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
 
   // Arraycopy stubs takes a length in number of elements, so don't scale it.
   __ mr(len, length);
-  __ call_c_with_frame_resize(entry, /*stub does not need resized frame*/ 0);
+  __ call_c(entry, relocInfo::runtime_call_type);
 
-  __ bind(*stub->continuation());
+  if (stub != nullptr) {
+    __ bind(*stub->continuation());
+  }
 }
 
 
@@ -2301,7 +2306,8 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       arrayOopDesc::base_offset_in_bytes(op->type()),
                       type2aelembytes(op->type()),
                       op->klass()->as_register(),
-                      *op->stub()->entry());
+                      *op->stub()->entry(),
+                      op->zero_array());
   }
   __ bind(*op->stub()->continuation());
 }
@@ -2614,7 +2620,7 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     __ cmpxchgw(BOOL_RESULT, /*current_value=*/R0, cmp_value, new_value, addr,
                 MacroAssembler::MemBarNone,
                 MacroAssembler::cmpxchgx_hint_atomic_update(),
-                noreg, /*check without ldarx first*/true);
+                noreg, nullptr, /*check without ldarx first*/true);
   }
 
   if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -2856,7 +2862,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest,
     return;
   }
 
-  __ call_c_with_frame_resize(dest, /*no resizing*/ 0);
+  __ call_c(dest, relocInfo::runtime_call_type);
   if (info != nullptr) {
     add_call_info_here(info);
   }

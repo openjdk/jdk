@@ -163,8 +163,8 @@ public class WrongLNTForLambdaTest {
         for (MethodModel method : classFile.methods()) {
             if (method.methodName().equalsString(methodToFind)) {
                 methodFound = true;
-                CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();
-                LineNumberTableAttribute lnt = code.findAttribute(Attributes.LINE_NUMBER_TABLE).orElseThrow();
+                CodeAttribute code = method.findAttribute(Attributes.code()).orElseThrow();
+                LineNumberTableAttribute lnt = code.findAttribute(Attributes.lineNumberTable()).orElseThrow();
                 Assert.check(lnt.lineNumbers().size() == expectedLNT.length,
                         "The LineNumberTable found has a length different to the expected one");
                 int i = 0;

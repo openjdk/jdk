@@ -41,6 +41,8 @@
   #define SYS_membarrier 365
   #elif defined(AARCH64)
   #define SYS_membarrier 283
+  #elif defined(ARM32)
+  #define SYS_membarrier 389
   #elif defined(ALPHA)
   #define SYS_membarrier 517
   #else

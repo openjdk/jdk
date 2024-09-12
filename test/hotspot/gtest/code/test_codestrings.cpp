@@ -49,7 +49,8 @@ static const char* replace_addr_expr(const char* str)
     // Padding: riscv
     std::basic_string<char> tmp4  = std::regex_replace(tmp3, std::regex("\\s+<addr>:\\s+unimp"), "");
     // Padding: x64
-    std::basic_string<char> red  = std::regex_replace(tmp4, std::regex("\\s+<addr>:\\s+hlt[ \\t]+(?!\\n\\s+;;)"), "");
+    std::basic_string<char> tmp5  = std::regex_replace(tmp4, std::regex("\\s+<addr>:\\s+hlt[ \\t]+(?!\\n\\s+;;)"), "");
+    std::basic_string<char> red  = std::regex_replace(tmp5, std::regex("(\\s+<addr>:\\s+nop)[ \\t]*"), "$1");
 
     return os::strdup(red.c_str());
 }

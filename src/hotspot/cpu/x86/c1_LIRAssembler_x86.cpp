@@ -1621,7 +1621,8 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       arrayOopDesc::base_offset_in_bytes(op->type()),
                       array_element_size(op->type()),
                       op->klass()->as_register(),
-                      *op->stub()->entry());
+                      *op->stub()->entry(),
+                      op->zero_array());
   }
   __ bind(*op->stub()->continuation());
 }
@@ -2835,7 +2836,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
     offset += NativeCall::displacement_offset;
     break;
   case lir_icvirtual_call:
-    offset += NativeCall::displacement_offset + NativeMovConstReg::instruction_size;
+    offset += NativeCall::displacement_offset + NativeMovConstReg::instruction_size_rex;
     break;
   default: ShouldNotReachHere();
   }
@@ -2872,7 +2873,7 @@ void LIR_Assembler::emit_static_call_stub() {
   int start = __ offset();
 
   // make sure that the displacement word of the call ends up word aligned
-  __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size + NativeCall::displacement_offset);
+  __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size_rex + NativeCall::displacement_offset);
   __ relocate(static_stub_Relocation::spec(call_pc));
   __ mov_metadata(rbx, (Metadata*)nullptr);
   // must be set to -1 at code generation time
@@ -3453,7 +3454,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   address entry = StubRoutines::select_arraycopy_function(basic_type, aligned, disjoint, name, false);
   __ call_VM_leaf(entry, 0);
 
-  __ bind(*stub->continuation());
+  if (stub != nullptr) {
+    __ bind(*stub->continuation());
+  }
 }
 
 void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {

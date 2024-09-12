@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +248,6 @@ public:
   static zaddress uncolor(zpointer ptr);
   static zaddress uncolor_store_good(zpointer ptr);
   static zaddress_unsafe uncolor_unsafe(zpointer ptr);
-  static zpointer set_remset_bits(zpointer ptr);
 
   static bool is_load_bad(zpointer ptr);
   static bool is_load_good(zpointer ptr);

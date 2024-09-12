@@ -724,9 +724,9 @@ Node* AddPNode::Ideal_base_and_offset(Node* ptr, PhaseValues* phase,
 //------------------------------unpack_offsets----------------------------------
 // Collect the AddP offset values into the elements array, giving up
 // if there are more than length.
-int AddPNode::unpack_offsets(Node* elements[], int length) {
+int AddPNode::unpack_offsets(Node* elements[], int length) const {
   int count = 0;
-  Node* addr = this;
+  Node const* addr = this;
   Node* base = addr->in(AddPNode::Base);
   while (addr->is_AddP()) {
     if (addr->in(AddPNode::Base) != base) {
@@ -1080,11 +1080,19 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   return AddNode::Value(phase);
 }
 
-static Node* build_min_max_int(Node* a, Node* b, bool is_max) {
+Node* MaxNode::build_min_max_int(Node* a, Node* b, bool is_max) {
   if (is_max) {
     return new MaxINode(a, b);
   } else {
     return new MinINode(a, b);
+  }
+}
+
+Node* MaxNode::build_min_max_long(PhaseGVN* phase, Node* a, Node* b, bool is_max) {
+  if (is_max) {
+    return new MaxLNode(phase->C, a, b);
+  } else {
+    return new MinLNode(phase->C, a, b);
   }
 }
 
@@ -1414,6 +1422,14 @@ Node* MinLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return fold_subI_no_underflow_pattern(this, phase);
   }
   return nullptr;
+}
+
+Node* MaxNode::Identity(PhaseGVN* phase) {
+  if (in(1) == in(2)) {
+      return in(1);
+  }
+
+  return AddNode::Identity(phase);
 }
 
 //------------------------------add_ring---------------------------------------

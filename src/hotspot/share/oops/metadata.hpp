@@ -76,4 +76,13 @@ class Metadata : public MetaspaceObj {
   static void mark_on_stack(Metadata* m) { m->set_on_stack(true); }
 };
 
+template <typename M>
+static void print_on_maybe_null(outputStream* st, const char* str, const M* m) {
+  if (nullptr != m) {
+    st->print_raw(str);
+    m->print_value_on(st);
+    st->cr();
+  }
+}
+
 #endif // SHARE_OOPS_METADATA_HPP

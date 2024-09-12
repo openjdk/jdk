@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@
  * The classes in this package were initially specified by Netscape, and are the
  * de facto standard mechanism for calling JavaScript from the Java runtime.
  * </p>
+ *
+ * @since 1.5
  */
 
 package netscape.javascript;

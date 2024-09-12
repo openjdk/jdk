@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -87,10 +87,11 @@ requires.properties= \
     vm.musl \
     vm.flagless \
     docker.support \
+    systemd.support \
     jdk.containerized
 
 # Minimum jtreg version
-requiredVersion=7.3.1+1
+requiredVersion=7.4+1
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../../ notation to reach them

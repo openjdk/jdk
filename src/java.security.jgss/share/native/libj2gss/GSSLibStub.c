@@ -99,9 +99,9 @@ Java_sun_security_jgss_wrapper_GSSLibStub_init(JNIEnv *env,
                     MAX_MSG_SIZE,
                     NULL);
             if (0 == dwRes) {
-                printf("GSS-API: Unknown failure %d\n", dwError);
+                TRACE1("GSS-API: Unknown failure %d", dwError);
             } else {
-                printf("GSS-API: %s\n",szMsgBuf);
+                TRACE1("GSS-API: %s",szMsgBuf);
             }
 #else
             char* error = dlerror();

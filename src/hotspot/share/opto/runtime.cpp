@@ -26,7 +26,6 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/compiledMethod.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
@@ -84,7 +83,7 @@
 //  To force FullGCALot inside a runtime function, add the following two lines
 //
 //  Universe::release_fullgc_alot_dummy();
-//  MarkSweep::invoke(0, "Debugging");
+//  Universe::heap()->collect();
 //
 // At command line specify the parameters: -XX:+FullGCALot -XX:FullGCALotStart=100000000
 
@@ -115,7 +114,8 @@ address OptoRuntime::_notify_jvmti_vthread_mount                  = nullptr;
 address OptoRuntime::_notify_jvmti_vthread_unmount                = nullptr;
 #endif
 
-ExceptionBlob* OptoRuntime::_exception_blob;
+UncommonTrapBlob*   OptoRuntime::_uncommon_trap_blob;
+ExceptionBlob*      OptoRuntime::_exception_blob;
 
 // This should be called in an assertion at the start of OptoRuntime routines
 // which are entered from compiled code (all of them)
@@ -139,6 +139,7 @@ static bool check_compiled_frame(JavaThread* thread) {
 
 bool OptoRuntime::generate(ciEnv* env) {
 
+  generate_uncommon_trap_blob();
   generate_exception_blob();
 
   // Note: tls: Means fetching the return oop out of the thread-local storage
@@ -772,6 +773,29 @@ const TypeFunc* OptoRuntime::void_void_Type() {
  }
 
 
+// Takes as parameters:
+// void *dest
+// long size
+// uchar byte
+const TypeFunc* OptoRuntime::make_setmemory_Type() {
+  // create input type (domain)
+  int argcnt = NOT_LP64(3) LP64_ONLY(4);
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;        // dest
+  fields[argp++] = TypeX_X;                 // size
+  LP64_ONLY(fields[argp++] = Type::HALF);   // size
+  fields[argp++] = TypeInt::UBYTE;          // bytevalue
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
 // arraycopy stub variations:
 enum ArrayCopyType {
   ac_fast,                      // void(ptr, ptr, size_t)
@@ -1128,7 +1152,7 @@ const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type(bool is_sha3) {
 
 const TypeFunc* OptoRuntime::multiplyToLen_Type() {
   // create input type (domain)
-  int num_args      = 6;
+  int num_args      = 5;
   int argcnt = num_args;
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
@@ -1137,7 +1161,6 @@ const TypeFunc* OptoRuntime::multiplyToLen_Type() {
   fields[argp++] = TypePtr::NOTNULL;    // y
   fields[argp++] = TypeInt::INT;        // ylen
   fields[argp++] = TypePtr::NOTNULL;    // z
-  fields[argp++] = TypeInt::INT;        // zlen
   assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -1336,6 +1359,27 @@ const TypeFunc* OptoRuntime::base64_encodeBlock_Type() {
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
   return TypeFunc::make(domain, range);
 }
+
+// String IndexOf function
+const TypeFunc* OptoRuntime::string_IndexOf_Type() {
+  int argcnt = 4;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // haystack array
+  fields[argp++] = TypeInt::INT;        // haystack length
+  fields[argp++] = TypePtr::NOTNULL;    // needle array
+  fields[argp++] = TypeInt::INT;        // needle length
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT; // Index of needle in haystack
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
+
 // Base64 decode function
 const TypeFunc* OptoRuntime::base64_decodeBlock_Type() {
   int argcnt = 7;
@@ -1369,6 +1413,45 @@ const TypeFunc* OptoRuntime::poly1305_processBlocks_Type() {
   fields[argp++] = TypeInt::INT;        // input length
   fields[argp++] = TypePtr::NOTNULL;    // accumulator array
   fields[argp++] = TypePtr::NOTNULL;    // r array
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
+// MontgomeryIntegerPolynomialP256 multiply function
+const TypeFunc* OptoRuntime::intpoly_montgomeryMult_P256_Type() {
+  int argcnt = 3;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // a array
+  fields[argp++] = TypePtr::NOTNULL;    // b array
+  fields[argp++] = TypePtr::NOTNULL;    // r(esult) array
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
+// IntegerPolynomial constant time assignment function
+const TypeFunc* OptoRuntime::intpoly_assign_Type() {
+  int argcnt = 4;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypeInt::INT;        // set flag
+  fields[argp++] = TypePtr::NOTNULL;    // a array (result)
+  fields[argp++] = TypePtr::NOTNULL;    // b array (if set is set)
+  fields[argp++] = TypeInt::INT;        // array length
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 
@@ -1775,14 +1858,6 @@ void OptoRuntime::print_named_counters() {
           eliminated_lock_count += count;
         }
       }
-#if INCLUDE_RTM_OPT
-    } else if (c->tag() == NamedCounter::RTMLockingCounter) {
-      RTMLockingCounters* rlc = ((RTMLockingNamedCounter*)c)->counters();
-      if (rlc->nonzero()) {
-        tty->print_cr("%s", c->name());
-        rlc->print_on(tty);
-      }
-#endif
     }
     c = c->next();
   }
@@ -1824,12 +1899,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
     st.print("@%d", bci);
     // To print linenumbers instead of bci use: m->line_number_from_bci(bci)
   }
-  NamedCounter* c;
-  if (tag == NamedCounter::RTMLockingCounter) {
-    c = new RTMLockingNamedCounter(st.freeze());
-  } else {
-    c = new NamedCounter(st.freeze(), tag);
-  }
+  NamedCounter* c = new NamedCounter(st.freeze(), tag);
 
   // atomically add the new counter to the head of the list.  We only
   // add counters so this is safe.
@@ -1851,9 +1921,8 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
   exception_oop->print_value_on(&tempst);
   tempst.print(" in ");
   CodeBlob* blob = CodeCache::find_blob(exception_pc);
-  if (blob->is_compiled()) {
-    CompiledMethod* cm = blob->as_compiled_method_or_null();
-    cm->method()->print_value_on(&tempst);
+  if (blob->is_nmethod()) {
+    blob->as_nmethod()->method()->print_value_on(&tempst);
   } else if (blob->is_runtime_stub()) {
     tempst.print("<runtime-stub>");
   } else {

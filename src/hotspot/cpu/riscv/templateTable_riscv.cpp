@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -2098,9 +2098,9 @@ void TemplateTable::_return(TosState state) {
 
     __ ld(c_rarg1, aaddress(0));
     __ load_klass(x13, c_rarg1);
-    __ lwu(x13, Address(x13, Klass::access_flags_offset()));
+    __ lbu(x13, Address(x13, Klass::misc_flags_offset()));
     Label skip_register_finalizer;
-    __ test_bit(t0, x13, exact_log2(JVM_ACC_HAS_FINALIZER));
+    __ test_bit(t0, x13, exact_log2(KlassFlags::_misc_has_finalizer));
     __ beqz(t0, skip_register_finalizer);
 
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), c_rarg1);
@@ -2272,7 +2272,9 @@ void TemplateTable::load_resolved_field_entry(Register obj,
   __ load_unsigned_byte(flags, Address(cache, in_bytes(ResolvedFieldEntry::flags_offset())));
 
   // TOS state
-  __ load_unsigned_byte(tos_state, Address(cache, in_bytes(ResolvedFieldEntry::type_offset())));
+  if (tos_state != noreg) {
+    __ load_unsigned_byte(tos_state, Address(cache, in_bytes(ResolvedFieldEntry::type_offset())));
+  }
 
   // Klass overwrite register
   if (is_static) {
@@ -3036,13 +3038,9 @@ void TemplateTable::fast_storefield(TosState state) {
 
   // access constant pool cache
   __ load_field_entry(x12, x11);
-  __ push_reg(x10);
-  // X11: field offset, X12: TOS, X13: flags
-  load_resolved_field_entry(x12, x12, x10, x11, x13);
-  __ pop_reg(x10);
 
-  // Must prevent reordering of the following cp cache loads with bytecode load
-  __ membar(MacroAssembler::LoadLoad);
+  // X11: field offset, X12: field holder, X13: flags
+  load_resolved_field_entry(x12, x12, noreg, x11, x13);
 
   {
     Label notVolatile;
@@ -3132,9 +3130,6 @@ void TemplateTable::fast_accessfield(TosState state) {
 
   // access constant pool cache
   __ load_field_entry(x12, x11);
-
-  // Must prevent reordering of the following cp cache loads with bytecode load
-  __ membar(MacroAssembler::LoadLoad);
 
   __ load_sized_value(x11, Address(x12, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
   __ load_unsigned_byte(x13, Address(x12, in_bytes(ResolvedFieldEntry::flags_offset())));
@@ -3554,7 +3549,7 @@ void TemplateTable::_new() {
 
   // get instance_size in InstanceKlass (scaled to a count of bytes)
   __ lwu(x13, Address(x14, Klass::layout_helper_offset()));
-  // test to see if it has a finalizer or is malformed in some way
+  // test to see if is malformed in some way
   __ test_bit(t0, x13, exact_log2(Klass::_lh_instance_slow_path_bit));
   __ bnez(t0, slow_case);
 
@@ -3597,8 +3592,7 @@ void TemplateTable::_new() {
     __ store_klass_gap(x10, zr);   // zero klass gap for compressed oops
     __ store_klass(x10, x14);      // store klass last
 
-    {
-      SkipIfEqual skip(_masm, &DTraceAllocProbes, false);
+    if (DTraceAllocProbes) {
       // Trigger dtrace event for fastpath
       __ push(atos); // save the return value
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), x10);

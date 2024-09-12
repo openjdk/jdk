@@ -68,6 +68,8 @@ public sealed interface DiscontinuedInstruction extends Instruction {
          * @param op the opcode for the specific type of JSR instruction,
          *           which must be of kind {@link Opcode.Kind#DISCONTINUED_JSR}
          * @param target target label of the subroutine
+         * @throws IllegalArgumentException if the opcode kind is not
+         *         {@link Opcode.Kind#DISCONTINUED_JSR}.
          */
         static JsrInstruction of(Opcode op, Label target) {
             Util.checkKind(op, Opcode.Kind.DISCONTINUED_JSR);
@@ -109,6 +111,8 @@ public sealed interface DiscontinuedInstruction extends Instruction {
          * @param op the opcode for the specific type of RET instruction,
          *           which must be of kind {@link Opcode.Kind#DISCONTINUED_RET}
          * @param slot the local variable slot to load return address from
+         * @throws IllegalArgumentException if the opcode kind is not
+         *         {@link Opcode.Kind#DISCONTINUED_RET}.
          */
         static RetInstruction of(Opcode op, int slot) {
             Util.checkKind(op, Opcode.Kind.DISCONTINUED_RET);

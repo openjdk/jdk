@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -2028,9 +2028,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} Vaxtı</regionFormat>
 			<regionFormat type="daylight">{0} Yay Vaxtı</regionFormat>
 			<regionFormat type="standard">{0} Standart Vaxtı</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa İzabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Koordinasiya edilmiş ümumdünya vaxtı</standard>
@@ -2116,9 +2113,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Melburn</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Kuriye</exemplarCity>
 			</zone>
 			<zone type="Australia/Sydney">
 				<exemplarCity>Sidney</exemplarCity>
@@ -2228,9 +2222,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>Kreston</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>Yellounayf</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>Edmondton</exemplarCity>
 			</zone>
@@ -2249,23 +2240,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>Rezolyut</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Reyni Çayı</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>Rankin Girişi</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>İldırım Körfəzi</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>Nipiqon</exemplarCity>
-			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>İqaluit</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>Panqnirtanq</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>Monkton</exemplarCity>
@@ -2862,14 +2841,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Dar es Salam</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Ujqorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiyev</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporojye</exemplarCity>
 			</zone>
 			<zone type="Pacific/Midway">
 				<exemplarCity>Midvey</exemplarCity>
@@ -2882,9 +2855,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Conston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ankorac</exemplarCity>
@@ -3488,11 +3458,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Lord Hau Yay vaxtı</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Makari Adası Vaxtı</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Maqadan Vaxtı</generic>
@@ -3530,13 +3495,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Mouson Vaxtı</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Şimal-Qərbi Meksika Vaxtı</generic>
-					<standard>Şimal-Qərbi Meksika Standart Vaxtı</standard>
-					<daylight>Şimal-Qərbi Meksika Yay Vaxtı</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

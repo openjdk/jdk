@@ -70,7 +70,7 @@ public class ModuleTestBase {
 
     protected void testModuleAttribute(Path modulePath, ModuleDescriptor moduleDescriptor) throws Exception {
         ClassModel classFile = ClassFile.of().parse(modulePath.resolve("module-info.class"));
-        ModuleAttribute moduleAttribute = classFile.findAttribute(Attributes.MODULE).orElse(null);
+        ModuleAttribute moduleAttribute = classFile.findAttribute(Attributes.module()).orElse(null);
         assert moduleAttribute != null;
         testModuleName(moduleDescriptor, moduleAttribute);
         testModuleFlags(moduleDescriptor, moduleAttribute);

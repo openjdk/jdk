@@ -43,6 +43,10 @@ import combo.ComboTask;
 import combo.ComboTestHelper;
 import toolbox.ToolBox;
 
+import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
+import java.util.List;
+
 public class PrimitiveInstanceOfComboTest extends ComboInstance<PrimitiveInstanceOfComboTest> {
     private static final String JAVA_VERSION = System.getProperty("java.specification.version");
 
@@ -82,25 +86,49 @@ public class PrimitiveInstanceOfComboTest extends ComboInstance<PrimitiveInstanc
             }
             """;
 
+    // potential not-exhaustive errors are expected and filtered out in `doWork`
+    private static final String test3 =
+            """
+            public class Test {
+                public static void doTest(#{TYPE1} in) {
+                    switch(in) {
+                       case #{TYPE2} x -> {}
+                    }
+                }
+            }
+            """;
+
     @Override
     protected void doWork() throws Throwable {
         ComboTask task1 = newCompilationTask()
                 .withSourceFromTemplate(test1.replace("#{TYPE1}", type1.code).replace("#{TYPE2}", type2.code))
                 .withOption("--enable-preview")
-                .withOption("-source").withOption(JAVA_VERSION);;
+                .withOption("-source").withOption(JAVA_VERSION);
 
         ComboTask task2 = newCompilationTask()
                 .withSourceFromTemplate(test2.replace("#{TYPE1}", type1.code).replace("#{TYPE2}", type2.code))
                 .withOption("--enable-preview")
-                .withOption("-source").withOption(JAVA_VERSION);;
+                .withOption("-source").withOption(JAVA_VERSION);
+
+        ComboTask task3 = newCompilationTask()
+                .withSourceFromTemplate(test3.replace("#{TYPE1}", type1.code).replace("#{TYPE2}", type2.code))
+                .withOption("--enable-preview")
+                .withOption("-source").withOption(JAVA_VERSION);
 
         task1.generate(result1 -> {
             task2.generate(result2 -> {
-                if (result1.hasErrors() ^ result2.hasErrors()) {
-                    throw new AssertionError("Unexpected result: " +
-                            "\n task1: " + result1.hasErrors() + ", info: " + result1.compilationInfo() +
-                            "\n task1: " + result2.hasErrors() + ", info: " + result2.compilationInfo());
-                }
+                task3.generate(result3 -> {
+                    List<Diagnostic<? extends JavaFileObject>> list1 = result1.diagnosticsForKind(Diagnostic.Kind.ERROR);
+                    List<Diagnostic<? extends JavaFileObject>> list2 = result2.diagnosticsForKind(Diagnostic.Kind.ERROR);
+                    List<Diagnostic<? extends JavaFileObject>> list3 = result3.diagnosticsForKind(Diagnostic.Kind.ERROR).stream().filter(e -> !e.getCode().equals("compiler.err.not.exhaustive.statement")).toList();
+                    if (!(list1.size() == list2.size() && list3.size() == list2.size())) {
+                        throw new AssertionError("Unexpected result: " +
+                                "\n task1: " + result1.hasErrors() + ", info: " + result1.compilationInfo() +
+                                "\n task2: " + result2.hasErrors() + ", info: " + result2.compilationInfo() +
+                                "\n task3: " + result3.hasErrors() + ", info: " + result3.compilationInfo()
+                        );
+                    }
+                });
             });
         });
     }

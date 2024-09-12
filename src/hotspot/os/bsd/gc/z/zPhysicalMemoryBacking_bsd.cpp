@@ -103,7 +103,7 @@ bool ZPhysicalMemoryBacking::commit_inner(zoffset offset, size_t length) const {
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
   log_trace(gc, heap)("Committing memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
-                      untype(offset) / M, untype(offset) + length / M, length / M);
+                      untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
   const uintptr_t addr = _base + untype(offset);
   const void* const res = mmap((void*)addr, length, PROT_READ | PROT_WRITE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
@@ -150,7 +150,7 @@ size_t ZPhysicalMemoryBacking::uncommit(zoffset offset, size_t length) const {
   assert(is_aligned(length, os::vm_page_size()), "Invalid length");
 
   log_trace(gc, heap)("Uncommitting memory: " SIZE_FORMAT "M-" SIZE_FORMAT "M (" SIZE_FORMAT "M)",
-                      untype(offset) / M, untype(offset) + length / M, length / M);
+                      untype(offset) / M, untype(to_zoffset_end(offset, length)) / M, length / M);
 
   const uintptr_t start = _base + untype(offset);
   const void* const res = mmap((void*)start, length, PROT_NONE, MAP_FIXED | MAP_ANONYMOUS | MAP_PRIVATE | MAP_NORESERVE, -1, 0);

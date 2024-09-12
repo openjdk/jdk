@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import java.util.stream.Stream;
 import java.util.function.UnaryOperator;
 
 import static java.lang.constant.ConstantDescs.CD_void;
-import static java.lang.classfile.TypeKind.VoidType;
 
 class Utf8EntryTest {
 
@@ -196,7 +195,7 @@ class Utf8EntryTest {
     static byte[] createClassFile(String s) {
         return ClassFile.of().build(ClassDesc.of("C"),
                                clb -> clb.withMethod("m", MethodTypeDesc.of(CD_void), 0,
-                                                     mb -> mb.withCode(cb -> cb.constantInstruction(s)
-                                                                               .returnInstruction(VoidType))));
+                                                     mb -> mb.withCode(cb -> cb.loadConstant(s)
+                                                                               .return_())));
     }
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,18 @@
 include LibCommon.gmk
 
 ################################################################################
+## Build libj2pcsc
+################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJ2PCSC, \
     NAME := j2pcsc, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
     CFLAGS_unix := -D__sun_jdk, \
-    EXTRA_HEADER_DIRS := libj2pcsc/MUSCLE, \
+    EXTRA_HEADER_DIRS := \
+        libj2pcsc/MUSCLE \
+        java.base:libjava, \
     OPTIMIZATION := LOW, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := $(LIBDL), \
     LIBS_windows := winscard.lib, \
 ))
 
 TARGETS += $(BUILD_LIBJ2PCSC)
-
-################################################################################

@@ -423,7 +423,7 @@ public class ByteCodeTest {
         }
 
         private Map<Integer, String> readBSM() {
-            BootstrapMethodsAttribute bsmAttr = cf.findAttribute(Attributes.BOOTSTRAP_METHODS).orElse(null);
+            BootstrapMethodsAttribute bsmAttr = cf.findAttribute(Attributes.bootstrapMethods()).orElse(null);
             if (bsmAttr != null) {
                 Map<Integer, String> out =
                         new HashMap<>(bsmAttr.bootstrapMethodsSize());

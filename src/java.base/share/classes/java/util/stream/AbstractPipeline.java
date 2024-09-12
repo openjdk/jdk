@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,6 +432,20 @@ abstract class AbstractPipeline<E_IN, E_OUT, S extends BaseStream<E_OUT, S>>
          }
          return result;
      }
+
+    /**
+     * Returns whether any of the stages in the (entire) pipeline is short-circuiting
+     * or not.
+     * @return {@code true} if any stage in this pipeline is short-circuiting,
+     *         {@code false} if not.
+     */
+    protected final boolean isShortCircuitingPipeline() {
+        for (var u = sourceStage.nextStage; u != null; u = u.nextStage) {
+            if (StreamOpFlag.SHORT_CIRCUIT.isKnown(u.combinedFlags))
+                return true;
+        }
+        return false;
+    }
 
     /**
      * Get the source spliterator for this pipeline stage.  For a sequential or

@@ -600,7 +600,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
     public Type              getUpperBound()     { return null; }
     public Type              getLowerBound()     { return null; }
 
-    /** Navigation methods, these will work for classes, type variables,
+    /* Navigation methods, these will work for classes, type variables,
      *  foralls, but will return null for arrays and methods.
      */
 
@@ -1120,6 +1120,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
                         s += String.valueOf(sym.hashCode());
                     return s;
                 } else if (longform) {
+                    sym.apiComplete();
                     return sym.getQualifiedName().toString();
                 } else {
                     return sym.name.toString();
@@ -2337,7 +2338,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             this.originalType = (originalType == null ? noType : originalType);
         }
 
-        private ErrorType(Type originalType, TypeSymbol tsym,
+        public ErrorType(Type originalType, TypeSymbol tsym,
                           List<TypeMetadata> metadata) {
             super(noType, List.nil(), null, metadata);
             this.tsym = tsym;
@@ -2391,10 +2392,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         public boolean isErroneous()             { return true; }
         public boolean isCompound()              { return false; }
         public boolean isInterface()             { return false; }
-
-        public List<Type> allparams()            { return List.nil(); }
-        @DefinedBy(Api.LANGUAGE_MODEL)
-        public List<Type> getTypeArguments()     { return List.nil(); }
 
         @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {

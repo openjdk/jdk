@@ -112,7 +112,7 @@ public class TestBootstrapMethodsCount {
         File compiledTest = new File("Test.class");
         try {
             ClassModel cf = ClassFile.of().parse(compiledTest.toPath());
-            BootstrapMethodsAttribute bsm_attr = cf.findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
+            BootstrapMethodsAttribute bsm_attr = cf.findAttribute(Attributes.bootstrapMethods()).orElseThrow();
             int length = bsm_attr.bootstrapMethodsSize();
             if (length != 1) {
                 throw new Error("Bad number of method specifiers " +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
 #include "nmt/memTracker.hpp"
@@ -51,9 +51,6 @@ void CardTable::initialize_card_size() {
   _card_shift = log2i_exact(_card_size);
   _card_size_in_words = _card_size / sizeof(HeapWord);
 
-  // Set blockOffsetTable size based on card table entry size
-  BOTConstants::initialize_bot_size(_card_shift);
-
   log_info_p(gc, init)("CardTable entry size: " UINT32_FORMAT,  _card_size);
 }
 
@@ -68,8 +65,7 @@ CardTable::CardTable(MemRegion whole_heap) :
   _page_size(os::vm_page_size()),
   _byte_map_size(0),
   _byte_map(nullptr),
-  _byte_map_base(nullptr),
-  _guard_region()
+  _byte_map_base(nullptr)
 {
   assert((uintptr_t(_whole_heap.start())  & (_card_size - 1))  == 0, "heap must start at card boundary");
   assert((uintptr_t(_whole_heap.end()) & (_card_size - 1))  == 0, "heap must end at card boundary");
@@ -78,8 +74,7 @@ CardTable::CardTable(MemRegion whole_heap) :
 void CardTable::initialize(void* region0_start, void* region1_start) {
   size_t num_cards = cards_required(_whole_heap.word_size());
 
-  // each card takes 1 byte; + 1 for the guard card
-  size_t num_bytes = num_cards + 1;
+  size_t num_bytes = num_cards * sizeof(CardValue);
   _byte_map_size = compute_byte_map_size(num_bytes);
 
   HeapWord* low_bound  = _whole_heap.start();
@@ -106,10 +101,6 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
   _byte_map_base = _byte_map - (uintptr_t(low_bound) >> _card_shift);
   assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
   assert(byte_for(high_bound-1) <= &_byte_map[last_valid_index()], "Checking end of map");
-
-  CardValue* guard_card = &_byte_map[num_cards];
-  assert(is_aligned(guard_card, _page_size), "must be on its own OS page");
-  _guard_region = MemRegion((HeapWord*)guard_card, _page_size);
 
   initialize_covered_region(region0_start, region1_start);
 
@@ -211,12 +202,10 @@ void CardTable::resize_covered_region(MemRegion new_region) {
 void CardTable::dirty_MemRegion(MemRegion mr) {
   assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
   assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
+  assert(_covered[0].contains(mr) || _covered[1].contains(mr), "precondition");
   CardValue* cur  = byte_for(mr.start());
   CardValue* last = byte_after(mr.last());
-  while (cur < last) {
-    *cur = dirty_card;
-    cur++;
-  }
+  memset(cur, dirty_card, pointer_delta(last, cur, sizeof(CardValue)));
 }
 
 void CardTable::clear_MemRegion(MemRegion mr) {
@@ -236,15 +225,6 @@ void CardTable::clear_MemRegion(MemRegion mr) {
 uintx CardTable::ct_max_alignment_constraint() {
   // Calculate maximum alignment using GCCardSizeInBytes as card_size hasn't been set yet
   return GCCardSizeInBytes * os::vm_page_size();
-}
-
-void CardTable::invalidate(MemRegion mr) {
-  assert(align_down(mr.start(), HeapWordSize) == mr.start(), "Unaligned start");
-  assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
-  for (int i = 0; i < max_covered_regions; i++) {
-    MemRegion mri = mr.intersection(_covered[i]);
-    if (!mri.is_empty()) dirty_MemRegion(mri);
-  }
 }
 
 #ifndef PRODUCT

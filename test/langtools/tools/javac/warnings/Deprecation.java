@@ -1,4 +1,4 @@
-/**
+/*
  * @test  /nodynamiccopyright/
  * @bug 4986256 6598104 8032211 8194764
  * @compile/ref=Deprecation.noLint.out                                                   -XDrawDiagnostics Deprecation.java

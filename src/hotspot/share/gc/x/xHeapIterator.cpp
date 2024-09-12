@@ -303,16 +303,16 @@ public:
 
 class XHeapIteratorThreadClosure : public ThreadClosure {
 private:
-  OopClosure* const        _cl;
-  CodeBlobToNMethodClosure _cb_cl;
+  OopClosure* const     _cl;
+  NMethodClosure* const _nm_cl;
 
 public:
   XHeapIteratorThreadClosure(OopClosure* cl, NMethodClosure* nm_cl) :
       _cl(cl),
-      _cb_cl(nm_cl) {}
+      _nm_cl(nm_cl) {}
 
   void do_thread(Thread* thread) {
-    thread->oops_do(_cl, &_cb_cl);
+    thread->oops_do(_cl, _nm_cl);
   }
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import jdk.test.lib.process.ProcessTools;
  */
 public class TestRetransformUsingLog {
 
-    private static final String FILE_READ_FORCED_CLASS_LOAD = "Adding forced instrumentation for event type " + EventNames.FileRead + " during initial class load";
+    private static final String FORCED_CLASS_LOAD = "Adding forced instrumentation for event type " + EventNames.DirectBufferStatistics + " during initial class load";
     private static final String SIMPLE_EVENT_FORCED_CLASS_LOAD = "Adding forced instrumentation for event type jdk.test.lib.jfr.SimpleEvent during initial class load";
     private static final String SIMPLE_EVENT_UNFORCED_CLASS_LOAD = "Adding instrumentation for event type jdk.test.lib.jfr.SimpleEvent during initial class load";
 
@@ -61,28 +61,28 @@ public class TestRetransformUsingLog {
 
     private static void testRecordingRetransFormFalse() throws Exception {
         startApp(true, false, out -> {
-            out.shouldContain(FILE_READ_FORCED_CLASS_LOAD);
+            out.shouldContain(FORCED_CLASS_LOAD);
             out.shouldContain(SIMPLE_EVENT_FORCED_CLASS_LOAD);
         });
     }
 
     private static void testRecordingRetransFormTrue() throws Exception {
         startApp(true, true, out -> {
-            out.shouldContain(FILE_READ_FORCED_CLASS_LOAD);
+            out.shouldContain(FORCED_CLASS_LOAD);
             out.shouldContain(SIMPLE_EVENT_UNFORCED_CLASS_LOAD);
         });
     }
 
     private static void testNoRecordingRetransFormFalse() throws Exception {
         startApp(false, false, out -> {
-            out.shouldNotContain(FILE_READ_FORCED_CLASS_LOAD);
+            out.shouldNotContain(FORCED_CLASS_LOAD);
             out.shouldContain(SIMPLE_EVENT_FORCED_CLASS_LOAD);
         });
     }
 
     private static void testNoRecordingRetransFormTrue() throws Exception {
         startApp(false, true, out -> {
-            out.shouldNotContain(FILE_READ_FORCED_CLASS_LOAD);
+            out.shouldNotContain(FORCED_CLASS_LOAD);
             out.shouldNotContain(SIMPLE_EVENT_FORCED_CLASS_LOAD);
             out.shouldNotContain(SIMPLE_EVENT_UNFORCED_CLASS_LOAD);
         });

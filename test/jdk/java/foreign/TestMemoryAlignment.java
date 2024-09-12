@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,25 @@
  * @run testng TestMemoryAlignment
  */
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.foreign.*;
 import java.lang.foreign.MemoryLayout.PathElement;
 import java.lang.invoke.VarHandle;
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.CharBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import org.testng.annotations.*;
 import static org.testng.Assert.*;
@@ -124,10 +138,76 @@ public class TestMemoryAlignment {
         }
     }
 
+    @Test(dataProvider = "alignments")
+    public void testActualByteAlignment(long align) {
+        if (align > (1L << 10)) {
+            return;
+        }
+        try (Arena arena = Arena.ofConfined()) {
+            var segment = arena.allocate(4, align);
+            assertTrue(segment.maxByteAlignment() >= align);
+            // Power of two?
+            assertEquals(Long.bitCount(segment.maxByteAlignment()), 1);
+            assertEquals(segment.asSlice(1).maxByteAlignment(), 1);
+        }
+    }
+
+    public void testActualByteAlignmentMappedSegment() throws IOException {
+        File tmp = File.createTempFile("tmp", "txt");
+        try (FileChannel channel = FileChannel.open(tmp.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
+             Arena arena = Arena.ofConfined()) {
+            var segment =channel.map(FileChannel.MapMode.READ_WRITE, 0L, 32L, arena);
+            // We do not know anything about mapping alignment other than it should
+            // be positive.
+            assertTrue(segment.maxByteAlignment() >= Byte.BYTES);
+            // Power of two?
+            assertEquals(Long.bitCount(segment.maxByteAlignment()), 1);
+            assertEquals(segment.asSlice(1).maxByteAlignment(), 1);
+        } finally {
+            tmp.delete();
+        }
+    }
+
+    @Test()
+    public void testActualByteAlignmentNull() {
+        long alignment = MemorySegment.NULL.maxByteAlignment();
+        assertEquals(1L << 62, alignment);
+    }
+
+    @Test(dataProvider = "heapSegments")
+    public void testActualByteAlignmentHeap(MemorySegment segment, int bytes) {
+        assertEquals(segment.maxByteAlignment(), bytes);
+        // A slice at offset 1 should always have an alignment of 1
+        var segmentSlice = segment.asSlice(1);
+        assertEquals(segmentSlice.maxByteAlignment(), 1);
+    }
+
     @DataProvider(name = "alignments")
     public Object[][] createAlignments() {
         return LongStream.range(1, 20)
                 .mapToObj(v -> new Object[] { 1L << v })
                 .toArray(Object[][]::new);
     }
+
+    @DataProvider(name = "heapSegments")
+    public Object[][] heapSegments() {
+        return Stream.of(
+                        new Object[]{MemorySegment.ofArray(new byte[]{1}), Byte.BYTES},
+                        new Object[]{MemorySegment.ofArray(new short[]{1}), Short.BYTES},
+                        new Object[]{MemorySegment.ofArray(new char[]{1}), Character.BYTES},
+                        new Object[]{MemorySegment.ofArray(new int[]{1}), Integer.BYTES},
+                        new Object[]{MemorySegment.ofArray(new long[]{1}), Long.BYTES},
+                        new Object[]{MemorySegment.ofArray(new float[]{1}), Float.BYTES},
+                        new Object[]{MemorySegment.ofArray(new double[]{1}), Double.BYTES},
+                        new Object[]{MemorySegment.ofBuffer(ByteBuffer.allocate(8)), Byte.BYTES},
+                        new Object[]{MemorySegment.ofBuffer(CharBuffer.allocate(8)), Character.BYTES},
+                        new Object[]{MemorySegment.ofBuffer(ShortBuffer.allocate(8)), Short.BYTES},
+                        new Object[]{MemorySegment.ofBuffer(IntBuffer.allocate(8)), Integer.BYTES},
+                        new Object[]{MemorySegment.ofBuffer(LongBuffer.allocate(8)), Long.BYTES},
+                        new Object[]{MemorySegment.ofBuffer(FloatBuffer.allocate(8)), Float.BYTES},
+                        new Object[]{MemorySegment.ofBuffer(DoubleBuffer.allocate(8)), Double.BYTES}
+        )
+                .toArray(Object[][]::new);
+    }
+
 }

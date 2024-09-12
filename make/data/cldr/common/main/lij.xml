@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Proper interpretation of these files requires synthesis of missing items, as per
@@ -2713,11 +2713,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="unconfirmed">oa de stæ de Lord Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard draft="unconfirmed">oa de l’isoa Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic draft="unconfirmed">oa de Magadan</generic>
@@ -2755,13 +2750,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard draft="unconfirmed">oa de Mawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic draft="unconfirmed">oa do Mescico do nòrd-ponente</generic>
-					<standard draft="unconfirmed">oa standard do Mescico do nòrd-ponente</standard>
-					<daylight draft="unconfirmed">oa de stæ do Mescico do nòrd-ponente</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

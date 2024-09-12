@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,49 @@
  * questions.
  */
 
-/* @test
-   @bug 7030332
-   @summary Default borders in tables looks incorrect JEditorPane
-   @author Pavel Porvatov
- * @run applet/manual=yesno bug7030332.html
-*/
+import java.awt.GridLayout;
+import javax.swing.JComponent;
+import javax.swing.JEditorPane;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.ImageIcon;
+import javax.swing.SwingConstants;
 
-import javax.swing.*;
-import java.awt.*;
 import java.net.URL;
 
-public class bug7030332 extends JApplet {
+/* @test
+ * @bug 7030332
+ * @summary Default borders in tables looks incorrect
+ * when rendered using JEditorPane
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual/othervm -Dsun.java2d.uiScale=1 bug7030332
+ */
+
+public class bug7030332 {
+    public static void main(String[] args) throws Exception {
+        String testInstructions = """
+                Compare Golden Images with rendered JEditorPane.
+                They should look similar in each line.
+                Pay attention to:
+                1. Border width around tables
+                2. Border width around cells
+                Note: The test was written before there was hidpi.
+                Hence we are considering the border width being
+                "similar enough" with 1.0 scaling.
+                                """;
+
+        PassFailJFrame.builder()
+                .title("Test Instructions")
+                .instructions(testInstructions)
+                .rows(9)
+                .columns(35)
+                .splitUI(bug7030332::createContentPane)
+                .build()
+                .awaitAndCheck();
+    }
+
     public static final String[] HTML_SAMPLES = new String[]{
             "<table border><tr><th>Column1</th><th>Column2</th></tr></table>",
             "<table border=\"\"><tr><th>Column1</th><th>Column2</th></tr></table>",
@@ -40,35 +71,7 @@ public class bug7030332 extends JApplet {
             "<table border=\"2\"><tr><th>Column1</th><th>Column2</th></tr></table>",
     };
 
-    public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                JFrame frame = new JFrame();
-
-                frame.setContentPane(createContentPane());
-                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                frame.setSize(600, 400);
-                frame.setLocationRelativeTo(null);
-
-                frame.setVisible(true);
-
-            }
-        });
-    }
-
-    public void init() {
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    setContentPane(createContentPane());
-                }
-            });
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static Container createContentPane() {
+    private static JComponent createContentPane() {
         JPanel result = new JPanel(new GridLayout(HTML_SAMPLES.length + 1, 3, 10, 10));
 
         result.add(new JLabel("Html code"));
@@ -77,22 +80,16 @@ public class bug7030332 extends JApplet {
 
         for (int i = 0; i < HTML_SAMPLES.length; i++) {
             String htmlSample = HTML_SAMPLES[i];
-
             JTextArea textArea = new JTextArea(htmlSample);
-
             textArea.setLineWrap(true);
-
             result.add(textArea);
 
             String imageName = "sample" + i + ".png";
             URL resource = bug7030332.class.getResource(imageName);
-
             result.add(resource == null ? new JLabel(imageName + " not found") :
                     new JLabel(new ImageIcon(resource), SwingConstants.LEFT));
-
             result.add(new JEditorPane("text/html", htmlSample));
         }
-
         return result;
     }
 }

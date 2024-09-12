@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,6 +193,7 @@ public class ParseDouble {
         "\u0661e\u0661", // 1e1 in Arabic-Indic digits
         "\u06F1e\u06F1", // 1e1 in Extended Arabic-Indic digits
         "\u0967e\u0967", // 1e1 in Devanagari digits
+        "\uD835\uDFD9e\uD835\uDFD9", // 1e1 in Mathematical Alphanumeric Symbols
 
         // JCK test lex03592m3
         ".",
@@ -556,24 +557,21 @@ public class ParseDouble {
      */
     private static void testParsing(String [] input,
                                     boolean exceptionalInput) {
-        for(int i = 0; i < input.length; i++) {
-            double d;
-
+        for (String s : input) {
             try {
-                d = Double.parseDouble(input[i]);
-                check(input[i]);
-            }
-            catch (NumberFormatException e) {
-                if (! exceptionalInput) {
+                Double.parseDouble(s);
+                check(s);
+            } catch (NumberFormatException e) {
+                if (!exceptionalInput) {
                     throw new RuntimeException("Double.parseDouble rejected " +
-                                               "good string `" + input[i] +
+                                               "good string `" + s +
                                                "'.");
                 }
-                break;
+                continue;
             }
             if (exceptionalInput) {
                 throw new RuntimeException("Double.parseDouble accepted " +
-                                           "bad string `" + input[i] +
+                                           "bad string `" + s +
                                            "'.");
             }
         }

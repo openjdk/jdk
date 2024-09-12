@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 
 import java.io.IOException;
+import java.lang.classfile.ClassFile;
+import java.lang.constant.MethodTypeDesc;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,6 +31,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.testng.Assert;
 import tests.Helper;
 import tests.JImageGenerator;
 import tests.JImageValidator;
@@ -37,9 +40,12 @@ import tests.Result;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
- /*
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_int;
+
+/*
  * @test
- * @bug 8252919
+ * @bug 8252919 8327499
  * @library ../../lib
  * @summary Test --generate-jli-classes plugin
  * @enablePreview
@@ -120,6 +126,47 @@ public class GenerateJLIClassesPluginTest {
 
         Path image = result.assertSuccess();
         validateHolderClasses(image);
+    }
+
+    @Test
+    public static void testInvokers() throws IOException {
+        var fileString = "[LF_RESOLVE] java.lang.invoke.Invokers$Holder invoker L3I_L (fail)";
+        Path invokersTrace = Files.createTempFile("invokers", "trace");
+        Files.writeString(invokersTrace, fileString, Charset.defaultCharset());
+        Result result = JImageGenerator.getJLinkTask()
+                .modulePath(helper.defaultModulePath())
+                .output(helper.createNewImageDir("jli-invokers"))
+                .option("--generate-jli-classes=@" + invokersTrace.toString())
+                .addMods("java.base")
+                .call();
+
+        var image = result.assertSuccess();
+        var targetMtd = MethodTypeDesc.of(CD_Object, CD_Object, CD_Object, CD_Object, CD_int);
+
+        validateHolderClasses(image);
+        JImageValidator.validate(image.resolve("lib").resolve("modules"),
+                List.of(), List.of(), bytes -> {
+                    var cf = ClassFile.of().parse(bytes);
+                    if (!cf.thisClass().name().equalsString("java/lang/invoke/Invokers$Holder")) {
+                        return;
+                    }
+
+                    boolean found = false;
+                    for (var m : cf.methods()) {
+                        // LambdaForm.Kind
+                        if (m.methodName().equalsString("invoker") && m.methodTypeSymbol().equals(targetMtd)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        var methodsInfo = cf.methods().stream()
+                                .map(m -> m.methodName() + m.methodTypeSymbol().displayDescriptor())
+                                .collect(Collectors.joining("\n"));
+
+                        Assert.fail("Missing invoker L3I_L in java.lang.invoke.Invokers$Holder, found:\n" + methodsInfo);
+                    }
+                });
     }
 
     private static void validateHolderClasses(Path image) throws IOException {

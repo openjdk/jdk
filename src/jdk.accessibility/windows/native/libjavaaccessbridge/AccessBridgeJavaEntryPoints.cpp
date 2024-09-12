@@ -1041,7 +1041,7 @@ AccessBridgeJavaEntryPoints::getParentWithRole(const jobject accessibleContext, 
         rAccessibleContext = jniEnv->CallObjectMethod(accessBridgeObject,
                                                       getParentWithRoleMethod,
                                                       accessibleContext, roleName);
-        EXCEPTION_CHECK("Getting ParentWithRole - call to CallObjectMethod()", (AccessibleContext)0);
+        EXCEPTION_CHECK("Getting ParentWithRole - call to CallObjectMethod()", reinterpret_cast<jobject>((AccessibleContext)0));
         PrintDebugString("[INFO]:     rAccessibleContext = %p", rAccessibleContext);
         jobject globalRef = jniEnv->NewGlobalRef(rAccessibleContext);
         EXCEPTION_CHECK("Getting ParentWithRole - call to NewGlobalRef()", FALSE);
@@ -1111,7 +1111,7 @@ AccessBridgeJavaEntryPoints::getParentWithRoleElseRoot(const jobject accessibleC
         rAccessibleContext = jniEnv->CallObjectMethod(accessBridgeObject,
                                                       getParentWithRoleElseRootMethod,
                                                       accessibleContext, roleName);
-        EXCEPTION_CHECK("Getting ParentWithRoleElseRoot - call to CallObjectMethod()", (AccessibleContext)0);
+        EXCEPTION_CHECK("Getting ParentWithRoleElseRoot - call to CallObjectMethod()", reinterpret_cast<jobject>((AccessibleContext)0));
         PrintDebugString("[INFO]:     rAccessibleContext = %p", rAccessibleContext);
         jobject globalRef = jniEnv->NewGlobalRef(rAccessibleContext);
         EXCEPTION_CHECK("Getting ParentWithRoleElseRoot - call to NewGlobalRef()", FALSE);
@@ -1168,7 +1168,7 @@ AccessBridgeJavaEntryPoints::getActiveDescendent(const jobject accessibleContext
         rAccessibleContext = jniEnv->CallObjectMethod(accessBridgeObject,
                                                       getActiveDescendentMethod,
                                                       accessibleContext);
-        EXCEPTION_CHECK("Getting ActiveDescendent - call to CallObjectMethod()", (AccessibleContext)0);
+        EXCEPTION_CHECK("Getting ActiveDescendent - call to CallObjectMethod()", reinterpret_cast<jobject>((AccessibleContext)0));
         PrintDebugString("[INFO]:     rAccessibleContext = %p", rAccessibleContext);
         jobject globalRef = jniEnv->NewGlobalRef(rAccessibleContext);
         EXCEPTION_CHECK("Getting ActiveDescendant - call to NewGlobalRef()", FALSE);
@@ -1177,7 +1177,7 @@ AccessBridgeJavaEntryPoints::getActiveDescendent(const jobject accessibleContext
         return globalRef;
     } else {
         PrintDebugString("[ERROR]: either jniEnv == 0 or getActiveDescendentMethod == 0");
-        return (AccessibleContext)0;
+        return reinterpret_cast<jobject>((AccessibleContext)0);
     }
 }
 

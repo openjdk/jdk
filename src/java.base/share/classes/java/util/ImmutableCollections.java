@@ -258,6 +258,8 @@ class ImmutableCollections {
         @Override public void    add(int index, E element) { throw uoe(); }
         @Override public boolean addAll(int index, Collection<? extends E> c) { throw uoe(); }
         @Override public E       remove(int index) { throw uoe(); }
+        @Override public E       removeFirst() { throw uoe(); }
+        @Override public E       removeLast() { throw uoe(); }
         @Override public void    replaceAll(UnaryOperator<E> operator) { throw uoe(); }
         @Override public E       set(int index, E element) { throw uoe(); }
         @Override public void    sort(Comparator<? super E> c) { throw uoe(); }

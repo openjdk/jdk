@@ -214,6 +214,21 @@ import java.util.Objects;
  * If multiple threads access a format concurrently, it must be synchronized
  * externally.
  *
+ * @apiNote A subclass could perform more consistent pattern validation by
+ * throwing an {@code IllegalArgumentException} for all incorrect cases.
+ * See the {@code Implementation Note} for this implementation's behavior regarding
+ * incorrect patterns.
+ * <p>This class inherits instance methods from {@code NumberFormat} it does
+ * not utilize; a subclass could override and throw {@code
+ * UnsupportedOperationException} for such methods.
+ * @implNote Given an incorrect pattern, this implementation may either
+ * throw an exception or succeed and discard the incorrect portion. A {@code
+ * NumberFormatException} is thrown if a {@code limit} can not be
+ * parsed as a numeric value and an {@code IllegalArgumentException} is thrown
+ * if a {@code SubPattern} is missing, or the intervals are not ascending.
+ * Discarding the incorrect portion may result in a ChoiceFormat with
+ * empty {@code limits} and {@code formats}.
+ *
  *
  * @see          DecimalFormat
  * @see          MessageFormat
@@ -227,11 +242,12 @@ public class ChoiceFormat extends NumberFormat {
     private static final long serialVersionUID = 1795184449645032964L;
 
     /**
-     * Apply the given pattern to this ChoiceFormat object. The syntax
-     * for the ChoiceFormat pattern can be seen in the {@linkplain ##patterns
-     * Patterns} section. Unlike {@link #setChoices(double[], String[])} this
-     * method will throw an {@code IllegalArgumentException} if the {@code
-     * limits} are not in ascending order.
+     * Apply the given pattern to this ChoiceFormat object. The syntax and error
+     * related caveats for the ChoiceFormat pattern can be found in the
+     * {@linkplain ##patterns Patterns} section. Unlike {@link #setChoices(double[],
+     * String[])}, this method will throw an {@code IllegalArgumentException} if
+     * the {@code limits} are not in ascending order.
+     *
      * @param newPattern a pattern string
      * @throws    NullPointerException if {@code newPattern}
      *            is {@code null}
@@ -399,9 +415,11 @@ public class ChoiceFormat extends NumberFormat {
 
     /**
      * Constructs a ChoiceFormat with limits and corresponding formats
-     * based on the pattern.
-     * The syntax for the ChoiceFormat pattern can be seen in the {@linkplain
-     * ##patterns Patterns} section.
+     * based on the pattern. The syntax and error related caveats for the
+     * ChoiceFormat pattern can be found in the {@linkplain ##patterns Patterns}
+     * section. Unlike {@link #ChoiceFormat(double[], String[])}, this constructor will
+     * throw an {@code IllegalArgumentException} if the {@code limits} are not
+     * in ascending order.
      *
      * @param newPattern the new pattern string
      * @throws    NullPointerException if {@code newPattern} is
@@ -496,7 +514,13 @@ public class ChoiceFormat extends NumberFormat {
     @Override
     public StringBuffer format(long number, StringBuffer toAppendTo,
                                FieldPosition status) {
-        return format((double)number, toAppendTo, status);
+        return format((double) number, StringBufFactory.of(toAppendTo), status).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(long number, StringBuf toAppendTo,
+                     FieldPosition status) {
+        return format((double) number, toAppendTo, status);
     }
 
     /**
@@ -513,6 +537,12 @@ public class ChoiceFormat extends NumberFormat {
     @Override
     public StringBuffer format(double number, StringBuffer toAppendTo,
                                FieldPosition status) {
+        return format(number, StringBufFactory.of(toAppendTo), status).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(double number, StringBuf toAppendTo,
+                         FieldPosition status) {
         // find the number
         int i;
         for (i = 0; i < choiceLimits.length; ++i) {
@@ -566,6 +596,24 @@ public class ChoiceFormat extends NumberFormat {
             status.errorIndex = furthest;
         }
         return Double.valueOf(bestNumber);
+    }
+
+    /**
+     * @since 23
+     */
+    @Override
+    public boolean isStrict() {
+        throw new UnsupportedOperationException(
+                "ChoiceFormat does not utilize leniency when parsing");
+    }
+
+    /**
+     * @since 23
+     */
+    @Override
+    public void setStrict(boolean strict) {
+        throw new UnsupportedOperationException(
+                "ChoiceFormat does not utilize leniency when parsing");
     }
 
     /**

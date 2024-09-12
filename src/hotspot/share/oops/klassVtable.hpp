@@ -54,6 +54,9 @@ class klassVtable {
   klassVtable(Klass* klass, void* base, int length) : _klass(klass) {
     _tableOffset = int((address)base - (address)klass);
     _length = length;
+#ifndef PRODUCT
+    _verify_count = 0;
+#endif
   }
 
   // accessors

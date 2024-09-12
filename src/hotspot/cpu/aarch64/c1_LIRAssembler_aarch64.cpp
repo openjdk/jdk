@@ -647,7 +647,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
     break;
   case T_OBJECT:
   case T_ARRAY:
-    assert(c->as_jobject() == 0, "should be");
+    assert(c->as_jobject() == nullptr, "should be");
     if (UseCompressedOops && !wide) {
       insn = &Assembler::strw;
     } else {
@@ -1212,7 +1212,8 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       arrayOopDesc::base_offset_in_bytes(op->type()),
                       array_element_size(op->type()),
                       op->klass()->as_register(),
-                      *op->stub()->entry());
+                      *op->stub()->entry(),
+                      op->zero_array());
   }
   __ bind(*op->stub()->continuation());
 }
@@ -2504,7 +2505,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
    __ call_VM_leaf(entry, 3);
  }
 
-  __ bind(*stub->continuation());
+  if (stub != nullptr) {
+    __ bind(*stub->continuation());
+  }
 }
 
 

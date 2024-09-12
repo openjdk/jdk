@@ -27,19 +27,19 @@
 
 INCLUDE globals_vectorApiSupport_windows.S.inc
 IFNB __VECTOR_API_MATH_INTRINSICS_WINDOWS
-	OPTION DOTNAME
+        OPTION DOTNAME
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST0:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_atan22_ha_ex
+        ALIGN     16
+        PUBLIC __jsvml_atan22_ha_ex
 
-__jsvml_atan22_ha_ex	PROC	EXPORT
+__jsvml_atan22_ha_ex    PROC    EXPORT
 
 _B1_1::
 
@@ -406,89 +406,89 @@ _B1_13::
 
 __jsvml_atan22_ha_ex ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan22_ha_ex_B1_B4:
-	DD	1603585
-	DD	4248696
-	DD	1402992
-	DD	1341544
-	DD	1280096
-	DD	1218647
-	DD	1157198
-	DD	1095749
-	DD	1493052
-	DD	1693743
-	DD	1632294
-	DD	1570843
-	DD	4391179
+        DD      1603585
+        DD      4248696
+        DD      1402992
+        DD      1341544
+        DD      1280096
+        DD      1218647
+        DD      1157198
+        DD      1095749
+        DD      1493052
+        DD      1693743
+        DD      1632294
+        DD      1570843
+        DD      4391179
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B1_1
-	DD	imagerel _B1_7
-	DD	imagerel _unwind___jsvml_atan22_ha_ex_B1_B4
+        DD      imagerel _B1_1
+        DD      imagerel _B1_7
+        DD      imagerel _unwind___jsvml_atan22_ha_ex_B1_B4
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan22_ha_ex_B7_B11:
-	DD	265761
-	DD	287758
-	DD	340999
-	DD	imagerel _B1_1
-	DD	imagerel _B1_7
-	DD	imagerel _unwind___jsvml_atan22_ha_ex_B1_B4
+        DD      265761
+        DD      287758
+        DD      340999
+        DD      imagerel _B1_1
+        DD      imagerel _B1_7
+        DD      imagerel _unwind___jsvml_atan22_ha_ex_B1_B4
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B1_7
-	DD	imagerel _B1_12
-	DD	imagerel _unwind___jsvml_atan22_ha_ex_B7_B11
+        DD      imagerel _B1_7
+        DD      imagerel _B1_12
+        DD      imagerel _unwind___jsvml_atan22_ha_ex_B7_B11
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan22_ha_ex_B12_B12:
-	DD	33
-	DD	imagerel _B1_1
-	DD	imagerel _B1_7
-	DD	imagerel _unwind___jsvml_atan22_ha_ex_B1_B4
+        DD      33
+        DD      imagerel _B1_1
+        DD      imagerel _B1_7
+        DD      imagerel _unwind___jsvml_atan22_ha_ex_B1_B4
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B1_12
-	DD	imagerel _B1_13
-	DD	imagerel _unwind___jsvml_atan22_ha_ex_B12_B12
+        DD      imagerel _B1_12
+        DD      imagerel _B1_13
+        DD      imagerel _unwind___jsvml_atan22_ha_ex_B12_B12
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST1:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_atan21_ha_ex
+        ALIGN     16
+        PUBLIC __jsvml_atan21_ha_ex
 
-__jsvml_atan21_ha_ex	PROC	EXPORT
+__jsvml_atan21_ha_ex    PROC    EXPORT
 
 _B2_1::
 
@@ -837,49 +837,49 @@ _B2_9::
 
 __jsvml_atan21_ha_ex ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan21_ha_ex_B1_B8:
-	DD	1612289
-	DD	1954970
-	DD	1599634
-	DD	1538186
-	DD	1476736
-	DD	1415283
-	DD	1353828
-	DD	1292372
-	DD	1230918
-	DD	1169463
-	DD	1108008
-	DD	1046553
-	DD	3997963
+        DD      1612289
+        DD      1954970
+        DD      1599634
+        DD      1538186
+        DD      1476736
+        DD      1415283
+        DD      1353828
+        DD      1292372
+        DD      1230918
+        DD      1169463
+        DD      1108008
+        DD      1046553
+        DD      3997963
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B2_1
-	DD	imagerel _B2_9
-	DD	imagerel _unwind___jsvml_atan21_ha_ex_B1_B8
+        DD      imagerel _B2_1
+        DD      imagerel _B2_9
+        DD      imagerel _unwind___jsvml_atan21_ha_ex_B1_B8
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST2:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_atan24_ha_l9
+        ALIGN     16
+        PUBLIC __jsvml_atan24_ha_l9
 
-__jsvml_atan24_ha_l9	PROC	EXPORT
+__jsvml_atan24_ha_l9    PROC    EXPORT
 
 _B3_1::
 
@@ -1154,89 +1154,89 @@ _B3_13::
 
 __jsvml_atan24_ha_l9 ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan24_ha_l9_B1_B4:
-	DD	1603329
-	DD	4904055
-	DD	1271919
-	DD	1538150
-	DD	1149021
-	DD	2332756
-	DD	2205771
-	DD	2078786
-	DD	1951801
-	DD	1824816
-	DD	1697831
-	DD	1439771
-	DD	5046539
+        DD      1603329
+        DD      4904055
+        DD      1271919
+        DD      1538150
+        DD      1149021
+        DD      2332756
+        DD      2205771
+        DD      2078786
+        DD      1951801
+        DD      1824816
+        DD      1697831
+        DD      1439771
+        DD      5046539
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B3_1
-	DD	imagerel _B3_7
-	DD	imagerel _unwind___jsvml_atan24_ha_l9_B1_B4
+        DD      imagerel _B3_1
+        DD      imagerel _B3_7
+        DD      imagerel _unwind___jsvml_atan24_ha_l9_B1_B4
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan24_ha_l9_B7_B11:
-	DD	265761
-	DD	287758
-	DD	340999
-	DD	imagerel _B3_1
-	DD	imagerel _B3_7
-	DD	imagerel _unwind___jsvml_atan24_ha_l9_B1_B4
+        DD      265761
+        DD      287758
+        DD      340999
+        DD      imagerel _B3_1
+        DD      imagerel _B3_7
+        DD      imagerel _unwind___jsvml_atan24_ha_l9_B1_B4
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B3_7
-	DD	imagerel _B3_12
-	DD	imagerel _unwind___jsvml_atan24_ha_l9_B7_B11
+        DD      imagerel _B3_7
+        DD      imagerel _B3_12
+        DD      imagerel _unwind___jsvml_atan24_ha_l9_B7_B11
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan24_ha_l9_B12_B12:
-	DD	33
-	DD	imagerel _B3_1
-	DD	imagerel _B3_7
-	DD	imagerel _unwind___jsvml_atan24_ha_l9_B1_B4
+        DD      33
+        DD      imagerel _B3_1
+        DD      imagerel _B3_7
+        DD      imagerel _unwind___jsvml_atan24_ha_l9_B1_B4
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B3_12
-	DD	imagerel _B3_13
-	DD	imagerel _unwind___jsvml_atan24_ha_l9_B12_B12
+        DD      imagerel _B3_12
+        DD      imagerel _B3_13
+        DD      imagerel _unwind___jsvml_atan24_ha_l9_B12_B12
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST3:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_atan24_ha_e9
+        ALIGN     16
+        PUBLIC __jsvml_atan24_ha_e9
 
-__jsvml_atan24_ha_e9	PROC	EXPORT
+__jsvml_atan24_ha_e9    PROC    EXPORT
 
 _B4_1::
 
@@ -1574,89 +1574,89 @@ _B4_13::
 
 __jsvml_atan24_ha_e9 ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan24_ha_e9_B1_B4:
-	DD	1603329
-	DD	5428343
-	DD	1534063
-	DD	1800294
-	DD	1411165
-	DD	2594900
-	DD	2467915
-	DD	2340930
-	DD	2213945
-	DD	2086960
-	DD	1959975
-	DD	1701915
-	DD	5570827
+        DD      1603329
+        DD      5428343
+        DD      1534063
+        DD      1800294
+        DD      1411165
+        DD      2594900
+        DD      2467915
+        DD      2340930
+        DD      2213945
+        DD      2086960
+        DD      1959975
+        DD      1701915
+        DD      5570827
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B4_1
-	DD	imagerel _B4_7
-	DD	imagerel _unwind___jsvml_atan24_ha_e9_B1_B4
+        DD      imagerel _B4_1
+        DD      imagerel _B4_7
+        DD      imagerel _unwind___jsvml_atan24_ha_e9_B1_B4
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan24_ha_e9_B7_B11:
-	DD	265761
-	DD	287758
-	DD	340999
-	DD	imagerel _B4_1
-	DD	imagerel _B4_7
-	DD	imagerel _unwind___jsvml_atan24_ha_e9_B1_B4
+        DD      265761
+        DD      287758
+        DD      340999
+        DD      imagerel _B4_1
+        DD      imagerel _B4_7
+        DD      imagerel _unwind___jsvml_atan24_ha_e9_B1_B4
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B4_7
-	DD	imagerel _B4_12
-	DD	imagerel _unwind___jsvml_atan24_ha_e9_B7_B11
+        DD      imagerel _B4_7
+        DD      imagerel _B4_12
+        DD      imagerel _unwind___jsvml_atan24_ha_e9_B7_B11
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan24_ha_e9_B12_B12:
-	DD	33
-	DD	imagerel _B4_1
-	DD	imagerel _B4_7
-	DD	imagerel _unwind___jsvml_atan24_ha_e9_B1_B4
+        DD      33
+        DD      imagerel _B4_1
+        DD      imagerel _B4_7
+        DD      imagerel _unwind___jsvml_atan24_ha_e9_B1_B4
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B4_12
-	DD	imagerel _B4_13
-	DD	imagerel _unwind___jsvml_atan24_ha_e9_B12_B12
+        DD      imagerel _B4_12
+        DD      imagerel _B4_13
+        DD      imagerel _unwind___jsvml_atan24_ha_e9_B12_B12
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST4:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_atan22_ha_l9
+        ALIGN     16
+        PUBLIC __jsvml_atan22_ha_l9
 
-__jsvml_atan22_ha_l9	PROC	EXPORT
+__jsvml_atan22_ha_l9    PROC    EXPORT
 
 _B5_1::
 
@@ -1905,89 +1905,89 @@ _B5_13::
 
 __jsvml_atan22_ha_l9 ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan22_ha_l9_B1_B4:
-	DD	1604097
-	DD	3593338
-	DD	1075314
-	DD	1472617
-	DD	1149024
-	DD	1546327
-	DD	1222734
-	DD	1685573
-	DD	1624124
-	DD	1431599
-	DD	1370150
-	DD	1308699
-	DD	3735819
+        DD      1604097
+        DD      3593338
+        DD      1075314
+        DD      1472617
+        DD      1149024
+        DD      1546327
+        DD      1222734
+        DD      1685573
+        DD      1624124
+        DD      1431599
+        DD      1370150
+        DD      1308699
+        DD      3735819
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B5_1
-	DD	imagerel _B5_7
-	DD	imagerel _unwind___jsvml_atan22_ha_l9_B1_B4
+        DD      imagerel _B5_1
+        DD      imagerel _B5_7
+        DD      imagerel _unwind___jsvml_atan22_ha_l9_B1_B4
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan22_ha_l9_B7_B11:
-	DD	265761
-	DD	287758
-	DD	340999
-	DD	imagerel _B5_1
-	DD	imagerel _B5_7
-	DD	imagerel _unwind___jsvml_atan22_ha_l9_B1_B4
+        DD      265761
+        DD      287758
+        DD      340999
+        DD      imagerel _B5_1
+        DD      imagerel _B5_7
+        DD      imagerel _unwind___jsvml_atan22_ha_l9_B1_B4
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B5_7
-	DD	imagerel _B5_12
-	DD	imagerel _unwind___jsvml_atan22_ha_l9_B7_B11
+        DD      imagerel _B5_7
+        DD      imagerel _B5_12
+        DD      imagerel _unwind___jsvml_atan22_ha_l9_B7_B11
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan22_ha_l9_B12_B12:
-	DD	33
-	DD	imagerel _B5_1
-	DD	imagerel _B5_7
-	DD	imagerel _unwind___jsvml_atan22_ha_l9_B1_B4
+        DD      33
+        DD      imagerel _B5_1
+        DD      imagerel _B5_7
+        DD      imagerel _unwind___jsvml_atan22_ha_l9_B1_B4
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B5_12
-	DD	imagerel _B5_13
-	DD	imagerel _unwind___jsvml_atan22_ha_l9_B12_B12
+        DD      imagerel _B5_12
+        DD      imagerel _B5_13
+        DD      imagerel _unwind___jsvml_atan22_ha_l9_B12_B12
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST5:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_atan22_ha_e9
+        ALIGN     16
+        PUBLIC __jsvml_atan22_ha_e9
 
-__jsvml_atan22_ha_e9	PROC	EXPORT
+__jsvml_atan22_ha_e9    PROC    EXPORT
 
 _B6_1::
 
@@ -2298,89 +2298,89 @@ _B6_13::
 
 __jsvml_atan22_ha_e9 ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan22_ha_e9_B1_B4:
-	DD	1603073
-	DD	4117622
-	DD	1075310
-	DD	1276005
-	DD	1214556
-	DD	1153107
-	DD	1353802
-	DD	1685569
-	DD	1624120
-	DD	1562671
-	DD	1501222
-	DD	1439771
-	DD	4260107
+        DD      1603073
+        DD      4117622
+        DD      1075310
+        DD      1276005
+        DD      1214556
+        DD      1153107
+        DD      1353802
+        DD      1685569
+        DD      1624120
+        DD      1562671
+        DD      1501222
+        DD      1439771
+        DD      4260107
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B6_1
-	DD	imagerel _B6_7
-	DD	imagerel _unwind___jsvml_atan22_ha_e9_B1_B4
+        DD      imagerel _B6_1
+        DD      imagerel _B6_7
+        DD      imagerel _unwind___jsvml_atan22_ha_e9_B1_B4
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan22_ha_e9_B7_B11:
-	DD	265761
-	DD	287758
-	DD	340999
-	DD	imagerel _B6_1
-	DD	imagerel _B6_7
-	DD	imagerel _unwind___jsvml_atan22_ha_e9_B1_B4
+        DD      265761
+        DD      287758
+        DD      340999
+        DD      imagerel _B6_1
+        DD      imagerel _B6_7
+        DD      imagerel _unwind___jsvml_atan22_ha_e9_B1_B4
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B6_7
-	DD	imagerel _B6_12
-	DD	imagerel _unwind___jsvml_atan22_ha_e9_B7_B11
+        DD      imagerel _B6_7
+        DD      imagerel _B6_12
+        DD      imagerel _unwind___jsvml_atan22_ha_e9_B7_B11
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan22_ha_e9_B12_B12:
-	DD	33
-	DD	imagerel _B6_1
-	DD	imagerel _B6_7
-	DD	imagerel _unwind___jsvml_atan22_ha_e9_B1_B4
+        DD      33
+        DD      imagerel _B6_1
+        DD      imagerel _B6_7
+        DD      imagerel _unwind___jsvml_atan22_ha_e9_B1_B4
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B6_12
-	DD	imagerel _B6_13
-	DD	imagerel _unwind___jsvml_atan22_ha_e9_B12_B12
+        DD      imagerel _B6_12
+        DD      imagerel _B6_13
+        DD      imagerel _unwind___jsvml_atan22_ha_e9_B12_B12
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST6:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_atan28_ha_z0
+        ALIGN     16
+        PUBLIC __jsvml_atan28_ha_z0
 
-__jsvml_atan28_ha_z0	PROC	EXPORT
+__jsvml_atan28_ha_z0    PROC    EXPORT
 
 _B7_1::
 
@@ -2690,101 +2690,101 @@ _B7_18::
 
 __jsvml_atan28_ha_z0 ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan28_ha_z0_B1_B10:
-	DD	1873409
-	DD	6018198
-	DD	4614286
-	DD	3569795
-	DD	4098168
-	DD	4364397
-	DD	3844194
-	DD	3323991
-	DD	3065932
-	DD	5167169
-	DD	5433398
-	DD	4913195
-	DD	11356960
-	DD	11426583
-	DD	11469067
+        DD      1873409
+        DD      6018198
+        DD      4614286
+        DD      3569795
+        DD      4098168
+        DD      4364397
+        DD      3844194
+        DD      3323991
+        DD      3065932
+        DD      5167169
+        DD      5433398
+        DD      4913195
+        DD      11356960
+        DD      11426583
+        DD      11469067
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B7_1
-	DD	imagerel _B7_12
-	DD	imagerel _unwind___jsvml_atan28_ha_z0_B1_B10
+        DD      imagerel _B7_1
+        DD      imagerel _B7_12
+        DD      imagerel _unwind___jsvml_atan28_ha_z0_B1_B10
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan28_ha_z0_B12_B16:
-	DD	1604897
-	DD	3757181
-	DD	3568754
-	DD	3630184
-	DD	3683422
-	DD	153686
-	DD	411723
-	DD	669760
-	DD	927797
-	DD	1185834
-	DD	1443871
-	DD	3439380
-	DD	3500811
-	DD	imagerel _B7_1
-	DD	imagerel _B7_12
-	DD	imagerel _unwind___jsvml_atan28_ha_z0_B1_B10
+        DD      1604897
+        DD      3757181
+        DD      3568754
+        DD      3630184
+        DD      3683422
+        DD      153686
+        DD      411723
+        DD      669760
+        DD      927797
+        DD      1185834
+        DD      1443871
+        DD      3439380
+        DD      3500811
+        DD      imagerel _B7_1
+        DD      imagerel _B7_12
+        DD      imagerel _unwind___jsvml_atan28_ha_z0_B1_B10
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B7_12
-	DD	imagerel _B7_17
-	DD	imagerel _unwind___jsvml_atan28_ha_z0_B12_B16
+        DD      imagerel _B7_12
+        DD      imagerel _B7_17
+        DD      imagerel _unwind___jsvml_atan28_ha_z0_B12_B16
 
-.pdata	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+.pdata  ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan28_ha_z0_B17_B17:
-	DD	33
-	DD	imagerel _B7_1
-	DD	imagerel _B7_12
-	DD	imagerel _unwind___jsvml_atan28_ha_z0_B1_B10
+        DD      33
+        DD      imagerel _B7_1
+        DD      imagerel _B7_12
+        DD      imagerel _unwind___jsvml_atan28_ha_z0_B1_B10
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B7_17
-	DD	imagerel _B7_18
-	DD	imagerel _unwind___jsvml_atan28_ha_z0_B17_B17
+        DD      imagerel _B7_17
+        DD      imagerel _B7_18
+        DD      imagerel _unwind___jsvml_atan28_ha_z0_B17_B17
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST7:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_atan21_ha_e9
+        ALIGN     16
+        PUBLIC __jsvml_atan21_ha_e9
 
-__jsvml_atan21_ha_e9	PROC	EXPORT
+__jsvml_atan21_ha_e9    PROC    EXPORT
 
 _B8_1::
 
@@ -3083,49 +3083,49 @@ _B8_9::
 
 __jsvml_atan21_ha_e9 ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan21_ha_e9_B1_B8:
-	DD	1611521
-	DD	1954967
-	DD	1599631
-	DD	1538182
-	DD	1476733
-	DD	1415282
-	DD	1353827
-	DD	1292371
-	DD	1230918
-	DD	1169463
-	DD	1108008
-	DD	1046553
-	DD	3866891
+        DD      1611521
+        DD      1954967
+        DD      1599631
+        DD      1538182
+        DD      1476733
+        DD      1415282
+        DD      1353827
+        DD      1292371
+        DD      1230918
+        DD      1169463
+        DD      1108008
+        DD      1046553
+        DD      3866891
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B8_1
-	DD	imagerel _B8_9
-	DD	imagerel _unwind___jsvml_atan21_ha_e9_B1_B8
+        DD      imagerel _B8_1
+        DD      imagerel _B8_9
+        DD      imagerel _unwind___jsvml_atan21_ha_e9_B1_B8
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST8:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_atan21_ha_l9
+        ALIGN     16
+        PUBLIC __jsvml_atan21_ha_l9
 
-__jsvml_atan21_ha_l9	PROC	EXPORT
+__jsvml_atan21_ha_l9    PROC    EXPORT
 
 _B9_1::
 
@@ -3363,49 +3363,49 @@ _B9_9::
 
 __jsvml_atan21_ha_l9 ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_atan21_ha_l9_B1_B8:
-	DD	1615361
-	DD	1954982
-	DD	1599644
-	DD	1538189
-	DD	1476734
-	DD	1415279
-	DD	1353825
-	DD	1292372
-	DD	1230919
-	DD	1169463
-	DD	1108008
-	DD	1046553
-	DD	3473675
+        DD      1615361
+        DD      1954982
+        DD      1599644
+        DD      1538189
+        DD      1476734
+        DD      1415279
+        DD      1353825
+        DD      1292372
+        DD      1230919
+        DD      1169463
+        DD      1108008
+        DD      1046553
+        DD      3473675
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B9_1
-	DD	imagerel _B9_9
-	DD	imagerel _unwind___jsvml_atan21_ha_l9_B1_B8
+        DD      imagerel _B9_1
+        DD      imagerel _B9_9
+        DD      imagerel _unwind___jsvml_atan21_ha_l9_B1_B8
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_TEXT	SEGMENT      'CODE'
+_TEXT   SEGMENT      'CODE'
 
 TXTST9:
 
-_TEXT	ENDS
-_TEXT	SEGMENT      'CODE'
+_TEXT   ENDS
+_TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
-	PUBLIC __jsvml_datan2_ha_cout_rare_internal
+        ALIGN     16
+        PUBLIC __jsvml_datan2_ha_cout_rare_internal
 
-__jsvml_datan2_ha_cout_rare_internal	PROC
+__jsvml_datan2_ha_cout_rare_internal    PROC
 
 _B10_1::
 
@@ -4407,1372 +4407,1372 @@ _B10_54::
 
 __jsvml_datan2_ha_cout_rare_internal ENDP
 
-_TEXT	ENDS
-.xdata	SEGMENT  DWORD   READ  ''
+_TEXT   ENDS
+.xdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 _unwind___jsvml_datan2_ha_cout_rare_internal_B1_B57:
-	DD	551425
-	DD	419946
-	DD	579685
-	DD	522332
-	DD	1245451
+        DD      551425
+        DD      419946
+        DD      579685
+        DD      522332
+        DD      1245451
 
-.xdata	ENDS
-.pdata	SEGMENT  DWORD   READ  ''
+.xdata  ENDS
+.pdata  SEGMENT  DWORD   READ  ''
 
-	ALIGN 004H
+        ALIGN 004H
 
-	DD	imagerel _B10_1
-	DD	imagerel _B10_54
-	DD	imagerel _unwind___jsvml_datan2_ha_cout_rare_internal_B1_B57
+        DD      imagerel _B10_1
+        DD      imagerel _B10_54
+        DD      imagerel _unwind___jsvml_datan2_ha_cout_rare_internal_B1_B57
 
-.pdata	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
+.pdata  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
 
-_RDATA	SEGMENT     READ PAGE   'DATA'
-	ALIGN  32
-	PUBLIC __jsvml_datan2_ha_data_internal
-__jsvml_datan2_ha_data_internal	DD	0
-	DD	1072693248
-	DD	1413754136
-	DD	1073291771
-	DD	856972295
-	DD	1016178214
-	DD	0
-	DD	0
-	DD	0
-	DD	1073217536
-	DD	3531732635
-	DD	1072657163
-	DD	2062601149
-	DD	1013974920
-	DD	4294967295
-	DD	4294967295
-	DD	0
-	DD	1072693248
-	DD	1413754136
-	DD	1072243195
-	DD	856972295
-	DD	1015129638
-	DD	4294967295
-	DD	4294967295
-	DD	0
-	DD	1071644672
-	DD	90291023
-	DD	1071492199
-	DD	573531618
-	DD	1014639487
-	DD	4294967295
-	DD	4294967295
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	4294967295
-	DD	4294967295
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	90291023
-	DD	1071492199
-	DD	90291023
-	DD	1071492199
-	DD	90291023
-	DD	1071492199
-	DD	90291023
-	DD	1071492199
-	DD	90291023
-	DD	1071492199
-	DD	90291023
-	DD	1071492199
-	DD	90291023
-	DD	1071492199
-	DD	90291023
-	DD	1071492199
-	DD	573531618
-	DD	1014639487
-	DD	573531618
-	DD	1014639487
-	DD	573531618
-	DD	1014639487
-	DD	573531618
-	DD	1014639487
-	DD	573531618
-	DD	1014639487
-	DD	573531618
-	DD	1014639487
-	DD	573531618
-	DD	1014639487
-	DD	573531618
-	DD	1014639487
-	DD	1413754136
-	DD	1072243195
-	DD	1413754136
-	DD	1072243195
-	DD	1413754136
-	DD	1072243195
-	DD	1413754136
-	DD	1072243195
-	DD	1413754136
-	DD	1072243195
-	DD	1413754136
-	DD	1072243195
-	DD	1413754136
-	DD	1072243195
-	DD	1413754136
-	DD	1072243195
-	DD	856972295
-	DD	1015129638
-	DD	856972295
-	DD	1015129638
-	DD	856972295
-	DD	1015129638
-	DD	856972295
-	DD	1015129638
-	DD	856972295
-	DD	1015129638
-	DD	856972295
-	DD	1015129638
-	DD	856972295
-	DD	1015129638
-	DD	856972295
-	DD	1015129638
-	DD	3531732635
-	DD	1072657163
-	DD	3531732635
-	DD	1072657163
-	DD	3531732635
-	DD	1072657163
-	DD	3531732635
-	DD	1072657163
-	DD	3531732635
-	DD	1072657163
-	DD	3531732635
-	DD	1072657163
-	DD	3531732635
-	DD	1072657163
-	DD	3531732635
-	DD	1072657163
-	DD	2062601149
-	DD	1013974920
-	DD	2062601149
-	DD	1013974920
-	DD	2062601149
-	DD	1013974920
-	DD	2062601149
-	DD	1013974920
-	DD	2062601149
-	DD	1013974920
-	DD	2062601149
-	DD	1013974920
-	DD	2062601149
-	DD	1013974920
-	DD	2062601149
-	DD	1013974920
-	DD	1413754136
-	DD	1073291771
-	DD	1413754136
-	DD	1073291771
-	DD	1413754136
-	DD	1073291771
-	DD	1413754136
-	DD	1073291771
-	DD	1413754136
-	DD	1073291771
-	DD	1413754136
-	DD	1073291771
-	DD	1413754136
-	DD	1073291771
-	DD	1413754136
-	DD	1073291771
-	DD	856972295
-	DD	1016178214
-	DD	856972295
-	DD	1016178214
-	DD	856972295
-	DD	1016178214
-	DD	856972295
-	DD	1016178214
-	DD	856972295
-	DD	1016178214
-	DD	856972295
-	DD	1016178214
-	DD	856972295
-	DD	1016178214
-	DD	856972295
-	DD	1016178214
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1071644672
-	DD	0
-	DD	1073217536
-	DD	0
-	DD	1073217536
-	DD	0
-	DD	1073217536
-	DD	0
-	DD	1073217536
-	DD	0
-	DD	1073217536
-	DD	0
-	DD	1073217536
-	DD	0
-	DD	1073217536
-	DD	0
-	DD	1073217536
-	DD	0
-	DD	2147483648
-	DD	0
-	DD	2147483648
-	DD	0
-	DD	2147483648
-	DD	0
-	DD	2147483648
-	DD	0
-	DD	2147483648
-	DD	0
-	DD	2147483648
-	DD	0
-	DD	2147483648
-	DD	0
-	DD	2147483648
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1074340347
-	DD	0
-	DD	1017226816
-	DD	0
-	DD	1017226816
-	DD	0
-	DD	1017226816
-	DD	0
-	DD	1017226816
-	DD	0
-	DD	1017226816
-	DD	0
-	DD	1017226816
-	DD	0
-	DD	1017226816
-	DD	0
-	DD	1017226816
-	DD	4160749568
-	DD	4294967295
-	DD	4160749568
-	DD	4294967295
-	DD	4160749568
-	DD	4294967295
-	DD	4160749568
-	DD	4294967295
-	DD	4160749568
-	DD	4294967295
-	DD	4160749568
-	DD	4294967295
-	DD	4160749568
-	DD	4294967295
-	DD	4160749568
-	DD	4294967295
-	DD	0
-	DD	1071382528
-	DD	0
-	DD	1071382528
-	DD	0
-	DD	1071382528
-	DD	0
-	DD	1071382528
-	DD	0
-	DD	1071382528
-	DD	0
-	DD	1071382528
-	DD	0
-	DD	1071382528
-	DD	0
-	DD	1071382528
-	DD	0
-	DD	1072889856
-	DD	0
-	DD	1072889856
-	DD	0
-	DD	1072889856
-	DD	0
-	DD	1072889856
-	DD	0
-	DD	1072889856
-	DD	0
-	DD	1072889856
-	DD	0
-	DD	1072889856
-	DD	0
-	DD	1072889856
-	DD	0
-	DD	1073971200
-	DD	0
-	DD	1073971200
-	DD	0
-	DD	1073971200
-	DD	0
-	DD	1073971200
-	DD	0
-	DD	1073971200
-	DD	0
-	DD	1073971200
-	DD	0
-	DD	1073971200
-	DD	0
-	DD	1073971200
-	DD	0
-	DD	1072037888
-	DD	0
-	DD	1072037888
-	DD	0
-	DD	1072037888
-	DD	0
-	DD	1072037888
-	DD	0
-	DD	1072037888
-	DD	0
-	DD	1072037888
-	DD	0
-	DD	1072037888
-	DD	0
-	DD	1072037888
-	DD	4
-	DD	4
-	DD	4
-	DD	4
-	DD	4
-	DD	4
-	DD	4
-	DD	4
-	DD	4
-	DD	4
-	DD	4
-	DD	4
-	DD	4
-	DD	4
-	DD	4
-	DD	4
-	DD	4293918720
-	DD	4293918720
-	DD	4293918720
-	DD	4293918720
-	DD	4293918720
-	DD	4293918720
-	DD	4293918720
-	DD	4293918720
-	DD	4293918720
-	DD	4293918720
-	DD	4293918720
-	DD	4293918720
-	DD	4293918720
-	DD	4293918720
-	DD	4293918720
-	DD	4293918720
-	DD	2145386496
-	DD	2145386496
-	DD	2145386496
-	DD	2145386496
-	DD	2145386496
-	DD	2145386496
-	DD	2145386496
-	DD	2145386496
-	DD	2145386496
-	DD	2145386496
-	DD	2145386496
-	DD	2145386496
-	DD	2145386496
-	DD	2145386496
-	DD	2145386496
-	DD	2145386496
-	DD	8388607
-	DD	8388607
-	DD	8388607
-	DD	8388607
-	DD	8388607
-	DD	8388607
-	DD	8388607
-	DD	8388607
-	DD	8388607
-	DD	8388607
-	DD	8388607
-	DD	8388607
-	DD	8388607
-	DD	8388607
-	DD	8388607
-	DD	8388607
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	133169152
-	DD	133169152
-	DD	133169152
-	DD	133169152
-	DD	133169152
-	DD	133169152
-	DD	133169152
-	DD	133169152
-	DD	133169152
-	DD	133169152
-	DD	133169152
-	DD	133169152
-	DD	133169152
-	DD	133169152
-	DD	133169152
-	DD	133169152
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1072693248
-	DD	3866310424
-	DD	1066132731
-	DD	3866310424
-	DD	1066132731
-	DD	3866310424
-	DD	1066132731
-	DD	3866310424
-	DD	1066132731
-	DD	3866310424
-	DD	1066132731
-	DD	3866310424
-	DD	1066132731
-	DD	3866310424
-	DD	1066132731
-	DD	3866310424
-	DD	1066132731
-	DD	529668190
-	DD	3214953687
-	DD	529668190
-	DD	3214953687
-	DD	529668190
-	DD	3214953687
-	DD	529668190
-	DD	3214953687
-	DD	529668190
-	DD	3214953687
-	DD	529668190
-	DD	3214953687
-	DD	529668190
-	DD	3214953687
-	DD	529668190
-	DD	3214953687
-	DD	1493047753
-	DD	1067887957
-	DD	1493047753
-	DD	1067887957
-	DD	1493047753
-	DD	1067887957
-	DD	1493047753
-	DD	1067887957
-	DD	1493047753
-	DD	1067887957
-	DD	1493047753
-	DD	1067887957
-	DD	1493047753
-	DD	1067887957
-	DD	1493047753
-	DD	1067887957
-	DD	1554070819
-	DD	3215629941
-	DD	1554070819
-	DD	3215629941
-	DD	1554070819
-	DD	3215629941
-	DD	1554070819
-	DD	3215629941
-	DD	1554070819
-	DD	3215629941
-	DD	1554070819
-	DD	3215629941
-	DD	1554070819
-	DD	3215629941
-	DD	1554070819
-	DD	3215629941
-	DD	3992437651
-	DD	1068372721
-	DD	3992437651
-	DD	1068372721
-	DD	3992437651
-	DD	1068372721
-	DD	3992437651
-	DD	1068372721
-	DD	3992437651
-	DD	1068372721
-	DD	3992437651
-	DD	1068372721
-	DD	3992437651
-	DD	1068372721
-	DD	3992437651
-	DD	1068372721
-	DD	845965549
-	DD	3216052365
-	DD	845965549
-	DD	3216052365
-	DD	845965549
-	DD	3216052365
-	DD	845965549
-	DD	3216052365
-	DD	845965549
-	DD	3216052365
-	DD	845965549
-	DD	3216052365
-	DD	845965549
-	DD	3216052365
-	DD	845965549
-	DD	3216052365
-	DD	3073500986
-	DD	1068740914
-	DD	3073500986
-	DD	1068740914
-	DD	3073500986
-	DD	1068740914
-	DD	3073500986
-	DD	1068740914
-	DD	3073500986
-	DD	1068740914
-	DD	3073500986
-	DD	1068740914
-	DD	3073500986
-	DD	1068740914
-	DD	3073500986
-	DD	1068740914
-	DD	426211919
-	DD	3216459217
-	DD	426211919
-	DD	3216459217
-	DD	426211919
-	DD	3216459217
-	DD	426211919
-	DD	3216459217
-	DD	426211919
-	DD	3216459217
-	DD	426211919
-	DD	3216459217
-	DD	426211919
-	DD	3216459217
-	DD	426211919
-	DD	3216459217
-	DD	435789718
-	DD	1069314503
-	DD	435789718
-	DD	1069314503
-	DD	435789718
-	DD	1069314503
-	DD	435789718
-	DD	1069314503
-	DD	435789718
-	DD	1069314503
-	DD	435789718
-	DD	1069314503
-	DD	435789718
-	DD	1069314503
-	DD	435789718
-	DD	1069314503
-	DD	2453936673
-	DD	3217180964
-	DD	2453936673
-	DD	3217180964
-	DD	2453936673
-	DD	3217180964
-	DD	2453936673
-	DD	3217180964
-	DD	2453936673
-	DD	3217180964
-	DD	2453936673
-	DD	3217180964
-	DD	2453936673
-	DD	3217180964
-	DD	2453936673
-	DD	3217180964
-	DD	2576977731
-	DD	1070176665
-	DD	2576977731
-	DD	1070176665
-	DD	2576977731
-	DD	1070176665
-	DD	2576977731
-	DD	1070176665
-	DD	2576977731
-	DD	1070176665
-	DD	2576977731
-	DD	1070176665
-	DD	2576977731
-	DD	1070176665
-	DD	2576977731
-	DD	1070176665
-	DD	1431655762
-	DD	3218429269
-	DD	1431655762
-	DD	3218429269
-	DD	1431655762
-	DD	3218429269
-	DD	1431655762
-	DD	3218429269
-	DD	1431655762
-	DD	3218429269
-	DD	1431655762
-	DD	3218429269
-	DD	1431655762
-	DD	3218429269
-	DD	1431655762
-	DD	3218429269
-	DD	2147483647
-	DD	2147483647
-	DD	2147483647
-	DD	2147483647
-	DD	2147483647
-	DD	2147483647
-	DD	2147483647
-	DD	2147483647
-	DD	2147483647
-	DD	2147483647
-	DD	2147483647
-	DD	2147483647
-	DD	2147483647
-	DD	2147483647
-	DD	2147483647
-	DD	2147483647
-	DD	2150629376
-	DD	2150629376
-	DD	2150629376
-	DD	2150629376
-	DD	2150629376
-	DD	2150629376
-	DD	2150629376
-	DD	2150629376
-	DD	2150629376
-	DD	2150629376
-	DD	2150629376
-	DD	2150629376
-	DD	2150629376
-	DD	2150629376
-	DD	2150629376
-	DD	2150629376
-	DD	4258267136
-	DD	4258267136
-	DD	4258267136
-	DD	4258267136
-	DD	4258267136
-	DD	4258267136
-	DD	4258267136
-	DD	4258267136
-	DD	4258267136
-	DD	4258267136
-	DD	4258267136
-	DD	4258267136
-	DD	4258267136
-	DD	4258267136
-	DD	4258267136
-	DD	4258267136
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	4294967295
-	DD	2147483647
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	1065353216
-	DD	0
-	DD	4294967295
-	DD	0
-	DD	4294967295
-	DD	0
-	DD	4294967295
-	DD	0
-	DD	4294967295
-	DD	0
-	DD	4294967295
-	DD	0
-	DD	4294967295
-	DD	0
-	DD	4294967295
-	DD	0
-	DD	4294967295
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1074340347
-	DD	1413754136
-	DD	1073291771
-	DD	1413754136
-	DD	1073291771
-	DD	1413754136
-	DD	1073291771
-	DD	1413754136
-	DD	1073291771
-	DD	1413754136
-	DD	1073291771
-	DD	1413754136
-	DD	1073291771
-	DD	1413754136
-	DD	1073291771
-	DD	1413754136
-	DD	1073291771
-	DD	1005584384
-	DD	1005584384
-	DD	1005584384
-	DD	1005584384
-	DD	1005584384
-	DD	1005584384
-	DD	1005584384
-	DD	1005584384
-	DD	1005584384
-	DD	1005584384
-	DD	1005584384
-	DD	1005584384
-	DD	1005584384
-	DD	1005584384
-	DD	1005584384
-	DD	1005584384
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-	DD	0
-_vmldAtanHATab	DD	3892314112
-	DD	1069799150
-	DD	2332892550
-	DD	1039715405
-	DD	1342177280
-	DD	1070305495
-	DD	270726690
-	DD	1041535749
-	DD	939524096
-	DD	1070817911
-	DD	2253973841
-	DD	3188654726
-	DD	3221225472
-	DD	1071277294
-	DD	3853927037
-	DD	1043226911
-	DD	2818572288
-	DD	1071767563
-	DD	2677759107
-	DD	1044314101
-	DD	3355443200
-	DD	1072103591
-	DD	1636578514
-	DD	3191094734
-	DD	1476395008
-	DD	1072475260
-	DD	1864703685
-	DD	3188646936
-	DD	805306368
-	DD	1072747407
-	DD	192551812
-	DD	3192726267
-	DD	2013265920
-	DD	1072892781
-	DD	2240369452
-	DD	1043768538
-	DD	0
-	DD	1072999953
-	DD	3665168337
-	DD	3192705970
-	DD	402653184
-	DD	1073084787
-	DD	1227953434
-	DD	3192313277
-	DD	2013265920
-	DD	1073142981
-	DD	3853283127
-	DD	1045277487
-	DD	805306368
-	DD	1073187261
-	DD	1676192264
-	DD	3192868861
-	DD	134217728
-	DD	1073217000
-	DD	4290763938
-	DD	1042034855
-	DD	671088640
-	DD	1073239386
-	DD	994303084
-	DD	3189643768
-	DD	402653184
-	DD	1073254338
-	DD	1878067156
-	DD	1042652475
-	DD	1610612736
-	DD	1073265562
-	DD	670314820
-	DD	1045138554
-	DD	3221225472
-	DD	1073273048
-	DD	691126919
-	DD	3189987794
-	DD	3489660928
-	DD	1073278664
-	DD	1618990832
-	DD	3188194509
-	DD	1207959552
-	DD	1073282409
-	DD	2198872939
-	DD	1044806069
-	DD	3489660928
-	DD	1073285217
-	DD	2633982383
-	DD	1042307894
-	DD	939524096
-	DD	1073287090
-	DD	1059367786
-	DD	3189114230
-	DD	2281701376
-	DD	1073288494
-	DD	3158525533
-	DD	1044484961
-	DD	3221225472
-	DD	1073289430
-	DD	286581777
-	DD	1044893263
-	DD	4026531840
-	DD	1073290132
-	DD	2000245215
-	DD	3191647611
-	DD	134217728
-	DD	1073290601
-	DD	4205071590
-	DD	1045035927
-	DD	536870912
-	DD	1073290952
-	DD	2334392229
-	DD	1043447393
-	DD	805306368
-	DD	1073291186
-	DD	2281458177
-	DD	3188885569
-	DD	3087007744
-	DD	1073291361
-	DD	691611507
-	DD	1044733832
-	DD	3221225472
-	DD	1073291478
-	DD	1816229550
-	DD	1044363390
-	DD	2281701376
-	DD	1073291566
-	DD	1993843750
-	DD	3189837440
-	DD	134217728
-	DD	1073291625
-	DD	3654754496
-	DD	1044970837
-	DD	4026531840
-	DD	1073291668
-	DD	3224300229
-	DD	3191935390
-	DD	805306368
-	DD	1073291698
-	DD	2988777976
-	DD	3188950659
-	DD	536870912
-	DD	1073291720
-	DD	1030371341
-	DD	1043402665
-	DD	3221225472
-	DD	1073291734
-	DD	1524463765
-	DD	1044361356
-	DD	3087007744
-	DD	1073291745
-	DD	2754295320
-	DD	1044731036
-	DD	134217728
-	DD	1073291753
-	DD	3099629057
-	DD	1044970710
-	DD	2281701376
-	DD	1073291758
-	DD	962914160
-	DD	3189838838
-	DD	805306368
-	DD	1073291762
-	DD	3543908206
-	DD	3188950786
-	DD	4026531840
-	DD	1073291764
-	DD	1849909620
-	DD	3191935434
-	DD	3221225472
-	DD	1073291766
-	DD	1641333636
-	DD	1044361352
-	DD	536870912
-	DD	1073291768
-	DD	1373968792
-	DD	1043402654
-	DD	134217728
-	DD	1073291769
-	DD	2033191599
-	DD	1044970710
-	DD	3087007744
-	DD	1073291769
-	DD	4117947437
-	DD	1044731035
-	DD	805306368
-	DD	1073291770
-	DD	315378368
-	DD	3188950787
-	DD	2281701376
-	DD	1073291770
-	DD	2428571750
-	DD	3189838838
-	DD	3221225472
-	DD	1073291770
-	DD	1608007466
-	DD	1044361352
-	DD	4026531840
-	DD	1073291770
-	DD	1895711420
-	DD	3191935434
-	DD	134217728
-	DD	1073291771
-	DD	2031108713
-	DD	1044970710
-	DD	536870912
-	DD	1073291771
-	DD	1362518342
-	DD	1043402654
-	DD	805306368
-	DD	1073291771
-	DD	317461253
-	DD	3188950787
-	DD	939524096
-	DD	1073291771
-	DD	4117231784
-	DD	1044731035
-	DD	1073741824
-	DD	1073291771
-	DD	1607942376
-	DD	1044361352
-	DD	1207959552
-	DD	1073291771
-	DD	2428929577
-	DD	3189838838
-	DD	1207959552
-	DD	1073291771
-	DD	2031104645
-	DD	1044970710
-	DD	1342177280
-	DD	1073291771
-	DD	1895722602
-	DD	3191935434
-	DD	1342177280
-	DD	1073291771
-	DD	317465322
-	DD	3188950787
-	DD	1342177280
-	DD	1073291771
-	DD	1362515546
-	DD	1043402654
-	DD	1342177280
-	DD	1073291771
-	DD	1607942248
-	DD	1044361352
-	DD	1342177280
-	DD	1073291771
-	DD	4117231610
-	DD	1044731035
-	DD	1342177280
-	DD	1073291771
-	DD	2031104637
-	DD	1044970710
-	DD	1342177280
-	DD	1073291771
-	DD	1540251232
-	DD	1045150466
-	DD	1342177280
-	DD	1073291771
-	DD	2644671394
-	DD	1045270303
-	DD	1342177280
-	DD	1073291771
-	DD	2399244691
-	DD	1045360181
-	DD	1342177280
-	DD	1073291771
-	DD	803971124
-	DD	1045420100
-	DD	1476395008
-	DD	1073291771
-	DD	3613709523
-	DD	3192879152
-	DD	1476395008
-	DD	1073291771
-	DD	2263862659
-	DD	3192849193
-	DD	1476395008
-	DD	1073291771
-	DD	177735686
-	DD	3192826724
-	DD	1476395008
-	DD	1073291771
-	DD	1650295902
-	DD	3192811744
-	DD	1476395008
-	DD	1073291771
-	DD	2754716064
-	DD	3192800509
-	DD	1476395008
-	DD	1073291771
-	DD	3490996172
-	DD	3192793019
-	DD	1476395008
-	DD	1073291771
-	DD	1895722605
-	DD	3192787402
-	DD	1476395008
-	DD	1073291771
-	DD	2263862659
-	DD	3192783657
-	DD	1476395008
-	DD	1073291771
-	DD	3613709523
-	DD	3192780848
-	DD	1476395008
-	DD	1073291771
-	DD	1650295902
-	DD	3192778976
-	DD	1476395008
-	DD	1073291771
-	DD	177735686
-	DD	3192777572
-	DD	1476395008
-	DD	1073291771
-	DD	3490996172
-	DD	3192776635
-	DD	1476395008
-	DD	1073291771
-	DD	2754716064
-	DD	3192775933
-	DD	1476395008
-	DD	1073291771
-	DD	2263862659
-	DD	3192775465
-	DD	1476395008
-	DD	1073291771
-	DD	1895722605
-	DD	3192775114
-	DD	1476395008
-	DD	1073291771
-	DD	1650295902
-	DD	3192774880
-	DD	1476395008
-	DD	1073291771
-	DD	3613709523
-	DD	3192774704
-	DD	1476395008
-	DD	1073291771
-	DD	3490996172
-	DD	3192774587
-	DD	1476395008
-	DD	1073291771
-	DD	177735686
-	DD	3192774500
-	DD	1476395008
-	DD	1073291771
-	DD	2263862659
-	DD	3192774441
-	DD	1476395008
-	DD	1073291771
-	DD	2754716064
-	DD	3192774397
-	DD	1476395008
-	DD	1073291771
-	DD	1650295902
-	DD	3192774368
-	DD	1476395008
-	DD	1073291771
-	DD	1895722605
-	DD	3192774346
-	DD	1476395008
-	DD	1073291771
-	DD	3490996172
-	DD	3192774331
-	DD	1476395008
-	DD	1073291771
-	DD	3613709523
-	DD	3192774320
-	DD	1476395008
-	DD	1073291771
-	DD	2263862659
-	DD	3192774313
-	DD	1476395008
-	DD	1073291771
-	DD	177735686
-	DD	3192774308
-	DD	1476395008
-	DD	1073291771
-	DD	1650295902
-	DD	3192774304
-	DD	1476395008
-	DD	1073291771
-	DD	2754716064
-	DD	3192774301
-	DD	1476395008
-	DD	1073291771
-	DD	3490996172
-	DD	3192774299
-	DD	1476395008
-	DD	1073291771
-	DD	1895722605
-	DD	3192774298
-	DD	1476395008
-	DD	1073291771
-	DD	2263862659
-	DD	3192774297
-	DD	1476395008
-	DD	1073291771
-	DD	3613709523
-	DD	3192774296
-	DD	1476395008
-	DD	1073291771
-	DD	1650295902
-	DD	3192774296
-	DD	1476395008
-	DD	1073291771
-	DD	177735686
-	DD	3192774296
-	DD	1476395008
-	DD	1073291771
-	DD	3490996172
-	DD	3192774295
-	DD	1476395008
-	DD	1073291771
-	DD	2754716064
-	DD	3192774295
-	DD	1476395008
-	DD	1073291771
-	DD	2263862659
-	DD	3192774295
-	DD	1476395008
-	DD	1073291771
-	DD	1895722605
-	DD	3192774295
-	DD	1476395008
-	DD	1073291771
-	DD	1650295902
-	DD	3192774295
-	DD	1476395008
-	DD	1073291771
-	DD	1466225875
-	DD	3192774295
-	DD	1476395008
-	DD	1073291771
-	DD	1343512524
-	DD	3192774295
-	DD	1476395008
-	DD	1073291771
-	DD	1251477510
-	DD	3192774295
-	DD	1476395008
-	DD	1073291771
-	DD	1190120835
-	DD	3192774295
-	DD	1476395008
-	DD	1073291771
-	DD	1144103328
-	DD	3192774295
-	DD	1476395008
-	DD	1073291771
-	DD	1113424990
-	DD	3192774295
-	DD	1476395008
-	DD	1073291771
-	DD	1090416237
-	DD	3192774295
-	DD	1476395008
-	DD	1073291771
-	DD	1075077068
-	DD	3192774295
-	DD	1431655765
-	DD	3218429269
-	DD	2576978363
-	DD	1070176665
-	DD	2453154343
-	DD	3217180964
-	DD	4189149139
-	DD	1069314502
-	DD	1775019125
-	DD	3216459198
-	DD	273199057
-	DD	1068739452
-	DD	874748308
-	DD	3215993277
-	DD	0
-	DD	1069547520
-	DD	0
-	DD	1072693248
-	DD	0
-	DD	1073741824
-	DD	1413754136
-	DD	1072243195
-	DD	856972295
-	DD	1015129638
-	DD	1413754136
-	DD	1073291771
-	DD	856972295
-	DD	1016178214
-	DD	1413754136
-	DD	1074340347
-	DD	856972295
-	DD	1017226790
-	DD	2134057426
-	DD	1073928572
-	DD	1285458442
-	DD	1016756537
-	DD	0
-	DD	3220176896
-	DD	0
-	DD	0
-	DD	0
-	DD	2144337920
-	DD	0
-	DD	1048576
-	DD	33554432
-	DD	1101004800
-_2il0floatpacket_51	DD	0ffffffffH,0ffffffffH
-_RDATA	ENDS
-_DATA	SEGMENT      'DATA'
-_DATA	ENDS
-EXTRN	__ImageBase:PROC
-EXTRN	_fltused:BYTE
+_RDATA  SEGMENT     READ PAGE   'DATA'
+        ALIGN  32
+        PUBLIC __jsvml_datan2_ha_data_internal
+__jsvml_datan2_ha_data_internal DD      0
+        DD      1072693248
+        DD      1413754136
+        DD      1073291771
+        DD      856972295
+        DD      1016178214
+        DD      0
+        DD      0
+        DD      0
+        DD      1073217536
+        DD      3531732635
+        DD      1072657163
+        DD      2062601149
+        DD      1013974920
+        DD      4294967295
+        DD      4294967295
+        DD      0
+        DD      1072693248
+        DD      1413754136
+        DD      1072243195
+        DD      856972295
+        DD      1015129638
+        DD      4294967295
+        DD      4294967295
+        DD      0
+        DD      1071644672
+        DD      90291023
+        DD      1071492199
+        DD      573531618
+        DD      1014639487
+        DD      4294967295
+        DD      4294967295
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      4294967295
+        DD      4294967295
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      90291023
+        DD      1071492199
+        DD      90291023
+        DD      1071492199
+        DD      90291023
+        DD      1071492199
+        DD      90291023
+        DD      1071492199
+        DD      90291023
+        DD      1071492199
+        DD      90291023
+        DD      1071492199
+        DD      90291023
+        DD      1071492199
+        DD      90291023
+        DD      1071492199
+        DD      573531618
+        DD      1014639487
+        DD      573531618
+        DD      1014639487
+        DD      573531618
+        DD      1014639487
+        DD      573531618
+        DD      1014639487
+        DD      573531618
+        DD      1014639487
+        DD      573531618
+        DD      1014639487
+        DD      573531618
+        DD      1014639487
+        DD      573531618
+        DD      1014639487
+        DD      1413754136
+        DD      1072243195
+        DD      1413754136
+        DD      1072243195
+        DD      1413754136
+        DD      1072243195
+        DD      1413754136
+        DD      1072243195
+        DD      1413754136
+        DD      1072243195
+        DD      1413754136
+        DD      1072243195
+        DD      1413754136
+        DD      1072243195
+        DD      1413754136
+        DD      1072243195
+        DD      856972295
+        DD      1015129638
+        DD      856972295
+        DD      1015129638
+        DD      856972295
+        DD      1015129638
+        DD      856972295
+        DD      1015129638
+        DD      856972295
+        DD      1015129638
+        DD      856972295
+        DD      1015129638
+        DD      856972295
+        DD      1015129638
+        DD      856972295
+        DD      1015129638
+        DD      3531732635
+        DD      1072657163
+        DD      3531732635
+        DD      1072657163
+        DD      3531732635
+        DD      1072657163
+        DD      3531732635
+        DD      1072657163
+        DD      3531732635
+        DD      1072657163
+        DD      3531732635
+        DD      1072657163
+        DD      3531732635
+        DD      1072657163
+        DD      3531732635
+        DD      1072657163
+        DD      2062601149
+        DD      1013974920
+        DD      2062601149
+        DD      1013974920
+        DD      2062601149
+        DD      1013974920
+        DD      2062601149
+        DD      1013974920
+        DD      2062601149
+        DD      1013974920
+        DD      2062601149
+        DD      1013974920
+        DD      2062601149
+        DD      1013974920
+        DD      2062601149
+        DD      1013974920
+        DD      1413754136
+        DD      1073291771
+        DD      1413754136
+        DD      1073291771
+        DD      1413754136
+        DD      1073291771
+        DD      1413754136
+        DD      1073291771
+        DD      1413754136
+        DD      1073291771
+        DD      1413754136
+        DD      1073291771
+        DD      1413754136
+        DD      1073291771
+        DD      1413754136
+        DD      1073291771
+        DD      856972295
+        DD      1016178214
+        DD      856972295
+        DD      1016178214
+        DD      856972295
+        DD      1016178214
+        DD      856972295
+        DD      1016178214
+        DD      856972295
+        DD      1016178214
+        DD      856972295
+        DD      1016178214
+        DD      856972295
+        DD      1016178214
+        DD      856972295
+        DD      1016178214
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1071644672
+        DD      0
+        DD      1073217536
+        DD      0
+        DD      1073217536
+        DD      0
+        DD      1073217536
+        DD      0
+        DD      1073217536
+        DD      0
+        DD      1073217536
+        DD      0
+        DD      1073217536
+        DD      0
+        DD      1073217536
+        DD      0
+        DD      1073217536
+        DD      0
+        DD      2147483648
+        DD      0
+        DD      2147483648
+        DD      0
+        DD      2147483648
+        DD      0
+        DD      2147483648
+        DD      0
+        DD      2147483648
+        DD      0
+        DD      2147483648
+        DD      0
+        DD      2147483648
+        DD      0
+        DD      2147483648
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1074340347
+        DD      0
+        DD      1017226816
+        DD      0
+        DD      1017226816
+        DD      0
+        DD      1017226816
+        DD      0
+        DD      1017226816
+        DD      0
+        DD      1017226816
+        DD      0
+        DD      1017226816
+        DD      0
+        DD      1017226816
+        DD      0
+        DD      1017226816
+        DD      4160749568
+        DD      4294967295
+        DD      4160749568
+        DD      4294967295
+        DD      4160749568
+        DD      4294967295
+        DD      4160749568
+        DD      4294967295
+        DD      4160749568
+        DD      4294967295
+        DD      4160749568
+        DD      4294967295
+        DD      4160749568
+        DD      4294967295
+        DD      4160749568
+        DD      4294967295
+        DD      0
+        DD      1071382528
+        DD      0
+        DD      1071382528
+        DD      0
+        DD      1071382528
+        DD      0
+        DD      1071382528
+        DD      0
+        DD      1071382528
+        DD      0
+        DD      1071382528
+        DD      0
+        DD      1071382528
+        DD      0
+        DD      1071382528
+        DD      0
+        DD      1072889856
+        DD      0
+        DD      1072889856
+        DD      0
+        DD      1072889856
+        DD      0
+        DD      1072889856
+        DD      0
+        DD      1072889856
+        DD      0
+        DD      1072889856
+        DD      0
+        DD      1072889856
+        DD      0
+        DD      1072889856
+        DD      0
+        DD      1073971200
+        DD      0
+        DD      1073971200
+        DD      0
+        DD      1073971200
+        DD      0
+        DD      1073971200
+        DD      0
+        DD      1073971200
+        DD      0
+        DD      1073971200
+        DD      0
+        DD      1073971200
+        DD      0
+        DD      1073971200
+        DD      0
+        DD      1072037888
+        DD      0
+        DD      1072037888
+        DD      0
+        DD      1072037888
+        DD      0
+        DD      1072037888
+        DD      0
+        DD      1072037888
+        DD      0
+        DD      1072037888
+        DD      0
+        DD      1072037888
+        DD      0
+        DD      1072037888
+        DD      4
+        DD      4
+        DD      4
+        DD      4
+        DD      4
+        DD      4
+        DD      4
+        DD      4
+        DD      4
+        DD      4
+        DD      4
+        DD      4
+        DD      4
+        DD      4
+        DD      4
+        DD      4
+        DD      4293918720
+        DD      4293918720
+        DD      4293918720
+        DD      4293918720
+        DD      4293918720
+        DD      4293918720
+        DD      4293918720
+        DD      4293918720
+        DD      4293918720
+        DD      4293918720
+        DD      4293918720
+        DD      4293918720
+        DD      4293918720
+        DD      4293918720
+        DD      4293918720
+        DD      4293918720
+        DD      2145386496
+        DD      2145386496
+        DD      2145386496
+        DD      2145386496
+        DD      2145386496
+        DD      2145386496
+        DD      2145386496
+        DD      2145386496
+        DD      2145386496
+        DD      2145386496
+        DD      2145386496
+        DD      2145386496
+        DD      2145386496
+        DD      2145386496
+        DD      2145386496
+        DD      2145386496
+        DD      8388607
+        DD      8388607
+        DD      8388607
+        DD      8388607
+        DD      8388607
+        DD      8388607
+        DD      8388607
+        DD      8388607
+        DD      8388607
+        DD      8388607
+        DD      8388607
+        DD      8388607
+        DD      8388607
+        DD      8388607
+        DD      8388607
+        DD      8388607
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      133169152
+        DD      133169152
+        DD      133169152
+        DD      133169152
+        DD      133169152
+        DD      133169152
+        DD      133169152
+        DD      133169152
+        DD      133169152
+        DD      133169152
+        DD      133169152
+        DD      133169152
+        DD      133169152
+        DD      133169152
+        DD      133169152
+        DD      133169152
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1072693248
+        DD      3866310424
+        DD      1066132731
+        DD      3866310424
+        DD      1066132731
+        DD      3866310424
+        DD      1066132731
+        DD      3866310424
+        DD      1066132731
+        DD      3866310424
+        DD      1066132731
+        DD      3866310424
+        DD      1066132731
+        DD      3866310424
+        DD      1066132731
+        DD      3866310424
+        DD      1066132731
+        DD      529668190
+        DD      3214953687
+        DD      529668190
+        DD      3214953687
+        DD      529668190
+        DD      3214953687
+        DD      529668190
+        DD      3214953687
+        DD      529668190
+        DD      3214953687
+        DD      529668190
+        DD      3214953687
+        DD      529668190
+        DD      3214953687
+        DD      529668190
+        DD      3214953687
+        DD      1493047753
+        DD      1067887957
+        DD      1493047753
+        DD      1067887957
+        DD      1493047753
+        DD      1067887957
+        DD      1493047753
+        DD      1067887957
+        DD      1493047753
+        DD      1067887957
+        DD      1493047753
+        DD      1067887957
+        DD      1493047753
+        DD      1067887957
+        DD      1493047753
+        DD      1067887957
+        DD      1554070819
+        DD      3215629941
+        DD      1554070819
+        DD      3215629941
+        DD      1554070819
+        DD      3215629941
+        DD      1554070819
+        DD      3215629941
+        DD      1554070819
+        DD      3215629941
+        DD      1554070819
+        DD      3215629941
+        DD      1554070819
+        DD      3215629941
+        DD      1554070819
+        DD      3215629941
+        DD      3992437651
+        DD      1068372721
+        DD      3992437651
+        DD      1068372721
+        DD      3992437651
+        DD      1068372721
+        DD      3992437651
+        DD      1068372721
+        DD      3992437651
+        DD      1068372721
+        DD      3992437651
+        DD      1068372721
+        DD      3992437651
+        DD      1068372721
+        DD      3992437651
+        DD      1068372721
+        DD      845965549
+        DD      3216052365
+        DD      845965549
+        DD      3216052365
+        DD      845965549
+        DD      3216052365
+        DD      845965549
+        DD      3216052365
+        DD      845965549
+        DD      3216052365
+        DD      845965549
+        DD      3216052365
+        DD      845965549
+        DD      3216052365
+        DD      845965549
+        DD      3216052365
+        DD      3073500986
+        DD      1068740914
+        DD      3073500986
+        DD      1068740914
+        DD      3073500986
+        DD      1068740914
+        DD      3073500986
+        DD      1068740914
+        DD      3073500986
+        DD      1068740914
+        DD      3073500986
+        DD      1068740914
+        DD      3073500986
+        DD      1068740914
+        DD      3073500986
+        DD      1068740914
+        DD      426211919
+        DD      3216459217
+        DD      426211919
+        DD      3216459217
+        DD      426211919
+        DD      3216459217
+        DD      426211919
+        DD      3216459217
+        DD      426211919
+        DD      3216459217
+        DD      426211919
+        DD      3216459217
+        DD      426211919
+        DD      3216459217
+        DD      426211919
+        DD      3216459217
+        DD      435789718
+        DD      1069314503
+        DD      435789718
+        DD      1069314503
+        DD      435789718
+        DD      1069314503
+        DD      435789718
+        DD      1069314503
+        DD      435789718
+        DD      1069314503
+        DD      435789718
+        DD      1069314503
+        DD      435789718
+        DD      1069314503
+        DD      435789718
+        DD      1069314503
+        DD      2453936673
+        DD      3217180964
+        DD      2453936673
+        DD      3217180964
+        DD      2453936673
+        DD      3217180964
+        DD      2453936673
+        DD      3217180964
+        DD      2453936673
+        DD      3217180964
+        DD      2453936673
+        DD      3217180964
+        DD      2453936673
+        DD      3217180964
+        DD      2453936673
+        DD      3217180964
+        DD      2576977731
+        DD      1070176665
+        DD      2576977731
+        DD      1070176665
+        DD      2576977731
+        DD      1070176665
+        DD      2576977731
+        DD      1070176665
+        DD      2576977731
+        DD      1070176665
+        DD      2576977731
+        DD      1070176665
+        DD      2576977731
+        DD      1070176665
+        DD      2576977731
+        DD      1070176665
+        DD      1431655762
+        DD      3218429269
+        DD      1431655762
+        DD      3218429269
+        DD      1431655762
+        DD      3218429269
+        DD      1431655762
+        DD      3218429269
+        DD      1431655762
+        DD      3218429269
+        DD      1431655762
+        DD      3218429269
+        DD      1431655762
+        DD      3218429269
+        DD      1431655762
+        DD      3218429269
+        DD      2147483647
+        DD      2147483647
+        DD      2147483647
+        DD      2147483647
+        DD      2147483647
+        DD      2147483647
+        DD      2147483647
+        DD      2147483647
+        DD      2147483647
+        DD      2147483647
+        DD      2147483647
+        DD      2147483647
+        DD      2147483647
+        DD      2147483647
+        DD      2147483647
+        DD      2147483647
+        DD      2150629376
+        DD      2150629376
+        DD      2150629376
+        DD      2150629376
+        DD      2150629376
+        DD      2150629376
+        DD      2150629376
+        DD      2150629376
+        DD      2150629376
+        DD      2150629376
+        DD      2150629376
+        DD      2150629376
+        DD      2150629376
+        DD      2150629376
+        DD      2150629376
+        DD      2150629376
+        DD      4258267136
+        DD      4258267136
+        DD      4258267136
+        DD      4258267136
+        DD      4258267136
+        DD      4258267136
+        DD      4258267136
+        DD      4258267136
+        DD      4258267136
+        DD      4258267136
+        DD      4258267136
+        DD      4258267136
+        DD      4258267136
+        DD      4258267136
+        DD      4258267136
+        DD      4258267136
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      4294967295
+        DD      2147483647
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      1065353216
+        DD      0
+        DD      4294967295
+        DD      0
+        DD      4294967295
+        DD      0
+        DD      4294967295
+        DD      0
+        DD      4294967295
+        DD      0
+        DD      4294967295
+        DD      0
+        DD      4294967295
+        DD      0
+        DD      4294967295
+        DD      0
+        DD      4294967295
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1074340347
+        DD      1413754136
+        DD      1073291771
+        DD      1413754136
+        DD      1073291771
+        DD      1413754136
+        DD      1073291771
+        DD      1413754136
+        DD      1073291771
+        DD      1413754136
+        DD      1073291771
+        DD      1413754136
+        DD      1073291771
+        DD      1413754136
+        DD      1073291771
+        DD      1413754136
+        DD      1073291771
+        DD      1005584384
+        DD      1005584384
+        DD      1005584384
+        DD      1005584384
+        DD      1005584384
+        DD      1005584384
+        DD      1005584384
+        DD      1005584384
+        DD      1005584384
+        DD      1005584384
+        DD      1005584384
+        DD      1005584384
+        DD      1005584384
+        DD      1005584384
+        DD      1005584384
+        DD      1005584384
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+        DD      0
+_vmldAtanHATab  DD      3892314112
+        DD      1069799150
+        DD      2332892550
+        DD      1039715405
+        DD      1342177280
+        DD      1070305495
+        DD      270726690
+        DD      1041535749
+        DD      939524096
+        DD      1070817911
+        DD      2253973841
+        DD      3188654726
+        DD      3221225472
+        DD      1071277294
+        DD      3853927037
+        DD      1043226911
+        DD      2818572288
+        DD      1071767563
+        DD      2677759107
+        DD      1044314101
+        DD      3355443200
+        DD      1072103591
+        DD      1636578514
+        DD      3191094734
+        DD      1476395008
+        DD      1072475260
+        DD      1864703685
+        DD      3188646936
+        DD      805306368
+        DD      1072747407
+        DD      192551812
+        DD      3192726267
+        DD      2013265920
+        DD      1072892781
+        DD      2240369452
+        DD      1043768538
+        DD      0
+        DD      1072999953
+        DD      3665168337
+        DD      3192705970
+        DD      402653184
+        DD      1073084787
+        DD      1227953434
+        DD      3192313277
+        DD      2013265920
+        DD      1073142981
+        DD      3853283127
+        DD      1045277487
+        DD      805306368
+        DD      1073187261
+        DD      1676192264
+        DD      3192868861
+        DD      134217728
+        DD      1073217000
+        DD      4290763938
+        DD      1042034855
+        DD      671088640
+        DD      1073239386
+        DD      994303084
+        DD      3189643768
+        DD      402653184
+        DD      1073254338
+        DD      1878067156
+        DD      1042652475
+        DD      1610612736
+        DD      1073265562
+        DD      670314820
+        DD      1045138554
+        DD      3221225472
+        DD      1073273048
+        DD      691126919
+        DD      3189987794
+        DD      3489660928
+        DD      1073278664
+        DD      1618990832
+        DD      3188194509
+        DD      1207959552
+        DD      1073282409
+        DD      2198872939
+        DD      1044806069
+        DD      3489660928
+        DD      1073285217
+        DD      2633982383
+        DD      1042307894
+        DD      939524096
+        DD      1073287090
+        DD      1059367786
+        DD      3189114230
+        DD      2281701376
+        DD      1073288494
+        DD      3158525533
+        DD      1044484961
+        DD      3221225472
+        DD      1073289430
+        DD      286581777
+        DD      1044893263
+        DD      4026531840
+        DD      1073290132
+        DD      2000245215
+        DD      3191647611
+        DD      134217728
+        DD      1073290601
+        DD      4205071590
+        DD      1045035927
+        DD      536870912
+        DD      1073290952
+        DD      2334392229
+        DD      1043447393
+        DD      805306368
+        DD      1073291186
+        DD      2281458177
+        DD      3188885569
+        DD      3087007744
+        DD      1073291361
+        DD      691611507
+        DD      1044733832
+        DD      3221225472
+        DD      1073291478
+        DD      1816229550
+        DD      1044363390
+        DD      2281701376
+        DD      1073291566
+        DD      1993843750
+        DD      3189837440
+        DD      134217728
+        DD      1073291625
+        DD      3654754496
+        DD      1044970837
+        DD      4026531840
+        DD      1073291668
+        DD      3224300229
+        DD      3191935390
+        DD      805306368
+        DD      1073291698
+        DD      2988777976
+        DD      3188950659
+        DD      536870912
+        DD      1073291720
+        DD      1030371341
+        DD      1043402665
+        DD      3221225472
+        DD      1073291734
+        DD      1524463765
+        DD      1044361356
+        DD      3087007744
+        DD      1073291745
+        DD      2754295320
+        DD      1044731036
+        DD      134217728
+        DD      1073291753
+        DD      3099629057
+        DD      1044970710
+        DD      2281701376
+        DD      1073291758
+        DD      962914160
+        DD      3189838838
+        DD      805306368
+        DD      1073291762
+        DD      3543908206
+        DD      3188950786
+        DD      4026531840
+        DD      1073291764
+        DD      1849909620
+        DD      3191935434
+        DD      3221225472
+        DD      1073291766
+        DD      1641333636
+        DD      1044361352
+        DD      536870912
+        DD      1073291768
+        DD      1373968792
+        DD      1043402654
+        DD      134217728
+        DD      1073291769
+        DD      2033191599
+        DD      1044970710
+        DD      3087007744
+        DD      1073291769
+        DD      4117947437
+        DD      1044731035
+        DD      805306368
+        DD      1073291770
+        DD      315378368
+        DD      3188950787
+        DD      2281701376
+        DD      1073291770
+        DD      2428571750
+        DD      3189838838
+        DD      3221225472
+        DD      1073291770
+        DD      1608007466
+        DD      1044361352
+        DD      4026531840
+        DD      1073291770
+        DD      1895711420
+        DD      3191935434
+        DD      134217728
+        DD      1073291771
+        DD      2031108713
+        DD      1044970710
+        DD      536870912
+        DD      1073291771
+        DD      1362518342
+        DD      1043402654
+        DD      805306368
+        DD      1073291771
+        DD      317461253
+        DD      3188950787
+        DD      939524096
+        DD      1073291771
+        DD      4117231784
+        DD      1044731035
+        DD      1073741824
+        DD      1073291771
+        DD      1607942376
+        DD      1044361352
+        DD      1207959552
+        DD      1073291771
+        DD      2428929577
+        DD      3189838838
+        DD      1207959552
+        DD      1073291771
+        DD      2031104645
+        DD      1044970710
+        DD      1342177280
+        DD      1073291771
+        DD      1895722602
+        DD      3191935434
+        DD      1342177280
+        DD      1073291771
+        DD      317465322
+        DD      3188950787
+        DD      1342177280
+        DD      1073291771
+        DD      1362515546
+        DD      1043402654
+        DD      1342177280
+        DD      1073291771
+        DD      1607942248
+        DD      1044361352
+        DD      1342177280
+        DD      1073291771
+        DD      4117231610
+        DD      1044731035
+        DD      1342177280
+        DD      1073291771
+        DD      2031104637
+        DD      1044970710
+        DD      1342177280
+        DD      1073291771
+        DD      1540251232
+        DD      1045150466
+        DD      1342177280
+        DD      1073291771
+        DD      2644671394
+        DD      1045270303
+        DD      1342177280
+        DD      1073291771
+        DD      2399244691
+        DD      1045360181
+        DD      1342177280
+        DD      1073291771
+        DD      803971124
+        DD      1045420100
+        DD      1476395008
+        DD      1073291771
+        DD      3613709523
+        DD      3192879152
+        DD      1476395008
+        DD      1073291771
+        DD      2263862659
+        DD      3192849193
+        DD      1476395008
+        DD      1073291771
+        DD      177735686
+        DD      3192826724
+        DD      1476395008
+        DD      1073291771
+        DD      1650295902
+        DD      3192811744
+        DD      1476395008
+        DD      1073291771
+        DD      2754716064
+        DD      3192800509
+        DD      1476395008
+        DD      1073291771
+        DD      3490996172
+        DD      3192793019
+        DD      1476395008
+        DD      1073291771
+        DD      1895722605
+        DD      3192787402
+        DD      1476395008
+        DD      1073291771
+        DD      2263862659
+        DD      3192783657
+        DD      1476395008
+        DD      1073291771
+        DD      3613709523
+        DD      3192780848
+        DD      1476395008
+        DD      1073291771
+        DD      1650295902
+        DD      3192778976
+        DD      1476395008
+        DD      1073291771
+        DD      177735686
+        DD      3192777572
+        DD      1476395008
+        DD      1073291771
+        DD      3490996172
+        DD      3192776635
+        DD      1476395008
+        DD      1073291771
+        DD      2754716064
+        DD      3192775933
+        DD      1476395008
+        DD      1073291771
+        DD      2263862659
+        DD      3192775465
+        DD      1476395008
+        DD      1073291771
+        DD      1895722605
+        DD      3192775114
+        DD      1476395008
+        DD      1073291771
+        DD      1650295902
+        DD      3192774880
+        DD      1476395008
+        DD      1073291771
+        DD      3613709523
+        DD      3192774704
+        DD      1476395008
+        DD      1073291771
+        DD      3490996172
+        DD      3192774587
+        DD      1476395008
+        DD      1073291771
+        DD      177735686
+        DD      3192774500
+        DD      1476395008
+        DD      1073291771
+        DD      2263862659
+        DD      3192774441
+        DD      1476395008
+        DD      1073291771
+        DD      2754716064
+        DD      3192774397
+        DD      1476395008
+        DD      1073291771
+        DD      1650295902
+        DD      3192774368
+        DD      1476395008
+        DD      1073291771
+        DD      1895722605
+        DD      3192774346
+        DD      1476395008
+        DD      1073291771
+        DD      3490996172
+        DD      3192774331
+        DD      1476395008
+        DD      1073291771
+        DD      3613709523
+        DD      3192774320
+        DD      1476395008
+        DD      1073291771
+        DD      2263862659
+        DD      3192774313
+        DD      1476395008
+        DD      1073291771
+        DD      177735686
+        DD      3192774308
+        DD      1476395008
+        DD      1073291771
+        DD      1650295902
+        DD      3192774304
+        DD      1476395008
+        DD      1073291771
+        DD      2754716064
+        DD      3192774301
+        DD      1476395008
+        DD      1073291771
+        DD      3490996172
+        DD      3192774299
+        DD      1476395008
+        DD      1073291771
+        DD      1895722605
+        DD      3192774298
+        DD      1476395008
+        DD      1073291771
+        DD      2263862659
+        DD      3192774297
+        DD      1476395008
+        DD      1073291771
+        DD      3613709523
+        DD      3192774296
+        DD      1476395008
+        DD      1073291771
+        DD      1650295902
+        DD      3192774296
+        DD      1476395008
+        DD      1073291771
+        DD      177735686
+        DD      3192774296
+        DD      1476395008
+        DD      1073291771
+        DD      3490996172
+        DD      3192774295
+        DD      1476395008
+        DD      1073291771
+        DD      2754716064
+        DD      3192774295
+        DD      1476395008
+        DD      1073291771
+        DD      2263862659
+        DD      3192774295
+        DD      1476395008
+        DD      1073291771
+        DD      1895722605
+        DD      3192774295
+        DD      1476395008
+        DD      1073291771
+        DD      1650295902
+        DD      3192774295
+        DD      1476395008
+        DD      1073291771
+        DD      1466225875
+        DD      3192774295
+        DD      1476395008
+        DD      1073291771
+        DD      1343512524
+        DD      3192774295
+        DD      1476395008
+        DD      1073291771
+        DD      1251477510
+        DD      3192774295
+        DD      1476395008
+        DD      1073291771
+        DD      1190120835
+        DD      3192774295
+        DD      1476395008
+        DD      1073291771
+        DD      1144103328
+        DD      3192774295
+        DD      1476395008
+        DD      1073291771
+        DD      1113424990
+        DD      3192774295
+        DD      1476395008
+        DD      1073291771
+        DD      1090416237
+        DD      3192774295
+        DD      1476395008
+        DD      1073291771
+        DD      1075077068
+        DD      3192774295
+        DD      1431655765
+        DD      3218429269
+        DD      2576978363
+        DD      1070176665
+        DD      2453154343
+        DD      3217180964
+        DD      4189149139
+        DD      1069314502
+        DD      1775019125
+        DD      3216459198
+        DD      273199057
+        DD      1068739452
+        DD      874748308
+        DD      3215993277
+        DD      0
+        DD      1069547520
+        DD      0
+        DD      1072693248
+        DD      0
+        DD      1073741824
+        DD      1413754136
+        DD      1072243195
+        DD      856972295
+        DD      1015129638
+        DD      1413754136
+        DD      1073291771
+        DD      856972295
+        DD      1016178214
+        DD      1413754136
+        DD      1074340347
+        DD      856972295
+        DD      1017226790
+        DD      2134057426
+        DD      1073928572
+        DD      1285458442
+        DD      1016756537
+        DD      0
+        DD      3220176896
+        DD      0
+        DD      0
+        DD      0
+        DD      2144337920
+        DD      0
+        DD      1048576
+        DD      33554432
+        DD      1101004800
+_2il0floatpacket_51     DD      0ffffffffH,0ffffffffH
+_RDATA  ENDS
+_DATA   SEGMENT      'DATA'
+_DATA   ENDS
+EXTRN   __ImageBase:PROC
+EXTRN   _fltused:BYTE
 ENDIF
-	END
+        END

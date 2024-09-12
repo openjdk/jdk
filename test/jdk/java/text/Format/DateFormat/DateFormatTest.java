@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 /**
  * @test
  * @bug 4052223 4089987 4469904 4326988 4486735 8008577 8045998 8140571
- *      8190748 8216969
+ *      8190748 8216969 8174269
  * @summary test DateFormat and SimpleDateFormat.
  * @modules jdk.localedata
- * @run junit/othervm -Djava.locale.providers=COMPAT,SPI DateFormatTest
+ * @run junit DateFormatTest
  */
 
 import java.util.*;
@@ -130,7 +130,11 @@ public class DateFormatTest
             String fmtDstOffset = null;
             if (fmtOffset.startsWith("GMT"))
             {
-                fmtDstOffset = fmtOffset.substring(3);
+                if (fmtOffset.length() > 3) {
+                    fmtDstOffset = fmtOffset.substring(3);
+                } else {
+                    fmtDstOffset = "+00:00";
+                }
             }
             /*
              * Show our result.
@@ -255,10 +259,10 @@ public class DateFormatTest
         String[] expected =
         {
             "", "1997", "August", "", "", "13", "", "Wednesday", "",
-            "PM", "", "2", "", "", "34", "12", "", "PDT",
+            "PM", "", "2", "", "", "34", "12", "", "Pacific Daylight Time",
 
             "", "1997", "ao\u00FBt", "", "", "13", "", "mercredi", "", "",
-            "", "", "14", "", "34", "", "", "PDT" /*"GMT-07:00"*/,
+            "", "", "14", "", "34", "12", "", "heure d\u2019\u00e9t\u00e9 du Pacifique nord-am\u00e9ricain" /*"GMT-07:00"*/,
 
             "AD", "1997", "8", "33", "3", "13", "225", "Wed", "2", "PM",
             "2", "2", "14", "14", "34", "12", "513", "PDT",
@@ -1006,20 +1010,21 @@ test commented out pending API-change approval
     /**
      * Bug4469904 -- th_TH date format doesn't use Thai B.E.
      */
-    @Test
-    public void TestBuddhistEraBugId4469904() {
-        String era = "\u0e1e.\u0e28.";
-        Locale loc = Locale.of("th", "TH");
-        Calendar cal = Calendar.getInstance(Locale.US);
-        cal.set(2001, 7, 23);
-        Date date = cal.getTime();
-        DateFormat df = DateFormat.getDateInstance(DateFormat.FULL, loc);
-        String output = df.format(date);
-        int index = output.indexOf(era);
-        if (index == -1) {
-            fail("Test4469904: Failed. Buddhist Era abbrev not present.");
-        }
-    }
+// CLDR full date do not include era
+//   @Test
+//   public void TestBuddhistEraBugId4469904() {
+//       String era = "\u0e1e.\u0e28.";
+//       Locale loc = Locale.of("th", "TH");
+//       Calendar cal = Calendar.getInstance(Locale.US);
+//       cal.set(2001, 7, 23);
+//       Date date = cal.getTime();
+//       DateFormat df = DateFormat.getDateInstance(DateFormat.FULL, loc);
+//       String output = df.format(date);
+//       int index = output.indexOf(era);
+//       if (index == -1) {
+//           fail("Test4469904: Failed. Buddhist Era abbrev not present.");
+//       }
+//    }
 
     /**
      * 4326988: API: SimpleDateFormat throws NullPointerException when parsing with null pattern
@@ -1233,12 +1238,12 @@ test commented out pending API-change approval
     @Test
     public void Test8216969() throws Exception {
         Locale locale = Locale.of("ru");
-        String format = "\u0434\u0435\u043a";
-        String standalone = "\u0434\u0435\u043a.";
+        String format = "\u0438\u044e\u043d.";
+        String standalone = "\u0438\u044e\u043d\u044c";
 
         // Check that format form is used so that the dot is parsed correctly.
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd MMM.yyyy", locale);
-        System.out.println(simpleDateFormat.parse("28 " + format + ".2018"));
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd MMMyyyy", locale);
+        System.out.println(simpleDateFormat.parse("28 " + format + "2018"));
 
         // Check that standalone form is used.
         simpleDateFormat = new SimpleDateFormat("MMM", locale);

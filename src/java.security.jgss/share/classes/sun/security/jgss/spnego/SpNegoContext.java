@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Objects;
 
 import org.ietf.jgss.*;
 import sun.security.action.GetBooleanAction;
+import sun.security.action.GetPropertyAction;
 import sun.security.jgss.*;
 import sun.security.jgss.spi.*;
 import sun.security.util.*;
@@ -84,8 +85,8 @@ public class SpNegoContext implements GSSContextSpi {
     private final SpNegoMechFactory factory;
 
     // debug property
-    static final boolean DEBUG = GetBooleanAction
-            .privilegedGetProperty("sun.security.spnego.debug");
+    static final Debug DEBUG = Debug.of("spnego", GetPropertyAction
+            .privilegedGetProperty("sun.security.spnego.debug"));
 
     /**
      * Constructor for SpNegoContext to be called on the context initiator's
@@ -294,8 +295,8 @@ public class SpNegoContext implements GSSContextSpi {
         byte[] mechToken = null;
         int errorCode = GSSException.FAILURE;
 
-        if (DEBUG) {
-            System.out.println("Entered SpNego.initSecContext with " +
+        if (DEBUG != null) {
+            DEBUG.println("Entered SpNego.initSecContext with " +
                                 "state=" + printState(state));
         }
         if (!isInitiator()) {
@@ -323,8 +324,8 @@ public class SpNegoContext implements GSSContextSpi {
                 // generate SPNEGO token
                 initToken = new NegTokenInit(DER_mechTypes, getContextFlags(),
                                         mechToken, null);
-                if (DEBUG) {
-                    System.out.println("SpNegoContext.initSecContext: " +
+                if (DEBUG != null) {
+                    DEBUG.println("SpNegoContext.initSecContext: " +
                                 "sending token of type = " +
                                 SpNegoToken.getTokenName(initToken.getType()));
                 }
@@ -342,8 +343,8 @@ public class SpNegoContext implements GSSContextSpi {
                 errorCode = GSSException.DEFECTIVE_TOKEN;
                 byte[] server_token = new byte[is.available()];
                 SpNegoToken.readFully(is, server_token);
-                if (DEBUG) {
-                    System.out.println("SpNegoContext.initSecContext: " +
+                if (DEBUG != null) {
+                    DEBUG.println("SpNegoContext.initSecContext: " +
                                         "process received token = " +
                                         SpNegoToken.getHexBytes(server_token));
                 }
@@ -352,8 +353,8 @@ public class SpNegoContext implements GSSContextSpi {
                 // token will be validated when parsing
                 NegTokenTarg targToken = new NegTokenTarg(server_token);
 
-                if (DEBUG) {
-                    System.out.println("SpNegoContext.initSecContext: " +
+                if (DEBUG != null) {
+                    DEBUG.println("SpNegoContext.initSecContext: " +
                                 "received token of type = " +
                                 SpNegoToken.getTokenName(targToken.getType()));
                 }
@@ -421,8 +422,8 @@ public class SpNegoContext implements GSSContextSpi {
                     if (isMechContextEstablished()) {
                         state = STATE_DONE;
                         retVal = mechToken;
-                        if (DEBUG) {
-                            System.out.println("SPNEGO Negotiated Mechanism = "
+                        if (DEBUG != null) {
+                            DEBUG.println("SPNEGO Negotiated Mechanism = "
                                 + internal_mech + " " +
                                 GSSUtil.getMechStr(internal_mech));
                         }
@@ -430,8 +431,8 @@ public class SpNegoContext implements GSSContextSpi {
                         // generate SPNEGO token
                         initToken = new NegTokenInit(null, null,
                                                 mechToken, null);
-                        if (DEBUG) {
-                            System.out.println("SpNegoContext.initSecContext:" +
+                        if (DEBUG != null) {
+                            DEBUG.println("SpNegoContext.initSecContext:" +
                                 " continue sending token of type = " +
                                 SpNegoToken.getTokenName(initToken.getType()));
                         }
@@ -442,13 +443,13 @@ public class SpNegoContext implements GSSContextSpi {
 
             } else {
                 // XXX Use logging API
-                if (DEBUG) {
-                    System.out.println(state);
+                if (DEBUG != null) {
+                    DEBUG.println("state is " + state);
                 }
             }
-            if (DEBUG) {
+            if (DEBUG != null) {
                 if (retVal != null) {
-                    System.out.println("SNegoContext.initSecContext: " +
+                    DEBUG.println("SNegoContext.initSecContext: " +
                         "sending token = " + SpNegoToken.getHexBytes(retVal));
                 }
             }
@@ -488,8 +489,8 @@ public class SpNegoContext implements GSSContextSpi {
         SpNegoToken.NegoResult negoResult;
         boolean valid = true;
 
-        if (DEBUG) {
-            System.out.println("Entered SpNegoContext.acceptSecContext with " +
+        if (DEBUG != null) {
+            DEBUG.println("Entered SpNegoContext.acceptSecContext with " +
                                "state=" +  printState(state));
         }
 
@@ -505,8 +506,8 @@ public class SpNegoContext implements GSSContextSpi {
                 // read data
                 byte[] token = new byte[is.available()];
                 SpNegoToken.readFully(is, token);
-                if (DEBUG) {
-                    System.out.println("SpNegoContext.acceptSecContext: " +
+                if (DEBUG != null) {
+                    DEBUG.println("SpNegoContext.acceptSecContext: " +
                                         "receiving token = " +
                                         SpNegoToken.getHexBytes(token));
                 }
@@ -515,8 +516,8 @@ public class SpNegoContext implements GSSContextSpi {
                 // token will be validated when parsing
                 NegTokenInit initToken = new NegTokenInit(token);
 
-                if (DEBUG) {
-                    System.out.println("SpNegoContext.acceptSecContext: " +
+                if (DEBUG != null) {
+                    DEBUG.println("SpNegoContext.acceptSecContext: " +
                                 "received token of type = " +
                                 SpNegoToken.getTokenName(initToken.getType()));
                 }
@@ -548,8 +549,8 @@ public class SpNegoContext implements GSSContextSpi {
                         (GSSUtil.isKerberosMech(mechList[0]) &&
                          GSSUtil.isKerberosMech(mech_wanted))) {
                     // get the mechanism token
-                    if (DEBUG && !mech_wanted.equals(mechList[0])) {
-                        System.out.println("SpNegoContext.acceptSecContext: " +
+                    if (DEBUG != null && !mech_wanted.equals(mechList[0])) {
+                        DEBUG.println("SpNegoContext.acceptSecContext: " +
                                 "negotiated mech adjusted to " + mechList[0]);
                     }
                     byte[] mechToken = initToken.getMechToken();
@@ -577,8 +578,8 @@ public class SpNegoContext implements GSSContextSpi {
                         // now set the context flags for acceptor
                         setContextFlags();
                         // print the negotiated mech info
-                        if (DEBUG) {
-                            System.out.println("SPNEGO Negotiated Mechanism = "
+                        if (DEBUG != null) {
+                            DEBUG.println("SPNEGO Negotiated Mechanism = "
                                 + internal_mech + " " +
                                 GSSUtil.getMechStr(internal_mech));
                         }
@@ -591,18 +592,18 @@ public class SpNegoContext implements GSSContextSpi {
                     throw new GSSException(GSSException.FAILURE);
                 }
 
-                if (DEBUG) {
-                    System.out.println("SpNegoContext.acceptSecContext: " +
+                if (DEBUG != null) {
+                    DEBUG.println("SpNegoContext.acceptSecContext: " +
                                 "mechanism wanted = " + mech_wanted);
-                    System.out.println("SpNegoContext.acceptSecContext: " +
+                    DEBUG.println("SpNegoContext.acceptSecContext: " +
                                 "negotiated result = " + negoResult);
                 }
 
                 // generate SPNEGO token
                 NegTokenTarg targToken = new NegTokenTarg(negoResult.ordinal(),
                                 mech_wanted, accept_token, null);
-                if (DEBUG) {
-                    System.out.println("SpNegoContext.acceptSecContext: " +
+                if (DEBUG != null) {
+                    DEBUG.println("SpNegoContext.acceptSecContext: " +
                                 "sending token of type = " +
                                 SpNegoToken.getTokenName(targToken.getType()));
                 }
@@ -613,8 +614,8 @@ public class SpNegoContext implements GSSContextSpi {
                 // read data
                 byte[] token = new byte[is.available()];
                 SpNegoToken.readFully(is, token);
-                if (DEBUG) {
-                    System.out.println("SpNegoContext.acceptSecContext: " +
+                if (DEBUG != null) {
+                    DEBUG.println("SpNegoContext.acceptSecContext: " +
                             "receiving token = " +
                             SpNegoToken.getHexBytes(token));
                 }
@@ -623,8 +624,8 @@ public class SpNegoContext implements GSSContextSpi {
                 // token will be validated when parsing
                 NegTokenTarg inputToken = new NegTokenTarg(token);
 
-                if (DEBUG) {
-                    System.out.println("SpNegoContext.acceptSecContext: " +
+                if (DEBUG != null) {
+                    DEBUG.println("SpNegoContext.acceptSecContext: " +
                             "received token of type = " +
                             SpNegoToken.getTokenName(inputToken.getType()));
                 }
@@ -653,8 +654,8 @@ public class SpNegoContext implements GSSContextSpi {
                 // generate SPNEGO token
                 NegTokenTarg targToken = new NegTokenTarg(negoResult.ordinal(),
                                 null, accept_token, null);
-                if (DEBUG) {
-                    System.out.println("SpNegoContext.acceptSecContext: " +
+                if (DEBUG != null) {
+                    DEBUG.println("SpNegoContext.acceptSecContext: " +
                                 "sending token of type = " +
                                 SpNegoToken.getTokenName(targToken.getType()));
                 }
@@ -663,12 +664,12 @@ public class SpNegoContext implements GSSContextSpi {
 
             } else {
                 // XXX Use logging API
-                if (DEBUG) {
-                    System.out.println("AcceptSecContext: state = " + state);
+                if (DEBUG != null) {
+                    DEBUG.println("AcceptSecContext: state = " + state);
                 }
             }
-            if (DEBUG) {
-                    System.out.println("SpNegoContext.acceptSecContext: " +
+            if (DEBUG != null) {
+                    DEBUG.println("SpNegoContext.acceptSecContext: " +
                         "sending token = " + SpNegoToken.getHexBytes(retVal));
             }
         } catch (IOException e) {
@@ -768,16 +769,16 @@ public class SpNegoContext implements GSSContextSpi {
 
         // sanity check the required input
         if (mechTypes == null) {
-            if (DEBUG) {
-                System.out.println("SpNegoContext: no MIC token included");
+            if (DEBUG != null) {
+                DEBUG.println("SpNegoContext: no MIC token included");
             }
             return null;
         }
 
         // check if mechanism supports integrity
         if (!mechContext.getIntegState()) {
-            if (DEBUG) {
-                System.out.println("SpNegoContext: no MIC token included" +
+            if (DEBUG != null) {
+                DEBUG.println("SpNegoContext: no MIC token included" +
                         " - mechanism does not support integrity");
             }
             return null;
@@ -788,14 +789,14 @@ public class SpNegoContext implements GSSContextSpi {
         try {
             MessageProp prop = new MessageProp(0, true);
             mic = getMIC(mechTypes, 0, mechTypes.length, prop);
-            if (DEBUG) {
-                System.out.println("SpNegoContext: getMIC = " +
+            if (DEBUG != null) {
+                DEBUG.println("SpNegoContext: getMIC = " +
                                         SpNegoToken.getHexBytes(mic));
             }
         } catch (GSSException e) {
             mic = null;
-            if (DEBUG) {
-                System.out.println("SpNegoContext: no MIC token included" +
+            if (DEBUG != null) {
+                DEBUG.println("SpNegoContext: no MIC token included" +
                         " - getMIC failed : " + e.getMessage());
             }
         }
@@ -810,16 +811,16 @@ public class SpNegoContext implements GSSContextSpi {
 
         // sanity check the input
         if (token == null) {
-            if (DEBUG) {
-                System.out.println("SpNegoContext: no MIC token validation");
+            if (DEBUG != null) {
+                DEBUG.println("SpNegoContext: no MIC token validation");
             }
             return true;
         }
 
         // check if mechanism supports integrity
         if (!mechContext.getIntegState()) {
-            if (DEBUG) {
-                System.out.println("SpNegoContext: no MIC token validation" +
+            if (DEBUG != null) {
+                DEBUG.println("SpNegoContext: no MIC token validation" +
                         " - mechanism does not support integrity");
             }
             return true;
@@ -834,8 +835,8 @@ public class SpNegoContext implements GSSContextSpi {
             valid = true;
         } catch (GSSException e) {
             valid = false;
-            if (DEBUG) {
-                System.out.println("SpNegoContext: MIC validation failed! " +
+            if (DEBUG != null) {
+                DEBUG.println("SpNegoContext: MIC validation failed! " +
                                         e.getMessage());
             }
         }
@@ -921,8 +922,8 @@ public class SpNegoContext implements GSSContextSpi {
         for (int i = 0; i < supported_mechSet.length; i++) {
             for (int j = 0; j < mechSet.length; j++) {
                 if (mechSet[j].equals(supported_mechSet[i])) {
-                    if (DEBUG) {
-                        System.out.println("SpNegoContext: " +
+                    if (DEBUG != null) {
+                        DEBUG.println("SpNegoContext: " +
                                 "negotiated mechanism = " + mechSet[j]);
                     }
                     return (mechSet[j]);
@@ -940,8 +941,8 @@ public class SpNegoContext implements GSSContextSpi {
         if (mechContext != null) {
             return mechContext.isEstablished();
         } else {
-            if (DEBUG) {
-                System.out.println("The underlying mechanism context has " +
+            if (DEBUG != null) {
+                DEBUG.println("The underlying mechanism context has " +
                                         "not been initialized");
             }
             return false;
@@ -1053,8 +1054,8 @@ public class SpNegoContext implements GSSContextSpi {
             peerName = targName.getElement(internal_mech);
             return peerName;
         } else {
-            if (DEBUG) {
-                System.out.println("The underlying mechanism context has " +
+            if (DEBUG != null) {
+                DEBUG.println("The underlying mechanism context has " +
                                         "not been initialized");
             }
             return null;
@@ -1069,8 +1070,8 @@ public class SpNegoContext implements GSSContextSpi {
             myName = srcName.getElement(internal_mech);
             return myName;
         } else {
-            if (DEBUG) {
-                System.out.println("The underlying mechanism context has " +
+            if (DEBUG != null) {
+                DEBUG.println("The underlying mechanism context has " +
                                         "not been initialized");
             }
             return null;

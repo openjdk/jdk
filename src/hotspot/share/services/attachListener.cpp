@@ -254,7 +254,7 @@ static jint dump_heap(AttachOperation* op, outputStream* out) {
     // This helps reduces the amount of unreachable objects in the dump
     // and makes it easier to browse.
     HeapDumper dumper(live_objects_only /* request GC */);
-    dumper.dump(path, out, level, false, HeapDumper::default_num_of_dump_threads());
+    dumper.dump(path, out, level);
   }
   return JNI_OK;
 }
@@ -395,7 +395,13 @@ void AttachListenerThread::thread_entry(JavaThread* thread, TRAPS) {
     }
 
     ResourceMark rm;
-    bufferedStream st;
+    // jcmd output can get lengthy. As long as we miss jcmd continuous streaming output
+    // and instead just send the output in bulk, make sure large command output does not
+    // cause asserts. We still retain a max cap, but dimensioned in a way that makes it
+    // highly unlikely we should ever hit it under normal conditions.
+    constexpr size_t initial_size = 1 * M;
+    constexpr size_t max_size = 3 * G;
+    bufferedStream st(initial_size, max_size);
     jint res = JNI_OK;
 
     // handle special detachall operation

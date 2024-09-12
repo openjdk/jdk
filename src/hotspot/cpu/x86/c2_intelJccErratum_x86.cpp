@@ -114,13 +114,13 @@ int IntelJccErratum::compute_padding(uintptr_t current_offset, const MachNode* m
   }
 }
 
-#define __ _masm.
+#define __ _masm->
 
 uintptr_t IntelJccErratumAlignment::pc() {
   return (uintptr_t)__ pc();
 }
 
-IntelJccErratumAlignment::IntelJccErratumAlignment(MacroAssembler& masm, int jcc_size) :
+IntelJccErratumAlignment::IntelJccErratumAlignment(MacroAssembler* masm, int jcc_size) :
     _masm(masm),
     _start_pc(pc()) {
   if (!VM_Version::has_intel_jcc_erratum()) {

@@ -62,7 +62,7 @@ public class StackMapWriter extends InstructionDetailWriter {
     }
 
     void setStackMap(CodeAttribute code) {
-        StackMapTableAttribute attr = code.findAttribute(Attributes.STACK_MAP_TABLE)
+        StackMapTableAttribute attr = code.findAttribute(Attributes.stackMapTable())
                 .orElse(null);
         if (attr == null) {
             map = null;

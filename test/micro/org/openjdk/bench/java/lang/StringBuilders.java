@@ -241,17 +241,66 @@ public class StringBuilders {
 
 
     @Benchmark
-    public String toStringCharWithFloat8() {
-        StringBuilder result = new StringBuilder();
-        result.append(113.110F);
-        result.append(156456.36435637F);
-        result.append(65436434.64632F);
-        result.append(42654634.64540F);
-        result.append(63464351.64537F);
-        result.append(634564.645711F);
-        result.append(64547.64311F);
-        result.append(4763456341.64531F);
-        return result.toString();
+    public int appendWithFloat8Latin1() {
+        StringBuilder buf = sbLatin1;
+        buf.setLength(0);
+        buf.append(113.110F);
+        buf.append(156456.36435637F);
+        buf.append(65436434.64632F);
+        buf.append(42654634.64540F);
+        buf.append(63464351.64537F);
+        buf.append(634564.645711F);
+        buf.append(64547.64311F);
+        buf.append(4763456341.64531F);
+        return buf.length();
+    }
+
+
+    @Benchmark
+    public int appendWithFloat8Utf16() {
+        StringBuilder buf = sbUtf16;
+        buf.setLength(0);
+        buf.append(113.110F);
+        buf.append(156456.36435637F);
+        buf.append(65436434.64632F);
+        buf.append(42654634.64540F);
+        buf.append(63464351.64537F);
+        buf.append(634564.645711F);
+        buf.append(64547.64311F);
+        buf.append(4763456341.64531F);
+        return buf.length();
+    }
+
+
+    @Benchmark
+    public int appendWithDouble8Latin1() {
+        StringBuilder buf = sbLatin1;
+        buf.setLength(0);
+        buf.append(0.3005216476500575D);
+        buf.append(0.39727691577802204D);
+        buf.append(0.9869700323149287D);
+        buf.append(42654634.645403256D);
+        buf.append(63464351.645371353D);
+        buf.append(634564.645711246D);
+        buf.append(64547.6431172363D);
+        buf.append(4763456341.64531675D);
+        return buf.length();
+    }
+
+
+    @Benchmark
+    public int appendWithDouble8Utf16() {
+        StringBuilder buf = sbUtf16;
+        buf.setLength(0);
+        buf.append(0.3005216476500575D);
+        buf.append(0.39727691577802204D);
+        buf.append(0.9869700323149287D);
+        buf.append(42654634.645403256D);
+        buf.append(63464351.645371353D);
+        buf.append(634564.645711246D);
+        buf.append(64547.6431172363D);
+        buf.append(4763456341.64531675D);
+        return buf.length();
     }
 
     @Benchmark

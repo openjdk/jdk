@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import tests.Helper;
 import tests.JImageGenerator;
 
@@ -32,12 +34,12 @@ import tests.JImageGenerator;
  * @summary Tests whether a custom Hijrah configuration properties file works correctly
  * @bug 8187987
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
- * @library /tools/lib
+ * @library /tools/lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
- * @build HijrahConfigCheck tests.*
+ * @build HijrahConfigCheck tests.* jdk.test.lib.compiler.CompilerUtils jdk.test.lib.process.ProcessTools
  * @run main/othervm -Xmx1g HijrahConfigTest
  */
 public class HijrahConfigTest {
@@ -66,13 +68,7 @@ public class HijrahConfigTest {
 
         // Run tests
         Path launcher = outputPath.resolve("bin").resolve("java");
-        ProcessBuilder builder = new ProcessBuilder(
-                launcher.toAbsolutePath().toString(), "-ea", "-esa", "HijrahConfigCheck");
-        Process p = builder.inheritIO().start();
-        p.waitFor();
-        int exitValue = p.exitValue();
-        if (exitValue != 0) {
-            throw new RuntimeException("HijrahConfigTest failed. Exit value: " + exitValue);
-        }
+        OutputAnalyzer analyzer =  ProcessTools.executeCommand(launcher.toAbsolutePath().toString(), "-ea", "-esa", "HijrahConfigCheck");
+        analyzer.shouldHaveExitValue(0);
     }
 }

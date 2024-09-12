@@ -78,7 +78,7 @@ public class ProjectCreator {
       System.err.println(" are both quoted strings.");
       System.err.println("    Default includes: \".\"");
       System.err
-            .println("    Default defines: WIN32, _WINDOWS, \"HOTSPOT_BUILD_USER=$(USERNAME)\"");
+            .println("    Default defines: WIN32, _WINDOWS");
    }
 
    public static void main(String[] args) {

@@ -36,31 +36,15 @@ static inline bool check_alignment(Klass* v) {
   return (intptr_t)v % KlassAlignmentInBytes == 0;
 }
 
-inline Klass* CompressedKlassPointers::decode_raw(narrowKlass v) {
-  return decode_raw(v, base(), shift());
-}
-
-inline Klass* CompressedKlassPointers::decode_raw(narrowKlass v, address narrow_base, int shift) {
+inline Klass* CompressedKlassPointers::decode_not_null_without_asserts(narrowKlass v, address narrow_base, int shift) {
   return (Klass*)((uintptr_t)narrow_base +((uintptr_t)v << shift));
-}
-
-inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v) {
-  return decode_not_null(v, base(), shift());
 }
 
 inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v, address narrow_base, int shift) {
   assert(!is_null(v), "narrow klass value can never be zero");
-  Klass* result = decode_raw(v, narrow_base, shift);
+  Klass* result = decode_not_null_without_asserts(v, narrow_base, shift);
   assert(check_alignment(result), "address not aligned: " PTR_FORMAT, p2i(result));
   return result;
-}
-
-inline Klass* CompressedKlassPointers::decode(narrowKlass v) {
-  return is_null(v) ? nullptr : decode_not_null(v);
-}
-
-inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v) {
-  return encode_not_null(v, base(), shift());
 }
 
 inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v, address narrow_base, int shift) {
@@ -72,6 +56,26 @@ inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v, address na
   assert((result & CONST64(0xffffffff00000000)) == 0, "narrow klass pointer overflow");
   assert(decode_not_null((narrowKlass)result, narrow_base, shift) == v, "reversibility");
   return (narrowKlass)result;
+}
+
+inline Klass* CompressedKlassPointers::decode_not_null_without_asserts(narrowKlass v) {
+  return decode_not_null_without_asserts(v, base(), shift());
+}
+
+inline Klass* CompressedKlassPointers::decode_without_asserts(narrowKlass v) {
+  return is_null(v) ? nullptr : decode_not_null_without_asserts(v);
+}
+
+inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v) {
+  return decode_not_null(v, base(), shift());
+}
+
+inline Klass* CompressedKlassPointers::decode(narrowKlass v) {
+  return is_null(v) ? nullptr : decode_not_null(v);
+}
+
+inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v) {
+  return encode_not_null(v, base(), shift());
 }
 
 inline narrowKlass CompressedKlassPointers::encode(Klass* v) {

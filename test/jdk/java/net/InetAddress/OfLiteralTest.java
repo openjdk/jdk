@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  */
 
 /* @test
- * @bug 8272215
- * @summary Test for ofLiteral API in InetAddress classes
+ * @bug 8272215 8315767
+ * @summary Test for ofLiteral, ofPosixLiteral APIs in InetAddress classes
  * @run junit/othervm -Djdk.net.hosts.file=nonExistingHostsFile.txt
  *                     OfLiteralTest
  * @run junit/othervm -Djdk.net.hosts.file=nonExistingHostsFile.txt
@@ -67,11 +67,15 @@ public class OfLiteralTest {
         InetAddress ofLiteralResult = switch (inetAddressClass) {
             case INET_ADDRESS -> InetAddress.ofLiteral(addressLiteral);
             case INET4_ADDRESS -> Inet4Address.ofLiteral(addressLiteral);
+            case INET4_ADDRESS_POSIX -> Inet4Address.ofPosixLiteral(addressLiteral);
             case INET6_ADDRESS -> Inet6Address.ofLiteral(addressLiteral);
         };
-        InetAddress getByNameResult = InetAddress.getByName(addressLiteral);
         Assert.assertArrayEquals(expectedAddressBytes, ofLiteralResult.getAddress());
-        Assert.assertEquals(getByNameResult, ofLiteralResult);
+        // POSIX literals are not compatible with InetAddress.getByName()
+        if (inetAddressClass != InetAddressClass.INET4_ADDRESS_POSIX) {
+            InetAddress getByNameResult = InetAddress.getByName(addressLiteral);
+            Assert.assertEquals(getByNameResult, ofLiteralResult);
+        }
     }
 
     private static Stream<Arguments> validLiteralArguments() throws Exception {
@@ -100,6 +104,33 @@ public class OfLiteralTest {
         // ::FFFF:129.144.52.38 address bytes
         byte[] ipv6Ipv4MappedAddressExpBytes = new byte[]{
                 (byte) 129, (byte) 144, 52, 38};
+
+        // 87.0.0.1 address bytes
+        byte[] ipv4_87_0_0_1 = new byte[]{87, 0, 0, 1};
+
+        // 127.0.0.1 address bytes
+        byte[] ipv4_127_0_0_1 = new byte[]{127, 0, 0, 1};
+
+        // 17.99.141.27 address bytes
+        byte[] ipv4_17_99_141_27 = new byte[]{17, 99, (byte)141, 27};
+
+        // 127.8.0.1 address bytes
+        byte[] ipv4_127_8_0_1 = new byte[]{127, 8, 0, 1};
+
+        // 0.0.0.42 address bytes
+        byte[] ipv4_0_0_0_42 = new byte[]{0, 0, 0, 42};
+
+        // 0.0.0.34 address bytes
+        byte[] ipv4_0_0_0_34 = new byte[]{0, 0, 0, 34};
+
+        // 127.0.1.2 address bytes
+        byte[] ipv4_127_0_1_2 = new byte[]{127, 0, 1, 2};
+
+        // 127.1.2.3 address bytes
+        byte[] ipv4_127_1_2_3 = new byte[]{127, 1, 2, 3};
+
+        // 255.255.255.255 address bytes
+        byte[] ipv4_255_255_255_255 = new byte[]{(byte)255, (byte)255, (byte)255, (byte)255};
 
         Stream<Arguments> validLiterals = Stream.of(
                 // IPv6 address literals are parsable by Inet6Address.ofLiteral
@@ -170,7 +201,87 @@ public class OfLiteralTest {
                 //      with leading 0 that is discarded and address
                 //      parsed as decimal
                 Arguments.of(InetAddressClass.INET_ADDRESS,
-                        "03735928559", ipv4ExpBytes)
+                        "03735928559", ipv4ExpBytes),
+                //      form:'x.x.x.x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0 treated as octal segment prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0127.0.0.1", ipv4_87_0_0_1),
+                //      form:'x.x.x.x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0 treated as octal segment prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0177.0.0.1", ipv4_127_0_0_1),
+                //      form:'x.x.x.x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0s treated as octal segment prefixes
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0177.0000.0000.0001", ipv4_127_0_0_1),
+                //      form:'x.x.x.x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0 treated as octal segment prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "127.010.0.1", ipv4_127_8_0_1),
+                //      form:'x.x.x.x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0 treated as octal segment prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0377.0377.0377.0377", ipv4_255_255_255_255),
+                //      form:'x.x.x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0s treated as octal segment prefixes
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0177.0.0402", ipv4_127_0_1_2),
+                //      form:'x.x.x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0x treated as hexadecimal segment prefixes
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0x7F.0.0x102", ipv4_127_0_1_2),
+                //      form:'x.x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0s treated as octal segment prefixes
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0177.0201003", ipv4_127_1_2_3),
+                //      form:'x.x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0x treated as hexadecimal prefixes
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0x7F.0x10203", ipv4_127_1_2_3),
+                //      form:'x.x' method:InetAddress.ofPosixLiteral -
+                //      without prefixes treated as decimal
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "127.66051", ipv4_127_1_2_3),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0 treated as octal segment prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "017700000001", ipv4_127_0_0_1),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0 treated as octal segment prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "02130706433", ipv4_17_99_141_27),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0 treated as octal segment prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "037777777777", ipv4_255_255_255_255),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0x treated as hex prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0x1020304", oneToFourAddressExpBytes),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0x treated as hex prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0xFFFFFFFF", ipv4_255_255_255_255),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      without leading 0 treated as decimal
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "2130706433", ipv4_127_0_0_1),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      without leading 0 treated as decimal
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "42", ipv4_0_0_0_42),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0 treated as octal segment prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "0100401404", oneToFourAddressExpBytes),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      without prefixes treated as decimal
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "16909060", oneToFourAddressExpBytes),
+                //      form:'x' method:InetAddress.ofPosixLiteral -
+                //      with leading 0 treated as octal segment prefix
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX,
+                        "042", ipv4_0_0_0_34)
         );
 
         // Generate addresses for loopback and wildcard address test cases
@@ -251,7 +362,18 @@ public class OfLiteralTest {
                 Arguments.of(InetAddressClass.INET_ADDRESS, "0x1.2.3.4"),
                 Arguments.of(InetAddressClass.INET4_ADDRESS, "1.2.0x3.4"),
                 Arguments.of(InetAddressClass.INET_ADDRESS, "0xFFFFFFFF"),
-                Arguments.of(InetAddressClass.INET4_ADDRESS, "0xFFFFFFFF")
+                Arguments.of(InetAddressClass.INET4_ADDRESS, "0xFFFFFFFF"),
+
+                // invalid IPv4 literals in POSIX/BSD form
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "0x100.1.2.3"), // 0x100 is too large
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "1.2.3.0x100"),
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "127.08.9.1"),  // 8, 9 are invalid octals
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "127.8.09.1"),
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "048"),
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, ""),            // empty
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "0x1FFFFFFFF"), // 2^33 - 1 is too large
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "0x100000000"), // 2^32 is too large
+                Arguments.of(InetAddressClass.INET4_ADDRESS_POSIX, "040000000000")
         );
         // Construct arguments for a test case with IPv6-scoped address with scope-id
         // specified as a string with non-existing network interface name
@@ -297,6 +419,7 @@ public class OfLiteralTest {
         return switch (inetAddressClass) {
             case INET_ADDRESS -> () -> InetAddress.ofLiteral(input);
             case INET4_ADDRESS -> () -> Inet4Address.ofLiteral(input);
+            case INET4_ADDRESS_POSIX -> () -> Inet4Address.ofPosixLiteral(input);
             case INET6_ADDRESS -> () -> Inet6Address.ofLiteral(input);
         };
     }
@@ -304,6 +427,7 @@ public class OfLiteralTest {
     enum InetAddressClass {
         INET_ADDRESS,
         INET4_ADDRESS,
+        INET4_ADDRESS_POSIX,
         INET6_ADDRESS
     }
 }

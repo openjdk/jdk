@@ -65,7 +65,7 @@ public class ExpressionSnippet extends Snippet {
         return key().typeName();
     }
 
-    /**** internal access ****/
+    //**** internal access ****
 
     @Override
     ExpressionKey key() {

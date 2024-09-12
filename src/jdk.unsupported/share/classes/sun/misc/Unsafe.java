@@ -25,15 +25,25 @@
 
 package sun.misc;
 
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.VarHandle;
+import java.lang.reflect.Field;
+import java.net.URL;
+import java.security.AccessController;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
+import java.security.PrivilegedAction;
+import java.util.List;
+import java.util.Set;
+
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
-
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Field;
-import java.util.Set;
-
 
 /**
  * A collection of methods for performing low-level, unsafe operations.
@@ -48,6 +58,11 @@ import java.util.Set;
  * runtime compiler, some or all checks (if any) may be elided. Hence,
  * the caller must not rely on the checks and corresponding
  * exceptions!
+ *
+ * @apiNote
+ * This class pre-dates the introduction of {@link VarHandle}, low-level access to
+ * memory with {@linkplain java.lang.foreign}, and other standard APIs. New code
+ * should not use this API.
  *
  * @author John R. Rose
  * @see #getUnsafe
@@ -100,8 +115,8 @@ public final class Unsafe {
         return theUnsafe;
     }
 
-    /// peek and poke operations
-    /// (compilers should optimize these to memory ops)
+    //| peek and poke operations
+    //| (compilers should optimize these to memory ops)
 
     // These work on object fields in the Java heap.
     // They will not work on elements of packed arrays.
@@ -150,6 +165,9 @@ public final class Unsafe {
      * be portably confused with longs used in the single-register addressing
      * mode.
      *
+     * @deprecated Use {@link VarHandle#get(Object...)} or
+     * {@link MemorySegment#get(ValueLayout.OfInt, long)} instead.
+     *
      * @param o Java heap object in which the variable resides, if any, else
      *        null
      * @param offset indication of where the variable resides in a Java heap
@@ -159,8 +177,10 @@ public final class Unsafe {
      * @throws RuntimeException No defined exceptions are thrown, not even
      *         {@link NullPointerException}
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public int getInt(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getInt(o, offset);
     }
 
@@ -175,6 +195,9 @@ public final class Unsafe {
      * The variable must be of the same type as the method
      * parameter {@code x}.
      *
+     * @deprecated Use {@link VarHandle#set(Object...)} or
+     * {@link MemorySegment#set(ValueLayout.OfInt, long, int)} instead.
+     *
      * @param o Java heap object in which the variable resides, if any, else
      *        null
      * @param offset indication of where the variable resides in a Java heap
@@ -184,17 +207,22 @@ public final class Unsafe {
      * @throws RuntimeException No defined exceptions are thrown, not even
      *         {@link NullPointerException}
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putInt(Object o, long offset, int x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putInt(o, offset, x);
     }
 
     /**
      * Fetches a reference value from a given Java variable.
-     * @see #getInt(Object, long)
+     *
+     * @deprecated Use {@link VarHandle#get(Object...)} instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public Object getObject(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getReference(o, offset);
     }
 
@@ -206,94 +234,195 @@ public final class Unsafe {
      * If the reference {@code o} is non-null, card marks or
      * other store barriers for that object (if the VM requires them)
      * are updated.
-     * @see #putInt(Object, long, int)
+     *
+     * @deprecated Use {@link VarHandle#set(Object...)} instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putObject(Object o, long offset, Object x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putReference(o, offset, x);
     }
 
-    /** @see #getInt(Object, long) */
+    /**
+     * @deprecated Use {@link VarHandle#get(Object...)} or
+     * {@link MemorySegment#get(ValueLayout.OfBoolean, long)} instead.
+     *
+     * @see #getInt(Object, long)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public boolean getBoolean(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getBoolean(o, offset);
     }
 
-    /** @see #putInt(Object, long, int) */
+    /**
+     * @deprecated Use {@link VarHandle#set(Object...)} or
+     * {@link MemorySegment#set(ValueLayout.OfBoolean, long, boolean)} instead.
+     *
+     * @see #putInt(Object, long, int)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putBoolean(Object o, long offset, boolean x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putBoolean(o, offset, x);
     }
 
-    /** @see #getInt(Object, long) */
+    /**
+     * @deprecated Use {@link VarHandle#get(Object...)} or
+     * {@link MemorySegment#get(ValueLayout.OfByte, long)} instead.
+     *
+     * @see #getInt(Object, long)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public byte getByte(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getByte(o, offset);
     }
 
-    /** @see #putInt(Object, long, int) */
+    /**
+     * @deprecated Use {@link VarHandle#set(Object...)} or
+     * {@link MemorySegment#set(ValueLayout.OfByte, long, byte)} instead.
+     *
+     * @see #putInt(Object, long, int)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putByte(Object o, long offset, byte x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putByte(o, offset, x);
     }
 
-    /** @see #getInt(Object, long) */
+    /**
+     * @deprecated Use {@link VarHandle#get(Object...)} or
+     * {@link MemorySegment#get(ValueLayout.OfShort, long)} instead.
+     *
+     * @see #getInt(Object, long)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public short getShort(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getShort(o, offset);
     }
 
-    /** @see #putInt(Object, long, int) */
+    /**
+     * @deprecated Use {@link VarHandle#set(Object...)} or
+     * {@link MemorySegment#set(ValueLayout.OfShort, long, short)} instead.
+     *
+     * @see #putInt(Object, long, int)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putShort(Object o, long offset, short x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putShort(o, offset, x);
     }
 
-    /** @see #getInt(Object, long) */
+    /**
+     * @deprecated Use {@link VarHandle#get(Object...)} or
+     * {@link MemorySegment#get(ValueLayout.OfChar, long)} instead.
+     *
+     * @see #getInt(Object, long)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public char getChar(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getChar(o, offset);
     }
 
-    /** @see #putInt(Object, long, int) */
+    /**
+     * @deprecated Use {@link VarHandle#set(Object...)} or
+     * {@link MemorySegment#set(ValueLayout.OfChar, long, char)} instead.
+     *
+     * @see #putInt(Object, long, int)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putChar(Object o, long offset, char x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putChar(o, offset, x);
     }
 
-    /** @see #getInt(Object, long) */
+    /**
+     * @deprecated Use {@link VarHandle#get(Object...)} or
+     * {@link MemorySegment#get(ValueLayout.OfLong, long)} instead.
+     *
+     * @see #getInt(Object, long)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public long getLong(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getLong(o, offset);
     }
 
-    /** @see #putInt(Object, long, int) */
+    /**
+     * @deprecated Use {@link VarHandle#set(Object...)} or
+     * {@link MemorySegment#set(ValueLayout.OfLong, long, long)} instead.
+     *
+     * @see #putInt(Object, long, int)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putLong(Object o, long offset, long x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putLong(o, offset, x);
     }
 
-    /** @see #getInt(Object, long) */
+    /**
+     * @deprecated Use {@link VarHandle#get(Object...)} or
+     * {@link MemorySegment#get(ValueLayout.OfFloat, long)} instead.
+     *
+     * @see #getInt(Object, long)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public float getFloat(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getFloat(o, offset);
     }
 
-    /** @see #putInt(Object, long, int) */
+    /**
+     * @deprecated Use {@link VarHandle#set(Object...)} or
+     * {@link MemorySegment#set(ValueLayout.OfFloat, long, float)} instead.
+     *
+     * @see #putInt(Object, long, int)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putFloat(Object o, long offset, float x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putFloat(o, offset, x);
     }
 
-    /** @see #getInt(Object, long) */
+    /**
+     * @deprecated Use {@link VarHandle#get(Object...)} or
+     * {@link MemorySegment#get(ValueLayout.OfDouble, long)} instead.
+     *
+     * @see #getInt(Object, long)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public double getDouble(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getDouble(o, offset);
     }
 
-    /** @see #putInt(Object, long, int) */
+    /**
+     * @deprecated Use {@link VarHandle#set(Object...)} or
+     * {@link MemorySegment#set(ValueLayout.OfDouble, long, double)} instead.
+     *
+     * @see #putInt(Object, long, int)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putDouble(Object o, long offset, double x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putDouble(o, offset, x);
     }
 
@@ -304,10 +433,14 @@ public final class Unsafe {
      * does not point into a block obtained from {@link #allocateMemory}, the
      * results are undefined.
      *
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
      * @see #allocateMemory
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public byte getByte(long address) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getByte(address);
     }
 
@@ -316,82 +449,158 @@ public final class Unsafe {
      * does not point into a block obtained from {@link #allocateMemory}, the
      * results are undefined.
      *
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
      * @see #getByte(long)
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putByte(long address, byte x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putByte(address, x);
     }
 
-    /** @see #getByte(long) */
+    /**
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
+     * @see #getByte(long)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public short getShort(long address) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getShort(address);
     }
 
-    /** @see #putByte(long, byte) */
+    /**
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
+     * @see #putByte(long, byte)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putShort(long address, short x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putShort(address, x);
     }
 
-    /** @see #getByte(long) */
+    /**
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
+     * @see #getByte(long)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public char getChar(long address) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getChar(address);
     }
 
-    /** @see #putByte(long, byte) */
+    /**
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
+     * @see #putByte(long, byte)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putChar(long address, char x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putChar(address, x);
     }
 
-    /** @see #getByte(long) */
+    /**
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
+     * @see #getByte(long)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public int getInt(long address) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getInt(address);
     }
 
-    /** @see #putByte(long, byte) */
+    /**
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
+     * @see #putByte(long, byte)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putInt(long address, int x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putInt(address, x);
     }
 
-    /** @see #getByte(long) */
+    /**
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
+     * @see #getByte(long)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public long getLong(long address) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getLong(address);
     }
 
-    /** @see #putByte(long, byte) */
+    /**
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
+     * @see #putByte(long, byte)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putLong(long address, long x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putLong(address, x);
     }
 
-    /** @see #getByte(long) */
+    /**
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
+     * @see #getByte(long)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public float getFloat(long address) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getFloat(address);
     }
 
-    /** @see #putByte(long, byte) */
+    /**
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
+     * @see #putByte(long, byte)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putFloat(long address, float x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putFloat(address, x);
     }
 
-    /** @see #getByte(long) */
+    /**
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
+     * @see #getByte(long)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public double getDouble(long address) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getDouble(address);
     }
 
-    /** @see #putByte(long, byte) */
+    /**
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
+     * @see #putByte(long, byte)
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putDouble(long address, double x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putDouble(address, x);
     }
 
@@ -408,10 +617,14 @@ public final class Unsafe {
      * from the target address may be determined by consulting {@link
      * #addressSize}.
      *
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
      * @see #allocateMemory
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public long getAddress(long address) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getAddress(address);
     }
 
@@ -423,15 +636,19 @@ public final class Unsafe {
      * <p>The number of bytes actually written at the target address may be
      * determined by consulting {@link #addressSize}.
      *
+     * @deprecated Use {@link java.lang.foreign} to access off-heap memory.
+     *
      * @see #getAddress(long)
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putAddress(long address, long x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putAddress(address, x);
     }
 
 
-    /// wrappers for malloc, realloc, free:
+    //| wrappers for malloc, realloc, free:
 
     /**
      * Allocates a new block of native memory, of the given size in bytes.  The
@@ -450,6 +667,8 @@ public final class Unsafe {
      * caller must not rely on the checks and corresponding
      * exceptions!
      *
+     * @deprecated Use {@link java.lang.foreign} to allocate off-heap memory.
+     *
      * @throws RuntimeException if the size is negative or too large
      *         for the native size_t type
      *
@@ -458,8 +677,10 @@ public final class Unsafe {
      * @see #getByte(long)
      * @see #putByte(long, byte)
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public long allocateMemory(long bytes) {
+        beforeMemoryAccess();
         return theInternalUnsafe.allocateMemory(bytes);
     }
 
@@ -482,6 +703,8 @@ public final class Unsafe {
      * caller must not rely on the checks and corresponding
      * exceptions!
      *
+     * @deprecated Use {@link java.lang.foreign} to allocate off-heap memory.
+     *
      * @throws RuntimeException if the size is negative or too large
      *         for the native size_t type
      *
@@ -489,8 +712,10 @@ public final class Unsafe {
      *
      * @see #allocateMemory
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public long reallocateMemory(long address, long bytes) {
+        beforeMemoryAccess();
         return theInternalUnsafe.reallocateMemory(address, bytes);
     }
 
@@ -518,12 +743,17 @@ public final class Unsafe {
      * caller must not rely on the checks and corresponding
      * exceptions!
      *
+     * @deprecated {@link MemorySegment#fill(byte)} fills the contents of a memory
+     * segment with a given value.
+     *
      * @throws RuntimeException if any of the arguments is invalid
      *
      * @since 1.7
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void setMemory(Object o, long offset, long bytes, byte value) {
+        beforeMemoryAccess();
         theInternalUnsafe.setMemory(o, offset, bytes, value);
     }
 
@@ -533,9 +763,16 @@ public final class Unsafe {
      * as discussed in {@link #getInt(Object,long)}.
      *
      * <p>Equivalent to {@code setMemory(null, address, bytes, value)}.
+     *
+     * @deprecated {@link MemorySegment#fill(byte)} fills the contents of a memory
+     * segment with a given value.
+     *
+     * Use {@link MemorySegment} and its bulk copy methods instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void setMemory(long address, long bytes, byte value) {
+        beforeMemoryAccess();
         theInternalUnsafe.setMemory(address, bytes, value);
     }
 
@@ -563,14 +800,18 @@ public final class Unsafe {
      * caller must not rely on the checks and corresponding
      * exceptions!
      *
+     * @deprecated Use {@link MemorySegment} and its bulk copy methods instead.
+     *
      * @throws RuntimeException if any of the arguments is invalid
      *
      * @since 1.7
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void copyMemory(Object srcBase, long srcOffset,
                            Object destBase, long destOffset,
                            long bytes) {
+        beforeMemoryAccess();
         theInternalUnsafe.copyMemory(srcBase, srcOffset, destBase, destOffset, bytes);
     }
 
@@ -580,9 +821,13 @@ public final class Unsafe {
      * as discussed in {@link #getInt(Object,long)}.
      *
      * Equivalent to {@code copyMemory(null, srcAddress, null, destAddress, bytes)}.
+     *
+     * @deprecated Use {@link MemorySegment} and its bulk copy methods instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void copyMemory(long srcAddress, long destAddress, long bytes) {
+        beforeMemoryAccess();
         theInternalUnsafe.copyMemory(srcAddress, destAddress, bytes);
     }
 
@@ -600,22 +845,28 @@ public final class Unsafe {
      * caller must not rely on the checks and corresponding
      * exceptions!
      *
+     * @deprecated Use {@link java.lang.foreign} to allocate and free off-heap memory.
+     *
      * @throws RuntimeException if any of the arguments is invalid
      *
      * @see #allocateMemory
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void freeMemory(long address) {
+        beforeMemoryAccess();
         theInternalUnsafe.freeMemory(address);
     }
 
-    /// random queries
+    //| random queries
 
     /**
      * This constant differs from all results that will ever be returned from
      * {@link #staticFieldOffset}, {@link #objectFieldOffset},
      * or {@link #arrayBaseOffset}.
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
      */
+    @Deprecated(since="23", forRemoval=true)
     public static final int INVALID_FIELD_OFFSET = jdk.internal.misc.Unsafe.INVALID_FIELD_OFFSET;
 
     /**
@@ -638,11 +889,11 @@ public final class Unsafe {
      * @deprecated The guarantee that a field will always have the same offset
      * and base may not be true in a future release. The ability to provide an
      * offset and object reference to a heap memory accessor will be removed
-     * in a future release. Use {@link java.lang.invoke.VarHandle} instead.
+     * in a future release. Use {@link VarHandle} instead.
      *
      * @see #getInt(Object, long)
      */
-    @Deprecated(since="18")
+    @Deprecated(since="18", forRemoval=true)
     @ForceInline
     public long objectFieldOffset(Field f) {
         if (f == null) {
@@ -655,6 +906,7 @@ public final class Unsafe {
         if (declaringClass.isRecord()) {
             throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
         }
+        beforeMemoryAccess();
         return theInternalUnsafe.objectFieldOffset(f);
     }
 
@@ -677,11 +929,11 @@ public final class Unsafe {
      * @deprecated The guarantee that a field will always have the same offset
      * and base may not be true in a future release. The ability to provide an
      * offset and object reference to a heap memory accessor will be removed
-     * in a future release. Use {@link java.lang.invoke.VarHandle} instead.
+     * in a future release. Use {@link VarHandle} instead.
      *
      * @see #getInt(Object, long)
      */
-    @Deprecated(since="18")
+    @Deprecated(since="18", forRemoval=true)
     @ForceInline
     public long staticFieldOffset(Field f) {
         if (f == null) {
@@ -694,6 +946,7 @@ public final class Unsafe {
         if (declaringClass.isRecord()) {
             throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
         }
+        beforeMemoryAccess();
         return theInternalUnsafe.staticFieldOffset(f);
     }
 
@@ -710,9 +963,9 @@ public final class Unsafe {
      * @deprecated The guarantee that a field will always have the same offset
      * and base may not be true in a future release. The ability to provide an
      * offset and object reference to a heap memory accessor will be removed
-     * in a future release. Use {@link java.lang.invoke.VarHandle} instead.
+     * in a future release. Use {@link VarHandle} instead.
      */
-    @Deprecated(since="18")
+    @Deprecated(since="18", forRemoval=true)
     @ForceInline
     public Object staticFieldBase(Field f) {
         if (f == null) {
@@ -725,6 +978,7 @@ public final class Unsafe {
         if (declaringClass.isRecord()) {
             throw new UnsupportedOperationException("can't get base address on a record class: " + f);
         }
+        beforeMemoryAccess();
         return theInternalUnsafe.staticFieldBase(f);
     }
 
@@ -735,39 +989,79 @@ public final class Unsafe {
      * base offset, to form new offsets to access elements of arrays of the
      * given class.
      *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     *
      * @see #getInt(Object, long)
      * @see #putInt(Object, long, int)
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public int arrayBaseOffset(Class<?> arrayClass) {
+        beforeMemoryAccess();
         return theInternalUnsafe.arrayBaseOffset(arrayClass);
     }
 
-    /** The value of {@code arrayBaseOffset(boolean[].class)} */
+    /** The value of {@code arrayBaseOffset(boolean[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_BOOLEAN_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_BOOLEAN_BASE_OFFSET;
 
-    /** The value of {@code arrayBaseOffset(byte[].class)} */
+    /** The value of {@code arrayBaseOffset(byte[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_BYTE_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
-    /** The value of {@code arrayBaseOffset(short[].class)} */
+    /** The value of {@code arrayBaseOffset(short[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_SHORT_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_SHORT_BASE_OFFSET;
 
-    /** The value of {@code arrayBaseOffset(char[].class)} */
+    /** The value of {@code arrayBaseOffset(char[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_CHAR_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_CHAR_BASE_OFFSET;
 
-    /** The value of {@code arrayBaseOffset(int[].class)} */
+    /** The value of {@code arrayBaseOffset(int[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_INT_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_INT_BASE_OFFSET;
 
-    /** The value of {@code arrayBaseOffset(long[].class)} */
+    /** The value of {@code arrayBaseOffset(long[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_LONG_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_LONG_BASE_OFFSET;
 
-    /** The value of {@code arrayBaseOffset(float[].class)} */
+    /** The value of {@code arrayBaseOffset(float[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_FLOAT_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_FLOAT_BASE_OFFSET;
 
-    /** The value of {@code arrayBaseOffset(double[].class)} */
+    /** The value of {@code arrayBaseOffset(double[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_DOUBLE_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_DOUBLE_BASE_OFFSET;
 
-    /** The value of {@code arrayBaseOffset(Object[].class)} */
+    /** The value of {@code arrayBaseOffset(Object[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_OBJECT_BASE_OFFSET = jdk.internal.misc.Unsafe.ARRAY_OBJECT_BASE_OFFSET;
 
     /**
@@ -777,40 +1071,79 @@ public final class Unsafe {
      * #getByte(Object, long)}, so the scale factor for such classes is reported
      * as zero.
      *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     *
      * @see #arrayBaseOffset
      * @see #getInt(Object, long)
      * @see #putInt(Object, long, int)
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public int arrayIndexScale(Class<?> arrayClass) {
         return theInternalUnsafe.arrayIndexScale(arrayClass);
     }
 
-    /** The value of {@code arrayIndexScale(boolean[].class)} */
+    /** The value of {@code arrayIndexScale(boolean[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_BOOLEAN_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_BOOLEAN_INDEX_SCALE;
 
-    /** The value of {@code arrayIndexScale(byte[].class)} */
+    /** The value of {@code arrayIndexScale(byte[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_BYTE_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_BYTE_INDEX_SCALE;
 
-    /** The value of {@code arrayIndexScale(short[].class)} */
+    /** The value of {@code arrayIndexScale(short[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_SHORT_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_SHORT_INDEX_SCALE;
 
-    /** The value of {@code arrayIndexScale(char[].class)} */
+    /** The value of {@code arrayIndexScale(char[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_CHAR_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_CHAR_INDEX_SCALE;
 
-    /** The value of {@code arrayIndexScale(int[].class)} */
+    /** The value of {@code arrayIndexScale(int[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_INT_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_INT_INDEX_SCALE;
 
-    /** The value of {@code arrayIndexScale(long[].class)} */
+    /** The value of {@code arrayIndexScale(long[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_LONG_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_LONG_INDEX_SCALE;
 
-    /** The value of {@code arrayIndexScale(float[].class)} */
+    /** The value of {@code arrayIndexScale(float[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_FLOAT_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_FLOAT_INDEX_SCALE;
 
-    /** The value of {@code arrayIndexScale(double[].class)} */
+    /** The value of {@code arrayIndexScale(double[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_DOUBLE_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_DOUBLE_INDEX_SCALE;
 
-    /** The value of {@code arrayIndexScale(Object[].class)} */
+    /** The value of {@code arrayIndexScale(Object[].class)}.
+     *
+     * @deprecated Not needed when using {@link VarHandle} or {@link java.lang.foreign}.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ARRAY_OBJECT_INDEX_SCALE = jdk.internal.misc.Unsafe.ARRAY_OBJECT_INDEX_SCALE;
 
     /**
@@ -818,13 +1151,20 @@ public final class Unsafe {
      * #putAddress}.  This value will be either 4 or 8.  Note that the sizes of
      * other primitive types (as stored in native memory blocks) is determined
      * fully by their information content.
+     *
+     * @deprecated Use {@link ValueLayout#ADDRESS}.{@link MemoryLayout#byteSize()} instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public int addressSize() {
         return theInternalUnsafe.addressSize();
     }
 
-    /** The value of {@code addressSize()} */
+    /** The value of {@code addressSize()}.
+     *
+     * @deprecated Use {@link ValueLayout#ADDRESS}.{@link MemoryLayout#byteSize()} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     public static final int ADDRESS_SIZE = theInternalUnsafe.addressSize();
 
     /**
@@ -837,7 +1177,7 @@ public final class Unsafe {
     }
 
 
-    /// random trusted operations from JNI:
+    //| random trusted operations from JNI:
 
     /**
      * Allocates an instance but does not run any constructor.
@@ -863,11 +1203,15 @@ public final class Unsafe {
      * and write.  Corresponds to C11 atomic_compare_exchange_strong.
      *
      * @return {@code true} if successful
+     *
+     * @deprecated Use {@link VarHandle#compareAndExchange(Object...)} instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public final boolean compareAndSwapObject(Object o, long offset,
                                               Object expected,
                                               Object x) {
+        beforeMemoryAccess();
         return theInternalUnsafe.compareAndSetReference(o, offset, expected, x);
     }
 
@@ -879,11 +1223,15 @@ public final class Unsafe {
      * and write.  Corresponds to C11 atomic_compare_exchange_strong.
      *
      * @return {@code true} if successful
+     *
+     * @deprecated Use {@link VarHandle#compareAndExchange(Object...)} instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public final boolean compareAndSwapInt(Object o, long offset,
                                            int expected,
                                            int x) {
+        beforeMemoryAccess();
         return theInternalUnsafe.compareAndSetInt(o, offset, expected, x);
     }
 
@@ -895,125 +1243,218 @@ public final class Unsafe {
      * and write.  Corresponds to C11 atomic_compare_exchange_strong.
      *
      * @return {@code true} if successful
+     *
+     * @deprecated Use {@link VarHandle#compareAndExchange(Object...)} instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public final boolean compareAndSwapLong(Object o, long offset,
                                             long expected,
                                             long x) {
+        beforeMemoryAccess();
         return theInternalUnsafe.compareAndSetLong(o, offset, expected, x);
     }
 
     /**
      * Fetches a reference value from a given Java variable, with volatile
      * load semantics. Otherwise identical to {@link #getObject(Object, long)}
+     *
+     * @deprecated Use {@link VarHandle#getVolatile(Object...)} instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public Object getObjectVolatile(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getReferenceVolatile(o, offset);
     }
 
     /**
      * Stores a reference value into a given Java variable, with
      * volatile store semantics. Otherwise identical to {@link #putObject(Object, long, Object)}
+     *
+     * @deprecated Use {@link VarHandle#setVolatile(Object...)} instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putObjectVolatile(Object o, long offset, Object x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putReferenceVolatile(o, offset, x);
     }
 
-    /** Volatile version of {@link #getInt(Object, long)}  */
+    /** Volatile version of {@link #getInt(Object, long)}.
+     *
+     * @deprecated Use {@link VarHandle#getVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public int getIntVolatile(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getIntVolatile(o, offset);
     }
 
-    /** Volatile version of {@link #putInt(Object, long, int)}  */
+    /** Volatile version of {@link #putInt(Object, long, int)}.
+     *
+     * @deprecated Use {@link VarHandle#setVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putIntVolatile(Object o, long offset, int x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putIntVolatile(o, offset, x);
     }
 
-    /** Volatile version of {@link #getBoolean(Object, long)}  */
+    /** Volatile version of {@link #getBoolean(Object, long)}.
+     *
+     * @deprecated Use {@link VarHandle#getVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public boolean getBooleanVolatile(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getBooleanVolatile(o, offset);
     }
 
-    /** Volatile version of {@link #putBoolean(Object, long, boolean)}  */
+    /** Volatile version of {@link #putBoolean(Object, long, boolean)}.
+     *
+     * @deprecated Use {@link VarHandle#setVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putBooleanVolatile(Object o, long offset, boolean x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putBooleanVolatile(o, offset, x);
     }
 
-    /** Volatile version of {@link #getByte(Object, long)}  */
+    /** Volatile version of {@link #getByte(Object, long)}.
+     *
+     * @deprecated Use {@link VarHandle#getVolatile(Object...)}
+     * instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public byte getByteVolatile(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getByteVolatile(o, offset);
     }
 
-    /** Volatile version of {@link #putByte(Object, long, byte)}  */
+    /** Volatile version of {@link #putByte(Object, long, byte)}.
+     *
+     * @deprecated Use {@link VarHandle#setVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putByteVolatile(Object o, long offset, byte x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putByteVolatile(o, offset, x);
     }
 
-    /** Volatile version of {@link #getShort(Object, long)}  */
+    /** Volatile version of {@link #getShort(Object, long)}.
+     *
+     * @deprecated Use {@link VarHandle#getVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public short getShortVolatile(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getShortVolatile(o, offset);
     }
 
-    /** Volatile version of {@link #putShort(Object, long, short)}  */
+    /** Volatile version of {@link #putShort(Object, long, short)}.
+     *
+     * @deprecated Use {@link VarHandle#setVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putShortVolatile(Object o, long offset, short x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putShortVolatile(o, offset, x);
     }
 
-    /** Volatile version of {@link #getChar(Object, long)}  */
+    /** Volatile version of {@link #getChar(Object, long)}.
+     *
+     * @deprecated Use {@link VarHandle#getVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public char getCharVolatile(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getCharVolatile(o, offset);
     }
 
-    /** Volatile version of {@link #putChar(Object, long, char)}  */
+    /** Volatile version of {@link #putChar(Object, long, char)}.
+     *
+     * @deprecated Use {@link VarHandle#setVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putCharVolatile(Object o, long offset, char x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putCharVolatile(o, offset, x);
     }
 
-    /** Volatile version of {@link #getLong(Object, long)}  */
+    /** Volatile version of {@link #getLong(Object, long)}.
+     *
+     * @deprecated Use {@link VarHandle#getVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public long getLongVolatile(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getLongVolatile(o, offset);
     }
 
-    /** Volatile version of {@link #putLong(Object, long, long)}  */
+    /** Volatile version of {@link #putLong(Object, long, long)}.
+     *
+     * @deprecated Use {@link VarHandle#setVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putLongVolatile(Object o, long offset, long x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putLongVolatile(o, offset, x);
     }
 
-    /** Volatile version of {@link #getFloat(Object, long)}  */
+    /** Volatile version of {@link #getFloat(Object, long)}.
+     *
+     * @deprecated Use {@link VarHandle#getVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public float getFloatVolatile(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getFloatVolatile(o, offset);
     }
 
-    /** Volatile version of {@link #putFloat(Object, long, float)}  */
+    /** Volatile version of {@link #putFloat(Object, long, float)}.
+     *
+     * @deprecated Use {@link VarHandle#setVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putFloatVolatile(Object o, long offset, float x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putFloatVolatile(o, offset, x);
     }
 
-    /** Volatile version of {@link #getDouble(Object, long)}  */
+    /** Volatile version of {@link #getDouble(Object, long)}.
+     *
+     * @deprecated Use {@link VarHandle#getVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public double getDoubleVolatile(Object o, long offset) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getDoubleVolatile(o, offset);
     }
 
-    /** Volatile version of {@link #putDouble(Object, long, double)}  */
+    /** Volatile version of {@link #putDouble(Object, long, double)}.
+     *
+     * @deprecated Use {@link VarHandle#setVolatile(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putDoubleVolatile(Object o, long offset, double x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putDoubleVolatile(o, offset, x);
     }
 
@@ -1025,21 +1466,35 @@ public final class Unsafe {
      * that is otherwise only accessed using volatile accesses).
      *
      * Corresponds to C11 atomic_store_explicit(..., memory_order_release).
+     *
+     * @deprecated Use {@link VarHandle#setRelease(Object...)} instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putOrderedObject(Object o, long offset, Object x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putReferenceRelease(o, offset, x);
     }
 
-    /** Ordered/Lazy version of {@link #putIntVolatile(Object, long, int)}  */
+    /** Ordered/Lazy version of {@link #putIntVolatile(Object, long, int)}.
+     *
+     * @deprecated Use {@link VarHandle#setRelease(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putOrderedInt(Object o, long offset, int x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putIntRelease(o, offset, x);
     }
 
-    /** Ordered/Lazy version of {@link #putLongVolatile(Object, long, long)} */
+    /** Ordered/Lazy version of {@link #putLongVolatile(Object, long, long)}.
+     *
+     * @deprecated Use {@link VarHandle#setRelease(Object...)} instead.
+     */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public void putOrderedLong(Object o, long offset, long x) {
+        beforeMemoryAccess();
         theInternalUnsafe.putLongRelease(o, offset, x);
     }
 
@@ -1098,9 +1553,10 @@ public final class Unsafe {
      * @return the number of samples actually retrieved; or -1
      *         if the load average is unobtainable.
      *
-     * @deprecated Use {@link java.lang.management.OperatingSystemMXBean#getSystemLoadAverage()}
+     * @deprecated Use {@link java.management/java.lang.management.OperatingSystemMXBean#getSystemLoadAverage()}
      * instead.
      */
+    @SuppressWarnings("doclint:reference") // cross-module links
     @Deprecated(since="22", forRemoval=true)
     @ForceInline
     public int getLoadAverage(double[] loadavg, int nelems) {
@@ -1120,9 +1576,13 @@ public final class Unsafe {
      * @param delta the value to add
      * @return the previous value
      * @since 1.8
+     *
+     * @deprecated Use {@link VarHandle#getAndAdd(Object...)} instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public final int getAndAddInt(Object o, long offset, int delta) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getAndAddInt(o, offset, delta);
     }
 
@@ -1136,9 +1596,13 @@ public final class Unsafe {
      * @param delta the value to add
      * @return the previous value
      * @since 1.8
+     *
+     * @deprecated Use {@link VarHandle#getAndAdd(Object...)} instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public final long getAndAddLong(Object o, long offset, long delta) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getAndAddLong(o, offset, delta);
     }
 
@@ -1152,9 +1616,13 @@ public final class Unsafe {
      * @param newValue new value
      * @return the previous value
      * @since 1.8
+     *
+     * @deprecated Use {@link VarHandle#getAndAdd(Object...)} instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public final int getAndSetInt(Object o, long offset, int newValue) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getAndSetInt(o, offset, newValue);
     }
 
@@ -1168,9 +1636,13 @@ public final class Unsafe {
      * @param newValue new value
      * @return the previous value
      * @since 1.8
+     *
+     * @deprecated Use {@link VarHandle#getAndAdd(Object...)} instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public final long getAndSetLong(Object o, long offset, long newValue) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getAndSetLong(o, offset, newValue);
     }
 
@@ -1184,9 +1656,13 @@ public final class Unsafe {
      * @param newValue new value
      * @return the previous value
      * @since 1.8
+     *
+     * @deprecated Use {@link VarHandle#getAndAdd(Object...)} instead.
      */
+    @Deprecated(since="23", forRemoval=true)
     @ForceInline
     public final Object getAndSetObject(Object o, long offset, Object newValue) {
+        beforeMemoryAccess();
         return theInternalUnsafe.getAndSetReference(o, offset, newValue);
     }
 
@@ -1201,7 +1677,7 @@ public final class Unsafe {
      * is almost always desired, and most current hardware instructions that
      * provide a LoadLoad barrier also provide a LoadStore barrier for free.
      *
-     * @deprecated Use {@link java.lang.invoke.VarHandle#acquireFence()} instead.
+     * @deprecated Use {@link VarHandle#acquireFence()} instead.
      * @since 1.8
      */
     @Deprecated(since="22", forRemoval=true)
@@ -1221,7 +1697,7 @@ public final class Unsafe {
      * is almost always desired, and most current hardware instructions that
      * provide a StoreStore barrier also provide a LoadStore barrier for free.
      *
-     * @deprecated Use {@link java.lang.invoke.VarHandle#releaseFence()} instead.
+     * @deprecated Use {@link VarHandle#releaseFence()} instead.
      * @since 1.8
      */
     @Deprecated(since="22", forRemoval=true)
@@ -1238,7 +1714,7 @@ public final class Unsafe {
      *
      * Corresponds to C11 atomic_thread_fence(memory_order_seq_cst).
      *
-     * @deprecated Use {@link java.lang.invoke.VarHandle#fullFence()} instead.
+     * @deprecated Use {@link VarHandle#fullFence()} instead.
      * @since 1.8
      */
     @Deprecated(since="22", forRemoval=true)
@@ -1255,12 +1731,207 @@ public final class Unsafe {
      * @throws IllegalArgumentException if {@code directBuffer} is non-direct,
      * or is a {@link java.nio.Buffer#slice slice}, or is a
      * {@link java.nio.Buffer#duplicate duplicate}
+     *
+     * @deprecated Use a {@link MemorySegment} allocated in an {@link Arena} with the
+     * appropriate temporal bounds. The {@link MemorySegment#asByteBuffer()} method
+     * wraps a memory segment as a {@code ByteBuffer} to allow interop with existing
+     * code.
+     *
      * @since 9
      */
+    @Deprecated(since="23", forRemoval=true)
     public void invokeCleaner(java.nio.ByteBuffer directBuffer) {
         if (!directBuffer.isDirect())
-            throw new IllegalArgumentException("buffer is non-direct");
-
+            throw new IllegalArgumentException("Not a direct buffer");
+        beforeMemoryAccess();
         theInternalUnsafe.invokeCleaner(directBuffer);
+    }
+
+    // Infrastructure for --sun-misc-unsafe-memory-access=<value> command line option.
+
+    private static final Object MEMORY_ACCESS_WARNED_BASE;
+    private static final long MEMORY_ACCESS_WARNED_OFFSET;
+    static {
+        try {
+            Field field = Unsafe.class.getDeclaredField("memoryAccessWarned");
+            MEMORY_ACCESS_WARNED_BASE = theInternalUnsafe.staticFieldBase(field);
+            MEMORY_ACCESS_WARNED_OFFSET = theInternalUnsafe.staticFieldOffset(field);
+        } catch (Exception e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+    // set to true by first usage of memory-access method
+    private static @Stable boolean memoryAccessWarned;
+
+    private static boolean isMemoryAccessWarned() {
+        return theInternalUnsafe.getBooleanVolatile(MEMORY_ACCESS_WARNED_BASE, MEMORY_ACCESS_WARNED_OFFSET);
+    }
+
+    private static boolean trySetMemoryAccessWarned() {
+        return theInternalUnsafe.compareAndSetBoolean(MEMORY_ACCESS_WARNED_BASE, MEMORY_ACCESS_WARNED_OFFSET, false, true);
+    }
+
+    private static final MemoryAccessOption MEMORY_ACCESS_OPTION = MemoryAccessOption.value();
+
+    /**
+     * Invoked by all memory-access methods.
+     */
+    @ForceInline
+    private static void beforeMemoryAccess() {
+        if (MEMORY_ACCESS_OPTION == MemoryAccessOption.ALLOW) {
+            return;
+        }
+
+        if (MEMORY_ACCESS_OPTION == MemoryAccessOption.WARN && isMemoryAccessWarned()) {
+            // nothing to do if this is not the first usage
+            return;
+        }
+
+        // warn && first usage, debug, or deny
+        beforeMemoryAccessSlow();
+    }
+
+    private static void beforeMemoryAccessSlow() {
+        assert MEMORY_ACCESS_OPTION != MemoryAccessOption.ALLOW;
+
+        // stack trace without the frames for the beforeMemoryAccess methods
+        List<StackWalker.StackFrame> stack = StackWalkerHolder.INSTANCE.walk(s ->
+                s.dropWhile(f -> (f.getDeclaringClass() == Unsafe.class)
+                                && f.getMethodName().startsWith("beforeMemoryAccess"))
+                    .limit(32)
+                    .toList()
+        );
+
+        // callerClass -> Unsafe.methodName
+        String methodName = stack.get(0).getMethodName();
+        Class<?> callerClass = stack.get(1).getDeclaringClass();
+
+        switch (MEMORY_ACCESS_OPTION) {
+            case WARN -> {
+                if (trySetMemoryAccessWarned()) {
+                    log(multiLineWarning(callerClass, methodName));
+                }
+            }
+            case DEBUG -> {
+                String warning = singleLineWarning(callerClass, methodName);
+                StringBuilder sb = new StringBuilder(warning);
+                stack.stream()
+                        .skip(1)
+                        .forEach(f ->
+                                sb.append(System.lineSeparator()).append("\tat " + f)
+                        );
+                log(sb.toString());
+            }
+            case DENY -> {
+                throw new UnsupportedOperationException(methodName);
+            }
+        }
+    }
+
+    /**
+     * Represents the options for the depreacted method-access methods.
+     */
+    private enum MemoryAccessOption {
+        /**
+         * Allow use of the memory-access methods with no warnings.
+         */
+        ALLOW,
+        /**
+         * Warning on the first use of a memory-access method.
+         */
+        WARN,
+        /**
+         * One-line warning and a stack trace on every use of a memory-access method.
+         */
+        DEBUG,
+        /**
+         * Deny use of the memory-access methods.
+         */
+        DENY;
+
+        private static MemoryAccessOption defaultValue() {
+            return ALLOW;
+        }
+
+        /**
+         * Return the value.
+         */
+        static MemoryAccessOption value() {
+            String value = VM.getSavedProperty("sun.misc.unsafe.memory.access");
+            if (value != null) {
+                return switch (value) {
+                    case "allow" -> MemoryAccessOption.ALLOW;
+                    case "warn"  -> MemoryAccessOption.WARN;
+                    case "debug" -> MemoryAccessOption.DEBUG;
+                    case "deny"  -> MemoryAccessOption.DENY;
+                    default -> {
+                        // should not happen
+                        log("sun.misc.unsafe.memory.access ignored, value '" + value +
+                                "' is not a recognized value");
+                        yield defaultValue();
+                    }
+                };
+            } else {
+                return defaultValue();
+            }
+        }
+    }
+
+    /**
+     * Holder for StackWalker that retains class references.
+     */
+    private static class StackWalkerHolder {
+        static final StackWalker INSTANCE;
+        static {
+            PrivilegedAction<StackWalker> pa = () ->
+                    StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+            @SuppressWarnings("removal")
+            StackWalker walker = AccessController.doPrivileged(pa);
+            INSTANCE = walker;
+        }
+    }
+
+    /**
+     * Return the multi-line warning message for when the given class invokes the
+     * given the Unsafe method.
+     */
+    private static String multiLineWarning(Class<?> callerClass, String methodName) {
+        return String.format(
+                """
+                WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+                WARNING: sun.misc.Unsafe::%s has been called by %s
+                WARNING: Please consider reporting this to the maintainers of %s
+                WARNING: sun.misc.Unsafe::%s will be removed in a future release""",
+                methodName, callerAndLocation(callerClass), callerClass, methodName);
+    }
+
+    /**
+     * Return the single-line warning message for when the given class invokes the
+     * given the Unsafe method.
+     */
+    private static String singleLineWarning(Class<?> callerClass, String methodName) {
+        return String.format("WARNING: sun.misc.Unsafe::%s called by %s",
+                methodName, callerAndLocation(callerClass));
+    }
+
+    /**
+     * Returns a string with the caller class and the location URL from the CodeSource.
+     */
+    private static String callerAndLocation(Class<?> callerClass) {
+        PrivilegedAction<ProtectionDomain> pa = callerClass::getProtectionDomain;
+        @SuppressWarnings("removal")
+        CodeSource cs = AccessController.doPrivileged(pa).getCodeSource();
+        String who = callerClass.getName();
+        if (cs != null && cs.getLocation() != null) {
+            who += " (" + cs.getLocation() + ")";
+        }
+        return who;
+    }
+
+    /**
+     * Prints the given message to the standard error.
+     */
+    private static void log(String message) {
+        VM.initialErr().println(message);
     }
 }

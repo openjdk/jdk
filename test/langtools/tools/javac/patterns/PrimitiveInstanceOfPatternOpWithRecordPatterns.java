@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8304487
+ * @bug 8304487 8327683 8330387
  * @summary Compiler Implementation for Primitive types in patterns, instanceof, and switch (Preview)
  * @enablePreview
  * @compile PrimitiveInstanceOfPatternOpWithRecordPatterns.java
@@ -41,6 +41,8 @@ public class PrimitiveInstanceOfPatternOpWithRecordPatterns {
         assertEquals(true,  unboxing());
         assertEquals(true,  unboxingWithObject());
         assertEquals(true,  wideningReferenceConversionUnboxing());
+        assertEquals(true,  wideningReferenceConversionUnboxing2());
+        assertEquals(true,  wideningReferenceConversionUnboxing3());
         assertEquals(true,  wideningReferenceConversionUnboxingAndWideningPrimitive());
         assertEquals(true,  unboxingAndWideningPrimitiveExact());
         assertEquals(false, unboxingAndWideningPrimitiveNotExact());
@@ -103,13 +105,23 @@ public class PrimitiveInstanceOfPatternOpWithRecordPatterns {
                 !(o2 instanceof R_Object(int i2)));
     }
 
-    public static <T extends Integer> boolean wideningReferenceConversionUnboxing() {
-        R_generic i = new R_generic(42);
+    public static boolean wideningReferenceConversionUnboxing() {
+        R_generic<Integer> i = new R_generic<Integer>(42);
         return i instanceof R_generic(int _);
     }
 
-    public static <T extends Integer> boolean wideningReferenceConversionUnboxingAndWideningPrimitive() {
-        R_generic i = new R_generic(42);
+    public static boolean wideningReferenceConversionUnboxing2() {
+        R_generic2<Byte> i = new R_generic2<Byte>(Byte.valueOf((byte) 42));
+        return i instanceof R_generic2(byte _);
+    }
+
+    public static boolean wideningReferenceConversionUnboxing3() {
+        R_generic<Integer> i = new R_generic<Integer>(0x1000000);
+        return i instanceof R_generic(float _);
+    }
+
+    public static boolean wideningReferenceConversionUnboxingAndWideningPrimitive() {
+        R_generic<Integer> i = new R_generic<Integer>(42);
         return i instanceof R_generic(double _);
     }
 
@@ -155,7 +167,9 @@ public class PrimitiveInstanceOfPatternOpWithRecordPatterns {
     record R_long(long l) {}
     record R_Integer(Integer i) {}
     record R_Object(Object i) {}
-    record R_generic<T extends Integer>(int i) {}
+    record R_generic<T extends Integer>(T i) {}
+    record R_generic2<T extends Byte>(T i) {}
+
     record R_ByteValue(Byte b) {}
     record R_ShortValue(Short s) {}
     record R_CharacterValue(Character s) {}

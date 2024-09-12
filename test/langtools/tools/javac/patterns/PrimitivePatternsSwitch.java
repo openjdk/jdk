@@ -113,6 +113,13 @@ public class PrimitivePatternsSwitch {
         assertEquals(1, testByteWrapperToIntUnconditionallyExact());
         assertEquals(1, testIntegerWrapperToFloat());
         assertEquals(-1, testIntegerWrapperToFloatInexact());
+        assertEquals(Character.MAX_VALUE, testUnboxingAndWideningCharacter1(Character.MAX_VALUE));
+        assertEquals(Character.MAX_VALUE, testUnboxingAndWideningCharacter2(Character.MAX_VALUE));
+        assertEquals(Character.MAX_VALUE, testUnboxingAndWideningCharacter3(Character.MAX_VALUE));
+        assertEquals(Float.MAX_VALUE, testUnboxingAndWideningFloat(Float.MAX_VALUE));
+        assertEquals(Float.MAX_VALUE, testUnboxingAndWideningFloatExplicitCast(Float.MAX_VALUE));
+        assertEquals(42f, testUnboxingAndWideningLong(42L));
+        assertEquals(2, testUnboxingAndWideningLong(Long.MAX_VALUE));
     }
 
     public static int primitiveSwitch(int i) {
@@ -565,6 +572,43 @@ public class PrimitivePatternsSwitch {
         };
     }
 
+    public static char testUnboxingAndWideningCharacter1(Character test) {
+        return switch (test) {
+            case char c -> c;
+        };
+    }
+
+    public static int testUnboxingAndWideningCharacter2(Character test) {
+        return switch (test) {
+            case int c -> c;
+        };
+    }
+
+    public static float testUnboxingAndWideningCharacter3(Character test) {
+        return switch (test) {
+            case float f -> f;
+        };
+    }
+    public static float testUnboxingAndWideningLong(Long test) {
+        return switch (test) {
+            case float y -> y;
+            default -> 2;
+        };
+    }
+
+    public static double testUnboxingAndWideningFloat(Float test) {
+        return switch (test) {
+            case double y -> y;
+            default -> 2;
+        };
+    }
+
+    public static double testUnboxingAndWideningFloatExplicitCast(Object test) {
+        return switch ((Float) test) {
+            case double y -> y;
+            default -> 2;
+        };
+    }
 
     record R_Integer(Integer x) {}
     record R_int(int x) {}

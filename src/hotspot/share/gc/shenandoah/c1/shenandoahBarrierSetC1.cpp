@@ -58,26 +58,32 @@ ShenandoahBarrierSetC1::ShenandoahBarrierSetC1() :
 
 void ShenandoahBarrierSetC1::pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, DecoratorSet decorators, LIR_Opr addr_opr, LIR_Opr pre_val) {
   // First we test whether marking is in progress.
-  BasicType flag_type;
+
   bool patch = (decorators & C1_NEEDS_PATCHING) != 0;
   bool do_load = pre_val == LIR_OprFact::illegalOpr;
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    flag_type = T_INT;
-  } else {
-    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1,
-              "Assumption");
-    // Use unsigned type T_BOOLEAN here rather than signed T_BYTE since some platforms, eg. ARM,
-    // need to use unsigned instructions to use the large offset to load the satb_mark_queue.
-    flag_type = T_BOOLEAN;
-  }
+
   LIR_Opr thrd = gen->getThreadPointer();
-  LIR_Address* mark_active_flag_addr =
-    new LIR_Address(thrd,
-                    in_bytes(ShenandoahThreadLocalData::satb_mark_queue_active_offset()),
-                    flag_type);
-  // Read the marking-in-progress flag.
+  LIR_Address* gc_state_addr =
+          new LIR_Address(thrd,
+                          in_bytes(ShenandoahThreadLocalData::gc_state_offset()),
+                          T_BYTE);
+  // Read the gc_state flag.
   LIR_Opr flag_val = gen->new_register(T_INT);
-  __ load(mark_active_flag_addr, flag_val);
+  __ load(gc_state_addr, flag_val);
+
+  // Create a mask to test if the marking bit is set.
+  // TODO: can we directly test if bit is set?
+  LIR_Opr mask = LIR_OprFact::intConst(ShenandoahHeap::MARKING);
+  LIR_Opr mask_reg = gen->new_register(T_INT);
+  __ move(mask, mask_reg);
+
+  if (two_operand_lir_form) {
+    __ logical_and(flag_val, mask_reg, flag_val);
+  } else {
+    LIR_Opr masked_flag = gen->new_register(T_INT);
+    __ logical_and(flag_val, mask_reg, masked_flag);
+    flag_val = masked_flag;
+  }
   __ cmp(lir_cond_notEqual, flag_val, LIR_OprFact::intConst(0));
 
   LIR_PatchCode pre_val_patch_code = lir_patch_none;
@@ -177,20 +183,11 @@ LIR_Opr ShenandoahBarrierSetC1::ensure_in_register(LIRGenerator* gen, LIR_Opr ob
   return obj;
 }
 
-LIR_Opr ShenandoahBarrierSetC1::iu_barrier(LIRGenerator* gen, LIR_Opr obj, CodeEmitInfo* info, DecoratorSet decorators) {
-  if (ShenandoahIUBarrier) {
-    obj = ensure_in_register(gen, obj, T_OBJECT);
-    pre_barrier(gen, info, decorators, LIR_OprFact::illegalOpr, obj);
-  }
-  return obj;
-}
-
 void ShenandoahBarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
   if (access.is_oop()) {
     if (ShenandoahSATBBarrier) {
       pre_barrier(access.gen(), access.access_emit_info(), access.decorators(), access.resolved_addr(), LIR_OprFact::illegalOpr /* pre_val */);
     }
-    value = iu_barrier(access.gen(), value, access.access_emit_info(), access.decorators());
   }
   BarrierSetC1::store_at_resolved(access, value);
 }

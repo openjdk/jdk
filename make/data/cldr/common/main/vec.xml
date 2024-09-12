@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -1763,9 +1763,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Thimphu">
 				<exemplarCity>Tinpu</exemplarCity>
 			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>Pang</exemplarCity>
-			</zone>
 			<zone type="America/St_Johns">
 				<exemplarCity>S. Joani</exemplarCity>
 			</zone>
@@ -2215,17 +2212,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Dar es Salam</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Ùzgorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Sinferòpoli</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporija</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>Kanpala</exemplarCity>
@@ -2235,9 +2226,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity>Atolo Wake</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Atolo Johnston</exemplarCity>
 			</zone>
 			<zone type="America/Los_Angeles">
 				<exemplarCity>Los Àngeles</exemplarCity>
@@ -2811,11 +2799,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Ora d’istà de l’Ìzola Lord Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Ora de l’Ìzola Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Ora de Magadan</generic>
@@ -2853,13 +2836,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>Ora de Mawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Ora de’l Mèsego nord osidentale</generic>
-					<standard>Ora normale de’l Mèsego nord osidentale</standard>
-					<daylight>Ora d’istà de’l Mèsego nord osidentale</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

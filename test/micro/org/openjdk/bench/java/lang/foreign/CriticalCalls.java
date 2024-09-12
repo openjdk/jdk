@@ -61,7 +61,7 @@ public class CriticalCalls {
         System.loadLibrary("CriticalCalls");
         SymbolLookup lookup = SymbolLookup.loaderLookup();
 
-        MemorySegment sumIntsSym = lookup.find("sum_ints").get();
+        MemorySegment sumIntsSym = lookup.findOrThrow("sum_ints");
         FunctionDescriptor sumIntsDesc = FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT);
 
         PINNED = Linker.nativeLinker().downcallHandle(

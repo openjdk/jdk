@@ -26,6 +26,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/symbolTable.hpp"
@@ -62,12 +63,14 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/relocator.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -310,19 +313,16 @@ int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_kla
 
 void Method::mask_for(int bci, InterpreterOopMap* mask) {
   methodHandle h_this(Thread::current(), this);
-  // Only GC uses the OopMapCache during thread stack root scanning
-  // any other uses generate an oopmap but do not save it in the cache.
-  if (Universe::heap()->is_gc_active()) {
-    method_holder()->mask_for(h_this, bci, mask);
-  } else {
-    OopMapCache::compute_one_oop_map(h_this, bci, mask);
-  }
-  return;
+  mask_for(h_this, bci, mask);
 }
 
+void Method::mask_for(const methodHandle& this_mh, int bci, InterpreterOopMap* mask) {
+  assert(this_mh() == this, "Sanity");
+  method_holder()->mask_for(this_mh, bci, mask);
+}
 
 int Method::bci_from(address bcp) const {
-  if (is_native() && bcp == 0) {
+  if (is_native() && bcp == nullptr) {
     return 0;
   }
   // Do not have a ResourceMark here because AsyncGetCallTrace stack walking code
@@ -345,7 +345,7 @@ int Method::validate_bci(int bci) const {
 int Method::validate_bci_from_bcp(address bcp) const {
   // keep bci as -1 if not a valid bci
   int bci = -1;
-  if (bcp == 0 || bcp == code_base()) {
+  if (bcp == nullptr || bcp == code_base()) {
     // code_size() may return 0 and we allow 0 here
     // the method may be native
     bci = 0;
@@ -664,49 +664,6 @@ int Method::extra_stack_words() {
   return extra_stack_entries() * Interpreter::stackElementSize;
 }
 
-bool Method::is_vanilla_constructor() const {
-  // Returns true if this method is a vanilla constructor, i.e. an "<init>" "()V" method
-  // which only calls the superclass vanilla constructor and possibly does stores of
-  // zero constants to local fields:
-  //
-  //   aload_0
-  //   invokespecial
-  //   indexbyte1
-  //   indexbyte2
-  //
-  // followed by an (optional) sequence of:
-  //
-  //   aload_0
-  //   aconst_null / iconst_0 / fconst_0 / dconst_0
-  //   putfield
-  //   indexbyte1
-  //   indexbyte2
-  //
-  // followed by:
-  //
-  //   return
-
-  assert(name() == vmSymbols::object_initializer_name(),    "Should only be called for default constructors");
-  assert(signature() == vmSymbols::void_method_signature(), "Should only be called for default constructors");
-  int size = code_size();
-  // Check if size match
-  if (size == 0 || size % 5 != 0) return false;
-  address cb = code_base();
-  int last = size - 1;
-  if (cb[0] != Bytecodes::_aload_0 || cb[1] != Bytecodes::_invokespecial || cb[last] != Bytecodes::_return) {
-    // Does not call superclass default constructor
-    return false;
-  }
-  // Check optional sequence
-  for (int i = 4; i < last; i += 5) {
-    if (cb[i] != Bytecodes::_aload_0) return false;
-    if (!Bytecodes::is_zero_const(Bytecodes::cast(cb[i+1]))) return false;
-    if (cb[i+2] != Bytecodes::_putfield) return false;
-  }
-  return true;
-}
-
-
 bool Method::compute_has_loops_flag() {
   BytecodeStream bcs(methodHandle(Thread::current(), this));
   Bytecodes::Code bc;
@@ -1011,7 +968,7 @@ void Method::set_native_function(address function, bool post_event_flag) {
   // This function can be called more than once. We must make sure that we always
   // use the latest registered method -> check if a stub already has been generated.
   // If so, we have to make it not_entrant.
-  CompiledMethod* nm = code(); // Put it into local variable to guard against concurrent updates
+  nmethod* nm = code(); // Put it into local variable to guard against concurrent updates
   if (nm != nullptr) {
     nm->make_not_entrant();
   }
@@ -1159,8 +1116,8 @@ void Method::clear_code() {
   _code = nullptr;
 }
 
-void Method::unlink_code(CompiledMethod *compare) {
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+void Method::unlink_code(nmethod *compare) {
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   // We need to check if either the _code or _from_compiled_code_entry_point
   // refer to this nmethod because there is a race in setting these two fields
   // in Method* as seen in bugid 4947125.
@@ -1171,7 +1128,7 @@ void Method::unlink_code(CompiledMethod *compare) {
 }
 
 void Method::unlink_code() {
-  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   clear_code();
 }
 
@@ -1214,6 +1171,10 @@ void Method::remove_unshareable_flags() {
 // Called when the method_holder is getting linked. Setup entrypoints so the method
 // is ready to be called from interpreter, compiler, and vtables.
 void Method::link_method(const methodHandle& h_method, TRAPS) {
+  if (log_is_enabled(Info, perf, class, link)) {
+    ClassLoader::perf_ik_link_methods_count()->inc();
+  }
+
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
   if (adapter() != nullptr) {
@@ -1265,6 +1226,8 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
 }
 
 address Method::make_adapters(const methodHandle& mh, TRAPS) {
+  PerfTraceTime timer(ClassLoader::perf_method_adapters_time());
+
   // Adapters for compiled code are made eagerly here.  They are fairly
   // small (generally < 100 bytes) and quick to make (and cached and shared)
   // so making them eagerly shouldn't be too expensive.
@@ -1276,7 +1239,7 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
       // Java exception object.
       vm_exit_during_initialization("Out of space in CodeCache for adapters");
     } else {
-      THROW_MSG_NULL(vmSymbols::java_lang_VirtualMachineError(), "Out of space in CodeCache for adapters");
+      THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(), "Out of space in CodeCache for adapters");
     }
   }
 
@@ -1303,13 +1266,13 @@ address Method::verified_code_entry() {
 // Not inline to avoid circular ref.
 bool Method::check_code() const {
   // cached in a register or local.  There's a race on the value of the field.
-  CompiledMethod *code = Atomic::load_acquire(&_code);
+  nmethod *code = Atomic::load_acquire(&_code);
   return code == nullptr || (code->method() == nullptr) || (code->method() == (Method*)this && !code->is_osr_method());
 }
 
 // Install compiled code.  Instantly it can execute.
-void Method::set_code(const methodHandle& mh, CompiledMethod *code) {
-  assert_lock_strong(CompiledMethod_lock);
+void Method::set_code(const methodHandle& mh, nmethod *code) {
+  assert_lock_strong(NMethodState_lock);
   assert( code, "use clear_code to remove code" );
   assert( mh->check_code(), "" );
 
@@ -1770,7 +1733,7 @@ void Method::sort_methods(Array<Method*>* methods, bool set_idnums, method_compa
     }
     {
       NoSafepointVerifier nsv;
-      QuickSort::sort(methods->data(), length, func, /*idempotent=*/false);
+      QuickSort::sort(methods->data(), length, func);
     }
     // Reset method ordering
     if (set_idnums) {
@@ -2143,14 +2106,6 @@ class JNIMethodBlock : public CHeapObj<mtClass> {
     return false;  // not found
   }
 
-  // Doesn't really destroy it, just marks it as free so it can be reused.
-  void destroy_method(Method** m) {
-#ifdef ASSERT
-    assert(contains(m), "should be a methodID");
-#endif // ASSERT
-    *m = _free_method;
-  }
-
   // During class unloading the methods are cleared, which is different
   // than freed.
   void clear_all_methods() {
@@ -2203,6 +2158,9 @@ jmethodID Method::make_jmethod_id(ClassLoaderData* cld, Method* m) {
   // Also have to add the method to the list safely, which the lock
   // protects as well.
   assert(JmethodIdCreation_lock->owned_by_self(), "sanity check");
+
+  ResourceMark rm;
+  log_debug(jmethod)("Creating jmethodID for Method %s", m->external_name());
   if (cld->jmethod_ids() == nullptr) {
     cld->set_jmethod_ids(new JNIMethodBlock());
   }
@@ -2213,14 +2171,6 @@ jmethodID Method::make_jmethod_id(ClassLoaderData* cld, Method* m) {
 jmethodID Method::jmethod_id() {
   methodHandle mh(Thread::current(), this);
   return method_holder()->get_jmethod_id(mh);
-}
-
-// Mark a jmethodID as free.  This is called when there is a data race in
-// InstanceKlass while creating the jmethodID cache.
-void Method::destroy_jmethod_id(ClassLoaderData* cld, jmethodID m) {
-  Method** ptr = (Method**)m;
-  assert(cld->jmethod_ids() != nullptr, "should have method handles");
-  cld->jmethod_ids()->destroy_method(ptr);
 }
 
 void Method::change_method_associated_with_jmethod_id(jmethodID jmid, Method* new_method) {

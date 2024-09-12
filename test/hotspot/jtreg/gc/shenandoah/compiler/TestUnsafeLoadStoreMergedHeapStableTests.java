@@ -55,7 +55,7 @@ public class TestUnsafeLoadStoreMergedHeapStableTests {
 
     static Object testHelper(boolean flag, Object o, long offset, Object x) {
         if (flag) {
-            return UNSAFE.getAndSetObject(o, offset, x);
+            return UNSAFE.getAndSetReference(o, offset, x);
         }
         return null;
     }
@@ -68,7 +68,7 @@ public class TestUnsafeLoadStoreMergedHeapStableTests {
     }
 
     static Object test2(Object o, long offset) {
-        return UNSAFE.getAndSetObject(o, offset, field);
+        return UNSAFE.getAndSetReference(o, offset, field);
     }
 
     static public void main(String[] args) {

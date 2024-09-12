@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ private:
   static const TypeInfo _type_info[];
 
   static int uhash( const Type *const t );
-  // Structural equality check.  Assumes that cmp() has already compared
+  // Structural equality check.  Assumes that equals() has already compared
   // the _base types and thus knows it can cast 't' appropriately.
   virtual bool eq( const Type *t ) const;
 
@@ -216,15 +216,15 @@ public:
   // Create a new hash-consd type
   static const Type *make(enum TYPES);
   // Test for equivalence of types
-  static int cmp( const Type *const t1, const Type *const t2 );
+  static bool equals(const Type* t1, const Type* t2);
   // Test for higher or equal in lattice
   // Variant that drops the speculative part of the types
-  bool higher_equal(const Type *t) const {
-    return !cmp(meet(t),t->remove_speculative());
+  bool higher_equal(const Type* t) const {
+    return equals(meet(t), t->remove_speculative());
   }
   // Variant that keeps the speculative part of the types
-  bool higher_equal_speculative(const Type *t) const {
-    return !cmp(meet_speculative(t),t);
+  bool higher_equal_speculative(const Type* t) const {
+    return equals(meet_speculative(t), t);
   }
 
   // MEET operation; lower in lattice.
@@ -1356,6 +1356,7 @@ public:
 
   // Speculative type helper methods.
   virtual const TypeInstPtr* remove_speculative() const;
+  const TypeInstPtr* with_speculative(const TypePtr* speculative) const;
   virtual const TypePtr* with_inline_depth(int depth) const;
   virtual const TypePtr* with_instance_id(int instance_id) const;
 

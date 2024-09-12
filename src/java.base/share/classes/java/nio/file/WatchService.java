@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,6 +97,20 @@ import java.util.concurrent.TimeUnit;
  * implementation specific if changes to the file can be detected. In particular,
  * it is not required that changes to files carried out on remote systems be
  * detected.
+ *
+ * @implNote
+ * The JDK's {@code WatchService} implementations buffer up to 512 pending
+ * events for each registered watchable object. If this limit is exceeded,
+ * pending events are discarded and the special
+ * {@link StandardWatchEventKinds#OVERFLOW OVERFLOW} event is queued. This
+ * special event is the trigger to re-examine the state of the object, e.g.
+ * scan a watched directory to get an updated list of the files in the
+ * directory. The limit for the pending events can be changed from its default
+ * with the system property
+ * {@systemProperty jdk.nio.file.WatchService.maxEventsPerPoll}
+ * set to a value that parses as a positive integer. This may be useful in
+ * environments where there is a high volume of changes and where the impact
+ * of discarded events is high.
  *
  * @since 1.7
  *

@@ -40,7 +40,6 @@ class G1ConcurrentMark;
 class G1EvacFailureRegions;
 class G1EvacInfo;
 class G1GCPhaseTimes;
-class G1HRPrinter;
 class G1MonitoringSupport;
 class G1MonotonicArenaMemoryStats;
 class G1NewTracer;
@@ -69,7 +68,6 @@ class G1YoungCollector {
   STWGCTimer* gc_timer_stw() const;
   G1NewTracer* gc_tracer_stw() const;
 
-  G1HRPrinter* hr_printer() const;
   G1MonitoringSupport* monitoring_support() const;
   G1GCPhaseTimes* phase_times() const;
   G1Policy* policy() const;

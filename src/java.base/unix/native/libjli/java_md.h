@@ -60,6 +60,7 @@ static jboolean GetJVMPath(const char *jrepath, const char *jvmtype,
 static jboolean GetJREPath(char *path, jint pathsize, jboolean speculative);
 
 #if defined(_AIX)
+jboolean GetApplicationHomeFromLibpath(char *buf, jint bufsize);
 #include "java_md_aix.h"
 #endif
 

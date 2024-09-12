@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -245,7 +246,7 @@ void VM_RedefineClasses::doit() {
   }
 
 #if INCLUDE_CDS
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     // Sharing is enabled so we remap the shared readonly space to
     // shared readwrite, private just in case we need to redefine
     // a shared class. We do the remap during the doit() phase of
@@ -1173,7 +1174,7 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
           }
         }
       }
-      JFR_ONLY(k_new_method->copy_trace_flags(*k_old_method->trace_flags_addr());)
+      JFR_ONLY(k_new_method->copy_trace_flags(k_old_method->trace_flags());)
       log_trace(redefine, class, normalize)
         ("Method matched: new: %s [%d] == old: %s [%d]",
          k_new_method->name_and_sig_as_C_string(), ni, k_old_method->name_and_sig_as_C_string(), oi);
@@ -4350,7 +4351,8 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   the_class->vtable().initialize_vtable();
   the_class->itable().initialize_itable();
 
-  // Leave arrays of jmethodIDs and itable index cache unchanged
+  // Update jmethodID cache if present.
+  the_class->update_methods_jmethod_cache();
 
   // Copy the "source debug extension" attribute from new class version
   the_class->set_source_debug_extension(

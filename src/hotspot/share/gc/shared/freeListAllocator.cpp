@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ void FreeListAllocator::delete_list(FreeNode* list) {
 FreeListAllocator::~FreeListAllocator() {
   uint index = Atomic::load(&_active_pending_list);
   NodeList pending_list = _pending_lists[index].take_all();
-  delete_list(Atomic::load(&pending_list._head));
+  delete_list(pending_list._head);
   delete_list(_free_list.pop_all());
 }
 
@@ -106,7 +106,7 @@ size_t FreeListAllocator::free_count() const {
 
 size_t FreeListAllocator::pending_count() const {
   uint index = Atomic::load(&_active_pending_list);
-  return _pending_lists[index].count();;
+  return _pending_lists[index].count();
 }
 
 // To solve the ABA problem, popping a node from the _free_list is performed within

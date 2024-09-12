@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,8 @@ import javax.security.auth.kerberos.ServicePermission;
 import java.security.Provider;
 import java.util.Vector;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 /**
  * Krb5 Mechanism plug in for JGSS
  * This is the properties object required by the JGSS framework.
@@ -42,8 +44,6 @@ import java.util.Vector;
  */
 
 public final class Krb5MechFactory implements MechanismFactory {
-
-    private static final boolean DEBUG = Krb5Util.DEBUG;
 
     static final Provider PROVIDER =
         new sun.security.jgss.SunProvider();
@@ -152,8 +152,8 @@ public final class Krb5MechFactory implements MechanismFactory {
             try {
                 sm.checkPermission(perm);
             } catch (SecurityException e) {
-                if (DEBUG) {
-                    System.out.println("Permission to initiate " +
+                if (DEBUG != null) {
+                    DEBUG.println("Permission to initiate " +
                         "kerberos init credential" + e.getMessage());
                 }
                 throw e;

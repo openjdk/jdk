@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,8 @@ import javax.annotation.processing.SupportedSourceVersion;
  * @param <R> the return type of this visitor's methods
  * @param <P> the type of the additional parameter to this visitor's methods.
  *
- * @see <a href="AbstractAnnotationValueVisitor6.html#note_for_subclasses">
- * <strong>Compatibility note for subclasses</strong></a>
+ * @see AbstractAnnotationValueVisitor6##note_for_subclasses"
+ * <strong>Compatibility note for subclasses</strong>
  * @see AbstractAnnotationValueVisitor6
  * @see AbstractAnnotationValueVisitor8
  * @see AbstractAnnotationValueVisitor9

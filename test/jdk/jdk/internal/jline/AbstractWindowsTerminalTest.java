@@ -25,8 +25,10 @@
  * @test
  * @bug 8218287
  * @summary Verify the wrapper input stream is used when using Terminal.reader()
- * @modules jdk.internal.le/jdk.internal.org.jline.terminal
+ * @modules jdk.internal.le/jdk.internal.org.jline
+ *          jdk.internal.le/jdk.internal.org.jline.terminal
  *          jdk.internal.le/jdk.internal.org.jline.terminal.impl
+ *          jdk.internal.le/jdk.internal.org.jline.terminal.spi
  *          jdk.internal.le/jdk.internal.org.jline.utils
  */
 
@@ -39,6 +41,7 @@ import java.util.function.Function;
 import jdk.internal.org.jline.terminal.Size;
 import jdk.internal.org.jline.terminal.Terminal.SignalHandler;
 import jdk.internal.org.jline.terminal.impl.AbstractWindowsTerminal;
+import jdk.internal.org.jline.terminal.spi.SystemStream;
 
 
 public class AbstractWindowsTerminalTest {
@@ -56,14 +59,17 @@ public class AbstractWindowsTerminalTest {
                 return is.read();
             }
         };
-        var t = new AbstractWindowsTerminal(out, "test", "vt100", null, false, SignalHandler.SIG_DFL, isWrapper) {
+        var t = new AbstractWindowsTerminal<String>(null, SystemStream.Output, out,
+                                                    "test", "vt100", null, false,
+                                                    SignalHandler.SIG_DFL, "", 0,
+                                                    "", 0, isWrapper) {
             @Override
-            protected int getConsoleMode() {
+            protected int getConsoleMode(String console) {
                 return -1;
             }
 
             @Override
-            protected void setConsoleMode(int mode) {
+            protected void setConsoleMode(String console, int mode) {
                 throw new UnsupportedOperationException("unexpected.");
             }
 

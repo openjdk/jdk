@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public class T6888367 {
 
     void testInnerClasses(ClassModel cm) throws Exception {
         InnerClassesAttribute ic =
-                cm.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+                cm.findAttribute(Attributes.innerClasses()).orElse(null);
         assert ic != null;
         for (InnerClassInfo info: ic.classes()) {
             ClassEntry outerClass = info.outerClass().orElse(null);
@@ -106,7 +106,7 @@ public class T6888367 {
             return;
 
         System.err.println(name);
-        SignatureAttribute sa = m.findAttribute(Attributes.SIGNATURE).orElse(null);
+        SignatureAttribute sa = m.findAttribute(Attributes.signature()).orElse(null);
         if (sa != null)
             System.err.println("     signature: " + sa.signature());
 
@@ -173,7 +173,7 @@ public class T6888367 {
     }
 
     AnnotValues getAnnotValues(String annotName, AttributedElement m) {
-        RuntimeInvisibleAnnotationsAttribute annots = m.findAttribute(Attributes.RUNTIME_INVISIBLE_ANNOTATIONS).orElse(null);
+        RuntimeInvisibleAnnotationsAttribute annots = m.findAttribute(Attributes.runtimeInvisibleAnnotations()).orElse(null);
         if (annots != null) {
             for (Annotation a: annots.annotations()) {
                 if (a.classSymbol().descriptorString().equals("L" + annotName + ";")) {
@@ -312,21 +312,14 @@ public class T6888367 {
         }
 
         public String visitWildcardType(Signature.TypeArg type) {
-            switch (type.wildcardIndicator()) {
-                case UNBOUNDED -> {
-                    return "W{?}";
-                }
-                case EXTENDS -> {
-                    return "W{e," + print(type.boundType().get()) + "}";
-                }
-                case SUPER -> {
-                    return "W{s," + print(type.boundType().get()) + "}";
-                }
-                default -> {
-                    if (type.boundType().isPresent()) return print(type.boundType().get());
-                    else throw new AssertionError();
-                }
-            }
+            return switch (type) {
+                case Signature.TypeArg.Unbounded _ -> "W{?}";
+                case Signature.TypeArg.Bounded b -> switch (b.wildcardIndicator()) {
+                    case EXTENDS -> "W{e," + print(b.boundType()) + "}";
+                    case SUPER -> "W{s," + print(b.boundType()) + "}";
+                    case NONE -> print(b.boundType());
+                };
+            };
         }
 
     };

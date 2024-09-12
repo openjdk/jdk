@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import java.io.PrintWriter;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
 
 public class SharedStringsStress {
     static {
@@ -69,37 +68,17 @@ public class SharedStringsStress {
         String vmOptionsPrefix[] = SharedStringsUtils.getChildVMOptionsPrefix();
         String appJar = JarBuilder.build("SharedStringsStress", "HelloString");
 
-        String test_cases[][] = {
-            // default heap size
-            {},
+        OutputAnalyzer dumpOutput = TestCommon.dump(appJar, TestCommon.list("HelloString"),
+            TestCommon.concat(vmOptionsPrefix,
+                "-XX:SharedArchiveConfigFile=" + sharedArchiveConfigFile,
+                "-Xlog:gc+region+cds",
+                "-Xlog:gc+region=trace"));
+        TestCommon.checkDump(dumpOutput);
+        dumpOutput.shouldContain("string table array (primary)");
+        dumpOutput.shouldContain("string table array (secondary)");
 
-            // Test for handling of heap fragmentation. With sharedArchiveConfigFile, we will dump about
-            // 18MB of shared objects on 64 bit VM (smaller on 32-bit).
-            //
-            // During dump time, an extra copy of these objects are allocated,
-            // so we need about 36MB, plus a few MB for other system data. So 64MB total heap
-            // should be enough.
-            //
-            // The VM should executed a full GC to maximize contiguous free space and
-            // avoid fragmentation.
-            {"-Xmx64m"},
-        };
-
-        for (String[] extra_opts: test_cases) {
-            vmOptionsPrefix = TestCommon.concat(vmOptionsPrefix, extra_opts);
-
-            OutputAnalyzer dumpOutput = TestCommon.dump(appJar, TestCommon.list("HelloString"),
-                TestCommon.concat(vmOptionsPrefix,
-                    "-XX:SharedArchiveConfigFile=" + sharedArchiveConfigFile,
-                    "-Xlog:gc+region+cds",
-                    "-Xlog:gc+region=trace"));
-            TestCommon.checkDump(dumpOutput);
-            dumpOutput.shouldContain("string table array (primary)");
-            dumpOutput.shouldContain("string table array (secondary)");
-
-            OutputAnalyzer execOutput = TestCommon.exec(appJar,
-                TestCommon.concat(vmOptionsPrefix, "-Xlog:cds", "HelloString"));
-            TestCommon.checkExec(execOutput);
-        }
+        OutputAnalyzer execOutput = TestCommon.exec(appJar,
+            TestCommon.concat(vmOptionsPrefix, "-Xlog:cds", "HelloString"));
+        TestCommon.checkExec(execOutput);
     }
 }

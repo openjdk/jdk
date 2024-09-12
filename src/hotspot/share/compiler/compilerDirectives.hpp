@@ -30,7 +30,6 @@
 #include "ci/ciMethod.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/methodMatcher.hpp"
-#include "compiler/compilerOracle.hpp"
 #include "opto/phasetype.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/exceptions.hpp"

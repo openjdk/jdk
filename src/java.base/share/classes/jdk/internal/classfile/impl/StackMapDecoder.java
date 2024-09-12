@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,29 @@
 
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.ClassReader;
+import java.lang.classfile.Label;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.*;
+import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
-import java.util.TreeMap;
-import java.lang.classfile.BufWriter;
-
-import java.lang.classfile.constantpool.ClassEntry;
-import java.lang.classfile.attribute.StackMapFrameInfo;
-import java.lang.classfile.attribute.StackMapFrameInfo.*;
-import java.lang.classfile.ClassReader;
+import java.util.Objects;
 
 import static java.lang.classfile.ClassFile.*;
-import java.lang.classfile.Label;
-import java.lang.classfile.MethodModel;
 
 public class StackMapDecoder {
 
     private static final int
                     SAME_LOCALS_1_STACK_ITEM_EXTENDED = 247,
                     SAME_EXTENDED = 251;
+    private static final StackMapFrameInfo[] NO_STACK_FRAME_INFOS = new StackMapFrameInfo[0];
 
     private final ClassReader classReader;
     private final int pos;
@@ -80,7 +82,8 @@ public class StackMapDecoder {
         } else {
             vtis = new VerificationTypeInfo[methodType.parameterCount()];
         }
-        for(var arg : methodType.parameterList()) {
+        for (int pi = 0; pi < methodType.parameterCount(); pi++) {
+            var arg = methodType.parameterType(pi);
             vtis[i++] = switch (arg.descriptorString().charAt(0)) {
                 case 'I', 'S', 'C' ,'B', 'Z' -> SimpleVerificationTypeInfo.ITEM_INTEGER;
                 case 'J' -> SimpleVerificationTypeInfo.ITEM_LONG;
@@ -102,15 +105,20 @@ public class StackMapDecoder {
                 mi.methodTypeSymbol(),
                 (mi.methodFlags() & ACC_STATIC) != 0);
         int prevOffset = -1;
-        var map = new TreeMap<Integer, StackMapFrameInfo>();
+        // avoid using method handles due to early bootstrap
+        StackMapFrameInfo[] infos = entries.toArray(NO_STACK_FRAME_INFOS);
         //sort by resolved label offsets first to allow unordered entries
-        for (var fr : entries) {
-            map.put(dcb.labelToBci(fr.target()), fr);
-        }
-        b.writeU2(map.size());
-        for (var me : map.entrySet()) {
-            int offset = me.getKey();
-            var fr = me.getValue();
+        Arrays.sort(infos, new Comparator<StackMapFrameInfo>() {
+            public int compare(final StackMapFrameInfo o1, final StackMapFrameInfo o2) {
+                return Integer.compare(dcb.labelToBci(o1.target()), dcb.labelToBci(o2.target()));
+            }
+        });
+        b.writeU2(infos.length);
+        for (var fr : infos) {
+            int offset = dcb.labelToBci(fr.target());
+            if (offset == prevOffset) {
+                throw new IllegalArgumentException("Duplicated stack frame bytecode index: " + offset);
+            }
             writeFrame(buf, offset - prevOffset - 1, prevLocals, fr);
             prevOffset = offset;
             prevLocals = fr.locals();
@@ -160,13 +168,14 @@ public class StackMapDecoder {
 
     private static void writeTypeInfo(BufWriterImpl bw, VerificationTypeInfo vti) {
         bw.writeU1(vti.tag());
-        switch (vti) {
-            case SimpleVerificationTypeInfo svti ->
+        switch (vti.tag()) {
+            case VT_TOP, VT_INTEGER, VT_FLOAT, VT_DOUBLE, VT_LONG, VT_NULL, VT_UNINITIALIZED_THIS ->
                 {}
-            case ObjectVerificationTypeInfo ovti ->
-                bw.writeIndex(ovti.className());
-            case UninitializedVerificationTypeInfo uvti ->
-                bw.writeU2(bw.labelContext().labelToBci(uvti.newTarget()));
+            case VT_OBJECT ->
+                bw.writeIndex(((ObjectVerificationTypeInfo)vti).className());
+            case VT_UNINITIALIZED ->
+                bw.writeU2(bw.labelContext().labelToBci(((UninitializedVerificationTypeInfo)vti).newTarget()));
+            default -> throw new IllegalArgumentException("Invalid verification type tag: " + vti.tag());
         }
     }
 
@@ -230,7 +239,7 @@ public class StackMapDecoder {
             case VT_LONG -> SimpleVerificationTypeInfo.ITEM_LONG;
             case VT_NULL -> SimpleVerificationTypeInfo.ITEM_NULL;
             case VT_UNINITIALIZED_THIS -> SimpleVerificationTypeInfo.ITEM_UNINITIALIZED_THIS;
-            case VT_OBJECT -> new ObjectVerificationTypeInfoImpl((ClassEntry)classReader.entryByIndex(u2()));
+            case VT_OBJECT -> new ObjectVerificationTypeInfoImpl(classReader.entryByIndex(u2(), ClassEntry.class));
             case VT_UNINITIALIZED -> new UninitializedVerificationTypeInfoImpl(ctx.getLabel(u2()));
             default -> throw new IllegalArgumentException("Invalid verification type tag: " + tag);
         };
@@ -241,6 +250,20 @@ public class StackMapDecoder {
 
         @Override
         public int tag() { return VT_OBJECT; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o instanceof ObjectVerificationTypeInfoImpl that) {
+                return Objects.equals(className, that.className);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(className);
+        }
 
         @Override
         public String toString() {
@@ -270,5 +293,9 @@ public class StackMapDecoder {
                                            List<VerificationTypeInfo> locals,
                                            List<VerificationTypeInfo> stack)
             implements StackMapFrameInfo {
+        public StackMapFrameImpl {
+            locals = List.copyOf(locals);
+            stack = List.copyOf(stack);
+        }
     }
 }

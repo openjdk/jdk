@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -8,16 +8,17 @@
  */
 package jdk.internal.org.jline.terminal.impl;
 
-import jdk.internal.org.jline.terminal.Attributes;
-import jdk.internal.org.jline.terminal.Cursor;
-import jdk.internal.org.jline.terminal.Size;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.IntConsumer;
+
+import jdk.internal.org.jline.terminal.Attributes;
+import jdk.internal.org.jline.terminal.Cursor;
+import jdk.internal.org.jline.terminal.Size;
+import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 
 /**
  * Console implementation with embedded line disciplined.
@@ -32,45 +33,59 @@ import java.util.function.IntConsumer;
  */
 public class ExternalTerminal extends LineDisciplineTerminal {
 
+    private final TerminalProvider provider;
     protected final AtomicBoolean closed = new AtomicBoolean();
     protected final InputStream masterInput;
     protected final Object lock = new Object();
     protected boolean paused = true;
     protected Thread pumpThread;
 
-    public ExternalTerminal(String name, String type,
-                            InputStream masterInput,
-                            OutputStream masterOutput,
-                            Charset encoding) throws IOException {
-        this(name, type, masterInput, masterOutput, encoding, SignalHandler.SIG_DFL);
+    public ExternalTerminal(
+            String name, String type, InputStream masterInput, OutputStream masterOutput, Charset encoding)
+            throws IOException {
+        this(null, name, type, masterInput, masterOutput, encoding, SignalHandler.SIG_DFL);
     }
 
-    public ExternalTerminal(String name, String type,
-                            InputStream masterInput,
-                            OutputStream masterOutput,
-                            Charset encoding,
-                            SignalHandler signalHandler) throws IOException {
-        this(name, type, masterInput, masterOutput, encoding, signalHandler, false);
+    public ExternalTerminal(
+            TerminalProvider provider,
+            String name,
+            String type,
+            InputStream masterInput,
+            OutputStream masterOutput,
+            Charset encoding,
+            SignalHandler signalHandler)
+            throws IOException {
+        this(provider, name, type, masterInput, masterOutput, encoding, signalHandler, false);
     }
 
-    public ExternalTerminal(String name, String type,
-                            InputStream masterInput,
-                            OutputStream masterOutput,
-                            Charset encoding,
-                            SignalHandler signalHandler,
-                            boolean paused) throws IOException {
-        this(name, type, masterInput, masterOutput, encoding, signalHandler, paused, null, null);
+    public ExternalTerminal(
+            TerminalProvider provider,
+            String name,
+            String type,
+            InputStream masterInput,
+            OutputStream masterOutput,
+            Charset encoding,
+            SignalHandler signalHandler,
+            boolean paused)
+            throws IOException {
+        this(provider, name, type, masterInput, masterOutput, encoding, signalHandler, paused, null, null);
     }
 
-    public ExternalTerminal(String name, String type,
-                            InputStream masterInput,
-                            OutputStream masterOutput,
-                            Charset encoding,
-                            SignalHandler signalHandler,
-                            boolean paused,
-                            Attributes attributes,
-                            Size size) throws IOException {
+    @SuppressWarnings("this-escape")
+    public ExternalTerminal(
+            TerminalProvider provider,
+            String name,
+            String type,
+            InputStream masterInput,
+            OutputStream masterOutput,
+            Charset encoding,
+            SignalHandler signalHandler,
+            boolean paused,
+            Attributes attributes,
+            Size size)
+            throws IOException {
         super(name, type, masterOutput, encoding, signalHandler);
+        this.provider = provider;
         this.masterInput = masterInput;
         if (attributes != null) {
             setAttributes(attributes);
@@ -171,4 +186,8 @@ public class ExternalTerminal extends LineDisciplineTerminal {
         return CursorSupport.getCursorPosition(this, discarded);
     }
 
+    @Override
+    public TerminalProvider getProvider() {
+        return provider;
+    }
 }

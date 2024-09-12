@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class TestMutuallyExclusivePlatformPredicates {
         IGNORED("isEmulatedClient", "isDebugBuild", "isFastDebugBuild", "isMusl",
                 "isSlowDebugBuild", "hasSA", "isRoot", "isTieredSupported",
                 "areCustomLoadersSupportedForCDS", "isDefaultCDSArchiveSupported",
-                "isHardenedOSX", "hasOSXPlistEntries", "isOracleLinux7");
+                "isHardenedOSX", "hasOSXPlistEntries", "isOracleLinux7", "isOnWayland");
 
         public final List<String> methodNames;
 

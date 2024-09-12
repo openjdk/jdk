@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,10 +137,14 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
   }
 };
 
-
 void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
+  {
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
+  }
+
   _metaspace_stats = MetaspaceUtils::get_combined_statistics();
 }
 
@@ -148,11 +152,6 @@ bool MemBaseline::baseline_allocation_sites() {
   // Malloc allocation sites
   MallocAllocationSiteWalker malloc_walker;
   if (!MallocSiteTable::walk_malloc_site(&malloc_walker)) {
-    return false;
-  }
-
-  // Walk simple thread stacks
-  if (!ThreadStackTracker::walk_simple_thread_stack_site(&malloc_walker)) {
     return false;
   }
 
@@ -194,7 +193,6 @@ void MemBaseline::baseline(bool summaryOnly) {
     baseline_allocation_sites();
     _baseline_type = Detail_baselined;
   }
-
 }
 
 int compare_allocation_site(const VirtualMemoryAllocationSite& s1,

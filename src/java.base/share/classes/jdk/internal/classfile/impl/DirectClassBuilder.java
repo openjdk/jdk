@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,15 @@
 
 package jdk.internal.classfile.impl;
 
+import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassModel;
@@ -44,7 +46,6 @@ import java.lang.classfile.FieldTransform;
 import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.MethodTransform;
-import java.lang.classfile.WritableElement;
 import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class DirectClassBuilder
@@ -52,8 +53,8 @@ public final class DirectClassBuilder
         implements ClassBuilder {
 
     final ClassEntry thisClassEntry;
-    private final List<WritableElement<FieldModel>> fields = new ArrayList<>();
-    private final List<WritableElement<MethodModel>> methods = new ArrayList<>();
+    private final List<Util.Writable> fields = new ArrayList<>();
+    private final List<Util.Writable> methods = new ArrayList<>();
     private ClassEntry superclassEntry;
     private List<ClassEntry> interfaceEntries;
     private int majorVersion;
@@ -78,23 +79,36 @@ public final class DirectClassBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute)element);
+            writeAttribute((CustomAttribute<?>) element);
         }
+        return this;
+    }
+
+    @Override
+    public ClassBuilder withFlags(int flags) {
+        setFlags(flags);
         return this;
     }
 
     @Override
     public ClassBuilder withField(Utf8Entry name,
                                   Utf8Entry descriptor,
+                                  int flags) {
+        return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, flags, null));
+    }
+
+    @Override
+    public ClassBuilder withField(Utf8Entry name,
+                                  Utf8Entry descriptor,
                                   Consumer<? super FieldBuilder> handler) {
-        return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, null)
+        return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, 0, null)
                                  .run(handler));
     }
 
     @Override
     public ClassBuilder transformField(FieldModel field, FieldTransform transform) {
         DirectFieldBuilder builder = new DirectFieldBuilder(constantPool, context, field.fieldName(),
-                                                            field.fieldType(), field);
+                                                            field.fieldType(), 0, field);
         builder.transform(field, transform);
         return withField(builder);
     }
@@ -120,12 +134,12 @@ public final class DirectClassBuilder
 
     // internal / for use by elements
 
-    public ClassBuilder withField(WritableElement<FieldModel> field) {
+    ClassBuilder withField(Util.Writable field) {
         fields.add(field);
         return this;
     }
 
-    public ClassBuilder withMethod(WritableElement<MethodModel> method) {
+    ClassBuilder withMethod(Util.Writable method) {
         methods.add(method);
         return this;
     }
@@ -172,13 +186,13 @@ public final class DirectClassBuilder
 
         // We maintain two writers, and then we join them at the end
         int size = sizeHint == 0 ? 256 : sizeHint;
-        BufWriter head = new BufWriterImpl(constantPool, context, size);
+        BufWriterImpl head = new BufWriterImpl(constantPool, context, size);
         BufWriterImpl tail = new BufWriterImpl(constantPool, context, size, thisClassEntry, majorVersion);
 
         // The tail consists of fields and methods, and attributes
         // This should trigger all the CP/BSM mutation
-        tail.writeList(fields);
-        tail.writeList(methods);
+        Util.writeList(tail, fields);
+        Util.writeList(tail, methods);
         int attributesOffset = tail.size();
         attributes.writeTo(tail);
 
@@ -186,7 +200,7 @@ public final class DirectClassBuilder
         boolean written = constantPool.writeBootstrapMethods(tail);
         if (written) {
             // Update attributes count
-            tail.patchInt(attributesOffset, 2, attributes.size() + 1);
+            tail.patchU2(attributesOffset, attributes.size() + 1);
         }
 
         // Now we can make the head
@@ -197,7 +211,7 @@ public final class DirectClassBuilder
         head.writeU2(flags);
         head.writeIndex(thisClassEntry);
         head.writeIndexOrZero(superclass);
-        head.writeListIndices(ies);
+        Util.writeListIndices(head, ies);
 
         // Join head and tail into an exact-size buffer
         byte[] result = new byte[head.size() + tail.size()];

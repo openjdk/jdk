@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@ import sun.security.krb5.Checksum;
 import sun.security.krb5.KrbCryptoException;
 import sun.security.krb5.internal.*;
 
-public abstract class CksumType {
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
-    private static boolean DEBUG = Krb5.DEBUG;
+public abstract class CksumType {
 
     public static CksumType getInstance(int cksumTypeConst)
         throws KdcErrException {
@@ -121,8 +121,8 @@ public abstract class CksumType {
         default:
             throw new KdcErrException(Krb5.KDC_ERR_SUMTYPE_NOSUPP);
         }
-        if (DEBUG) {
-            System.out.println(">>> CksumType: " + cksumTypeName);
+        if (DEBUG != null) {
+            DEBUG.println(">>> CksumType: " + cksumTypeName);
         }
         return cksumType;
     }

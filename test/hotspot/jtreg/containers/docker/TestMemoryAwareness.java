@@ -200,8 +200,8 @@ public class TestMemoryAwareness {
             .shouldMatch("Memory Limit is:.*" + expectedTraceValue)
             // Either for cgroup v1: a_1) same as memory limit, or b_1) -2 on systems with swapaccount=0
             // Either for cgroup v2: a_2) 0, or b_2) -2 on systems with swapaccount=0
-            .shouldMatch("Memory and Swap Limit is:.*(" + expectedTraceValue + "|-2|0)")
-            .shouldNotMatch("Memory and Swap Limit is:.*" + neg2InUnsignedLong);
+            .shouldMatch("(Memory and )?Swap Limit is:.*(" + expectedTraceValue + "|-2|0)")
+            .shouldNotMatch("(Memory and )?Swap Limit is:.*" + neg2InUnsignedLong);
     }
 
 

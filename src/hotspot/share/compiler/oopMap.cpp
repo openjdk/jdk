@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -498,7 +498,6 @@ static void update_register_map1(const ImmutableOopMap* oopmap, const frame* fr,
       VMReg reg = omv.content_reg();
       address loc = fr->oopmapreg_to_location(omv.reg(), reg_map);
       reg_map->set_location(reg, loc);
-      //DEBUG_ONLY(nof_callee++;)
     }
   }
 }
@@ -520,15 +519,7 @@ void ImmutableOopMap::update_register_map(const frame *fr, RegisterMap *reg_map)
   // Scan through oopmap and find location of all callee-saved registers
   // (we do not do update in place, since info could be overwritten)
 
-  DEBUG_ONLY(int nof_callee = 0;)
   update_register_map1(this, fr, reg_map);
-
-  // Check that runtime stubs save all callee-saved registers
-#ifdef COMPILER2
-  assert(cb == nullptr || cb->is_compiled_by_c1() || cb->is_compiled_by_jvmci() || !cb->is_runtime_stub() ||
-         (nof_callee >= SAVED_ON_ENTRY_REG_COUNT || nof_callee >= C_SAVED_ON_ENTRY_REG_COUNT),
-         "must save all");
-#endif // COMPILER2
 }
 
 const ImmutableOopMap* OopMapSet::find_map(const frame *fr) {

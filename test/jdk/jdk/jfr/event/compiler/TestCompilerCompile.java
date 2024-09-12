@@ -48,6 +48,7 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:CompileOnly=jdk.jfr.event.compiler.TestCompilerCompile::dummyMethod,jdk.jfr.event.compiler.TestCompilerCompile::doTest
+ *     -XX:CompileCommand=MemStat,*.*
  *     jdk.jfr.event.compiler.TestCompilerCompile
  */
 public class TestCompilerCompile {
@@ -138,5 +139,6 @@ public class TestCompilerCompile {
         Events.assertField(event, "inlinedBytes").atLeast(0L);
         Events.assertField(event, "codeSize").atLeast(0L);
         Events.assertField(event, "isOsr");
+        Events.assertField(event, "arenaBytes").atLeast(1024L);
     }
 }

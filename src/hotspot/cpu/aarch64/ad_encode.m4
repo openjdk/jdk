@@ -29,12 +29,12 @@ define(choose, `loadStore($1, &MacroAssembler::$3, $2, $4,
   %}')dnl
 define(access, `
     $3Register $1_reg = as_$3Register($$1$$reg);
-    $4choose(C2_MacroAssembler(&cbuf), $1_reg,$2,$mem->opcode(),
+    $4choose(masm, $1_reg,$2,$mem->opcode(),
         as_Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp,$5)')dnl
 define(load,`
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_$2($1 dst, memory$5 mem) %{dnl
+  enc_class aarch64_enc_$2($1 dst, memory mem) %{dnl
 access(dst,$2,$3,$4,$5)')dnl
 load(iRegI,ldrsbw,,,1)
 load(iRegI,ldrsb,,,1)
@@ -53,14 +53,13 @@ load(vRegD,ldrd,Float,,8)
 define(STORE,`
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_$2($1 src, memory$5 mem) %{dnl
+  enc_class aarch64_enc_$2($1 src, memory mem) %{dnl
 access(src,$2,$3,$4,$5)')dnl
 define(STORE0,`
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_$2`'0(memory$4 mem) %{
-    C2_MacroAssembler _masm(&cbuf);
-    choose(_masm,zr,$2,$mem->opcode(),
+  enc_class aarch64_enc_$2`'0(memory mem) %{
+    choose(masm,zr,$2,$mem->opcode(),
         as_$3Register($mem$$base),$mem$$index,$mem$$scale,$mem$$disp,$4)')dnl
 STORE(iRegI,strb,,,1)
 STORE0(iRegI,strb,,1)
@@ -72,7 +71,6 @@ STORE(iRegL,str,,
 `// we sometimes get asked to store the stack pointer into the
     // current thread -- we cannot do that directly on AArch64
     if (src_reg == r31_sp) {
-      C2_MacroAssembler _masm(&cbuf);
       assert(as_Register($mem$$base) == rthread, "unexpected store for sp");
       __ mov(rscratch2, sp);
       src_reg = rscratch2;
@@ -84,9 +82,8 @@ STORE(vRegD,strd,Float,,8)
 
   // This encoding class is generated automatically from ad_encode.m4.
   // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-  enc_class aarch64_enc_strb0_ordered(memory4 mem) %{
-      C2_MacroAssembler _masm(&cbuf);
+  enc_class aarch64_enc_strb0_ordered(memory mem) %{
       __ membar(Assembler::StoreStore);
-      loadStore(_masm, &MacroAssembler::strb, zr, $mem->opcode(),
+      loadStore(masm, &MacroAssembler::strb, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}

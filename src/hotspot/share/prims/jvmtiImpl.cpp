@@ -1014,17 +1014,17 @@ void JvmtiDeferredEvent::run_nmethod_entry_barriers() {
 
 
 // Keep the nmethod for compiled_method_load from being unloaded.
-void JvmtiDeferredEvent::oops_do(OopClosure* f, CodeBlobClosure* cf) {
+void JvmtiDeferredEvent::oops_do(OopClosure* f, NMethodClosure* cf) {
   if (cf != nullptr && _type == TYPE_COMPILED_METHOD_LOAD) {
-    cf->do_code_blob(_event_data.compiled_method_load);
+    cf->do_nmethod(_event_data.compiled_method_load);
   }
 }
 
 // The GC calls this and marks the nmethods here on the stack so that
 // they cannot be unloaded while in the queue.
-void JvmtiDeferredEvent::nmethods_do(CodeBlobClosure* cf) {
+void JvmtiDeferredEvent::nmethods_do(NMethodClosure* cf) {
   if (cf != nullptr && _type == TYPE_COMPILED_METHOD_LOAD) {
-    cf->do_code_blob(_event_data.compiled_method_load);
+    cf->do_nmethod(_event_data.compiled_method_load);
   }
 }
 
@@ -1092,13 +1092,13 @@ void JvmtiDeferredEventQueue::run_nmethod_entry_barriers() {
 }
 
 
-void JvmtiDeferredEventQueue::oops_do(OopClosure* f, CodeBlobClosure* cf) {
+void JvmtiDeferredEventQueue::oops_do(OopClosure* f, NMethodClosure* cf) {
   for(QueueNode* node = _queue_head; node != nullptr; node = node->next()) {
      node->event().oops_do(f, cf);
   }
 }
 
-void JvmtiDeferredEventQueue::nmethods_do(CodeBlobClosure* cf) {
+void JvmtiDeferredEventQueue::nmethods_do(NMethodClosure* cf) {
   for(QueueNode* node = _queue_head; node != nullptr; node = node->next()) {
      node->event().nmethods_do(cf);
   }

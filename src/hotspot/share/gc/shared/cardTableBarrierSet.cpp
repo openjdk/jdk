@@ -28,7 +28,7 @@
 #include "gc/shared/cardTableBarrierSet.inline.hpp"
 #include "gc/shared/cardTableBarrierSetAssembler.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/virtualspace.hpp"
 #include "nmt/memTracker.hpp"
@@ -80,12 +80,8 @@ CardTableBarrierSet::~CardTableBarrierSet() {
   delete _card_table;
 }
 
-void CardTableBarrierSet::write_ref_array_work(MemRegion mr) {
+void CardTableBarrierSet::write_region(MemRegion mr) {
   _card_table->dirty_MemRegion(mr);
-}
-
-void CardTableBarrierSet::invalidate(MemRegion mr) {
-  _card_table->invalidate(mr);
 }
 
 void CardTableBarrierSet::print_on(outputStream* st) const {
@@ -141,7 +137,7 @@ void CardTableBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop ne
       thread->set_deferred_card_mark(mr);
     } else {
       // Do the card mark
-      invalidate(mr);
+      write_region(mr);
     }
   }
 #endif // COMPILER2_OR_JVMCI

@@ -149,9 +149,8 @@ void Management::init() {
 }
 
 void Management::initialize(TRAPS) {
-  if (UseNotificationThread) {
-    NotificationThread::initialize();
-  }
+  NotificationThread::initialize();
+
   if (ManagementServer) {
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);
@@ -1433,7 +1432,7 @@ JVM_ENTRY(jobjectArray, jmm_GetVMGlobalNames(JNIEnv *env))
   int num_entries = 0;
   for (int i = 0; i < nFlags; i++) {
     JVMFlag* flag = &JVMFlag::flags[i];
-    // Exclude notproduct and develop flags in product builds.
+    // Exclude develop flags in product builds.
     if (flag->is_constant_in_binary()) {
       continue;
     }
@@ -1590,7 +1589,7 @@ JVM_ENTRY(jint, jmm_GetVMGlobals(JNIEnv *env,
     int num_entries = 0;
     for (int i = 0; i < nFlags && num_entries < count;  i++) {
       JVMFlag* flag = &JVMFlag::flags[i];
-      // Exclude notproduct and develop flags in product builds.
+      // Exclude develop flags in product builds.
       if (flag->is_constant_in_binary()) {
         continue;
       }
@@ -1821,7 +1820,7 @@ JVM_END
 // of a given length and return the objArrayOop
 static objArrayOop get_memory_usage_objArray(jobjectArray array, int length, TRAPS) {
   if (array == nullptr) {
-    THROW_(vmSymbols::java_lang_NullPointerException(), 0);
+    THROW_NULL(vmSymbols::java_lang_NullPointerException());
   }
 
   objArrayOop oa = objArrayOop(JNIHandles::resolve_non_null(array));
@@ -1829,16 +1828,16 @@ static objArrayOop get_memory_usage_objArray(jobjectArray array, int length, TRA
 
   // array must be of the given length
   if (length != array_h->length()) {
-    THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-               "The length of the given MemoryUsage array does not match the number of memory pools.", 0);
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                   "The length of the given MemoryUsage array does not match the number of memory pools.");
   }
 
   // check if the element of array is of type MemoryUsage class
   Klass* usage_klass = Management::java_lang_management_MemoryUsage_klass(CHECK_NULL);
   Klass* element_klass = ObjArrayKlass::cast(array_h->klass())->element_klass();
   if (element_klass != usage_klass) {
-    THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-               "The element type is not MemoryUsage class", 0);
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                   "The element type is not MemoryUsage class");
   }
 
   return array_h();
