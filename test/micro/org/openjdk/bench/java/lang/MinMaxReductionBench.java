@@ -58,7 +58,7 @@ public class MinMaxReductionBench {
      * For min, this value represents the percentage of branches in which
      * the value will be smaller or equal than the current min.
      */
-    @Param({"50", "100"})
+    @Param({"50", "80", "100"})
     int probability;
 
     public int[] maxIntA;
