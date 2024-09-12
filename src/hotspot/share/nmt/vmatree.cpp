@@ -197,3 +197,51 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   }
   return diff;
 }
+
+#ifdef ASSERT
+void VMATree::print_on(outputStream* out) {
+  visit_in_order([&](TreapNode* current) {
+    out->print("%lu (%s) - %s - ", current->key(), NMTUtil::flag_to_name(current->val().out.flag()),
+               statetype_to_string(current->val().out.type()));
+  });
+  out->cr();
+}
+#endif
+
+VMATree::SummaryDiff VMATree::set_flag(position from, size_t sz, MEMFLAGS flag) {
+  VMATreap::Range range = _tree.find_enclosing_range(from);
+  assert(range.start != nullptr && range.end != nullptr,
+         "Setting a flag must be done within existing range");
+  StateType type = range.start->val().out.type();
+  RegionData new_data = RegionData(range.start->val().out.stack(), flag);
+
+  position end = MIN2(from + sz, range.end->key());
+  SummaryDiff diff = register_mapping(from, end, type, new_data);
+
+  // If end < from + sz then there are multiple ranges for which to set the flag.
+  while (end < from + sz) {
+    range = _tree.find_enclosing_range(from);
+    assert(range.start != nullptr && range.end != nullptr,
+           "Setting a flag must be done within existing range.");
+    if (range.start == nullptr || range.end == nullptr) {
+      break;
+    }
+    end = MIN2(from + sz, range.end->key());
+    StateType type = range.start->val().out.type();
+    RegionData new_data = RegionData(range.start->val().out.stack(), flag);
+    SummaryDiff result = register_mapping(from, end, type, new_data);
+    diff.apply(result);
+  }
+
+  return diff;
+}
+
+void VMATree::SummaryDiff::print_on(outputStream* out) {
+  for (int i = 0; i < mt_number_of_types; i++) {
+    if (flag[i].reserve == 0 && flag[i].commit == 0) {
+      continue;
+    }
+    out->print_cr("Flag %s R: %ld C: %ld", NMTUtil::flag_to_enum_name((MEMFLAGS)i), flag[i].reserve,
+                  flag[i].commit);
+  }
+}

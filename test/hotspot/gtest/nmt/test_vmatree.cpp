@@ -31,7 +31,7 @@
 #include "unittest.hpp"
 
 using Tree = VMATree;
-using Node = Tree::TreapNode;
+using TreeNode = Tree::TreapNode;
 using NCS = NativeCallStackStorage;
 
 class NMTVMATreeTest : public testing::Test {
@@ -77,7 +77,7 @@ public:
 
   int count_nodes(Tree& tree) {
     int count = 0;
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TreeNode* x) {
       ++count;
     });
     return count;
@@ -130,7 +130,7 @@ public:
     for (int i = 0; i < 10; i++) {
       tree.commit_mapping(i * 100, 100, rd);
     }
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TreeNode* x) {
       VMATree::StateType in = in_type_of(x);
       VMATree::StateType out = out_type_of(x);
       EXPECT_TRUE((in == VMATree::StateType::Released && out == VMATree::StateType::Committed) ||
@@ -155,7 +155,7 @@ public:
     };
 
     int i = 0;
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TreeNode* x) {
       if (i < 16) {
         found[i] = x->key();
       }
@@ -211,7 +211,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     VMATree::RegionData rd2{si[1], mtNMT };
     tree.commit_mapping(50, 50, rd2);
     tree.reserve_mapping(0, 100, rd);
-    treap(tree).visit_in_order([&](Node* x) {
+    treap(tree).visit_in_order([&](TreeNode* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0) {
         EXPECT_EQ(x->val().out.regiondata().flag, mtTest);
@@ -247,7 +247,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     Tree tree;
     tree.reserve_mapping(0, 100, rd);
     tree.commit_mapping(0, 100, rd2);
-    treap(tree).visit_range_in_order(0, 99999, [&](Node* x) {
+    treap(tree).visit_range_in_order(0, 99999, [&](TreeNode* x) {
       if (x->key() == 0) {
         EXPECT_EQ(mtTest, x->val().out.regiondata().flag);
       }
@@ -264,6 +264,68 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     EXPECT_EQ(nullptr, treap_root(tree));
     tree.commit_mapping(0, 0, rd);
     EXPECT_EQ(nullptr, treap_root(tree));
+  }
+}
+
+TEST_VM_F(NMTVMATreeTest, SetFlag) {
+  auto i = [](MEMFLAGS f) -> uint8_t { return (uint8_t)f; };
+
+  // The gc/cds case with only reserved data
+  {
+    VMATree::SummaryDiff diff;
+    Tree::RegionData rd(NCS::StackIndex(), mtNone);
+    VMATree tree;
+
+    VMATree::SummaryDiff result = tree.reserve_mapping(0, 500, rd);
+    diff.apply(result);
+    EXPECT_EQ(diff.flag[i(mtNone)].reserve, 500);
+
+    result = tree.reserve_mapping(500, 100, rd);
+    diff.apply(result);
+    EXPECT_EQ(diff.flag[i(mtNone)].reserve, 600);
+
+    result = tree.set_flag(0, 500, mtGC);
+    diff.apply(result);
+    EXPECT_EQ(diff.flag[i(mtNone)].reserve, 100);
+    EXPECT_EQ(diff.flag[i(mtGC)].reserve, 500);
+
+    result = tree.set_flag(500, 100, mtClassShared);
+    diff.apply(result);
+    EXPECT_EQ(diff.flag[i(mtNone)].reserve, 0);
+    EXPECT_EQ(diff.flag[i(mtGC)].reserve, 500);
+    EXPECT_EQ(diff.flag[i(mtClassShared)].reserve, 100);
+  }
+
+  // Now let's add in some committed data
+  {
+    VMATree::SummaryDiff diff;
+    Tree::RegionData rd(NCS::StackIndex(), mtNone);
+    VMATree tree;
+
+    VMATree::SummaryDiff result = tree.reserve_mapping(0, 600, rd);
+    diff.apply(result);
+    EXPECT_EQ(diff.flag[i(mtNone)], 600);
+
+    // The committed areas
+    result = tree.commit_mapping(100, 125, rd);
+    diff.apply(result);
+    result = tree.commit_mapping(550, 10, rd);
+    diff.apply(result);
+    result = tree.commit_mapping(565, 10, rd);
+    diff.apply(result);
+
+    // OK, set flag
+    result = tree.set_flag(0, 500, mtGC);
+    diff.apply(result);
+    EXPECT_EQ(diff.flag[i(mtNone)].reserve, 100);
+    EXPECT_EQ(diff.flag[i(mtGC)].reserve, 500);
+    EXPECT_EQ(diff.flag[i(mtGC)].commit, 25);
+
+    result = tree.set_flag(500, 100, mtClassShared);
+    diff.apply(result);
+    EXPECT_EQ(diff.flag[i(mtNone)].reserve, 0);
+    EXPECT_EQ(diff.flag[i(mtClassShared)].reserve, 100);
+    EXPECT_EQ(diff.flag[i(mtClassShared)].commit, 20);
   }
 }
 

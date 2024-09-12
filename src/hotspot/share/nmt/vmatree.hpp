@@ -26,10 +26,11 @@
 #ifndef SHARE_NMT_VMATREE_HPP
 #define SHARE_NMT_VMATREE_HPP
 
+#include "nmt/memflags.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtTreap.hpp"
-#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 #include <cstdint>
 
 // A VMATree stores a sequence of points on the natural number line.
@@ -74,7 +75,9 @@ public:
     RegionData() : stack_idx(), flag(mtNone) {}
 
     RegionData(NativeCallStackStorage::StackIndex stack_idx, MEMFLAGS flag)
-    : stack_idx(stack_idx), flag(flag) {}
+      : stack_idx(stack_idx),
+        flag(flag) {
+    }
 
     static bool equals(const RegionData& a, const RegionData& b) {
       return a.flag == b.flag &&
@@ -158,6 +161,7 @@ public:
     delta reserve;
     delta commit;
   };
+
   struct SummaryDiff {
     SingleDiff flag[mt_number_of_types];
     SummaryDiff() {
@@ -165,6 +169,17 @@ public:
         flag[i] = SingleDiff{0, 0};
       }
     }
+
+    void apply(SummaryDiff& other) {
+      for (int i = 0; i < mt_number_of_types; i++) {
+        flag[i].reserve += other.flag[i].reserve;
+        flag[i].commit += other.flag[i].commit;
+      }
+    }
+
+#ifdef ASSERT
+    void print_on(outputStream* out);
+#endif
   };
 
   SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata);
@@ -172,6 +187,8 @@ public:
   SummaryDiff reserve_mapping(position from, position sz, const RegionData& metadata) {
     return register_mapping(from, from + sz, StateType::Reserved, metadata);
   }
+
+  SummaryDiff set_flag(position from, size_t sz, MEMFLAGS flag);
 
   SummaryDiff commit_mapping(position from, position sz, const RegionData& metadata) {
     return register_mapping(from, from + sz, StateType::Committed, metadata);
@@ -186,6 +203,11 @@ public:
   void visit_in_order(F f) const {
     _tree.visit_in_order(f);
   }
+
+#ifdef ASSERT
+  void print_on(outputStream* out);
+#endif
+
 };
 
 #endif
