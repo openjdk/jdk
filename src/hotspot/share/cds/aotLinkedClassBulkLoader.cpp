@@ -102,13 +102,13 @@ void AOTLinkedClassBulkLoader::load_classes_in_loader_impl(LoaderKind loader_kin
     // execute some of the <clinit> methods.
     break;
   case LoaderKind::BOOT2:
-    init_classes_reachable_from_mirrors(h_loader, static_table->boot2(), CHECK);
+    init_required_classes_for_loader(h_loader, static_table->boot2(), CHECK);
     break;
   case LoaderKind::PLATFORM:
-    init_classes_reachable_from_mirrors(h_loader, static_table->platform(), CHECK);
+    init_required_classes_for_loader(h_loader, static_table->platform(), CHECK);
     break;
   case LoaderKind::APP:
-    init_classes_reachable_from_mirrors(h_loader, static_table->app(), CHECK);
+    init_required_classes_for_loader(h_loader, static_table->app(), CHECK);
     break;
   }
 
@@ -231,10 +231,14 @@ void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char*
 }
 
 void AOTLinkedClassBulkLoader::finish_loading_javabase_classes(TRAPS) {
-  init_classes_reachable_from_mirrors(Handle(), AOTLinkedClassTable::for_static_archive()->boot(), CHECK);
+  init_required_classes_for_loader(Handle(), AOTLinkedClassTable::for_static_archive()->boot(), CHECK);
 }
 
-void AOTLinkedClassBulkLoader::init_classes_reachable_from_mirrors(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS) {
+// Some AOT-linked classes for <class_loader> must be initialized early. This includes
+// - classes that were AOT-initialized by AOTClassInitializer
+// - the classes of all objects that are reachable from the archived mirrors of
+//   the AOT-linked classes for <class_loader>.
+void AOTLinkedClassBulkLoader::init_required_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS) {
   if (classes != nullptr) {
     for (int i = 0; i < classes->length(); i++) {
       InstanceKlass* ik = classes->at(i);
@@ -243,12 +247,11 @@ void AOTLinkedClassBulkLoader::init_classes_reachable_from_mirrors(Handle class_
         // For example, we have loaded only BOOT classes but k is part of BOOT2.
         continue;
       }
-      if (ik->has_preinitialized_mirror()) {
+      if (ik->has_aot_initialized_mirror()) {
         ik->initialize_from_cds(CHECK);
       }
     }
   }
 
-  // See comments in initialize_default_subgraph_classes() about what it does.
-  HeapShared::initialize_default_subgraph_classes(Handle(), CHECK);
+  HeapShared::init_classes_reachable_from_archived_mirrors(class_loader, CHECK);
 }

@@ -54,7 +54,7 @@ class AOTLinkedClassBulkLoader :  AllStatic {
   static void load_table(AOTLinkedClassTable* table, LoaderKind loader_kind, Handle loader, TRAPS);
   static void initiate_loading(JavaThread* current, const char* category, Handle initiating_loader, Array<InstanceKlass*>* classes);
   static void load_classes_impl(LoaderKind loader_kind, Array<InstanceKlass*>* classes, const char* category, Handle loader, TRAPS);
-  static void init_classes_reachable_from_mirrors(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
+  static void init_required_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
 
 public:
   static void serialize(SerializeClosure* soc, bool is_static_archive);

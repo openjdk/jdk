@@ -330,7 +330,7 @@ private:
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
   static bool archive_object(oop obj);
-  static void copy_preinitialized_mirror(Klass* orig_k, oop orig_mirror, oop m);
+  static void copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop m);
   static void copy_interned_strings();
 
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
@@ -440,7 +440,7 @@ private:
   static void initialize_test_class_from_archive(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
 #endif
 
-  static void initialize_default_subgraph_classes(Handle loader, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_classes_reachable_from_archived_mirrors(Handle loader, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
 };
 
 #if INCLUDE_CDS_JAVA_HEAP

@@ -28,7 +28,7 @@
 #include "cds/cdsConfig.hpp"
 #include "oops/instanceKlass.inline.hpp"
 
-bool AOTClassInitializer::can_archive_preinitialized_mirror(InstanceKlass* ik) {
+bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   assert(!ArchiveBuilder::current()->is_in_buffer_space(ik), "must be source klass");
   if (!CDSConfig::is_initing_classes_at_dump_time()) {
     return false;

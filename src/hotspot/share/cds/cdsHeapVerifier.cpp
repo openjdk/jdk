@@ -182,12 +182,12 @@ public:
       }
       if (klass_of_field->is_instance_klass()) {
         if (InstanceKlass::cast(klass_of_field)->is_initialized() &&
-            AOTClassInitializer::can_archive_preinitialized_mirror(InstanceKlass::cast(klass_of_field))) {
+            AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass::cast(klass_of_field))) {
           return;
         }
       }
 
-      if (AOTClassInitializer::can_archive_preinitialized_mirror(_ik)) {
+      if (AOTClassInitializer::can_archive_initialized_mirror(_ik)) {
         return;
       }
 

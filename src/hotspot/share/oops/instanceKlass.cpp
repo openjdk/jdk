@@ -816,7 +816,7 @@ void InstanceKlass::initialize_from_cds(TRAPS) {
     return;
   }
 
-  if (has_preinitialized_mirror() && CDSConfig::is_loading_heap() &&
+  if (has_aot_initialized_mirror() && CDSConfig::is_loading_heap() &&
       are_super_types_initialized(this)) {
     if (log_is_enabled(Info, cds, init)) {
       ResourceMark rm;
@@ -845,7 +845,7 @@ void InstanceKlass::initialize_from_cds(TRAPS) {
     // execution of <clinit> of this class.
     ResourceMark rm;
     log_info(cds, init)("%s%s", external_name(),
-                        (has_preinitialized_mirror() && CDSConfig::is_loading_heap()) ? " (quicker)" : "");
+                        (has_aot_initialized_mirror() && CDSConfig::is_loading_heap()) ? " (quicker)" : "");
   }
   initialize(THREAD);
 }
@@ -1645,14 +1645,14 @@ void InstanceKlass::call_class_initializer(TRAPS) {
 
 #if INCLUDE_CDS
   // This is needed to ensure the consistency of the archived heap objects.
-  if (has_archived_enum_objs()) {
+  if (has_aot_initialized_mirror() && CDSConfig::is_loading_heap()) {
+    return;
+  } else if (has_archived_enum_objs()) {
     assert(is_shared(), "must be");
     bool initialized = CDSEnumKlass::initialize_enum_klass(this, CHECK);
     if (initialized) {
       return;
     }
-  } else if (has_preinitialized_mirror() && CDSConfig::is_loading_heap()) {
-    return;
   }
 #endif
 

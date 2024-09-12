@@ -408,12 +408,12 @@ void HeapShared::remove_scratch_objects(Klass* k) {
   }
 }
 
-void HeapShared::copy_preinitialized_mirror(Klass* orig_k, oop orig_mirror, oop m) {
+void HeapShared::copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop m) {
   if (!orig_k->is_instance_klass()) {
     return;
   }
   InstanceKlass* ik = InstanceKlass::cast(orig_k);
-  if (!ik->is_initialized() || !AOTClassInitializer::can_archive_preinitialized_mirror(ik)) {
+  if (!ik->is_initialized() || !AOTClassInitializer::can_archive_initialized_mirror(ik)) {
     return;
   }
 
@@ -464,12 +464,12 @@ void HeapShared::copy_preinitialized_mirror(Klass* orig_k, oop orig_mirror, oop 
 
   if (log_is_enabled(Info, cds, init)) {
     ResourceMark rm;
-    log_debug(cds, init)("copied %3d field(s) in preinitialized mirror %s%s", nfields, ik->external_name(),
+    log_debug(cds, init)("copied %3d field(s) in aot-initialized mirror %s%s", nfields, ik->external_name(),
                          ik->is_hidden() ? " (hidden)" : "");
   }
 
   InstanceKlass* buffered_ik = ArchiveBuilder::current()->get_buffered_addr(ik);
-  buffered_ik->set_has_preinitialized_mirror();
+  buffered_ik->set_has_aot_initialized_mirror();
 }
 
 static void copy_java_mirror_hashcode(oop orig_mirror, oop scratch_m) {
@@ -509,7 +509,7 @@ void HeapShared::archive_java_mirrors() {
     oop m = scratch_java_mirror(orig_k);
     if (m != nullptr) {
       copy_java_mirror_hashcode(orig_mirror, m);
-      copy_preinitialized_mirror(orig_k, orig_mirror, m);
+      copy_aot_initialized_mirror(orig_k, orig_mirror, m);
     }
   }
 
@@ -972,7 +972,7 @@ void HeapShared::resolve_classes_for_subgraphs(JavaThread* current, ArchivableSt
 }
 
 // The main purpose of this call is to initialize any classes that are reachable
-// from archived Java mirrors that belong to the given class_loader.
+// from the archived Java mirrors that belong to the <class_loader>.
 //
 // For example, if this enum class is initialized at AOT cache assembly time:
 //
@@ -987,7 +987,7 @@ void HeapShared::resolve_classes_for_subgraphs(JavaThread* current, ArchivableSt
 // The set of classes that are required to be initialized for the archived
 // java mirrors are recorded in _runtime_default_subgraph_info (which probably
 // needs a better name).
-void HeapShared::initialize_default_subgraph_classes(Handle class_loader, TRAPS) {
+void HeapShared::init_classes_reachable_from_archived_mirrors(Handle class_loader, TRAPS) {
   if (!ArchiveHeapLoader::is_in_use()) {
     return;
   }
@@ -1323,7 +1323,7 @@ bool HeapShared::archive_reachable_objects_from(int level,
     }
   } else if (java_lang_Class::is_instance(orig_obj) && subgraph_info != _default_subgraph_info) {
     // Without CDSConfig::is_initing_classes_at_dump_time(), we only allow archived objects to
-    // point to the mirrors of the j.l.Object, primitive classes and box classes. These are initialized
+    // point to the mirrors of (1) j.l.Object, (2) primitive classes, and (3) box classes. These are initialized
     // very early by HeapShared::init_box_classes().
     if (orig_obj == vmClasses::Object_klass()->java_mirror()
         || java_lang_Class::is_primitive(orig_obj)
@@ -1386,8 +1386,8 @@ bool HeapShared::archive_reachable_objects_from(int level,
   orig_obj->oop_iterate(&walker);
 
   if (CDSConfig::is_initing_classes_at_dump_time()) {
-    // The enum klasses are archived with preinitialized mirror.
-    // See AOTClassInitializer::can_archive_preinitialized_mirror.
+    // The enum klasses are archived with aot-initialized mirror.
+    // See AOTClassInitializer::can_archive_initialized_mirror().
   } else {
     if (CDSEnumKlass::is_enum_obj(orig_obj)) {
       CDSEnumKlass::handle_enum_obj(level + 1, subgraph_info, orig_obj);
