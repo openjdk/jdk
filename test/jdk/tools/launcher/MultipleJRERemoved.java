@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,8 +112,18 @@ public class MultipleJRERemoved extends TestHelper {
         TestResult tr = doExec(cmd.toArray(new String[cmd.size()]));
         tr.checkNegative();
         tr.isNotZeroOutput();
-        errorMessages.forEach(tr::contains);
-
+        boolean foundAnyExpectedErrMsgs = false;
+        for (String errMsg : errorMessages) {
+            if (tr.contains(errMsg)) {
+                foundAnyExpectedErrMsgs = true;
+                break;
+            }
+        }
+        if (!foundAnyExpectedErrMsgs) {
+            errorMessages.forEach((errMsg) -> {
+                tr.appendError("string <" + errMsg + "> not found");
+            });
+        }
         if (!tr.testStatus) {
             System.out.println(tr);
             throw new RuntimeException("test case: failed\n" + cmd);
