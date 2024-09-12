@@ -36,36 +36,20 @@ inline Klass* CompressedKlassPointers::decode_not_null_without_asserts(narrowKla
   return (Klass*)((uintptr_t)narrow_base_base +((uintptr_t)v << shift));
 }
 
-inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v, address narrow_base, int shift) {
-  assert(!is_null(v), "narrow klass value can never be zero");
-  Klass* result = decode_not_null_without_asserts(v, narrow_base, shift);
-  DEBUG_ONLY(check_valid_klass(result, narrow_base, shift));
-  return result;
-}
-
 inline narrowKlass CompressedKlassPointers::encode_not_null_without_asserts(Klass* k, address narrow_base, int shift) {
   return (narrowKlass)(pointer_delta(k, narrow_base, 1) >> shift);
 }
 
-inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v, address narrow_base, int shift) {
-  assert(!is_null(v), "klass value can never be zero");
-  DEBUG_ONLY(check_valid_klass(v);)
-  narrowKlass result = encode_not_null_without_asserts(v, narrow_base, shift);
-  assert(decode_not_null((narrowKlass)result, narrow_base, shift) == v, "reversibility");
-  return result;
-}
-
-inline Klass* CompressedKlassPointers::decode_not_null_without_asserts(narrowKlass v) {
-  return decode_not_null_without_asserts(v, base(), shift());
-}
-
 inline Klass* CompressedKlassPointers::decode_without_asserts(narrowKlass v) {
-  return is_null(v) ? nullptr : decode_not_null_without_asserts(v);
+  return is_null(v) ? nullptr : decode_not_null_without_asserts(v, base(), shift());
 }
 
 inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v) {
+  assert(!is_null(v), "narrow klass value can never be zero");
   DEBUG_ONLY(check_valid_narrow_klass_id(v);)
-  return decode_not_null(v, base(), shift());
+  Klass* const k = decode_not_null_without_asserts(v, base(), shift());
+  DEBUG_ONLY(check_encodable(k));
+  return k;
 }
 
 inline Klass* CompressedKlassPointers::decode(narrowKlass v) {
@@ -73,7 +57,10 @@ inline Klass* CompressedKlassPointers::decode(narrowKlass v) {
 }
 
 inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v) {
-  narrowKlass nk = encode_not_null(v, base(), shift());
+  assert(!is_null(v), "klass value can never be zero");
+  DEBUG_ONLY(check_encodable(v);)
+  const narrowKlass nk = encode_not_null_without_asserts(v, base(), shift());
+  assert(decode_not_null_without_asserts(nk, base(), shift()) == v, "reversibility");
   DEBUG_ONLY(check_valid_narrow_klass_id(nk);)
   return nk;
 }
@@ -83,34 +70,37 @@ inline narrowKlass CompressedKlassPointers::encode(Klass* v) {
 }
 
 #ifdef ASSERT
-inline void CompressedKlassPointers::check_valid_klass(const Klass* k, address base, int shift) {
-  const int log_alignment = MAX2(3, shift); // always at least 64-bit aligned
-  assert(is_aligned(k, nth_bit(log_alignment)), "Klass (" PTR_FORMAT ") not properly aligned to %zu",
-         p2i(k), nth_bit(shift));
-  const address encoding_end = base + nth_bit(narrow_klass_pointer_bits() + shift);
-  assert((address)k >= base && (address)k < encoding_end,
-         "Klass (" PTR_FORMAT ") falls outside of the valid encoding range [" PTR_FORMAT "-" PTR_FORMAT ")",
-         p2i(k), p2i(base), p2i(encoding_end));
+inline void CompressedKlassPointers::check_encodable(const void* addr) {
+  assert(UseCompressedClassPointers, "Only call for +UseCCP");
+  assert(addr != nullptr, "Null Klass?");
+  assert(is_encodable(addr),
+         "Address " PTR_FORMAT " is not encodable (Klass range: " RANGEFMT ", klass alignment: %d)",
+         p2i(addr), RANGE2FMTARGS(_klass_range_start, _klass_range_end), klass_alignment_in_bytes());
 }
 
-inline void CompressedKlassPointers::check_valid_klass(const Klass* k) {
-  assert(UseCompressedClassPointers, "Only call for +UseCCP");
-  check_valid_klass(k, base(), shift());
-  // Also assert that k falls into what we know is the valid Klass range. This is usually smaller
-  // than the encoding range (e.g. encoding range covers 4G, but we only have 1G class space and a
-  // tiny bit of CDS => 1.1G)
-  const address klassrange_end = base() + range();
-  assert((address)k < klassrange_end,
-      "Klass (" PTR_FORMAT ") falls outside of the valid klass range [" PTR_FORMAT "-" PTR_FORMAT ")",
-      p2i(k), p2i(base()), p2i(klassrange_end));
-}
 inline void CompressedKlassPointers::check_valid_narrow_klass_id(narrowKlass nk) {
+  check_init(_base);
   assert(UseCompressedClassPointers, "Only call for +UseCCP");
+  assert(nk > 0, "narrow Klass ID is 0");
   const uint64_t nk_mask = ~right_n_bits(narrow_klass_pointer_bits());
   assert(((uint64_t)nk & nk_mask) == 0, "narrow klass id bit spillover (%u)", nk);
   assert(nk >= _lowest_valid_narrow_klass_id &&
          nk <= _highest_valid_narrow_klass_id, "narrowKlass ID out of range (%u)", nk);
 }
 #endif // ASSERT
+
+inline bool CompressedKlassPointers::is_encodable(const void* address) {
+  check_init(_base);
+  // An address can only be encoded if:
+  //
+  // 1) the address lies within the klass range.
+  // 2) It is suitably aligned to 2^encoding_shift. This only really matters for
+  //    +UseCompactObjectHeaders, since the encoding shift can be large (max 10 bits -> 1KB).
+  //    This can lead to alignment waste. We use that waste to store other data. That data,
+  //    though living inside the Klass range, cannot be encoded since it is not properly
+  //    aligned. That should not matter.
+  return is_aligned(address, klass_alignment_in_bytes()) &&
+      address >= _klass_range_start && address < _klass_range_end;
+}
 
 #endif // SHARE_OOPS_COMPRESSEDKLASS_INLINE_HPP

@@ -43,6 +43,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -256,7 +257,7 @@ static markWord make_prototype(const Klass* kls) {
     // Note that only those Klass that can be instantiated have a narrow Klass ID.
     // For those who don't, we leave the klass bits empty and assert if someone
     // tries to use those.
-    const narrowKlass nk = CompressedKlassPointers::is_in_encoding_range(kls) ?
+    const narrowKlass nk = CompressedKlassPointers::is_encodable(kls) ?
         CompressedKlassPointers::encode(const_cast<Klass*>(kls)) : 0;
     prototype = prototype.set_narrow_klass(nk);
   }
@@ -1010,7 +1011,14 @@ void Klass::verify_on(outputStream* st) {
 
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
-  assert(Metaspace::contains((address)this), "Should be");
+#ifdef ASSERT
+  if (UseCompressedClassPointers && needs_narrow_id()) {
+    // Stricter checks for both correct alignment and placement
+    CompressedKlassPointers::check_encodable(this);
+  } else {
+    assert(Metaspace::contains((address)this), "Should be");
+  }
+#endif // ASSERT
 
   guarantee(this->is_klass(),"should be klass");
 
@@ -1038,6 +1046,8 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
 }
 
+// Note: this function is called with an address that may or may not be a Klass.
+// The point is not to assert it is but to check if it could be.
 bool Klass::is_valid(Klass* k) {
   if (!is_aligned(k, sizeof(MetaWord))) return false;
   if ((size_t)k < os::min_page_size()) return false;

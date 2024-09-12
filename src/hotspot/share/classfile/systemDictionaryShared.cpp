@@ -84,6 +84,16 @@ DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_dumptime_lambda_pro
 // Used by NoClassLoadingMark
 DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
 
+#ifdef ASSERT
+static void check_klass_after_loading(const Klass* k) {
+#ifdef _LP64
+  if (k != nullptr && UseCompressedClassPointers && k->needs_narrow_id()) {
+    CompressedKlassPointers::check_encodable(k);
+  }
+#endif
+}
+#endif
+
 InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
                  Symbol* class_name, Handle class_loader, TRAPS) {
   assert(CDSConfig::is_using_archive(), "must be");
@@ -430,11 +440,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
     }
   }
 
-#ifdef ASSERT
-    if (UseCompressedClassPointers && k != nullptr) {
-      CompressedKlassPointers::check_valid_klass(k);
-    }
-#endif
+  DEBUG_ONLY(check_klass_after_loading(k);)
 
   return k;
 }
@@ -1345,11 +1351,7 @@ InstanceKlass* SystemDictionaryShared::find_builtin_class(Symbol* name) {
                                                name);
   if (record != nullptr) {
     assert(!record->_klass->is_hidden(), "hidden class cannot be looked up by name");
-#ifdef _LP64
-    if (UseCompressedClassPointers) {
-      DEBUG_ONLY(CompressedKlassPointers::check_valid_klass(record->_klass);)
-    }
-#endif
+    DEBUG_ONLY(check_klass_after_loading(record->_klass);)
     // We did not save the classfile data of the generated LambdaForm invoker classes,
     // so we cannot support CLFH for such classes.
     if (record->_klass->is_generated_shared_class() && JvmtiExport::should_post_class_file_load_hook()) {

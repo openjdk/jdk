@@ -1000,7 +1000,7 @@ int ArchiveBuilder::precomputed_narrow_klass_shift() {
   // Note that all of this may change in the future, if we decide to correct the pre-calculated
   // narrow Klass IDs at archive load time.
   assert(UseCompressedClassPointers, "Only needed for compressed class pointers");
-  return CompressedKlassPointers::tiny_classpointer_mode() ?  CompressedKlassPointers::max_shift() : 0;
+  return UseCompactObjectHeaders ?  CompressedKlassPointers::max_shift() : 0;
 }
 #endif // _LP64
 

@@ -663,7 +663,7 @@ void Metaspace::ergo_initialize() {
     const size_t max_ccs_size = 8 * (MaxMetaspaceSize / 10);
 
     // CCS is also limited by the max. possible Klass encoding range size
-    const size_t max_encoding_range = CompressedKlassPointers::max_encoding_range_size();
+    const size_t max_encoding_range = CompressedKlassPointers::max_klass_range_size();
     assert(max_encoding_range >= res_align,
            "Encoding range (%zu) must cover at least a full root chunk (%zu)",
            max_encoding_range, res_align);
