@@ -35,6 +35,7 @@ import java.util.Random;
 /*
  * Windows implementation of HotSpotVirtualMachine
  */
+@SuppressWarnings("restricted")
 public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     // the enqueue code stub (copied into each target VM)
