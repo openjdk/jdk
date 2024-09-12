@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,12 +86,11 @@ public class ClassPathAttr {
 
       // Test handling of forward slash ('/') file separator for Class-Path attribute on Windows.
       if (Platform.isWindows()) {
-
           // Test with relative path
           // Find the index to the dir before the jar file.
           int idx = jar1.lastIndexOf(File.separator);
           idx = jar1.substring(0, idx - 1).lastIndexOf(File.separator);
-          // Setup jar direcotry and names.
+          // Setup jar directory and names.
           String jarDir = jar1.substring(0, idx);
           String jar1Name = jar1.substring(idx + 1);
           String jar4Name = jar4.substring(idx + 1);
@@ -116,6 +115,40 @@ public class ClassPathAttr {
                 output.shouldMatch("checking shared classpath entry: .*cpattr2.jar");
                 output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
               });
+
+          // Go one directory up.
+          int idx2 = jar1.substring(0, idx - 1).lastIndexOf(File.separator);
+          if (idx2 != -1) {
+              // Setup jar directory and names.
+              jarDir = jar1.substring(0, idx2);
+              // Set relative path to jar containing '\' and '/' file separators
+              // e.g. d1\d2/A.jar
+              jar1Name = jar1.substring(idx2 + 1).replace("\\", "/");
+              jar4Name = jar4.substring(idx2 + 1).replace("\\", "/");
+              jar1Name = jar1Name.replaceFirst("/", "\\\\");
+              jar4Name = jar4Name.replaceFirst("/", "\\\\");
+
+              newCp = jar1Name + File.pathSeparator + jar4Name;
+              out = TestCommon.testDump(jarDir, newCp, classlist, "-Xlog:class+path=info");
+              if (i == 1) {
+                  out.shouldContain("opened: scratch\\0/cpattr1.jar"); // first jar on -cp
+              } else {
+                  // first jar on -cp with long Class-Path: attribute
+                  out.shouldContain("opened: scratch\\0/cpattr1_long.jar");
+              }
+              // one of the jar in the Class-Path: attribute of cpattr1.jar
+              out.shouldContain("opened: scratch\\0/cpattr2.jar");
+
+              TestCommon.runWithRelativePath(
+                  jarDir.replace("\\", "/"),
+                  "-Xlog:class+path,class+load",
+                  "-cp", newCp,
+                  "CpAttr1")
+                .assertNormalExit(output -> {
+                    output.shouldMatch("checking shared classpath entry: .*cpattr2.jar");
+                    output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
+                  });
+          }
       }
     }
 

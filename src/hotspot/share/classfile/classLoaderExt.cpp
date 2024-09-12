@@ -214,9 +214,12 @@ void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
     const char* dir_name = entry->name();
     const char* dir_tail = strrchr(dir_name, sep);
 #ifdef _WINDOWS
-    // On Windows, we also support forward slash as the file separator for Class-Path: attribute.
+    // On Windows, we also support forward slash as the file separator when locating entries in the Class-Path: attribute.
+    const char* dir_tail2 = strrchr(dir_name, '/');
     if (dir_tail == nullptr) {
-      dir_tail = strrchr(dir_name, '/');
+      dir_tail = dir_tail2;
+    } else if (dir_tail2 != nullptr && dir_tail2 > dir_tail) {
+      dir_tail = dir_tail2;
     }
 #endif
     int dir_len;
