@@ -29,7 +29,7 @@
  * of windows with RGB stripes in according to the number of the
  * GraphicsConfigurations for each screen. It also displays the size of
  * the screen and the GraphicsConfiguration.toString().
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual NonDefaultGC
  */

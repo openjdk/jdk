@@ -29,7 +29,7 @@
  * The togglebutton shows and hides an empty frame on the second monitor. The
  * frame should be positioned at 0, 0 and is shown and hidden by clicking the
  * toggleButton.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual Position
  */
