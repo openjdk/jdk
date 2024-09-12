@@ -97,7 +97,7 @@ public class TestDisabledAutoTransferSwing {
         frame.add(misc);
         misc.addFocusListener(watcher);
         frame.add(desired);
-        frame.setSize (200,200);
+        frame.setSize(200, 200);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         frame.validate();
