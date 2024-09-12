@@ -534,20 +534,20 @@ class MacroAssembler: public Assembler {
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
   void cmpxchgb(ConditionRegister flag, Register dest_current_value,
                 RegisterOrConstant compare_value, Register exchange_value,
-                Register addr_base, Register tmp1, Register tmp2,
-                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
-                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
-    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
-                    semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 1);
+                Register addr_base, int semantics, bool cmpxchgx_hint = false,
+                Register int_flag_success = noreg, Label* failed = nullptr, 
+                bool contention_hint = false, bool weak = false) {
+    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, semantics,
+                     cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 1);
   }
   // Temps, addr_base and exchange_value are killed if processor does not support Power 8 instructions.
   // compare_value must be at least 32 bit sign extended. Result will be sign extended.
   void cmpxchgh(ConditionRegister flag, Register dest_current_value,
                 RegisterOrConstant compare_value, Register exchange_value,
-                Register addr_base, Register tmp1, Register tmp2,
-                int semantics, bool cmpxchgx_hint = false, Register int_flag_success = noreg,
-                Label* failed = nullptr, bool contention_hint = false, bool weak = false) {
-    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base, tmp1, tmp2,
+                Register addr_base, int semantics, bool cmpxchgx_hint = false, 
+                Register int_flag_success = noreg, Label* failed = nullptr,
+                bool contention_hint = false, bool weak = false) {
+    cmpxchg_generic(flag, dest_current_value, compare_value, exchange_value, addr_base,
                     semantics, cmpxchgx_hint, int_flag_success, failed, contention_hint, weak, 2);
   }
   void cmpxchgw(ConditionRegister flag, Register dest_current_value,
