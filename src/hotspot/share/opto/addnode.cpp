@@ -399,6 +399,8 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   PhaseValues* igvn = phase->is_IterGVN();
 //  printf("igvn: %p\n", igvn);
 //  this->dump_bfs(100);
+//  this->dump();
+//  printf("%p, %d, %s\n", igvn, this->_idx, this->Name());
 
   Node* base = nullptr;
   int terms = 0;
