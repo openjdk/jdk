@@ -107,6 +107,10 @@ public:
     return false;
   }
 
+  bool is_in_encoding_range() {
+    return CompressedKlassPointers::is_in_encoding_range(get_Klass());
+  }
+
   // Attempt to get a klass using this ciKlass's loader.
   ciKlass* find_klass(ciSymbol* klass_name);
   // Note:  To find a class from its name string, use ciSymbol::make,
