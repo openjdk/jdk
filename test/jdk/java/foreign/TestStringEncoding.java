@@ -87,6 +87,7 @@ public class TestStringEncoding {
         }
     }
 
+    
     @Test(dataProvider = "strings")
     public void testStringsHeap(String testString) {
         for (Charset charset : singleByteCharsets()) {
