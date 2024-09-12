@@ -28,30 +28,46 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver CompressedOopsTest
+ * @run driver DefaultLogDecoratorsTest
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.regex.Pattern;
+import java.util.List;
 
-public class DefaultLogDecoratorsTest {
+public class DefaultLogDecoratorsTest { //
+    private static Pattern DECORATED_LINE_JIT = Pattern.compile("\\[[0-9]*\\.?[0-9]*s\\]\\[\\w+\\s*\\]\\[jit(,\\w+)*\\s*\\] .*");
+    private static Pattern DECORATED_LINE_GC  = Pattern.compile("\\[[0-9]*\\.?[0-9]*s\\]\\[\\w+\\s*\\]\\[gc(,\\w+)*\\s*\\] .*");
+
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseCompressedOops",
-                                                                             "-Xlog:jit=trace",
+        // JIT logging, as per defaults, shall have all decorators disabled
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:jit*=trace:decorators.log",
                                                                              InnerClass.class.getName());
-
-        output = new OutputAnalyzer(pb.start());
-        output.shouldContain("[gc,heap,coops] Heap address");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
+        List<String> allLines = Files.readAllLines(Path.of("decorators.log"));
+        for (String line : allLines) {
+            if (DECORATED_LINE_JIT.matcher(line).find()) {
+                throw new RuntimeException("JIT logging should not contain decorators!");
+            }
+        }
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseCompressedOops",
-                                                              "-Xlog:jit=trace::tid",
+
+        // Other logging shall not be affected by a tag with defaults
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:gc*=trace:decorators.log",
                                                               InnerClass.class.getName());
-
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("[gc,heap,coops] Heap address");
         output.shouldHaveExitValue(0);
+        allLines = Files.readAllLines(Path.of("decorators.log"));
+        for (String line : allLines) {
+            if (!DECORATED_LINE_GC.matcher(line).find()) {
+                throw new RuntimeException("GC logging should contain decorators!");
+            }
+        }
     }
 
     public static class InnerClass {
