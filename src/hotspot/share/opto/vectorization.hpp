@@ -671,12 +671,11 @@ public:
 
   // Compute the cost of the (scalar) body.
   float cost() const;
+  bool has_zero_cost(Node* n) const;
 
 private:
   bool setup_submodules();
   VStatus setup_submodules_helper();
-
-  bool has_zero_cost(Node* n) const;
 };
 
 // A vectorization pointer (VPointer) has information about an address for

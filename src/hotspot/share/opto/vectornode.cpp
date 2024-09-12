@@ -1561,6 +1561,30 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
   return false;
 }
 
+float ReductionNode::cost(int vopc, uint vlen, BasicType bt, bool requires_strict_order) {
+  // For these reductions, we know that we never require strict order:
+  switch (vopc) {
+  case Op_AddReductionVI:
+  case Op_AddReductionVL:
+  case Op_MulReductionVI:
+  case Op_MulReductionVL:
+  case Op_MinReductionV:
+  case Op_MaxReductionV:
+  case Op_AndReductionV:
+  case Op_OrReductionV:
+  case Op_XorReductionV:
+    requires_strict_order = false;
+  }
+
+  if (requires_strict_order) {
+    // Linear: shuffle and reduce
+    return 2 * vlen;
+  } else {
+    // Recursive: shuffle and reduce
+    return 2 * exact_log2(vlen);
+  }
+}
+
 MacroLogicVNode* MacroLogicVNode::make(PhaseGVN& gvn, Node* in1, Node* in2, Node* in3,
                                        Node* mask, uint truth_table, const TypeVect* vt) {
   assert(truth_table <= 0xFF, "invalid");

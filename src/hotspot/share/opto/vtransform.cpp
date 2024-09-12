@@ -111,11 +111,16 @@ bool VTransformGraph::schedule() {
 
 float VTransformGraph::cost() const {
   assert(is_scheduled(), "must already be scheduled");
+  // TODO: determine what nodes are inside the loop: only count those!
+  //       must be connected up and down... so far can only do up...
+  //       but need down when we are doing the reductions anyway.
   float sum = 0;
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
     float c = vtn->cost(_vloop_analyzer);
-    tty->print("vcost: %.2f ", c); vtn->print();
+    if (c != 0) {
+      tty->print("vcost: %.2f ", c); vtn->print();
+    }
     sum += c;
   }
   return sum;
@@ -160,6 +165,14 @@ Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& 
   Node* n = vnode_idx_to_transformed_node.at(in(i)->_idx);
   assert(n != nullptr, "must find input IR node");
   return n;
+}
+
+float VTransformScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
+  if (vloop_analyzer.has_zero_cost(_node)) {
+    return 0;
+  } else {
+    return 1;
+  }
 }
 
 VTransformApplyResult VTransformScalarNode::apply(const VLoopAnalyzer& vloop_analyzer,
@@ -288,6 +301,16 @@ VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop
   VectorNode* vn = new VectorMaskCmpNode(mask, cmp_in1, cmp_in2, mask_node, vt);
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
+}
+
+float VTransformReductionVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
+  Node* first = nodes().at(0);
+  uint  vlen = nodes().length();
+  int   opc  = first->Opcode();
+  BasicType bt = first->bottom_type()->basic_type();
+
+  int vopc = ReductionNode::opcode(opc, bt);
+  return ReductionNode::cost(vopc, vlen, bt, true);
 }
 
 VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,

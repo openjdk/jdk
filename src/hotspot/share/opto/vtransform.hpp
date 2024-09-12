@@ -337,7 +337,7 @@ public:
     VTransformNode(vtransform, n->req()), _node(n) {}
   Node* node() const { return _node; }
   virtual VTransformScalarNode* isa_Scalar() override { return this; }
-  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; }; // TODO
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "Scalar"; };)
@@ -363,7 +363,7 @@ private:
 public:
   VTransformReplicateNode(VTransform& vtransform, int vlen, const Type* element_type) :
     VTransformNode(vtransform, 2), _vlen(vlen), _element_type(element_type) {}
-  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; }; // TODO
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; };
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "Replicate"; };)
@@ -374,7 +374,7 @@ public:
 class VTransformConvI2LNode : public VTransformNode {
 public:
   VTransformConvI2LNode(VTransform& vtransform) : VTransformNode(vtransform, 2) {}
-  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; }; // TODO
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; };
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ConvI2L"; };)
@@ -390,7 +390,7 @@ private:
 public:
   VTransformShiftCountNode(VTransform& vtransform, int vlen, BasicType element_bt, juint mask, int shift_opcode) :
     VTransformNode(vtransform, 2), _vlen(vlen), _element_bt(element_bt), _mask(mask), _shift_opcode(shift_opcode) {}
-  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; }; // TODO
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; };
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ShiftCount"; };)
@@ -405,7 +405,7 @@ private:
 public:
   VTransformPopulateIndexNode(VTransform& vtransform, int vlen, const BasicType element_bt) :
     VTransformNode(vtransform, 2), _vlen(vlen), _element_bt(element_bt) {}
-  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; }; // TODO
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; };
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "PopulateIndex"; };)
@@ -438,7 +438,7 @@ public:
   VTransformElementWiseVectorNode(VTransform& vtransform, uint req, uint number_of_nodes) :
     VTransformVectorNode(vtransform, req, number_of_nodes) {}
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
-  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; }; // TODO
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; };
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
@@ -460,7 +460,7 @@ public:
     VTransformElementWiseVectorNode(vtransform, 2, number_of_nodes), _test(test) {}
   VTransformBoolTest test() const { return _test; }
   virtual VTransformBoolVectorNode* isa_BoolVector() override { return this; }
-  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; }; // TODO
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 0; };
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "BoolVector"; };)
@@ -472,7 +472,7 @@ public:
   VTransformReductionVectorNode(VTransform& vtransform, uint number_of_nodes) :
     VTransformVectorNode(vtransform, 3, number_of_nodes) {}
   virtual VTransformReductionVectorNode* isa_ReductionVector() override { return this; }
-  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; }; // TODO
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ReductionVector"; };)
@@ -484,7 +484,7 @@ public:
   VTransformLoadVectorNode(VTransform& vtransform, uint number_of_nodes) :
     VTransformVectorNode(vtransform, 3, number_of_nodes) {}
   LoadNode::ControlDependency control_dependency() const;
-  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; }; // TODO
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; };
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoadVector"; };)
@@ -495,7 +495,7 @@ public:
   // req = 4 -> [ctrl, mem, adr, val]
   VTransformStoreVectorNode(VTransform& vtransform, uint number_of_nodes) :
     VTransformVectorNode(vtransform, 4, number_of_nodes) {}
-  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; }; // TODO
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 1; };
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)

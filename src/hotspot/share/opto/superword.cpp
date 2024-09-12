@@ -42,9 +42,7 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
            ),
   _mem_ref_for_main_loop_alignment(nullptr),
   _aw_for_main_loop_alignment(0),
-  _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
-  _num_work_vecs(0),                                        // amount of vector work we have
-  _num_reductions(0)                                        // amount of reduction work we have
+  _do_vector_loop(phase()->C->do_vector_loop())             // whether to do vectorization/simd style
 {
 }
 
@@ -1535,18 +1533,6 @@ void SuperWord::filter_packs_for_implemented() {
 
 // Remove packs that are not profitable.
 void SuperWord::filter_packs_for_profitable() {
-  // Count the number of reductions vs other vector ops, for the
-  // reduction profitability heuristic.
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* pack = _packset.at(i);
-    Node* n = pack->at(0);
-    if (is_marked_reduction(n)) {
-      _num_reductions++;
-    } else {
-      _num_work_vecs++;
-    }
-  }
-
   // Remove packs that are not profitable
   auto filter = [&](const Node_List* pack) {
     return profitable(pack);
@@ -1715,11 +1701,8 @@ bool SuperWord::profitable(const Node_List* p) const {
   if (is_marked_reduction(p0)) {
     Node* second_in = p0->in(2);
     Node_List* second_pk = get_pack(second_in);
-    if ((second_pk == nullptr) || (_num_work_vecs == _num_reductions)) {
-      // No parent pack or not enough work
-      // to cover reduction expansion overhead
-      return false;
-    } else if (second_pk->size() != p->size()) {
+    if (second_pk == nullptr ||
+        second_pk->size() != p->size()) {
       return false;
     }
   }
