@@ -25,10 +25,14 @@
 
 package com.sun.tools.javac.comp;
 
+import java.util.Set;
+
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.WriteableScope;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.comp.DeferredAttr.AttributionMode;
 
 /** Contains information specific to the attribute and enter
@@ -126,6 +130,16 @@ public class AttrContext {
      */
     JCTree preferredTreeForDiagnostics;
 
+    /** Variable declarations we want to prevent from being assigned constant values.
+     *  This is used when scanning for() inits to implement final for() loop variables.
+     */
+    Set<JCVariableDecl> nonConstantVarDecls;
+
+    /** Variables that may be assigned even though they are already initialized and final.
+     *  This is used when scanning for() steps to implement final for() loop variables.
+     */
+    Set<VarSymbol> assignableFinalVars;
+
     /** Duplicate this context, replacing scope field and copying all others.
      */
     AttrContext dup(WriteableScope scope) {
@@ -149,6 +163,8 @@ public class AttrContext {
         info.preferredTreeForDiagnostics = preferredTreeForDiagnostics;
         info.visitingServiceImplementation = visitingServiceImplementation;
         info.allowProtectedAccess = allowProtectedAccess;
+        info.nonConstantVarDecls = nonConstantVarDecls;
+        info.assignableFinalVars = assignableFinalVars;
         return info;
     }
 

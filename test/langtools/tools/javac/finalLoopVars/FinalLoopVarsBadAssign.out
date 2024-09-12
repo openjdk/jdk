@@ -1,0 +1,6 @@
+FinalLoopVarsBadAssign.java:15:37: compiler.err.cant.assign.val.to.var: final, i
+FinalLoopVarsBadAssign.java:23:33: compiler.err.cant.assign.val.to.var: final, i
+FinalLoopVarsBadAssign.java:30:13: compiler.err.cant.assign.val.to.var: final, i
+- compiler.note.preview.filename: FinalLoopVarsBadAssign.java, DEFAULT
+- compiler.note.preview.recompile
+3 errors

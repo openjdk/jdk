@@ -38,6 +38,7 @@ import com.sun.source.tree.CaseTree;
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.WriteableScope;
+import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.*;
@@ -215,9 +216,16 @@ public class Flow {
     private       TreeMaker make;
     private final Resolve rs;
     private final JCDiagnostic.Factory diags;
+    private final Preview preview;
     private Env<AttrContext> attrEnv;
     private       Lint lint;
     private final Infer infer;
+
+    /** Whether (a) final for() loop variables are allowed to be reassigned in the step
+     *  and (b) non-final for() loop variables reassigned in the step are still treated
+     *  as effectively final in the body.
+     */
+    private final boolean allowFinalForLoopVariables;
 
     public static Flow instance(Context context) {
         Flow instance = context.get(flowKey);
@@ -344,7 +352,10 @@ public class Flow {
         infer = Infer.instance(context);
         rs = Resolve.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
+        preview = Preview.instance(context);
         Source source = Source.instance(context);
+
+        allowFinalForLoopVariables = Feature.FINAL_FOR_LOOP_VARIABLES.allowedInSource(source);
     }
 
     /**
@@ -2135,6 +2146,11 @@ public class Flow {
         final Bits uninitsWhenTrue;
         final Bits uninitsWhenFalse;
 
+        /** This contains the for() loop variables declared in the init section
+         *  during the analysis of the corresponding for() step section.
+         */
+        Bits forLoopVarsInStep;
+
         /** A mapping from addresses to variable symbols.
          */
         protected JCVariableDecl[] vardecls;
@@ -2249,7 +2265,10 @@ public class Flow {
                         //assignment targeting an effectively final variable
                         //makes the variable lose its status of effectively final
                         //if the variable is _not_ definitively unassigned
-                        sym.flags_field &= ~EFFECTIVELY_FINAL;
+                        //we exclude assignments to for() loop variables in the step.
+                        if (!isForLoopVariableInStep(pos, sym, false)) {
+                            sym.flags_field &= ~EFFECTIVELY_FINAL;
+                        }
                     } else {
                         uninit(sym);
                     }
@@ -2264,13 +2283,15 @@ public class Flow {
                                       Errors.FinalParameterMayNotBeAssigned(sym));
                         }
                     } else if (!uninits.isMember(sym.adr)) {
-                        log.error(pos, diags.errorKey(flowKind.errKey, sym));
+                        if (!isForLoopVariableInStep(pos, sym, true)) {
+                            log.error(pos, diags.errorKey(flowKind.errKey, sym));
+                        }
                     } else {
                         uninit(sym);
                     }
                 }
                 inits.incl(sym.adr);
-            } else if ((sym.flags() & FINAL) != 0) {
+            } else if ((sym.flags() & FINAL) != 0 && !isForLoopVariableInStep(pos, sym, true)) {
                 log.error(pos, Errors.VarMightAlreadyBeAssigned(sym));
             }
         }
@@ -2284,6 +2305,13 @@ public class Flow {
                     //log.rawWarning(pos, "unreachable assignment");//DEBUG
                     uninits.excl(sym.adr);
                 }
+            }
+            boolean isForLoopVariableInStep(DiagnosticPosition pos, VarSymbol sym, boolean checkPreview) {
+                boolean result = forLoopVarsInStep != null && forLoopVarsInStep.isMember(sym.adr);
+                if (result && checkPreview) {
+                    preview.checkSourceLevel(pos, Feature.FINAL_FOR_LOOP_VARIABLES);
+                }
+                return result;
             }
 
         /** If tree is either a simple name or of the form this.name or
@@ -2704,6 +2732,12 @@ public class Flow {
             flowKind = FlowKind.NORMAL;
             int nextadrPrev = nextadr;
             scan(tree.init);
+            final Bits forLoopVars;
+            if (allowFinalForLoopVariables) {
+                forLoopVars = new Bits();
+                forLoopVars.inclRange(nextadrPrev, nextadr);
+            } else
+                forLoopVars = null;
             final Bits initsSkip = new Bits(true);
             final Bits uninitsSkip = new Bits(true);
             pendingExits = new ListBuffer<>();
@@ -2727,7 +2761,13 @@ public class Flow {
                 }
                 scan(tree.body);
                 resolveContinues(tree);
-                scan(tree.step);
+                final Bits forLoopVarsInStepPrev = forLoopVarsInStep;
+                forLoopVarsInStep = forLoopVars;
+                try {
+                    scan(tree.step);
+                } finally {
+                    forLoopVarsInStep = forLoopVarsInStepPrev;
+                }
                 if (log.nerrors != prevErrors ||
                     flowKind.isFinal() ||
                     new Bits(uninitsEntry).diffSet(uninits).nextBit(firstadr) == -1)

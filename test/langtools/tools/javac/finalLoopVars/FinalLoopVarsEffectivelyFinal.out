@@ -1,0 +1,2 @@
+FinalLoopVarsEffectivelyFinal.java:17:49: compiler.err.cant.ref.non.effectively.final.var: i, (compiler.misc.lambda)
+1 error

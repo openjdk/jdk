@@ -1,0 +1,4 @@
+FinalLoopVarsConstValue.java:16:13: compiler.err.unreachable.stmt
+FinalLoopVarsConstValue.java:24:9: compiler.err.unreachable.stmt
+FinalLoopVarsConstValue.java:38:13: compiler.err.unreachable.stmt
+3 errors

@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.lang.model.element.ElementKind;
@@ -172,6 +173,7 @@ public class Attr extends JCTree.Visitor {
                              Feature.PATTERN_SWITCH.allowedInSource(source);
         allowUnconditionalPatternsInstanceOf =
                              Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.allowedInSource(source);
+        allowFinalForLoopVariables = Feature.FINAL_FOR_LOOP_VARIABLES.allowedInSource(source);
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
 
@@ -199,6 +201,10 @@ public class Attr extends JCTree.Visitor {
     /** Are unconditional patterns in instanceof allowed
      */
     private final boolean allowUnconditionalPatternsInstanceOf;
+
+    /** Are final for() loop variables allowed
+     */
+    private final boolean allowFinalForLoopVariables;
 
     /**
      * Switch: warn about use of variable before declaration?
@@ -303,7 +309,7 @@ public class Attr extends JCTree.Visitor {
                isAssignableAsBlankFinal(v, env)))) {
             if (v.isResourceVariable()) { //TWR resource
                 log.error(pos, Errors.TryResourceMayNotBeAssigned(v));
-            } else {
+            } else if (env.info.assignableFinalVars == null || !env.info.assignableFinalVars.contains(v)) {
                 log.error(pos, Errors.CantAssignValToVar(Flags.toSource(v.flags() & (STATIC | FINAL)), v));
             }
             return;
@@ -842,14 +848,16 @@ public class Attr extends JCTree.Visitor {
 
     /**
      * Attribute a "lazy constant value".
-     *  @param env         The env for the const value
-     *  @param variable    The initializer for the const value
-     *  @param type        The expected type, or null
+     *  @param env              The env for the const value
+     *  @param variable         The initializer for the const value
+     *  @param type             The expected type, or null
+     *  @param forceNonConstant Force variable to not have a constant value
      *  @see VarSymbol#setLazyConstValue
      */
     public Object attribLazyConstantValue(Env<AttrContext> env,
                                       JCVariableDecl variable,
-                                      Type type) {
+                                      Type type,
+                                      boolean forceNonConstant) {
 
         DiagnosticPosition prevLintPos
                 = deferredLintHandler.setPos(variable.pos());
@@ -857,6 +865,9 @@ public class Attr extends JCTree.Visitor {
         final JavaFileObject prevSource = log.useSource(env.toplevel.sourcefile);
         try {
             Type itype = attribExpr(variable.init, env, type);
+            if (forceNonConstant) {
+                itype = itype.dropMetadata(TypeMetadata.ConstantValue.class);
+            }
             if (variable.isImplicitlyTyped()) {
                 //fixup local variable type
                 type = variable.type = variable.sym.type = chk.checkLocalVarType(variable, itype, variable.name);
@@ -1482,16 +1493,69 @@ public class Attr extends JCTree.Visitor {
             env.dup(env.tree, env.info.dup(env.info.scope.dup()));
         MatchBindings condBindings = MatchBindingsComputer.EMPTY;
         try {
-            attribStats(tree.init, loopEnv);
+
+            // Identify final variables declared in the for() loop init block that get reassigned
+            // in the for() step. We need to ensure these don't get treated as constant values.
+            // Note we can ignore any final variables that don't also have initializers.
+            Set<JCVariableDecl> finalForVarDecls;
+            if (allowFinalForLoopVariables) {
+                finalForVarDecls = Optional.of(tree.init.stream()
+                  .filter(init -> init.hasTag(VARDEF))
+                  .map(JCVariableDecl.class::cast)
+                  .filter(varDecl -> (varDecl.mods.flags & Flags.FINAL) != 0 && varDecl.init != null)
+                  .filter(varDecl -> new VariableAssignScanner(varDecl.name).hasAnyAssignments(tree.step))
+                  .collect(Collectors.toSet()))
+                  .filter(set -> !set.isEmpty())
+                  .orElse(null);
+                if (finalForVarDecls != null) {
+                    preview.checkSourceLevel(tree.pos(), Feature.FINAL_FOR_LOOP_VARIABLES);
+                }
+            } else
+                finalForVarDecls = null;
+
+            // Attribute the for() init block; this will create the corresponding VarSymbols
+            Set<JCVariableDecl> nonConstantVarDeclsPrev = loopEnv.info.nonConstantVarDecls;
+            loopEnv.info.nonConstantVarDecls = finalForVarDecls;
+            try {
+                attribStats(tree.init, loopEnv);
+            } finally {
+                loopEnv.info.nonConstantVarDecls = nonConstantVarDeclsPrev;
+            }
+
+            // Retrieve the corresponding VarSymbols and flag them as reassignable
+            Set<VarSymbol> assignableFinalVarsPrev = loopEnv.info.assignableFinalVars;
+            Set<VarSymbol> assignableFinalVarsNext = assignableFinalVarsPrev;
+            if (finalForVarDecls != null) {
+                Set<VarSymbol> finalForVars = Optional.of(finalForVarDecls.stream()
+                  .map(varDecl -> varDecl.sym)
+                  .collect(Collectors.toSet()))
+                  .filter(set -> !set.isEmpty())
+                  .orElse(null);
+                if (finalForVars != null) {
+                    if (assignableFinalVarsPrev != null) {                  // merge with previous
+                        finalForVars.addAll(assignableFinalVarsPrev);
+                    }
+                    assignableFinalVarsNext = finalForVars;
+                }
+            }
+
+            // Attribute the for() condition
             if (tree.cond != null) {
                 attribExpr(tree.cond, loopEnv, syms.booleanType);
                 // include condition's bindings when true in the body and step:
                 condBindings = matchBindings;
             }
+
+            // Attribute the for() body and step
             Env<AttrContext> bodyEnv = bindingEnv(loopEnv, condBindings.bindingsWhenTrue);
             try {
                 bodyEnv.tree = tree; // before, we were not in loop!
-                attribStats(tree.step, bodyEnv);
+                bodyEnv.info.assignableFinalVars = assignableFinalVarsNext;
+                try {
+                    attribStats(tree.step, bodyEnv);
+                } finally {
+                    bodyEnv.info.assignableFinalVars = assignableFinalVarsPrev;
+                }
                 attribStat(tree.body, bodyEnv);
             } finally {
                 bodyEnv.info.scope.leave();
@@ -1502,6 +1566,63 @@ public class Attr extends JCTree.Visitor {
             loopEnv.info.scope.leave();
         }
         handleLoopConditionBindings(condBindings, tree, tree.body);
+    }
+
+    /** Visitor class to find assignments to a specific variable name.
+     */
+    static class VariableAssignScanner extends TreeScanner {
+
+        private final Name varName;
+        private boolean assignmentFound;
+
+        VariableAssignScanner(Name varName) {
+            this.varName = varName;
+        }
+
+        boolean hasAnyAssignments(List<? extends JCTree> trees) {
+            return trees.stream().anyMatch(this::hasAnyAssignments);
+        }
+
+        boolean hasAnyAssignments(JCTree tree) {
+            this.assignmentFound = false;
+            tree.accept(this);
+            return this.assignmentFound;
+        }
+
+        @Override
+        public void visitAssign(JCAssign tree) {
+            checkAssignmentTarget(tree.lhs);
+            super.visitAssign(tree);
+        }
+
+        @Override
+        public void visitAssignop(JCAssignOp tree) {
+            checkAssignmentTarget(tree.lhs);
+            super.visitAssignop(tree);
+        }
+
+        @Override
+        public void visitUnary(JCUnary tree) {
+            if (tree.getTag().isIncOrDecUnaryOp())
+                checkAssignmentTarget(tree.arg);
+            super.visitUnary(tree);
+        }
+
+        @Override
+        public void visitClassDef(JCClassDecl tree) {
+            // do not recurse
+        }
+
+        @Override
+        public void visitLambda(JCLambda tree) {
+            // do not recurse
+        }
+
+        private void checkAssignmentTarget(JCExpression target) {
+            target = TreeInfo.skipParens(target);
+            if (target.hasTag(IDENT) && ((JCIdent)target).name == this.varName)
+                this.assignmentFound = true;
+        }
     }
 
     /**
