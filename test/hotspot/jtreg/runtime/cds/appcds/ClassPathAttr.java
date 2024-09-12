@@ -84,7 +84,8 @@ public class ClassPathAttr {
             output.shouldMatch("checking shared classpath entry: .*cpattr3.jar");
           });
 
-      // Test handling of forward slash ('/') file separator for Class-Path attribute on Windows.
+      // Test handling of forward slash ('/') file separator when locating entries
+      // in the classpath entry on Windows.
       // Skip the following test when CDS dynamic dump is enabled due to some
       // issue when converting a relative path to real path.
       if (Platform.isWindows() && !CDSTestUtils.DYNAMIC_DUMP) {
