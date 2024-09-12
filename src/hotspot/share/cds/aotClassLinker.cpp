@@ -146,9 +146,9 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
 
   add_candidate(ik);
 
-  if (log_is_enabled(Info, cds, aot, load)) {
+  if (log_is_enabled(Info, cds, aot, link)) {
     ResourceMark rm;
-    log_info(cds, aot, load)("%s %s", ArchiveUtils::class_category(ik), ik->external_name());
+    log_info(cds, aot, link)("%s %s", ArchiveUtils::class_category(ik), ik->external_name());
   }
 
   return true;
@@ -209,7 +209,7 @@ Array<InstanceKlass*>* AOTClassLinker::write_classes(oop class_loader, bool is_j
     return nullptr;
   } else {
     const char* category = ArchiveUtils::class_category(list.at(0));
-    log_info(cds, aot, load)("written %d class(es) for category %s", list.length(), category);
+    log_info(cds, aot, link)("written %d class(es) for category %s", list.length(), category);
     return ArchiveUtils::archive_array(&list);
   }
 }
