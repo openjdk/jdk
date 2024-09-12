@@ -424,7 +424,7 @@ public class Resolve {
             return
                 (env.enclClass.sym == sym.owner // fast special case
                  ||
-                 isCurrentlyResolvingPermitting(env)
+                 env.info.isPermitsClause
                  &&
                  ((JCClassDecl) env.tree).sym.outermostClass() == sym.owner.outermostClass()
                  ||
@@ -461,21 +461,6 @@ public class Resolve {
         default: // this case includes erroneous combinations as well
             return isAccessible(env, site, checkInner) && notOverriddenIn(site, sym);
         }
-    }
-
-    // it's a bit hacky, but basically if we are currently resolving symbol inside permitting block
-    // then at least one symbol in permitting block should be unresolved,
-    // while extending and implementing should be resolved
-    private boolean isCurrentlyResolvingPermitting(Env<AttrContext> env) {
-        return env.tree instanceof JCClassDecl classDecl
-            && classDecl.permitting.stream().anyMatch(permitting -> !symNotNull(permitting))
-            && (classDecl.extending == null || symNotNull(classDecl.extending))
-            && classDecl.implementing.stream().allMatch(this::symNotNull);
-    }
-
-    private boolean symNotNull(JCTree tree) {
-        return tree instanceof JCFieldAccess fieldAccess && fieldAccess.sym != null
-            || tree instanceof JCIdent ident && ident.sym != null;
     }
 
     //where
