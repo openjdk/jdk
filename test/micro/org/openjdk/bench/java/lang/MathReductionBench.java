@@ -34,6 +34,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
@@ -43,10 +44,13 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Thread)
-public class MathLoopBench {
+public class MathReductionBench {
 
-    @Param({"1024", "4096", "8192", "16384"})
+    @Param({"100", "1000", "10000"})
     int size;
+
+    @Param({"50", "75", "100"})
+    int probability;
 
     public int[] aInt;
     public int[] bInt;
@@ -57,24 +61,54 @@ public class MathLoopBench {
 
     @Setup
     public void setup() {
-        aInt = new int[size];
-        bInt = new int[size];
-        cInt = new int[size];
-        aLong = new long[size];
-        bLong = new long[size];
-        cLong = new long[size];
-        for (int i = 0; i < size; i++) {
-            aInt[i] = ThreadLocalRandom.current().nextInt();
-            bInt[i] = ThreadLocalRandom.current().nextInt();
-            cInt[i] = ThreadLocalRandom.current().nextInt();
-            aLong[i] = ThreadLocalRandom.current().nextLong();
-            bLong[i] = ThreadLocalRandom.current().nextLong();
-            cLong[i] = ThreadLocalRandom.current().nextLong();
-        }
+        aInt = distributeIntRandomIncrement(size, probability);
+        bInt = distributeIntRandomIncrement(size, probability);
+        cInt = distributeIntRandomIncrement(size, probability);
+        aLong = distributeLongRandomIncrement(size, probability);
+        bLong = distributeLongRandomIncrement(size, probability);
+        cLong = distributeLongRandomIncrement(size, probability);
+    }
+
+    static int[] distributeIntRandomIncrement(int size, int probability) {
+        final long[] longs = distributeLongRandomIncrement(size, probability);
+        return Arrays.stream(longs).mapToInt(i -> (int) i).toArray();
+    }
+
+    static long[] distributeLongRandomIncrement(int size, int probability) {
+        long[] result;
+        int aboveCount, abovePercent;
+
+        // Iterate until you find a set that matches the requirement probability
+        do {
+            long max = ThreadLocalRandom.current().nextLong(10);
+            result = new long[size];
+            result[0] = max;
+
+            aboveCount = 0;
+            for (int i = 1; i < result.length; i++) {
+                long value;
+
+                if (ThreadLocalRandom.current().nextLong(101) <= probability) {
+                    long increment = ThreadLocalRandom.current().nextLong(10);
+                    value = max + increment;
+                    aboveCount++;
+                } else {
+                    // Decrement by at least 1
+                    long decrement = ThreadLocalRandom.current().nextLong(10) + 1;
+                    value = max - decrement;
+                }
+
+                result[i] = value;
+                max = Math.max(max, value);
+            }
+            abovePercent = ((aboveCount + 1) * 100) / size;
+        } while (abovePercent != probability);
+
+        return result;
     }
 
     @Benchmark
-    public long reductionSingleIntMin() {
+    public long singleIntMin() {
         int result = 0;
         for (int i = 0; i < size; i++) {
             final int v = 11 * aInt[i];
@@ -84,7 +118,7 @@ public class MathLoopBench {
     }
 
     @Benchmark
-    public long reductionMultiIntMin() {
+    public long multiIntMin() {
         int result = 0;
         for (int i = 0; i < size; i++) {
             final int v = (aInt[i] * bInt[i]) + (aInt[i] * cInt[i]) + (bInt[i] * cInt[i]);
@@ -94,7 +128,7 @@ public class MathLoopBench {
     }
 
     @Benchmark
-    public long reductionSingleIntMax() {
+    public long singleIntMax() {
         int result = 0;
         for (int i = 0; i < size; i++) {
             final int v = 11 * aInt[i];
@@ -104,7 +138,7 @@ public class MathLoopBench {
     }
 
     @Benchmark
-    public long reductionMultiIntMax() {
+    public long multiIntMax() {
         int result = 0;
         for (int i = 0; i < size; i++) {
             final int v = (aInt[i] * bInt[i]) + (aInt[i] * cInt[i]) + (bInt[i] * cInt[i]);
@@ -114,7 +148,7 @@ public class MathLoopBench {
     }
 
     @Benchmark
-    public long reductionSingleLongMin() {
+    public long singleLongMin() {
         long result = 0;
         for (int i = 0; i < size; i++) {
             final long v = 11 * aLong[i];
@@ -124,7 +158,7 @@ public class MathLoopBench {
     }
 
     @Benchmark
-    public long reductionMultiLongMin() {
+    public long multiLongMin() {
         long result = 0;
         for (int i = 0; i < size; i++) {
             final long v = (aLong[i] * bLong[i]) + (aLong[i] * cLong[i]) + (bLong[i] * cLong[i]);
@@ -134,7 +168,7 @@ public class MathLoopBench {
     }
 
     @Benchmark
-    public long reductionSingleLongMax() {
+    public long singleLongMax() {
         long result = 0;
         for (int i = 0; i < size; i++) {
             final long v = 11 * aLong[i];
@@ -144,7 +178,7 @@ public class MathLoopBench {
     }
 
     @Benchmark
-    public long reductionMultiLongMax() {
+    public long multiLongMax() {
         long result = 0;
         for (int i = 0; i < size; i++) {
             final long v = (aLong[i] * bLong[i]) + (aLong[i] * cLong[i]) + (bLong[i] * cLong[i]);
