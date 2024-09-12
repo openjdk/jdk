@@ -54,7 +54,7 @@ public final class SegmentBulkOperations {
 
     // Update the FILL value for Aarch64 once 8338975 is fixed.
     private static final int NATIVE_THRESHOLD_FILL = powerOfPropertyOr("fill", Architecture.isAARCH64() ? 10 : 5);
-    private static final int NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", Architecture.isAARCH64() ? 31 : 5);
+    private static final int NATIVE_THRESHOLD_MISMATCH = powerOfPropertyOr("mismatch", 6);
     private static final int NATIVE_THRESHOLD_COPY = powerOfPropertyOr("copy", 6);
 
     @ForceInline
@@ -197,48 +197,12 @@ public final class SegmentBulkOperations {
                                  AbstractMemorySegmentImpl dst, long dstFromOffset,
                                  long start, int length, boolean srcAndDstBytesDiffer) {
         int offset = 0;
-        // Currently, we do not benefit from super-word optimization on Aarch64 so
-        // instead we manually unroll the loop.
-        // This gives about 20% performance increase for large values of `length`.
-        // On non-Aarch64 architectures, the unroll code will be eliminated at compile time.
-        if (Architecture.isAARCH64() && NATIVE_THRESHOLD_MISMATCH > 64) {
-
-            // 0...X...000000
-            final int bulkLimit = length & (NATIVE_THRESHOLD_MISMATCH - 64);
-            for (; offset < bulkLimit; offset += 64) {
-                // Manually unroll looping in chunks of 64 bytes
-
-                // The creation of long arrays will be optimized away
-                final long[] s = new long[8];
-                // Grouping reads from the same source together improves performance
-                s[0] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset,      !Architecture.isLittleEndian());
-                s[1] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset +  8, !Architecture.isLittleEndian());
-                s[2] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 16, !Architecture.isLittleEndian());
-                s[3] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 24, !Architecture.isLittleEndian());
-                s[4] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 32, !Architecture.isLittleEndian());
-                s[5] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 40, !Architecture.isLittleEndian());
-                s[6] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 48, !Architecture.isLittleEndian());
-                s[7] = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset + 56, !Architecture.isLittleEndian());
-
-                final long[] d = new long[8];
-                d[0] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset,      !Architecture.isLittleEndian());
-                d[1] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset +  8, !Architecture.isLittleEndian());
-                d[2] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 16, !Architecture.isLittleEndian());
-                d[3] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 24, !Architecture.isLittleEndian());
-                d[4] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 32, !Architecture.isLittleEndian());
-                d[5] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 40, !Architecture.isLittleEndian());
-                d[6] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 48, !Architecture.isLittleEndian());
-                d[7] = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset + 56, !Architecture.isLittleEndian());
-
-                // Explicitly checking each index retains performance
-                if (s[0] != d[0]) { return start + offset +      mismatch(s[0], d[0]); }
-                if (s[1] != d[1]) { return start + offset +  8 + mismatch(s[1], d[1]); }
-                if (s[2] != d[2]) { return start + offset + 16 + mismatch(s[2], d[2]); }
-                if (s[3] != d[3]) { return start + offset + 24 + mismatch(s[3], d[3]); }
-                if (s[4] != d[4]) { return start + offset + 32 + mismatch(s[4], d[4]); }
-                if (s[5] != d[5]) { return start + offset + 40 + mismatch(s[5], d[5]); }
-                if (s[6] != d[6]) { return start + offset + 48 + mismatch(s[6], d[6]); }
-                if (s[7] != d[7]) { return start + offset + 56 + mismatch(s[7], d[7]); }
+        final int limit = length & (NATIVE_THRESHOLD_MISMATCH - 8);
+        for (; offset < limit; offset += 8) {
+            final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, !Architecture.isLittleEndian());
+            final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, !Architecture.isLittleEndian());
+            if (s != d) {
+                return start + offset + mismatch(s, d);
             }
         }
         int remaining = length - offset;
