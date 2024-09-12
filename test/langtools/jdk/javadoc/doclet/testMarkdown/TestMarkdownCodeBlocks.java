@@ -543,4 +543,50 @@ public class TestMarkdownCodeBlocks extends JavadocTester {
                     </code></pre>
                     </div>""");
     }
+
+    // this example is derived from the test case in JDK-8338525
+    @Test
+    public void testLeadingTrailingCodeBlockWithAnnotations(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package p;
+                    public class C {
+                        ///     @Override
+                        ///     void m() {}
+                        ///
+                        /// Plain text
+                        ///
+                        ///     @Override
+                        ///     void m() {}
+                        public void m() {}
+                    }""");
+
+        javadoc("-d", base.resolve("api").toString(),
+                "--no-platform-links",
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <div class="col-first even-row-color method-summary-table method-summary-table-tab2 \
+                    method-summary-table-tab4"><code>void</code></div>
+                    <div class="col-second even-row-color method-summary-table method-summary-table-tab2 \
+                    method-summary-table-tab4"><code><a href="#m()" class="member-name-link">m</a>()</code></div>
+                    <div class="col-last even-row-color method-summary-table method-summary-table-tab2 \
+                    method-summary-table-tab4">&nbsp;</div>""",
+                """
+                    <div class="member-signature"><span class="modifiers">public</span>&nbsp;\
+                    <span class="return-type">void</span>&nbsp;<span class="element-name">m</span>()</div>
+                    <div class="block"><pre><code>@Override
+                    void m() {}
+                    </code></pre>
+                    <p>Plain text</p>
+                    <pre><code>@Override
+                    void m() {}
+                    </code></pre>
+                    </div>""");
+
+    }
 }
