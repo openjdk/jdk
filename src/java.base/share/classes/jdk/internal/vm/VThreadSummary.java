@@ -61,6 +61,7 @@ public class VThreadSummary {
         // print I/O pollers if initialized
         if (!U.shouldBeInitialized(Poller.class)) {
             printPollers(sb);
+            sb.append(System.lineSeparator());
         }
 
         // print thread groupings/containers
@@ -127,7 +128,6 @@ public class VThreadSummary {
                         .append("] ")
                         .append(writePollers.get(i))
                         .append(System.lineSeparator()));
-        sb.append(System.lineSeparator());
     }
 
     /**

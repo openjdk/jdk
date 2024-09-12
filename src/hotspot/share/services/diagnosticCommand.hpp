@@ -964,7 +964,7 @@ public:
     return "Thread.vthread_summary";
   }
   static const char* description() {
-    return "Print virtual thread summary";
+    return "Print the virtual thread scheduler, timeout schedulers, I/O pollers, and thread groupings.";
   }
   static const char* impact() { return "Low"; }
   virtual void execute(DCmdSource source, TRAPS);
