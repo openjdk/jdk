@@ -37,6 +37,8 @@ import org.openjdk.jmh.annotations.Warmup;
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 @Warmup(iterations = 3, time = 5)
 @Measurement(iterations = 4, time = 5)
@@ -44,29 +46,58 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Thread)
-public class MathReductionBench {
+public class MinMaxReductionBench {
 
     @Param({"100", "1000", "10000"})
     int size;
 
-    @Param({"50", "75", "100"})
+    /**
+     * Probability of one of the min/max branches being taken.
+     * For max, this value represents the percentage of branches in which
+     * the value will be bigger or equal than the current max.
+     * For min, this value represents the percentage of branches in which
+     * the value will be smaller or equal than the current min.
+     */
+    @Param({"50", "100"})
     int probability;
 
-    public int[] aInt;
-    public int[] bInt;
-    public int[] cInt;
-    public long[] aLong;
-    public long[] bLong;
-    public long[] cLong;
+    public int[] maxIntA;
+    public int[] minIntA;
+    public int[] maxIntB;
+    public int[] minIntB;
+    public int[] maxIntC;
+    public int[] minIntC;
+    public long[] maxLongA;
+    public long[] minLongA;
+    public long[] maxLongB;
+    public long[] minLongB;
+    public long[] maxLongC;
+    public long[] minLongC;
 
     @Setup
     public void setup() {
-        aInt = distributeIntRandomIncrement(size, probability);
-        bInt = distributeIntRandomIncrement(size, probability);
-        cInt = distributeIntRandomIncrement(size, probability);
-        aLong = distributeLongRandomIncrement(size, probability);
-        bLong = distributeLongRandomIncrement(size, probability);
-        cLong = distributeLongRandomIncrement(size, probability);
+        maxIntA = distributeIntRandomIncrement(size, probability);
+        minIntA = negate(distributeIntRandomIncrement(size, probability);
+        maxIntB = distributeIntRandomIncrement(size, probability);
+        minIntB = negate(distributeIntRandomIncrement(size, probability));
+        maxIntC = distributeIntRandomIncrement(size, probability);
+        minIntC = negate(distributeIntRandomIncrement(size, probability));
+        maxLongA = distributeLongRandomIncrement(size, probability);
+        minLongA = negate(distributeLongRandomIncrement(size, probability));
+        maxLongB = distributeLongRandomIncrement(size, probability);
+        minLongB = negate(distributeLongRandomIncrement(size, probability));
+        maxLongC = distributeLongRandomIncrement(size, probability);
+        minLongC = negate(distributeLongRandomIncrement(size, probability));
+    }
+
+    static long[] negate(long[] nums)
+    {
+        return LongStream.of(nums).map(l -> -l).toArray();
+    }
+
+    static int[] negate(int[] nums)
+    {
+        return IntStream.of(nums).map(i -> -i).toArray();
     }
 
     static int[] distributeIntRandomIncrement(int size, int probability) {
@@ -111,7 +142,7 @@ public class MathReductionBench {
     public long singleIntMin() {
         int result = 0;
         for (int i = 0; i < size; i++) {
-            final int v = 11 * aInt[i];
+            final int v = 11 * minIntA[i];
             result = Math.min(result, v);
         }
         return result;
@@ -121,7 +152,7 @@ public class MathReductionBench {
     public long multiIntMin() {
         int result = 0;
         for (int i = 0; i < size; i++) {
-            final int v = (aInt[i] * bInt[i]) + (aInt[i] * cInt[i]) + (bInt[i] * cInt[i]);
+            final int v = (minIntA[i] * minIntB[i]) + (minIntA[i] * minIntC[i]) + (minIntB[i] * minIntC[i]);
             result = Math.min(result, v);
         }
         return result;
@@ -131,7 +162,7 @@ public class MathReductionBench {
     public long singleIntMax() {
         int result = 0;
         for (int i = 0; i < size; i++) {
-            final int v = 11 * aInt[i];
+            final int v = 11 * maxIntA[i];
             result = Math.max(result, v);
         }
         return result;
@@ -141,7 +172,7 @@ public class MathReductionBench {
     public long multiIntMax() {
         int result = 0;
         for (int i = 0; i < size; i++) {
-            final int v = (aInt[i] * bInt[i]) + (aInt[i] * cInt[i]) + (bInt[i] * cInt[i]);
+            final int v = (maxIntA[i] * maxIntB[i]) + (maxIntA[i] * maxIntC[i]) + (maxIntB[i] * maxIntC[i]);
             result = Math.max(result, v);
         }
         return result;
@@ -151,7 +182,7 @@ public class MathReductionBench {
     public long singleLongMin() {
         long result = 0;
         for (int i = 0; i < size; i++) {
-            final long v = 11 * aLong[i];
+            final long v = 11 * minLongA[i];
             result = Math.min(result, v);
         }
         return result;
@@ -161,7 +192,7 @@ public class MathReductionBench {
     public long multiLongMin() {
         long result = 0;
         for (int i = 0; i < size; i++) {
-            final long v = (aLong[i] * bLong[i]) + (aLong[i] * cLong[i]) + (bLong[i] * cLong[i]);
+            final long v = (minLongA[i] * minLongB[i]) + (minLongA[i] * minLongC[i]) + (minLongB[i] * minLongC[i]);
             result = Math.min(result, v);
         }
         return result;
@@ -171,7 +202,7 @@ public class MathReductionBench {
     public long singleLongMax() {
         long result = 0;
         for (int i = 0; i < size; i++) {
-            final long v = 11 * aLong[i];
+            final long v = 11 * maxLongA[i];
             result = Math.max(result, v);
         }
         return result;
@@ -181,7 +212,7 @@ public class MathReductionBench {
     public long multiLongMax() {
         long result = 0;
         for (int i = 0; i < size; i++) {
-            final long v = (aLong[i] * bLong[i]) + (aLong[i] * cLong[i]) + (bLong[i] * cLong[i]);
+            final long v = (maxLongA[i] * maxLongB[i]) + (maxLongA[i] * maxLongC[i]) + (maxLongB[i] * maxLongC[i]);
             result = Math.max(result, v);
         }
         return result;
