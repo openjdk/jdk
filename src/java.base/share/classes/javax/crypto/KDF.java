@@ -101,7 +101,6 @@ import java.util.Objects;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
 public final class KDF {
-    private static final Debug debug = Debug.getInstance("jca", "KDF");
 
     private static final Debug pdebug = Debug.getInstance("provider",
                                                           "Provider");
