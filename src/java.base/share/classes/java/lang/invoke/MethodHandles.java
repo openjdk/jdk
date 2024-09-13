@@ -1906,7 +1906,7 @@ public class MethodHandles {
                 this.flag = flag;
             }
 
-            static int optionsToFlag(ClassOption ... options) {
+            static int optionsToFlag(ClassOption[] options) {
                 int flags = 0;
                 for (ClassOption cp : options) {
                     flags |= cp.flag;
