@@ -319,7 +319,7 @@ TEST_VM_F(NMTVMATreeTest, SetFlag) {
     diff.apply(result);
     EXPECT_EQ(100, diff.flag[i(mtNone)].reserve);
     EXPECT_EQ(500, diff.flag[i(mtGC)].reserve);
-    EXPECT_EQ(25, diff.flag[i(mtGC)].commit);
+    EXPECT_EQ(125, diff.flag[i(mtGC)].commit);
 
     result = tree.set_flag(500, 100, mtClassShared);
     diff.apply(result);
