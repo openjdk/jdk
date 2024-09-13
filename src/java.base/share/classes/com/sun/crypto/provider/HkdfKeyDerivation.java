@@ -164,10 +164,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             // perform extract
             try {
-                byte[] result = hkdfExtract(inputKeyMaterial, salt);
-                Arrays.fill(inputKeyMaterial, (byte)0x00);
-                Arrays.fill(salt, (byte)0x00);
-                return result;
+                return hkdfExtract(inputKeyMaterial, salt);
             } catch (InvalidKeyException ike) {
                 throw new InvalidAlgorithmParameterException(
                     "an HKDF Extract could not be initialized with the given "
@@ -201,9 +198,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             // perform expand
             try {
-                byte[] result = hkdfExpand(pseudoRandomKey, info, length);
-                Arrays.fill(pseudoRandomKey, (byte) 0x00);
-                return result;
+                return hkdfExpand(pseudoRandomKey, info, length);
             } catch (InvalidKeyException ike) {
                 throw new InvalidAlgorithmParameterException(
                     "an HKDF Expand could not be initialized with the given "
@@ -246,11 +241,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             pseudoRandomKey = null;
             try {
                 pseudoRandomKey = hkdfExtract(inputKeyMaterial, salt);
-                byte[] result = hkdfExpand(pseudoRandomKey, info, length);
-                Arrays.fill(inputKeyMaterial, (byte)0x00);
-                Arrays.fill(salt, (byte)0x00);
-                Arrays.fill(pseudoRandomKey, (byte)0x00);
-                return result;
+                return hkdfExpand(pseudoRandomKey, info, length);
             } catch (InvalidKeyException ike) {
                 throw new InvalidAlgorithmParameterException(
                     "an HKDF ExtractThenExpand could not be initialized with "
