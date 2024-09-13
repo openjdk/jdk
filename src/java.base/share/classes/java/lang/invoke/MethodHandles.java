@@ -2420,7 +2420,7 @@ public class MethodHandles {
         private ClassDefiner makeHiddenClassDefiner(ClassFile cf,
                                                     boolean accessVmAnnotations,
                                                     ClassFileDumper dumper,
-                                                    ClassOption ... options) {
+                                                    ClassOption[] options) {
             int flags = HIDDEN_CLASS | ClassOption.optionsToFlag(options);
             if (accessVmAnnotations | VM.isSystemDomainLoader(lookupClass.getClassLoader())) {
                 // jdk.internal.vm.annotations are permitted for classes
