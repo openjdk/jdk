@@ -371,6 +371,7 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
 }
 
 size_t HeapRootSegments::size_in_bytes(size_t seg_idx) {
+  assert(seg_idx < _count, "In range");
   return objArrayOopDesc::object_size(size_in_elems(seg_idx)) * HeapWordSize;
 }
 
@@ -385,6 +386,7 @@ int HeapRootSegments::size_in_elems(size_t seg_idx) {
 }
 
 size_t HeapRootSegments::segment_offset(size_t seg_idx) {
+  assert(seg_idx < _count, "In range");
   return _base_offset + seg_idx * _max_size_in_bytes;
 }
 

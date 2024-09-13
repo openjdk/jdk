@@ -290,7 +290,7 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- requested_base_address:         " INTPTR_FORMAT, p2i(_requested_base_address));
   st->print_cr("- mapped_base_address:            " INTPTR_FORMAT, p2i(_mapped_base_address));
   st->print_cr("- heap_root_segments.roots_count: %d" , _heap_root_segments.roots_count());
-  st->print_cr("- heap_root_segments.base_offset: " SIZE_FORMAT, _heap_root_segments.base_offset());
+  st->print_cr("- heap_root_segments.base_offset: " SIZE_FORMAT_X, _heap_root_segments.base_offset());
   st->print_cr("- heap_root_segments.count:       " SIZE_FORMAT, _heap_root_segments.count());
   st->print_cr("- heap_root_segments.max_size_elems: %d", _heap_root_segments.max_size_in_elems());
   st->print_cr("- heap_root_segments.max_size_bytes: %d", _heap_root_segments.max_size_in_bytes());
