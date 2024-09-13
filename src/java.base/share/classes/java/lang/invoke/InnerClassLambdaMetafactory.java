@@ -77,7 +77,7 @@ import sun.invoke.util.Wrapper;
 
     private static final boolean disableEagerInitialization;
 
-    public static final MethodHandles.Lookup.ClassOption[] LAMBDA_CLASS_OPTIONS = { NESTMATE, STRONG };
+    private static final MethodHandles.Lookup.ClassOption[] LAMBDA_CLASS_OPTIONS = { NESTMATE, STRONG };
 
     static {
         // To dump the lambda proxy classes, set this system property:
