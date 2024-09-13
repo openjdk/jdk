@@ -2876,7 +2876,6 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
       ld(tmp2, in_bytes(ObjectMonitor::recursions_offset()), monitor);
       addi(tmp2, tmp2, 1);
       std(tmp2, in_bytes(ObjectMonitor::recursions_offset()), monitor);
-
     }
 
     bind(monitor_locked);
