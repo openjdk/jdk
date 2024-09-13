@@ -3335,7 +3335,7 @@ public final class Math {
         if (scaleFactor > -2 * DoubleConsts.EXP_BIAS) {
             return d * longBitsToDouble((long) (scaleFactor + 2 * DoubleConsts.EXP_BIAS) << PRECISION - 1) * F_DOWN;
         }
-        if (scaleFactor > -3 * DoubleConsts.EXP_BIAS) {
+        if (scaleFactor > -2 * DoubleConsts.EXP_BIAS - PRECISION) {
             return d * longBitsToDouble((long) (scaleFactor + 3 * DoubleConsts.EXP_BIAS) << PRECISION - 1) * F_DOWN * F_DOWN;
         }
         return d * MIN_VALUE * MIN_VALUE;
