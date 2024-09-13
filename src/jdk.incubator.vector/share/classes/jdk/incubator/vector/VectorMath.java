@@ -24,40 +24,25 @@
  */
 package jdk.incubator.vector;
 
-
 /**
  * The class {@code VectorMath} contains methods for performing
  * scalar numeric operations in support of vector numeric operations.
- *
  */
-public class VectorMath {
+public final class VectorMath {
 
-   /**
-    * Default Constructor definition.
-    */
     private VectorMath() {
     }
 
     /**
-     * Based on the unsigned comparison returns the greater of two {@code long} values.
+     * Returns the smaller of two {@code long} values numerically treating
+     * the values as unsigned. That is, the result is the operand closer
+     * to the value of the expression {@code 0L}. If the operands have the
+     * same value, the result is that same value.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the greater of {@code a} and {@code b}
-     * @see java.util.function.BinaryOperator
-     * @since 24
-     */
-    public static long maxUnsigned(long a, long b) {
-        return Long.compareUnsigned(a, b) > 0 ? a : b;
-    }
-
-    /**
-     * Based on the unsigned comparison returns the smaller of two {@code long} values.
-     *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the smaller of {@code a} and {@code b}
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the smaller of {@code a} and {@code b}.
+     * @see VectorOperators#UMIN
      * @since 24
      */
     public static long minUnsigned(long a, long b) {
@@ -65,14 +50,38 @@ public class VectorMath {
     }
 
     /**
-     * Saturating addition of two {@code long} values,
-     * which returns a {@code Long.MIN_VALUE} in underflowing or
-     * {@code Long.MAX_VALUE} in overflowing scenario.
+     * Returns the greater of two {@code long} values numerically treating
+     * the values as unsigned. That is, the result is the operand closer
+     * to the value of the expression {@code 0xFFFFFFFF_FFFFFFFFL} numerically
+     * treating it as unsigned. If the operands have the same value,
+     * the result is that same value.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the sum of {@code a} and {@code b} iff within {@code long} value range else delimiting {@code Long.MIN_VALUE/MAX_VALUE} value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the larger of {@code a} and {@code b}.
+     * @see VectorOperators#UMAX
+     * @since 24
+     */
+    public static long maxUnsigned(long a, long b) {
+        return Long.compareUnsigned(a, b) > 0 ? a : b;
+    }
+
+    /**
+     * Adds two {@code long} values using saturation
+     * arithemetic. The lower and upper (inclusive) bounds are
+     * {@code Long.MIN_VALUE} and {@code Long.MAX_VALUE}, respectively.
+     * <p>
+     * If the result of the addition would otherwise overflow from
+     * a positive value to a negative value then the result is clamped
+     * to the upper bound {@code Long.MAX_VALUE}.
+     * If the result of the addition would otherwise underflow from
+     * a negative value to a positive value then the result is clamped
+     * to lower bound {@code Long.MIN_VALUE}.
+     *
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating addition of the operands.
+     * @see VectorOperators#SADD
      * @since 24
      */
     public static long addSaturating(long a, long b) {
@@ -86,14 +95,21 @@ public class VectorMath {
     }
 
     /**
-     * Saturating subtraction of two {@code long} values,
-     * which returns a {@code Long.MIN_VALUE} in underflowing or
-     * {@code Long.MAX_VALUE} in overflowing scenario.
+     * Subtracts two {@code long} values using saturation
+     * arithemetic. The lower and upper (inclusive) bounds are
+     * {@code Long.MIN_VALUE} and {@code Long.MAX_VALUE}, respectively.
+     * <p>
+     * If the result of the subtraction would otherwise overflow from
+     * a positive value to a negative value then the result is clamped
+     * to the upper bound {@code Long.MAX_VALUE}.
+     * If the result of the subtraction would otherwise underflow from
+     * a negative value to a positive value then the result is clamped
+     * to lower bound {@code Long.MIN_VALUE}.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the difference between {@code a} and {@code b} iff within {@code long} value range else delimiting {@code Long.MIN_VALUE/MAX_VALUE} value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating difference of the operands.
+     * @see VectorOperators#SSUB
      * @since 24
      */
     public static long subSaturating(long a, long b) {
@@ -108,13 +124,20 @@ public class VectorMath {
     }
 
     /**
-     * Saturating unsigned addition of two {@code long} values,
-     * which returns maximum unsigned long value in overflowing scenario.
+     * Adds two {@code long} values using saturation
+     * arithemetic and numerically treating the values
+     * as unsigned. The lower and upper (inclusive) bounds
+     * are {@code 0L} and {@code 0xFFFFFFFF_FFFFFFFFL}, respectively,
+     * numerically treating them as unsigned.
+     * <p>
+     * If the result of the unsigned addition would otherwise overflow
+     * from the greater of the two operands to a lesser value then the
+     * result is clamped to the upper bound {@code 0xFFFFFFFF_FFFFFFFFL}.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the unsigned sum of {@code a} and {@code b} iff within unsigned value range else delimiting maximum unsigned long value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating addition of the operands.
+     * @see VectorOperators#SADD
      * @since 24
      */
     public static long addSaturatingUnsigned(long a, long b) {
@@ -128,13 +151,20 @@ public class VectorMath {
     }
 
     /**
-     * Saturating unsigned subtraction of two {@code long} values,
-     * which returns a zero in underflowing scenario.
+     * Subtracts two {@code long} values using saturation
+     * arithemetic and numerically treating the values
+     * as unsigned. The lower and upper (inclusive) bounds
+     * are {@code 0L} and {@code 0xFFFFFFFF_FFFFFFFFL}, respectively,
+     * numerically treating them as unsigned.
+     * <p>
+     * If the result of the unsigned subtraction would otherwise underflow
+     * from the lesser of the two operands to a greater value then the
+     * result is clamped to the lower bound {@code 0L}.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the unsigned difference between {@code a} and {@code b} iff within unsigned value range else delimiting zero value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating difference of the operands.
+     * @see VectorOperators#SSUB
      * @since 24
      */
     public static long subSaturatingUnsigned(long a, long b) {
@@ -145,13 +175,34 @@ public class VectorMath {
         }
     }
 
+
     /**
-     * Based on the unsigned comparison returns the greater of two {@code int} values.
+     * Returns the smaller of two {@code int} values numerically treating
+     * the values as unsigned. That is, the result is the operand closer
+     * to the value of the expression {@code 0}. If the operands have the
+     * same value, the result is that same value.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the greater of {@code a} and {@code b}
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the smaller of {@code a} and {@code b}.
+     * @see VectorOperators#UMIN
+     * @since 24
+     */
+    public static int minUnsigned(int a, int b) {
+        return Integer.compareUnsigned(a, b) < 0 ? a : b;
+    }
+
+    /**
+     * Returns the greater of two {@code int} values numerically treating
+     * the values as unsigned. That is, the result is the operand closer
+     * to the value of the expression {@code 0xFFFFFFFF} numerically
+     * treating it as unsigned. If the operands have the same value,
+     * the result is that same value.
+     *
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the larger of {@code a} and {@code b}.
+     * @see VectorOperators#UMAX
      * @since 24
      */
     public static int maxUnsigned(int a, int b) {
@@ -159,28 +210,21 @@ public class VectorMath {
     }
 
     /**
-     * Based on the unsigned comparison returns the smaller of two {@code int} values.
+     * Adds two {@code int} values using saturation
+     * arithemetic. The lower and upper (inclusive) bounds are
+     * {@code Integer.MIN_VALUE} and {@code Integer.MAX_VALUE}, respectively.
+     * <p>
+     * If the result of the addition would otherwise overflow from
+     * a positive value to a negative value then the result is clamped
+     * to the upper bound {@code Integer.MAX_VALUE}.
+     * If the result of the addition would otherwise underflow from
+     * a negative value to a positive value then the result is clamped
+     * to lower bound {@code Integer.MIN_VALUE}.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the smaller of {@code a} and {@code b}
-     * @see java.util.function.BinaryOperator
-     * @since 24
-     */
-    public static int minUnsigned(int a, int b) {
-        return Integer.compareUnsigned(a, b) < 0 ? a : b;
-    }
-
-
-    /**
-     * Saturating addition of two {@code int} values,
-     * which returns an {@code Integer.MIN_VALUE} in underflowing or
-     * {@code Integer.MAX_VALUE} in overflowing scenario.
-     *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the sum of {@code a} and {@code b} iff within {@code int} value range else delimiting {@code Integer.MIN_VALUE/MAX_VALUE} value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating addition of the operands.
+     * @see VectorOperators#SADD
      * @since 24
      */
     public static int addSaturating(int a, int b) {
@@ -195,14 +239,21 @@ public class VectorMath {
     }
 
     /**
-     * Saturating subtraction of two {@code int} values,
-     * which returns an {@code Integer.MIN_VALUE} in underflowing or
-     * {@code Integer.MAX_VALUE} in overflowing scenario.
+     * Subtracts two {@code int} values using saturation
+     * arithemetic. The lower and upper (inclusive) bounds are
+     * {@code Integer.MIN_VALUE} and {@code Integer.MAX_VALUE}, respectively.
+     * <p>
+     * If the result of the subtraction would otherwise overflow from
+     * a positive value to a negative value then the result is clamped
+     * to the upper bound {@code Integer.MAX_VALUE}.
+     * If the result of the subtraction would otherwise underflow from
+     * a negative value to a positive value then the result is clamped
+     * to lower bound {@code Integer.MIN_VALUE}.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the difference between {@code a} and {@code b} iff within {@code int} value range else delimiting {@code Integer.MIN_VALUE/MAX_VALUE} value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating difference of the operands.
+     * @see VectorOperators#SSUB
      * @since 24
      */
     public static int subSaturating(int a, int b) {
@@ -217,46 +268,68 @@ public class VectorMath {
     }
 
     /**
-     * Saturating unsigned addition of two {@code int} values,
-     * which returns maximum unsigned int value in overflowing scenario.
+     * Adds two {@code int} values using saturation
+     * arithemetic and numerically treating the values
+     * as unsigned. The lower and upper (inclusive) bounds
+     * are {@code 0} and {@code 0xFFFFFFFF}, respectively,
+     * numerically treating them as unsigned.
+     * <p>
+     * If the result of the unsigned addition would otherwise overflow
+     * from the greater of the two operands to a lesser value then the
+     * result is clamped to the upper bound {@code 0xFFFFFFFF}.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the unsigned sum of {@code a} and {@code b} iff within unsigned value range else delimiting maximum unsigned int value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating addition of the operands.
+     * @see VectorOperators#SADD
      * @since 24
      */
     public static int addSaturatingUnsigned(int a, int b) {
         int res = a + b;
         boolean overflow = Integer.compareUnsigned(res, (a | b)) < 0;
         if (overflow)  {
-           return -1;
+            return -1;
         } else {
-           return res;
+            return res;
+        }
+    }
+
+    /**
+     * Subtracts two {@code int} values using saturation
+     * arithemetic and numerically treating the values
+     * as unsigned. The lower and upper (inclusive) bounds
+     * are {@code 0} and {@code -0xFFFFFFFF}, respectively,
+     * numerically treating them as unsigned.
+     * <p>
+     * If the result of the unsigned subtraction would otherwise underflow
+     * from the lesser of the two operands to a greater value then the
+     * result is clamped to the lower bound {@code 0}.
+     *
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating difference of the operands.
+     * @see VectorOperators#SSUB
+     * @since 24
+     */
+    public static int subSaturatingUnsigned(int a, int b) {
+        if (Integer.compareUnsigned(b, a) < 0) {
+            return a - b;
+        } else {
+            return 0;
         }
     }
 
 
     /**
-     * Based on the unsigned comparison returns the greater of two {@code short} values.
+     * Returns the smaller of two {@code short} values numerically treating
+     * the values as unsigned. That is, the result is the operand closer
+     * to the value of the expression {@code 0}. If the operands have the
+     * same value, the result is that same value.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the greater of {@code a} and {@code b}
-     * @see java.util.function.BinaryOperator
-     * @since 24
-     */
-    public static short maxUnsigned(short a, short b) {
-        return Short.compareUnsigned(a, b) > 0 ? a : b;
-    }
-
-    /**
-     * Based on the unsigned comparison returns the smaller of two {@code short} values.
-     *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the smaller of {@code a} and {@code b}
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the smaller of {@code a} and {@code b}.
+     * @see VectorOperators#UMIN
      * @since 24
      */
     public static short minUnsigned(short a, short b) {
@@ -264,14 +337,38 @@ public class VectorMath {
     }
 
     /**
-     * Saturating addition of two {@code short} values,
-     * which returns a {@code Short.MIN_VALUE} in underflowing or
-     * {@code Short.MAX_VALUE} in overflowing scenario.
+     * Returns the greater of two {@code short} values numerically treating
+     * the values as unsigned. That is, the result is the operand closer
+     * to the value of the expression {@code 0xFFFF} numerically
+     * treating it as unsigned. If the operands have the same value,
+     * the result is that same value.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the sum of {@code a} and {@code b} iff within {@code short} value range else delimiting {@code Short.MIN_VALUE/MAX_VALUE} value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the larger of {@code a} and {@code b}.
+     * @see VectorOperators#UMAX
+     * @since 24
+     */
+    public static short maxUnsigned(short a, short b) {
+        return Short.compareUnsigned(a, b) > 0 ? a : b;
+    }
+
+    /**
+     * Adds two {@code short} values using saturation
+     * arithemetic. The lower and upper (inclusive) bounds are
+     * {@code Short.MIN_VALUE} and {@code Short.MAX_VALUE}, respectively.
+     * <p>
+     * If the result of the addition would otherwise overflow from
+     * a positive value to a negative value then the result is clamped
+     * to the upper bound {@code Short.MAX_VALUE}.
+     * If the result of the addition would otherwise underflow from
+     * a negative value to a positive value then the result is clamped
+     * to lower bound {@code Short.MIN_VALUE}.
+     *
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating addition of the operands.
+     * @see VectorOperators#SADD
      * @since 24
      */
     public static short addSaturating(short a, short b) {
@@ -286,14 +383,21 @@ public class VectorMath {
     }
 
     /**
-     * Saturating subtraction of two {@code short} values,
-     * which returns a {@code Short.MIN_VALUE} in underflowing or
-     * {@code Short.MAX_VALUE} in overflowing scenario.
+     * Subtracts two {@code short} values using saturation
+     * arithemetic. The lower and upper (inclusive) bounds are
+     * {@code Short.MIN_VALUE} and {@code Short.MAX_VALUE}, respectively.
+     * <p>
+     * If the result of the subtraction would otherwise overflow from
+     * a positive value to a negative value then the result is clamped
+     * to the upper bound {@code Short.MAX_VALUE}.
+     * If the result of the subtraction would otherwise underflow from
+     * a negative value to a positive value then the result is clamped
+     * to lower bound {@code Short.MIN_VALUE}.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the difference between {@code a} and {@code b} iff within {@code short} value range else delimiting {@code Short.MIN_VALUE/MAX_VALUE} value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating difference of the operands.
+     * @see VectorOperators#SSUB
      * @since 24
      */
     public static short subSaturating(short a, short b) {
@@ -308,13 +412,20 @@ public class VectorMath {
     }
 
     /**
-     * Saturating unsigned addition of two {@code short} values,
-     * which returns maximum unsigned short value in overflowing scenario.
+     * Adds two {@code short} values using saturation
+     * arithemetic and numerically treating the values
+     * as unsigned. The lower and upper (inclusive) bounds
+     * are {@code 0} and {@code 0xFFFF}, respectively,
+     * numerically treating them as unsigned.
+     * <p>
+     * If the result of the unsigned addition would otherwise overflow
+     * from the greater of the two operands to a lesser value then the
+     * result is clamped to the upper bound {@code 0xFFFF}.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the unsigned sum of {@code a} and {@code b} iff within unsigned value range else delimiting maximum unsigned short value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating addition of the operands.
+     * @see VectorOperators#SADD
      * @since 24
      */
     public static short addSaturatingUnsigned(short a, short b) {
@@ -327,15 +438,21 @@ public class VectorMath {
         }
     }
 
-
     /**
-     * Saturating unsigned subtraction of two {@code short} values,
-     * which returns a zero in underflowing scenario.
+     * Subtracts two {@code short} values using saturation
+     * arithemetic and numerically treating the values
+     * as unsigned. The lower and upper (inclusive) bounds
+     * are {@code 0} and {@code 0xFFFF}, respectively,
+     * numerically treating them as unsigned.
+     * <p>
+     * If the result of the unsigned subtraction would otherwise underflow
+     * from the lesser of the two operands to a greater value then the
+     * result is clamped to the lower bound {@code 0}.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the unsigned difference between {@code a} and {@code b} iff within unsigned value range else delimiting zero value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating difference of the operands.
+     * @see VectorOperators#SSUB
      * @since 24
      */
     public static short subSaturatingUnsigned(short a, short b) {
@@ -346,26 +463,17 @@ public class VectorMath {
         }
     }
 
-    /**
-     * Based on the unsigned comparison returns the greater of two {@code byte} values.
-     *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the greater of {@code a} and {@code b}
-     * @see java.util.function.BinaryOperator
-     * @since 24
-     */
-    public static byte maxUnsigned(byte a, byte b) {
-        return Byte.compareUnsigned(a, b) > 0 ? a : b;
-    }
 
     /**
-     * Based on the unsigned comparison returns the smaller of two {@code byte} values.
+     * Returns the smaller of two {@code byte} values numerically treating
+     * the values as unsigned. That is, the result is the operand closer
+     * to the value of the expression {@code 0}. If the operands have the
+     * same value, the result is that same value.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the smaller of {@code a} and {@code b}
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the smaller of {@code a} and {@code b}.
+     * @see VectorOperators#UMIN
      * @since 24
      */
     public static byte minUnsigned(byte a, byte b) {
@@ -373,14 +481,38 @@ public class VectorMath {
     }
 
     /**
-     * Saturating addition of two {@code byte} values,
-     * which returns a {@code Byte.MIN_VALUE} in underflowing or
-     * {@code Byte.MAX_VALUE} in overflowing scenario.
+     * Returns the greater of two {@code byte} values numerically treating
+     * the values as unsigned. That is, the result is the operand closer
+     * to the value of the expression {@code 0xFF} numerically
+     * treating it as unsigned. If the operands have the same value,
+     * the result is that same value.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the sum of {@code a} and {@code b} iff within {@code byte} value range else delimiting {@code Byte.MIN_VALUE/MAX_VALUE} value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the larger of {@code a} and {@code b}.
+     * @see VectorOperators#UMAX
+     * @since 24
+     */
+    public static byte maxUnsigned(byte a, byte b) {
+        return Byte.compareUnsigned(a, b) > 0 ? a : b;
+    }
+
+    /**
+     * Adds two {@code byte} values using saturation
+     * arithemetic. The lower and upper (inclusive) bounds are
+     * {@code Byte.MIN_VALUE} and {@code Byte.MAX_VALUE}, respectively.
+     * <p>
+     * If the result of the addition would otherwise overflow from
+     * a positive value to a negative value then the result is clamped
+     * to the upper bound {@code Byte.MAX_VALUE}.
+     * If the result of the addition would otherwise underflow from
+     * a negative value to a positive value then the result is clamped
+     * to lower bound {@code Byte.MIN_VALUE}.
+     *
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating addition of the operands.
+     * @see VectorOperators#SADD
      * @since 24
      */
     public static byte addSaturating(byte a, byte b) {
@@ -395,14 +527,21 @@ public class VectorMath {
     }
 
     /**
-     * Saturating subtraction of two {@code byte} values,
-     * which returns a {@code Byte.MIN_VALUE} in underflowing or
-     * {@code Byte.MAX_VALUE} in overflowing scenario.
+     * Subtracts two {@code byte} values using saturation
+     * arithemetic. The lower and upper (inclusive) bounds are
+     * {@code Byte.MIN_VALUE} and {@code Byte.MAX_VALUE}, respectively.
+     * <p>
+     * If the result of the subtraction would otherwise overflow from
+     * a positive value to a negative value then the result is clamped
+     * to the upper bound {@code Byte.MAX_VALUE}.
+     * If the result of the subtraction would otherwise underflow from
+     * a negative value to a positive value then the result is clamped
+     * to lower bound {@code Byte.MIN_VALUE}.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the difference between {@code a} and {@code b} iff within {@code byte} value range else delimiting {@code Byte.MIN_VALUE/MAX_VALUE} value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating difference of the operands.
+     * @see VectorOperators#SSUB
      * @since 24
      */
     public static byte subSaturating(byte a, byte b) {
@@ -417,13 +556,20 @@ public class VectorMath {
     }
 
     /**
-     * Saturating unsigned addition of two {@code byte} values,
-     * which returns an maximum unsigned byte value (0xFF) in overflowing scenario.
+     * Adds two {@code byte} values using saturation
+     * arithemetic and numerically treating the values
+     * as unsigned. The lower and upper (inclusive) bounds
+     * are {@code 0} and {@code 0xFF}, respectively,
+     * numerically treating them as unsigned.
+     * <p>
+     * If the result of the unsigned addition would otherwise overflow
+     * from the greater of the two operands to a lesser value then the
+     * result is clamped to the upper bound {@code 0xFF}.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the unsigned sum of {@code a} and {@code b} iff within unsigned value range else delimiting maximum unsigned byte value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating addition of the operands.
+     * @see VectorOperators#SADD
      * @since 24
      */
     public static byte addSaturatingUnsigned(byte a, byte b) {
@@ -437,13 +583,20 @@ public class VectorMath {
     }
 
     /**
-     * Saturating unsigned subtraction of two {@code byte} values,
-     * which returns a zero in underflowing scenario.
+     * Subtracts two {@code byte} values using saturation
+     * arithemetic and numerically treating the values
+     * as unsigned. The lower and upper (inclusive) bounds
+     * are {@code 0} and {@code 0xFF}, respectively,
+     * numerically treating them as unsigned.
+     * <p>
+     * If the result of the unsigned subtraction would otherwise underflow
+     * from the lesser of the two operands to a greater value then the
+     * result is clamped to the lower bound {@code 0}.
      *
-     * @param a the first operand
-     * @param b the second operand
-     * @return the unsigned difference between {@code a} and {@code b} iff within unsigned value range else delimiting zero value.
-     * @see java.util.function.BinaryOperator
+     * @param a the first operand.
+     * @param b the second operand.
+     * @return the saturating difference of the operands.
+     * @see VectorOperators#SSUB
      * @since 24
      */
    public static byte subSaturatingUnsigned(byte a, byte b) {

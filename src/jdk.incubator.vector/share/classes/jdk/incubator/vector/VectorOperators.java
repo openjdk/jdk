@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -567,17 +567,29 @@ public abstract class VectorOperators {
     /** Produce {@code a^b}.  Integral only. */
     public static final /*bitwise*/ Associative XOR = assoc("XOR", "^", VectorSupport.VECTOR_OP_XOR, VO_NOFP+VO_ASSOC);
 
-    /** Produce {@code a [+] b}.  */
+    /** Produce saturating {@code a+b}.  Integral only.
+     * @see VectorMath#addSaturating(int, int)
+     */
     public static final Associative SADD = assoc("SADD", "+", VectorSupport.VECTOR_OP_SADD, VO_NOFP+VO_ASSOC);
-    /** Produce {@code a [u+] b}. */
+    /** Produce saturating unsigned {@code a+b}.  Integral only.
+     * @see VectorMath#addSaturatingUnsigned(int, int)
+     */
     public static final Associative SUADD = assoc("SUADD", "+", VectorSupport.VECTOR_OP_SUADD, VO_NOFP+VO_ASSOC);
-    /** Produce {@code a [-] b}.  */
+    /** Produce saturating {@code a-b}.  Integral only.
+     * @see VectorMath#subSaturating(int, int)
+     */
     public static final Binary SSUB = binary("SSUB", "-", VectorSupport.VECTOR_OP_SSUB, VO_NOFP);
-    /** Produce {@code a [u-] b}. */
+    /** Produce saturating unsigned {@code a-b}.  Integral only.
+     * @see VectorMath#subSaturatingUnsigned(int, int)
+     */
     public static final Binary SUSUB = binary("SUSUB", "-", VectorSupport.VECTOR_OP_SUSUB, VO_NOFP);
-    /** Produce {@code umin(a,b)}. */
+    /** Produce unsigned {@code min(a,b)}.  Integral only.
+     * @see VectorMath#minUnsigned(int, int) (int, int)
+     */
     public static final Associative UMIN = assoc("UMIN", "umin", VectorSupport.VECTOR_OP_UMIN, VO_NOFP+VO_ASSOC);
-    /** Produce {@code umax(a,b)}. */
+    /** Produce unsigned {@code max(a,b)}.  Integral only.
+     * @see VectorMath#maxUnsigned(int, int) (int, int)
+     */
     public static final Associative UMAX = assoc("UMAX", "umax", VectorSupport.VECTOR_OP_UMAX, VO_NOFP+VO_ASSOC);
 
 
