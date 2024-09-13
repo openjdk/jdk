@@ -337,7 +337,7 @@ class oopDesc {
       // of LoadNKlass instructions. This value could be any value that is not a valid
       // field offset. Use an offset halfway into the markWord, as the markWord is never
       // partially loaded from C2.
-      return 4;
+      return mark_offset_in_bytes() + 4;
     } else
 #endif
     {
@@ -346,7 +346,6 @@ class oopDesc {
   }
   static int klass_gap_offset_in_bytes() {
     assert(has_klass_gap(), "only applicable to compressed klass pointers");
-    assert(!UseCompactObjectHeaders, "don't use klass_gap_offset_in_bytes() with compact headers");
     return klass_offset_in_bytes() + sizeof(narrowKlass);
   }
 

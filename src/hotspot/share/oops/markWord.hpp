@@ -168,7 +168,6 @@ class markWord {
     // Returns true for normal forwarded (0b011) and self-forwarded (0b1xx).
     return mask_bits(value(), lock_mask_in_place | self_fwd_mask_in_place) >= static_cast<intptr_t>(marked_value);
   }
-
   bool is_neutral()  const {  // Not locked, or marked - a "clean" neutral state
     return (mask_bits(value(), lock_mask_in_place) == unlocked_value);
   }

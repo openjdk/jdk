@@ -32,16 +32,6 @@
 // Evaluating "new HashTable()" will create an instanceOop.
 
 class instanceOopDesc : public oopDesc {
- public:
-  static int base_offset_in_bytes() {
-    if (UseCompactObjectHeaders) {
-      return oopDesc::base_offset_in_bytes();
-    } else if (UseCompressedClassPointers) {
-      return klass_gap_offset_in_bytes();
-    } else {
-      return sizeof(instanceOopDesc);
-    }
-  }
 };
 
 // See similar requirement for oopDesc.

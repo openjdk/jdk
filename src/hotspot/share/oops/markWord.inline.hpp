@@ -25,8 +25,8 @@
 #ifndef SHARE_OOPS_MARKWORD_INLINE_HPP
 #define SHARE_OOPS_MARKWORD_INLINE_HPP
 
-#include "oops/markWord.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/markWord.hpp"
 
 narrowKlass markWord::narrow_klass() const {
 #ifdef _LP64
