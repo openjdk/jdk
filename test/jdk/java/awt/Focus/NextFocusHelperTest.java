@@ -56,7 +56,7 @@ public class NextFocusHelperTest {
 
             Point loc = btn1.getLocationOnScreen();
             Dimension dim = btn1.getSize();
-            robot.mouseMove(loc.x + dim.width/2, loc.y + dim.height/2); 
+            robot.mouseMove(loc.x + dim.width/2, loc.y + dim.height/2);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
@@ -90,7 +90,7 @@ public class NextFocusHelperTest {
 
         panel = new Panel();
         panel.setFocusCycleRoot(true);
-        btn1 = new Button("Button In Panel"); 
+        btn1 = new Button("Button In Panel");
         panel.add(btn1);
 
         hideButton = new Button("Hide Panel");
