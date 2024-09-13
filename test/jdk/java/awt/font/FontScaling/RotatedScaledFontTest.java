@@ -30,6 +30,8 @@ import java.awt.image.BufferedImage;
 
 /*
  * @test
+ * @bug 8339974
+ * @summary Verifies that text draws correctly using scaled and rotated fonts.
  */
 public class RotatedScaledFontTest {
 

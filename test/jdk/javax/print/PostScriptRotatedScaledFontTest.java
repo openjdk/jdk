@@ -45,6 +45,8 @@ import javax.print.event.PrintJobEvent;
 
 /*
  * @test
+ * @bug 8339974
+ * @summary Verifies that text prints correctly using scaled and rotated fonts.
  */
 public class PostScriptRotatedScaledFontTest {
 
