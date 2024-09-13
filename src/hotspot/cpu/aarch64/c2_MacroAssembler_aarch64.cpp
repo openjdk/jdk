@@ -33,6 +33,7 @@
 #include "opto/subnode.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -53,24 +54,19 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
 
   Register tmp1 = rscratch1, tmp2 = rscratch2;
 
-  Label TAIL, RELATIVE;
+  Label TAIL, STUB_SWITCH, STUB_SWITCH_OUT, LOOP, RELATIVE, LARGE, DONE;
 
-  // Unroll factor for the scalar loop below. 4 provides good performance and moderate code size.
-  // Increasing the unroll factor to 8 does slightly improve the performance on some older CPUs but
-  // gives no performance benefits for the others, which isn't worth the increase in code size.
+  // Vectorization factor. Number of array elements loaded to one SIMD&FP registers by the stubs. We
+  // use 8H load arrangements for chars and shorts and 8B for booleans and bytes. It's possible to
+  // use 4H for chars and shorts instead, but using 8H gives better performance.
+  const size_t vf = eltype == T_BOOLEAN || eltype == T_BYTE ? 8
+                    : eltype == T_CHAR || eltype == T_SHORT ? 8
+                    : eltype == T_INT                       ? 4
+                                                            : 0;
+  guarantee(vf, "unsupported eltype");
+
+  // Unroll factor for the scalar loop below. The value is chosen based on performance analysis.
   const size_t unroll_factor = 4;
-
-  // Number of array elements handled by one iteration of the vectorized loop in
-  // large_arrays_hashcode stub. Each iteration, the loop loads 4 SIMD&FP registers in one load
-  // instruction. We use 4H and 4S load arrangements for chars, shorts and ints but 8B for booleans
-  // and bytes, as it's the smallest arrangement available for single-byte elements with LD1
-  // instruction. Hence, the loop handles different number of element per iteration depending on the
-  // element type.
-  const size_t loop_factor = eltype == T_BOOLEAN || eltype == T_BYTE ? 32
-                             : eltype == T_CHAR || eltype == T_SHORT ? 16
-                             : eltype == T_INT                       ? 16
-                                                                     : 0;
-  guarantee(loop_factor, "unsupported eltype");
 
   switch (eltype) {
   case T_BOOLEAN:
@@ -92,8 +88,37 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
     ShouldNotReachHere();
   }
 
-  subsw(cnt, cnt, loop_factor);
-  br(Assembler::LO, TAIL);
+  // large_arrays_hashcode(T_INT) performs worse than the scalar loop below when the Neon loop
+  // implemented by the stub executes just once. Call the stub only if at least two iteration will
+  // be executed.
+  const size_t large_threshold = eltype == T_INT ? vf * 2 : vf;
+  cmpw(cnt, large_threshold);
+  br(Assembler::HS, LARGE);
+
+  bind(TAIL);
+
+  // The orr performs (r - lc) % uf where uf = unroll_factor. The subtract shifted by 3
+  // offsets past |(r - lc) % uf| pairs of load + madd insns i.e. it only executes
+  // r % uf load + madds. Iteration eats up the remainder, uf elements at a time.
+  assert(is_power_of_2(unroll_factor), "can't use this value to calculate the jump target PC");
+  andr(tmp2, cnt, unroll_factor - 1);
+  adr(tmp1, RELATIVE);
+  sub(tmp1, tmp1, tmp2, ext::sxtw, 3);
+  movw(tmp2, 0x1f);
+  br(tmp1);
+
+  bind(LOOP);
+  for (size_t i = 0; i < unroll_factor; ++i) {
+    arrays_hashcode_elload(tmp1, Address(post(ary, type2aelembytes(eltype))), eltype);
+    maddw(result, result, tmp2, tmp1);
+  }
+  bind(RELATIVE);
+  subsw(cnt, cnt, unroll_factor);
+  br(Assembler::HS, LOOP);
+
+  b(DONE);
+
+  bind(LARGE);
 
   RuntimeAddress stub = RuntimeAddress(StubRoutines::aarch64::large_arrays_hashcode(eltype));
   assert(stub.target() != nullptr, "array_hashcode stub has not been generated");
@@ -104,28 +129,7 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
     return nullptr;
   }
 
-  bind(TAIL);
-
-  // At this point cnt holds (r - l) where r is the number of remaining elements, l is loop_count
-  // and 0 <= r < l. The orr performs (r - l) % u where u = unroll_factor. The subtract shifted by 3
-  // offsets past |(r - l) % u| load + madd insns i.e. it only executes r % u load + madds.
-  // Iteration eats up the remainder, u elements at a time.
-  assert(is_power_of_2(unroll_factor), "can't use this value to calculate the jump target PC");
-  orr(tmp2, cnt, -unroll_factor);
-  adr(tmp1, RELATIVE);
-  sub(tmp1, tmp1, tmp2, ext::sxtw, 3);
-  movw(tmp2, 0x1f);
-  addw(cnt, cnt, loop_factor);
-
-  br(tmp1);
-
-  bind(RELATIVE);
-  for (size_t i = 0; i < unroll_factor; ++i) {
-    arrays_hashcode_elload(tmp1, Address(post(ary, type2aelembytes(eltype))), eltype);
-    maddw(result, result, tmp2, tmp1);
-  }
-  subsw(cnt, cnt, unroll_factor);
-  br(Assembler::HS, RELATIVE);
+  bind(DONE);
 
   BLOCK_COMMENT("} // arrays_hashcode");
 
