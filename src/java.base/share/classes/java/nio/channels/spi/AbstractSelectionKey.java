@@ -47,7 +47,7 @@ import sun.nio.ch.SelectorImpl;
 public abstract class AbstractSelectionKey
     extends SelectionKey
 {
-    private static final VarHandle INVALID = MethodHandlesInternal.findVarHandleOrThrow(
+    private static final VarHandle INVALID = MethodHandlesInternal.findVarHandle(
             MethodHandles.lookup(), AbstractSelectionKey.class, "invalid", boolean.class);
 
     /**

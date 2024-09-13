@@ -454,7 +454,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             private Spliterator<T> spliterator;
             private Hybrid next;
 
-            private static final VarHandle NEXT = MethodHandlesInternal.findVarHandleOrThrow(
+            private static final VarHandle NEXT = MethodHandlesInternal.findVarHandle(
                     MethodHandles.lookup(), Hybrid.class, "next", Hybrid.class);
 
             protected Hybrid(Spliterator<T> spliterator) {

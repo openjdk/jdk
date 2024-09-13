@@ -74,7 +74,7 @@ import sun.nio.ch.SelectorImpl;
 public abstract class AbstractSelector
     extends Selector
 {
-    private static final VarHandle CLOSED = MethodHandlesInternal.findVarHandleOrThrow(
+    private static final VarHandle CLOSED = MethodHandlesInternal.findVarHandle(
         MethodHandles.lookup(), AbstractSelector.class, "closed", boolean.class);
 
     private volatile boolean closed;

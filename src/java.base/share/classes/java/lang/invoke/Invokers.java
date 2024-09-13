@@ -683,8 +683,9 @@ class Invokers {
     }
 
     private static class Lazy {
-        private static final MethodHandle MH_asSpreader = MethodHandlesInternal.findVirtualOrThrow(
-                IMPL_LOOKUP, MethodHandle.class, "asSpreader", MethodType.methodType(MethodHandle.class, Class.class, int.class));
+        private static final MethodHandle MH_asSpreader = MethodHandlesInternal.findVirtual(
+                IMPL_LOOKUP, MethodHandle.class, "asSpreader",
+                MethodType.methodType(MethodHandle.class, Class.class, int.class));
     }
 
     static {

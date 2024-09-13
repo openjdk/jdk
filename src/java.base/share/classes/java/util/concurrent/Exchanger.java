@@ -533,9 +533,12 @@ public class Exchanger<V> {
     private static final VarHandle AA;
     static {
         MethodHandles.Lookup l = MethodHandles.lookup();
-        BOUND = MethodHandlesInternal.findVarHandleOrThrow(l, Exchanger.class, "bound", int.class);
-        MATCH = MethodHandlesInternal.findVarHandleOrThrow(l, Node.class, "match", Object.class);
-        ENTRY = MethodHandlesInternal.findVarHandleOrThrow(l, Slot.class, "entry", Node.class);
+        BOUND = MethodHandlesInternal.findVarHandle(
+                l, Exchanger.class, "bound", int.class);
+        MATCH = MethodHandlesInternal.findVarHandle(
+                l, Node.class, "match", Object.class);
+        ENTRY = MethodHandlesInternal.findVarHandle(
+                l, Slot.class, "entry", Node.class);
         AA = MethodHandles.arrayElementVarHandle(Slot[].class);
     }
 

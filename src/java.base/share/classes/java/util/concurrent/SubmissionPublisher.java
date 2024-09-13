@@ -1508,8 +1508,10 @@ public class SubmissionPublisher<T> implements Publisher<T>,
 
         static {
             MethodHandles.Lookup l = MethodHandles.lookup();
-            CTL = MethodHandlesInternal.findVarHandleOrThrow(l, BufferedSubscription.class, "ctl", int.class);
-            DEMAND = MethodHandlesInternal.findVarHandleOrThrow(l, BufferedSubscription.class, "demand", long.class);
+            CTL = MethodHandlesInternal.findVarHandle(
+                    l, BufferedSubscription.class, "ctl", int.class);
+            DEMAND = MethodHandlesInternal.findVarHandle(
+                    l, BufferedSubscription.class, "demand", long.class);
             QA = MethodHandles.arrayElementVarHandle(Object[].class);
 
             // Reduce the risk of rare disastrous classloading in first call to

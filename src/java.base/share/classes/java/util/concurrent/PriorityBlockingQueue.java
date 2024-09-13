@@ -1094,10 +1094,9 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     }
 
     // VarHandle mechanics
-    private static final VarHandle ALLOCATIONSPINLOCK = MethodHandlesInternal.findVarHandleOrThrow(
-            MethodHandles.lookup(),
-            PriorityBlockingQueue.class,
-            "allocationSpinLock",
-            int.class);
+    private static final VarHandle ALLOCATIONSPINLOCK =
+            MethodHandlesInternal.findVarHandle(
+                    MethodHandles.lookup(),
+                    PriorityBlockingQueue.class, "allocationSpinLock", int.class);
 
 }

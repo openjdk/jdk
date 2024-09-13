@@ -158,7 +158,7 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
 
     public MethodHandle scaleHandle() {
         class Holder {
-            static final MethodHandle MH_SCALE = MethodHandlesInternal.findVirtualOrThrow(
+            static final MethodHandle MH_SCALE = MethodHandlesInternal.findVirtual(
                     MethodHandles.lookup(), MemoryLayout.class, "scale",
                     MethodType.methodType(long.class, long.class, long.class));
         }

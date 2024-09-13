@@ -104,9 +104,12 @@ public class Socket implements java.io.Closeable {
     private static final VarHandle STATE, IN, OUT;
     static {
         MethodHandles.Lookup l = MethodHandles.lookup();
-        STATE = MethodHandlesInternal.findVarHandleOrThrow(l, Socket.class, "state", int.class);
-        IN = MethodHandlesInternal.findVarHandleOrThrow(l, Socket.class, "in", InputStream.class);
-        OUT = MethodHandlesInternal.findVarHandleOrThrow(l, Socket.class, "out", OutputStream.class);
+        STATE = MethodHandlesInternal.findVarHandle(
+                l, Socket.class, "state", int.class);
+        IN = MethodHandlesInternal.findVarHandle(
+                l, Socket.class, "in", InputStream.class);
+        OUT = MethodHandlesInternal.findVarHandle(
+                l, Socket.class, "out", OutputStream.class);
     }
 
     // the underlying SocketImpl, may be null, may be swapped when connecting

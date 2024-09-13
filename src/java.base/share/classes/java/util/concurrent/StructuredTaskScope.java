@@ -992,8 +992,10 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         private static final VarHandle FIRST_EXCEPTION;
         static {
                 MethodHandles.Lookup l = MethodHandles.lookup();
-                FIRST_RESULT = MethodHandlesInternal.findVarHandleOrThrow(l, ShutdownOnSuccess.class, "firstResult", Object.class);
-                FIRST_EXCEPTION = MethodHandlesInternal.findVarHandleOrThrow(l, ShutdownOnSuccess.class, "firstException", Throwable.class);
+                FIRST_RESULT = MethodHandlesInternal.findVarHandle(
+                        l, ShutdownOnSuccess.class, "firstResult", Object.class);
+                FIRST_EXCEPTION = MethodHandlesInternal.findVarHandle(
+                        l, ShutdownOnSuccess.class, "firstException", Throwable.class);
         }
         private volatile Object firstResult;
         private volatile Throwable firstException;
@@ -1174,8 +1176,9 @@ public class StructuredTaskScope<T> implements AutoCloseable {
      */
     @PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
     public static final class ShutdownOnFailure extends StructuredTaskScope<Object> {
-        private static final VarHandle FIRST_EXCEPTION = MethodHandlesInternal.findVarHandleOrThrow(
-                MethodHandles.lookup(), ShutdownOnFailure.class, "firstException", Throwable.class);
+        private static final VarHandle FIRST_EXCEPTION =
+                MethodHandlesInternal.findVarHandle(MethodHandles.lookup(),
+                        ShutdownOnFailure.class, "firstException", Throwable.class);
         private volatile Throwable firstException;
 
         /**

@@ -431,7 +431,7 @@ public abstract class SelectionKey {
 
     // -- Attachments --
 
-    private static final VarHandle ATTACHMENT = MethodHandlesInternal.findVarHandleOrThrow(
+    private static final VarHandle ATTACHMENT = MethodHandlesInternal.findVarHandle(
             MethodHandles.lookup(), SelectionKey.class, "attachment", Object.class);
 
     private volatile Object attachment;

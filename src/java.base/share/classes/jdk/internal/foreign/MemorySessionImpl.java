@@ -58,7 +58,7 @@ public abstract sealed class MemorySessionImpl
     static final int OPEN = 0;
     static final int CLOSED = -1;
 
-    static final VarHandle STATE = MethodHandlesInternal.findVarHandleOrThrow(
+    static final VarHandle STATE = MethodHandlesInternal.findVarHandle(
             MethodHandles.lookup(), MemorySessionImpl.class, "state", int.class);
 
     static final int MAX_FORKS = Integer.MAX_VALUE;

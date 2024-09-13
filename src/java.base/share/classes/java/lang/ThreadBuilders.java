@@ -274,7 +274,7 @@ class ThreadBuilders {
      * Base ThreadFactory implementation.
      */
     private abstract static class BaseThreadFactory implements ThreadFactory {
-        private static final VarHandle COUNT = MethodHandlesInternal.findVarHandleOrThrow(
+        private static final VarHandle COUNT = MethodHandlesInternal.findVarHandle(
                 MethodHandles.lookup(), BaseThreadFactory.class, "count", long.class);
 
         private final String name;

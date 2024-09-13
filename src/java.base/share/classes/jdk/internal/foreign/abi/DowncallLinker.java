@@ -39,7 +39,6 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
@@ -57,7 +56,7 @@ public class DowncallLinker {
 
     private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
-    private static final MethodHandle MH_INVOKE_INTERP_BINDINGS = MethodHandlesInternal.findVirtualOrThrow(
+    private static final MethodHandle MH_INVOKE_INTERP_BINDINGS = MethodHandlesInternal.findVirtual(
             MethodHandles.lookup(), DowncallLinker.class, "invokeInterpBindings",
             methodType(Object.class, SegmentAllocator.class, Object[].class, InvocationData.class));
 

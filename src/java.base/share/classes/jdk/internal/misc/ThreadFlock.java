@@ -86,8 +86,10 @@ public class ThreadFlock implements AutoCloseable {
     private static final VarHandle PERMIT;
     static {
         MethodHandles.Lookup l = MethodHandles.lookup();
-        THREAD_COUNT = MethodHandlesInternal.findVarHandleOrThrow(l, ThreadFlock.class, "threadCount", int.class);
-        PERMIT = MethodHandlesInternal.findVarHandleOrThrow(l, ThreadFlock.class, "permit", boolean.class);
+        THREAD_COUNT = MethodHandlesInternal.findVarHandle(
+                l, ThreadFlock.class, "threadCount", int.class);
+        PERMIT = MethodHandlesInternal.findVarHandle(
+                l, ThreadFlock.class, "permit", boolean.class);
     }
 
     private final Set<Thread> threads = ConcurrentHashMap.newKeySet();

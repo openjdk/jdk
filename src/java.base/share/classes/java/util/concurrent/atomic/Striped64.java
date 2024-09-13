@@ -140,7 +140,7 @@ abstract class Striped64 extends Number {
         }
 
         // VarHandle mechanics
-        private static final VarHandle VALUE = MethodHandlesInternal.findVarHandleOrThrow(
+        private static final VarHandle VALUE = MethodHandlesInternal.findVarHandle(
                 MethodHandles.lookup(), Cell.class, "value", long.class);
     }
 
@@ -378,9 +378,9 @@ abstract class Striped64 extends Number {
     static {
         MethodHandles.Lookup l1 = MethodHandles.lookup();
 
-        BASE = MethodHandlesInternal.findVarHandleOrThrow(
+        BASE = MethodHandlesInternal.findVarHandle(
                 l1, Striped64.class, "base", long.class);
-        CELLSBUSY = MethodHandlesInternal.findVarHandleOrThrow(
+        CELLSBUSY = MethodHandlesInternal.findVarHandle(
                 l1, Striped64.class, "cellsBusy", int.class);
             @SuppressWarnings("removal")
         MethodHandles.Lookup l2 = java.security.AccessController.doPrivileged(
@@ -392,7 +392,7 @@ abstract class Striped64 extends Number {
                                 throw new ExceptionInInitializerError(e);
                             }
                         }});
-        THREAD_PROBE = MethodHandlesInternal.findVarHandleOrThrow(
+        THREAD_PROBE = MethodHandlesInternal.findVarHandle(
                 l2, Thread.class, "threadLocalRandomProbe", int.class);
     }
 

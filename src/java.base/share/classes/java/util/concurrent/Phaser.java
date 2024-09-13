@@ -1139,7 +1139,7 @@ public class Phaser {
     }
 
     // VarHandle mechanics
-    private static final VarHandle STATE = MethodHandlesInternal.findVarHandleOrThrow(
+    private static final VarHandle STATE = MethodHandlesInternal.findVarHandle(
             MethodHandles.lookup(), Phaser.class, "state", long.class);
     static {
         // Reduce the risk of rare disastrous classloading in first call to

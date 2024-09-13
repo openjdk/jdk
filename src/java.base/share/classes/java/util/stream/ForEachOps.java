@@ -372,8 +372,8 @@ final class ForEachOps {
         private Node<T> node;
 
         private ForEachOrderedTask<S, T> next;
-        private static final VarHandle NEXT = MethodHandlesInternal.findVarHandleOrThrow(
-                MethodHandles.lookup(),ForEachOrderedTask.class, "next", ForEachOrderedTask.class);
+        private static final VarHandle NEXT = MethodHandlesInternal.findVarHandle(
+                MethodHandles.lookup(), ForEachOrderedTask.class, "next", ForEachOrderedTask.class);
 
         protected ForEachOrderedTask(PipelineHelper<T> helper,
                                      Spliterator<S> spliterator,

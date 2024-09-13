@@ -52,7 +52,7 @@ import java.util.function.UnaryOperator;
  */
 public class AtomicReference<V> implements java.io.Serializable {
     private static final long serialVersionUID = -1848883965231344442L;
-    private static final VarHandle VALUE = MethodHandlesInternal.findVarHandleOrThrow(
+    private static final VarHandle VALUE = MethodHandlesInternal.findVarHandle(
             MethodHandles.lookup(), AtomicReference.class, "value", Object.class);
 
     @SuppressWarnings("serial") // Conditionally serializable

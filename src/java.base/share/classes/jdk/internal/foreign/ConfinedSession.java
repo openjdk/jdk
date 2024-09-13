@@ -41,7 +41,7 @@ final class ConfinedSession extends MemorySessionImpl {
 
     private int asyncReleaseCount = 0;
 
-    static final VarHandle ASYNC_RELEASE_COUNT= MethodHandlesInternal.findVarHandleOrThrow(
+    static final VarHandle ASYNC_RELEASE_COUNT= MethodHandlesInternal.findVarHandle(
             MethodHandles.lookup(), ConfinedSession.class, "asyncReleaseCount", int.class);
 
     public ConfinedSession(Thread owner) {

@@ -43,9 +43,9 @@ public class SharedThreadContainer extends ThreadContainer implements AutoClosea
     private static final VarHandle VIRTUAL_THREADS;
     static {
         MethodHandles.Lookup l = MethodHandles.lookup();
-        CLOSED = MethodHandlesInternal.findVarHandleOrThrow(
+        CLOSED = MethodHandlesInternal.findVarHandle(
                 l, SharedThreadContainer.class, "closed", boolean.class);
-        VIRTUAL_THREADS = MethodHandlesInternal.findVarHandleOrThrow(
+        VIRTUAL_THREADS = MethodHandlesInternal.findVarHandle(
                 l, SharedThreadContainer.class, "virtualThreads", Set.class);
     }
 

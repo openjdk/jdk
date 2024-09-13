@@ -68,7 +68,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
@@ -150,7 +149,7 @@ class DatagramChannelImpl
     private InetSocketAddress initialLocalAddress;
 
     // Socket adaptor, created lazily
-    private static final VarHandle SOCKET = MethodHandlesInternal.findVarHandleOrThrow(
+    private static final VarHandle SOCKET = MethodHandlesInternal.findVarHandle(
             MethodHandles.lookup(), DatagramChannelImpl.class, "socket", DatagramSocket.class);
     private volatile DatagramSocket socket;
 

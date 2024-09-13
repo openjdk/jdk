@@ -49,7 +49,7 @@ import jdk.internal.vm.ThreadContainers;
 class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final Permission MODIFY_THREAD = new RuntimePermission("modifyThread");
-    private static final VarHandle STATE = MethodHandlesInternal.findVarHandleOrThrow(
+    private static final VarHandle STATE = MethodHandlesInternal.findVarHandle(
             MethodHandles.lookup(), ThreadPerTaskExecutor.class, "state", int.class);
 
     private final ThreadFactory factory;
@@ -501,9 +501,12 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
         private static final VarHandle EXCEPTION_COUNT;
         static {
             MethodHandles.Lookup l = MethodHandles.lookup();
-            RESULT = MethodHandlesInternal.findVarHandleOrThrow(l, AnyResultHolder.class, "result", Object.class);
-            EXCEPTION = MethodHandlesInternal.findVarHandleOrThrow(l, AnyResultHolder.class, "exception", Throwable.class);
-            EXCEPTION_COUNT = MethodHandlesInternal.findVarHandleOrThrow(l, AnyResultHolder.class, "exceptionCount", int.class);
+            RESULT = MethodHandlesInternal.findVarHandle(
+                    l, AnyResultHolder.class, "result", Object.class);
+            EXCEPTION = MethodHandlesInternal.findVarHandle(
+                    l, AnyResultHolder.class, "exception", Throwable.class);
+            EXCEPTION_COUNT = MethodHandlesInternal.findVarHandle(
+                    l, AnyResultHolder.class, "exceptionCount", int.class);
         }
         private static final Object NULL = new Object();
 

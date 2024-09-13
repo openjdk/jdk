@@ -52,8 +52,8 @@ import java.lang.invoke.VarHandle;
  */
 public class AtomicBoolean implements java.io.Serializable {
     private static final long serialVersionUID = 4654671469794556979L;
-    private static final VarHandle VALUE = MethodHandlesInternal.findVarHandleOrThrow(
-            MethodHandles.lookup(),AtomicBoolean.class, "value", int.class);
+    private static final VarHandle VALUE = MethodHandlesInternal.findVarHandle(
+            MethodHandles.lookup(), AtomicBoolean.class, "value", int.class);
 
     private volatile int value;
 

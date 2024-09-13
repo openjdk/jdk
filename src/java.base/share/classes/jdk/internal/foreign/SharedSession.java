@@ -92,7 +92,7 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
      */
     static class SharedResourceList extends ResourceList {
 
-        static final VarHandle FST = MethodHandlesInternal.findVarHandleOrThrow(
+        static final VarHandle FST = MethodHandlesInternal.findVarHandle(
                 MethodHandles.lookup(), ResourceList.class, "fst", ResourceCleanup.class);
 
         @Override

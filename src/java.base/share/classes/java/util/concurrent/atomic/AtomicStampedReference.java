@@ -192,7 +192,7 @@ public class AtomicStampedReference<V> {
     }
 
     // VarHandle mechanics
-    private static final VarHandle PAIR = MethodHandlesInternal.findVarHandleOrThrow(
+    private static final VarHandle PAIR = MethodHandlesInternal.findVarHandle(
             MethodHandles.lookup(), AtomicStampedReference.class, "pair", Pair.class);
 
     private boolean casPair(Pair<V> cmp, Pair<V> val) {
