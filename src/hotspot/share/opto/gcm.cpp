@@ -588,7 +588,7 @@ private:
   };
 
   GrowableArray<DefUsePair> _queue;
-  Node_List _worklist_visited; // visited mergemem nodes
+  GrowableArray<MergeMemNode*> _worklist_visited; // visited mergemem nodes
 
   bool already_enqueued(Node* def_mem, PhiNode* use_phi) const {
     // def_mem is one of the inputs of use_phi and at least one input of use_phi is
@@ -622,22 +622,18 @@ private:
   }
 
 public:
-  DefUseMemStatesQueue(ResourceArea* area) :
-          _worklist_visited((area)) {
+  DefUseMemStatesQueue(ResourceArea* area) {
   }
 
   void push(Node* def_mem_state, Node* use_mem_state) {
     if (use_mem_state->is_MergeMem()) {
       // Be sure we don't get into combinatorial problems.
-      // (Allow phis to be repeated; they can merge two relevant states.)
-      uint j = _worklist_visited.size();
-      for (; j > 0; j--) {
-        if (_worklist_visited.at(j-1) == use_mem_state)  return; // already on work list; do not repeat
+      if (!_worklist_visited.append_if_missing(use_mem_state->as_MergeMem())) {
+        return; // already on work list; do not repeat
       }
-      _worklist_visited.push(use_mem_state);
     } else if (use_mem_state->is_Phi()) {
       // A Phi could have the same mem as input multiple times. If that's the case, we don't need to enqueue it
-      // more than once.
+      // more than once. We otherwise allow phis to be repeated; they can merge two relevant states.
       if (already_enqueued(def_mem_state, use_mem_state->as_Phi())) {
         return;
       }
@@ -746,7 +742,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // Therefore, the branches visited by the worklist are of this form:
   //    initial_mem -> (MergeMem ->)* Memory state modifying node
   // Memory state modifying nodes include Store and Phi nodes and any node for which needs_anti_dependence_check()
-  // returns true.
+  // returns false.
   // The anti-dependence constraints apply only to the fringe of this tree.
 
   Node* initial_mem = load->in(MemNode::Memory);
@@ -758,7 +754,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
     worklist_def_use_mem_states.pop();
 
     uint op = use_mem_state->Opcode();
-    assert(!use_mem_state->needs_anti_dependence_check(), "only stores");
+    assert(!use_mem_state->needs_anti_dependence_check(), "no loads");
 
     // MergeMems do not directly have anti-deps.
     // Treat them as internal nodes in a forward tree of memory states,
@@ -772,8 +768,9 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
 
       for (DUIterator_Fast imax, i = def_mem_state->fast_outs(imax); i < imax; i++) {
         use_mem_state = def_mem_state->fast_out(i);
-        // If this is not a store, load can't be anti dependent on this node
         if (use_mem_state->needs_anti_dependence_check()) {
+          // use_mem_state is also a kind of load (i.e. needs_anti_dependence_check), and it is not a memory state
+          // modifying node (store, Phi or MergeMem). Hence, load can't be anti dependent on this node.
           continue;
         }
         worklist_def_use_mem_states.push(def_mem_state, use_mem_state);
