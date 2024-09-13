@@ -310,13 +310,11 @@ public final class SegmentBulkOperations {
 
     // The returned value is in the interval [0, 2^30]
     static int powerOfPropertyOr(String name, int defaultPower) {
-        final String property = GetPropertyAction.privilegedGetProperty(PROPERTY_PATH + name);
-        if (property != null) {
-            try {
-                return 1 << Math.clamp(Integer.parseInt(property), 0, Integer.SIZE - 2);
-            } catch (NumberFormatException _) {
-                // ignore
-            }
+        final String property = GetPropertyAction.privilegedGetProperty(PROPERTY_PATH + name, Integer.toString(defaultPower));
+        try {
+            return 1 << Math.clamp(Integer.parseInt(property), 0, Integer.SIZE - 2);
+        } catch (NumberFormatException _) {
+            // ignore
         }
         return defaultPower;
     }
