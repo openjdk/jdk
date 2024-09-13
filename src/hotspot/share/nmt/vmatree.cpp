@@ -217,6 +217,8 @@ VMATree::SummaryDiff VMATree::set_flag(position from, size size, MEMFLAGS flag) 
 
   position end = MIN2(from + size, range.end->key());
   SummaryDiff diff = register_mapping(from, end, type, new_data);
+  size = size - (end - from);
+  from = end;
 
   // If end < from + sz then there are multiple ranges for which to set the flag.
   while (end < from + size) {
@@ -231,6 +233,8 @@ VMATree::SummaryDiff VMATree::set_flag(position from, size size, MEMFLAGS flag) 
     RegionData new_data = RegionData(range.start->val().out.stack(), flag);
     SummaryDiff result = register_mapping(from, end, type, new_data);
     diff.apply(result);
+    size = size - (end - from);
+    from = end;
   }
 
   return diff;
