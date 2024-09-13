@@ -2402,7 +2402,7 @@ public class MethodHandles {
          * @param dumper  dumper to write the given bytes to the dumper's output directory
          * @return ClassDefiner that defines a hidden class of the given bytes and options.
          */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, ClassFileDumper dumper, ClassOption ... options) {
+        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, ClassFileDumper dumper, ClassOption... options) {
             Objects.requireNonNull(dumper);
             // skip name and access flags validation
             return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), false, dumper, options);
