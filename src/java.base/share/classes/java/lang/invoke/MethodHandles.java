@@ -2220,7 +2220,7 @@ public class MethodHandles {
                 throw new IllegalAccessException(this + " does not have full privilege access");
             }
 
-            return makeHiddenClassDefiner(bytes.clone(), false, options.clone())
+            return makeHiddenClassDefiner(bytes.clone(), false, options)
                        .defineClassAsLookup(initialize, classData);
         }
 
