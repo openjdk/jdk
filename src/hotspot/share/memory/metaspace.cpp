@@ -655,20 +655,21 @@ void Metaspace::ergo_initialize() {
 
     const size_t res_align = reserve_alignment();
 
-    // Let CCS size not be larger than 80% of MaxMetaspaceSize. Note that is
+    // Let Class Space not be larger than 80% of MaxMetaspaceSize. Note that is
     // grossly over-dimensioned for most usage scenarios; typical ratio of
     // class space : non class space usage is about 1:6. With many small classes,
     // it can get as low as 1:2. It is not a big deal though since ccs is only
     // reserved and will be committed on demand only.
     const size_t max_ccs_size = 8 * (MaxMetaspaceSize / 10);
 
-    // CCS is also limited by the max. possible Klass encoding range size
-    const size_t max_encoding_range = CompressedKlassPointers::max_klass_range_size();
-    assert(max_encoding_range >= res_align,
-           "Encoding range (%zu) must cover at least a full root chunk (%zu)",
-           max_encoding_range, res_align);
+    // Sanity check: The max. Klass Range allowed by the narrowKlass geometry must cover
+    // at least a root chunk (16MB). That is of course given.
+    const size_t max_klass_range = CompressedKlassPointers::max_klass_range_size();
+    assert(max_klass_range >= res_align,
+           "Klass range (%zu) must cover at least a full root chunk (%zu)",
+           max_klass_range, res_align);
 
-    size_t adjusted_ccs_size = MIN3(CompressedClassSpaceSize, max_ccs_size, max_encoding_range);
+    size_t adjusted_ccs_size = MIN3(CompressedClassSpaceSize, max_ccs_size, max_klass_range);
 
     // CCS must be aligned to root chunk size, and be at least the size of one
     //  root chunk. But impose a miminum size of 1 root chunk (16MB).
