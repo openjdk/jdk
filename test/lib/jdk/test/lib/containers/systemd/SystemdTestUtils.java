@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -135,15 +136,21 @@ public class SystemdTestUtils {
         if (runOpts.hasSliceDLimit()) {
             String dirName = String.format("%s.slice.d", SLICE_NAMESPACE_PREFIX);
             sliceDotDDir = SYSTEMD_CONFIG_HOME.resolve(Path.of(dirName));
-            Files.createDirectory(sliceDotDDir);
+            // Using createDirectories since we only need to ensure the directory
+            // exists. Ignore it if already existent.
+            Files.createDirectories(sliceDotDDir);
 
             if (runOpts.sliceDMemoryLimit != null) {
                 Path memoryConfig = sliceDotDDir.resolve(Path.of(SLICE_D_MEM_CONFIG_FILE));
-                Files.writeString(memoryConfig, getMemoryDSliceContent(runOpts));
+                Files.writeString(memoryConfig,
+                                  getMemoryDSliceContent(runOpts),
+                                  StandardOpenOption.TRUNCATE_EXISTING);
             }
             if (runOpts.sliceDCpuLimit != null) {
                 Path cpuConfig = sliceDotDDir.resolve(Path.of(SLICE_D_CPU_CONFIG_FILE));
-                Files.writeString(cpuConfig, getCPUDSliceContent(runOpts));
+                Files.writeString(cpuConfig,
+                                  getCPUDSliceContent(runOpts),
+                                  StandardOpenOption.TRUNCATE_EXISTING);
             }
         }
 
