@@ -1549,13 +1549,8 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
   if (p0 != nullptr) {
     int opc = p0->Opcode();
     if (is_marked_reduction(p0)) {
-      const Type *arith_type = p0->bottom_type();
-      // Length 2 reductions of INT/LONG do not offer performance benefits
-      if (((arith_type->basic_type() == T_INT) || (arith_type->basic_type() == T_LONG)) && (size == 2)) {
-        retValue = false;
-      } else {
-        retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
-      }
+      const Type* arith_type = p0->bottom_type();
+      retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
     } else if (VectorNode::is_convert_opcode(opc)) {
       retValue = VectorCastNode::implemented(opc, size, velt_basic_type(p0->in(1)), velt_basic_type(p0));
     } else if (VectorNode::is_minmax_opcode(opc) && is_subword_type(velt_basic_type(p0))) {
