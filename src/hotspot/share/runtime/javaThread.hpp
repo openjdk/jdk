@@ -617,7 +617,7 @@ private:
   void clear_jni_monitor_count() { _jni_monitor_count = 0;   }
 
   // Support for SharedRuntime::monitor_exit_helper()
-  ObjectMonitor* unlocked_inflated_monitor() { return _unlocked_inflated_monitor; }
+  ObjectMonitor* unlocked_inflated_monitor() const { return _unlocked_inflated_monitor; }
   void clear_unlocked_inflated_monitor() {
     _unlocked_inflated_monitor = nullptr;
   }

@@ -373,12 +373,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      INotify(JavaThread* current);
   ObjectWaiter* DequeueWaiter();
   void      DequeueSpecificWaiter(ObjectWaiter* waiter);
-  bool      enterI_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
-  bool      TryLockI(JavaThread* current);
+  bool      TryLock_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
   void      EnterI(JavaThread* current);
   void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
   void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
-
   bool      TrySpin(JavaThread* current);
   bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);
   void      ExitEpilog(JavaThread* current, ObjectWaiter* Wakee);

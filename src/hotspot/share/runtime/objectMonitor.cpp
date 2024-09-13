@@ -306,8 +306,7 @@ bool ObjectMonitor::enter_is_async_deflating() {
   return false;
 }
 
-bool ObjectMonitor::enterI_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark) {
-  // Used by ObjectSynchronizer::enter_for() to enter for another thread.
+bool ObjectMonitor::TryLock_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark) {
   // The monitor is private to or already owned by locking_thread which must be suspended.
   // So this code may only contend with deflation.
   assert(locking_thread == Thread::current() || locking_thread->is_obj_deopt_suspend(), "must be");
@@ -327,8 +326,13 @@ bool ObjectMonitor::enterI_with_contention_mark(JavaThread* locking_thread, Obje
     // Racing with deflation.
     prev_owner = try_set_owner_from(DEFLATER_MARKER, locking_thread);
     if (prev_owner == DEFLATER_MARKER) {
-      // Cancelled deflation. Increment contentions as part of the deflation protocol.
-      add_to_contentions(1);
+      // We successfully cancelled the in-progress async deflation.
+      // By extending the lifetime of the contention_mark, we
+      // prevent the destructor from decrementing the contentions
+      // counter when the contention_mark goes out of scope. Instead
+      // ObjectMonitor::deflate_monitor() will decrement contentions
+      // after it recognizes that the async deflation was cancelled.
+      contention_mark.extend();
       success = true;
     } else if (prev_owner == nullptr) {
       // At this point we cannot race with deflation as we have both incremented
@@ -350,7 +354,8 @@ bool ObjectMonitor::enterI_with_contention_mark(JavaThread* locking_thread, Obje
 }
 
 void ObjectMonitor::enter_for_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark) {
-  DEBUG_ONLY(bool success = ) ObjectMonitor::enterI_with_contention_mark(locking_thread, contention_mark);
+  // Used by LightweightSynchronizer::inflate_and_enter in deoptimization path to enter for another thread.
+  bool success = ObjectMonitor::TryLock_with_contention_mark(locking_thread, contention_mark);
 
   assert(success, "Failed to enter_for: locking_thread=" INTPTR_FORMAT
          ", this=" INTPTR_FORMAT "{owner=" INTPTR_FORMAT "}",
@@ -368,22 +373,13 @@ bool ObjectMonitor::enter_for(JavaThread* locking_thread) {
     return false;
   }
 
-  enter_for_with_contention_mark(locking_thread, contention_mark);
+  bool success = ObjectMonitor::TryLock_with_contention_mark(locking_thread, contention_mark);
+
+  assert(success, "Failed to enter_for: locking_thread=" INTPTR_FORMAT
+         ", this=" INTPTR_FORMAT "{owner=" INTPTR_FORMAT "}",
+         p2i(locking_thread), p2i(this), p2i(owner_raw()));
   assert(owner_raw() == locking_thread, "must be");
   return true;
-}
-
-bool ObjectMonitor::TryLockI(JavaThread* current) {
-  assert(current == JavaThread::current(), "must be");
-
-  // Block out deflation as soon as possible.
-  ObjectMonitorContentionMark contention_mark(this);
-
-  // Check for deflation.
-  if (enter_is_async_deflating()) {
-    return false;
-  }
-  return enterI_with_contention_mark(current, contention_mark);
 }
 
 bool ObjectMonitor::try_enter(JavaThread* current) {
@@ -571,7 +567,15 @@ ObjectMonitor::TryLockResult ObjectMonitor::TryLock(JavaThread* current) {
 
   for (;;) {
     if (own == DEFLATER_MARKER) {
-      if (TryLockI(current)) {
+      // Block out deflation as soon as possible.
+      ObjectMonitorContentionMark contention_mark(this);
+
+      // Check for deflation.
+      if (enter_is_async_deflating()) {
+        // Treat deflation as interference.
+        return TryLockResult::Interference;
+      }
+      if (TryLock_with_contention_mark(current, contention_mark)) {
         assert(_recursions == 0, "invariant");
         return TryLockResult::Success;
       } else {
@@ -900,8 +904,6 @@ void ObjectMonitor::EnterI(JavaThread* current) {
     // Note that we don't need to do OrderAccess::fence() after clearing
     // _succ here, since we own the lock.
   }
-
-  assert(_succ != current, "invariant");
 
   // We've acquired ownership with CAS().
   // CAS is serializing -- it has MEMBAR/FENCE-equivalent semantics.
@@ -1240,8 +1242,8 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
       // in enter().
       ObjectMonitorContentionMark contention_mark(this);
 
-      if (contentions() < 0) {
-        assert((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != nullptr, "");
+      if (is_being_async_deflated()) {
+        assert((intptr_t(_EntryList) | intptr_t(_cxq)) == 0 || _succ != nullptr, "");
         // Mr. Deflator won the race, so we are done.
         return;
       }

@@ -233,8 +233,8 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
 
   // Check if the entry lists are empty.
   ld(t0, Address(tmp, ObjectMonitor::EntryList_offset()));
-  ld(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset()));
-  orr(t0, t0, disp_hdr);
+  ld(tmp1Reg, Address(tmp, ObjectMonitor::cxq_offset()));
+  orr(t0, t0, tmp1Reg);
   beqz(t0, unlocked); // If so we are done.
 
   // Check if there is a successor.
@@ -550,7 +550,6 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
 
     bind(not_recursive);
 
-    Label release;
     const Register tmp2_owner_addr = tmp2;
 
     // Compute owner address.

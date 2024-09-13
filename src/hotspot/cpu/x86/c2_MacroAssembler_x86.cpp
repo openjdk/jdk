@@ -475,12 +475,6 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
   membar(StoreLoad);
 
-  // Memory barrier/fence
-  // Instead of MFENCE we use a dummy locked add of 0 to the top-of-stack.
-  // This is faster on Nehalem and AMD Shanghai/Barcelona.
-  // See https://blogs.oracle.com/dave/entry/instruction_selection_for_volatile_fences
-  lock(); addl(Address(rsp, 0), 0);
-
   // Check if the entry lists are empty.
   movptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
   orptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
