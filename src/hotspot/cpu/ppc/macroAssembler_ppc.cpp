@@ -1618,7 +1618,7 @@ Register addr_base, Label &retry, Label &failed, bool cmpxchgx_hint, int size) {
   // For older processors, instruction_type != size holds, and we
   // emulate the sub-word instructions by constructing a 4-byte value
   // that leaves the other bytes unchanged.
-  const int instruction_type =  size ;
+  const int instruction_type = size ;
 
   Register shift_amount = noreg,
            val32 = dest_current_value,
@@ -1666,8 +1666,7 @@ Register addr_base, Label &retry, Label &failed, bool cmpxchgx_hint, int size) {
 
 // CmpxchgX sets condition register to cmpX(current, compare).
 void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_current_value,
-                                     RegisterOrConstant compare_value, Register exchange_value,
-                                     Register addr_base, int semantics, bool cmpxchgx_hint, Register int_flag_success,
+                                     RegisterOrConstant compare_value, Register exchange_value,                                 Register addr_base, int semantics, bool cmpxchgx_hint, Register int_flag_success,
                                      Label* failed_ext, bool contention_hint, bool weak, int size) {
   Label retry;
   Label failed_int;
@@ -1704,7 +1703,7 @@ void MacroAssembler::cmpxchg_generic(ConditionRegister flag, Register dest_curre
     release();
   }
 
-  cmpxchg_loop_body(flag, dest_current_value, compare_value, exchange_value, addr_base, 
+  cmpxchg_loop_body(flag, dest_current_value, compare_value, exchange_value, addr_base,
                     retry, failed, cmpxchgx_hint, size);
   if (!weak || use_result_reg || failed_ext) {
     if (UseStaticBranchPredictionInCompareAndSwapPPC64) {

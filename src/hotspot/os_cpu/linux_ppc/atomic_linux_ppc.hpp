@@ -246,19 +246,7 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
   // specified otherwise (see atomic.hpp).
 
   // Using 32 bit internally.
-  //volatile int *dest_base = (volatile int*)((uintptr_t)dest & ~3);
-
-// #ifdef VM_LITTLE_ENDIAN
-//   const unsigned int shift_amount        = ((uintptr_t)dest & 3) * 8;
-// #else
-//   const unsigned int shift_amount        = ((~(uintptr_t)dest) & 3) * 8;
-// #endif
-//   const unsigned int masked_compare_val  = ((unsigned int)(unsigned char)compare_value),
-//                      masked_exchange_val = ((unsigned int)(unsigned char)exchange_value),
-//                      xor_value           = (masked_compare_val ^ masked_exchange_val) << shift_amount;
-
   unsigned int old_value, loaded_value;
-
   pre_membar(order);
 
   __asm__ __volatile__ (
@@ -271,11 +259,8 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
     "   lbarx   %[old_value], 0, %[dest]               \n"
     /* extract byte and compare */
     "   cmpw    %[compare_value], %[old_value] \n"
-   // "   clrldi  %[old_value], %[old_value], 56            \n"
-   // "   cmpw    %[masked_compare_val], %[old_value]       \n"
     "   bne-    2f                                        \n"
     /* replace byte and try to store */
-   // "   xor     %[value32], %[xor_value], %[value32]      \n"
     "   stbcx.  %[exchange_value], 0, %[dest]               \n"
     "   bne-    1b                                        \n"
     /* exit */

@@ -36,11 +36,9 @@
 void Compile::pd_compiler2_init() {
 
   // Power7 and later.
-
   if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
     FLAG_SET_ERGO(UsePopCountInstruction, true);
   }
-  
 
   if (!VM_Version::has_isel() && FLAG_IS_DEFAULT(ConditionalMoveLimit)) {
     FLAG_SET_ERGO(ConditionalMoveLimit, 0);

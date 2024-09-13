@@ -82,7 +82,7 @@ void VM_Version::initialize() {
 
   // Power 8: Configure Data Stream Control Register.
   config_dscr();
-  
+
 
   if (!UseSIGTRAP) {
     MSG(TrapBasedICMissChecks);
@@ -160,12 +160,12 @@ void VM_Version::initialize() {
                (has_fsqrt()   ? " fsqrt"   : ""),
                (has_isel()    ? " isel"    : ""),
                (has_lxarxeh() ? " lxarxeh" : ""),
-               ( " cmpb"  ),
-               (" popcntb"),
-               ( " popcntw"),
+               "cmpb",
+               "popcntb",
+                "popcntw",
                (has_fcfids()  ? " fcfids"  : ""),
                (has_vand()    ? " vand"    : ""),
-               ( " lqarx"  ),
+               "lqarx",
                (has_vcipher() ? " aes"     : ""),
                (has_vpmsumb() ? " vpmsumb" : ""),
                (has_mfdscr()  ? " mfdscr"  : ""),
@@ -322,7 +322,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  
 
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
