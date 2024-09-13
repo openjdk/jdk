@@ -663,6 +663,9 @@ class SleepingThread extends BaseThread {
         expectedMethods.add(Thread.class.getName() + ".currentCarrierThread");
         expectedMethods.add(Thread.class.getName() + ".currentThread");
         // jdk.internal.event.ThreadSleepEvent not accessible
+        expectedMethods.add("java.lang.Object.<init>");
+        expectedMethods.add("jdk.internal.event.Event.<init>");
+        expectedMethods.add("jdk.internal.event.ThreadSleepEvent.<init>");
         expectedMethods.add("jdk.internal.event.ThreadSleepEvent.<clinit>");
         expectedMethods.add("jdk.internal.event.ThreadSleepEvent.isEnabled");
         expectedMethods.add(SleepingThread.class.getName() + ".run");

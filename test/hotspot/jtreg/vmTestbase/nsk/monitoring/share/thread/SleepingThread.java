@@ -41,6 +41,9 @@ public class SleepingThread extends RecursiveMonitoringThread {
                 "java.lang.Thread.beforeSleep",
                 "java.lang.Thread.afterSleep",
                 "java.util.concurrent.TimeUnit.toNanos",
+                "java.lang.Object.<init>",
+                "jdk.internal.event.Event.<init>",
+                "jdk.internal.event.ThreadSleepEvent.<init>",
                 "jdk.internal.event.ThreadSleepEvent.<clinit>",
                 "jdk.internal.event.ThreadSleepEvent.isEnabled",
                 "nsk.monitoring.share.thread.SleepingThread.runInside"
