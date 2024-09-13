@@ -23,18 +23,16 @@
 
 /*
  * @test
- * @bug         4271200
- * @summary     This test should show that the default position of a Frame
- * should be on the physical screen for the GraphicsConfiguration.
- * The togglebutton shows and hides an empty frame on the second monitor. The
- * frame should be positioned at 0, 0 and is shown and hidden by clicking the
- * toggleButton.
+ * @bug     4271200
+ * @summary This test should show that the default position of a Frame
+ *          should be on the physical screen for the GraphicsConfiguration.
+ *          The togglebutton shows and hides an empty frame on the second monitor.
+ *          The frame should be positioned at 0, 0 and is shown and hidden by clicking the button.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual Position
  */
 
-import java.awt.Graphics;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.event.ActionEvent;

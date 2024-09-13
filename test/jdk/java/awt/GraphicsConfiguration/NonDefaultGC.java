@@ -23,12 +23,12 @@
 
 /*
  * @test
- * @bug         4131642
- * @summary     This test shows the ability to create Frames, Windows
- * and Canvases with a GraphicsConfiguration. The test should show a number
- * of windows with RGB stripes in according to the number of the
- * GraphicsConfigurations for each screen. It also displays the size of
- * the screen and the GraphicsConfiguration.toString().
+ * @bug     4131642
+ * @summary This test shows the ability to create Frames, Windows
+ *          and Canvases with a GraphicsConfiguration. The test should show a number
+ *          of windows with RGB stripes in according to the number of the
+ *          GraphicsConfigurations for each screen. It also displays the size of
+ *          the screen and the GraphicsConfiguration.toString().
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual NonDefaultGC
