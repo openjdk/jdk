@@ -1285,9 +1285,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
      * <p>
-     * Getting a String from a {@code segment} with a known byte {@code offset} and
-     * known byte {@code length} can be done like so:
-     * {@snippet lang=java
+     * Getting a string from a segment with a known byte offset and
+     * known byte length can be done like so:
+     * {@snippet lang=java :
      *     byte[] bytes = new byte[length];
      *     MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, length);
      *     return new String(bytes, charset);
