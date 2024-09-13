@@ -108,7 +108,10 @@ public:
   }
 
   bool is_in_encoding_range() {
-    return CompressedKlassPointers::is_in_encoding_range(get_Klass());
+    Klass* k = get_Klass();
+    bool is_in_encoding_range = CompressedKlassPointers::is_in_encoding_range(k);
+    assert(is_in_encoding_range || k->is_interface() || k->is_abstract(), "sanity");
+    return is_in_encoding_range;
   }
 
   // Attempt to get a klass using this ciKlass's loader.
