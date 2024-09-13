@@ -277,12 +277,31 @@ public:
   }
 };
 
+#ifdef _WINDOWS
+static void map_stack_pages(JavaThread* thread, size_t size, address sp) {
+  address new_sp = sp - size;
+  address watermark = thread->stack_overflow_state()->shadow_zone_growth_watermark();
+
+  if (new_sp < watermark) {
+    size_t page_size = os::vm_page_size();
+    address last_touched_page = watermark - StackOverflow::stack_shadow_zone_size();
+    size_t pages_to_touch = align_up(watermark - new_sp, page_size) / page_size;
+    while (pages_to_touch-- > 0) {
+      last_touched_page -= page_size;
+      *last_touched_page = 0;
+    }
+    thread->stack_overflow_state()->set_shadow_zone_growth_watermark(new_sp);
+  }
+}
+#endif
+
 static bool stack_overflow_check(JavaThread* thread, size_t size, address sp) {
   const size_t page_size = os::vm_page_size();
   if (size > page_size) {
     if (sp - size < thread->stack_overflow_state()->shadow_zone_safe_limit()) {
       return false;
     }
+    WINDOWS_ONLY(map_stack_pages(thread, size, sp));
   }
   return true;
 }
@@ -877,7 +896,7 @@ inline void FreezeBase::before_freeze_java_frame(const frame& f, const frame& ca
     LogStream ls(lt);
     ls.print_cr("======== FREEZING FRAME interpreted: %d bottom: %d", f.is_interpreted_frame(), is_bottom_frame);
     ls.print_cr("fsize: %d argsize: %d", fsize, argsize);
-    f.print_value_on(&ls, nullptr);
+    f.print_value_on(&ls);
   }
   assert(caller.is_interpreted_frame() == Interpreter::contains(caller.pc()), "");
 }
@@ -886,7 +905,7 @@ inline void FreezeBase::after_freeze_java_frame(const frame& hf, bool is_bottom_
   LogTarget(Trace, continuations) lt;
   if (lt.develop_is_enabled()) {
     LogStream ls(lt);
-    DEBUG_ONLY(hf.print_value_on(&ls, nullptr);)
+    DEBUG_ONLY(hf.print_value_on(&ls);)
     assert(hf.is_heap_frame(), "should be");
     DEBUG_ONLY(print_frame_layout(hf, false, &ls);)
     if (is_bottom_frame) {
@@ -2027,7 +2046,7 @@ NOINLINE intptr_t* ThawBase::thaw_slow(stackChunkOop chunk, bool return_barrier)
     LogStream ls(lt);
     ls.print_cr("top hframe before (thaw):");
     assert(heap_frame.is_heap_frame(), "should have created a relative frame");
-    heap_frame.print_value_on(&ls, nullptr);
+    heap_frame.print_value_on(&ls);
   }
 
 #if INCLUDE_ZGC || INCLUDE_SHENANDOAHGC
@@ -2124,7 +2143,7 @@ inline void ThawBase::before_thaw_java_frame(const frame& hf, const frame& calle
     LogStream ls(lt);
     ls.print_cr("======== THAWING FRAME: %d", num_frame);
     assert(hf.is_heap_frame(), "should be");
-    hf.print_value_on(&ls, nullptr);
+    hf.print_value_on(&ls);
   }
   assert(bottom == _cont.is_entry_frame(caller), "bottom: %d is_entry_frame: %d", bottom, _cont.is_entry_frame(hf));
 }
@@ -2394,7 +2413,7 @@ void ThawBase::finish_thaw(frame& f) {
   if (lt.develop_is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("top hframe after (thaw):");
-    _cont.last_frame().print_value_on(&ls, nullptr);
+    _cont.last_frame().print_value_on(&ls);
   }
 }
 
@@ -2406,7 +2425,7 @@ void ThawBase::push_return_frame(frame& f) { // see generate_cont_thaw
   if (lt.develop_is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("push_return_frame");
-    f.print_value_on(&ls, nullptr);
+    f.print_value_on(&ls);
   }
 
   assert(f.sp() - frame::metadata_words_at_bottom >= _top_stack_address, "overwrote past thawing space"
@@ -2467,7 +2486,7 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
   if (lt.develop_is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("Jumping to frame (thaw):");
-    frame(sp).print_value_on(&ls, nullptr);
+    frame(sp).print_value_on(&ls);
   }
 #endif
 

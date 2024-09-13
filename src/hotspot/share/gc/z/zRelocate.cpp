@@ -843,7 +843,23 @@ private:
 
     // Promotions happen through a new cloned page
     ZPage* const to_page = promotion ? from_page->clone_limited() : from_page;
-    to_page->reset(to_age, ZPageResetType::InPlaceRelocation);
+
+    // Reset page for in-place relocation
+    to_page->reset(to_age);
+    to_page->reset_top_for_allocation();
+    if (promotion) {
+      to_page->remset_initialize();
+    }
+
+    // Verify that the inactive remset is clear when resetting the page for
+    // in-place relocation.
+    if (from_page->age() == ZPageAge::old) {
+      if (ZGeneration::old()->active_remset_is_current()) {
+        to_page->verify_remset_cleared_previous();
+      } else {
+        to_page->verify_remset_cleared_current();
+      }
+    }
 
     // Clear remset bits for all objects that were relocated
     // before this page became an in-place relocated page.
@@ -1270,8 +1286,14 @@ public:
       prev_page->log_msg(promotion ? " (flip promoted)" : " (flip survived)");
 
       // Setup to-space page
-      ZPage* const new_page = promotion ? prev_page->clone_limited_promote_flipped() : prev_page;
-      new_page->reset(to_age, ZPageResetType::FlipAging);
+      ZPage* const new_page = promotion ? prev_page->clone_limited() : prev_page;
+
+      // Reset page for flip aging
+      new_page->reset(to_age);
+      new_page->reset_livemap();
+      if (promotion) {
+        new_page->remset_initialize();
+      }
 
       if (promotion) {
         ZGeneration::young()->flip_promote(prev_page, new_page);

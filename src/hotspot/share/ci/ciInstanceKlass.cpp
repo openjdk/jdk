@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
 
   AccessFlags access_flags = ik->access_flags();
   _flags = ciFlags(access_flags);
-  _has_finalizer = access_flags.has_finalizer();
+  _has_finalizer = ik->has_finalizer();
   _has_subklass = flags().is_final() ? subklass_false : subklass_unknown;
   _init_state = ik->init_state();
   _has_nonstatic_fields = ik->has_nonstatic_fields();
