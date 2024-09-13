@@ -51,6 +51,15 @@ void NativeCall::verify() {
   }
 }
 
+address NativeCall::destination() const {
+  // Getting the destination of a call isn't safe because that call can
+  // be getting patched while you're calling this.  There's only special
+  // places where this can be called but not automatically verifiable by
+  // checking which locks are held.  The solution is true atomic patching
+  // on x86, nyi.
+  return return_address() + displacement();
+}
+
 void NativeCall::print() {
   tty->print_cr(PTR_FORMAT ": call " PTR_FORMAT,
                 p2i(instruction_address()), p2i(destination()));

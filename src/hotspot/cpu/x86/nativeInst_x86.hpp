@@ -124,14 +124,7 @@ class NativeCall: public NativeInstruction {
   int   displacement() const                { return (jint) int_at(displacement_offset); }
   address displacement_address() const      { return addr_at(displacement_offset); }
   address return_address() const            { return addr_at(return_address_offset); }
-  address destination() const {
-    // Getting the destination of a call isn't safe because that call can
-    // be getting patched while you're calling this.  There's only special
-    // places where this can be called but not automatically verifiable by
-    // checking which locks are held.  The solution is true atomic patching
-    // on x86, nyi.
-    return return_address() + displacement();
-  }
+  address destination() const;
   void  set_destination(address dest)       {
 #ifdef AMD64
     intptr_t disp = dest - return_address();
