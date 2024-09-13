@@ -471,9 +471,9 @@ jlong AddNode::find_repeated_operand_in_chained_addition(PhaseGVN* phase,
 
   *base = nullptr;
 
-  if (depth > 2) {
-    return -1;
-  }
+  // if (depth > 2) {
+  //   return -1;
+  // }
 
   // MulNode(any, const), e.g., a*2
   if (node->is_Mul()
@@ -488,9 +488,9 @@ jlong AddNode::find_repeated_operand_in_chained_addition(PhaseGVN* phase,
       jlong multiplier = find_repeated_operand_in_chained_addition(phase, operand_node,
                                                                    &mul_base, depth + 1);
 
-      if (mul_base == nullptr) {
-        return -1;
-      }
+      // if (mul_base == nullptr) {
+      //   return -1;
+      // }
 
       *base = mul_base;
       return multiplier * const_node->get_integer_as_long(bt);
@@ -508,9 +508,9 @@ jlong AddNode::find_repeated_operand_in_chained_addition(PhaseGVN* phase,
       jlong multiplier = find_repeated_operand_in_chained_addition(phase, operand_node,
                                                                    &shift_base, depth + 1);
 
-      if (shift_base == nullptr) {
-        return -1;
-      }
+      // if (shift_base == nullptr) {
+      //   return -1;
+      // }
 
       *base = shift_base;
       return multiplier * ((jlong) 1 << const_node->get_integer_as_long(bt));
@@ -531,9 +531,9 @@ jlong AddNode::find_repeated_operand_in_chained_addition(PhaseGVN* phase,
     jlong multiplier_right = find_repeated_operand_in_chained_addition(phase, operand_node_right,
                                                                        &base_right, depth + 1);
 
-    if (base_left == nullptr || base_right == nullptr) {
-      return -1;
-    }
+    // if (base_left == nullptr || base_right == nullptr) {
+    //   return -1;
+    // }
 
     if (base_left == base_right) {
       *base = base_left;
