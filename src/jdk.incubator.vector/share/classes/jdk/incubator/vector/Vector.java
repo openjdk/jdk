@@ -2767,25 +2767,46 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
     public abstract Vector<E> selectFrom(Vector<E> v);
 
     /**
-     * Rearranges the lane elements of two vectors, selecting lanes
-     * under the control of a specific index vector (the current vector)
-     * holding indexes in valid index range of two vectors i.e. {@code [0, VLENGTH*2)}.
+     * Using values stored in the lanes of this vector,
+     * assemble values stored in the second vector {@code v1}
+     * and third vector {@code v2}. The second and third vectors thus
+     * serve as a table, whose elements are selected by indexes
+     * in this vector.
      *
      * This is a cross-lane operation that rearranges the lane
-     * elements of the two input vectors {@code v1} and a second vector {@code v2}).
+     * elements of the argument vectors, under the control of
+     * this vector.
      *
-     * For each lane {@code N} of the index vector (the current vector), and
-     * for each lane source index {@code I=this.laneSource(N)} in the index vector,
-     * the output lane {@code N} obtains the value from the first vector at lane {@code I}
-     * if {@code I>=0 && I < VLENGTH}. Otherwise, index vector lane is used to index
-     * the <em>second</em> vector, at index {@code I-VLENGTH}.
+     * For each lane {@code N} of this vector, and for each lane
+     * value {@code I=wrapIndex(this.lane(N)} in this vector,
+     * the output lane {@code N} obtains the value from
+     * the second vector at lane {@code I} if {@code I < VLENGTH}.
+     * Otherwise, the output lane {@code N} obtains the value from
+     * the third vector at lane {@code I - VLENGTH}.
+     *
+     * Here, {@code VLENGTH} is the result of {@code this.length()},
+     * and {@code wrapIndex} computes the result of
+     * {@code Math.floorMod(E, 2 * VLENGTH)},
+     * where {@code E} is the index to be wrapped.
+     * As long as {@code VLENGTH} is a power of two, then the result
+     * is also equal to {@code E & (2 * VLENGTH - 1)}.
+     *
+     * In this way, the result contains only values stored in the
+     * argument vectors {@code v1} and {@code v2}, but presented in
+     * an order which depends on the index values in {@code this}.
+     *
+     * The result is the same as the expression
+     * {@snippet lang=java :
+     * v1.rearrange(
+     * this.lanewise(VectorOperators.AND, 2 * VLENGTH - 1).toShuffle(),
+     * v2)
+     * }
+     * when {@code VLENGTH} is a power of two.
      *
      * @param v1 the first input vector
      * @param v2 the second input vector
-     * @return the rearrangement of lane elements of first and
-     *         the second input vector
-     * @throws IndexOutOfBoundsException if any invalid
-     *         source indexes are found in {@code this}
+     * @return the rearrangement of lane elements of {@code v1} and {@code v2}
+     * @see #rearrange(VectorShuffle, Vector)
      */
     public abstract Vector<E> selectFrom(Vector<E> v1, Vector<E> v2);
 
