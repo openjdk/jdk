@@ -29,7 +29,7 @@
  * @requires vm.jvmti
  * @requires (os.family == "linux") & (vm.debug != true)
  * @library /test/lib
- * @run main/othervm/timeout=300 TestUnloadedClass
+ * @run driver/timeout=300 TestUnloadedClass
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
