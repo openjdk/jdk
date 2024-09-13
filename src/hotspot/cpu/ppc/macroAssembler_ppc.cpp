@@ -2805,6 +2805,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
 
     // mark contains the tagged ObjectMonitor*.
     const uintptr_t monitor_tag = markWord::monitor_value;
+    const Register monitor = mark;
     const Register owner_addr = tmp2;
     Label monitor_locked;
 
@@ -2844,10 +2845,10 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
       b(slow_path);
 
       bind(monitor_found);
-      ld(mark, in_bytes(OMCache::oop_to_monitor_difference()), cache_addr);
+      ld(monitor, in_bytes(OMCache::oop_to_monitor_difference()), cache_addr);
 
       // Compute owner address.
-      addi(owner_addr, mark, in_bytes(ObjectMonitor::owner_offset()));
+      addi(owner_addr, monitor, in_bytes(ObjectMonitor::owner_offset()));
     }
 
     // CAS owner (null => current thread).
@@ -2865,14 +2866,22 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
     bne(flag, slow_path);
 
     // Recursive.
-    ld(tmp1, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
-    addi(tmp1, tmp1, 1);
-    std(tmp1, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
+    if (!UseObjectMonitorTable) {
+      assert_different_registers(tmp1, owner_addr);
+      ld(tmp1, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
+      addi(tmp1, tmp1, 1);
+      std(tmp1, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
+    } else {
+      assert_different_registers(tmp2, monitor);
+      ld(tmp2, in_bytes(ObjectMonitor::recursions_offset()), monitor);
+      addi(tmp2, tmp2, 1);
+      std(tmp2, in_bytes(ObjectMonitor::recursions_offset()), monitor);
+
+    }
 
     bind(monitor_locked);
     if (UseObjectMonitorTable) {
-      addi(tmp1, owner_addr, -in_bytes(ObjectMonitor::owner_offset())); // restore monitor address
-      std(tmp1, BasicLock::object_monitor_cache_offset_in_bytes(), box);
+      std(monitor, BasicLock::object_monitor_cache_offset_in_bytes(), box);
     }
   }
 
