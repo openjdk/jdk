@@ -304,7 +304,7 @@ TEST_VM_F(NMTVMATreeTest, SetFlag) {
 
     VMATree::SummaryDiff result = tree.reserve_mapping(0, 600, rd);
     diff.apply(result);
-    EXPECT_EQ(diff.flag[i(mtNone)], 600);
+    EXPECT_EQ(600, diff.flag[i(mtNone)].reserve);
 
     // The committed areas
     result = tree.commit_mapping(100, 125, rd);
