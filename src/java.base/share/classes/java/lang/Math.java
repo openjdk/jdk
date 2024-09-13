@@ -32,7 +32,6 @@ import jdk.internal.math.DoubleConsts;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.Double.*;
-import static java.lang.Double.MIN_VALUE;
 
 /**
  * The class {@code Math} contains methods for performing basic
@@ -3322,21 +3321,21 @@ public final class Math {
     public static double scalb(double d, int scaleFactor) {
         if (scaleFactor > -DoubleConsts.EXP_BIAS) {
             if (scaleFactor <= DoubleConsts.EXP_BIAS) {
-                return d * longBitsToDouble((long) (scaleFactor + DoubleConsts.EXP_BIAS) << PRECISION - 1);
+                return d * primPowerOfTwoD(scaleFactor);
             }
             if (scaleFactor <= 2 * DoubleConsts.EXP_BIAS) {
-                return d * longBitsToDouble((long) scaleFactor << PRECISION - 1) * F_UP;
+                return d * primPowerOfTwoD(scaleFactor - DoubleConsts.EXP_BIAS) * F_UP;
             }
             if (scaleFactor < 2 * DoubleConsts.EXP_BIAS + PRECISION - 1) {
-                return d * longBitsToDouble((long) (scaleFactor - DoubleConsts.EXP_BIAS) << PRECISION - 1) * F_UP * F_UP;
+                return d * primPowerOfTwoD(scaleFactor - 2 * DoubleConsts.EXP_BIAS) * F_UP * F_UP;
             }
             return d * F_UP * F_UP * F_UP;
         }
         if (scaleFactor > -2 * DoubleConsts.EXP_BIAS) {
-            return d * longBitsToDouble((long) (scaleFactor + 2 * DoubleConsts.EXP_BIAS) << PRECISION - 1) * F_DOWN;
+            return d * primPowerOfTwoD(scaleFactor + DoubleConsts.EXP_BIAS) * F_DOWN;
         }
         if (scaleFactor > -2 * DoubleConsts.EXP_BIAS - PRECISION) {
-            return d * longBitsToDouble((long) (scaleFactor + 3 * DoubleConsts.EXP_BIAS) << PRECISION - 1) * F_DOWN * F_DOWN;
+            return d * primPowerOfTwoD(scaleFactor + 2 * DoubleConsts.EXP_BIAS) * F_DOWN * F_DOWN;
         }
         return d * MIN_VALUE * MIN_VALUE;
     }
@@ -3397,9 +3396,15 @@ public final class Math {
      */
     static double powerOfTwoD(int n) {
         assert(n >= Double.MIN_EXPONENT && n <= Double.MAX_EXPONENT);
-        return Double.longBitsToDouble((((long)n + (long)DoubleConsts.EXP_BIAS) <<
-                                        (DoubleConsts.SIGNIFICAND_WIDTH-1))
-                                       & DoubleConsts.EXP_BIT_MASK);
+        return primPowerOfTwoD(n);
+    }
+
+    /**
+     * Returns a floating-point power of two in the normal range.
+     * No checks are performed on the argument.
+     */
+    private static double primPowerOfTwoD(int n) {
+        return longBitsToDouble((long) (n + DoubleConsts.EXP_BIAS) << PRECISION - 1);
     }
 
     /**
