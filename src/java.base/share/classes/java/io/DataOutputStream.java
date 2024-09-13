@@ -29,7 +29,9 @@ package java.io;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArray;
-import jdk.internal.util.JDKUTF;
+
+import static jdk.internal.util.ModifiedUtf.putChar;
+import static jdk.internal.util.ModifiedUtf.utflen;
 
 /**
  * A data output stream lets an application write primitive Java data
@@ -362,7 +364,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
     static int writeUTF(String str, DataOutput out) throws IOException {
         final int strlen = str.length();
         int countNonZeroAscii = JLA.countNonZeroAscii(str);
-        int utflen = JDKUTF.utflen(str, countNonZeroAscii);
+        int utflen = utflen(str, countNonZeroAscii);
 
         if (utflen > 65535 || /* overflow */ utflen < strlen)
             throw new UTFDataFormatException(tooLongMsg(str, utflen));
@@ -383,7 +385,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
         count += countNonZeroAscii;
 
         for (int i = countNonZeroAscii; i < strlen;) {
-            count = JDKUTF.putChar(bytearr, count, str.charAt(i++));
+            count = putChar(bytearr, count, str.charAt(i++));
         }
         out.write(bytearr, 0, utflen + 2);
         return utflen + 2;

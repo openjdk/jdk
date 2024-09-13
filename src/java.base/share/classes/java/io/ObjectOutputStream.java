@@ -37,8 +37,10 @@ import java.util.StringJoiner;
 import jdk.internal.util.ByteArray;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.JDKUTF;
 import sun.reflect.misc.ReflectUtil;
+
+import static jdk.internal.util.ModifiedUtf.putChar;
+import static jdk.internal.util.ModifiedUtf.utflen;
 
 /**
  * An ObjectOutputStream writes primitive data types and graphs of Java objects
@@ -2032,7 +2034,7 @@ public class ObjectOutputStream
         private void writeUTFInternal(String str, boolean writeHeader) throws IOException {
             int strlen = str.length();
             int countNonZeroAscii = JLA.countNonZeroAscii(str);
-            int utflen = JDKUTF.utflen(str, countNonZeroAscii);
+            int utflen = utflen(str, countNonZeroAscii);
             if (utflen <= 0xFFFF) {
                 if(writeHeader) {
                     writeByte(TC_STRING);
@@ -2062,7 +2064,7 @@ public class ObjectOutputStream
                     drain();
                     pos = 0;
                 }
-                pos = JDKUTF.putChar(buf, pos, c);
+                pos = putChar(buf, pos, c);
             }
             this.pos = pos;
         }

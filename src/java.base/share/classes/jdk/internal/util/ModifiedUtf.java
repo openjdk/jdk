@@ -32,7 +32,7 @@ import jdk.internal.vm.annotation.ForceInline;
  *
  * @since 24
  */
-public abstract class JDKUTF {
+public abstract class ModifiedUtf {
     @ForceInline
     public static int putChar(byte[] buf, int offset, char c) {
         if (c != 0 && c < 0x80) {

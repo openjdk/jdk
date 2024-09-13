@@ -37,7 +37,9 @@ import java.lang.classfile.constantpool.PoolEntry;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.JDKUTF;
+
+import static jdk.internal.util.ModifiedUtf.putChar;
+import static jdk.internal.util.ModifiedUtf.utflen;
 
 public final class BufWriterImpl implements BufWriter {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
@@ -162,7 +164,7 @@ public final class BufWriterImpl implements BufWriter {
     void writeUTF(String str) {
         int strlen = str.length();
         int countNonZeroAscii = JLA.countNonZeroAscii(str);
-        int utflen = JDKUTF.utflen(str, countNonZeroAscii);
+        int utflen = utflen(str, countNonZeroAscii);
         if (utflen > 65535) {
             throw new IllegalArgumentException("string too long");
         }
@@ -179,7 +181,7 @@ public final class BufWriterImpl implements BufWriter {
         offset += countNonZeroAscii;
 
         for (int i = countNonZeroAscii; i < strlen; i++) {
-            offset = JDKUTF.putChar(elems, offset, str.charAt(i));
+            offset = putChar(elems, offset, str.charAt(i));
         }
 
         this.offset = offset;
