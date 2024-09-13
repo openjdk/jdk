@@ -116,6 +116,7 @@ public class TestAlwaysPreTouchStacks {
       //                      (stack: reserved=10301560KB, committed=300988KB)  <<<
 
       output.shouldMatch("- *Thread.*reserved.*committed");
+      output.reportDiagnosticSummary();
       Pattern pat = Pattern.compile(".*stack: reserved=(\\d+), committed=(\\d+).*");
       boolean foundLine = false;
       for (String line : output.asLines()) {
@@ -129,7 +130,6 @@ public class TestAlwaysPreTouchStacks {
           long max_reserved = memoryCeilingMB * 3 * MB;
           long min_reserved = memoryCeilingMB * MB;
           if (reserved >= max_reserved || reserved < min_reserved) {
-              output.reportDiagnosticSummary();
               throw new RuntimeException("Total reserved stack sizes outside of our expectations (" + reserved +
                                           ", expected " + min_reserved + ".." + max_reserved + ")");
           }
@@ -138,7 +138,6 @@ public class TestAlwaysPreTouchStacks {
         }
       }
       if (!foundLine) {
-          output.reportDiagnosticSummary();
           throw new RuntimeException("Did not find expected NMT output");
       }
       return new ReservedCommitted(reserved, committed);
