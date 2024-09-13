@@ -38,7 +38,8 @@ import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import static java.lang.foreign.ValueLayout.*;
@@ -49,59 +50,63 @@ import static java.lang.foreign.ValueLayout.*;
 @State(Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 3)
-public class CopyTest {
+public class SegmentBulkMismatch {
 
-    @Param({"0", "1", "2", "3", "4", "5", "6", "7", "8",
-            "9", "10", "11", "12", "13", "14", "15", "16",
-            "17", "18", "19", "20", "21", "22", "23", "24",
-            "25", "26", "27", "28", "29", "30", "31", "32",
-            "33", "36", "40", "44", "48", "52", "56", "60", "63", "64", "128"})
+    @Param({"2", "3", "4", "5", "6", "7", "8", "64", "512",
+            "4096", "32768", "262144", "2097152", "16777216", "134217728"})
     public int ELEM_SIZE;
 
+    MemorySegment srcNative;
+    MemorySegment dstNative;
     byte[] srcArray;
     byte[] dstArray;
-    MemorySegment heapSrcSegment;
-    MemorySegment heapDstSegment;
-    MemorySegment nativeSrcSegment;
-    MemorySegment nativeDstSegment;
-    ByteBuffer srcBuffer;
-    ByteBuffer dstBuffer;
+    MemorySegment srcHeap;
+    MemorySegment dstHeap;
 
     @Setup
     public void setup() {
-        srcArray = new byte[ELEM_SIZE];
-        dstArray = new byte[ELEM_SIZE];
-        heapSrcSegment = MemorySegment.ofArray(srcArray);
-        heapDstSegment = MemorySegment.ofArray(dstArray);
-        nativeSrcSegment = Arena.ofAuto().allocate(ELEM_SIZE);
-        nativeDstSegment = Arena.ofAuto().allocate(ELEM_SIZE);
-        srcBuffer = ByteBuffer.wrap(srcArray);
-        dstBuffer = ByteBuffer.wrap(dstArray);
+        // Always use the same alignment regardless of size
+        srcNative = Arena.ofAuto().allocate(ELEM_SIZE,16);
+        dstNative = Arena.ofAuto().allocate(ELEM_SIZE, 16);
+        var rnd = new Random(42);
+        for (int i = 0; i < ELEM_SIZE; i++) {
+            srcNative.set(JAVA_BYTE, i, (byte) rnd.nextInt(Byte.MIN_VALUE, Byte.MAX_VALUE));
+        }
+        dstNative.copyFrom(srcNative);
+        srcArray = srcNative.toArray(JAVA_BYTE);
+        dstArray = dstNative.toArray(JAVA_BYTE);
+        srcHeap = MemorySegment.ofArray(srcArray);
+        dstHeap = MemorySegment.ofArray(dstArray);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=31"})
+    @Benchmark
+    public long nativeSegmentJava() {
+        return srcNative.mismatch(dstNative);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=31"})
+    @Benchmark
+    public long heapSegmentJava() {
+        return srcHeap.mismatch(dstHeap);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=0"})
+    @Benchmark
+    public long nativeSegmentUnsafe() {
+        return srcNative.mismatch(dstNative);
+    }
+
+    @Fork(value = 3, jvmArgsAppend = {"-Djava.lang.foreign.native.threshold.power.mismatch=0"})
+    @Benchmark
+    public long heapSegmentUnsafe() {
+        return srcHeap.mismatch(dstHeap);
     }
 
     @Benchmark
-    public void array_copy() {
-        System.arraycopy(srcArray, 0, dstArray, 0, ELEM_SIZE);
-    }
-
-    @Benchmark
-    public void heap_segment_copy5Arg() {
-        MemorySegment.copy(heapSrcSegment, 0, heapDstSegment, 0, ELEM_SIZE);
-    }
-
-    @Benchmark
-    public void native_segment_copy5Arg() {
-        MemorySegment.copy(nativeSrcSegment, 0, nativeDstSegment, 0, ELEM_SIZE);
-    }
-
-    @Benchmark
-    public void heap_segment_copy7arg() {
-        MemorySegment.copy(heapSrcSegment, JAVA_BYTE, 0, heapDstSegment, JAVA_BYTE, 0, ELEM_SIZE);
-    }
-
-    @Benchmark
-    public void buffer_copy() {
-        dstBuffer.put(srcBuffer);
+    public long array() {
+        return Arrays.mismatch(srcArray, dstArray);
     }
 
 }
+
