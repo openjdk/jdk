@@ -1906,7 +1906,7 @@ public class MethodHandles {
                 this.flag = flag;
             }
 
-            static int optionsToFlag(Set<ClassOption> options) {
+            static int optionsToFlag(ClassOption ... options) {
                 int flags = 0;
                 for (ClassOption cp : options) {
                     flags |= cp.flag;
@@ -2133,7 +2133,7 @@ public class MethodHandles {
                 throw new IllegalAccessException(this + " does not have full privilege access");
             }
 
-            return makeHiddenClassDefiner(bytes.clone(), Set.of(options), false).defineClassAsLookup(initialize);
+            return makeHiddenClassDefiner(bytes.clone(), false, options).defineClassAsLookup(initialize);
         }
 
         /**
@@ -2220,7 +2220,7 @@ public class MethodHandles {
                 throw new IllegalAccessException(this + " does not have full privilege access");
             }
 
-            return makeHiddenClassDefiner(bytes.clone(), Set.of(options), false)
+            return makeHiddenClassDefiner(bytes.clone(), false, options.clone())
                        .defineClassAsLookup(initialize, classData);
         }
 
@@ -2366,7 +2366,7 @@ public class MethodHandles {
          */
         ClassDefiner makeHiddenClassDefiner(byte[] bytes, ClassFileDumper dumper) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return makeHiddenClassDefiner(cf, Set.of(), false, dumper);
+            return makeHiddenClassDefiner(cf, false, dumper);
         }
 
         /**
@@ -2386,10 +2386,10 @@ public class MethodHandles {
          * {@code bytes} denotes a class in a different package than the lookup class
          */
         private ClassDefiner makeHiddenClassDefiner(byte[] bytes,
-                                                    Set<ClassOption> options,
-                                                    boolean accessVmAnnotations) {
+                                                    boolean accessVmAnnotations,
+                                                    ClassOption ... options) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return makeHiddenClassDefiner(cf, options, accessVmAnnotations, defaultDumper());
+            return makeHiddenClassDefiner(cf, accessVmAnnotations, defaultDumper(), options);
         }
 
         /**
@@ -2402,10 +2402,10 @@ public class MethodHandles {
          * @param dumper  dumper to write the given bytes to the dumper's output directory
          * @return ClassDefiner that defines a hidden class of the given bytes and options.
          */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, Set<ClassOption> options, ClassFileDumper dumper) {
+        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, ClassFileDumper dumper, ClassOption ... options) {
             Objects.requireNonNull(dumper);
             // skip name and access flags validation
-            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), options, false, dumper);
+            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), false, dumper, options);
         }
 
         /**
@@ -2418,9 +2418,9 @@ public class MethodHandles {
          * @param dumper dumper to write the given bytes to the dumper's output directory
          */
         private ClassDefiner makeHiddenClassDefiner(ClassFile cf,
-                                                    Set<ClassOption> options,
                                                     boolean accessVmAnnotations,
-                                                    ClassFileDumper dumper) {
+                                                    ClassFileDumper dumper,
+                                                    ClassOption ... options) {
             int flags = HIDDEN_CLASS | ClassOption.optionsToFlag(options);
             if (accessVmAnnotations | VM.isSystemDomainLoader(lookupClass.getClassLoader())) {
                 // jdk.internal.vm.annotations are permitted for classes

@@ -77,6 +77,8 @@ import sun.invoke.util.Wrapper;
 
     private static final boolean disableEagerInitialization;
 
+    public static final MethodHandles.Lookup.ClassOption[] LAMBDA_CLASS_OPTIONS = { NESTMATE, STRONG };
+
     static {
         // To dump the lambda proxy classes, set this system property:
         //    -Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles
@@ -348,7 +350,7 @@ import sun.invoke.util.Wrapper;
         try {
             // this class is linked at the indy callsite; so define a hidden nestmate
             var classdata = useImplMethodHandle? implementation : null;
-            return caller.makeHiddenClassDefiner(lambdaClassName, classBytes, Set.of(NESTMATE, STRONG), lambdaProxyClassFileDumper)
+            return caller.makeHiddenClassDefiner(lambdaClassName, classBytes, lambdaProxyClassFileDumper, LAMBDA_CLASS_OPTIONS)
                          .defineClass(!disableEagerInitialization, classdata);
 
         } catch (Throwable t) {

@@ -224,7 +224,7 @@ class InvokerBytecodeGenerator {
      * Extract the MemberName of a newly-defined method.
      */
     private MemberName loadMethod(byte[] classFile) {
-        Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile, Set.of(), dumper())
+        Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile, dumper())
                                       .defineClass(true, classDataValues());
         return resolveInvokerMember(invokerClass, invokerName, invokerType);
     }

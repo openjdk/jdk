@@ -1353,7 +1353,7 @@ public final class StringConcatFactory {
                             }
                     }});
             try {
-                var hiddenClass = lookup.makeHiddenClassDefiner(CLASS_NAME, classBytes, Set.of(), DUMPER)
+                var hiddenClass = lookup.makeHiddenClassDefiner(CLASS_NAME, classBytes, DUMPER)
                                         .defineClass(true, null);
 
                 if (staticConcat) {
