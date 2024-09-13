@@ -1216,11 +1216,9 @@ public class CLDRConverter {
     // This method assumes handlerMetaZones is already initialized
     private static Set<String> getAvailableZoneIds() {
         assert handlerMetaZones != null;
-        assert tzdbLinks != null;
         if (AVAILABLE_TZIDS == null) {
-            AVAILABLE_TZIDS = new HashSet<>(ZoneId.getAvailableZoneIds());
+            AVAILABLE_TZIDS = new HashSet<>(Arrays.asList(TimeZone.getAvailableIDs()));
             AVAILABLE_TZIDS.addAll(handlerMetaZones.keySet());
-            AVAILABLE_TZIDS.addAll(tzdbLinks.keySet());
             AVAILABLE_TZIDS.remove(MetaZonesParseHandler.NO_METAZONE_KEY);
         }
 
