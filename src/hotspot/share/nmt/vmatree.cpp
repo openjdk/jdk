@@ -240,6 +240,7 @@ VMATree::SummaryDiff VMATree::set_flag(position from, size size, MEMFLAGS flag) 
   return diff;
 }
 
+#ifdef ASSERT
 void VMATree::SummaryDiff::print_on(outputStream* out) {
   for (int i = 0; i < mt_number_of_types; i++) {
     if (flag[i].reserve == 0 && flag[i].commit == 0) {
@@ -249,3 +250,4 @@ void VMATree::SummaryDiff::print_on(outputStream* out) {
                   flag[i].commit);
   }
 }
+#endif
