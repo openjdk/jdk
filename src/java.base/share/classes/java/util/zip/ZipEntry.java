@@ -37,6 +37,11 @@ import static java.util.zip.ZipConstants64.*;
 
 /**
  * This class is used to represent a ZIP file entry.
+ * <P>
+ * The combined length of the entry name, the extra field data, the
+ * entry comment and {@link ZipFile#CENHDR CEN Header size}, must not
+ * exceed 65,535 bytes. If it does, {@linkplain ZipOutputStream} will
+ * throw a {@linkplain ZipException} when writing the ZIP file entry.
  *
  * @author      David Connelly
  * @since 1.1
@@ -78,7 +83,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
     /**
      * Approximately 128 years, in milliseconds (ignoring leap years etc).
      *
-     * This establish an approximate high-bound value for DOS times in
+     * This establishes an approximate high-bound value for DOS times in
      * milliseconds since epoch, used to enable an efficient but
      * sufficient bounds check to avoid generating extended last modified
      * time entries.

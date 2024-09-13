@@ -46,6 +46,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CenSizeTooLarge {
+
+    // Helps SparseOutputStream detect write of the last CEN entry
+    private static final String LAST_CEN_COMMENT = "LastCEN";
+    private static final byte[] LAST_CEN_COMMENT_BYTES =
+            LAST_CEN_COMMENT.getBytes(StandardCharsets.UTF_8);
+
+    // Entry names produced in this test are fixed-length
+    public static final int NAME_LENGTH = 10;
+
     // Maximum allowed CEN size allowed by the ZipFile implementation
     static final int MAX_CEN_SIZE = Integer.MAX_VALUE - ZipFile.ENDHDR - 1;
 
@@ -59,11 +68,11 @@ public class CenSizeTooLarge {
      *        fields respectively.  The combined length of any
      *        directory record and these three fields SHOULD NOT
      *        generally exceed 65,535 bytes.
-     *
-     *  Since ZipOutputStream does not enforce the 'combined length' clause,
-     *  we simply use 65,535 (0xFFFF) for the purpose of this test.
+     *.
+     * Create a maximum extra field which does not exceed 65,535 bytes
      */
-    static final int MAX_EXTRA_FIELD_SIZE = 65_535;
+    static final int MAX_EXTRA_FIELD_SIZE =
+            65_535 - ZipFile.CENHDR - NAME_LENGTH - LAST_CEN_COMMENT.length();
 
     // Data size (unsigned short)
     // Field size minus the leading header 'tag' and 'data size' fields (2 bytes each)
@@ -71,9 +80,6 @@ public class CenSizeTooLarge {
 
     // Tag for the 'unknown' field type, specified in APPNOTE.txt 'Third party mappings'
     static final short UNKNOWN_ZIP_TAG = (short) 0x9902;
-
-    // Entry names produced in this test are fixed-length
-    public static final int NAME_LENGTH = 10;
 
     // Use a shared LocalDateTime on all entries to save processing time
     static final LocalDateTime TIME_LOCAL = LocalDateTime.now();
@@ -83,10 +89,6 @@ public class CenSizeTooLarge {
 
     // The number of entries needed to exceed the MAX_CEN_SIZE
     static final int NUM_ENTRIES = (MAX_CEN_SIZE / CEN_HEADER_SIZE) + 1;
-
-    // Helps SparseOutputStream detect write of the last CEN entry
-    private static final String LAST_CEN_COMMENT = "LastCEN";
-    private static final byte[] LAST_CEN_COMMENT_BYTES = LAST_CEN_COMMENT.getBytes(StandardCharsets.UTF_8);
 
     // Expected ZipException message when the CEN does not fit in a Java byte array
     private static final String CEN_TOO_LARGE_MESSAGE = "invalid END header (central directory size too large)";
