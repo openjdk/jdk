@@ -28,7 +28,7 @@ import java.util.function.Function;
 
 /*
  * @test
- * @bug 8262891 8268333 8268896 8269802 8269808 8270151 8269113 8277864 8290709
+ * @bug 8262891 8268333 8268896 8269802 8269808 8270151 8269113 8277864 8290709 8339296
  * @summary Check behavior of pattern switches.
  */
 public class Switches {
@@ -117,6 +117,9 @@ public class Switches {
         assertEquals(0, constantAndPatternGuardEnum(E.B, true));
         assertEquals(1, constantAndPatternGuardEnum(E.B, false));
         assertEquals(2, constantAndPatternGuardEnum(E.A, false));
+        assertEquals(0, nestedSwitchesInArgumentPosition(1));
+        assertEquals(1, nestedSwitchesInArgumentPosition(new R(1)));
+        assertEquals(5, nestedSwitchesInArgumentPosition(new R(new R("hello"))));
     }
 
     void run(Function<Object, Integer> mapper) {
@@ -747,6 +750,24 @@ public class Switches {
             case E.B -> 1;
             case E f -> 2;
         };
+    }
+
+    int nestedSwitchesInArgumentPosition(Object o1) {
+        return id(switch (o1) {
+            case R(var o2) -> switch (o2) {
+                case R(String s) -> s;
+                default -> "n";
+            };
+            default -> "";
+        });
+    }
+
+    int id(String s) {
+        return s.length();
+    }
+
+    int id(int i) {
+        return i;
     }
 
     //verify that for cases like:

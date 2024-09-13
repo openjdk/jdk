@@ -408,9 +408,6 @@ public class Symtab {
 
         names = Names.instance(context);
 
-        // Create the unknown type
-        unknownType = new UnknownType();
-
         messages = JavacMessages.instance(context);
 
         MissingInfoHandler missingInfoHandler = MissingInfoHandler.instance(context);
@@ -475,8 +472,8 @@ public class Symtab {
         errType = new ErrorType(errSymbol, Type.noType);
 
         unknownSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.fromString("<any?>"), null, rootPackage);
-        unknownSymbol.members_field = new Scope.ErrorScope(unknownSymbol);
-        unknownSymbol.type = unknownType;
+        // Create the unknown type
+        unknownType = new UnknownType(unknownSymbol);
 
         // initialize builtin types
         initType(byteType, "byte", "Byte");

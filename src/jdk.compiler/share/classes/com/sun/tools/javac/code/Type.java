@@ -2408,17 +2408,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
     }
 
-    public static class UnknownType extends Type {
+    public static class UnknownType extends ErrorType {
 
-        public UnknownType() {
+        public UnknownType(ClassSymbol unknownSymbol) {
             // Unknown is a synthesized internal type, so it cannot be
             // annotated.
-            super(null, List.nil());
-        }
-
-        @Override
-        public TypeTag getTag() {
-            return UNKNOWN;
+            super(unknownSymbol, noType);
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
@@ -2426,9 +2421,9 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
             return v.visitUnknown(this, p);
         }
 
-        @Override
-        public boolean isPartial() {
-            return true;
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        public TypeKind getKind() {
+            return TypeKind.OTHER;
         }
     }
 
