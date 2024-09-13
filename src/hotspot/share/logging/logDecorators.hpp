@@ -143,7 +143,7 @@ class LogDecorators {
 
   // Check if we have some default decorators for a given LogSelection. If that is the case,
   // the output parameter mask will contain the defaults-specified decorators mask
-  static bool has_default_decorator(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults = default_decorators, size_t defaults_cnt = number_of_default_decorators);
+  static bool has_default_decorator(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults = default_decorators, size_t defaults_count = number_of_default_decorators);
 
   static LogDecorators::Decorator from_string(const char* str);
 

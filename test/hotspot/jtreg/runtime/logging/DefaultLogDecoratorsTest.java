@@ -38,41 +38,54 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.regex.Pattern;
 import java.util.List;
+import java.util.Arrays;
+import java.util.ArrayList;
 
-public class DefaultLogDecoratorsTest { //
-    private static Pattern DECORATED_LINE_JIT = Pattern.compile("\\[[0-9]*\\.?[0-9]*s\\]\\[\\w+\\s*\\]\\[jit(,\\w+)*\\s*\\] .*");
-    private static Pattern DECORATED_LINE_GC  = Pattern.compile("\\[[0-9]*\\.?[0-9]*s\\]\\[\\w+\\s*\\]\\[gc(,\\w+)*\\s*\\] .*");
+public class DefaultLogDecoratorsTest {
+    private static Pattern DECORATED_LINE = Pattern.compile("(\\[.+\\])+ .*");
 
-    public static void main(String[] args) throws Exception {
-        // JIT logging, as per defaults, shall have all decorators disabled
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:jit*=trace:decorators.log",
-                                                                             InnerClass.class.getName());
+    private static void doTest(boolean shouldHave, String... xlog) throws Exception {
+        List<String> argsList = new ArrayList<String>();
+        for (String string : xlog) {
+            argsList.add(string);
+        }
+        argsList.add(InnerClass.class.getName());
+        String[] args = argsList.toArray(new String[0]);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         List<String> allLines = Files.readAllLines(Path.of("decorators.log"));
         for (String line : allLines) {
-            if (DECORATED_LINE_JIT.matcher(line).find()) {
-                throw new RuntimeException("JIT logging should not contain decorators!");
-            }
-        }
-
-
-        // Other logging shall not be affected by a tag with defaults
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:gc*=trace:decorators.log",
-                                                              InnerClass.class.getName());
-        output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
-        allLines = Files.readAllLines(Path.of("decorators.log"));
-        for (String line : allLines) {
-            if (!DECORATED_LINE_GC.matcher(line).find()) {
-                throw new RuntimeException("GC logging should contain decorators!");
+            if (DECORATED_LINE.matcher(line).find() == !shouldHave) {
+                throw new RuntimeException("Logging should " + (shouldHave ? "not " : "") + "contain decorators!");
             }
         }
     }
 
+    public static void main(String[] args) throws Exception {
+        // JIT logging, as per defaults, shall have all decorators disabled
+        doTest(false, "-Xlog:jit*=trace:decorators.log");
+
+
+        // If decorators are specified, the defaults are not taken into account
+        doTest(true, "-Xlog:jit*=trace:decorators.log:time");
+
+
+        // Even if decorators are only supplied for another tag(s), the defaults are not taken into account
+        doTest(true, "-Xlog:jit*=trace:decorators.log", "-Xlog:os*=info:decorators.log:time");
+
+
+        // Defaults are not taken into account also when another tag implicitly imposes the "standard" defaults
+        doTest(true, "-Xlog:jit*=trace:decorators.log", "-Xlog:os*=info:decorators.log");
+
+
+        // Other logging shall not be affected by a tag with defaults
+        doTest(true, "-Xlog:gc*=trace:decorators.log");
+    }
+
     public static class InnerClass {
         public static void main(String[] args) throws Exception {
-            System.out.println("Compressed Oops (gc+heap+coops) test");
+            System.out.println("DefaultLogDecorators test");
         }
     }
 }
