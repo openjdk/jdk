@@ -521,9 +521,9 @@ GetJavaProperties(JNIEnv *env)
     {
         char buf[MAXPATHLEN];
         errno = 0;
-        if (getcwd(buf, sizeof(buf))  == NULL) {
+        if (getcwd(buf, sizeof(buf)) == NULL) {
             JNU_ThrowByName(env, "java/lang/Error",
-             "Properties init: Could not determine current working directory.");
+            "Properties init: Could not determine current working directory.");
             return NULL;
         }
         else {
