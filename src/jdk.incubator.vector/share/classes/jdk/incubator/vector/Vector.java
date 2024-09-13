@@ -2622,7 +2622,6 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * @return the rearrangement of the lane elements of this vector
      * @see #rearrange(VectorShuffle,VectorMask)
      * @see #rearrange(VectorShuffle,Vector)
-     * @see VectorShuffle#laneIsValid()
      */
     public abstract Vector<E> rearrange(VectorShuffle<E> s);
 
@@ -2641,9 +2640,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      *
      * <p> This method returns the value of this pseudocode:
      * <pre>{@code
-     * Vector<E> r = this.rearrange(s.wrapIndexes());
-     * VectorMask<E> valid = s.laneIsValid();
-     * if (m.andNot(valid).anyTrue()) throw ...;
+     * Vector<E> r = this.rearrange(s);
      * return broadcast(0).blend(r, m);
      * }</pre>
      *
@@ -2652,7 +2649,6 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * @return the rearrangement of the lane elements of this vector
      * @see #rearrange(VectorShuffle)
      * @see #rearrange(VectorShuffle,Vector)
-     * @see VectorShuffle#laneIsValid()
      */
     public abstract Vector<E> rearrange(VectorShuffle<E> s, VectorMask<E> m);
 
@@ -2752,7 +2748,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * depends on the index values in {@code this}.
      *
      * The result is the same as the expression
-     * {@code v.rearrange(this.toShuffle().wrapIndexes())}.
+     * {@code v.rearrange(this.toShuffle())}.
      *
      * @param v the vector supplying the result values
      * @return the rearrangement of the lane elements of {@code v}
@@ -2776,7 +2772,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * this vector and the mask.
      *
      * The result is the same as the expression
-     * {@code v.rearrange(this.toShuffle().wrapIndexes(), m)}.
+     * {@code v.rearrange(this.toShuffle(), m)}.
      *
      * @param v the vector supplying the result values
      * @param m the mask controlling selection from {@code v}
