@@ -62,6 +62,14 @@ public class RemovedFiles {
                 .shouldContain(NONEXISTENT_ENTRIES_FOUND)
                 .shouldContain("Warning: nonexistent signed entries: [a]");
 
+        // Remove one more entry.
+        JarUtils.deleteEntries(Path.of("a.jar"), "b");
+        SecurityTools.jarsigner("-verify a.jar")
+                .shouldContain(NONEXISTENT_ENTRIES_FOUND);
+        SecurityTools.jarsigner("-verify -verbose a.jar")
+                .shouldContain(NONEXISTENT_ENTRIES_FOUND)
+                .shouldContain("Warning: nonexistent signed entries: [a, b]");
+
         // Re-sign will not clear the warning.
         SecurityTools.jarsigner("-storepass changeit -keystore ks a.jar x");
         SecurityTools.jarsigner("-verify a.jar")
