@@ -138,12 +138,12 @@ class LambdaForm {
     public static final int VOID_RESULT = -1, LAST_RESULT = -2;
 
     enum BasicType {
-        L_TYPE('L', Object.class, Wrapper.OBJECT, TypeKind.ReferenceType), // all reference types
-        I_TYPE('I', int.class,    Wrapper.INT,    TypeKind.IntType),
-        J_TYPE('J', long.class,   Wrapper.LONG,   TypeKind.LongType),
-        F_TYPE('F', float.class,  Wrapper.FLOAT,  TypeKind.FloatType),
-        D_TYPE('D', double.class, Wrapper.DOUBLE, TypeKind.DoubleType),  // all primitive types
-        V_TYPE('V', void.class,   Wrapper.VOID,   TypeKind.VoidType);    // not valid in all contexts
+        L_TYPE('L', Object.class, Wrapper.OBJECT, TypeKind.REFERENCE), // all reference types
+        I_TYPE('I', int.class,    Wrapper.INT,    TypeKind.INT),
+        J_TYPE('J', long.class,   Wrapper.LONG,   TypeKind.LONG),
+        F_TYPE('F', float.class,  Wrapper.FLOAT,  TypeKind.FLOAT),
+        D_TYPE('D', double.class, Wrapper.DOUBLE, TypeKind.DOUBLE),  // all primitive types
+        V_TYPE('V', void.class,   Wrapper.VOID,   TypeKind.VOID);    // not valid in all contexts
 
         static final @Stable BasicType[] ALL_TYPES = BasicType.values();
         static final @Stable BasicType[] ARG_TYPES = Arrays.copyOf(ALL_TYPES, ALL_TYPES.length-1);
@@ -1555,26 +1555,12 @@ class LambdaForm {
          *  Return -1 if the name is not used.
          */
         int lastUseIndex(Name n) {
+            Object[] arguments = this.arguments;
             if (arguments == null)  return -1;
             for (int i = arguments.length; --i >= 0; ) {
                 if (arguments[i] == n)  return i;
             }
             return -1;
-        }
-
-        /** Return the number of occurrences of n in the argument array.
-         *  Return 0 if the name is not used.
-         */
-        int useCount(Name n) {
-            int count = 0;
-            if (arguments != null) {
-                for (Object argument : arguments) {
-                    if (argument == n) {
-                        count++;
-                    }
-                }
-            }
-            return count;
         }
 
         public boolean equals(Name that) {
@@ -1618,8 +1604,16 @@ class LambdaForm {
     int useCount(Name n) {
         int count = (result == n.index) ? 1 : 0;
         int i = Math.max(n.index + 1, arity);
+        Name[] names = this.names;
         while (i < names.length) {
-            count += names[i++].useCount(n);
+            Object[] arguments = names[i++].arguments;
+            if (arguments != null) {
+                for (Object argument : arguments) {
+                    if (argument == n) {
+                        count++;
+                    }
+                }
+            }
         }
         return count;
     }

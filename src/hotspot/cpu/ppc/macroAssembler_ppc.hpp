@@ -359,7 +359,7 @@ class MacroAssembler: public Assembler {
   address call_c(Register function_entry);
   // For tail calls: only branch, don't link, so callee returns to caller of this function.
   address call_c_and_return_to_caller(Register function_entry);
-  address call_c(address function_entry, relocInfo::relocType rt);
+  address call_c(address function_entry, relocInfo::relocType rt = relocInfo::none);
 #else
   // Call a C function via a function descriptor and use full C
   // calling conventions. Updates and returns _last_calls_return_pc.
@@ -367,6 +367,9 @@ class MacroAssembler: public Assembler {
   // For tail calls: only branch, don't link, so callee returns to caller of this function.
   address call_c_and_return_to_caller(Register function_descriptor);
   address call_c(const FunctionDescriptor* function_descriptor, relocInfo::relocType rt);
+  address call_c(address function_entry, relocInfo::relocType rt = relocInfo::none) {
+    return call_c((const FunctionDescriptor*)function_entry, rt);
+  }
   address call_c_using_toc(const FunctionDescriptor* function_descriptor, relocInfo::relocType rt,
                            Register toc);
 #endif
