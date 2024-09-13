@@ -29,11 +29,7 @@ import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
-<<<<<<< HEAD
 import sun.security.action.GetIntegerAction;
-=======
->>>>>>> master
-import sun.security.action.GetPropertyAction;
 
 import java.lang.foreign.MemorySegment;
 
