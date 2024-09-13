@@ -340,8 +340,9 @@ public final class KDF {
      *     if no {@code Provider} supports a {@code KDF} implementation for the
      *     specified algorithm
      * @throws InvalidAlgorithmParameterException
-     *     if no {@code Provider} supports a {@code KDFSpi} implementation for
-     *     the specified algorithm and parameters
+     *     if at least one {@code Provider} supports a {@code KDFSpi}
+     *     implementation for the specified algorithm but none of them
+     *     support the specified parameters
      * @throws NullPointerException
      *     if the {@code algorithm} is {@code null}
      */
