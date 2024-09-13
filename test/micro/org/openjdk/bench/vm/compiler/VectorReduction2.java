@@ -37,6 +37,16 @@ public abstract class VectorReduction2 {
     @Param({"2048"})
     public int SIZE;
 
+    private byte[] in1B;
+    private byte[] in2B;
+    private byte[] in3B;
+    private char[] in1C;
+    private char[] in2C;
+    private char[] in3C;
+    private short[] in1S;
+    private short[] in2S;
+    private short[] in3S;
+
     private int[] in1I;
     private int[] in2I;
     private int[] in3I;
@@ -59,6 +69,16 @@ public abstract class VectorReduction2 {
 
     @Setup
     public void init() {
+        in1B = new byte[SIZE];
+        in2B = new byte[SIZE];
+        in3B = new byte[SIZE];
+        in1C = new char[SIZE];
+        in2C = new char[SIZE];
+        in3C = new char[SIZE];
+        in1S = new short[SIZE];
+        in2S = new short[SIZE];
+        in3S = new short[SIZE];
+
         in1I = new int[SIZE];
         in2I = new int[SIZE];
         in3I = new int[SIZE];
@@ -74,6 +94,16 @@ public abstract class VectorReduction2 {
         in3D = new double[SIZE];
 
         for (int i = 0; i < SIZE; i++) {
+            in1B[i] = (byte)r.nextInt();
+            in2B[i] = (byte)r.nextInt();
+            in3B[i] = (byte)r.nextInt();
+            in1C[i] = (char)r.nextInt();
+            in2C[i] = (char)r.nextInt();
+            in3C[i] = (char)r.nextInt();
+            in1S[i] = (short)r.nextInt();
+            in2S[i] = (short)r.nextInt();
+            in3S[i] = (short)r.nextInt();
+
             in1I[i] = r.nextInt();
             in2I[i] = r.nextInt();
             in3I[i] = r.nextInt();
@@ -103,6 +133,645 @@ public abstract class VectorReduction2 {
     //     - mul:     acc *= val
     //     - min:     acc = min(acc, val)
     //     - max:     acc = max(acc, val)
+
+    // ---------byte***Simple ------------------------------------------------------------
+    @Benchmark
+    public void byteAndSimple(Blackhole bh) {
+        byte acc = (byte)0xFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = in1B[i];
+            acc &= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteOrSimple(Blackhole bh) {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = in1B[i];
+            acc |= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteXorSimple(Blackhole bh) {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = in1B[i];
+            acc ^= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteAddSimple(Blackhole bh) {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = in1B[i];
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteMulSimple(Blackhole bh) {
+        byte acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = in1B[i];
+            acc *= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteMinSimple(Blackhole bh) {
+        byte acc = Byte.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = in1B[i];
+            acc = (byte)Math.min(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteMaxSimple(Blackhole bh) {
+        byte acc = Byte.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = in1B[i];
+            acc = (byte)Math.max(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    // ---------byte***DotProduct ------------------------------------------------------------
+    @Benchmark
+    public void byteAndDotProduct(Blackhole bh) {
+        byte acc = (byte)0xFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] * in2B[i]);
+            acc &= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteOrDotProduct(Blackhole bh) {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] * in2B[i]);
+            acc |= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteXorDotProduct(Blackhole bh) {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] * in2B[i]);
+            acc ^= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteAddDotProduct(Blackhole bh) {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] * in2B[i]);
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteMulDotProduct(Blackhole bh) {
+        byte acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] * in2B[i]);
+            acc *= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteMinDotProduct(Blackhole bh) {
+        byte acc = Byte.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] * in2B[i]);
+            acc = (byte)Math.min(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteMaxDotProduct(Blackhole bh) {
+        byte acc = Byte.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] * in2B[i]);
+            acc = (byte)Math.max(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    // ---------byte***Big ------------------------------------------------------------
+    @Benchmark
+    public void byteAndBig(Blackhole bh) {
+        byte acc = (byte)0xFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)((in1B[i] * in2B[i]) + (in1B[i] * in3B[i]) + (in2B[i] * in3B[i]));
+            acc &= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteOrBig(Blackhole bh) {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)((in1B[i] * in2B[i]) + (in1B[i] * in3B[i]) + (in2B[i] * in3B[i]));
+            acc |= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteXorBig(Blackhole bh) {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)((in1B[i] * in2B[i]) + (in1B[i] * in3B[i]) + (in2B[i] * in3B[i]));
+            acc ^= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteAddBig(Blackhole bh) {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)((in1B[i] * in2B[i]) + (in1B[i] * in3B[i]) + (in2B[i] * in3B[i]));
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteMulBig(Blackhole bh) {
+        byte acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)((in1B[i] * in2B[i]) + (in1B[i] * in3B[i]) + (in2B[i] * in3B[i]));
+            acc *= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteMinBig(Blackhole bh) {
+        byte acc = Byte.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)((in1B[i] * in2B[i]) + (in1B[i] * in3B[i]) + (in2B[i] * in3B[i]));
+            acc = (byte)Math.min(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void byteMaxBig(Blackhole bh) {
+        byte acc = Byte.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)((in1B[i] * in2B[i]) + (in1B[i] * in3B[i]) + (in2B[i] * in3B[i]));
+            acc = (byte)Math.max(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    // ---------char***Simple ------------------------------------------------------------
+    @Benchmark
+    public void charAndSimple(Blackhole bh) {
+        char acc = (char)0xFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = in1C[i];
+            acc &= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charOrSimple(Blackhole bh) {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = in1C[i];
+            acc |= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charXorSimple(Blackhole bh) {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = in1C[i];
+            acc ^= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charAddSimple(Blackhole bh) {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = in1C[i];
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charMulSimple(Blackhole bh) {
+        char acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = in1C[i];
+            acc *= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charMinSimple(Blackhole bh) {
+        char acc = Character.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = in1C[i];
+            acc = (char)Math.min(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charMaxSimple(Blackhole bh) {
+        char acc = Character.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = in1C[i];
+            acc = (char)Math.max(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    // ---------char***DotProduct ------------------------------------------------------------
+    @Benchmark
+    public void charAndDotProduct(Blackhole bh) {
+        char acc = (char)0xFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] * in2C[i]);
+            acc &= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charOrDotProduct(Blackhole bh) {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] * in2C[i]);
+            acc |= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charXorDotProduct(Blackhole bh) {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] * in2C[i]);
+            acc ^= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charAddDotProduct(Blackhole bh) {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] * in2C[i]);
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charMulDotProduct(Blackhole bh) {
+        char acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] * in2C[i]);
+            acc *= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charMinDotProduct(Blackhole bh) {
+        char acc = Character.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] * in2C[i]);
+            acc = (char)Math.min(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charMaxDotProduct(Blackhole bh) {
+        char acc = Character.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] * in2C[i]);
+            acc = (char)Math.max(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    // ---------char***Big ------------------------------------------------------------
+    @Benchmark
+    public void charAndBig(Blackhole bh) {
+        char acc = (char)0xFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)((in1C[i] * in2C[i]) + (in1C[i] * in3C[i]) + (in2C[i] * in3C[i]));
+            acc &= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charOrBig(Blackhole bh) {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)((in1C[i] * in2C[i]) + (in1C[i] * in3C[i]) + (in2C[i] * in3C[i]));
+            acc |= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charXorBig(Blackhole bh) {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)((in1C[i] * in2C[i]) + (in1C[i] * in3C[i]) + (in2C[i] * in3C[i]));
+            acc ^= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charAddBig(Blackhole bh) {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)((in1C[i] * in2C[i]) + (in1C[i] * in3C[i]) + (in2C[i] * in3C[i]));
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charMulBig(Blackhole bh) {
+        char acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)((in1C[i] * in2C[i]) + (in1C[i] * in3C[i]) + (in2C[i] * in3C[i]));
+            acc *= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charMinBig(Blackhole bh) {
+        char acc = Character.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)((in1C[i] * in2C[i]) + (in1C[i] * in3C[i]) + (in2C[i] * in3C[i]));
+            acc = (char)Math.min(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void charMaxBig(Blackhole bh) {
+        char acc = Character.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)((in1C[i] * in2C[i]) + (in1C[i] * in3C[i]) + (in2C[i] * in3C[i]));
+            acc = (char)Math.max(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    // ---------short***Simple ------------------------------------------------------------
+    @Benchmark
+    public void shortAndSimple(Blackhole bh) {
+        short acc = (short)0xFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = in1S[i];
+            acc &= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortOrSimple(Blackhole bh) {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = in1S[i];
+            acc |= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortXorSimple(Blackhole bh) {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = in1S[i];
+            acc ^= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortAddSimple(Blackhole bh) {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = in1S[i];
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortMulSimple(Blackhole bh) {
+        short acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = in1S[i];
+            acc *= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortMinSimple(Blackhole bh) {
+        short acc = Short.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = in1S[i];
+            acc = (short)Math.min(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortMaxSimple(Blackhole bh) {
+        short acc = Short.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = in1S[i];
+            acc = (short)Math.max(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    // ---------short***DotProduct ------------------------------------------------------------
+    @Benchmark
+    public void shortAndDotProduct(Blackhole bh) {
+        short acc = (short)0xFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] * in2S[i]);
+            acc &= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortOrDotProduct(Blackhole bh) {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] * in2S[i]);
+            acc |= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortXorDotProduct(Blackhole bh) {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] * in2S[i]);
+            acc ^= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortAddDotProduct(Blackhole bh) {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] * in2S[i]);
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortMulDotProduct(Blackhole bh) {
+        short acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] * in2S[i]);
+            acc *= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortMinDotProduct(Blackhole bh) {
+        short acc = Short.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] * in2S[i]);
+            acc = (short)Math.min(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortMaxDotProduct(Blackhole bh) {
+        short acc = Short.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] * in2S[i]);
+            acc = (short)Math.max(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    // ---------short***Big ------------------------------------------------------------
+    @Benchmark
+    public void shortAndBig(Blackhole bh) {
+        short acc = (short)0xFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)((in1S[i] * in2S[i]) + (in1S[i] * in3S[i]) + (in2S[i] * in3S[i]));
+            acc &= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortOrBig(Blackhole bh) {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)((in1S[i] * in2S[i]) + (in1S[i] * in3S[i]) + (in2S[i] * in3S[i]));
+            acc |= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortXorBig(Blackhole bh) {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)((in1S[i] * in2S[i]) + (in1S[i] * in3S[i]) + (in2S[i] * in3S[i]));
+            acc ^= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortAddBig(Blackhole bh) {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)((in1S[i] * in2S[i]) + (in1S[i] * in3S[i]) + (in2S[i] * in3S[i]));
+            acc += val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortMulBig(Blackhole bh) {
+        short acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)((in1S[i] * in2S[i]) + (in1S[i] * in3S[i]) + (in2S[i] * in3S[i]));
+            acc *= val;
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortMinBig(Blackhole bh) {
+        short acc = Short.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)((in1S[i] * in2S[i]) + (in1S[i] * in3S[i]) + (in2S[i] * in3S[i]));
+            acc = (short)Math.min(acc, val);
+        }
+        bh.consume(acc);
+    }
+
+    @Benchmark
+    public void shortMaxBig(Blackhole bh) {
+        short acc = Short.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)((in1S[i] * in2S[i]) + (in1S[i] * in3S[i]) + (in2S[i] * in3S[i]));
+            acc = (short)Math.max(acc, val);
+        }
+        bh.consume(acc);
+    }
 
     // ---------int***Simple ------------------------------------------------------------
     @Benchmark
