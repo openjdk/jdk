@@ -1327,7 +1327,8 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
   size_t old_collector_regions = 0;
   size_t old_collector_used = 0;
 
-  for (size_t idx = 0; idx < _heap->num_regions(); idx++) {
+  size_t num_regions = _heap->num_regions();
+  for (size_t idx = 0; idx < num_regions; idx++) {
     ShenandoahHeapRegion* region = _heap->get_region(idx);
     if (region->is_trash()) {
       // Trashed regions represent regions that had been in the collection partition but have not yet been "cleaned up".
@@ -1412,10 +1413,14 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &young_cset_regi
                 old_collector_leftmost, old_collector_rightmost, old_collector_leftmost_empty, old_collector_rightmost_empty,
                 old_collector_regions, old_collector_used);
 
-  _partitions.establish_mutator_intervals(mutator_leftmost, mutator_rightmost, mutator_leftmost_empty, mutator_rightmost_empty,
+  idx_t rightmost_idx = (mutator_leftmost == max_regions)? -1: (idx_t) mutator_rightmost;
+  idx_t rightmost_empty_idx = (mutator_leftmost_empty == max_regions)? -1: (idx_t) mutator_rightmost_empty;
+  _partitions.establish_mutator_intervals(mutator_leftmost, rightmost_idx, mutator_leftmost_empty, rightmost_empty_idx,
                                           mutator_regions, mutator_used);
-  _partitions.establish_old_collector_intervals(old_collector_leftmost, old_collector_rightmost, old_collector_leftmost_empty,
-                                                old_collector_rightmost_empty, old_collector_regions, old_collector_used);
+  rightmost_idx = (old_collector_leftmost == max_regions)? -1: (idx_t) old_collector_rightmost;
+  rightmost_empty_idx = (old_collector_leftmost_empty == max_regions)? -1: (idx_t) old_collector_rightmost_empty;
+  _partitions.establish_old_collector_intervals(old_collector_leftmost, rightmost_idx, old_collector_leftmost_empty,
+                                                rightmost_empty_idx, old_collector_regions, old_collector_used);
   log_debug(gc)("  After find_regions_with_alloc_capacity(), Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT "],"
                 "  Old Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
                 _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator),
@@ -1532,8 +1537,23 @@ void ShenandoahFreeSet::establish_generation_sizes(size_t young_region_count, si
     ShenandoahYoungGeneration* young_gen = heap->young_generation();
     size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
-    old_gen->set_capacity(old_region_count * region_size_bytes);
-    young_gen->set_capacity(young_region_count * region_size_bytes);
+    size_t original_old_capacity = old_gen->max_capacity();
+    size_t new_old_capacity = old_region_count * region_size_bytes;
+    size_t new_young_capacity = young_region_count * region_size_bytes;
+    old_gen->set_capacity(new_old_capacity);
+    young_gen->set_capacity(new_young_capacity);
+
+    if (new_old_capacity > original_old_capacity) {
+      size_t region_count = (new_old_capacity - original_old_capacity) / region_size_bytes;
+      log_info(gc)("Transfer " SIZE_FORMAT " region(s) from %s to %s, yielding increased size: " PROPERFMT,
+                   region_count, young_gen->name(), old_gen->name(), PROPERFMTARGS(new_old_capacity));
+    } else if (new_old_capacity < original_old_capacity) {
+      size_t region_count = (original_old_capacity - new_old_capacity) / region_size_bytes;
+      log_info(gc)("Transfer " SIZE_FORMAT " region(s) from %s to %s, yielding increased size: " PROPERFMT,
+                   region_count, old_gen->name(), young_gen->name(), PROPERFMTARGS(new_young_capacity));
+    }
+    // This balances generations, so clear any pending request to balance.
+    old_gen->set_region_balance(0);
   }
 }
 
@@ -1700,12 +1720,12 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve, size_t to_reserve_old
   }
 
   if (LogTarget(Info, gc, free)::is_enabled()) {
-    size_t old_reserve = _partitions.capacity_of(ShenandoahFreeSetPartitionId::OldCollector);
+    size_t old_reserve = _partitions.available_in(ShenandoahFreeSetPartitionId::OldCollector);
     if (old_reserve < to_reserve_old) {
       log_info(gc, free)("Wanted " PROPERFMT " for old reserve, but only reserved: " PROPERFMT,
                          PROPERFMTARGS(to_reserve_old), PROPERFMTARGS(old_reserve));
     }
-    size_t reserve = _partitions.capacity_of(ShenandoahFreeSetPartitionId::Collector);
+    size_t reserve = _partitions.available_in(ShenandoahFreeSetPartitionId::Collector);
     if (reserve < to_reserve) {
       log_debug(gc)("Wanted " PROPERFMT " for young reserve, but only reserved: " PROPERFMT,
                     PROPERFMTARGS(to_reserve), PROPERFMTARGS(reserve));
