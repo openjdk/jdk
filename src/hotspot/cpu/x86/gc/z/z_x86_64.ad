@@ -212,8 +212,7 @@ instruct zCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rax_
 
   format %{ "lock\n\t"
             "cmpxchgq $newval, $mem\n\t"
-            "sete     $res\n\t"
-            "movzbl   $res, $res" %}
+            "sete_with_zextl  $res\n\t" %}
 
   ins_encode %{
     assert_different_registers($oldval$$Register, $mem$$Register);
