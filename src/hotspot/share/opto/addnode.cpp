@@ -438,10 +438,12 @@ bool AddNode::is_optimized_multiplication(Node* node, Node* base) {
 
   // AddNode(LShiftNode(a, const)/a, LShiftNode(a, const))
   // AddNode(LShiftNode(a, const), LShiftNode(a, const)/a)
+  // giving that lhs is different from rhs
   if (node->is_Add()
+      && node->in(1) != node->in(2)
       && (
-          (node->in(1)->is_LShift() && node->in(1)->in(2)->is_Con())
-              || (node->in(2)->is_LShift() && node->in(2)->in(2)->is_Con())
+          (node->in(1)->is_LShift() && node->in(1)->in(2)->is_Con()) // AddNode(LShiftNode(a, const), *)
+              || (node->in(2)->is_LShift() && node->in(2)->in(2)->is_Con()) // AddNode(*, LShiftNode(a, const))
       )) {
     Node* a1 = node->in(1)->is_LShift() ? node->in(1)->in(1) : node->in(1);
     Node* a2 = node->in(2)->is_LShift() ? node->in(2)->in(1) : node->in(2);
@@ -449,6 +451,26 @@ bool AddNode::is_optimized_multiplication(Node* node, Node* base) {
 //    printf("is_optimized_multiplication = %s", a1 == a2 && base == a1 ? "true" : "false");
     return a1 == a2 && base == a1;
   }
+
+//  if (node->is_Add()) {
+//    Node* a1 = node->in(1);
+//    Node* a2 = node->in(2);
+//    Node* c1 = nullptr;
+//    Node* c2 = nullptr;
+//
+//    if (a1->is_LShift() && a1->in(2)->is_Con()) {
+//      a1 = a1->in(2);
+//      c2 = a1->in(2);
+//    }
+//
+//    if (node->in(2)->is_LShift() && node->in(2)->in(2)->is_Con()) {
+//      a2 = a2->in(2);
+//      c1 = a2->in(2);
+//    }
+//
+////    printf("is_optimized_multiplication = %s", a1 == a2 && base == a1 ? "true" : "false");
+//    return a1 == a2 && base == a1 && c1 != c2;
+//  }
 
   // SubNode(LShiftNode(a, const), a)
   if (node->is_Sub() && node->in(1)->is_LShift() && node->in(1)->in(2)->is_Con()) {
