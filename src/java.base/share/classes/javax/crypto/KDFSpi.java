@@ -100,10 +100,7 @@ public abstract class KDFSpi {
     protected abstract KDFParameters engineGetParameters();
 
     /**
-     * Derives a key, returned as a {@code SecretKey}.
-     * <p>
-     * The {@code engineDeriveKey} method may be called multiple times on a particular
-     * {@code KDFSpi} instance, but it is not considered thread-safe.
+     * Derives a key, returned as a {@code SecretKey} object.
      *
      * @param alg
      *     the algorithm of the resultant {@code SecretKey} object
@@ -131,9 +128,6 @@ public abstract class KDFSpi {
 
     /**
      * Obtains raw data from a key derivation function.
-     * <p>
-     * The {@code engineDeriveData} method may be called multiple times on a
-     * particular {@code KDFSpi} instance, but it is not considered thread-safe.
      *
      * @param derivationSpec
      *     derivation parameters

@@ -43,7 +43,7 @@ import java.util.Objects;
 /**
  * This class provides the functionality of a Key Derivation Function (KDF),
  * which is a cryptographic algorithm for deriving additional keys from input
- * keying material and (optionally) other data.
+ * keying material (IKM) and (optionally) other data.
  * <p>
  * {@code KDF} objects are instantiated with the {@code getInstance} family
  * of methods.
@@ -88,8 +88,8 @@ import java.util.Objects;
  * <p>
  * If the {@code getProviderName} or {@code getParameters} method is called
  * before the {@code deriveKey} or {@code deriveData} methods, the first
- * provider supporting the KDF algorithm and optional {@code KDFParameters} is
- * chosen. This provider may not support the key material that is subsequently
+ * provider supporting the {@code KDF} algorithm and optional {@code KDFParameters}
+ * is chosen. This provider may not support the key material that is subsequently
  * passed to the {@code deriveKey} or {@code deriveData} methods. Therefore, it
  * is recommended not to call the {@code getProviderName} or
  * {@code getParameters} methods until after a key derivation operation. Once a
@@ -512,7 +512,7 @@ public final class KDF {
     }
 
     /**
-     * Derives a key, returned as a {@code SecretKey}.
+     * Derives a key, returned as a {@code SecretKey} object.
      *
      * @param alg
      *     the algorithm of the resultant {@code SecretKey} object
