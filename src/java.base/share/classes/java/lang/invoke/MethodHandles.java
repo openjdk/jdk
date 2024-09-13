@@ -2387,7 +2387,7 @@ public class MethodHandles {
          */
         private ClassDefiner makeHiddenClassDefiner(byte[] bytes,
                                                     boolean accessVmAnnotations,
-                                                    ClassOption ... options) {
+                                                    ClassOption[] options) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
             return makeHiddenClassDefiner(cf, accessVmAnnotations, defaultDumper(), options);
         }
