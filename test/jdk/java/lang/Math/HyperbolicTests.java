@@ -1008,7 +1008,7 @@ public class HyperbolicTests {
             testCases[i] = min + range * rand.nextDouble();
         }
 
-        for(int i = 0; i < testCases.length; i++) {
+        for (int i = 0; i < testCases.length; i++) {
             double testCase = testCases[i];
             failures += testTanhWithReferenceUlpDiff(testCase, StrictMath.tanh(testCase), 2.5);
         }
