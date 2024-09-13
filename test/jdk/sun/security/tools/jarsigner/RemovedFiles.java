@@ -33,6 +33,8 @@ import jdk.test.lib.util.JarUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 public class RemovedFiles {
 
@@ -64,5 +66,21 @@ public class RemovedFiles {
         SecurityTools.jarsigner("-storepass changeit -keystore ks a.jar x");
         SecurityTools.jarsigner("-verify a.jar")
                 .shouldContain(NONEXISTENT_ENTRIES_FOUND);
+
+        // Unfortunately, if there is a non-file entry in manifest, there will be
+        // a false alarm. See https://bugs.openjdk.org/browse/JDK-8334261.
+        var man = new Manifest();
+        man.getMainAttributes().putValue("Manifest-Version", "1.0");
+        man.getEntries().computeIfAbsent("Hello", _ -> new Attributes())
+                .putValue("Foo", "Bar");
+        JarUtils.createJarFile(Path.of("b.jar"),
+                man,
+                Path.of("."),
+                Path.of("a"));
+        SecurityTools.jarsigner("-storepass changeit -keystore ks b.jar x");
+        SecurityTools.jarsigner("-verbose -verify b.jar")
+                .shouldContain("Warning: nonexistent signed entries: [Hello]")
+                .shouldContain(NONEXISTENT_ENTRIES_FOUND);
+
     }
 }
