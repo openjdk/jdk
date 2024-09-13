@@ -113,16 +113,12 @@ private:
 
   static int compare_by_index(RegionData a, RegionData b);
 
-  inline void trigger_old_is_fragmented(double density, size_t first_old_index, size_t last_old_index) {
-    _fragmentation_trigger = true;
-    _fragmentation_density = density;
-    _fragmentation_first_old_region = first_old_index;
-    _fragmentation_last_old_region = last_old_index;
-  }
-  inline void trigger_old_has_grown() { _growth_trigger = true; }
+  // Set the fragmentation trigger if old-gen memory has become fragmented.
+  void set_trigger_if_old_is_fragmented(size_t first_old_region, size_t last_old_region,
+                                        size_t old_region_count, size_t num_regions);
 
-  void trigger_collection_if_fragmented(size_t first_old_region, size_t last_old_region, size_t old_region_count, size_t num_regions);
-  void trigger_collection_if_overgrown();
+  // Set the overgrowth trigger if old-gen memory has grown beyond a particular threshold.
+  void set_trigger_if_old_is_overgrown();
 
  protected:
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set, RegionData* data, size_t data_size, size_t free) override;
@@ -183,7 +179,8 @@ public:
 
   void clear_triggers();
 
-  void trigger_maybe(size_t first_old_region, size_t last_old_region, size_t old_region_count, size_t num_regions);
+  // Check whether conditions merit the start of old GC.  Set appropriate trigger if so.
+  void evaluate_triggers(size_t first_old_region, size_t last_old_region, size_t old_region_count, size_t num_regions);
 
   void record_cycle_end() override;
 
