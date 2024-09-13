@@ -178,8 +178,8 @@ public final class BufWriterImpl implements BufWriter {
         str.getBytes(0, countNonZeroAscii, elems, offset);
         offset += countNonZeroAscii;
 
-        for (int i = countNonZeroAscii; i < strlen;) {
-            offset = JDKUTF.putChar(elems, offset, str.charAt(i++));
+        for (int i = countNonZeroAscii; i < strlen; i++) {
+            offset = JDKUTF.putChar(elems, offset, str.charAt(i));
         }
 
         this.offset = offset;

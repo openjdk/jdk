@@ -2011,20 +2011,6 @@ public class ObjectOutputStream
             this.pos = pos;
         }
 
-        void writeUTF(String str, int stroff) throws IOException {
-            int pos = this.pos;
-            for (int strlen = str.length(); stroff < strlen;) {
-                char c = str.charAt(stroff++);
-                int csize = c != 0 && c < 0x80 ? 1 : c >= 0x800 ? 3 : 2;
-                if (pos + csize >= MAX_BLOCK_SIZE) {
-                    drain();
-                    pos = 0;
-                }
-                pos = JDKUTF.putChar(buf, pos, c);
-            }
-            this.pos = pos;
-        }
-
         public void writeBytes(String s) throws IOException {
             writeBytes(s, s.length());
         }
@@ -2043,7 +2029,7 @@ public class ObjectOutputStream
             writeUTFInternal(str, false);
         }
 
-        void writeUTFInternal(String str, boolean writeHeader) throws IOException {
+        private void writeUTFInternal(String str, boolean writeHeader) throws IOException {
             int strlen = str.length();
             int countNonZeroAscii = JLA.countNonZeroAscii(str);
             int utflen = JDKUTF.utflen(str, countNonZeroAscii);
@@ -2063,8 +2049,22 @@ public class ObjectOutputStream
                 writeBytes(str, countNonZeroAscii);
             }
             if (countNonZeroAscii != strlen) {
-                writeUTF(str, countNonZeroAscii);
+                writeMoreUTF(str, countNonZeroAscii);
             }
+        }
+
+        private void writeMoreUTF(String str, int stroff) throws IOException {
+            int pos = this.pos;
+            for (int strlen = str.length(); stroff < strlen;) {
+                char c = str.charAt(stroff++);
+                int csize = c != 0 && c < 0x80 ? 1 : c >= 0x800 ? 3 : 2;
+                if (pos + csize >= MAX_BLOCK_SIZE) {
+                    drain();
+                    pos = 0;
+                }
+                pos = JDKUTF.putChar(buf, pos, c);
+            }
+            this.pos = pos;
         }
 
 
