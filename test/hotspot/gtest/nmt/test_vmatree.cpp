@@ -278,22 +278,22 @@ TEST_VM_F(NMTVMATreeTest, SetFlag) {
 
     VMATree::SummaryDiff result = tree.reserve_mapping(0, 500, rd);
     diff.apply(result);
-    EXPECT_EQ(diff.flag[i(mtNone)].reserve, 500);
+    EXPECT_EQ(500, diff.flag[i(mtNone)].reserve);
 
     result = tree.reserve_mapping(500, 100, rd);
     diff.apply(result);
-    EXPECT_EQ(diff.flag[i(mtNone)].reserve, 600);
+    EXPECT_EQ(600, diff.flag[i(mtNone)].reserve);
 
     result = tree.set_flag(0, 500, mtGC);
     diff.apply(result);
-    EXPECT_EQ(diff.flag[i(mtNone)].reserve, 100);
-    EXPECT_EQ(diff.flag[i(mtGC)].reserve, 500);
+    EXPECT_EQ(100, diff.flag[i(mtNone)].reserve);
+    EXPECT_EQ(500, diff.flag[i(mtGC)].reserve);
 
     result = tree.set_flag(500, 100, mtClassShared);
     diff.apply(result);
-    EXPECT_EQ(diff.flag[i(mtNone)].reserve, 0);
-    EXPECT_EQ(diff.flag[i(mtGC)].reserve, 500);
-    EXPECT_EQ(diff.flag[i(mtClassShared)].reserve, 100);
+    EXPECT_EQ(0, diff.flag[i(mtNone)].reserve);
+    EXPECT_EQ(500, diff.flag[i(mtGC)].reserve);
+    EXPECT_EQ(100, diff.flag[i(mtClassShared)].reserve);
   }
 
   // Now let's add in some committed data
@@ -317,15 +317,15 @@ TEST_VM_F(NMTVMATreeTest, SetFlag) {
     // OK, set flag
     result = tree.set_flag(0, 500, mtGC);
     diff.apply(result);
-    EXPECT_EQ(diff.flag[i(mtNone)].reserve, 100);
-    EXPECT_EQ(diff.flag[i(mtGC)].reserve, 500);
-    EXPECT_EQ(diff.flag[i(mtGC)].commit, 25);
+    EXPECT_EQ(100, diff.flag[i(mtNone)].reserve);
+    EXPECT_EQ(500, diff.flag[i(mtGC)].reserve);
+    EXPECT_EQ(25, diff.flag[i(mtGC)].commit);
 
     result = tree.set_flag(500, 100, mtClassShared);
     diff.apply(result);
-    EXPECT_EQ(diff.flag[i(mtNone)].reserve, 0);
-    EXPECT_EQ(diff.flag[i(mtClassShared)].reserve, 100);
-    EXPECT_EQ(diff.flag[i(mtClassShared)].commit, 20);
+    EXPECT_EQ(0, diff.flag[i(mtNone)].reserve);
+    EXPECT_EQ(100, diff.flag[i(mtClassShared)].reserve);
+    EXPECT_EQ(20, diff.flag[i(mtClassShared)].commit);
   }
 }
 
