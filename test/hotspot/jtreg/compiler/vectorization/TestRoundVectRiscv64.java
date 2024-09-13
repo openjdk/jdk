@@ -28,7 +28,7 @@
  * @summary Auto-vectorize Math.round API
  * @requires vm.compiler2.enabled
  * @requires os.arch == "riscv64"
- * @requires vm.cpu.features ~= ".*v,.*"
+ * @requires vm.cpu.features ~= ".*rvv.*"
  * @library /test/lib /
  * @run driver compiler.vectorization.TestRoundVectRiscv64
  */
