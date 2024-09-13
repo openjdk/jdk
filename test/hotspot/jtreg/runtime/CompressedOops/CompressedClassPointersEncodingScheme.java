@@ -102,9 +102,11 @@ public class CompressedClassPointersEncodingScheme {
         }
         // add more...
 
-        // Compact Object Header Mode with tiny classpointers
-        // On all platforms we expect the VM to chose the smallest possible shift value needed to cover the encoding range
-        long forceAddress = 30 * G;
+        // Compact Object Header Mode:
+        // On all platforms we expect the VM to chose the smallest possible shift value needed to cover
+        // the encoding range. We expect the encoding Base to start at the class space start - but to enforce that,
+        // we choose a high address.
+        long forceAddress = 32 * G;
 
         long ccsSize = 128 * M;
         int expectedShift = 6;
