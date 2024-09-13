@@ -43,6 +43,7 @@ class VMATree {
   // A position in memory.
 public:
   using position = size_t;
+  using size = size_t;
 
   class PositionComparator {
   public:
@@ -188,13 +189,13 @@ public:
     return register_mapping(from, from + sz, StateType::Reserved, metadata);
   }
 
-  SummaryDiff set_flag(position from, size_t sz, MEMFLAGS flag);
+  SummaryDiff set_flag(position from, size size, MEMFLAGS flag);
 
-  SummaryDiff commit_mapping(position from, position sz, const RegionData& metadata) {
+  SummaryDiff commit_mapping(position from, size sz, const RegionData& metadata) {
     return register_mapping(from, from + sz, StateType::Committed, metadata);
   }
 
-  SummaryDiff release_mapping(position from, position sz) {
+  SummaryDiff release_mapping(position from, size sz) {
     return register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata);
   }
 

@@ -208,25 +208,25 @@ void VMATree::print_on(outputStream* out) {
 }
 #endif
 
-VMATree::SummaryDiff VMATree::set_flag(position from, size_t sz, MEMFLAGS flag) {
+VMATree::SummaryDiff VMATree::set_flag(position from, size size, MEMFLAGS flag) {
   VMATreap::Range range = _tree.find_enclosing_range(from);
   assert(range.start != nullptr && range.end != nullptr,
          "Setting a flag must be done within existing range");
   StateType type = range.start->val().out.type();
   RegionData new_data = RegionData(range.start->val().out.stack(), flag);
 
-  position end = MIN2(from + sz, range.end->key());
+  position end = MIN2(from + size, range.end->key());
   SummaryDiff diff = register_mapping(from, end, type, new_data);
 
   // If end < from + sz then there are multiple ranges for which to set the flag.
-  while (end < from + sz) {
+  while (end < from + size) {
     range = _tree.find_enclosing_range(from);
     assert(range.start != nullptr && range.end != nullptr,
            "Setting a flag must be done within existing range.");
     if (range.start == nullptr || range.end == nullptr) {
       break;
     }
-    end = MIN2(from + sz, range.end->key());
+    end = MIN2(from + size, range.end->key());
     StateType type = range.start->val().out.type();
     RegionData new_data = RegionData(range.start->val().out.stack(), flag);
     SummaryDiff result = register_mapping(from, end, type, new_data);
