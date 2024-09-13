@@ -59,11 +59,6 @@ import sun.nio.ch.FileChannelImpl;
  * than {@code EOFException} is thrown. In particular, an
  * {@code IOException} may be thrown if the stream has been closed.
  *
- * <p>
- * <a href= "../../java/nio/file/package-summary.html#links">Symbolic links</a>
- * are automatically redirected to the <i>target</i> of the link, whether they
- * are provided by a pathname string or via a {@code File} object.
- *
  * @since   1.0
  */
 
@@ -106,8 +101,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     /**
      * Creates a random access file stream to read from, and optionally
-     * to write to, a file with the specified pathname. A new
-     * {@link FileDescriptor} object is created to represent the
+     * to write to, a file with the specified pathname.
+     * {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * If the access mode specifies writing and the file or link target exists,
+     * then it will be truncated.
+     * A new {@link FileDescriptor} object is created to represent the
      * connection to the file.
      *
      * <p> The {@code mode} argument specifies the access mode with which the
@@ -152,7 +151,11 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     /**
      * Creates a random access file stream to read from, and optionally to
-     * write to, the file specified by the {@link File} argument.  A new {@link
+     * write to, the file specified by the {@link File} argument.
+     * {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * If the access mode specifies writing and the file or link target exists,
+     * then it will be truncated. A new {@link
      * FileDescriptor} object is created to represent this file connection.
      *
      * <p>The <a id="mode">{@code mode}</a> argument specifies the access mode

@@ -45,11 +45,6 @@ import sun.nio.ch.FileChannelImpl;
  * such as image data. For writing streams of characters, consider using
  * {@code FileWriter}.
  *
- * <p>
- * <a href= "../../java/nio/file/package-summary.html#links">Symbolic links</a>
- * are automatically redirected to the <i>target</i> of the link, whether they
- * are provided by a pathname string or via a {@code File} object.
- *
  * @apiNote
  * The {@link #close} method should be called to release resources used by this
  * stream, either directly, or with the {@code try}-with-resources statement.
@@ -102,7 +97,10 @@ public class FileOutputStream extends OutputStream
 
     /**
      * Creates a file output stream to write to the file with the
-     * specified name. A new {@code FileDescriptor} object is
+     * specified name. {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * If the file or link target exists, then it will be truncated.
+     * A new {@code FileDescriptor} object is
      * created to represent this file connection.
      * <p>
      * First, if there is a security manager, its {@code checkWrite}
@@ -131,8 +129,12 @@ public class FileOutputStream extends OutputStream
 
     /**
      * Creates a file output stream to write to the file with the specified
-     * name.  If the second argument is {@code true}, then
-     * bytes will be written to the end of the file rather than the beginning.
+     * name.  {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * If the second argument is {@code true}, then
+     * bytes will be written to the end of the file or link target rather than
+     * the beginning; if {@code false}, the file or link target will be
+     * truncated if it exists.
      * A new {@code FileDescriptor} object is created to represent this
      * file connection.
      * <p>
@@ -163,8 +165,11 @@ public class FileOutputStream extends OutputStream
 
     /**
      * Creates a file output stream to write to the file represented by
-     * the specified {@code File} object. A new
-     * {@code FileDescriptor} object is created to represent this
+     * the specified {@code File} object.
+     * {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * If the file or link target exists, then it will be truncated.
+     * A new {@code FileDescriptor} object is created to represent this
      * file connection.
      * <p>
      * First, if there is a security manager, its {@code checkWrite}
@@ -192,9 +197,13 @@ public class FileOutputStream extends OutputStream
 
     /**
      * Creates a file output stream to write to the file represented by
-     * the specified {@code File} object. If the second argument is
+     * the specified {@code File} object.
+     * {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * If the second argument is
      * {@code true}, then bytes will be written to the end of the file
-     * rather than the beginning. A new {@code FileDescriptor} object is
+     * rather than the beginning; if {@code false}, the file or link target
+     * will be truncated if it exists. A new {@code FileDescriptor} object is
      * created to represent this file connection.
      * <p>
      * First, if there is a security manager, its {@code checkWrite}

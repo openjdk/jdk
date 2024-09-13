@@ -79,8 +79,7 @@ import jdk.internal.util.StaticProperty;
  * {@code user.dir}, and is typically the directory in which the Java
  * virtual machine was invoked.
  *
- * <p> Unless otherwise noted,
- * <a href= "../../java/nio/file/package-summary.html#links">symbolic links</a>
+ * <p> Unless otherwise noted, {@linkplain java.nio.file##links symbolic links}
  * are automatically redirected to the <i>target</i> of the link, whether they
  * are provided by a pathname string or via a {@code File} object.
  *
