@@ -570,11 +570,11 @@ public abstract class VectorOperators {
     /** Produce saturating {@code a+b}.  Integral only.
      * @see VectorMath#addSaturating(int, int)
      */
-    public static final Associative SADD = assoc("SADD", "+", VectorSupport.VECTOR_OP_SADD, VO_NOFP+VO_ASSOC);
+    public static final Associative SADD = assoc("SADD", "+", VectorSupport.VECTOR_OP_SADD, VO_NOFP);
     /** Produce saturating unsigned {@code a+b}.  Integral only.
      * @see VectorMath#addSaturatingUnsigned(int, int)
      */
-    public static final Associative SUADD = assoc("SUADD", "+", VectorSupport.VECTOR_OP_SUADD, VO_NOFP+VO_ASSOC);
+    public static final Associative SUADD = assoc("SUADD", "+", VectorSupport.VECTOR_OP_SUADD, VO_NOFP);
     /** Produce saturating {@code a-b}.  Integral only.
      * @see VectorMath#subSaturating(int, int)
      */
@@ -662,22 +662,22 @@ public abstract class VectorOperators {
      * @see java.lang.Integer#compareUnsigned
      * @see java.lang.Long#compareUnsigned
      */
-    public static final Comparison UNSIGNED_LT = compare("UNSIGNED_LT", "<",  VectorSupport.BT_ult, VO_NOFP);
+    public static final Comparison ULT = compare("ULT", "<",  VectorSupport.BT_ult, VO_NOFP);
     /** Unsigned compare {@code a<=b}.  Integral only.
      * @see java.lang.Integer#compareUnsigned
      * @see java.lang.Long#compareUnsigned
      */
-    public static final Comparison UNSIGNED_LE = compare("UNSIGNED_LE", "<=", VectorSupport.BT_ule, VO_NOFP);
+    public static final Comparison ULE = compare("ULE", "<=", VectorSupport.BT_ule, VO_NOFP);
     /** Unsigned compare {@code a>b}.  Integral only.
      * @see java.lang.Integer#compareUnsigned
      * @see java.lang.Long#compareUnsigned
      */
-    public static final Comparison UNSIGNED_GT = compare("UNSIGNED_GT", ">",  VectorSupport.BT_ugt, VO_NOFP);
+    public static final Comparison UGT = compare("UGT", ">",  VectorSupport.BT_ugt, VO_NOFP);
     /** Unsigned compare {@code a>=b}.  Integral only.
      * @see java.lang.Integer#compareUnsigned
      * @see java.lang.Long#compareUnsigned
      */
-    public static final Comparison UNSIGNED_GE = compare("UNSIGNED_GE", ">=", VectorSupport.BT_uge, VO_NOFP);
+    public static final Comparison UGE = compare("UGE", ">=", VectorSupport.BT_uge, VO_NOFP);
 
     // Conversion operators
 

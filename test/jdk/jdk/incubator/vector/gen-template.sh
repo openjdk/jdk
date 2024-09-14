@@ -508,10 +508,10 @@ gen_compare_op "NE" "neq"
 gen_compare_op "LE" "le"
 gen_compare_op "GE" "ge"
 
-gen_compare_op "UNSIGNED_LT" "ult" "BITWISE"
-gen_compare_op "UNSIGNED_GT" "ugt" "BITWISE"
-gen_compare_op "UNSIGNED_LE" "ule" "BITWISE"
-gen_compare_op "UNSIGNED_GE" "uge" "BITWISE"
+gen_compare_op "ULT" "ult" "BITWISE"
+gen_compare_op "UGT" "ugt" "BITWISE"
+gen_compare_op "ULE" "ule" "BITWISE"
+gen_compare_op "UGE" "uge" "BITWISE"
 
 
 gen_compare_bcst_op "LT" "<"
