@@ -27,7 +27,7 @@
  * @bug 8339725
  * @summary Stress test GetMethodDeclaringClass
  * @requires vm.jvmti
- * @requires (os.family == "linux") & (vm.debug != true)
+ * @requires (os.family == "linux")
  * @library /test/lib
  * @run driver/timeout=300 TestUnloadedClass
  */
@@ -35,6 +35,7 @@
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Platform;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -48,14 +49,20 @@ public class TestUnloadedClass {
                 "-Xmx50m",
                 "Test");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("OutOfMemoryError");
+        if (!Platform.isDebugBuild()) {
+            output.shouldContain("OutOfMemoryError");
+        }
     }
 }
 
 class Test {
     public static void main(String[] args) throws Exception {
         long last = System.nanoTime();
-        for (;;) {
+        for (int i = 0;;i++) {
+            if (Platform.isDebugBuild() && i >= 1000) {
+                // Debug build costs too much time to OOM so limit the loop iteration
+                break;
+            }
             CustomClassLoader loader = new CustomClassLoader();
             Class<?> k = loader.findClass("MyClass");
             Constructor<?> c = k.getDeclaredConstructor();
