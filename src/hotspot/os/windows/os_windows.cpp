@@ -1286,40 +1286,49 @@ void os::shutdown() {
 
 static HANDLE dumpFile = nullptr;
 
-// Check if dump file can be created.
-void os::check_core_prerequisites(char* buffer, size_t bufferSize, bool check_only) {
-  bool status = true;
-  if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
+// Check if core dump is active and if a core dump file can be created
+void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool check_only) {
+  bool will_dump_core = !(!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash);
+  if (!will_dump_core) {
     jio_snprintf(buffer, bufferSize, "CreateCoredumpOnCrash is disabled from command line");
-    status = false;
-  }
-
+  } else {
 #ifndef ASSERT
-  if (status && FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !os::win32::is_windows_server()) {
-    jio_snprintf(buffer, bufferSize, "Minidumps are not enabled by default on client versions of Windows");
-    status = false;
-  }
-#endif
-
-  if (status) {
-    const char* cwd = get_current_directory(nullptr, 0);
-    int pid = current_process_id();
-    if (cwd != nullptr) {
-      jio_snprintf(buffer, bufferSize, "%s\\hs_err_pid%u.mdmp", cwd, pid);
-    } else {
-      jio_snprintf(buffer, bufferSize, ".\\hs_err_pid%u.mdmp", pid);
+    will_dump_core = !(FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !os::win32::is_windows_server());
+    if (!will_dump_core) {
+      jio_snprintf(buffer, bufferSize, "Minidumps are not enabled by default on client versions of Windows");
     }
+#endif
+    if (will_dump_core) {
+      const char* cwd = get_current_directory(nullptr, 0);
+      int pid = current_process_id();
+      if (cwd != nullptr) {
+        jio_snprintf(buffer, bufferSize, "%s\\hs_err_pid%u.mdmp", cwd, pid);
+      } else {
+        jio_snprintf(buffer, bufferSize, ".\\hs_err_pid%u.mdmp", pid);
+      }
 
-    if (!check_only && dumpFile == nullptr &&
-       (dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr))
-                 == INVALID_HANDLE_VALUE) {
-      jio_snprintf(buffer, bufferSize, "Failed to create minidump file (0x%x).", GetLastError());
-      status = false;
+      if (!check_only) {
+        will_dump_core = !(dumpFile == nullptr &&
+                           (dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr))
+                             == INVALID_HANDLE_VALUE);
+        if (!will_dump_core) {
+          jio_snprintf(buffer, bufferSize, "Failed to create minidump file (0x%x).", GetLastError());
+        }
+      } else {
+        // For check_only, which is done at the startup, we DO NOT want to create a file,
+        // which would slow startup down, so simply assume here that we can do it
+        will_dump_core = true;
+      }
     }
   }
 
   if (!check_only) {
-    VMError::record_coredump_status(buffer, status);
+    VMError::record_coredump_status(buffer, will_dump_core);
+  } else {
+    if (!will_dump_core) {
+      // The code logic is provided, but currently there is no path to get here on Windows
+      warning("CreateCoredumpOnCrash specified, but %s", buffer);
+    }
   }
 }
 

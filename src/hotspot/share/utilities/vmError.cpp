@@ -1696,7 +1696,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
       ShowMessageBoxOnError = false;
     }
 
-    os::check_core_prerequisites(buffer, sizeof(buffer));
+    os::check_core_dump_prerequisites(buffer, sizeof(buffer));
 
     // reset signal handlers or exception filter; make sure recursive crashes
     // are handled properly.
