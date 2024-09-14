@@ -1043,6 +1043,7 @@ abstract class MethodHandleImpl {
         private static final ClassDesc CD_Object_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;");
         private static final MethodType INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
         private static final MethodType REFLECT_INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object.class, Object[].class);
+        private static final Lookup.ClassOption[] INVOKER_CLASS_OPTIONS = { NESTMATE };
 
         static MethodHandle bindCaller(MethodHandle mh, Class<?> hostClass) {
             // Code in the boot layer should now be careful while creating method handles or
@@ -1111,7 +1112,7 @@ abstract class MethodHandleImpl {
                 }
                 name = name.replace('.', '/');
                 Class<?> invokerClass = new Lookup(targetClass)
-                        .makeHiddenClassDefiner(name, INJECTED_INVOKER_TEMPLATE, dumper(), NESTMATE)
+                        .makeHiddenClassDefiner(name, INJECTED_INVOKER_TEMPLATE, dumper(), INVOKER_CLASS_OPTIONS)
                         .defineClass(true, targetClass);
                 assert checkInjectedInvoker(targetClass, invokerClass);
                 return invokerClass;

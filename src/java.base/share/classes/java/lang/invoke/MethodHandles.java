@@ -1913,6 +1913,8 @@ public class MethodHandles {
                 }
                 return flags;
             }
+
+            private static final ClassOption[] NO_OPTIONS = new ClassOption[0];
         }
 
         /**
@@ -2366,7 +2368,7 @@ public class MethodHandles {
          */
         ClassDefiner makeHiddenClassDefiner(byte[] bytes, ClassFileDumper dumper) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return makeHiddenClassDefiner(cf, false, dumper);
+            return makeHiddenClassDefiner(cf, false, dumper, ClassOption.NO_OPTIONS);
         }
 
         /**
@@ -2390,6 +2392,21 @@ public class MethodHandles {
                                                     ClassOption[] options) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
             return makeHiddenClassDefiner(cf, accessVmAnnotations, defaultDumper(), options);
+        }
+
+        /**
+         * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
+         * from the given bytes and the given options.  No package name check on the given bytes.
+         *
+         * @param name    internal name that specifies the prefix of the hidden class
+         * @param bytes   class bytes
+         * @param dumper  dumper to write the given bytes to the dumper's output directory
+         * @return ClassDefiner that defines a hidden class of the given bytes and options.
+         */
+        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, ClassFileDumper dumper) {
+            Objects.requireNonNull(dumper);
+            // skip name and access flags validation
+            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), false, dumper, ClassOption.NO_OPTIONS);
         }
 
         /**
