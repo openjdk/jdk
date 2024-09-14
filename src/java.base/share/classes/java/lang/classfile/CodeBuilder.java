@@ -626,6 +626,7 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction pushing a constant int value onto the operand stack.
+     * This is identical to {@link #loadConstant(ConstantDesc) loadConstant(Integer.valueOf(value))}.
      * @param value the int value
      * @return this builder
      * @since 24
@@ -647,6 +648,7 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction pushing a constant long value onto the operand stack.
+     * This is identical to {@link #loadConstant(ConstantDesc) loadConstant(Long.valueOf(value))}.
      * @param value the long value
      * @return this builder
      * @since 24
@@ -659,6 +661,7 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction pushing a constant float value onto the operand stack.
+     * This is identical to {@link #loadConstant(ConstantDesc) loadConstant(Float.valueOf(value))}.
      * @param value the float value
      * @return this builder
      * @since 24
@@ -672,6 +675,7 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction pushing a constant double value onto the operand stack.
+     * This is identical to {@link #loadConstant(ConstantDesc) loadConstant(Double.valueOf(value))}.
      * @param value the double value
      * @return this builder
      * @since 24
