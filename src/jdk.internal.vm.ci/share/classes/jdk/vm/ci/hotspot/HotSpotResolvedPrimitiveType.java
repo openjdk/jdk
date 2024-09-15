@@ -60,7 +60,13 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
         this.kind = kind;
     }
 
-    static HotSpotResolvedPrimitiveType forKind(JavaKind kind) {
+    /**
+     * Returns a primitive type instance corresponding to the given {@link JavaKind}.
+     *
+     * @param kind the Java kind of the primitive type
+     * @return the primitive type instance for the given Java kind
+     */
+    public static HotSpotResolvedPrimitiveType forKind(JavaKind kind) {
         HotSpotResolvedPrimitiveType primitive = primitives[kind.getBasicType()];
         assert primitive != null : kind;
         return primitive;
@@ -83,7 +89,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    HotSpotResolvedObjectTypeImpl getArrayType() {
+    protected HotSpotResolvedObjectType getArrayType() {
         if (kind == JavaKind.Void) {
             return null;
         }
@@ -319,7 +325,7 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    JavaConstant getJavaMirror() {
+    public JavaConstant getJavaMirror() {
         return mirror;
     }
 
@@ -332,5 +338,4 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
         return List.of();
     }
-
 }

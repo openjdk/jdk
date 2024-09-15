@@ -33,7 +33,7 @@ import jdk.vm.ci.meta.Assumptions.Assumption;
 import jdk.vm.ci.meta.ResolvedJavaField;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 
-import java.util.List;
+import java.util.Arrays;
 
 /**
  * A {@link CompiledCode} with additional HotSpot-specific information required for installing the
@@ -187,5 +187,98 @@ public class HotSpotCompiledCode implements CompiledCode {
                 return field.getOffset();
             }
         });
+    }
+
+    /**
+     * Returns a copy of the compiled machine code.
+     */
+    public byte[] getTargetCode() {
+        return (targetCode == null) ? null : Arrays.copyOf(targetCode, targetCode.length);
+    }
+
+    /**
+     * Gets the size of the compiled machine code in bytes.
+     */
+    public int getTargetCodeSize() {
+        return targetCodeSize;
+    }
+
+    /**
+     * Returns a copy of the array of {@link Site} objects associated with this compiled code.
+     */
+    public Site[] getSites() {
+        return (sites == null) ? null : Arrays.copyOf(sites, sites.length);
+    }
+
+    /**
+     * Returns a copy of the array of {@link Assumption} objects associated with this compiled code.
+     */
+    public Assumption[] getAssumptions() {
+        return (assumptions == null) ? null : Arrays.copyOf(assumptions, assumptions.length);
+    }
+
+    /**
+     * Returns a copy of the array of {@link ResolvedJavaMethod} objects representing the methods
+     * whose bytecodes were used as input to the compilation. If the compilation did not record
+     * method dependencies, this method returns {@code null}. Otherwise, the first element of the
+     * returned array is the root method of the compilation.
+     *
+     * @return a copy of the array of methods associated with this compiled code or {@code null}
+     * if no methods were recorded
+     */
+    public ResolvedJavaMethod[] getMethods() {
+        return (methods == null) ? null : Arrays.copyOf(methods, methods.length);
+    }
+
+    /**
+     * Returns a copy of the array of {@link Comment} objects associated with this compiled code.
+     */
+    public Comment[] getComments() {
+        return Arrays.copyOf(comments, comments.length);
+    }
+
+    /**
+     * Returns a copy of the data section containing serialized constants for the emitted machine code.
+     */
+    public byte[] getDataSection() {
+        return (dataSection == null) ? null : Arrays.copyOf(dataSection, dataSection.length);
+    }
+
+    /**
+     * Gets the minimum alignment of the data section.
+     */
+    public int getDataSectionAlignment() {
+        return dataSectionAlignment;
+    }
+
+    /**
+     * Returns a copy of the array of {@link DataPatch} objects representing the relocations in the
+     * {@linkplain #getDataSection() data section}.
+     *
+     * @return a copy of the array of data section patches or {@code null} if there are no patches
+     */
+    public DataPatch[] getDataSectionPatches() {
+        return (dataSectionPatches == null) ? null : Arrays.copyOf(dataSectionPatches, dataSectionPatches.length);
+    }
+
+    /**
+     * Checks if this compiled code is immutable and position independent.
+     */
+    public boolean isImmutablePIC() {
+        return isImmutablePIC;
+    }
+
+    /**
+     * Gets the total size of the stack frame of this compiled method.
+     */
+    public int getTotalFrameSize() {
+        return totalFrameSize;
+    }
+
+    /**
+     * Gets the deoptimization rescue slot associated with this compiled code.
+     */
+    public StackSlot getDeoptRescueSlot() {
+        return deoptRescueSlot;
     }
 }

@@ -22,6 +22,7 @@
  */
 package jdk.vm.ci.code;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -290,10 +291,12 @@ public final class VirtualObject implements JavaValue {
             return true;
         }
         if (o instanceof VirtualObject l) {
-            if (!l.type.equals(type) || l.values.length != values.length) {
+            int lValuesLength = (l.values == null) ? 0 : l.values.length;
+            int valuesLength = (values == null) ? 0 : values.length;
+            if (!l.type.equals(type) || lValuesLength != valuesLength) {
                 return false;
             }
-            for (int i = 0; i < values.length; i++) {
+            for (int i = 0; i < valuesLength; i++) {
                 /*
                  * Virtual objects can form cycles. Calling equals() could therefore lead to
                  * infinite recursion.
@@ -309,5 +312,16 @@ public final class VirtualObject implements JavaValue {
 
     private static boolean same(Object o1, Object o2) {
         return o1 == o2;
+    }
+
+    /**
+     * Returns a copy of the array containing the Java kinds of the values stored in this
+     * virtual object.
+     *
+     * @return a copy of the array containing the Java kinds of the values or {@code null} if the
+     *         values have not been initialized.
+     */
+    public JavaKind[] getSlotKinds() {
+        return (slotKinds == null) ? null : Arrays.copyOf(slotKinds, slotKinds.length);
     }
 }
