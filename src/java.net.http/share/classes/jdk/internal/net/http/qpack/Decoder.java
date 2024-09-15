@@ -277,6 +277,11 @@ public final class Decoder {
 
     private void submitDecoderInstruction(DecoderInstructionsWriter decoderInstructionsWriter,
                                           int size) {
+        if (size > decoderStreamPair.credit()) {
+            qpackErrorHandler.closeOnError(
+                    new IOException("QPACK not enough credit on a decoder stream " +
+                            decoderStreamPair.remoteStreamType()), H3_CLOSED_CRITICAL_STREAM);
+        }
         // All decoder instructions contain only one variable length integer.
         // Which could take up to 9 bytes max.
         ByteBuffer buffer = ByteBuffer.allocate(size);
