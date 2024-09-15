@@ -373,7 +373,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             PoolEntry e = entryByIndex(map.getIndexByToken(token));
             if (e.tag() == ClassFile.TAG_UTF8
                 && e instanceof AbstractPoolEntry.Utf8EntryImpl ce
-                && ce.hashCode() == hash
                 && target.equals(ce.stringValue()))
                 return ce;
         }
@@ -400,108 +399,111 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         return null;
     }
 
-    @Override
-    public Utf8Entry utf8Entry(ClassDesc desc) {
-        var utf8 = utf8Entry(desc.descriptorString());
-        utf8.typeSym = desc;
-        return utf8;
+    private AbstractPoolEntry.Utf8EntryImpl tryFindUtf8OfRegion(int hash, String target, int start, int end) {
+        EntryMap map = map();
+        while (true) {
+            for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
+                PoolEntry e = entryByIndex(map.getIndexByToken(token));
+                if (e.tag() == ClassFile.TAG_UTF8
+                        && e instanceof AbstractPoolEntry.Utf8EntryImpl ce
+                        && ce.equalsRegion(target, start, end))
+                    return ce;
+            }
+            if (!doneFullScan) {
+                fullScan();
+                continue;
+            }
+            return null;
+        }
     }
 
-    @Override
-    public Utf8Entry utf8Entry(MethodTypeDesc desc) {
-        var utf8 = utf8Entry(desc.descriptorString());
-        utf8.typeSym = desc;
-        return utf8;
-    }
-
-    /**
-     * Faster checking for ClassEntry given a class or interface descriptor.
-     * <p>
-     * Check steps:
-     * <ol>
-     * <li>Compute internal name utf8 entry hash for fast utf8 lookup
-     * <li>Check length
-     * <li>Find class entry and check ClassDesc if available (has == fast path)
-     * <li>Check utf8 contents (only if ClassDesc is unavailable, only happens once if matched)
-     * </ol>
-     * Postprocessing: ensure on a match, the resulting ClassEntry has ClassDesc
-     * for faster future checking
-     * <p>
-     * The rationale of the fast path is that:
-     * <ol>
-     * <li>New String hashing is expensive, reuse if possible
-     * <li>Substringing needs allocation, but worse it discards hashes
-     * <li>String equality check is expensive too, go through other fast paths before
-     *   (like identity check in ClassDesc::equals) if possible
-     * </ol>
-     */
-    private AbstractPoolEntry.ClassEntryImpl classEntryForClassOrInterface(ClassDesc cd) {
-        var desc = cd.descriptorString();
-        int hash = AbstractPoolEntry.hashString(Util.internalNameHash(desc));
-
+    private AbstractPoolEntry.ClassEntryImpl tryFindClassOrInterface(int hash, ClassDesc cd) {
         while (true) {
             EntryMap map = map();
             for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
                 PoolEntry e = entryByIndex(map.getIndexByToken(token));
-                if (e.tag() == ClassFile.TAG_UTF8
-                        && e instanceof AbstractPoolEntry.Utf8EntryImpl utf
-                        && utf.length() + 2 == desc.length()) {
-                    // now probe class entry, fast path
-                    var ce = (AbstractPoolEntry.ClassEntryImpl) findEntry(TAG_CLASS, utf);
-                    if (ce != null) {
-                        var sym = ce.sym;
-                        if (sym != null) {
-                            if (cd.equals(sym)) {
-                                // definite match, fully expanded class entry
-                                return ce;
-                            } else {
-                                // definite mismatch
-                                continue;
-                            }
+                if (e.tag() == TAG_CLASS
+                        && e instanceof AbstractPoolEntry.ClassEntryImpl ce) {
+                    var esym = ce.sym;
+
+                    if (esym != null) {
+                        if (cd.equals(esym)) {
+                            return ce; // definite match
                         }
+                        continue; // definite mismatch
                     }
 
-                    // now: ce == null or ce.sym == null
-                    // slow path for definite checks
-                    if (!utf.equalsRegion(desc, 1, desc.length() - 1)) {
-                        // definite mismatch
-                        continue;
+                    // no symbol available
+                    var desc = cd.descriptorString();
+                    if (ce.ref1.equalsRegion(desc, 1, desc.length() - 1)) {
+                        // definite match, propagate symbol
+                        ce.sym = cd;
+                        return ce;
                     }
-
-                    // definite match of utf8
-                    // if ce != null, it's already bound to that utf8
-                    if (ce == null) {
-                        // no ClassEntry bound to that utf8 yet
-                        ce = internalAdd(new AbstractPoolEntry.ClassEntryImpl(this, size, utf));
-                    }
-
-                    // with the symbol expansion, future lookups
-                    // will go to the fast path definite check with sym above
-                    assert ce.sym == null;
-                    ce.sym = cd;
-                    return ce;
+                    // definite mismatch
                 }
             }
             if (!doneFullScan) {
                 fullScan();
                 continue;
             }
-            break;
+            return null;
         }
+    }
 
-        // No suitable utf8 and class entries, create both
-        var internalName = ConstantUtils.dropFirstAndLastChar(desc);
-        var utf = internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, internalName, hash));
-        var ce = internalAdd(new AbstractPoolEntry.ClassEntryImpl(this, size, utf));
-        ce.sym = cd;
-        return ce;
+    private AbstractPoolEntry.ClassEntryImpl classEntryForClassOrInterface(ClassDesc cd) {
+        var desc = cd.descriptorString();
+
+        int hash = AbstractPoolEntry.hashClassFromDescriptor(desc.hashCode());
+        var ce = tryFindClassOrInterface(hash, cd);
+        if (ce != null)
+            return ce;
+
+        var utfHash = Util.internalNameHash(desc);
+        var utf = tryFindUtf8OfRegion(AbstractPoolEntry.hashString(utfHash), desc, 1, desc.length() - 1);
+        if (utf == null)
+            utf = internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, ConstantUtils.dropFirstAndLastChar(desc), utfHash));
+
+        return internalAdd(new AbstractPoolEntry.ClassEntryImpl(this, size, utf, hash, cd));
+    }
+
+    private AbstractPoolEntry.ClassEntryImpl tryFindClassEntry(int hash, AbstractPoolEntry.Utf8EntryImpl utf8) {
+        EntryMap map = map();
+        for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
+            PoolEntry e = entryByIndex(map.getIndexByToken(token));
+            if (e.tag() == ClassFile.TAG_CLASS
+                    && e instanceof AbstractPoolEntry.ClassEntryImpl ce
+                    && ce.ref1.equalsUtf8(utf8))
+                return ce;
+        }
+        if (!doneFullScan) {
+            fullScan();
+            return tryFindClassEntry(hash, utf8);
+        }
+        return null;
+    }
+
+    @Override
+    public AbstractPoolEntry.Utf8EntryImpl utf8Entry(ClassDesc desc) {
+        var utf8 = utf8Entry(desc.descriptorString());
+        if (utf8.typeSym == null)
+            utf8.typeSym = desc;
+        return utf8;
+    }
+
+    @Override
+    public Utf8Entry utf8Entry(MethodTypeDesc desc) {
+        var utf8 = utf8Entry(desc.descriptorString());
+        if (utf8.typeSym == null)
+            utf8.typeSym = desc;
+        return utf8;
     }
 
     @Override
     public AbstractPoolEntry.Utf8EntryImpl utf8Entry(String s) {
-        int hash = AbstractPoolEntry.hashString(s.hashCode());
-        var ce = tryFindUtf8(hash, s);
-        return ce == null ? internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, s, hash)) : ce;
+        int contentHash = s.hashCode();
+        var ce = tryFindUtf8(AbstractPoolEntry.hashString(contentHash), s);
+        return ce == null ? internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, s, contentHash)) : ce;
     }
 
     AbstractPoolEntry.Utf8EntryImpl maybeCloneUtf8Entry(Utf8Entry entry) {
@@ -514,9 +516,15 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public AbstractPoolEntry.ClassEntryImpl classEntry(Utf8Entry nameEntry) {
-        AbstractPoolEntry.Utf8EntryImpl ne = maybeCloneUtf8Entry(nameEntry);
-        var e = (AbstractPoolEntry.ClassEntryImpl) findEntry(TAG_CLASS, ne);
-        return e == null ? internalAdd(new AbstractPoolEntry.ClassEntryImpl(this, size, ne)) : e;
+        var ne = maybeCloneUtf8Entry(nameEntry);
+        return classEntry(ne, AbstractPoolEntry.isArrayDescriptor(ne));
+    }
+
+    AbstractPoolEntry.ClassEntryImpl classEntry(AbstractPoolEntry.Utf8EntryImpl ne, boolean isArray) {
+        int hash = AbstractPoolEntry.hashClassFromUtf8(isArray, ne);
+        var e = tryFindClassEntry(hash, ne);
+        return e == null ? internalAdd(new AbstractPoolEntry.ClassEntryImpl(this, size, ne, hash,
+                isArray && ne.typeSym instanceof ClassDesc cd ? cd : null)) : e;
     }
 
     @Override
@@ -525,13 +533,19 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             return classEntryForClassOrInterface(cd);
         }
         if (cd.isArray()) {
-            var ret = classEntry(utf8Entry(cd.descriptorString()));
-            if (ret.sym == null) {
-                ret.sym = cd;
-            }
-            return ret;
+            return classEntry(utf8Entry(cd), true);
         }
         throw new IllegalArgumentException("Cannot be encoded as ClassEntry: " + cd.displayName());
+    }
+
+    AbstractPoolEntry.ClassEntryImpl cloneClassEntry(AbstractPoolEntry.ClassEntryImpl e) {
+        var ce = tryFindClassEntry(e.hashCode(), e.ref1);
+        if (ce != null) {
+            return ce;
+        }
+
+        return internalAdd(new AbstractPoolEntry.ClassEntryImpl(this, size,
+                maybeCloneUtf8Entry(e.ref1), e.hashCode(), e.sym));
     }
 
     @Override
@@ -558,36 +572,24 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public FieldRefEntry fieldRefEntry(ClassEntry owner, NameAndTypeEntry nameAndType) {
-        AbstractPoolEntry.ClassEntryImpl oe = (AbstractPoolEntry.ClassEntryImpl) owner;
-        AbstractPoolEntry.NameAndTypeEntryImpl ne = (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType;
-        if (!canWriteDirect(oe.constantPool))
-            oe = classEntry(owner.name());
-        if (!canWriteDirect(ne.constantPool))
-            ne = nameAndTypeEntry(nameAndType.name(), nameAndType.type());
+        var oe = AbstractPoolEntry.maybeClone(this, (AbstractPoolEntry.ClassEntryImpl) owner);
+        var ne = AbstractPoolEntry.maybeClone(this, (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType);
         var e = (AbstractPoolEntry.FieldRefEntryImpl) findEntry(TAG_FIELDREF, oe, ne);
         return e == null ? internalAdd(new AbstractPoolEntry.FieldRefEntryImpl(this, size, oe, ne)) : e;
     }
 
     @Override
     public MethodRefEntry methodRefEntry(ClassEntry owner, NameAndTypeEntry nameAndType) {
-        AbstractPoolEntry.ClassEntryImpl oe = (AbstractPoolEntry.ClassEntryImpl) owner;
-        AbstractPoolEntry.NameAndTypeEntryImpl ne = (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType;
-        if (!canWriteDirect(oe.constantPool))
-            oe = classEntry(owner.name());
-        if (!canWriteDirect(ne.constantPool))
-            ne = nameAndTypeEntry(nameAndType.name(), nameAndType.type());
+        var oe = AbstractPoolEntry.maybeClone(this, (AbstractPoolEntry.ClassEntryImpl) owner);
+        var ne = AbstractPoolEntry.maybeClone(this, (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType);
         var e = (AbstractPoolEntry.MethodRefEntryImpl) findEntry(TAG_METHODREF, oe, ne);
         return e == null ? internalAdd(new AbstractPoolEntry.MethodRefEntryImpl(this, size, oe, ne)) : e;
     }
 
     @Override
     public InterfaceMethodRefEntry interfaceMethodRefEntry(ClassEntry owner, NameAndTypeEntry nameAndType) {
-        AbstractPoolEntry.ClassEntryImpl oe = (AbstractPoolEntry.ClassEntryImpl) owner;
-        AbstractPoolEntry.NameAndTypeEntryImpl ne = (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType;
-        if (!canWriteDirect(oe.constantPool))
-            oe = classEntry(owner.name());
-        if (!canWriteDirect(ne.constantPool))
-            ne = nameAndTypeEntry(nameAndType.name(), nameAndType.type());
+        var oe = AbstractPoolEntry.maybeClone(this, (AbstractPoolEntry.ClassEntryImpl) owner);
+        var ne = AbstractPoolEntry.maybeClone(this, (AbstractPoolEntry.NameAndTypeEntryImpl) nameAndType);
         var e = (AbstractPoolEntry.InterfaceMethodRefEntryImpl) findEntry(TAG_INTERFACEMETHODREF, oe, ne);
         return e == null ? internalAdd(new AbstractPoolEntry.InterfaceMethodRefEntryImpl(this, size, oe, ne)) : e;
     }
@@ -606,15 +608,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public MethodHandleEntry methodHandleEntry(int refKind, MemberRefEntry reference) {
-        if (!canWriteDirect(reference.constantPool())) {
-            reference = switch (reference.tag()) {
-                case TAG_FIELDREF -> fieldRefEntry(reference.owner(), reference.nameAndType());
-                case TAG_METHODREF -> methodRefEntry(reference.owner(), reference.nameAndType());
-                case TAG_INTERFACEMETHODREF -> interfaceMethodRefEntry(reference.owner(), reference.nameAndType());
-                default -> throw new IllegalArgumentException(String.format("Bad tag %d", reference.tag()));
-            };
-        }
-
+        reference = AbstractPoolEntry.maybeClone(this, reference);
         int hash = AbstractPoolEntry.hash2(TAG_METHODHANDLE, refKind, reference.index());
         EntryMap map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
@@ -638,8 +632,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         if (!canWriteDirect(bootstrapMethodEntry.constantPool()))
             bootstrapMethodEntry = bsmEntry(bootstrapMethodEntry.bootstrapMethod(),
                                             bootstrapMethodEntry.arguments());
-        if (!canWriteDirect(nameAndType.constantPool()))
-            nameAndType = nameAndTypeEntry(nameAndType.name(), nameAndType.type());
+        nameAndType = AbstractPoolEntry.maybeClone(this, nameAndType);
         int hash = AbstractPoolEntry.hash2(TAG_INVOKEDYNAMIC,
                 bootstrapMethodEntry.bsmIndex(), nameAndType.index());
         EntryMap map1 = map();
@@ -669,8 +662,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         if (!canWriteDirect(bootstrapMethodEntry.constantPool()))
             bootstrapMethodEntry = bsmEntry(bootstrapMethodEntry.bootstrapMethod(),
                                             bootstrapMethodEntry.arguments());
-        if (!canWriteDirect(nameAndType.constantPool()))
-            nameAndType = nameAndTypeEntry(nameAndType.name(), nameAndType.type());
+        nameAndType = AbstractPoolEntry.maybeClone(this, nameAndType);
         int hash = AbstractPoolEntry.hash2(TAG_CONSTANTDYNAMIC,
                 bootstrapMethodEntry.bsmIndex(), nameAndType.index());
         EntryMap map1 = map();
@@ -728,8 +720,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     @Override
     public BootstrapMethodEntry bsmEntry(MethodHandleEntry methodReference,
                                          List<LoadableConstantEntry> arguments) {
-        if (!canWriteDirect(methodReference.constantPool()))
-            methodReference = methodHandleEntry(methodReference.kind(), methodReference.reference());
+        methodReference = AbstractPoolEntry.maybeClone(this, methodReference);
         for (LoadableConstantEntry a : arguments) {
             if (!canWriteDirect(a.constantPool())) {
                 // copy args list

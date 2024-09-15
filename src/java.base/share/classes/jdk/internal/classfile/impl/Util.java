@@ -344,8 +344,17 @@ public class Util {
      */
     public static int internalNameHash(String desc) {
         if (desc.length() > 0xffff)
-            throw new IllegalArgumentException("String too long (" + desc.length() + "): " + desc);
+            throw new IllegalArgumentException("String too long: ".concat(Integer.toString(desc.length())));
         return (desc.hashCode() - pow31(desc.length() - 1) * 'L' - ';') * INVERSE_31;
+    }
+
+    /**
+     * Returns the hash code of a class or interface L descriptor given the internal name.
+     */
+    public static int descriptorStringHash(int length, int hash) {
+        if (length > 0xffff)
+            throw new IllegalArgumentException("String too long: ".concat(Integer.toString(length)));
+        return 'L' * pow31(length + 1) + hash * 31 + ';';
     }
 
     // k is at most 65536, length of Utf8 entry + 1

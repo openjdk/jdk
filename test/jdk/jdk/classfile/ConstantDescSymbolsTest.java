@@ -142,6 +142,10 @@ final class ConstantDescSymbolsTest {
         var cd1 = ClassDesc.ofDescriptor(cd.descriptorString());
         assertSame(ce, cp.classEntry(cd1), "Finding by another equal CD");
 
+        // 1.3.1. Lookup existing - equal but different ClassDesc, equal but different string
+        var cd2 = ClassDesc.ofDescriptor("" + cd.descriptorString());
+        assertSame(ce, cp.classEntry(cd2), "Finding by another equal CD");
+
         // 1.4. Lookup existing - with utf8 internal name
         var utf8 = cp.utf8Entry(internal);
         assertSame(ce, cp.classEntry(utf8), "Finding CD by UTF8");
@@ -151,14 +155,14 @@ final class ConstantDescSymbolsTest {
         utf8 = cp.utf8Entry(internal);
         ce = cp.classEntry(utf8);
         var found = cp.classEntry(cd);
-        assertSame(ce, cp.classEntry(cd), "Finding non-CD CEs with CD");
-        assertSame(cd, ce.asSymbol(), "Symbol propagation on find");
+        assertSame(ce, found, "Finding non-CD CEs with CD");
+        assertEquals(cd, ce.asSymbol(), "Symbol propagation on find");
 
         // 3. Utf8Entry exists, no ClassEntry
         cp = ConstantPoolBuilder.of();
         utf8 = cp.utf8Entry(internal);
         ce = cp.classEntry(cd);
         assertSame(utf8, ce.name(), "Reusing existing utf8 entry");
-        assertSame(cd, ce.asSymbol(), "Symbol propagation on create with utf8");
+        assertEquals(cd, ce.asSymbol(), "Symbol propagation on create with utf8");
     }
 }
