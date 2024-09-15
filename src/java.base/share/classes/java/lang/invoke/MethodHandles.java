@@ -2128,7 +2128,9 @@ public class MethodHandles {
                 throws IllegalAccessException
         {
             Objects.requireNonNull(bytes);
-            Objects.requireNonNull(options);
+
+            // Disallow null and duplicate options
+            Set.of(options);
 
             ensureDefineClassPermission();
             if (!hasFullPrivilegeAccess()) {
@@ -2215,7 +2217,9 @@ public class MethodHandles {
         {
             Objects.requireNonNull(bytes);
             Objects.requireNonNull(classData);
-            Objects.requireNonNull(options);
+
+            // Disallow null and duplicate options
+            Set.of(options);
 
             ensureDefineClassPermission();
             if (!hasFullPrivilegeAccess()) {
