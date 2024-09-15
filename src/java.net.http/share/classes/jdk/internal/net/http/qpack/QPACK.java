@@ -43,7 +43,6 @@ import static jdk.internal.net.http.Http3ClientProperties.QPACK_DECODER_MAX_FIEL
 import static jdk.internal.net.http.Http3ClientProperties.QPACK_DECODER_MAX_TABLE_CAPACITY;
 import static jdk.internal.net.http.Http3ClientProperties.QPACK_ENCODER_DRAINING_THRESHOLD;
 import static jdk.internal.net.http.Http3ClientProperties.QPACK_ENCODER_TABLE_CAPACITY_LIMIT;
-import static jdk.internal.net.http.Http3ClientProperties.QPACK_ENCODER_USE_DYNAMIC_TABLE;
 import static jdk.internal.net.http.http3.frames.SettingsFrame.SETTINGS_MAX_FIELD_SECTION_SIZE;
 import static jdk.internal.net.http.http3.frames.SettingsFrame.SETTINGS_QPACK_BLOCKED_STREAMS;
 import static jdk.internal.net.http.qpack.QPACK.Logger.Level.EXTRA;
@@ -61,12 +60,6 @@ public final class QPACK {
     // less than this limit the encoder's dynamic table capacity is set to the max capacity
     // value.
     public static final long ENCODER_TABLE_CAPACITY_LIMIT = QPACK_ENCODER_TABLE_CAPACITY_LIMIT;
-
-    // If set to "true" enables the encoder to configure
-    // its dynamic table capacity with a positive value received from the peer's
-    // HTTP/3 settings frame. Otherwise, dynamic table is disabled on the
-    // encoder side.
-    public static final boolean ENCODER_USE_DYNAMIC_TABLE = QPACK_ENCODER_USE_DYNAMIC_TABLE;
 
     // The value of SETTINGS_QPACK_MAX_TABLE_CAPACITY HTTP/3 setting that is
     // negotiated by HTTP client's decoder

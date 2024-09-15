@@ -57,15 +57,6 @@ public final class Http3ClientProperties {
     // HTTP/3 setting value received from the peer decoder.
     public static final long QPACK_ENCODER_TABLE_CAPACITY_LIMIT;
 
-
-    // If set to "true" enables the encoder to configure
-    // its dynamic table capacity with a positive value received from the peer's
-    // HTTP/3 settings frame. Otherwise, dynamic table usages are disabled on the
-    // encoder side.
-    public static final boolean QPACK_ENCODER_USE_DYNAMIC_TABLE = Utils.getBooleanProperty(
-            "jdk.httpclient.qpack.encoderUseDynamicTable",
-            true);
-
     // The value of SETTINGS_QPACK_MAX_TABLE_CAPACITY HTTP/3 setting that is
     // negotiated by HTTP client's decoder
     public static final long QPACK_DECODER_MAX_TABLE_CAPACITY;
@@ -88,7 +79,7 @@ public final class Http3ClientProperties {
     // name reference and reference it in a field line section without awaiting
     // decoder's acknowledgement.
     public static final boolean QPACK_ALLOW_BLOCKING_ENCODING = Utils.getBooleanProperty(
-            "jdk.httpclient.qpack.allowBlockingEncoding", false);
+            "jdk.internal.httpclient.qpack.allowBlockingEncoding", false);
 
     // whether localhost is acceptable as an alternative service origin
     public static final boolean ALTSVC_ALLOW_LOCAL_HOST_ORIGIN = Utils.getBooleanProperty(
@@ -134,8 +125,10 @@ public final class Http3ClientProperties {
         long decoderMaxFieldSectionSize = Utils.getLongProperty(
                 "jdk.http.maxHeaderSize",
                 defaultDecoderMaxFieldSectionSize);
+        // Percentage of occupied space in the dynamic table that when
+        // exceeded the dynamic table draining index starts increasing
         int drainingThreshold = Utils.getIntegerProperty(
-                "jdk.httpclient.qpack.encoderDrainingThreshold",
+                "jdk.internal.httpclient.qpack.encoderDrainingThreshold",
                 75);
 
         MAX_DIRECT_CONNECTION_TIMEOUT = maxDirectConnectionTimeout <= 0
@@ -152,8 +145,7 @@ public final class Http3ClientProperties {
                 DEFAULT_SETTINGS_MAX_FIELD_SECTION_SIZE : decoderMaxFieldSectionSize;
         QPACK_DECODER_BLOCKED_STREAMS = decoderBlockedStreams < 0 ?
                 DEFAULT_SETTINGS_QPACK_BLOCKED_STREAMS : decoderBlockedStreams;
-        QPACK_ENCODER_DRAINING_THRESHOLD = drainingThreshold < 0 ?
-                75 : drainingThreshold;
+        QPACK_ENCODER_DRAINING_THRESHOLD = Math.clamp(drainingThreshold, 10, 90);
     }
 
 }

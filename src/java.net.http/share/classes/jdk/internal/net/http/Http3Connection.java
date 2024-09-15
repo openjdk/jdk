@@ -1194,7 +1194,7 @@ public final class Http3Connection implements AutoCloseable {
                 // Send DT capacity update instruction if the peer negotiated non-zero
                 // max table capacity
                 long maxCapacity = peerSettings.qpackMaxTableCapacity();
-                if (QPACK.ENCODER_USE_DYNAMIC_TABLE && maxCapacity > 0) {
+                if (QPACK.ENCODER_TABLE_CAPACITY_LIMIT > 0 && maxCapacity > 0) {
                     long encoderCapacity = Math.min(maxCapacity, QPACK.ENCODER_TABLE_CAPACITY_LIMIT);
                     qpackEncoder().setTableCapacity(encoderCapacity);
                 }
