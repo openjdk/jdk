@@ -39,7 +39,7 @@ import static java.util.zip.ZipConstants64.*;
  * This class is used to represent a ZIP file entry.
  * <P>
  * The combined length of the entry name, the extra field data, the
- * entry comment and {@link ZipFile#CENHDR CEN Header size}, must not
+ * entry comment and {@linkplain #CENHDR CEN Header size}, must not
  * exceed 65,535 bytes. If it does, {@linkplain ZipOutputStream} will
  * throw a {@linkplain ZipException} when writing the ZIP file entry.
  *
