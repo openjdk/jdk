@@ -73,7 +73,6 @@ class Compilation: public StackObj {
   ciMethod*          _method;
   int                _osr_bci;
   IR*                _hir;
-  int                _max_spills;
   FrameMap*          _frame_map;
   C1_MacroAssembler* _masm;
   bool               _has_exception_handlers;
@@ -151,7 +150,6 @@ class Compilation: public StackObj {
   int osr_bci() const                            { return _osr_bci; }
   bool is_osr_compile() const                    { return osr_bci() >= 0; }
   IR* hir() const                                { return _hir; }
-  int max_spills() const                         { return _max_spills; }
   FrameMap* frame_map() const                    { return _frame_map; }
   CodeBuffer* code()                             { return &_code; }
   C1_MacroAssembler* masm() const                { return _masm; }
