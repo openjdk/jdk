@@ -43,3 +43,7 @@ All sources are compiled with `comp.compile()`. First, the sources are stored to
 The compiled code is then loaded with a ClassLoader. The classes can be accessed directly with `comp.getClass(name)`. Specific methods can also be directly invoked with `comp.invoke`.
 
 Should one require the modified classpath that includes the compiled classes, this is available with `comp.getEscapedClassPathOfCompiledClasses()`. This can be necessary if the test launches any other VM's that also access the compiled classes. This is for example necessary when using the IR-Framework.
+
+### Verbose Printing
+
+For debugging purposes, one can enable verbose printing, with `-DCompileFrameworkVerbose=true`.

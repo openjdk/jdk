@@ -35,14 +35,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
-* TODO
+* Utility class, with many helper methods for the Compile Framework.
 */
 class Utils {
     private static final boolean VERBOSE = Boolean.getBoolean("CompileFrameworkVerbose");
     private static final int COMPILE_TIMEOUT = 60;
 
     /**
-    * TODO
+    * Verbose printing, enabled with {@code -DCompileFrameworkVerbose=true}.
     */
     public static void printlnVerbose(String s) {
         if (VERBOSE) {
@@ -51,7 +51,10 @@ class Utils {
     }
 
     /**
-    * TODO
+    * Create a temporary directory, with a unique name, so that there can be no collisions
+    * with multi-threading. Used to create the sources and classes directories. Since they
+    * are unique even across threads, the Compile Framework is multi-threading safe, i.e.
+    * it does not have collisions if two instances generate classes with the same name.
     */
     public static Path getTempDir(String prefix) {
         try {
@@ -62,7 +65,7 @@ class Utils {
     }
 
     /**
-    * TODO
+    * Get all paths in the classpath.
     */
     public static String[] getClassPaths() {
         String separator = File.pathSeparator;
@@ -70,7 +73,7 @@ class Utils {
     }
 
     /**
-    * TODO
+    * Get the path of asmtools, which is shipped with JTREG.
     */
     public static String getAsmToolsPath() {
         for (String path : getClassPaths()) {
@@ -107,7 +110,7 @@ class Utils {
     }
 
     /**
-    * TODO
+    * Write sources to file.
     */
     public static List<Path> writeSourcesToFile(List<SourceCode> sources, Path sourceDir) {
         List<Path> storedFiles = new ArrayList<Path>();
@@ -120,7 +123,7 @@ class Utils {
     }
 
     /**
-    * TODO
+    * Execute a given compilation, given as a {@code command}.
     */
     public static void executeCompileCommand(List<String> command) {
         printlnVerbose("Compile command: " + String.join(" ", command));
@@ -155,14 +158,14 @@ class Utils {
     }
 
     /**
-    * TODO
+    * Return the classpath, appended with the {@code classesDir}.
     */
     public static String getEscapedClassPathAndClassesDir(Path classesDir) {
         String cp = System.getProperty("java.class.path") +
                     File.pathSeparator +
                     classesDir.toAbsolutePath();
-        // Escape the backslash for Windows paths. We are using the path in the command-line
-        // and Java code, so we always want it to be escaped.
+        // Escape the backslash for Windows paths. We are using the path in the
+        // command-line and Java code, so we always want it to be escaped.
         return cp.replace("\\", "\\\\");
     }
 }
