@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public final class JceKeyStore extends KeyStoreSpi {
         Date date; // the creation date of this entry
         byte[] protectedKey;
         Certificate[] chain;
-    };
+    }
 
     // Secret key
     private static final class SecretKeyEntry {
@@ -93,7 +93,7 @@ public final class JceKeyStore extends KeyStoreSpi {
     private static final class TrustedCertEntry {
         Date date; // the creation date of this entry
         Certificate cert;
-    };
+    }
 
     /**
      * Private keys and certificates are stored in a hashtable.
@@ -119,7 +119,7 @@ public final class JceKeyStore extends KeyStoreSpi {
     public Key engineGetKey(String alias, char[] password)
         throws NoSuchAlgorithmException, UnrecoverableKeyException
     {
-        Key key = null;
+        Key key;
 
         Object entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
 
@@ -652,7 +652,7 @@ public final class JceKeyStore extends KeyStoreSpi {
                  * the keystore (such as deleting or modifying key or
                  * certificate entries).
                  */
-                byte digest[] = md.digest();
+                byte[] digest = md.digest();
 
                 dos.write(digest);
                 dos.flush();
@@ -691,8 +691,8 @@ public final class JceKeyStore extends KeyStoreSpi {
             MessageDigest md = null;
             CertificateFactory cf = null;
             Hashtable<String, CertificateFactory> cfs = null;
-            ByteArrayInputStream bais = null;
-            byte[] encoded = null;
+            ByteArrayInputStream bais;
+            byte[] encoded;
             int trustedKeyCount = 0, privateKeyCount = 0, secretKeyCount = 0;
 
             if (stream == null)

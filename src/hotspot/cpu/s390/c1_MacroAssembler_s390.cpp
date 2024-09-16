@@ -72,7 +72,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, Roop);
-    testbit(Address(tmp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
     branch_optimized(Assembler::bcondAllOne, slow_case);
   }
 
@@ -254,7 +254,7 @@ void C1_MacroAssembler::initialize_object(
   // Dtrace support is unimplemented.
   //  if (CURRENT_ENV->dtrace_alloc_probes()) {
   //    assert(obj == rax, "must be");
-  //    call(RuntimeAddress(Runtime1::entry_for (Runtime1::dtrace_object_alloc_id)));
+  //    call(RuntimeAddress(Runtime1::entry_for (C1StubId::dtrace_object_alloc_id)));
   //  }
 
   verify_oop(obj, FILE_AND_LINE);
@@ -315,7 +315,7 @@ void C1_MacroAssembler::allocate_array(
   // Dtrace support is unimplemented.
   // if (CURRENT_ENV->dtrace_alloc_probes()) {
   //   assert(obj == rax, "must be");
-  //   call(RuntimeAddress(Runtime1::entry_for (Runtime1::dtrace_object_alloc_id)));
+  //   call(RuntimeAddress(Runtime1::entry_for (C1StubId::dtrace_object_alloc_id)));
   // }
 
   verify_oop(obj, FILE_AND_LINE);

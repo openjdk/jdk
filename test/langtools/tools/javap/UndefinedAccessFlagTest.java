@@ -70,7 +70,7 @@ public class UndefinedAccessFlagTest {
         )) {
             cm = cf.parse(is.readAllBytes());
         }
-        var bytes = cf.transform(cm, (cb, ce) -> {
+        var bytes = cf.transformClass(cm, (cb, ce) -> {
             switch (ce) {
                 case AccessFlags flags when location == TestLocation.CLASS -> cb
                     .withFlags(flags.flagsMask() | ACC_PRIVATE);

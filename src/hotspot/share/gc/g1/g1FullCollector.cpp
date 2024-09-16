@@ -164,7 +164,7 @@ G1FullCollector::~G1FullCollector() {
   FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
 }
 
-class PrepareRegionsClosure : public HeapRegionClosure {
+class PrepareRegionsClosure : public G1HeapRegionClosure {
   G1FullCollector* _collector;
 
 public:
@@ -246,6 +246,8 @@ void G1FullCollector::complete_collection() {
   _heap->prepare_for_mutator_after_full_collection();
 
   _heap->resize_all_tlabs();
+
+  _heap->young_regions_cardset()->clear();
 
   _heap->policy()->record_full_collection_end();
   _heap->gc_epilogue(true);

@@ -41,8 +41,6 @@
 // - - NativeJump
 // - - NativeGeneralJump
 // - - NativeIllegalInstruction
-// - - NativeCallTrampolineStub
-// - - NativeMembar
 // - - NativePostCallNop
 // - - NativeDeoptInstruction
 
@@ -69,30 +67,31 @@ class NativeInstruction {
   bool is_movptr1()                         const { return MacroAssembler::is_movptr1_at(addr_at(0));     }
   bool is_movptr2()                         const { return MacroAssembler::is_movptr2_at(addr_at(0));     }
   bool is_auipc()                           const { return MacroAssembler::is_auipc_at(addr_at(0));       }
-  bool is_call()                            const { return MacroAssembler::is_call_at(addr_at(0));        }
   bool is_jump()                            const { return MacroAssembler::is_jump_at(addr_at(0));        }
+  bool is_call()                            const { return is_call_at(addr_at(0));                        }
+  static bool is_call_at(address addr);
 
-  inline bool is_nop() const;
-  inline bool is_jump_or_nop();
+  bool is_nop() const;
+  bool is_jump_or_nop();
   bool is_safepoint_poll();
   bool is_sigill_not_entrant();
   bool is_stop();
 
  protected:
-  address addr_at(int offset) const    { return address(this) + offset; }
-
-  jint int_at(int offset) const        { return (jint)Bytes::get_native_u4(addr_at(offset)); }
-  juint uint_at(int offset) const      { return Bytes::get_native_u4(addr_at(offset)); }
-
-  address ptr_at(int offset) const     { return (address)Bytes::get_native_u8(addr_at(offset)); }
-
-  oop  oop_at (int offset) const       { return cast_to_oop(Bytes::get_native_u8(addr_at(offset))); }
+  address addr_at(int offset) const { return address(this) + offset; }
+  jint     int_at(int offset) const { return (jint)      Bytes::get_native_u4(addr_at(offset));  }
+  juint   uint_at(int offset) const { return             Bytes::get_native_u4(addr_at(offset));  }
+  address  ptr_at(int offset) const { return (address)   Bytes::get_native_u8(addr_at(offset));  }
+  oop      oop_at(int offset) const { return cast_to_oop(Bytes::get_native_u8(addr_at(offset))); }
 
 
-  void set_int_at(int offset, jint i)        { Bytes::put_native_u4(addr_at(offset), i); }
-  void set_uint_at(int offset, jint i)       { Bytes::put_native_u4(addr_at(offset), i); }
-  void set_ptr_at (int offset, address ptr)  { Bytes::put_native_u8(addr_at(offset), (u8)ptr); }
-  void set_oop_at (int offset, oop o)        { Bytes::put_native_u8(addr_at(offset), cast_from_oop<u8>(o)); }
+  void  set_int_at(int offset, jint i)      { Bytes::put_native_u4(addr_at(offset), i); }
+  void set_uint_at(int offset, jint i)      { Bytes::put_native_u4(addr_at(offset), i); }
+  void  set_ptr_at(int offset, address ptr) { Bytes::put_native_u8(addr_at(offset), (u8)ptr); }
+  void  set_oop_at(int offset, oop o)       { Bytes::put_native_u8(addr_at(offset), cast_from_oop<u8>(o)); }
+
+  static void     set_data64_at(address dest, uint64_t data) { Bytes::put_native_u8(dest, (u8)data); }
+  static uint64_t get_data64_at(address src)                 { return Bytes::get_native_u8(src); }
 
  public:
 
@@ -103,98 +102,55 @@ class NativeInstruction {
   }
 };
 
-inline NativeInstruction* nativeInstruction_at(address addr) {
+NativeInstruction* nativeInstruction_at(address addr) {
   return (NativeInstruction*)addr;
 }
 
-// The natural type of an RISCV instruction is uint32_t
-inline NativeInstruction* nativeInstruction_at(uint32_t *addr) {
-  return (NativeInstruction*)addr;
-}
+NativeCall* nativeCall_at(address addr);
+NativeCall* nativeCall_before(address return_address);
 
-inline NativeCall* nativeCall_at(address addr);
 // The NativeCall is an abstraction for accessing/manipulating native
 // call instructions (used to manipulate inline caches, primitive &
 // DSO calls, etc.).
-
-class NativeCall: public NativeInstruction {
- public:
-  enum RISCV_specific_constants {
-    instruction_size            =    4,
-    instruction_offset          =    0,
-    displacement_offset         =    0,
-    return_address_offset       =    4
+class NativeCall: private NativeInstruction {
+ // private: when common code is using byte_size()
+ private:
+  enum {
+    // Use byte_size() as it can be changed in runtime
+    // Since instruction_size exists on NativeInstruction we need
+    // to overload and hide it.
+    instruction_size = 3 * Assembler::instruction_size // auipc + ld + jalr
   };
+ public:
 
-  static int byte_size()                    { return instruction_size; }
-  address instruction_address() const       { return addr_at(instruction_offset); }
-  address next_instruction_address() const  { return addr_at(return_address_offset); }
-  address return_address() const            { return addr_at(return_address_offset); }
-  address destination() const;
-
-  void set_destination(address dest) {
-    assert(is_jal(), "Should be jal instruction!");
-    intptr_t offset = (intptr_t)(dest - instruction_address());
-    assert((offset & 0x1) == 0, "bad alignment");
-    assert(Assembler::is_simm21(offset), "encoding constraint");
-    unsigned int insn = 0b1101111; // jal
-    address pInsn = (address)(&insn);
-    Assembler::patch(pInsn, 31, 31, (offset >> 20) & 0x1);
-    Assembler::patch(pInsn, 30, 21, (offset >> 1) & 0x3ff);
-    Assembler::patch(pInsn, 20, 20, (offset >> 11) & 0x1);
-    Assembler::patch(pInsn, 19, 12, (offset >> 12) & 0xff);
-    Assembler::patch(pInsn, 11, 7, ra->encoding()); // Rd must be x1, need ra
-    set_int_at(displacement_offset, insn);
+  static int byte_size() {
+    if (UseTrampolines) {
+      return NativeInstruction::instruction_size; // jal
+    } else {
+      return 3 * NativeInstruction::instruction_size; // auipc + ld + jalr
+    }
   }
+  // Creation
+  friend NativeCall* nativeCall_at(address addr);
+  friend NativeCall* nativeCall_before(address return_address);
+
+  address instruction_address() const;
+  address next_instruction_address() const;
+  address return_address() const;
+  address destination() const;
+  address reloc_destination(address orig_address);
 
   void verify_alignment() {} // do nothing on riscv
   void verify();
   void print();
 
-  // Creation
-  inline friend NativeCall* nativeCall_at(address addr);
-  inline friend NativeCall* nativeCall_before(address return_address);
+  void set_destination(address dest);
+  bool set_destination_mt_safe(address dest, bool assert_lock = true);
+  bool reloc_set_destination(address dest);
 
-  static bool is_call_before(address return_address) {
-    return MacroAssembler::is_call_at(return_address - NativeCall::return_address_offset);
-  }
-
-  // MT-safe patching of a call instruction.
-  static void insert(address code_pos, address entry);
-
-  static void replace_mt_safe(address instr_addr, address code_buffer);
-
-  // Similar to replace_mt_safe, but just changes the destination.  The
-  // important thing is that free-running threads are able to execute
-  // this call instruction at all times.  If the call is an immediate BL
-  // instruction we can simply rely on atomicity of 32-bit writes to
-  // make sure other threads will see no intermediate states.
-
-  // We cannot rely on locks here, since the free-running threads must run at
-  // full speed.
-  //
-  // Used in the runtime linkage of calls; see class CompiledIC.
-  // (Cf. 4506997 and 4479829, where threads witnessed garbage displacements.)
-
-  // The parameter assert_lock disables the assertion during code generation.
-  void set_destination_mt_safe(address dest, bool assert_lock = true);
-
-  address get_trampoline();
+  static bool is_at(address addr);
+  static bool is_call_before(address return_address);
 };
-
-inline NativeCall* nativeCall_at(address addr) {
-  assert_cond(addr != nullptr);
-  NativeCall* call = (NativeCall*)(addr - NativeCall::instruction_offset);
-  DEBUG_ONLY(call->verify());
-  return call;
-}
-
-inline NativeCall* nativeCall_before(address return_address) {
-  assert_cond(return_address != nullptr);
-  NativeCall* call = (NativeCall*)(return_address - NativeCall::return_address_offset);
-  DEBUG_ONLY(call->verify());
-  return call;
-}
 
 // An interface for accessing/manipulating native mov reg, imm instructions.
 // (used to manipulate inlined 64-bit data calls, etc.)
@@ -364,27 +320,6 @@ inline bool NativeInstruction::is_nop() const {
 
 inline bool NativeInstruction::is_jump_or_nop() {
   return is_nop() || is_jump();
-}
-
-// Call trampoline stubs.
-class NativeCallTrampolineStub : public NativeInstruction {
- public:
-
-  enum RISCV_specific_constants {
-    // Refer to function emit_trampoline_stub.
-    instruction_size = MacroAssembler::trampoline_stub_instruction_size, // auipc + ld + jr + target address
-    data_offset      = MacroAssembler::trampoline_stub_data_offset,      // auipc + ld + jr
-  };
-
-  address destination(nmethod *nm = nullptr) const;
-  void set_destination(address new_destination);
-  ptrdiff_t destination_offset() const;
-};
-
-inline NativeCallTrampolineStub* nativeCallTrampolineStub_at(address addr) {
-  assert_cond(addr != nullptr);
-  assert(MacroAssembler::is_trampoline_stub_at(addr), "no call trampoline found");
-  return (NativeCallTrampolineStub*)addr;
 }
 
 // A NativePostCallNop takes the form of three instructions:

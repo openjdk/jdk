@@ -264,6 +264,8 @@ class VM_Version : public Abstract_VM_Version {
   static uint32_t cpu_vector_length();
   static uint32_t _initial_vector_length;
 
+  static void common_initialize();
+
 #ifdef COMPILER2
   static void c2_initialize();
 #endif // COMPILER2

@@ -24,17 +24,15 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.ConstantDesc;
+import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
 
-import java.lang.classfile.Attribute;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassReader;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.*;
 import java.util.Objects;
@@ -65,8 +63,8 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     private PoolEntry[] myEntries;
     private BootstrapMethodEntryImpl[] myBsmEntries;
     private boolean doneFullScan;
-    private EntryMap<PoolEntry> map;
-    private EntryMap<BootstrapMethodEntryImpl> bsmMap;
+    private EntryMap map;
+    private EntryMap bsmMap;
 
     public SplitConstantPool() {
         this.size = 1;
@@ -135,8 +133,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         return this == other || parent == other;
     }
 
-    @Override
-    public boolean writeBootstrapMethods(BufWriter buf) {
+    public boolean writeBootstrapMethods(BufWriterImpl buf) {
         if (bsmSize == 0)
             return false;
         int pos = buf.size();
@@ -145,15 +142,15 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             for (int i = parentBsmSize; i < bsmSize; i++)
                 bootstrapMethodEntry(i).writeTo(buf);
             int attrLen = buf.size() - pos;
-            buf.patchInt(pos + 2, 4, attrLen - 6);
-            buf.patchInt(pos + 6, 2, bsmSize);
+            buf.patchInt(pos + 2, attrLen - 6);
+            buf.patchU2(pos + 6, bsmSize);
         }
         else {
-            Attribute<BootstrapMethodsAttribute> a
+            UnboundAttribute<BootstrapMethodsAttribute> a
                     = new UnboundAttribute.AdHocAttribute<>(Attributes.bootstrapMethods()) {
 
                 @Override
-                public void writeBody(BufWriter b) {
+                public void writeBody(BufWriterImpl b) {
                     buf.writeU2(bsmSize);
                     for (int i = 0; i < bsmSize; i++)
                         bootstrapMethodEntry(i).writeTo(buf);
@@ -164,8 +161,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         return true;
     }
 
-    @Override
-    public void writeTo(BufWriter buf) {
+    void writeTo(BufWriterImpl buf) {
         int writeFrom = 1;
         if (size() >= 65536) {
             throw new IllegalArgumentException(String.format("Constant pool is too large %d", size()));
@@ -176,20 +172,16 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             writeFrom = parent.size();
         }
         for (int i = writeFrom; i < size(); ) {
-            PoolEntry info = entryByIndex(i);
+            var info = (AbstractPoolEntry) entryByIndex(i);
             info.writeTo(buf);
             i += info.width();
         }
     }
 
-    private EntryMap<PoolEntry> map() {
+    private EntryMap map() {
         if (map == null) {
-            map = new EntryMap<>(Math.max(size, 1024), .75f) {
-                @Override
-                protected PoolEntry fetchElement(int index) {
-                    return entryByIndex(index);
-                }
-            };
+            map = new EntryMap(Math.max(size, 1024), .75f);
+
             // Doing a full scan here yields fall-off-the-cliff performance results,
             // especially if we only need a few entries that are already
             // inflated (such as attribute names).
@@ -224,14 +216,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         doneFullScan = true;
     }
 
-    private EntryMap<BootstrapMethodEntryImpl> bsmMap() {
+    private EntryMap bsmMap() {
         if (bsmMap == null) {
-            bsmMap = new EntryMap<>(Math.max(bsmSize, 16), .75f) {
-                @Override
-                protected BootstrapMethodEntryImpl fetchElement(int index) {
-                    return bootstrapMethodEntry(index);
-                }
-            };
+            bsmMap = new EntryMap(Math.max(bsmSize, 16), .75f);
             for (int i=0; i<parentBsmSize; i++) {
                 BootstrapMethodEntryImpl bsm = parent.bootstrapMethodEntry(i);
                 bsmMap.put(bsm.hash, bsm.index);
@@ -270,19 +257,70 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         return bsm;
     }
 
-    private <T extends ConstantDesc> PoolEntry findPrimitiveEntry(int tag, T val) {
-        int hash = AbstractPoolEntry.hash1(tag, val.hashCode());
-        EntryMap<PoolEntry> map = map();
+    private IntegerEntry findIntEntry(int val) {
+        int hash = AbstractPoolEntry.hash1(TAG_INTEGER, Integer.hashCode(val));
+        EntryMap map = map();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
-            PoolEntry e = map.getElementByToken(token);
-            if (e.tag() == tag
-                && e instanceof AbstractPoolEntry.PrimitiveEntry<?> ce
-                && ce.value().equals(val))
-                return e;
+            PoolEntry e = entryByIndex(map.getIndexByToken(token));
+            if (e.tag() == TAG_INTEGER
+                    && e instanceof AbstractPoolEntry.IntegerEntryImpl ce
+                    && ce.intValue() == val)
+                return ce;
         }
         if (!doneFullScan) {
             fullScan();
-            return findPrimitiveEntry(tag, val);
+            return findIntEntry(val);
+        }
+        return null;
+    }
+
+    private LongEntry findLongEntry(long val) {
+        int hash = AbstractPoolEntry.hash1(TAG_LONG, Long.hashCode(val));
+        EntryMap map = map();
+        for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
+            PoolEntry e = entryByIndex(map.getIndexByToken(token));
+            if (e.tag() == TAG_LONG
+                    && e instanceof AbstractPoolEntry.LongEntryImpl ce
+                    && ce.longValue() == val)
+                return ce;
+        }
+        if (!doneFullScan) {
+            fullScan();
+            return findLongEntry(val);
+        }
+        return null;
+    }
+
+    private FloatEntry findFloatEntry(float val) {
+        int hash = AbstractPoolEntry.hash1(TAG_FLOAT, Float.hashCode(val));
+        EntryMap map = map();
+        for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
+            PoolEntry e = entryByIndex(map.getIndexByToken(token));
+            if (e.tag() == TAG_FLOAT
+                    && e instanceof AbstractPoolEntry.FloatEntryImpl ce
+                    && ce.floatValue() == val)
+                return ce;
+        }
+        if (!doneFullScan) {
+            fullScan();
+            return findFloatEntry(val);
+        }
+        return null;
+    }
+
+    private DoubleEntry findDoubleEntry(double val) {
+        int hash = AbstractPoolEntry.hash1(TAG_DOUBLE, Double.hashCode(val));
+        EntryMap map = map();
+        for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
+            PoolEntry e = entryByIndex(map.getIndexByToken(token));
+            if (e.tag() == TAG_DOUBLE
+                    && e instanceof AbstractPoolEntry.DoubleEntryImpl ce
+                    && ce.doubleValue() == val)
+                return ce;
+        }
+        if (!doneFullScan) {
+            fullScan();
+            return findDoubleEntry(val);
         }
         return null;
     }
@@ -290,9 +328,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     private<T extends AbstractPoolEntry> AbstractPoolEntry findEntry(int tag, T ref1) {
         // invariant: canWriteDirect(ref1.constantPool())
         int hash = AbstractPoolEntry.hash1(tag, ref1.index());
-        EntryMap<PoolEntry> map = map();
+        EntryMap map = map();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
-            PoolEntry e = map.getElementByToken(token);
+            PoolEntry e = entryByIndex(map.getIndexByToken(token));
             if (e.tag() == tag
                 && e instanceof AbstractPoolEntry.AbstractRefEntry<?> re
                 && re.ref1 == ref1)
@@ -309,9 +347,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             AbstractPoolEntry findEntry(int tag, T ref1, U ref2) {
         // invariant: canWriteDirect(ref1.constantPool()), canWriteDirect(ref2.constantPool())
         int hash = AbstractPoolEntry.hash2(tag, ref1.index(), ref2.index());
-        EntryMap<PoolEntry> map = map();
+        EntryMap map = map();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
-            PoolEntry e = map.getElementByToken(token);
+            PoolEntry e = entryByIndex(map.getIndexByToken(token));
             if (e.tag() == tag
                     && e instanceof AbstractPoolEntry.AbstractRefsEntry<?, ?> re
                     && re.ref1 == ref1
@@ -327,10 +365,10 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     }
 
     private AbstractPoolEntry.Utf8EntryImpl tryFindUtf8(int hash, String target) {
-        EntryMap<PoolEntry> map = map();
+        EntryMap map = map();
         for (int token = map.firstToken(hash); token != -1;
              token = map.nextToken(hash, token)) {
-            PoolEntry e = map.getElementByToken(token);
+            PoolEntry e = entryByIndex(map.getIndexByToken(token));
             if (e.tag() == ClassFile.TAG_UTF8
                 && e instanceof AbstractPoolEntry.Utf8EntryImpl ce
                 && ce.hashCode() == hash
@@ -345,9 +383,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     }
 
     private AbstractPoolEntry.Utf8EntryImpl tryFindUtf8(int hash, AbstractPoolEntry.Utf8EntryImpl target) {
-        EntryMap<PoolEntry> map = map();
+        EntryMap map = map();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
-            PoolEntry e = map.getElementByToken(token);
+            PoolEntry e = entryByIndex(map.getIndexByToken(token));
             if (e.tag() == ClassFile.TAG_UTF8
                 && e instanceof AbstractPoolEntry.Utf8EntryImpl ce
                 && target.equalsUtf8(ce))
@@ -358,6 +396,20 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             return tryFindUtf8(hash, target);
         }
         return null;
+    }
+
+    @Override
+    public Utf8Entry utf8Entry(ClassDesc desc) {
+        var utf8 = utf8Entry(desc.descriptorString());
+        utf8.typeSym = desc;
+        return utf8;
+    }
+
+    @Override
+    public Utf8Entry utf8Entry(MethodTypeDesc desc) {
+        var utf8 = utf8Entry(desc.descriptorString());
+        utf8.typeSym = desc;
+        return utf8;
     }
 
     @Override
@@ -442,9 +494,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public MethodTypeEntry methodTypeEntry(MethodTypeDesc descriptor) {
-        var ret = (AbstractPoolEntry.MethodTypeEntryImpl)methodTypeEntry(utf8Entry(descriptor.descriptorString()));
-        ret.sym = descriptor;
-        return ret;
+        return methodTypeEntry(utf8Entry(descriptor));
     }
 
     @Override
@@ -466,9 +516,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         }
 
         int hash = AbstractPoolEntry.hash2(TAG_METHODHANDLE, refKind, reference.index());
-        EntryMap<PoolEntry> map1 = map();
+        EntryMap map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
-            PoolEntry e = map1.getElementByToken(token);
+            PoolEntry e = entryByIndex(map1.getIndexByToken(token));
             if (e.tag() == TAG_METHODHANDLE
                 && e instanceof AbstractPoolEntry.MethodHandleEntryImpl ce
                 && ce.kind() == refKind && ce.reference() == reference)
@@ -492,9 +542,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             nameAndType = nameAndTypeEntry(nameAndType.name(), nameAndType.type());
         int hash = AbstractPoolEntry.hash2(TAG_INVOKEDYNAMIC,
                 bootstrapMethodEntry.bsmIndex(), nameAndType.index());
-        EntryMap<PoolEntry> map1 = map();
+        EntryMap map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
-            PoolEntry e = map1.getElementByToken(token);
+            PoolEntry e = entryByIndex(map1.getIndexByToken(token));
             if (e.tag() == TAG_INVOKEDYNAMIC
                 && e instanceof AbstractPoolEntry.InvokeDynamicEntryImpl ce
                 && ce.bootstrap() == bootstrapMethodEntry && ce.nameAndType() == nameAndType)
@@ -523,9 +573,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             nameAndType = nameAndTypeEntry(nameAndType.name(), nameAndType.type());
         int hash = AbstractPoolEntry.hash2(TAG_CONSTANTDYNAMIC,
                 bootstrapMethodEntry.bsmIndex(), nameAndType.index());
-        EntryMap<PoolEntry> map1 = map();
+        EntryMap map1 = map();
         for (int token = map1.firstToken(hash); token != -1; token = map1.nextToken(hash, token)) {
-            PoolEntry e = map1.getElementByToken(token);
+            PoolEntry e = entryByIndex(map1.getIndexByToken(token));
             if (e.tag() == TAG_CONSTANTDYNAMIC
                 && e instanceof AbstractPoolEntry.ConstantDynamicEntryImpl ce
                 && ce.bootstrap() == bootstrapMethodEntry && ce.nameAndType() == nameAndType)
@@ -546,25 +596,25 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public IntegerEntry intEntry(int value) {
-        var e = (IntegerEntry) findPrimitiveEntry(TAG_INTEGER, value);
+        var e = findIntEntry(value);
         return e == null ? internalAdd(new AbstractPoolEntry.IntegerEntryImpl(this, size, value)) : e;
     }
 
     @Override
     public FloatEntry floatEntry(float value) {
-        var e = (FloatEntry) findPrimitiveEntry(TAG_FLOAT, value);
+        var e = findFloatEntry(value);
         return e == null ? internalAdd(new AbstractPoolEntry.FloatEntryImpl(this, size, value)) : e;
     }
 
     @Override
     public LongEntry longEntry(long value) {
-        var e = (LongEntry) findPrimitiveEntry(TAG_LONG, value);
+        var e = findLongEntry(value);
         return e == null ? internalAdd(new AbstractPoolEntry.LongEntryImpl(this, size, value)) : e;
     }
 
     @Override
     public DoubleEntry doubleEntry(double value) {
-        var e = (DoubleEntry) findPrimitiveEntry(TAG_DOUBLE, value);
+        var e = findDoubleEntry(value);
         return e == null ? internalAdd(new AbstractPoolEntry.DoubleEntryImpl(this, size, value)) : e;
     }
 
@@ -593,9 +643,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         }
         AbstractPoolEntry.MethodHandleEntryImpl mre = (AbstractPoolEntry.MethodHandleEntryImpl) methodReference;
         int hash = BootstrapMethodEntryImpl.computeHashCode(mre, arguments);
-        EntryMap<BootstrapMethodEntryImpl> map = bsmMap();
+        EntryMap map = bsmMap();
         for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
-            BootstrapMethodEntryImpl e = map.getElementByToken(token);
+            BootstrapMethodEntryImpl e = bootstrapMethodEntry(map.getIndexByToken(token));
             if (e.bootstrapMethod() == mre && e.arguments().equals(arguments)) {
                 return e;
             }

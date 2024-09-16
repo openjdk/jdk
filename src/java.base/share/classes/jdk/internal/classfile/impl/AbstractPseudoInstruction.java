@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,7 +154,8 @@ public abstract sealed class AbstractPseudoInstruction
 
     }
 
-    private abstract static sealed class AbstractLocalPseudo extends AbstractPseudoInstruction {
+    private abstract static sealed class AbstractLocalPseudo extends AbstractPseudoInstruction
+            implements Util.WritableLocalVariable {
         protected final int slot;
         protected final Utf8Entry name;
         protected final Utf8Entry descriptor;
@@ -189,8 +190,9 @@ public abstract sealed class AbstractPseudoInstruction
             return endScope;
         }
 
-        public boolean writeTo(BufWriter b) {
-            var lc = ((BufWriterImpl)b).labelContext();
+        @Override
+        public boolean writeLocalTo(BufWriterImpl b) {
+            var lc = b.labelContext();
             int startBci = lc.labelToBci(startScope());
             int endBci = lc.labelToBci(endScope());
             if (startBci == -1 || endBci == -1) {

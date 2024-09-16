@@ -191,9 +191,10 @@ void outputStream::print_raw(const char* str, size_t len) {
   write(str, len);
 }
 
-void outputStream::fill_to(int col) {
-  int need_fill = col - position();
+int outputStream::fill_to(int col) {
+  const int need_fill = MAX2(col - position(), 0);
   sp(need_fill);
+  return need_fill;
 }
 
 void outputStream::move_to(int col, int slop, int min_space) {
@@ -1037,7 +1038,7 @@ void bufferedStream::write(const char* s, size_t len) {
     const size_t reasonable_cap = MAX2(100 * M, buffer_max * 2);
     if (end > reasonable_cap) {
       // In debug VM, assert right away.
-      assert(false, "Exceeded max buffer size for this string.");
+      assert(false, "Exceeded max buffer size for this string (\"%.200s...\").", buffer);
       // Release VM: silently truncate. We do this since these kind of errors
       // are both difficult to predict with testing (depending on logging content)
       // and usually not serious enough to kill a production VM for it.

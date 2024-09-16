@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 // are compressed into -1, and all positive answers compressed to 1.
 class SubNode : public Node {
 public:
-  SubNode( Node *in1, Node *in2 ) : Node(0,in1,in2) {
+  SubNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
     init_class_id(Class_Sub);
   }
 
@@ -347,6 +347,7 @@ public:
   BoolNode* negate(PhaseGVN* phase);
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  const Type* Value_cmpu_and_mask(PhaseValues* phase) const;
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *bottom_type() const { return TypeInt::BOOL; }
   uint match_edge(uint idx) const { return 0; }
@@ -363,7 +364,7 @@ public:
 // for finding this pattern in the graph.
 class AbsNode : public Node {
 public:
-  AbsNode( Node *value ) : Node(0,value) {}
+  AbsNode( Node *value ) : Node(nullptr,value) {}
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
@@ -420,7 +421,7 @@ public:
 // If p < q, return -1 else return 0.  Nice for flow-free idioms.
 class CmpLTMaskNode : public Node {
 public:
-  CmpLTMaskNode( Node *p, Node *q ) : Node(0, p, q) {}
+  CmpLTMaskNode( Node *p, Node *q ) : Node(nullptr, p, q) {}
   virtual int Opcode() const;
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -430,7 +431,7 @@ public:
 //------------------------------NegNode----------------------------------------
 class NegNode : public Node {
 public:
-  NegNode(Node* in1) : Node(0, in1) {
+  NegNode(Node* in1) : Node(nullptr, in1) {
     init_class_id(Class_Neg);
   }
 };

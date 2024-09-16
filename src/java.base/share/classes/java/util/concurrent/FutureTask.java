@@ -205,6 +205,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
         return report(s);
     }
 
+    /**
+     * @since 19
+     */
     @Override
     public V resultNow() {
         switch (state()) {    // Future.State
@@ -221,6 +224,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
         }
     }
 
+    /**
+     * @since 19
+     */
     @Override
     public Throwable exceptionNow() {
         switch (state()) {    // Future.State
@@ -236,6 +242,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
         }
     }
 
+    /**
+     * @since 19
+     */
     @Override
     public State state() {
         int s = state;

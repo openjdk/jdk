@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +224,7 @@ void G1NUMA::request_memory_on_node(void* aligned_address, size_t size_in_bytes,
 
 uint G1NUMA::max_search_depth() const {
   // Multiple of 3 is just random number to limit iterations.
-  // There would be some cases that 1 page may be consisted of multiple HeapRegions.
+  // There would be some cases that 1 page may be consisted of multiple heap regions.
   return 3 * MAX2((uint)(page_size() / region_size()), (uint)1) * num_active_nodes();
 }
 

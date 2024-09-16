@@ -282,8 +282,7 @@ public class Inflater {
     }
 
     /**
-     * Returns true if a preset dictionary is needed for decompression.
-     * @return true if a preset dictionary is needed for decompression
+     * {@return true if a preset dictionary is needed for decompression}
      * @see Inflater#setDictionary
      */
     public boolean needsDictionary() {
@@ -293,10 +292,8 @@ public class Inflater {
     }
 
     /**
-     * Returns true if the end of the compressed data stream has been
-     * reached.
-     * @return true if the end of the compressed data stream has been
-     * reached
+     * {@return true if the end of the compressed data stream has been
+     * reached}
      */
     public boolean finished() {
         synchronized (zsRef) {
@@ -602,8 +599,7 @@ public class Inflater {
     }
 
     /**
-     * Returns the ADLER-32 value of the uncompressed data.
-     * @return the ADLER-32 value of the uncompressed data
+     * {@return the ADLER-32 value of the uncompressed data}
      */
     public int getAdler() {
         synchronized (zsRef) {

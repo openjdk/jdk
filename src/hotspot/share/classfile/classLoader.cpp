@@ -470,7 +470,7 @@ bool ClassPathImageEntry::is_modules_image() const {
 void ClassLoader::exit_with_path_failure(const char* error, const char* message) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   tty->print_cr("Hint: enable -Xlog:class+path=info to diagnose the failure");
-  vm_exit_during_initialization(error, message);
+  vm_exit_during_cds_dumping(error, message);
 }
 #endif
 

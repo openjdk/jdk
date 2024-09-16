@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,8 +120,8 @@ public class TestMemberInheritance extends JavadocTester {
         checkOutput("pkg2/DocumentedNonGenericChild.html", true,
                 """
                     <section class="class-description" id="class-description">
-                    <div class="horizontal-scroll">
                     <hr>
+                    <div class="horizontal-scroll">
                     <div class="type-signature"><span class="modifiers">public abstract class </span\
                     ><span class="element-name type-name-label">DocumentedNonGenericChild</span>
                     <span class="extends-implements">extends java.lang.Object</span></div>

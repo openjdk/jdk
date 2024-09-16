@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,8 @@ import java.lang.classfile.instruction.TypeCheckInstruction;
 
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.classfile.impl.BytecodeHelpers.handleDescToHandleInfo;
-import jdk.internal.classfile.impl.TransformingCodeBuilder;
+
+import jdk.internal.classfile.impl.TransformImpl;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -97,6 +98,27 @@ import jdk.internal.javac.PreviewFeature;
  * #with(ClassFileElement)} or concretely by calling the various {@code withXxx}
  * methods.
  *
+ * <h2>Instruction Factories</h2>
+ * {@code CodeBuilder} provides convenience methods to create instructions (See
+ * JVMS {@jvms 6.5} Instructions) by their mnemonic, taking necessary operands.
+ * <ul>
+ * <li>Instructions that encode their operands in their opcode, such as {@code
+ * aload_<n>}, share their factories with their generic version like {@link
+ * #aload aload}. Note that some constant instructions, such as {@link #iconst_1
+ * iconst_1}, do not have generic versions, and thus have their own factories.
+ * <li>Instructions that accept wide operands, such as {@code ldc2_w} or {@code
+ * wide}, share their factories with their regular version like {@link #ldc}. Note
+ * that {@link #goto_w goto_w} has its own factory to avoid {@linkplain
+ * ClassFile.ShortJumpsOption short jumps}.
+ * <li>The {@code goto}, {@code instanceof}, {@code new}, and {@code return}
+ * instructions' factories are named {@link #goto_ goto_}, {@link #instanceOf
+ * instanceOf}, {@link #new_ new_}, and {@link #return_() return_} respectively,
+ * due to clashes with keywords in the Java programming language.
+ * <li>Factories are not provided for instructions {@code jsr}, {@code jsr_w},
+ * {@code ret}, and {@code wide ret}, which cannot appear in class files with
+ * major version {@value ClassFile#JAVA_7_VERSION} or higher. (JVMS {@jvms 4.9.1})
+ * </ul>
+ *
  * @see CodeTransform
  *
  * @since 22
@@ -105,12 +127,6 @@ import jdk.internal.javac.PreviewFeature;
 public sealed interface CodeBuilder
         extends ClassFileBuilder<CodeElement, CodeBuilder>
         permits CodeBuilder.BlockCodeBuilder, ChainedCodeBuilder, TerminalCodeBuilder, NonterminalCodeBuilder {
-
-    /**
-     * {@return the {@link CodeModel} representing the method body being transformed,
-     * if this code builder represents the transformation of some {@link CodeModel}}
-     */
-    Optional<CodeModel> original();
 
     /** {@return a fresh unbound label} */
     Label newLabel();
@@ -130,7 +146,7 @@ public sealed interface CodeBuilder
     /**
      * {@return the local variable slot associated with the receiver}.
      *
-     * @throws IllegalStateException if this is not a static method
+     * @throws IllegalStateException if this is a static method
      */
     int receiverSlot();
 
@@ -169,9 +185,9 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder transforming(CodeTransform transform, Consumer<CodeBuilder> handler) {
-        var resolved = transform.resolve(this);
+        var resolved = TransformImpl.resolve(transform, this);
         resolved.startHandler().run();
-        handler.accept(new TransformingCodeBuilder(this, resolved.consumer()));
+        handler.accept(new ChainedCodeBuilder(this, resolved.consumer()));
         resolved.endHandler().run();
         return this;
     }
@@ -246,7 +262,7 @@ public sealed interface CodeBuilder
      */
     default CodeBuilder ifThen(Opcode opcode,
                                Consumer<BlockCodeBuilder> thenHandler) {
-        if (opcode.kind() != Opcode.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VoidType) {
+        if (opcode.kind() != Opcode.Kind.BRANCH || BytecodeHelpers.isUnconditionalBranch(opcode)) {
             throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
         }
 
@@ -296,7 +312,7 @@ public sealed interface CodeBuilder
     default CodeBuilder ifThenElse(Opcode opcode,
                                    Consumer<BlockCodeBuilder> thenHandler,
                                    Consumer<BlockCodeBuilder> elseHandler) {
-        if (opcode.kind() != Opcode.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VoidType) {
+        if (opcode.kind() != Opcode.Kind.BRANCH || BytecodeHelpers.isUnconditionalBranch(opcode)) {
             throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
         }
 
@@ -534,83 +550,58 @@ public sealed interface CodeBuilder
      * @param fromType the source type
      * @param toType the target type
      * @return this builder
-     * @throws IllegalArgumentException for conversions of {@code VoidType} or {@code ReferenceType}
+     * @throws IllegalArgumentException for conversions of {@link TypeKind#VOID void} or
+     *         {@link TypeKind#REFERENCE reference}
      * @since 23
      */
     default CodeBuilder conversion(TypeKind fromType, TypeKind toType) {
-        return switch (fromType) {
-            case IntType, ByteType, CharType, ShortType, BooleanType ->
-                    switch (toType) {
-                        case IntType -> this;
-                        case LongType -> i2l();
-                        case DoubleType -> i2d();
-                        case FloatType -> i2f();
-                        case ByteType -> i2b();
-                        case CharType -> i2c();
-                        case ShortType -> i2s();
-                        case BooleanType -> iconst_1().iand();
-                        case VoidType, ReferenceType ->
-                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-                    };
-            case LongType ->
-                    switch (toType) {
-                        case IntType -> l2i();
-                        case LongType -> this;
-                        case DoubleType -> l2d();
-                        case FloatType -> l2f();
-                        case ByteType -> l2i().i2b();
-                        case CharType -> l2i().i2c();
-                        case ShortType -> l2i().i2s();
-                        case BooleanType -> l2i().iconst_1().iand();
-                        case VoidType, ReferenceType ->
-                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-                    };
-            case DoubleType ->
-                    switch (toType) {
-                        case IntType -> d2i();
-                        case LongType -> d2l();
-                        case DoubleType -> this;
-                        case FloatType -> d2f();
-                        case ByteType -> d2i().i2b();
-                        case CharType -> d2i().i2c();
-                        case ShortType -> d2i().i2s();
-                        case BooleanType -> d2i().iconst_1().iand();
-                        case VoidType, ReferenceType ->
-                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-                    };
-            case FloatType ->
-                    switch (toType) {
-                        case IntType -> f2i();
-                        case LongType -> f2l();
-                        case DoubleType -> f2d();
-                        case FloatType -> this;
-                        case ByteType -> f2i().i2b();
-                        case CharType -> f2i().i2c();
-                        case ShortType -> f2i().i2s();
-                        case BooleanType -> f2i().iconst_1().iand();
-                        case VoidType, ReferenceType ->
-                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-                    };
-            case VoidType, ReferenceType ->
-                throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-        };
-    }
-
-    /**
-     * Generate an instruction pushing a constant onto the operand stack
-     * @see Opcode.Kind#CONSTANT
-     * @param opcode the constant instruction opcode
-     * @param value the constant value
-     * @return this builder
-     * @since 23
-     */
-    default CodeBuilder loadConstant(Opcode opcode, ConstantDesc value) {
-        BytecodeHelpers.validateValue(opcode, value);
-        return with(switch (opcode) {
-            case SIPUSH, BIPUSH -> ConstantInstruction.ofArgument(opcode, ((Number)value).intValue());
-            case LDC, LDC_W, LDC2_W -> ConstantInstruction.ofLoad(opcode, BytecodeHelpers.constantEntry(constantPool(), value));
-            default -> ConstantInstruction.ofIntrinsic(opcode);
-        });
+        var computationalFrom = fromType.asLoadable();
+        var computationalTo = toType.asLoadable();
+        if (computationalFrom != computationalTo) {
+            switch (computationalTo) {
+                case INT -> {
+                    switch (computationalFrom) {
+                        case FLOAT -> f2i();
+                        case LONG -> l2i();
+                        case DOUBLE -> d2i();
+                        default -> throw BytecodeHelpers.cannotConvertException(fromType, toType);
+                    }
+                }
+                case FLOAT -> {
+                    switch (computationalFrom) {
+                        case INT -> i2f();
+                        case LONG -> l2f();
+                        case DOUBLE -> d2f();
+                        default -> throw BytecodeHelpers.cannotConvertException(fromType, toType);
+                    }
+                }
+                case LONG -> {
+                    switch (computationalFrom) {
+                        case INT -> i2l();
+                        case FLOAT -> f2l();
+                        case DOUBLE -> d2l();
+                        default -> throw BytecodeHelpers.cannotConvertException(fromType, toType);
+                    }
+                }
+                case DOUBLE -> {
+                    switch (computationalFrom) {
+                        case INT -> i2d();
+                        case FLOAT -> f2d();
+                        case LONG -> l2d();
+                        default -> throw BytecodeHelpers.cannotConvertException(fromType, toType);
+                    }
+                }
+            }
+        }
+        if (computationalTo == TypeKind.INT && toType != TypeKind.INT) {
+            switch (toType) {
+                case BOOLEAN -> iconst_1().iand();
+                case BYTE -> i2b();
+                case CHAR -> i2c();
+                case SHORT -> i2s();
+            }
+        }
+        return this;
     }
 
     /**
@@ -623,32 +614,34 @@ public sealed interface CodeBuilder
         //avoid switch expressions here
         if (value == null || value == ConstantDescs.NULL)
             return aconst_null();
-        if (value instanceof Integer iVal)
-            return switch (iVal) {
-                case -1 -> iconst_m1();
-                case  0 -> iconst_0();
-                case  1 -> iconst_1();
-                case  2 -> iconst_2();
-                case  3 -> iconst_3();
-                case  4 -> iconst_4();
-                case  5 -> iconst_5();
-                default -> (iVal >= Byte.MIN_VALUE && iVal <= Byte.MAX_VALUE) ? bipush(iVal)
-                         : (iVal >= Short.MIN_VALUE && iVal <= Short.MAX_VALUE) ? sipush(iVal)
-                         : ldc(constantPool().intEntry(iVal));
-            };
-        if (value instanceof Long lVal)
-            return lVal == 0l ? lconst_0()
-                 : lVal == 1l ? lconst_1()
-                 : ldc(constantPool().longEntry(lVal));
-        if (value instanceof Float fVal)
-            return Float.floatToRawIntBits(fVal) == 0 ? fconst_0()
-                 : fVal == 1.0f ? fconst_1()
-                 : fVal == 2.0f ? fconst_2()
-                 : ldc(constantPool().floatEntry(fVal));
-        if (value instanceof Double dVal)
-            return Double.doubleToRawLongBits(dVal) == 0l ? dconst_0()
-                 : dVal == 1.0d ? dconst_1()
-                 : ldc(constantPool().doubleEntry(dVal));
+        if (value instanceof Number) {
+            if (value instanceof Integer iVal)
+                return switch (iVal) {
+                    case -1 -> iconst_m1();
+                    case 0 -> iconst_0();
+                    case 1 -> iconst_1();
+                    case 2 -> iconst_2();
+                    case 3 -> iconst_3();
+                    case 4 -> iconst_4();
+                    case 5 -> iconst_5();
+                    default -> (iVal >= Byte.MIN_VALUE && iVal <= Byte.MAX_VALUE) ? bipush(iVal)
+                            : (iVal >= Short.MIN_VALUE && iVal <= Short.MAX_VALUE) ? sipush(iVal)
+                            : ldc(constantPool().intEntry(iVal));
+                };
+            if (value instanceof Long lVal)
+                return lVal == 0L ? lconst_0()
+                        : lVal == 1L ? lconst_1()
+                        : ldc(constantPool().longEntry(lVal));
+            if (value instanceof Float fVal)
+                return Float.floatToRawIntBits(fVal) == 0 ? fconst_0()
+                        : fVal == 1.0f ? fconst_1()
+                        : fVal == 2.0f ? fconst_2()
+                        : ldc(constantPool().floatEntry(fVal));
+            if (value instanceof Double dVal)
+                return Double.doubleToRawLongBits(dVal) == 0L ? dconst_0()
+                        : dVal == 1.0d ? dconst_1()
+                        : ldc(constantPool().doubleEntry(dVal));
+        }
         return ldc(value);
     }
 
@@ -699,7 +692,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder exceptionCatch(Label start, Label end, Label handler, ClassEntry catchType) {
-        return with(ExceptionCatch.of(handler, start, end, Optional.of(catchType)));
+        return with(ExceptionCatch.of(handler, start, end, Optional.ofNullable(catchType)));
     }
 
     /**
@@ -776,7 +769,7 @@ public sealed interface CodeBuilder
     default CodeBuilder localVariable(int slot, String name, ClassDesc descriptor, Label startScope, Label endScope) {
         return localVariable(slot,
                              constantPool().utf8Entry(name),
-                             constantPool().utf8Entry(descriptor.descriptorString()),
+                             constantPool().utf8Entry(descriptor),
                              startScope, endScope);
     }
 
@@ -824,7 +817,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder aaload() {
-        return arrayLoad(TypeKind.ReferenceType);
+        return arrayLoad(TypeKind.REFERENCE);
     }
 
     /**
@@ -832,16 +825,20 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder aastore() {
-        return arrayStore(TypeKind.ReferenceType);
+        return arrayStore(TypeKind.REFERENCE);
     }
 
     /**
      * Generate an instruction to load a reference from a local variable
+     *
+     * <p>This may also generate {@code aload_<N>} and
+     * {@code wide aload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder aload(int slot) {
-        return loadLocal(TypeKind.ReferenceType, slot);
+        return loadLocal(TypeKind.REFERENCE, slot);
     }
 
     /**
@@ -868,7 +865,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder areturn() {
-        return return_(TypeKind.ReferenceType);
+        return return_(TypeKind.REFERENCE);
     }
 
     /**
@@ -881,11 +878,15 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to store a reference into a local variable
+     *
+     * <p>This may also generate {@code astore_<N>} and
+     * {@code wide astore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder astore(int slot) {
-        return storeLocal(TypeKind.ReferenceType, slot);
+        return storeLocal(TypeKind.REFERENCE, slot);
     }
 
     /**
@@ -901,7 +902,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder baload() {
-        return arrayLoad(TypeKind.ByteType);
+        return arrayLoad(TypeKind.BYTE);
     }
 
     /**
@@ -909,16 +910,16 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder bastore() {
-        return arrayStore(TypeKind.ByteType);
+        return arrayStore(TypeKind.BYTE);
     }
 
     /**
-     * Generate an instruction pushing a byte onto the operand stack
-     * @param b the byte
+     * Generate an instruction pushing an int in the range of byte onto the operand stack.
+     * @param b the int in the range of byte
      * @return this builder
      */
     default CodeBuilder bipush(int b) {
-        return loadConstant(Opcode.BIPUSH, b);
+        return with(ConstantInstruction.ofArgument(Opcode.BIPUSH, b));
     }
 
     /**
@@ -926,7 +927,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder caload() {
-        return arrayLoad(TypeKind.CharType);
+        return arrayLoad(TypeKind.CHAR);
     }
 
     /**
@@ -934,7 +935,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder castore() {
-        return arrayStore(TypeKind.CharType);
+        return arrayStore(TypeKind.CHAR);
     }
 
     /**
@@ -993,7 +994,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder daload() {
-        return arrayLoad(TypeKind.DoubleType);
+        return arrayLoad(TypeKind.DOUBLE);
     }
 
     /**
@@ -1001,7 +1002,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dastore() {
-        return arrayStore(TypeKind.DoubleType);
+        return arrayStore(TypeKind.DOUBLE);
     }
 
     /**
@@ -1046,11 +1047,15 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to load a double from a local variable
+     *
+     * <p>This may also generate {@code dload_<N>} and
+     * {@code wide dload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder dload(int slot) {
-        return loadLocal(TypeKind.DoubleType, slot);
+        return loadLocal(TypeKind.DOUBLE, slot);
     }
 
     /**
@@ -1082,16 +1087,20 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dreturn() {
-        return return_(TypeKind.DoubleType);
+        return return_(TypeKind.DOUBLE);
     }
 
     /**
      * Generate an instruction to store a double into a local variable
+     *
+     * <p>This may also generate {@code dstore_<N>} and
+     * {@code wide dstore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder dstore(int slot) {
-        return storeLocal(TypeKind.DoubleType, slot);
+        return storeLocal(TypeKind.DOUBLE, slot);
     }
 
     /**
@@ -1189,7 +1198,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder faload() {
-        return arrayLoad(TypeKind.FloatType);
+        return arrayLoad(TypeKind.FLOAT);
     }
 
     /**
@@ -1197,7 +1206,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fastore() {
-        return arrayStore(TypeKind.FloatType);
+        return arrayStore(TypeKind.FLOAT);
     }
 
     /**
@@ -1250,11 +1259,15 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to load a float from a local variable
+     *
+     * <p>This may also generate {@code fload_<N>} and
+     * {@code wide fload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder fload(int slot) {
-        return loadLocal(TypeKind.FloatType, slot);
+        return loadLocal(TypeKind.FLOAT, slot);
     }
 
     /**
@@ -1286,16 +1299,20 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder freturn() {
-        return return_(TypeKind.FloatType);
+        return return_(TypeKind.FLOAT);
     }
 
     /**
      * Generate an instruction to store a float into a local variable
+     *
+     * <p>This may also generate {@code fstore_<N>} and
+     * {@code wide fstore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder fstore(int slot) {
-        return storeLocal(TypeKind.FloatType, slot);
+        return storeLocal(TypeKind.FLOAT, slot);
     }
 
     /**
@@ -1350,6 +1367,15 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to branch always
+     *
+     * <p>This may also generate {@code goto_w} instructions if the {@link
+     * ClassFile.ShortJumpsOption#FIX_SHORT_JUMPS FIX_SHORT_JUMPS} option
+     * is set.
+     *
+     * @apiNote The instruction's name is {@code goto}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with an extra {@code _} suffix instead.
+     *
      * @param target the branch target
      * @return this builder
      */
@@ -1427,7 +1453,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iaload() {
-        return arrayLoad(TypeKind.IntType);
+        return arrayLoad(TypeKind.INT);
     }
 
     /**
@@ -1443,7 +1469,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iastore() {
-        return arrayStore(TypeKind.IntType);
+        return arrayStore(TypeKind.INT);
     }
 
     /**
@@ -1587,7 +1613,7 @@ public sealed interface CodeBuilder
      * @param target the branch target
      * @return this builder
      */
-    default CodeBuilder if_nonnull(Label target) {
+    default CodeBuilder ifnonnull(Label target) {
         return branch(Opcode.IFNONNULL, target);
     }
 
@@ -1596,7 +1622,7 @@ public sealed interface CodeBuilder
      * @param target the branch target
      * @return this builder
      */
-    default CodeBuilder if_null(Label target) {
+    default CodeBuilder ifnull(Label target) {
         return branch(Opcode.IFNULL, target);
     }
 
@@ -1666,11 +1692,15 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to load an int from a local variable
+     *
+     * <p>This may also generate {@code iload_<N>} and
+     * {@code wide iload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder iload(int slot) {
-        return loadLocal(TypeKind.IntType, slot);
+        return loadLocal(TypeKind.INT, slot);
     }
 
     /**
@@ -1691,6 +1721,11 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to determine if an object is of the given type
+     *
+     * @apiNote The instruction's name is {@code instanceof}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with camel case instead.
+     *
      * @param target the target type
      * @return this builder
      * @since 23
@@ -1701,6 +1736,11 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to determine if an object is of the given type
+     *
+     * @apiNote The instruction's name is {@code instanceof}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with camel case instead.
+     *
      * @param target the target type
      * @return this builder
      * @throws IllegalArgumentException if {@code target} represents a primitive type
@@ -1889,7 +1929,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ireturn() {
-        return return_(TypeKind.IntType);
+        return return_(TypeKind.INT);
     }
 
     /**
@@ -1910,11 +1950,15 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to store an int into a local variable
+     *
+     * <p>This may also generate {@code istore_<N>} and
+     * {@code wide istore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder istore(int slot) {
-        return storeLocal(TypeKind.IntType, slot);
+        return storeLocal(TypeKind.INT, slot);
     }
 
     /**
@@ -1988,7 +2032,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder laload() {
-        return arrayLoad(TypeKind.LongType);
+        return arrayLoad(TypeKind.LONG);
     }
 
     /**
@@ -2004,7 +2048,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lastore() {
-        return arrayStore(TypeKind.LongType);
+        return arrayStore(TypeKind.LONG);
     }
 
     /**
@@ -2033,6 +2077,12 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction pushing an item from the run-time constant pool onto the operand stack
+     *
+     * <p>This may also generate {@code ldc_w} and {@code ldc2_w} instructions.
+     *
+     * @apiNote {@link #loadConstant(ConstantDesc) loadConstant} generates more optimal instructions
+     * and should be used for general constants if an {@code ldc} instruction is not strictly required.
+     *
      * @param value the constant value
      * @return this builder
      */
@@ -2042,14 +2092,14 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction pushing an item from the run-time constant pool onto the operand stack
+     *
+     * <p>This may also generate {@code ldc_w} and {@code ldc2_w} instructions.
+     *
      * @param entry the constant value
      * @return this builder
      */
     default CodeBuilder ldc(LoadableConstantEntry entry) {
-        return with(ConstantInstruction.ofLoad(
-                entry.typeKind().slotSize() == 2 ? Opcode.LDC2_W
-                : entry.index() > 0xff ? Opcode.LDC_W
-                : Opcode.LDC, entry));
+        return with(ConstantInstruction.ofLoad(BytecodeHelpers.ldcOpcode(entry), entry));
     }
 
     /**
@@ -2062,11 +2112,15 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to load a long from a local variable
+     *
+     * <p>This may also generate {@code lload_<N>} and
+     * {@code wide lload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder lload(int slot) {
-        return loadLocal(TypeKind.LongType, slot);
+        return loadLocal(TypeKind.LONG, slot);
     }
 
     /**
@@ -2106,7 +2160,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lreturn() {
-        return return_(TypeKind.LongType);
+        return return_(TypeKind.LONG);
     }
 
     /**
@@ -2127,11 +2181,15 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to store a long into a local variable
+     *
+     * <p>This may also generate {@code lstore_<N>} and
+     * {@code wide lstore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder lstore(int slot) {
-        return storeLocal(TypeKind.LongType, slot);
+        return storeLocal(TypeKind.LONG, slot);
     }
 
     /**
@@ -2197,6 +2255,11 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to create a new object
+     *
+     * @apiNote The instruction's name is {@code new}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with an extra {@code _} suffix instead.
+     *
      * @param clazz the new class type
      * @return this builder
      */
@@ -2206,6 +2269,11 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to create a new object
+     *
+     * @apiNote The instruction's name is {@code new}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with an extra {@code _} suffix instead.
+     *
      * @param clazz the new class type
      * @return this builder
      * @throws IllegalArgumentException if {@code clazz} represents a primitive type
@@ -2283,10 +2351,15 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction to return void from the method
+     *
+     * @apiNote The instruction's name is {@code return}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with an extra {@code _} suffix instead.
+     *
      * @return this builder
      */
     default CodeBuilder return_() {
-        return return_(TypeKind.VoidType);
+        return return_(TypeKind.VOID);
     }
 
     /**
@@ -2294,7 +2367,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder saload() {
-        return arrayLoad(TypeKind.ShortType);
+        return arrayLoad(TypeKind.SHORT);
     }
 
     /**
@@ -2302,16 +2375,16 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder sastore() {
-        return arrayStore(TypeKind.ShortType);
+        return arrayStore(TypeKind.SHORT);
     }
 
     /**
-     * Generate an instruction pushing a short onto the operand stack
-     * @param s the short
+     * Generate an instruction pushing an int in the range of short onto the operand stack.
+     * @param s the int in the range of short
      * @return this builder
      */
     default CodeBuilder sipush(int s) {
-        return loadConstant(Opcode.SIPUSH, s);
+        return with(ConstantInstruction.ofArgument(Opcode.SIPUSH, s));
     }
 
     /**

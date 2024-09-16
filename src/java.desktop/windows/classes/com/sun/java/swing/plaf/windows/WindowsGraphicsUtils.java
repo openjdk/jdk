@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,31 @@
 
 package com.sun.java.swing.plaf.windows;
 
-import sun.swing.SwingUtilities2;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Rectangle;
 
-import java.awt.*;
-
-import javax.swing.*;
+import javax.swing.AbstractButton;
+import javax.swing.ButtonModel;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import javax.swing.JRadioButton;
+import javax.swing.JToggleButton;
+import javax.swing.UIManager;
 import javax.swing.plaf.UIResource;
 
-import static com.sun.java.swing.plaf.windows.TMSchema.*;
+import sun.swing.MnemonicHandler;
+import sun.swing.SwingUtilities2;
+
+import static com.sun.java.swing.plaf.windows.TMSchema.Part;
+import static com.sun.java.swing.plaf.windows.TMSchema.Prop;
+import static com.sun.java.swing.plaf.windows.TMSchema.State;
+import static com.sun.java.swing.plaf.windows.TMSchema.TypeEnum;
 
 /**
  * A collection of static utility methods used for rendering the Windows look
@@ -60,7 +77,7 @@ public class WindowsGraphicsUtils {
 
         int mnemIndex = b.getDisplayedMnemonicIndex();
         // W2K Feature: Check to see if the Underscore should be rendered.
-        if (WindowsLookAndFeel.isMnemonicHidden() == true) {
+        if (MnemonicHandler.isMnemonicHidden()) {
             mnemIndex = -1;
         }
 
@@ -191,46 +208,4 @@ public class WindowsGraphicsUtils {
         return c.getComponentOrientation().isLeftToRight();
     }
 
-    /*
-     * Repaints all the components with the mnemonics in the given window and
-     * all its owned windows.
-     */
-    static void repaintMnemonicsInWindow(Window w) {
-        if(w == null || !w.isShowing()) {
-            return;
-        }
-
-        Window[] ownedWindows = w.getOwnedWindows();
-        for(int i=0;i<ownedWindows.length;i++) {
-            repaintMnemonicsInWindow(ownedWindows[i]);
-        }
-
-        repaintMnemonicsInContainer(w);
-    }
-
-    /*
-     * Repaints all the components with the mnemonics in container.
-     * Recursively searches for all the subcomponents.
-     */
-    static void repaintMnemonicsInContainer(Container cont) {
-        Component c;
-        for(int i=0; i<cont.getComponentCount(); i++) {
-            c = cont.getComponent(i);
-            if(c == null || !c.isVisible()) {
-                continue;
-            }
-            if(c instanceof AbstractButton
-               && ((AbstractButton)c).getMnemonic() != '\0') {
-                c.repaint();
-                continue;
-            } else if(c instanceof JLabel
-                      && ((JLabel)c).getDisplayedMnemonic() != '\0') {
-                c.repaint();
-                continue;
-            }
-            if(c instanceof Container) {
-                repaintMnemonicsInContainer((Container)c);
-            }
-        }
-    }
 }
