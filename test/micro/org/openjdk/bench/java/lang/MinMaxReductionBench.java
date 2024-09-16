@@ -139,17 +139,7 @@ public class MinMaxReductionBench {
     }
 
     @Benchmark
-    public long singleIntMin() {
-        int result = 0;
-        for (int i = 0; i < size; i++) {
-            final int v = 11 * minIntA[i];
-            result = Math.min(result, v);
-        }
-        return result;
-    }
-
-    @Benchmark
-    public long multiIntMin() {
+    public long intMin() {
         int result = 0;
         for (int i = 0; i < size; i++) {
             final int v = (minIntA[i] * minIntB[i]) + (minIntA[i] * minIntC[i]) + (minIntB[i] * minIntC[i]);
@@ -159,17 +149,7 @@ public class MinMaxReductionBench {
     }
 
     @Benchmark
-    public long singleIntMax() {
-        int result = 0;
-        for (int i = 0; i < size; i++) {
-            final int v = 11 * maxIntA[i];
-            result = Math.max(result, v);
-        }
-        return result;
-    }
-
-    @Benchmark
-    public long multiIntMax() {
+    public long intMax() {
         int result = 0;
         for (int i = 0; i < size; i++) {
             final int v = (maxIntA[i] * maxIntB[i]) + (maxIntA[i] * maxIntC[i]) + (maxIntB[i] * maxIntC[i]);
@@ -179,17 +159,7 @@ public class MinMaxReductionBench {
     }
 
     @Benchmark
-    public long singleLongMin() {
-        long result = 0;
-        for (int i = 0; i < size; i++) {
-            final long v = 11 * minLongA[i];
-            result = Math.min(result, v);
-        }
-        return result;
-    }
-
-    @Benchmark
-    public long multiLongMin() {
+    public long longMin() {
         long result = 0;
         for (int i = 0; i < size; i++) {
             final long v = (minLongA[i] * minLongB[i]) + (minLongA[i] * minLongC[i]) + (minLongB[i] * minLongC[i]);
@@ -199,17 +169,7 @@ public class MinMaxReductionBench {
     }
 
     @Benchmark
-    public long singleLongMax() {
-        long result = 0;
-        for (int i = 0; i < size; i++) {
-            final long v = 11 * maxLongA[i];
-            result = Math.max(result, v);
-        }
-        return result;
-    }
-
-    @Benchmark
-    public long multiLongMax() {
+    public long longMax() {
         long result = 0;
         for (int i = 0; i < size; i++) {
             final long v = (maxLongA[i] * maxLongB[i]) + (maxLongA[i] * maxLongC[i]) + (maxLongB[i] * maxLongC[i]);
