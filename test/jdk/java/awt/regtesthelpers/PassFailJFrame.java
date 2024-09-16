@@ -1251,6 +1251,35 @@ public final class PassFailJFrame {
         }
 
         /**
+         * Adds an implementation of {@link PositionWindows PositionWindows}
+         * which the framework will use to position multiple test UI windows.
+         *
+         * @param positionWindows an implementation of {@code PositionWindows}
+         *                        to position multiple test UI windows
+         * @return this builder
+         * @throws IllegalArgumentException if the {@code positionWindows}
+         *              parameter is {@code null}
+         * @throws IllegalStateException if the {@code positionWindows} field
+         *              is already set, or if neither a windows list creator
+         *              nor a list of test windows has been provided
+         */
+        public Builder positionTestUI(PositionWindows positionWindows) {
+            if (positionWindows == null) {
+                throw new IllegalArgumentException("positionWindows parameter can't be null");
+            }
+            if (this.positionWindows != null) {
+                throw new IllegalStateException("PositionWindows is already set");
+            }
+            if (windowListCreator == null || testWindows == null) {
+                throw new IllegalStateException("Neither a windows list creator "
+                                                + "nor a list of test windows "
+                                                + "has been provided");
+            }
+            this.positionWindows = positionWindows;
+            return this;
+        }
+
+        /**
          * Adds a {@code WindowListCreator} which the framework will use
          * to create a list of test UI windows.
          *
