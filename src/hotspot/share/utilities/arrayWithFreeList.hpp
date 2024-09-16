@@ -62,19 +62,19 @@ public:
 private:
   // A minimal resizable array with customizable len/cap properties.
   class resizable_array {
-    bool fixed_size;
-    I len;
-    I cap;
-    BackingElement* data;
+    bool _fixed_size;
+    I _len;
+    I _cap;
+    BackingElement* _data;
 
     bool grow() {
-      if (cap == std::numeric_limits<I>::max() - 1) {
+      if (_cap == std::numeric_limits<I>::max() - 1) {
         // Already at max capacity.
         return false;
       }
 
       // Widen the capacity temporarily.
-      uint64_t widened_cap = static_cast<uint64_t>(cap);
+      uint64_t widened_cap = static_cast<uint64_t>(_cap);
       if (std::numeric_limits<uint64_t>::max() - widened_cap < widened_cap) {
         // Overflow of uint64_t in case of resize, we fail.
         return  false;
@@ -82,48 +82,48 @@ private:
       // Safe to double the widened_cap
       widened_cap *= 2;
       // If I has max size (2**X) - 1, is cap at 2**(X-1)?
-      if (std::numeric_limits<I>::max() - cap == (cap - 1)) {
+      if (std::numeric_limits<I>::max() - _cap == (_cap - 1)) {
         // Reduce widened_cap
         widened_cap -= 1;
       }
 
       I next_cap = static_cast<I>(widened_cap);
-      void* next_array = os::realloc(data, next_cap * sizeof(BackingElement), flag);
+      void* next_array = os::realloc(_data, next_cap * sizeof(BackingElement), flag);
       if (next_array == nullptr) {
         return false;
       }
-      data = static_cast<BackingElement*>(next_array);
-      cap = next_cap;
+      _data = static_cast<BackingElement*>(next_array);
+      _cap = next_cap;
       return true;
     }
 
   public:
     resizable_array(I initial_cap)
-    : fixed_size(false),
-      len(0),
-      cap(initial_cap),
-      data(static_cast<BackingElement*>(os::malloc(initial_cap * sizeof(BackingElement), flag))) {
+    : _fixed_size(false),
+      _len(0),
+      _cap(initial_cap),
+      _data(static_cast<BackingElement*>(os::malloc(initial_cap * sizeof(BackingElement), flag))) {
     }
 
     resizable_array(BackingElement* data, II capacity)
-    : fixed_size(true),
-      len(0),
-      cap(capacity),
-      data(data) {}
+    : _fixed_size(true),
+      _len(0),
+      _cap(capacity),
+      _data(data) {}
 
     ~resizable_array() {
-      if (!fixed_size) {
-        os::free(data);
+      if (!_fixed_size) {
+        os::free(_data);
       }
     }
 
     I length() {
-      return len;
+      return _len;
     }
 
     BackingElement& at(I i) {
-      assert(i < len, "oob");
-      return data[i];
+      assert(i < _len, "oob");
+      return _data[i];
     }
 
     BackingElement* adr_at(I i) {
@@ -131,19 +131,19 @@ private:
     }
 
     I append() {
-      if (len == cap) {
-        if (fixed_size) return nil;
+      if (_len == _cap) {
+        if (_fixed_size) return nil;
         if (!grow()) {
           return nil;
         }
       }
-      I idx = len++;
+      I idx = _len++;
       return idx;
     }
 
     void remove_last() {
-      I idx = len - 1;
-      --len;
+      I idx = _len - 1;
+      --_len;
     }
   };
 
