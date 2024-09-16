@@ -395,116 +395,92 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     }
   }
 
-  static int timestamp = 0;
-
-  // TODO: extract this into a separate function
-  // Convert a + a+ ... + a into a*n
-  PhaseIterGVN* igvn = phase->is_IterGVN();
-//  printf("igvn: %p\n", igvn);
-//  this->dump_bfs(100);
-//  this->dump();
-  timestamp++;
-//  printf("%d, <, %p, %d, %s\n", timestamp, igvn, this->_idx, this->Name());
-
-  Node* base = nullptr;
-  jlong factor = find_repeated_operand_in_chained_addition(phase, this, &base, can_reshape ? 5 : -1);
-
-  // Check if subtree is already optimal
-  if (base != nullptr && base != this && !is_optimized_multiplication(this, base) && (base != in(1) || base != in(2))) {
-    Node* node = (bt == T_INT) ? (Node*) phase->intcon((jint) factor) : (Node*) phase->longcon(factor);
-    BasicType bt2 = phase->type(base)->basic_type();
-
-    if (bt2 == T_INT || bt2 == T_LONG) { // to avoid void constant types
-      Node* mul = MulNode::make(base, node, bt2);
-      if (can_reshape) { // is IGVN?
-        mul = igvn->register_new_node_with_optimizer(mul);
-      }
-
-//      printf("%d, >, %p, %d, %s\n", timestamp, igvn, this->_idx, mul->Name());
-      return mul;
-    }
+  // Convert a + a + ... + a into a*n
+  Node* serial_additions = convert_serial_additions(phase, can_reshape, bt);
+  if (serial_additions != nullptr) {
+    return serial_additions;
   }
-
-//  printf("%d, -, %p, %d, %s\n", timestamp, igvn, this->_idx, this->Name());
 
   return AddNode::Ideal(phase, can_reshape);
 }
 
-// MulINode::Ideal() optimizes a multiplication to an addition of at most two terms if possible
-// Look for patterns: LShiftNode(a, const), AddNode(LShiftNode(a, const), LShiftNode(a, const)/a) and SubNode(LShiftNode(a, const), a)
-bool AddNode::is_optimized_multiplication(Node* node, Node* base) {
-//  node->dump_bfs(5);
+// Convert a + a + ... + a into a*n
+Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, BasicType bt) {
+  Node* base = nullptr;
+  // During IGVN, to avoid same transformation applied to the every con in a subgraph, we use a depth limit to avoid
+  // transforming a huge subgraph in one go and the risk of associated performance issues. Untransformed nodes will be
+  // added to the worklist. Being iterative, the algorithm eventually transforms the whole subgraph.
+  jlong factor = extract_base_operand_from_serial_additions(phase, this, &base, can_reshape ? 5 : -1);
 
-  // LShiftNode(a, const)
+  // The subgraph cannot be transformed if:
+  // 1. no common base operand can be extracted, i.e., nullptr
+  // 2. the base operand is the same as the current con, i.e., a + b
+  // 3. input is an already-optimized multiplication, i.e., a*6 => (a<<1) + (a<<2)
+  // 4. is simple additions not worth transforming, i.e., a + a
+  if (base == nullptr
+      || base == this
+      || is_optimized_multiplication(this, base)
+      || (base == in(1) && base == in(2))) {
+    return nullptr;
+  }
+
+// FIXME: remove this if not needed
+//  if (bt2 == T_INT || bt2 == T_LONG) { // to avoid void constant types
+//    return nullptr;
+//  }
+
+  Node* con = (bt == T_INT) ? (Node*) phase->intcon((jint) factor) : (Node*) phase->longcon(factor);
+  Node* mul = MulNode::make(base, con, bt);
+
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+  if (igvn != nullptr) {
+    mul = igvn->register_new_node_with_optimizer(mul);
+  }
+
+  return mul;
+}
+
+// MulINode::Ideal() optimizes a multiplication to an addition of at most two terms if possible.
+bool AddNode::is_optimized_multiplication(Node* node, Node* base) {
+  // Look for pattern: LShiftNode(a, CON)
   if (node->is_LShift() && node->in(2)->is_Con()) {
-//    printf("is_optimized_multiplication = %s", base == node->isa_LShift()->in(1) ? "true" : "false");
     return base == node->isa_LShift()->in(1);
   }
 
-  // AddNode(LShiftNode(a, const)/a, LShiftNode(a, const))
-  // AddNode(LShiftNode(a, const), LShiftNode(a, const)/a)
+  // Look for patterns:
+  //     - AddNode(LShiftNode(a, CON)/a, LShiftNode(a, CON))
+  //     - AddNode(LShiftNode(a, CON), LShiftNode(a, CON)/a)
   // giving that lhs is different from rhs
   if (node->is_Add()
       && node->in(1) != node->in(2)
       && (
-          (node->in(1)->is_LShift() && node->in(1)->in(2)->is_Con()) // AddNode(LShiftNode(a, const), *)
-              || (node->in(2)->is_LShift() && node->in(2)->in(2)->is_Con()) // AddNode(*, LShiftNode(a, const))
+          (node->in(1)->is_LShift() && node->in(1)->in(2)->is_Con()) // AddNode(LShiftNode(a, CON), *)
+              || (node->in(2)->is_LShift() && node->in(2)->in(2)->is_Con()) // AddNode(*, LShiftNode(a, CON))
       )) {
     Node* a1 = node->in(1)->is_LShift() ? node->in(1)->in(1) : node->in(1);
     Node* a2 = node->in(2)->is_LShift() ? node->in(2)->in(1) : node->in(2);
 
-//    printf("is_optimized_multiplication = %s", a1 == a2 && base == a1 ? "true" : "false");
     return a1 == a2 && base == a1;
   }
 
-//  if (node->is_Add()) {
-//    Node* a1 = node->in(1);
-//    Node* a2 = node->in(2);
-//    Node* c1 = nullptr;
-//    Node* c2 = nullptr;
-//
-//    if (a1->is_LShift() && a1->in(2)->is_Con()) {
-//      a1 = a1->in(2);
-//      c2 = a1->in(2);
-//    }
-//
-//    if (node->in(2)->is_LShift() && node->in(2)->in(2)->is_Con()) {
-//      a2 = a2->in(2);
-//      c1 = a2->in(2);
-//    }
-//
-////    printf("is_optimized_multiplication = %s", a1 == a2 && base == a1 ? "true" : "false");
-//    return a1 == a2 && base == a1 && c1 != c2;
-//  }
-
-  // SubNode(LShiftNode(a, const), a)
+  // Look for pattern: SubNode(LShiftNode(a, CON), a)
   if (node->is_Sub() && node->in(1)->is_LShift() && node->in(1)->in(2)->is_Con()) {
     Node* a1 = node->in(1)->in(1);
     Node* a2 = node->in(2);
 
-//    printf("is_optimized_multiplication = %s", a1 == a2 && base == a1 ? "true" : "false");
     return a1 == a2 && base == a1;
   }
 
-//  printf("is_optimized_multiplication = %s", false ? "true" : "false");
   return false;
 }
 
-jlong AddNode::find_repeated_operand_in_chained_addition(PhaseGVN* phase,
-                                                         Node* node,
-                                                         Node** base,
-                                                         int depth) {
-//  printf("%*s%d (%s)\n", depth, "\t", node->_idx, node->Name());
+// For a series of additions, extract the base operand and the multiplier. E.g., extract a*n from a + a + ... + a
+jlong AddNode::extract_base_operand_from_serial_additions(PhaseGVN* phase, Node* node, Node** base, int depth_limit) {
+  *base = node;
 
-  *base = nullptr;
-
-  // if (depth > 2) {
-  //   return -1;
-  // }
-  if (depth == 0) {
-    return -1;
+  if (depth_limit == 0) {
+    return 1;
   }
-
 
   // MulNode(any, const), e.g., a*2
   if (node->is_Mul()
@@ -514,18 +490,14 @@ jlong AddNode::find_repeated_operand_in_chained_addition(PhaseGVN* phase,
     Node* operand_node = node->in(1)->is_Con() ? node->in(2) : node->in(1);
     BasicType bt = phase->type(const_node)->basic_type();
 
-    if (bt == T_INT || bt == T_LONG) {
+// FIXME: remove this if not needed
+//    if (bt == T_INT || bt == T_LONG) {
       Node* mul_base;
-      jlong multiplier = find_repeated_operand_in_chained_addition(phase, operand_node,
-                                                                   &mul_base, depth - 1);
-
-       if (mul_base == nullptr) {
-         return -1;
-       }
+      jlong multiplier = extract_base_operand_from_serial_additions(phase, operand_node, &mul_base, depth_limit - 1);
 
       *base = mul_base;
       return multiplier * const_node->get_integer_as_long(bt);
-    }
+//    }
   }
 
   // LShiftNode(any, const), e.g, a<<2 => a*4
@@ -534,18 +506,14 @@ jlong AddNode::find_repeated_operand_in_chained_addition(PhaseGVN* phase,
     Node* operand_node = node->in(1);
     BasicType bt = phase->type(const_node)->basic_type();
 
-    if (bt == T_INT || bt == T_LONG) {
+// FIXME: remove this if not needed
+//    if (bt == T_INT || bt == T_LONG) {
       Node* shift_base;
-      jlong multiplier = find_repeated_operand_in_chained_addition(phase, operand_node,
-                                                                   &shift_base, depth - 1);
-
-       if (shift_base == nullptr) {
-         return -1;
-       }
+      jlong multiplier = extract_base_operand_from_serial_additions(phase, operand_node, &shift_base, depth_limit - 1);
 
       *base = shift_base;
       return multiplier * ((jlong) 1 << const_node->get_integer_as_long(bt));
-    }
+//    }
   }
 
   // AddNode(any, any), e.g., a + a => a*2 or (a<<2) + a => a*5
@@ -556,15 +524,10 @@ jlong AddNode::find_repeated_operand_in_chained_addition(PhaseGVN* phase,
 
     Node* base_left;
     Node* base_right;
-
-    jlong multiplier_left = find_repeated_operand_in_chained_addition(phase, operand_node_left,
-                                                                      &base_left, depth - 1);
-    jlong multiplier_right = find_repeated_operand_in_chained_addition(phase, operand_node_right,
-                                                                       &base_right, depth - 1);
-
-     if (base_left == nullptr || base_right == nullptr) {
-       return -1;
-     }
+    jlong multiplier_left = extract_base_operand_from_serial_additions(phase, operand_node_left, &base_left,
+                                                                       depth_limit - 1);
+    jlong multiplier_right = extract_base_operand_from_serial_additions(phase, operand_node_right, &base_right,
+                                                                        depth_limit - 1);
 
     if (base_left == base_right) {
       *base = base_left;
