@@ -53,6 +53,8 @@ import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.MethodRefEntry;
 import static java.lang.constant.ConstantDescs.*;
+import static java.lang.invoke.MethodHandleNatives.Constants.NESTMATE_CLASS;
+import static java.lang.invoke.MethodHandleNatives.Constants.STRONG_LOADER_LINK;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import static java.lang.invoke.MethodType.methodType;
@@ -76,8 +78,6 @@ import sun.invoke.util.Wrapper;
     private static final ClassFileDumper lambdaProxyClassFileDumper;
 
     private static final boolean disableEagerInitialization;
-
-    private static final MethodHandles.Lookup.ClassOption[] LAMBDA_CLASS_OPTIONS = { NESTMATE, STRONG };
 
     static {
         // To dump the lambda proxy classes, set this system property:
@@ -350,7 +350,7 @@ import sun.invoke.util.Wrapper;
         try {
             // this class is linked at the indy callsite; so define a hidden nestmate
             var classdata = useImplMethodHandle? implementation : null;
-            return caller.makeHiddenClassDefiner(lambdaClassName, classBytes, lambdaProxyClassFileDumper, LAMBDA_CLASS_OPTIONS)
+            return caller.makeHiddenClassDefiner(lambdaClassName, classBytes, lambdaProxyClassFileDumper, NESTMATE_CLASS | STRONG_LOADER_LINK)
                          .defineClass(!disableEagerInitialization, classdata);
 
         } catch (Throwable t) {
