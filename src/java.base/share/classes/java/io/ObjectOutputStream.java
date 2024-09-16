@@ -40,7 +40,7 @@ import jdk.internal.access.SharedSecrets;
 import sun.reflect.misc.ReflectUtil;
 
 import static jdk.internal.util.ModifiedUtf.putChar;
-import static jdk.internal.util.ModifiedUtf.utflen;
+import static jdk.internal.util.ModifiedUtf.utfLen;
 
 /**
  * An ObjectOutputStream writes primitive data types and graphs of Java objects
@@ -2034,7 +2034,7 @@ public class ObjectOutputStream
         private void writeUTFInternal(String str, boolean writeHeader) throws IOException {
             int strlen = str.length();
             int countNonZeroAscii = JLA.countNonZeroAscii(str);
-            int utflen = utflen(str, countNonZeroAscii);
+            int utflen = utfLen(str, countNonZeroAscii);
             if (utflen <= 0xFFFF) {
                 if(writeHeader) {
                     writeByte(TC_STRING);

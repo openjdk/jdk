@@ -31,7 +31,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArray;
 
 import static jdk.internal.util.ModifiedUtf.putChar;
-import static jdk.internal.util.ModifiedUtf.utflen;
+import static jdk.internal.util.ModifiedUtf.utfLen;
 
 /**
  * A data output stream lets an application write primitive Java data
@@ -364,7 +364,7 @@ public class DataOutputStream extends FilterOutputStream implements DataOutput {
     static int writeUTF(String str, DataOutput out) throws IOException {
         final int strlen = str.length();
         int countNonZeroAscii = JLA.countNonZeroAscii(str);
-        int utflen = utflen(str, countNonZeroAscii);
+        int utflen = utfLen(str, countNonZeroAscii);
 
         if (utflen > 65535 || /* overflow */ utflen < strlen)
             throw new UTFDataFormatException(tooLongMsg(str, utflen));

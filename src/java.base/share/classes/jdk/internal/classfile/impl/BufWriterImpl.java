@@ -39,7 +39,7 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 
 import static jdk.internal.util.ModifiedUtf.putChar;
-import static jdk.internal.util.ModifiedUtf.utflen;
+import static jdk.internal.util.ModifiedUtf.utfLen;
 
 public final class BufWriterImpl implements BufWriter {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
@@ -164,7 +164,7 @@ public final class BufWriterImpl implements BufWriter {
     void writeUTF(String str) {
         int strlen = str.length();
         int countNonZeroAscii = JLA.countNonZeroAscii(str);
-        int utflen = utflen(str, countNonZeroAscii);
+        int utflen = utfLen(str, countNonZeroAscii);
         if (utflen > 65535) {
             throw new IllegalArgumentException("string too long");
         }
