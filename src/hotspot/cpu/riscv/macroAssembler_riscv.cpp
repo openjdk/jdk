@@ -1461,10 +1461,11 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
 //  2. re-generate the tables needed, we use tables of (N == 16, W == 4)
 //  3. finally vectorize the code (original implementation in zcrc32.c is just scalar code).
 // New tables for vector version is after table3.
-void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register len, const int64_t unroll_words,
+void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register len,
                                          Register tmp1, Register tmp2, Register tmp3, Register tmp4,
-                                         Register table0, Register table3, const int64_t single_table_size) {
+                                         Register table0, Register table3) {
     const int N = 16, W = 4;
+    const int64_t single_table_size = 256;
     const Register blks = tmp2;
     const Register tmpTable = tmp3, tableN16 = tmp4;
     const VectorRegister vcrc = v4, vword = v8, vtmp = v12;
@@ -1472,6 +1473,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
     Label LastBlock;
 
     add(tableN16, table3, 1*single_table_size*sizeof(juint), tmp1);
+    mv(t0, 0xff);
 
     if (MaxVectorSize == 16) {
       vsetivli(zr, N, Assembler::e32, Assembler::m4, Assembler::ma, Assembler::ta);
@@ -1481,8 +1483,8 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
       assert(MaxVectorSize > 32, "sanity");
       vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
     }
+
     vmv_v_x(vcrc, zr);
-    zext_w(crc, crc);
     vmv_s_x(vcrc, crc);
 
     // multiple of 64
@@ -1501,8 +1503,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
 
       addi(buf, buf, N*W);
 
-      mv(t1, 0xff);
-      vand_vx(vtmp, vword, t1);
+      vand_vx(vtmp, vword, t0);
       vsll_vi(vtmp, vtmp, 2);
       vluxei32_v(vcrc, tmpTable, vtmp);
 
@@ -1513,8 +1514,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
         slli(t1, tmp1, 3);
         vsrl_vx(vtmp, vword, t1);
 
-        mv(t1, 0xff);
-        vand_vx(vtmp, vtmp, t1);
+        vand_vx(vtmp, vtmp, t0);
         vsll_vi(vtmp, vtmp, 2);
         vluxei32_v(vtmp, tmpTable, vtmp);
 
@@ -1532,18 +1532,18 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
       mv(crc, zr);
       for (int i = 0; i < N; i++) {
         lwu(t1, Address(buf, i*W));
-        vmv_x_s(t0, vcrc);
+        vmv_x_s(tmp2, vcrc);
         // in vmv_x_s, the value is sign-extended to SEW bits, but we need zero-extended here.
-        zext_w(t0, t0);
+        zext_w(tmp2, tmp2);
         vslidedown_vi(vcrc, vcrc, 1);
-        xorr(t1, t0, t1);
+        xorr(t1, tmp2, t1);
         xorr(crc, crc, t1);
         for (int j = 0; j < W; j++) {
-          andi(t1, crc, 0xff);
+          andr(t1, crc, t0);
           shadd(t1, t1, table0, tmp1, 2);
           lwu(t1, Address(t1, 0));
-          srli(t0, crc, 8);
-          xorr(crc, t0, t1);
+          srli(tmp2, crc, 8);
+          xorr(crc, tmp2, t1);
         }
       }
       addi(buf, buf, N*W);
@@ -1577,8 +1577,8 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 
   if (UseRVV) {
     const int64_t tmp_limit = MaxVectorSize >= 32 ? unroll_words*3 : unroll_words*5;
-    sub(tmp1, len, tmp_limit);
-    bge(tmp1, zr, L_vector_entry);
+    mv(tmp1, tmp_limit);
+    bge(len, tmp1, L_vector_entry);
   }
   subw(len, len, unroll_words);
   bge(len, zr, L_unroll_loop_entry);
@@ -1647,7 +1647,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     j(L_exit); // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
 
     bind(L_vector_entry);
-    vector_update_crc32(crc, buf, len, unroll_words, tmp1, tmp2, tmp3, tmp4, table0, table3, single_table_size);
+    vector_update_crc32(crc, buf, len, tmp1, tmp2, tmp3, tmp4, table0, table3);
 
     addiw(len, len, -4);
     bge(len, zr, L_by4_loop);
