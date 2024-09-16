@@ -44,7 +44,9 @@ class AddNode : public Node {
   virtual uint hash() const;
 
 private:
-  static jlong find_repeated_operand_in_chained_addition(PhaseGVN* phase, Node* node, Node** operand, int* terms);
+  Node* convert_serial_additions(PhaseGVN* phase, bool can_reshape, BasicType bt);
+  static bool is_optimized_multiplication(Node* node, Node* base);
+  static jlong extract_base_operand_from_serial_additions(PhaseGVN* phase, Node* node, Node** base, int depth_limit);
 
 public:
   AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
