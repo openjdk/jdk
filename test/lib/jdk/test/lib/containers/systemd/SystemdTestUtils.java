@@ -93,19 +93,23 @@ public class SystemdTestUtils {
         try {
             return SystemdTestUtils.systemdRunJava(opts);
         } finally {
-            try {
-                if (files.memory() != null) {
-                    Files.delete(files.memory());
-                }
-                if (files.cpu() != null) {
-                    Files.delete(files.cpu());
-                }
-                if (files.sliceDotDDir() != null) {
-                    FileUtils.deleteFileTreeUnchecked(files.sliceDotDDir());
-                }
-            } catch (NoSuchFileException e) {
-                // ignore
+            cleanupFiles(files);
+        }
+    }
+
+    private static void cleanupFiles(ResultFiles files) throws IOException {
+        try {
+            if (files.memory() != null) {
+                Files.delete(files.memory());
             }
+            if (files.cpu() != null) {
+                Files.delete(files.cpu());
+            }
+            if (files.sliceDotDDir() != null) {
+                FileUtils.deleteFileTreeUnchecked(files.sliceDotDDir());
+            }
+        } catch (NoSuchFileException e) {
+            // ignore
         }
     }
 
@@ -168,7 +172,7 @@ public class SystemdTestUtils {
             throw new AssertionError("Failed to write systemd slice files");
         }
 
-        systemdDaemonReload(cpu);
+        systemdDaemonReload(cpu, memory, sliceDotDDir);
 
         return new ResultFiles(memory, cpu, sliceDotDDir);
     }
@@ -184,12 +188,13 @@ public class SystemdTestUtils {
         return String.format("%s-cpu", slice);
     }
 
-    private static void systemdDaemonReload(Path cpu) throws Exception {
+    private static void systemdDaemonReload(Path cpu, Path memory, Path sliceDdir) throws Exception {
         List<String> daemonReload = systemCtl();
         daemonReload.add("daemon-reload");
 
         if (execute(daemonReload).getExitValue() != 0) {
             if (RUN_AS_USER) {
+                cleanupFiles(new ResultFiles(cpu, memory, sliceDdir));
                 // When run as user the systemd user manager needs to be
                 // accessible and working. This is usually the case when
                 // connected via SSH or user login, but may not work for
