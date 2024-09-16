@@ -50,7 +50,7 @@ public class CompileFramework {
     public String getClassPathOfCompiledClasses() {
         String cp = System.getProperty("java.class.path") +
                     File.pathSeparator +
-                    classesDir.toAbsolutePath().toString();
+                    classesDir.toAbsolutePath();
         return cp.replace("\\", "\\\\"); // For windows paths
     }
 
@@ -91,8 +91,8 @@ public class CompileFramework {
         }
 
         System.out.println("------------------ CompileFramework: Compilation ------------------");
-        System.out.println("Source directory: " + sourceDir.toString());
-        System.out.println("Classes directory: " + classesDir.toString());
+        System.out.println("Source directory: " + sourceDir);
+        System.out.println("Classes directory: " + classesDir);
 
         compileJasmSources(jasmSources);
         compileJavaSources(javaSources);
@@ -195,21 +195,21 @@ public class CompileFramework {
     }
 
     private static void writeCodeToFile(String code, Path path) {
-        println("File: " + path.toString());
+        println("File: " + path);
 
         // Ensure directory of the file exists.
         Path dir = path.getParent();
         try {
             Files.createDirectories(dir);
         } catch (Exception e) {
-            throw new CompileFrameworkException("Could not create directory: " + dir.toString(), e);
+            throw new CompileFrameworkException("Could not create directory: " + dir, e);
         }
 
         // Write to file.
         try (BufferedWriter writer = Files.newBufferedWriter(path)) {
             writer.write(code);
         } catch (Exception e) {
-            throw new CompileFrameworkException("Could not write file: " + path.toString(), e);
+            throw new CompileFrameworkException("Could not write file: " + path, e);
         }
     }
 
