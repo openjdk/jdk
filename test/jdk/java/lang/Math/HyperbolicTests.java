@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 4851625 4900189 4939441
- * @library ../ /test/lib
  * @build Tests
  * @build HyperbolicTests
  * @run main HyperbolicTests
