@@ -53,7 +53,7 @@ public class TestConcurrentCompilation {
     public static void test(int i) {
         System.out.println("Generate and compile XYZ for " + i);
         CompileFramework comp = new CompileFramework();
-        comp.add(SourceCode.newJavaSourceCode("XYZ", generate(i)));
+        comp.addJavaSourceCode("XYZ", generate(i));
         comp.compile();
 
         // Now, sleep to give the other threads time to compile and store their class-files.

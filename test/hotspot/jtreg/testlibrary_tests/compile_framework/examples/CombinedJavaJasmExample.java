@@ -89,8 +89,8 @@ public class CombinedJavaJasmExample {
         CompileFramework comp = new CompileFramework();
 
         // Generate files.
-        comp.add(SourceCode.newJasmSourceCode("p.xyz.XYZJasm", generateJasm()));
-        comp.add(SourceCode.newJavaSourceCode("p.xyz.XYZJava", generateJava()));
+        comp.addJasmSourceCode("p.xyz.XYZJasm", generateJasm());
+        comp.addJavaSourceCode("p.xyz.XYZJava", generateJava());
 
         // Compile the source files.
         comp.compile();

@@ -81,7 +81,7 @@ public class TestFrameworkJavaExample {
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
-        comp.add(SourceCode.newJavaSourceCode("X1", generate_X1(comp)));
+        comp.addJavaSourceCode("X1", generate_X1(comp));
 
         // Compile the source file.
         comp.compile();
@@ -117,7 +117,7 @@ public class TestFrameworkJavaExample {
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
-        comp.add(SourceCode.newJavaSourceCode("X2", generate_X2(comp)));
+        comp.addJavaSourceCode("X2", generate_X2(comp));
 
         // Compile the source file.
         comp.compile();

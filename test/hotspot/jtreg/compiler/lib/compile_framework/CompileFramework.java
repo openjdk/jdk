@@ -38,6 +38,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+* TODO
+*/
 public class CompileFramework {
     private static final int COMPILE_TIMEOUT = 60;
     private static final boolean VERBOSE = Boolean.getBoolean("CompileFrameworkVerbose");
@@ -47,15 +50,24 @@ public class CompileFramework {
     private final Path classesDir = getTempDir("compile-framework-classes-");
     private URLClassLoader classLoader;
 
+    /**
+    * TODO
+    */
     public String getClassPathOfCompiledClasses() {
         String cp = System.getProperty("java.class.path") +
                     File.pathSeparator +
                     classesDir.toAbsolutePath();
-        return cp.replace("\\", "\\\\"); // For windows paths
+        // Escape the backslash for Windows paths. We are using the path in the command-line
+	// and Java code, so we always want it to be escaped.
+        return cp.replace("\\", "\\\\");
     }
 
-    public void add(SourceCode sourceCode) {
-        sourceCodes.add(sourceCode);
+    public void addJavaSourceCode(String className, String code) {
+        sourceCodes.add(new SourceCode(className, code, SourceCode.Kind.JAVA));
+    }
+
+    public void addJasmSourceCode(String className, String code) {
+        sourceCodes.add(new SourceCode(className, code, SourceCode.Kind.JASM));
     }
 
     public String sourceCodesAsString() {

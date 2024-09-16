@@ -60,8 +60,7 @@ public class SimpleJasmExample {
 
         // Add a java source file.
         String src = generate();
-        SourceCode file = SourceCode.newJasmSourceCode("XYZ", src);
-        comp.add(file);
+        comp.addJasmSourceCode("XYZ", src);
 
         // Compile the source file.
         comp.compile();

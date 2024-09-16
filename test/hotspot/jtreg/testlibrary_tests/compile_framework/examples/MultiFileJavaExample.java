@@ -64,7 +64,7 @@ public class MultiFileJavaExample {
 
         // Generate 10 files.
         for (int i = 0; i < 10; i++) {
-            comp.add(SourceCode.newJavaSourceCode("p.xyz.XYZ" + i, generate(i)));
+            comp.addJavaSourceCode("p.xyz.XYZ" + i, generate(i));
         }
 
         // Compile the source files.

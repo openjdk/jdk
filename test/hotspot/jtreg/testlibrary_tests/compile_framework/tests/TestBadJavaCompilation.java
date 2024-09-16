@@ -49,9 +49,7 @@ public class TestBadJavaCompilation {
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
-        String src = generate();
-        SourceCode file = SourceCode.newJavaSourceCode("XYZ", src);
-        comp.add(file);
+        comp.addJavaSourceCode("XYZ", generate());
 
         try {
             // Compile the source file.

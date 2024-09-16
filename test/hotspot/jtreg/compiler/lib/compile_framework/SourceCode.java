@@ -26,7 +26,7 @@ package compiler.lib.compile_framework;
 /**
  * This class represents the source code of a specific class.
  */
-public class SourceCode {
+class SourceCode {
     enum Kind { JAVA, JASM };
 
     public final String className;
@@ -37,14 +37,6 @@ public class SourceCode {
         this.className = className;
         this.code = code;
         this.kind = kind;
-    }
-
-    public static SourceCode newJavaSourceCode(String className, String code) {
-        return new SourceCode(className, code, Kind.JAVA);
-    }
-
-    public static SourceCode newJasmSourceCode(String className, String code) {
-        return new SourceCode(className, code, Kind.JASM);
     }
 
     public String fileExtension() {
