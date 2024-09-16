@@ -74,7 +74,7 @@ define SetupBuildLauncherBody
   endif
 
   ifneq ($$($1_MAIN_CLASS), )
-    $1_JAVA_ARGS += -ms8m
+    $1_JAVA_ARGS += -Xms8m
     $1_LAUNCHER_CLASS := -m $$($1_MAIN_MODULE)/$$($1_MAIN_CLASS)
   endif
 
