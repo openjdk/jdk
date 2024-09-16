@@ -146,9 +146,9 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
 
   add_candidate(ik);
 
-  if (log_is_enabled(Info, cds, aot, load)) {
+  if (log_is_enabled(Info, cds, aot, link)) {
     ResourceMark rm;
-    log_info(cds, aot, load)("%s %s", ArchiveUtils::class_category(ik), ik->external_name());
+    log_info(cds, aot, link)("%s %s", ArchiveUtils::class_category(ik), ik->external_name());
   }
 
   return true;
@@ -209,27 +209,34 @@ Array<InstanceKlass*>* AOTClassLinker::write_classes(oop class_loader, bool is_j
     return nullptr;
   } else {
     const char* category = ArchiveUtils::class_category(list.at(0));
-    log_info(cds, aot, load)("written %d class(es) for category %s", list.length(), category);
+    log_info(cds, aot, link)("written %d class(es) for category %s", list.length(), category);
     return ArchiveUtils::archive_array(&list);
   }
 }
 
 int AOTClassLinker::num_platform_initiated_classes() {
-  // AOTLinkedClassBulkLoader will initiate loading of all public boot classes in the platform loader.
-  return num_initiated_classes(nullptr, nullptr);
+  if (CDSConfig::is_dumping_aot_linked_classes()) {
+    // AOTLinkedClassBulkLoader will initiate loading of all public boot classes in the platform loader.
+    return count_public_classes(nullptr);
+  } else {
+    return 0;
+  }
 }
 
 int AOTClassLinker::num_app_initiated_classes() {
-  // AOTLinkedClassBulkLoader will initiate loading of all public boot/platform classes in the app loader.
-  return num_initiated_classes(nullptr, SystemDictionary::java_platform_loader());
+  if (CDSConfig::is_dumping_aot_linked_classes()) {
+    // AOTLinkedClassBulkLoader will initiate loading of all public boot/platform classes in the app loader.
+    return count_public_classes(nullptr) + count_public_classes(SystemDictionary::java_platform_loader());
+  } else {
+    return 0;
+  }
 }
 
-int AOTClassLinker::num_initiated_classes(oop loader1, oop loader2) {
+int AOTClassLinker::count_public_classes(oop loader) {
   int n = 0;
   for (int i = 0; i < _sorted_candidates->length(); i++) {
     InstanceKlass* ik = _sorted_candidates->at(i);
-    if (ik->is_public() && !ik->is_hidden() &&
-        (ik->class_loader() == loader1 || ik->class_loader() == loader2)) {
+    if (ik->is_public() && !ik->is_hidden() && ik->class_loader() == loader) {
       n++;
     }
   }
