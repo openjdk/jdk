@@ -33,7 +33,6 @@ import java.util.Random;
  * @bug 8332442
  * @summary Test that DIV and MOD nodes are converted into DIVMOD where possible
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @run driver compiler.c2.TestDivModNodes
  */
 public class TestDivModNodes {
