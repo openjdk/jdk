@@ -189,7 +189,19 @@ public class SystemdTestUtils {
         daemonReload.add("daemon-reload");
 
         if (execute(daemonReload).getExitValue() != 0) {
-            throw new AssertionError("Failed to reload systemd daemon");
+            if (RUN_AS_USER) {
+                // When run as user the systemd user manager needs to be
+                // accessible and working. This is usually the case when
+                // connected via SSH or user login, but may not work for
+                // sessions set up via 'su <user>' or similar.
+                // In that case, 'systemctl --user status' usually doesn't
+                // work. There is no other option than skip the test.
+                String msg = "Service user@.service not properly configured. " +
+                             "Skipping the test!";
+                throw new SkippedException(msg);
+            } else {
+                throw new AssertionError("Failed to reload systemd daemon");
+            }
         }
     }
 
