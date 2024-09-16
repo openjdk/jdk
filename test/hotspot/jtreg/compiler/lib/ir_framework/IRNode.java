@@ -276,25 +276,25 @@ public class IRNode {
 
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
     static {
-        String optoRegex = "(.*precise .*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+        String optoRegex = "(.*precise .*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: C2 Runtime new_instance" + END;
         allocNodes(ALLOC, "Allocate", optoRegex);
     }
 
     public static final String ALLOC_OF = COMPOSITE_PREFIX + "ALLOC_OF" + POSTFIX;
     static {
-        String regex = "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+        String regex = "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: C2 Runtime new_instance" + END;
         optoOnly(ALLOC_OF, regex);
     }
 
     public static final String ALLOC_ARRAY = PREFIX + "ALLOC_ARRAY" + POSTFIX;
     static {
-        String optoRegex = "(.*precise \\[.*\\R((.*(?i:mov|mv|xor|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
+        String optoRegex = "(.*precise \\[.*\\R((.*(?i:mov|mv|xor|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: C2 Runtime new_array" + END;
         allocNodes(ALLOC_ARRAY, "AllocateArray", optoRegex);
     }
 
     public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "ALLOC_ARRAY_OF" + POSTFIX;
     static {
-        String regex = "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
+        String regex = "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: C2 Runtime new_array" + END;
         optoOnly(ALLOC_ARRAY_OF, regex);
     }
 
@@ -439,7 +439,7 @@ public class IRNode {
 
     public static final String CMP_U = PREFIX + "CMP_U" + POSTFIX;
     static {
-        beforeMatchingNameRegex(CMP_U, "CmpU");
+        beforeMatchingNameRegex(CMP_U, "CmpU\\b");
     }
 
     public static final String CMP_U3 = PREFIX + "CMP_U3" + POSTFIX;
@@ -2231,6 +2231,21 @@ public class IRNode {
     public static final String X86_TESTL_REG = PREFIX + "X86_TESTL_REG" + POSTFIX;
     static {
         machOnlyNameRegex(X86_TESTL_REG, "testL_reg");
+    }
+
+    public static final String X86_CMOVEL_IMM01 = PREFIX + "X86_CMOVEL_IMM01" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_CMOVEL_IMM01, "cmovL_imm_01");
+    }
+
+    public static final String X86_CMOVEL_IMM01U = PREFIX + "X86_CMOVEL_IMM01U" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_CMOVEL_IMM01U, "cmovL_imm_01U");
+    }
+
+    public static final String X86_CMOVEL_IMM01UCF = PREFIX + "X86_CMOVEL_IMM01UCF" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_CMOVEL_IMM01UCF, "cmovL_imm_01UCF");
     }
 
     /*

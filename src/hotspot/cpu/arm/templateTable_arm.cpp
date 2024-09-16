@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2494,8 +2494,8 @@ void TemplateTable::_return(TosState state) {
     assert(state == vtos, "only valid state");
     __ ldr(R1, aaddress(0));
     __ load_klass(Rtemp, R1);
-    __ ldr_u32(Rtemp, Address(Rtemp, Klass::access_flags_offset()));
-    __ tbz(Rtemp, exact_log2(JVM_ACC_HAS_FINALIZER), skip_register_finalizer);
+    __ ldrb(Rtemp, Address(Rtemp, Klass::misc_flags_offset()));
+    __ tbz(Rtemp, exact_log2(KlassFlags::_misc_has_finalizer), skip_register_finalizer);
 
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), R1);
 

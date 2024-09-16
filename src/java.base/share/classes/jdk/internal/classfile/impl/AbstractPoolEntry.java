@@ -54,6 +54,7 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.Stable;
 
 public abstract sealed class AbstractPoolEntry {
     /*
@@ -146,12 +147,14 @@ public abstract sealed class AbstractPoolEntry {
         private final int offset;
         private final int rawLen;
         // Set in any state other than RAW
-        private int hash;
-        private int charLen;
+        private @Stable int hash;
+        private @Stable int charLen;
         // Set in CHAR state
-        private char[] chars;
+        private @Stable char[] chars;
         // Only set in STRING state
-        private String stringValue;
+        private @Stable String stringValue;
+        // The descriptor symbol, if this is a descriptor
+        @Stable TypeDescriptor typeSym;
 
         Utf8EntryImpl(ConstantPool cpm, int index,
                           byte[] rawBytes, int offset, int rawLen) {
@@ -187,6 +190,7 @@ public abstract sealed class AbstractPoolEntry {
             this.charLen = u.charLen;
             this.chars = u.chars;
             this.stringValue = u.stringValue;
+            this.typeSym = u.typeSym;
         }
 
         /**
@@ -409,61 +413,31 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         void writeTo(BufWriterImpl pool) {
+            pool.writeU1(tag);
             if (rawBytes != null) {
-                pool.writeU1(tag);
                 pool.writeU2(rawLen);
                 pool.writeBytes(rawBytes, offset, rawLen);
             }
             else {
                 // state == STRING and no raw bytes
-                if (stringValue.length() > 65535) {
-                    throw new IllegalArgumentException("string too long");
-                }
-                pool.writeU1(tag);
-                pool.writeU2(charLen);
-                for (int i = 0; i < charLen; ++i) {
-                    char c = stringValue.charAt(i);
-                    if (c >= '\001' && c <= '\177') {
-                        // Optimistic writing -- hope everything is bytes
-                        // If not, we bail out, and alternate path patches the length
-                        pool.writeU1((byte) c);
-                    }
-                    else {
-                        int charLength = stringValue.length();
-                        int byteLength = i;
-                        char c1;
-                        for (int j = i; j < charLength; ++j) {
-                            c1 = (stringValue).charAt(j);
-                            if (c1 >= '\001' && c1 <= '\177') {
-                                byteLength++;
-                            } else if (c1 > '\u07FF') {
-                                byteLength += 3;
-                            } else {
-                                byteLength += 2;
-                            }
-                        }
-                        if (byteLength > 65535) {
-                            throw new IllegalArgumentException();
-                        }
-                        int byteLengthFinal = byteLength;
-                        pool.patchInt(pool.size() - i - 2, 2, byteLengthFinal);
-                        for (int j = i; j < charLength; ++j) {
-                            c1 = (stringValue).charAt(j);
-                            if (c1 >= '\001' && c1 <= '\177') {
-                                pool.writeU1((byte) c1);
-                            } else if (c1 > '\u07FF') {
-                                pool.writeU1((byte) (0xE0 | c1 >> 12 & 0xF));
-                                pool.writeU1((byte) (0x80 | c1 >> 6 & 0x3F));
-                                pool.writeU1((byte) (0x80 | c1 & 0x3F));
-                            } else {
-                                pool.writeU1((byte) (0xC0 | c1 >> 6 & 0x1F));
-                                pool.writeU1((byte) (0x80 | c1 & 0x3F));
-                            }
-                        }
-                        break;
-                    }
-                }
+                pool.writeUTF(stringValue);
             }
+        }
+
+        public ClassDesc fieldTypeSymbol() {
+            if (typeSym instanceof ClassDesc cd)
+                return cd;
+            var ret = ClassDesc.ofDescriptor(stringValue());
+            typeSym = ret;
+            return ret;
+        }
+
+        public MethodTypeDesc methodTypeSymbol() {
+            if (typeSym instanceof MethodTypeDesc mtd)
+                return mtd;
+            var ret = MethodTypeDesc.ofDescriptor(stringValue());
+            typeSym = ret;
+            return ret;
         }
     }
 
@@ -631,8 +605,6 @@ public abstract sealed class AbstractPoolEntry {
     public static final class NameAndTypeEntryImpl extends AbstractRefsEntry<Utf8EntryImpl, Utf8EntryImpl>
             implements NameAndTypeEntry {
 
-        public TypeDescriptor typeSym = null;
-
         NameAndTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name, Utf8EntryImpl type) {
             super(cpm, ClassFile.TAG_NAMEANDTYPE, index, name, type);
         }
@@ -647,31 +619,12 @@ public abstract sealed class AbstractPoolEntry {
             return ref2;
         }
 
-        public ClassDesc fieldTypeSymbol() {
-            if (typeSym instanceof ClassDesc cd) {
-                return cd;
-            } else {
-                return (ClassDesc)(typeSym = ClassDesc.ofDescriptor(ref2.stringValue()));
-            }
-        }
-
-        public MethodTypeDesc methodTypeSymbol() {
-            if (typeSym instanceof MethodTypeDesc mtd) {
-                return mtd;
-            } else {
-                return (MethodTypeDesc)(typeSym = MethodTypeDesc.ofDescriptor(ref2.stringValue()));
-            }
-        }
-
         @Override
         public NameAndTypeEntry clone(ConstantPoolBuilder cp) {
             if (cp.canWriteDirect(constantPool)) {
                 return this;
-            } else {
-                var ret = (NameAndTypeEntryImpl)cp.nameAndTypeEntry(ref1, ref2);
-                ret.typeSym = typeSym;
-                return ret;
             }
+            return cp.nameAndTypeEntry(ref1, ref2);
         }
 
         @Override
@@ -943,8 +896,6 @@ public abstract sealed class AbstractPoolEntry {
             extends AbstractRefEntry<Utf8EntryImpl>
             implements MethodTypeEntry {
 
-        public MethodTypeDesc sym = null;
-
         MethodTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl descriptor) {
             super(cpm, ClassFile.TAG_METHODTYPE, index, descriptor);
         }
@@ -958,20 +909,13 @@ public abstract sealed class AbstractPoolEntry {
         public MethodTypeEntry clone(ConstantPoolBuilder cp) {
             if (cp.canWriteDirect(constantPool)) {
                 return this;
-            } else {
-                var ret = (MethodTypeEntryImpl)cp.methodTypeEntry(ref1);
-                ret.sym = sym;
-                return ret;
             }
+            return cp.methodTypeEntry(ref1);
         }
 
         @Override
         public MethodTypeDesc asSymbol() {
-            var sym = this.sym;
-            if (sym != null) {
-                return sym;
-            }
-            return this.sym = MethodTypeDesc.ofDescriptor(descriptor().stringValue());
+            return ref1.methodTypeSymbol();
         }
 
         @Override

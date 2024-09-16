@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -785,13 +786,13 @@ bool Disassembler::load_library(outputStream* st) {
   os::jvm_path(buf, sizeof(buf));
   int jvm_offset = -1;
   int lib_offset = -1;
-#ifdef STATIC_BUILD
-  char* p = strrchr(buf, '/');
-  *p = '\0';
-  strcat(p, "/lib/");
-  lib_offset = jvm_offset = (int)strlen(buf);
-#else
-  {
+
+  if (is_vm_statically_linked()) {
+    char* p = strrchr(buf, '/');
+    *p = '\0';
+    strcat(p, "/lib/");
+    lib_offset = jvm_offset = (int)strlen(buf);
+  } else {
     // Match "libjvm" instead of "jvm" on *nix platforms. Creates better matches.
     // Match "[lib]jvm[^/]*" in jvm_path.
     const char* base = buf;
@@ -805,7 +806,6 @@ bool Disassembler::load_library(outputStream* st) {
     if (p != nullptr) jvm_offset = p - base + 3; // this points to 'j' in libjvm.
 #endif
   }
-#endif
 
   // Find the disassembler shared library.
   // Search for several paths derived from libjvm, in this order:
