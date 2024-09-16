@@ -24,112 +24,12 @@
 
 #include "precompiled.hpp"
 #include "unittest.hpp"
-#include "nmt/arrayWithFreeList.hpp"
+#include "utilities/arrayWithFreeList.hpp"
 
 using A = ArrayWithFreeList<int, mtTest>;
 
 class ArrayWithFreeListTest  : public testing::Test {
 };
-
-// A linked list which sets the allocator itself
-template<typename E>
-struct LL {
-  struct Node;
-  using NodeAllocator = ArrayWithFreeList<Node, mtTest>;
-  using NodePtr = typename NodeAllocator::I;
-  NodeAllocator alloc;
-  struct Node {
-    E e;
-    NodePtr next;
-  };
-
-  NodePtr start;
-  LL()
-  : start{NodeAllocator::nil} {
-  }
-
-  void push(E e) {
-    NodePtr new_element = alloc.allocate(e, NodeAllocator::nil);
-    NodePtr& current = start;
-    if (current == NodeAllocator::nil) {
-      current = new_element;
-      return;
-    }
-    alloc.at(new_element).next = current;
-    current = new_element;
-  };
-
-  E pop() {
-    assert(start != NodeAllocator::nil, "must be");
-    Node& n = alloc.at(start);
-    E e = n.e;
-    NodePtr next_start = n.next;
-    alloc.deallocate(start);
-    start = next_start;
-    return e;
-  }
-};
-
-// A linked list which is capable of having multiple different allocators. This is done through higher-kinded types.
-// That's a very fancy word that means that a templated type like Foo<E> can be passed around like only Foo at first
-// and then be 'applied' to some E. Think of it like passing around a lambda or function pointer, but on a template level,
-// where Foo is a function that can be called on some type with the return type being Foo<E>.
-template<typename E, template<typename, MEMFLAGS> class Allocator>
-struct LL2 {
-  struct Node;
-  using NodeAllocator = Allocator<Node, mtTest>;
-  using NodePtr = typename NodeAllocator::I;
-  NodeAllocator alloc;
-  struct Node {
-    E e;
-    NodePtr next;
-  };
-
-  NodePtr start;
-  LL2()
-    : start(NodeAllocator::nil) {
-  }
-
-  void push(E e) {
-    NodePtr new_element = alloc.allocate(e, NodeAllocator::nil);
-    NodePtr& current = start;
-    if (current == NodeAllocator::nil) {
-      current = new_element;
-      return;
-    }
-    alloc.at(new_element).next = current;
-    current = new_element;
-  };
-
-  E pop() {
-    assert(start != NodeAllocator::nil, "must be");
-    Node& n = alloc.at(start);
-    E e = n.e;
-    NodePtr next_start = n.next;
-    alloc.deallocate(start);
-    start = next_start;
-    return e;
-  }
-};
-
-template<typename List>
-void test_with_list(List& list) {
-  list.push(1);
-  list.push(2);
-  EXPECT_EQ(2, list.pop());
-  EXPECT_EQ(1, list.pop());
-}
-
-TEST_VM_F(ArrayWithFreeListTest, TestLinkedLists) {
-  {
-    LL<int> list;
-    test_with_list(list);
-  }
-  {
-    LL2<int, ArrayWithFreeList> list;
-    test_with_list(list);
-  }
-}
 
 TEST_VM_F(ArrayWithFreeListTest, FreeingShouldReuseMemory) {
   A alloc;
@@ -150,4 +50,46 @@ TEST_VM_F(ArrayWithFreeListTest, FreeingInTheMiddleWorks) {
   alloc.deallocate(i1);
   A::I i3 = alloc.allocate(0);
   EXPECT_EQ(p1, &alloc.at(i3));
+}
+
+TEST_VM_F(ArrayWithFreeListTest, MakeVerySmallArray) {
+  using Elem = uint8_t; using Index = uint8_t;
+  using SmallArray = ArrayWithFreeList<Elem, mtTest, Index>;
+  SmallArray a;
+
+  int success_count = 0;
+  int failure_count = 0;
+  for (int i = 0; i < 128; i++) {
+    SmallArray::I x = a.allocate(0);
+    if (x != SmallArray::nil) success_count++;
+    else failure_count++;
+  }
+  EXPECT_EQ(0, failure_count);
+  EXPECT_EQ(128, success_count);
+
+  for (int i = 0; i < 128; i++) {
+    SmallArray::I x = a.allocate(0);
+    if (x != SmallArray::nil) success_count++;
+    else failure_count++;
+  }
+  EXPECT_EQ(1, failure_count);
+  EXPECT_EQ(255, success_count);
+}
+
+TEST_VM_F(ArrayWithFreeListTest, BackedByFixedArray) {
+  A::BackingElement data[8];
+  A a(data, 8);
+
+  int success_count = 0;
+  int failure_count = 0;
+  for (int i = 0; i < 8; i++) {
+    A::I x = a.allocate(0);
+    if (x != A::nil) success_count++;
+    else failure_count++;
+  }
+  EXPECT_EQ(8, success_count);
+  EXPECT_EQ(0, failure_count);
+  A::I x = a.allocate(0);
+  A::I n = A::nil;
+  EXPECT_EQ(n, x);
 }
