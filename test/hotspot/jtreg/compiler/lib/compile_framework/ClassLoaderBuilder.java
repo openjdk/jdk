@@ -23,22 +23,26 @@
 
 package compiler.lib.compile_framework;
 
-
-import java.io.IOException;
 import java.io.File;
-import java.net.URLClassLoader;
+import java.io.IOException;
 import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.nio.file.Path;
 
 /**
-* TODO
+* Build a ClassLoader that loads from classpath and {@code classesDir}.
+* Helper class that generates a ClassLoader which allows loading classes
+* from the classpath (see {@code Utils.getClassPaths()}) and {@code classesDir}.
+*
+* The CompileFramework compiles all its classes to a specific {@code classesDir},
+* and this generated ClassLoader thus can be used to load those classes.
 */
 class ClassLoaderBuilder {
 
     /**
-    * TODO
+    * Build a ClassLoader that loads from classpath and {@code classesDir}.
     */
     public static ClassLoader build(Path classesDir) {
         ClassLoader sysLoader = ClassLoader.getSystemClassLoader();

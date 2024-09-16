@@ -42,7 +42,7 @@ public class CompileFramework {
     /**
     * TODO change name to escaped too???
     */
-    public String getClassPathOfCompiledClasses() {
+    public String getEscapedClassPathOfCompiledClasses() {
         return Utils.getEscapedClassPathAndClassesDir(classesDir);
     }
 

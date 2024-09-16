@@ -23,17 +23,18 @@
 
 package compiler.lib.compile_framework;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.nio.file.Path;
 
 /**
-* TODO
+* Helper class for compilation of Java and Jasm {@code SourceCode}.
 */
 class Compile {
 
     /**
-    * TODO
+    * Compile all sources in {@code jasmSources}. First write them to the {@code sourceDir},
+    * then compile them to class-files which are stored in {@code classesDir}.
     */
     public static void compileJasmSources(List<SourceCode> jasmSources, Path sourceDir, Path classesDir) {
         if (jasmSources.isEmpty()) {
@@ -48,7 +49,8 @@ class Compile {
     }
 
     /**
-    * TODO
+    * Compile a list of files (i.e. {@code paths}) using asmtools jasm and store
+    * them in {@code classesDir}.
     */
     private static void compileJasmFiles(List<Path> paths, Path classesDir) {
         List<String> command = new ArrayList<>();
@@ -67,7 +69,8 @@ class Compile {
     }
 
     /**
-    * TODO
+    * Compile all sources in {@code javaSources}. First write them to the {@code sourceDir},
+    * then compile them to class-files which are stored in {@code classesDir}.
     */
     public static void compileJavaSources(List<SourceCode> javaSources, Path sourceDir, Path classesDir) {
         if (javaSources.isEmpty()) {
@@ -82,7 +85,8 @@ class Compile {
     }
 
     /**
-    * TODO
+    * Compile a list of files (i.e. {@code paths}) using javac and store
+    * them in {@code classesDir}.
     */
     private static void compileJavaFiles(List<Path> paths, Path classesDir) {
         List<String> command = new ArrayList<>();

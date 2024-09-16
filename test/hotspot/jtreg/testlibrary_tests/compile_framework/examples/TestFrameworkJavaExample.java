@@ -42,6 +42,9 @@ import java.lang.reflect.InvocationTargetException;
  * The "@compile" command for JTREG is required so that the TestFramework is compiled, other javac
  * might not compile it because it is not present in the class, only in the dynamically compiled
  * code.
+ *
+ * Additionally, we must set the classpath for the Test-VM, so that it has access to all compiled
+ * classes (see {@code getEscapedClassPathOfCompiledClasses}).
  */
 public class TestFrameworkJavaExample {
 
@@ -73,7 +76,7 @@ public class TestFrameworkJavaExample {
                        return a;
                    }
                }
-               """, comp.getClassPathOfCompiledClasses());
+               """, comp.getEscapedClassPathOfCompiledClasses());
     }
 
     static void test_X1() {
@@ -109,7 +112,7 @@ public class TestFrameworkJavaExample {
                    static void test() {
                    }
                }
-               """, comp.getClassPathOfCompiledClasses());
+               """, comp.getEscapedClassPathOfCompiledClasses());
     }
 
     static void test_X2() {
