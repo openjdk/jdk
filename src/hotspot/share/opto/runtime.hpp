@@ -30,6 +30,7 @@
 #include "opto/optoreg.hpp"
 #include "opto/type.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/stubDeclarations.hpp"
 #include "runtime/vframe.hpp"
 
 //------------------------------OptoRuntime------------------------------------
@@ -98,36 +99,45 @@ private:
 
 typedef const TypeFunc*(*TypeFunc_generator)();
 
+// define OptoStubId enum tags: uncommon_trap_id etc
+
+#define C2_BLOB_ID_ENUM_DECLARE(name, type) STUB_ID_NAME(name),
+#define C2_STUB_ID_ENUM_DECLARE(name, f, t, r) STUB_ID_NAME(name),
+#define C2_JVMTI_STUB_ID_ENUM_DECLARE(name) STUB_ID_NAME(name),
+enum class OptoStubId :int {
+  NO_STUBID = -1,
+  C2_STUBS_DO(C2_BLOB_ID_ENUM_DECLARE, C2_STUB_ID_ENUM_DECLARE, C2_JVMTI_STUB_ID_ENUM_DECLARE)
+  NUM_STUBIDS
+};
+#undef C2_BLOB_ID_ENUM_DECLARE
+#undef C2_STUB_ID_ENUM_DECLARE
+#undef C2_JVMTI_STUB_ID_ENUM_DECLARE
+
 class OptoRuntime : public AllStatic {
   friend class Matcher;  // allow access to stub names
 
  private:
+  // declare opto stub address/blob holder static fields
+#define C2_BLOB_FIELD_DECLARE(name, type) \
+  static type        BLOB_FIELD_NAME(name);
+#define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
+#define C2_STUB_FIELD_DECLARE(name, f, t, r) \
+  static address     C2_STUB_FIELD_NAME(name) ;
+#define C2_JVMTI_STUB_FIELD_DECLARE(name) \
+  static address     STUB_FIELD_NAME(name);
+
+  C2_STUBS_DO(C2_BLOB_FIELD_DECLARE, C2_STUB_FIELD_DECLARE, C2_JVMTI_STUB_FIELD_DECLARE)
+
+#undef C2_BLOB_FIELD_DECLARE
+#undef C2_STUB_FIELD_NAME
+#undef C2_STUB_FIELD_DECLARE
+#undef C2_JVMTI_STUB_FIELD_DECLARE
+
+  // Stub names indexed by sharedStubId
+  static const char *_stub_names[];
+
   // define stubs
   static address generate_stub(ciEnv* ci_env, TypeFunc_generator gen, address C_function, const char* name, int is_fancy_jump, bool pass_tls, bool return_pc);
-
-  // References to generated stubs
-  static address _new_instance_Java;
-  static address _new_array_Java;
-  static address _new_array_nozero_Java;
-  static address _multianewarray2_Java;
-  static address _multianewarray3_Java;
-  static address _multianewarray4_Java;
-  static address _multianewarray5_Java;
-  static address _multianewarrayN_Java;
-  static address _vtable_must_compile_Java;
-  static address _complete_monitor_locking_Java;
-  static address _rethrow_Java;
-  static address _monitor_notify_Java;
-  static address _monitor_notifyAll_Java;
-
-  static address _slow_arraycopy_Java;
-  static address _register_finalizer_Java;
-#if INCLUDE_JVMTI
-  static address _notify_jvmti_vthread_start;
-  static address _notify_jvmti_vthread_end;
-  static address _notify_jvmti_vthread_mount;
-  static address _notify_jvmti_vthread_unmount;
-#endif
 
   //
   // Implementation of runtime methods
@@ -147,6 +157,13 @@ class OptoRuntime : public AllStatic {
   static void multianewarray4_C(Klass* klass, int len1, int len2, int len3, int len4, JavaThread* current);
   static void multianewarray5_C(Klass* klass, int len1, int len2, int len3, int len4, int len5, JavaThread* current);
   static void multianewarrayN_C(Klass* klass, arrayOopDesc* dims, JavaThread* current);
+
+  // local methods passed as arguments to stub generator that forward
+  // control to corresponding JRT methods of SharedRuntime
+  static void slow_arraycopy_C(oopDesc* src,  jint src_pos,
+                               oopDesc* dest, jint dest_pos,
+                               jint length, JavaThread* thread);
+  static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* current);
 
 public:
   static void monitor_notify_C(oopDesc* obj, JavaThread* current);
@@ -168,13 +185,10 @@ private:
   // CodeBlob support
   // ===================================================================
 
-  static UncommonTrapBlob*   _uncommon_trap_blob;
-  static ExceptionBlob*       _exception_blob;
-
   static void generate_uncommon_trap_blob(void);
   static void generate_exception_blob();
 
-  static void register_finalizer(oopDesc* obj, JavaThread* current);
+  static void register_finalizer_C(oopDesc* obj, JavaThread* current);
 
  public:
 
@@ -188,6 +202,12 @@ private:
   // Returns the name of a stub
   static const char* stub_name(address entry);
 
+  // Returns the name associated with a given stub id
+  static const char* stub_name(OptoStubId id) {
+    assert(id > OptoStubId::NO_STUBID && id < OptoStubId::NUM_STUBIDS, "stub id out of range");
+    return _stub_names[(int)id];
+  }
+
   // access to runtime stubs entry points for java code
   static address new_instance_Java()                     { return _new_instance_Java; }
   static address new_array_Java()                        { return _new_array_Java; }
@@ -197,7 +217,6 @@ private:
   static address multianewarray4_Java()                  { return _multianewarray4_Java; }
   static address multianewarray5_Java()                  { return _multianewarray5_Java; }
   static address multianewarrayN_Java()                  { return _multianewarrayN_Java; }
-  static address vtable_must_compile_stub()              { return _vtable_must_compile_Java; }
   static address complete_monitor_locking_Java()         { return _complete_monitor_locking_Java; }
   static address monitor_notify_Java()                   { return _monitor_notify_Java; }
   static address monitor_notifyAll_Java()                { return _monitor_notifyAll_Java; }
@@ -227,6 +246,7 @@ private:
 
   static const TypeFunc* new_instance_Type(); // object allocation (slow case)
   static const TypeFunc* new_array_Type ();   // [a]newarray (slow case)
+  static const TypeFunc* new_array_nozero_Type ();   // [a]newarray (slow case)
   static const TypeFunc* multianewarray_Type(int ndim); // multianewarray
   static const TypeFunc* multianewarray2_Type(); // multianewarray
   static const TypeFunc* multianewarray3_Type(); // multianewarray
@@ -234,8 +254,10 @@ private:
   static const TypeFunc* multianewarray5_Type(); // multianewarray
   static const TypeFunc* multianewarrayN_Type(); // multianewarray
   static const TypeFunc* complete_monitor_enter_Type();
+  static const TypeFunc* complete_monitor_locking_Type();
   static const TypeFunc* complete_monitor_exit_Type();
   static const TypeFunc* monitor_notify_Type();
+  static const TypeFunc* monitor_notifyAll_Type();
   static const TypeFunc* uncommon_trap_Type();
   static const TypeFunc* athrow_Type();
   static const TypeFunc* rethrow_Type();

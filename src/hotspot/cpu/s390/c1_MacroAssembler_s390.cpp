@@ -254,7 +254,7 @@ void C1_MacroAssembler::initialize_object(
   // Dtrace support is unimplemented.
   //  if (CURRENT_ENV->dtrace_alloc_probes()) {
   //    assert(obj == rax, "must be");
-  //    call(RuntimeAddress(Runtime1::entry_for (Runtime1::dtrace_object_alloc_id)));
+  //    call(RuntimeAddress(Runtime1::entry_for (C1StubId::dtrace_object_alloc_id)));
   //  }
 
   verify_oop(obj, FILE_AND_LINE);
@@ -315,7 +315,7 @@ void C1_MacroAssembler::allocate_array(
   // Dtrace support is unimplemented.
   // if (CURRENT_ENV->dtrace_alloc_probes()) {
   //   assert(obj == rax, "must be");
-  //   call(RuntimeAddress(Runtime1::entry_for (Runtime1::dtrace_object_alloc_id)));
+  //   call(RuntimeAddress(Runtime1::entry_for (C1StubId::dtrace_object_alloc_id)));
   // }
 
   verify_oop(obj, FILE_AND_LINE);

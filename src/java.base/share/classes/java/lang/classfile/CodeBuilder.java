@@ -769,7 +769,7 @@ public sealed interface CodeBuilder
     default CodeBuilder localVariable(int slot, String name, ClassDesc descriptor, Label startScope, Label endScope) {
         return localVariable(slot,
                              constantPool().utf8Entry(name),
-                             constantPool().utf8Entry(descriptor.descriptorString()),
+                             constantPool().utf8Entry(descriptor),
                              startScope, endScope);
     }
 
