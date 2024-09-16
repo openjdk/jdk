@@ -226,6 +226,7 @@ public class TestG1BarrierGeneration {
                  "testStoreNotNull",
                  "testStoreTwice",
                  "testStoreOnNewObject",
+                 "testStoreNullOnNewObject",
                  "testStoreNotNullOnNewObject"})
     public void runStoreTests() {
         {
