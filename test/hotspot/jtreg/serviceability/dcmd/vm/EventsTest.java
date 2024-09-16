@@ -76,6 +76,7 @@ public class EventsTest {
 
     public void run_max_selected(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("VM.events log=load max=" + MAX);
+        output.stdoutShouldMatch(buildHeaderPattern("Classes loaded"));
         long lines = output.asLines().stream().filter(x -> x.contains("Loading class")).count();
         Assert.assertTrue(lines == MAX, "There are should be " + MAX + " lines");
         output.stdoutShouldNotMatch(buildHeaderPattern("Events"));
