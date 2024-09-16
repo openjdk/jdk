@@ -221,9 +221,7 @@ public sealed interface ConstantPoolBuilder
      * @param type the symbolic descriptor for a field type
      */
     default NameAndTypeEntry nameAndTypeEntry(String name, ClassDesc type) {
-        var ret = (NameAndTypeEntryImpl)nameAndTypeEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
-        ret.typeSym = type;
-        return ret;
+        return nameAndTypeEntry(utf8Entry(name), utf8Entry(type));
     }
 
     /**
@@ -236,9 +234,7 @@ public sealed interface ConstantPoolBuilder
      * @param type the symbolic descriptor for a method type
      */
     default NameAndTypeEntry nameAndTypeEntry(String name, MethodTypeDesc type) {
-        var ret = (NameAndTypeEntryImpl)nameAndTypeEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
-        ret.typeSym = type;
-        return ret;
+        return nameAndTypeEntry(utf8Entry(name), utf8Entry(type));
     }
 
     /**

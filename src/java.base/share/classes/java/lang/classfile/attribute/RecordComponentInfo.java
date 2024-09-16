@@ -33,6 +33,7 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundRecordComponentInfo;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
+import jdk.internal.classfile.impl.Util;
 
 /**
  * Models a single record component in the {@link java.lang.classfile.attribute.RecordAttribute}.
@@ -56,7 +57,7 @@ public sealed interface RecordComponentInfo
      * {@return the field descriptor of this component, as a {@linkplain ClassDesc}}
      */
     default ClassDesc descriptorSymbol() {
-        return ClassDesc.ofDescriptor(descriptor().stringValue());
+        return Util.fieldTypeSymbol(descriptor());
     }
 
     /**
@@ -93,7 +94,7 @@ public sealed interface RecordComponentInfo
                                   ClassDesc descriptor,
                                   List<Attribute<?>> attributes) {
         return new UnboundAttribute.UnboundRecordComponentInfo(TemporaryConstantPool.INSTANCE.utf8Entry(name),
-                                                               TemporaryConstantPool.INSTANCE.utf8Entry(descriptor.descriptorString()),
+                                                               TemporaryConstantPool.INSTANCE.utf8Entry(descriptor),
                                                                attributes);
     }
 

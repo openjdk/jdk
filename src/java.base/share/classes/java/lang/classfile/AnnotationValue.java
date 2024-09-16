@@ -39,6 +39,8 @@ import java.lang.constant.Constable;
 import java.util.ArrayList;
 import java.util.List;
 
+import jdk.internal.classfile.impl.Util;
+
 /**
  * Models an {@code element_value} structure, or a value of an element-value
  * pair of an annotation, as defined in JVMS {@jvms 4.7.16.1}.
@@ -390,7 +392,7 @@ public sealed interface AnnotationValue {
 
         /** {@return the class descriptor} */
         default ClassDesc classSymbol() {
-            return ClassDesc.ofDescriptor(className().stringValue());
+            return Util.fieldTypeSymbol(className());
         }
     }
 
@@ -407,7 +409,7 @@ public sealed interface AnnotationValue {
 
         /** {@return the enum class descriptor} */
         default ClassDesc classSymbol() {
-            return ClassDesc.ofDescriptor(className().stringValue());
+            return Util.fieldTypeSymbol(className());
         }
 
         /** {@return the enum constant name} */
@@ -436,7 +438,7 @@ public sealed interface AnnotationValue {
      * @param constantName the name of the enum constant
      */
     static OfEnum ofEnum(ClassDesc className, String constantName) {
-        return ofEnum(TemporaryConstantPool.INSTANCE.utf8Entry(className.descriptorString()),
+        return ofEnum(TemporaryConstantPool.INSTANCE.utf8Entry(className),
                       TemporaryConstantPool.INSTANCE.utf8Entry(constantName));
     }
 
@@ -453,7 +455,7 @@ public sealed interface AnnotationValue {
      * @param className the descriptor of the class
      */
     static OfClass ofClass(ClassDesc className) {
-        return ofClass(TemporaryConstantPool.INSTANCE.utf8Entry(className.descriptorString()));
+        return ofClass(TemporaryConstantPool.INSTANCE.utf8Entry(className));
     }
 
     /**
