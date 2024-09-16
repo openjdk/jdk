@@ -424,11 +424,6 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, Basic
     return nullptr;
   }
 
-// FIXME: remove this if not needed
-//  if (bt2 == T_INT || bt2 == T_LONG) { // to avoid void constant types
-//    return nullptr;
-//  }
-
   Node* con = (bt == T_INT) ? (Node*) phase->intcon((jint) factor) : (Node*) phase->longcon(factor);
   Node* mul = MulNode::make(base, con, bt);
 
