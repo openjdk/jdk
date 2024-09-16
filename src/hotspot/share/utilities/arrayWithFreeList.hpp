@@ -25,26 +25,33 @@
 #ifndef SHARE_NMT_ARRAYWITHFREELIST_HPP
 #define SHARE_NMT_ARRAYWITHFREELIST_HPP
 
-#include "utilities/growableArray.hpp"
+#include "nmt/memflags.hpp"
+#include <cstdint>
+#include <limits>
 #include <type_traits>
+#include "runtime/os.hpp"
 
 // A flat array of elements E, backed by C-heap, growing on-demand. It allows for
 // returning arbitrary elements and keeps them in a freelist. Elements can be uniquely
 // identified via array index.
-template<typename E, MEMFLAGS flag>
+template<typename E, MEMFLAGS flag, typename II = int32_t>
 class ArrayWithFreeList {
-
-  // An E must be trivially copyable and destructible, but it may be constructed
-  // however it likes.
-  constexpr void static_assert_E_satisfies_type_requirements() const {
-    static_assert(std::is_trivially_copyable<E>::value && std::is_trivially_destructible<E>::value, "must be");
+  constexpr void static_assert_E_satisfies_type_requirements(bool fixed) const {
+    static_assert(std::numeric_limits<II>::is_exact, "must be");
+    static_assert(std::numeric_limits<II>::max() <= std::numeric_limits<uint64_t>::max(), "cannot have index larger than uint64_t");
+    if (fixed) {
+      static_assert(std::is_trivially_destructible<E>::value, "must be");
+    } else {
+      static_assert(std::is_trivially_copyable<E>::value && std::is_trivially_destructible<E>::value, "must be");
+    }
   }
 
 public:
-  using I = int32_t;
-  static constexpr const I nil = -1;
+  // Export the I so it's easily available for consumption by users
+  using I = II;
+  static constexpr const I nil = std::numeric_limits<I>::max();
+  static constexpr const I max = nil - 1;
 
-private:
   // A free list allocator element is either a link to the next free space
   // or an actual element.
   union BackingElement {
@@ -52,7 +59,95 @@ private:
     E e;
   };
 
-  GrowableArrayCHeap<BackingElement, flag> _backing_storage;
+private:
+  // A minimal resizable array with customizable len/cap properties.
+  class resizable_array {
+    bool fixed_size;
+    I len;
+    I cap;
+    BackingElement* data;
+
+    bool grow() {
+      if (cap == std::numeric_limits<I>::max() - 1) {
+        // Already at max capacity.
+        return false;
+      }
+
+      // Widen the capacity temporarily.
+      uint64_t widened_cap = static_cast<uint64_t>(cap);
+      if (std::numeric_limits<uint64_t>::max() - widened_cap < widened_cap) {
+        // Overflow of uint64_t in case of resize, we fail.
+        return  false;
+      }
+      // Safe to double the widened_cap
+      widened_cap *= 2;
+      // If I has max size (2**X) - 1, is cap at 2**(X-1)?
+      if (std::numeric_limits<I>::max() - cap == (cap - 1)) {
+        // Reduce widened_cap
+        widened_cap -= 1;
+      }
+
+      I next_cap = static_cast<I>(widened_cap);
+      void* next_array = os::realloc(data, next_cap * sizeof(BackingElement), flag);
+      if (next_array == nullptr) {
+        return false;
+      }
+      data = static_cast<BackingElement*>(next_array);
+      cap = next_cap;
+      return true;
+    }
+
+  public:
+    resizable_array(I initial_cap)
+    : fixed_size(false),
+      len(0),
+      cap(initial_cap),
+      data(static_cast<BackingElement*>(os::malloc(initial_cap * sizeof(BackingElement), flag))) {
+    }
+
+    resizable_array(BackingElement* data, II capacity)
+    : fixed_size(true),
+      len(0),
+      cap(capacity),
+      data(data) {}
+
+    ~resizable_array() {
+      if (!fixed_size) {
+        os::free(data);
+      }
+    }
+
+    I length() {
+      return len;
+    }
+
+    BackingElement& at(I i) {
+      assert(i < len, "oob");
+      return data[i];
+    }
+
+    BackingElement* adr_at(I i) {
+      return &at(i);
+    }
+
+    I append() {
+      if (len == cap) {
+        if (fixed_size) return nil;
+        if (!grow()) {
+          return nil;
+        }
+      }
+      I idx = len++;
+      return idx;
+    }
+
+    void remove_last() {
+      I idx = len - 1;
+      --len;
+    }
+  };
+
+  resizable_array _backing_storage;
   I _free_start;
 
   bool is_in_bounds(I i) {
@@ -64,21 +159,28 @@ public:
 
   ArrayWithFreeList(int initial_capacity = 8)
     : _backing_storage(initial_capacity),
-    _free_start(nil) {}
+    _free_start(nil) {
+    static_assert_E_satisfies_type_requirements(false);
+  }
+
+  ArrayWithFreeList(BackingElement* data, II capacity)
+  : _backing_storage(data, capacity), _free_start(nil) {
+    static_assert_E_satisfies_type_requirements(true);
+  }
 
   template<typename... Args>
   I allocate(Args... args) {
-    static_assert_E_satisfies_type_requirements();
     BackingElement* be;
     I i;
     if (_free_start != nil) {
       // Must point to already existing index
-      be = &_backing_storage.at(_free_start);
+      be = _backing_storage.adr_at(_free_start);
       i = _free_start;
       _free_start = be->link;
     } else {
       // There are no free elements, allocate a new one.
-      i = _backing_storage.append(BackingElement());
+      i = _backing_storage.append();
+      if (i == nil) return i;
       be = _backing_storage.adr_at(i);
     }
 
@@ -87,19 +189,21 @@ public:
   }
 
   void deallocate(I i) {
-    static_assert_E_satisfies_type_requirements();
     assert(i == nil || is_in_bounds(i), "out of bounds free");
     if (i == nil) return;
-    BackingElement& be_freed = _backing_storage.at(i);
-    be_freed.link = _free_start;
-    _free_start = i;
+    if (i == _backing_storage.length()) {
+      _backing_storage.remove_last();
+    } else {
+      BackingElement& be_freed = _backing_storage.at(i);
+      be_freed.link = _free_start;
+      _free_start = i;
+    }
   }
 
   E& at(I i) {
-    static_assert_E_satisfies_type_requirements();
     assert(i != nil, "null pointer dereference");
     assert(is_in_bounds(i), "out of bounds dereference");
-    return _backing_storage.at(i).e;
+    return reinterpret_cast<E&>(_backing_storage.at(i).e);
   }
 };
 
