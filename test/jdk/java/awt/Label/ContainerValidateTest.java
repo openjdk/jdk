@@ -93,11 +93,11 @@ public class ContainerValidateTest extends Frame implements MouseListener {
     }
 
     private void testUI() throws Exception {
-        EventQueue.invokeAndWait(() ->
-                                         btnBounds = new Rectangle(btn1.getLocationOnScreen().x,
-                                                                   btn1.getLocationOnScreen().y,
-                                                                   btn1.getWidth(),
-                                                                   btn1.getHeight()));
+        EventQueue.invokeAndWait(() -> btnBounds
+                = new Rectangle(btn1.getLocationOnScreen().x,
+                                btn1.getLocationOnScreen().y,
+                                btn1.getWidth(),
+                                btn1.getHeight()));
         for (int i= 1; i < 4 ; i++) {
             EventQueue.invokeAndWait(() -> {
                 currentPanel = (Panel) this.getComponent(0);
@@ -139,7 +139,6 @@ public class ContainerValidateTest extends Frame implements MouseListener {
             }
         }
     }
-
 
     @Override
     public void mousePressed(MouseEvent evt) {
