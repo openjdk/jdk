@@ -113,7 +113,7 @@ class Utils {
         List<Path> storedFiles = new ArrayList<Path>();
         for (SourceCode sourceCode : sources) {
             Path path = sourceDir.resolve(sourceCode.filePathName());
-            writeCodeToFile(sourceCode.code, path);
+            writeCodeToFile(sourceCode.code(), path);
             storedFiles.add(path);
         }
         return storedFiles;

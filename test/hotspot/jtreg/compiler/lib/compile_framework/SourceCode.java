@@ -26,26 +26,9 @@ package compiler.lib.compile_framework;
 /**
  * This class represents the source code of a specific class.
  */
-class SourceCode {
-    enum Kind { JAVA, JASM };
-
-    public final String className;
-    public final String code;
-    public final Kind kind;
-
-    public SourceCode(String className, String code, Kind kind) {
-        this.className = className;
-        this.code = code;
-        this.kind = kind;
-    }
-
-    public String fileExtension() {
-        return kind.name().toLowerCase();
-    }
-
+record SourceCode(String className, String extension, String code) {
     public String filePathName() {
         StringBuilder builder = new StringBuilder();
-        String extension = kind.name().toLowerCase();
         builder.append(className.replace('.','/')).append(".").append(extension);
         return builder.toString();
     }

@@ -33,7 +33,8 @@ import java.util.List;
 * TODO
 */
 public class CompileFramework {
-    private List<SourceCode> sourceCodes = new ArrayList<>();
+    private List<SourceCode> javaSources = new ArrayList<>();
+    private List<SourceCode> jasmSources = new ArrayList<>();
     private final Path sourceDir = Utils.getTempDir("compile-framework-sources-");
     private final Path classesDir = Utils.getTempDir("compile-framework-classes-");
     private ClassLoader classLoader;
@@ -49,21 +50,21 @@ public class CompileFramework {
     * TODO
     */
     public void addJavaSourceCode(String className, String code) {
-        sourceCodes.add(new SourceCode(className, code, SourceCode.Kind.JAVA));
+        javaSources.add(new SourceCode(className, "java", code));
     }
 
     /**
     * TODO
     */
     public void addJasmSourceCode(String className, String code) {
-        sourceCodes.add(new SourceCode(className, code, SourceCode.Kind.JASM));
+        jasmSources.add(new SourceCode(className, "jasm", code));
     }
 
-    private String sourceCodesAsString() {
+    private String sourceCodesAsString(List<SourceCode> sourceCodes) {
         StringBuilder builder = new StringBuilder();
         for (SourceCode sourceCode : sourceCodes) {
             builder.append("SourceCode: ").append(sourceCode.filePathName()).append(System.lineSeparator());
-            builder.append(sourceCode.code).append(System.lineSeparator());
+            builder.append(sourceCode.code()).append(System.lineSeparator());
         }
         return builder.toString();
     }
@@ -77,16 +78,8 @@ public class CompileFramework {
         }
 
         Utils.printlnVerbose("------------------ CompileFramework: SourceCode -------------------");
-        Utils.printlnVerbose(sourceCodesAsString());
-
-        List<SourceCode> javaSources = new ArrayList<SourceCode>();
-        List<SourceCode> jasmSources = new ArrayList<SourceCode>();
-        for (SourceCode sourceCode : sourceCodes) {
-            switch (sourceCode.kind) {
-                case SourceCode.Kind.JASM -> { jasmSources.add(sourceCode);  }
-                case SourceCode.Kind.JAVA -> { javaSources.add(sourceCode);  }
-            }
-        }
+        Utils.printlnVerbose(sourceCodesAsString(jasmSources));
+        Utils.printlnVerbose(sourceCodesAsString(javaSources));
 
         System.out.println("------------------ CompileFramework: Compilation ------------------");
         System.out.println("Source directory: " + sourceDir);
