@@ -57,7 +57,7 @@ public class DefaultLogDecoratorsTest {
         List<String> allLines = Files.readAllLines(Path.of("decorators.log"));
         for (String line : allLines) {
             if (DECORATED_LINE.matcher(line).find() == !shouldHave) {
-                throw new RuntimeException("Logging should " + (shouldHave ? "not " : "") + "contain decorators!");
+                throw new RuntimeException("Logging should " + (shouldHave ? "" : "not ") + "contain decorators!");
             }
         }
     }
@@ -72,11 +72,11 @@ public class DefaultLogDecoratorsTest {
 
 
         // Even if decorators are only supplied for another tag(s), the defaults are not taken into account
-        doTest(true, "-Xlog:jit*=trace:decorators.log", "-Xlog:os*=info:decorators.log:time");
+        doTest(true, "-Xlog:jit*=trace:decorators.log", "-Xlog:gc*=info:decorators.log:time");
 
 
         // Defaults are not taken into account also when another tag implicitly imposes the "standard" defaults
-        doTest(true, "-Xlog:jit*=trace:decorators.log", "-Xlog:os*=info:decorators.log");
+        doTest(true, "-Xlog:jit*=trace:decorators.log", "-Xlog:gc*=info:decorators.log");
 
 
         // Other logging shall not be affected by a tag with defaults
