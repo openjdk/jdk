@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.security.provider;
 
-/*
- * The SHAKE256 extendable output function.
+/**
+ * This package contains JDK extensions to the standard implementation of the
+ * {@link java.lang.management} API.
+ *
+ * @since 24
  */
-public final class SHAKE256 extends SHA3 {
-    public SHAKE256(int d) {
-        super("SHAKE256", d, (byte) 0x1F, 64);
-    }
 
-    public void update(byte in) {
-        engineUpdate(in);
-    }
-    public void update(byte[] in, int off, int len) {
-        engineUpdate(in, off, len);
-    }
-
-    public byte[] digest() {
-        return engineDigest();
-    }
-
-    public void reset() {
-        engineReset();
-    }
-}
+package jdk.management;

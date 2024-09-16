@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.security.provider;
 
-/*
- * The SHAKE128 extendable output function.
+package jdk.internal.access.foreign;
+
+import java.io.FileDescriptor;
+
+/**
+ * This proxy interface is required to allow access to @{code MappedMemoryUtils} methods from {@code ScopedMemoryAccess}.
+ * This allows to avoid pesky initialization issues in the middle of memory mapped scoped methods.
  */
-public final class SHAKE128 extends SHA3 {
-    public SHAKE128(int d) {
-        super("SHAKE128", d, (byte) 0x1F, 32);
-    }
-
-    public void update(byte in) {
-        engineUpdate(in);
-    }
-    public void update(byte[] in, int off, int len) {
-        engineUpdate(in, off, len);
-    }
-
-    public byte[] digest() {
-        return engineDigest();
-    }
-
-    public void reset() {
-        engineReset();
-    }
+public interface MappedMemoryUtilsProxy {
+    boolean isLoaded(long address, boolean isSync, long size);
+    void load(long address, boolean isSync, long size);
+    void unload(long address, boolean isSync, long size);
+    void force(FileDescriptor fd, long address, boolean isSync, long index, long length);
 }
