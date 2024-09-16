@@ -26,6 +26,7 @@
 #define SHARE_OOPS_COMPRESSEDKLASS_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
@@ -259,7 +260,18 @@ public:
 #endif
 
   // Returns true if addr can be encoded to a narrow Klass id
-  static inline bool is_encodable(const void* addr);
-
+  static inline bool is_encodable(const void* addr) {
+    check_init(_base);
+    // An address can only be encoded if:
+    //
+    // 1) the address lies within the klass range.
+    // 2) It is suitably aligned to 2^encoding_shift. This only really matters for
+    //    +UseCompactObjectHeaders, since the encoding shift can be large (max 10 bits -> 1KB).
+    //    This can lead to alignment waste. We use that waste to store other data. That data,
+    //    though living inside the Klass range, cannot be encoded since it is not properly
+    //    aligned. That should not matter.
+    return is_aligned(addr, klass_alignment_in_bytes()) &&
+      addr >= _klass_range_start && addr < _klass_range_end;
+  }
 };
 #endif // SHARE_OOPS_COMPRESSEDKLASS_HPP

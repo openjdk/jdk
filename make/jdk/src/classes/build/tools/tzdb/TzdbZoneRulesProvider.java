@@ -164,7 +164,8 @@ class TzdbZoneRulesProvider {
                         }
                         continue;
                     }
-                    if (line.startsWith("Zone")) {        // parse Zone line
+                    int token0len = tokens.length > 0 ? tokens[0].length() : line.length();
+                    if (line.regionMatches(true, 0, "Zone", 0, token0len)) {        // parse Zone line
                         String name = tokens[1];
                         if (excludedZones.contains(name)){
                             continue;
@@ -182,13 +183,13 @@ class TzdbZoneRulesProvider {
                         if (zLine.parse(tokens, 2)) {
                             openZone = null;
                         }
-                    } else if (line.startsWith("Rule")) { // parse Rule line
+                    } else if (line.regionMatches(true, 0, "Rule", 0, token0len)) { // parse Rule line
                         String name = tokens[1];
                         if (!rules.containsKey(name)) {
                             rules.put(name, new ArrayList<RuleLine>(10));
                         }
                         rules.get(name).add(new RuleLine().parse(tokens));
-                    } else if (line.startsWith("Link")) { // parse link line
+                    } else if (line.regionMatches(true, 0, "Link", 0, token0len)) { // parse link line
                         if (tokens.length >= 3) {
                             String realId = tokens[1];
                             String aliasId = tokens[2];
@@ -304,7 +305,7 @@ class TzdbZoneRulesProvider {
             month = parseMonth(tokens[off++]);
             if (off < tokens.length) {
                 String dayRule = tokens[off++];
-                if (dayRule.startsWith("last")) {
+                if (dayRule.regionMatches(true, 0, "last", 0, 4)) {
                     dayOfMonth = -1;
                     dayOfWeek = parseDayOfWeek(dayRule.substring(4));
                     adjustForwards = false;
@@ -355,11 +356,12 @@ class TzdbZoneRulesProvider {
         }
 
         int parseYear(String year, int defaultYear) {
-            switch (year.toLowerCase()) {
-            case "min":  return 1900;
-            case "max":  return Year.MAX_VALUE;
-            case "only": return defaultYear;
-            }
+            int len = year.length();
+
+            if (year.regionMatches(true, 0, "minimum", 0, len)) return 1900;
+            if (year.regionMatches(true, 0, "maximum", 0, len)) return Year.MAX_VALUE;
+            if (year.regionMatches(true, 0, "only", 0, len)) return defaultYear;
+
             return Integer.parseInt(year);
         }
 

@@ -72,8 +72,6 @@ public abstract sealed class AbstractMemorySegmentImpl
         implements MemorySegment, SegmentAllocator, BiFunction<String, List<Number>, RuntimeException>
         permits HeapMemorySegmentImpl, NativeMemorySegmentImpl {
 
-    private static final ScopedMemoryAccess SCOPED_MEMORY_ACCESS = ScopedMemoryAccess.getScopedMemoryAccess();
-
     static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     final long length;
@@ -189,91 +187,16 @@ public abstract sealed class AbstractMemorySegmentImpl
         return StreamSupport.stream(spliterator(elementLayout), false);
     }
 
-    // FILL_NATIVE_THRESHOLD must be a power of two and should be greater than 2^3
-    // Update the value for Aarch64 once 8338975 is fixed.
-    private static final long FILL_NATIVE_THRESHOLD = 1L << (Architecture.isAARCH64() ? 10 : 5);
-
-    @Override
     @ForceInline
+    @Override
     public final MemorySegment fill(byte value) {
-        checkReadOnly(false);
-        if (length == 0) {
-            // Implicit state check
-            checkValidState();
-        } else if (length < FILL_NATIVE_THRESHOLD) {
-            // 0 <= length < FILL_NATIVE_LIMIT : 0...0X...XXXX
-
-            // Handle smaller segments directly without transitioning to native code
-            final long u = Byte.toUnsignedLong(value);
-            final long longValue = u << 56 | u << 48 | u << 40 | u << 32 | u << 24 | u << 16 | u << 8 | u;
-
-            int offset = 0;
-            // 0...0X...X000
-            final int limit = (int) (length & (FILL_NATIVE_THRESHOLD - 8));
-            for (; offset < limit; offset += 8) {
-                SCOPED_MEMORY_ACCESS.putLong(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, longValue);
-            }
-            int remaining = (int) length - limit;
-            // 0...0X00
-            if (remaining >= 4) {
-                SCOPED_MEMORY_ACCESS.putInt(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, (int) longValue);
-                offset += 4;
-                remaining -= 4;
-            }
-            // 0...00X0
-            if (remaining >= 2) {
-                SCOPED_MEMORY_ACCESS.putShort(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, (short) longValue);
-                offset += 2;
-                remaining -= 2;
-            }
-            // 0...000X
-            if (remaining == 1) {
-                SCOPED_MEMORY_ACCESS.putByte(sessionImpl(), unsafeGetBase(), unsafeGetOffset() + offset, value);
-            }
-            // We have now fully handled 0...0X...XXXX
-        } else {
-            // Handle larger segments via native calls
-            SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
-        }
-        return this;
+        return SegmentBulkOperations.fill(this, value);
     }
 
     @Override
     public MemorySegment allocate(long byteSize, long byteAlignment) {
         Utils.checkAllocationSizeAndAlign(byteSize, byteAlignment);
         return asSlice(0, byteSize, byteAlignment);
-    }
-
-    /**
-     * Mismatch over long lengths.
-     */
-    public static long vectorizedMismatchLargeForBytes(MemorySessionImpl aSession, MemorySessionImpl bSession,
-                                                        Object a, long aOffset,
-                                                        Object b, long bOffset,
-                                                        long length) {
-        long off = 0;
-        long remaining = length;
-        int i, size;
-        boolean lastSubRange = false;
-        while (remaining > 7 && !lastSubRange) {
-            if (remaining > Integer.MAX_VALUE) {
-                size = Integer.MAX_VALUE;
-            } else {
-                size = (int) remaining;
-                lastSubRange = true;
-            }
-            i = SCOPED_MEMORY_ACCESS.vectorizedMismatch(aSession, bSession,
-                    a, aOffset + off,
-                    b, bOffset + off,
-                    size, ArraysSupport.LOG2_ARRAY_BYTE_INDEX_SCALE);
-            if (i >= 0)
-                return off + i;
-
-            i = size - ~i;
-            off += i;
-            remaining -= i;
-        }
-        return ~remaining;
     }
 
     @Override
@@ -314,7 +237,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @ForceInline
-    private boolean overlaps(AbstractMemorySegmentImpl that) {
+    boolean overlaps(AbstractMemorySegmentImpl that) {
         if (unsafeGetBase() == that.unsafeGetBase()) {  // both either native or the same heap segment
             final long thisStart = this.unsafeGetOffset();
             final long thatStart = that.unsafeGetOffset();
@@ -334,7 +257,8 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public long mismatch(MemorySegment other) {
         Objects.requireNonNull(other);
-        return MemorySegment.mismatch(this, 0, byteSize(), other, 0, other.byteSize());
+        return SegmentBulkOperations.mismatch(this, 0, byteSize(),
+                (AbstractMemorySegmentImpl) other, 0, other.byteSize());
     }
 
     @Override
@@ -650,64 +574,6 @@ public abstract sealed class AbstractMemorySegmentImpl
         }
     }
 
-    // COPY_NATIVE_THRESHOLD must be a power of two and should be greater than 2^3
-    private static final long COPY_NATIVE_THRESHOLD = 1 << 6;
-
-    @ForceInline
-    public static void copy(AbstractMemorySegmentImpl src, long srcOffset,
-                            AbstractMemorySegmentImpl dst, long dstOffset,
-                            long size) {
-
-        Utils.checkNonNegativeIndex(size, "size");
-        // Implicit null check for src and dst
-        src.checkAccess(srcOffset, size, true);
-        dst.checkAccess(dstOffset, size, false);
-
-        if (size <= 0) {
-            // Do nothing
-        } else if (size < COPY_NATIVE_THRESHOLD && !src.overlaps(dst)) {
-            // 0 < size < FILL_NATIVE_LIMIT : 0...0X...XXXX
-            //
-            // Strictly, we could check for !src.asSlice(srcOffset, size).overlaps(dst.asSlice(dstOffset, size) but
-            // this is a bit slower and it likely very unusual there is any difference in the outcome. Also, if there
-            // is an overlap, we could tolerate one particular direction of overlap (but not the other).
-
-            // 0...0X...X000
-            final int limit = (int) (size & (COPY_NATIVE_THRESHOLD - 8));
-            int offset = 0;
-            for (; offset < limit; offset += 8) {
-                final long v = SCOPED_MEMORY_ACCESS.getLong(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset);
-                SCOPED_MEMORY_ACCESS.putLong(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
-            }
-            int remaining = (int) size - offset;
-            // 0...0X00
-            if (remaining >= 4) {
-                final int v = SCOPED_MEMORY_ACCESS.getInt(src.sessionImpl(), src.unsafeGetBase(),src.unsafeGetOffset() + srcOffset + offset);
-                SCOPED_MEMORY_ACCESS.putInt(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
-                offset += 4;
-                remaining -= 4;
-            }
-            // 0...00X0
-            if (remaining >= 2) {
-                final short v = SCOPED_MEMORY_ACCESS.getShort(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset);
-                SCOPED_MEMORY_ACCESS.putShort(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
-                offset += 2;
-                remaining -=2;
-            }
-            // 0...000X
-            if (remaining == 1) {
-                final byte v = SCOPED_MEMORY_ACCESS.getByte(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset + offset);
-                SCOPED_MEMORY_ACCESS.putByte(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset + offset, v);
-            }
-            // We have now fully handled 0...0X...XXXX
-        } else {
-            // For larger sizes, the transition to native code pays off
-            SCOPED_MEMORY_ACCESS.copyMemory(src.sessionImpl(), dst.sessionImpl(),
-                    src.unsafeGetBase(), src.unsafeGetOffset() + srcOffset,
-                    dst.unsafeGetBase(), dst.unsafeGetOffset() + dstOffset, size);
-        }
-    }
-
     @ForceInline
     public static void copy(MemorySegment srcSegment, ValueLayout srcElementLayout, long srcOffset,
                             MemorySegment dstSegment, ValueLayout dstElementLayout, long dstOffset,
@@ -792,40 +658,6 @@ public abstract sealed class AbstractMemorySegmentImpl
                     srcArray, srcInfo.base() + (srcIndex * srcInfo.scale()),
                     destImpl.unsafeGetBase(), destImpl.unsafeGetOffset() + dstOffset, elementCount * srcInfo.scale(), srcInfo.scale());
         }
-    }
-
-    public static long mismatch(MemorySegment srcSegment, long srcFromOffset, long srcToOffset,
-                                MemorySegment dstSegment, long dstFromOffset, long dstToOffset) {
-        AbstractMemorySegmentImpl srcImpl = (AbstractMemorySegmentImpl)Objects.requireNonNull(srcSegment);
-        AbstractMemorySegmentImpl dstImpl = (AbstractMemorySegmentImpl)Objects.requireNonNull(dstSegment);
-        long srcBytes = srcToOffset - srcFromOffset;
-        long dstBytes = dstToOffset - dstFromOffset;
-        srcImpl.checkAccess(srcFromOffset, srcBytes, true);
-        dstImpl.checkAccess(dstFromOffset, dstBytes, true);
-
-        long bytes = Math.min(srcBytes, dstBytes);
-        long i = 0;
-        if (bytes > 7) {
-            if (srcImpl.get(JAVA_BYTE, srcFromOffset) != dstImpl.get(JAVA_BYTE, dstFromOffset)) {
-                return 0;
-            }
-            i = AbstractMemorySegmentImpl.vectorizedMismatchLargeForBytes(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
-                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcFromOffset,
-                    dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstFromOffset,
-                    bytes);
-            if (i >= 0) {
-                return i;
-            }
-            long remaining = ~i;
-            assert remaining < 8 : "remaining greater than 7: " + remaining;
-            i = bytes - remaining;
-        }
-        for (; i < bytes; i++) {
-            if (srcImpl.get(JAVA_BYTE, srcFromOffset + i) != dstImpl.get(JAVA_BYTE, dstFromOffset + i)) {
-                return i;
-            }
-        }
-        return srcBytes != dstBytes ? bytes : -1;
     }
 
     private static int getScaleFactor(Buffer buffer) {

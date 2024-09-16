@@ -2627,7 +2627,6 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 
     // Fill words
     {
-      Label L_wordsTail, L_wordsLoop, L_wordsTailLoop;
       UnsafeMemoryAccessMark umam(this, true, true);
 
       // At this point, we know the lower bit of size is zero and a
@@ -2641,7 +2640,6 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 
     // Fill QUADWORDs
     {
-      Label L_qwordLoop, L_qwordsTail, L_qwordsTailLoop;
       UnsafeMemoryAccessMark umam(this, true, true);
 
       // At this point, we know the lower 3 bits of size are zero and a
@@ -2658,7 +2656,6 @@ address StubGenerator::generate_unsafe_setmemory(const char *name,
 
     // Fill DWORDs
     {
-      Label L_dwordLoop, L_dwordsTail, L_dwordsTailLoop;
       UnsafeMemoryAccessMark umam(this, true, true);
 
       // At this point, we know the lower 2 bits of size are zero and a
