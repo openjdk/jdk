@@ -54,6 +54,7 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.Stable;
 
 public abstract sealed class AbstractPoolEntry {
     /*
@@ -146,12 +147,14 @@ public abstract sealed class AbstractPoolEntry {
         private final int offset;
         private final int rawLen;
         // Set in any state other than RAW
-        private int hash;
-        private int charLen;
+        private @Stable int hash;
+        private @Stable int charLen;
         // Set in CHAR state
-        private char[] chars;
+        private @Stable char[] chars;
         // Only set in STRING state
-        private String stringValue;
+        private @Stable String stringValue;
+        // The descriptor symbol, if this is a descriptor
+        @Stable TypeDescriptor typeSym;
 
         Utf8EntryImpl(ConstantPool cpm, int index,
                           byte[] rawBytes, int offset, int rawLen) {
@@ -187,6 +190,7 @@ public abstract sealed class AbstractPoolEntry {
             this.charLen = u.charLen;
             this.chars = u.chars;
             this.stringValue = u.stringValue;
+            this.typeSym = u.typeSym;
         }
 
         /**
@@ -419,6 +423,22 @@ public abstract sealed class AbstractPoolEntry {
                 pool.writeUTF(stringValue);
             }
         }
+
+        public ClassDesc fieldTypeSymbol() {
+            if (typeSym instanceof ClassDesc cd)
+                return cd;
+            var ret = ClassDesc.ofDescriptor(stringValue());
+            typeSym = ret;
+            return ret;
+        }
+
+        public MethodTypeDesc methodTypeSymbol() {
+            if (typeSym instanceof MethodTypeDesc mtd)
+                return mtd;
+            var ret = MethodTypeDesc.ofDescriptor(stringValue());
+            typeSym = ret;
+            return ret;
+        }
     }
 
     abstract static sealed class AbstractRefEntry<T extends PoolEntry> extends AbstractPoolEntry {
@@ -585,8 +605,6 @@ public abstract sealed class AbstractPoolEntry {
     public static final class NameAndTypeEntryImpl extends AbstractRefsEntry<Utf8EntryImpl, Utf8EntryImpl>
             implements NameAndTypeEntry {
 
-        public TypeDescriptor typeSym = null;
-
         NameAndTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name, Utf8EntryImpl type) {
             super(cpm, ClassFile.TAG_NAMEANDTYPE, index, name, type);
         }
@@ -601,31 +619,12 @@ public abstract sealed class AbstractPoolEntry {
             return ref2;
         }
 
-        public ClassDesc fieldTypeSymbol() {
-            if (typeSym instanceof ClassDesc cd) {
-                return cd;
-            } else {
-                return (ClassDesc)(typeSym = ClassDesc.ofDescriptor(ref2.stringValue()));
-            }
-        }
-
-        public MethodTypeDesc methodTypeSymbol() {
-            if (typeSym instanceof MethodTypeDesc mtd) {
-                return mtd;
-            } else {
-                return (MethodTypeDesc)(typeSym = MethodTypeDesc.ofDescriptor(ref2.stringValue()));
-            }
-        }
-
         @Override
         public NameAndTypeEntry clone(ConstantPoolBuilder cp) {
             if (cp.canWriteDirect(constantPool)) {
                 return this;
-            } else {
-                var ret = (NameAndTypeEntryImpl)cp.nameAndTypeEntry(ref1, ref2);
-                ret.typeSym = typeSym;
-                return ret;
             }
+            return cp.nameAndTypeEntry(ref1, ref2);
         }
 
         @Override
@@ -897,8 +896,6 @@ public abstract sealed class AbstractPoolEntry {
             extends AbstractRefEntry<Utf8EntryImpl>
             implements MethodTypeEntry {
 
-        public MethodTypeDesc sym = null;
-
         MethodTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl descriptor) {
             super(cpm, ClassFile.TAG_METHODTYPE, index, descriptor);
         }
@@ -912,20 +909,13 @@ public abstract sealed class AbstractPoolEntry {
         public MethodTypeEntry clone(ConstantPoolBuilder cp) {
             if (cp.canWriteDirect(constantPool)) {
                 return this;
-            } else {
-                var ret = (MethodTypeEntryImpl)cp.methodTypeEntry(ref1);
-                ret.sym = sym;
-                return ret;
             }
+            return cp.methodTypeEntry(ref1);
         }
 
         @Override
         public MethodTypeDesc asSymbol() {
-            var sym = this.sym;
-            if (sym != null) {
-                return sym;
-            }
-            return this.sym = MethodTypeDesc.ofDescriptor(descriptor().stringValue());
+            return ref1.methodTypeSymbol();
         }
 
         @Override

@@ -457,18 +457,19 @@ public class Thread implements Runnable {
      * Called before sleeping to create a jdk.ThreadSleep event.
      */
     private static ThreadSleepEvent beforeSleep(long nanos) {
-        ThreadSleepEvent event = null;
-        if (ThreadSleepEvent.isTurnedOn()) {
-            try {
-                event = new ThreadSleepEvent();
+        try {
+            ThreadSleepEvent event = new ThreadSleepEvent();
+            if (event.isEnabled()) {
                 event.time = nanos;
                 event.begin();
-            } catch (OutOfMemoryError e) {
-                event = null;
+                return event;
             }
+        } catch (OutOfMemoryError e) {
+            // ignore
         }
-        return event;
+        return null;
     }
+
 
     /**
      * Called after sleeping to commit the jdk.ThreadSleep event.
