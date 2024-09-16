@@ -1372,6 +1372,7 @@ public class CLDRConverter {
     private static void generateTZDBShortNamesMap() throws IOException {
         Files.walk(Path.of(tzDataDir), 1, FileVisitOption.FOLLOW_LINKS)
             .filter(p -> p.toFile().isFile())
+            .filter(p -> p.getFileName().toString().matches("africa|antarctica|asia|australasia|backward|etcetera|europe|northamerica|southamerica"))
             .forEach(p -> {
                 try {
                     String zone = null;
@@ -1394,43 +1395,41 @@ public class CLDRConverter {
                         }
                         // remove comments in-line
                         line = line.replaceAll("[ \t]*#.*", "");
-
+                        var tokens = line.split("[ \t]+", -1);
+                        var token0len = tokens.length > 0 ? tokens[0].length() : 0;
                         // Zone line
-                        if (line.startsWith("Zone")) {
+                        if (token0len > 0 && tokens[0].regionMatches(true, 0, "Zone", 0, token0len)) {
                             if (zone != null) {
                                 tzdbShortNamesMap.put(zone, format + NBSP + rule);
                             }
-                            var zl = line.split("[ \t]+", -1);
-                            zone = zl[1];
-                            rule = zl[3];
-                            format = flipIfNeeded(inVanguard, zl[4]);
+                            zone = tokens[1];
+                            rule = tokens[3];
+                            format = flipIfNeeded(inVanguard, tokens[4]);
                         } else {
                             if (zone != null) {
-                                if (line.startsWith("Rule") ||
-                                    line.startsWith("Link")) {
+                                if (token0len > 0 &&
+                                   (tokens[0].regionMatches(true, 0, "Rule", 0, token0len) ||
+                                    tokens[0].regionMatches(true, 0, "Link", 0, token0len))) {
                                     tzdbShortNamesMap.put(zone, format + NBSP + rule);
                                     zone = null;
                                     rule = null;
                                     format = null;
                                 } else {
-                                    var s = line.split("[ \t]+", -1);
-                                    rule = s[2];
-                                    format = flipIfNeeded(inVanguard, s[3]);
+                                    rule = tokens[2];
+                                    format = flipIfNeeded(inVanguard, tokens[3]);
                                 }
                             }
                         }
 
                         // Rule line
-                        if (line.startsWith("Rule")) {
-                            var rl = line.split("[ \t]+", -1);
-                            tzdbSubstLetters.put(rl[1] + NBSP + (rl[8].equals("0") ? STD : DST),
-                                    rl[9].replace(NO_SUBST, ""));
+                        if (token0len > 0 && tokens[0].regionMatches(true, 0, "Rule", 0, token0len)) {
+                            tzdbSubstLetters.put(tokens[1] + NBSP + (tokens[8].equals("0") ? STD : DST),
+                                    tokens[9].replace(NO_SUBST, ""));
                         }
 
                         // Link line
-                        if (line.startsWith("Link")) {
-                            var ll = line.split("[ \t]+", -1);
-                            tzdbLinks.put(ll[2], ll[1]);
+                        if (token0len > 0 && tokens[0].regionMatches(true, 0, "Link", 0, token0len)) {
+                            tzdbLinks.put(tokens[2], tokens[1]);
                         }
                     }
 

@@ -89,6 +89,5 @@
 
   void null_check(Register r, Label *Lnull = nullptr);
 
-  address call_c_with_frame_resize(address dest, int frame_resize);
 
 #endif // CPU_PPC_C1_MACROASSEMBLER_PPC_HPP
