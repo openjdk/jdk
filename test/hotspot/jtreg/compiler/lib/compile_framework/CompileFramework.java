@@ -118,10 +118,20 @@ public class CompileFramework {
     * @return Return value from the invocation.
     */
     public Object invoke(String className, String methodName, Object[] args) {
+        Method method = findMethod(className, methodName);
+
+        try {
+            return method.invoke(null, args);
+        } catch (IllegalAccessException e) {
+            throw new CompileFrameworkException("Illegal access:", e);
+        } catch (InvocationTargetException e) {
+            throw new CompileFrameworkException("Invocation target:", e);
+        }
+    }
+
+    private Method findMethod(String className, String methodName) {
         Class<?> c = getClass(className);
-
         Method[] methods = c.getDeclaredMethods();
-
         Method method = null;
 
         for (Method m : methods) {
@@ -137,13 +147,7 @@ public class CompileFramework {
             throw new CompileFrameworkException("Method \"" + methodName + "\" not found in class \n" + className + "\".");
         }
 
-        try {
-            return method.invoke(null, args);
-        } catch (IllegalAccessException e) {
-            throw new CompileFrameworkException("Illegal access:", e);
-        } catch (InvocationTargetException e) {
-            throw new CompileFrameworkException("Invocation target:", e);
-        }
+        return method;
     }
 }
 
