@@ -97,9 +97,9 @@ public class FileOutputStream extends OutputStream
 
     /**
      * Creates a file output stream to write to the file with the
-     * specified name. {@linkplain java.nio.file##links Symbolic links}
+     * specified name. If the file exists, it is truncated, otherwise a
+     * new file is created. {@linkplain java.nio.file##links Symbolic links}
      * are automatically redirected to the <i>target</i> of the link.
-     * If the file or link target exists, then it will be truncated.
      * A new {@code FileDescriptor} object is
      * created to represent this file connection.
      * <p>
@@ -129,12 +129,11 @@ public class FileOutputStream extends OutputStream
 
     /**
      * Creates a file output stream to write to the file with the specified
-     * name.  {@linkplain java.nio.file##links Symbolic links}
+     * name. If the file exists, it is truncated unless the second
+     * argument is {@code true}, in which case bytes will be written to the
+     * end of the file rather than the beginning. If the file does not exist,
+     * it is created. {@linkplain java.nio.file##links Symbolic links}
      * are automatically redirected to the <i>target</i> of the link.
-     * If the second argument is {@code true}, then
-     * bytes will be written to the end of the file or link target rather than
-     * the beginning; if {@code false}, the file or link target will be
-     * truncated if it exists.
      * A new {@code FileDescriptor} object is created to represent this
      * file connection.
      * <p>
@@ -166,11 +165,11 @@ public class FileOutputStream extends OutputStream
     /**
      * Creates a file output stream to write to the file represented by
      * the specified {@code File} object.
-     * {@linkplain java.nio.file##links Symbolic links}
+     * If the file exists, it is truncated, otherwise a
+     * new file is created. {@linkplain java.nio.file##links Symbolic links}
      * are automatically redirected to the <i>target</i> of the link.
-     * If the file or link target exists, then it will be truncated.
-     * A new {@code FileDescriptor} object is created to represent this
-     * file connection.
+     * A new {@code FileDescriptor} object is
+     * created to represent this file connection.
      * <p>
      * First, if there is a security manager, its {@code checkWrite}
      * method is called with the path represented by the {@code file}
@@ -198,13 +197,13 @@ public class FileOutputStream extends OutputStream
     /**
      * Creates a file output stream to write to the file represented by
      * the specified {@code File} object.
-     * {@linkplain java.nio.file##links Symbolic links}
+     * If the file exists, it is truncated unless the second
+     * argument is {@code true}, in which case bytes will be written to the
+     * end of the file rather than the beginning. If the file does not exist,
+     * it is created. {@linkplain java.nio.file##links Symbolic links}
      * are automatically redirected to the <i>target</i> of the link.
-     * If the second argument is
-     * {@code true}, then bytes will be written to the end of the file
-     * rather than the beginning; if {@code false}, the file or link target
-     * will be truncated if it exists. A new {@code FileDescriptor} object is
-     * created to represent this file connection.
+     * A new {@code FileDescriptor} object is created to represent this
+     * file connection.
      * <p>
      * First, if there is a security manager, its {@code checkWrite}
      * method is called with the path represented by the {@code file}
