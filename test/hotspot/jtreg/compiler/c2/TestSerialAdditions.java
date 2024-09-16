@@ -21,18 +21,19 @@
  * questions.
  */
 
-package compiler.c2.arithmeticCanonicalization;
+package compiler.c2;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.ir_framework.Test;
 
 /*
  * @test
  * @bug 8325495
  * @summary C2 should optimize for series of Add of unique value. e.g., a + a + ... + a => a*n
  * @library /test/lib /
- * @run driver compiler.c2.arithmeticCanonicalization.SerialAdditionCanonicalization
+ * @run driver compiler.c2.TestSerialAdditions
  */
-public class SerialAdditionCanonicalization {
+public class TestSerialAdditions {
     public static void main(String[] args) {
         TestFramework.run();
     }
@@ -54,6 +55,15 @@ public class SerialAdditionCanonicalization {
     }
 
     // ----- integer tests -----
+    @Test
+    @Arguments(values = {Argument.RANDOM_EACH})
+    @IR(counts = { IRNode.ADD_I, "1" })
+    @IR(failOn = {IRNode.LSHIFT_I})
+    private static void addTo2(int a) {
+        int sum = a + a; // Simple additions like a + a should be kept as-is
+        verifyResult(a, 2, sum);
+    }
+
     @Test
     @Arguments(values = {Argument.RANDOM_EACH})
     @IR(counts = { IRNode.ADD_I, "1" })
@@ -134,6 +144,15 @@ public class SerialAdditionCanonicalization {
     private static void addTo16(int a) {
         int sum = a + a + a + a + a + a + a + a + a + a
                 + a + a + a + a + a + a; // a*16 => a<<4
+        verifyResult(a, 16, sum);
+    }
+
+    @Test
+    @Arguments(values = {Argument.RANDOM_EACH})
+    @IR(failOn = IRNode.ADD_I)
+    @IR(counts = {IRNode.LSHIFT_I, "1"})
+    private static void addAndShiftTo16(int a) {
+        int sum = (a + a) << 3; // a<<(3 + 1) => a<<4
         verifyResult(a, 16, sum);
     }
 
