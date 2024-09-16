@@ -498,7 +498,7 @@ final class Double128Vector extends DoubleVector {
     public Double128Vector selectFrom(Vector<Double> v1,
                                    Vector<Double> v2) {
         return (Double128Vector)
-            super.selectFromTemplate((Double128Vector) v1, (Double128Vector) v2);  // specialize
+            super.selectFromTemplate(Long128Vector.class, (Double128Vector) v1, (Double128Vector) v2);  // specialize
     }
 
     @ForceInline

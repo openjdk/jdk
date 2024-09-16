@@ -525,17 +525,17 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return r;
     }
 
-    static FloatVector selectFromTwoVectorHelper(Vector<Float> v1, Vector<Float> v2, Vector<Float> v3) {
+    static FloatVector selectFromTwoVectorHelper(Vector<Integer> v1, Vector<Float> v2, Vector<Float> v3) {
         int vlen = v1.length();
         float[] res = new float[vlen];
-        float[] vpayload1 = ((FloatVector)v1).vec();
-        float[] vpayload2 = ((FloatVector)v2).vec();
-        float[] vpayload3 = ((FloatVector)v3).vec();
+        int[] vecPayload1 = ((IntVector)v1).vec();
+        float[] vecPayload2 = ((FloatVector)v2).vec();
+        float[] vecPayload3 = ((FloatVector)v3).vec();
         for (int i = 0; i < vlen; i++) {
-            int index = ((int)vpayload1[i]);
-            res[i] = index >= vlen ? vpayload3[index & (vlen - 1)] : vpayload2[index];
+            int index = ((int)vecPayload1[i]);
+            res[i] = index >= vlen ? vecPayload3[index & (vlen - 1)] : vecPayload2[index];
         }
-        return ((FloatVector)v1).vectorFactory(res);
+        return ((FloatVector)v2).vectorFactory(res);
     }
 
     // Static factories (other than memory operations)
@@ -2443,17 +2443,18 @@ public abstract class FloatVector extends AbstractVector<Float> {
     public abstract
     FloatVector selectFrom(Vector<Float> v1, Vector<Float> v2);
 
+
     /*package-private*/
     @ForceInline
-    final FloatVector selectFromTemplate(FloatVector v1, FloatVector v2) {
+    final FloatVector selectFromTemplate(Class<? extends Vector<Integer>> indexVecClass,
+                                                  FloatVector v1, FloatVector v2) {
         int twoVectorLen = length() * 2;
-        FloatVector wrapped_indexes = this.convert(VectorOperators.F2I, 0)
-                                               .lanewise(VectorOperators.AND, twoVectorLen - 1)
-                                               .reinterpretAsInts()
-                                               .convert(VectorOperators.I2F, 0)
-                                               .reinterpretAsFloats();
-        return (FloatVector)VectorSupport.selectFromTwoVectorOp(getClass(), float.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
+        IntVector wrapped_indexes = this.convert(VectorOperators.F2I, 0)
+                                                   .lanewise(VectorOperators.AND, twoVectorLen - 1)
+                                                   .reinterpretAsInts();
+        return (FloatVector)VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass , float.class,
+                                                              int.class, length(), wrapped_indexes, v1, v2,
+                                                              (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 

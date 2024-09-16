@@ -539,14 +539,14 @@ public abstract class ShortVector extends AbstractVector<Short> {
     static ShortVector selectFromTwoVectorHelper(Vector<Short> v1, Vector<Short> v2, Vector<Short> v3) {
         int vlen = v1.length();
         short[] res = new short[vlen];
-        short[] vpayload1 = ((ShortVector)v1).vec();
-        short[] vpayload2 = ((ShortVector)v2).vec();
-        short[] vpayload3 = ((ShortVector)v3).vec();
+        short[] vecPayload1 = ((ShortVector)v1).vec();
+        short[] vecPayload2 = ((ShortVector)v2).vec();
+        short[] vecPayload3 = ((ShortVector)v3).vec();
         for (int i = 0; i < vlen; i++) {
-            int index = ((int)vpayload1[i]);
-            res[i] = index >= vlen ? vpayload3[index & (vlen - 1)] : vpayload2[index];
+            int index = ((int)vecPayload1[i]);
+            res[i] = index >= vlen ? vecPayload3[index & (vlen - 1)] : vecPayload2[index];
         }
-        return ((ShortVector)v1).vectorFactory(res);
+        return ((ShortVector)v2).vectorFactory(res);
     }
 
     // Static factories (other than memory operations)
@@ -2590,13 +2590,16 @@ public abstract class ShortVector extends AbstractVector<Short> {
     public abstract
     ShortVector selectFrom(Vector<Short> v1, Vector<Short> v2);
 
+
     /*package-private*/
     @ForceInline
-    final ShortVector selectFromTemplate(ShortVector v1, ShortVector v2) {
+    final ShortVector selectFromTemplate(Class<? extends Vector<Short>> indexVecClass,
+                                                  ShortVector v1, ShortVector v2) {
         int twoVectorLen = length() * 2;
         ShortVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLen - 1);
-        return (ShortVector)VectorSupport.selectFromTwoVectorOp(getClass(), short.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
+        return (ShortVector)VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass, short.class, short.class,
+                                                              length(), wrapped_indexes, v1, v2,
+                                                              (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 

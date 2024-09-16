@@ -511,7 +511,7 @@ final class ByteMaxVector extends ByteVector {
     public ByteMaxVector selectFrom(Vector<Byte> v1,
                                    Vector<Byte> v2) {
         return (ByteMaxVector)
-            super.selectFromTemplate((ByteMaxVector) v1, (ByteMaxVector) v2);  // specialize
+            super.selectFromTemplate(ByteMaxVector.class, (ByteMaxVector) v1, (ByteMaxVector) v2);  // specialize
     }
 
     @ForceInline

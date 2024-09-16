@@ -501,7 +501,7 @@ final class Long512Vector extends LongVector {
     public Long512Vector selectFrom(Vector<Long> v1,
                                    Vector<Long> v2) {
         return (Long512Vector)
-            super.selectFromTemplate((Long512Vector) v1, (Long512Vector) v2);  // specialize
+            super.selectFromTemplate(Long512Vector.class, (Long512Vector) v1, (Long512Vector) v2);  // specialize
     }
 
     @ForceInline

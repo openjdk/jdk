@@ -525,17 +525,17 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         return r;
     }
 
-    static DoubleVector selectFromTwoVectorHelper(Vector<Double> v1, Vector<Double> v2, Vector<Double> v3) {
+    static DoubleVector selectFromTwoVectorHelper(Vector<Long> v1, Vector<Double> v2, Vector<Double> v3) {
         int vlen = v1.length();
         double[] res = new double[vlen];
-        double[] vpayload1 = ((DoubleVector)v1).vec();
-        double[] vpayload2 = ((DoubleVector)v2).vec();
-        double[] vpayload3 = ((DoubleVector)v3).vec();
+        long[] vecPayload1 = ((LongVector)v1).vec();
+        double[] vecPayload2 = ((DoubleVector)v2).vec();
+        double[] vecPayload3 = ((DoubleVector)v3).vec();
         for (int i = 0; i < vlen; i++) {
-            int index = ((int)vpayload1[i]);
-            res[i] = index >= vlen ? vpayload3[index & (vlen - 1)] : vpayload2[index];
+            int index = ((int)vecPayload1[i]);
+            res[i] = index >= vlen ? vecPayload3[index & (vlen - 1)] : vecPayload2[index];
         }
-        return ((DoubleVector)v1).vectorFactory(res);
+        return ((DoubleVector)v2).vectorFactory(res);
     }
 
     // Static factories (other than memory operations)
@@ -2431,17 +2431,18 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     public abstract
     DoubleVector selectFrom(Vector<Double> v1, Vector<Double> v2);
 
+
     /*package-private*/
     @ForceInline
-    final DoubleVector selectFromTemplate(DoubleVector v1, DoubleVector v2) {
+    final DoubleVector selectFromTemplate(Class<? extends Vector<Long>> indexVecClass,
+                                                  DoubleVector v1, DoubleVector v2) {
         int twoVectorLen = length() * 2;
-        DoubleVector wrapped_indexes = this.convert(VectorOperators.D2I, 0)
-                                               .lanewise(VectorOperators.AND, twoVectorLen - 1)
-                                               .reinterpretAsInts()
-                                               .convert(VectorOperators.I2D, 0)
-                                               .reinterpretAsDoubles();
-        return (DoubleVector)VectorSupport.selectFromTwoVectorOp(getClass(), double.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
+        LongVector wrapped_indexes = this.convert(VectorOperators.D2L, 0)
+                                                   .lanewise(VectorOperators.AND, twoVectorLen - 1)
+                                                   .reinterpretAsLongs();
+        return (DoubleVector)VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass , double.class,
+                                                              long.class, length(), wrapped_indexes, v1, v2,
+                                                              (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 

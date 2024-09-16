@@ -1945,10 +1945,7 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
        if (bt == T_BYTE && !VM_Version::supports_avx512_vbmi()) {
          return false;
        }
-       if ((bt == T_INT || bt == T_FLOAT) && !VM_Version::supports_evex()) {
-         return false;
-       }
-       if (bt == T_DOUBLE && !VM_Version::supports_avx512dq()) {
+       if ((bt == T_INT || bt == T_FLOAT || bt == T_DOUBLE) && !VM_Version::supports_evex()) {
          return false;
        }
        break;

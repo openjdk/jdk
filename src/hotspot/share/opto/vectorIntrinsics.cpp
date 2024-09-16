@@ -2632,28 +2632,41 @@ bool LibraryCallKit::inline_vector_extract() {
 }
 
 
-// public static
-// <V extends Vector<E>,
-//  E>
-// V selectFromTwoVectorOp(Class<? extends V> vClass, Class<E> eClass, int length,
-//                         V v1, V v2, V v3,
-//                         SelectFromTwoVector<V> defaultImpl)
+//  public static
+//  <V extends Vector<E1>,
+//   VI extends Vector<E2>,
+//   E1,
+//   E2>
+//  V selectFromTwoVectorOp(Class<? extends V> vClass, Class<? extends VI> viClass,
+//                          Class<E1> eClass, Class<E2> iClass, int length,
+//                          VI v1, V v2, V v3,
+//                          SelectFromTwoVector<V> defaultImpl)
 bool LibraryCallKit::inline_vector_select_from_two_vectors() {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
-  const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
-  const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
+  const TypeInstPtr* index_vector_klass = gvn().type(argument(1))->isa_instptr();
+  const TypeInstPtr* elem_klass = gvn().type(argument(2))->isa_instptr();
+  const TypeInstPtr* index_elem_klass = gvn().type(argument(3))->isa_instptr();
+  const TypeInt* vlen = gvn().type(argument(4))->isa_int();
 
-  if (vector_klass == nullptr || elem_klass == nullptr ||  vlen == nullptr ||
-      vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr ||
-      !vlen->is_con()) {
-    log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s",
+  if (vector_klass == nullptr || index_vector_klass == nullptr || elem_klass == nullptr ||
+      index_elem_klass == nullptr || vlen == nullptr || vector_klass->const_oop() == nullptr ||
+      index_vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr ||
+      index_elem_klass->const_oop() == nullptr || !vlen->is_con()) {
+    log_if_needed("  ** missing constant: vclass=%s viclass = %s etype=%s itype = %s vlen=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
-                    NodeClassNames[argument(2)->Opcode()]);
+                    NodeClassNames[argument(2)->Opcode()],
+                    NodeClassNames[argument(3)->Opcode()],
+                    NodeClassNames[argument(4)->Opcode()]);
     return false; // not enough info for intrinsification
   }
 
   if (!is_klass_initialized(vector_klass)) {
+    log_if_needed("  ** klass argument not initialized");
+    return false;
+  }
+
+  if (!is_klass_initialized(index_vector_klass)) {
     log_if_needed("  ** klass argument not initialized");
     return false;
   }
@@ -2664,19 +2677,26 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
     return false; // should be primitive type
   }
 
+  ciType* index_elem_type = index_elem_klass->const_oop()->as_instance()->java_mirror_type();
+  if (!index_elem_type->is_primitive_type()) {
+    log_if_needed("  ** index element not a primitive bt=%d", index_elem_type->basic_type());
+    return false; // should be primitive type
+  }
+
   int num_elem = vlen->get_con();
   BasicType elem_bt = elem_type->basic_type();
+  BasicType index_elem_bt = index_elem_type->basic_type();
+  assert(!is_floating_point_type(index_elem_bt), "floating point index element type");
 
   if (!arch_supports_vector(Op_SelectFromTwoVector, num_elem, elem_bt, VecMaskNotUsed)) {
-    int opc = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_SUB, elem_bt);
-    int sopc = VectorNode::opcode(opc, elem_bt);
-    if (!arch_supports_vector(Op_VectorMaskCmp, num_elem, elem_bt, VecMaskNotUsed)   ||
-        !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)     ||
-        !arch_supports_vector(Op_VectorRearrange, num_elem, elem_bt, VecMaskNotUsed) ||
-        (!is_integral_type(elem_bt) &&
-          ((elem_bt == T_FLOAT && !arch_supports_vector(Op_VectorCastF2X, num_elem, T_INT, VecMaskNotUsed))     ||
-           (elem_bt == T_DOUBLE && !arch_supports_vector(Op_VectorCastD2X, num_elem, T_LONG, VecMaskNotUsed)))) ||
-        !arch_supports_vector(sopc, num_elem, elem_bt, VecMaskNotUsed)) {
+    int cast_vopc = VectorCastNode::opcode(-1, index_elem_bt, true);
+    if (!arch_supports_vector(Op_VectorMaskCmp, num_elem, T_BYTE, VecMaskNotUsed)            ||
+        !arch_supports_vector(Op_AndV, num_elem, T_BYTE, VecMaskNotUsed)                     ||
+        !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)             ||
+        !arch_supports_vector(Op_VectorRearrange, num_elem, elem_bt, VecMaskNotUsed)         ||
+        !arch_supports_vector(cast_vopc, num_elem, T_BYTE, VecMaskNotUsed)                   ||
+        !arch_supports_vector(Op_VectorLoadShuffle, num_elem, index_elem_bt, VecMaskNotUsed) ||
+        !arch_supports_vector(Op_Replicate, num_elem, T_BYTE, VecMaskNotUsed)) {
       log_if_needed("  ** not supported: opc=%d vlen=%d etype=%s ismask=useload",
                     Op_SelectFromTwoVector, num_elem, type2name(elem_bt));
       return false; // not supported
@@ -2684,24 +2704,26 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
   }
 
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  ciKlass* index_vbox_klass = index_vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
+  const TypeInstPtr* index_vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, index_vbox_klass);
 
-  Node* opd1 = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
+  Node* opd1 = unbox_vector(argument(5), index_vbox_type, index_elem_bt, num_elem);
   if (opd1 == nullptr) {
     log_if_needed("  ** unbox failed v1=%s",
-                  NodeClassNames[argument(3)->Opcode()]);
+                  NodeClassNames[argument(5)->Opcode()]);
     return false;
   }
-  Node* opd2 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+  Node* opd2 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
   if (opd2 == nullptr) {
     log_if_needed("  ** unbox failed v1=%s",
-                  NodeClassNames[argument(4)->Opcode()]);
+                  NodeClassNames[argument(6)->Opcode()]);
     return false;
   }
-  Node* opd3 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  Node* opd3 = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
   if (opd3 == nullptr) {
     log_if_needed("  ** unbox failed v1=%s",
-                  NodeClassNames[argument(5)->Opcode()]);
+                  NodeClassNames[argument(7)->Opcode()]);
     return false;
   }
 

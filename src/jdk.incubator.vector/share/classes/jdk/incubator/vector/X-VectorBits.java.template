@@ -517,7 +517,7 @@ final class $vectortype$ extends $abstractvectortype$ {
     public $vectortype$ selectFrom(Vector<$Boxtype$> v1,
                                    Vector<$Boxtype$> v2) {
         return ($vectortype$)
-            super.selectFromTemplate(($vectortype$) v1, ($vectortype$) v2);  // specialize
+            super.selectFromTemplate($Bitstype$$bits$Vector.class, ($vectortype$) v1, ($vectortype$) v2);  // specialize
     }
 
 #if[FP]

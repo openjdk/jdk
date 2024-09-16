@@ -550,17 +550,17 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         return r;
     }
 
-    static $abstractvectortype$ selectFromTwoVectorHelper(Vector<$Boxtype$> v1, Vector<$Boxtype$> v2, Vector<$Boxtype$> v3) {
+    static $abstractvectortype$ selectFromTwoVectorHelper(Vector<$Boxbitstype$> v1, Vector<$Boxtype$> v2, Vector<$Boxtype$> v3) {
         int vlen = v1.length();
         $type$[] res = new $type$[vlen];
-        $type$[] vecPayload1 = (($abstractvectortype$)v1).vec();
+        $bitstype$[] vecPayload1 = (($abstractbitsvectortype$)v1).vec();
         $type$[] vecPayload2 = (($abstractvectortype$)v2).vec();
         $type$[] vecPayload3 = (($abstractvectortype$)v3).vec();
         for (int i = 0; i < vlen; i++) {
             int index = ((int)vecPayload1[i]);
             res[i] = index >= vlen ? vecPayload3[index & (vlen - 1)] : vecPayload2[index];
         }
-        return (($abstractvectortype$)v1).vectorFactory(res);
+        return (($abstractvectortype$)v2).vectorFactory(res);
     }
 
     // Static factories (other than memory operations)
@@ -2966,30 +2966,27 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     public abstract
     $abstractvectortype$ selectFrom(Vector<$Boxtype$> v1, Vector<$Boxtype$> v2);
 
+
     /*package-private*/
     @ForceInline
-    final $abstractvectortype$ selectFromTemplate($abstractvectortype$ v1, $abstractvectortype$ v2) {
+    final $abstractvectortype$ selectFromTemplate(Class<? extends Vector<$Boxbitstype$>> indexVecClass,
+                                                  $abstractvectortype$ v1, $abstractvectortype$ v2) {
         int twoVectorLen = length() * 2;
 #if[FP]
-#if[intOrFloat]
-        $abstractvectortype$ wrapped_indexes = this.convert(VectorOperators.F2I, 0)
-                                               .lanewise(VectorOperators.AND, twoVectorLen - 1)
-                                               .reinterpretAsInts()
-                                               .convert(VectorOperators.I2F, 0)
-                                               .reinterpretAsFloats();
-#else[intOrFloat]
-        $abstractvectortype$ wrapped_indexes = this.convert(VectorOperators.D2I, 0)
-                                               .lanewise(VectorOperators.AND, twoVectorLen - 1)
-                                               .reinterpretAsInts()
-                                               .convert(VectorOperators.I2D, 0)
-                                               .reinterpretAsDoubles();
-#end[intOrFloat]
+        $abstractbitsvectortype$ wrapped_indexes = this.convert(VectorOperators.{#if[intOrFloat]?F2I:D2L}, 0)
+                                                   .lanewise(VectorOperators.AND, twoVectorLen - 1)
+                                                   .reinterpretAs$Bitstype$s();
+        return ($Type$Vector)VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass , $type$.class,
+                                                              $bitstype$.class, length(), wrapped_indexes, v1, v2,
+                                                              (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
+        );
 #else[FP]
         $abstractvectortype$ wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLen - 1);
-#end[FP]
-        return ($Type$Vector)VectorSupport.selectFromTwoVectorOp(getClass(), $type$.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
+        return ($Type$Vector)VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass, $type$.class, $type$.class,
+                                                              length(), wrapped_indexes, v1, v2,
+                                                              (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
+#end[FP]
     }
 
     /// Ternary operations

@@ -498,7 +498,7 @@ final class DoubleMaxVector extends DoubleVector {
     public DoubleMaxVector selectFrom(Vector<Double> v1,
                                    Vector<Double> v2) {
         return (DoubleMaxVector)
-            super.selectFromTemplate((DoubleMaxVector) v1, (DoubleMaxVector) v2);  // specialize
+            super.selectFromTemplate(LongMaxVector.class, (DoubleMaxVector) v1, (DoubleMaxVector) v2);  // specialize
     }
 
     @ForceInline

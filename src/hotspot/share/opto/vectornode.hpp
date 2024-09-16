@@ -1607,7 +1607,6 @@ class VectorRearrangeNode : public VectorNode {
     // assert(mask->is_VectorMask(), "VectorBlendNode requires that third argument be a mask");
   }
 
-  Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual int Opcode() const;
   Node* vec1() const { return in(1); }
   Node* vec_shuffle() const { return in(2); }

@@ -177,10 +177,6 @@
     return is_alltrue ? BoolTest::eq : BoolTest::ne;
   }
 
-  static bool vector_indexes_needs_pruning(BasicType bt, int vlen) {
-    return false;
-  }
-
   // Returns pre-selection estimated size of a vector operation.
   static int vector_op_pre_select_sz_estimate(int vopc, BasicType ety, int vlen) {
     switch(vopc) {

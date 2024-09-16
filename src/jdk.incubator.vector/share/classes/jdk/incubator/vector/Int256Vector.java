@@ -511,7 +511,7 @@ final class Int256Vector extends IntVector {
     public Int256Vector selectFrom(Vector<Integer> v1,
                                    Vector<Integer> v2) {
         return (Int256Vector)
-            super.selectFromTemplate((Int256Vector) v1, (Int256Vector) v2);  // specialize
+            super.selectFromTemplate(Int256Vector.class, (Int256Vector) v1, (Int256Vector) v2);  // specialize
     }
 
     @ForceInline
