@@ -576,6 +576,10 @@ void ShenandoahHeapRegion::recycle() {
   reset_alloc_metadata();
 
   heap->marking_context()->reset_top_at_mark_start(this);
+  if (heap->is_bitmap_slice_committed(this)) {
+    heap->marking_context()->clear_bitmap(this);
+  }
+
   set_update_watermark(bottom());
 
   make_empty();
