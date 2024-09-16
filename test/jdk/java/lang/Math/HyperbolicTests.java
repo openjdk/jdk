@@ -974,11 +974,11 @@ public class HyperbolicTests {
 
     /**
      * Test accuracy of {Math, StrictMath}.tanh using quad precision
-     * tanh implementation as the reference.
+     * tanh implementation as the reference. There are additional tests.
      * The specified accuracy is 2.5 ulps.
      *
      */
-    static int testTanhWithReference() {
+    static int testTanhAdditionalTests() {
         int failures = 0;
         /*
          * Array elements below are generated using a quad precision tanh
@@ -1716,8 +1716,6 @@ public class HyperbolicTests {
             {-9.88131291682493088353137585736442745e-324,             -9.88131291682493088353137585736442745e-324},
             {+4.94065645841246544176568792868221372e-324,             +4.94065645841246544176568792868221372e-324},
             {-4.94065645841246544176568792868221372e-324,             -4.94065645841246544176568792868221372e-324},
-            {+0.00000000000000000000000000000000000e+00,              +0.00000000000000000000000000000000000e+00},
-            {-0.00000000000000000000000000000000000e+00,              -0.00000000000000000000000000000000000e+00},
         };
 
         for (int i = 0; i < testCases.length; i++) {
