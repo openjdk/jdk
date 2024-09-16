@@ -28,7 +28,7 @@
  * Note: we try to trigger bugs by enforcing the JVM to use zero-based mode. To increase the chance of zero-based
  * mode, we start with CDS disabled, a small class space and a large (albeit uncommitted, to save memory) heap. The
  * JVM will likely place the class space in low-address territory.
- * (If it does not manage to do this, the test will note that and print "skipped")
+ * (If it does not manage to do this, the test will still succeed, but it won't alert us on regressions)
  */
 
 /* @test id=use-zero-based-encoding
