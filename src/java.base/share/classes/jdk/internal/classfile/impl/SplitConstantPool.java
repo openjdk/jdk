@@ -544,8 +544,9 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             return ce;
         }
 
+        var utf8 = maybeCloneUtf8Entry(e.ref1); // call order matters
         return internalAdd(new AbstractPoolEntry.ClassEntryImpl(this, size,
-                maybeCloneUtf8Entry(e.ref1), e.hashCode(), e.sym));
+                utf8, e.hashCode(), e.sym));
     }
 
     @Override

@@ -242,7 +242,7 @@ public abstract sealed class AbstractPoolEntry {
             int singleBytes = JLA.countPositives(rawBytes, offset, rawLen);
             int hash = ArraysSupport.hashCodeOfUnsigned(rawBytes, offset, singleBytes, 0);
             if (singleBytes == rawLen) {
-                this.contentHash = hashString(hash);
+                this.contentHash = hash;
                 charLen = rawLen;
                 state = State.BYTE;
             }
@@ -300,7 +300,7 @@ public abstract sealed class AbstractPoolEntry {
                             throw new CpException("malformed input around byte " + px);
                     }
                 }
-                this.contentHash = hashString(hash);
+                this.contentHash = hash;
                 charLen = chararr_count;
                 this.chars = chararr;
                 state = State.CHAR;
