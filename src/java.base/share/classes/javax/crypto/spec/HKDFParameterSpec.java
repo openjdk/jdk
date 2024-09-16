@@ -51,8 +51,7 @@ import java.util.Objects;
  * <p>
  * Examples:
  * {@snippet lang = java:
- * // this usage depicts the initialization of an HKDF-Extract
- * AlgorithmParameterSpec
+ * // this usage depicts the initialization of an HKDF-Extract AlgorithmParameterSpec
  * AlgorithmParameterSpec derivationSpec =
  *             HKDFParameterSpec.ofExtract()
  *                              .addIKM(label)
@@ -60,14 +59,12 @@ import java.util.Objects;
  *                              .addSalt(salt).extractOnly();
  *}
  * {@snippet lang = java:
- * // this usage depicts the initialization of an HKDF-Expand
- * AlgorithmParameterSpec
+ * // this usage depicts the initialization of an HKDF-Expand AlgorithmParameterSpec
  * AlgorithmParameterSpec derivationSpec =
  *             HKDFParameterSpec.expandOnly(prk, info, 32);
  *}
  * {@snippet lang = java:
- * // this usage depicts the initialization of an HKDF-ExtractExpand
- * AlgorithmParameterSpec
+ * // this usage depicts the initialization of an HKDF-ExtractExpand AlgorithmParameterSpec
  * AlgorithmParameterSpec derivationSpec =
  *             HKDFParameterSpec.ofExtract()
  *                              .addIKM(ikm)

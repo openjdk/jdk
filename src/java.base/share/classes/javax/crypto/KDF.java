@@ -528,6 +528,10 @@ public final class KDF {
      *         if {@code alg} is empty or invalid
      * @throws NullPointerException
      *         if {@code alg} or {@code derivationSpec} is null
+     *
+     * @see <a href="#DelayedProviderSelection">Delayed Provider
+     *         Selection</a>
+     *
      */
     public SecretKey deriveKey(String alg,
                                AlgorithmParameterSpec derivationSpec)
@@ -566,6 +570,10 @@ public final class KDF {
      *         if the derived keying material is not extractable
      * @throws NullPointerException
      *         if {@code derivationSpec} is null
+     *
+     * @see <a href="#DelayedProviderSelection">Delayed Provider
+     *         Selection</a>
+     *
      */
     public byte[] deriveData(AlgorithmParameterSpec derivationSpec)
             throws InvalidAlgorithmParameterException {
