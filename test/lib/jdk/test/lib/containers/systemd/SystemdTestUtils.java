@@ -144,13 +144,15 @@ public class SystemdTestUtils {
                 Path memoryConfig = sliceDotDDir.resolve(Path.of(SLICE_D_MEM_CONFIG_FILE));
                 Files.writeString(memoryConfig,
                                   getMemoryDSliceContent(runOpts),
-                                  StandardOpenOption.TRUNCATE_EXISTING);
+                                  StandardOpenOption.TRUNCATE_EXISTING,
+                                  StandardOpenOption.CREATE);
             }
             if (runOpts.sliceDCpuLimit != null) {
                 Path cpuConfig = sliceDotDDir.resolve(Path.of(SLICE_D_CPU_CONFIG_FILE));
                 Files.writeString(cpuConfig,
                                   getCPUDSliceContent(runOpts),
-                                  StandardOpenOption.TRUNCATE_EXISTING);
+                                  StandardOpenOption.TRUNCATE_EXISTING,
+                                  StandardOpenOption.CREATE);
             }
         }
 
