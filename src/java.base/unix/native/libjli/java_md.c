@@ -68,9 +68,9 @@
  *      - removes any JVM selection options from the
  *        arguments that were passed to the launcher
  *
- *  - CreateExecutionEnvironment then determines if
- *    LD_LIBRARY_PATH environment variable needs
- *    to be set/updated.
+ *  - CreateExecutionEnvironment then determines (by calling
+ *    RequiresSetenv function) if LD_LIBRARY_PATH environment
+ *    variable needs to be set/updated.
  *      - If LD_LIBRARY_PATH needs to be set/updated,
  *        then CreateExecutionEnvironment exec()s
  *        the current process with the appropriate value
@@ -205,7 +205,7 @@ ContainsLibJVM(const char *env) {
 }
 
 /*
- * Test whether the environment variable needs to be set.
+ * Test whether the LD_LIBRARY_PATH environment variable needs to be set.
  */
 static jboolean
 RequiresSetenv(const char *jvmpath) {
