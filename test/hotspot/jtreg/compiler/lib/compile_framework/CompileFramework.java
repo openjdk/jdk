@@ -23,18 +23,9 @@
 
 package compiler.lib.compile_framework;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,35 +33,33 @@ import java.util.List;
 * TODO
 */
 public class CompileFramework {
-    private static final int COMPILE_TIMEOUT = 60;
-    private static final boolean VERBOSE = Boolean.getBoolean("CompileFrameworkVerbose");
-
     private List<SourceCode> sourceCodes = new ArrayList<>();
-    private final Path sourceDir = getTempDir("compile-framework-sources-");
-    private final Path classesDir = getTempDir("compile-framework-classes-");
-    private URLClassLoader classLoader;
+    private final Path sourceDir = Utils.getTempDir("compile-framework-sources-");
+    private final Path classesDir = Utils.getTempDir("compile-framework-classes-");
+    private ClassLoader classLoader;
+
+    /**
+    * TODO change name to escaped too???
+    */
+    public String getClassPathOfCompiledClasses() {
+        return Utils.getEscapedClassPathAndClassesDir(classesDir);
+    }
 
     /**
     * TODO
     */
-    public String getClassPathOfCompiledClasses() {
-        String cp = System.getProperty("java.class.path") +
-                    File.pathSeparator +
-                    classesDir.toAbsolutePath();
-        // Escape the backslash for Windows paths. We are using the path in the command-line
-	// and Java code, so we always want it to be escaped.
-        return cp.replace("\\", "\\\\");
-    }
-
     public void addJavaSourceCode(String className, String code) {
         sourceCodes.add(new SourceCode(className, code, SourceCode.Kind.JAVA));
     }
 
+    /**
+    * TODO
+    */
     public void addJasmSourceCode(String className, String code) {
         sourceCodes.add(new SourceCode(className, code, SourceCode.Kind.JASM));
     }
 
-    public String sourceCodesAsString() {
+    private String sourceCodesAsString() {
         StringBuilder builder = new StringBuilder();
         for (SourceCode sourceCode : sourceCodes) {
             builder.append("SourceCode: ").append(sourceCode.filePathName()).append(System.lineSeparator());
@@ -79,19 +68,16 @@ public class CompileFramework {
         return builder.toString();
     }
 
-    private static void println(String s) {
-        if (VERBOSE) {
-            System.out.println(s);
-        }
-    }
-
+    /**
+    * TODO
+    */
     public void compile() {
         if (classLoader != null) {
             throw new CompileFrameworkException("Cannot compile twice!");
         }
 
-        println("------------------ CompileFramework: SourceCode -------------------");
-        println(sourceCodesAsString());
+        Utils.printlnVerbose("------------------ CompileFramework: SourceCode -------------------");
+        Utils.printlnVerbose(sourceCodesAsString());
 
         List<SourceCode> javaSources = new ArrayList<SourceCode>();
         List<SourceCode> jasmSources = new ArrayList<SourceCode>();
@@ -106,175 +92,14 @@ public class CompileFramework {
         System.out.println("Source directory: " + sourceDir);
         System.out.println("Classes directory: " + classesDir);
 
-        compileJasmSources(jasmSources);
-        compileJavaSources(javaSources);
-        setUpClassLoader();
+        Compile.compileJasmSources(jasmSources, sourceDir, classesDir);
+        Compile.compileJavaSources(javaSources, sourceDir, classesDir);
+        classLoader = ClassLoaderBuilder.build(classesDir);
     }
 
-    private static Path getTempDir(String prefix) {
-        try {
-            return Files.createTempDirectory(Paths.get("."), prefix);
-        } catch (Exception e) {
-            throw new InternalCompileFrameworkException("Could not set up temporary directory", e);
-        }
-    }
-
-    private void compileJasmSources(List<SourceCode> jasmSources) {
-        if (jasmSources.isEmpty()) {
-            println("No jasm sources to compile.");
-            return;
-        }
-        println("Compiling jasm sources: " + jasmSources.size());
-
-        List<Path> jasmFilePaths = writeSourcesToFile(jasmSources);
-        compileJasmFiles(jasmFilePaths);
-        println("Jasm sources compiled.");
-    }
-
-    private void compileJasmFiles(List<Path> paths) {
-        // Compile JASM files with asmtools.jar, shipped with jtreg.
-        List<String> command = new ArrayList<>();
-
-        command.add("%s/bin/java".formatted(System.getProperty("compile.jdk")));
-        command.add("-classpath");
-        command.add(getAsmToolsPath());
-        command.add("org.openjdk.asmtools.jasm.Main");
-        command.add("-d");
-        command.add(classesDir.toString());
-        for (Path path : paths) {
-            command.add(path.toAbsolutePath().toString());
-        }
-
-        executeCompileCommand(command);
-    }
-
-    private static String[] getClassPaths() {
-        String separator = File.pathSeparator;
-        return System.getProperty("java.class.path").split(separator);
-    }
-
-    private static String getAsmToolsPath() {
-        for (String path : getClassPaths()) {
-            if (path.endsWith("jtreg.jar")) {
-                File jtreg = new File(path);
-                File dir = jtreg.getAbsoluteFile().getParentFile();
-                File asmtools = new File(dir, "asmtools.jar");
-                if (!asmtools.exists()) {
-                    throw new InternalCompileFrameworkException("Found jtreg.jar in classpath, but could not find asmtools.jar");
-                }
-                return asmtools.getAbsolutePath();
-            }
-        }
-        throw new InternalCompileFrameworkException("Could not find asmtools because could not find jtreg.jar in classpath");
-    }
-
-    private void compileJavaSources(List<SourceCode> javaSources) {
-        if (javaSources.isEmpty()) {
-            println("No java sources to compile.");
-            return;
-        }
-        println("Compiling Java sources: " + javaSources.size());
-
-        List<Path> javaFilePaths = writeSourcesToFile(javaSources);
-        compileJavaFiles(javaFilePaths);
-        println("Java sources compiled.");
-    }
-
-    private void compileJavaFiles(List<Path> paths) {
-        // Compile JAVA files with javac, in the "compile.jdk".
-        List<String> command = new ArrayList<>();
-
-        command.add("%s/bin/javac".formatted(System.getProperty("compile.jdk")));
-        command.add("-classpath");
-        command.add(getClassPathOfCompiledClasses());
-        command.add("-d");
-        command.add(classesDir.toString());
-        for (Path path : paths) {
-            command.add(path.toAbsolutePath().toString());
-        }
-
-        executeCompileCommand(command);
-    }
-
-    private List<Path> writeSourcesToFile(List<SourceCode> sources) {
-        List<Path> storedFiles = new ArrayList<Path>();
-        for (SourceCode sourceCode : sources) {
-            Path path = sourceDir.resolve(sourceCode.filePathName());
-            writeCodeToFile(sourceCode.code, path);
-            storedFiles.add(path);
-        }
-        return storedFiles;
-    }
-
-    private static void writeCodeToFile(String code, Path path) {
-        println("File: " + path);
-
-        // Ensure directory of the file exists.
-        Path dir = path.getParent();
-        try {
-            Files.createDirectories(dir);
-        } catch (Exception e) {
-            throw new CompileFrameworkException("Could not create directory: " + dir, e);
-        }
-
-        // Write to file.
-        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
-            writer.write(code);
-        } catch (Exception e) {
-            throw new CompileFrameworkException("Could not write file: " + path, e);
-        }
-    }
-
-    private static void executeCompileCommand(List<String> command) {
-        println("Compile command: " + String.join(" ", command));
-
-        ProcessBuilder builder = new ProcessBuilder(command);
-        builder.redirectErrorStream(true);
-
-        String output;
-        int exitCode;
-        try {
-            Process process = builder.start();
-            boolean exited = process.waitFor(COMPILE_TIMEOUT, TimeUnit.SECONDS);
-            if (!exited) {
-                process.destroyForcibly();
-                System.out.println("Timeout: compile command: " + String.join(" ", command));
-                throw new InternalCompileFrameworkException("Process timeout: compilation took too long.");
-            }
-            output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            exitCode = process.exitValue();
-        } catch (IOException e) {
-            throw new InternalCompileFrameworkException("IOException during compilation", e);
-        } catch (InterruptedException e) {
-            throw new CompileFrameworkException("InterruptedException during compilation", e);
-        }
-
-        if (exitCode != 0 || !output.equals("")) {
-            System.out.println("Compilation failed.");
-            System.out.println("Exit code: " + exitCode);
-            System.out.println("Output: '" + output + "'");
-            throw new CompileFrameworkException("Compilation failed.");
-        }
-    }
-
-    private void setUpClassLoader() {
-        ClassLoader sysLoader = ClassLoader.getSystemClassLoader();
-
-        try {
-            // Classpath for all included classes (e.g. IR Framework).
-            // Get all class paths, convert to urls.
-            List<URL> urls = new ArrayList<URL>();
-            for (String path : getClassPaths()) {
-                urls.add(new File(path).toURI().toURL());
-            }
-            // And add in the compiled classes from this instance of CompileFramework.
-            urls.add(new File(classesDir.toString()).toURI().toURL());
-            classLoader = URLClassLoader.newInstance(urls.toArray(URL[]::new), sysLoader);
-        } catch (IOException e) {
-            throw new CompileFrameworkException("IOException while creating ClassLoader", e);
-        }
-    }
-
+    /**
+    * TODO
+    */
     public Class<?> getClass(String name) {
         try {
             return Class.forName(name, true, classLoader);
@@ -283,6 +108,9 @@ public class CompileFramework {
         }
     }
 
+    /**
+    * TODO
+    */
     public Object invoke(String className, String methodName, Object[] args) {
         Class<?> c = getClass(className);
 
