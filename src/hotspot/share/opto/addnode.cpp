@@ -490,14 +490,13 @@ jlong AddNode::extract_base_operand_from_serial_additions(PhaseGVN* phase, Node*
     Node* operand_node = node->in(1)->is_Con() ? node->in(2) : node->in(1);
     BasicType bt = phase->type(const_node)->basic_type();
 
-// FIXME: remove this if not needed
-//    if (bt == T_INT || bt == T_LONG) {
+    if (bt == T_INT || bt == T_LONG) { // const could potentially be void type
       Node* mul_base;
       jlong multiplier = extract_base_operand_from_serial_additions(phase, operand_node, &mul_base, depth_limit - 1);
 
       *base = mul_base;
       return multiplier * const_node->get_integer_as_long(bt);
-//    }
+    }
   }
 
   // LShiftNode(any, const), e.g, a<<2 => a*4
@@ -506,14 +505,13 @@ jlong AddNode::extract_base_operand_from_serial_additions(PhaseGVN* phase, Node*
     Node* operand_node = node->in(1);
     BasicType bt = phase->type(const_node)->basic_type();
 
-// FIXME: remove this if not needed
-//    if (bt == T_INT || bt == T_LONG) {
+    if (bt == T_INT || bt == T_LONG) { // const could potentially be void type
       Node* shift_base;
       jlong multiplier = extract_base_operand_from_serial_additions(phase, operand_node, &shift_base, depth_limit - 1);
 
       *base = shift_base;
-      return multiplier * ((jlong) 1 << const_node->get_integer_as_long(bt));
-//    }
+      return multiplier * ((jlong) 1 << const_node->get_integer_as_long(bt)); // const could be void type
+    }
   }
 
   // AddNode(any, any), e.g., a + a => a*2 or (a<<2) + a => a*5
@@ -535,7 +533,6 @@ jlong AddNode::extract_base_operand_from_serial_additions(PhaseGVN* phase, Node*
     }
   }
 
-  *base = node;
   return 1;
 }
 
