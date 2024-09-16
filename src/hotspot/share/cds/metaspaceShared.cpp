@@ -1530,11 +1530,17 @@ void MetaspaceShared::initialize_shared_spaces() {
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
 
-  log_info(cds)("Using AOT-linked classes: %s (%s%s)",
-                CDSConfig::is_using_aot_linked_classes() ? "true" : "false",
-                static_mapinfo->header()->has_aot_linked_classes() ? "static archive: true" : "static archive: false",
-                (dynamic_mapinfo == nullptr) ? "" :
-                   (dynamic_mapinfo->header()->has_aot_linked_classes() ? ", dynamic archive: true" : ", dynamic archive: false"));
+  LogStreamHandle(Info, cds) lsh;
+  if (lsh.is_enabled()) {
+    lsh.print("Using AOT-linked classes: %s (static archive: %s aot-linked classes",
+              CDSConfig::is_using_aot_linked_classes() ? "true" : "false",
+              static_mapinfo->header()->has_aot_linked_classes() ? "has" : "no");
+    if (dynamic_mapinfo != nullptr) {
+      lsh.print(", dynamic archive: %s aot-linked classes",
+                dynamic_mapinfo->header()->has_aot_linked_classes() ? "has" : "no");
+    }
+    lsh.print_cr(")");
+  }
 
   // Set up LambdaFormInvokers::_lambdaform_lines for dynamic dump
   if (CDSConfig::is_dumping_dynamic_archive()) {

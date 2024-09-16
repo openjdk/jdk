@@ -86,7 +86,7 @@ class AOTClassLinker :  AllStatic {
   static void add_candidate(InstanceKlass* ik);
 
   static Array<InstanceKlass*>* write_classes(oop class_loader, bool is_javabase);
-  static int num_initiated_classes(oop loader1, oop loader2);
+  static int count_public_classes(oop loader);
 
 public:
   static void initialize();
