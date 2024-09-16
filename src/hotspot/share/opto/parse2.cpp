@@ -1632,6 +1632,10 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
 }
 
 bool Parse::path_is_suitable_for_uncommon_trap(float prob) const {
+  // Randomly skip emitting an uncommon trap
+  if (StressUnstableIfTraps && ((C->random() % 2) == 0)) {
+    return false;
+  }
   // Don't want to speculate on uncommon traps when running with -Xcomp
   if (!UseInterpreter) {
     return false;
