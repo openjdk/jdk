@@ -72,13 +72,7 @@ class SerialHeap : public CollectedHeap {
   friend class HeapInspection;
   friend class GCCauseSetter;
   friend class VMStructs;
-public:
   friend class VM_PopulateDumpSharedSpace;
-
-  enum GenerationType {
-    YoungGen,
-    OldGen
-  };
 
 private:
   DefNewGeneration* _young_gen;
@@ -124,7 +118,6 @@ public:
   // Does operations required after initialization has been done.
   void post_initialize() override;
 
-  bool is_young_gen(const Generation* gen) const { return gen == _young_gen; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
   // Performance Counter support

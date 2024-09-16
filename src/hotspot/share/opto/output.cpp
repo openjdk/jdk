@@ -716,7 +716,7 @@ ObjectValue*
 PhaseOutput::sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id) {
   for (int i = 0; i < objs->length(); i++) {
     assert(objs->at(i)->is_object(), "corrupt object cache");
-    ObjectValue* sv = (ObjectValue*) objs->at(i);
+    ObjectValue* sv = objs->at(i)->as_ObjectValue();
     if (sv->id() == id) {
       return sv;
     }
@@ -755,7 +755,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
   if (local->is_SafePointScalarObject()) {
     SafePointScalarObjectNode* spobj = local->as_SafePointScalarObject();
 
-    ObjectValue* sv = (ObjectValue*) sv_for_node_id(objs, spobj->_idx);
+    ObjectValue* sv = sv_for_node_id(objs, spobj->_idx);
     if (sv == nullptr) {
       ciKlass* cik = t->is_oopptr()->exact_klass();
       assert(cik->is_instance_klass() ||
@@ -974,6 +974,27 @@ bool PhaseOutput::contains_as_owner(GrowableArray<MonitorValue*> *monarray, Obje
   return false;
 }
 
+// Determine if there is a scalar replaced object description represented by 'ov'.
+bool PhaseOutput::contains_as_scalarized_obj(JVMState* jvms, MachSafePointNode* sfn,
+                                             GrowableArray<ScopeValue*>* objs,
+                                             ObjectValue* ov) const {
+  for (int i = 0; i < jvms->scl_size(); i++) {
+    Node* n = sfn->scalarized_obj(jvms, i);
+    // Other kinds of nodes that we may encounter here, for instance constants
+    // representing values of fields of objects scalarized, aren't relevant for
+    // us, since they don't map to ObjectValue.
+    if (!n->is_SafePointScalarObject()) {
+      continue;
+    }
+
+    ObjectValue* other = sv_for_node_id(objs, n->_idx);
+    if (ov == other) {
+      return true;
+    }
+  }
+  return false;
+}
+
 //--------------------------Process_OopMap_Node--------------------------------
 void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
   // Handle special safepoint nodes for synchronization
@@ -1137,7 +1158,10 @@ void PhaseOutput::Process_OopMap_Node(MachNode *mach, int current_offset) {
 
         for (int j = 0; j< merge->possible_objects()->length(); j++) {
           ObjectValue* ov = merge->possible_objects()->at(j)->as_ObjectValue();
-          bool is_root = locarray->contains(ov) || exparray->contains(ov) || contains_as_owner(monarray, ov);
+          bool is_root = locarray->contains(ov) ||
+                         exparray->contains(ov) ||
+                         contains_as_owner(monarray, ov) ||
+                         contains_as_scalarized_obj(jvms, sfn, objs, ov);
           ov->set_root(is_root);
         }
       }
@@ -2900,7 +2924,7 @@ void Scheduling::verify_good_schedule( Block *b, const char *msg ) {
     // Now make all USEs live
     for( uint i=1; i<n->req(); i++ ) {
       Node *def = n->in(i);
-      assert(def != 0, "input edge required");
+      assert(def != nullptr, "input edge required");
       OptoReg::Name reg_lo = _regalloc->get_reg_first(def);
       OptoReg::Name reg_hi = _regalloc->get_reg_second(def);
       if( OptoReg::is_valid(reg_lo) ) {
@@ -2923,7 +2947,7 @@ void Scheduling::verify_good_schedule( Block *b, const char *msg ) {
 // Conditionally add precedence edges.  Avoid putting edges on Projs.
 static void add_prec_edge_from_to( Node *from, Node *to ) {
   if( from->is_Proj() ) {       // Put precedence edge on Proj's input
-    assert( from->req() == 1 && (from->len() == 1 || from->in(1)==0), "no precedence edges on projections" );
+    assert( from->req() == 1 && (from->len() == 1 || from->in(1) == nullptr), "no precedence edges on projections" );
     from = from->in(0);
   }
   if( from != to &&             // No cycles (for things like LD L0,[L0+4] )
@@ -3434,6 +3458,7 @@ void PhaseOutput::install_code(ciMethod*         target,
                                      has_unsafe_access,
                                      SharedRuntime::is_wide_vector(C->max_vector_size()),
                                      C->has_monitors(),
+                                     C->has_scoped_access(),
                                      0);
 
     if (C->log() != nullptr) { // Print code cache state into compiler log

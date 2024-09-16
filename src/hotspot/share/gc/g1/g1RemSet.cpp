@@ -365,7 +365,7 @@ public:
     _next_dirty_regions = nullptr;
   }
 
-  void iterate_dirty_regions_from(HeapRegionClosure* cl, uint worker_id) {
+  void iterate_dirty_regions_from(G1HeapRegionClosure* cl, uint worker_id) {
     uint num_regions = _next_dirty_regions->size();
 
     if (num_regions == 0) {
@@ -481,7 +481,7 @@ public:
 };
 
 // Scans a heap region for dirty cards.
-class G1ScanHRForRegionClosure : public HeapRegionClosure {
+class G1ScanHRForRegionClosure : public G1HeapRegionClosure {
   using CardValue = CardTable::CardValue;
 
   G1CollectedHeap* _g1h;
@@ -755,7 +755,7 @@ public:
 
 // Heap region closure to be applied to all regions in the current collection set
 // increment to fix up non-card related roots.
-class G1ScanCollectionSetRegionClosure : public HeapRegionClosure {
+class G1ScanCollectionSetRegionClosure : public G1HeapRegionClosure {
   G1ParScanThreadState* _pss;
   G1RemSetScanState* _scan_state;
 
@@ -972,13 +972,13 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   // Visitor for remembered sets. Several methods of it are called by a region's
   // card set iterator to drop card set remembered set entries onto the card.
-  // table. This is in addition to being the HeapRegionClosure to iterate over
+  // table. This is in addition to being the HG1eapRegionClosure to iterate over
   // all region's remembered sets.
   //
   // We add a small prefetching cache in front of the actual work as dropping
   // onto the card table is basically random memory access. This improves
   // performance of this operation significantly.
-  class G1MergeCardSetClosure : public HeapRegionClosure {
+  class G1MergeCardSetClosure : public G1HeapRegionClosure {
     friend class G1MergeCardSetCache;
 
     G1RemSetScanState* _scan_state;
@@ -1074,7 +1074,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
     void merge_card_set_for_region(G1HeapRegion* r) {
       assert(r->in_collection_set() || r->is_starts_humongous(), "must be");
 
-      HeapRegionRemSet* rem_set = r->rem_set();
+      G1HeapRegionRemSet* rem_set = r->rem_set();
       if (!rem_set->is_empty()) {
         rem_set->iterate_for_merge(*this);
       }
@@ -1098,7 +1098,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
   // Closure to make sure that the marking bitmap is clear for any old region in
   // the collection set.
   // This is needed to be able to use the bitmap for evacuation failure handling.
-  class G1ClearBitmapClosure : public HeapRegionClosure {
+  class G1ClearBitmapClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
 
     void assert_bitmap_clear(G1HeapRegion* hr, const G1CMBitMap* bitmap) {
@@ -1144,11 +1144,11 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   // Helper to allow two closure to be applied when
   // iterating through the collection set.
-  class G1CombinedClosure : public HeapRegionClosure {
-    HeapRegionClosure* _closure1;
-    HeapRegionClosure* _closure2;
+  class G1CombinedClosure : public G1HeapRegionClosure {
+    G1HeapRegionClosure* _closure1;
+    G1HeapRegionClosure* _closure2;
   public:
-    G1CombinedClosure(HeapRegionClosure* cl1, HeapRegionClosure* cl2) :
+    G1CombinedClosure(G1HeapRegionClosure* cl1, G1HeapRegionClosure* cl2) :
       _closure1(cl1),
       _closure2(cl2) { }
 
@@ -1160,7 +1160,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   // Visitor for the remembered sets of humongous candidate regions to merge their
   // remembered set into the card table.
-  class G1FlushHumongousCandidateRemSets : public HeapRegionIndexClosure {
+  class G1FlushHumongousCandidateRemSets : public G1HeapRegionIndexClosure {
     G1MergeCardSetClosure _cl;
 
   public:
@@ -1230,11 +1230,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
       _cards_skipped(0)
     {}
 
-    void do_card_ptr(CardValue* card_ptr, uint worker_id) {
+    void do_card_ptr(CardValue* card_ptr) override {
       // The only time we care about recording cards that
       // contain references that point into the collection set
       // is during RSet updating within an evacuation pause.
-      // In this case worker_id should be the id of a GC worker thread.
       assert(SafepointSynchronize::is_at_safepoint(), "not during an evacuation pause");
 
       uint const region_idx = _ct->region_idx_for(card_ptr);
@@ -1342,6 +1341,7 @@ public:
       FREE_C_HEAP_ARRAY(Stack, _dirty_card_buffers);
     }
   }
+
   virtual void work(uint worker_id) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1GCPhaseTimes* p = g1h->phase_times();
@@ -1378,6 +1378,10 @@ public:
         G1MergeCardSetClosure merge(_scan_state);
         G1ClearBitmapClosure clear(g1h);
         G1CombinedClosure combined(&merge, &clear);
+
+        if (_initial_evacuation) {
+          G1HeapRegionRemSet::iterate_for_merge(g1h->young_regions_cardset(), merge);
+        }
 
         g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
         G1MergeCardSetStats stats = merge.stats();

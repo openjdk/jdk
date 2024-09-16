@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ package jdk.internal.classfile.impl;
 import java.lang.constant.MethodTypeDesc;
 import java.util.function.Consumer;
 
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeModel;
@@ -37,18 +36,16 @@ import java.lang.classfile.CustomAttribute;
 import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.MethodElement;
 import java.lang.classfile.MethodModel;
-import java.lang.classfile.WritableElement;
 import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class DirectMethodBuilder
         extends AbstractDirectBuilder<MethodModel>
-        implements TerminalMethodBuilder, WritableElement<MethodModel>, MethodInfo {
+        implements TerminalMethodBuilder, Util.Writable {
 
     final Utf8Entry name;
     final Utf8Entry desc;
     int flags;
     int[] parameterSlots;
-    MethodTypeDesc mDesc;
 
     public DirectMethodBuilder(SplitConstantPool constantPool,
                                ClassFileImpl context,
@@ -61,6 +58,12 @@ public final class DirectMethodBuilder
         this.name = nameInfo;
         this.desc = typeInfo;
         this.flags = flags;
+    }
+
+    @Override
+    public MethodBuilder withFlags(int flags) {
+        setFlags(flags);
+        return this;
     }
 
     void setFlags(int flags) {
@@ -83,14 +86,7 @@ public final class DirectMethodBuilder
 
     @Override
     public MethodTypeDesc methodTypeSymbol() {
-        if (mDesc == null) {
-            if (original instanceof MethodInfo mi) {
-                mDesc = mi.methodTypeSymbol();
-            } else {
-                mDesc = MethodTypeDesc.ofDescriptor(methodType().stringValue());
-            }
-        }
-        return mDesc;
+        return Util.methodTypeSymbol(methodType());
     }
 
     @Override
@@ -100,6 +96,9 @@ public final class DirectMethodBuilder
 
     @Override
     public int parameterSlot(int paramNo) {
+        if (paramNo == 0) {
+            return ((flags & ClassFile.ACC_STATIC) != 0) ? 0 : 1;
+        }
         if (parameterSlots == null)
             parameterSlots = Util.parseParameterSlots(methodFlags(), methodTypeSymbol());
         return parameterSlots[paramNo];
@@ -115,7 +114,7 @@ public final class DirectMethodBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute)element);
+            writeAttribute((CustomAttribute<?>) element);
         }
         return this;
     }
@@ -148,8 +147,7 @@ public final class DirectMethodBuilder
     }
 
     @Override
-    public void writeTo(BufWriter b) {
-        BufWriterImpl buf = (BufWriterImpl) b;
+    public void writeTo(BufWriterImpl buf) {
         buf.writeU2(flags);
         buf.writeIndex(name);
         buf.writeIndex(desc);

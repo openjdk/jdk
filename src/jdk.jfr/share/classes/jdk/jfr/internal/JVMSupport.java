@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 
 import jdk.jfr.Recording;
 import jdk.jfr.internal.event.EventConfiguration;
+import jdk.jfr.internal.management.HiddenWait;
 import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.util.ValueFormatter;
 
@@ -118,7 +119,8 @@ public final class JVMSupport {
                 lastTimestamp = time;
                 return;
             }
-            Utils.takeNap(1);
+            HiddenWait hiddenWait = new HiddenWait();
+            hiddenWait.takeNap(1);
         }
     }
 

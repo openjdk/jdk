@@ -72,7 +72,7 @@ void Dependencies::initialize(ciEnv* env) {
 #endif
   DEBUG_ONLY(_deps[end_marker] = nullptr);
   for (int i = (int)FIRST_TYPE; i < (int)TYPE_LIMIT; i++) {
-    _deps[i] = new(arena) GrowableArray<ciBaseObject*>(arena, 10, 0, 0);
+    _deps[i] = new(arena) GrowableArray<ciBaseObject*>(arena, 10, 0, nullptr);
   }
   _content_bytes = nullptr;
   _size_in_bytes = (size_t)-1;
@@ -893,7 +893,7 @@ void Dependencies::DepStream::print_dependency(outputStream* st, Klass* witness,
 void Dependencies::DepStream::initial_asserts(size_t byte_limit) {
   assert(must_be_in_vm(), "raw oops here");
   _byte_limit = byte_limit;
-  _type       = (DepType)(end_marker-1);  // defeat "already at end" assert
+  _type       = undefined_dependency;  // defeat "already at end" assert
   assert((_code!=nullptr) + (_deps!=nullptr) == 1, "one or t'other");
 }
 #endif //ASSERT

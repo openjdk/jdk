@@ -773,6 +773,7 @@ bool IfNode::cmpi_folds(PhaseIterGVN* igvn, bool fold_ne) {
 bool IfNode::is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn) {
   return ctrl != nullptr &&
     ctrl->is_Proj() &&
+    ctrl->outcnt() == 1 && // No side-effects
     ctrl->in(0) != nullptr &&
     ctrl->in(0)->Opcode() == Op_If &&
     ctrl->in(0)->outcnt() == 2 &&
@@ -1346,7 +1347,7 @@ Node* IfNode::fold_compares(PhaseIterGVN* igvn) {
 
   if (cmpi_folds(igvn)) {
     Node* ctrl = in(0);
-    if (is_ctrl_folds(ctrl, igvn) && ctrl->outcnt() == 1) {
+    if (is_ctrl_folds(ctrl, igvn)) {
       // A integer comparison immediately dominated by another integer
       // comparison
       ProjNode* success = nullptr;
@@ -1842,10 +1843,10 @@ void IfProjNode::pin_array_access_nodes(PhaseIterGVN* igvn) {
 #ifndef PRODUCT
 void IfNode::dump_spec(outputStream* st) const {
   switch (_assertion_predicate_type) {
-    case AssertionPredicateType::Init_value:
+    case AssertionPredicateType::InitValue:
       st->print("#Init Value Assertion Predicate  ");
       break;
-    case AssertionPredicateType::Last_value:
+    case AssertionPredicateType::LastValue:
       st->print("#Last Value Assertion Predicate  ");
       break;
     case AssertionPredicateType::None:

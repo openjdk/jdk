@@ -36,7 +36,9 @@
 #include "runtime/atomic.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -237,6 +239,27 @@ inline void JavaThread::set_class_to_be_initialized(InstanceKlass* k) {
 
 inline InstanceKlass* JavaThread::class_to_be_initialized() const {
   return _class_to_be_initialized;
+}
+
+inline void JavaThread::om_set_monitor_cache(ObjectMonitor* monitor) {
+  assert(UseObjectMonitorTable, "must be");
+  assert(monitor != nullptr, "use om_clear_monitor_cache to clear");
+  assert(this == current() || monitor->owner_raw() == this, "only add owned monitors for other threads");
+  assert(this == current() || is_obj_deopt_suspend(), "thread must not run concurrently");
+
+  _om_cache.set_monitor(monitor);
+}
+
+inline void JavaThread::om_clear_monitor_cache() {
+  if (UseObjectMonitorTable) {
+    _om_cache.clear();
+  }
+}
+
+inline ObjectMonitor* JavaThread::om_get_from_monitor_cache(oop obj) {
+  assert(obj != nullptr, "do not look for null objects");
+  assert(this == current(), "only get own thread locals");
+  return _om_cache.get_monitor(obj);
 }
 
 #endif // SHARE_RUNTIME_JAVATHREAD_INLINE_HPP

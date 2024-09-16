@@ -2321,7 +2321,7 @@ void TemplateTable::_return(TosState state) {
     assert(state == vtos, "only valid state");
     __ z_lg(Rthis, aaddress(0));
     __ load_klass(Rklass, Rthis);
-    __ testbit(Address(Rklass, Klass::access_flags_offset()), exact_log2(JVM_ACC_HAS_FINALIZER));
+    __ z_tm(Address(Rklass, Klass::misc_flags_offset()), KlassFlags::_misc_has_finalizer);
     __ z_bfalse(skip_register_finalizer);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), Rthis);
     __ bind(skip_register_finalizer);
@@ -3976,8 +3976,7 @@ void TemplateTable::_new() {
     __ store_klass_gap(Rzero, RallocatedObject);  // Zero klass gap for compressed oops.
     __ store_klass(iklass, RallocatedObject);     // Store klass last.
 
-    {
-      SkipIfEqual skip(_masm, &DTraceAllocProbes, false, Z_ARG5 /*scratch*/);
+    if (DTraceAllocProbes) {
       // Trigger dtrace event for fastpath.
       __ push(atos); // Save the return value.
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), RallocatedObject);

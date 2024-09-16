@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,14 +48,14 @@
 
 
 // Interface collecting various instance specific verification methods of
-// HeapRegionSets.
-class HeapRegionSetChecker : public CHeapObj<mtGC> {
+// G1HeapRegionSets.
+class G1HeapRegionSetChecker : public CHeapObj<mtGC> {
 public:
-  // Verify MT safety for this HeapRegionSet.
+  // Verify MT safety for this G1HeapRegionSet.
   virtual void check_mt_safety() = 0;
-  // Returns true if the given G1HeapRegion is of the correct type for this HeapRegionSet.
+  // Returns true if the given G1HeapRegion is of the correct type for this G1HeapRegionSet.
   virtual bool is_correct_type(G1HeapRegion* hr) = 0;
-  // Return a description of the type of regions this HeapRegionSet contains.
+  // Return a description of the type of regions this G1HeapRegionSet contains.
   virtual const char* get_description() = 0;
 };
 
@@ -64,10 +64,10 @@ public:
 // (e.g., length, region num, used bytes sum) plus any shared
 // functionality (e.g., verification).
 
-class HeapRegionSetBase {
+class G1HeapRegionSetBase {
   friend class VMStructs;
 
-  HeapRegionSetChecker* _checker;
+  G1HeapRegionSetChecker* _checker;
 
 protected:
   // The number of regions in to the set.
@@ -87,7 +87,7 @@ protected:
     }
   }
 
-  HeapRegionSetBase(const char* name, HeapRegionSetChecker* verifier);
+  G1HeapRegionSetBase(const char* name, G1HeapRegionSetChecker* verifier);
 
 public:
   const char* name() { return _name; }
@@ -117,12 +117,12 @@ public:
 // This class represents heap region sets whose members are not
 // explicitly tracked. It's helpful to group regions using such sets
 // so that we can reason about all the region groups in the heap using
-// the same interface (namely, the HeapRegionSetBase API).
+// the same interface (namely, the G1HeapRegionSetBase API).
 
-class HeapRegionSet : public HeapRegionSetBase {
+class G1HeapRegionSet : public G1HeapRegionSetBase {
 public:
-  HeapRegionSet(const char* name, HeapRegionSetChecker* checker):
-    HeapRegionSetBase(name, checker) {
+  G1HeapRegionSet(const char* name, G1HeapRegionSetChecker* checker):
+    G1HeapRegionSetBase(name, checker) {
   }
 
   void bulk_remove(const uint removed) {
@@ -135,11 +135,11 @@ public:
 // such lists in performance critical paths. Typically we should
 // add / remove one region at a time or concatenate two lists.
 
-class FreeRegionListIterator;
+class G1FreeRegionListIterator;
 class G1NUMA;
 
-class FreeRegionList : public HeapRegionSetBase {
-  friend class FreeRegionListIterator;
+class G1FreeRegionList : public G1HeapRegionSetBase {
+  friend class G1FreeRegionListIterator;
 
 private:
 
@@ -181,17 +181,17 @@ private:
   inline void decrease_length(uint node_index);
 
   // Common checks for adding a list.
-  void add_list_common_start(FreeRegionList* from_list);
-  void add_list_common_end(FreeRegionList* from_list);
+  void add_list_common_start(G1FreeRegionList* from_list);
+  void add_list_common_end(G1FreeRegionList* from_list);
 
   void verify_region_to_remove(G1HeapRegion* curr, G1HeapRegion* next) NOT_DEBUG_RETURN;
 protected:
-  // See the comment for HeapRegionSetBase::clear()
+  // See the comment for G1HeapRegionSetBase::clear()
   virtual void clear();
 
 public:
-  FreeRegionList(const char* name, HeapRegionSetChecker* checker = nullptr);
-  ~FreeRegionList();
+  G1FreeRegionList(const char* name, G1HeapRegionSetChecker* checker = nullptr);
+  ~G1FreeRegionList();
 
   void verify_list();
 
@@ -218,8 +218,8 @@ public:
 
   // Merge two ordered lists. The result is also ordered. The order is
   // determined by hrm_index.
-  void add_ordered(FreeRegionList* from_list);
-  void append_ordered(FreeRegionList* from_list);
+  void add_ordered(G1FreeRegionList* from_list);
+  void append_ordered(G1FreeRegionList* from_list);
 
   // It empties the list by removing all regions from it.
   void remove_all();
@@ -235,16 +235,16 @@ public:
 
   virtual void verify();
 
-  using HeapRegionSetBase::length;
+  using G1HeapRegionSetBase::length;
   uint length(uint node_index) const;
 };
 
 // Iterator class that provides a convenient way to iterate over the
 // regions of a FreeRegionList.
 
-class FreeRegionListIterator : public StackObj {
+class G1FreeRegionListIterator : public StackObj {
 private:
-  FreeRegionList* _list;
+  G1FreeRegionList* _list;
   G1HeapRegion*   _curr;
 
 public:
@@ -265,7 +265,7 @@ public:
     return hr;
   }
 
-  FreeRegionListIterator(FreeRegionList* list)
+  G1FreeRegionListIterator(G1FreeRegionList* list)
   : _list(list),
     _curr(list->_head) {
   }

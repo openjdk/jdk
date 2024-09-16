@@ -1007,7 +1007,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, object);
-    testbit(Address(tmp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    z_tm(Address(tmp, Klass::misc_flags_offset()), KlassFlags::_misc_is_value_based_class);
     z_btrue(slow_case);
   }
 
@@ -1072,16 +1072,9 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   // None of the above fast optimizations worked so we have to get into the
   // slow case of monitor enter.
   bind(slow_case);
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    // for lightweight locking we need to use monitorenter_obj, see interpreterRuntime.cpp
-    call_VM(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj),
-            object);
-  } else {
-    call_VM(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            monitor);
-  }
+  call_VM(noreg,
+          CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+          monitor);
   // }
 
   bind(done);
