@@ -62,7 +62,6 @@ private:
   void* _holder;
 
   static const uintptr_t PartialArrayStateBit = 1;
-
 public:
   PSMarkTask() : _holder(nullptr) { }
 
@@ -163,7 +162,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   PSMarkTaskQueue*  marking_stack()       { return &_marking_stack; }
 
-  inline void process_large_objArray(oop obj);
+  inline void push_objArray(oop obj);
   inline void push(PartialArrayState* stat);
 
   // To collect per-region live-words in a worker local cache in order to

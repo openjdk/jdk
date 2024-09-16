@@ -64,7 +64,7 @@ inline void ParCompactionManager::push(PartialArrayState* stat) {
   marking_stack()->push(PSMarkTask(stat));
 }
 
-inline void ParCompactionManager::process_large_objArray(oop obj) {
+inline void ParCompactionManager::push_objArray(oop obj) {
   assert(obj->is_objArray(), "precondition");
   _mark_and_push_closure.do_klass(obj->klass());
 
@@ -116,7 +116,6 @@ inline void ParCompactionManager::mark_and_push(T* p) {
 
       assert(_marking_stats_cache != nullptr, "inv");
       _marking_stats_cache->push(obj, obj->size());
-
       push(obj);
     }
   }
@@ -159,7 +158,7 @@ inline void ParCompactionManager::follow_contents(const PSMarkTask& task) {
     assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
     if (obj->is_objArray() &&
         objArrayOop(obj)->length() > (int)ObjArrayMarkingStride) {
-      process_large_objArray(obj);
+      push_objArray(obj);
     } else {
       obj->oop_iterate(&_mark_and_push_closure);
     }
