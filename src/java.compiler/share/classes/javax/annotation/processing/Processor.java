@@ -195,7 +195,7 @@ import javax.lang.model.SourceVersion;
  * processors can operate on files.
  *
  * @apiNote Implementors of this interface may find it convenient
- * to extend {@link AbstractProcessor} rather than implement this
+ * to extend {@link AbstractProcessor} rather than implementing this
  * interface directly.
  *
  * @since 1.6
