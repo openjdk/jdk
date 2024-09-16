@@ -397,6 +397,7 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
 
   static int timestamp = 0;
 
+  // TODO: extract this into a separate function
   // Convert a + a+ ... + a into a*n
   PhaseValues* igvn = phase->is_IterGVN();
 //  printf("igvn: %p\n", igvn);
@@ -409,7 +410,7 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   jlong factor = find_repeated_operand_in_chained_addition(phase, this, &base, 0);
 
   // Check if subtree is already optimal
-  if (base != nullptr && base != this && !is_optimized_multiplication(this, base)) {
+  if (base != nullptr && base != this && !is_optimized_multiplication(this, base) && (base != in(1) || base != in(2))) {
     Node* node = (bt == T_INT) ? (Node*) phase->intcon((jint) factor) : (Node*) phase->longcon(factor);
     BasicType bt2 = phase->type(base)->basic_type();
 
