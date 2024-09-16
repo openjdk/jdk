@@ -980,7 +980,6 @@ public class TTY implements EventNotifier {
                 return;
             } else if (
                    // Standard VM options passed on
-                   token.equals("-v") || token.startsWith("-v:") ||  // -v[:...]
                    token.startsWith("-verbose") ||                  // -verbose[:...]
                    token.startsWith("-D") ||
                    // -classpath handled below
@@ -988,7 +987,6 @@ public class TTY implements EventNotifier {
                    token.startsWith("-X") ||
                    // Old-style options (These should remain in place as long as
                    //  the standard VM accepts them)
-                   token.equals("-prof") ||
                    token.equals("-verify") ||
                    token.equals("-verifyremote") ||
                    token.equals("-verbosegc") ||
