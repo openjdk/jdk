@@ -1592,15 +1592,6 @@ size_t FileMapInfo::remove_bitmap_zeros(CHeapBitMap* map) {
   // Slice and resize bitmap
   map->truncate(first_set, last_set + 1);
 
-  log_info(cds, map)("Truncated bitmap " PTR_FORMAT " " SIZE_FORMAT " -> " SIZE_FORMAT,
-                     p2i(map), old_size, last_set - first_set);
-
-  LogTarget(Info, cds, map) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    map->print_on(&ls);
-  }
-
   assert(map->at(0), "First bit should be set");
   assert(map->at(map->size() - 1), "Last bit should be set");
   assert(map->size() <= old_size, "sanity");
