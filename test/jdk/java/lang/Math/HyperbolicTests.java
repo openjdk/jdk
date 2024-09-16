@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,15 @@
 
 /*
  * @test
- * @key randomness
  * @bug 4851625 4900189 4939441
  * @library ../ /test/lib
  * @build Tests
  * @build HyperbolicTests
  * @run main HyperbolicTests
- * @summary Tests for {Math, StrictMath}.{sinh, cosh, tanh} (use -Dseed=X to set PRNG seed)
+ * @summary Tests for {Math, StrictMath}.{sinh, cosh, tanh}
  */
 
 import static java.lang.Double.longBitsToDouble;
-import java.util.Random;
-import jdk.test.lib.RandomFactory;
 
 public class HyperbolicTests {
     private HyperbolicTests(){}
@@ -1758,5 +1755,4 @@ public class HyperbolicTests {
         failures += Tests.testUlpDiffWithAbsBound("StrictMath.tanh", -input, StrictMath::tanh, -expected, ulps, 1.0);
         return failures;
     }
-
 }
