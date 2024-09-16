@@ -38,20 +38,9 @@ import java.util.List;
 public class CompileFramework {
     private List<SourceCode> javaSources = new ArrayList<>();
     private List<SourceCode> jasmSources = new ArrayList<>();
-    private final Path sourceDir = Utils.getTempDir("compile-framework-sources-");
-    private final Path classesDir = Utils.getTempDir("compile-framework-classes-");
+    private final Path sourceDir = Utils.makeUniqueDir("compile-framework-sources-");
+    private final Path classesDir = Utils.makeUniqueDir("compile-framework-classes-");
     private ClassLoader classLoader;
-
-    /**
-    * Returns the classpath appended with the {@code classesDir}, where
-    * the compiled classes are stored. This enables another VM to load
-    * the compiled classes. Note, the string is already backslash escaped,
-    * so that the windows paths which use backslashes can be used directly
-    * as strings.
-    */
-    public String getEscapedClassPathOfCompiledClasses() {
-        return Utils.getEscapedClassPathAndClassesDir(classesDir);
-    }
 
     /**
     * Add a Java source to the compilation.
@@ -110,25 +99,6 @@ public class CompileFramework {
         }
     }
 
-    /**
-    * Invoke a static method from the compiled code.
-    * @param className Class name of a compiled class.
-    * @param methodName Method name of the class.
-    * @param args List of arguments for the method invocation.
-    * @return Return value from the invocation.
-    */
-    public Object invoke(String className, String methodName, Object[] args) {
-        Method method = findMethod(className, methodName);
-
-        try {
-            return method.invoke(null, args);
-        } catch (IllegalAccessException e) {
-            throw new CompileFrameworkException("Illegal access:", e);
-        } catch (InvocationTargetException e) {
-            throw new CompileFrameworkException("Invocation target:", e);
-        }
-    }
-
     private Method findMethod(String className, String methodName) {
         Class<?> c = getClass(className);
         Method[] methods = c.getDeclaredMethods();
@@ -148,6 +118,36 @@ public class CompileFramework {
         }
 
         return method;
+    }
+
+    /**
+    * Invoke a static method from the compiled code.
+    * @param className Class name of a compiled class.
+    * @param methodName Method name of the class.
+    * @param args List of arguments for the method invocation.
+    * @return Return value from the invocation.
+    */
+    public Object invoke(String className, String methodName, Object[] args) {
+        Method method = findMethod(className, methodName);
+
+        try {
+            return method.invoke(null, args);
+        } catch (IllegalAccessException e) {
+            throw new CompileFrameworkException("Illegal access:", e);
+        } catch (InvocationTargetException e) {
+            throw new CompileFrameworkException("Invocation target:", e);
+        }
+    }
+
+    /**
+    * Returns the classpath appended with the {@code classesDir}, where
+    * the compiled classes are stored. This enables another VM to load
+    * the compiled classes. Note, the string is already backslash escaped,
+    * so that the windows paths which use backslashes can be used directly
+    * as strings.
+    */
+    public String getEscapedClassPathOfCompiledClasses() {
+        return Utils.getEscapedClassPathAndClassesDir(classesDir);
     }
 }
 

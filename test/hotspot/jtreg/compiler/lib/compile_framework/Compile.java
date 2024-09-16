@@ -33,42 +33,6 @@ import java.util.List;
 class Compile {
 
     /**
-    * Compile all sources in {@code jasmSources}. First write them to the {@code sourceDir},
-    * then compile them to class-files which are stored in {@code classesDir}.
-    */
-    public static void compileJasmSources(List<SourceCode> jasmSources, Path sourceDir, Path classesDir) {
-        if (jasmSources.isEmpty()) {
-            Utils.printlnVerbose("No jasm sources to compile.");
-            return;
-        }
-        Utils.printlnVerbose("Compiling jasm sources: " + jasmSources.size());
-
-        List<Path> jasmFilePaths = Utils.writeSourcesToFile(jasmSources, sourceDir);
-        compileJasmFiles(jasmFilePaths, classesDir);
-        Utils.printlnVerbose("Jasm sources compiled.");
-    }
-
-    /**
-    * Compile a list of files (i.e. {@code paths}) using asmtools jasm and store
-    * them in {@code classesDir}.
-    */
-    private static void compileJasmFiles(List<Path> paths, Path classesDir) {
-        List<String> command = new ArrayList<>();
-
-        command.add("%s/bin/java".formatted(System.getProperty("compile.jdk")));
-        command.add("-classpath");
-        command.add(Utils.getAsmToolsPath());
-        command.add("org.openjdk.asmtools.jasm.Main");
-        command.add("-d");
-        command.add(classesDir.toString());
-        for (Path path : paths) {
-            command.add(path.toAbsolutePath().toString());
-        }
-
-        Utils.executeCompileCommand(command);
-    }
-
-    /**
     * Compile all sources in {@code javaSources}. First write them to the {@code sourceDir},
     * then compile them to class-files which are stored in {@code classesDir}.
     */
@@ -95,6 +59,42 @@ class Compile {
         command.add("-classpath");
         // Note: the backslashes from windows paths must be escaped!
         command.add(Utils.getEscapedClassPathAndClassesDir(classesDir));
+        command.add("-d");
+        command.add(classesDir.toString());
+        for (Path path : paths) {
+            command.add(path.toAbsolutePath().toString());
+        }
+
+        Utils.executeCompileCommand(command);
+    }
+
+    /**
+    * Compile all sources in {@code jasmSources}. First write them to the {@code sourceDir},
+    * then compile them to class-files which are stored in {@code classesDir}.
+    */
+    public static void compileJasmSources(List<SourceCode> jasmSources, Path sourceDir, Path classesDir) {
+        if (jasmSources.isEmpty()) {
+            Utils.printlnVerbose("No jasm sources to compile.");
+            return;
+        }
+        Utils.printlnVerbose("Compiling jasm sources: " + jasmSources.size());
+
+        List<Path> jasmFilePaths = Utils.writeSourcesToFile(jasmSources, sourceDir);
+        compileJasmFiles(jasmFilePaths, classesDir);
+        Utils.printlnVerbose("Jasm sources compiled.");
+    }
+
+    /**
+    * Compile a list of files (i.e. {@code paths}) using asmtools jasm and store
+    * them in {@code classesDir}.
+    */
+    private static void compileJasmFiles(List<Path> paths, Path classesDir) {
+        List<String> command = new ArrayList<>();
+
+        command.add("%s/bin/java".formatted(System.getProperty("compile.jdk")));
+        command.add("-classpath");
+        command.add(Utils.getAsmToolsPath());
+        command.add("org.openjdk.asmtools.jasm.Main");
         command.add("-d");
         command.add(classesDir.toString());
         for (Path path : paths) {

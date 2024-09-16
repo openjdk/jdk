@@ -56,7 +56,7 @@ class Utils {
     * are unique even across threads, the Compile Framework is multi-threading safe, i.e.
     * it does not have collisions if two instances generate classes with the same name.
     */
-    public static Path getTempDir(String prefix) {
+    public static Path makeUniqueDir(String prefix) {
         try {
             return Files.createTempDirectory(Paths.get("."), prefix);
         } catch (Exception e) {
@@ -70,6 +70,18 @@ class Utils {
     public static String[] getClassPaths() {
         String separator = File.pathSeparator;
         return System.getProperty("java.class.path").split(separator);
+    }
+
+    /**
+    * Return the classpath, appended with the {@code classesDir}.
+    */
+    public static String getEscapedClassPathAndClassesDir(Path classesDir) {
+        String cp = System.getProperty("java.class.path") +
+                    File.pathSeparator +
+                    classesDir.toAbsolutePath();
+        // Escape the backslash for Windows paths. We are using the path in the
+        // command-line and Java code, so we always want it to be escaped.
+        return cp.replace("\\", "\\\\");
     }
 
     /**
@@ -155,17 +167,5 @@ class Utils {
             System.out.println("Output: '" + output + "'");
             throw new CompileFrameworkException("Compilation failed.");
         }
-    }
-
-    /**
-    * Return the classpath, appended with the {@code classesDir}.
-    */
-    public static String getEscapedClassPathAndClassesDir(Path classesDir) {
-        String cp = System.getProperty("java.class.path") +
-                    File.pathSeparator +
-                    classesDir.toAbsolutePath();
-        // Escape the backslash for Windows paths. We are using the path in the
-        // command-line and Java code, so we always want it to be escaped.
-        return cp.replace("\\", "\\\\");
     }
 }
