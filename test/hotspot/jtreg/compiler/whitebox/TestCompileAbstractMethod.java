@@ -44,9 +44,8 @@ public class TestCompileAbstractMethod {
     public static void main(String[] args) throws NoSuchMethodException {
         Method m1 = A.class.getDeclaredMethod("run");
         assert m1 != null;
-        WHITE_BOX.enqueueMethodForCompilation(m1, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
-        if (WHITE_BOX.isMethodCompiled(m1)) {
-            throw new RuntimeException("Abstract method should not be compiled");
+        if (WHITE_BOX.enqueueMethodForCompilation(m1, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION)) {
+            throw new RuntimeException("Abstract method should not be enqueued");
         }
     }
 
