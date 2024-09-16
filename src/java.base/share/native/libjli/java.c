@@ -1405,8 +1405,8 @@ ParseArguments(int *pargc, char ***pargv,
         if (mode == LM_JAR) {
             jar_path = *pwhat;
         }
-        // not in headless mode. we now set a couple of env variables that
-        // will be used later by ShowSplashScreen()
+        // Not in headless mode. We now set a couple of env variables that
+        // will be used later by ShowSplashScreen().
         SetupSplashScreenEnvVars(splash_file_path, jar_path);
     }
 
@@ -1418,10 +1418,10 @@ SetupSplashScreenEnvVars(const char *splash_file_path, // "-splash:" option valu
                          char *jar_path // the jar file being launched (may be NULL)
 ) {
 
-    // command line specified "-splash:" takes priority over manifest one.
+    // Command line specified "-splash:" takes priority over manifest one.
     if (splash_file_path) {
         // We set up the splash file name as a env variable which then gets
-        // used when showing the splash screen in ShowSplashScreen()
+        // used when showing the splash screen in ShowSplashScreen().
 
         // create the string of the form _JAVA_SPLASH_FILE=<val>
         splash_file_entry = JLI_MemAlloc(JLI_StrLen(SPLASH_FILE_ENV_ENTRY "=")
@@ -1454,7 +1454,7 @@ SetupSplashScreenEnvVars(const char *splash_file_path, // "-splash:" option valu
     }
     // The jar's manifest had a "Splashscreen-Image" specified. We set up the jar entry name
     // and the jar file name as env variables which then get used when showing the splash screen
-    // in ShowSplashScreen()
+    // in ShowSplashScreen().
 
     // create the string of the form _JAVA_SPLASH_FILE=<val>
     splash_file_entry = JLI_MemAlloc(JLI_StrLen(SPLASH_FILE_ENV_ENTRY "=")

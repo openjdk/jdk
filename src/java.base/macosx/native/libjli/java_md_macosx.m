@@ -63,7 +63,7 @@ struct NSAppArgs {
  * Following is the high level flow of the launcher code residing in the common java.c and this
  * macosx specific java_md_macosx file:
  *
- *  - JLI_Launch function, which is the entry point to the launcher, calls CreateExecutionEnvironment
+ *  - JLI_Launch function, which is the entry point to the launcher, calls CreateExecutionEnvironment.
  *
  *  - CreateExecutionEnvironment does the following (not necessarily in this order):
  *      - determines the relevant JVM type that needs to be ultimately created
@@ -89,17 +89,17 @@ struct NSAppArgs {
  *    JNI Invocation Functions "JNI_CreateJavaVM", "JNI_GetDefaultJavaVMInitArgs" and "JNI_GetCreatedJavaVMs" in that
  *    library. It then sets internal function pointers in the launcher to point to those functions.
  *
- *  - JLI_Launch then translates any -J options by invoking TranslateApplicationArgs
+ *  - JLI_Launch then translates any -J options by invoking TranslateApplicationArgs.
  *
- *  - JLI_Launch then invokes ParseArguments to parse/process the launcher arguments
+ *  - JLI_Launch then invokes ParseArguments to parse/process the launcher arguments.
  *
- *  - JLI_Launch then ultimately calls JVMInit
+ *  - JLI_Launch then ultimately calls JVMInit.
  *
- *  - JVMInit then invokes JavaMain
+ *  - JVMInit then invokes JavaMain.
  *
- *  - JavaMain, before launching the application, invokes PostJVMInit
+ *  - JavaMain, before launching the application, invokes PostJVMInit.
  *
- *  - PostJVMInit invokes ShowSplashScreen which displays a splash screen for the application, if applicable
+ *  - PostJVMInit invokes ShowSplashScreen which displays a splash screen for the application, if applicable.
  *
  *  - Control then returns back from PostJVMInit into JavaMain, which then loads the application's main class
  *    and invokes the relevant main() Java method.
