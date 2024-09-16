@@ -64,6 +64,7 @@ import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.MN_CALLER_SENSITIVE;
 import static java.lang.invoke.MethodHandleNatives.Constants.MN_HIDDEN_MEMBER;
+import static java.lang.invoke.MethodHandleNatives.Constants.NESTMATE_CLASS;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
@@ -1111,7 +1112,7 @@ abstract class MethodHandleImpl {
                 }
                 name = name.replace('.', '/');
                 Class<?> invokerClass = new Lookup(targetClass)
-                        .makeHiddenClassDefiner(name, INJECTED_INVOKER_TEMPLATE, Set.of(NESTMATE), dumper())
+                        .makeHiddenClassDefiner(name, INJECTED_INVOKER_TEMPLATE, dumper(), NESTMATE_CLASS)
                         .defineClass(true, targetClass);
                 assert checkInjectedInvoker(targetClass, invokerClass);
                 return invokerClass;

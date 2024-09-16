@@ -26,7 +26,6 @@
 package jdk.internal.classfile.impl;
 
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import java.lang.classfile.BufWriter;
@@ -218,12 +217,38 @@ public final class BufWriterImpl implements BufWriter {
         this.offset = prevOffset;
     }
 
+    public void patchU2(int offset, int x) {
+        byte[] elems = this.elems;
+        elems[offset    ] = (byte) (x >> 8);
+        elems[offset + 1] = (byte)  x;
+    }
+
+    public void patchInt(int offset, int x) {
+        byte[] elems = this.elems;
+        elems[offset    ] = (byte) (x >> 24);
+        elems[offset + 1] = (byte) (x >> 16);
+        elems[offset + 2] = (byte) (x >> 8);
+        elems[offset + 3] = (byte)  x;
+    }
+
     @Override
     public void writeIntBytes(int intSize, long intValue) {
         reserveSpace(intSize);
         for (int i = 0; i < intSize; i++) {
             elems[offset++] = (byte) ((intValue >> 8 * (intSize - i - 1)) & 0xFF);
         }
+    }
+
+    /**
+     * Skip a few bytes in the output buffer. The skipped area has undefined value.
+     * @param bytes number of bytes to skip
+     * @return the index, for later patching
+     */
+    public int skip(int bytes) {
+        int now = offset;
+        reserveSpace(bytes);
+        offset += bytes;
+        return now;
     }
 
     @Override
@@ -247,8 +272,8 @@ public final class BufWriterImpl implements BufWriter {
         return offset;
     }
 
-    public ByteBuffer asByteBuffer() {
-        return ByteBuffer.wrap(elems, 0, offset).slice();
+    public RawBytecodeHelper.CodeRange bytecodeView() {
+        return RawBytecodeHelper.of(elems, offset);
     }
 
     public void copyTo(byte[] array, int bufferOffset) {
