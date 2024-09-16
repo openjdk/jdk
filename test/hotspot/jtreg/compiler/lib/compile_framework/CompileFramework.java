@@ -30,7 +30,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
-* TODO
+* This is the entry-point for the Compile Framework. Its purpose it to allow
+* compilation and execution of Java and Jasm sources generated at runtime.
+*
+* Please reference the README.md for more explanation.
 */
 public class CompileFramework {
     private List<SourceCode> javaSources = new ArrayList<>();
@@ -40,21 +43,25 @@ public class CompileFramework {
     private ClassLoader classLoader;
 
     /**
-    * TODO change name to escaped too???
+    * Returns the classpath appended with the {@code classesDir}, where
+    * the compiled classes are stored. This enables another VM to load
+    * the compiled classes. Note, the string is already backslash escaped,
+    * so that the windows paths which use backslashes can be used directly
+    * as strings.
     */
     public String getEscapedClassPathOfCompiledClasses() {
         return Utils.getEscapedClassPathAndClassesDir(classesDir);
     }
 
     /**
-    * TODO
+    * Add a Java source to the compilation.
     */
     public void addJavaSourceCode(String className, String code) {
         javaSources.add(new SourceCode(className, "java", code));
     }
 
     /**
-    * TODO
+    * Add a Jasm source to the compilation.
     */
     public void addJasmSourceCode(String className, String code) {
         jasmSources.add(new SourceCode(className, "jasm", code));
@@ -70,7 +77,9 @@ public class CompileFramework {
     }
 
     /**
-    * TODO
+    * Compile all sources: store the sources to the sources directory, compile
+    * Java and Jasm sources and store the generated class-files in the classes
+    * directory.
     */
     public void compile() {
         if (classLoader != null) {
@@ -91,7 +100,7 @@ public class CompileFramework {
     }
 
     /**
-    * TODO
+    * Access a class from the compiled code.
     */
     public Class<?> getClass(String name) {
         try {
@@ -102,7 +111,11 @@ public class CompileFramework {
     }
 
     /**
-    * TODO
+    * Invoke a static method from the compiled code.
+    * @param className Class name of a compiled class.
+    * @param methodName Method name of the class.
+    * @param args List of arguments for the method invocation.
+    * @return Return value from the invocation.
     */
     public Object invoke(String className, String methodName, Object[] args) {
         Class<?> c = getClass(className);
