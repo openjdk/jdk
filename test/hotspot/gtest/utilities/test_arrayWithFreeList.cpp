@@ -53,7 +53,7 @@ TEST_VM_F(ArrayWithFreeListTest, FreeingInTheMiddleWorks) {
 }
 
 TEST_VM_F(ArrayWithFreeListTest, MakeVerySmallArray) {
-  using Elem = uint8_t; using Index = uint8_t;
+  using Elem = int; using Index = uint8_t;
   using SmallArray = ArrayWithFreeList<Elem, mtTest, Index>;
   SmallArray a;
 
