@@ -42,7 +42,7 @@ public class CompileFramework {
     private static final int COMPILE_TIMEOUT = 60;
     private static final boolean VERBOSE = Boolean.getBoolean("CompileFrameworkVerbose");
 
-    private List<SourceCode> sourceCodes = new ArrayList<SourceCode>();
+    private List<SourceCode> sourceCodes = new ArrayList<>();
     private final Path sourceDir = getTempDir("compile-framework-sources-");
     private final Path classesDir = getTempDir("compile-framework-classes-");
     private URLClassLoader classLoader;
@@ -108,7 +108,7 @@ public class CompileFramework {
     }
 
     private void compileJasmSources(List<SourceCode> jasmSources) {
-        if (jasmSources.size() == 0) {
+        if (jasmSources.isEmpty() {
             println("No jasm sources to compile.");
             return;
         }
@@ -157,7 +157,7 @@ public class CompileFramework {
     }
 
     private void compileJavaSources(List<SourceCode> javaSources) {
-        if (javaSources.size() == 0) {
+        if (javaSources.isEmpty()) {
             println("No java sources to compile.");
             return;
         }
@@ -263,7 +263,7 @@ public class CompileFramework {
         }
     }
 
-    public Class getClass(String name) {
+    public Class<?> getClass(String name) {
         try {
             return Class.forName(name, true, classLoader);
         } catch (ClassNotFoundException e) {
@@ -272,7 +272,7 @@ public class CompileFramework {
     }
 
     public Object invoke(String className, String methodName, Object[] args) {
-        Class c = getClass(className);
+        Class<?> c = getClass(className);
 
         Method[] methods = c.getDeclaredMethods();
 

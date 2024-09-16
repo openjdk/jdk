@@ -48,13 +48,13 @@ public class SourceCode {
     }
 
     public String fileExtension() {
-        return this.kind.name().toLowerCase();
+        return kind.name().toLowerCase();
     }
 
     public String filePathName() {
         StringBuilder builder = new StringBuilder();
-        String extension = this.kind.name().toLowerCase();
-        builder.append(this.className.replace('.','/')).append(".").append(extension);
+        String extension = kind.name().toLowerCase();
+        builder.append(className.replace('.','/')).append(".").append(extension);
         return builder.toString();
     }
 }
