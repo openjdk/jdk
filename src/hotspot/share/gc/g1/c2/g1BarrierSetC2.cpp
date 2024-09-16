@@ -236,9 +236,19 @@ static void refine_barrier_by_new_val_type(const Node* n) {
   const Node* newval = n->in(MemNode::ValueIn);
   assert(newval != nullptr, "");
   const Type* newval_bottom = newval->bottom_type();
-  assert(newval_bottom->isa_ptr() || newval_bottom->isa_narrowoop(), "newval should be an OOP");
   TypePtr::PTR newval_type = newval_bottom->make_ptr()->ptr();
   uint8_t barrier_data = store->barrier_data();
+  if (!newval_bottom->isa_oopptr() &&
+      !newval_bottom->isa_narrowoop() &&
+      newval_type != TypePtr::Null) {
+    // newval is neither an OOP nor null, so there is no barrier to refine.
+    assert(barrier_data == 0, "non-OOP stores should have no barrier data");
+    return;
+  }
+  if (barrier_data == 0) {
+    // No barrier to refine.
+    return;
+  }
   if (newval_type == TypePtr::Null) {
     // Simply elide post-barrier if writing null.
     barrier_data &= ~G1C2BarrierPost;
