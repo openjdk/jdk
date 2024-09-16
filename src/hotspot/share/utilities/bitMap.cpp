@@ -705,8 +705,6 @@ void BitMap::IteratorImpl::assert_not_empty() const {
 }
 #endif
 
-#ifndef PRODUCT
-
 void BitMap::print_on(outputStream* st) const {
   st->print("Bitmap (" SIZE_FORMAT " bits):", size());
   for (idx_t index = 0; index < size(); index++) {
@@ -721,8 +719,6 @@ void BitMap::print_on(outputStream* st) const {
   }
   st->cr();
 }
-
-#endif
 
 template class GrowableBitMap<ArenaBitMap>;
 template class GrowableBitMap<ResourceBitMap>;
