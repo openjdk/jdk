@@ -60,52 +60,79 @@ struct NSAppArgs {
 #define LD_LIBRARY_PATH "DYLD_FALLBACK_LIBRARY_PATH"
 
 /*
- * Following is the high level flow of the launcher code residing in the common java.c and this
+ * Following is the high level flow of the launcher
+ * code residing in the common java.c and this
  * macosx specific java_md_macosx file:
  *
- *  - JLI_Launch function, which is the entry point to the launcher, calls CreateExecutionEnvironment.
+ *  - JLI_Launch function, which is the entry point
+ *    to the launcher, calls CreateExecutionEnvironment.
  *
- *  - CreateExecutionEnvironment does the following (not necessarily in this order):
- *      - determines the relevant JVM type that needs to be ultimately created
- *      - determines the path and asserts the presence of libjava and relevant libjvm library
- *      - removes any JVM selection options from the arguments that were passed to the launcher
+ *  - CreateExecutionEnvironment does the following
+ *    (not necessarily in this order):
+ *      - determines the relevant JVM type that needs
+ *        to be ultimately created
+ *      - determines the path and asserts the presence
+ *        of libjava and relevant libjvm library
+ *      - removes any JVM selection options from the
+ *        arguments that were passed to the launcher
  *
- *  - CreateExecutionEnvironment then creates a new thread, within the same process, to launch the application's main()
- *    Java method and parks the current thread, on which CreateExecutionEnvironment was invoked, in Apple's Cocoa event
- *    loop. Before doing so, CreateExecutionEnvironment maintains a state flag to keep note that a new thread
- *    has been spawned.
+ *  - CreateExecutionEnvironment then creates a new
+ *    thread, within the same process, to launch the
+ *    application's main() Java method and parks the
+ *    current thread, on which CreateExecutionEnvironment
+ *    was invoked, in Apple's Cocoa event loop. Before
+ *    doing so, CreateExecutionEnvironment maintains a
+ *    state flag to keep note that a new thread has
+ *    been spawned.
  *
- *  - The newly created thread (in which the application's main() method will ultimately run) starts right from the
- *    beginning of the current process' main function, which effectively means that JLI_Launch is re-invoked on this
- *    new thread and the same above sequence of code flow repeats again. During this "recursive" call, when at the
- *    point of creating a new thread in CreateExecutionEnvironment, the CreateExecutionEnvironment will check for
- *    the state flag to see if a new thread has already been spawned and upon noticing that it has, it will skip
- *    spawning any more threads and will return back from CreateExecutionEnvironment.
+ *  - The newly created thread (in which the application's
+ *    main() method will ultimately run) starts right from
+ *    the beginning of the current process' main function,
+ *    which effectively means that JLI_Launch is re-invoked
+ *    on this new thread and the same above sequence of code
+ *    flow repeats again. During this "recursive" call, when
+ *    at the point of creating a new thread in
+ *    CreateExecutionEnvironment, the CreateExecutionEnvironment
+ *    will check for the state flag to see if a new thread
+ *    has already been spawned and upon noticing that it
+ *    has, it will skip spawning any more threads and will
+ *    return back from CreateExecutionEnvironment.
  *
- *  - The control returns back from CreateExecutionEnvironment to JLI_Launch, and the thread on which the control
- *    returns is the thread on which the application's main() Java method will be invoked.
+ *  - The control returns back from CreateExecutionEnvironment
+ *    to JLI_Launch, and the thread on which the control
+ *    returns is the thread on which the application's main()
+ *    Java method will be invoked.
  *
- *  - JLI_Launch then invokes LoadJavaVM which dlopen()s the JVM library and asserts the presence of
- *    JNI Invocation Functions "JNI_CreateJavaVM", "JNI_GetDefaultJavaVMInitArgs" and "JNI_GetCreatedJavaVMs" in that
- *    library. It then sets internal function pointers in the launcher to point to those functions.
+ *  - JLI_Launch then invokes LoadJavaVM which dlopen()s the
+ *    JVM library and asserts the presence of JNI Invocation
+ *    Functions "JNI_CreateJavaVM", "JNI_GetDefaultJavaVMInitArgs"
+ *    and "JNI_GetCreatedJavaVMs" in that library. It then sets
+ *    internal function pointers in the launcher to point to
+ *    those functions.
  *
- *  - JLI_Launch then translates any -J options by invoking TranslateApplicationArgs.
+ *  - JLI_Launch then translates any -J options by invoking
+ *    TranslateApplicationArgs.
  *
- *  - JLI_Launch then invokes ParseArguments to parse/process the launcher arguments.
+ *  - JLI_Launch then invokes ParseArguments to parse/process
+ *    the launcher arguments.
  *
  *  - JLI_Launch then ultimately calls JVMInit.
  *
  *  - JVMInit then invokes JavaMain.
  *
- *  - JavaMain, before launching the application, invokes PostJVMInit.
+ *  - JavaMain, before launching the application, invokes
+ *    PostJVMInit.
  *
- *  - PostJVMInit invokes ShowSplashScreen which displays a splash screen for the application, if applicable.
+ *  - PostJVMInit invokes ShowSplashScreen which displays
+ *    a splash screen for the application, if applicable.
  *
- *  - Control then returns back from PostJVMInit into JavaMain, which then loads the application's main class
- *    and invokes the relevant main() Java method.
+ *  - Control then returns back from PostJVMInit into
+ *    JavaMain, which then loads the application's main
+ *    class and invokes the relevant main() Java method.
  *
- *  - JavaMain then returns back an integer result which then gets propagated as a return value all the way out
- *    of the JLI_Launch function.
+ *  - JavaMain then returns back an integer result which
+ *    then gets propagated as a return value all the way
+ *    out of the JLI_Launch function.
  */
 
 /* Store the name of the executable once computed */

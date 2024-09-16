@@ -52,61 +52,86 @@
 #endif
 
 /*
- * Following is the high level flow of the launcher code residing in the common java.c and this
+ * Following is the high level flow of the launcher
+ * code residing in the common java.c and this
  * unix specific java_md file:
  *
- *  - JLI_Launch function, which is the entry point to the launcher, calls CreateExecutionEnvironment.
+ *  - JLI_Launch function, which is the entry point
+ *    to the launcher, calls CreateExecutionEnvironment.
  *
- *  - CreateExecutionEnvironment does the following (not necessarily in this order):
- *      - determines the relevant JVM type that needs to be ultimately created
- *      - determines the path and asserts the presence of libjava and relevant libjvm library
- *      - removes any JVM selection options from the arguments that were passed to the launcher
+ *  - CreateExecutionEnvironment does the following
+ *    (not necessarily in this order):
+ *      - determines the relevant JVM type that
+ *        needs to be ultimately created
+ *      - determines the path and asserts the presence
+ *        of libjava and relevant libjvm library
+ *      - removes any JVM selection options from the
+ *        arguments that were passed to the launcher
  *
- *  - CreateExecutionEnvironment then determines if LD_LIBRARY_PATH environment variable needs
+ *  - CreateExecutionEnvironment then determines if
+ *    LD_LIBRARY_PATH environment variable needs
  *    to be set/updated.
- *      - If LD_LIBRARY_PATH needs to be set/updated, then CreateExecutionEnvironment exec()s
- *        the current process with the appropriate value for LD_LIBRARY_PATH.
- *      - Else if LD_LIBRARY_PATH need not be set or updated, then CreateExecutionEnvironment
+ *      - If LD_LIBRARY_PATH needs to be set/updated,
+ *        then CreateExecutionEnvironment exec()s
+ *        the current process with the appropriate value
+ *        for LD_LIBRARY_PATH.
+ *      - Else if LD_LIBRARY_PATH need not be set or
+ *        updated, then CreateExecutionEnvironment
  *        returns back.
  *
- *  - If CreateExecutionEnvironment exec()ed the process in the previous step, then the code control
- *    for the process will again start from the process' entry point and JLI_Launch is thus
- *    re-invoked and the same above sequence of code flow repeats again. During this "recursive"
- *    call into CreateExecutionEnvironment, the implementation of the check for LD_LIBRARY_PATH
- *    will realize that no further exec() is required and the control will return back from
- *    CreateExecutionEnvironment.
+ *  - If CreateExecutionEnvironment exec()ed the process
+ *    in the previous step, then the code control for the
+ *    process will again start from the process' entry
+ *    point and JLI_Launch is thus re-invoked and the
+ *    same above sequence of code flow repeats again.
+ *    During this "recursive" call into CreateExecutionEnvironment,
+ *    the implementation of the check for LD_LIBRARY_PATH
+ *    will realize that no further exec() is required and
+ *    the control will return back from CreateExecutionEnvironment.
  *
- *  - The control returns back from CreateExecutionEnvironment to JLI_Launch.
+ *  - The control returns back from CreateExecutionEnvironment
+ *    to JLI_Launch.
  *
- *  - JLI_Launch then invokes LoadJavaVM which dlopen()s the JVM library and asserts the presence of
- *    JNI Invocation Functions "JNI_CreateJavaVM", "JNI_GetDefaultJavaVMInitArgs" and
- *    "JNI_GetCreatedJavaVMs" in that library. It then sets internal function pointers in the
- *    launcher to point to those functions.
+ *  - JLI_Launch then invokes LoadJavaVM which dlopen()s
+ *    the JVM library and asserts the presence of
+ *    JNI Invocation Functions "JNI_CreateJavaVM",
+ *    "JNI_GetDefaultJavaVMInitArgs" and
+ *    "JNI_GetCreatedJavaVMs" in that library. It then
+ *    sets internal function pointers in the launcher to
+ *    point to those functions.
  *
- *  - JLI_Launch then translates any -J options by invoking TranslateApplicationArgs.
+ *  - JLI_Launch then translates any -J options by
+ *    invoking TranslateApplicationArgs.
  *
- *  - JLI_Launch then invokes ParseArguments to parse/process the launcher arguments.
+ *  - JLI_Launch then invokes ParseArguments to
+ *    parse/process the launcher arguments.
  *
  *  - JLI_Launch then ultimately calls JVMInit.
  *
- *  - JVMInit invokes ShowSplashScreen which displays a splash screen for the application,
- *    if applicable.
+ *  - JVMInit invokes ShowSplashScreen which displays
+ *    a splash screen for the application, if applicable.
  *
- *  - JVMInit then creates a new thread (T2), in the current process, and invokes JavaMain function
- *    in that new thread. The current thread (T1) then waits for the newly launched thread (T2) to
- *    complete.
+ *  - JVMInit then creates a new thread (T2), in the
+ *    current process, and invokes JavaMain function
+ *    in that new thread. The current thread (T1) then
+ *    waits for the newly launched thread (T2) to complete.
  *
- *  - JavaMain function, in thread T2, before launching the application, invokes PostJVMInit.
+ *  - JavaMain function, in thread T2, before launching
+ *    the application, invokes PostJVMInit.
  *
  *  - PostJVMInit is a no-op and returns back.
  *
- *  - Control then returns back from PostJVMInit into JavaMain, which then loads the application's
- *    main class and invokes the relevant main() Java method.
+ *  - Control then returns back from PostJVMInit into JavaMain,
+ *    which then loads the application's main class and invokes
+ *    the relevant main() Java method.
  *
- *  - JavaMain, in thread T2, then returns back an integer result and thread T2 execution ends here.
+ *  - JavaMain, in thread T2, then returns back an integer
+ *    result and thread T2 execution ends here.
  *
- *  - The thread T1 in JVMInit, which is waiting on T2 to complete, receives the integer result and
- *    then propagates it as a return value all the way out of the JLI_Launch function.
+ *  - The thread T1 in JVMInit, which is waiting on T2 to
+ *    complete, receives the integer result and then propagates
+ *    it as a return value all the way out of the
+ *    JLI_Launch function.
  */
 
 /* Store the name of the executable once computed */
