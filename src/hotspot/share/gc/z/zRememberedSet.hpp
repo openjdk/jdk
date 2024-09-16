@@ -114,8 +114,7 @@ public:
 
   bool is_initialized() const;
   void initialize(size_t page_size);
-
-  void resize(size_t page_size);
+  void delete_all();
 
   bool at_current(uintptr_t offset) const;
   bool at_previous(uintptr_t offset) const;
@@ -133,7 +132,6 @@ public:
   bool is_cleared_current() const;
   bool is_cleared_previous() const;
 
-  void delete_all();
   void clear_previous();
   void swap_remset_bitmaps();
 

@@ -112,7 +112,6 @@ void ZPage::reset_top_for_allocation() {
 void ZPage::reset_type_and_size(ZPageType type) {
   _type = type;
   _livemap.resize(object_max_count());
-  _remembered_set.resize(size());
 }
 
 ZPage* ZPage::retype(ZPageType type) {
