@@ -560,7 +560,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   __ cmp(Rtemp, R0);
 
   __ mov(SP, Rsender_sp, ls);  // restore SP
-  __ b(StubRoutines::throw_StackOverflowError_entry(), ls);
+  __ b(SharedRuntime::throw_StackOverflowError_entry(), ls);
 }
 
 

@@ -35,6 +35,7 @@
 #include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/osThread.hpp"
@@ -67,6 +68,8 @@
                                                                                        address)                                      \
   static_field(CompilerToVM::Data,             SharedRuntime_deopt_blob_uncommon_trap, address)                                      \
   static_field(CompilerToVM::Data,             SharedRuntime_polling_page_return_handler,                                            \
+                                                                                       address)                                      \
+  static_field(CompilerToVM::Data,             SharedRuntime_throw_delayed_StackOverflowError_entry,                                 \
                                                                                        address)                                      \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             nmethod_entry_barrier, address)                                                       \
@@ -151,7 +154,7 @@
   nonstatic_field(Array<Klass*>,               _length,                                int)                                          \
   nonstatic_field(Array<Klass*>,               _data[0],                               Klass*)                                       \
                                                                                                                                      \
-  volatile_nonstatic_field(BasicLock,          _displaced_header,                      markWord)                                     \
+  volatile_nonstatic_field(BasicLock,          _metadata,                              uintptr_t)                                    \
                                                                                                                                      \
   static_field(CodeCache,                      _low_bound,                             address)                                      \
   static_field(CodeCache,                      _high_bound,                            address)                                      \
@@ -241,10 +244,13 @@
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
   nonstatic_field(JavaThread,                  _held_monitor_count,                           intx)                                  \
   nonstatic_field(JavaThread,                  _lock_stack,                                   LockStack)                             \
+  nonstatic_field(JavaThread,                  _om_cache,                                     OMCache)                               \
+  nonstatic_field(JavaThread,                  _cont_entry,                                   ContinuationEntry*)                    \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_tmp_VTMS_transition,                    bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_disable_suspend,                           bool))                                 \
                                                                                                                                      \
+  nonstatic_field(ContinuationEntry,           _pin_count,                                    uint32_t)                              \
   nonstatic_field(LockStack,                   _top,                                          uint32_t)                              \
                                                                                                                                      \
   JVMTI_ONLY(static_field(JvmtiVTMSTransitionDisabler, _VTMS_notify_jvmti_events,             bool))                                 \
@@ -268,6 +274,7 @@
   nonstatic_field(Klass,                       _class_loader_data,                            ClassLoaderData*)                      \
   nonstatic_field(Klass,                       _bitmap,                                       uintx)                                 \
   nonstatic_field(Klass,                       _hash_slot,                                    uint8_t)                               \
+  nonstatic_field(Klass,                       _misc_flags._flags,                            u1)                                    \
                                                                                                                                      \
   nonstatic_field(LocalVariableTableElement,   start_bci,                                     u2)                                    \
   nonstatic_field(LocalVariableTableElement,   length,                                        u2)                                    \
@@ -326,8 +333,6 @@
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
                                                                                                                                      \
   static_field(StubRoutines,                _verify_oop_count,                                jint)                                  \
-                                                                                                                                     \
-  static_field(StubRoutines,                _throw_delayed_StackOverflowError_entry,          address)                               \
                                                                                                                                      \
   static_field(StubRoutines,                _jbyte_arraycopy,                                 address)                               \
   static_field(StubRoutines,                _jshort_arraycopy,                                address)                               \
@@ -478,10 +483,6 @@
   declare_constant(JVMCINMethodData::SPECULATION_LENGTH_BITS)             \
                                                                           \
   declare_constant(JVM_ACC_WRITTEN_FLAGS)                                 \
-  declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
-  declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
-  declare_constant(JVM_ACC_IS_HIDDEN_CLASS)                               \
-  declare_constant(JVM_ACC_IS_VALUE_BASED_CLASS)                          \
   declare_constant(FieldInfo::FieldFlags::_ff_injected)                   \
   declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
   declare_preprocessor_constant("JVM_ACC_VARARGS", JVM_ACC_VARARGS)       \
@@ -531,6 +532,8 @@
                                                                           \
   declare_constant_with_value("CardTable::dirty_card", CardTable::dirty_card_val()) \
   declare_constant_with_value("LockStack::_end_offset", LockStack::end_offset()) \
+  declare_constant_with_value("OMCache::oop_to_oop_difference", OMCache::oop_to_oop_difference()) \
+  declare_constant_with_value("OMCache::oop_to_monitor_difference", OMCache::oop_to_monitor_difference()) \
                                                                           \
   declare_constant(CodeInstaller::VERIFIED_ENTRY)                         \
   declare_constant(CodeInstaller::UNVERIFIED_ENTRY)                       \
@@ -727,6 +730,10 @@
                                                                           \
   declare_constant(InstanceKlassFlags::_misc_has_nonstatic_concrete_methods)   \
   declare_constant(InstanceKlassFlags::_misc_declares_nonstatic_concrete_methods) \
+  declare_constant(KlassFlags::_misc_is_hidden_class)                     \
+  declare_constant(KlassFlags::_misc_is_value_based_class)                \
+  declare_constant(KlassFlags::_misc_has_finalizer)                       \
+  declare_constant(KlassFlags::_misc_is_cloneable_fast)                   \
                                                                           \
   declare_constant(JumpData::taken_off_set)                               \
   declare_constant(JumpData::displacement_off_set)                        \

@@ -358,11 +358,6 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
     }
 
     heap->set_evacuation_in_progress(true);
-
-    if(ShenandoahVerify) {
-      heap->verifier()->verify_during_evacuation();
-    }
-
     heap->set_has_forwarded_objects(!heap->collection_set()->is_empty());
   } else {
     if (ShenandoahVerify) {

@@ -864,7 +864,7 @@ private:
   RootNode*    root() const                { return _root; }
   void         set_root(RootNode* r)       { _root = r; }
   StartNode*   start() const;              // (Derived from root.)
-  void         init_start(StartNode* s);
+  void         verify_start(StartNode* s) const NOT_DEBUG_RETURN;
   Node*        immutable_memory();
 
   Node*        recent_alloc_ctl() const    { return _recent_alloc_ctl; }

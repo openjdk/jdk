@@ -38,8 +38,8 @@ public class TestEnableNativeAccessBase {
     static final String PANAMA_REFLECTION = "panama_module/" + PANAMA_REFLECTION_CLS;
     static final String PANAMA_INVOKE_CLS = "org.openjdk.foreigntest.PanamaMainInvoke";
     static final String PANAMA_INVOKE = "panama_module/" + PANAMA_INVOKE_CLS;
-    static final String PANAMA_JNI_CLS = "org.openjdk.foreigntest.PanamaMainJNI";
-    static final String PANAMA_JNI = "panama_module/" + PANAMA_JNI_CLS;
+    static final String PANAMA_JNI_CLS = "org.openjdk.jni.PanamaMainJNI";
+    static final String PANAMA_JNI = "panama_jni_load_module/" + PANAMA_JNI_CLS;
     static final String UNNAMED = "org.openjdk.foreigntest.unnamed.PanamaMainUnnamedModule";
 
     /**
@@ -97,6 +97,14 @@ public class TestEnableNativeAccessBase {
 
     static Result successWithWarning(String moduleName) {
         return success().expect("WARNING").expect("--enable-native-access=" + moduleName);
+    }
+
+    static Result successWithWarnings(String... moduleNames) {
+        Result result = success();
+        for (String moduleName : moduleNames) {
+            result = result.expect("WARNING").expect("--enable-native-access=" + moduleName);
+        }
+        return result;
     }
 
     static Result failWithWarning(String expectedOutput) {

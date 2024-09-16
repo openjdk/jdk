@@ -729,11 +729,6 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
 #endif
 }
 
-// TODO:
-//  Consider compacting old-gen objects toward the high end of memory and young-gen objects towards the low-end
-//  of memory.  As currently implemented, all regions are compacted toward the low-end of memory.  This creates more
-//  fragmentation of the heap, because old-gen regions get scattered among low-address regions such that it becomes
-//  more difficult to find contiguous regions for humongous objects.
 void ShenandoahFullGC::phase2_calculate_target_addresses(ShenandoahHeapRegionSet** worker_slices) {
   GCTraceTime(Info, gc, phases) time("Phase 2: Compute new object addresses", _gc_timer);
   ShenandoahGCPhase calculate_address_phase(ShenandoahPhaseTimings::full_gc_calculate_addresses);

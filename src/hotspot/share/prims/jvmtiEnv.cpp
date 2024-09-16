@@ -1321,7 +1321,7 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
     if (name() != nullptr) {
       n = java_lang_String::as_utf8_string(name());
     } else {
-      int utf8_length = 0;
+      size_t utf8_length = 0;
       n = UNICODE::as_utf8((jchar*) nullptr, utf8_length);
     }
 
@@ -2534,6 +2534,7 @@ JvmtiEnv::ClearBreakpoint(Method* method, jlocation location) {
 
 jvmtiError
 JvmtiEnv::SetFieldAccessWatch(fieldDescriptor* fdesc_ptr) {
+  JvmtiVTMSTransitionDisabler disabler;
   // make sure we haven't set this watch before
   if (fdesc_ptr->is_field_access_watched()) return JVMTI_ERROR_DUPLICATE;
   fdesc_ptr->set_is_field_access_watched(true);
@@ -2546,6 +2547,7 @@ JvmtiEnv::SetFieldAccessWatch(fieldDescriptor* fdesc_ptr) {
 
 jvmtiError
 JvmtiEnv::ClearFieldAccessWatch(fieldDescriptor* fdesc_ptr) {
+  JvmtiVTMSTransitionDisabler disabler;
   // make sure we have a watch to clear
   if (!fdesc_ptr->is_field_access_watched()) return JVMTI_ERROR_NOT_FOUND;
   fdesc_ptr->set_is_field_access_watched(false);
@@ -2558,6 +2560,7 @@ JvmtiEnv::ClearFieldAccessWatch(fieldDescriptor* fdesc_ptr) {
 
 jvmtiError
 JvmtiEnv::SetFieldModificationWatch(fieldDescriptor* fdesc_ptr) {
+  JvmtiVTMSTransitionDisabler disabler;
   // make sure we haven't set this watch before
   if (fdesc_ptr->is_field_modification_watched()) return JVMTI_ERROR_DUPLICATE;
   fdesc_ptr->set_is_field_modification_watched(true);
@@ -2570,6 +2573,7 @@ JvmtiEnv::SetFieldModificationWatch(fieldDescriptor* fdesc_ptr) {
 
 jvmtiError
 JvmtiEnv::ClearFieldModificationWatch(fieldDescriptor* fdesc_ptr) {
+  JvmtiVTMSTransitionDisabler disabler;
    // make sure we have a watch to clear
   if (!fdesc_ptr->is_field_modification_watched()) return JVMTI_ERROR_NOT_FOUND;
   fdesc_ptr->set_is_field_modification_watched(false);

@@ -598,7 +598,9 @@ private:
 public:
   bool is_maximal_no_gc() const override shenandoah_not_implemented_return(false);
 
-  inline bool is_in(const void* p) const override;
+  // Check the pointer is in active part of Java heap.
+  // Use is_in_reserved to check if object is within heap bounds.
+  bool is_in(const void* p) const override;
 
   inline bool is_in_active_generation(oop obj) const;
   inline bool is_in_young(const void* p) const;
@@ -653,6 +655,12 @@ public:
 
   void sync_pinned_region_status();
   void assert_pinned_region_status() NOT_DEBUG_RETURN;
+
+// ---------- CDS archive support
+
+  bool can_load_archived_objects() const override { return UseCompressedOops && !ShenandoahCardBarrier; }
+  HeapWord* allocate_loaded_archive_space(size_t size) override;
+  void complete_loaded_archive_space(MemRegion archive_space) override;
 
 // ---------- Allocation support
 //

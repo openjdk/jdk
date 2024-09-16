@@ -50,7 +50,7 @@ template <typename ClosureType>
 void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t count, HeapWord* end_of_range,
                                                                ClosureType* cl, bool use_write_table, uint worker_id) {
 
-  assert(ShenandoahHeap::heap()->old_generation()->is_parseable(), "Old generation regions must be parseable for remembered set scan");
+  assert(ShenandoahHeap::heap()->old_generation()->is_parsable(), "Old generation regions must be parsable for remembered set scan");
   // If old-gen evacuation is active, then MarkingContext for old-gen heap regions is valid.  We use the MarkingContext
   // bits to determine which objects within a DIRTY card need to be scanned.  This is necessary because old-gen heap
   // regions that are in the candidate collection set have not been coalesced and filled.  Thus, these heap regions
@@ -245,9 +245,6 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
         }
       }
 
-      // TODO: if an objArray then only use mr, else just iterate over entire object;
-      // that would avoid the special treatment of suffix below.
-
       // SUFFIX: Fix up a possible incomplete scan at right end of window
       // by scanning the portion of a non-objArray that wasn't done.
       if (p > right && last_p != nullptr) {
@@ -355,24 +352,12 @@ ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, siz
   if (start_of_range < end_of_range) {
     if (region->is_humongous()) {
       ShenandoahHeapRegion* start_region = region->humongous_start_region();
-      // TODO: ysr : This will be called multiple times with same start_region, but different start_cluster_no.
-      // Check that it does the right thing here, and doesn't do redundant work. Also see if the call API/interface
-      // can be simplified.
       process_humongous_clusters(start_region, start_cluster_no, clusters, end_of_range, cl, use_write_table);
     } else {
-      // TODO: ysr The start_of_range calculated above is discarded and may be calculated again in process_clusters().
-      // See if the redundant and wasted calculations can be avoided, and if the call parameters can be cleaned up.
-      // It almost sounds like this set of methods needs a working class to stash away some useful info that can be
-      // efficiently passed around amongst these methods, as well as related state. Note that we can't use
-      // ShenandoahScanRemembered as there seems to be only one instance of that object for the heap which is shared
-      // by all workers. Note that there are also task methods which call these which may have per worker storage.
-      // We need to be careful however that if the number of workers changes dynamically that state isn't sequestered
-      // and become obsolete.
       process_clusters(start_cluster_no, clusters, end_of_range, cl, use_write_table, worker_id);
     }
   }
 }
-
 
 inline bool ShenandoahRegionChunkIterator::has_next() const {
   return _index < _total_chunks;

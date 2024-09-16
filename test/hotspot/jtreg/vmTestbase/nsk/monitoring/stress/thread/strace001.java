@@ -151,7 +151,6 @@ public class strace001 {
                 "java.util.concurrent.TimeUnit.toNanos",
                 "jdk.internal.event.ThreadSleepEvent.<clinit>",
                 "jdk.internal.event.ThreadSleepEvent.<init>",
-                "jdk.internal.event.ThreadSleepEvent.isTurnedOn",
                 "jdk.internal.event.ThreadSleepEvent.isEnabled"
         };
 

@@ -204,24 +204,24 @@ private:
   const size_t LogCardValsPerIntPtr;    // the number of card values (entries) in an intptr_t
   const size_t LogCardSizeInWords;      // the size of a card in heap word units
 
-  ShenandoahHeap *_heap;
-  ShenandoahCardTable *_card_table;
+  ShenandoahHeap* _heap;
+  ShenandoahCardTable* _card_table;
   size_t _card_shift;
   size_t _total_card_count;
-  HeapWord *_whole_heap_base;   // Points to first HeapWord of data contained within heap memory
+  HeapWord* _whole_heap_base;   // Points to first HeapWord of data contained within heap memory
   CardValue* _byte_map;         // Points to first entry within the card table
   CardValue* _byte_map_base;    // Points to byte_map minus the bias computed from address of heap memory
 
 public:
 
   // count is the number of cards represented by the card table.
-  ShenandoahDirectCardMarkRememberedSet(ShenandoahCardTable *card_table, size_t total_card_count);
+  ShenandoahDirectCardMarkRememberedSet(ShenandoahCardTable* card_table, size_t total_card_count);
 
   // Card index is zero-based relative to _byte_map.
   size_t last_valid_index() const;
   size_t total_cards() const;
-  size_t card_index_for_addr(HeapWord *p) const;
-  HeapWord *addr_for_card_index(size_t card_index) const;
+  size_t card_index_for_addr(HeapWord* p) const;
+  HeapWord* addr_for_card_index(size_t card_index) const;
   inline const CardValue* get_card_table_byte_map(bool use_write_table) const {
     return use_write_table ? _card_table->write_byte_map() : _card_table->read_byte_map();
   }
@@ -232,11 +232,12 @@ public:
   inline void mark_range_as_dirty(size_t card_index, size_t num_cards);
   inline void mark_card_as_clean(size_t card_index);
   inline void mark_range_as_clean(size_t card_index, size_t num_cards);
-  inline bool is_card_dirty(HeapWord *p) const;
-  inline void mark_card_as_dirty(HeapWord *p);
-  inline void mark_range_as_dirty(HeapWord *p, size_t num_heap_words);
-  inline void mark_card_as_clean(HeapWord *p);
-  inline void mark_range_as_clean(HeapWord *p, size_t num_heap_words);
+  inline bool is_card_dirty(HeapWord* p) const;
+  inline bool is_write_card_dirty(HeapWord* p) const;
+  inline void mark_card_as_dirty(HeapWord* p);
+  inline void mark_range_as_dirty(HeapWord* p, size_t num_heap_words);
+  inline void mark_card_as_clean(HeapWord* p);
+  inline void mark_range_as_clean(HeapWord* p, size_t num_heap_words);
 
   // Merge any dirty values from write table into the read table, while leaving
   // the write table unchanged.
@@ -364,7 +365,7 @@ private:
   static const int MaxCardSize = NOT_LP64(512) LP64_ONLY(1024);
   STATIC_ASSERT((MaxCardSize / HeapWordSize) - 1 <= FirstStartBits);
 
-  crossing_info *_object_starts;
+  crossing_info* _object_starts;
 
 public:
   // If we're setting first_start, assume the card has an object.
@@ -389,14 +390,14 @@ public:
     return (_object_starts[card_index].offsets.first & ObjectStartsInCardRegion) != 0;
   }
 
-  inline void clear_objects_in_range(HeapWord *addr, size_t num_words) {
+  inline void clear_objects_in_range(HeapWord* addr, size_t num_words) {
     size_t card_index = _rs->card_index_for_addr(addr);
     size_t last_card_index = _rs->card_index_for_addr(addr + num_words - 1);
     while (card_index <= last_card_index)
       _object_starts[card_index++].short_word = 0;
   }
 
-  ShenandoahCardCluster(ShenandoahDirectCardMarkRememberedSet *rs) {
+  ShenandoahCardCluster(ShenandoahDirectCardMarkRememberedSet* rs) {
     _rs = rs;
     _object_starts = NEW_C_HEAP_ARRAY(crossing_info, rs->total_cards(), mtGC);
     for (size_t i = 0; i < rs->total_cards(); i++) {
@@ -582,7 +583,7 @@ public:
   // mechanism.
 
   // Reset the starts_object() information to false for all cards in the range between from and to.
-  void reset_object_range(HeapWord *from, HeapWord *to);
+  void reset_object_range(HeapWord* from, HeapWord* to);
 
   // register_object() requires that the caller hold the heap lock
   // before calling it.
@@ -698,7 +699,7 @@ private:
   int _card_stats_log_counter[2] = {0, 0};
 
 public:
-  ShenandoahScanRemembered(ShenandoahDirectCardMarkRememberedSet *rs) {
+  ShenandoahScanRemembered(ShenandoahDirectCardMarkRememberedSet* rs) {
     _rs = rs;
     _scc = new ShenandoahCardCluster(rs);
 
@@ -745,42 +746,29 @@ public:
     return nullptr; // Quiet compiler
   }
 
-  // TODO:  We really don't want to share all of these APIs with arbitrary consumers of the ShenandoahScanRemembered abstraction.
-  // But in the spirit of quick and dirty for the time being, I'm going to go ahead and publish everything for right now.  Some
-  // of existing code already depends on having access to these services (because existing code has not been written to honor
-  // full abstraction of remembered set scanning.  In the not too distant future, we want to try to make most, if not all, of
-  // these services private.  Two problems with publicizing:
-  //  1. Allowing arbitrary users to reach beneath the hood allows the users to make assumptions about underlying implementation.
-  //     This will make it more difficult to change underlying implementation at a future time, such as when we eventually experiment
-  //     with SATB-based implementation of remembered set representation.
-  //  2. If we carefully control sharing of certain of these services, we can reduce the overhead of synchronization by assuring
-  //     that all users follow protocols that avoid contention that might require synchronization.  When we publish these APIs, we
-  //     lose control over who and how the data is accessed.  As a result, we are required to insert more defensive measures into
-  //     the implementation, including synchronization locks.
-
-
   // Card index is zero-based relative to first spanned card region.
-  size_t card_index_for_addr(HeapWord *p);
-  HeapWord *addr_for_card_index(size_t card_index);
+  size_t card_index_for_addr(HeapWord* p);
+  HeapWord* addr_for_card_index(size_t card_index);
   bool is_card_dirty(size_t card_index);
   bool is_write_card_dirty(size_t card_index);
-  bool is_card_dirty(HeapWord *p);
-  void mark_card_as_dirty(HeapWord *p);
-  void mark_range_as_dirty(HeapWord *p, size_t num_heap_words);
-  void mark_card_as_clean(HeapWord *p);
-  void mark_range_as_clean(HeapWord *p, size_t num_heap_words);
+  bool is_card_dirty(HeapWord* p);
+  bool is_write_card_dirty(HeapWord* p);
+  void mark_card_as_dirty(HeapWord* p);
+  void mark_range_as_dirty(HeapWord* p, size_t num_heap_words);
+  void mark_card_as_clean(HeapWord* p);
+  void mark_range_as_clean(HeapWord* p, size_t num_heap_words);
 
   void reset_remset(HeapWord* start, size_t word_count) { _rs->reset_remset(start, word_count); }
 
   void merge_write_table(HeapWord* start, size_t word_count) { _rs->merge_write_table(start, word_count); }
 
-  size_t cluster_for_addr(HeapWord *addr);
+  size_t cluster_for_addr(HeapWord* addr);
   HeapWord* addr_for_cluster(size_t cluster_no);
 
-  void reset_object_range(HeapWord *from, HeapWord *to);
-  void register_object(HeapWord *addr);
-  void register_object_without_lock(HeapWord *addr);
-  void coalesce_objects(HeapWord *addr, size_t length_in_words);
+  void reset_object_range(HeapWord* from, HeapWord* to);
+  void register_object(HeapWord* addr);
+  void register_object_without_lock(HeapWord* addr);
+  void coalesce_objects(HeapWord* addr, size_t length_in_words);
 
   HeapWord* first_object_in_card(size_t card_index) {
     if (_scc->starts_object(card_index)) {
@@ -794,7 +782,7 @@ public:
   bool verify_registration(HeapWord* address, ShenandoahMarkingContext* ctx);
 
   // clear the cards to clean, and clear the object_starts info to no objects
-  void mark_range_as_empty(HeapWord *addr, size_t length_in_words);
+  void mark_range_as_empty(HeapWord* addr, size_t length_in_words);
 
   // process_clusters() scans a portion of the remembered set
   // for references from old gen into young. Several worker threads
@@ -827,16 +815,16 @@ public:
   // ClosureType ShenandoahEvacuateUpdateRootsClosure.
 
   template <typename ClosureType>
-  void process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range, ClosureType *oops,
-                               bool use_write_table, uint worker_id);
+  void process_clusters(size_t first_cluster, size_t count, HeapWord* end_of_range, ClosureType* oops,
+                        bool use_write_table, uint worker_id);
 
   template <typename ClosureType>
   void process_humongous_clusters(ShenandoahHeapRegion* r, size_t first_cluster, size_t count,
-                                         HeapWord *end_of_range, ClosureType *oops, bool use_write_table);
+                                  HeapWord* end_of_range, ClosureType* oops, bool use_write_table);
 
   template <typename ClosureType>
   void process_region_slice(ShenandoahHeapRegion* region, size_t offset, size_t clusters, HeapWord* end_of_range,
-                                   ClosureType *cl, bool use_write_table, uint worker_id);
+                            ClosureType* cl, bool use_write_table, uint worker_id);
 
   // To Do:
   //  Create subclasses of ShenandoahInitMarkRootsClosure and
@@ -878,7 +866,7 @@ private:
 // A ShenandoahRegionChunk represents a contiguous interval of a ShenandoahHeapRegion, typically representing
 // work to be done by a worker thread.
 struct ShenandoahRegionChunk {
-  ShenandoahHeapRegion *_r;      // The region of which this represents a chunk
+  ShenandoahHeapRegion* _r;      // The region of which this represents a chunk
   size_t _chunk_offset;          // HeapWordSize offset
   size_t _chunk_size;            // HeapWordSize qty
 };
@@ -889,7 +877,7 @@ struct ShenandoahRegionChunk {
 // function of the size of the range.  Some memory ranges hold only a small number of live objects.
 // Some ranges hold primarily primitive (non-pointer) data.  We start with larger chunk sizes because larger chunks
 // reduce coordination overhead.  We expect that the GC worker threads that receive more difficult assignments
-// will work longer on those chunks.  Meanwhile, other worker will threads repeatedly accept and complete multiple
+// will work longer on those chunks.  Meanwhile, other worker threads will repeatedly accept and complete multiple
 // easier chunks.  As the total amount of work remaining to be completed decreases, we decrease the size of chunks
 // given to individual threads.  This reduces the likelihood of significant imbalance between worker thread assignments
 // when there is less meaningful work to be performed by the remaining worker threads while they wait for
@@ -970,7 +958,7 @@ public:
 
   // Fills in assignment with next chunk of work and returns true iff there is more work.
   // Otherwise, returns false.  This is multi-thread-safe.
-  inline bool next(struct ShenandoahRegionChunk *assignment);
+  inline bool next(struct ShenandoahRegionChunk* assignment);
 
   // This is *not* MT safe. However, in the absence of multithreaded access, it
   // can be used to determine if there is more work to do.

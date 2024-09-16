@@ -681,32 +681,10 @@ void ShenandoahConcurrentGC::op_final_mark() {
     // Notify JVMTI that the tagmap table will need cleaning.
     JvmtiTagMap::set_needs_cleaning();
 
-    // The collection set is chosen by prepare_regions_and_collection_set().
-    //
-    // TODO: Under severe memory overload conditions that can be checked here, we may want to limit
-    // the inclusion of old-gen candidates within the collection set.  This would allow us to prioritize efforts on
-    // evacuating young-gen,  This remediation is most appropriate when old-gen availability is very high (so there
-    // are negligible negative impacts from delaying completion of old-gen evacuation) and when young-gen collections
-    // are "under duress" (as signalled by very low availability of memory within young-gen, indicating that/ young-gen
-    // collections are not triggering frequently enough).
+    // The collection set is chosen by prepare_regions_and_collection_set(). Additionally, certain parameters have been
+    // established to govern the evacuation efforts that are about to begin.  Refer to comments on reserve members in
+    // ShenandoahGeneration and ShenandoahOldGeneration for more detail.
     _generation->prepare_regions_and_collection_set(true /*concurrent*/);
-
-    // Upon return from prepare_regions_and_collection_set(), certain parameters have been established to govern the
-    // evacuation efforts that are about to begin.  In particular:
-    //
-    // heap->get_promoted_reserve() represents the amount of memory within old-gen's available memory that has
-    //   been set aside to hold objects promoted from young-gen memory.  This represents an estimated percentage
-    //   of the live young-gen memory within the collection set.  If there is more data ready to be promoted than
-    //   can fit within this reserve, the promotion of some objects will be deferred until a subsequent evacuation
-    //   pass.
-    //
-    // heap->get_old_evac_reserve() represents the amount of memory within old-gen's available memory that has been
-    //  set aside to hold objects evacuated from the old-gen collection set.
-    //
-    // heap->get_young_evac_reserve() represents the amount of memory within young-gen's available memory that has
-    //  been set aside to hold objects evacuated from the young-gen collection set.  Conservatively, this value
-    //  equals the entire amount of live young-gen memory within the collection set, even though some of this memory
-    //  will likely be promoted.
 
     // Has to be done after cset selection
     heap->prepare_concurrent_roots();
@@ -727,12 +705,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
       }
 
       heap->set_evacuation_in_progress(true);
-
-      // Verify before arming for concurrent processing.
-      // Otherwise, verification can trigger stack processing.
-      if (ShenandoahVerify) {
-        heap->verifier()->verify_during_evacuation();
-      }
 
       // Generational mode may promote objects in place during the evacuation phase.
       // If that is the only reason we are evacuating, we don't need to update references
@@ -858,10 +830,7 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
     if (!_mark_context->is_marked(obj)) {
       shenandoah_assert_generations_reconciled();
       if (_heap->is_in_active_generation(obj)) {
-        // Here we are asserting that an unmarked from-space object is 'correct'. There seems to be a legitimate
-        // use-case for accessing from-space objects during concurrent class unloading. In all modes of Shenandoah,
-        // concurrent class unloading only happens during a global collection.
-        shenandoah_assert_correct(p, obj);
+        // Note: The obj is dead here. Do not touch it, just clear.
         ShenandoahHeap::atomic_clear_oop(p, obj);
       }
     } else if (_evac_in_progress && _heap->in_collection_set(obj)) {

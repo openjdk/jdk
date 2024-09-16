@@ -262,7 +262,7 @@ public sealed interface CodeBuilder
      */
     default CodeBuilder ifThen(Opcode opcode,
                                Consumer<BlockCodeBuilder> thenHandler) {
-        if (opcode.kind() != Opcode.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VoidType) {
+        if (opcode.kind() != Opcode.Kind.BRANCH || BytecodeHelpers.isUnconditionalBranch(opcode)) {
             throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
         }
 
@@ -312,7 +312,7 @@ public sealed interface CodeBuilder
     default CodeBuilder ifThenElse(Opcode opcode,
                                    Consumer<BlockCodeBuilder> thenHandler,
                                    Consumer<BlockCodeBuilder> elseHandler) {
-        if (opcode.kind() != Opcode.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VoidType) {
+        if (opcode.kind() != Opcode.Kind.BRANCH || BytecodeHelpers.isUnconditionalBranch(opcode)) {
             throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
         }
 
@@ -550,83 +550,58 @@ public sealed interface CodeBuilder
      * @param fromType the source type
      * @param toType the target type
      * @return this builder
-     * @throws IllegalArgumentException for conversions of {@code VoidType} or {@code ReferenceType}
+     * @throws IllegalArgumentException for conversions of {@link TypeKind#VOID void} or
+     *         {@link TypeKind#REFERENCE reference}
      * @since 23
      */
     default CodeBuilder conversion(TypeKind fromType, TypeKind toType) {
-        return switch (fromType) {
-            case IntType, ByteType, CharType, ShortType, BooleanType ->
-                    switch (toType) {
-                        case IntType -> this;
-                        case LongType -> i2l();
-                        case DoubleType -> i2d();
-                        case FloatType -> i2f();
-                        case ByteType -> i2b();
-                        case CharType -> i2c();
-                        case ShortType -> i2s();
-                        case BooleanType -> iconst_1().iand();
-                        case VoidType, ReferenceType ->
-                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-                    };
-            case LongType ->
-                    switch (toType) {
-                        case IntType -> l2i();
-                        case LongType -> this;
-                        case DoubleType -> l2d();
-                        case FloatType -> l2f();
-                        case ByteType -> l2i().i2b();
-                        case CharType -> l2i().i2c();
-                        case ShortType -> l2i().i2s();
-                        case BooleanType -> l2i().iconst_1().iand();
-                        case VoidType, ReferenceType ->
-                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-                    };
-            case DoubleType ->
-                    switch (toType) {
-                        case IntType -> d2i();
-                        case LongType -> d2l();
-                        case DoubleType -> this;
-                        case FloatType -> d2f();
-                        case ByteType -> d2i().i2b();
-                        case CharType -> d2i().i2c();
-                        case ShortType -> d2i().i2s();
-                        case BooleanType -> d2i().iconst_1().iand();
-                        case VoidType, ReferenceType ->
-                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-                    };
-            case FloatType ->
-                    switch (toType) {
-                        case IntType -> f2i();
-                        case LongType -> f2l();
-                        case DoubleType -> f2d();
-                        case FloatType -> this;
-                        case ByteType -> f2i().i2b();
-                        case CharType -> f2i().i2c();
-                        case ShortType -> f2i().i2s();
-                        case BooleanType -> f2i().iconst_1().iand();
-                        case VoidType, ReferenceType ->
-                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-                    };
-            case VoidType, ReferenceType ->
-                throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-        };
-    }
-
-    /**
-     * Generate an instruction pushing a constant onto the operand stack
-     * @see Opcode.Kind#CONSTANT
-     * @param opcode the constant instruction opcode
-     * @param value the constant value
-     * @return this builder
-     * @since 23
-     */
-    default CodeBuilder loadConstant(Opcode opcode, ConstantDesc value) {
-        BytecodeHelpers.validateValue(opcode, value);
-        return with(switch (opcode) {
-            case SIPUSH, BIPUSH -> ConstantInstruction.ofArgument(opcode, ((Number)value).intValue());
-            case LDC, LDC_W, LDC2_W -> ConstantInstruction.ofLoad(opcode, BytecodeHelpers.constantEntry(constantPool(), value));
-            default -> ConstantInstruction.ofIntrinsic(opcode);
-        });
+        var computationalFrom = fromType.asLoadable();
+        var computationalTo = toType.asLoadable();
+        if (computationalFrom != computationalTo) {
+            switch (computationalTo) {
+                case INT -> {
+                    switch (computationalFrom) {
+                        case FLOAT -> f2i();
+                        case LONG -> l2i();
+                        case DOUBLE -> d2i();
+                        default -> throw BytecodeHelpers.cannotConvertException(fromType, toType);
+                    }
+                }
+                case FLOAT -> {
+                    switch (computationalFrom) {
+                        case INT -> i2f();
+                        case LONG -> l2f();
+                        case DOUBLE -> d2f();
+                        default -> throw BytecodeHelpers.cannotConvertException(fromType, toType);
+                    }
+                }
+                case LONG -> {
+                    switch (computationalFrom) {
+                        case INT -> i2l();
+                        case FLOAT -> f2l();
+                        case DOUBLE -> d2l();
+                        default -> throw BytecodeHelpers.cannotConvertException(fromType, toType);
+                    }
+                }
+                case DOUBLE -> {
+                    switch (computationalFrom) {
+                        case INT -> i2d();
+                        case FLOAT -> f2d();
+                        case LONG -> l2d();
+                        default -> throw BytecodeHelpers.cannotConvertException(fromType, toType);
+                    }
+                }
+            }
+        }
+        if (computationalTo == TypeKind.INT && toType != TypeKind.INT) {
+            switch (toType) {
+                case BOOLEAN -> iconst_1().iand();
+                case BYTE -> i2b();
+                case CHAR -> i2c();
+                case SHORT -> i2s();
+            }
+        }
+        return this;
     }
 
     /**
@@ -639,32 +614,34 @@ public sealed interface CodeBuilder
         //avoid switch expressions here
         if (value == null || value == ConstantDescs.NULL)
             return aconst_null();
-        if (value instanceof Integer iVal)
-            return switch (iVal) {
-                case -1 -> iconst_m1();
-                case  0 -> iconst_0();
-                case  1 -> iconst_1();
-                case  2 -> iconst_2();
-                case  3 -> iconst_3();
-                case  4 -> iconst_4();
-                case  5 -> iconst_5();
-                default -> (iVal >= Byte.MIN_VALUE && iVal <= Byte.MAX_VALUE) ? bipush(iVal)
-                         : (iVal >= Short.MIN_VALUE && iVal <= Short.MAX_VALUE) ? sipush(iVal)
-                         : ldc(constantPool().intEntry(iVal));
-            };
-        if (value instanceof Long lVal)
-            return lVal == 0l ? lconst_0()
-                 : lVal == 1l ? lconst_1()
-                 : ldc(constantPool().longEntry(lVal));
-        if (value instanceof Float fVal)
-            return Float.floatToRawIntBits(fVal) == 0 ? fconst_0()
-                 : fVal == 1.0f ? fconst_1()
-                 : fVal == 2.0f ? fconst_2()
-                 : ldc(constantPool().floatEntry(fVal));
-        if (value instanceof Double dVal)
-            return Double.doubleToRawLongBits(dVal) == 0l ? dconst_0()
-                 : dVal == 1.0d ? dconst_1()
-                 : ldc(constantPool().doubleEntry(dVal));
+        if (value instanceof Number) {
+            if (value instanceof Integer iVal)
+                return switch (iVal) {
+                    case -1 -> iconst_m1();
+                    case 0 -> iconst_0();
+                    case 1 -> iconst_1();
+                    case 2 -> iconst_2();
+                    case 3 -> iconst_3();
+                    case 4 -> iconst_4();
+                    case 5 -> iconst_5();
+                    default -> (iVal >= Byte.MIN_VALUE && iVal <= Byte.MAX_VALUE) ? bipush(iVal)
+                            : (iVal >= Short.MIN_VALUE && iVal <= Short.MAX_VALUE) ? sipush(iVal)
+                            : ldc(constantPool().intEntry(iVal));
+                };
+            if (value instanceof Long lVal)
+                return lVal == 0L ? lconst_0()
+                        : lVal == 1L ? lconst_1()
+                        : ldc(constantPool().longEntry(lVal));
+            if (value instanceof Float fVal)
+                return Float.floatToRawIntBits(fVal) == 0 ? fconst_0()
+                        : fVal == 1.0f ? fconst_1()
+                        : fVal == 2.0f ? fconst_2()
+                        : ldc(constantPool().floatEntry(fVal));
+            if (value instanceof Double dVal)
+                return Double.doubleToRawLongBits(dVal) == 0L ? dconst_0()
+                        : dVal == 1.0d ? dconst_1()
+                        : ldc(constantPool().doubleEntry(dVal));
+        }
         return ldc(value);
     }
 
@@ -840,7 +817,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder aaload() {
-        return arrayLoad(TypeKind.ReferenceType);
+        return arrayLoad(TypeKind.REFERENCE);
     }
 
     /**
@@ -848,7 +825,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder aastore() {
-        return arrayStore(TypeKind.ReferenceType);
+        return arrayStore(TypeKind.REFERENCE);
     }
 
     /**
@@ -861,7 +838,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder aload(int slot) {
-        return loadLocal(TypeKind.ReferenceType, slot);
+        return loadLocal(TypeKind.REFERENCE, slot);
     }
 
     /**
@@ -888,7 +865,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder areturn() {
-        return return_(TypeKind.ReferenceType);
+        return return_(TypeKind.REFERENCE);
     }
 
     /**
@@ -909,7 +886,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder astore(int slot) {
-        return storeLocal(TypeKind.ReferenceType, slot);
+        return storeLocal(TypeKind.REFERENCE, slot);
     }
 
     /**
@@ -925,7 +902,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder baload() {
-        return arrayLoad(TypeKind.ByteType);
+        return arrayLoad(TypeKind.BYTE);
     }
 
     /**
@@ -933,16 +910,16 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder bastore() {
-        return arrayStore(TypeKind.ByteType);
+        return arrayStore(TypeKind.BYTE);
     }
 
     /**
-     * Generate an instruction pushing a byte onto the operand stack
-     * @param b the byte
+     * Generate an instruction pushing an int in the range of byte onto the operand stack.
+     * @param b the int in the range of byte
      * @return this builder
      */
     default CodeBuilder bipush(int b) {
-        return loadConstant(Opcode.BIPUSH, b);
+        return with(ConstantInstruction.ofArgument(Opcode.BIPUSH, b));
     }
 
     /**
@@ -950,7 +927,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder caload() {
-        return arrayLoad(TypeKind.CharType);
+        return arrayLoad(TypeKind.CHAR);
     }
 
     /**
@@ -958,7 +935,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder castore() {
-        return arrayStore(TypeKind.CharType);
+        return arrayStore(TypeKind.CHAR);
     }
 
     /**
@@ -1017,7 +994,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder daload() {
-        return arrayLoad(TypeKind.DoubleType);
+        return arrayLoad(TypeKind.DOUBLE);
     }
 
     /**
@@ -1025,7 +1002,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dastore() {
-        return arrayStore(TypeKind.DoubleType);
+        return arrayStore(TypeKind.DOUBLE);
     }
 
     /**
@@ -1078,7 +1055,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dload(int slot) {
-        return loadLocal(TypeKind.DoubleType, slot);
+        return loadLocal(TypeKind.DOUBLE, slot);
     }
 
     /**
@@ -1110,7 +1087,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dreturn() {
-        return return_(TypeKind.DoubleType);
+        return return_(TypeKind.DOUBLE);
     }
 
     /**
@@ -1123,7 +1100,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dstore(int slot) {
-        return storeLocal(TypeKind.DoubleType, slot);
+        return storeLocal(TypeKind.DOUBLE, slot);
     }
 
     /**
@@ -1221,7 +1198,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder faload() {
-        return arrayLoad(TypeKind.FloatType);
+        return arrayLoad(TypeKind.FLOAT);
     }
 
     /**
@@ -1229,7 +1206,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fastore() {
-        return arrayStore(TypeKind.FloatType);
+        return arrayStore(TypeKind.FLOAT);
     }
 
     /**
@@ -1290,7 +1267,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fload(int slot) {
-        return loadLocal(TypeKind.FloatType, slot);
+        return loadLocal(TypeKind.FLOAT, slot);
     }
 
     /**
@@ -1322,7 +1299,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder freturn() {
-        return return_(TypeKind.FloatType);
+        return return_(TypeKind.FLOAT);
     }
 
     /**
@@ -1335,7 +1312,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fstore(int slot) {
-        return storeLocal(TypeKind.FloatType, slot);
+        return storeLocal(TypeKind.FLOAT, slot);
     }
 
     /**
@@ -1476,7 +1453,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iaload() {
-        return arrayLoad(TypeKind.IntType);
+        return arrayLoad(TypeKind.INT);
     }
 
     /**
@@ -1492,7 +1469,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iastore() {
-        return arrayStore(TypeKind.IntType);
+        return arrayStore(TypeKind.INT);
     }
 
     /**
@@ -1723,7 +1700,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iload(int slot) {
-        return loadLocal(TypeKind.IntType, slot);
+        return loadLocal(TypeKind.INT, slot);
     }
 
     /**
@@ -1952,7 +1929,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ireturn() {
-        return return_(TypeKind.IntType);
+        return return_(TypeKind.INT);
     }
 
     /**
@@ -1981,7 +1958,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder istore(int slot) {
-        return storeLocal(TypeKind.IntType, slot);
+        return storeLocal(TypeKind.INT, slot);
     }
 
     /**
@@ -2055,7 +2032,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder laload() {
-        return arrayLoad(TypeKind.LongType);
+        return arrayLoad(TypeKind.LONG);
     }
 
     /**
@@ -2071,7 +2048,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lastore() {
-        return arrayStore(TypeKind.LongType);
+        return arrayStore(TypeKind.LONG);
     }
 
     /**
@@ -2122,10 +2099,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ldc(LoadableConstantEntry entry) {
-        return with(ConstantInstruction.ofLoad(
-                entry.typeKind().slotSize() == 2 ? Opcode.LDC2_W
-                : entry.index() > 0xff ? Opcode.LDC_W
-                : Opcode.LDC, entry));
+        return with(ConstantInstruction.ofLoad(BytecodeHelpers.ldcOpcode(entry), entry));
     }
 
     /**
@@ -2146,7 +2120,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lload(int slot) {
-        return loadLocal(TypeKind.LongType, slot);
+        return loadLocal(TypeKind.LONG, slot);
     }
 
     /**
@@ -2186,7 +2160,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lreturn() {
-        return return_(TypeKind.LongType);
+        return return_(TypeKind.LONG);
     }
 
     /**
@@ -2215,7 +2189,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lstore(int slot) {
-        return storeLocal(TypeKind.LongType, slot);
+        return storeLocal(TypeKind.LONG, slot);
     }
 
     /**
@@ -2385,7 +2359,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder return_() {
-        return return_(TypeKind.VoidType);
+        return return_(TypeKind.VOID);
     }
 
     /**
@@ -2393,7 +2367,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder saload() {
-        return arrayLoad(TypeKind.ShortType);
+        return arrayLoad(TypeKind.SHORT);
     }
 
     /**
@@ -2401,16 +2375,16 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder sastore() {
-        return arrayStore(TypeKind.ShortType);
+        return arrayStore(TypeKind.SHORT);
     }
 
     /**
-     * Generate an instruction pushing a short onto the operand stack
-     * @param s the short
+     * Generate an instruction pushing an int in the range of short onto the operand stack.
+     * @param s the int in the range of short
      * @return this builder
      */
     default CodeBuilder sipush(int s) {
-        return loadConstant(Opcode.SIPUSH, s);
+        return with(ConstantInstruction.ofArgument(Opcode.SIPUSH, s));
     }
 
     /**

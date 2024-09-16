@@ -54,6 +54,8 @@ private:
 
   // Bytes reserved within old-gen to hold the results of promotion. This is separate from
   // and in addition to the evacuation reserve for intra-generation evacuations (ShenandoahGeneration::_evacuation_reserve).
+  // If there is more data ready to be promoted than can fit within this reserve, the promotion of some objects will be
+  // deferred until a subsequent evacuation pass.
   size_t _promoted_reserve;
 
   // Bytes of old-gen memory expended on promotions. This may be modified concurrently
@@ -81,7 +83,7 @@ private:
   size_t _promotable_regular_regions;
 
   // True if old regions may be safely traversed by the remembered set scan.
-  bool _is_parseable;
+  bool _is_parsable;
 
   bool coalesce_and_fill();
 
@@ -149,8 +151,8 @@ public:
   bool has_in_place_promotions() const { return (_promotable_humongous_regions + _promotable_regular_regions) > 0; }
 
   // Class unloading may render the card table offsets unusable, if they refer to unmarked objects
-  bool is_parseable() const   { return _is_parseable; }
-  void set_parseable(bool parseable);
+  bool is_parsable() const   { return _is_parsable; }
+  void set_parsable(bool parsable);
 
   // This will signal the heuristic to trigger an old generation collection
   void handle_failed_transfer();

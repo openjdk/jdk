@@ -41,7 +41,11 @@ import java.util.List;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the value of a key-value pair of an annotation.
+ * Models an {@code element_value} structure, or a value of an element-value
+ * pair of an annotation, as defined in JVMS {@jvms 4.7.16.1}.
+ * <p>
+ * Two {@code AnnotationValue} objects should be compared using the {@link
+ * Object#equals(Object) equals} method.
  *
  * @see Annotation
  * @see AnnotationElement
@@ -53,8 +57,8 @@ import jdk.internal.javac.PreviewFeature;
 public sealed interface AnnotationValue {
 
     /**
-     * Models an annotation-valued element.
-     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_ANNOTATION}.
+     * Models an annotation value of an element-value pair.
+     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_ANNOTATION}.
      *
      * @since 22
      */
@@ -66,8 +70,8 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * Models an array-valued element.
-     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_ARRAY}.
+     * Models an array value of an element-value pair.
+     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_ARRAY}.
      *
      * @since 22
      */
@@ -79,27 +83,28 @@ public sealed interface AnnotationValue {
          *
          * @apiNote
          * All array elements derived from Java source code have the same type,
-         * which must not be an array type. ({@jls 9.6.1})
+         * which must not be an array type. (JLS {@jls 9.6.1}) If such elements are
+         * annotations, they have the same annotation interface; if such elements
+         * are enum, they belong to the same enum class.
          */
         List<AnnotationValue> values();
     }
 
     /**
-     * Models a constant-valued element.
+     * Models a constant value of an element-value pair.
      *
      * @sealedGraph
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfConstant
-            extends AnnotationValue
-            permits OfString, OfDouble, OfFloat, OfLong, OfInt, OfShort, OfChar, OfByte,
-                    OfBoolean, AnnotationImpl.OfConstantImpl {
+    sealed interface OfConstant extends AnnotationValue {
         /**
          * {@return the constant pool entry backing this constant element}
          *
          * @apiNote
-         * Different types of constant values may share the same type of entry.
+         * Different types of constant values may share the same type of entry
+         * because they have the same {@linkplain TypeKind##computational-type
+         * computational type}.
          * For example, {@link OfInt} and {@link OfChar} are both
          * backed by {@link IntegerEntry}. Use {@link #resolvedValue
          * resolvedValue()} for a value of accurate type.
@@ -123,8 +128,8 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * Models a string-valued element.
-     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_STRING}.
+     * Models a string value of an element-value pair.
+     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_STRING}.
      *
      * @since 22
      */
@@ -151,8 +156,8 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * Models a double-valued element.
-     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_DOUBLE}.
+     * Models a double value of an element-value pair.
+     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_DOUBLE}.
      *
      * @since 22
      */
@@ -179,8 +184,8 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * Models a float-valued element.
-     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_FLOAT}.
+     * Models a float value of an element-value pair.
+     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_FLOAT}.
      *
      * @since 22
      */
@@ -207,8 +212,8 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * Models a long-valued element.
-     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_LONG}.
+     * Models a long value of an element-value pair.
+     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_LONG}.
      *
      * @since 22
      */
@@ -235,8 +240,8 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * Models an int-valued element.
-     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_INT}.
+     * Models an int value of an element-value pair.
+     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_INT}.
      *
      * @since 22
      */
@@ -263,8 +268,8 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * Models a short-valued element.
-     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_SHORT}.
+     * Models a short value of an element-value pair.
+     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_SHORT}.
      *
      * @since 22
      */
@@ -294,8 +299,8 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * Models a char-valued element.
-     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_CHAR}.
+     * Models a char value of an element-value pair.
+     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_CHAR}.
      *
      * @since 22
      */
@@ -325,8 +330,8 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * Models a byte-valued element.
-     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_BYTE}.
+     * Models a byte value of an element-value pair.
+     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_BYTE}.
      *
      * @since 22
      */
@@ -356,8 +361,8 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * Models a boolean-valued element.
-     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_BOOLEAN}.
+     * Models a boolean value of an element-value pair.
+     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_BOOLEAN}.
      *
      * @since 22
      */
@@ -387,8 +392,8 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * Models a class-valued element.
-     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_CLASS}.
+     * Models a class value of an element-value pair.
+     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_CLASS}.
      *
      * @since 22
      */
@@ -405,8 +410,8 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * Models an enum-valued element.
-     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_ENUM}.
+     * Models an enum value of an element-value pair.
+     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_ENUM}.
      *
      * @since 22
      */
@@ -426,12 +431,13 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return the tag character for this type as per {@jvms 4.7.16.1}}
+     * {@return the tag character for this value as per JVMS {@jvms 4.7.16.1}}
+     * The tag characters have a one-to-one mapping to the types of annotation element values.
      */
     char tag();
 
     /**
-     * {@return an annotation element for a enum-valued element}
+     * {@return an enum value for an element-value pair}
      * @param className the descriptor string of the enum class
      * @param constantName the name of the enum constant
      */
@@ -441,7 +447,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a enum-valued element}
+     * {@return an enum value for an element-value pair}
      * @param className the descriptor of the enum class
      * @param constantName the name of the enum constant
      */
@@ -451,7 +457,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a class-valued element}
+     * {@return a class value for an element-value pair}
      * @param className the descriptor string of the class
      */
     static OfClass ofClass(Utf8Entry className) {
@@ -459,7 +465,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a class-valued element}
+     * {@return a class value for an element-value pair}
      * @param className the descriptor of the class
      */
     static OfClass ofClass(ClassDesc className) {
@@ -467,7 +473,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a string-valued element}
+     * {@return a string value for an element-value pair}
      * @param value the string
      */
     static OfString ofString(Utf8Entry value) {
@@ -475,7 +481,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a string-valued element}
+     * {@return a string value for an element-value pair}
      * @param value the string
      */
     static OfString ofString(String value) {
@@ -483,7 +489,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a double-valued element}
+     * {@return a double value for an element-value pair}
      * @param value the double value
      */
     static OfDouble ofDouble(DoubleEntry value) {
@@ -491,7 +497,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a double-valued element}
+     * {@return a double value for an element-value pair}
      * @param value the double value
      */
     static OfDouble ofDouble(double value) {
@@ -499,7 +505,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a float-valued element}
+     * {@return a float value for an element-value pair}
      * @param value the float value
      */
     static OfFloat ofFloat(FloatEntry value) {
@@ -507,7 +513,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a float-valued element}
+     * {@return a float value for an element-value pair}
      * @param value the float value
      */
     static OfFloat ofFloat(float value) {
@@ -515,7 +521,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a long-valued element}
+     * {@return a long value for an element-value pair}
      * @param value the long value
      */
     static OfLong ofLong(LongEntry value) {
@@ -523,7 +529,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a long-valued element}
+     * {@return a long value for an element-value pair}
      * @param value the long value
      */
     static OfLong ofLong(long value) {
@@ -531,7 +537,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for an int-valued element}
+     * {@return an int value for an element-value pair}
      * @param value the int value
      */
     static OfInt ofInt(IntegerEntry value) {
@@ -539,7 +545,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for an int-valued element}
+     * {@return an int value for an element-value pair}
      * @param value the int value
      */
     static OfInt ofInt(int value) {
@@ -547,7 +553,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a short-valued element}
+     * {@return a short value for an element-value pair}
      * @param value the short value
      */
     static OfShort ofShort(IntegerEntry value) {
@@ -555,7 +561,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a short-valued element}
+     * {@return a short value for an element-value pair}
      * @param value the short value
      */
     static OfShort ofShort(short value) {
@@ -563,7 +569,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a char-valued element}
+     * {@return a char value for an element-value pair}
      * @param value the char value
      */
     static OfChar ofChar(IntegerEntry value) {
@@ -571,7 +577,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a char-valued element}
+     * {@return a char value for an element-value pair}
      * @param value the char value
      */
     static OfChar ofChar(char value) {
@@ -579,7 +585,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a byte-valued element}
+     * {@return a byte value for an element-value pair}
      * @param value the byte value
      */
     static OfByte ofByte(IntegerEntry value) {
@@ -587,7 +593,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a byte-valued element}
+     * {@return a byte value for an element-value pair}
      * @param value the byte value
      */
     static OfByte ofByte(byte value) {
@@ -595,7 +601,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a boolean-valued element}
+     * {@return a boolean value for an element-value pair}
      * @param value the boolean value
      */
     static OfBoolean ofBoolean(IntegerEntry value) {
@@ -603,7 +609,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for a boolean-valued element}
+     * {@return a boolean value for an element-value pair}
      * @param value the boolean value
      */
     static OfBoolean ofBoolean(boolean value) {
@@ -612,7 +618,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for an annotation-valued element}
+     * {@return an annotation value for an element-value pair}
      * @param value the annotation
      */
     static OfAnnotation ofAnnotation(Annotation value) {
@@ -620,7 +626,12 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for an array-valued element}
+     * {@return an array value for an element-value pair}
+     *
+     * @apiNote
+     * See {@link AnnotationValue.OfArray#values() values()} for conventions
+     * on array values derived from Java source code.
+     *
      * @param values the array elements
      */
     static OfArray ofArray(List<AnnotationValue> values) {
@@ -628,7 +639,12 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return an annotation element for an array-valued element}
+     * {@return an array value for an element-value pair}
+     *
+     * @apiNote
+     * See {@link AnnotationValue.OfArray#values() values()} for conventions
+     * on array values derived from Java source code.
+     *
      * @param values the array elements
      */
     static OfArray ofArray(AnnotationValue... values) {

@@ -43,19 +43,15 @@
 
 
 class ShenandoahResetUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
- private:
+private:
   ShenandoahHeap* _heap;
   ShenandoahMarkingContext* const _ctx;
- public:
+public:
   ShenandoahResetUpdateRegionStateClosure() :
     _heap(ShenandoahHeap::heap()),
     _ctx(_heap->marking_context()) {}
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
-    if (_heap->is_bitmap_slice_committed(r)) {
-      _ctx->clear_bitmap(r);
-    }
-
     if (r->is_active()) {
       // Reset live data and set TAMS optimistically. We would recheck these under the pause
       // anyway to capture any updates that happened since now.
@@ -67,30 +63,34 @@ class ShenandoahResetUpdateRegionStateClosure : public ShenandoahHeapRegionClosu
   bool is_thread_safe() override { return true; }
 };
 
-class ShenandoahResetBitmapTask : public ShenandoahHeapRegionClosure {
- private:
-  ShenandoahHeap* _heap;
-  ShenandoahMarkingContext* const _ctx;
- public:
-  ShenandoahResetBitmapTask() :
-    _heap(ShenandoahHeap::heap()),
-    _ctx(_heap->marking_context()) {}
+class ShenandoahResetBitmapTask : public WorkerTask {
+private:
+  ShenandoahRegionIterator _regions;
+  ShenandoahGeneration* _generation;
 
-  void heap_region_do(ShenandoahHeapRegion* region) {
-    if (_heap->is_bitmap_slice_committed(region)) {
-      _ctx->clear_bitmap(region);
+public:
+  ShenandoahResetBitmapTask(ShenandoahGeneration* generation) :
+    WorkerTask("Shenandoah Reset Bitmap"), _generation(generation) {}
+
+  void work(uint worker_id) {
+    ShenandoahHeapRegion* region = _regions.next();
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    ShenandoahMarkingContext* const ctx = heap->marking_context();
+    while (region != nullptr) {
+      if (_generation->contains(region) && heap->is_bitmap_slice_committed(region)) {
+        ctx->clear_bitmap(region);
+      }
+      region = _regions.next();
     }
   }
-
-  bool is_thread_safe() { return true; }
 };
 
 // Copy the write-version of the card-table into the read-version, clearing the
 // write-copy.
 class ShenandoahMergeWriteTable: public ShenandoahHeapRegionClosure {
- private:
+private:
   ShenandoahScanRemembered* _scanner;
- public:
+public:
   ShenandoahMergeWriteTable(ShenandoahScanRemembered* scanner) : _scanner(scanner) {}
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
@@ -104,9 +104,9 @@ class ShenandoahMergeWriteTable: public ShenandoahHeapRegionClosure {
 };
 
 class ShenandoahCopyWriteCardTableToRead: public ShenandoahHeapRegionClosure {
- private:
+private:
   ShenandoahScanRemembered* _scanner;
- public:
+public:
   ShenandoahCopyWriteCardTableToRead(ShenandoahScanRemembered* scanner) : _scanner(scanner) {}
 
   void heap_region_do(ShenandoahHeapRegion* region) override {
@@ -193,8 +193,8 @@ void ShenandoahGeneration::reset_mark_bitmap() {
 
   set_mark_incomplete();
 
-  ShenandoahResetBitmapTask task;
-  parallel_heap_region_iterate(&task);
+  ShenandoahResetBitmapTask task(this);
+  heap->workers()->run_task(&task);
 }
 
 // The ideal is to swap the remembered set so the safepoint effort is no more than a few pointer manipulations.
@@ -227,8 +227,8 @@ void ShenandoahGeneration::merge_write_table() {
 }
 
 void ShenandoahGeneration::prepare_gc() {
-  // Invalidate the marking context
-  set_mark_incomplete();
+
+  reset_mark_bitmap();
 
   // Capture Top At Mark Start for this generation (typically young) and reset mark bitmap.
   ShenandoahResetUpdateRegionStateClosure cl;

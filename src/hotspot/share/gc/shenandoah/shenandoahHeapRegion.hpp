@@ -228,8 +228,6 @@ private:
   static size_t RegionSizeWordsShift;
   static size_t RegionSizeBytesMask;
   static size_t RegionSizeWordsMask;
-  static size_t HumongousThresholdBytes;
-  static size_t HumongousThresholdWords;
   static size_t MaxTLABSizeBytes;
   static size_t MaxTLABSizeWords;
 
@@ -277,6 +275,10 @@ public:
 
   inline static size_t required_regions(size_t bytes) {
     return (bytes + ShenandoahHeapRegion::region_size_bytes() - 1) >> ShenandoahHeapRegion::region_size_bytes_shift();
+  }
+
+  inline static bool requires_humongous(size_t words) {
+    return words > ShenandoahHeapRegion::RegionSizeWords;
   }
 
   inline static size_t region_count() {
@@ -329,14 +331,6 @@ public:
   inline static jint region_size_words_shift_jint() {
     assert (ShenandoahHeapRegion::RegionSizeWordsShift <= (size_t)max_jint, "sanity");
     return (jint)ShenandoahHeapRegion::RegionSizeWordsShift;
-  }
-
-  inline static size_t humongous_threshold_bytes() {
-    return ShenandoahHeapRegion::HumongousThresholdBytes;
-  }
-
-  inline static size_t humongous_threshold_words() {
-    return ShenandoahHeapRegion::HumongousThresholdWords;
   }
 
   inline static size_t max_tlab_size_bytes() {

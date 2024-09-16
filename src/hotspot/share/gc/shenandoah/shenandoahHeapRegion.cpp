@@ -52,7 +52,6 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-
 size_t ShenandoahHeapRegion::RegionCount = 0;
 size_t ShenandoahHeapRegion::RegionSizeBytes = 0;
 size_t ShenandoahHeapRegion::RegionSizeWords = 0;
@@ -60,8 +59,6 @@ size_t ShenandoahHeapRegion::RegionSizeBytesShift = 0;
 size_t ShenandoahHeapRegion::RegionSizeWordsShift = 0;
 size_t ShenandoahHeapRegion::RegionSizeBytesMask = 0;
 size_t ShenandoahHeapRegion::RegionSizeWordsMask = 0;
-size_t ShenandoahHeapRegion::HumongousThresholdBytes = 0;
-size_t ShenandoahHeapRegion::HumongousThresholdWords = 0;
 size_t ShenandoahHeapRegion::MaxTLABSizeBytes = 0;
 size_t ShenandoahHeapRegion::MaxTLABSizeWords = 0;
 
@@ -144,8 +141,10 @@ void ShenandoahHeapRegion::make_affiliated_maybe() {
 
 void ShenandoahHeapRegion::make_regular_bypass() {
   shenandoah_assert_heaplocked();
-  assert (ShenandoahHeap::heap()->is_full_gc_in_progress() || ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
-          "only for full or degen GC");
+  assert (!Universe::is_fully_initialized() ||
+          ShenandoahHeap::heap()->is_full_gc_in_progress() ||
+          ShenandoahHeap::heap()->is_degenerated_gc_in_progress(),
+          "Only for STW GC or when Universe is initializing (CDS)");
   reset_age();
   switch (_state) {
     case _empty_uncommitted:
@@ -154,6 +153,14 @@ void ShenandoahHeapRegion::make_regular_bypass() {
     case _cset:
     case _humongous_start:
     case _humongous_cont:
+      if (_state == _humongous_start || _state == _humongous_cont) {
+        // CDS allocates chunks of the heap to fill with regular objects. The allocator
+        // will dutifully track any waste in the unused portion of the last region. Once
+        // CDS has finished initializing the objects, it will convert these regions to
+        // regular regions. The 'waste' in the last region is no longer wasted at this point,
+        // so we must stop treating it as such.
+        decrement_humongous_waste();
+      }
       set_state(_regular);
       return;
     case _pinned_cset:
@@ -572,10 +579,15 @@ void ShenandoahHeapRegion::recycle() {
 
   set_top(bottom());
   clear_live_data();
+  heap->marking_context()->clear_bitmap(this);
 
   reset_alloc_metadata();
 
   heap->marking_context()->reset_top_at_mark_start(this);
+  if (heap->is_bitmap_slice_committed(this)) {
+    heap->marking_context()->clear_bitmap(this);
+  }
+
   set_update_watermark(bottom());
 
   make_empty();
@@ -747,18 +759,8 @@ size_t ShenandoahHeapRegion::setup_sizes(size_t max_heap_size) {
   RegionCount = align_up(max_heap_size, RegionSizeBytes) / RegionSizeBytes;
   guarantee(RegionCount >= MIN_NUM_REGIONS, "Should have at least minimum regions");
 
-  guarantee(HumongousThresholdWords == 0, "we should only set it once");
-  HumongousThresholdWords = RegionSizeWords * ShenandoahHumongousThreshold / 100;
-  HumongousThresholdWords = align_down(HumongousThresholdWords, MinObjAlignment);
-  assert (HumongousThresholdWords <= RegionSizeWords, "sanity");
-
-  guarantee(HumongousThresholdBytes == 0, "we should only set it once");
-  HumongousThresholdBytes = HumongousThresholdWords * HeapWordSize;
-  assert (HumongousThresholdBytes <= RegionSizeBytes, "sanity");
-
   guarantee(MaxTLABSizeWords == 0, "we should only set it once");
-  MaxTLABSizeWords = MIN2(RegionSizeWords, HumongousThresholdWords);
-  MaxTLABSizeWords = align_down(MaxTLABSizeWords, MinObjAlignment);
+  MaxTLABSizeWords = align_down(RegionSizeWords, MinObjAlignment);
 
   guarantee(MaxTLABSizeBytes == 0, "we should only set it once");
   MaxTLABSizeBytes = MaxTLABSizeWords * HeapWordSize;
