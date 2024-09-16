@@ -1270,11 +1270,6 @@ public final class PassFailJFrame {
             if (this.positionWindows != null) {
                 throw new IllegalStateException("PositionWindows is already set");
             }
-            if (windowListCreator == null || testWindows == null) {
-                throw new IllegalStateException("Neither a windows list creator "
-                                                + "nor a list of test windows "
-                                                + "has been provided");
-            }
             this.positionWindows = positionWindows;
             return this;
         }
