@@ -825,10 +825,11 @@ void InstanceKlass::initialize_from_cds(TRAPS) {
 
     link_class(CHECK);
 
-#ifdef AZZERT
+#ifdef ASSERT
     {
-      MonitorLocker ml(THREAD, _init_monitor);
-      assert(!initialized(), "sanity");
+      Handle h_init_lock(THREAD, init_lock());
+      ObjectLocker ol(h_init_lock, THREAD);
+      assert(!is_initialized(), "sanity");
       assert(!is_being_initialized(), "sanity");
       assert(!is_in_error_state(), "sanity");
     }
