@@ -48,9 +48,10 @@ public class CompileFramework {
     private URLClassLoader classLoader;
 
     public String getClassPathOfCompiledClasses() {
-        return System.getProperty("java.class.path") +
-               File.pathSeparator +
-               classesDir.toAbsolutePath().toString();
+        String cp = System.getProperty("java.class.path") +
+                    File.pathSeparator +
+                    classesDir.toAbsolutePath().toString();
+        return cp.replace("\\", "\\\\"); // For windows paths
     }
 
     public void add(SourceCode sourceCode) {
