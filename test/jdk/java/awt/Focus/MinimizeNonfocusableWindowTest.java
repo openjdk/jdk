@@ -25,7 +25,7 @@
  * @test
  * @bug 6399659
  * @summary   When minimizing non-focusable window focus shouldn't jump out of the focused window.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual MinimizeNonfocusableWindowTest
 */

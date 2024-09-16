@@ -26,7 +26,7 @@
  * @bug 4257071 4228379
  * @summary Ensures that focus lost is delivered to a lightweight component
             in a disposed window
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual WindowDisposeFocusTest
 */

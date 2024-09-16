@@ -26,7 +26,7 @@
  * @bug 6435715
  * @summary JButton stops receiving the focusGained event and eventually focus is lost altogether
  * @modules java.desktop/sun.awt
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug6435715
  */
