@@ -706,12 +706,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
 
       heap->set_evacuation_in_progress(true);
 
-      // Verify before arming for concurrent processing.
-      // Otherwise, verification can trigger stack processing.
-      if (ShenandoahVerify) {
-        heap->verifier()->verify_during_evacuation();
-      }
-
       // Generational mode may promote objects in place during the evacuation phase.
       // If that is the only reason we are evacuating, we don't need to update references
       // and there will be no forwarded objects on the heap.
@@ -836,10 +830,7 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
     if (!_mark_context->is_marked(obj)) {
       shenandoah_assert_generations_reconciled();
       if (_heap->is_in_active_generation(obj)) {
-        // Here we are asserting that an unmarked from-space object is 'correct'. There seems to be a legitimate
-        // use-case for accessing from-space objects during concurrent class unloading. In all modes of Shenandoah,
-        // concurrent class unloading only happens during a global collection.
-        shenandoah_assert_correct(p, obj);
+        // Note: The obj is dead here. Do not touch it, just clear.
         ShenandoahHeap::atomic_clear_oop(p, obj);
       }
     } else if (_evac_in_progress && _heap->in_collection_set(obj)) {

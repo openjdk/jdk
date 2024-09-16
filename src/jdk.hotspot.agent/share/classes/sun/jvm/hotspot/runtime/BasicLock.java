@@ -43,7 +43,7 @@ public class BasicLock extends VMObject {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type  = db.lookupType("BasicLock");
-    displacedHeaderField = type.getCIntegerField("_displaced_header");
+    displacedHeaderField = type.getCIntegerField("_metadata");
   }
 
   private static CIntegerField displacedHeaderField;

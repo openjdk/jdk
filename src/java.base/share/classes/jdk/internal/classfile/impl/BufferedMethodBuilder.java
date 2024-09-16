@@ -205,12 +205,7 @@ public final class BufferedMethodBuilder
 
         @Override
         public void writeTo(DirectClassBuilder builder) {
-            builder.withMethod(methodName(), methodType(), methodFlags(), new Consumer<>() {
-                @Override
-                public void accept(MethodBuilder mb) {
-                    forEach(mb);
-                }
-            });
+            builder.withMethod(methodName(), methodType(), methodFlags(), Util.writingAll(this));
         }
 
         @Override

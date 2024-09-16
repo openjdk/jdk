@@ -345,16 +345,10 @@ uint ShenandoahHeap::get_object_age(oop obj) {
   return w.age();
 }
 
-bool ShenandoahHeap::is_in(const void* p) const {
-  HeapWord* heap_base = (HeapWord*) base();
-  HeapWord* last_region_end = heap_base + ShenandoahHeapRegion::region_size_words() * num_regions();
-  return p >= heap_base && p < last_region_end;
-}
-
 inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
   if (!mode()->is_generational()) {
     // everything is the same single generation
-    assert(is_in(obj), "Otherwise shouldn't return true below");
+    assert(is_in_reserved(obj), "Otherwise shouldn't return true below");
     return true;
   }
 
@@ -366,7 +360,7 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
     return false;
   }
 
-  assert(is_in(obj), "only check if is in active generation for objects (" PTR_FORMAT ") in heap", p2i(obj));
+  assert(is_in_reserved(obj), "only check if is in active generation for objects (" PTR_FORMAT ") in heap", p2i(obj));
   assert(gen->is_old() || gen->is_young() || gen->is_global(),
          "Active generation must be old, young, or global");
 
@@ -392,11 +386,11 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
 }
 
 inline bool ShenandoahHeap::is_in_young(const void* p) const {
-  return is_in(p) && (_affiliations[heap_region_index_containing(p)] == ShenandoahAffiliation::YOUNG_GENERATION);
+  return is_in_reserved(p) && (_affiliations[heap_region_index_containing(p)] == ShenandoahAffiliation::YOUNG_GENERATION);
 }
 
 inline bool ShenandoahHeap::is_in_old(const void* p) const {
-  return is_in(p) && (_affiliations[heap_region_index_containing(p)] == ShenandoahAffiliation::OLD_GENERATION);
+  return is_in_reserved(p) && (_affiliations[heap_region_index_containing(p)] == ShenandoahAffiliation::OLD_GENERATION);
 }
 
 inline bool ShenandoahHeap::is_old(oop obj) const {
