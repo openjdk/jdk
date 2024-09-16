@@ -51,7 +51,6 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.ref.SoftReference;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -1353,7 +1352,7 @@ public final class StringConcatFactory {
                             }
                     }});
             try {
-                var hiddenClass = lookup.makeHiddenClassDefiner(CLASS_NAME, classBytes, Set.of(), DUMPER)
+                var hiddenClass = lookup.makeHiddenClassDefiner(CLASS_NAME, classBytes, DUMPER)
                                         .defineClass(true, null);
 
                 if (staticConcat) {
