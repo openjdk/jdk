@@ -3679,7 +3679,6 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
   bs->resolve_global_jobject(this, value, tmp1, tmp2);
 }
 
-
 // Last_Java_sp must comply to the rules in frame_s390.hpp.
 void MacroAssembler::set_last_Java_frame(Register last_Java_sp, Register last_Java_pc, bool allow_relocation) {
   BLOCK_COMMENT("set_last_Java_frame {");
