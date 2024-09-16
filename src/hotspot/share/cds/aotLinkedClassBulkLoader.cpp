@@ -197,6 +197,8 @@ void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char*
     InstanceKlass* ik = classes->at(i);
     assert(ik->is_loaded(), "must have already been loaded by a parent loader");
     assert(ik->class_loader() != initiating_loader(), "must be a parent loader");
+    assert(ik->class_loader() == nullptr ||
+           ik->class_loader() == SystemDictionary::java_platform_loader(), "must be");
     if (ik->is_public() && !ik->is_hidden()) {
       if (log_is_enabled(Info, cds, aot, load)) {
         ResourceMark rm(current);
