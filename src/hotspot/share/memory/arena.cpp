@@ -311,8 +311,6 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   return result;
 }
 
-
-
 // Reallocate storage in Arena.
 void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFailType alloc_failmode) {
   if (new_size == 0) {
@@ -324,21 +322,21 @@ void *Arena::Arealloc(void* old_ptr, size_t old_size, size_t new_size, AllocFail
     return Amalloc(new_size, alloc_failmode); // as with realloc(3), a null old ptr is equivalent to malloc(3)
   }
   char *c_old = (char*)old_ptr; // Handy name
-  // Stupid fast special case
-  if( new_size <= old_size ) {  // Shrink in-place
-    if( c_old+old_size == _hwm) // Attempt to free the excess bytes
-      _hwm = c_old+new_size;    // Adjust hwm
-    return c_old;
-  }
 
-  // make sure that new_size is legal
+  // Make sure that new_size is legal
   size_t corrected_new_size = ARENA_ALIGN(new_size);
 
-  // See if we can resize in-place
-  if( (c_old+old_size == _hwm) &&       // Adjusting recent thing
-      (c_old+corrected_new_size <= _max) ) {      // Still fits where it sits
-    _hwm = c_old+corrected_new_size;      // Adjust hwm
-    return c_old;               // Return old pointer
+  // Reallocating the latest allocation?
+  if (c_old + old_size == _hwm) {
+    assert(_chunk->bottom() <= c_old, "invariant");
+
+    // Reallocate in place if it fits. Also handles shrinking
+    if (pointer_delta(_max, c_old, 1) >= corrected_new_size) {
+      _hwm = c_old + corrected_new_size;
+      return c_old;
+    }
+  } else if (new_size <= old_size) { // Shrink in place
+    return c_old;
   }
 
   // Oops, got to relocate guts

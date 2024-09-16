@@ -87,6 +87,7 @@ requires.properties= \
     vm.musl \
     vm.flagless \
     docker.support \
+    systemd.support \
     jdk.containerized \
     jlink.runtime.linkable \
     jlink.packagedModules

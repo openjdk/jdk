@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BufferedMethodBuilder;
 import jdk.internal.classfile.impl.MethodImpl;
+import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -59,7 +60,7 @@ public sealed interface MethodModel
 
     /** {@return the method descriptor of this method, as a symbolic descriptor} */
     default MethodTypeDesc methodTypeSymbol() {
-        return MethodTypeDesc.ofDescriptor(methodType().stringValue());
+        return Util.methodTypeSymbol(methodType());
     }
 
     /** {@return the body of this method, if there is one} */

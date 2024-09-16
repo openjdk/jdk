@@ -966,10 +966,6 @@ private:
                                                        const Node_List& old_new);
   void insert_loop_limit_check_predicate(ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
                                          Node* bol);
-#ifdef ASSERT
-  bool only_has_infinite_loops();
-#endif
-
   void log_loop_tree();
 
 public:
@@ -1076,7 +1072,7 @@ private:
 
   // Place 'n' in some loop nest, where 'n' is a CFG node
   void build_loop_tree();
-  int build_loop_tree_impl( Node *n, int pre_order );
+  int build_loop_tree_impl(Node* n, int pre_order);
   // Insert loop into the existing loop tree.  'innermost' is a leaf of the
   // loop tree, not the root.
   IdealLoopTree *sort( IdealLoopTree *loop, IdealLoopTree *innermost );
@@ -1183,6 +1179,16 @@ public:
     return find_non_split_ctrl(dom_lca_internal(n1, n2));
   }
   Node *dom_lca_internal( Node *n1, Node *n2 ) const;
+
+  Node* dominated_node(Node* c1, Node* c2) {
+    assert(is_dominator(c1, c2) || is_dominator(c2, c1), "nodes must be related");
+    return is_dominator(c1, c2) ? c2 : c1;
+  }
+
+  // Return control node that's dominated by the 2 others
+  Node* dominated_node(Node* c1, Node* c2, Node* c3) {
+    return dominated_node(c1, dominated_node(c2, c3));
+  }
 
   // Build and verify the loop tree without modifying the graph.  This
   // is useful to verify that all inputs properly dominate their uses.
@@ -1784,6 +1790,8 @@ public:
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
 
   void pin_array_access_nodes_dependent_on(Node* ctrl);
+
+  Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
 };
 
 

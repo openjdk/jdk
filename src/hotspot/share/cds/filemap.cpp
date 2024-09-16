@@ -289,7 +289,11 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- has_non_jar_in_classpath:       %d", _has_non_jar_in_classpath);
   st->print_cr("- requested_base_address:         " INTPTR_FORMAT, p2i(_requested_base_address));
   st->print_cr("- mapped_base_address:            " INTPTR_FORMAT, p2i(_mapped_base_address));
-  st->print_cr("- heap_roots_offset:              " SIZE_FORMAT, _heap_roots_offset);
+  st->print_cr("- heap_root_segments.roots_count: %d" , _heap_root_segments.roots_count());
+  st->print_cr("- heap_root_segments.base_offset: " SIZE_FORMAT_X, _heap_root_segments.base_offset());
+  st->print_cr("- heap_root_segments.count:       " SIZE_FORMAT, _heap_root_segments.count());
+  st->print_cr("- heap_root_segments.max_size_elems: %d", _heap_root_segments.max_size_in_elems());
+  st->print_cr("- heap_root_segments.max_size_bytes: %d", _heap_root_segments.max_size_in_bytes());
   st->print_cr("- _heap_oopmap_start_pos:         " SIZE_FORMAT, _heap_oopmap_start_pos);
   st->print_cr("- _heap_ptrmap_start_pos:         " SIZE_FORMAT, _heap_ptrmap_start_pos);
   st->print_cr("- _rw_ptrmap_start_pos:           " SIZE_FORMAT, _rw_ptrmap_start_pos);
@@ -1647,7 +1651,7 @@ size_t FileMapInfo::write_heap_region(ArchiveHeapInfo* heap_info) {
   char* buffer_start = heap_info->buffer_start();
   size_t buffer_size = heap_info->buffer_byte_size();
   write_region(MetaspaceShared::hp, buffer_start, buffer_size, false, false);
-  header()->set_heap_roots_offset(heap_info->heap_roots_offset());
+  header()->set_heap_root_segments(heap_info->heap_root_segments());
   return buffer_size;
 }
 
