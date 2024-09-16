@@ -1091,6 +1091,8 @@ public class File
     /**
      * Requests that the file or directory denoted by this abstract
      * pathname be deleted when the virtual machine terminates.
+     * If this pathname denotes a symbolic link, then the
+     * link itself, not its target, will be deleted.
      * Files (or directories) are deleted in the reverse order that
      * they are registered. Invoking this method to delete a file or
      * directory that is already registered for deletion has no effect.
