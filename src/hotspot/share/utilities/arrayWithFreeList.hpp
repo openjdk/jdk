@@ -203,7 +203,7 @@ public:
   E& at(I i) {
     assert(i != nil, "null pointer dereference");
     assert(is_in_bounds(i), "out of bounds dereference");
-    return reinterpret_cast<E&>(_backing_storage.at(i).e);
+    return _backing_storage.at(i).e;
   }
 };
 
