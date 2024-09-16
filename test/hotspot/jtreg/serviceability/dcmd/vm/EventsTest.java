@@ -39,7 +39,7 @@ import org.testng.Assert;
  */
 public class EventsTest {
 
-    // MAX should be less then number of actually recored events
+    // MAX should be less than number of actually recorded events
     private static int MAX = 9;
 
     static String buildHeaderPattern(String logname) {
