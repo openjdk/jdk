@@ -114,7 +114,7 @@ class CompressedKlassPointers : public AllStatic {
   static int _shift;
 
   // Start and end of the Klass Range.
-  // Note: guaranteed to be aligned to 1<<shift (klass_alignment_in_bytes)
+  // Note: guaranteed to be aligned to KlassAlignmentInBytes
   static address _klass_range_start;
   static address _klass_range_end;
 
