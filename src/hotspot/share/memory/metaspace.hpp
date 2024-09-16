@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -64,6 +64,10 @@ private:
 
   static const MetaspaceTracer* _tracer;
 
+  // For quick pointer testing: extent of class space; nullptr if no class space.
+  static const void* _class_space_start;
+  static const void* _class_space_end;
+
   static bool _initialized;
 
 public:
@@ -113,8 +117,32 @@ public:
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             MetaspaceObj::Type type);
 
-  static bool contains(const void* ptr);
-  static bool contains_non_shared(const void* ptr);
+  // Returns true if the pointer points into class space, non-class metaspace, or the
+  // metadata portion of the CDS archive.
+  static bool contains(const void* ptr) {
+    return is_in_shared_metaspace(ptr) || // in cds
+           is_in_class_space(ptr) ||      // in class space
+           is_in_nonclass_metaspace(ptr); // in one of the non-class regions?
+  }
+
+  // Returns true if the pointer points into class space or into non-class metaspace
+  static bool contains_non_shared(const void* ptr) {
+    return is_in_class_space(ptr) ||      // in class space
+           is_in_nonclass_metaspace(ptr); // in one of the non-class regions?
+  }
+
+  // Returns true if pointer points into the CDS klass region.
+  static bool is_in_shared_metaspace(const void* ptr);
+
+  // Returns true if pointer points into one of the non-class-space metaspace regions.
+  static bool is_in_nonclass_metaspace(const void* ptr);
+
+  // Returns true if pointer points into class space, false if it doesn't or if
+  // there is no class space. Class space is a contiguous region, which is why
+  // two address comparisons are enough.
+  static inline bool is_in_class_space(const void* ptr) {
+    return ptr < _class_space_end && ptr >= _class_space_start;
+  }
 
   // Free empty virtualspaces
   static void purge(bool classes_unloaded);

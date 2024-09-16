@@ -2450,7 +2450,8 @@ public abstract class ClassLoader {
      * @param javaName the native method's declared name
      */
     static long findNative(ClassLoader loader, Class<?> clazz, String entryName, String javaName) {
-        long addr = findNativeInternal(loader, entryName);
+        NativeLibraries nativeLibraries = nativeLibrariesFor(loader);
+        long addr = nativeLibraries.find(entryName);
         if (addr != 0 && loader != null) {
             Reflection.ensureNativeAccess(clazz, clazz, javaName, true);
         }
@@ -2462,11 +2463,11 @@ public abstract class ClassLoader {
      * to avoid a restricted check, as that check has already been performed when
      * obtaining the lookup.
      */
-    static long findNativeInternal(ClassLoader loader, String entryName) {
+    static NativeLibraries nativeLibrariesFor(ClassLoader loader) {
         if (loader == null) {
-            return BootLoader.getNativeLibraries().find(entryName);
+            return BootLoader.getNativeLibraries();
         } else {
-            return loader.libraries.find(entryName);
+            return loader.libraries;
         }
     }
 

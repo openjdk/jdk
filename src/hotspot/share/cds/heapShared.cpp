@@ -1644,30 +1644,6 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
 };
 #endif
 
-#ifndef PRODUCT
-ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
-  size_t num_bits = region.byte_size() / (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
-  ResourceBitMap oopmap(num_bits);
-
-  HeapWord* p   = region.start();
-  HeapWord* end = region.end();
-  FindEmbeddedNonNullPointers finder((void*)p, &oopmap);
-
-  int num_objs = 0;
-  while (p < end) {
-    oop o = cast_to_oop(p);
-    o->oop_iterate(&finder);
-    p += o->size();
-    ++ num_objs;
-  }
-
-  log_info(cds, heap)("calculate_oopmap: objects = %6d, oop fields = %7d (nulls = %7d)",
-                      num_objs, finder.num_total_oops(), finder.num_null_oops());
-  return oopmap;
-}
-
-#endif // !PRODUCT
-
 void HeapShared::count_allocation(size_t size) {
   _total_obj_count ++;
   _total_obj_size += size;

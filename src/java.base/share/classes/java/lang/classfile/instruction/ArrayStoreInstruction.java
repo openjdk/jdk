@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,9 @@ import jdk.internal.classfile.impl.Util;
 public sealed interface ArrayStoreInstruction extends Instruction
         permits AbstractInstruction.UnboundArrayStoreInstruction {
     /**
-     * {@return the component type of the array}
+     * {@return the component type of the array} The {@link TypeKind#BYTE byte}
+     * type store instruction {@link Opcode#BASTORE bastore} also operates on
+     * {@link TypeKind#BOOLEAN boolean} arrays.
      */
     TypeKind typeKind();
 

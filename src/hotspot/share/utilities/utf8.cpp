@@ -98,15 +98,21 @@ char* UTF8::next_character(const char* str, jint* value) {
   return next_ch;
 }
 
-// Count bytes of the form 10xxxxxx and deduct this count
+// The number of unicode characters in a utf8 sequence can be easily
+// determined by noting that bytes of the form 10xxxxxx are part of
+// a 2 or 3-byte multi-byte sequence, all others are either characters
+// themselves or else the start of a multi-byte character.
+
+// Calculate the unicode length of a utf8 string of known size
+// by counting bytes of the form 10xxxxxx and deducting this count
 // from the total byte count.  The utf8 string must be in
 // legal form which has been verified in the format checker.
-int UTF8::unicode_length(const char* str, int len, bool& is_latin1, bool& has_multibyte) {
-  int num_chars = len;
+int UTF8::unicode_length(const char* str, size_t len, bool& is_latin1, bool& has_multibyte) {
+  size_t num_chars = len;
   has_multibyte = false;
   is_latin1 = true;
   unsigned char prev = 0;
-  for (int i = 0; i < len; i++) {
+  for (size_t i = 0; i < len; i++) {
     unsigned char c = str[i];
     if ((c & 0xC0) == 0x80) {
       // Multibyte, check if valid latin1 character.
@@ -118,12 +124,12 @@ int UTF8::unicode_length(const char* str, int len, bool& is_latin1, bool& has_mu
     }
     prev = c;
   }
-  return num_chars;
+  return checked_cast<int>(num_chars);
 }
 
-// Count bytes of the utf8 string except those in form
-// 10xxxxxx which only appear in multibyte characters.
-// The utf8 string must be in legal form and has been
+// Calculate the unicode length of a nul-terminated utf8 string
+// by counting bytes of the utf8 string except those in the form
+// 10xxxxxx. The utf8 string must be in legal form and has been
 // verified in the format checker.
 int UTF8::unicode_length(const char* str, bool& is_latin1, bool& has_multibyte) {
   int num_chars = 0;
@@ -195,10 +201,10 @@ template void UTF8::convert_to_unicode<jchar>(const char* utf8_str, jchar* unico
 template void UTF8::convert_to_unicode<jbyte>(const char* utf8_str, jbyte* unicode_str, int unicode_length);
 
 // returns the quoted ascii length of a 0-terminated utf8 string
-int UTF8::quoted_ascii_length(const char* utf8_str, int utf8_length) {
+size_t UTF8::quoted_ascii_length(const char* utf8_str, size_t utf8_length) {
   const char *ptr = utf8_str;
   const char* end = ptr + utf8_length;
-  int result = 0;
+  size_t result = 0;
   while (ptr < end) {
     jchar c;
     ptr = UTF8::next(ptr, &c);
@@ -212,7 +218,7 @@ int UTF8::quoted_ascii_length(const char* utf8_str, int utf8_length) {
 }
 
 // converts a utf8 string to quoted ascii
-void UTF8::as_quoted_ascii(const char* utf8_str, int utf8_length, char* buf, int buflen) {
+void UTF8::as_quoted_ascii(const char* utf8_str, size_t utf8_length, char* buf, size_t buflen) {
   const char *ptr = utf8_str;
   const char *utf8_end = ptr + utf8_length;
   char* p = buf;
@@ -248,7 +254,7 @@ const char* UTF8::from_quoted_ascii(const char* quoted_ascii_str) {
     return quoted_ascii_str;
   }
   // everything up to this point was ok.
-  int length = ptr - quoted_ascii_str;
+  size_t length = ptr - quoted_ascii_str;
   char* buffer = nullptr;
   for (int round = 0; round < 2; round++) {
     while (*ptr != '\0') {
@@ -330,11 +336,11 @@ jint UTF8::get_supplementary_character(const unsigned char* str) {
                  + ((str[4] & 0x0f) << 6)  + (str[5] & 0x3f);
 }
 
-bool UTF8::is_legal_utf8(const unsigned char* buffer, int length,
+bool UTF8::is_legal_utf8(const unsigned char* buffer, size_t length,
                          bool version_leq_47) {
-  int i = 0;
-  int count = length >> 2;
-  for (int k=0; k<count; k++) {
+  size_t i = 0;
+  size_t count = length >> 2;
+  for (size_t k = 0; k < count; k++) {
     unsigned char b0 = buffer[i];
     unsigned char b1 = buffer[i+1];
     unsigned char b2 = buffer[i+2];
@@ -405,7 +411,7 @@ static bool is_starting_byte(unsigned char b) {
 // To avoid that the caller can choose to check for validity first.
 // The incoming buffer is still expected to be NUL-terminated.
 // The incoming buffer is expected to be a realistic size - we assert if it is too small.
-void UTF8::truncate_to_legal_utf8(unsigned char* buffer, int length) {
+void UTF8::truncate_to_legal_utf8(unsigned char* buffer, size_t length) {
   assert(length > 5, "invalid length");
   assert(buffer[length - 1] == '\0', "Buffer should be NUL-terminated");
 
@@ -433,7 +439,7 @@ void UTF8::truncate_to_legal_utf8(unsigned char* buffer, int length) {
   // then we insert NUL at that location to terminate the buffer. There is an added complexity with 6 byte
   // encodings as the first and fourth bytes are the same and overlap with the 3 byte encoding.
 
-  for (int index = length - 2; index > 0; index--) {
+  for (size_t index = length - 2; index > 0; index--) {
     if (is_starting_byte(buffer[index])) {
       if (buffer[index] == 0xED) {
         // Could be first byte of 3 or 6, or fourth byte of 6.
@@ -441,7 +447,7 @@ void UTF8::truncate_to_legal_utf8(unsigned char* buffer, int length) {
         // surrogate value in the range EDA080 to EDAFBF. We only
         // need to check for EDA to establish this as the "missing"
         // values in EDAxxx would not be valid 3 byte encodings.
-        if ((index - 3) >= 0 &&
+        if (index >= 3 &&
             (buffer[index - 3] == 0xED) &&
             ((buffer[index - 2] & 0xF0) == 0xA0)) {
           assert(buffer[index - 1] >= 0x80 && buffer[index - 1] <= 0xBF, "sanity check");
@@ -470,7 +476,7 @@ bool UNICODE::is_latin1(const jchar* base, int length) {
   return true;
 }
 
-int UNICODE::utf8_size(jchar c) {
+size_t UNICODE::utf8_size(jchar c) {
   if ((0x0001 <= c) && (c <= 0x007F)) {
     // ASCII character
     return 1;
@@ -481,7 +487,7 @@ int UNICODE::utf8_size(jchar c) {
   }
 }
 
-int UNICODE::utf8_size(jbyte c) {
+size_t UNICODE::utf8_size(jbyte c) {
   if (c >= 0x01) {
     // ASCII character. Check is equivalent to
     // (0x01 <= c) && (c <= 0x7F) because c is signed.
@@ -494,11 +500,23 @@ int UNICODE::utf8_size(jbyte c) {
 }
 
 template<typename T>
-int UNICODE::utf8_length(const T* base, int length) {
+size_t UNICODE::utf8_length(const T* base, int length) {
+  size_t result = 0;
+  for (int index = 0; index < length; index++) {
+    result += utf8_size(base[index]);
+  }
+  return result;
+}
+
+template<typename T>
+int UNICODE::utf8_length_as_int(const T* base, int length) {
   size_t result = 0;
   for (int index = 0; index < length; index++) {
     T c = base[index];
-    int sz = utf8_size(c);
+    size_t sz = utf8_size(c);
+    // If the length is > INT_MAX-1 we truncate at a completed
+    // modified-UTF8 encoding. This allows for +1 to be added
+    // by the caller for NUL-termination, without overflow.
     if (result + sz > INT_MAX-1) {
       break;
     }
@@ -508,41 +526,44 @@ int UNICODE::utf8_length(const T* base, int length) {
 }
 
 template<typename T>
-char* UNICODE::as_utf8(const T* base, int& length) {
-  int utf8_len = utf8_length(base, length);
+char* UNICODE::as_utf8(const T* base, size_t& length) {
+  // Incoming length must be <= INT_MAX
+  size_t utf8_len = utf8_length(base, static_cast<int>(length));
   u_char* buf = NEW_RESOURCE_ARRAY(u_char, utf8_len + 1);
-  char* result = as_utf8(base, length, (char*) buf, utf8_len + 1);
-  assert((int) strlen(result) == utf8_len, "length prediction must be correct");
-  // Set string length to uft8 length
+  char* result = as_utf8(base, static_cast<int>(length), (char*) buf, utf8_len + 1);
+  assert(strlen(result) == utf8_len, "length prediction must be correct");
+  // Set outgoing string length to uft8 length
   length = utf8_len;
   return (char*) result;
 }
 
-char* UNICODE::as_utf8(const jchar* base, int length, char* buf, int buflen) {
+char* UNICODE::as_utf8(const jchar* base, int length, char* buf, size_t buflen) {
   assert(buflen > 0, "zero length output buffer");
   u_char* p = (u_char*)buf;
   for (int index = 0; index < length; index++) {
     jchar c = base[index];
-    buflen -= utf8_size(c);
-    if (buflen <= 0) break; // string is truncated
+    size_t sz = utf8_size(c);
+    if (sz >= buflen) break; // string is truncated
+    buflen -= sz;
     p = utf8_write(p, c);
   }
   *p = '\0';
   return buf;
 }
 
-char* UNICODE::as_utf8(const jbyte* base, int length, char* buf, int buflen) {
+char* UNICODE::as_utf8(const jbyte* base, int length, char* buf, size_t buflen) {
   assert(buflen > 0, "zero length output buffer");
   u_char* p = (u_char*)buf;
   for (int index = 0; index < length; index++) {
     jbyte c = base[index];
-    int sz = utf8_size(c);
+    size_t sz = utf8_size(c);
+    if (sz >= buflen) break; // string is truncated
     buflen -= sz;
-    if (buflen <= 0) break; // string is truncated
     if (sz == 1) {
       // Copy ASCII characters (UTF-8 is ASCII compatible)
       *p++ = c;
     } else {
+      assert(sz == 2, "must be!");
       // Non-ASCII character or 0x00 which should
       // be encoded as 0xC080 in "modified" UTF8.
       p = utf8_write(p, ((jchar) c) & 0xff);
@@ -561,8 +582,8 @@ void UNICODE::convert_to_utf8(const jchar* base, int length, char* utf8_buffer) 
 
 // returns the quoted ascii length of a unicode string
 template<typename T>
-int UNICODE::quoted_ascii_length(const T* base, int length) {
-  int result = 0;
+size_t UNICODE::quoted_ascii_length(const T* base, int length) {
+  size_t result = 0;
   for (int i = 0; i < length; i++) {
     T c = base[i];
     if (c >= 32 && c < 127) {
@@ -576,7 +597,7 @@ int UNICODE::quoted_ascii_length(const T* base, int length) {
 
 // converts a unicode string to quoted ascii
 template<typename T>
-void UNICODE::as_quoted_ascii(const T* base, int length, char* buf, int buflen) {
+void UNICODE::as_quoted_ascii(const T* base, int length, char* buf, size_t buflen) {
   char* p = buf;
   char* end = buf + buflen;
   for (int index = 0; index < length; index++) {
@@ -594,11 +615,13 @@ void UNICODE::as_quoted_ascii(const T* base, int length, char* buf, int buflen) 
 }
 
 // Explicit instantiation for all supported types.
-template int UNICODE::utf8_length(const jbyte* base, int length);
-template int UNICODE::utf8_length(const jchar* base, int length);
-template char* UNICODE::as_utf8(const jbyte* base, int& length);
-template char* UNICODE::as_utf8(const jchar* base, int& length);
-template int UNICODE::quoted_ascii_length<jbyte>(const jbyte* base, int length);
-template int UNICODE::quoted_ascii_length<jchar>(const jchar* base, int length);
-template void UNICODE::as_quoted_ascii<jbyte>(const jbyte* base, int length, char* buf, int buflen);
-template void UNICODE::as_quoted_ascii<jchar>(const jchar* base, int length, char* buf, int buflen);
+template size_t UNICODE::utf8_length(const jbyte* base, int length);
+template size_t UNICODE::utf8_length(const jchar* base, int length);
+template int UNICODE::utf8_length_as_int(const jbyte* base, int length);
+template int UNICODE::utf8_length_as_int(const jchar* base, int length);
+template char* UNICODE::as_utf8(const jbyte* base, size_t& length);
+template char* UNICODE::as_utf8(const jchar* base, size_t& length);
+template size_t UNICODE::quoted_ascii_length<jbyte>(const jbyte* base, int length);
+template size_t UNICODE::quoted_ascii_length<jchar>(const jchar* base, int length);
+template void UNICODE::as_quoted_ascii<jbyte>(const jbyte* base, int length, char* buf, size_t buflen);
+template void UNICODE::as_quoted_ascii<jchar>(const jchar* base, int length, char* buf, size_t buflen);
