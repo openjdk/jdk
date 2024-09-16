@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "nmt/vmatree.hpp"
 #include "utilities/growableArray.hpp"
+#include <cinttypes>
 
 const VMATree::RegionData VMATree::empty_regiondata{NativeCallStackStorage::StackIndex{}, mtNone};
 
@@ -246,7 +247,7 @@ void VMATree::SummaryDiff::print_on(outputStream* out) {
     if (flag[i].reserve == 0 && flag[i].commit == 0) {
       continue;
     }
-    out->print_cr("Flag %s R: %ld C: %ld", NMTUtil::flag_to_enum_name((MEMFLAGS)i), flag[i].reserve,
+    out->print_cr("Flag %s R: " SIZE_FORMAT " C: " SIZE_FORMAT, NMTUtil::flag_to_enum_name((MEMFLAGS)i), flag[i].reserve,
                   flag[i].commit);
   }
 }
