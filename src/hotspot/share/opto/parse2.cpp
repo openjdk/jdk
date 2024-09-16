@@ -1371,7 +1371,8 @@ inline int Parse::repush_if_args() {
   return bc_depth;
 }
 
-static volatile int _stress_counter = 0;
+// Used by StressUnstableIfTraps
+static volatile int _trap_stress_counter = 0;
 
 //----------------------------------do_ifnull----------------------------------
 void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
@@ -1381,7 +1382,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   Node* incr_store = nullptr;
   bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
   if (do_stress_trap) {
-    Node* counter_addr = makecon(TypeRawPtr::make((address)&_stress_counter));
+    Node* counter_addr = makecon(TypeRawPtr::make((address)&_trap_stress_counter));
     counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
     counter = _gvn.transform(new AddINode(counter, intcon(1)));
     incr_store = store_to_memory(control(), counter_addr, counter, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
@@ -1488,7 +1489,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   Node* incr_store = nullptr;
   bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
   if (do_stress_trap) {
-    Node* counter_addr = makecon(TypeRawPtr::make((address)&_stress_counter));
+    Node* counter_addr = makecon(TypeRawPtr::make((address)&_trap_stress_counter));
     counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
     counter = _gvn.transform(new AddINode(counter, intcon(1)));
     incr_store = store_to_memory(control(), counter_addr, counter, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
@@ -1607,7 +1608,7 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
   assert(success, "Trap already modified");
 
   // Add a check before the original if that will trap with a certain frequency and execute the original if otherwise
-  int freq_log = C->random() % 32; // Random logarithmic frequency in [0, 32), 0 = always
+  int freq_log = (C->random() % 31) + 1; // Random logarithmic frequency in [1, 31]
   Node* mask = intcon(right_n_bits(freq_log));
   counter = _gvn.transform(new AndINode(counter, mask));
   Node* cmp = _gvn.transform(new CmpINode(counter, intcon(0)));
@@ -1615,6 +1616,7 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
   IfNode* iff = _gvn.transform(new IfNode(orig_iff->in(0), bol, orig_iff->_prob, orig_iff->_fcnt))->as_If();
   Node* if_true = _gvn.transform(new IfTrueNode(iff));
   Node* if_false = _gvn.transform(new IfFalseNode(iff));
+  assert(!if_true->is_top() && !if_false->is_top(), "trap always / never taken");
 
   // Trap
   ProjNode* trap_proj = trap->in(0)->as_Proj();
