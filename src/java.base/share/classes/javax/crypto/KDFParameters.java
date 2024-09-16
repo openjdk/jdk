@@ -27,15 +27,15 @@ package javax.crypto;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * A specification of Key Derivation Function ({@link KDF})
- * parameters.
+ * A specification of Key Derivation Function ({@link KDF}) parameters.
  * <p>
  * The purpose of this interface is to group (and provide type safety for) all
  * {@code KDF} parameter specifications. All {@code KDF} parameter
  * specifications must implement this interface.
  * <p>
- * When supplied, the {@link KDF#getInstance(String, KDFParameters) KDF.getInstance}
- * methods return a {@code KDF} that is initialized with the specified parameters.
+ * When supplied, the
+ * {@link KDF#getInstance(String, KDFParameters) KDF.getInstance} methods return
+ * a {@code KDF} that is initialized with the specified parameters.
  * <p>
  * The {@code KDFParameters} used for initialization are returned by
  * {@link KDF#getParameters()} and may contain additional default or random

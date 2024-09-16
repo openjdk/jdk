@@ -51,7 +51,8 @@ import java.util.Objects;
  * <p>
  * Examples:
  * {@snippet lang = java:
- * // this usage depicts the initialization of an HKDF-Extract AlgorithmParameterSpec
+ * // this usage depicts the initialization of an HKDF-Extract
+ * AlgorithmParameterSpec
  * AlgorithmParameterSpec derivationSpec =
  *             HKDFParameterSpec.ofExtract()
  *                              .addIKM(label)
@@ -59,12 +60,14 @@ import java.util.Objects;
  *                              .addSalt(salt).extractOnly();
  *}
  * {@snippet lang = java:
- * // this usage depicts the initialization of an HKDF-Expand AlgorithmParameterSpec
+ * // this usage depicts the initialization of an HKDF-Expand
+ * AlgorithmParameterSpec
  * AlgorithmParameterSpec derivationSpec =
  *             HKDFParameterSpec.expandOnly(prk, info, 32);
  *}
  * {@snippet lang = java:
- * // this usage depicts the initialization of an HKDF-ExtractExpand AlgorithmParameterSpec
+ * // this usage depicts the initialization of an HKDF-ExtractExpand
+ * AlgorithmParameterSpec
  * AlgorithmParameterSpec derivationSpec =
  *             HKDFParameterSpec.ofExtract()
  *                              .addIKM(ikm)
@@ -108,29 +111,30 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         }
 
         /**
-         * Builds an {@code ExtractThenExpand} object from the current state of the
-         * {@code Builder}.
+         * Builds an {@code ExtractThenExpand} object from the current state of
+         * the {@code Builder}.
          *
          * @param info
-         *     the optional context and application specific information (may be
-         *     {@code null}); the byte array is copied to prevent subsequent
-         *     modification
+         *         the optional context and application specific information
+         *         (may be {@code null}); the byte array is copied to prevent
+         *         subsequent modification
          * @param length
-         *     the length of the output keying material (must be greater than 0)
-         *
-         * @implNote HKDF implementations will enforce that the length is not greater
-         * than 255 * HMAC length. HKDF implementations will also enforce that a
-         * {code null} info value is treated as zero-length byte array.
+         *         the length of the output keying material (must be greater
+         *         than 0)
          *
          * @return an {@code ExtractThenExpand} object
          *
          * @throws IllegalArgumentException
-         *     if {@code length} is not greater than 0
+         *         if {@code length} is not greater than 0
+         * @implNote HKDF implementations will enforce that the length
+         *         is not greater than 255 * HMAC length. HKDF implementations
+         *         will also enforce that a {code null} info value is treated as
+         *         zero-length byte array.
          */
         public ExtractThenExpand thenExpand(byte[] info, int length) {
             return new ExtractThenExpand(
-                extractOnly(), info,
-                length);
+                    extractOnly(), info,
+                    length);
         }
 
         /**
@@ -139,15 +143,16 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * {@code addIKM} may be called multiple times when the input keying
          * material value is to be assembled piece-meal or if part of the IKM is
          * to be supplied by a hardware crypto device. This method appends to
-         * the existing list of values or creates a new list if there is none yet.
+         * the existing list of values or creates a new list if there is none
+         * yet.
          *
          * @param ikm
-         *     the input keying material (IKM) value
+         *         the input keying material (IKM) value
          *
          * @return this builder
          *
          * @throws NullPointerException
-         *     if the {@code ikm} argument is null
+         *         if the {@code ikm} argument is null
          */
         public Builder addIKM(SecretKey ikm) {
             Objects.requireNonNull(ikm, "ikm must not be null");
@@ -161,15 +166,16 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * {@code addIKM} may be called multiple times when the input keying
          * material value is to be assembled piece-meal or if part of the IKM is
          * to be supplied by a hardware crypto device. This method appends to
-         * the existing list of values or creates a new list if there is none yet.
+         * the existing list of values or creates a new list if there is none
+         * yet.
          *
          * @param ikm
-         *     the input keying material (IKM) value
+         *         the input keying material (IKM) value
          *
          * @return this builder
          *
          * @throws NullPointerException
-         *     if the {@code ikm} argument is null
+         *         if the {@code ikm} argument is null
          */
         public Builder addIKM(byte[] ikm) {
             Objects.requireNonNull(ikm, "ikm must not be null");
@@ -189,12 +195,12 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * of values or creates a new list if there is none yet.
          *
          * @param salt
-         *     the salt value
+         *         the salt value
          *
          * @return this builder
          *
          * @throws NullPointerException
-         *     if the {@code salt} is null
+         *         if the {@code salt} is null
          */
         public Builder addSalt(SecretKey salt) {
             Objects.requireNonNull(salt, "salt must not be null");
@@ -211,12 +217,12 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * of values or creates a new list if there is none yet.
          *
          * @param salt
-         *     the salt value
+         *         the salt value
          *
          * @return this builder
          *
          * @throws NullPointerException
-         *     if the {@code salt} is null
+         *         if the {@code salt} is null
          */
         public Builder addSalt(byte[] salt) {
             Objects.requireNonNull(salt, "salt must not be null");
@@ -242,25 +248,26 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
      * Creates an {@code Expand} object.
      *
      * @param prk
-     *     the pseudorandom key (PRK); must not be {@code null}
+     *         the pseudorandom key (PRK); must not be {@code null}
      * @param info
-     *     the optional context and application specific information (may be
-     *     {@code null}); the byte array is copied to prevent subsequent
-     *     modification
+     *         the optional context and application specific information (may be
+     *         {@code null}); the byte array is copied to prevent subsequent
+     *         modification
      * @param length
-     *     the length of the output keying material (must be greater than 0)
-     *
-     * @implNote HKDF implementations will enforce that the length is not greater
-     * than 255 * HMAC length. Implementations will also enforce that the prk argument
-     * is at least as many bytes as the HMAC length. Implementations will also
-     * enforce that a {code null} info value is treated as zero-length byte array.
+     *         the length of the output keying material (must be greater than
+     *         0)
      *
      * @return an {@code Expand} object
      *
      * @throws NullPointerException
-     *     if the {@code prk} argument is {@code null}
+     *         if the {@code prk} argument is {@code null}
      * @throws IllegalArgumentException
-     *     if {@code length} is not greater than 0
+     *         if {@code length} is not greater than 0
+     * @implNote HKDF implementations will enforce that the length is
+     *         not greater than 255 * HMAC length. Implementations will also
+     *         enforce that the prk argument is at least as many bytes as the
+     *         HMAC length. Implementations will also enforce that a {code null}
+     *         info value is treated as zero-length byte array.
      */
     static Expand expandOnly(SecretKey prk, byte[] info, int length) {
         if (prk == null) {
@@ -294,10 +301,12 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * are converted to a {@code SecretKeySpec} object. Empty arrays are
          * discarded.
          *
-         * @implNote An HKDF implementation should concatenate the input keying
-         * materials into a single value to be used in HKDF-Extract.
+         * @return the unmodifiable {@code List} of input keying material
+         *         values
          *
-         * @return the unmodifiable {@code List} of input keying material values
+         * @implNote An HKDF implementation should concatenate the input
+         *         keying materials into a single value to be used in
+         *         HKDF-Extract.
          */
         public List<SecretKey> ikms() {
             return ikms;
@@ -307,14 +316,13 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * Returns an unmodifiable {@code List} of salt values in the order they
          * were added. Returns an empty list if there are no salt values.
          * <p>
-         * Salt values added by {@link Builder#addSalt(byte[])}
-         * are converted to a {@code SecretKeySpec} object. Empty arrays are
-         * discarded.
-         *
-         * @implNote An HKDF implementation should concatenate the salt into a
-         * single value to be used in HKDF-Extract.
+         * Salt values added by {@link Builder#addSalt(byte[])} are converted to
+         * a {@code SecretKeySpec} object. Empty arrays are discarded.
          *
          * @return the unmodifiable {@code List} of salt values
+         *
+         * @implNote An HKDF implementation should concatenate the salt
+         *         into a single value to be used in HKDF-Extract.
          */
         public List<SecretKey> salts() {
             return salts;
@@ -338,18 +346,18 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * Constructor that may be used to initialize an {@code Expand} object
          *
          * @param prk
-         *     the pseudorandom key (PRK); in the case of {@code ExtractThenExpand},
-         *     the {@code prk} argument may be {@null} since the output of
-         *     extract phase is used
+         *         the pseudorandom key (PRK); in the case of
+         *         {@code ExtractThenExpand}, the {@code prk} argument may be
+         *         {@null} since the output of extract phase is used
          * @param info
-         *     the optional context and application specific information (may be
-         *     {@code null}); the byte array is copied to prevent subsequent
-         *     modification
+         *         the optional context and application specific information
+         *         (may be {@code null}); the byte array is copied to prevent
+         *         subsequent modification
          * @param length
-         *     the length of the output keying material
+         *         the length of the output keying material
          *
          * @throws IllegalArgumentException
-         *     if {@code length} not greater than 0
+         *         if {@code length} not greater than 0
          */
         private Expand(SecretKey prk, byte[] info, int length) {
             // a null prk argument could be indicative of ExtractThenExpand
@@ -374,7 +382,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * Returns the optional context and application specific information.
          *
          * @return a copy of the optional context and application specific
-         *     information, or {@code null} if not specified
+         *         information, or {@code null} if not specified
          */
         public byte[] info() {
             return (info == null) ? null : info.clone();
@@ -405,16 +413,16 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * {@code ExtractThenExpand} object
          *
          * @param ext
-         *     a pre-generated {@code Extract}
+         *         a pre-generated {@code Extract}
          * @param info
-         *     the optional context and application specific information (may be
-         *     {@code null}); the byte array is copied to prevent subsequent
-         *     modification
+         *         the optional context and application specific information
+         *         (may be {@code null}); the byte array is copied to prevent
+         *         subsequent modification
          * @param length
-         *     the length of the output keying material
+         *         the length of the output keying material
          *
          * @throws IllegalArgumentException
-         *     if {@code length} is not greater than 0
+         *         if {@code length} is not greater than 0
          */
         private ExtractThenExpand(Extract ext, byte[] info, int length) {
             Objects.requireNonNull(ext, "Extract object must not be null");
@@ -434,10 +442,12 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * are converted to a {@code SecretKeySpec} object. Empty arrays are
          * discarded.
          *
-         * @implNote An HKDF implementation should concatenate the input keying
-         * materials into a single value to be used in the HKDF-Extract phase.
+         * @return the unmodifiable {@code List} of input keying material
+         *         values
          *
-         * @return the unmodifiable {@code List} of input keying material values
+         * @implNote An HKDF implementation should concatenate the input
+         *         keying materials into a single value to be used in the
+         *         HKDF-Extract phase.
          */
         public List<SecretKey> ikms() {
             return ext.ikms();
@@ -447,14 +457,13 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * Returns an unmodifiable {@code List} of salt values in the order they
          * were added. Returns an empty list if there are no salt values.
          * <p>
-         * Salt values added by {@link Builder#addSalt(byte[])}
-         * are converted to a {@code SecretKeySpec} object. Empty arrays are
-         * discarded.
-         *
-         * @implNote An HKDF implementation should concatenate the salt into a
-         * single value to be used in the HKDF-Extract phase.
+         * Salt values added by {@link Builder#addSalt(byte[])} are converted to
+         * a {@code SecretKeySpec} object. Empty arrays are discarded.
          *
          * @return the unmodifiable {@code List} of salt values
+         *
+         * @implNote An HKDF implementation should concatenate the salt
+         *         into a single value to be used in the HKDF-Extract phase.
          */
         public List<SecretKey> salts() {
             return ext.salts();
@@ -464,7 +473,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * Returns the optional context and application specific information.
          *
          * @return a copy of the optional context and application specific
-         *     information, or {@code null} if not specified
+         *         information, or {@code null} if not specified
          */
         public byte[] info() {
             return exp.info();
