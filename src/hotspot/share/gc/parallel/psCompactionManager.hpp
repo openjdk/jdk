@@ -118,9 +118,8 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   size_t                              _array_chunks_processed;
 
   void print_local_stats(outputStream* const out, uint i) const;
-  static void print_and_reset_taskqueue_stats();
-
   void reset_stats();
+  static void print_and_reset_taskqueue_stats();
 #endif // TASKQUEUE_STATS
 
   PSMarkTaskQueue               _marking_stack;
