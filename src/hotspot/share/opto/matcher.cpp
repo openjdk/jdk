@@ -2838,10 +2838,14 @@ bool Matcher::is_non_long_integral_vector(const Node* n) {
 }
 
 bool Matcher::is_encode_and_store_pattern(const Node* n, const Node* m) {
-  return n != nullptr &&
-    m != nullptr &&
-    n->Opcode() == Op_StoreN &&
-    m->is_EncodeP();
+  if (n == nullptr ||
+      m == nullptr ||
+      n->Opcode() != Op_StoreN ||
+      !m->is_EncodeP()) {
+    return false;
+  }
+  assert(m == n->in(MemNode::ValueIn), "m should be input to n");
+  return true;
 }
 
 #ifdef ASSERT
