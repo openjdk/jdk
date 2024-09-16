@@ -108,7 +108,7 @@ public class CompileFramework {
     }
 
     private void compileJasmSources(List<SourceCode> jasmSources) {
-        if (jasmSources.isEmpty() {
+        if (jasmSources.isEmpty()) {
             println("No jasm sources to compile.");
             return;
         }
