@@ -1344,7 +1344,7 @@ ParseArguments(int *pargc, char ***pargv,
                 _have_classpath = JNI_TRUE;
             } else if (JLI_StrCmp(arg, "-Djava.awt.headless=true") == 0) {
                 /*
-                 * Checking for headless toolkit option in the some way as AWT does:
+                 * Checking for headless toolkit option in the same way as AWT does:
                  * "true" means true and any other value means false
                  */
                 headless = true;

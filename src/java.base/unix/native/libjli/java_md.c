@@ -57,7 +57,7 @@
  *
  *  - JLI_Launch function, which is the entry point to the launcher, calls CreateExecutionEnvironment
  *
- *  - CreateExecutionEnvironment does the following (not necessarily in that order):
+ *  - CreateExecutionEnvironment does the following (not necessarily in this order):
  *      - determines the relevant JVM type that needs to be ultimately created
  *      - determines the path and asserts the presence of libjava and relevant libjvm library
  *      - removes any JVM selection options from the arguments that were passed to the launcher
