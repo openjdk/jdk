@@ -35,7 +35,7 @@
 
 package java.util.concurrent;
 
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;

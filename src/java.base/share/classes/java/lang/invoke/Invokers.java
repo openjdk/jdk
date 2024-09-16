@@ -25,7 +25,7 @@
 
 package java.lang.invoke;
 
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;

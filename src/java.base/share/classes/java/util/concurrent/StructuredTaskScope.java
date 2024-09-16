@@ -37,7 +37,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.ThreadFlock;
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 
 /**
  * A basic API for <em>structured concurrency</em>. {@code StructuredTaskScope} supports
@@ -991,11 +991,9 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         private static final VarHandle FIRST_RESULT;
         private static final VarHandle FIRST_EXCEPTION;
         static {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                FIRST_RESULT = MethodHandlesInternal.findVarHandle(
-                        l, ShutdownOnSuccess.class, "firstResult", Object.class);
-                FIRST_EXCEPTION = MethodHandlesInternal.findVarHandle(
-                        l, ShutdownOnSuccess.class, "firstException", Throwable.class);
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            FIRST_RESULT = MethodHandlesInternal.findVarHandle(l, "firstResult", Object.class);
+            FIRST_EXCEPTION = MethodHandlesInternal.findVarHandle(l, "firstException", Throwable.class);
         }
         private volatile Object firstResult;
         private volatile Throwable firstException;

@@ -36,7 +36,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Stream;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 import jdk.internal.vm.ScopedValueContainer;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.ThreadContainers;
@@ -86,10 +86,8 @@ public class ThreadFlock implements AutoCloseable {
     private static final VarHandle PERMIT;
     static {
         MethodHandles.Lookup l = MethodHandles.lookup();
-        THREAD_COUNT = MethodHandlesInternal.findVarHandle(
-                l, ThreadFlock.class, "threadCount", int.class);
-        PERMIT = MethodHandlesInternal.findVarHandle(
-                l, ThreadFlock.class, "permit", boolean.class);
+        THREAD_COUNT = MethodHandlesInternal.findVarHandle(l, "threadCount", int.class);
+        PERMIT = MethodHandlesInternal.findVarHandle(l, "permit", boolean.class);
     }
 
     private final Set<Thread> threads = ConcurrentHashMap.newKeySet();

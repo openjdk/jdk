@@ -34,7 +34,7 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadFactory;
 import jdk.internal.misc.Unsafe;
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 import jdk.internal.vm.ContinuationSupport;
 
 /**
@@ -275,7 +275,7 @@ class ThreadBuilders {
      */
     private abstract static class BaseThreadFactory implements ThreadFactory {
         private static final VarHandle COUNT = MethodHandlesInternal.findVarHandle(
-                MethodHandles.lookup(), BaseThreadFactory.class, "count", long.class);
+                MethodHandles.lookup(), "count", long.class);
 
         private final String name;
         private final int characteristics;

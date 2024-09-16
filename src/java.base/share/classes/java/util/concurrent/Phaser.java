@@ -35,7 +35,7 @@
 
 package java.util.concurrent;
 
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -1140,7 +1140,7 @@ public class Phaser {
 
     // VarHandle mechanics
     private static final VarHandle STATE = MethodHandlesInternal.findVarHandle(
-            MethodHandles.lookup(), Phaser.class, "state", long.class);
+            MethodHandles.lookup(), "state", long.class);
     static {
         // Reduce the risk of rare disastrous classloading in first call to
         // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773

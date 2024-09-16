@@ -28,7 +28,7 @@ package jdk.internal.foreign;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import jdk.internal.misc.ScopedMemoryAccess;
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**

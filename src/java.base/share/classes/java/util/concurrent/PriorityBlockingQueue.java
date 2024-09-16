@@ -53,7 +53,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 import jdk.internal.util.ArraysSupport;
 
 /**
@@ -1096,7 +1096,6 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
     // VarHandle mechanics
     private static final VarHandle ALLOCATIONSPINLOCK =
             MethodHandlesInternal.findVarHandle(
-                    MethodHandles.lookup(),
-                    PriorityBlockingQueue.class, "allocationSpinLock", int.class);
+                    MethodHandles.lookup(), "allocationSpinLock", int.class);
 
 }

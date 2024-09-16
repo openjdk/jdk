@@ -26,7 +26,7 @@ package jdk.internal.foreign.abi;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 import sun.security.action.GetPropertyAction;
 
 import java.lang.foreign.AddressLayout;

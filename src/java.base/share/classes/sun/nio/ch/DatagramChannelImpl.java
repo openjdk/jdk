@@ -74,7 +74,7 @@ import java.util.function.Consumer;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
@@ -150,7 +150,7 @@ class DatagramChannelImpl
 
     // Socket adaptor, created lazily
     private static final VarHandle SOCKET = MethodHandlesInternal.findVarHandle(
-            MethodHandles.lookup(), DatagramChannelImpl.class, "socket", DatagramSocket.class);
+            MethodHandles.lookup(), "socket", DatagramSocket.class);
     private volatile DatagramSocket socket;
 
     // Multicast support

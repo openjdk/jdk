@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.reflect;
+package jdk.internal.invoke;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -48,6 +48,12 @@ public final class MethodHandlesInternal {
     private MethodHandlesInternal() {}
 
     public static VarHandle findVarHandle(MethodHandles.Lookup lookup,
+                                          String name,
+                                          Class<?> type) {
+        return findVarHandle(lookup, lookup.lookupClass(), name, type);
+    }
+
+    public static VarHandle findVarHandle(MethodHandles.Lookup lookup,
                                           Class<?> recv,
                                           String name,
                                           Class<?> type) {
@@ -57,6 +63,7 @@ public final class MethodHandlesInternal {
             throw new InternalError(e);
         }
     }
+
 
     public static MethodHandle findVirtual(MethodHandles.Lookup lookup,
                                            Class<?> refc,

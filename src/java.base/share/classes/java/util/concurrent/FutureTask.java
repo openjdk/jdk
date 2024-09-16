@@ -35,7 +35,7 @@
 
 package java.util.concurrent;
 
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -585,12 +585,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
     private static final VarHandle WAITERS;
     static {
         MethodHandles.Lookup l = MethodHandles.lookup();
-        STATE = MethodHandlesInternal.findVarHandle(
-                l, FutureTask.class, "state", int.class);
-        RUNNER = MethodHandlesInternal.findVarHandle(
-                l, FutureTask.class, "runner", Thread.class);
-        WAITERS = MethodHandlesInternal.findVarHandle(
-                l, FutureTask.class, "waiters", WaitNode.class);
+        STATE = MethodHandlesInternal.findVarHandle(l, "state", int.class);
+        RUNNER = MethodHandlesInternal.findVarHandle(l, "runner", Thread.class);
+        WAITERS = MethodHandlesInternal.findVarHandle(l, "waiters", WaitNode.class);
 
         // Reduce the risk of rare disastrous classloading in first call to
         // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773

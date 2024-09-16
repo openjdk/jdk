@@ -35,7 +35,7 @@
 
 package java.util.concurrent.atomic;
 
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -53,7 +53,7 @@ import java.util.function.UnaryOperator;
 public class AtomicReference<V> implements java.io.Serializable {
     private static final long serialVersionUID = -1848883965231344442L;
     private static final VarHandle VALUE = MethodHandlesInternal.findVarHandle(
-            MethodHandles.lookup(), AtomicReference.class, "value", Object.class);
+            MethodHandles.lookup(), "value", Object.class);
 
     @SuppressWarnings("serial") // Conditionally serializable
     private volatile V value;

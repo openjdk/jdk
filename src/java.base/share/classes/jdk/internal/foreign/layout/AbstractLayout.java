@@ -27,7 +27,7 @@ package jdk.internal.foreign.layout;
 
 import jdk.internal.foreign.LayoutPath;
 import jdk.internal.foreign.Utils;
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;

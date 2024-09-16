@@ -27,7 +27,7 @@ package java.net;
 
 import jdk.internal.event.SocketReadEvent;
 import jdk.internal.event.SocketWriteEvent;
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 import sun.security.util.SecurityConstants;
 
 import java.io.InputStream;
@@ -104,12 +104,9 @@ public class Socket implements java.io.Closeable {
     private static final VarHandle STATE, IN, OUT;
     static {
         MethodHandles.Lookup l = MethodHandles.lookup();
-        STATE = MethodHandlesInternal.findVarHandle(
-                l, Socket.class, "state", int.class);
-        IN = MethodHandlesInternal.findVarHandle(
-                l, Socket.class, "in", InputStream.class);
-        OUT = MethodHandlesInternal.findVarHandle(
-                l, Socket.class, "out", OutputStream.class);
+        STATE = MethodHandlesInternal.findVarHandle(l, "state", int.class);
+        IN = MethodHandlesInternal.findVarHandle(l, "in", InputStream.class);
+        OUT = MethodHandlesInternal.findVarHandle(l, "out", OutputStream.class);
     }
 
     // the underlying SocketImpl, may be null, may be swapped when connecting

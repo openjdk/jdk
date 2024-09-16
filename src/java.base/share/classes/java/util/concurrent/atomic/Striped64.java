@@ -35,7 +35,7 @@
 
 package java.util.concurrent.atomic;
 
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -141,7 +141,7 @@ abstract class Striped64 extends Number {
 
         // VarHandle mechanics
         private static final VarHandle VALUE = MethodHandlesInternal.findVarHandle(
-                MethodHandles.lookup(), Cell.class, "value", long.class);
+                MethodHandles.lookup(), "value", long.class);
     }
 
     /** Number of CPUS, to place bound on table size */
@@ -378,10 +378,8 @@ abstract class Striped64 extends Number {
     static {
         MethodHandles.Lookup l1 = MethodHandles.lookup();
 
-        BASE = MethodHandlesInternal.findVarHandle(
-                l1, Striped64.class, "base", long.class);
-        CELLSBUSY = MethodHandlesInternal.findVarHandle(
-                l1, Striped64.class, "cellsBusy", int.class);
+        BASE = MethodHandlesInternal.findVarHandle(l1, "base", long.class);
+        CELLSBUSY = MethodHandlesInternal.findVarHandle(l1, "cellsBusy", int.class);
             @SuppressWarnings("removal")
         MethodHandles.Lookup l2 = java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction<>() {
@@ -393,7 +391,7 @@ abstract class Striped64 extends Number {
                             }
                         }});
         THREAD_PROBE = MethodHandlesInternal.findVarHandle(
-                l2, Thread.class, "threadLocalRandomProbe", int.class);
+                l2, "threadLocalRandomProbe", int.class);
     }
 
 }

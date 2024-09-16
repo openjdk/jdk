@@ -30,7 +30,7 @@ import java.lang.invoke.VarHandle;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 import sun.nio.ch.SelectionKeyImpl;
 import sun.nio.ch.SelectorImpl;
 
@@ -48,7 +48,7 @@ public abstract class AbstractSelectionKey
     extends SelectionKey
 {
     private static final VarHandle INVALID = MethodHandlesInternal.findVarHandle(
-            MethodHandles.lookup(), AbstractSelectionKey.class, "invalid", boolean.class);
+            MethodHandles.lookup(), "invalid", boolean.class);
 
     /**
      * Initializes a new instance of this class.

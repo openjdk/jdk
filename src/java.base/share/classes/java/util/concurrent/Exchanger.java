@@ -36,7 +36,7 @@
 
 package java.util.concurrent;
 
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -533,8 +533,7 @@ public class Exchanger<V> {
     private static final VarHandle AA;
     static {
         MethodHandles.Lookup l = MethodHandles.lookup();
-        BOUND = MethodHandlesInternal.findVarHandle(
-                l, Exchanger.class, "bound", int.class);
+        BOUND = MethodHandlesInternal.findVarHandle(l, "bound", int.class);
         MATCH = MethodHandlesInternal.findVarHandle(
                 l, Node.class, "match", Object.class);
         ENTRY = MethodHandlesInternal.findVarHandle(

@@ -35,7 +35,7 @@
 
 package java.util.concurrent.atomic;
 
-import jdk.internal.reflect.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesInternal;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -193,7 +193,7 @@ public class AtomicMarkableReference<V> {
 
     // VarHandle mechanics
     private static final VarHandle PAIR = MethodHandlesInternal.findVarHandle(
-            MethodHandles.lookup(), AtomicMarkableReference.class, "pair", Pair.class);;
+            MethodHandles.lookup(), "pair", Pair.class);
 
     private boolean casPair(Pair<V> cmp, Pair<V> val) {
         return PAIR.compareAndSet(this, cmp, val);
