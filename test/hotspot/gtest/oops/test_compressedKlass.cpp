@@ -28,7 +28,7 @@
 
 #include "unittest.hpp"
 
-TEST_VM(compressedKlass, basics) {
+TEST_VM(CompressedKlass, basics) {
   if (!UseCompressedClassPointers) {
     return;
   }
@@ -48,7 +48,7 @@ TEST_VM(compressedKlass, basics) {
   }
 }
 
-TEST_VM(compressedKlass, test_too_low_address) {
+TEST_VM(CompressedKlass, test_too_low_address) {
   if (!UseCompressedClassPointers) {
     return;
   }
@@ -58,7 +58,7 @@ TEST_VM(compressedKlass, test_too_low_address) {
   ASSERT_FALSE(CompressedKlassPointers::is_encodable(low));
 }
 
-TEST_VM(compressedKlass, test_too_high_address) {
+TEST_VM(CompressedKlass, test_too_high_address) {
   if (!UseCompressedClassPointers) {
     return;
   }
@@ -68,7 +68,7 @@ TEST_VM(compressedKlass, test_too_high_address) {
   ASSERT_FALSE(CompressedKlassPointers::is_encodable(high));
 }
 
-TEST_VM(compressedKlass, test_good_address) {
+TEST_VM(CompressedKlass, test_good_address) {
   if (!UseCompressedClassPointers) {
     return;
   }

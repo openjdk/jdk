@@ -36,7 +36,7 @@ class Klass;
 // Klass Range:
 //  a contiguous memory range into which we place Klass that should be encodable. Not every Klass
 //  needs to be encodable. There is only one such memory range.
-//  If CDS is disabled, this Klass Range is the same as the class space. If CDS is enabled, the
+//  If CDS is disabled, this Klass Range is the same as the metaspace class space. If CDS is enabled, the
 //  Klass Range contains both CDS and class space adjacent to each other (with a potential small
 //  unused alignment gap between them).
 //
