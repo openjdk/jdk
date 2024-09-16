@@ -989,9 +989,7 @@ public class TTY implements EventNotifier {
                    //  the standard VM accepts them)
                    token.equals("-verify") ||
                    token.equals("-verifyremote") ||
-                   token.equals("-verbosegc") ||
-                   token.startsWith("-ms") || token.startsWith("-mx") ||
-                   token.startsWith("-ss") || token.startsWith("-oss") ) {
+                   token.equals("-verbosegc")) {
 
                 javaArgs = addArgument(javaArgs, token);
             } else if (token.startsWith("-R")) {
