@@ -31,7 +31,7 @@ import jdk.test.lib.Platform;
 /*
  * @test
  * @bug 6191897
- * @summary Verifies that ctrl+left/right does not move word-by-word in a TexField
+ * @summary Verifies that ctrl+left/right does not move word-by-word in a TextField
  *          with echo character set
  * @library /java/awt/regtesthelpers  /test/lib
  * @build PassFailJFrame jdk.test.lib.Platform
