@@ -10,7 +10,7 @@ Of course we could compile at runtime without this framework, but it abstracts a
 
 ## How to Use the Framework
 
-Please reference the examples found in [examples]{../../../testlibrary_tests/compile_framework/examples/}. Some basic tests can be found in [tests]{../../../testlibrary_tests/compile_framework/tests/}.
+Please reference the examples found in [examples](../../../testlibrary_tests/compile_framework/examples/). Some basic tests can be found in [tests](../../../testlibrary_tests/compile_framework/tests/).
 
 Here a very simple example:
 
@@ -32,7 +32,7 @@ First, one must create a `new CompileFramework()`, which creates two directories
 
 ### Adding Sources to the Compilation
 
-Java and Jasm sources can be added to the compilation using `comp.addJavaSourceCode` and `comp.addJasmSourceCode`. The source classes can depend on each other, and they can also use the IR-Framework ([TestFrameworkJavaExample]{../../../testlibrary_tests/compile_framework/examples/TestFrameworkJavaExample.java}).
+Java and Jasm sources can be added to the compilation using `comp.addJavaSourceCode` and `comp.addJasmSourceCode`. The source classes can depend on each other, and they can also use the IR-Framework ([TestFrameworkJavaExample](../../../testlibrary_tests/compile_framework/examples/TestFrameworkJavaExample.java)).
 
 ### Compiling
 
