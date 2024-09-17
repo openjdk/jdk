@@ -38,6 +38,7 @@ import java.lang.reflect.InvocationTargetException;
  * @test
  * @bug 4038580
  * @key headful
+ * @requires os.family != "windows"
  * @summary Caret position not accurate in presence of selected areas
  * @run main CaretPositionTest
  */
@@ -57,7 +58,7 @@ public class CaretPositionTest extends Frame {
         try {
             test.test();
             if (position != 9) {
-                throe new RuntimeException("Caret position should be at the end of the string");
+                throw new RuntimeException("Caret position should be at the end of the string");
             }
         } finally {
             EventQueue.invokeAndWait(test::dispose);
