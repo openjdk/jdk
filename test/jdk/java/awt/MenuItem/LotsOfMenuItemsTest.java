@@ -1,0 +1,120 @@
+/*
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+import java.awt.Frame;
+import java.awt.Menu;
+import java.awt.MenuBar;
+import java.awt.MenuItem;
+import java.awt.Rectangle;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/*
+ * @test
+ * @bug 4175790
+ * @requires os.family == "windows"
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @summary Win32: Running out of command ids for menu items
+ * @run main/manual LotsOfMenuItemsTest
+ */
+
+public class LotsOfMenuItemsTest implements ComponentListener {
+    private static final int NUM_WINDOWS = 400;
+    private static TestFrame firstFrame, testFrame;
+    private static Rectangle rect;
+
+    public static void main(String[] args) throws Exception {
+        LotsOfMenuItemsTest obj = new LotsOfMenuItemsTest();
+        String INSTRUCTIONS = """
+                This test creates a lots of frames with menubars.
+                When it's done you will see two frames.
+                Try to select menu items from each of them.
+
+                If everything seems to work - test passed.
+                Click "Done" button in the test harness window.
+
+                If test crashes on you - test failed.""";
+
+        PassFailJFrame.builder()
+                .title("LotsOfMenuItemsTest")
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 2)
+                .columns(40)
+                .testTimeOut(5)
+                .testUI(obj.createAndShowUI())
+                .build()
+                .awaitAndCheck();
+    }
+
+    private List<? extends Frame> createAndShowUI() {
+        List<Frame> list = new ArrayList<>();
+        firstFrame = new TestFrame("First frame");
+        firstFrame.addComponentListener(this);
+
+        for (int i = 1; i < NUM_WINDOWS; ++i) {
+            testFrame = new TestFrame("Running(" + i + ")...");
+            if (i != (NUM_WINDOWS - 1)) {
+                testFrame.setVisible(false);
+                testFrame.dispose();
+            } else {
+                testFrame.setTitle("Last Frame");
+            }
+        }
+        list.add(firstFrame);
+        list.add(testFrame);
+        return list;
+    }
+    public void componentMoved(ComponentEvent e) {}
+
+    public void componentHidden(ComponentEvent e) {}
+
+    public void componentShown(ComponentEvent e) {
+        firstFrame.setLocation(970, 350);
+        testFrame.setLocation(970, 510);
+    }
+
+    public void componentResized(ComponentEvent e) {}
+}
+
+class TestFrame extends Frame {
+    static int n = 0;
+
+    public TestFrame(String title) {
+        super(title);
+        MenuBar mb = new MenuBar();
+        for (int i = 0; i < 10; ++i) {
+            Menu m = new Menu("Menu_" + (i + 1));
+            for (int j = 0; j < 20; ++j) {
+                MenuItem mi = new MenuItem("Menu item " + ++n);
+                m.add(mi);
+            }
+            mb.add(m);
+        }
+        setMenuBar(mb);
+        setSize(450, 150);
+    }
+}
