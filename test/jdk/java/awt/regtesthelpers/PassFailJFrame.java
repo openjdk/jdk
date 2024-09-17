@@ -1215,6 +1215,12 @@ public final class PassFailJFrame {
             return this;
         }
 
+        /**
+         * Sets the number of columns for displaying the instruction text.
+         *
+         * @param columns the number of columns for instruction text
+         * @return this builder
+         */
         public Builder columns(int columns) {
             this.columns = columns;
             return this;
