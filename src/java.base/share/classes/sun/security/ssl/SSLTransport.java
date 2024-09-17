@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+
 import javax.crypto.AEADBadTagException;
 import javax.crypto.BadPaddingException;
 import javax.net.ssl.SSLHandshakeException;
@@ -105,44 +106,62 @@ interface SSLTransport {
         ByteBuffer[] srcs, int srcsOffset, int srcsLength,
         ByteBuffer[] dsts, int dstsOffset, int dstsLength) throws IOException {
 
-        Plaintext[] plaintexts;
-        try {
-            plaintexts =
-                    context.inputRecord.decode(srcs, srcsOffset, srcsLength);
-        } catch (UnsupportedOperationException unsoe) {         // SSLv2Hello
-            // Code to deliver SSLv2 error message for SSL/TLS connections.
-            if (!context.sslContext.isDTLS()) {
-                context.outputRecord.encodeV2NoCipher();
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                    SSLLogger.finest("may be talking to SSLv2");
-                }
-            }
+        Plaintext[] plaintexts = null;
 
-            throw context.fatal(Alert.UNEXPECTED_MESSAGE, unsoe);
-        } catch (AEADBadTagException bte) {
-            throw context.fatal(Alert.BAD_RECORD_MAC, bte);
-        } catch (BadPaddingException bpe) {
-            /*
-             * The basic SSLv3 record protection involves (optional)
-             * encryption for privacy, and an integrity check ensuring
-             * data origin authentication.  We do them both here, and
-             * throw a fatal alert if the integrity check fails.
-             */
-             Alert alert = (context.handshakeContext != null) ?
-                     Alert.HANDSHAKE_FAILURE :
-                     Alert.BAD_RECORD_MAC;
-            throw context.fatal(alert, bpe);
-        } catch (SSLHandshakeException she) {
-            // may be record sequence number overflow
-            throw context.fatal(Alert.HANDSHAKE_FAILURE, she);
-        } catch (EOFException eofe) {
-            // rethrow EOFException, the call will handle it if needed.
-            throw eofe;
-        } catch (InterruptedIOException | SocketException se) {
-            // don't close the Socket in case of timeouts or interrupts or SocketException.
-            throw se;
-        } catch (IOException ioe) {
-            throw context.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
+        // Check for unexpected plaintext alert message during TLSv1.3 handshake, @bug 8331682
+        if (srcsLength == 1 && context.handshakeContext != null &&
+                ProtocolVersion.TLS13.equals(context.handshakeContext.negotiatedProtocol)) {
+            ByteBuffer packet = srcs[srcsOffset].slice();
+            byte contentType = packet.get();                   // pos: 0
+            byte majorVersion = packet.get();                  // pos: 1
+            byte minorVersion = packet.get();                  // pos: 2
+            int contentLen = Record.getInt16(packet);          // pos: 3, 4
+
+            if (contentLen == 2 && ContentType.ALERT.equals(ContentType.valueOf(contentType))) {
+                plaintexts = new Plaintext[]{
+                        new Plaintext(contentType, majorVersion, minorVersion, -1, -1L, packet)
+                };
+            }
+        }
+
+        if (plaintexts == null) {
+            try {
+                plaintexts = context.inputRecord.decode(srcs, srcsOffset, srcsLength);
+            } catch (UnsupportedOperationException unsoe) {         // SSLv2Hello
+                // Code to deliver SSLv2 error message for SSL/TLS connections.
+                if (!context.sslContext.isDTLS()) {
+                    context.outputRecord.encodeV2NoCipher();
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                        SSLLogger.finest("may be talking to SSLv2");
+                    }
+                }
+
+                throw context.fatal(Alert.UNEXPECTED_MESSAGE, unsoe);
+            } catch (AEADBadTagException bte) {
+                throw context.fatal(Alert.BAD_RECORD_MAC, bte);
+            } catch (BadPaddingException bpe) {
+                /*
+                 * The basic SSLv3 record protection involves (optional)
+                 * encryption for privacy, and an integrity check ensuring
+                 * data origin authentication.  We do them both here, and
+                 * throw a fatal alert if the integrity check fails.
+                 */
+                Alert alert = (context.handshakeContext != null) ?
+                        Alert.HANDSHAKE_FAILURE :
+                        Alert.BAD_RECORD_MAC;
+                throw context.fatal(alert, bpe);
+            } catch (SSLHandshakeException she) {
+                // may be record sequence number overflow
+                throw context.fatal(Alert.HANDSHAKE_FAILURE, she);
+            } catch (EOFException eofe) {
+                // rethrow EOFException, the call will handle it if needed.
+                throw eofe;
+            } catch (InterruptedIOException | SocketException se) {
+                // don't close the Socket in case of timeouts or interrupts or SocketException.
+                throw se;
+            } catch (IOException ioe) {
+                throw context.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
+            }
         }
 
         if (plaintexts == null || plaintexts.length == 0) {
