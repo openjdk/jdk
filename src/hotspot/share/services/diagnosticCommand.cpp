@@ -899,7 +899,6 @@ void EventLogDCmd::execute(DCmdSource source, TRAPS) {
   int max = -1;
   if (max_value != nullptr) {
     char* endptr = nullptr;
-    int max;
     if (!parse_integer(max_value, &max)) {
       output()->print_cr("Invalid max option: \"%s\".", max_value);
       return;
