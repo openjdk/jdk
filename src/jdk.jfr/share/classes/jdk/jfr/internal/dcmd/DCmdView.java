@@ -110,7 +110,7 @@ public class DCmdView extends AbstractDCmd {
 
                  cell-height   (Optional) Maximum number of rows in a table cell. (INT, no default value)
 
-                 maxage        (Optional) Length of time for the view to span. (INT, followed by
+                 maxage        (Optional) Length of time for the view to span. (INT followed by
                                's' for seconds 'm' for minutes or 'h' for hours, default value is 10m)
 
                  maxsize       (Optional) Maximum size for the view to span in bytes if one of

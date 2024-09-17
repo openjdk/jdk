@@ -141,7 +141,7 @@ public final class DCmdQuery extends AbstractDCmd {
 
                 Options:
 
-                  maxage     (Optional) Length of time for the query to span. (INT, followed by
+                  maxage     (Optional) Length of time for the query to span. (INT followed by
                              's' for seconds 'm' for minutes or 'h' for hours, no default value)
 
                   maxsize    (Optional) Maximum size for the query to span in bytes if one of
