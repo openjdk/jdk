@@ -63,8 +63,8 @@ public class DefaultLogDecoratorsTest {
     }
 
     public static void main(String[] args) throws Exception {
-        // JIT logging, as per defaults, shall have all decorators disabled
-        doTest(false, "-Xlog:jit*=trace:decorators.log");
+        // JIT inlining logging, as per defaults, shall have all decorators disabled
+        doTest(false, "-Xlog:jit+inlining*=trace:decorators.log");
 
 
         // If decorators are specified, the defaults are not taken into account

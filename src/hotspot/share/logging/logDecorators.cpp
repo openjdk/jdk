@@ -28,7 +28,8 @@
 
 const LogLevelType AnyLevel = LogLevelType::NotMentioned;
 #define DEFAULT_DECORATORS \
-  DEFAULT_VALUE(mask_from_decorators(NoDecorators), Trace, LOG_TAGS(jit))
+  DEFAULT_VALUE(mask_from_decorators(NoDecorators), AnyLevel, LOG_TAGS(jit, inlining)) 
+
 
 template <LogDecorators::Decorator d>
 struct AllBitmask {
@@ -51,7 +52,7 @@ const char* LogDecorators::_name[][2] = {
 };
 
 const LogDecorators::DefaultDecorator LogDecorators::default_decorators[] = {
-#define DEFAULT_VALUE(mask, level, ...) LogDecorators::DefaultDecorator(LogLevel::level, mask, __VA_ARGS__),
+#define DEFAULT_VALUE(mask, level, ...) LogDecorators::DefaultDecorator(level, mask, __VA_ARGS__),
   DEFAULT_DECORATORS
 #undef DEFAULT_VALUE
 };
