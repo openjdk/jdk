@@ -16049,8 +16049,9 @@ void Assembler::esetzucc(Condition cc, Register dst) {
   attributes.set_extended_context();
 
   // Encoding Format : eevex_prefix | opcode_cc | modrm
-  int encode = vex_prefix_and_encode(dst->encoding(), 0, 0, VEX_SIMD_F2, /* MAP4 */VEX_OPCODE_0F_3C, &attributes);
-  emit_opcode_prefix_and_encoding(0x40 | cc, 0xC0, encode);
+  int encode =  evex_prefix_and_encode_ndd(0, 0, dst->encoding(), VEX_SIMD_F2, /* MAP4 */VEX_OPCODE_0F_3C, &attributes);
+  emit_opcode_prefix_and_encoding((0x40 | cc), 0xC0, encode);
+
 }
 
 void Assembler::exorq(Register dst, Address src1, Register src2, bool no_flags) {
