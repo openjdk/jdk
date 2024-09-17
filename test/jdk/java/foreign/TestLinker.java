@@ -36,6 +36,9 @@ import org.testng.annotations.Test;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
 import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.PaddingLayout;
+import java.lang.foreign.SequenceLayout;
+import java.lang.foreign.StructLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
@@ -49,6 +52,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertThrows;
 
 public class TestLinker extends NativeTestHelper {
 
@@ -149,6 +153,16 @@ public class TestLinker extends NativeTestHelper {
         MemoryLayout layout = LINKER.canonicalLayouts().get(typeName);
         assertNotNull(layout);
         assertTrue(layout instanceof ValueLayout);
+    }
+
+    @Test
+    public void embeddedPaddingLayout() {
+        PaddingLayout padding = MemoryLayout.paddingLayout(64).withByteAlignment(64);
+        SequenceLayout sequence = MemoryLayout.sequenceLayout(2, padding);
+        StructLayout struct = MemoryLayout.structLayout(sequence);
+        FunctionDescriptor fd = FunctionDescriptor.of(struct, struct);
+        Linker linker = Linker.nativeLinker();
+        assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
     }
 
     @DataProvider

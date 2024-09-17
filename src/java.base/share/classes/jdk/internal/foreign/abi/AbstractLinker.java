@@ -213,6 +213,9 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             checkGroupSize(ul, maxUnpaddedLayout);
         } else if (layout instanceof SequenceLayout sl) {
             checkHasNaturalAlignment(layout);
+            if (sl.elementLayout() instanceof PaddingLayout) {
+                throw new IllegalArgumentException("Sequence layouts with padding not supported");
+            }
             checkLayoutRecursive(sl.elementLayout());
         }
     }
