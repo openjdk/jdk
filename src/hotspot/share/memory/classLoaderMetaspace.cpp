@@ -161,8 +161,7 @@ void ClassLoaderMetaspace::deallocate(MetaWord* ptr, size_t word_size) {
   MutexLocker fcl(lock(), Mutex::_no_safepoint_check_flag);
   NOT_LP64(word_size = align_down(word_size, Metaspace::min_allocation_word_size);)
   MetaBlock bl(ptr, word_size);
-  // If the block would be reusable for a Klass, add to class arena, otherwise to
-  // then non-class arena.
+  // Add to class arena only if block is usable for encodable Klass storage.
   MetaspaceArena* receiving_arena = non_class_space_arena();
   if (Metaspace::using_class_space() && Metaspace::is_in_class_space(ptr) &&
       is_aligned(ptr, class_space_arena()->allocation_alignment_bytes())) {
