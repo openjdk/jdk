@@ -154,7 +154,7 @@ public final class DCmdQuery extends AbstractDCmd {
                   verbose    (Optional) Display additional information about the query execution.
                              (BOOLEAN, false)
 
-                  width      (Optional) Maximum number of horizontal characters. (BOOLEAN, false)""";
+                  width      (Optional) Maximum number of horizontal characters. (INT, default value is 100)""";
     }
 
     @Override

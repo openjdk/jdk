@@ -127,7 +127,7 @@ public class DCmdView extends AbstractDCmd {
                                See list below for available views. (STRING, no default value)
 
                  width         (Optional) The width of the view in characters
-                               (INT, no default value)""";
+                               (INT, default value is 100)""";
     }
 
     public String getExamples() {
@@ -136,7 +136,7 @@ public class DCmdView extends AbstractDCmd {
 
                  $ jcmd <pid> JFR.view gc
 
-                 $ jcmd <pid< JFR.view width=160 hot-methods
+                 $ jcmd <pid> JFR.view width=160 hot-methods
 
                  $ jcmd <pid> JFR.view verbose=true allocation-by-class
 
