@@ -1039,13 +1039,16 @@ private:
   void pusha_uncached();
   void popa_uncached();
 
-  // APX ISA extensions for register save/restore optimizations.
+  // APX ISA Extensions for register save/restore optimizations.
   void push2(Register src1, Register src2, bool with_ppx = false);
   void pop2(Register src1, Register src2, bool with_ppx = false);
   void push2p(Register src1, Register src2);
   void pop2p(Register src1, Register src2);
   void pushp(Register src);
   void popp(Register src);
+
+  // New Zero Upper setcc instruction.
+  void esetzucc(Condition cc, Register dst);
 
 #endif
   void vzeroupper_uncached();
