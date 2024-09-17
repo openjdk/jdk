@@ -38,7 +38,7 @@ class AOTLinkedClassTable;
 class InstanceKlass;
 class SerializeClosure;
 template <typename T> class Array;
-
+enum class AOTLinkedClassCategory : int;
 
 // AOTClassLinker is used during the AOTCache Assembly Phase.
 // It links eligible classes before they are written into the AOTCache
@@ -110,6 +110,21 @@ public:
 
   static int num_app_initiated_classes();
   static int num_platform_initiated_classes();
+
+  // Used in logging: "boot1", "boot2", "plat", "app" and "unreg";
+  // Corresponds to AOTLinkedClassCategory.
+  static const char* class_category_name(Klass* k);
+  static const char* class_category_name(AOTLinkedClassCategory category);
+};
+
+// AOT-linked classes are divided into different categories and are loaded
+// in two phases during the production run.
+enum class AOTLinkedClassCategory : int {
+  BOOT1,       // Only java.base classes are loaded in the 1st phase
+  BOOT2,       // All boots classes that not in java.base are loaded in the 2nd phase
+  PLATFORM,
+  APP,    
+  UNREGISTERED // classes loaded outside of the boot/platform/app loaders; currently not supported by AOTClassLinker
 };
 
 #endif // SHARE_CDS_AOTCLASSLINKER_HPP

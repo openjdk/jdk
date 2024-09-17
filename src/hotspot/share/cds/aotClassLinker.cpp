@@ -148,7 +148,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
 
   if (log_is_enabled(Info, cds, aot, link)) {
     ResourceMark rm;
-    log_info(cds, aot, link)("%s %s", ArchiveUtils::class_category(ik), ik->external_name());
+    log_info(cds, aot, link)("%s %s", class_category_name(ik), ik->external_name());
   }
 
   return true;
@@ -208,7 +208,7 @@ Array<InstanceKlass*>* AOTClassLinker::write_classes(oop class_loader, bool is_j
   if (list.length() == 0) {
     return nullptr;
   } else {
-    const char* category = ArchiveUtils::class_category(list.at(0));
+    const char* category = class_category_name(list.at(0));
     log_info(cds, aot, link)("written %d class(es) for category %s", list.length(), category);
     return ArchiveUtils::archive_array(&list);
   }
@@ -243,3 +243,50 @@ int AOTClassLinker::count_public_classes(oop loader) {
 
   return n;
 }
+
+// Used in logging: "boot1", "boot2", "plat", "app" and "unreg";
+const char* AOTClassLinker::class_category_name(Klass* k) {
+  if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space(k)) {
+    k = ArchiveBuilder::current()->get_source_addr(k);
+  }
+
+  if (k->is_array_klass()) {
+    return "array";
+  } else {
+    oop loader = k->class_loader();
+    if (loader == nullptr) {
+      if (k->module() != nullptr &&
+          k->module()->name() != nullptr &&
+          k->module()->name()->equals("java.base")) {
+        return "boot1"; // boot classes in java.base are loaded in the 1st phase
+      } else {
+        return "boot2"; // boot classes outside of java.base are loaded in the 2nd phase phase
+      }
+    } else {
+      if (loader == SystemDictionary::java_platform_loader()) {
+        return "plat";
+      } else if (loader == SystemDictionary::java_system_loader()) {
+        return "app";
+      } else {
+        return "unreg";
+      }
+    }
+  }
+}
+
+const char* AOTClassLinker::class_category_name(AOTLinkedClassCategory category) {
+  switch (category) {
+  case AOTLinkedClassCategory::BOOT1:
+    return "boot1";
+  case AOTLinkedClassCategory::BOOT2:
+    return "boot2";
+  case AOTLinkedClassCategory::PLATFORM:
+    return "plat";
+  case AOTLinkedClassCategory::APP:
+    return "app";
+  case AOTLinkedClassCategory::UNREGISTERED:
+  default:
+      return "unreg";
+  }
+}
+
