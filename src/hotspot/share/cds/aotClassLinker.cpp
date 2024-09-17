@@ -244,7 +244,7 @@ int AOTClassLinker::count_public_classes(oop loader) {
   return n;
 }
 
-// Used in logging: "boot1", "boot2", "plat", "app" and "unreg";
+// Used in logging: "boot1", "boot2", "plat", "app" and "unreg", or "array"
 const char* AOTClassLinker::class_category_name(Klass* k) {
   if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space(k)) {
     k = ArchiveBuilder::current()->get_source_addr(k);

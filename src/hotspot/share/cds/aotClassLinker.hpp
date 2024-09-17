@@ -112,9 +112,8 @@ public:
   static int num_platform_initiated_classes();
 
   // Used in logging: "boot1", "boot2", "plat", "app" and "unreg";
-  // Corresponds to AOTLinkedClassCategory.
-  static const char* class_category_name(Klass* k);
   static const char* class_category_name(AOTLinkedClassCategory category);
+  static const char* class_category_name(Klass* k);
 };
 
 // AOT-linked classes are divided into different categories and are loaded
