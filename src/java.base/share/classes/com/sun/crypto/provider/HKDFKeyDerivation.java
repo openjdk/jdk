@@ -144,13 +144,7 @@ abstract class HKDFKeyDerivation extends KDFSpi {
         List<SecretKey> ikms, salts;
         byte[] inputKeyMaterial, salt, pseudoRandomKey, info;
         int length;
-        // A switch would be nicer, but we may need to backport this before
-        // JDK 17
-        // Also, JEP 305 came out in JDK 14, so we can't declare a variable
-        // in instanceof either
-        if (derivationSpec instanceof HKDFParameterSpec.Extract) {
-            HKDFParameterSpec.Extract anExtract =
-                    (HKDFParameterSpec.Extract) derivationSpec;
+        if (derivationSpec instanceof HKDFParameterSpec.Extract anExtract) {
             ikms = anExtract.ikms();
             salts = anExtract.salts();
             // we should be able to combine both of the above Lists of key
@@ -183,9 +177,7 @@ abstract class HKDFKeyDerivation extends KDFSpi {
                     Arrays.fill(salt, (byte) 0x00);
                 }
             }
-        } else if (derivationSpec instanceof HKDFParameterSpec.Expand) {
-            HKDFParameterSpec.Expand anExpand =
-                    (HKDFParameterSpec.Expand) derivationSpec;
+        } else if (derivationSpec instanceof HKDFParameterSpec.Expand anExpand) {
             // set this value in the "if"
             if ((pseudoRandomKey = anExpand.prk().getEncoded()) == null) {
                 throw new AssertionError(
@@ -217,9 +209,7 @@ abstract class HKDFKeyDerivation extends KDFSpi {
             } finally {
                 Arrays.fill(pseudoRandomKey, (byte) 0x00);
             }
-        } else if (derivationSpec instanceof HKDFParameterSpec.ExtractThenExpand) {
-            HKDFParameterSpec.ExtractThenExpand anExtractThenExpand =
-                    (HKDFParameterSpec.ExtractThenExpand) derivationSpec;
+        } else if (derivationSpec instanceof HKDFParameterSpec.ExtractThenExpand anExtractThenExpand) {
             ikms = anExtractThenExpand.ikms();
             salts = anExtractThenExpand.salts();
             // we should be able to combine both of the above Lists of key
