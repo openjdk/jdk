@@ -5417,7 +5417,7 @@ class StubGenerator: public StubCodeGenerator {
     guarantee(small_loop_size != -1, "invalid small_loop_size");
 
     // Put 0-3'th powers of 31 into a single SIMD register together. The register will be used in
-    // the SMALL and LARGE LOOPS' EPILOQUES. The initialization is hoisted here and the register's
+    // the SMALL and LARGE LOOPS' epilogues. The initialization is hoisted here and the register's
     // value shouldn't change throughout both loops.
     __ movw(rscratch1, intpow(31U, 3));
     __ mov(vpow, Assembler::S, 0, rscratch1);
