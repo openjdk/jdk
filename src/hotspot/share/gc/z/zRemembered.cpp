@@ -125,7 +125,7 @@ bool ZRemembered::should_scan_page(ZPage* page) const {
   return false;
 }
 
-bool ZRemembered::scan_page(ZPage* page) const {
+bool ZRemembered::scan_page_and_clear_remset(ZPage* page) const {
   const bool can_trust_live_bits =
       page->is_relocatable() && !ZGeneration::old()->is_phase_mark();
 
@@ -149,6 +149,20 @@ bool ZRemembered::scan_page(ZPage* page) const {
   } else {
     page->log_msg(" (scan_page_remembered_dead)");
     // All objects are dead - do nothing
+  }
+
+  if (ZVerifyRemembered) {
+    // Make sure self healing of pointers is ordered before clearing of
+    // the previous bits so that ZVerify::after_scan can detect missing
+    // remset entries accurately.
+    OrderAccess::storestore();
+  }
+
+  // If we have consumed the remset entries above we also clear them.
+  // The exception is if the page is completely empty/garbage, where we don't
+  // want to race with an old collection modifying the remset as well.
+  if (!can_trust_live_bits || page->is_marked()) {
+    page->clear_remset_previous();
   }
 
   return result;
@@ -500,16 +514,7 @@ public:
       if (page != nullptr) {
         if (_remembered->should_scan_page(page)) {
           // Visit all entries pointing into young gen
-          bool found_roots = _remembered->scan_page(page);
-
-          // ... and as a side-effect clear the previous entries
-          if (ZVerifyRemembered) {
-            // Make sure self healing of pointers is ordered before clearing of
-            // the previous bits so that ZVerify::after_scan can detect missing
-            // remset entries accurately.
-            OrderAccess::storestore();
-          }
-          page->clear_remset_previous();
+          bool found_roots = _remembered->scan_page_and_clear_remset(page);
 
           if (found_roots && !left_marking) {
             // Follow remembered set when possible

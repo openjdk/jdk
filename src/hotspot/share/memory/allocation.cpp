@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,14 +75,16 @@ void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,
                                  MetaspaceObj::Type type, TRAPS) throw() {
   // Klass has its own operator new
-  return Metaspace::allocate(loader_data, word_size, type, THREAD);
+  assert(type != ClassType, "class has its own operator new");
+  return Metaspace::allocate(loader_data, word_size, type, /*use_class_space*/ false, THREAD);
 }
 
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,
                                  MetaspaceObj::Type type) throw() {
   assert(!Thread::current()->is_Java_thread(), "only allowed by non-Java thread");
-  return Metaspace::allocate(loader_data, word_size, type);
+  assert(type != ClassType, "class has its own operator new");
+  return Metaspace::allocate(loader_data, word_size, type, /*use_class_space*/ false);
 }
 
 bool MetaspaceObj::is_valid(const MetaspaceObj* p) {
@@ -237,9 +239,10 @@ ReallocMark::ReallocMark() {
 #endif
 }
 
-void ReallocMark::check() {
+void ReallocMark::check(Arena* arena) {
 #ifdef ASSERT
-  if (_nesting != Thread::current()->resource_area()->nesting()) {
+  if ((arena == nullptr || arena == Thread::current()->resource_area()) &&
+      _nesting != Thread::current()->resource_area()->nesting()) {
     fatal("allocation bug: array could grow within nested ResourceMark");
   }
 #endif

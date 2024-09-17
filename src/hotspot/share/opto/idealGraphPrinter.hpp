@@ -96,6 +96,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   bool _traverse_outs;
   Compile *C;
   double _max_freq;
+  bool _append;
 
   void print_method(ciMethod* method, int bci, InlineTree* tree);
   void print_inline_tree(InlineTree* tree);
@@ -118,7 +119,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   void head(const char *name);
   void text(const char *s);
   void init(const char* file_name, bool use_multiple_files, bool append);
-  void init_file_stream(const char* file_name, bool use_multiple_files, bool append);
+  void init_file_stream(const char* file_name, bool use_multiple_files);
   void init_network_stream();
   IdealGraphPrinter();
   ~IdealGraphPrinter();

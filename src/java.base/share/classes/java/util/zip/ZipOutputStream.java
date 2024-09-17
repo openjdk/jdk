@@ -485,7 +485,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         writeShort(elen);
         writeBytes(nameBytes, 0, nameBytes.length);
         if (hasZip64) {
-            writeShort(ZIP64_EXTID);
+            writeShort(EXTID_ZIP64);
             writeShort(16);
             writeLong(e.size);
             writeLong(e.csize);
@@ -541,7 +541,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * to a version value.
      */
     private int versionMadeBy(ZipEntry e, int version) {
-        return (e.extraAttributes < 0) ? version :
+        return (e.externalFileAttributes < 0) ? version :
                 VERSION_MADE_BY_BASE_UNIX | (version & 0xff);
     }
 
@@ -637,13 +637,13 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         writeShort(0);              // starting disk number
         writeShort(0);              // internal file attributes (unused)
         // extra file attributes, used for storing posix permissions etc.
-        writeInt(e.extraAttributes > 0 ? e.extraAttributes << 16 : 0);
+        writeInt(e.externalFileAttributes > 0 ? e.externalFileAttributes << 16 : 0);
         writeInt(offset);           // relative offset of local header
         writeBytes(nameBytes, 0, nameBytes.length);
 
         // take care of EXTID_ZIP64 and EXTID_EXTT
         if (hasZip64) {
-            writeShort(ZIP64_EXTID);// Zip64 extra
+            writeShort(EXTID_ZIP64);// Zip64 extra
             writeShort(elenZIP64);
             if (size == ZIP64_MAGICVAL)
                 writeLong(e.size);

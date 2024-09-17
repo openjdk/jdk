@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
  */
 package java.lang.classfile.instruction;
 
-import java.lang.constant.ClassDesc;
-
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
@@ -34,9 +31,12 @@ import java.lang.classfile.Label;
 import java.lang.classfile.PseudoInstruction;
 import java.lang.classfile.attribute.LocalVariableTableAttribute;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.constant.ClassDesc;
+
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundLocalVariable;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
+import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -71,7 +71,7 @@ public sealed interface LocalVariable extends PseudoInstruction
      * {@return the local variable type, as a symbolic descriptor}
      */
     default ClassDesc typeSymbol() {
-        return ClassDesc.ofDescriptor(type().stringValue());
+        return Util.fieldTypeSymbol(type());
     }
 
     /**
@@ -83,14 +83,6 @@ public sealed interface LocalVariable extends PseudoInstruction
      * {@return the end range of the local variable scope}
      */
     Label endScope();
-
-    /**
-     * Writes the local variable to the specified writer
-     *
-     * @param buf the writer
-     * @return true if the variable has been written
-     */
-    boolean writeTo(BufWriter buf);
 
     /**
      * {@return a local variable pseudo-instruction}
@@ -118,7 +110,7 @@ public sealed interface LocalVariable extends PseudoInstruction
     static LocalVariable of(int slot, String name, ClassDesc descriptor, Label startScope, Label endScope) {
         return of(slot,
                   TemporaryConstantPool.INSTANCE.utf8Entry(name),
-                  TemporaryConstantPool.INSTANCE.utf8Entry(descriptor.descriptorString()),
+                  TemporaryConstantPool.INSTANCE.utf8Entry(descriptor),
                   startScope, endScope);
     }
 }

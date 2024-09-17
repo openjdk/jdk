@@ -169,10 +169,10 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
     return earliest;
   }
 
-  while (1) {
-    Node *next = ctl;
-    // Moving the node out of a loop on the projection of a If
-    // confuses loop predication. So once we hit a Loop in a If branch
+  while (true) {
+    Node* next = ctl;
+    // Moving the node out of a loop on the projection of an If
+    // confuses Loop Predication. So, once we hit a loop in an If branch
     // that doesn't branch to an UNC, we stop. The code that process
     // expensive nodes will notice the loop and skip over it to try to
     // move the node further up.
@@ -567,7 +567,7 @@ void PhaseIdealLoop::add_parse_predicate(Deoptimization::DeoptReason reason, Nod
     register_control(if_true, loop, parse_predicate);
 
     int trap_request = Deoptimization::make_trap_request(reason, Deoptimization::Action_maybe_recompile);
-    address call_addr = SharedRuntime::uncommon_trap_blob()->entry_point();
+    address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
     const TypePtr* no_memory_effects = nullptr;
     JVMState* jvms = sfpt->jvms();
     CallNode* unc = new CallStaticJavaNode(OptoRuntime::uncommon_trap_Type(), call_addr, "uncommon_trap",
@@ -2591,7 +2591,7 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* stride_m = phase->intcon(stride_con - (stride_con > 0 ? 1 : -1));
     Node *range = phase->transform(new SubINode(in(Limit), in(Init)));
     Node *bias  = phase->transform(new AddINode(range, stride_m));
-    Node *trip  = phase->transform(new DivINode(0, bias, in(Stride)));
+    Node *trip  = phase->transform(new DivINode(nullptr, bias, in(Stride)));
     Node *span  = phase->transform(new MulINode(trip, in(Stride)));
     return new AddINode(span, in(Init)); // exact limit
   }
@@ -2620,7 +2620,7 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node* neg_stride   = phase->longcon(-stride_con);
       span = phase->transform(new AndLNode(bias, neg_stride));
     } else {
-      Node *trip  = phase->transform(new DivLNode(0, bias, stride));
+      Node *trip  = phase->transform(new DivLNode(nullptr, bias, stride));
       span = phase->transform(new MulLNode(trip, stride));
     }
     // Convert back to int
@@ -4511,23 +4511,6 @@ bool PhaseIdealLoop::process_expensive_nodes() {
   return progress;
 }
 
-#ifdef ASSERT
-// Goes over all children of the root of the loop tree. Check if any of them have a path
-// down to Root, that does not go via a NeverBranch exit.
-bool PhaseIdealLoop::only_has_infinite_loops() {
-  ResourceMark rm;
-  Unique_Node_List worklist;
-  // start traversal at all loop heads of first-level loops
-  for (IdealLoopTree* l = _ltree_root->_child; l != nullptr; l = l->_next) {
-    Node* head = l->_head;
-    assert(head->is_Region(), "");
-    worklist.push(head);
-  }
-  return RegionNode::are_all_nodes_in_infinite_subgraph(worklist);
-}
-#endif
-
-
 //=============================================================================
 //----------------------------build_and_optimize-------------------------------
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
@@ -4586,13 +4569,9 @@ void PhaseIdealLoop::build_and_optimize() {
     return;
   }
 
-  // Verify that the has_loops() flag set at parse time is consistent
-  // with the just built loop tree. With infinite loops, it could be
-  // that one pass of loop opts only finds infinite loops, clears the
-  // has_loops() flag but adds NeverBranch nodes so the next loop opts
-  // verification pass finds a non empty loop tree. When the back edge
+  // Verify that the has_loops() flag set at parse time is consistent with the just built loop tree. When the back edge
   // is an exception edge, parsing doesn't set has_loops().
-  assert(_ltree_root->_child == nullptr || C->has_loops() || only_has_infinite_loops() || C->has_exception_backedge(), "parsing found no loops but there are some");
+  assert(_ltree_root->_child == nullptr || C->has_loops() || C->has_exception_backedge(), "parsing found no loops but there are some");
   // No loops after all
   if( !_ltree_root->_child && !_verify_only ) C->set_has_loops(false);
 
@@ -5248,6 +5227,7 @@ bool IdealLoopTree::verify_tree(IdealLoopTree* loop_verify) const {
 
 //------------------------------set_idom---------------------------------------
 void PhaseIdealLoop::set_idom(Node* d, Node* n, uint dom_depth) {
+  _nesting.check(); // Check if a potential reallocation in the resource arena is safe
   uint idx = d->_idx;
   if (idx >= _idom_size) {
     uint newsize = next_power_of_2(idx);
@@ -5424,7 +5404,7 @@ void PhaseIdealLoop::build_loop_tree() {
       if ( bltstack.length() == stack_size ) {
         // There were no additional children, post visit node now
         (void)bltstack.pop(); // Remove node from stack
-        pre_order = build_loop_tree_impl( n, pre_order );
+        pre_order = build_loop_tree_impl(n, pre_order);
         // Check for bailout
         if (C->failing()) {
           return;
@@ -5442,7 +5422,7 @@ void PhaseIdealLoop::build_loop_tree() {
 }
 
 //------------------------------build_loop_tree_impl---------------------------
-int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
+int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
   // ---- Post-pass Work ----
   // Pre-walked but not post-walked nodes need a pre_order number.
 
@@ -5453,56 +5433,51 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
   // for it.  Then find the tightest enclosing loop for the self Node.
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* m = n->fast_out(i);   // Child
-    if( n == m ) continue;      // Ignore control self-cycles
-    if( !m->is_CFG() ) continue;// Ignore non-CFG edges
+    if (n == m) continue;      // Ignore control self-cycles
+    if (!m->is_CFG()) continue;// Ignore non-CFG edges
 
     IdealLoopTree *l;           // Child's loop
-    if( !is_postvisited(m) ) {  // Child visited but not post-visited?
+    if (!is_postvisited(m)) {  // Child visited but not post-visited?
       // Found a backedge
-      assert( get_preorder(m) < pre_order, "should be backedge" );
+      assert(get_preorder(m) < pre_order, "should be backedge");
       // Check for the RootNode, which is already a LoopNode and is allowed
       // to have multiple "backedges".
-      if( m == C->root()) {     // Found the root?
+      if (m == C->root()) {     // Found the root?
         l = _ltree_root;        // Root is the outermost LoopNode
       } else {                  // Else found a nested loop
         // Insert a LoopNode to mark this loop.
         l = new IdealLoopTree(this, m, n);
       } // End of Else found a nested loop
-      if( !has_loop(m) )        // If 'm' does not already have a loop set
+      if (!has_loop(m)) {        // If 'm' does not already have a loop set
         set_loop(m, l);         // Set loop header to loop now
-
+      }
     } else {                    // Else not a nested loop
       if (!_loop_or_ctrl[m->_idx]) continue; // Dead code has no loop
-      l = get_loop(m);          // Get previously determined loop
+      IdealLoopTree* m_loop = get_loop(m);
+      l = m_loop;          // Get previously determined loop
       // If successor is header of a loop (nest), move up-loop till it
       // is a member of some outer enclosing loop.  Since there are no
       // shared headers (I've split them already) I only need to go up
       // at most 1 level.
-      while( l && l->_head == m ) // Successor heads loop?
+      while (l && l->_head == m) { // Successor heads loop?
         l = l->_parent;         // Move up 1 for me
+      }
       // If this loop is not properly parented, then this loop
       // has no exit path out, i.e. its an infinite loop.
-      if( !l ) {
+      if (!l) {
         // Make loop "reachable" from root so the CFG is reachable.  Basically
         // insert a bogus loop exit that is never taken.  'm', the loop head,
         // points to 'n', one (of possibly many) fall-in paths.  There may be
         // many backedges as well.
 
-        // Here I set the loop to be the root loop.  I could have, after
-        // inserting a bogus loop exit, restarted the recursion and found my
-        // new loop exit.  This would make the infinite loop a first-class
-        // loop and it would then get properly optimized.  What's the use of
-        // optimizing an infinite loop?
-        l = _ltree_root;        // Oops, found infinite loop
-
         if (!_verify_only) {
           // Insert the NeverBranch between 'm' and it's control user.
           NeverBranchNode *iff = new NeverBranchNode( m );
           _igvn.register_new_node_with_optimizer(iff);
-          set_loop(iff, l);
+          set_loop(iff, m_loop);
           Node *if_t = new CProjNode( iff, 0 );
           _igvn.register_new_node_with_optimizer(if_t);
-          set_loop(if_t, l);
+          set_loop(if_t, m_loop);
 
           Node* cfg = nullptr;       // Find the One True Control User of m
           for (DUIterator_Fast jmax, j = m->fast_outs(jmax); j < jmax; j++) {
@@ -5518,7 +5493,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           // Now create the never-taken loop exit
           Node *if_f = new CProjNode( iff, 1 );
           _igvn.register_new_node_with_optimizer(if_f);
-          set_loop(if_f, l);
+          set_loop(if_f, _ltree_root);
           // Find frame ptr for Halt.  Relies on the optimizer
           // V-N'ing.  Easier and quicker than searching through
           // the program structure.
@@ -5527,10 +5502,27 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           // Halt & Catch Fire
           Node* halt = new HaltNode(if_f, frame, "never-taken loop exit reached");
           _igvn.register_new_node_with_optimizer(halt);
-          set_loop(halt, l);
+          set_loop(halt, _ltree_root);
           _igvn.add_input_to(C->root(), halt);
         }
         set_loop(C->root(), _ltree_root);
+        // move to outer most loop with same header
+        l = m_loop;
+        while (true) {
+          IdealLoopTree* next = l->_parent;
+          if (next == nullptr || next->_head != m) {
+            break;
+          }
+          l = next;
+        }
+        // properly insert infinite loop in loop tree
+        sort(_ltree_root, l);
+        // fix child link from parent
+        IdealLoopTree* p = l->_parent;
+        l->_next = p->_child;
+        p->_child = l;
+        // code below needs enclosing loop
+        l = l->_parent;
       }
     }
     if (is_postvisited(l->_head)) {
@@ -5584,7 +5576,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
     assert( get_loop(n) == innermost, "" );
     IdealLoopTree *p = innermost->_parent;
     IdealLoopTree *l = innermost;
-    while( p && l->_head == n ) {
+    while (p && l->_head == n) {
       l->_next = p->_child;     // Put self on parents 'next child'
       p->_child = l;            // Make self as first child of parent
       l = p;                    // Now walk up the parent chain
@@ -5598,7 +5590,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
     // Record tightest enclosing loop for self.  Mark as post-visited.
     set_loop(n, innermost);
     // Also record has_call flag early on
-    if( innermost ) {
+    if (innermost) {
       if( n->is_Call() && !n->is_CallLeaf() && !n->is_macro() ) {
         // Do not count uncommon calls
         if( !n->is_CallStaticJava() || !n->as_CallStaticJava()->_name ) {
@@ -6081,18 +6073,25 @@ Node* PhaseIdealLoop::get_late_ctrl_with_anti_dep(LoadNode* n, Node* early, Node
   return LCA;
 }
 
-// true if CFG node d dominates CFG node n
-bool PhaseIdealLoop::is_dominator(Node *d, Node *n) {
-  if (d == n)
+// Is CFG node 'dominator' dominating node 'n'?
+bool PhaseIdealLoop::is_dominator(Node* dominator, Node* n) {
+  if (dominator == n) {
     return true;
-  assert(d->is_CFG() && n->is_CFG(), "must have CFG nodes");
-  uint dd = dom_depth(d);
+  }
+  assert(dominator->is_CFG() && n->is_CFG(), "must have CFG nodes");
+  uint dd = dom_depth(dominator);
   while (dom_depth(n) >= dd) {
-    if (n == d)
+    if (n == dominator) {
       return true;
+    }
     n = idom(n);
   }
   return false;
+}
+
+// Is CFG node 'dominator' strictly dominating node 'n'?
+bool PhaseIdealLoop::is_strict_dominator(Node* dominator, Node* n) {
+  return dominator != n && is_dominator(dominator, n);
 }
 
 //------------------------------dom_lca_for_get_late_ctrl_internal-------------
@@ -6331,7 +6330,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     }
   } else {                      // No slot zero
     if( n->is_CFG() ) {         // CFG with no slot 0 is dead
-      _loop_or_ctrl.map(n->_idx,0);    // No block setting, it's globally dead
+      _loop_or_ctrl.map(n->_idx,nullptr); // No block setting, it's globally dead
       return;
     }
     assert(!n->is_CFG() || n->outcnt() == 0, "");
@@ -6349,7 +6348,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
       assert(_loop_or_ctrl[n->out(i1)->_idx] == nullptr, "all uses must also be dead");
     }
 #endif
-    _loop_or_ctrl.map(n->_idx, 0);     // This node is useless
+    _loop_or_ctrl.map(n->_idx, nullptr); // This node is useless
     _deadlist.push(n);
     return;
   }
@@ -6377,31 +6376,16 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
 
   if (least != early) {
     // Move the node above predicates as far up as possible so a
-    // following pass of loop predication doesn't hoist a predicate
+    // following pass of Loop Predication doesn't hoist a predicate
     // that depends on it above that node.
-    Node* new_ctrl = least;
-    for (;;) {
-      if (!new_ctrl->is_Proj()) {
+    PredicateEntryIterator predicate_iterator(least);
+    while (predicate_iterator.has_next()) {
+      Node* next_predicate_entry = predicate_iterator.next_entry();
+      if (is_strict_dominator(next_predicate_entry, early)) {
         break;
       }
-      CallStaticJavaNode* call = new_ctrl->as_Proj()->is_uncommon_trap_if_pattern();
-      if (call == nullptr) {
-        break;
-      }
-      int req = call->uncommon_trap_request();
-      Deoptimization::DeoptReason trap_reason = Deoptimization::trap_request_reason(req);
-      if (trap_reason != Deoptimization::Reason_loop_limit_check &&
-          trap_reason != Deoptimization::Reason_predicate &&
-          trap_reason != Deoptimization::Reason_profile_predicate) {
-        break;
-      }
-      Node* c = new_ctrl->in(0)->in(0);
-      if (is_dominator(c, early) && c != early) {
-        break;
-      }
-      new_ctrl = c;
+      least = next_predicate_entry;
     }
-    least = new_ctrl;
   }
   // Try not to place code on a loop entry projection
   // which can inhibit range check elimination.

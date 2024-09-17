@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,16 +85,17 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
                               ExecutorService exec,
                               CountDownLatch allBytesReceived) throws IOException {
             SSLServerSocketFactory fac = ctx.getServerSocketFactory();
+            InetAddress loopback = InetAddress.getLoopbackAddress();
             SSLServerSocket serv = (SSLServerSocket) fac.createServerSocket();
             serv.setReuseAddress(false);
-            serv.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            serv.bind(new InetSocketAddress(loopback, 0));
             SSLParameters params = serv.getSSLParameters();
             params.setApplicationProtocols(new String[]{"proto2"});
             serv.setSSLParameters(params);
 
 
             int serverPort = serv.getLocalPort();
-            clientSock = new Socket("localhost", serverPort);
+            clientSock = new Socket(loopback, serverPort);
             serverSock = (SSLSocket) serv.accept();
             this.buffer = new LinkedBlockingQueue<>();
             this.allBytesReceived = allBytesReceived;
@@ -107,6 +108,7 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
         }
 
         public void start() {
+            System.out.println("Starting: server listening at: " + serverSock.getLocalSocketAddress());
             thread1.start();
             thread2.start();
             thread3.start();
@@ -144,6 +146,7 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
                     publisher.submit(List.of(bb));
                 }
             } catch (Throwable e) {
+                System.out.println("clientReader got exception: " + e);
                 e.printStackTrace();
                 Utils.close(clientSock);
             }
@@ -176,6 +179,7 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
                     clientSubscription.request(1);
                 }
             } catch (Throwable e) {
+                System.out.println("clientWriter got exception: " + e);
                 e.printStackTrace();
             }
         }
@@ -212,6 +216,7 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
                         is.close();
                         os.close();
                         serverSock.close();
+                        System.out.println("serverLoopback exiting normally");
                         return;
                     }
                     os.write(bb, 0, n);
@@ -219,7 +224,10 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
                     loopCount.addAndGet(n);
                 }
             } catch (Throwable e) {
+                System.out.println("serverLoopback got exception: " + e);
                 e.printStackTrace();
+            } finally {
+                System.out.println("serverLoopback exiting at count: " + loopCount.get());
             }
         }
 

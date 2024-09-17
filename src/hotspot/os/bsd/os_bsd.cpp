@@ -210,6 +210,22 @@ julong os::physical_memory() {
   return Bsd::physical_memory();
 }
 
+size_t os::rss() {
+  size_t rss = 0;
+#ifdef __APPLE__
+  mach_task_basic_info info;
+  mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
+
+  kern_return_t ret = task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
+                                (task_info_t)&info, &count);
+  if (ret == KERN_SUCCESS) {
+    rss = info.resident_size;
+  }
+#endif // __APPLE__
+
+  return rss;
+}
+
 // Cpu architecture string
 #if   defined(ZERO)
 static char cpu_arch[] = ZERO_LIBARCH;
@@ -457,9 +473,9 @@ void os::init_system_properties_values() {
     if (pslash != nullptr) {
       *pslash = '\0';            // Get rid of /{client|server|hotspot}.
     }
-#ifdef STATIC_BUILD
-    strcat(buf, "/lib");
-#endif
+    if (is_vm_statically_linked()) {
+      strcat(buf, "/lib");
+    }
 
     Arguments::set_dll_dir(buf);
 
@@ -1077,19 +1093,20 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
 
 #ifdef __APPLE__
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
-#ifdef STATIC_BUILD
-  return os::get_default_process_handle();
-#else
+  if (is_vm_statically_linked()) {
+    return os::get_default_process_handle();
+  }
+
   log_info(os)("attempting shared library load of %s", filename);
 
   return os::Bsd::dlopen_helper(filename, RTLD_LAZY, ebuf, ebuflen);
-#endif // STATIC_BUILD
 }
 #else
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
-#ifdef STATIC_BUILD
-  return os::get_default_process_handle();
-#else
+  if (is_vm_statically_linked()) {
+    return os::get_default_process_handle();
+  }
+
   log_info(os)("attempting shared library load of %s", filename);
 
   void* result;
@@ -1253,7 +1270,6 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   return nullptr;
-#endif // STATIC_BUILD
 }
 #endif // !__APPLE__
 
@@ -1668,7 +1684,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
-void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
+void os::pd_disclaim_memory(char *addr, size_t bytes) {
   ::madvise(addr, bytes, MADV_DONTNEED);
 }
 

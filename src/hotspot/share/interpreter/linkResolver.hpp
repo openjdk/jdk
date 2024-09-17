@@ -242,13 +242,15 @@ class LinkResolver: AllStatic {
                                                  Klass* resolved_klass,
                                                  Handle recv,
                                                  Klass* recv_klass,
-                                                 bool check_null_and_abstract, TRAPS);
+                                                 bool check_null_and_abstract,
+                                                 bool is_abstract_interpretation, TRAPS);
   static void runtime_resolve_interface_method  (CallInfo& result,
                                                  const methodHandle& resolved_method,
                                                  Klass* resolved_klass,
                                                  Handle recv,
                                                  Klass* recv_klass,
-                                                 bool check_null_and_abstract, TRAPS);
+                                                 bool check_null_and_abstract,
+                                                 bool is_abstract_interpretation, TRAPS);
 
   static bool resolve_previously_linked_invokehandle(CallInfo& result,
                                                      const LinkInfo& link_info,
@@ -293,7 +295,16 @@ class LinkResolver: AllStatic {
                                    const constantPoolHandle& pool,
                                    int index,
                                    const methodHandle& method,
-                                   Bytecodes::Code byte, TRAPS);
+                                   Bytecodes::Code byte,
+                                   bool initialize_class, TRAPS);
+  static void resolve_field_access(fieldDescriptor& result,
+                                   const constantPoolHandle& pool,
+                                   int index,
+                                   const methodHandle& method,
+                                   Bytecodes::Code byte, TRAPS) {
+    resolve_field_access(result, pool, index, method, byte,
+                         /* initialize_class*/true, THREAD);
+  }
   static void resolve_field(fieldDescriptor& result, const LinkInfo& link_info,
                             Bytecodes::Code access_kind,
                             bool initialize_class, TRAPS);
@@ -315,6 +326,10 @@ class LinkResolver: AllStatic {
                                      const LinkInfo& link_info, TRAPS);
   static void resolve_dynamic_call  (CallInfo& result,
                                      BootstrapInfo& bootstrap_specifier, TRAPS);
+
+  static void cds_resolve_virtual_call  (CallInfo& result, const LinkInfo& link_info, TRAPS);
+  static void cds_resolve_interface_call(CallInfo& result, const LinkInfo& link_info, TRAPS);
+  static void cds_resolve_special_call  (CallInfo& result, const LinkInfo& link_info, TRAPS);
 
   // same as above for compile-time resolution; but returns null handle instead of throwing
   // an exception on error also, does not initialize klass (i.e., no side effects)

@@ -38,7 +38,7 @@
 // or from committed memory of a certain MEMFLAGS to committed memory of a different MEMFLAGS.
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
 class VMATree {
-  friend class VMATreeTest;
+  friend class NMTVMATreeTest;
   // A position in memory.
 public:
   using position = size_t;
@@ -78,7 +78,7 @@ public:
 
     static bool equals(const RegionData& a, const RegionData& b) {
       return a.flag == b.flag &&
-             NativeCallStackStorage::StackIndex::equals(a.stack_idx, b.stack_idx);
+             NativeCallStackStorage::equals(a.stack_idx, b.stack_idx);
     }
   };
 
@@ -112,7 +112,7 @@ private:
       return RegionData{sidx, flag()};
     }
 
-    const NativeCallStackStorage::StackIndex stack() const {
+    NativeCallStackStorage::StackIndex stack() const {
      return sidx;
     }
   };

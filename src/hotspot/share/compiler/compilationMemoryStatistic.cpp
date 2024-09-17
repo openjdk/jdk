@@ -51,29 +51,36 @@
 #include "utilities/quickSort.hpp"
 #include "utilities/resourceHash.hpp"
 
-ArenaStatCounter::ArenaStatCounter() :
-  _current(0), _start(0), _peak(0),
-  _na(0), _ra(0),
-  _limit(0), _hit_limit(false), _limit_in_process(false),
-  _na_at_peak(0), _ra_at_peak(0), _live_nodes_at_peak(0)
-{}
+ArenaStatCounter::ArenaStatCounter() {
+  reset();
+}
 
-size_t ArenaStatCounter::peak_since_start() const {
-  return _peak > _start ? _peak - _start : 0;
+void ArenaStatCounter::reset() {
+  _current = 0;
+  _peak = 0;
+  _current_by_tag.clear();
+  _peak_by_tag.clear();
+  _limit = 0;
+  _hit_limit = false;
+  _limit_in_process = false;
+  _live_nodes_at_peak = 0;
+  _active = false;
 }
 
 void ArenaStatCounter::start(size_t limit) {
-  _peak = _start = _current;
+  reset();
+  _active = true;
   _limit = limit;
-  _hit_limit = false;
 }
 
-void ArenaStatCounter::end(){
+void ArenaStatCounter::end() {
   _limit = 0;
   _hit_limit = false;
+  _active = false;
 }
 
 void ArenaStatCounter::update_c2_node_count() {
+  assert(_active, "compilaton has not yet started");
 #ifdef COMPILER2
   CompilerThread* const th = Thread::current()->as_Compiler_thread();
   const CompileTask* const task = th->task();
@@ -90,33 +97,27 @@ void ArenaStatCounter::update_c2_node_count() {
 
 // Account an arena allocation or de-allocation.
 bool ArenaStatCounter::account(ssize_t delta, int tag) {
+  assert(_active, "compilaton has not yet started");
   bool rc = false;
 #ifdef ASSERT
   // Note: if this fires, we free more arena memory under the scope of the
   // CompilationMemoryHistoryMark than we allocate. This cannot be since we
   // assume arena allocations in CompilerThread to be stack bound and symmetric.
   assert(delta >= 0 || ((ssize_t)_current + delta) >= 0,
-         "Negative overflow (d=%zd %zu %zu %zu)", delta, _current, _start, _peak);
+         "Negative overflow (d=%zd %zu %zu)", delta, _current, _peak);
 #endif
   // Update totals
   _current += delta;
-  // Update detail counter
-  switch ((Arena::Tag)tag) {
-    case Arena::Tag::tag_ra: _ra += delta; break;
-    case Arena::Tag::tag_node: _na += delta; break;
-    default: // ignore
-      break;
-  };
+  _current_by_tag.add(tag, delta);
   // Did we reach a peak?
   if (_current > _peak) {
     _peak = _current;
-    assert(delta > 0, "Sanity (%zu %zu %zu)", _current, _start, _peak);
-    _na_at_peak = _na;
-    _ra_at_peak = _ra;
+    assert(delta > 0, "Sanity (%zu %zu)", _current, _peak);
     update_c2_node_count();
+    _peak_by_tag = _current_by_tag;
     rc = true;
     // Did we hit the memory limit?
-    if (!_hit_limit && _limit > 0 && peak_since_start() > _limit) {
+    if (!_hit_limit && _limit > 0 && _peak > _limit) {
       _hit_limit = true;
     }
   }
@@ -124,9 +125,15 @@ bool ArenaStatCounter::account(ssize_t delta, int tag) {
 }
 
 void ArenaStatCounter::print_on(outputStream* st) const {
-  st->print("%zu [na %zu ra %zu]", peak_since_start(), _na_at_peak, _ra_at_peak);
+  st->print("%zu [", _peak);
+  for (int tag = 0; tag < _peak_by_tag.element_count(); tag++) {
+    if (_peak_by_tag.counter(tag) > 0) {
+      st->print("%s %zu ", _peak_by_tag.tag_name(tag), _peak_by_tag.counter(tag));
+    }
+  }
+  st->print("]");
 #ifdef ASSERT
-  st->print(" (%zu->%zu->%zu)", _start, _peak, _current);
+  st->print(" (%zu->%zu)", _peak, _current);
 #endif
 }
 
@@ -186,10 +193,8 @@ class MemStatEntry : public CHeapObj<mtInternal> {
 
   // peak usage, bytes, over all arenas
   size_t _total;
-  // usage in node arena when total peaked
-  size_t _na_at_peak;
-  // usage in resource area when total peaked
-  size_t _ra_at_peak;
+  // usage per arena tag when total peaked
+  ArenaCountersByTag _peak_by_tag;
   // number of nodes (c2 only) when total peaked
   unsigned _live_nodes_at_peak;
   const char* _result;
@@ -199,8 +204,9 @@ public:
   MemStatEntry(FullMethodName method)
     : _method(method), _comptype(compiler_c1),
       _time(0), _num_recomp(0), _thread(nullptr), _limit(0),
-      _total(0), _na_at_peak(0), _ra_at_peak(0), _live_nodes_at_peak(0),
+      _total(0), _live_nodes_at_peak(0),
       _result(nullptr) {
+    _peak_by_tag.clear();
   }
 
   void set_comptype(CompilerType comptype) { _comptype = comptype; }
@@ -210,8 +216,7 @@ public:
   void inc_recompilation() { _num_recomp++; }
 
   void set_total(size_t n) { _total = n; }
-  void set_na_at_peak(size_t n) { _na_at_peak = n; }
-  void set_ra_at_peak(size_t n) { _ra_at_peak = n; }
+  void set_peak_by_tag(ArenaCountersByTag peak_by_tag) { _peak_by_tag = peak_by_tag; }
   void set_live_nodes_at_peak(unsigned n) { _live_nodes_at_peak = n; }
 
   void set_result(const char* s) { _result = s; }
@@ -219,21 +224,34 @@ public:
   size_t total() const { return _total; }
 
   static void print_legend(outputStream* st) {
+#define LEGEND_KEY_FMT "%11s"
     st->print_cr("Legend:");
-    st->print_cr("  total  : memory allocated via arenas while compiling");
-    st->print_cr("  NA     : ...how much in node arenas (if c2)");
-    st->print_cr("  RA     : ...how much in resource areas");
-    st->print_cr("  result : Result: 'ok' finished successfully, 'oom' hit memory limit, 'err' compilation failed");
-    st->print_cr("  #nodes : ...how many nodes (c2 only)");
-    st->print_cr("  limit  : memory limit, if set");
-    st->print_cr("  time   : time of last compilation (sec)");
-    st->print_cr("  type   : compiler type");
-    st->print_cr("  #rc    : how often recompiled");
-    st->print_cr("  thread : compiler thread");
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "total", "memory allocated via arenas while compiling");
+    for (int tag = 0; tag < Arena::tag_count(); tag++) {
+      st->print_cr("  " LEGEND_KEY_FMT ": %s", Arena::tag_name[tag], Arena::tag_desc[tag]);
+    }
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "result", "Result: 'ok' finished successfully, 'oom' hit memory limit, 'err' compilation failed");
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "#nodes", "...how many nodes (c2 only)");
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "limit", "memory limit, if set");
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "time", "time taken for last compilation (sec)");
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "type", "compiler type");
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "#rc", "how often recompiled");
+    st->print_cr("  " LEGEND_KEY_FMT ": %s", "thread", "compiler thread");
+#undef LEGEND_KEY_FMT
   }
 
   static void print_header(outputStream* st) {
-    st->print_cr("total     NA        RA        result  #nodes  limit   time    type  #rc thread              method");
+#define SIZE_FMT "%-10s"
+    st->print(SIZE_FMT, "total");
+    for (int tag = 0; tag < Arena::tag_count(); tag++) {
+      st->print(SIZE_FMT, Arena::tag_name[tag]);
+    }
+#define HDR_FMT1 "%-8s%-8s%-8s%-8s"
+#define HDR_FMT2 "%-6s%-4s%-19s%s"
+
+    st->print(HDR_FMT1, "result", "#nodes", "limit", "time");
+    st->print(HDR_FMT2, "type", "#rc", "thread", "method");
+    st->print_cr("");
   }
 
   void print_on(outputStream* st, bool human_readable) const {
@@ -247,21 +265,14 @@ public:
     }
     col += 10; st->fill_to(col);
 
-    // NA
-    if (human_readable) {
-      st->print(PROPERFMT " ", PROPERFMTARGS(_na_at_peak));
-    } else {
-      st->print("%zu ", _na_at_peak);
+    for (int tag = 0; tag < Arena::tag_count(); tag++) {
+      if (human_readable) {
+        st->print(PROPERFMT " ", PROPERFMTARGS(_peak_by_tag.counter(tag)));
+      } else {
+        st->print("%zu ", _peak_by_tag.counter(tag));
+      }
+      col += 10; st->fill_to(col);
     }
-    col += 10; st->fill_to(col);
-
-    // RA
-    if (human_readable) {
-      st->print(PROPERFMT " ", PROPERFMTARGS(_ra_at_peak));
-    } else {
-      st->print("%zu ", _ra_at_peak);
-    }
-    col += 10; st->fill_to(col);
 
     // result?
     st->print("%s ", _result ? _result : "");
@@ -296,7 +307,7 @@ public:
     col += 4; st->fill_to(col);
 
     // Thread
-    st->print(PTR_FORMAT "  ", p2i(_thread));
+    st->print(PTR_FORMAT " ", p2i(_thread));
 
     // MethodName
     char buf[1024];
@@ -341,7 +352,7 @@ class MemStatTable :
 public:
 
   void add(const FullMethodName& fmn, CompilerType comptype,
-           size_t total, size_t na_at_peak, size_t ra_at_peak,
+           size_t total, ArenaCountersByTag peak_by_tag,
            unsigned live_nodes_at_peak, size_t limit, const char* result) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
     MemStatTableKey key(fmn, comptype);
@@ -360,8 +371,7 @@ public:
     e->set_comptype(comptype);
     e->inc_recompilation();
     e->set_total(total);
-    e->set_na_at_peak(na_at_peak);
-    e->set_ra_at_peak(ra_at_peak);
+    e->set_peak_by_tag(peak_by_tag);
     e->set_live_nodes_at_peak(live_nodes_at_peak);
     e->set_limit(limit);
     e->set_result(result);
@@ -427,7 +437,7 @@ void CompilationMemoryStatistic::on_end_compilation() {
   const bool print = directive->should_print_memstat();
 
   // Store memory used in task, for later processing by JFR
-  task->set_arena_bytes(arena_stat->peak_since_start());
+  task->set_arena_bytes(arena_stat->peak());
 
   // Store result
   // For this to work, we must call on_end_compilation() at a point where
@@ -447,9 +457,8 @@ void CompilationMemoryStatistic::on_end_compilation() {
     assert(_the_table != nullptr, "not initialized");
 
     _the_table->add(fmn, ct,
-                    arena_stat->peak_since_start(), // total
-                    arena_stat->na_at_peak(),
-                    arena_stat->ra_at_peak(),
+                    arena_stat->peak(), // total
+                    arena_stat->peak_by_tag(),
                     arena_stat->live_nodes_at_peak(),
                     arena_stat->limit(),
                     result);
@@ -511,7 +520,7 @@ void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* aren
 
   bool hit_limit_before = arena_stat->hit_limit();
 
-  if (arena_stat->account(diff, (int)arena->get_tag())) { // new peak?
+  if (arena_stat->is_active() && arena_stat->account(diff, (int)arena->get_tag())) { // new peak?
 
     // Limit handling
     if (arena_stat->hit_limit()) {
@@ -545,7 +554,7 @@ void CompilationMemoryStatistic::on_arena_change(ssize_t diff, const Arena* aren
         }
         ss.print("Hit MemLimit %s(limit: %zu now: %zu)",
                  (hit_limit_before ? "again " : ""),
-                 arena_stat->limit(), arena_stat->peak_since_start());
+                 arena_stat->limit(), arena_stat->peak());
       }
 
       // log if needed
@@ -604,7 +613,7 @@ void CompilationMemoryStatistic::print_all_by_size(outputStream* st, bool human_
       st->print_cr("(%d/%d)", num, _the_table->number_of_entries());
     }
     if (num > 0) {
-      QuickSort::sort(filtered, num, diff_entries_by_size, false);
+      QuickSort::sort(filtered, num, diff_entries_by_size);
       // Now print. Has to happen under lock protection too, since entries may be changed.
       for (int i = 0; i < num; i ++) {
         filtered[i]->print_on(st, human_readable);

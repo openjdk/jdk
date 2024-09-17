@@ -35,6 +35,7 @@
 #include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/osThread.hpp"
@@ -42,9 +43,16 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
 #if INCLUDE_G1GC
+#include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
+#endif
+#if INCLUDE_ZGC
+#include "gc/x/xBarrierSetRuntime.hpp"
+#include "gc/z/zBarrierSetAssembler.hpp"
+#include "gc/z/zBarrierSetRuntime.hpp"
+#include "gc/z/zThreadLocalData.hpp"
 #endif
 
 #define VM_STRUCTS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
@@ -61,11 +69,14 @@
   static_field(CompilerToVM::Data,             SharedRuntime_deopt_blob_uncommon_trap, address)                                      \
   static_field(CompilerToVM::Data,             SharedRuntime_polling_page_return_handler,                                            \
                                                                                        address)                                      \
+  static_field(CompilerToVM::Data,             SharedRuntime_throw_delayed_StackOverflowError_entry,                                 \
+                                                                                       address)                                      \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             nmethod_entry_barrier, address)                                                       \
   static_field(CompilerToVM::Data,             thread_disarmed_guard_value_offset, int)                                              \
   static_field(CompilerToVM::Data,             thread_address_bad_mask_offset, int)                                                  \
   AARCH64_ONLY(static_field(CompilerToVM::Data, BarrierSetAssembler_nmethod_patching_type, int))                                     \
+  AARCH64_ONLY(static_field(CompilerToVM::Data, BarrierSetAssembler_patching_epoch_addr, address))                                   \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded, address)                      \
   static_field(CompilerToVM::Data,             ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded, address)                 \
@@ -75,6 +86,10 @@
   static_field(CompilerToVM::Data,             ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded, address)         \
   static_field(CompilerToVM::Data,             ZBarrierSetRuntime_load_barrier_on_oop_array, address)                                \
   static_field(CompilerToVM::Data,             ZBarrierSetRuntime_clone, address)                                                    \
+                                                                                                                                     \
+  static_field(CompilerToVM::Data,             ZPointerVectorLoadBadMask_address, address)                                           \
+  static_field(CompilerToVM::Data,             ZPointerVectorStoreBadMask_address, address)                                          \
+  static_field(CompilerToVM::Data,             ZPointerVectorStoreGoodMask_address, address)                                         \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             continuations_enabled, bool)                                                          \
                                                                                                                                      \
@@ -100,6 +115,8 @@
   static_field(CompilerToVM::Data,             cardtable_start_address,                CardTable::CardValue*)                        \
   static_field(CompilerToVM::Data,             cardtable_shift,                        int)                                          \
                                                                                                                                      \
+  X86_ONLY(static_field(CompilerToVM::Data,    L1_line_size,                           int))                                         \
+                                                                                                                                     \
   static_field(CompilerToVM::Data,             vm_page_size,                           size_t)                                       \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             sizeof_vtableEntry,                     int)                                          \
@@ -109,6 +126,7 @@
   static_field(CompilerToVM::Data,             sizeof_narrowKlass,                     int)                                          \
   static_field(CompilerToVM::Data,             sizeof_arrayOopDesc,                    int)                                          \
   static_field(CompilerToVM::Data,             sizeof_BasicLock,                       int)                                          \
+  ZGC_ONLY(static_field(CompilerToVM::Data,    sizeof_ZStoreBarrierEntry,              int))                                         \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             dsin,                                   address)                                      \
   static_field(CompilerToVM::Data,             dcos,                                   address)                                      \
@@ -123,7 +141,7 @@
                                                                                                                                      \
   static_field(CompilerToVM::Data,             data_section_item_alignment,            int)                                          \
                                                                                                                                      \
-  static_field(CompilerToVM::Data,             _should_notify_object_alloc,            int*)                                         \
+  JVMTI_ONLY(static_field(CompilerToVM::Data,  _should_notify_object_alloc,            int*))                                         \
                                                                                                                                      \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \
@@ -136,7 +154,7 @@
   nonstatic_field(Array<Klass*>,               _length,                                int)                                          \
   nonstatic_field(Array<Klass*>,               _data[0],                               Klass*)                                       \
                                                                                                                                      \
-  volatile_nonstatic_field(BasicLock,          _displaced_header,                      markWord)                                     \
+  volatile_nonstatic_field(BasicLock,          _metadata,                              uintptr_t)                                    \
                                                                                                                                      \
   static_field(CodeCache,                      _low_bound,                             address)                                      \
   static_field(CodeCache,                      _high_bound,                            address)                                      \
@@ -226,10 +244,13 @@
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
   nonstatic_field(JavaThread,                  _held_monitor_count,                           intx)                                  \
   nonstatic_field(JavaThread,                  _lock_stack,                                   LockStack)                             \
+  nonstatic_field(JavaThread,                  _om_cache,                                     OMCache)                               \
+  nonstatic_field(JavaThread,                  _cont_entry,                                   ContinuationEntry*)                    \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_tmp_VTMS_transition,                    bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_disable_suspend,                           bool))                                 \
                                                                                                                                      \
+  nonstatic_field(ContinuationEntry,           _pin_count,                                    uint32_t)                              \
   nonstatic_field(LockStack,                   _top,                                          uint32_t)                              \
                                                                                                                                      \
   JVMTI_ONLY(static_field(JvmtiVTMSTransitionDisabler, _VTMS_notify_jvmti_events,             bool))                                 \
@@ -253,6 +274,7 @@
   nonstatic_field(Klass,                       _class_loader_data,                            ClassLoaderData*)                      \
   nonstatic_field(Klass,                       _bitmap,                                       uintx)                                 \
   nonstatic_field(Klass,                       _hash_slot,                                    uint8_t)                               \
+  nonstatic_field(Klass,                       _misc_flags._flags,                            u1)                                    \
                                                                                                                                      \
   nonstatic_field(LocalVariableTableElement,   start_bci,                                     u2)                                    \
   nonstatic_field(LocalVariableTableElement,   length,                                        u2)                                    \
@@ -311,8 +333,6 @@
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
                                                                                                                                      \
   static_field(StubRoutines,                _verify_oop_count,                                jint)                                  \
-                                                                                                                                     \
-  static_field(StubRoutines,                _throw_delayed_StackOverflowError_entry,          address)                               \
                                                                                                                                      \
   static_field(StubRoutines,                _jbyte_arraycopy,                                 address)                               \
   static_field(StubRoutines,                _jshort_arraycopy,                                address)                               \
@@ -463,10 +483,6 @@
   declare_constant(JVMCINMethodData::SPECULATION_LENGTH_BITS)             \
                                                                           \
   declare_constant(JVM_ACC_WRITTEN_FLAGS)                                 \
-  declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
-  declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
-  declare_constant(JVM_ACC_IS_HIDDEN_CLASS)                               \
-  declare_constant(JVM_ACC_IS_VALUE_BASED_CLASS)                          \
   declare_constant(FieldInfo::FieldFlags::_ff_injected)                   \
   declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
   declare_preprocessor_constant("JVM_ACC_VARARGS", JVM_ACC_VARARGS)       \
@@ -516,6 +532,8 @@
                                                                           \
   declare_constant_with_value("CardTable::dirty_card", CardTable::dirty_card_val()) \
   declare_constant_with_value("LockStack::_end_offset", LockStack::end_offset()) \
+  declare_constant_with_value("OMCache::oop_to_oop_difference", OMCache::oop_to_oop_difference()) \
+  declare_constant_with_value("OMCache::oop_to_monitor_difference", OMCache::oop_to_monitor_difference()) \
                                                                           \
   declare_constant(CodeInstaller::VERIFIED_ENTRY)                         \
   declare_constant(CodeInstaller::UNVERIFIED_ENTRY)                       \
@@ -640,6 +658,7 @@
   declare_constant(ConstMethodFlags::_misc_intrinsic_candidate)           \
   declare_constant(ConstMethodFlags::_misc_reserved_stack_access)         \
   declare_constant(ConstMethodFlags::_misc_changes_current_thread)        \
+  declare_constant(ConstMethodFlags::_misc_is_scoped)                     \
                                                                           \
   declare_constant(CounterData::count_off)                                \
                                                                           \
@@ -711,6 +730,10 @@
                                                                           \
   declare_constant(InstanceKlassFlags::_misc_has_nonstatic_concrete_methods)   \
   declare_constant(InstanceKlassFlags::_misc_declares_nonstatic_concrete_methods) \
+  declare_constant(KlassFlags::_misc_is_hidden_class)                     \
+  declare_constant(KlassFlags::_misc_is_value_based_class)                \
+  declare_constant(KlassFlags::_misc_has_finalizer)                       \
+  declare_constant(KlassFlags::_misc_is_cloneable_fast)                   \
                                                                           \
   declare_constant(JumpData::taken_off_set)                               \
   declare_constant(JumpData::displacement_off_set)                        \
@@ -763,6 +786,7 @@
   declare_constant(vmIntrinsics::_linkToStatic)                           \
   declare_constant(vmIntrinsics::_linkToSpecial)                          \
   declare_constant(vmIntrinsics::_linkToInterface)                        \
+  declare_constant(vmIntrinsics::_linkToNative)                           \
                                                                           \
   declare_constant(vmSymbols::FIRST_SID)                                  \
   declare_constant(vmSymbols::SID_LIMIT)                                  \
@@ -784,7 +808,12 @@
   declare_constant(markWord::no_hash_in_place)                            \
   declare_constant(markWord::no_lock_in_place)                            \
 
-#define VM_ADDRESSES(declare_address, declare_preprocessor_address, declare_function) \
+// Helper macro to support ZGC pattern where the function itself isn't exported
+#define DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, name) \
+  declare_function_with_value(name, name##_addr())
+
+
+#define VM_ADDRESSES(declare_address, declare_preprocessor_address, declare_function, declare_function_with_value) \
   declare_function(SharedRuntime::register_finalizer)                     \
   declare_function(SharedRuntime::exception_handler_for_return_address)   \
   declare_function(SharedRuntime::OSR_migration_end)                      \
@@ -800,6 +829,26 @@
   declare_function(os::dll_lookup)                                        \
   declare_function(os::javaTimeMillis)                                    \
   declare_function(os::javaTimeNanos)                                     \
+                                                                          \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::load_barrier_on_oop_field_preloaded))                      \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded))                 \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded))              \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::weak_load_barrier_on_oop_field_preloaded))                 \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::weak_load_barrier_on_weak_oop_field_preloaded))            \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::weak_load_barrier_on_phantom_oop_field_preloaded))         \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::load_barrier_on_oop_array))                                \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, XBarrierSetRuntime::clone))                                                    \
+                                                                                                                      \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded))                      \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded))                 \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded))              \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_store_good))           \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::no_keepalive_load_barrier_on_weak_oop_field_preloaded))    \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::no_keepalive_load_barrier_on_phantom_oop_field_preloaded)) \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing))        \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing))                  \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing))               \
+  ZGC_ONLY(DECLARE_FUNCTION_FROM_ADDR(declare_function_with_value, ZBarrierSetRuntime::load_barrier_on_oop_array))                                \
                                                                           \
   declare_function(Deoptimization::fetch_unroll_info)                     \
   declare_function(Deoptimization::uncommon_trap)                         \
@@ -851,9 +900,35 @@
 #endif // INCLUDE_G1GC
 
 
+#if INCLUDE_ZGC
+
+#define VM_INT_CONSTANTS_JVMCI_ZGC(declare_constant, declare_constant_with_value, declare_preprocessor_constant)                           \
+  declare_constant_with_value("ZThreadLocalData::store_good_mask_offset" , in_bytes(ZThreadLocalData::store_good_mask_offset()))           \
+  declare_constant_with_value("ZThreadLocalData::store_bad_mask_offset" , in_bytes(ZThreadLocalData::store_bad_mask_offset()))             \
+  declare_constant_with_value("ZThreadLocalData::store_barrier_buffer_offset" , in_bytes(ZThreadLocalData::store_barrier_buffer_offset())) \
+  declare_constant_with_value("ZStoreBarrierBuffer::current_offset" , in_bytes(ZStoreBarrierBuffer::current_offset()))                     \
+  declare_constant_with_value("ZStoreBarrierBuffer::buffer_offset" , in_bytes(ZStoreBarrierBuffer::buffer_offset()))                       \
+  declare_constant_with_value("ZStoreBarrierEntry::p_offset" , in_bytes(ZStoreBarrierEntry::p_offset()))                                   \
+  declare_constant_with_value("ZStoreBarrierEntry::prev_offset" , in_bytes(ZStoreBarrierEntry::prev_offset()))                             \
+  AMD64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_SHL))                                            \
+  AMD64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_LOAD_BAD_AFTER_TEST))                                             \
+  AMD64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_MARK_BAD_AFTER_TEST))                                             \
+  AMD64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_CMP))                                            \
+  AMD64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_STORE_BAD_AFTER_TEST))                                            \
+  AMD64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_OR))                                             \
+  AMD64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_MOV))                                            \
+  AARCH64_ONLY(declare_constant(ZPointerLoadShift))                                                                                        \
+  AARCH64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_TB_X))                                         \
+  AARCH64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_MARK_BAD_BEFORE_MOV))                                           \
+  AARCH64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_BEFORE_MOV))                                         \
+  AARCH64_ONLY(declare_constant(CodeInstaller::Z_BARRIER_RELOCATION_FORMAT_STORE_BAD_BEFORE_MOV))
+
+#endif // INCLUDE_ZGC
+
+
 #ifdef LINUX
 
-#define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function) \
+#define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function, declare_function_with_value) \
   declare_preprocessor_address("RTLD_DEFAULT", RTLD_DEFAULT)
 
 #endif
@@ -861,7 +936,7 @@
 
 #ifdef BSD
 
-#define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function) \
+#define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function, declare_function_with_value) \
   declare_preprocessor_address("RTLD_DEFAULT", RTLD_DEFAULT)
 
 #endif
@@ -912,12 +987,16 @@
 #endif
 
 #ifndef VM_ADDRESSES_OS
-#define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function)
+#define VM_ADDRESSES_OS(declare_address, declare_preprocessor_address, declare_function, declare_function_with_value)
 #endif
 
 //
 // Instantiation of VMStructEntries, VMTypeEntries and VMIntConstantEntries
 //
+
+#define GENERATE_VM_FUNCTION_WITH_VALUE_ENTRY(name, value) \
+  { QUOTE(name), CAST_FROM_FN_PTR(void*, value) },
+
 
 // These initializers are allowed to access private fields in classes
 // as long as class VMStructs is a friend
@@ -969,6 +1048,11 @@ VMIntConstantEntry JVMCIVMStructs::localHotSpotVMIntConstants[] = {
                               GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
                               GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 #endif
+#if INCLUDE_ZGC
+  VM_INT_CONSTANTS_JVMCI_ZGC(GENERATE_VM_INT_CONSTANT_ENTRY,
+                              GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY,
+                              GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+#endif
 #ifdef VM_INT_CPU_FEATURE_CONSTANTS
   VM_INT_CPU_FEATURE_CONSTANTS
 #endif
@@ -994,10 +1078,12 @@ VMLongConstantEntry JVMCIVMStructs::localHotSpotVMLongConstants[] = {
 VMAddressEntry JVMCIVMStructs::localHotSpotVMAddresses[] = {
   VM_ADDRESSES(GENERATE_VM_ADDRESS_ENTRY,
                GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
-               GENERATE_VM_FUNCTION_ENTRY)
+               GENERATE_VM_FUNCTION_ENTRY,
+               GENERATE_VM_FUNCTION_WITH_VALUE_ENTRY)
   VM_ADDRESSES_OS(GENERATE_VM_ADDRESS_ENTRY,
                   GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
-                  GENERATE_VM_FUNCTION_ENTRY)
+                  GENERATE_VM_FUNCTION_ENTRY,
+                  GENERATE_VM_FUNCTION_WITH_VALUE_ENTRY)
 
   GENERATE_VM_ADDRESS_LAST_ENTRY()
 };

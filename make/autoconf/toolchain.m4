@@ -23,14 +23,14 @@
 # questions.
 #
 
-########################################################################
+################################################################################
 # This file is responsible for detecting, verifying and setting up the
 # toolchain, i.e. the compiler, linker and related utilities. It will setup
 # proper paths to the binaries, but it will not setup any flags.
 #
 # The binaries used is determined by the toolchain type, which is the family of
 # compilers and related tools that are used.
-########################################################################
+################################################################################
 
 m4_include([toolchain_microsoft.m4])
 
@@ -678,6 +678,9 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
       test_metal=`$METAL --version 2>&1`
       if test $? -ne 0; then
         AC_MSG_RESULT([no])
+        AC_MSG_NOTICE([A full XCode is required to build the JDK (not only command line tools)])
+        AC_MSG_NOTICE([If you have XCode installed, you might need to reset the Xcode active developer directory])
+        AC_MSG_NOTICE([using 'sudo xcode-select -r'])
         AC_MSG_ERROR([XCode tool 'metal' neither found in path nor with xcrun])
       else
         AC_MSG_RESULT([yes, will be using '$METAL'])

@@ -1711,8 +1711,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ add2reg(r_box, lock_offset, Z_SP);
 
     // Try fastpath for locking.
-    // Fast_lock kills r_temp_1, r_temp_2.
-    __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      // Fast_lock kills r_temp_1, r_temp_2.
+      __ compiler_fast_lock_lightweight_object(r_oop, r_tmp1, r_tmp2);
+    } else {
+      // Fast_lock kills r_temp_1, r_temp_2.
+      __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
+    }
     __ z_bre(done);
 
     //-------------------------------------------------------------------------
@@ -1910,8 +1915,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ add2reg(r_box, lock_offset, Z_SP);
 
     // Try fastpath for unlocking.
-    // Fast_unlock kills r_tmp1, r_tmp2.
-    __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      // Fast_unlock kills r_tmp1, r_tmp2.
+      __ compiler_fast_unlock_lightweight_object(r_oop, r_tmp1, r_tmp2);
+    } else {
+      // Fast_unlock kills r_tmp1, r_tmp2.
+      __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
+    }
     __ z_bre(done);
 
     // Slow path for unlocking.
@@ -2478,7 +2488,8 @@ void SharedRuntime::generate_deopt_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
-  CodeBuffer buffer("deopt_blob", 2048, 1024);
+  const char* name = SharedRuntime::stub_name(SharedStubId::deopt_id);
+  CodeBuffer buffer(name, 2048, 1024);
   InterpreterMacroAssembler* masm = new InterpreterMacroAssembler(&buffer);
   Label exec_mode_initialized;
   OopMap* map = nullptr;
@@ -2696,7 +2707,7 @@ void SharedRuntime::generate_deopt_blob() {
 
 #ifdef COMPILER2
 //------------------------------generate_uncommon_trap_blob--------------------
-void SharedRuntime::generate_uncommon_trap_blob() {
+void OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
@@ -2759,7 +2770,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   } else {
     __ z_cliy(unpack_kind_byte_offset, unroll_block_reg, Deoptimization::Unpack_uncommon_trap);
   }
-  __ asm_assert(Assembler::bcondEqual, "SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
+  __ asm_assert(Assembler::bcondEqual, "OptoRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
 #endif
 
   __ zap_from_to(Z_SP, Z_SP, Z_R0_scratch, Z_R1, 500, -1);
@@ -2824,23 +2835,25 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 //
 // Generate a special Compile2Runtime blob that saves all registers,
 // and setup oopmap.
-SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_type) {
+SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
   assert(StubRoutines::forward_exception_entry() != nullptr,
          "must be generated before");
+  assert(is_polling_page_id(id), "expected a polling page stub id");
 
   ResourceMark rm;
   OopMapSet *oop_maps = new OopMapSet();
   OopMap* map;
 
   // Allocate space for the code. Setup code generation tools.
-  CodeBuffer buffer("handler_blob", 2048, 1024);
+  const char* name = SharedRuntime::stub_name(id);
+  CodeBuffer buffer(name, 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
 
   unsigned int start_off = __ offset();
   address call_pc = nullptr;
   int frame_size_in_bytes;
 
-  bool cause_return = (poll_type == POLL_AT_RETURN);
+  bool cause_return = (id == SharedStubId::polling_page_return_handler_id);
   // Make room for return address (or push it again)
   if (!cause_return) {
     __ z_lg(Z_R14, Address(Z_thread, JavaThread::saved_exception_pc_offset()));
@@ -2925,12 +2938,14 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 // but since this is generic code we don't know what they are and the caller
 // must do any gc of the args.
 //
-RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const char* name) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
   assert (StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
+  assert(is_resolve_id(id), "expected a resolve stub id");
 
   // allocate space for the code
   ResourceMark rm;
 
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 1000, 512);
   MacroAssembler* masm                = new MacroAssembler(&buffer);
 
@@ -2998,6 +3013,88 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers)/wordSize,
                                        oop_maps, true);
 
+}
+
+// Continuation point for throwing of implicit exceptions that are
+// not handled in the current activation. Fabricates an exception
+// oop and initiates normal exception dispatching in this
+// frame. Only callee-saved registers are preserved (through the
+// normal RegisterMap handling). If the compiler
+// needs all registers to be preserved between the fault point and
+// the exception handler then it must assume responsibility for that
+// in AbstractCompiler::continuation_for_implicit_null_exception or
+// continuation_for_implicit_division_by_zero_exception. All other
+// implicit exceptions (e.g., NullPointerException or
+// AbstractMethodError on entry) are either at call sites or
+// otherwise assume that stack unwinding will be initiated, so
+// caller saved registers were assumed volatile in the compiler.
+
+// Note that we generate only this stub into a RuntimeStub, because
+// it needs to be properly traversed and ignored during GC, so we
+// change the meaning of the "__" macro within this method.
+
+// Note: the routine set_pc_not_at_call_for_caller in
+// SharedRuntime.cpp requires that this code be generated into a
+// RuntimeStub.
+
+RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+  assert(is_throw_id(id), "expected a throw stub id");
+
+  const char* name = SharedRuntime::stub_name(id);
+
+  int insts_size = 256;
+  int locs_size  = 0;
+
+  ResourceMark rm;
+  const char* timer_msg = "SharedRuntime generate_throw_exception";
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+
+  CodeBuffer      code(name, insts_size, locs_size);
+  MacroAssembler* masm = new MacroAssembler(&code);
+  int framesize_in_bytes;
+  address start = __ pc();
+
+  __ save_return_pc();
+  framesize_in_bytes = __ push_frame_abi160(0);
+
+  address frame_complete_pc = __ pc();
+
+  // Note that we always have a runtime stub frame on the top of stack at this point.
+  __ get_PC(Z_R1);
+  __ set_last_Java_frame(/*sp*/Z_SP, /*pc*/Z_R1);
+
+  // Do the call.
+  BLOCK_COMMENT("call runtime_entry");
+  __ call_VM_leaf(runtime_entry, Z_thread);
+
+  __ reset_last_Java_frame();
+
+#ifdef ASSERT
+  // Make sure that this code is only executed if there is a pending exception.
+  { Label L;
+    __ z_lg(Z_R0,
+            in_bytes(Thread::pending_exception_offset()),
+            Z_thread);
+    __ z_ltgr(Z_R0, Z_R0);
+    __ z_brne(L);
+    __ stop("SharedRuntime::throw_exception: no pending exception");
+    __ bind(L);
+  }
+#endif
+
+  __ pop_frame();
+  __ restore_return_pc();
+
+  __ load_const_optimized(Z_R1, StubRoutines::forward_exception_entry());
+  __ z_br(Z_R1);
+
+  RuntimeStub* stub =
+    RuntimeStub::new_runtime_stub(name, &code,
+                                  frame_complete_pc - start,
+                                  framesize_in_bytes/wordSize,
+                                  nullptr /*oop_maps*/, false);
+
+  return stub;
 }
 
 //------------------------------Montgomery multiplication------------------------
@@ -3253,3 +3350,18 @@ extern "C"
 int SpinPause() {
   return 0;
 }
+
+#if INCLUDE_JFR
+RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
+  if (!Continuations::enabled()) return nullptr;
+  Unimplemented();
+  return nullptr;
+}
+
+RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
+  if (!Continuations::enabled()) return nullptr;
+  Unimplemented();
+  return nullptr;
+}
+
+#endif // INCLUDE_JFR

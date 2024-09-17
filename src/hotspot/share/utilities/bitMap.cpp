@@ -197,11 +197,6 @@ bm_word_t* CHeapBitMap::reallocate(bm_word_t* map, size_t old_size_in_words, siz
 }
 
 #ifdef ASSERT
-void BitMap::verify_size(idx_t size_in_bits) {
-  assert(size_in_bits <= max_size_in_bits(),
-         "out of bounds: " SIZE_FORMAT, size_in_bits);
-}
-
 void BitMap::verify_index(idx_t bit) const {
   assert(bit < _size,
          "BitMap index out of bounds: " SIZE_FORMAT " >= " SIZE_FORMAT,
@@ -710,8 +705,6 @@ void BitMap::IteratorImpl::assert_not_empty() const {
 }
 #endif
 
-#ifndef PRODUCT
-
 void BitMap::print_on(outputStream* st) const {
   st->print("Bitmap (" SIZE_FORMAT " bits):", size());
   for (idx_t index = 0; index < size(); index++) {
@@ -726,8 +719,6 @@ void BitMap::print_on(outputStream* st) const {
   }
   st->cr();
 }
-
-#endif
 
 template class GrowableBitMap<ArenaBitMap>;
 template class GrowableBitMap<ResourceBitMap>;

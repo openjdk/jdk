@@ -1616,21 +1616,23 @@ bool LibraryCallKit::inline_vector_reduction() {
   }
 
   Node* init = ReductionNode::make_identity_con_scalar(gvn(), opc, elem_bt);
-  Node* value = nullptr;
-  if (mask == nullptr) {
-    assert(!is_masked_op, "Masked op needs the mask value never null");
-    value = ReductionNode::make(opc, nullptr, init, opd, elem_bt);
-  } else {
-    if (use_predicate) {
-      value = ReductionNode::make(opc, nullptr, init, opd, elem_bt);
-      value->add_req(mask);
-      value->add_flag(Node::Flag_is_predicated_vector);
-    } else {
-      Node* reduce_identity = gvn().transform(VectorNode::scalar2vector(init, num_elem, Type::get_const_basic_type(elem_bt)));
-      value = gvn().transform(new VectorBlendNode(reduce_identity, opd, mask));
-      value = ReductionNode::make(opc, nullptr, init, value, elem_bt);
-    }
+  Node* value = opd;
+
+  assert(mask != nullptr || !is_masked_op, "Masked op needs the mask value never null");
+  if (mask != nullptr && !use_predicate) {
+    Node* reduce_identity = gvn().transform(VectorNode::scalar2vector(init, num_elem, Type::get_const_basic_type(elem_bt)));
+    value = gvn().transform(new VectorBlendNode(reduce_identity, value, mask));
   }
+
+  // Make an unordered Reduction node. This affects only AddReductionVF/VD and MulReductionVF/VD,
+  // as these operations are allowed to be associative (not requiring strict order) in VectorAPI.
+  value = ReductionNode::make(opc, nullptr, init, value, elem_bt, /* requires_strict_order */ false);
+
+  if (mask != nullptr && use_predicate) {
+    value->add_req(mask);
+    value->add_flag(Node::Flag_is_predicated_vector);
+  }
+
   value = gvn().transform(value);
 
   Node* bits = nullptr;
@@ -2482,12 +2484,10 @@ bool LibraryCallKit::inline_vector_insert() {
   // Convert insert value back to its appropriate type.
   switch (elem_bt) {
     case T_BYTE:
-      insert_val = gvn().transform(new ConvL2INode(insert_val));
-      insert_val = gvn().transform(new CastIINode(insert_val, TypeInt::BYTE));
+      insert_val = gvn().transform(new ConvL2INode(insert_val, TypeInt::BYTE));
       break;
     case T_SHORT:
-      insert_val = gvn().transform(new ConvL2INode(insert_val));
-      insert_val = gvn().transform(new CastIINode(insert_val, TypeInt::SHORT));
+      insert_val = gvn().transform(new ConvL2INode(insert_val, TypeInt::SHORT));
       break;
     case T_INT:
       insert_val = gvn().transform(new ConvL2INode(insert_val));

@@ -25,7 +25,7 @@
 #ifndef SHARE_OPTO_VECTORIZATION_HPP
 #define SHARE_OPTO_VECTORIZATION_HPP
 
-#include "opto/node.hpp"
+#include "opto/matcher.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
 #include "utilities/pair.hpp"
@@ -128,6 +128,9 @@ public:
   // Estimate maximum size for data structures, to avoid repeated reallocation
   int estimated_body_length() const { return lpt()->_body.size(); };
   int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
+
+  // Should we align vector memory references on this platform?
+  static bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
 
 #ifndef PRODUCT
   const VTrace& vtrace()      const { return _vtrace; }
@@ -760,9 +763,9 @@ class VPointer : public ArenaObj {
     }
   }
 
-  bool overlap_possible_with_any_in(const Node_List* p) const {
-    for (uint k = 0; k < p->size(); k++) {
-      MemNode* mem = p->at(k)->as_Mem();
+  bool overlap_possible_with_any_in(const GrowableArray<Node*>& nodes) const {
+    for (int i = 0; i < nodes.length(); i++) {
+      MemNode* mem = nodes.at(i)->as_Mem();
       VPointer p_mem(mem, _vloop);
       // Only if we know that we have Less or Greater can we
       // be sure that there can never be an overlap between

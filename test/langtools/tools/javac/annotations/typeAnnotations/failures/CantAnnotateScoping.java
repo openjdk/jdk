@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8006733 8006775 8043226
+ * @bug 8006733 8006775 8043226 8334055
  * @summary Ensure behavior for nested types is correct.
  * @author Werner Dietl
  * @compile/fail/ref=CantAnnotateScoping.out -XDrawDiagnostics CantAnnotateScoping.java

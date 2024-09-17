@@ -36,6 +36,7 @@
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/recorder/storage/jfrReferenceCountedStorage.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/support/jfrMethodLookup.hpp"
 #include "jfr/utilities/jfrHashtable.hpp"
@@ -272,11 +273,30 @@ static void install_stack_traces(const ObjectSampler* sampler) {
   iterate_samples(installer);
 }
 
+// Resets the blob write states from the previous epoch.
+static void reset_blob_write_state(const ObjectSampler* sampler, JavaThread* jt) {
+  assert(sampler != nullptr, "invariant");
+  const ObjectSample* sample = sampler->last_resolved();
+  while (sample != nullptr) {
+    if (sample->has_stacktrace()) {
+      sample->stacktrace()->reset_write_state();
+    }
+    if (sample->has_thread()) {
+      sample->thread()->reset_write_state();
+    }
+    if (sample->has_type_set()) {
+      sample->type_set()->reset_write_state();
+    }
+    sample = sample->next();
+  }
+}
+
 void ObjectSampleCheckpoint::on_rotation(const ObjectSampler* sampler) {
   assert(sampler != nullptr, "invariant");
   assert(LeakProfiler::is_running(), "invariant");
   JavaThread* const thread = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread);)
+  reset_blob_write_state(sampler, thread);
   if (!ObjectSampler::has_unresolved_entry()) {
     return;
   }
@@ -326,38 +346,34 @@ void ObjectSampleCheckpoint::write_stacktrace(const JfrStackTrace* trace, JfrChe
   }
 }
 
-static void write_blob(const JfrBlobHandle& blob, JfrCheckpointWriter& writer, bool reset) {
-  if (reset) {
-    blob->reset_write_state();
-    return;
-  }
+static void write_blob(const JfrBlobHandle& blob, JfrCheckpointWriter& writer) {
   blob->exclusive_write(writer);
 }
 
-static void write_type_set_blob(const ObjectSample* sample, JfrCheckpointWriter& writer, bool reset) {
+static void write_type_set_blob(const ObjectSample* sample, JfrCheckpointWriter& writer) {
   if (sample->has_type_set()) {
-    write_blob(sample->type_set(), writer, reset);
+    write_blob(sample->type_set(), writer);
   }
 }
 
-static void write_thread_blob(const ObjectSample* sample, JfrCheckpointWriter& writer, bool reset) {
+static void write_thread_blob(const ObjectSample* sample, JfrCheckpointWriter& writer) {
   assert(sample->has_thread(), "invariant");
   if (sample->is_virtual_thread() || has_thread_exited(sample->thread_id())) {
-    write_blob(sample->thread(), writer, reset);
+    write_blob(sample->thread(), writer);
   }
 }
 
-static void write_stacktrace_blob(const ObjectSample* sample, JfrCheckpointWriter& writer, bool reset) {
+static void write_stacktrace_blob(const ObjectSample* sample, JfrCheckpointWriter& writer) {
   if (sample->has_stacktrace()) {
-    write_blob(sample->stacktrace(), writer, reset);
+    write_blob(sample->stacktrace(), writer);
   }
 }
 
-static void write_blobs(const ObjectSample* sample, JfrCheckpointWriter& writer, bool reset) {
+static void write_blobs(const ObjectSample* sample, JfrCheckpointWriter& writer) {
   assert(sample != nullptr, "invariant");
-  write_stacktrace_blob(sample, writer, reset);
-  write_thread_blob(sample, writer, reset);
-  write_type_set_blob(sample, writer, reset);
+  write_stacktrace_blob(sample, writer);
+  write_thread_blob(sample, writer);
+  write_type_set_blob(sample, writer);
 }
 
 class BlobWriter {
@@ -365,17 +381,13 @@ class BlobWriter {
   const ObjectSampler* _sampler;
   JfrCheckpointWriter& _writer;
   const jlong _last_sweep;
-  bool _reset;
  public:
   BlobWriter(const ObjectSampler* sampler, JfrCheckpointWriter& writer, jlong last_sweep) :
-    _sampler(sampler), _writer(writer), _last_sweep(last_sweep), _reset(false)  {}
+    _sampler(sampler), _writer(writer), _last_sweep(last_sweep) {}
   void sample_do(ObjectSample* sample) {
     if (sample->is_alive_and_older_than(_last_sweep)) {
-      write_blobs(sample, _writer, _reset);
+      write_blobs(sample, _writer);
     }
-  }
-  void set_reset() {
-    _reset = true;
   }
 };
 
@@ -384,9 +396,6 @@ static void write_sample_blobs(const ObjectSampler* sampler, bool emit_all, Thre
   const jlong last_sweep = emit_all ? max_jlong : ObjectSampler::last_sweep();
   JfrCheckpointWriter writer(thread, false);
   BlobWriter cbw(sampler, writer, last_sweep);
-  iterate_samples(cbw, true);
-  // reset blob write states
-  cbw.set_reset();
   iterate_samples(cbw, true);
 }
 
@@ -403,67 +412,17 @@ void ObjectSampleCheckpoint::write(const ObjectSampler* sampler, EdgeStore* edge
   }
 }
 
-// A linked list of saved type set blobs for the epoch.
-// The link consist of a reference counted handle.
-static JfrBlobHandle saved_type_set_blobs;
-
-static void release_state_for_previous_epoch() {
-  // decrements the reference count and the list is reinitialized
-  saved_type_set_blobs = JfrBlobHandle();
-}
-
-class BlobInstaller {
- public:
-  ~BlobInstaller() {
-    release_state_for_previous_epoch();
-  }
-  void sample_do(ObjectSample* sample) {
-    if (!sample->is_dead()) {
-      sample->set_type_set(saved_type_set_blobs);
-    }
-  }
-};
-
-static void install_type_set_blobs() {
-  if (saved_type_set_blobs.valid()) {
-    BlobInstaller installer;
-    iterate_samples(installer);
-  }
-}
-
-static void save_type_set_blob(JfrCheckpointWriter& writer) {
-  assert(writer.has_data(), "invariant");
-  const JfrBlobHandle blob = writer.copy();
-  if (saved_type_set_blobs.valid()) {
-    saved_type_set_blobs->set_next(blob);
-  } else {
-    saved_type_set_blobs = blob;
-  }
-}
-
 // This routine has exclusive access to the sampler instance on entry.
-void ObjectSampleCheckpoint::on_type_set(JfrCheckpointWriter& writer) {
+void ObjectSampleCheckpoint::on_type_set(JavaThread* jt) {
   assert(LeakProfiler::is_running(), "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(JavaThread::current());)
   assert(ClassLoaderDataGraph_lock->owned_by_self(), "invariant");
   if (!ObjectSampler::has_unresolved_entry()) {
     return;
   }
-  const ObjectSample* const last = ObjectSampler::sampler()->last();
+  ObjectSample* const last = ObjectSampler::sampler()->last();
   assert(last != nullptr, "invariant");
   assert(last != ObjectSampler::sampler()->last_resolved(), "invariant");
-  if (writer.has_data()) {
-    save_type_set_blob(writer);
-  }
-  install_type_set_blobs();
+  JfrReferenceCountedStorage::install(last, ObjectSampler::sampler()->last_resolved());
   ObjectSampler::sampler()->set_last_resolved(last);
-}
-
-// This routine does NOT have exclusive access to the sampler instance on entry.
-void ObjectSampleCheckpoint::on_type_set_unload(JfrCheckpointWriter& writer) {
-  assert(LeakProfiler::is_running(), "invariant");
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  if (writer.has_data() && ObjectSampler::has_unresolved_entry()) {
-    save_type_set_blob(writer);
-  }
 }

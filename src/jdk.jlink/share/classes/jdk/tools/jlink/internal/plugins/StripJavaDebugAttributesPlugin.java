@@ -67,7 +67,7 @@ public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
                         var clm = newClassReader(path, resource,
                                 ClassFile.DebugElementsOption.DROP_DEBUG,
                                 ClassFile.LineNumbersOption.DROP_LINE_NUMBERS);
-                        byte[] content = ClassFile.of().transform(clm, ClassTransform
+                        byte[] content = ClassFile.of().transformClass(clm, ClassTransform
                                         .dropping(cle -> cle instanceof SourceFileAttribute
                                                             || cle instanceof SourceDebugExtensionAttribute)
                                               .andThen(ClassTransform.transformingMethods(MethodTransform

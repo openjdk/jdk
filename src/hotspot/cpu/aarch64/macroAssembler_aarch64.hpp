@@ -150,6 +150,7 @@ class MacroAssembler: public Assembler {
   void bind(Label& L) {
     Assembler::bind(L);
     code()->clear_last_insn();
+    code()->set_last_label(pc());
   }
 
   void membar(Membar_mask_bits order_constraint);
@@ -1638,7 +1639,7 @@ public:
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
 
-  void lightweight_lock(Register obj, Register t1, Register t2, Register t3, Label& slow);
+  void lightweight_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow);
   void lightweight_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow);
 
 private:

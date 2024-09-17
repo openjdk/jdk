@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,6 +198,15 @@ void JVMCICompiler::print_timers() {
   tty->cr();
   tty->print_cr("    JVMCI Hosted Time:");
   _hosted_code_installs.print_on(tty, "       Install Code:   ");
+}
+
+bool JVMCICompiler::is_intrinsic_supported(const methodHandle& method) {
+  vmIntrinsics::ID id = method->intrinsic_id();
+  assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
+  JavaThread* thread = JavaThread::current();
+  JVMCIEnv jvmciEnv(thread, __FILE__, __LINE__);
+  JVMCIRuntime* runtime = JVMCI::compiler_runtime(thread, false);
+  return runtime->is_intrinsic_supported(&jvmciEnv, (jint) id);
 }
 
 void JVMCICompiler::CodeInstallStats::print_on(outputStream* st, const char* prefix) const {

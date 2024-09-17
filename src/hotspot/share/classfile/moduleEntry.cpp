@@ -149,7 +149,7 @@ bool ModuleEntry::can_read(ModuleEntry* m) const {
   if (!has_reads_list()) {
     return false;
   } else {
-    return _reads->contains(m);
+    return reads()->contains(m);
   }
 }
 
@@ -164,9 +164,10 @@ void ModuleEntry::add_read(ModuleEntry* m) {
   if (m == nullptr) {
     set_can_read_all_unnamed();
   } else {
-    if (_reads == nullptr) {
+    if (reads() == nullptr) {
       // Lazily create a module's reads list
-      _reads = new (mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
+      GrowableArray<ModuleEntry*>* new_reads = new (mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
+      set_reads(new_reads);
     }
 
     // Determine, based on this newly established read edge to module m,
@@ -174,7 +175,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
     set_read_walk_required(m->loader_data());
 
     // Establish readability to module m
-    _reads->append_if_missing(m);
+    reads()->append_if_missing(m);
   }
 }
 
@@ -208,7 +209,7 @@ void ModuleEntry::set_is_open(bool is_open) {
 // module will return false.
 bool ModuleEntry::has_reads_list() const {
   assert_locked_or_safepoint(Module_lock);
-  return ((_reads != nullptr) && !_reads->is_empty());
+  return ((reads() != nullptr) && !reads()->is_empty());
 }
 
 // Purge dead module entries out of reads list.
@@ -227,12 +228,12 @@ void ModuleEntry::purge_reads() {
     }
 
     // Go backwards because this removes entries that are dead.
-    int len = _reads->length();
+    int len = reads()->length();
     for (int idx = len - 1; idx >= 0; idx--) {
-      ModuleEntry* module_idx = _reads->at(idx);
+      ModuleEntry* module_idx = reads()->at(idx);
       ClassLoaderData* cld_idx = module_idx->loader_data();
       if (cld_idx->is_unloading()) {
-        _reads->delete_at(idx);
+        reads()->delete_at(idx);
       } else {
         // Update the need to walk this module's reads based on live modules
         set_read_walk_required(cld_idx);
@@ -246,15 +247,15 @@ void ModuleEntry::module_reads_do(ModuleClosure* f) {
   assert(f != nullptr, "invariant");
 
   if (has_reads_list()) {
-    int reads_len = _reads->length();
-    for (int i = 0; i < reads_len; ++i) {
-      f->do_module(_reads->at(i));
+    int reads_len = reads()->length();
+    for (ModuleEntry* m : *reads()) {
+      f->do_module(m);
     }
   }
 }
 
 void ModuleEntry::delete_reads() {
-  delete _reads;
+  delete reads();
   _reads = nullptr;
 }
 
@@ -272,7 +273,8 @@ ModuleEntry::ModuleEntry(Handle module_handle,
     _has_default_read_edges(false),
     _must_walk_reads(false),
     _is_open(is_open),
-    _is_patched(false) {
+    _is_patched(false)
+    DEBUG_ONLY(COMMA _reads_is_archived(false)) {
 
   // Initialize fields specific to a ModuleEntry
   if (_name == nullptr) {
@@ -466,7 +468,7 @@ void ModuleEntry::iterate_symbols(MetaspaceClosure* closure) {
 }
 
 void ModuleEntry::init_as_archived_entry() {
-  Array<ModuleEntry*>* archived_reads = write_growable_array(_reads);
+  set_archived_reads(write_growable_array(reads()));
 
   _loader_data = nullptr;  // re-init at runtime
   _shared_path_index = FileMapInfo::get_module_shared_path_index(_location);
@@ -474,7 +476,6 @@ void ModuleEntry::init_as_archived_entry() {
     _name = ArchiveBuilder::get_buffered_symbol(_name);
     ArchivePtrMarker::mark_pointer((address*)&_name);
   }
-  _reads = (GrowableArray<ModuleEntry*>*)archived_reads;
   if (_version != nullptr) {
     _version = ArchiveBuilder::get_buffered_symbol(_version);
   }
@@ -515,7 +516,7 @@ void ModuleEntry::verify_archived_module_entries() {
 void ModuleEntry::load_from_archive(ClassLoaderData* loader_data) {
   assert(CDSConfig::is_using_archive(), "runtime only");
   set_loader_data(loader_data);
-  _reads = restore_growable_array((Array<ModuleEntry*>*)_reads);
+  set_reads(restore_growable_array(archived_reads()));
   JFR_ONLY(INIT_ID(this);)
 }
 
@@ -567,7 +568,7 @@ Array<ModuleEntry*>* ModuleEntryTable::allocate_archived_entries() {
 
   if (n > 1) {
     // Always allocate in the same order to produce deterministic archive.
-    QuickSort::sort(archived_modules->data(), n, (_sort_Fn)compare_module_by_name, true);
+    QuickSort::sort(archived_modules->data(), n, compare_module_by_name);
   }
   for (int i = 0; i < n; i++) {
     archived_modules->at_put(i, archived_modules->at(i)->allocate_archived_entry());
@@ -704,7 +705,7 @@ void ModuleEntryTable::patch_javabase_entries(JavaThread* current, Handle module
     {
       java_lang_Class::fixup_module_field(k, module_handle);
     }
-    k->class_loader_data()->dec_keep_alive();
+    k->class_loader_data()->dec_keep_alive_ref_count();
   }
 
   delete java_lang_Class::fixup_module_field_list();

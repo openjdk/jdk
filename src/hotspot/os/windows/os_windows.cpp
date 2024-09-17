@@ -858,6 +858,19 @@ julong os::physical_memory() {
   return win32::physical_memory();
 }
 
+size_t os::rss() {
+  size_t rss = 0;
+  PROCESS_MEMORY_COUNTERS_EX pmex;
+  ZeroMemory(&pmex, sizeof(PROCESS_MEMORY_COUNTERS_EX));
+  pmex.cb = sizeof(pmex);
+  BOOL ret = GetProcessMemoryInfo(
+      GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS *)&pmex, sizeof(pmex));
+  if (ret) {
+    rss = pmex.WorkingSetSize;
+  }
+  return rss;
+}
+
 bool os::has_allocatable_memory_limit(size_t* limit) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
@@ -1763,14 +1776,14 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch_str != nullptr) {
-    ::_snprintf(ebuf, ebuflen - 1,
-                "Can't load %s-bit .dll on a %s-bit platform",
-                lib_arch_str, running_arch_str);
+    os::snprintf(ebuf, ebuflen - 1,
+                 "Can't load %s-bit .dll on a %s-bit platform",
+                 lib_arch_str, running_arch_str);
   } else {
     // don't know what architecture this dll was build for
-    ::_snprintf(ebuf, ebuflen - 1,
-                "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
-                lib_arch, running_arch_str);
+    os::snprintf(ebuf, ebuflen - 1,
+                 "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
+                 lib_arch, running_arch_str);
   }
   JFR_ONLY(load_event.set_error_msg(ebuf);)
   return nullptr;
@@ -2745,7 +2758,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
   }
 
-#ifndef PRODUCT
+#if !defined(PRODUCT) && defined(_LP64)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
     // Verify that OS save/restore APX registers.
@@ -3449,7 +3462,8 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
                                      os::attempt_reserve_memory_at(aligned_base, size, false, flag);
   }
 
-  assert(aligned_base != nullptr, "Did not manage to re-map after %d attempts?", max_attempts);
+  assert(aligned_base != nullptr,
+      "Did not manage to re-map after %d attempts (size %zu, alignment %zu, file descriptor %d)", max_attempts, size, alignment, file_desc);
 
   return aligned_base;
 }
@@ -3880,7 +3894,7 @@ bool os::unguard_memory(char* addr, size_t bytes) {
 }
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
-void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) { }
+void os::pd_disclaim_memory(char *addr, size_t bytes) { }
 
 size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   return page_size;
@@ -5727,11 +5741,23 @@ void Parker::unpark() {
   SetEvent(_ParkHandle);
 }
 
+// Platform Mutex/Monitor implementation
+
+PlatformMutex::PlatformMutex() {
+  InitializeCriticalSection(&_mutex);
+}
+
 PlatformMutex::~PlatformMutex() {
   DeleteCriticalSection(&_mutex);
 }
 
-// Platform Monitor implementation
+PlatformMonitor::PlatformMonitor() {
+  InitializeConditionVariable(&_cond);
+}
+
+PlatformMonitor::~PlatformMonitor() {
+  // There is no DeleteConditionVariable API
+}
 
 // Must already be locked
 int PlatformMonitor::wait(uint64_t millis) {

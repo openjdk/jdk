@@ -15,7 +15,7 @@ keys=intermittent randomness needs-src needs-src-jdk_javadoc
 groups=TEST.groups
 
 # Minimum jtreg version
-requiredVersion=7.3.1+1
+requiredVersion=7.4+1
 
 # Use new module options
 useNewOptions=true
@@ -42,4 +42,5 @@ requires.extraPropDefns.vmOpts = \
     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI \
     --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
 requires.properties= \
-    vm.continuations
+    vm.continuations \
+    vm.debug

@@ -65,6 +65,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   // the InternalTable or user-defined memory.
   class Node {
    private:
+    DEBUG_ONLY(size_t _saved_hash);
     Node * volatile _next;
     VALUE _value;
    public:
@@ -77,6 +78,10 @@ class ConcurrentHashTable : public CHeapObj<F> {
     Node* next() const;
     void set_next(Node* node)         { _next = node; }
     Node* const volatile * next_ptr() { return &_next; }
+#ifdef ASSERT
+    size_t saved_hash() const         { return _saved_hash; }
+    void set_saved_hash(size_t hash)  { _saved_hash = hash; }
+#endif
 
     VALUE* value()                    { return &_value; }
 
@@ -91,6 +96,13 @@ class ConcurrentHashTable : public CHeapObj<F> {
 
     void print_on(outputStream* st) const {};
     void print_value_on(outputStream* st) const {};
+
+    static bool is_dynamic_sized_value_compatible() {
+      // To support dynamically sized Value types, where part of the payload is
+      // allocated beyond the end of the object, it must be that the _value
+      // field ends where the Node object ends. (No end padding).
+      return offset_of(Node, _value) + sizeof(_value) == sizeof(Node);
+    }
   };
 
   // Only constructed with placement new from an array allocated with MEMFLAGS
@@ -419,6 +431,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
 
   size_t get_size_log2(Thread* thread);
   static size_t get_node_size() { return sizeof(Node); }
+  static size_t get_dynamic_node_size(size_t value_size);
   bool is_max_size_reached() { return _size_limit_reached; }
 
   // This means no paused bucket resize operation is going to resume

@@ -159,7 +159,7 @@ static char* reserve_memory(char* requested_address, const size_t size,
   // If the memory was requested at a particular address, use
   // os::attempt_reserve_memory_at() to avoid mapping over something
   // important.  If the reservation fails, return null.
-  if (requested_address != 0) {
+  if (requested_address != nullptr) {
     assert(is_aligned(requested_address, alignment),
            "Requested address " PTR_FORMAT " must be aligned to " SIZE_FORMAT,
            p2i(requested_address), alignment);
@@ -380,7 +380,7 @@ void ReservedHeapSpace::establish_noaccess_prefix() {
   if (base() && base() + _size > (char *)OopEncodingHeapMax) {
     if (true
         WIN64_ONLY(&& !UseLargePages)
-        AIX_ONLY(&& os::vm_page_size() != 64*K)) {
+        AIX_ONLY(&& (os::Aix::supports_64K_mmap_pages() || os::vm_page_size() == 4*K))) {
       // Protect memory at the base of the allocated region.
       // If special, the page was committed (only matters on windows)
       if (!os::protect_memory(_base, _noaccess_prefix, os::MEM_PROT_NONE, _special)) {

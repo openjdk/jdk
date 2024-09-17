@@ -31,9 +31,12 @@
 #include "oops/oop.hpp"
 #include "utilities/macros.hpp"
 
+class ArchiveBuilder;
+class ArchiveHeapInfo;
 class FileMapInfo;
 class outputStream;
 class SerializeClosure;
+class StaticArchiveBuilder;
 
 template<class E> class GrowableArray;
 
@@ -66,13 +69,13 @@ class MetaspaceShared : AllStatic {
   };
 
   static void prepare_for_dumping() NOT_CDS_RETURN;
-  static void preload_and_dump() NOT_CDS_RETURN;
+  static void preload_and_dump(TRAPS) NOT_CDS_RETURN;
 #ifdef _LP64
   static void adjust_heap_sizes_for_dumping() NOT_CDS_JAVA_HEAP_RETURN;
 #endif
 
 private:
-  static void preload_and_dump_impl(TRAPS) NOT_CDS_RETURN;
+  static void preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS) NOT_CDS_RETURN;
   static void preload_classes(TRAPS) NOT_CDS_RETURN;
 
 public:
@@ -105,6 +108,7 @@ public:
 
   static void unrecoverable_loading_error(const char* message = nullptr);
   static void unrecoverable_writing_error(const char* message = nullptr);
+  static void writing_error(const char* message = nullptr);
 
   static void serialize(SerializeClosure* sc) NOT_CDS_RETURN;
 
@@ -166,6 +170,7 @@ public:
 
 private:
   static void read_extra_data(JavaThread* current, const char* filename) NOT_CDS_RETURN;
+  static bool write_static_archive(ArchiveBuilder* builder, FileMapInfo* map_info, ArchiveHeapInfo* heap_info);
   static FileMapInfo* open_static_archive();
   static FileMapInfo* open_dynamic_archive();
   // use_requested_addr: If true (default), attempt to map at the address the

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,11 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 
 import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassModel;
 import jdk.internal.classfile.impl.ClassReaderImpl;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
-import java.lang.classfile.WritableElement;
 import jdk.internal.classfile.impl.AbstractPoolEntry.ClassEntryImpl;
 import jdk.internal.classfile.impl.AbstractPoolEntry.NameAndTypeEntryImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;
@@ -61,7 +59,7 @@ import static java.util.Objects.requireNonNull;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantPoolBuilder
-        extends ConstantPool, WritableElement<ConstantPool>
+        extends ConstantPool
         permits SplitConstantPool, TemporaryConstantPool {
 
     /**
@@ -91,14 +89,6 @@ public sealed interface ConstantPoolBuilder
      * @param constantPool the other constant pool
      */
     boolean canWriteDirect(ConstantPool constantPool);
-
-    /**
-     * Writes associated bootstrap method entries to the specified writer
-     *
-     * @param buf the writer
-     * @return false when no bootstrap method entry has been written
-     */
-    boolean writeBootstrapMethods(BufWriter buf);
 
     /**
      * {@return A {@link Utf8Entry} describing the provided {@linkplain String}}
@@ -233,9 +223,7 @@ public sealed interface ConstantPoolBuilder
      * @param type the symbolic descriptor for a field type
      */
     default NameAndTypeEntry nameAndTypeEntry(String name, ClassDesc type) {
-        var ret = (NameAndTypeEntryImpl)nameAndTypeEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
-        ret.typeSym = type;
-        return ret;
+        return nameAndTypeEntry(utf8Entry(name), utf8Entry(type));
     }
 
     /**
@@ -248,9 +236,7 @@ public sealed interface ConstantPoolBuilder
      * @param type the symbolic descriptor for a method type
      */
     default NameAndTypeEntry nameAndTypeEntry(String name, MethodTypeDesc type) {
-        var ret = (NameAndTypeEntryImpl)nameAndTypeEntry(utf8Entry(name), utf8Entry(type.descriptorString()));
-        ret.typeSym = type;
-        return ret;
+        return nameAndTypeEntry(utf8Entry(name), utf8Entry(type));
     }
 
     /**
@@ -375,7 +361,7 @@ public sealed interface ConstantPoolBuilder
      * it is returned; otherwise, a new entry is added and the new entry is
      * returned.
      *
-     * @param refKind the reference kind of the method handle {@jvms 4.4.8}
+     * @param refKind the reference kind of the method handle (JVMS {@jvms 4.4.8})
      * @param reference the constant pool entry describing the field or method
      */
     MethodHandleEntry methodHandleEntry(int refKind, MemberRefEntry reference);
@@ -517,25 +503,6 @@ public sealed interface ConstantPoolBuilder
         if (c instanceof MethodTypeDesc mtd) return methodTypeEntry(mtd);
         if (c instanceof DirectMethodHandleDesc dmhd) return methodHandleEntry(dmhd);
         if (c instanceof DynamicConstantDesc<?> dcd) return constantDynamicEntry(dcd);
-        throw new IllegalArgumentException("Illegal type: " + (c == null ? null : c.getClass()));
-    }
-
-    /**
-     * {@return An {@link AnnotationConstantValueEntry} describing the provided
-     * constant}  The constant should be an Integer, String, Long, Float,
-     * Double, ClassDesc (for a Class constant), or MethodTypeDesc (for a MethodType
-     * constant.)
-     *
-     * @param c the constant
-     */
-    default AnnotationConstantValueEntry annotationConstantValueEntry(ConstantDesc c) {
-        if (c instanceof Integer i) return intEntry(i);
-        if (c instanceof String s) return utf8Entry(s);
-        if (c instanceof Long l) return longEntry(l);
-        if (c instanceof Float f) return floatEntry(f);
-        if (c instanceof Double d) return doubleEntry(d);
-        if (c instanceof ClassDesc cd) return utf8Entry(cd);
-        if (c instanceof MethodTypeDesc mtd) return utf8Entry(mtd);
         throw new IllegalArgumentException("Illegal type: " + (c == null ? null : c.getClass()));
     }
 

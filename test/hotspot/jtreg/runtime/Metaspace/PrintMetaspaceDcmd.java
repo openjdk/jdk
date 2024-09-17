@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, SAP and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,17 +34,6 @@ import jdk.test.lib.JDKToolFinder;
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -Dwith-compressed-class-space -XX:MaxMetaspaceSize=201M -Xmx100M -XX:+UseCompressedOops -XX:+UseCompressedClassPointers PrintMetaspaceDcmd
- */
-
-/*
- * @test id=test-64bit-ccs-guarded
- * @summary Test the VM.metaspace command
- * @requires vm.bits == "64"
- * @requires vm.debug == true
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run main/othervm -Dwith-compressed-class-space -XX:MaxMetaspaceSize=201M -Xmx100M -XX:+UseCompressedOops -XX:+UseCompressedClassPointers -XX:+UnlockDiagnosticVMOptions -XX:+MetaspaceGuardAllocations PrintMetaspaceDcmd
  */
 
 /*
