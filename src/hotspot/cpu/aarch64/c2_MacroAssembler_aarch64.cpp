@@ -97,9 +97,9 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
 
   bind(TAIL);
 
-  // The orr performs (r - lc) % uf where uf = unroll_factor. The subtract shifted by 3
-  // offsets past |(r - lc) % uf| pairs of load + madd insns i.e. it only executes
-  // r % uf load + madds. Iteration eats up the remainder, uf elements at a time.
+  // The andr performs cnt % uf where uf = unroll_factor. The subtract shifted by 3 offsets past
+  // uf - (cnt % uf) pairs of load + madd insns i.e. it only executes cnt % uf load + madd pairs.
+  // Iteration eats up the remainder, uf elements at a time.
   assert(is_power_of_2(unroll_factor), "can't use this value to calculate the jump target PC");
   andr(tmp2, cnt, unroll_factor - 1);
   adr(tmp1, RELATIVE);
