@@ -29,6 +29,7 @@ import jdk.internal.net.http.common.Deadline;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.TimeLine;
 import jdk.internal.net.http.common.TimeSource;
+import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.quic.frames.AckFrame;
 import jdk.internal.net.http.quic.packets.QuicPacket;
 
@@ -48,6 +49,9 @@ import java.util.concurrent.locks.ReentrantLock;
 public class QuicRenoCongestionController implements QuicCongestionController {
     // higher of 14720 and 2*maxDatagramSize; we use fixed maxDatagramSize
     private static final int INITIAL_WINDOW = Math.max(14720, 2 * QuicConnectionImpl.DEFAULT_DATAGRAM_SIZE);
+    private static final int MAX_BYTES_IN_FLIGHT = Math.clamp(
+            Utils.getLongProperty("jdk.httpclient.quic.maxBytesInFlight", 1 << 24),
+            1 << 14, 1 << 24);
     private final TimeLine timeSource;
     private final String dbgTag;
     private final Lock lock = new ReentrantLock();
@@ -96,6 +100,9 @@ public class QuicRenoCongestionController implements QuicCongestionController {
     public boolean canSendPacket() {
         lock.lock();
         try {
+            if (bytesInFlight >= MAX_BYTES_IN_FLIGHT) {
+                return false;
+            }
             var canSend = congestionWindow - bytesInFlight >= maxDatagramSize;
             return canSend;
         } finally {
