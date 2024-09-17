@@ -1182,8 +1182,36 @@ public final class PassFailJFrame {
             return this;
         }
 
+        /**
+         * Sets the number of rows for displaying the instruction text.
+         * The default value is the number of lines in the text plus 1:
+         * {@code ((int) instructions.lines().count() + 1)}.
+         *
+         * @param rows the number of rows for instruction text
+         * @return this builder
+         */
         public Builder rows(int rows) {
             this.rows = rows;
+            return this;
+        }
+
+        private int getDefaultRows() {
+            return (int) instructions.lines().count() + 1;
+        }
+
+        /**
+         * Adds a certain number of rows for displaying the instruction text.
+         *
+         * @param rowsAdd the number of rows to add to the number of rows
+         * @return this builder
+         * @see #rows
+         */
+        public Builder rowsAdd(int rowsAdd) {
+            if (rows == 0) {
+                rows = getDefaultRows();
+            }
+            rows += rowsAdd;
+
             return this;
         }
 
@@ -1458,7 +1486,7 @@ public final class PassFailJFrame {
             }
 
             if (rows == 0) {
-                rows = ROWS;
+                rows = getDefaultRows();
             }
 
             if (columns == 0) {
