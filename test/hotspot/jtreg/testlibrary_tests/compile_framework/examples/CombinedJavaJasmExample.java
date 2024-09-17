@@ -34,7 +34,7 @@ package compile_framework.examples;
 import compiler.lib.compile_framework.*;
 
 /**
- * This test shows a compilation of multiple java and jasm source code files.
+ * This test shows a compilation of multiple Java and Jasm source code files.
  * In this example, the classes even reference each other.
  */
 public class CombinedJavaJasmExample {

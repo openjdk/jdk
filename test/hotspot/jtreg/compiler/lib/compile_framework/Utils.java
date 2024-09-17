@@ -51,7 +51,7 @@ class Utils {
     }
 
     /**
-    * Create a temporary directory, with a unique name, so that there can be no collisions
+    * Create a temporary directory with a unique name to avoid collisions
     * with multi-threading. Used to create the sources and classes directories. Since they
     * are unique even across threads, the Compile Framework is multi-threading safe, i.e.
     * it does not have collisions if two instances generate classes with the same name.
@@ -162,9 +162,9 @@ class Utils {
         }
 
         if (exitCode != 0 || !output.isEmpty()) {
-            System.out.println("Compilation failed.");
-            System.out.println("Exit code: " + exitCode);
-            System.out.println("Output: '" + output + "'");
+            System.err.println("Compilation failed.");
+            System.err.println("Exit code: " + exitCode);
+            System.err.println("Output: '" + output + "'");
             throw new CompileFrameworkException("Compilation failed.");
         }
     }

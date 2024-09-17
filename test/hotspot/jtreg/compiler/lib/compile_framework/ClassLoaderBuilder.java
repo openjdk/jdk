@@ -34,8 +34,8 @@ import java.util.List;
 /**
 * Build a ClassLoader that loads from classpath and {@code classesDir}.
 * Helper class that generates a ClassLoader which allows loading classes
-* from the classpath (see {@code Utils.getClassPaths()}) and {@code classesDir}.
-*
+* from the classpath (see {@link Utils#getClassPaths()}) and {@code classesDir}.
+* <p>
 * The CompileFramework compiles all its classes to a specific {@code classesDir},
 * and this generated ClassLoader thus can be used to load those classes.
 */
@@ -49,8 +49,8 @@ class ClassLoaderBuilder {
 
         try {
             // Classpath for all included classes (e.g. IR Framework).
-            // Get all class paths, convert to urls.
-            List<URL> urls = new ArrayList<URL>();
+            // Get all class paths, convert to URLs.
+            List<URL> urls = new ArrayList<>();
             for (String path : Utils.getClassPaths()) {
                 urls.add(new File(path).toURI().toURL());
             }
