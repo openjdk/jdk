@@ -292,12 +292,11 @@ void* BufferBlob::operator new(size_t s, unsigned size, bool alloc_in_codecache)
   if (!alloc_in_codecache) {
     BufferBlob* blob = malloc_buffer_blob(size);
     if (StressCodeBuffers) { // temporary code for testing purposes only
-      while (offset_to_codecache((char*)blob) < 4L*1000*1000*1000 &&
-             offset_to_codecache((char*)blob) > -4L*1000*1000*1000) {
-        // stress test: leave the garbage and reallocate
-        blob = malloc_buffer_blob(100*1000*1000);
+      do {
         blob = malloc_buffer_blob(size);
-      }
+        size = size*2;
+      } while (offset_to_codecache((char*)blob) < 4L*1000*1000*1000 &&
+               offset_to_codecache((char*)blob) > -4L*1000*1000*1000);
     }
     return blob;
   }
