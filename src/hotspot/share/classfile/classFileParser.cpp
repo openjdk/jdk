@@ -1155,7 +1155,7 @@ static void parse_annotations(const ConstantPool* const cp,
       // then we may not be able to determine that.
       const u1* offset = abase + member_off;
       // There are only 2 members in @Deprecated.
-      int n_members = MIN(count, 2);
+      int n_members = MIN2(count, 2);
       for (int i = 0; i < n_members; ++i) {
         int member_index = Bytes::get_Java_u2((address)offset);
         offset += 2;
