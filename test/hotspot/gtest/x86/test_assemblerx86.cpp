@@ -2,11 +2,15 @@
 
 #if defined(X86)
 
+#include "utilities/vmassert_uninstall.hpp"
 #include <unordered_map>
+#include "utilities/vmassert_reinstall.hpp"
+
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
 #include "memory/resourceArea.hpp"
+
 #include "unittest.hpp"
 
 #define __ _masm.
