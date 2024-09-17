@@ -51,6 +51,12 @@ public class TestMissingTypeVariable {
                             ClassDesc.of("java.lang.Object"),
                             fieldBuilder -> fieldBuilder.withFlags(AccessFlag.PUBLIC).with(SignatureAttribute.of(Signature.parseFrom("TA;"))));
                 });
+        /*
+          package sample;
+          public class MissingVariable {
+            public A f; // undeclared type variable
+          }
+         */
         Class<?> missing = ByteCodeLoader.load("sample.MissingVariable", bytes);
         try {
             Type type = missing.getField("f").getGenericType();
