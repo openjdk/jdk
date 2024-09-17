@@ -589,16 +589,16 @@ class Invokers {
         final int CSITE_ARG    = skipCallSite ? -1 : APPENDIX_ARG;
         final int CALL_MH      = skipCallSite ? APPENDIX_ARG : nameCursor++;  // result of getTarget
         final int LINKER_CALL  = nameCursor++;
-        Name[] names = argumentsWithTrailingObjectArgument(nameCursor - INARG_LIMIT, mtype);
-        assert(names.length == nameCursor);
-        assert(names[APPENDIX_ARG] != null);
+        Name[] names = arguments(nameCursor - INARG_LIMIT + 1, mtype);
+        assert(names.length == nameCursor && names[APPENDIX_ARG] == null);
+        names[APPENDIX_ARG] = argument(APPENDIX_ARG, BasicType.L_TYPE);
         if (!skipCallSite)
             names[CALL_MH] = new Name(getFunction(NF_getCallSiteTarget), names[CSITE_ARG]);
         // (site.)invokedynamic(a*):R => mh = site.getTarget(); mh.invokeBasic(a*)
         final int PREPEND_MH = 0, PREPEND_COUNT = 1;
-        Object[] outArgs = Arrays.copyOfRange(names, ARG_BASE, OUTARG_LIMIT + PREPEND_COUNT, Object[].class);
+        Object[] outArgs = new Object[OUTARG_LIMIT + PREPEND_COUNT];
+        System.arraycopy(names, 0, outArgs, PREPEND_COUNT, outArgs.length - PREPEND_COUNT);
         // prepend MH argument:
-        System.arraycopy(outArgs, 0, outArgs, PREPEND_COUNT, outArgs.length - PREPEND_COUNT);
         outArgs[PREPEND_MH] = names[CALL_MH];
         names[LINKER_CALL] = new Name(mtype, outArgs);
         lform = LambdaForm.create(INARG_LIMIT, names,

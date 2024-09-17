@@ -1637,15 +1637,6 @@ class LambdaForm {
         return names;
     }
 
-    static Name[] argumentsWithTrailingObjectArgument(int extra, MethodType types) {
-        int length = types.parameterCount();
-        Name[] names = new Name[length + extra + 1];
-        for (int i = 0; i < length; i++)
-            names[i] = argument(i, basicType(types.parameterType(i)));
-        names[length] = argument(length, L_TYPE);
-        return names;
-    }
-
     static Name[] invokeArguments(int extra, MethodType types) {
         int length = types.parameterCount();
         Name[] names = new Name[length + extra + 1];

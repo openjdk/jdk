@@ -250,11 +250,17 @@ sealed class DirectMethodHandle extends MethodHandle {
         default:  throw new InternalError("which="+which);
         }
 
-        MethodType mtypeWithArg = mtype.appendParameterTypes(MemberName.class);
-        if (doesAlloc)
-            mtypeWithArg = mtypeWithArg
-                    .insertParameterTypes(0, Object.class)  // insert newly allocated obj
-                    .changeReturnType(void.class);          // <init> returns void
+        MethodType mtypeWithArg;
+        if (doesAlloc) {
+            var ptypes = mtype.ptypes();
+            var newPtypes = new Class<?>[ptypes.length + (doesAlloc ? 2 : 1)];
+            newPtypes[0] = Object.class; // insert newly allocated obj
+            System.arraycopy(ptypes, 0, newPtypes, 1, ptypes.length);
+            newPtypes[newPtypes.length - 1] = MemberName.class;
+            mtypeWithArg = MethodType.methodType(void.class, newPtypes, true);
+        } else {
+            mtypeWithArg = mtype.appendParameterTypes(MemberName.class);
+        }
         MemberName linker = new MemberName(MethodHandle.class, linkerName, mtypeWithArg, REF_invokeStatic);
         try {
             linker = IMPL_NAMES.resolveOrFail(REF_invokeStatic, linker, null, LM_TRUSTED,
