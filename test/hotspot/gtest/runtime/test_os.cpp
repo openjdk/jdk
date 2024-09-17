@@ -372,7 +372,7 @@ TEST_VM(os, jio_snprintf) {
 }
 
 TEST_VM(os, realpath) {
-  static const char* path = "\\1234567890123456789";
+  static const char* path = "/1234567890123456789";
 
 	char buffer[MAX_PATH];
 
