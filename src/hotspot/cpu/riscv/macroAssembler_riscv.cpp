@@ -1502,7 +1502,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
       vle32_v(vword, buf);
       vxor_vv(vword, vword, vcrc);
 
-      addi(buf, buf, N*W);
+      addi(buf, buf, N*4);
 
       vand_vx(vtmp, vword, tmp5);
       vsll_vi(vtmp, vtmp, 2);
@@ -1532,7 +1532,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
     {
       mv(crc, zr);
       for (int i = 0; i < N; i++) {
-        lwu(t1, Address(buf, i*W));
+        lwu(t1, Address(buf, i*4));
         vmv_x_s(tmp2, vcrc);
         // in vmv_x_s, the value is sign-extended to SEW bits, but we need zero-extended here.
         zext_w(tmp2, tmp2);
@@ -1547,7 +1547,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
           xorr(crc, tmp2, t1);
         }
       }
-      addi(buf, buf, N*W);
+      addi(buf, buf, N*4);
     }
 }
 
