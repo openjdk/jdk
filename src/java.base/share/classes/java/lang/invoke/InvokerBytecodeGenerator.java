@@ -47,7 +47,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import jdk.internal.constant.MethodTypeDescImpl;
@@ -224,7 +223,7 @@ class InvokerBytecodeGenerator {
      * Extract the MemberName of a newly-defined method.
      */
     private MemberName loadMethod(byte[] classFile) {
-        Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile, Set.of(), dumper())
+        Class<?> invokerClass = LOOKUP.makeHiddenClassDefiner(className, classFile, dumper())
                                       .defineClass(true, classDataValues());
         return resolveInvokerMember(invokerClass, invokerName, invokerType);
     }

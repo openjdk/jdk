@@ -1322,6 +1322,9 @@ void HeapShared::check_default_subgraph_classes() {
               name == vmSymbols::java_lang_ArithmeticException() ||
               name == vmSymbols::java_lang_NullPointerException() ||
               name == vmSymbols::java_lang_InternalError() ||
+              name == vmSymbols::java_lang_ArrayIndexOutOfBoundsException() ||
+              name == vmSymbols::java_lang_ArrayStoreException() ||
+              name == vmSymbols::java_lang_ClassCastException() ||
               name == vmSymbols::object_array_signature() ||
               name == vmSymbols::byte_array_signature() ||
               name == vmSymbols::char_array_signature(),
