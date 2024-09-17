@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @summary Example test to use the Compile Framework together with the TestFramework.
+ * @summary Example test to use the Compile Framework together with the IR Framework (i.e. TestFramework).
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @compile ../../../compiler/lib/ir_framework/TestFramework.java
- * @run driver compile_framework.examples.TestFrameworkJavaExample
+ * @run driver compile_framework.examples.IRFrameworkJavaExample
  */
 
 package compile_framework.examples;
@@ -39,14 +39,14 @@ import java.lang.reflect.InvocationTargetException;
 
 /**
  * This test shows that the IR verification can be done on code compiled by the Compile Framework.
- * The "@compile" command for JTREG is required so that the TestFramework is compiled, other javac
+ * The "@compile" command for JTREG is required so that the IRFramework is compiled, other javac
  * might not compile it because it is not present in the class, only in the dynamically compiled
  * code.
  *
  * Additionally, we must set the classpath for the Test-VM, so that it has access to all compiled
  * classes (see {@code getEscapedClassPathOfCompiledClasses}).
  */
-public class TestFrameworkJavaExample {
+public class IRFrameworkJavaExample {
 
     public static void main(String args[]) {
         test_X1();

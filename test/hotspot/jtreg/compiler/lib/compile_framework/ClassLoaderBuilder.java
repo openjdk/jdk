@@ -32,18 +32,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
-* Build a ClassLoader that loads from classpath and {@code classesDir}.
-* Helper class that generates a ClassLoader which allows loading classes
-* from the classpath (see {@link Utils#getClassPaths()}) and {@code classesDir}.
-* <p>
-* The CompileFramework compiles all its classes to a specific {@code classesDir},
-* and this generated ClassLoader thus can be used to load those classes.
-*/
+ * Build a ClassLoader that loads from classpath and {@code classesDir}.
+ * Helper class that generates a ClassLoader which allows loading classes
+ * from the classpath (see {@link Utils#getClassPaths()}) and {@code classesDir}.
+ * <p>
+ * The CompileFramework compiles all its classes to a specific {@code classesDir},
+ * and this generated ClassLoader thus can be used to load those classes.
+ */
 class ClassLoaderBuilder {
 
     /**
-    * Build a ClassLoader that loads from classpath and {@code classesDir}.
-    */
+     * Build a ClassLoader that loads from classpath and {@code classesDir}.
+     */
     public static ClassLoader build(Path classesDir) {
         ClassLoader sysLoader = ClassLoader.getSystemClassLoader();
 

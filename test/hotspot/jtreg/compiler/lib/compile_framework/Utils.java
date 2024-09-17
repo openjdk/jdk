@@ -35,15 +35,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
-* Utility class, with many helper methods for the Compile Framework.
-*/
+ * Utility class, with many helper methods for the Compile Framework.
+ */
 class Utils {
     private static final boolean VERBOSE = Boolean.getBoolean("CompileFrameworkVerbose");
     private static final int COMPILE_TIMEOUT = 60;
 
     /**
-    * Verbose printing, enabled with {@code -DCompileFrameworkVerbose=true}.
-    */
+     * Verbose printing, enabled with {@code -DCompileFrameworkVerbose=true}.
+     */
     public static void printlnVerbose(String s) {
         if (VERBOSE) {
             System.out.println(s);
@@ -51,11 +51,11 @@ class Utils {
     }
 
     /**
-    * Create a temporary directory with a unique name to avoid collisions
-    * with multi-threading. Used to create the sources and classes directories. Since they
-    * are unique even across threads, the Compile Framework is multi-threading safe, i.e.
-    * it does not have collisions if two instances generate classes with the same name.
-    */
+     * Create a temporary directory with a unique name to avoid collisions
+     * with multi-threading. Used to create the sources and classes directories. Since they
+     * are unique even across threads, the Compile Framework is multi-threading safe, i.e.
+     * it does not have collisions if two instances generate classes with the same name.
+     */
     public static Path makeUniqueDir(String prefix) {
         try {
             return Files.createTempDirectory(Paths.get("."), prefix);
@@ -65,16 +65,16 @@ class Utils {
     }
 
     /**
-    * Get all paths in the classpath.
-    */
+     * Get all paths in the classpath.
+     */
     public static String[] getClassPaths() {
         String separator = File.pathSeparator;
         return System.getProperty("java.class.path").split(separator);
     }
 
     /**
-    * Return the classpath, appended with the {@code classesDir}.
-    */
+     * Return the classpath, appended with the {@code classesDir}.
+     */
     public static String getEscapedClassPathAndClassesDir(Path classesDir) {
         String cp = System.getProperty("java.class.path") +
                     File.pathSeparator +
@@ -85,8 +85,8 @@ class Utils {
     }
 
     /**
-    * Get the path of asmtools, which is shipped with JTREG.
-    */
+     * Get the path of asmtools, which is shipped with JTREG.
+     */
     public static String getAsmToolsPath() {
         for (String path : getClassPaths()) {
             if (path.endsWith("jtreg.jar")) {
@@ -122,8 +122,8 @@ class Utils {
     }
 
     /**
-    * Write sources to file.
-    */
+     * Write sources to file.
+     */
     public static List<Path> writeSourcesToFile(List<SourceCode> sources, Path sourceDir) {
         List<Path> storedFiles = new ArrayList<Path>();
         for (SourceCode sourceCode : sources) {
@@ -135,8 +135,8 @@ class Utils {
     }
 
     /**
-    * Execute a given compilation, given as a {@code command}.
-    */
+     * Execute a given compilation, given as a {@code command}.
+     */
     public static void executeCompileCommand(List<String> command) {
         printlnVerbose("Compile command: " + String.join(" ", command));
 

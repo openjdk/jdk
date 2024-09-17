@@ -15,34 +15,38 @@ Please reference the examples found in [examples](../../../testlibrary_tests/com
 Here a very simple example:
 
     // Create a new CompileFramework instance.
-    CompileFramework comp = new CompileFramework();
+    CompileFramework compileFramework = new CompileFramework();
 
     // Add a java source file.
-    comp.addJavaSourceCode("XYZ", "<your XYZ definition string>");
+    compileFramework.addJavaSourceCode("XYZ", "<your XYZ definition string>");
 
     // Compile the source file.
-    comp.compile();
+    compileFramework.compile();
 
-    // Object ret = XYZ.test(5);
-    Object ret = comp.invoke("XYZ", "test", new Object[] {5});
+    // Object returnValue = XYZ.test(5);
+    Object returnValue = compileFramework.invoke("XYZ", "test", new Object[] {5});
 
 ### Creating a new Compile Framework Instance
 
 First, one must create a `new CompileFramework()`, which creates two directories: a sources and a classes directory. The sources directory is where all the sources are placed by the Compile Framework, and the classes directory is where all the compiled classes are placed by the Compile Framework.
 
+The Compile Framework prints the names of the directories, they are subdirectories of the JTREG scratch directory `JTWork/scratch`.
+
 ### Adding Sources to the Compilation
 
-Java and Jasm sources can be added to the compilation using `comp.addJavaSourceCode()` and `comp.addJasmSourceCode()`. The source classes can depend on each other, and they can also use the IR Framework ([TestFrameworkJavaExample](../../../testlibrary_tests/compile_framework/examples/TestFrameworkJavaExample.java)).
+Java and Jasm sources can be added to the compilation using `compileFramework.addJavaSourceCode()` and `compileFramework.addJasmSourceCode()`. The source classes can depend on each other, and they can also use the IR Framework ([IRFrameworkJavaExample](../../../testlibrary_tests/compile_framework/examples/IRFrameworkJavaExample.java)).
+
+When using the IR Framework, or any other library that needs to be compiled, it can be necessary to explicitly let JTREG compile that library. For example with `@compile ../../../compiler/lib/ir_framework/TestFramework.java`. Otherwise, the corresponding class files may not be available, and a corresponding failure will be encounter at class loading.
 
 ### Compiling
 
-All sources are compiled with `comp.compile()`. First, the sources are stored to the sources directory, then compiled, and then the class-files stored in the classes directory. The respective directory names are printed, so that the user can easily access the generated files for debugging.
+All sources are compiled with `compileFramework.compile()`. First, the sources are stored to the sources directory, then compiled, and then the class-files stored in the classes directory. The respective directory names are printed, so that the user can easily access the generated files for debugging.
 
 ### Interacting with the Compiled Code
 
-The compiled code is then loaded with a `ClassLoader`. The classes can be accessed directly with `comp.getClass(name)`. Specific methods can also directly be invoked with `comp.invoke()`.
+The compiled code is then loaded with a `ClassLoader`. The classes can be accessed directly with `compileFramework.getClass(name)`. Specific methods can also directly be invoked with `compileFramework.invoke()`.
 
-Should one require the modified classpath that includes the compiled classes, this is available with `comp.getEscapedClassPathOfCompiledClasses()`. This can be necessary if the test launches any other VMs that also access the compiled classes. This is for example necessary when using the IR Framework.
+Should one require the modified classpath that includes the compiled classes, this is available with `compileFramework.getEscapedClassPathOfCompiledClasses()`. This can be necessary if the test launches any other VMs that also access the compiled classes. This is for example necessary when using the IR Framework.
 
 ### Verbose Printing
 

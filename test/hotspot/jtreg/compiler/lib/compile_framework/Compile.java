@@ -28,14 +28,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
-* Helper class for compilation of Java and Jasm {@code SourceCode}.
-*/
+ * Helper class for compilation of Java and Jasm {@code SourceCode}.
+ */
 class Compile {
 
     /**
-    * Compile all sources in {@code javaSources}. First write them to the {@code sourceDir},
-    * then compile them to class-files which are stored in {@code classesDir}.
-    */
+     * Compile all sources in {@code javaSources}. First write them to the {@code sourceDir},
+     * then compile them to class-files which are stored in {@code classesDir}.
+     */
     public static void compileJavaSources(List<SourceCode> javaSources, Path sourceDir, Path classesDir) {
         if (javaSources.isEmpty()) {
             Utils.printlnVerbose("No java sources to compile.");
@@ -49,9 +49,9 @@ class Compile {
     }
 
     /**
-    * Compile a list of files (i.e. {@code paths}) using javac and store
-    * them in {@code classesDir}.
-    */
+     * Compile a list of files (i.e. {@code paths}) using javac and store
+     * them in {@code classesDir}.
+     */
     private static void compileJavaFiles(List<Path> paths, Path classesDir) {
         List<String> command = new ArrayList<>();
 
@@ -69,9 +69,9 @@ class Compile {
     }
 
     /**
-    * Compile all sources in {@code jasmSources}. First write them to the {@code sourceDir},
-    * then compile them to class-files which are stored in {@code classesDir}.
-    */
+     * Compile all sources in {@code jasmSources}. First write them to the {@code sourceDir},
+     * then compile them to class-files which are stored in {@code classesDir}.
+     */
     public static void compileJasmSources(List<SourceCode> jasmSources, Path sourceDir, Path classesDir) {
         if (jasmSources.isEmpty()) {
             Utils.printlnVerbose("No jasm sources to compile.");
@@ -85,9 +85,9 @@ class Compile {
     }
 
     /**
-    * Compile a list of files (i.e. {@code paths}) using asmtools jasm and store
-    * them in {@code classesDir}.
-    */
+     * Compile a list of files (i.e. {@code paths}) using asmtools jasm and store
+     * them in {@code classesDir}.
+     */
     private static void compileJasmFiles(List<Path> paths, Path classesDir) {
         List<String> command = new ArrayList<>();
 
