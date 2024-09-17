@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -507,25 +507,7 @@ public final class Http3PushManager {
      *         otherwise
      */
     IOException checkMaxPushId(long pushId) {
-        long max = maxPushId.get();
-        return checkMaxPushId(pushId, max);
-    }
-
-    /**
-     * Checks whether the given pushId exceed the maximum pushId allowed
-     * to the peer, and if so, closes the connection.
-     * @param pushId the pushId
-     * @return an {@code IOException} that can be used to complete a completable
-     *         future if the maximum pushId is exceeded, {@code null}
-     *         otherwise
-     */
-    IOException checkMaxPushId(long pushId, long max) {
-        if (pushId >= max) {
-            var io = new IOException("Max pushId exceeded (%s >= %s)".formatted(pushId, max));
-            connection.connectionError(io, Http3Error.H3_ID_ERROR);
-            return io;
-        }
-        return null;
+        return connection.checkMaxPushId(pushId);
     }
 
     // Checks whether an Http3PushPromiseStream can be created now
@@ -592,19 +574,18 @@ public final class Http3PushManager {
             try {
                 promise = promises.get(pushId);
                 if (promise == null) {
-                    var maxPushId =  this.maxPushId.get();
-                    if (pushId >= minPushId.get() && pushId < maxPushId) {
-                        if (pushId > maxPushReceived.get()) maxPushReceived.set(pushId);
-                        checkExpungePromiseMap();
-                        var pp = new PendingPushPromise<>(exchange, pushId, promiseHeaders);
-                        promises.put(pushId, pp);
-                        return pp;
-                    } else {
-                        if (checkMaxPushId(pushId, maxPushId) == null) {
+                    if (checkMaxPushId(pushId) == null) {
+                        if (pushId >= minPushId.get()) {
+                            if (pushId > maxPushReceived.get()) maxPushReceived.set(pushId);
+                            checkExpungePromiseMap();
+                            var pp = new PendingPushPromise<>(exchange, pushId, promiseHeaders);
+                            promises.put(pushId, pp);
+                            return pp;
+                        } else {
                             // pushId < minPushId
                             sendCancelPush = true;
-                        } else return null;
-                    }
+                        }
+                    } else return null;
                 }
             } finally {
                 promiseLock.unlock();
@@ -660,18 +641,18 @@ public final class Http3PushManager {
                 promise = promises.get(pushId);
                 if (promise == null) {
                     var maxPushId = this.maxPushId.get();
-                    if (pushId >= minPushId.get() && pushId < maxPushId) {
-                        if (pushId > maxPushReceived.get()) maxPushReceived.set(pushId);
-                        checkExpungePromiseMap();
-                        var pp = new PendingPushPromise<U>(stream, pushId);
-                        promises.put(pushId, pp);
-                        return pp;
-                    } else {
-                        if (checkMaxPushId(pushId, maxPushId) == null) {
+                    if (checkMaxPushId(pushId) == null) {
+                        if (pushId >= minPushId.get()) {
+                            if (pushId > maxPushReceived.get()) maxPushReceived.set(pushId);
+                            checkExpungePromiseMap();
+                            var pp = new PendingPushPromise<U>(stream, pushId);
+                            promises.put(pushId, pp);
+                            return pp;
+                        } else {
                             // pushId < minPushId
                             sendCancelPush = true;
-                        } else return null; // maxPushId exceeded, connection closed
-                    }
+                        }
+                    } else return null; // maxPushId exceeded, connection closed
                 }
             } finally {
                 promiseLock.unlock();

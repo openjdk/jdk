@@ -150,6 +150,10 @@ public final class Http3Connection implements AutoCloseable {
     // any larger pushId.
     private final AtomicLong largestPushId = new AtomicLong();
 
+    // The max pushId for which a frame was scheduled to be sent.
+    // This should always be less or equal to pushManager.maxPushId
+    private final AtomicLong maxPushIdSent = new AtomicLong();
+
 
     /**
      * Creates a new HTTP/3 connection over a given {@link HttpQuicConnection}.
@@ -1093,7 +1097,7 @@ public final class Http3Connection implements AutoCloseable {
         try {
             // TODO: ideally this is should configurable for each client instance
             long maxPushId = pushManager.getMaxPushId();
-            if (maxPushId > 0) {
+            if (maxPushId > 0 && maxPushId > maxPushIdSent.get()) {
                 return sendMaxPushId(writer, maxPushId);
             } else {
                 return writer;
@@ -1111,6 +1115,15 @@ public final class Http3Connection implements AutoCloseable {
         // we don't check for credit and always directly buffer
         // the data to send in the writer. Therefore, there is
         // nothing to do in the control stream writer loop.
+        //
+        // When more credit is available, check if we need
+        // to send maxpushid;
+        if (maxPushIdSent.get() < pushManager.getMaxPushId()) {
+            var writer = controlStreamPair.localWriter();
+            if (writer != null && writer.connected()) {
+                sendMaxPushId(writer);
+            }
+        }
     }
 
     void controlStreamFailed(final QuicStream stream, final UniStreamPair uniStreamPair,
@@ -1572,7 +1585,14 @@ public final class Http3Connection implements AutoCloseable {
         final ByteBuffer buf = ByteBuffer.allocate((int) frameSize);
         maxPushIdFrame.writeFrame(buf);
         buf.flip();
-        writer.scheduleForWriting(buf, false);
+        if (writer.credit() > buf.remaining()) {
+            long previous;
+            do {
+                previous = maxPushIdSent.get();
+                if (previous >= maxPushId) return writer;
+            } while (!maxPushIdSent.compareAndSet(previous, maxPushId));
+            writer.scheduleForWriting(buf, false);
+        }
         return writer;
     }
 
@@ -1627,7 +1647,24 @@ public final class Http3Connection implements AutoCloseable {
      *         otherwise
      */
     IOException checkMaxPushId(long pushId) {
-        return pushManager.checkMaxPushId(pushId);
+        return checkMaxPushId(pushId, maxPushIdSent.get());
+    }
+
+    /**
+     * Checks whether the given pushId exceed the maximum pushId allowed
+     * to the peer, and if so, closes the connection.
+     * @param pushId the pushId
+     * @return an {@code IOException} that can be used to complete a completable
+     *         future if the maximum pushId is exceeded, {@code null}
+     *         otherwise
+     */
+    private IOException checkMaxPushId(long pushId, long max) {
+        if (pushId >= max) {
+            var io = new IOException("Max pushId exceeded (%s >= %s)".formatted(pushId, max));
+            connectionError(io, Http3Error.H3_ID_ERROR);
+            return io;
+        }
+        return null;
     }
 
     private static final VarHandle CLOSED_STATE;
