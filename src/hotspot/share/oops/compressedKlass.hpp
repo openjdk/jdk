@@ -249,14 +249,13 @@ public:
   // Returns whether the pointer is in the memory region used for encoding compressed
   // class pointers.  This includes CDS.
   static inline bool is_encodable(const void* addr) {
-    check_init(_base);
     // An address can only be encoded if:
     //
     // 1) the address lies within the klass range.
     // 2) It is suitably aligned to 2^encoding_shift. This only really matters for
     //    +UseCompactObjectHeaders, since the encoding shift can be large (max 10 bits -> 1KB).
-    return is_aligned(addr, klass_alignment_in_bytes()) &&
-        (address)addr >= _klass_range_start && (address)addr < _klass_range_end;
+    return (address)addr >= _klass_range_start && (address)addr < _klass_range_end &&
+        is_aligned(addr, klass_alignment_in_bytes());
   }
 
 };

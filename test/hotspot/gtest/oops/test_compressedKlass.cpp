@@ -50,6 +50,18 @@ TEST_VM(CompressedKlass, basics) {
   }
 }
 
+TEST_VM(CompressedKlass, ccp_off) {
+  if (UseCompressedClassPointers) {
+    return;
+  }
+  ASSERT_EQ(CompressedKlassPointers::klass_range_start(), (address)nullptr);
+  ASSERT_EQ(CompressedKlassPointers::klass_range_end(), (address)nullptr);
+  // We should be able to call CompressedKlassPointers::is_encodable, and it should
+  // always return false
+  ASSERT_FALSE(CompressedKlassPointers::is_encodable((address)0x12345));
+}
+
+
 TEST_VM(CompressedKlass, test_too_low_address) {
   if (!UseCompressedClassPointers) {
     return;
