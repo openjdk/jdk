@@ -49,7 +49,7 @@ public class CaretPositionTest extends Frame {
     private Point onScreen;
     private Dimension size;
     String text = "12 45 789";
-    private volatile static int position = -1;
+    private static volatile int position = -1;
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException, AWTException {
