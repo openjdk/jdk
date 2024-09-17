@@ -303,10 +303,14 @@ class WindowsLinkSupport {
             try {
                 DeviceIoControlGetReparsePoint(handle, buffer.address(), size);
             } catch (WindowsException x) {
-                // FIXME: exception doesn't have file name
+                String filename = null;
+                try {
+                    filename = GetFinalPathNameByHandle(handle);
+                } catch (WindowsException ignore) {
+                }
                 if (x.lastError() == ERROR_NOT_A_REPARSE_POINT)
-                    throw new NotLinkException(null, null, x.errorString());
-                x.rethrowAsIOException((String)null);
+                    throw new NotLinkException(filename, null, x.errorString());
+                x.rethrowAsIOException(filename + ": " + x.errorString());
             }
 
             /*
@@ -342,8 +346,12 @@ class WindowsLinkSupport {
 
             int tag = (int)unsafe.getLong(buffer.address() + OFFSETOF_REPARSETAG);
             if (tag != IO_REPARSE_TAG_SYMLINK) {
-                // FIXME: exception doesn't have file name
-                throw new NotLinkException(null, null, "Reparse point is not a symbolic link");
+                String filename = null;
+                try {
+                    filename = GetFinalPathNameByHandle(handle);
+                } catch (WindowsException ignore) {
+                }
+                throw new NotLinkException(filename, null, "Reparse point is not a symbolic link");
             }
 
             // get offset and length of target
