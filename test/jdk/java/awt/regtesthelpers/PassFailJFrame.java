@@ -1260,8 +1260,7 @@ public final class PassFailJFrame {
          * @throws IllegalArgumentException if the {@code positionWindows}
          *              parameter is {@code null}
          * @throws IllegalStateException if the {@code positionWindows} field
-         *              is already set, or if neither a windows list creator
-         *              nor a list of test windows has been provided
+         *              is already set
          */
         public Builder positionTestUI(PositionWindows positionWindows) {
             if (positionWindows == null) {
