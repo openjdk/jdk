@@ -314,14 +314,14 @@ class Invokers {
         final int CHECK_TYPE   = nameCursor++;
         final int CHECK_CUSTOM = (CUSTOMIZE_THRESHOLD >= 0) ? nameCursor++ : -1;
         final int LINKER_CALL  = nameCursor++;
-        MethodType invokerFormType = mtype.invokerType();
+        MethodType invokerFormType = mtype;
         if (isLinker) {
             if (!customized)
                 invokerFormType = invokerFormType.appendParameterTypes(MemberName.class);
         } else {
             invokerFormType = invokerFormType.invokerType();
         }
-        Name[] names = arguments(nameCursor - INARG_LIMIT, invokerFormType);
+        Name[] names = invokeArguments(nameCursor - INARG_LIMIT, invokerFormType);
         assert(names.length == nameCursor)
                 : Arrays.asList(mtype, customized, which, nameCursor, names.length);
         if (MTYPE_ARG >= INARG_LIMIT) {
@@ -390,11 +390,11 @@ class Invokers {
         final int LINKER_CALL  = nameCursor++;
 
         Name[] names = new Name[LINKER_CALL + 1];
-        names[THIS_VH] = argument(THIS_VH, BasicType.basicType(Object.class));
+        names[THIS_VH] = argument(THIS_VH, BasicType.L_TYPE);
         for (int i = 0; i < mtype.parameterCount(); i++) {
             names[ARG_BASE + i] = argument(ARG_BASE + i, BasicType.basicType(mtype.parameterType(i)));
         }
-        names[VAD_ARG] = new Name(ARG_LIMIT, BasicType.basicType(Object.class));
+        names[VAD_ARG] = new Name(ARG_LIMIT, BasicType.L_TYPE);
 
         names[UNBOUND_VH] = new Name(getFunction(NF_directVarHandleTarget), names[THIS_VH]);
 
@@ -446,8 +446,8 @@ class Invokers {
         final int LINKER_CALL  = nameCursor++;
 
         Name[] names = new Name[LINKER_CALL + 1];
-        names[THIS_MH] = argument(THIS_MH, BasicType.basicType(Object.class));
-        names[CALL_VH] = argument(CALL_VH, BasicType.basicType(Object.class));
+        names[THIS_MH] = argument(THIS_MH, BasicType.L_TYPE);
+        names[CALL_VH] = argument(CALL_VH, BasicType.L_TYPE);
         for (int i = 0; i < mtype.parameterCount(); i++) {
             names[ARG_BASE + i] = argument(ARG_BASE + i, BasicType.basicType(mtype.parameterType(i)));
         }
@@ -589,8 +589,7 @@ class Invokers {
         final int CSITE_ARG    = skipCallSite ? -1 : APPENDIX_ARG;
         final int CALL_MH      = skipCallSite ? APPENDIX_ARG : nameCursor++;  // result of getTarget
         final int LINKER_CALL  = nameCursor++;
-        MethodType invokerFormType = mtype.appendParameterTypes(skipCallSite ? MethodHandle.class : CallSite.class);
-        Name[] names = arguments(nameCursor - INARG_LIMIT, invokerFormType);
+        Name[] names = argumentsWithTrailingObjectArgument(nameCursor - INARG_LIMIT, mtype);
         assert(names.length == nameCursor);
         assert(names[APPENDIX_ARG] != null);
         if (!skipCallSite)

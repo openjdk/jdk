@@ -270,7 +270,7 @@ sealed class DirectMethodHandle extends MethodHandle {
         final int GET_MEMBER  = nameCursor++;
         final int CHECK_RECEIVER = (needsReceiverCheck ? nameCursor++ : -1);
         final int LINKER_CALL = nameCursor++;
-        Name[] names = arguments(nameCursor - ARG_LIMIT, mtype.invokerType());
+        Name[] names = invokeArguments(nameCursor - ARG_LIMIT, mtype);
         assert(names.length == nameCursor);
         if (doesAlloc) {
             // names = { argx,y,z,... new C, init method }
@@ -786,7 +786,7 @@ sealed class DirectMethodHandle extends MethodHandle {
         final int LINKER_CALL = nameCursor++;
         final int POST_CAST = (needsCast && isGetter ? nameCursor++ : -1);
         final int RESULT    = nameCursor-1;  // either the call or the cast
-        Name[] names = arguments(nameCursor - ARG_LIMIT, mtype.invokerType());
+        Name[] names = invokeArguments(nameCursor - ARG_LIMIT, mtype);
         if (needsInit)
             names[INIT_BAR] = new Name(getFunction(NF_ensureInitialized), names[DMH_THIS]);
         if (needsCast && !isGetter)
