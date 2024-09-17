@@ -31,21 +31,20 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 
 /**
- * This class contains a number of static factories for certain
- * VarHandle/MethodHandle variants.
+ * Static factories for certain VarHandle/MethodHandle variants.
  * <p>
  * The methods will throw an {@link InternalError} if the lookup fails.
  * <p>
  * Here is an example of how one of these methods could be used:
  * {@snippet lang=java
  * static MethodHandle BAR_HANDLE =
- *         MethodHandlesUtil.findVirtual(MethodHandles.lookup(),
+ *         MhUtil.findVirtual(MethodHandles.lookup(),
  *                 Foo.class,"bar",MethodType.methodType(int.class));
  * }
  */
-public final class MethodHandlesUtil {
+public final class MhUtil {
 
-    private MethodHandlesUtil() {}
+    private MhUtil() {}
 
     public static VarHandle findVarHandle(MethodHandles.Lookup lookup,
                                           String name,

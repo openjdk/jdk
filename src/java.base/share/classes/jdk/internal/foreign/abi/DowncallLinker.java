@@ -26,7 +26,7 @@ package jdk.internal.foreign.abi;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.invoke.MethodHandlesUtil;
+import jdk.internal.invoke.MhUtil;
 import sun.security.action.GetPropertyAction;
 
 import java.lang.foreign.AddressLayout;
@@ -56,7 +56,7 @@ public class DowncallLinker {
 
     private static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
 
-    private static final MethodHandle MH_INVOKE_INTERP_BINDINGS = MethodHandlesUtil.findVirtual(
+    private static final MethodHandle MH_INVOKE_INTERP_BINDINGS = MhUtil.findVirtual(
             MethodHandles.lookup(), DowncallLinker.class, "invokeInterpBindings",
             methodType(Object.class, SegmentAllocator.class, Object[].class, InvocationData.class));
 

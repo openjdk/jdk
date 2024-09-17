@@ -35,7 +35,7 @@
 
 package java.util.concurrent.atomic;
 
-import jdk.internal.invoke.MethodHandlesUtil;
+import jdk.internal.invoke.MhUtil;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -140,7 +140,7 @@ abstract class Striped64 extends Number {
         }
 
         // VarHandle mechanics
-        private static final VarHandle VALUE = MethodHandlesUtil.findVarHandle(
+        private static final VarHandle VALUE = MhUtil.findVarHandle(
                 MethodHandles.lookup(), "value", long.class);
     }
 
@@ -378,8 +378,8 @@ abstract class Striped64 extends Number {
     static {
         MethodHandles.Lookup l1 = MethodHandles.lookup();
 
-        BASE = MethodHandlesUtil.findVarHandle(l1, "base", long.class);
-        CELLSBUSY = MethodHandlesUtil.findVarHandle(l1, "cellsBusy", int.class);
+        BASE = MhUtil.findVarHandle(l1, "base", long.class);
+        CELLSBUSY = MhUtil.findVarHandle(l1, "cellsBusy", int.class);
             @SuppressWarnings("removal")
         MethodHandles.Lookup l2 = java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedAction<>() {
@@ -390,8 +390,7 @@ abstract class Striped64 extends Number {
                                 throw new ExceptionInInitializerError(e);
                             }
                         }});
-        THREAD_PROBE = MethodHandlesUtil.findVarHandle(
-                l2, "threadLocalRandomProbe", int.class);
+        THREAD_PROBE = MhUtil.findVarHandle(l2, "threadLocalRandomProbe", int.class);
     }
 
 }

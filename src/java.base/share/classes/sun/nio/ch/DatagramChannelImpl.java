@@ -74,7 +74,7 @@ import java.util.function.Consumer;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.ref.CleanerFactory;
-import jdk.internal.invoke.MethodHandlesUtil;
+import jdk.internal.invoke.MhUtil;
 import sun.net.ResourceManager;
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
@@ -149,7 +149,7 @@ class DatagramChannelImpl
     private InetSocketAddress initialLocalAddress;
 
     // Socket adaptor, created lazily
-    private static final VarHandle SOCKET = MethodHandlesUtil.findVarHandle(
+    private static final VarHandle SOCKET = MhUtil.findVarHandle(
             MethodHandles.lookup(), "socket", DatagramSocket.class);
     private volatile DatagramSocket socket;
 

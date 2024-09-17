@@ -28,7 +28,7 @@ package jdk.internal.foreign;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import jdk.internal.misc.ScopedMemoryAccess;
-import jdk.internal.invoke.MethodHandlesUtil;
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -92,7 +92,7 @@ sealed class SharedSession extends MemorySessionImpl permits ImplicitSession {
      */
     static class SharedResourceList extends ResourceList {
 
-        static final VarHandle FST = MethodHandlesUtil.findVarHandle(
+        static final VarHandle FST = MhUtil.findVarHandle(
                 MethodHandles.lookup(), ResourceList.class, "fst", ResourceCleanup.class);
 
         @Override

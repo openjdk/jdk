@@ -35,7 +35,7 @@
 
 package java.util.concurrent;
 
-import jdk.internal.invoke.MethodHandlesUtil;
+import jdk.internal.invoke.MhUtil;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -1508,8 +1508,8 @@ public class SubmissionPublisher<T> implements Publisher<T>,
 
         static {
             MethodHandles.Lookup l = MethodHandles.lookup();
-            CTL = MethodHandlesUtil.findVarHandle(l, "ctl", int.class);
-            DEMAND = MethodHandlesUtil.findVarHandle(l, "demand", long.class);
+            CTL = MhUtil.findVarHandle(l, "ctl", int.class);
+            DEMAND = MhUtil.findVarHandle(l, "demand", long.class);
             QA = MethodHandles.arrayElementVarHandle(Object[].class);
 
             // Reduce the risk of rare disastrous classloading in first call to

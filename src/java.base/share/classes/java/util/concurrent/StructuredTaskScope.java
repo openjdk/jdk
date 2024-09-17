@@ -37,7 +37,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.ThreadFlock;
-import jdk.internal.invoke.MethodHandlesUtil;
+import jdk.internal.invoke.MhUtil;
 
 /**
  * A basic API for <em>structured concurrency</em>. {@code StructuredTaskScope} supports
@@ -992,8 +992,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         private static final VarHandle FIRST_EXCEPTION;
         static {
             MethodHandles.Lookup l = MethodHandles.lookup();
-            FIRST_RESULT = MethodHandlesUtil.findVarHandle(l, "firstResult", Object.class);
-            FIRST_EXCEPTION = MethodHandlesUtil.findVarHandle(l, "firstException", Throwable.class);
+            FIRST_RESULT = MhUtil.findVarHandle(l, "firstResult", Object.class);
+            FIRST_EXCEPTION = MhUtil.findVarHandle(l, "firstException", Throwable.class);
         }
         private volatile Object firstResult;
         private volatile Throwable firstException;
@@ -1175,7 +1175,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
     @PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
     public static final class ShutdownOnFailure extends StructuredTaskScope<Object> {
         private static final VarHandle FIRST_EXCEPTION =
-                MethodHandlesUtil.findVarHandle(MethodHandles.lookup(),
+                MhUtil.findVarHandle(MethodHandles.lookup(),
                         ShutdownOnFailure.class, "firstException", Throwable.class);
         private volatile Throwable firstException;
 

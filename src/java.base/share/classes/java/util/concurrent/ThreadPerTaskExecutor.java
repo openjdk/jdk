@@ -38,7 +38,7 @@ import java.util.stream.Stream;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.invoke.MethodHandlesUtil;
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.vm.ThreadContainer;
 import jdk.internal.vm.ThreadContainers;
 
@@ -49,7 +49,7 @@ import jdk.internal.vm.ThreadContainers;
 class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final Permission MODIFY_THREAD = new RuntimePermission("modifyThread");
-    private static final VarHandle STATE = MethodHandlesUtil.findVarHandle(
+    private static final VarHandle STATE = MhUtil.findVarHandle(
             MethodHandles.lookup(), "state", int.class);
 
     private final ThreadFactory factory;
@@ -501,11 +501,9 @@ class ThreadPerTaskExecutor extends ThreadContainer implements ExecutorService {
         private static final VarHandle EXCEPTION_COUNT;
         static {
             MethodHandles.Lookup l = MethodHandles.lookup();
-            RESULT = MethodHandlesUtil.findVarHandle(l, "result", Object.class);
-            EXCEPTION = MethodHandlesUtil.findVarHandle(
-                    l, "exception", Throwable.class);
-            EXCEPTION_COUNT = MethodHandlesUtil.findVarHandle(
-                    l, "exceptionCount", int.class);
+            RESULT = MhUtil.findVarHandle(l, "result", Object.class);
+            EXCEPTION = MhUtil.findVarHandle(l, "exception", Throwable.class);
+            EXCEPTION_COUNT = MhUtil.findVarHandle(l, "exceptionCount", int.class);
         }
         private static final Object NULL = new Object();
 
