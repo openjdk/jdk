@@ -143,7 +143,7 @@ void BarrierSetAssembler::resolve_global_jobject(MacroAssembler* masm, Register 
   NearLabel done;
 
   __ z_ltgr(value, value);
-  __ z_bre(done); // null as-is.
+  __ z_bre(done); // use null as-is.
 
 #ifdef ASSERT
   {
