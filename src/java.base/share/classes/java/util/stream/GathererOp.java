@@ -24,7 +24,7 @@
  */
 package java.util.stream;
 
-import jdk.internal.invoke.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesUtil;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.invoke.MethodHandles;
@@ -454,7 +454,7 @@ final class GathererOp<T, A, R> extends ReferencePipeline<T, R> {
             private Spliterator<T> spliterator;
             private Hybrid next;
 
-            private static final VarHandle NEXT = MethodHandlesInternal.findVarHandle(
+            private static final VarHandle NEXT = MethodHandlesUtil.findVarHandle(
                     MethodHandles.lookup(), "next", Hybrid.class);
 
             protected Hybrid(Spliterator<T> spliterator) {

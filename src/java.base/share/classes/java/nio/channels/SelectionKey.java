@@ -25,7 +25,7 @@
 
 package java.nio.channels;
 
-import jdk.internal.invoke.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesUtil;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -431,7 +431,7 @@ public abstract class SelectionKey {
 
     // -- Attachments --
 
-    private static final VarHandle ATTACHMENT = MethodHandlesInternal.findVarHandle(
+    private static final VarHandle ATTACHMENT = MethodHandlesUtil.findVarHandle(
             MethodHandles.lookup(), "attachment", Object.class);
 
     private volatile Object attachment;

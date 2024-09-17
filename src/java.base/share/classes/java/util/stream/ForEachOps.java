@@ -24,7 +24,7 @@
  */
 package java.util.stream;
 
-import jdk.internal.invoke.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesUtil;
 
 import java.util.Objects;
 import java.util.Spliterator;
@@ -372,7 +372,7 @@ final class ForEachOps {
         private Node<T> node;
 
         private ForEachOrderedTask<S, T> next;
-        private static final VarHandle NEXT = MethodHandlesInternal.findVarHandle(
+        private static final VarHandle NEXT = MethodHandlesUtil.findVarHandle(
                 MethodHandles.lookup(), "next", ForEachOrderedTask.class);
 
         protected ForEachOrderedTask(PipelineHelper<T> helper,

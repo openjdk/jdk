@@ -35,7 +35,7 @@
 
 package java.util.concurrent.atomic;
 
-import jdk.internal.invoke.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesUtil;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -52,7 +52,7 @@ import java.lang.invoke.VarHandle;
  */
 public class AtomicBoolean implements java.io.Serializable {
     private static final long serialVersionUID = 4654671469794556979L;
-    private static final VarHandle VALUE = MethodHandlesInternal.findVarHandle(
+    private static final VarHandle VALUE = MethodHandlesUtil.findVarHandle(
             MethodHandles.lookup(), "value", int.class);
 
     private volatile int value;

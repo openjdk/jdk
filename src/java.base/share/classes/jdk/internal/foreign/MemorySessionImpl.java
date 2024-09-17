@@ -36,7 +36,7 @@ import java.util.Objects;
 
 import jdk.internal.foreign.GlobalSession.HeapSession;
 import jdk.internal.misc.ScopedMemoryAccess;
-import jdk.internal.invoke.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesUtil;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -58,7 +58,7 @@ public abstract sealed class MemorySessionImpl
     static final int OPEN = 0;
     static final int CLOSED = -1;
 
-    static final VarHandle STATE = MethodHandlesInternal.findVarHandle(
+    static final VarHandle STATE = MethodHandlesUtil.findVarHandle(
             MethodHandles.lookup(), "state", int.class);
 
     static final int MAX_FORKS = Integer.MAX_VALUE;

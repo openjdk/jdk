@@ -33,7 +33,7 @@ import java.nio.channels.Selector;
 import java.util.HashSet;
 import java.util.Set;
 
-import jdk.internal.invoke.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesUtil;
 import sun.nio.ch.Interruptible;
 import sun.nio.ch.SelectorImpl;
 
@@ -74,7 +74,7 @@ import sun.nio.ch.SelectorImpl;
 public abstract class AbstractSelector
     extends Selector
 {
-    private static final VarHandle CLOSED = MethodHandlesInternal.findVarHandle(
+    private static final VarHandle CLOSED = MethodHandlesUtil.findVarHandle(
             MethodHandles.lookup(), "closed", boolean.class);
 
     private volatile boolean closed;

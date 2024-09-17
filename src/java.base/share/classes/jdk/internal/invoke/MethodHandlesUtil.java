@@ -43,9 +43,9 @@ import java.lang.invoke.VarHandle;
  *                 Foo.class,"bar",MethodType.methodType(int.class));
  * }
  */
-public final class MethodHandlesInternal {
+public final class MethodHandlesUtil {
 
-    private MethodHandlesInternal() {}
+    private MethodHandlesUtil() {}
 
     public static VarHandle findVarHandle(MethodHandles.Lookup lookup,
                                           String name,

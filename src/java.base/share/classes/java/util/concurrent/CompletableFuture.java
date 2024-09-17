@@ -35,7 +35,7 @@
 
 package java.util.concurrent;
 
-import jdk.internal.invoke.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesUtil;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -3082,11 +3082,11 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     private static final VarHandle NEXT;
     static {
         MethodHandles.Lookup l = MethodHandles.lookup();
-        RESULT = MethodHandlesInternal.findVarHandle(
+        RESULT = MethodHandlesUtil.findVarHandle(
                 l, CompletableFuture.class, "result", Object.class);
-        STACK = MethodHandlesInternal.findVarHandle(
+        STACK = MethodHandlesUtil.findVarHandle(
                 l, CompletableFuture.class, "stack", Completion.class);
-        NEXT = MethodHandlesInternal.findVarHandle(
+        NEXT = MethodHandlesUtil.findVarHandle(
                 l, Completion.class, "next", Completion.class);
 
         // Reduce the risk of rare disastrous classloading in first call to

@@ -27,7 +27,7 @@ package jdk.internal.foreign.layout;
 
 import jdk.internal.foreign.LayoutPath;
 import jdk.internal.foreign.Utils;
-import jdk.internal.invoke.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesUtil;
 
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
@@ -158,7 +158,7 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
 
     public MethodHandle scaleHandle() {
         class Holder {
-            static final MethodHandle MH_SCALE = MethodHandlesInternal.findVirtual(
+            static final MethodHandle MH_SCALE = MethodHandlesUtil.findVirtual(
                     MethodHandles.lookup(), MemoryLayout.class, "scale",
                     MethodType.methodType(long.class, long.class, long.class));
         }

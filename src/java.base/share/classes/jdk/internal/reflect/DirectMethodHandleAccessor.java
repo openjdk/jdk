@@ -27,7 +27,7 @@ package jdk.internal.reflect;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.invoke.MethodHandlesInternal;
+import jdk.internal.invoke.MethodHandlesUtil;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
@@ -312,7 +312,7 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
             }
 
             static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
-            static final MethodHandle NATIVE_ACCESSOR_INVOKE = MethodHandlesInternal.findVirtual(
+            static final MethodHandle NATIVE_ACCESSOR_INVOKE = MethodHandlesUtil.findVirtual(
                     MethodHandles.lookup(), NativeAccessor.class, "invoke",
                     genericMethodType(1, true));
         }
