@@ -39,8 +39,8 @@ int CompressedKlassPointers::_max_shift = -1;
 
 address CompressedKlassPointers::_base = (address)-1;
 int CompressedKlassPointers::_shift = -1;
-address CompressedKlassPointers::_klass_range_start = (address)-1;
-address CompressedKlassPointers::_klass_range_end = (address)-1;
+address CompressedKlassPointers::_klass_range_start = nullptr;
+address CompressedKlassPointers::_klass_range_end = nullptr;
 narrowKlass CompressedKlassPointers::_lowest_valid_narrow_klass_id = (narrowKlass)-1;
 narrowKlass CompressedKlassPointers::_highest_valid_narrow_klass_id = (narrowKlass)-1;
 
@@ -174,7 +174,6 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
   _klass_range_start = addr;
   _klass_range_end = addr + len;
 
-  // Set Base and Shift from the requested values:
   _base = requested_base;
   _shift = requested_shift;
 
@@ -281,19 +280,20 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 }
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
-  st->print_cr("UseCompressedClassPointers %d, UseCompactObjectHeaders %d, "
-               "narrow klass pointer bits %d, max shift %d",
-               UseCompressedClassPointers, UseCompactObjectHeaders,
-               _narrow_klass_pointer_bits, _max_shift);
-  if (_base == (address)-1) {
-    st->print_cr("Narrow klass encoding not initialized");
-    return;
+  st->print_cr("UseCompressedClassPointers %d, UseCompactObjectHeaders %d",
+               UseCompressedClassPointers, UseCompactObjectHeaders);
+  if (UseCompressedClassPointers) {
+    st->print_cr("Narrow klass pointer bits %d, Max shift %d",
+                 _narrow_klass_pointer_bits, _max_shift);
+    st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
+                  p2i(base()), shift());
+    st->print_cr("Encoding Range: " RANGE2FMT, RANGE2FMTARGS(_base, encoding_range_end()));
+    st->print_cr("Klass Range:    " RANGE2FMT, RANGE2FMTARGS(_klass_range_start, _klass_range_end));
+    st->print_cr("Klass ID Range:  [%u - %u) (%u)", _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id + 1,
+                 _highest_valid_narrow_klass_id + 1 - _lowest_valid_narrow_klass_id);
+  } else {
+    st->print_cr("UseCompressedClassPointers off");
   }
-  st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d, "
-               "Klass range: " RANGE2FMT, p2i(base()), shift(),
-               RANGE2FMTARGS(_klass_range_start, _klass_range_end));
-  st->print_cr("Lowest valid nklass id: %u Highest valid nklass id: %u",
-               _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id);
 }
 
 #endif // _LP64

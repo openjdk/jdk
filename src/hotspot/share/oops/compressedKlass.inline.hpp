@@ -89,4 +89,9 @@ inline void CompressedKlassPointers::check_valid_narrow_klass_id(narrowKlass nk)
 }
 #endif // ASSERT
 
+inline address CompressedKlassPointers::encoding_range_end() {
+  const int max_bits = (sizeof(narrowKlass) * BitsPerByte) + _shift; // narrowKlass are 32 bit
+  return _base + nth_bit(max_bits);
+}
+
 #endif // SHARE_OOPS_COMPRESSEDKLASS_INLINE_HPP
