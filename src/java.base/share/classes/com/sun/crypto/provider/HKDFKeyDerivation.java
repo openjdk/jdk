@@ -58,7 +58,8 @@ abstract class HKDFKeyDerivation extends KDFSpi {
     private static final int SHA384_HMAC_SIZE = 48;
     private static final int SHA512_HMAC_SIZE = 64;
 
-    private static final Integer[] SUPPORTED_HMAC_SIZES = new Integer[]{
+    // since we are using Arrays.binarySearch later, order is important
+    private static final int[] SUPPORTED_HMAC_SIZES = new int[]{
             SHA256_HMAC_SIZE,
             SHA384_HMAC_SIZE,
             SHA512_HMAC_SIZE
@@ -83,7 +84,7 @@ abstract class HKDFKeyDerivation extends KDFSpi {
                     hmacAlgName + " does not support parameters");
         }
         // added to enforce valid values at reviewer's request
-        if (!Arrays.asList(SUPPORTED_HMAC_SIZES).contains(hmacLen)) {
+        if (Arrays.binarySearch(SUPPORTED_HMAC_SIZES, hmacLen) < 0) {
             throw new InternalError(
                     "Subclass attempted to use an invalid hmacLen");
         }
@@ -97,11 +98,9 @@ abstract class HKDFKeyDerivation extends KDFSpi {
      * @return a derived {@code SecretKey} object of the specified algorithm
      *
      * @throws InvalidAlgorithmParameterException
-     *         if the information contained within the
-     *         {@code derivationParameterSpec} is invalid or if the combination
-     *         of {@code alg} and the {@code derivationParameterSpec} results in
-     *         something invalid, ie - a key of inappropriate length for the
-     *         specified algorithm
+     *         if the information contained within the {@code derivationSpec} is
+     *         invalid or if the combination of {@code alg} and the
+     *         {@code derivationSpec} results in something invalid
      * @throws NoSuchAlgorithmException
      *         if {@code alg} is empty
      * @throws NullPointerException
