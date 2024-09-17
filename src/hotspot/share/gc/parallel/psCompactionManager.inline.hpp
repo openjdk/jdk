@@ -64,29 +64,6 @@ inline void ParCompactionManager::push(PartialArrayState* stat) {
   marking_stack()->push(PSMarkTask(stat));
 }
 
-inline void ParCompactionManager::push_objArray(oop obj) {
-  assert(obj->is_objArray(), "precondition");
-  _mark_and_push_closure.do_klass(obj->klass());
-
-  size_t array_length = objArrayOop(obj)->length();
-  PartialArrayTaskStepper::Step step = _partial_array_stepper.start(array_length);
-
-   if (step._ncreate > 0) {
-     TASKQUEUE_STATS_ONLY(++_arrays_chunked);
-     PartialArrayState* state =
-     _partial_array_state_allocator->allocate(_partial_array_state_allocator_index,
-                                              obj, nullptr,
-                                              step._index,
-                                              array_length,
-                                              step._ncreate);
-     for (uint i = 0; i < step._ncreate; ++i) {
-       marking_stack()->push(PSMarkTask(state));
-     }
-     TASKQUEUE_STATS_ONLY(_array_chunk_pushes += step._ncreate);
-   }
-   follow_array(objArrayOop(obj), 0, checked_cast<int>(step._index));
-}
-
 void ParCompactionManager::push_region(size_t index)
 {
 #ifdef ASSERT
@@ -156,35 +133,12 @@ inline void ParCompactionManager::follow_contents(const PSMarkTask& task) {
   } else {
     oop obj = task.obj();
     assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
-    if (obj->is_objArray() &&
-        objArrayOop(obj)->length() > (int)ObjArrayMarkingStride) {
+    if (obj->is_objArray()) {
       push_objArray(obj);
     } else {
       obj->oop_iterate(&_mark_and_push_closure);
     }
   }
-}
-
-inline void ParCompactionManager::process_array_chunk(PartialArrayState* state) {
-  TASKQUEUE_STATS_ONLY(++_array_chunks_processed);
-
-  // Claim a chunk.  Push additional tasks before processing the claimed
-  // chunk to allow other workers to steal while we're processing.
-  PartialArrayTaskStepper::Step step = _partial_array_stepper.next(state);
-  if (step._ncreate > 0) {
-    state->add_references(step._ncreate);
-    for (uint i = 0; i < step._ncreate; ++i) {
-      push(state);
-    }
-    TASKQUEUE_STATS_ONLY(_array_chunk_pushes += step._ncreate);
-  }
-  int start = checked_cast<int>(step._index);
-  int end = checked_cast<int>(step._index + _partial_array_stepper.chunk_size());
-  assert(start < end, "invariant");
-  follow_array(objArrayOop(state->source()), start, end);
-
-  // Release reference to state, now that we're done with it.
-  _partial_array_state_allocator->release(_partial_array_state_allocator_index, state);
 }
 
 inline void ParCompactionManager::MarkingStatsCache::push(size_t region_id, size_t live_words) {

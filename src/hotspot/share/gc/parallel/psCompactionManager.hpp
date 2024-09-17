@@ -162,7 +162,7 @@ class ParCompactionManager : public CHeapObj<mtGC> {
 
   PSMarkTaskQueue*  marking_stack()       { return &_marking_stack; }
 
-  inline void push_objArray(oop obj);
+  void push_objArray(oop obj);
   inline void push(PartialArrayState* stat);
 
   // To collect per-region live-words in a worker local cache in order to
@@ -247,7 +247,7 @@ public:
 
   inline void follow_contents(const PSMarkTask& task);
   inline void follow_array(objArrayOop array, int start, int end);
-  inline void process_array_chunk(PartialArrayState* state);
+  void process_array_chunk(PartialArrayState* state);
 
   TASKQUEUE_STATS_ONLY(inline void record_steal(PSMarkTask task);)
 
