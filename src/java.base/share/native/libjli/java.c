@@ -1217,12 +1217,6 @@ ParseArguments(int *pargc, char ***pargv,
                    JLI_StrCmp(arg, "-d") == 0) {
             REPORT_ERROR (has_arg_any_len, ARG_ERROR12, arg);
             describeModule = value;
-        } else if (JLI_StrCCmp(arg, "-version:") == 0) {
-            REPORT_ERROR(NULL, SPC_ERROR1, arg);
-        } else if (JLI_StrCmp(arg, "-jre-restrict-search") == 0) {
-            REPORT_ERROR(NULL, SPC_ERROR2, arg);
-        } else if (JLI_StrCmp(arg, "-jre-no-restrict-search") == 0) {
-            REPORT_ERROR(NULL, SPC_ERROR2, arg);
 /*
  * Parse white-space options
  */
