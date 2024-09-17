@@ -69,6 +69,7 @@ private:
   Register _thread;
   Register _tmp1;
   Register _tmp2;
+  Register _tmp3;
 
 protected:
   G1PostBarrierStubC2(const MachNode* node);
@@ -76,10 +77,11 @@ protected:
 public:
   static bool needs_barrier(const MachNode* node);
   static G1PostBarrierStubC2* create(const MachNode* node);
-  void initialize_registers(Register thread, Register tmp1, Register tmp2);
+  void initialize_registers(Register thread, Register tmp1 = noreg, Register tmp2 = noreg, Register tmp3 = noreg);
   Register thread() const;
   Register tmp1() const;
   Register tmp2() const;
+  Register tmp3() const;
   virtual void emit_code(MacroAssembler& masm);
 };
 
