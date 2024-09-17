@@ -306,8 +306,7 @@ public class CtwRunner {
                 // StressSeed is uint
                 "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE)));
 
-        // Use the following stress mode 10% of the time
-        // to avoid outcompeting other stress modes or potentially hiding an infinite compilation bug.
+        // Use this stress mode 10% of the time as it could make some long-running compilations likely to abort.
         if (rng.nextInt(Integer.MAX_VALUE) % 10 == 0) {
             Args.add("-XX:+StressBailout");
             Args.add("-XX:StressBailoutMean=100000");
