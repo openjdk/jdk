@@ -108,7 +108,7 @@ public class IncompatibleOptions {
             testDump(1, "-XX:+UseZGC", "-XX:-UseCompressedOops", null, false);
         }
 
-        // ParallelGC and SerialGC now supports dumping heap objects
+        // Dump heap objects with ParallelGC and SerialGC
         testDump(2, "-XX:+UseParallelGC", "", "", false);
         testDump(3, "-XX:+UseSerialGC", "", "", false);
 

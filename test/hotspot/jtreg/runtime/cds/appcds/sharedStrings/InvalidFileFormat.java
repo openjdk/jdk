@@ -26,7 +26,6 @@
  * @test
  * @summary Check most common errors in file format
  * @requires vm.cds.write.archived.java.heap
- * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build HelloString
  * @run driver InvalidFileFormat
