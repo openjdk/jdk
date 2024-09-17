@@ -39,7 +39,7 @@ import java.lang.invoke.VarHandle;
  * Here is an example of how one of these methods could be used:
  * {@snippet lang=java
  * static MethodHandle BAR_HANDLE =
- *         MethodHandlesInternal.findVirtual(MethodHandles.lookup(),
+ *         MethodHandlesUtil.findVirtual(MethodHandles.lookup(),
  *                 Foo.class,"bar",MethodType.methodType(int.class));
  * }
  */
