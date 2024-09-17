@@ -969,6 +969,8 @@ public class HyperbolicTests {
             failures += testTanhCaseWithUlpDiff(d, 1.0, 2.5);
         }
 
+        failures += testTanhAdditionalTests();
+
         return failures;
     }
 
