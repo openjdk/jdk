@@ -165,6 +165,39 @@ instruct g1StoreN(indirect mem, iRegN src, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegP
 
 // This pattern is generated automatically from g1_aarch64.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
+instruct g1StoreNVolatile(indirect mem, iRegN src, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
+%{
+  predicate(UseG1GC && needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
+  match(Set mem (StoreN mem src));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+  ins_cost(VOLATILE_REF_COST);
+  format %{ "stlrw  $src, $mem\t# compressed ptr" %}
+  ins_encode %{
+    write_barrier_pre(masm, this,
+                      $mem$$Register /* obj */,
+                      $tmp1$$Register /* pre_val */,
+                      $tmp2$$Register /* tmp1 */,
+                      $tmp3$$Register /* tmp2 */,
+                      RegSet::of($mem$$Register, $src$$Register) /* preserve */);
+    __ stlrw($src$$Register, $mem$$Register);
+    if ((barrier_data() & G1C2BarrierPost) != 0) {
+      if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
+        __ decode_heap_oop($tmp1$$Register, $src$$Register);
+      } else {
+        __ decode_heap_oop_not_null($tmp1$$Register, $src$$Register);
+      }
+    }
+    write_barrier_post(masm, this,
+                       $mem$$Register /* store_addr */,
+                       $tmp1$$Register /* new_val */,
+                       $tmp2$$Register /* tmp1 */,
+                       $tmp3$$Register /* tmp2 */);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
+// This pattern is generated automatically from g1_aarch64.m4.
+// DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
 instruct g1EncodePAndStoreN(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
 %{
   predicate(UseG1GC && !needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
@@ -195,18 +228,16 @@ instruct g1EncodePAndStoreN(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp t
   ins_pipe(istore_reg_mem);
 %}
 
-// Very few of the total executed stores are volatile (less than 1% across
-// multiple benchmark suites), no need to define an encode-and-store version.
-
 // This pattern is generated automatically from g1_aarch64.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct g1StoreNVolatile(indirect mem, iRegN src, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
+instruct g1EncodePAndStoreNVolatile(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
 %{
   predicate(UseG1GC && needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
-  match(Set mem (StoreN mem src));
+  match(Set mem (StoreN mem (EncodeP src)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
   ins_cost(VOLATILE_REF_COST);
-  format %{ "stlrw  $src, $mem\t# compressed ptr" %}
+  format %{ "encode_heap_oop $tmp1, $src\n\t"
+            "stlrw  $tmp1, $mem\t# compressed ptr" %}
   ins_encode %{
     write_barrier_pre(masm, this,
                       $mem$$Register /* obj */,
@@ -214,17 +245,15 @@ instruct g1StoreNVolatile(indirect mem, iRegN src, iRegPNoSp tmp1, iRegPNoSp tmp
                       $tmp2$$Register /* tmp1 */,
                       $tmp3$$Register /* tmp2 */,
                       RegSet::of($mem$$Register, $src$$Register) /* preserve */);
-    __ stlrw($src$$Register, $mem$$Register);
-    if ((barrier_data() & G1C2BarrierPost) != 0) {
-      if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
-        __ decode_heap_oop($tmp1$$Register, $src$$Register);
-      } else {
-        __ decode_heap_oop_not_null($tmp1$$Register, $src$$Register);
-      }
+    if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
+      __ encode_heap_oop($tmp1$$Register, $src$$Register);
+    } else {
+      __ encode_heap_oop_not_null($tmp1$$Register, $src$$Register);
     }
+    __ stlrw($tmp1$$Register, $mem$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
-                       $tmp1$$Register /* new_val */,
+                       $src$$Register /* new_val */,
                        $tmp2$$Register /* tmp1 */,
                        $tmp3$$Register /* tmp2 */);
   %}

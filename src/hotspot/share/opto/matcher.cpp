@@ -2841,7 +2841,8 @@ bool Matcher::is_encode_and_store_pattern(const Node* n, const Node* m) {
   if (n == nullptr ||
       m == nullptr ||
       n->Opcode() != Op_StoreN ||
-      !m->is_EncodeP()) {
+      !m->is_EncodeP() ||
+      n->as_Store()->barrier_data() == 0) {
     return false;
   }
   assert(m == n->in(MemNode::ValueIn), "m should be input to n");

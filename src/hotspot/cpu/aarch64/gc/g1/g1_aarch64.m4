@@ -88,17 +88,20 @@ instruct g1StoreN$1(indirect mem, iRegN src, iRegPNoSp tmp1, iRegPNoSp tmp2, iRe
   ins_pipe(ifelse($1,Volatile,pipe_class_memory,istore_reg_mem));
 %}')dnl
 STOREN_INSN(,strw)
-
+STOREN_INSN(Volatile,stlrw)
+dnl
+define(`ENCODESTOREN_INSN',
+`
 // This pattern is generated automatically from g1_aarch64.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct g1EncodePAndStoreN(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
+instruct g1EncodePAndStoreN$1(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
 %{
-  predicate(UseG1GC && !needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
+  predicate(UseG1GC && ifelse($1,Volatile,'needs_releasing_store(n)`,'!needs_releasing_store(n)`) && n->as_Store()->barrier_data() != 0);
   match(Set mem (StoreN mem (EncodeP src)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
-  ins_cost(INSN_COST);
+  ins_cost(ifelse($1,Volatile,VOLATILE_REF_COST,INSN_COST));
   format %{ "encode_heap_oop $tmp1, $src\n\t"
-            "strw  $tmp1, $mem\t# compressed ptr" %}
+            "$2  $tmp1, $mem\t# compressed ptr" %}
   ins_encode %{
     write_barrier_pre(masm, this,
                       $mem$$Register /* obj */,
@@ -111,19 +114,17 @@ instruct g1EncodePAndStoreN(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp t
     } else {
       __ encode_heap_oop_not_null($tmp1$$Register, $src$$Register);
     }
-    __ strw($tmp1$$Register, $mem$$Register);
+    __ $2($tmp1$$Register, $mem$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
                        $src$$Register /* new_val */,
                        $tmp2$$Register /* tmp1 */,
                        $tmp3$$Register /* tmp2 */);
   %}
-  ins_pipe(istore_reg_mem);
-%}
-
-// Very few of the total executed stores are volatile (less than 1% across
-// multiple benchmark suites), no need to define an encode-and-store version.
-STOREN_INSN(Volatile,stlrw)
+  ins_pipe(ifelse($1,Volatile,pipe_class_memory,istore_reg_mem));
+%}')dnl
+ENCODESTOREN_INSN(,strw)
+ENCODESTOREN_INSN(Volatile,stlrw)
 dnl
 define(`CAEP_INSN',
 `

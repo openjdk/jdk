@@ -30,6 +30,7 @@ import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
+import java.util.concurrent.ThreadLocalRandom;
 import jdk.test.lib.Asserts;
 
 /**
@@ -49,6 +50,10 @@ public class TestG1BarrierGeneration {
 
     static class Outer {
         Object f;
+    }
+
+    static class OuterWithVolatileField {
+        volatile Object f;
     }
 
     static class OuterWithFewFields implements Cloneable {
@@ -171,6 +176,17 @@ public class TestG1BarrierGeneration {
     }
 
     @Test
+    @IR(applyIf = {"UseCompressedOops", "false"},
+        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIf = {"UseCompressedOops", "true"},
+        counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, PRE_AND_POST, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    public static void testStoreVolatile(OuterWithVolatileField o, Object o1) {
+        o.f = o1;
+    }
+
+    @Test
     @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
         counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, POST_ONLY, "1"},
         phase = CompilePhase.FINAL_CODE)
@@ -220,14 +236,41 @@ public class TestG1BarrierGeneration {
         return o;
     }
 
+    @Test
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, POST_ONLY, "2"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "false"},
+        counts = {IRNode.G1_ENCODE_P_AND_STORE_N_WITH_BARRIER_FLAG, POST_ONLY, "2"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "false", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_STORE_P},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIfAnd = {"UseCompressedOops", "true", "ReduceInitialCardMarks", "true"},
+        failOn = {IRNode.G1_STORE_N, IRNode.G1_ENCODE_P_AND_STORE_N},
+        phase = CompilePhase.FINAL_CODE)
+    public static Outer testStoreOnNewObjectInTwoPaths(Object o1, boolean c) {
+        Outer o;
+        if (c) {
+            o = new Outer();
+            o.f = o1;
+        } else {
+            o = new Outer();
+            o.f = o1;
+        }
+        return o;
+    }
+
     @Run(test = {"testStore",
                  "testStoreNull",
                  "testStoreObfuscatedNull",
                  "testStoreNotNull",
                  "testStoreTwice",
+                 "testStoreVolatile",
                  "testStoreOnNewObject",
                  "testStoreNullOnNewObject",
-                 "testStoreNotNullOnNewObject"})
+                 "testStoreNotNullOnNewObject",
+                 "testStoreOnNewObjectInTwoPaths"})
     public void runStoreTests() {
         {
             Outer o = new Outer();
@@ -261,6 +304,12 @@ public class TestG1BarrierGeneration {
             Asserts.assertEquals(o1, p.f);
         }
         {
+            OuterWithVolatileField o = new OuterWithVolatileField();
+            Object o1 = new Object();
+            testStoreVolatile(o, o1);
+            Asserts.assertEquals(o1, o.f);
+        }
+        {
             Object o1 = new Object();
             Outer o = testStoreOnNewObject(o1);
             Asserts.assertEquals(o1, o.f);
@@ -272,6 +321,11 @@ public class TestG1BarrierGeneration {
         {
             Object o1 = new Object();
             Outer o = testStoreNotNullOnNewObject(o1);
+            Asserts.assertEquals(o1, o.f);
+        }
+        {
+            Object o1 = new Object();
+            Outer o = testStoreOnNewObjectInTwoPaths(o1, ThreadLocalRandom.current().nextBoolean());
             Asserts.assertEquals(o1, o.f);
         }
     }
