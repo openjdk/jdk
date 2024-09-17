@@ -29,7 +29,6 @@ import sun.awt.CGraphicsConfig;
 import sun.awt.CGraphicsDevice;
 import sun.awt.image.OffScreenImage;
 import sun.awt.image.SunVolatileImage;
-import sun.awt.image.SurfaceManager;
 import sun.java2d.Disposer;
 import sun.java2d.DisposerRecord;
 import sun.java2d.Surface;
@@ -70,7 +69,7 @@ import static sun.java2d.pipe.hw.ContextCapabilities.*;
 import static sun.java2d.metal.MTLContext.MTLContextCaps.CAPS_EXT_BIOP_SHADER;
 
 public final class MTLGraphicsConfig extends CGraphicsConfig
-        implements AccelGraphicsConfig, SurfaceManager.ProxiedGraphicsConfig
+        implements AccelGraphicsConfig
 {
     private static ImageCapabilities imageCaps = new MTLImageCaps();
 
@@ -87,7 +86,6 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
     private final MTLContext context;
     private final Object disposerReferent = new Object();
     private final int maxTextureSize;
-    private final SurfaceManager.ProxyCache surfaceDataProxyCache = new SurfaceManager.ProxyCache();
 
     private static native boolean tryLoadMetalLibrary(int displayID, String shaderLib);
     private static native long getMTLConfigInfo(int displayID, String mtlShadersLib);
@@ -111,11 +109,6 @@ public final class MTLGraphicsConfig extends CGraphicsConfig
         // MTLGraphicsConfigInfo data when this object goes away
         Disposer.addRecord(disposerReferent,
                 new MTLGCDisposerRecord(pConfigInfo));
-    }
-
-    @Override
-    public SurfaceManager.ProxyCache getSurfaceDataProxyCache() {
-        return surfaceDataProxyCache;
     }
 
     public SurfaceData createManagedSurface(int w, int h, int transparency) {
