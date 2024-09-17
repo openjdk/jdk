@@ -139,7 +139,6 @@ public final class ModuleBootstrap {
      */
     private static boolean canUseArchivedBootLayer() {
         return getProperty("jdk.module.upgrade.path") == null &&
-               getProperty("jdk.module.path") == null &&
                getProperty("jdk.module.patch.0") == null &&       // --patch-module
                getProperty("jdk.module.addmods.0") == null  &&    // --add-modules
                getProperty("jdk.module.limitmods") == null &&     // --limit-modules
@@ -203,7 +202,8 @@ public final class ModuleBootstrap {
         SystemModules systemModules = null;
         ModuleFinder systemModuleFinder;
 
-        boolean haveModulePath = (appModulePath != null || upgradeModulePath != null);
+        boolean haveUpgradeModulePath = (upgradeModulePath != null);
+        boolean haveModulePath = (appModulePath != null || haveUpgradeModulePath);
         boolean needResolution = true;
         boolean mayContainSplitPackages = true;
         boolean mayContainIncubatorModules = true;
@@ -463,7 +463,7 @@ public final class ModuleBootstrap {
 
         // Step 8: CDS dump phase
 
-        if (CDS.isDumpingStaticArchive() && !haveModulePath && addModules.isEmpty()) {
+        if (CDS.isDumpingStaticArchive() && !haveUpgradeModulePath && addModules.isEmpty()) {
             assert !isPatched;
 
             // Archive module graph and maybe boot layer

@@ -55,6 +55,7 @@
 jshort ClassLoaderExt::_app_class_paths_start_index = ClassLoaderExt::max_classpath_index;
 jshort ClassLoaderExt::_app_module_paths_start_index = ClassLoaderExt::max_classpath_index;
 jshort ClassLoaderExt::_max_used_path_index = 0;
+int ClassLoaderExt::_num_module_paths = 0;
 bool ClassLoaderExt::_has_app_classes = false;
 bool ClassLoaderExt::_has_platform_classes = false;
 bool ClassLoaderExt::_has_non_jar_in_classpath = false;
@@ -89,15 +90,19 @@ void ClassLoaderExt::setup_app_search_path(JavaThread* current) {
   os::free(app_class_path);
 }
 
+int ClassLoaderExt::compare_module_path_by_name(const char** p1, const char** p2) {
+  return strcmp(*p1, *p2);
+}
+
 void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable* met) {
   ResourceMark rm(current);
-  GrowableArray<char*>* module_paths = new GrowableArray<char*>(5);
+  GrowableArray<const char*>* module_paths = new GrowableArray<const char*>(5);
 
   class ModulePathsGatherer : public ModuleClosure {
     JavaThread* _current;
-    GrowableArray<char*>* _module_paths;
+    GrowableArray<const char*>* _module_paths;
    public:
-    ModulePathsGatherer(JavaThread* current, GrowableArray<char*>* module_paths) :
+    ModulePathsGatherer(JavaThread* current, GrowableArray<const char*>* module_paths) :
       _current(current), _module_paths(module_paths) {}
     void do_module(ModuleEntry* m) {
       char* path = m->location()->as_C_string();
@@ -115,6 +120,10 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
     MutexLocker ml(Module_lock);
     met->modules_do(&gatherer);
   }
+
+  // Sort the module paths before storing into CDS archive for simpler
+  // checking during runtime.
+  module_paths->sort(compare_module_path_by_name);
 
   for (int i = 0; i < module_paths->length(); i++) {
     ClassLoader::setup_module_search_path(current, module_paths->at(i));

@@ -33,6 +33,7 @@
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/stringTable.hpp"
@@ -55,6 +56,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/javaCalls.hpp"
@@ -873,6 +875,16 @@ void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k
     return; // nothing to do
   }
 
+  ResourceMark rm(THREAD);
+  if ((strcmp(k->name()->as_C_string(), "jdk/internal/module/ArchivedModuleGraph") == 0) &&
+      !CDSConfig::is_using_optimized_module_handling() &&
+      // archive was created with --module-path
+      ClassLoaderExt::num_module_paths() > 0) {
+    log_info(cds, heap)("    is_using_optimized_module_handling %d num_module_paths %d jdk.module.main %s",
+        CDSConfig::is_using_optimized_module_handling(), ClassLoaderExt::num_module_paths(), Arguments::get_property("jdk.module.main"));
+    return;
+  }
+
   ExceptionMark em(THREAD);
   const ArchivedKlassSubGraphInfoRecord* record =
     resolve_or_init_classes_for_subgraph_of(k, /*do_init=*/true, THREAD);
@@ -1121,6 +1133,13 @@ bool HeapShared::archive_reachable_objects_from(int level,
     // these objects that are referenced (directly or indirectly) by static fields.
     ResourceMark rm;
     log_error(cds, heap)("Cannot archive object of class %s", orig_obj->klass()->external_name());
+    if (log_is_enabled(Trace, cds, heap)) {
+      WalkOopAndArchiveClosure* walker = WalkOopAndArchiveClosure::current();
+      if (walker != nullptr) {
+        LogStream ls(Log(cds, heap)::trace());
+        CDSHeapVerifier::trace_to_root(&ls, walker->referencing_obj());
+      }
+    }
     MetaspaceShared::unrecoverable_writing_error();
   }
 
