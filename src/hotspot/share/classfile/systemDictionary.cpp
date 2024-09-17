@@ -1137,14 +1137,15 @@ InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* i
   return loaded_ik;
 }
 
-InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
-                                                   Handle class_loader,
-                                                   Handle protection_domain,
-                                                   const ClassFileStream *cfs,
-                                                   PackageEntry* pkg_entry,
-                                                   TRAPS) {
+InstanceKlass* SystemDictionary::load_shared_class_impl(InstanceKlass* ik,
+                                                        Handle class_loader,
+                                                        Handle protection_domain,
+                                                        const ClassFileStream *cfs,
+                                                        PackageEntry* pkg_entry,
+                                                        TRAPS) {
   assert(ik != nullptr, "sanity");
   assert(!ik->is_unshareable_info_restored(), "shared class can be restored only once");
+  assert(Atomic::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
 
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
@@ -1155,7 +1156,6 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
     return nullptr;
   }
 
-  assert(Atomic::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   InstanceKlass* new_ik = nullptr;
   // CFLH check is skipped for VM hidden classes (see KlassFactory::create_from_stream).
   // It will be skipped for shared VM hidden lambda proxy classes.
@@ -1192,6 +1192,21 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
 
   load_shared_class_misc(ik, loader_data);
   return ik;
+}
+
+InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
+                                                   Handle class_loader,
+                                                   Handle protection_domain,
+                                                   const ClassFileStream *cfs,
+                                                   PackageEntry* pkg_entry,
+                                                   TRAPS) {
+  InstanceKlass* loaded_ik = load_shared_class_impl(ik, class_loader, protection_domain, cfs, pkg_entry, THREAD);
+  // We may have a pending exception here
+  if (loaded_ik != ik) {
+    assert(loaded_ik == nullptr, "cannot load alternative class");
+    ik->set_shared_loading_failed(); // ik may be partially updated, never load it again.
+  }
+  return loaded_ik;
 }
 
 void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data) {
@@ -1283,7 +1298,6 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
       PerfTraceTime vmtimer(ClassLoader::perf_shared_classload_time());
       InstanceKlass* ik = SystemDictionaryShared::find_builtin_class(class_name);
       if (ik != nullptr && ik->is_shared_boot_class() && !ik->shared_loading_failed()) {
-        SharedClassLoadingMark slm(THREAD, ik);
         k = load_shared_class(ik, class_loader, Handle(), nullptr,  pkg_entry, CHECK_NULL);
       }
     }
@@ -1297,7 +1311,6 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
 
     // find_or_define_instance_class may return a different InstanceKlass
     if (k != nullptr) {
-      CDS_ONLY(SharedClassLoadingMark slm(THREAD, k);)
       k = find_or_define_instance_class(class_name, class_loader, k, CHECK_NULL);
     }
     return k;
@@ -1539,6 +1552,7 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
     // If a parallel capable class loader already defined this class, register 'k' for cleanup.
     assert(defined_k != nullptr, "Should have a klass if there's no exception");
     k->class_loader_data()->add_to_deallocate_list(k);
+    k->set_shared_loading_failed();
   } else if (HAS_PENDING_EXCEPTION) {
     // Remove this InstanceKlass from the LoaderConstraintTable if added.
     LoaderConstraintTable::remove_failed_loaded_klass(k, class_loader_data(class_loader));
