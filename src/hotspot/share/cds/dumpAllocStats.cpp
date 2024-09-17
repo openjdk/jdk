@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "cds/aotClassLinker.hpp"
-#include "cds/cdsConfig.hpp"
 #include "cds/dumpAllocStats.hpp"
 #include "logging/log.hpp"
 #include "logging/logMessage.hpp"
