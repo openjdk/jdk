@@ -600,16 +600,16 @@ bool os::find_builtin_agent(JvmtiAgent* agent, const char *syms[],
 
 // --------------------- heap allocation utilities ---------------------
 
-char *os::strdup(const char *str, MEMFLAGS flags) {
+char *os::strdup(const char *str, MemTag mem_tag) {
   size_t size = strlen(str);
-  char *dup_str = (char *)malloc(size + 1, flags);
+  char *dup_str = (char *)malloc(size + 1, mem_tag);
   if (dup_str == nullptr) return nullptr;
   strcpy(dup_str, str);
   return dup_str;
 }
 
-char* os::strdup_check_oom(const char* str, MEMFLAGS flags) {
-  char* p = os::strdup(str, flags);
+char* os::strdup_check_oom(const char* str, MemTag mem_tag) {
+  char* p = os::strdup(str, mem_tag);
   if (p == nullptr) {
     vm_exit_out_of_memory(strlen(str) + 1, OOM_MALLOC_ERROR, "os::strdup_check_oom");
   }
@@ -629,11 +629,11 @@ static void break_if_ptr_caught(void* ptr) {
 }
 #endif // ASSERT
 
-void* os::malloc(size_t size, MEMFLAGS flags) {
-  return os::malloc(size, flags, CALLER_PC);
+void* os::malloc(size_t size, MemTag mem_tag) {
+  return os::malloc(size, mem_tag, CALLER_PC);
 }
 
-void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+void* os::malloc(size_t size, MemTag mem_tag, const NativeCallStack& stack) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
@@ -651,7 +651,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   size = MAX2((size_t)1, size);
 
   // Observe MallocLimit
-  if (MemTracker::check_exceeds_limit(size, memflags)) {
+  if (MemTracker::check_exceeds_limit(size, mem_tag)) {
     return nullptr;
   }
 
@@ -667,7 +667,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
     return nullptr;
   }
 
-  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
+  void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, mem_tag, stack);
 
   if (CDSConfig::is_dumping_static_archive()) {
     // Need to deterministically fill all the alignment gaps in C++ structures.
@@ -679,20 +679,20 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   return inner_ptr;
 }
 
-void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
-  return os::realloc(memblock, size, flags, CALLER_PC);
+void* os::realloc(void *memblock, size_t size, MemTag mem_tag) {
+  return os::realloc(memblock, size, mem_tag, CALLER_PC);
 }
 
-void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallStack& stack) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
-  if (NMTPreInit::handle_realloc(&rc, memblock, size, memflags)) {
+  if (NMTPreInit::handle_realloc(&rc, memblock, size, mem_tag)) {
     return rc;
   }
 
   if (memblock == nullptr) {
-    return os::malloc(size, memflags, stack);
+    return os::malloc(size, mem_tag, stack);
   }
 
   DEBUG_ONLY(check_crash_protection());
@@ -715,15 +715,15 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     const size_t old_size = MallocTracker::malloc_header(memblock)->size();
 
     // Observe MallocLimit
-    if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, memflags)) {
+    if ((size > old_size) && MemTracker::check_exceeds_limit(size - old_size, mem_tag)) {
       return nullptr;
     }
 
     // Perform integrity checks on and mark the old block as dead *before* calling the real realloc(3) since it
     // may invalidate the old block, including its header.
     MallocHeader* header = MallocHeader::resolve_checked(memblock);
-    assert(memflags == header->flags(), "weird NMT flags mismatch (new:\"%s\" != old:\"%s\")\n",
-           NMTUtil::flag_to_name(memflags), NMTUtil::flag_to_name(header->flags()));
+    assert(mem_tag == header->mem_tag(), "weird NMT type mismatch (new:\"%s\" != old:\"%s\")\n",
+           NMTUtil::tag_to_name(mem_tag), NMTUtil::tag_to_name(header->mem_tag()));
     const MallocHeader::FreeInfo free_info = header->free_info();
 
     header->mark_block_as_dead();
@@ -742,7 +742,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
 
     // After a successful realloc(3), we account the resized block with its new size
     // to NMT.
-    void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, memflags, stack);
+    void* const new_inner_ptr = MemTracker::record_malloc(new_outer_ptr, size, mem_tag, stack);
 
 #ifdef ASSERT
     assert(old_size == free_info.size, "Sanity");
@@ -1871,10 +1871,10 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
+char* os::reserve_memory(size_t bytes, bool executable, MemTag mem_tag) {
   char* result = pd_reserve_memory(bytes, executable);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, flags);
+    MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, mem_tag);
     log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
   } else {
     log_info(os, map)("Reserve failed (%zu bytes)", bytes);
@@ -1882,10 +1882,10 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
   return result;
 }
 
-char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MEMFLAGS flag) {
+char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MemTag mem_tag) {
   char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, flag);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, mem_tag);
     log_debug(os, map)("Reserved " RANGEFMT, RANGEFMTARGS(result, bytes));
   } else {
     log_info(os, map)("Attempt to reserve " RANGEFMT " failed",
@@ -2235,31 +2235,31 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
   }
 }
 
-char* os::map_memory_to_file(size_t bytes, int file_desc, MEMFLAGS flag) {
+char* os::map_memory_to_file(size_t bytes, int file_desc, MemTag mem_tag) {
   // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
   // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
   // On all current implementations null is interpreted as any available address.
   char* result = os::map_memory_to_file(nullptr /* addr */, bytes, file_desc);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC, flag);
+    MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC, mem_tag);
   }
   return result;
 }
 
-char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MEMFLAGS flag) {
+char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MemTag mem_tag) {
   char* result = pd_attempt_map_memory_to_file_at(addr, bytes, file_desc);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flag);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);
   }
   return result;
 }
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only,
-                           bool allow_exec, MEMFLAGS flags) {
+                           bool allow_exec, MemTag mem_tag) {
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flags);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);
   }
   return result;
 }

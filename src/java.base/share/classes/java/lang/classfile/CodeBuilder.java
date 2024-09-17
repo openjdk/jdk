@@ -262,7 +262,7 @@ public sealed interface CodeBuilder
      */
     default CodeBuilder ifThen(Opcode opcode,
                                Consumer<BlockCodeBuilder> thenHandler) {
-        if (opcode.kind() != Opcode.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VOID) {
+        if (opcode.kind() != Opcode.Kind.BRANCH || BytecodeHelpers.isUnconditionalBranch(opcode)) {
             throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
         }
 
@@ -312,7 +312,7 @@ public sealed interface CodeBuilder
     default CodeBuilder ifThenElse(Opcode opcode,
                                    Consumer<BlockCodeBuilder> thenHandler,
                                    Consumer<BlockCodeBuilder> elseHandler) {
-        if (opcode.kind() != Opcode.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VOID) {
+        if (opcode.kind() != Opcode.Kind.BRANCH || BytecodeHelpers.isUnconditionalBranch(opcode)) {
             throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
         }
 
@@ -769,7 +769,7 @@ public sealed interface CodeBuilder
     default CodeBuilder localVariable(int slot, String name, ClassDesc descriptor, Label startScope, Label endScope) {
         return localVariable(slot,
                              constantPool().utf8Entry(name),
-                             constantPool().utf8Entry(descriptor.descriptorString()),
+                             constantPool().utf8Entry(descriptor),
                              startScope, endScope);
     }
 
