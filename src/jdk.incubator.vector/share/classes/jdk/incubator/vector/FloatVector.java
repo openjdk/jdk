@@ -2448,13 +2448,12 @@ public abstract class FloatVector extends AbstractVector<Float> {
     @ForceInline
     final FloatVector selectFromTemplate(Class<? extends Vector<Integer>> indexVecClass,
                                                   FloatVector v1, FloatVector v2) {
-        int twoVectorLen = length() * 2;
-        IntVector wrapped_indexes = this.convert(VectorOperators.F2I, 0)
-                                                   .lanewise(VectorOperators.AND, twoVectorLen - 1)
-                                                   .reinterpretAsInts();
-        return (FloatVector)VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass , float.class,
-                                                              int.class, length(), wrapped_indexes, v1, v2,
-                                                              (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
+        int twoVectorLenMask = (length() << 1) - 1;
+        Vector<Integer> wrapped_indexes = this.convert(VectorOperators.F2I, 0)
+                                                   .lanewise(VectorOperators.AND, twoVectorLenMask);
+        return VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass , float.class, int.class,
+                                                   length(), wrapped_indexes, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 

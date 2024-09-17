@@ -2145,9 +2145,10 @@ bool LibraryCallKit::inline_vector_broadcast_int() {
   }
 
   Node* cnt  = argument(6);
+  const TypeInt* cnt_type = cnt->bottom_type()->isa_int();
+
   ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
-  const TypeInt* cnt_type = cnt->bottom_type()->isa_int();
 
   // If CPU supports vector constant rotate instructions pass it directly
   bool is_const_rotate = is_rotate && cnt_type && cnt_type->is_con() &&
@@ -2716,13 +2717,13 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
   }
   Node* opd2 = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
   if (opd2 == nullptr) {
-    log_if_needed("  ** unbox failed v1=%s",
+    log_if_needed("  ** unbox failed v2=%s",
                   NodeClassNames[argument(6)->Opcode()]);
     return false;
   }
   Node* opd3 = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
   if (opd3 == nullptr) {
-    log_if_needed("  ** unbox failed v1=%s",
+    log_if_needed("  ** unbox failed v3=%s",
                   NodeClassNames[argument(7)->Opcode()]);
     return false;
   }

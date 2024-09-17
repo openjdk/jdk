@@ -2579,11 +2579,11 @@ public abstract class IntVector extends AbstractVector<Integer> {
     @ForceInline
     final IntVector selectFromTemplate(Class<? extends Vector<Integer>> indexVecClass,
                                                   IntVector v1, IntVector v2) {
-        int twoVectorLen = length() * 2;
-        IntVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLen - 1);
-        return (IntVector)VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass, int.class, int.class,
-                                                              length(), wrapped_indexes, v1, v2,
-                                                              (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
+        int twoVectorLenMask = (length() << 1) - 1;
+        IntVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLenMask);
+        return VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass, int.class, int.class,
+                                                   length(), wrapped_indexes, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 

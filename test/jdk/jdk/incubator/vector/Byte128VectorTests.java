@@ -315,20 +315,20 @@ public class Byte128VectorTests extends AbstractVectorTest {
 
     static void assertSelectFromTwoVectorEquals(byte[] r, byte[] order, byte[] a, byte[] b, int vector_len) {
         int i = 0, j = 0;
+        boolean is_exceptional_idx = false;
+        int idx = 0, wrapped_index = 0, oidx = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
-                    int idx = i + j;
-                    boolean is_exceptional_idx = (int)order[idx] >= vector_len;
-                    int oidx = is_exceptional_idx ? ((int)order[idx] - vector_len) : (int)order[idx];
+                    idx = i + j;
+                    wrapped_index =(((int)order[idx]) & (2 * vector_len -1));
+                    is_exceptional_idx = wrapped_index >= vector_len;
+                    oidx = is_exceptional_idx ? (wrapped_index - vector_len) : wrapped_index;
                     Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]));
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
-            boolean is_exceptional_idx = (int)order[idx] >= vector_len;
-            int oidx = is_exceptional_idx ? ((int)order[idx] - vector_len) : (int)order[idx];
-            Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + (int)order[idx] + ", a = " + a[i + oidx] + ", b = " + b[i + oidx]);
+            Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + order[idx] + ", a = " + a[i + oidx] + ", b = " + b[i + oidx]);
         }
     }
 
@@ -1010,7 +1010,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     static final List<IntFunction<byte[]>> SELECT_FROM_INDEX_GENERATORS = List.of(
             withToString("byte[0..VECLEN*2)", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (byte)(RAND.nextInt(SPECIES.length() * 2)));
+                            i -> (byte)(RAND.nextInt()));
             })
     );
 

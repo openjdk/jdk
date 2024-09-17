@@ -2436,13 +2436,12 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     @ForceInline
     final DoubleVector selectFromTemplate(Class<? extends Vector<Long>> indexVecClass,
                                                   DoubleVector v1, DoubleVector v2) {
-        int twoVectorLen = length() * 2;
-        LongVector wrapped_indexes = this.convert(VectorOperators.D2L, 0)
-                                                   .lanewise(VectorOperators.AND, twoVectorLen - 1)
-                                                   .reinterpretAsLongs();
-        return (DoubleVector)VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass , double.class,
-                                                              long.class, length(), wrapped_indexes, v1, v2,
-                                                              (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
+        int twoVectorLenMask = (length() << 1) - 1;
+        Vector<Long> wrapped_indexes = this.convert(VectorOperators.D2L, 0)
+                                                   .lanewise(VectorOperators.AND, twoVectorLenMask);
+        return VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass , double.class, long.class,
+                                                   length(), wrapped_indexes, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 

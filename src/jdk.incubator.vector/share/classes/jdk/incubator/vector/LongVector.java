@@ -2445,11 +2445,11 @@ public abstract class LongVector extends AbstractVector<Long> {
     @ForceInline
     final LongVector selectFromTemplate(Class<? extends Vector<Long>> indexVecClass,
                                                   LongVector v1, LongVector v2) {
-        int twoVectorLen = length() * 2;
-        LongVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLen - 1);
-        return (LongVector)VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass, long.class, long.class,
-                                                              length(), wrapped_indexes, v1, v2,
-                                                              (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
+        int twoVectorLenMask = (length() << 1) - 1;
+        LongVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLenMask);
+        return VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass, long.class, long.class,
+                                                   length(), wrapped_indexes, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 

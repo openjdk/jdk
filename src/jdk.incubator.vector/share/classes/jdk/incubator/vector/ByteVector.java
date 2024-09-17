@@ -2594,11 +2594,11 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     @ForceInline
     final ByteVector selectFromTemplate(Class<? extends Vector<Byte>> indexVecClass,
                                                   ByteVector v1, ByteVector v2) {
-        int twoVectorLen = length() * 2;
-        ByteVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLen - 1);
-        return (ByteVector)VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass, byte.class, byte.class,
-                                                              length(), wrapped_indexes, v1, v2,
-                                                              (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
+        int twoVectorLenMask = (length() << 1) - 1;
+        ByteVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLenMask);
+        return VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass, byte.class, byte.class,
+                                                   length(), wrapped_indexes, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 

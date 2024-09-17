@@ -1613,12 +1613,15 @@ class VectorRearrangeNode : public VectorNode {
 };
 
 
-// Selects elements from second and third vector based on the indices held in
-// first vector two input vectors based on the indexes held in first vector.
+// Select elements from two source vectors based on the wrapped indexes held in
+// the first vector.
 class SelectFromTwoVectorNode : public VectorNode {
 public:
-  SelectFromTwoVectorNode(Node* index, Node* src1, Node* src2, const TypeVect* vt)
-  : VectorNode(index, src1, src2, vt) {}
+  SelectFromTwoVectorNode(Node* indexes, Node* src1, Node* src2, const TypeVect* vt)
+  : VectorNode(indexes, src1, src2, vt) {
+      assert(is_integral_type(indexes->bottom_type()->is_vect()->element_basic_type()),
+             "indexes must be an integral vector");
+  }
 
   Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual int Opcode() const;

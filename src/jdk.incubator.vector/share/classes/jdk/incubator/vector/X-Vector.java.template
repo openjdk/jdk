@@ -2971,20 +2971,19 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     @ForceInline
     final $abstractvectortype$ selectFromTemplate(Class<? extends Vector<$Boxbitstype$>> indexVecClass,
                                                   $abstractvectortype$ v1, $abstractvectortype$ v2) {
-        int twoVectorLen = length() * 2;
+        int twoVectorLenMask = (length() << 1) - 1;
 #if[FP]
-        $abstractbitsvectortype$ wrapped_indexes = this.convert(VectorOperators.{#if[intOrFloat]?F2I:D2L}, 0)
-                                                   .lanewise(VectorOperators.AND, twoVectorLen - 1)
-                                                   .reinterpretAs$Bitstype$s();
-        return ($Type$Vector)VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass , $type$.class,
-                                                              $bitstype$.class, length(), wrapped_indexes, v1, v2,
-                                                              (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
+        Vector<$Boxbitstype$> wrapped_indexes = this.convert(VectorOperators.{#if[intOrFloat]?F2I:D2L}, 0)
+                                                   .lanewise(VectorOperators.AND, twoVectorLenMask);
+        return VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass , $type$.class, $bitstype$.class,
+                                                   length(), wrapped_indexes, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
 #else[FP]
-        $abstractvectortype$ wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLen - 1);
-        return ($Type$Vector)VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass, $type$.class, $type$.class,
-                                                              length(), wrapped_indexes, v1, v2,
-                                                              (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
+        $abstractvectortype$ wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLenMask);
+        return VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass, $type$.class, $type$.class,
+                                                   length(), wrapped_indexes, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
 #end[FP]
     }

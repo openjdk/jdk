@@ -2113,10 +2113,9 @@ Node* SelectFromTwoVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
   const TypeVect* index_vect_type = index_vec->bottom_type()->is_vect();
   BasicType index_elem_bt = index_vect_type->element_basic_type();
-  assert(!is_floating_point_type(index_elem_bt), "");
 
   // Downcast index vector to a type agnostic shuffle representation, shuffle indices
-  // are held in a byte vector which are later massaged to target specific permutation
+  // are held in a byte vector which are later transformed to target specific permutation
   // index format by subsequent VectorLoadShuffle.
   int cast_vopc = VectorCastNode::opcode(0, index_elem_bt, true);
   Node* index_byte_vec = phase->transform(VectorCastNode::make(cast_vopc, index_vec, T_BYTE, num_elem));
@@ -2127,14 +2126,14 @@ Node* SelectFromTwoVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Compute the blend mask for merging two indipendently permututed vectors
   // using shuff index in two vector index range [0, VLEN * 2).
   BoolTest::mask pred = BoolTest::le;
-  ConINode* pred_node = (ConINode*)phase->makecon(TypeInt::make(pred));
+  ConINode* pred_node = phase->makecon(TypeInt::make(pred))->as_ConI();
   const TypeVect* vmask_type = TypeVect::makemask(T_BYTE, num_elem);
   Node* mask = phase->transform(new VectorMaskCmpNode(pred, index_byte_vec, bcast_lane_cnt_m1_vec, pred_node, vmask_type));
 
   // Rearrange expects the indexes to lie within single vector index range [0, VLEN).
   index_byte_vec = phase->transform(VectorNode::make(Op_AndV, index_byte_vec, bcast_lane_cnt_m1_vec, index_byte_vec->bottom_type()->is_vect()));
 
-  // Load indexes from byte vector and appropriatly massage them to target specific
+  // Load indexes from byte vector and appropriatly transform them to target specific
   // permutation index format.
   index_vec = phase->transform(new VectorLoadShuffleNode(index_byte_vec, index_vect_type));
 

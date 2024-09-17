@@ -2595,11 +2595,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
     @ForceInline
     final ShortVector selectFromTemplate(Class<? extends Vector<Short>> indexVecClass,
                                                   ShortVector v1, ShortVector v2) {
-        int twoVectorLen = length() * 2;
-        ShortVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLen - 1);
-        return (ShortVector)VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass, short.class, short.class,
-                                                              length(), wrapped_indexes, v1, v2,
-                                                              (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
+        int twoVectorLenMask = (length() << 1) - 1;
+        ShortVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLenMask);
+        return VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass, short.class, short.class,
+                                                   length(), wrapped_indexes, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
 
