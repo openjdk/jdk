@@ -41,8 +41,6 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.InputEvent;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collections;
 
 /*
  * @test
@@ -53,18 +51,19 @@ import java.util.Collections;
  */
 public class ComponentEventTest {
 
-    private static Frame frame;
     private static final int DELAY = 500;
+
+    private static Frame frame;
     private static Robot robot;
+
     private static Component[] components;
+
+    private static volatile Point centerPoint;
+
     private static volatile boolean componentHidden;
     private static volatile boolean componentShown;
     private static volatile boolean componentMoved;
     private static volatile boolean componentResized;
-    private static volatile Point compAt;
-    private static volatile Dimension compSize;
-    private static final java.util.Collection<ComponentEvent> events =
-        Collections.synchronizedList(new ArrayList<ComponentEvent>());
 
     private static final ComponentListener componentListener =
         new ComponentListener() {
@@ -73,28 +72,24 @@ public class ComponentEventTest {
             public void componentShown(ComponentEvent e) {
                 System.out.println("ComponentShown: " + e.getSource());
                 componentShown = true;
-                events.add(e);
             }
 
             @Override
             public void componentResized(ComponentEvent e) {
                 System.out.println("ComponentResized: " + e.getSource());
                 componentResized = true;
-                events.add(e);
             }
 
             @Override
             public void componentMoved(ComponentEvent e) {
                 System.out.println("ComponentMoved: " + e.getSource());
                 componentMoved = true;
-                events.add(e);
             }
 
             @Override
             public void componentHidden(ComponentEvent e) {
                 System.out.println("ComponentHidden: " + e.getSource());
                 componentHidden = true;
-                events.add(e);
             }
         };
 
@@ -151,61 +146,74 @@ public class ComponentEventTest {
 
     private static void doTest()
         throws InvocationTargetException, InterruptedException {
-
+        // Click on the Frame to ensure its gain Focus
         EventQueue.invokeAndWait(() -> {
-            compAt = components[9].getLocationOnScreen();
-            compSize = components[9].getSize();
+            Point location = frame.getLocationOnScreen();
+            Dimension size = frame.getSize();
+            centerPoint = new Point(location.x + size.width / 2,
+                location.y + size.height / 2);
         });
 
-        robot.mouseMove(compAt.x + compSize.width / 2,
-            compAt.y + compSize.height / 2);
-
+        robot.mouseMove(centerPoint.x, centerPoint.y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
+        robot.delay(DELAY);
+
         for (int i = 0; i < components.length; i++) {
             for (boolean state : new boolean[] { true, false }) {
-                doTest(i, state);
+                doTest(components[i], state);
             }
         }
 
         robot.delay(DELAY);
 
+        System.out.println("Iconify frame");
         resetValues();
         EventQueue.invokeAndWait(() -> frame.setExtendedState(Frame.ICONIFIED));
 
+        robot.waitForIdle();
         robot.delay(DELAY);
         if (componentShown || componentHidden || componentMoved
             || componentResized) {
-            printErrEvents("ComponentEvent triggered when frame is iconified");
+            throw new RuntimeException(
+                "ComponentEvent triggered when frame is iconified");
         }
 
+        System.out.println("Deiconify frame");
         resetValues();
         EventQueue.invokeAndWait(() -> frame.setExtendedState(Frame.NORMAL));
 
+        robot.waitForIdle();
         robot.delay(DELAY);
-        if (componentShown || componentHidden) {
-            printErrEvents("ComponentEvent triggered when frame set to normal");
+
+        /*
+         * Because of the different behavior between MS Windows and other OS ,we
+         * natively received WM_SIZE/WM_MOVE events when set frame iconify to
+         * deiconify , The AWT sends the events to components when it receives
+         * the events from the native system.
+         * 
+         * Please check the  JDK-6754618
+         */
+
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("windows") && (componentShown || componentHidden
+            || !componentMoved || !componentResized)) {
+            throw new RuntimeException(
+                "FAIL: ComponentEvent triggered when frame set to normal");
+
+        } else if (!os.contains("windows") && (componentShown || componentHidden
+            || componentMoved || componentResized)) {
+            throw new RuntimeException(
+                "ComponentEvent triggered when frame set to normal");
         }
     }
 
-    private static void printErrEvents(String errorMsg) {
-        System.err.print("Events triggered are: ");
-        synchronized (events) {
-            for (ComponentEvent event : events) {
-                System.err.print(event + "; ");
-            }
-        }
-        System.err.println();
-        throw new RuntimeException("FAIL: " + errorMsg);
-    }
-
-    private static void doTest(int i, boolean enable)
+    private static void doTest(final Component currentComponent, boolean enable)
         throws InvocationTargetException, InterruptedException {
 
-        Component currentComponent = components[i];
-        System.out
-            .println("Component " + currentComponent + "is enabled " + enable);
+        System.out.println("Component " + currentComponent);
+        System.out.println("  enabled " + enable);
 
         EventQueue.invokeAndWait(() -> {
             currentComponent.setEnabled(enable);
@@ -223,7 +231,7 @@ public class ComponentEventTest {
         robot.delay(DELAY);
         if (!componentHidden) {
             throw new RuntimeException("FAIL: ComponentHidden not triggered for"
-                + components[i].getClass());
+                + currentComponent.getClass());
         }
 
         resetValues();
@@ -236,7 +244,7 @@ public class ComponentEventTest {
         if (componentHidden) {
             throw new RuntimeException("FAIL: ComponentHidden triggered when "
                 + "setVisible(false) called for a hidden "
-                + components[i].getClass());
+                + currentComponent.getClass());
         }
 
         resetValues();
@@ -248,7 +256,7 @@ public class ComponentEventTest {
         robot.delay(DELAY);
         if (!componentShown) {
             throw new RuntimeException("FAIL: ComponentShown not triggered for "
-                + components[i].getClass());
+                + currentComponent.getClass());
         }
 
         resetValues();
@@ -261,7 +269,7 @@ public class ComponentEventTest {
         if (componentShown) {
             throw new RuntimeException("FAIL: ComponentShown triggered when "
                 + "setVisible(true) called for a shown "
-                + components[i].getClass());
+                + currentComponent.getClass());
         }
 
         resetValues();
@@ -274,7 +282,7 @@ public class ComponentEventTest {
         robot.delay(DELAY);
         if (!componentMoved) {
             throw new RuntimeException("FAIL: ComponentMoved not triggered for "
-                + components[i].getClass());
+                + currentComponent.getClass());
         }
 
         resetValues();
@@ -287,7 +295,7 @@ public class ComponentEventTest {
         robot.delay(DELAY);
         if (!componentResized) {
             throw new RuntimeException("FAIL: ComponentResized not triggered "
-                + "when size increases for " + components[i].getClass());
+                + "when size increases for " + currentComponent.getClass());
         }
 
         resetValues();
@@ -300,8 +308,10 @@ public class ComponentEventTest {
         robot.delay(DELAY);
         if (!componentResized) {
             throw new RuntimeException("FAIL: ComponentResized not triggered "
-                + "when size decreases for " + components[i].getClass());
+                + "when size decreases for " + currentComponent.getClass());
         }
+
+        System.out.println("\n");
     }
 
     private static void revalidateFrame() {
@@ -314,7 +324,6 @@ public class ComponentEventTest {
         componentHidden = false;
         componentMoved = false;
         componentResized = false;
-        events.clear();
     }
 
     private static void disposeFrame() {
