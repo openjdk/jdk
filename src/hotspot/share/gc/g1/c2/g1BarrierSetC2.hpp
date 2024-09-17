@@ -77,7 +77,7 @@ protected:
 public:
   static bool needs_barrier(const MachNode* node);
   static G1PostBarrierStubC2* create(const MachNode* node);
-  void initialize_registers(Register thread, Register tmp1, Register tmp2, Register tmp3 = noreg);
+  void initialize_registers(Register thread, Register tmp1 = noreg, Register tmp2 = noreg, Register tmp3 = noreg);
   Register thread() const;
   Register tmp1() const;
   Register tmp2() const;
