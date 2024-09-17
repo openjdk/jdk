@@ -52,9 +52,6 @@ public class MinimizeNonfocusableWindowTest {
                 If it does, press FAIL, otherwise press PASS.""";
 
     public static void main(String[] args) throws Exception {
-        if ("sun.awt.motif.MToolkit".equals(Toolkit.getDefaultToolkit().getClass().getName())) {
-            return;
-        }
         PassFailJFrame.builder()
                 .title("MinimizeNonfocusableWindowTest Instructions")
                 .instructions(INSTRUCTIONS)
