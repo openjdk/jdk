@@ -34,7 +34,7 @@ class AOTClassInitializer : AllStatic {
 public:
   // Called by heapShared.cpp to see if src_ik->java_mirror() can be archived in
   // the initialized state.
-  static bool can_archive_preinitialized_mirror(InstanceKlass* src_ik);
+  static bool can_archive_initialized_mirror(InstanceKlass* src_ik);
 };
 
 #endif // SHARE_CDS_AOTCLASSINITIALIZER_HPP

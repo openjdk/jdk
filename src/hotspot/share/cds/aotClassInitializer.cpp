@@ -28,7 +28,7 @@
 #include "cds/cdsConfig.hpp"
 #include "oops/instanceKlass.inline.hpp"
 
-bool AOTClassInitializer::can_archive_preinitialized_mirror(InstanceKlass* ik) {
+bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   assert(!ArchiveBuilder::current()->is_in_buffer_space(ik), "must be source klass");
   if (!CDSConfig::is_initing_classes_at_dump_time()) {
     return false;
@@ -39,8 +39,9 @@ bool AOTClassInitializer::can_archive_preinitialized_mirror(InstanceKlass* ik) {
   } else if (ik->is_initialized() &&
              (ik->name()->equals("jdk/internal/constant/PrimitiveClassDescImpl") ||
               ik->name()->equals("jdk/internal/constant/ReferenceClassDescImpl") ||
-              ik->name()->equals("java/lang/constant/ConstantDescs") ||
-              ik->name()->equals("sun/invoke/util/Wrapper"))) {
+              ik->name()->equals("java/lang/constant/ConstantDescs"))) {
+    // The above classes are required to support the archival of sun.invoke.util.Wrapper
+    // enums, which are referenced by archived java.lang.invoke.MethodType instances.
     return true;
   } else {
     return false;

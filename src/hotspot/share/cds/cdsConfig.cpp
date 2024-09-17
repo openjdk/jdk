@@ -555,7 +555,7 @@ bool CDSConfig::is_using_aot_linked_classes() {
   return is_using_full_module_graph() && _has_aot_linked_classes;
 }
 
-void CDSConfig::set_has_aot_linked_classes(bool is_static_archive, bool has_aot_linked_classes) {
+void CDSConfig::set_has_aot_linked_classes(bool has_aot_linked_classes) {
   _has_aot_linked_classes |= has_aot_linked_classes;
 }
 

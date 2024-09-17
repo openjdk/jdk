@@ -2044,7 +2044,7 @@ void FileMapInfo::map_or_load_heap_region() {
 
   if (!success) {
     if (CDSConfig::is_using_aot_linked_classes()) {
-      // It's too later to recover -- we have already committed to use the archived metaspace objects, but
+      // It's too late to recover -- we have already committed to use the archived metaspace objects, but
       // the archived heap objects cannot be loaded, so we don't have the archived FMG to guarantee that
       // all AOT-linked classes are visible.
       //
@@ -2385,7 +2385,7 @@ bool FileMapInfo::validate_aot_class_linking() {
   // These checks need to be done after FileMapInfo::initialize(), which gets called before Universe::heap()
   // is available.
   if (header()->has_aot_linked_classes()) {
-    CDSConfig::set_has_aot_linked_classes(is_static(), true);
+    CDSConfig::set_has_aot_linked_classes(true);
     if (JvmtiExport::should_post_class_file_load_hook()) {
       log_error(cds)("CDS archive has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.");
       return false;
@@ -2452,6 +2452,11 @@ bool FileMapHeader::validate() {
   // header data
   const char* prop = Arguments::get_property("java.system.class.loader");
   if (prop != nullptr) {
+    if (has_aot_linked_classes()) {
+      log_error(cds)("CDS archive has aot-linked classes. It cannot be used when the "
+                     "java.system.class.loader property is specified.");
+      return false;
+    }
     log_warning(cds)("Archived non-system classes are disabled because the "
             "java.system.class.loader property is specified (value = \"%s\"). "
             "To use archived non-system classes, this property must not be set", prop);

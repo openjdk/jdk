@@ -346,7 +346,7 @@ private:
                                                Handle protection_domain, TRAPS);
   // Second part of load_shared_class
   static void load_shared_class_misc(InstanceKlass* ik, ClassLoaderData* loader_data) NOT_CDS_RETURN;
-  static void restore_archived_method_handle_intrinsics_impl(TRAPS);
+  static void restore_archived_method_handle_intrinsics_impl(TRAPS) NOT_CDS_RETURN;
 
 protected:
   // Used by SystemDictionaryShared

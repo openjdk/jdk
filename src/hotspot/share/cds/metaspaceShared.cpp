@@ -550,6 +550,8 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   _pending_method_handle_intrinsics = new (mtClassShared) GrowableArray<Method*>(256, mtClassShared);
   if (CDSConfig::is_dumping_aot_linked_classes()) {
+    // When dumping AOT-linked classes, some classes may have direct references to a method handle
+    // intrinsic. The easiest thing is to save all of them into the AOT cache.
     SystemDictionary::get_all_method_handle_intrinsics(_pending_method_handle_intrinsics);
   }
 
@@ -1567,11 +1569,17 @@ void MetaspaceShared::initialize_shared_spaces() {
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
 
-  log_info(cds)("Using AOT-linked classes: %s (%s%s)",
-                CDSConfig::is_using_aot_linked_classes() ? "true" : "false",
-                static_mapinfo->header()->has_aot_linked_classes() ? "static archive: true" : "static archive: false",
-                (dynamic_mapinfo == nullptr) ? "" :
-                   (dynamic_mapinfo->header()->has_aot_linked_classes() ? ", dynamic archive: true" : ", dynamic archive: false"));
+  LogStreamHandle(Info, cds) lsh;
+  if (lsh.is_enabled()) {
+    lsh.print("Using AOT-linked classes: %s (static archive: %s aot-linked classes",
+              CDSConfig::is_using_aot_linked_classes() ? "true" : "false",
+              static_mapinfo->header()->has_aot_linked_classes() ? "has" : "no");
+    if (dynamic_mapinfo != nullptr) {
+      lsh.print(", dynamic archive: %s aot-linked classes",
+                dynamic_mapinfo->header()->has_aot_linked_classes() ? "has" : "no");
+    }
+    lsh.print_cr(")");
+  }
 
   // Set up LambdaFormInvokers::_lambdaform_lines for dynamic dump
   if (CDSConfig::is_dumping_dynamic_archive()) {

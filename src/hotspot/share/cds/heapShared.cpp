@@ -85,7 +85,6 @@ struct ArchivableStaticFieldInfo {
 };
 
 bool HeapShared::_disable_writing = false;
-bool HeapShared::_box_classes_inited = false;
 DumpedInternedStrings *HeapShared::_dumped_interned_strings = nullptr;
 
 size_t HeapShared::_alloc_count[HeapShared::ALLOC_STAT_SLOTS];
@@ -409,12 +408,12 @@ void HeapShared::remove_scratch_objects(Klass* k) {
   }
 }
 
-void HeapShared::copy_preinitialized_mirror(Klass* orig_k, oop orig_mirror, oop m) {
+void HeapShared::copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop m) {
   if (!orig_k->is_instance_klass()) {
     return;
   }
   InstanceKlass* ik = InstanceKlass::cast(orig_k);
-  if (!ik->is_initialized() || !AOTClassInitializer::can_archive_preinitialized_mirror(ik)) {
+  if (!ik->is_initialized() || !AOTClassInitializer::can_archive_initialized_mirror(ik)) {
     return;
   }
 
@@ -465,12 +464,12 @@ void HeapShared::copy_preinitialized_mirror(Klass* orig_k, oop orig_mirror, oop 
 
   if (log_is_enabled(Info, cds, init)) {
     ResourceMark rm;
-    log_debug(cds, init)("copied %3d field(s) in preinitialized mirror %s%s", nfields, ik->external_name(),
+    log_debug(cds, init)("copied %3d field(s) in aot-initialized mirror %s%s", nfields, ik->external_name(),
                          ik->is_hidden() ? " (hidden)" : "");
   }
 
   InstanceKlass* buffered_ik = ArchiveBuilder::current()->get_buffered_addr(ik);
-  buffered_ik->set_has_preinitialized_mirror();
+  buffered_ik->set_has_aot_initialized_mirror();
 }
 
 static void copy_java_mirror_hashcode(oop orig_mirror, oop scratch_m) {
@@ -510,7 +509,7 @@ void HeapShared::archive_java_mirrors() {
     oop m = scratch_java_mirror(orig_k);
     if (m != nullptr) {
       copy_java_mirror_hashcode(orig_mirror, m);
-      copy_preinitialized_mirror(orig_k, orig_mirror, m);
+      copy_aot_initialized_mirror(orig_k, orig_mirror, m);
     }
   }
 
@@ -972,7 +971,23 @@ void HeapShared::resolve_classes_for_subgraphs(JavaThread* current, ArchivableSt
   }
 }
 
-void HeapShared::initialize_default_subgraph_classes(Handle loader, TRAPS) {
+// The main purpose of this call is to initialize any classes that are reachable
+// from the archived Java mirrors that belong to the <class_loader>.
+//
+// For example, if this enum class is initialized at AOT cache assembly time:
+//
+//    enum Fruit {
+//       APPLE, ORANGE, BANANA;
+//       static final Set<Fruit> HAVE_SEEDS = new HashSet<>(Arrays.asList(APPLE, ORANGE));
+//   }
+//
+// the pre-inited mirror of Fruit references HashSet, which should be initialized
+// before any Java code can access the Fruit class.
+//
+// The set of classes that are required to be initialized for the archived
+// java mirrors are recorded in _runtime_default_subgraph_info (which probably
+// needs a better name).
+void HeapShared::init_classes_reachable_from_archived_mirrors(Handle class_loader, TRAPS) {
   if (!ArchiveHeapLoader::is_in_use()) {
     return;
   }
@@ -987,7 +1002,7 @@ void HeapShared::initialize_default_subgraph_classes(Handle loader, TRAPS) {
           // This class is not yet loaded. We will initialize it in a later phase.
           continue;
         }
-        if (k->class_loader() == loader()) {
+        if (k->class_loader() == class_loader()) {
           if (pass == 0) {
             if (k->is_instance_klass()) {
               InstanceKlass::cast(k)->link_class(CHECK);
@@ -1019,11 +1034,6 @@ void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k
   if (!ArchiveHeapLoader::is_in_use()) {
     return; // nothing to do
   }
-
-  // The subgraphs may reference java_mirrors of the box classes like
-  // java/lang/Boolean. It may not be necessary, but for sanity, we force
-  // the box classes to be initialized before any subgraph can be initialized.
-  assert(_box_classes_inited, "must be");
 
   ExceptionMark em(THREAD);
   const ArchivedKlassSubGraphInfoRecord* record =
@@ -1258,22 +1268,6 @@ HeapShared::CachedOopInfo HeapShared::make_cached_oop_info(oop obj) {
   return CachedOopInfo(referrer, points_to_oops_checker.result());
 }
 
-// We currently allow only the box classes, as well as j.l.Object, which are
-// initialized very early by HeapShared::init_box_classes().
-bool HeapShared::can_mirror_be_used_in_subgraph(oop orig_java_mirror) {
-  return java_lang_Class::is_primitive(orig_java_mirror)
-    || orig_java_mirror == vmClasses::Boolean_klass()->java_mirror()
-    || orig_java_mirror == vmClasses::Character_klass()->java_mirror()
-    || orig_java_mirror == vmClasses::Float_klass()->java_mirror()
-    || orig_java_mirror == vmClasses::Double_klass()->java_mirror()
-    || orig_java_mirror == vmClasses::Byte_klass()->java_mirror()
-    || orig_java_mirror == vmClasses::Short_klass()->java_mirror()
-    || orig_java_mirror == vmClasses::Integer_klass()->java_mirror()
-    || orig_java_mirror == vmClasses::Long_klass()->java_mirror()
-    || orig_java_mirror == vmClasses::Void_klass()->java_mirror()
-    || orig_java_mirror == vmClasses::Object_klass()->java_mirror();
-}
-
 void HeapShared::init_box_classes(TRAPS) {
   if (ArchiveHeapLoader::is_in_use()) {
     vmClasses::Boolean_klass()->initialize(CHECK);
@@ -1285,15 +1279,6 @@ void HeapShared::init_box_classes(TRAPS) {
     vmClasses::Integer_klass()->initialize(CHECK);
     vmClasses::Long_klass()->initialize(CHECK);
     vmClasses::Void_klass()->initialize(CHECK);
-    _box_classes_inited = true;
-  }
-}
-
-void HeapShared::debug_trace() {
-  WalkOopAndArchiveClosure* walker = WalkOopAndArchiveClosure::current();
-  if (walker != nullptr) {
-    LogStream ls(Log(cds, heap)::error());
-    CDSHeapVerifier::trace_to_root(&ls, walker->referencing_obj());
   }
 }
 
@@ -1337,17 +1322,28 @@ bool HeapShared::archive_reachable_objects_from(int level,
       assert(orig_obj != nullptr, "must be archived");
     }
   } else if (java_lang_Class::is_instance(orig_obj) && subgraph_info != _default_subgraph_info) {
-    if (can_mirror_be_used_in_subgraph(orig_obj)) {
+    // Without CDSConfig::is_initing_classes_at_dump_time(), we only allow archived objects to
+    // point to the mirrors of (1) j.l.Object, (2) primitive classes, and (3) box classes. These are initialized
+    // very early by HeapShared::init_box_classes().
+    if (orig_obj == vmClasses::Object_klass()->java_mirror()
+        || java_lang_Class::is_primitive(orig_obj)
+        || orig_obj == vmClasses::Boolean_klass()->java_mirror()
+        || orig_obj == vmClasses::Character_klass()->java_mirror()
+        || orig_obj == vmClasses::Float_klass()->java_mirror()
+        || orig_obj == vmClasses::Double_klass()->java_mirror()
+        || orig_obj == vmClasses::Byte_klass()->java_mirror()
+        || orig_obj == vmClasses::Short_klass()->java_mirror()
+        || orig_obj == vmClasses::Integer_klass()->java_mirror()
+        || orig_obj == vmClasses::Long_klass()->java_mirror()
+        || orig_obj == vmClasses::Void_klass()->java_mirror()) {
       orig_obj = scratch_java_mirror(orig_obj);
       assert(orig_obj != nullptr, "must be archived");
     } else {
-      // Except for a few well-known types (see can_mirror_be_used_in_subgraph(orig_obj)),
-      // java mirrors cannot be included in an archived object sub-graph.
-      //
       // If you get an error here, you probably made a change in the JDK library that has added a Class
       // object that is referenced (directly or indirectly) by an ArchivableStaticFieldInfo
       // defined at the top of this file.
       log_error(cds, heap)("(%d) Unknown java.lang.Class object is in the archived sub-graph", level);
+      debug_trace();
       MetaspaceShared::unrecoverable_writing_error();
     }
   }
@@ -1390,8 +1386,8 @@ bool HeapShared::archive_reachable_objects_from(int level,
   orig_obj->oop_iterate(&walker);
 
   if (CDSConfig::is_initing_classes_at_dump_time()) {
-    // The enum klasses are archived with preinitialized mirror.
-    // See AOTClassInitializer::can_archive_preinitialized_mirror.
+    // The enum klasses are archived with aot-initialized mirror.
+    // See AOTClassInitializer::can_archive_initialized_mirror().
   } else {
     if (CDSEnumKlass::is_enum_obj(orig_obj)) {
       CDSEnumKlass::handle_enum_obj(level + 1, subgraph_info, orig_obj);
@@ -1867,6 +1863,15 @@ void HeapShared::add_to_dumped_interned_strings(oop string) {
   _dumped_interned_strings->put_if_absent(string, true, &created);
   if (created) {
     _dumped_interned_strings->maybe_grow();
+  }
+}
+
+void HeapShared::debug_trace() {
+  ResourceMark rm;
+  WalkOopAndArchiveClosure* walker = WalkOopAndArchiveClosure::current();
+  if (walker != nullptr) {
+    LogStream ls(Log(cds, heap)::error());
+    CDSHeapVerifier::trace_to_root(&ls, walker->referencing_obj());
   }
 }
 

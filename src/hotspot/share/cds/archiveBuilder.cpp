@@ -763,8 +763,8 @@ void ArchiveBuilder::relocate_metaspaceobj_embedded_pointers() {
 
 #define ADD_COUNT(x) \
   x += 1; \
-  x ## _a += aotlinked; \
-  x ## _i += inited;
+  x ## _a += aotlinked ? 1 : 0; \
+  x ## _i += inited ? 1 : 0;
 
 #define DECLARE_INSTANCE_KLASS_COUNTER(x) \
   int x = 0; \
@@ -778,8 +778,9 @@ void ArchiveBuilder::make_klasses_shareable() {
   DECLARE_INSTANCE_KLASS_COUNTER(num_platform_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_app_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_hidden_klasses);
-  DECLARE_INSTANCE_KLASS_COUNTER(num_unlinked_klasses);
+  DECLARE_INSTANCE_KLASS_COUNTER(num_enum_klasses);
   DECLARE_INSTANCE_KLASS_COUNTER(num_unregistered_klasses);
+  int num_unlinked_klasses = 0;
   int num_obj_array_klasses = 0;
   int num_type_array_klasses = 0;
 
@@ -821,8 +822,8 @@ void ArchiveBuilder::make_klasses_shareable() {
       assert(k->is_instance_klass(), " must be");
       InstanceKlass* ik = InstanceKlass::cast(k);
       InstanceKlass* src_ik = get_source_addr(ik);
-      int aotlinked = AOTClassLinker::is_candidate(src_ik);
-      int inited = ik->has_preinitialized_mirror();
+      bool aotlinked = AOTClassLinker::is_candidate(src_ik);
+      bool inited = ik->has_aot_initialized_mirror();
       ADD_COUNT(num_instance_klasses);
       if (CDSConfig::is_dumping_dynamic_archive()) {
         // For static dump, class loader type are already set.
@@ -863,7 +864,7 @@ void ArchiveBuilder::make_klasses_shareable() {
       }
 
       if (!ik->is_linked()) {
-        ADD_COUNT(num_unlinked_klasses);
+        num_unlinked_klasses ++;
         unlinked = " unlinked";
         if (ik->is_shared_boot_class()) {
           boot_unlinked ++;
@@ -880,6 +881,7 @@ void ArchiveBuilder::make_klasses_shareable() {
         kind = " interface";
       } else if (src_ik->java_super() == vmClasses::Enum_klass()) {
         kind = " enum";
+        ADD_COUNT(num_enum_klasses);
       }
 
       if (ik->is_hidden()) {
@@ -915,15 +917,14 @@ void ArchiveBuilder::make_klasses_shareable() {
   log_info(cds)("Number of classes %d", num_instance_klasses + num_obj_array_klasses + num_type_array_klasses);
   log_info(cds)("    instance classes   " STATS_FORMAT, STATS_PARAMS(instance_klasses));
   log_info(cds)("      boot             " STATS_FORMAT, STATS_PARAMS(boot_klasses));
-  log_info(cds)("       vm              " STATS_FORMAT, STATS_PARAMS(vm_klasses));
+  log_info(cds)("        vm             " STATS_FORMAT, STATS_PARAMS(vm_klasses));
   log_info(cds)("      platform         " STATS_FORMAT, STATS_PARAMS(platform_klasses));
   log_info(cds)("      app              " STATS_FORMAT, STATS_PARAMS(app_klasses));
   log_info(cds)("      unregistered     " STATS_FORMAT, STATS_PARAMS(unregistered_klasses));
+  log_info(cds)("      (enum)           " STATS_FORMAT, STATS_PARAMS(enum_klasses));
   log_info(cds)("      (hidden)         " STATS_FORMAT, STATS_PARAMS(hidden_klasses));
-  log_info(cds)("      (unlinked)       " STATS_FORMAT ", boot = %d, plat = %d, app = %d, unreg = %d",
-                                                              STATS_PARAMS(unlinked_klasses),
-                                                              boot_unlinked, platform_unlinked,
-                                                              app_unlinked, unreg_unlinked);
+  log_info(cds)("      (unlinked)       = %5d, boot = %d, plat = %d, app = %d, unreg = %d",
+                num_unlinked_klasses, boot_unlinked, platform_unlinked, app_unlinked, unreg_unlinked);
   log_info(cds)("    obj array classes  = %5d", num_obj_array_klasses);
   log_info(cds)("    type array classes = %5d", num_type_array_klasses);
   log_info(cds)("               symbols = %5d", _symbols->length());

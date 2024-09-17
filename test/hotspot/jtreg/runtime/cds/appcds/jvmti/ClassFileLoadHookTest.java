@@ -106,8 +106,9 @@ public class ClassFileLoadHookTest {
                 "-Xlog:cds",
                 "ClassFileLoadHook",
                 "" + ClassFileLoadHook.TestCaseId.SHARING_ON_CFLH_ON);
-        if (out.contains("Using AOT-linked classes: false")) {
-            // We are running with VM options that do not support -XX:+AOTClassLinking
+        if (out.contains("Using AOT-linked classes: false (static archive: no aot-linked classes")) {
+            // JTREG is executed with VM options that do not support -XX:+AOTClassLinking, so
+            // the static archive was not created with aot-linked classes.
             out.shouldHaveExitValue(0);
         } else {
             out.shouldContain("CDS archive has aot-linked classes. It cannot be used when JVMTI ClassFileLoadHook is in use.");
