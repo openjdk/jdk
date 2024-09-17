@@ -130,21 +130,20 @@ void ParCompactionManager::push_objArray(oop obj) {
 
   size_t array_length = objArrayOop(obj)->length();
   PartialArrayTaskStepper::Step step = _partial_array_stepper.start(array_length);
-
-   if (step._ncreate > 0) {
-     TASKQUEUE_STATS_ONLY(++_arrays_chunked);
-     PartialArrayState* state =
-     _partial_array_state_allocator->allocate(_partial_array_state_allocator_index,
-                                              obj, nullptr,
-                                              step._index,
-                                              array_length,
-                                              step._ncreate);
-     for (uint i = 0; i < step._ncreate; ++i) {
-       marking_stack()->push(PSMarkTask(state));
-     }
-     TASKQUEUE_STATS_ONLY(_array_chunk_pushes += step._ncreate);
-   }
-   follow_array(objArrayOop(obj), 0, checked_cast<int>(step._index));
+  if (step._ncreate > 0) {
+    TASKQUEUE_STATS_ONLY(++_arrays_chunked);
+    PartialArrayState* state =
+    _partial_array_state_allocator->allocate(_partial_array_state_allocator_index,
+                                             obj, nullptr,
+                                             step._index,
+                                             array_length,
+                                             step._ncreate);
+    for (uint i = 0; i < step._ncreate; ++i) {
+      marking_stack()->push(PSMarkTask(state));
+    }
+    TASKQUEUE_STATS_ONLY(_array_chunk_pushes += step._ncreate);
+  }
+  follow_array(objArrayOop(obj), 0, checked_cast<int>(step._index));
 }
 
 void ParCompactionManager::process_array_chunk(PartialArrayState* state) {

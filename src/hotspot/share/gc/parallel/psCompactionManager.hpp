@@ -110,20 +110,16 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static PSOldGen*              _old_gen;
   static PartialArrayStateAllocator*  _partial_array_state_allocator;
 
-#if TASKQUEUE_STATS
-  size_t                              _array_chunk_pushes;
-  size_t                              _array_chunk_steals;
-  size_t                              _arrays_chunked;
-  size_t                              _array_chunks_processed;
-
-  void print_local_stats(outputStream* const out, uint i) const;
-  void reset_stats();
-  static void print_and_reset_taskqueue_stats();
-#endif // TASKQUEUE_STATS
-
-  PSMarkTaskQueue               _marking_stack;
   PartialArrayTaskStepper       _partial_array_stepper;
   uint                          _partial_array_state_allocator_index;
+  PSMarkTaskQueue               _marking_stack;
+
+#if TASKQUEUE_STATS
+  size_t                        _array_chunk_pushes;
+  size_t                        _array_chunk_steals;
+  size_t                        _arrays_chunked;
+  size_t                        _array_chunks_processed;
+#endif // TASKQUEUE_STATS
 
   size_t                        _next_shadow_region;
 
@@ -160,10 +156,9 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   // Array of task queues.  Needed by the task terminator.
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
 
-  PSMarkTaskQueue*  marking_stack()       { return &_marking_stack; }
-
-  void push_objArray(oop obj);
+  inline PSMarkTaskQueue*  marking_stack() { return &_marking_stack; }
   inline void push(PartialArrayState* stat);
+  void push_objArray(oop obj);
 
   // To collect per-region live-words in a worker local cache in order to
   // reduce threads contention.
@@ -192,6 +187,12 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   };
 
   MarkingStatsCache* _marking_stats_cache;
+
+#if TASKQUEUE_STATS
+  static void print_and_reset_taskqueue_stats();
+  void print_local_stats(outputStream* const out, uint i) const;
+  void reset_stats();
+#endif // TASKQUEUE_STATS
 
 public:
   static const size_t InvalidShadow = ~0;
