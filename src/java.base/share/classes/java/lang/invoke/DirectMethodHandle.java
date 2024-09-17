@@ -253,7 +253,7 @@ sealed class DirectMethodHandle extends MethodHandle {
         MethodType mtypeWithArg;
         if (doesAlloc) {
             var ptypes = mtype.ptypes();
-            var newPtypes = new Class<?>[ptypes.length + (doesAlloc ? 2 : 1)];
+            var newPtypes = new Class<?>[ptypes.length + 2];
             newPtypes[0] = Object.class; // insert newly allocated obj
             System.arraycopy(ptypes, 0, newPtypes, 1, ptypes.length);
             newPtypes[newPtypes.length - 1] = MemberName.class;
