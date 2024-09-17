@@ -1464,6 +1464,7 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
 void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register len,
                                          Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
                                          Register table0, Register table3) {
+    assert_different_registers(t1, crc, buf, len, tmp1, tmp2, tmp3, tmp4, tmp5, table0, table3);
     const int N = 16, W = 4;
     const int64_t single_table_size = 256;
     const Register blks = tmp2;
