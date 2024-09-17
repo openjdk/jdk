@@ -1530,15 +1530,15 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
 
     bind(LastBlock);
     {
+      vle32_v(vtmp, buf);
+      vxor_vv(vcrc, vcrc, vtmp);
       mv(crc, zr);
       for (int i = 0; i < N; i++) {
-        lwu(t1, Address(buf, i*4));
         vmv_x_s(tmp2, vcrc);
         // in vmv_x_s, the value is sign-extended to SEW bits, but we need zero-extended here.
         zext_w(tmp2, tmp2);
         vslidedown_vi(vcrc, vcrc, 1);
-        xorr(t1, tmp2, t1);
-        xorr(crc, crc, t1);
+        xorr(crc, crc, tmp2);
         for (int j = 0; j < W; j++) {
           andr(t1, crc, tmp5);
           shadd(t1, t1, table0, tmp1, 2);
