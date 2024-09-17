@@ -156,6 +156,7 @@ public:
   DEBUG_ONLY( bool is_scheduled() const { return _schedule.is_nonempty(); } )
   const GrowableArray<VTransformNode*>& vtnodes() const { return _vtnodes; }
 
+  void optimize();
   bool schedule();
   float cost() const;
   void apply_memops_reordering_with_schedule() const;
@@ -221,6 +222,7 @@ public:
   DEBUG_ONLY( bool has_graph() const { return !_graph.is_empty(); } )
   VTransformGraph& graph() { return _graph; }
 
+  void optimize() { return _graph.optimize(); }
   bool schedule() { return _graph.schedule(); }
   float cost() const { return _graph.cost(); }
   void apply();
@@ -313,6 +315,7 @@ public:
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
 
+  virtual bool optimize() { return false; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const = 0;
 
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,

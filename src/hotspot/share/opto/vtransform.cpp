@@ -31,6 +31,19 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
   _vtnodes.push(vtnode);
 }
 
+void VTransformGraph::optimize() {
+  tty->print_cr("VTransformGraph::optimize");
+
+  while (true) {
+    bool progress = false;
+    for (int i = 0; i < _vtnodes.length(); i++) {
+      VTransformNode* vtn = _vtnodes.at(i);
+      progress |= vtn->optimize();
+    }
+    if (!progress) { break; }
+  }
+}
+
 // Compute a linearization of the graph. We do this with a reverse-post-order of a DFS.
 // This only works if the graph is a directed acyclic graph (DAG). The C2 graph, and
 // the VLoopDependencyGraph are both DAGs, but after introduction of vectors/packs, the

@@ -4531,6 +4531,7 @@ static bool is_unordered_reduction(Node* n) {
 // strict order).
 void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
   assert(!C->major_progress() && loop->is_counted() && loop->is_innermost(), "sanity");
+  return;
 
   // Find all Phi nodes with an unordered Reduction on backedge.
   CountedLoopNode* cl = loop->_head->as_CountedLoop();

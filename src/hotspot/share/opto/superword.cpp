@@ -1848,6 +1848,8 @@ bool SuperWord::schedule_and_apply() const {
     SuperWordVTransformBuilder builder(_packset, vtransform);
   }
 
+  vtransform.optimize();
+
   // Schedule
   if (!vtransform.schedule()) { return false; }
 

@@ -119,9 +119,8 @@ void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_
     } else if (n->is_CountedLoop()) {
       continue; // Is "root", has no dependency.
     } else if (n->is_Phi()) {
-      // CountedLoop Phi's: ignore backedge (and entry value).
       assert(n->in(0) == _vloop.cl(), "only Phi's from the CountedLoop allowed");
-      set_req_with_scalar(n, vtn, vtn_dependencies, 0);
+      set_all_req_with_scalars(n, vtn, vtn_dependencies);
       continue;
     } else {
       set_all_req_with_scalars(n, vtn, vtn_dependencies);
