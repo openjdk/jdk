@@ -192,7 +192,6 @@ public class ComponentEventTest {
          * natively received WM_SIZE/WM_MOVE events when set frame iconify to
          * deiconify , The AWT sends the events to components when it receives
          * the events from the native system.
-         * 
          * Please check the  JDK-6754618
          */
 
