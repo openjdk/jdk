@@ -30,7 +30,6 @@ const LogLevelType AnyLevel = LogLevelType::NotMentioned;
 #define DEFAULT_DECORATORS \
   DEFAULT_VALUE(mask_from_decorators(NoDecorators), AnyLevel, LOG_TAGS(jit, inlining)) 
 
-
 template <LogDecorators::Decorator d>
 struct AllBitmask {
   // Use recursive template deduction to calculate the bitmask of all decorations.
