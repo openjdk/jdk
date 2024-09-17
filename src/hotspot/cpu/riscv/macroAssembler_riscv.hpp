@@ -1320,7 +1320,7 @@ public:
         bool upper);
   void update_byte_crc32(Register crc, Register val, Register table);
   void vector_update_crc32(Register crc, Register buf, Register len,
-                           Register tmp1, Register tmp2, Register tmp3, Register tmp4,
+                           Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
                            Register table0, Register table3);
 
 #ifdef COMPILER2

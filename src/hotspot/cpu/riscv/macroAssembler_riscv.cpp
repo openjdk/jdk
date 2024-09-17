@@ -1462,7 +1462,7 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
 //  3. finally vectorize the code (original implementation in zcrc32.c is just scalar code).
 // New tables for vector version is after table3.
 void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register len,
-                                         Register tmp1, Register tmp2, Register tmp3, Register tmp4,
+                                         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
                                          Register table0, Register table3) {
     const int N = 16, W = 4;
     const int64_t single_table_size = 256;
@@ -1473,7 +1473,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
     Label LastBlock;
 
     add(tableN16, table3, 1*single_table_size*sizeof(juint), tmp1);
-    mv(t0, 0xff);
+    mv(tmp5, 0xff);
 
     if (MaxVectorSize == 16) {
       vsetivli(zr, N, Assembler::e32, Assembler::m4, Assembler::ma, Assembler::ta);
@@ -1503,7 +1503,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
 
       addi(buf, buf, N*W);
 
-      vand_vx(vtmp, vword, t0);
+      vand_vx(vtmp, vword, tmp5);
       vsll_vi(vtmp, vtmp, 2);
       vluxei32_v(vcrc, tmpTable, vtmp);
 
@@ -1514,7 +1514,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
         slli(t1, tmp1, 3);
         vsrl_vx(vtmp, vword, t1);
 
-        vand_vx(vtmp, vtmp, t0);
+        vand_vx(vtmp, vtmp, tmp5);
         vsll_vi(vtmp, vtmp, 2);
         vluxei32_v(vtmp, tmpTable, vtmp);
 
@@ -1539,7 +1539,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
         xorr(t1, tmp2, t1);
         xorr(crc, crc, t1);
         for (int j = 0; j < W; j++) {
-          andr(t1, crc, t0);
+          andr(t1, crc, tmp5);
           shadd(t1, t1, table0, tmp1, 2);
           lwu(t1, Address(t1, 0));
           srli(tmp2, crc, 8);
@@ -1647,7 +1647,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     j(L_exit); // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
 
     bind(L_vector_entry);
-    vector_update_crc32(crc, buf, len, tmp1, tmp2, tmp3, tmp4, table0, table3);
+    vector_update_crc32(crc, buf, len, tmp1, tmp2, tmp3, tmp4, tmp6, table0, table3);
 
     addiw(len, len, -4);
     bge(len, zr, L_by4_loop);
