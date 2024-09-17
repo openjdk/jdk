@@ -139,9 +139,10 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * <p>
          * {@code addIKM} may be called multiple times when the input keying
          * material value is to be assembled piece-meal or if part of the IKM is
-         * to be supplied by a hardware crypto device. This method appends to
-         * the existing list of values or creates a new list if there is none
-         * yet.
+         * to be supplied by a hardware crypto device. The {@code ikms()}
+         * method of the {@code Extract} or {@code ExtractThenExpand} object
+         * that is subsequently built returns the assembled input keying
+         * material as a list of {@code SecretKey} objects.
          *
          * @param ikm
          *         the input keying material (IKM) value
@@ -158,13 +159,15 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         }
 
         /**
-         * Adds input keying material (IKM) to the builder.
+         * Adds input keying material (IKM) to the builder. Note that an
+         * {@code ikm} byte array of length zero will discarded.
          * <p>
          * {@code addIKM} may be called multiple times when the input keying
          * material value is to be assembled piece-meal or if part of the IKM is
-         * to be supplied by a hardware crypto device. This method appends to
-         * the existing list of values or creates a new list if there is none
-         * yet.
+         * to be supplied by a hardware crypto device. The {@code ikms()}
+         * method of the {@code Extract} or {@code ExtractThenExpand} object
+         * that is subsequently built returns the assembled input keying
+         * material as a list of {@code SecretKey} objects.
          *
          * @param ikm
          *         the input keying material (IKM) value
@@ -188,8 +191,10 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * <p>
          * {@code addSalt} may be called multiple times when the salt value is
          * to be assembled piece-meal or if part of the salt is to be supplied
-         * by a hardware crypto device. This method appends to the existing list
-         * of values or creates a new list if there is none yet.
+         * by a hardware crypto device. The {@code salts()} method of the
+         * {@code Extract} or {@code ExtractThenExpand} object that is
+         * subsequently built returns the assembled salt as a list of
+         * {@code SecretKey} objects.
          *
          * @param salt
          *         the salt value
@@ -206,12 +211,15 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         }
 
         /**
-         * Adds a salt to the builder.
+         * Adds a salt to the builder. Note that a {@code salt} byte array of
+         * length zero will discarded.
          * <p>
          * {@code addSalt} may be called multiple times when the salt value is
          * to be assembled piece-meal or if part of the salt is to be supplied
-         * by a hardware crypto device. This method appends to the existing list
-         * of values or creates a new list if there is none yet.
+         * by a hardware crypto device. The {@code salts()} method of the
+         * {@code Extract} or {@code ExtractThenExpand} object that is
+         * subsequently built returns the assembled salt as a list of
+         * {@code SecretKey} objects.
          *
          * @param salt
          *         the salt value
