@@ -371,6 +371,10 @@ TEST_VM(os, jio_snprintf) {
   test_snprintf(jio_snprintf, false);
 }
 
+#ifndef MAX_PATH
+#define MAX_PATH    (2 * K)
+#endif
+
 TEST_VM(os, realpath) {
   static const char* path = "/1234567890123456789";
 
