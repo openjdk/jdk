@@ -24,8 +24,8 @@ the JDK source tree. The generated files reside in
 # Import instructions
 
 To update the version of libsleef that is used in the JDK, clone
-`https://github.com/shibatch/sleef.git`, and copy all files, except the `docs`
-and `.github` directories, into
+`https://github.com/shibatch/sleef.git`, and copy all files, except the `docs`,
+`.github` and `.git` directories, into
 `src/jdk.incubator.vector/linux/native/libsleef/upstream`.
 
 The libsleef source code does not follow the JDK whitespace rules as enforced by
@@ -46,8 +46,8 @@ Run `make update-sleef-source` to process the upstream source code and
 store the generated files in the `generated` directory.
 
 Now, you can repeat this for the next platform. For instance, you can
-create a separate profile using `configure --with-conf-name=riscv64` and then
-generate the updated libsleef source code by
+create a separate configuration using `configure --with-conf-name=riscv64` and
+then generate the updated libsleef source code by
 `make update-sleef-source CONF=riscv64`.
 
 Finally, verify with git that the local changes made to the files in

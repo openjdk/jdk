@@ -45,7 +45,7 @@ ifneq ($(COMPILE_TYPE), cross)
 endif
 
 ifeq ($(CMAKE), )
-  $(error CMake not found. Please install cmake and rerun confugure)
+  $(error CMake not found. Please install cmake and rerun configure)
 endif
 
 ifneq ($(OPENJDK_BUILD_OS), linux)
@@ -129,7 +129,7 @@ TARGETS := $(sleef_cross_build)
 
 $(CROSS_COMPILATION_SRC_FILES): $(sleef_cross_build)
 
-# Finally, copy the generated files (and one needed static files) into our
+# Finally, copy the generated files (and one needed static file) into our
 # target directory.
 
 $(eval $(call SetupCopyFiles, copy_static_sleef_source, \
