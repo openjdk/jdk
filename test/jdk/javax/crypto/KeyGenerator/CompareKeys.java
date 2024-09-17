@@ -29,7 +29,6 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Provider;
 import java.security.Security;
-import java.security.spec.NamedParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
@@ -144,9 +143,7 @@ public class CompareKeys {
     public static KeyPair genKeyPair(String algoName, Provider provider)
             throws Exception {
 
-        var g = KeyPairGenerator.getInstance(algoName, provider);
-        if (algoName.equals("ML-DSA")) g.initialize(NamedParameterSpec.ML_DSA_65);
-        else if (algoName.equals("ML-KEM")) g.initialize(NamedParameterSpec.ML_KEM_768);
-        return g.generateKeyPair();
+        return KeyPairGenerator.getInstance(algoName, provider)
+                .generateKeyPair();
     }
 }

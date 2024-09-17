@@ -29,10 +29,17 @@ import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.x509.NamedX509Key;
 
 import java.io.ByteArrayOutputStream;
-import java.security.*;
+import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.InvalidParameterException;
+import java.security.PrivateKey;
+import java.security.ProviderException;
+import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.SignatureException;
+import java.security.SignatureSpi;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.Arrays;
 import java.util.Objects;
 
 /// An implementation extends this class to create its own `Signature`.
@@ -48,7 +55,9 @@ public abstract class NamedSignature extends SignatureSpi {
     private byte[] secKey = null;
     private byte[] pubKey = null;
 
-    public NamedSignature(String fname, String... pnames) {
+    /// @param fname the family name
+    /// @param pnames the standard parameter set names. At least one is needed
+    protected NamedSignature(String fname, String... pnames) {
         this.fname = Objects.requireNonNull(fname);
         if (pnames == null || pnames.length == 0) {
             throw new AssertionError("pnames cannot be null or empty");
@@ -59,7 +68,7 @@ public abstract class NamedSignature extends SignatureSpi {
     private String checkName(String name) throws InvalidKeyException  {
         for (var pname : pnames) {
             if (pname.equalsIgnoreCase(name)) {
-                // return the stored pname, name should be sTrAnGe.
+                // return the stored standard name
                 return pname;
             }
         }
@@ -147,62 +156,52 @@ public abstract class NamedSignature extends SignatureSpi {
         return null;
     }
 
-    /**
-     * User-defined sign function.
-     *
-     * @param name parameter name
-     * @param sk private key in raw bytes
-     * @param msg the message
-     * @param sr SecureRandom object, null if not initialized
-     * @return the signature
-     * @throws ProviderException if there is an internal error
-     * @throws SignatureException if there is another error
-     */
+    /// User-defined sign function.
+    ///
+    /// @param name parameter name
+    /// @param sk private key in raw bytes
+    /// @param msg the message
+    /// @param sr SecureRandom object, `null` if not initialized
+    /// @return the signature
+    /// @throws ProviderException if there is an internal error
+    /// @throws SignatureException if there is another error
     public abstract byte[] sign0(String name, byte[] sk, byte[] msg, SecureRandom sr)
             throws SignatureException;
 
-    /**
-     * User-defined verify function.
-     *
-     * @param name parameter name
-     * @param pk public key in raw bytes
-     * @param msg the message
-     * @param sig the signature
-     * @return true if verified
-     * @throws ProviderException if there is an internal error
-     * @throws SignatureException if there is another error
-     */
+    /// User-defined verify function.
+    ///
+    /// @param name parameter name
+    /// @param pk public key in raw bytes
+    /// @param msg the message
+    /// @param sig the signature
+    /// @return true if verified
+    /// @throws ProviderException if there is an internal error
+    /// @throws SignatureException if there is another error
     public abstract boolean verify0(String name, byte[] pk, byte[] msg, byte[] sig)
             throws SignatureException;
 
-    /**
-     * User-defined function to validate a public key.
-     *
-     * This method will be called in {@code initVerify}. This gives provider a chance to
-     * reject the key so an {@code InvalidKeyException} can be thrown earlier.
-     *
-     * The default implementation returns with an exception.
-     *
-     * @param name parameter name
-     * @param pk public key in raw bytes
-     * @throws InvalidKeyException if the key is invalid
-     */
+    /// User-defined function to validate a public key.
+    ///
+    /// This method will be called in `initVerify`. This gives provider a chance to
+    /// reject the key so an `InvalidKeyException` can be thrown earlier.
+    /// The default implementation silently returns without an exception.
+    ///
+    /// @param name parameter name
+    /// @param pk public key in raw bytes
+    /// @throws InvalidKeyException if the key is invalid
     public void checkPublicKey(String name, byte[] pk) throws InvalidKeyException {
         return;
     }
 
-    /**
-     * User-defined function to validate a private key.
-     *
-     * This method will be called in {@code initSign}. This gives provider a chance to
-     * reject the key so an {@code InvalidKeyException} can be thrown earlier.
-     *
-     * The default implementation returns with an exception.
-     *
-     * @param name parameter name
-     * @param sk public key in raw bytes
-     * @throws InvalidKeyException if the key is invalid
-     */
+    /// User-defined function to validate a private key.
+    ///
+    /// This method will be called in `initSign`. This gives provider a chance to
+    /// reject the key so an `InvalidKeyException` can be thrown earlier.
+    /// The default implementation silently returns without an exception.
+    ///
+    /// @param name parameter name
+    /// @param sk public key in raw bytes
+    /// @throws InvalidKeyException if the key is invalid
     public void checkPrivateKey(String name, byte[] sk) throws InvalidKeyException {
         return;
     }

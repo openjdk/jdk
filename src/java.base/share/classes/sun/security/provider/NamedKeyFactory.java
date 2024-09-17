@@ -28,8 +28,18 @@ package sun.security.provider;
 import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.x509.NamedX509Key;
 
-import java.security.*;
-import java.security.spec.*;
+import java.security.AsymmetricKey;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.KeyFactorySpi;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.EncodedKeySpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.security.spec.NamedParameterSpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -43,7 +53,9 @@ public class NamedKeyFactory extends KeyFactorySpi {
     private final String fname; // family name
     private final String[] pnames; // allowed parameter set name, need at least one
 
-    public NamedKeyFactory(String fname, String... pnames) {
+    /// @param fname the family name
+    /// @param pnames the standard parameter set names. At least one is needed
+    protected NamedKeyFactory(String fname, String... pnames) {
         this.fname = Objects.requireNonNull(fname);
         if (pnames == null || pnames.length == 0) {
             throw new AssertionError("pnames cannot be null or empty");
@@ -54,7 +66,7 @@ public class NamedKeyFactory extends KeyFactorySpi {
     private String checkName(String name) throws InvalidKeyException  {
         for (var pname : pnames) {
             if (pname.equalsIgnoreCase(name)) {
-                // return the stored pname, name should be sTrAnGe.
+                // return the stored standard name
                 return pname;
             }
         }

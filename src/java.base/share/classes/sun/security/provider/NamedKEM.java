@@ -33,7 +33,11 @@ import javax.crypto.KEM;
 import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.PrivateKey;
+import java.security.ProviderException;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
@@ -46,7 +50,9 @@ public abstract class NamedKEM implements KEMSpi {
     private final String fname; // family name
     private final String[] pnames; // allowed parameter set name, need at least one
 
-    public NamedKEM(String fname, String... pnames) {
+    /// @param fname the family name
+    /// @param pnames the standard parameter set names. At least one is needed
+    protected NamedKEM(String fname, String... pnames) {
         this.fname = Objects.requireNonNull(fname);
         if (pnames == null || pnames.length == 0) {
             throw new AssertionError("pnames cannot be null or empty");
@@ -57,7 +63,7 @@ public abstract class NamedKEM implements KEMSpi {
     private String checkName(String name) throws InvalidKeyException  {
         for (var pname : pnames) {
             if (pname.equalsIgnoreCase(name)) {
-                // return the stored pname, name should be sTrAnGe.
+                // return the stored standard name
                 return pname;
             }
         }
@@ -145,76 +151,62 @@ public abstract class NamedKEM implements KEMSpi {
         return new KeyConsumerImpl(kem, name, kem.sslen0(name), kem.clen0(name), key, sr);
     }
 
-    /**
-     * User-defined encap function.
-     *
-     * @param name parameter name
-     * @param pk public key in raw bytes
-     * @param sr SecureRandom object, null if not initialized
-     * @return the key encapsulation message and the shared key (in this order)
-     * @throws ProviderException if there is an internal error
-     */
+    /// User-defined encap function.
+    ///
+    /// @param name parameter name
+    /// @param pk public key in raw bytes
+    /// @param sr SecureRandom object, `null` if not initialized
+    /// @return the key encapsulation message and the shared key (in this order)
+    /// @throws ProviderException if there is an internal error
     public abstract byte[][] encap0(String name, byte[] pk, SecureRandom sr);
 
-    /**
-     * User-defined decap function.
-     *
-     * @param name parameter name
-     * @param sk private key in raw bytes
-     * @param encap the key encapsulation message
-     * @return the shared key
-     * @throws ProviderException if there is an internal error
-     * @throws DecapsulateException if there is another error
-     */
+    /// User-defined decap function.
+    ///
+    /// @param name parameter name
+    /// @param sk private key in raw bytes
+    /// @param encap the key encapsulation message
+    /// @return the shared key
+    /// @throws ProviderException if there is an internal error
+    /// @throws DecapsulateException if there is another error
     public abstract byte[] decap0(String name, byte[] sk, byte[] encap)
             throws DecapsulateException;
 
-    /**
-     * User-defined function returning shared secret key length.
-     *
-     * @param name parameter name
-     * @return shared secret key length
-     * @throws ProviderException if there is an internal error
-     */
+    /// User-defined function returning shared secret key length.
+    ///
+    /// @param name parameter name
+    /// @return shared secret key length
+    /// @throws ProviderException if there is an internal error
     public abstract int sslen0(String name);
 
-    /**
-     * User-defined function returning key encapsulation message length.
-     *
-     * @param name parameter name
-     * @return key encapsulation message length
-     * @throws ProviderException if there is an internal error
-     */
+    /// User-defined function returning key encapsulation message length.
+    ///
+    /// @param name parameter name
+    /// @return key encapsulation message length
+    /// @throws ProviderException if there is an internal error
     public abstract int clen0(String name);
 
-    /**
-     * User-defined function to validate a public key.
-     *
-     * This method will be called in {@code newEncapsulator}. This gives provider a chance to
-     * reject the key so an {@code InvalidKeyException} can be thrown earlier.
-     *
-     * The default implementation returns with an exception.
-     *
-     * @param name parameter name
-     * @param pk public key in raw bytes
-     * @throws InvalidKeyException if the key is invalid
-     */
+    /// User-defined function to validate a public key.
+    ///
+    /// This method will be called in `newEncapsulator`. This gives provider a chance to
+    /// reject the key so an `InvalidKeyException` can be thrown earlier.
+    /// The default implementation silently returns without an exception.
+    ///
+    /// @param name parameter name
+    /// @param pk public key in raw bytes
+    /// @throws InvalidKeyException if the key is invalid
     public void checkPublicKey0(String name, byte[] pk) throws InvalidKeyException {
         return;
     }
 
-    /**
-     * User-defined function to validate a private key.
-     *
-     * This method will be called in {@code newDecapsulator}. This gives provider a chance to
-     * reject the key so an {@code InvalidKeyException} can be thrown earlier.
-     *
-     * The default implementation returns with an exception.
-     *
-     * @param name parameter name
-     * @param sk public key in raw bytes
-     * @throws InvalidKeyException if the key is invalid
-     */
+    /// User-defined function to validate a private key.
+    ///
+    /// This method will be called in `newDecapsulator`. This gives provider a chance to
+    /// reject the key so an `InvalidKeyException` can be thrown earlier.
+    /// The default implementation silently returns without an exception.
+    ///
+    /// @param name parameter name
+    /// @param sk public key in raw bytes
+    /// @throws InvalidKeyException if the key is invalid
     public void checkPrivateKey0(String name, byte[] sk) throws InvalidKeyException {
         return;
     }

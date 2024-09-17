@@ -28,11 +28,14 @@ package sun.security.provider;
 import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.x509.NamedX509Key;
 
-import java.security.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidParameterException;
+import java.security.KeyPair;
+import java.security.KeyPairGeneratorSpi;
+import java.security.ProviderException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
-import java.util.Arrays;
 import java.util.Objects;
 
 /// An implementation extends this class to create its own `KeyPairGenerator`.
@@ -71,9 +74,11 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
     protected String name = null; // init as
     private SecureRandom secureRandom;
 
-    // Implementors should call this ctor with at least one pnames.
-    // If multiple, 1st becomes the default one.
-    public NamedKeyPairGenerator(String fname, String... pnames) {
+    /// @param fname the family name
+    /// @param pnames supported parameter set names. Implementors should
+    ///     call this ctor with at least one. If multiple, the first one
+    ///     becomes the default parameter set name.
+    protected NamedKeyPairGenerator(String fname, String... pnames) {
         this.fname = Objects.requireNonNull(fname);
         if (pnames == null || pnames.length == 0) {
             throw new AssertionError("pnames cannot be null or empty");
@@ -84,7 +89,7 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
     private String checkName(String name) throws InvalidAlgorithmParameterException  {
         for (var pname : pnames) {
             if (pname.equalsIgnoreCase(name)) {
-                // return the stored pname, name should be sTrAnGe.
+                // return the stored standard name
                 return pname;
             }
         }
@@ -119,13 +124,11 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
                 new NamedPKCS8Key(fname, pname, keys[1]));
     }
 
-    /**
-     * User-defined key pair generator.
-     *
-     * @param pname parametert set name
-     * @param sr SecureRandom object, null if not initialized
-     * @return public key and private key (in this order) in raw bytes
-     * @throws ProviderException if there is an internal error
-     */
+    /// User-defined key pair generator.
+    ///
+    /// @param pname parameter set name
+    /// @param sr `SecureRandom` object, `null` if not initialized
+    /// @return public key and private key (in this order) in raw bytes
+    /// @throws ProviderException if there is an internal error
     public abstract byte[][] generateKeyPair0(String pname, SecureRandom sr);
 }
