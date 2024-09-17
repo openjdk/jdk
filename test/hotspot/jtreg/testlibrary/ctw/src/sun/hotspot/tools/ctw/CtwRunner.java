@@ -303,11 +303,16 @@ public class CtwRunner {
                 "-XX:+StressCCP",
                 "-XX:+StressMacroExpansion",
                 "-XX:+StressIncrementalInlining",
-                "-XX:+StressBailout",
-                "-XX:StressBailoutMean=100_000_000",
-                "-XX:+CaptureBailoutInformation",
                 // StressSeed is uint
                 "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE)));
+
+        // Use the following stress mode 10% of the time
+        // to avoid outcompeting other stress modes or potentially hiding an infinite compilation bug.
+        if (rng.nextInt(Integer.MAX_VALUE) % 10 == 0) {
+            Args.add("-XX:+StressBailout");
+            Args.add("-XX:StressBailoutMean=100000");
+            Args.add("-XX:+CaptureBailoutInformation");
+        }
 
         for (String arg : CTW_EXTRA_ARGS.split(",")) {
             Args.add(arg);
