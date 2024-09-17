@@ -77,8 +77,9 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ANY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
@@ -207,7 +208,7 @@ public class H3ConcurrentPush implements HttpServerAdapters {
 
                 // now make sure there's an HTTP/3 connection
                 client.send(HttpRequest.newBuilder(headURI).version(Version.HTTP_3)
-                        .configure(HTTP_3_ALT_SVC).HEAD().build(), BodyHandlers.discarding());
+                        .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC).HEAD().build(), BodyHandlers.discarding());
 
                 int waitForPushId;
                 List<CompletableFuture<HttpResponse<String>>> responses = new ArrayList<>();

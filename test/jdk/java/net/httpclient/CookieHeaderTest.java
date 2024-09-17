@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,6 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.CookieHandler;
-import java.net.CookieManager;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -56,7 +55,6 @@ import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
-import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -78,6 +76,7 @@ import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -157,7 +156,7 @@ public class CookieHeaderTest implements HttpServerAdapters {
             requestBuilder.version(version);
         }
         if (version == HTTP_3) {
-            requestBuilder.configure(http3TestServer.serverConfig());
+            requestBuilder.setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
         }
         HttpRequest request = requestBuilder.build();
         out.println("Initial request: " + request.uri());
@@ -166,7 +165,7 @@ public class CookieHeaderTest implements HttpServerAdapters {
             out.println("iteration: " + i);
             HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
 
-            out.println("  Got response: " + response + ", config=" + request.configuration()
+            out.println("  Got response: " + response + ", config=" + request.getOption(H3_DISCOVERY)
                     + ", version=" + response.version());
             out.println("  Got body Path: " + response.body());
 
@@ -185,7 +184,7 @@ public class CookieHeaderTest implements HttpServerAdapters {
                 requestBuilder.version(version);
             }
             if (version == HTTP_3) {
-                requestBuilder.configure(http3TestServer.serverConfig());
+                requestBuilder.setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
             }
             request = requestBuilder.build();
         }

@@ -29,8 +29,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
-import java.net.http.HttpRequest.Config;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
@@ -60,8 +59,11 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static java.net.http.HttpClient.Version.*;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.*;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
 import static java.lang.System.out;
@@ -244,7 +246,7 @@ public class GetHTTP3Test implements HttpServerAdapters {
         final Builder headBuilder = HttpRequest.newBuilder(headURI)
                 .version(firstRequestVersion)
                 .HEAD();
-        Config config = null;
+        H3DiscoveryMode config = null;
         if (firstRequestVersion == HTTP_3 && !directQuicConnectionSupported) {
             // if the server doesn't listen for HTTP/3 on the same port than TCP, then
             // do not attempt to connect to the URI host:port through UDP - as we might
@@ -256,7 +258,7 @@ public class GetHTTP3Test implements HttpServerAdapters {
         }
         if (config != null) {
             out.println("first request will use " + config);
-            headBuilder.configure(config);
+            headBuilder.setOption(H3_DISCOVERY, config);
             config = null;
         }
 
@@ -307,7 +309,9 @@ public class GetHTTP3Test implements HttpServerAdapters {
         Builder builder = HttpRequest.newBuilder()
                 .GET();
         version.ifPresent(builder::version);
-        Optional.ofNullable(config).ifPresent(builder::configure);
+        if (config != null) {
+            builder.setOption(H3_DISCOVERY, config);
+        }
         Map<URI, CompletableFuture<HttpResponse<String>>> responses = new HashMap<>();
         for (int i = 0; i < ITERATION_COUNT; i++) {
             HttpRequest request = builder.uri(URI.create(uri+"/Async/GET/"+i)).build();
@@ -363,7 +367,7 @@ public class GetHTTP3Test implements HttpServerAdapters {
             // through, there should be an AltService record for the server, so
             // we should be able to safely use any default config (except
             // HTTP_3_ONLY)
-            builder.configure(H3DiscoveryConfig.HTTP_3_ALT_SVC);
+            builder.setOption(H3_DISCOVERY, HTTP_3_ALT_SVC);
         }
 
         HttpRequest request = builder.build();

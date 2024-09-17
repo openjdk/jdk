@@ -42,7 +42,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Config;
 import java.net.http.HttpResponse;
 import java.util.concurrent.CompletableFuture;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
@@ -53,7 +52,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static org.testng.Assert.assertEquals;
@@ -209,16 +209,18 @@ public class IdleConnectionTimeoutTest {
 
     private void testTimeout(HttpClient hc, URI uri, Version version) {
         // Timeout should occur
-        Config config = version == HTTP_3 ? HTTP_3_ONLY : null;
-        HttpRequest hreq = HttpRequest.newBuilder(uri).version(version).GET().configure(config).build();
+        var config = version == HTTP_3 ? HTTP_3_ONLY : null;
+        HttpRequest hreq = HttpRequest.newBuilder(uri).version(version).GET()
+                .setOption(H3_DISCOVERY, config).build();
         HttpResponse<String> hresp = runRequest(hc, hreq, 2750);
         assertEquals(hresp.statusCode(), 200, "idleConnectionTimeoutEvent was not expected but occurred");
     }
 
     private void testNoTimeout(HttpClient hc, URI uri, Version version) {
         // Timeout should not occur
-        Config config = version == HTTP_3 ? HTTP_3_ONLY : null;
-        HttpRequest hreq = HttpRequest.newBuilder(uri).version(version).GET().configure(config).build();
+        var config = version == HTTP_3 ? HTTP_3_ONLY : null;
+        HttpRequest hreq = HttpRequest.newBuilder(uri).version(version).GET()
+                .setOption(H3_DISCOVERY,  config).build();
         HttpResponse<String> hresp = runRequest(hc, hreq, 0);
         assertEquals(hresp.statusCode(), 200, "idleConnectionTimeoutEvent was not expected but occurred");
     }

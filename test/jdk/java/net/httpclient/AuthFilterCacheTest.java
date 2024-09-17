@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Config;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
@@ -51,9 +50,10 @@ import javax.net.ssl.SSLContext;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ANY;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
 /**
@@ -312,11 +312,11 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
                 String uriStr = uri.toString() + (++count);
                 var builder = HttpRequest.newBuilder()
                         .uri(URI.create(uriStr));
-                Config config = uriStr.contains("h3-only") ? HTTP_3_ONLY
+                var config = uriStr.contains("h3-only") ? HTTP_3_ONLY
                         : uriStr.contains("h3-alt-svc") ? HTTP_3_ALT_SVC
                         : null;
                 if (config != null) {
-                    builder = builder.configure(config).version(HTTP_3);
+                    builder = builder.setOption(H3_DISCOVERY, config).version(HTTP_3);
                 } else {
                     builder = builder.version(HTTP_2);
                 }
@@ -336,12 +336,12 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
                                                         Throwable t) {
         if (t != null) {
             System.out.printf("Request failed: %s (version=%s, config=%s): %s%n",
-                    req, req.version(), req.configuration().orElse(null), t);
+                    req, req.version(), req.getOption(H3_DISCOVERY).orElse(null), t);
             t.printStackTrace(System.out);
             return CompletableFuture.failedFuture(t);
         } else {
             System.out.printf("Request succeeded: %s (version=%s, config=%s): %s%n",
-                    req, req.version(), req.configuration().orElse(null), resp);
+                    req, req.version(), req.getOption(H3_DISCOVERY).orElse(null), resp);
             return CompletableFuture.completedFuture(resp);
         }
     }

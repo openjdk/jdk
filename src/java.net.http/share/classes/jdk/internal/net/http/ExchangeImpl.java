@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.http.HttpConnectTimeoutException;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.ResponseInfo;
 import java.net.http.UnsupportedProtocolVersionException;
@@ -208,7 +208,7 @@ abstract class ExchangeImpl<T> {
                     if (debug.on()) {
                         debug.log("get: trying with both HTTP/3 and HTTP/2");
                     }
-                    if (config != H3DiscoveryConfig.HTTP_3_ONLY) {
+                    if (config != H3DiscoveryMode.HTTP_3_ONLY) {
                         Http2ClientImpl client2 = exchange.client().client2();
                         c2fs = () -> client2.getConnectionFor(request, exchange);
                     } else {

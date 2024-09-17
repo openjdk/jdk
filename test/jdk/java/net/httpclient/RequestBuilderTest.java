@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,14 +36,16 @@ import java.util.Set;
 
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
+
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.newBuilder;
 import static java.time.Duration.ofNanos;
 import static java.time.Duration.ofMinutes;
 import static java.time.Duration.ofSeconds;
 import static java.time.Duration.ZERO;
-import static java.net.http.HttpClient.Version.HTTP_1_1;
-import static java.net.http.HttpClient.Version.HTTP_2;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
-import static java.net.http.HttpRequest.newBuilder;
 import static org.testng.Assert.*;
 
 import org.testng.annotations.Test;
@@ -403,7 +405,7 @@ public class RequestBuilderTest {
                                                      .header("A", "B")
                                                      .POST(BodyPublishers.ofString(""))
                                                      .timeout(ofSeconds(30))
-                                                     .configure(HTTP_3_ONLY)
+                                                     .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                                                      .version(HTTP_1_1);
         HttpRequest.Builder copy = builder.copy();
         assertTrue(builder != copy);
@@ -420,8 +422,8 @@ public class RequestBuilderTest {
         assertEquals(copyRequest.timeout().get(), ofSeconds(30));
         assertTrue(copyRequest.version().isPresent());
         assertEquals(copyRequest.version().get(), HTTP_1_1);
-        assertTrue(copyRequest.configuration().isPresent());
-        assertEquals(copyRequest.configuration().get(), HTTP_3_ONLY);
+        assertTrue(copyRequest.getOption(H3_DISCOVERY).isPresent());
+        assertEquals(copyRequest.getOption(H3_DISCOVERY).get(), HTTP_3_ONLY);
 
         // lazy set URI ( maybe builder as a template )
         copyRequest = newBuilder().copy().uri(uri).build();

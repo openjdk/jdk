@@ -33,8 +33,7 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.Config;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
@@ -63,6 +62,7 @@ import sun.net.www.HeaderParser;
 
 import static java.lang.System.out;
 import static java.lang.String.format;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 /**
  * @test
@@ -387,12 +387,11 @@ public class DigestEchoClient {
                 .isPresent();
     }
 
-    static Config serverConfig(int step, DigestEchoServer server) {
+    static H3DiscoveryMode serverConfig(int step, DigestEchoServer server) {
         var config = server.serverConfig();
-        if (!(config instanceof H3DiscoveryConfig c)) return config;
-        return switch (c) {
-            case HTTP_3_ONLY -> c;
-            default -> H3DiscoveryConfig.HTTP_3_ALT_SVC;
+        return switch (config) {
+            case HTTP_3_ONLY -> config;
+            default -> H3DiscoveryMode.HTTP_3_ALT_SVC;
         };
     }
 
@@ -434,7 +433,7 @@ public class DigestEchoClient {
                 BodyPublisher reqBody = BodyPublishers.ofString(body);
                 HttpRequest.Builder builder = HttpRequest.newBuilder(uri)
                         .version(clientVersion)
-                        .configure(serverConfig(i, server))
+                        .setOption(H3_DISCOVERY, serverConfig(i, server))
                         .POST(reqBody)
                         .expectContinue(expectContinue);
                 boolean isTunnel = isProxy(authType) && useSSL;
@@ -507,7 +506,7 @@ public class DigestEchoClient {
                     System.out.println(String.format("%s received: adding header %s: %s",
                             resp.statusCode(), authorizationKey(authType), auth));
                     request = HttpRequest.newBuilder(uri).version(clientVersion)
-                            .configure(server.serverConfig())
+                            .setOption(H3_DISCOVERY, server.serverConfig())
                             .POST(reqBody).header(authorizationKey(authType), auth).build();
                     if (async) {
                         resp = client.sendAsync(request, BodyHandlers.ofLines()).join();
@@ -616,7 +615,7 @@ public class DigestEchoClient {
                 HttpRequest.BodyPublisher reqBody = HttpRequest.BodyPublishers.ofString(body);
                 HttpRequest.Builder reqBuilder = HttpRequest
                         .newBuilder(uri).version(clientVersion).POST(reqBody)
-                        .configure(serverConfig(i, server))
+                        .setOption(H3_DISCOVERY, serverConfig(i, server))
                         .expectContinue(expectContinue);
 
                 boolean isTunnel = isProxy(authType) && useSSL;
@@ -682,7 +681,7 @@ public class DigestEchoClient {
                     String auth = digestResponse(uri, digestMethod, challenge, cnonceStr);
                     try {
                         request = HttpRequest.newBuilder(uri).version(clientVersion)
-                            .configure(serverConfig(i, server))
+                            .setOption(H3_DISCOVERY, serverConfig(i, server))
                             .POST(reqBody).header(authorizationKey(authType), auth).build();
                     } catch (IllegalArgumentException x) {
                         throw x;

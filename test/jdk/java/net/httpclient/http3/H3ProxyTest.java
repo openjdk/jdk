@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient.Version;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.charset.StandardCharsets;
@@ -47,7 +47,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.test.lib.net.SimpleSSLContext;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.*;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 
 /*
@@ -132,7 +135,7 @@ public class H3ProxyTest implements HttpServerAdapters {
     }
 
     public static void test(HttpTestServer server,
-                            H3DiscoveryConfig config)
+                            H3DiscoveryMode config)
             throws Exception
     {
         System.out.println("""
@@ -180,7 +183,7 @@ public class H3ProxyTest implements HttpServerAdapters {
                         .uri(uri)
                         .GET()
                         .version(Version.HTTP_3)
-                        .configure(config)
+                        .setOption(H3_DISCOVERY, config)
                         .build();
 
                 System.out.println("\nSending request with HttpClient: " + config);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.HashSet;
@@ -48,7 +48,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import static java.net.http.HttpClient.Version.HTTP_2;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -179,12 +181,12 @@ public class HeadersLowerCaseTest implements HttpServerAdapters {
                 .version(version)
                 .sslContext(sslContext)
                 .proxy(HttpClient.Builder.NO_PROXY).build();
-        H3DiscoveryConfig config = switch (version) {
-            case HTTP_3 -> H3DiscoveryConfig.HTTP_3_ONLY;
-            default -> H3DiscoveryConfig.HTTP_3_ALT_SVC;
+        H3DiscoveryMode config = switch (version) {
+            case HTTP_3 -> HTTP_3_ONLY;
+            default -> HTTP_3_ALT_SVC;
         };
         final HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(requestURI)
-                .configure(config)
+                .setOption(H3_DISCOVERY, config)
                 .version(version);
         for (final String k : REQUEST_HEADERS) {
             reqBuilder.header(k, k);
@@ -210,12 +212,12 @@ public class HeadersLowerCaseTest implements HttpServerAdapters {
     @ParameterizedTest
     @MethodSource("params")
     public void testInvalidHeaderName(final Version version, final URI requestURI) throws Exception {
-        H3DiscoveryConfig config = switch (version) {
-            case HTTP_3 -> H3DiscoveryConfig.HTTP_3_ONLY;
-            default -> H3DiscoveryConfig.HTTP_3_ALT_SVC;
+        H3DiscoveryMode config = switch (version) {
+            case HTTP_3 -> HTTP_3_ONLY;
+            default -> HTTP_3_ALT_SVC;
         };
         final HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(requestURI)
-                .configure(config)
+                .setOption(H3_DISCOVERY, config)
                 .version(version);
         final String copyrightSign = new String(Character.toChars(0x00A9)); // copyright sign
         final String invalidHeaderName = "abcd" + copyrightSign;

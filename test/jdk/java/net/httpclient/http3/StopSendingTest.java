@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.ByteBuffer;
@@ -49,7 +48,9 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 /*
  * @test
@@ -135,7 +136,7 @@ public class StopSendingTest implements HttpServerAdapters {
         final URI reqURI = new URI(requestURIBase + "/hello");
         final HttpRequest req = HttpRequest.newBuilder(reqURI)
                 .version(Version.HTTP_3)
-                .configure(H3DiscoveryConfig.HTTP_3_ONLY)
+                .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                 .build();
         // used to wait and trigger a request cancellation
         final CountDownLatch cancellationTrigger = new CountDownLatch(1);

@@ -57,6 +57,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -80,7 +81,8 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import static java.lang.System.out;
 import static java.lang.System.err;
 import static java.net.http.HttpClient.Version.*;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -325,10 +327,10 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             // Populate alt-svc registry with h3 service
             if (uri.contains("h2h3")) headRequest(client);
-            HttpRequest.Config config = uri.contains("h3-only") ? h3TestServer.serverConfig() : null;
+            H3DiscoveryMode config = uri.contains("h3-only") ? h3TestServer.h3DiscoveryConfig() : null;
             HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
                     .GET()
-                    .configure(config)
+                    .setOption(H3_DISCOVERY, config)
                     .build();
             BodyHandler<String> handler = BodyHandlers.ofString();
             CountDownLatch latch = new CountDownLatch(1);
@@ -454,10 +456,10 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             // Populate alt-svc registry with h3 service
             if (uri.contains("h2h3")) headRequest(client);
-            HttpRequest.Config config = uri.contains("h3-only") ? h3TestServer.serverConfig() : null;
+            H3DiscoveryMode config = uri.contains("h3-only") ? h3TestServer.h3DiscoveryConfig() : null;
             HttpRequest req = HttpRequest.newBuilder(URI.create(uri))
                     .POST(HttpRequest.BodyPublishers.ofByteArrays(iterable))
-                    .configure(config)
+                    .setOption(H3_DISCOVERY, config)
                     .build();
             BodyHandler<String> handler = BodyHandlers.ofString();
             CountDownLatch latch = new CountDownLatch(1);
@@ -568,10 +570,10 @@ public class CancelRequestTest implements HttpServerAdapters {
 
             // Populate alt-svc registry with h3 service
             if (uri.contains("h2h3")) headRequest(client);
-            HttpRequest.Config config = uri.contains("h3-only") ? h3TestServer.serverConfig() : null;
+            H3DiscoveryMode config = uri.contains("h3-only") ? h3TestServer.h3DiscoveryConfig() : null;
             HttpRequest req = HttpRequest.newBuilder(URI.create(uriStr))
                     .POST(HttpRequest.BodyPublishers.ofByteArrays(iterable))
-                    .configure(config)
+                    .setOption(H3_DISCOVERY, config)
                     .build();
             String body = null;
             Exception failed = null;

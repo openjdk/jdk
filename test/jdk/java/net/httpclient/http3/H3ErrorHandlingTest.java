@@ -43,7 +43,6 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
-import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -59,7 +58,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
 /*
@@ -883,15 +884,15 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
     private HttpRequest getRequest() throws URISyntaxException {
         final URI reqURI = new URI(requestURIBase + "/hello");
         final HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(reqURI)
-                .version(Version.HTTP_3)
-                .configure(HTTP_3_ONLY);
+                .version(HTTP_3)
+                .setOption(H3_DISCOVERY, HTTP_3_ONLY);
         return reqBuilder.build();
     }
 
     private HttpClient getHttpClient() {
         final HttpClient client = newClientBuilderForH3()
                 .proxy(HttpClient.Builder.NO_PROXY)
-                .version(Version.HTTP_3)
+                .version(HTTP_3)
                 .sslContext(sslContext).build();
         return client;
     }

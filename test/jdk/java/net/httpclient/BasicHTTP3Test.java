@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.internal.net.quic.QuicVersion;
 import jdk.test.lib.net.SimpleSSLContext;
-import jdk.test.lib.net.URIBuilder;
 import org.testng.ITestContext;
 import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
@@ -57,10 +56,11 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
 import static java.lang.System.out;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
 
 
 /*
@@ -248,9 +248,9 @@ public class BasicHTTP3Test implements HttpServerAdapters {
                 // HTTP/3 endpoint listening at the URI port.
                 // sameClient should be fine because version.empty() should
                 // have come first and populated alt-services.
-                builder.configure(HTTP_3_ALT_SVC);
+                builder.setOption(H3_DISCOVERY, HTTP_3_ALT_SVC);
             } else {
-                builder.configure(null);
+                builder.setOption(H3_DISCOVERY, null);
             }
             HttpRequest request = builder.build();
             System.out.println("Iteration: " + i);
@@ -322,7 +322,7 @@ public class BasicHTTP3Test implements HttpServerAdapters {
         builder = HttpRequest.newBuilder(URI.create(h3URI.replace("h3","h2")))
                 .GET();
         request = builder.version(Version.HTTP_3)
-                .configure(HTTP_3_ALT_SVC)
+                .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
                 .build();
         try {
             response = client.send(request, BodyHandlers.ofString());

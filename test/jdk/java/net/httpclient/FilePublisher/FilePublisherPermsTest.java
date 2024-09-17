@@ -56,7 +56,7 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
 import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -71,6 +71,7 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
@@ -273,7 +274,7 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
                     .POST(bodyPublisher);
             if (version(uriString) == HTTP_3) {
                 // should be HTTP_3_ONLY
-                builder.configure(http3TestServer.serverConfig());
+                builder.setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
             }
             var req = builder.build();
             out.println("sending " + req);
@@ -380,7 +381,7 @@ public class FilePublisherPermsTest implements HttpServerAdapters {
                 new FilePublisherPermsTest.HttpEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
-        http3TestServer = HttpTestServer.create(H3DiscoveryConfig.HTTP_3_ONLY, sslContext);
+        http3TestServer = HttpTestServer.create(H3DiscoveryMode.HTTP_3_ONLY, sslContext);
         http3TestServer.addHandler(
                 new FilePublisherPermsTest.HttpEchoHandler(), "/http3/echo");
         http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/echo";

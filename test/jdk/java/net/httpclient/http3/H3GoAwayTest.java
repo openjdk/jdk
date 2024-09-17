@@ -47,6 +47,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.*;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -106,8 +109,8 @@ public class H3GoAwayTest {
                 final Set<String> connectionKeys = new LinkedHashSet<>();
                 for (int i = 1; i <= numReqs; i++) {
                     final URI reqURI = new URI(REQ_URI_BASE + "?" + reqMethod + "=" + i);
-                    final HttpRequest req = HttpRequest.newBuilder()
-                            .configure(HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY)
+                    final HttpRequest req = newBuilder()
+                            .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                             .uri(reqURI)
                             .method(reqMethod, BodyPublishers.noBody())
                             .build();

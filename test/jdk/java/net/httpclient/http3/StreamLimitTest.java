@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 /*
  * @test
@@ -149,7 +150,7 @@ public class StreamLimitTest {
                 .build();
         final HttpRequest req = HttpRequest.newBuilder().version(HTTP_3)
                 .GET().uri(requestURI)
-                .configure(server.serverConfig())
+                .setOption(H3_DISCOVERY, server.h3DiscoveryConfig())
                 .build();
         String requestHandledBy = null;
         System.out.println("Server has been configured with a limit for max" +
@@ -185,7 +186,7 @@ public class StreamLimitTest {
         //   request should be handled by a different server connection than the last N requests
         final HttpRequest reqWithTimeout = HttpRequest.newBuilder().version(HTTP_3)
                 .GET().uri(requestURI)
-                .configure(server.serverConfig())
+                .setOption(H3_DISCOVERY, server.h3DiscoveryConfig())
                 .timeout(Duration.of(10, ChronoUnit.SECONDS))
                 .build();
         for (int i = 1; i <= intialMaxStreamLimit; i++) {
@@ -248,7 +249,7 @@ public class StreamLimitTest {
                 " not increase max stream limit for bidi streams created by the client");
         final HttpRequest finalReq = HttpRequest.newBuilder()
                 .version(HTTP_3)
-                .configure(server.serverConfig())
+                .setOption(H3_DISCOVERY, server.h3DiscoveryConfig())
                 .GET().uri(requestURI)
                 .build();
         System.out.println("Sending request, without timeout, to " + requestURI);

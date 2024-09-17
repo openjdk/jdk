@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.net.ssl.SSLContext;
 
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 public class BasicAuthTest implements HttpServerAdapters {
@@ -89,8 +90,8 @@ public class BasicAuthTest implements HttpServerAdapters {
             var builder = HttpRequest.newBuilder(uri);
             if (version == Version.HTTP_3) {
                 builder.version(version);
-                var config = server.serverConfig();
-                builder.configure(server.serverConfig());
+                var config = server.h3DiscoveryConfig();
+                builder.setOption(H3_DISCOVERY, server.h3DiscoveryConfig());
             }
             HttpRequest req = builder.copy().GET().build();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,10 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.common.TestUtil;
 import jdk.test.lib.net.SimpleSSLContext;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.*;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
+
 import org.testng.annotations.Test;
 
 public class H3FixedThreadPoolTest implements HttpServerAdapters {
@@ -90,7 +93,7 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
 
             // warmup client to populate AltServiceRegistry
             var head = HttpRequest.newBuilder(URI.create(https2URIString + "head"))
-                    .configure(HTTP_3_ALT_SVC).build();
+                    .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC).build();
             var resp = client.send(head, BodyHandlers.ofString());
             assert resp.statusCode() == 200;
 
@@ -190,7 +193,7 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
         HttpClient client = getClient();
         Path src = TestUtil.getAFile(FILESIZE * 4);
         HttpRequest req = HttpRequest.newBuilder(uri)
-                                     .configure(config)
+                                     .setOption(H3_DISCOVERY, config)
                                      .POST(BodyPublishers.ofFile(src))
                                      .build();
 
@@ -237,7 +240,7 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
         try {
             URI u = new URI("https://" + server.serverAuthority() + "/paramsTest");
             HttpClient client = getClient();
-            HttpRequest req = HttpRequest.newBuilder(u).configure(HTTP_3_ONLY).build();
+            HttpRequest req = HttpRequest.newBuilder(u).setOption(H3_DISCOVERY, HTTP_3_ONLY).build();
             HttpResponse<String> resp = client.sendAsync(req, BodyHandlers.ofString()).get();
             int stat = resp.statusCode();
             if (stat != 200) {
@@ -260,7 +263,7 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
         HttpClient client = getClient();
         HttpRequest req = HttpRequest.newBuilder(uri)
                                      .POST(BodyPublishers.ofString(SIMPLE_STRING))
-                                     .configure(config)
+                                     .setOption(H3_DISCOVERY, config)
                                      .build();
         HttpResponse<String> response = client.sendAsync(req, BodyHandlers.ofString()).get();
         HttpHeaders h = response.headers();
@@ -278,7 +281,7 @@ public class H3FixedThreadPoolTest implements HttpServerAdapters {
         CompletableFuture<?>[] responses = new CompletableFuture[LOOPS];
         final Path source = TestUtil.getAFile(FILESIZE);
         HttpRequest request = HttpRequest.newBuilder(uri)
-                                         .configure(config)
+                                         .setOption(H3_DISCOVERY, config)
                                          .POST(BodyPublishers.ofFile(source))
                                          .build();
         for (int i = 0; i < LOOPS; i++) {

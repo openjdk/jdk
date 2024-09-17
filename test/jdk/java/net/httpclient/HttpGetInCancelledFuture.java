@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Config;
+import java.net.http.HttpRequest.H3DiscoveryMode;
+import java.net.http.HttpRequest.HttpRequestOption;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
@@ -62,8 +63,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ANY;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -111,11 +112,11 @@ public class HttpGetInCancelledFuture {
                 .build();
     }
 
-    record TestCase(String url, int reqCount, Version version, Config config) {
+    record TestCase(String url, int reqCount, Version version, H3DiscoveryMode config) {
         TestCase(String url, int reqCount, Version version) {
             this(url, reqCount, version, null);
         }
-        TestCase(String url, int reqCount, Config config) {
+        TestCase(String url, int reqCount, H3DiscoveryMode config) {
             this(url, reqCount, HTTP_3, null);
         }
     }
@@ -408,7 +409,7 @@ public class HttpGetInCancelledFuture {
         var id = ID.incrementAndGet();
         try {
             var builder = HttpRequest.newBuilder(url).version(version).GET();
-            if (version == HTTP_3) builder.configure(HTTP_3_ONLY);
+            if (version == HTTP_3) builder.setOption(HttpRequestOption.H3_DISCOVERY, HTTP_3_ONLY);
             var request = builder.build();
             var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             // System.out.println("Got response for " + id + ": " + response);

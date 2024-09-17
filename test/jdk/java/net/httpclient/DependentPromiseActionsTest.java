@@ -55,7 +55,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Config;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -92,7 +92,8 @@ import static java.lang.System.out;
 import static java.lang.String.format;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -256,7 +257,7 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
         }
     }
 
-    Config config(String uri) {
+    H3DiscoveryMode config(String uri) {
         return uri.contains("/http3/") ? HTTP_3_ONLY : null;
     }
 
@@ -268,7 +269,7 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
         var builder = HttpRequest.newBuilder(URI.create(uri))
                 .version(version(uri));
         var config = config(uri);
-        if (config != null) builder.configure(config);
+        if (config != null) builder.setOption(H3_DISCOVERY, config);
         return builder.build();
     }
 

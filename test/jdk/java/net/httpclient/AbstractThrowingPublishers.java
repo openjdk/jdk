@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -172,7 +173,7 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
         var builder = HttpRequest.newBuilder(URI.create(uri));
         if (version(uri) == HTTP_3) {
             builder.version(HTTP_3);
-            builder.configure(http3TestServer.serverConfig());
+            builder.setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
         }
         return builder;
     }

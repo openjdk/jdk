@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,17 @@ package jdk.internal.net.http;
 
 import java.net.URI;
 import java.net.http.HttpRequest.Builder;
-import java.net.http.HttpRequest.Config;
+import java.net.http.HttpRequest.HttpRequestOption;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublisher;
+import java.util.Set;
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Utils;
@@ -51,7 +55,10 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
     private BodyPublisher bodyPublisher;
     private volatile Optional<HttpClient.Version> version;
     private Duration duration;
-    private Config config;
+    private final Map<HttpRequestOption<?>, Object> options = new HashMap<>();
+
+    private static final Set<HttpRequestOption<?>> supportedOptions =
+            Set.of(HttpRequestOption.H3_DISCOVERY);
 
     public HttpRequestBuilderImpl(URI uri) {
         requireNonNull(uri, "uri must be non-null");
@@ -100,7 +107,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
         b.uri = uri;
         b.duration = duration;
         b.version = version;
-        b.config = config;
+        b.options.putAll(Map.copyOf(options));
         return b;
     }
 
@@ -160,8 +167,15 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
     }
 
     @Override
-    public Builder configure(Config config) {
-        this.config = config;
+    public <T> Builder setOption(HttpRequestOption<T> option, T value) {
+        Objects.requireNonNull(option, "option");
+        if (value == null) options.remove(option);
+        else if (supportedOptions.contains(option)) {
+            if (!option.type().isInstance(value)) {
+                throw newIAE("Illegal value type %s for %s", value, option);
+            }
+            options.put(option, value);
+        } // otherwise just ignore the option
         return this;
     }
 
@@ -177,7 +191,7 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
 
     Optional<HttpClient.Version> version() { return version; }
 
-    Config config() { return config; }
+    Map<HttpRequestOption<?>, Object> options() { return options; }
 
     @Override
     public HttpRequest.Builder GET() {
@@ -253,5 +267,31 @@ public class HttpRequestBuilderImpl implements HttpRequest.Builder {
     }
 
     Duration timeout() { return duration; }
+
+    public static Map<HttpRequestOption<?>, Object> copySupportedOptions(HttpRequest request) {
+        Objects.requireNonNull(request, "request");
+        if (request instanceof ImmutableHttpRequest ihr) {
+            // already checked and immutable
+            return ihr.options();
+        }
+        Map<HttpRequestOption<?>, Object> options = new HashMap<>();
+        for (HttpRequestOption<?> option : supportedOptions) {
+            var val =  request.getOption(option);
+            if (!val.isPresent()) continue;
+            options.put(option, option.type().cast(val.get()));
+        }
+        return Map.copyOf(options);
+    }
+
+    public static Map<HttpRequestOption<?>, Object> copySupportedOptions(Map<HttpRequestOption<?>, Object> options) {
+        Objects.requireNonNull(options, "option");
+        Map<HttpRequestOption<?>, Object> result = new HashMap<>();
+        for (HttpRequestOption<?> option : supportedOptions) {
+            var val =  options.get(option);
+            if (val == null) continue;
+            result.put(option, option.type().cast(val));
+        }
+        return Map.copyOf(result);
+    }
 
 }

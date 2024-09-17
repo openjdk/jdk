@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,10 @@ import java.net.http.HttpResponse.BodySubscriber;
 
 import static java.lang.String.format;
 import static java.lang.System.out;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
-import static java.net.http.HttpClient.Version.*;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.*;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
 
 /**
  * @test
@@ -166,7 +167,7 @@ public class CancelledResponse {
 
         HttpClient client = newHttpClient();
         HttpRequest request = HttpRequest.newBuilder(uri)
-                .configure(version == HTTP_3 ? HTTP_3_ALT_SVC : null)
+                .setOption(H3_DISCOVERY, version == HTTP_3 ? HTTP_3_ALT_SVC : null)
                 .version(version)
                 .build();
         try {

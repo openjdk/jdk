@@ -43,7 +43,6 @@ import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -54,7 +53,8 @@ import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
 public class H3StopSendingTest {
@@ -143,25 +143,25 @@ public class H3StopSendingTest {
                 .POST(testPub)
                 .uri(h3TestServerUriNoError)
                 .version(HttpClient.Version.HTTP_3)
-                .configure(HTTP_3_ONLY)
+                .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                 .build();
         postRequestError = HttpRequest.newBuilder()
                 .POST(testPub)
                 .uri(h3TestServerUriError)
                 .version(HttpClient.Version.HTTP_3)
-                .configure(HTTP_3_ONLY)
+                .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                 .build();
         postRequestNoErrorWithData = HttpRequest.newBuilder()
                 .POST(testPub)
                 .uri(URI.create(h3TestServerUriNoError.toString() + WITH_RESPONSE_BODY_QUERY))
                 .version(HttpClient.Version.HTTP_3)
-                .configure(HTTP_3_ONLY)
+                .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                 .build();
         postRequestErrorWithData = HttpRequest.newBuilder()
                 .POST(testPub)
                 .uri(URI.create(h3TestServerUriError.toString() + WITH_RESPONSE_BODY_QUERY))
                 .version(HttpClient.Version.HTTP_3)
-                .configure(HTTP_3_ONLY)
+                .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                 .build();
     }
 

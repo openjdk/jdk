@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,7 @@ import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Config;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -1127,13 +1125,13 @@ public interface HttpServerAdapters {
             return false;
         }
 
-        public HttpRequest.Config serverConfig() {
+        public H3DiscoveryMode h3DiscoveryConfig() {
             return null;
         }
 
         @Override
         public String toString() {
-            var conf = Optional.<Object>ofNullable(serverConfig()).orElse(getVersion());
+            var conf = Optional.<Object>ofNullable(h3DiscoveryConfig()).orElse(getVersion());
             return "HttpTestServer(%s: %s)".formatted(conf, serverAuthority());
         }
 
@@ -1238,7 +1236,7 @@ public interface HttpServerAdapters {
          * @return The newly created server
          * @throws IOException if any exception occurs during the server creation
          */
-        public static HttpTestServer create(H3DiscoveryConfig h3DiscoveryCfg,
+        public static HttpTestServer create(H3DiscoveryMode h3DiscoveryCfg,
                                             SSLContext sslContext)
                 throws IOException {
             Objects.requireNonNull(sslContext, "SSLContext");
@@ -1254,7 +1252,7 @@ public interface HttpServerAdapters {
          * @return The newly created server
          * @throws IOException if any exception occurs during the server creation
          */
-        public static HttpTestServer create(H3DiscoveryConfig h3DiscoveryCfg,
+        public static HttpTestServer create(H3DiscoveryMode h3DiscoveryCfg,
                                             SSLContext sslContext, ExecutorService executor)
                 throws IOException {
             Objects.requireNonNull(sslContext, "SSLContext");
@@ -1286,7 +1284,7 @@ public interface HttpServerAdapters {
          *
          * @param serverVersion The HTTP version of the server
          * @param sslContext    The SSLContext to use. Can be null
-         * @param h3DiscoveryCfg The Http3EndpointDiscoveryConfig for HTTP_3 server. Can be null,
+         * @param h3DiscoveryCfg The H3DiscoveryMode for HTTP_3 server. Can be null,
          *                       in which case it defaults to {@code HTTP_3_ALT_SVC} for HTTP_3
          *                       server
          * @param executor      The executor to be used by the server. Can be null
@@ -1297,12 +1295,12 @@ public interface HttpServerAdapters {
          * @throws IOException              if any exception occurs during the server creation
          */
         private static HttpTestServer create(final Version serverVersion, final SSLContext sslContext,
-                                            final H3DiscoveryConfig h3DiscoveryCfg,
+                                            final H3DiscoveryMode h3DiscoveryCfg,
                                             final ExecutorService executor) throws IOException {
             Objects.requireNonNull(serverVersion);
             if (h3DiscoveryCfg != null && serverVersion != HTTP_3) {
-                // Http3EndpointDiscoveryConfig is only supported when version of HTTP_3
-                throw new IllegalArgumentException("Http3EndpointDiscoveryConfig" +
+                // H3DiscoveryMode is only supported when version of HTTP_3
+                throw new IllegalArgumentException("H3DiscoveryMode" +
                         " isn't allowed for " + serverVersion + " version");
             }
             switch (serverVersion) {
@@ -1311,8 +1309,8 @@ public interface HttpServerAdapters {
                         throw new IllegalArgumentException("SSLContext cannot be null when" +
                                 " constructing a HTTP_3 server");
                     }
-                    final H3DiscoveryConfig effectiveDiscoveryCfg = h3DiscoveryCfg == null
-                            ? H3DiscoveryConfig.HTTP_3_ALT_SVC
+                    final H3DiscoveryMode effectiveDiscoveryCfg = h3DiscoveryCfg == null
+                            ? H3DiscoveryMode.HTTP_3_ALT_SVC
                             : h3DiscoveryCfg;
                     switch (effectiveDiscoveryCfg) {
                         case HTTP_3_ONLY -> {
@@ -1348,7 +1346,7 @@ public interface HttpServerAdapters {
                             return HttpTestServer.of(h2WithAltService);
                         }
                         default -> throw new IllegalArgumentException("Unsupported" +
-                                " Http3EndpointDiscoveryConfig: " + effectiveDiscoveryCfg);
+                                " H3DiscoveryMode: " + effectiveDiscoveryCfg);
                     }
                 }
                 case HTTP_2 -> {
@@ -1504,10 +1502,10 @@ public interface HttpServerAdapters {
                 return impl.supportsH3DirectConnection();
             }
 
-            public H3DiscoveryConfig serverConfig() {
+            public H3DiscoveryMode h3DiscoveryConfig() {
                 return supportsH3DirectConnection()
-                        ? H3DiscoveryConfig.HTTP_3_ANY
-                        : H3DiscoveryConfig.HTTP_3_ALT_SVC;
+                        ? H3DiscoveryMode.HTTP_3_ANY
+                        : H3DiscoveryMode.HTTP_3_ALT_SVC;
             }
 
             public Version getVersion() { return Version.HTTP_2; }
@@ -1609,8 +1607,8 @@ public interface HttpServerAdapters {
             }
 
             @Override
-            public Config serverConfig() {
-                return H3DiscoveryConfig.HTTP_3_ONLY;
+            public H3DiscoveryMode h3DiscoveryConfig() {
+                return H3DiscoveryMode.HTTP_3_ONLY;
             }
 
             @Override

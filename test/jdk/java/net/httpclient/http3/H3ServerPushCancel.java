@@ -43,7 +43,6 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Builder;
-import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -78,8 +77,11 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ANY;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -131,16 +133,16 @@ public class H3ServerPushCancel implements HttpServerAdapters {
 
     static <T> HttpResponse<T> assert200ResponseCode(HttpResponse<T> response) {
         assertEquals(response.statusCode(), 200);
-        assertEquals(response.version(), Version.HTTP_3);
+        assertEquals(response.version(), HTTP_3);
         return response;
     }
 
     private void sendHeadRequest(HttpClient client) throws IOException, InterruptedException {
         HttpRequest headRequest = HttpRequest.newBuilder(headURI)
-                .HEAD().version(Version.HTTP_2).build();
+                .HEAD().version(HTTP_2).build();
         var headResponse = client.send(headRequest, BodyHandlers.ofString());
         assertEquals(headResponse.statusCode(), 200);
-        assertEquals(headResponse.version(), Version.HTTP_2);
+        assertEquals(headResponse.version(), HTTP_2);
     }
 
     static final class TestPushPromiseHandler<T> implements PushPromiseHandler<T> {
@@ -219,7 +221,7 @@ public class H3ServerPushCancel implements HttpServerAdapters {
         assertTrue(maxPushes > 0);
         try (HttpClient client = newClientBuilderForH3()
                 .proxy(Builder.NO_PROXY)
-                .version(Version.HTTP_3)
+                .version(HTTP_3)
                 .sslContext(new SimpleSSLContext().get())
                 .build()) {
 
@@ -235,8 +237,9 @@ public class H3ServerPushCancel implements HttpServerAdapters {
                 else out.println("\ntestCancel: Second time around: should be a new connection");
 
                 // now make sure there's an HTTP/3 connection
-                client.send(HttpRequest.newBuilder(headURI).version(Version.HTTP_3)
-                        .configure(HTTP_3_ALT_SVC).HEAD().build(), BodyHandlers.discarding());
+                client.send(HttpRequest.newBuilder(headURI).version(HTTP_3)
+                        .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
+                        .HEAD().build(), BodyHandlers.discarding());
 
                 int waitForPushId;
                 List<CompletableFuture<HttpResponse<String>>> responses = new ArrayList<>();

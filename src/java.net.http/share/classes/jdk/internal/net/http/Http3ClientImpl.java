@@ -26,7 +26,7 @@ package jdk.internal.net.http;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.channels.ClosedChannelException;
 import java.time.Duration;
@@ -765,7 +765,7 @@ public final class Http3ClientImpl implements AutoCloseable {
      * @return true if there's no h3 endpoint already registered for the given uri.
      */
     public boolean mayAttemptDirectConnection(HttpRequestImpl request) {
-        return request.http3Discovery() != H3DiscoveryConfig.HTTP_3_ALT_SVC
+        return request.http3Discovery() != H3DiscoveryMode.HTTP_3_ALT_SVC
                 && client().registry().lookup(request.uri(), H3).findFirst().isEmpty()
                 && !hasNoH3(request.uri().getRawAuthority());
     }

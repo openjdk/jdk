@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,10 @@ import javax.net.ssl.SSLContext;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
 import jdk.test.lib.net.SimpleSSLContext;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 /*
  * @test
@@ -128,13 +131,13 @@ public class H3Timeout implements HttpServerAdapters {
 
     private static HttpTimeoutException connect(SSLContext context, String server) throws Exception {
         HttpClient client = HttpServerAdapters.createClientBuilderForH3()
-                .version(HttpClient.Version.HTTP_3)
+                .version(HTTP_3)
                 .sslContext(context)
                 .build();
         try {
             HttpRequest request = HttpRequest.newBuilder(new URI(server))
                     .timeout(Duration.ofMillis(TIMEOUT))
-                    .configure(HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                     .POST(BodyPublishers.ofString("body"))
                     .build();
             HttpResponse<String> response = client.send(request, BodyHandlers.ofString());
@@ -157,13 +160,13 @@ public class H3Timeout implements HttpServerAdapters {
 
     private static HttpTimeoutException connectAsync(SSLContext context, String server) throws Exception {
         try (HttpClient client = HttpServerAdapters.createClientBuilderForH3()
-                    .version(HttpClient.Version.HTTP_3)
+                    .version(HTTP_3)
                     .sslContext(context)
                     .build()) {
             try {
                 HttpRequest request = HttpRequest.newBuilder(new URI(server))
                         .timeout(Duration.ofMillis(TIMEOUT))
-                        .configure(HTTP_3_ONLY)
+                        .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                         .POST(BodyPublishers.ofString("body"))
                         .build();
                 HttpResponse<String> response = client.sendAsync(request, BodyHandlers.ofString()).join();

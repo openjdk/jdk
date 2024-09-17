@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient.Version;
-import java.net.http.HttpRequest.Config;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
@@ -80,6 +79,8 @@ import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpResponse.BodyHandlers.discarding;
 import static org.testng.Assert.assertEquals;
@@ -169,7 +170,7 @@ public class ConcurrentResponses {
         ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                 .name("HttpClient-" + id + "-Worker", 0).factory());
         var http3 = uri.contains("/https3/");
-        Config config = http3 ? H3DiscoveryConfig.HTTP_3_ONLY : null;
+       H3DiscoveryMode config = http3 ? H3DiscoveryMode.HTTP_3_ONLY : null;
         var builder = http3 ? HttpServerAdapters.createClientBuilderForH3() : HttpClient.newBuilder();
         if (http3) builder.version(Version.HTTP_3);
         HttpClient client = builder
@@ -179,13 +180,14 @@ public class ConcurrentResponses {
             Map<HttpRequest, String> requests = new HashMap<>();
             for (int i = 0; i < CONCURRENT_REQUESTS; i++) {
                 HttpRequest request = HttpRequest.newBuilder(URI.create(uri + "?" + i))
-                        .configure(config)
+                        .setOption(H3_DISCOVERY, config)
                         .build();
                 requests.put(request, BODIES[i]);
             }
 
             // initial connection to seed the cache so next parallel connections reuse it
-            client.sendAsync(HttpRequest.newBuilder(URI.create(uri)).configure(config).build(), discarding()).join();
+            client.sendAsync(HttpRequest.newBuilder(URI.create(uri))
+                    .setOption(H3_DISCOVERY, config).build(), discarding()).join();
 
             // will reuse connection cached from the previous request ( when HTTP/2 )
             CompletableFuture.allOf(requests.keySet().parallelStream()
@@ -208,7 +210,7 @@ public class ConcurrentResponses {
         ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
                 .name("HttpClient-" + id + "-Worker", 0).factory());
         var http3 = uri.contains("/https3/");
-        Config config = http3 ? H3DiscoveryConfig.HTTP_3_ONLY : null;
+        H3DiscoveryMode config = http3 ? H3DiscoveryMode.HTTP_3_ONLY : null;
         var builder = http3 ? HttpServerAdapters.createClientBuilderForH3() : HttpClient.newBuilder();
         if (http3) builder.version(Version.HTTP_3);
         HttpClient client = builder
@@ -218,13 +220,14 @@ public class ConcurrentResponses {
             Map<HttpRequest, String> requests = new HashMap<>();
             for (int i = 0; i < CONCURRENT_REQUESTS; i++) {
                 HttpRequest request = HttpRequest.newBuilder(URI.create(uri + "?" + i))
-                        .configure(config)
+                        .setOption(H3_DISCOVERY, config)
                         .build();
                 requests.put(request, BODIES[i]);
             }
 
             // initial connection to seed the cache so next parallel connections reuse it
-            client.sendAsync(HttpRequest.newBuilder(URI.create(uri)).configure(config).build(), discarding()).join();
+            client.sendAsync(HttpRequest.newBuilder(URI.create(uri))
+                    .setOption(H3_DISCOVERY, config).build(), discarding()).join();
 
             // will reuse connection cached from the previous request ( when HTTP/2 )
             CompletableFuture.allOf(requests.keySet().parallelStream()
@@ -330,7 +333,7 @@ public class ConcurrentResponses {
         https2TestServer.addHandler(new Http2VariableHandler(), "/https2/variable");
         https2VariableURI = "https://" + https2TestServer.serverAuthority() + "/https2/variable";
 
-        https3TestServer = HttpTestServer.create(H3DiscoveryConfig.HTTP_3_ONLY, sslContext);
+        https3TestServer = HttpTestServer.create(H3DiscoveryMode.HTTP_3_ONLY, sslContext);
         https3TestServer.addHandler(new Http3FixedHandler(), "/https3/fixed");
         https3FixedURI = "https://" + https3TestServer.serverAuthority() + "/https3/fixed";
         https3TestServer.addHandler(new Http3VariableHandler(), "/https3/variable");

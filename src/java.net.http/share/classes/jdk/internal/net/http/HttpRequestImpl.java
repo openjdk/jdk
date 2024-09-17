@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.security.PrivilegedAction;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.net.http.HttpClient;
@@ -48,6 +49,7 @@ import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.websocket.WebSocketRequest;
 
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static jdk.internal.net.http.common.Utils.ALLOWED_HEADERS;
 import static jdk.internal.net.http.common.Utils.ProxyHeaders;
 
@@ -67,7 +69,8 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     private volatile AccessControlContext acc;
     private final Duration timeout;  // may be null
     private final Optional<HttpClient.Version> version;
-    private final Config config;
+    // An alternative would be to have one field per supported option
+    private final Map<HttpRequestOption<?>, Object> options;
 
     private static String userAgent() {
         PrivilegedAction<String> pa = () -> System.getProperty("java.version");
@@ -95,7 +98,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.requestPublisher = builder.bodyPublisher();  // may be null
         this.timeout = builder.timeout();
         this.version = builder.version();
-        this.config = builder.config();
+        this.options = Map.copyOf(builder.options());
         this.authority = null;
     }
 
@@ -114,7 +117,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
                 "uri must be non null");
         Duration timeout = request.timeout().orElse(null);
         this.method = method == null ? "GET" : method;
-        this.config = request.configuration().orElse(null);
+        this.options = HttpRequestBuilderImpl.copySupportedOptions(request);
         this.userHeaders = HttpHeaders.of(request.headers().map(), Utils.VALIDATE_USER_HEADER);
         if (request instanceof HttpRequestImpl impl) {
             // all cases exception WebSocket should have a new system headers
@@ -199,15 +202,19 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.timeout = other.timeout;
         this.version = other.version();
         this.authority = null;
-        this.config = other.configFor(this.uri);
+        this.options = other.optionsFor(this.uri);
     }
 
-    private Config configFor(URI uri) {
+    private Map<HttpRequestOption<?>, Object> optionsFor(URI uri) {
         if (this.uri == uri || Objects.equals(this.uri.getRawAuthority(), uri.getRawAuthority())) {
-            return config;
+            return options;
         }
         // preserve config if version is HTTP/3
-        return version.orElse(null) == Version.HTTP_3 ? config : null;
+        if (version.orElse(null) == Version.HTTP_3) {
+            H3DiscoveryMode h3DiscoveryMode = (H3DiscoveryMode)options.get(H3_DISCOVERY);
+            if (h3DiscoveryMode != null) return Map.of(H3_DISCOVERY, h3DiscoveryMode);
+        }
+        return Map.of();
     }
 
     private BodyPublisher publisher(HttpRequestImpl other) {
@@ -243,7 +250,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         // What we want to possibly upgrade is the tunneled connection to the
         // target server (so not the CONNECT request itself)
         this.version = Optional.of(HttpClient.Version.HTTP_1_1);
-        this.config = null;
+        this.options = Map.of();
     }
 
     final boolean isConnect() {
@@ -251,17 +258,16 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     }
 
     final boolean isHttp3Only(Version version) {
-        return version == Version.HTTP_3 && config == H3DiscoveryConfig.HTTP_3_ONLY;
+        return version == Version.HTTP_3 && http3Discovery() == H3DiscoveryMode.HTTP_3_ONLY;
     }
 
-    H3DiscoveryConfig http3Discovery() {
-        if (config instanceof H3DiscoveryConfig discoveryConfig) {
-            return discoveryConfig;
-        }
+    H3DiscoveryMode http3Discovery() {
+        var h3Discovery = getOption(H3_DISCOVERY);
+        if (h3Discovery.isPresent()) return h3Discovery.get();
         var version = this.version.orElse(null);
         return version == null
-                ? H3DiscoveryConfig.HTTP_3_ALT_SVC
-                : H3DiscoveryConfig.HTTP_3_ANY;
+                ? H3DiscoveryMode.HTTP_3_ALT_SVC
+                : H3DiscoveryMode.HTTP_3_ANY;
     }
 
     /**
@@ -301,7 +307,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.timeout = parent.timeout;
         this.version = parent.version;
         this.authority = null;
-        this.config = parent.configuration().orElse(null);
+        this.options = parent.options;
     }
 
     @Override
@@ -391,8 +397,8 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     public Optional<HttpClient.Version> version() { return version; }
 
     @Override
-    public Optional<Config> configuration() {
-        return Optional.ofNullable(config);
+    public <T> Optional<T> getOption(HttpRequestOption<T> option) {
+        return Optional.ofNullable(option.type().cast(options.get(option)));
     }
 
     @Override

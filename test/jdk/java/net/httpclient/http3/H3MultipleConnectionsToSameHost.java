@@ -140,7 +140,8 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static jdk.internal.net.http.Http3ClientProperties.MAX_STREAM_LIMIT_WAIT_TIMEOUT;
 
 public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
@@ -179,7 +180,7 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
         try (var client2 = createClient(sslContext, Executors.newVirtualThreadPerTaskExecutor())) {
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString))
                     .version(HTTP_3)
-                    .configure(HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                     .HEAD().build();
             client2.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));
         }
@@ -193,7 +194,7 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
         try {
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString2))
                     .version(HTTP_3)
-                    .configure(HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                     .HEAD().build();
             client.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));
         } finally {
@@ -219,7 +220,7 @@ public class H3MultipleConnectionsToSameHost implements HttpServerAdapters {
             Set<String> connections = new ConcurrentSkipListSet<>();
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString))
                     .version(HTTP_3)
-                    .configure(HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                     .GET().build();
             long start = System.nanoTime();
             var resp = client.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));

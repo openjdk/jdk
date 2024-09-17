@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.Config;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.*;
@@ -59,6 +58,10 @@ import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 @Test
 public class HTTP3NoBodyTest {
@@ -175,11 +178,11 @@ public class HTTP3NoBodyTest {
     }
 
     static final AtomicInteger count = new AtomicInteger();
-    static Config config(boolean http3only) {
-        if (http3only) return H3DiscoveryConfig.HTTP_3_ONLY;
+    static H3DiscoveryMode config(boolean http3only) {
+        if (http3only) return HTTP_3_ONLY;
         return switch (count.getAndIncrement() %3) {
-            case 1 -> H3DiscoveryConfig.HTTP_3_ANY;
-            case 2 -> H3DiscoveryConfig.HTTP_3_ALT_SVC;
+            case 1 -> HTTP_3_ANY;
+            case 2 -> HTTP_3_ALT_SVC;
             default -> null;
         };
     }
@@ -200,7 +203,7 @@ public class HTTP3NoBodyTest {
         var builder = HttpRequest.newBuilder(uri);
         HttpRequest req = builder
                 .POST(BodyPublishers.ofString("Random text"))
-                .configure(config)
+                .setOption(H3_DISCOVERY, config)
                 .build();
         HttpResponse<String> response = client.send(req, BodyHandlers.ofString());
         checkStatus(200, response.statusCode());
@@ -221,7 +224,7 @@ public class HTTP3NoBodyTest {
             URI uri2 = getURI(http2, i);
             HttpRequest request = HttpRequest.newBuilder(uri2)
                     .POST(BodyPublishers.ofString(TEST_STRING))
-                    .configure(config)
+                    .setOption(H3_DISCOVERY, config)
                     .build();
             System.out.println(type + ": Loop " + i + ", config: " + config + ", uri: " + uri2);
             HttpResponse<String> response = client.send(request, BodyHandlers.ofString());

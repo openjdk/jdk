@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.URI;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.concurrent.CompletableFuture;
@@ -41,6 +40,8 @@ import java.util.stream.Stream;
 import jdk.test.lib.net.SimpleSSLContext;
 import static java.lang.System.out;
 import static java.lang.String.format;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
 
@@ -212,7 +213,7 @@ public class SplitResponse {
         HttpClient client = newHttpClient();
         HttpRequest request = HttpRequest.newBuilder(uri)
                 .version(version)
-                .configure(H3DiscoveryConfig.HTTP_3_ALT_SVC)
+                .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
                 .build();
         HttpResponse<String> r;
         CompletableFuture<HttpResponse<String>> cf1;

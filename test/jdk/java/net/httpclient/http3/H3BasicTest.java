@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.Config;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.*;
@@ -60,6 +59,7 @@ import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.Test;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 public class H3BasicTest implements HttpServerAdapters {
     static int http3Port, https2Port;
@@ -217,11 +217,11 @@ public class H3BasicTest implements HttpServerAdapters {
     }
 
     static final AtomicInteger count = new AtomicInteger();
-    static Config config(boolean http3only) {
-        if (http3only) return H3DiscoveryConfig.HTTP_3_ONLY;
+    static H3DiscoveryMode config(boolean http3only) {
+        if (http3only) return H3DiscoveryMode.HTTP_3_ONLY;
         return switch (count.getAndIncrement() %3) {
-            case 1 -> H3DiscoveryConfig.HTTP_3_ANY;
-            case 2 -> H3DiscoveryConfig.HTTP_3_ALT_SVC;
+            case 1 -> H3DiscoveryMode.HTTP_3_ANY;
+            case 2 -> H3DiscoveryMode.HTTP_3_ALT_SVC;
             default -> null;
         };
     }
@@ -258,7 +258,7 @@ public class H3BasicTest implements HttpServerAdapters {
         var config = config(http3Only);
         HttpRequest req = HttpRequest.newBuilder(uri)
                                      .POST(BodyPublishers.ofFile(src))
-                                     .configure(config)
+                                     .setOption(H3_DISCOVERY, config)
                                      .build();
 
         Path dest = Paths.get("streamtest.txt");
@@ -315,7 +315,7 @@ public class H3BasicTest implements HttpServerAdapters {
         var config = config(http3Only);
         HttpRequest req = HttpRequest.newBuilder(uri)
                                      .POST(BodyPublishers.ofString(SIMPLE_STRING))
-                                     .configure(config)
+                                     .setOption(H3_DISCOVERY, config)
                                      .build();
         HttpResponse<String> response = client.send(req, BodyHandlers.ofString());
         checkStatus(200, response.statusCode());
@@ -353,7 +353,7 @@ public class H3BasicTest implements HttpServerAdapters {
             HttpRequest request = HttpRequest.newBuilder(uri)
                     .header("X-Compare", source.toString())
                     .POST(BodyPublishers.ofFile(source))
-                    .configure(config)
+                    .setOption(H3_DISCOVERY, config)
                     .build();
             String desc = type + ": Loop " + i;
             System.out.printf("%s simpleTest(altSvc:%s, ping:%s) config(%s) Request to %s%n",

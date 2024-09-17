@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.Builder;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.time.Duration;
@@ -65,6 +64,8 @@ import org.testng.annotations.Test;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -211,8 +212,8 @@ public class BasicHTTP2Test implements HttpServerAdapters {
                 .version(Version.HTTP_3)
                 .GET();
         if (udp == null) {
-            out.println("Using config " + H3DiscoveryConfig.HTTP_3_ALT_SVC);
-            builder.configure(H3DiscoveryConfig.HTTP_3_ALT_SVC);
+            out.println("Using config " + HTTP_3_ALT_SVC);
+            builder.setOption(H3_DISCOVERY, HTTP_3_ALT_SVC);
         }
         HttpRequest request = builder.build();
 

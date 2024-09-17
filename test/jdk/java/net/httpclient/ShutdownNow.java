@@ -41,15 +41,12 @@
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Config;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.channels.ClosedChannelException;
@@ -61,21 +58,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLHandshakeException;
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
+import javax.net.ssl.SSLContext;
+
 import jdk.test.lib.RandomFactory;
-import jdk.test.lib.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -87,8 +75,9 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -122,8 +111,8 @@ public class ShutdownNow implements HttpServerAdapters {
     @DataProvider(name = "positive")
     public Object[][] positive() {
         return new Object[][] {
-                { h2h3URI,    HTTP_3,   h2h3TestServer.serverConfig()},
-                { h3URI,      HTTP_3,   h3TestServer.serverConfig()},
+                { h2h3URI,    HTTP_3,   h2h3TestServer.h3DiscoveryConfig()},
+                { h3URI,      HTTP_3,   h3TestServer.h3DiscoveryConfig()},
                 { httpURI,    HTTP_1_1, HTTP_3_ALT_SVC}, // do not attempt HTTP/3
                 { httpsURI,   HTTP_1_1, HTTP_3_ALT_SVC}, // do not attempt HTTP/3
                 { http2URI,   HTTP_2,   HTTP_3_ALT_SVC}, // do not attempt HTTP/3
@@ -186,7 +175,7 @@ public class ShutdownNow implements HttpServerAdapters {
     }
 
     @Test(dataProvider = "positive")
-    void testConcurrent(String uriString, Version version, Config config) throws Exception {
+    void testConcurrent(String uriString, Version version, H3DiscoveryMode config) throws Exception {
         out.printf("%n---- starting concurrent (%s, %s, %s) ----%n%n", uriString, version, config);
         HttpClient client = newClientBuilderForH3()
                 .proxy(NO_PROXY)
@@ -207,7 +196,7 @@ public class ShutdownNow implements HttpServerAdapters {
                 URI uri = URI.create(uriString + "/concurrent/iteration-" + i);
                 HttpRequest request = HttpRequest.newBuilder(uri)
                         .header("X-uuid", "uuid-" + requestCounter.incrementAndGet())
-                        .configure(config)
+                        .setOption(H3_DISCOVERY, config)
                         .build();
                 out.printf("Iteration %d request: %s%n", i, request.uri());
                 CompletableFuture<HttpResponse<String>> responseCF;
@@ -253,7 +242,7 @@ public class ShutdownNow implements HttpServerAdapters {
     }
 
     @Test(dataProvider = "positive")
-    void testSequential(String uriString, Version version, Config config) throws Exception {
+    void testSequential(String uriString, Version version, H3DiscoveryMode config) throws Exception {
         out.printf("%n---- starting sequential (%s, %s, %s) ----%n%n",
                 uriString, version, config);
         HttpClient client = newClientBuilderForH3()
@@ -275,7 +264,7 @@ public class ShutdownNow implements HttpServerAdapters {
                 URI uri = URI.create(uriString + "/sequential/iteration-" + i);
                 HttpRequest request = HttpRequest.newBuilder(uri)
                             .header("X-uuid", "uuid-" + requestCounter.incrementAndGet())
-                            .configure(config)
+                            .setOption(H3_DISCOVERY, config)
                             .build();
                 out.printf("Iteration %d request: %s%n", i, request.uri());
                 CompletableFuture<HttpResponse<String>> responseCF;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,13 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.stream.Stream;
 
 
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.*;
-import static java.net.http.HttpClient.Version.*;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ANY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
 
 
 
@@ -130,7 +134,7 @@ public class H3UserInfoTest implements HttpServerAdapters {
                     .port(origURI.getPort())
                     .path(origURI.getRawPath())
                     .build();
-            var config = server.serverConfig();
+            var config = server.h3DiscoveryConfig();
 
             while (true) {
                 if (config == HTTP_3_ALT_SVC) {
@@ -149,7 +153,7 @@ public class H3UserInfoTest implements HttpServerAdapters {
 
                 HttpRequest request = HttpRequest
                         .newBuilder(uri)
-                        .configure(config)
+                        .setOption(H3_DISCOVERY, config)
                         .version(HTTP_3)
                         .GET()
                         .build();

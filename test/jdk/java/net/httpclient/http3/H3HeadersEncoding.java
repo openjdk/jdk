@@ -52,6 +52,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,7 +68,8 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static jdk.httpclient.test.lib.common.HttpServerAdapters.*;
 
 public class H3HeadersEncoding {
@@ -86,7 +88,7 @@ public class H3HeadersEncoding {
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
 
-        http3TestServer = HttpTestServer.create(HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY, sslContext);
+        http3TestServer = HttpTestServer.create(H3DiscoveryMode.HTTP_3_ONLY, sslContext);
         serverHeadersHandler = new HeadersHandler();
         http3TestServer.addHandler(serverHeadersHandler, "/http3/headers");
         http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/headers";
@@ -105,7 +107,7 @@ public class H3HeadersEncoding {
             for (int i = 0; i < REQUESTS_COUNT; i++) {
                 HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(URI.create(http3URI))
                         .version(HTTP_3)
-                        .configure(HTTP_3_ONLY);
+                        .setOption(H3_DISCOVERY, HTTP_3_ONLY);
                 List<TestHeader> rndHeaders = TestHeader.randomHeaders(HEADERS_PER_REQUEST);
                 String[] requestHeaders = rndHeaders.stream()
                         .flatMap(th -> Stream.of(th.name(), th.value()))
@@ -142,7 +144,7 @@ public class H3HeadersEncoding {
             for (int i = 0; i < REQUESTS_COUNT; i++) {
                 HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(URI.create(http3URI))
                         .version(HTTP_3)
-                        .configure(HTTP_3_ONLY);
+                        .setOption(H3_DISCOVERY, HTTP_3_ONLY);
                 List<TestHeader> rndHeaders = TestHeader.randomHeaders(HEADERS_PER_REQUEST);
                 String[] requestHeaders = rndHeaders.stream()
                         .flatMap(th -> Stream.of(th.name(), th.value()))

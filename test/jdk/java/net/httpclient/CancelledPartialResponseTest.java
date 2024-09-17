@@ -64,13 +64,14 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.util.Iterator;
 import java.util.concurrent.ExecutionException;
 
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.*;
 
@@ -158,7 +159,7 @@ public class CancelledPartialResponseTest {
             throw new AssertionError("Unexpected null sslContext");
 
         http2TestServer = new Http2TestServer(false, 0);
-        http3TestServer = HttpTestServer.create(H3DiscoveryConfig.HTTP_3_ONLY, sslContext);
+        http3TestServer = HttpTestServer.create(H3DiscoveryMode.HTTP_3_ONLY, sslContext);
 
         http2TestServer.setExchangeSupplier(ExpectContinueResetTestExchangeImpl::new);
         http2TestServer.addHandler(new GetHandler().toHttp2Handler(), "/warmup");
@@ -193,19 +194,20 @@ public class CancelledPartialResponseTest {
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .version(version)
                 .sslContext(sslContext);
-        HttpRequest.Config requestConfig = null;
+        H3DiscoveryMode requestConfig = null;
         if (version == HTTP_3)
-            requestConfig = H3DiscoveryConfig.HTTP_3_ONLY;
+            requestConfig = H3DiscoveryMode.HTTP_3_ONLY;
 
         try (HttpClient client = builder.build()) {
             err.printf("Performing warmup request to %s", warmup);
             if (version == HTTP_2)
-                client.send(HttpRequest.newBuilder(warmup).GET().version(HTTP_2).build(), HttpResponse.BodyHandlers.discarding());
+                client.send(HttpRequest.newBuilder(warmup).GET().version(HTTP_2).build(),
+                        HttpResponse.BodyHandlers.discarding());
 
             HttpRequest postRequest = HttpRequest.newBuilder(uri)
                     .version(version)
                     .POST(bodyPublisher)
-                    .configure(requestConfig)
+                    .setOption(H3_DISCOVERY, requestConfig)
                     .expectContinue(true)
                     .build();
             err.printf("Sending request (%s): %s%n", version, postRequest);

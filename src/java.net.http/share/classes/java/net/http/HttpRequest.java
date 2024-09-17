@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,38 +93,18 @@ public abstract class HttpRequest {
     protected HttpRequest() {}
 
     /**
-     * An interface that can be used to provide additional configuration
-     * hints on how an HTTP exchange should be carried out by the
-     * {@link HttpClient} implementation.
-     *
-     * <p> The {@link H3DiscoveryConfig} enum defines three
-     * pre-defined instances of such configuration, that can be
-     * used to help the {@link HttpClient} decide how an HTTP/3 exchange
-     * should be established.
-     *
-     * <p> Concrete instances of this class and its subclasses are immutable.
-     *
-     * @implNote
-     * In this version, the {@code Config} interface is sealed and only allows
-     * one implementation: {@link H3DiscoveryConfig}. However, it could be
-     * extended in the future to support additional implementations.
-     *
-     * @since TBD
-     */
-    public sealed interface Config permits H3DiscoveryConfig {
-    }
-
-    /**
-     * An enumeration of three pre-defined instances of {@link Config}
-     * that can be used to help the {@link HttpClient} decide how an HTTP/3 exchange
-     * should be established.
+     * This enumeration can be used to help the {@link HttpClient} decide
+     * how an HTTP/3 exchange should be established, and can be provided
+     * as the value of the {@link HttpRequestOption#H3_DISCOVERY} option
+     * to {@link Builder#setOption(HttpRequestOption, Object) Builder.setOption}.
+     * <p>
      * Note that if neither the {@link Builder#version(Version) request preferred
      * version} nor the {@link HttpClient.Builder#version(Version) HttpClient preferred
      * version} is {@linkplain Version#HTTP_3 HTTP/3}, no HTTP/3 exchange will
-     * be established and the {@code H3DiscoveryConfig} is ignored.
+     * be established and the {@code H3DiscoveryMode} is ignored.
      * @since TBD
      */
-    public enum H3DiscoveryConfig implements Config {
+    public enum H3DiscoveryMode {
         /**
          * This instructs the {@link HttpClient} to only use the
          * <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
@@ -175,6 +155,32 @@ public abstract class HttpRequest {
         // TODO: may need to define what happens in case of redirects.
         HTTP_3_ONLY
     }
+
+    public sealed interface HttpRequestOption<T> permits HttpRequestOptionImpl {
+        String name();
+        Class<T> type();
+        public static final HttpRequestOption<H3DiscoveryMode> H3_DISCOVERY =
+                new HttpRequestOptionImpl.H3Discovery(H3DiscoveryMode.class, "H3_DISCOVERY");
+    }
+
+    private sealed interface HttpRequestOptionImpl<T> extends HttpRequestOption<T> {
+        Class<T> type();
+        record H3Discovery(Class<H3DiscoveryMode> type, String name)
+                implements HttpRequestOptionImpl<H3DiscoveryMode> {
+            @Override public String toString() {return name();}
+        }
+    }
+
+    /**
+     * {@return the value configured on this builder for the given option, if any}
+     * @param option a request configuration option
+     * @param <T> the type of the option
+     *
+     * @see Builder#setOption(HttpRequestOption, Object)
+     *
+     * @since TBD
+     */
+    public <T> Optional<T> getOption(HttpRequestOption<T> option) { return Optional.empty(); }
 
     /**
      * A builder of {@linkplain HttpRequest HTTP requests}.
@@ -238,44 +244,48 @@ public abstract class HttpRequest {
         public Builder version(HttpClient.Version version);
 
         /**
-         * Provides configuration hints to help an {@link HttpClient} implementation
-         * decide how the request/response exchange should be established or carried out.
+         * Provides request configuration option hints modeled as key value pairs
+         * to help an {@link HttpClient} implementation decide how the
+         * request/response exchange should be established or carried out.
          *
-         * <p> An {@link HttpClient} implementation may decide to ignore hints, or
-         * fail the request, if provided with any hints that it does not understand.
-         * If {@code null} is supplied, any hints previously provided to this builder
-         * are discarded.
+         * <p> An {@link HttpClient} implementation may decide to ignore request
+         * configuration option hints, or fail the request, if provided with any
+         * option hints that it does not understand.
+         * If {@code null} is supplied as value, any value previously provided to
+         * this builder for the corresponding option is discarded.
          *
          * @implSpec
-         * The default implementation of this method discards the provided hints
-         * and does nothing.
+         * The default implementation of this method discards the provided option
+         * hint and does nothing.
          *
          * @implNote
          * The JDK built-in implementation of the {@link HttpClient} understands the
-         * {@link H3DiscoveryConfig} hints.<br>
-         * If no configuration hint is provided, the JDK built-in implementation of
+         * request option {@link HttpRequestOption#H3_DISCOVERY} hint.<br>
+         * If no H3_DISCOVERY hint is provided, and {@linkplain  HttpClient.Version#HTTP_3
+         * HTTP/3 version} is selected, the JDK built-in implementation of
          * the {@link HttpClient} will select one:
          * <ul>
          *     <li> If the {@linkplain Builder#version(Version) request preferred version} is
          *          explicitly set to {@linkplain HttpClient.Version#HTTP_3 HTTP/3},
          *          the exchange will be established as per {@link
-         *          H3DiscoveryConfig#HTTP_3_ANY}.</li>
+         *          H3DiscoveryMode#HTTP_3_ANY}.</li>
          *     <li> Otherwise, if no request preferred version is explicitly provided
          *          and the {@linkplain HttpClient.Builder#version(Version) HttpClient
          *          preferred version} is {@linkplain HttpClient.Version#HTTP_3 HTTP/3},
          *          the exchange will be established as per {@link
-         *          H3DiscoveryConfig#HTTP_3_ALT_SVC}.</li>
+         *          H3DiscoveryMode#HTTP_3_ALT_SVC}.</li>
          * </ul>
          *
-         * @param config some configuration hints, can be {@code null}.
+         * @param option the request configuration option
+         * @param value  the request configuration option value (can be null)
          *
          * @return this builder
          *
-         * @see HttpRequest#configuration()
+         * @see HttpRequest#getOption(HttpRequestOption)
          *
          * @since TBD
          */
-        public default Builder configure(Config config) { return this; }
+        public default <T> Builder setOption(HttpRequestOption<T> option, T value) { return this; }
 
         /**
          * Adds the given name value pair to the set of headers for this request.
@@ -583,24 +593,6 @@ public abstract class HttpRequest {
      * @return HTTP protocol version
      */
     public abstract Optional<HttpClient.Version> version();
-
-    /**
-     * Returns an {@code Optional} containing the {@linkplain
-     * Builder#configure(Config) hints configured on this request}
-     * that can help the {@link HttpClient} decide how to establish or
-     * carry out the HTTP exchange for this request.
-     *
-     * @implSpec
-     * The default implementation of this method returns {@link
-     * Optional#empty() Optional.empty()}.
-     *
-     * @return an optional configuration hint
-     *
-     * @see Builder#configure(Config)
-     *
-     * @since TBD
-     */
-    public Optional<Config> configuration()  { return Optional.empty(); }
 
     /**
      * The (user-accessible) request headers that this request was (or will be)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,7 @@ import java.net.StandardSocketOptions;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.http.HttpRequest.Config;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -197,14 +196,14 @@ public abstract class DigestEchoServer implements HttpServerAdapters {
         }
     }
 
-    public Config serverConfig() {
+    public H3DiscoveryMode serverConfig() {
         // If the client request is HTTP_3, but the server
         // doesn't support HTTP/3, we don't want the client
         // to attempt a direct HTTP/3 connection - so use
         // HTTP_3_ALT_SVC to prevent that
-        var config = serverImpl.serverConfig();
+        var config = serverImpl.h3DiscoveryConfig();
         return config == null
-                ? H3DiscoveryConfig.HTTP_3_ALT_SVC
+                ? H3DiscoveryMode.HTTP_3_ALT_SVC
                 : config;
     }
 

@@ -52,8 +52,9 @@ import org.junit.jupiter.api.Test;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static jdk.httpclient.test.lib.common.DynamicKeyStoreUtil.generateCert;
 import static jdk.httpclient.test.lib.common.DynamicKeyStoreUtil.generateKeyStore;
 import static jdk.httpclient.test.lib.common.DynamicKeyStoreUtil.generateRSAKeyPair;
@@ -296,7 +297,7 @@ public class AltServiceReasonableAssurance implements HttpServerAdapters {
             final URI requestURI = testInput.requestURI;
             final HttpRequest request = HttpRequest.newBuilder()
                     .GET().uri(requestURI)
-                    .configure(HTTP_3_ALT_SVC)
+                    .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
                     .build();
             System.out.println("Issuing request " + requestURI);
             final HttpResponse<String> response = client.send(request,
@@ -409,7 +410,7 @@ public class AltServiceReasonableAssurance implements HttpServerAdapters {
             final URI requestURI = testInput.requestURI;
             final HttpRequest request = HttpRequest.newBuilder()
                     .GET().uri(requestURI)
-                    .configure(HTTP_3_ALT_SVC)
+                    .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
                     .build();
             System.out.println("Issuing request " + requestURI);
             final HttpResponse<String> response = client.send(request,
@@ -523,7 +524,7 @@ public class AltServiceReasonableAssurance implements HttpServerAdapters {
             final URI requestURI = testInput.requestURI;
             final HttpRequest request = HttpRequest.newBuilder()
                     .GET().uri(requestURI)
-                    .configure(HTTP_3_ALT_SVC)
+                    .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
                     .build();
             System.out.println("Issuing request " + requestURI);
             final HttpResponse<String> response = client.send(request,
@@ -637,7 +638,7 @@ public class AltServiceReasonableAssurance implements HttpServerAdapters {
             for (int i = 1; i <= 3; i++) {
                 final HttpRequest h3Request = HttpRequest.newBuilder()
                         .version(HTTP_3).GET().uri(requestURI)
-                        .configure(HTTP_3_ALT_SVC)
+                        .setOption(H3_DISCOVERY, HTTP_3_ALT_SVC)
                         .build();
                 System.out.println("Again(" + i + ") issuing " + h3Request.version()
                         + " request to " + requestURI);

@@ -32,7 +32,6 @@ import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import javax.net.ssl.SSLContext;
@@ -50,10 +49,9 @@ import java.util.HexFormat;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.*;
 
 /*
@@ -212,7 +210,7 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
         final URI reqURI = new URI(requestURIBase + "/hello");
         final HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(reqURI)
                 .version(Version.HTTP_3)
-                .configure(HTTP_3_ONLY);
+                .setOption(H3_DISCOVERY, HTTP_3_ONLY);
         return reqBuilder.build();
     }
 

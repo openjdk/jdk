@@ -46,6 +46,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -64,7 +65,8 @@ import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 
@@ -440,8 +442,8 @@ public class GZIPInputStreamTest implements HttpServerAdapters {
     }
 
     private HttpRequest buildRequest(URI uri) {
-        HttpRequest.Config config = uri.getPath().contains("/https3/") ? HTTP_3_ONLY : null;
-        return HttpRequest.newBuilder(uri).configure(config).build();
+        H3DiscoveryMode config = uri.getPath().contains("/https3/") ? HTTP_3_ONLY : null;
+        return HttpRequest.newBuilder(uri).setOption(H3_DISCOVERY, config).build();
     }
 
     static final class GZIPBodyHandler implements BodyHandler<InputStream> {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,16 @@ import java.net.URI;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 
-import static java.net.http.HttpClient.Version.*;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static jdk.httpclient.test.lib.common.HttpServerAdapters.createClientBuilderForH3;
 import static org.testng.Assert.assertEquals;
 
@@ -104,16 +108,18 @@ public class HeadTest implements HttpServerAdapters {
                         int expResp, Version version) throws Exception {
         out.printf("%n---- starting (%s) ----%n", uriString);
         URI uri = URI.create(uriString);
-        HttpRequest.Config config = version.equals(HTTP_3) ? HTTP_3_ONLY : null;
+        H3DiscoveryMode config = version.equals(HTTP_3) ? HTTP_3_ONLY : null;
         HttpRequest.Builder requestBuilder = HttpRequest
                 .newBuilder(uri)
                 .version(version)
-                .configure(config)
+                .setOption(H3_DISCOVERY, config)
                 .method(method, HttpRequest.BodyPublishers.noBody());
         doTest(requestBuilder.build(), expResp);
         // repeat the test this time by building the request using convenience
         // GET and HEAD methods
-        requestBuilder = HttpRequest.newBuilder(uri).version(version).configure(config);
+        requestBuilder = HttpRequest.newBuilder(uri)
+                .version(version)
+                .setOption(H3_DISCOVERY, config);
         switch (method) {
             case "GET" -> requestBuilder.GET();
             case "HEAD" -> requestBuilder.HEAD();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 import java.net.URI;
 import java.net.http.HttpClient;
-import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
@@ -37,7 +36,11 @@ import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+
+import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 /*
  * @test
@@ -95,13 +98,13 @@ public class H3SecMgrTest implements HttpServerAdapters {
     @Test
     public void testBasicRequests() throws Exception {
         final HttpClient client = newClientBuilderForH3()
-                .proxy(HttpClient.Builder.NO_PROXY)
-                .version(Version.HTTP_3)
+                .proxy(NO_PROXY)
+                .version(HTTP_3)
                 .sslContext(sslContext).build();
         final URI reqURI = new URI(requestURI);
         final HttpRequest.Builder reqBuilder = HttpRequest.newBuilder(reqURI)
-                .version(Version.HTTP_3)
-                .configure(HTTP_3_ONLY);
+                .version(HTTP_3)
+                .setOption(H3_DISCOVERY, HTTP_3_ONLY);
 
         // GET
         final HttpRequest req1 = reqBuilder.copy().GET().build();

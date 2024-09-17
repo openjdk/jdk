@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Builder;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
@@ -79,7 +79,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -93,6 +92,7 @@ import static java.lang.String.format;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.util.stream.Collectors.toList;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -383,7 +383,7 @@ public class DependentActionsTest implements HttpServerAdapters {
                     // have HTTP/3
                     assertEquals(resp.version(), HTTP_3,
                             "expected second request to go through HTTP/3 (serverConfig="
-                                    + http3TestServer.serverConfig() + ")");
+                                    + http3TestServer.h3DiscoveryConfig() + ")");
                 }
                 break;
             }
@@ -486,7 +486,7 @@ public class DependentActionsTest implements HttpServerAdapters {
             }
             assertEquals(result, List.of(response.request().uri().getPath()));
             var uriStr = response.request().uri().toString();
-            if (HTTP_3 != version(uriStr) || http3TestServer.serverConfig() != H3DiscoveryConfig.HTTP_3_ANY) {
+            if (HTTP_3 != version(uriStr) || http3TestServer.h3DiscoveryConfig() != H3DiscoveryMode.HTTP_3_ANY) {
                 assertEquals(response.version(), version(uriStr), uriStr);
             }
             return response;
@@ -628,7 +628,7 @@ public class DependentActionsTest implements HttpServerAdapters {
         var builder = HttpRequest.newBuilder(URI.create(uri));
         if (version(uri) == HTTP_3) {
             builder.version(HTTP_3);
-            builder.configure(http3TestServer.serverConfig());
+            builder.setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
         }
         return builder;
     }

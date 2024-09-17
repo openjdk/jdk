@@ -28,12 +28,11 @@ package java.net.http;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.net.http.HttpRequest.HttpRequestOption;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
 import java.net.URI;
-import java.net.http.HttpRequest.Builder;
-import java.net.http.HttpRequest.Config;
 import java.nio.channels.Selector;
 import java.net.Authenticator;
 import java.net.CookieHandler;
@@ -208,7 +207,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * {@linkplain HttpRequest.Builder#version(Version) HttpRequest preferred version} to
  * {@linkplain Version#HTTP_3 HTTP/3}. Like for HTTP/2, which protocol version is
  * actually used when HTTP/3 is enabled may depend on several factors.
- * {@linkplain HttpRequest.Builder#configure(Config) Configuration hints} can
+ * {@linkplain HttpRequest.Builder#setOption(HttpRequestOption, Object) Configuration hints} can
  * be provided to help the {@code HttpClient} implementation decide how to establish
  * and carry out the HTTP exchange when the HTTP/3 protocol is enabled. Note that a
  * request whose {@linkplain URI#getScheme() URI scheme} is not {@code "https"} will
@@ -223,7 +222,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *
  * @see UnsupportedProtocolVersionException
  * @see Builder#version(Version)
- * @see HttpRequest.Builder#configure(Config)
+ * @see HttpRequest.Builder#setOption(HttpRequestOption, Object)
  *
  * @since 11
  */

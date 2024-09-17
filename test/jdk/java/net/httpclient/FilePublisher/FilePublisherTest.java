@@ -53,6 +53,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpRequest.HttpRequestOption;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.FileSystem;
@@ -68,6 +69,7 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.assertEquals;
 
 public class FilePublisherTest implements HttpServerAdapters {
@@ -196,7 +198,7 @@ public class FilePublisherTest implements HttpServerAdapters {
         var builder = HttpRequest.newBuilder(URI.create(uri));
         if (version(uri) == HTTP_3) {
             builder.version(HTTP_3);
-            builder.configure(http3TestServer.serverConfig());
+            builder.setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
         }
         return builder;
     }

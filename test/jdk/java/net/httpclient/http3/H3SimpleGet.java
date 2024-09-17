@@ -149,7 +149,8 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 
 public class H3SimpleGet implements HttpServerAdapters {
     static HttpTestServer httpsServer;
@@ -188,7 +189,7 @@ public class H3SimpleGet implements HttpServerAdapters {
                 Thread.ofVirtual().name("client-2-vt-worker", 1).factory()))) {
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString))
                     .version(HTTP_3)
-                    .configure(HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                     .HEAD().build();
             client2.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));
         }
@@ -203,7 +204,7 @@ public class H3SimpleGet implements HttpServerAdapters {
         try {
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString2))
                     .version(HTTP_3)
-                    .configure(HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                     .HEAD().build();
             client.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));
         } finally {
@@ -230,7 +231,7 @@ public class H3SimpleGet implements HttpServerAdapters {
                     + TimeUnit.NANOSECONDS.toMillis(done-prestart)+" millis");
             HttpRequest request = HttpRequest.newBuilder(URI.create(httpsURIString))
                     .version(HTTP_3)
-                    .configure(HTTP_3_ONLY)
+                    .setOption(H3_DISCOVERY, HTTP_3_ONLY)
                     .GET().build();
             long start = System.nanoTime();
             var resp = client.send(request, BodyHandlers.ofByteArrayConsumer(b-> {}));

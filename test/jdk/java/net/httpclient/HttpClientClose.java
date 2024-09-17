@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Config;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
@@ -80,8 +80,9 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
@@ -117,8 +118,8 @@ public class HttpClientClose implements HttpServerAdapters {
     @DataProvider(name = "positive")
     public Object[][] positive() {
         return new Object[][] {
-                { h2h3URI,    HTTP_3,   h2h3TestServer.serverConfig()},
-                { h3URI,      HTTP_3,   h3TestServer.serverConfig()},
+                { h2h3URI,    HTTP_3,   h2h3TestServer.h3DiscoveryConfig()},
+                { h3URI,      HTTP_3,   h3TestServer.h3DiscoveryConfig()},
                 { httpURI,    HTTP_1_1, HTTP_3_ALT_SVC}, // do not attempt HTTP/3
                 { httpsURI,   HTTP_1_1, HTTP_3_ALT_SVC}, // do not attempt HTTP/3
                 { http2URI,   HTTP_2,   HTTP_3_ALT_SVC}, // do not attempt HTTP/3
@@ -170,15 +171,15 @@ public class HttpClientClose implements HttpServerAdapters {
 
     record ExchangeResult<T>(int step,
                              Version version,
-                             Config config,
+                             H3DiscoveryMode config,
                              HttpResponse<T> response,
                              boolean firstVersionMayNotMatch) {
 
-        static <U> ExchangeResult<U> afterHead(int step, Version version, Config config) {
+        static <U> ExchangeResult<U> afterHead(int step, Version version, H3DiscoveryMode config) {
             return new ExchangeResult<U>(step, version, config, null, false);
         }
 
-        static <U> ExchangeResult<U> ofSequential(int step, Version version, Config config) {
+        static <U> ExchangeResult<U> ofSequential(int step, Version version, H3DiscoveryMode config) {
             return new ExchangeResult<U>(step, version, config, null, true);
         }
 
@@ -230,7 +231,7 @@ public class HttpClientClose implements HttpServerAdapters {
     }
 
     @Test(dataProvider = "positive")
-    void testConcurrent(String uriString, Version version, Config config) throws Exception {
+    void testConcurrent(String uriString, Version version, H3DiscoveryMode config) throws Exception {
         out.printf("%n---- starting concurrent (%s, %s, %s) ----%n%n", uriString, version, config);
         Throwable failed = null;
         HttpClient toCheck = null;
@@ -251,7 +252,7 @@ public class HttpClientClose implements HttpServerAdapters {
                 URI uri = URI.create(uriString + "/concurrent/iteration-" + i);
                 HttpRequest request = HttpRequest.newBuilder(uri)
                         .header("X-uuid", "uuid-" + requestCounter.incrementAndGet())
-                        .configure(config)
+                        .setOption(H3_DISCOVERY, config)
                         .build();
                 out.printf("Iteration %d request: %s%n", i, request.uri());
                 CompletableFuture<HttpResponse<InputStream>> responseCF;
@@ -289,7 +290,7 @@ public class HttpClientClose implements HttpServerAdapters {
     }
 
     @Test(dataProvider = "positive")
-    void testSequential(String uriString, Version version, Config config) throws Exception {
+    void testSequential(String uriString, Version version, H3DiscoveryMode config) throws Exception {
         out.printf("%n---- starting sequential (%s, %s, %s) ----%n%n", uriString, version, config);
         Throwable failed = null;
         HttpClient toCheck = null;
@@ -305,7 +306,7 @@ public class HttpClientClose implements HttpServerAdapters {
                 URI uri = URI.create(uriString + "/sequential/iteration-" + i);
                 HttpRequest request = HttpRequest.newBuilder(uri)
                         .header("X-uuid", "uuid-" + requestCounter.incrementAndGet())
-                        .configure(config)
+                        .setOption(H3_DISCOVERY, config)
                         .build();
                 out.printf("Iteration %d request: %s%n", i, request.uri());
                 final int si = i;

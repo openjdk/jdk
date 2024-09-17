@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
-import java.net.http.HttpRequest.Config;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandler;
 import java.nio.ByteBuffer;
@@ -52,9 +52,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.System.out;
-import static java.net.http.HttpClient.Version.*;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ALT_SVC;
-import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
+import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ALT_SVC;
+import static java.net.http.HttpRequest.H3DiscoveryMode.HTTP_3_ONLY;
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -100,10 +102,10 @@ public class CancelledResponse2 implements HttpServerAdapters {
         }
     }
     @Test(dataProvider = "versions")
-    public void test(Version version, Config config, URI uri) throws Exception {
+    public void test(Version version, H3DiscoveryMode config, URI uri) throws Exception {
         for (int i = 0; i < 5; i++) {
             HttpClient httpClient = newClientBuilderForH3().sslContext(sslContext).version(version).build();
-            Config reqConfig = null;
+            H3DiscoveryMode reqConfig = null;
             if (version.equals(HTTP_3)) {
                 if (config != null) {
                     reqConfig = (config.equals(HTTP_3_ONLY)) ? HTTP_3_ONLY : HTTP_3_ALT_SVC;
@@ -117,7 +119,7 @@ public class CancelledResponse2 implements HttpServerAdapters {
             }
             HttpRequest httpRequest = HttpRequest.newBuilder(uri)
                     .version(version)
-                    .configure(reqConfig)
+                    .setOption(H3_DISCOVERY, reqConfig)
                     .GET()
                     .build();
             AtomicBoolean cancelled = new AtomicBoolean();

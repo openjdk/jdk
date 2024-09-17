@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.lang.StackWalker.StackFrame;
 import java.net.URI;
 import java.net.http.HttpClient.Builder;
 import java.net.http.HttpClient.Version;
-import java.net.http.HttpRequest.H3DiscoveryConfig;
+import java.net.http.HttpRequest.H3DiscoveryMode;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
@@ -58,6 +58,8 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import javax.net.ssl.SSLContext;
+
+import static java.net.http.HttpRequest.HttpRequestOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertThrows;
@@ -135,7 +137,7 @@ public class FlowAdapterSubscriberTest implements HttpServerAdapters {
                 ? HttpRequest.newBuilder(URI.create(uri))
                 : HttpRequest.newBuilder(URI.create(uri))
                 .version(Version.HTTP_3)
-                .configure(http3TestServer.serverConfig());
+                .setOption(H3_DISCOVERY, http3TestServer.h3DiscoveryConfig());
         return builder;
     }
 
@@ -651,7 +653,7 @@ public class FlowAdapterSubscriberTest implements HttpServerAdapters {
         https2TestServer.addHandler(new HttpEchoHandler(), "/https2/echo");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/echo";
 
-        http3TestServer = HttpTestServer.create(H3DiscoveryConfig.HTTP_3_ONLY, sslContext);
+        http3TestServer = HttpTestServer.create(H3DiscoveryMode.HTTP_3_ONLY, sslContext);
         http3TestServer.addHandler(new HttpEchoHandler(), "/http3/echo");
         http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/echo";
 

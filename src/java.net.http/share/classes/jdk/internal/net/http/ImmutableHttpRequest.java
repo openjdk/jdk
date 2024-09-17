@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.net.URI;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.net.http.HttpClient.Version;
@@ -43,7 +44,8 @@ final class ImmutableHttpRequest extends HttpRequest {
     private final boolean expectContinue;
     private final Optional<Duration> timeout;
     private final Optional<Version> version;
-    private final Config config;
+    // An alternative would be to have one field per supported option
+    private final Map<HttpRequestOption<?>, Object> options;
 
     /** Creates an ImmutableHttpRequest from the given builder. */
     ImmutableHttpRequest(HttpRequestBuilderImpl builder) {
@@ -54,7 +56,7 @@ final class ImmutableHttpRequest extends HttpRequest {
         this.expectContinue = builder.expectContinue();
         this.timeout = Optional.ofNullable(builder.timeout());
         this.version = Objects.requireNonNull(builder.version());
-        this.config = builder.config();
+        this.options = Map.copyOf(builder.options());
     }
 
     @Override
@@ -81,12 +83,16 @@ final class ImmutableHttpRequest extends HttpRequest {
     public Optional<Version> version() { return version; }
 
     @Override
-    public Optional<Config> configuration() {
-        return Optional.ofNullable(config);
+    public <T> Optional<T> getOption(HttpRequestOption<T> option) {
+        return Optional.ofNullable(option.type().cast(options.get(option)));
     }
 
     @Override
     public String toString() {
         return uri.toString() + " " + method;
+    }
+
+    public Map<HttpRequestOption<?>, Object> options() {
+        return options;
     }
 }
