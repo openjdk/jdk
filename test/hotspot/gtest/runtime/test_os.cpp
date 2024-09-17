@@ -371,6 +371,50 @@ TEST_VM(os, jio_snprintf) {
   test_snprintf(jio_snprintf, false);
 }
 
+TEST_VM(os, realpath) {
+  static const char* path = "\\1234567890123456789";
+
+	char buffer[MAX_PATH];
+
+  errno = 0;
+	const char* returnedBuffer = os::realpath(path, buffer, 10);
+  EXPECT_TRUE(errno == ENAMETOOLONG);
+  EXPECT_TRUE(returnedBuffer == nullptr);
+
+	errno = 0;
+	returnedBuffer = os::realpath(path, buffer, MAX_PATH);
+  EXPECT_TRUE(errno == 0);
+  EXPECT_TRUE(returnedBuffer == buffer);
+
+  errno = 0;
+  returnedBuffer = os::realpath(path, buffer, strlen(path) + 3); 
+  EXPECT_TRUE(errno == 0);
+  EXPECT_TRUE(returnedBuffer == buffer);
+
+  errno = 0;
+  returnedBuffer = os::realpath(path, buffer, strlen(path) - 1);
+  EXPECT_TRUE(errno == ENAMETOOLONG);
+  EXPECT_TRUE(returnedBuffer == nullptr);
+
+  /* the following tests cause an assert in fastdebug mode */
+  DEBUG_ONLY(if (false)) {
+    errno = 0;
+    returnedBuffer = os::realpath(nullptr, buffer, sizeof(buffer));
+    EXPECT_TRUE(errno == EINVAL);
+    EXPECT_TRUE(returnedBuffer == nullptr);
+
+    errno = 0;
+    returnedBuffer = os::realpath(path, buffer, sizeof(buffer));
+    EXPECT_TRUE(errno == EINVAL);
+    EXPECT_TRUE(returnedBuffer == nullptr);
+
+    errno = 0;
+    returnedBuffer = os::realpath(path, buffer, 0);
+    EXPECT_TRUE(errno == EINVAL);
+    EXPECT_TRUE(returnedBuffer == nullptr);
+  }
+}
+
 #ifdef __APPLE__
 // Not all macOS versions can use os::reserve_memory (i.e. anon_mmap) API
 // to reserve executable memory, so before attempting to use it,
