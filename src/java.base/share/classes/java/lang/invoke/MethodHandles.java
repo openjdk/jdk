@@ -1906,9 +1906,12 @@ public class MethodHandles {
                 this.flag = flag;
             }
 
-            static int optionsToFlag(Set<ClassOption> options) {
+            static int optionsToFlag(ClassOption[] options) {
                 int flags = 0;
                 for (ClassOption cp : options) {
+                    if ((flags & cp.flag) != 0) {
+                        throw new IllegalArgumentException("Duplicate ClassOption " + cp);
+                    }
                     flags |= cp.flag;
                 }
                 return flags;
@@ -2126,14 +2129,13 @@ public class MethodHandles {
                 throws IllegalAccessException
         {
             Objects.requireNonNull(bytes);
-            Objects.requireNonNull(options);
-
+            int flags = ClassOption.optionsToFlag(options);
             ensureDefineClassPermission();
             if (!hasFullPrivilegeAccess()) {
                 throw new IllegalAccessException(this + " does not have full privilege access");
             }
 
-            return makeHiddenClassDefiner(bytes.clone(), Set.of(options), false).defineClassAsLookup(initialize);
+            return makeHiddenClassDefiner(bytes.clone(), false, flags).defineClassAsLookup(initialize);
         }
 
         /**
@@ -2213,14 +2215,15 @@ public class MethodHandles {
         {
             Objects.requireNonNull(bytes);
             Objects.requireNonNull(classData);
-            Objects.requireNonNull(options);
+
+            int flags = ClassOption.optionsToFlag(options);
 
             ensureDefineClassPermission();
             if (!hasFullPrivilegeAccess()) {
                 throw new IllegalAccessException(this + " does not have full privilege access");
             }
 
-            return makeHiddenClassDefiner(bytes.clone(), Set.of(options), false)
+            return makeHiddenClassDefiner(bytes.clone(), false, flags)
                        .defineClassAsLookup(initialize, classData);
         }
 
@@ -2366,7 +2369,7 @@ public class MethodHandles {
          */
         ClassDefiner makeHiddenClassDefiner(byte[] bytes, ClassFileDumper dumper) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return makeHiddenClassDefiner(cf, Set.of(), false, dumper);
+            return makeHiddenClassDefiner(cf, false, dumper, 0);
         }
 
         /**
@@ -2378,7 +2381,7 @@ public class MethodHandles {
          * before calling this factory method.
          *
          * @param bytes   class bytes
-         * @param options class options
+         * @param flags   class option flag mask
          * @param accessVmAnnotations true to give the hidden class access to VM annotations
          * @return ClassDefiner that defines a hidden class of the given bytes and options
          *
@@ -2386,10 +2389,10 @@ public class MethodHandles {
          * {@code bytes} denotes a class in a different package than the lookup class
          */
         private ClassDefiner makeHiddenClassDefiner(byte[] bytes,
-                                                    Set<ClassOption> options,
-                                                    boolean accessVmAnnotations) {
+                                                    boolean accessVmAnnotations,
+                                                    int flags) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return makeHiddenClassDefiner(cf, options, accessVmAnnotations, defaultDumper());
+            return makeHiddenClassDefiner(cf, accessVmAnnotations, defaultDumper(), flags);
         }
 
         /**
@@ -2398,14 +2401,29 @@ public class MethodHandles {
          *
          * @param name    internal name that specifies the prefix of the hidden class
          * @param bytes   class bytes
-         * @param options class options
          * @param dumper  dumper to write the given bytes to the dumper's output directory
          * @return ClassDefiner that defines a hidden class of the given bytes and options.
          */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, Set<ClassOption> options, ClassFileDumper dumper) {
+        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, ClassFileDumper dumper) {
             Objects.requireNonNull(dumper);
             // skip name and access flags validation
-            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), options, false, dumper);
+            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), false, dumper, 0);
+        }
+
+        /**
+         * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
+         * from the given bytes and the given options.  No package name check on the given bytes.
+         *
+         * @param name    internal name that specifies the prefix of the hidden class
+         * @param bytes   class bytes
+         * @param flags   class options flag mask
+         * @param dumper  dumper to write the given bytes to the dumper's output directory
+         * @return ClassDefiner that defines a hidden class of the given bytes and options.
+         */
+        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, ClassFileDumper dumper, int flags) {
+            Objects.requireNonNull(dumper);
+            // skip name and access flags validation
+            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), false, dumper, flags);
         }
 
         /**
@@ -2413,15 +2431,15 @@ public class MethodHandles {
          * from the given class file and options.
          *
          * @param cf ClassFile
-         * @param options class options
+         * @param flags class option flag mask
          * @param accessVmAnnotations true to give the hidden class access to VM annotations
          * @param dumper dumper to write the given bytes to the dumper's output directory
          */
         private ClassDefiner makeHiddenClassDefiner(ClassFile cf,
-                                                    Set<ClassOption> options,
                                                     boolean accessVmAnnotations,
-                                                    ClassFileDumper dumper) {
-            int flags = HIDDEN_CLASS | ClassOption.optionsToFlag(options);
+                                                    ClassFileDumper dumper,
+                                                    int flags) {
+            flags |= HIDDEN_CLASS;
             if (accessVmAnnotations | VM.isSystemDomainLoader(lookupClass.getClassLoader())) {
                 // jdk.internal.vm.annotations are permitted for classes
                 // defined to boot loader and platform loader

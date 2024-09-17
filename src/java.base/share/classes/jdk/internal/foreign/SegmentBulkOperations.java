@@ -29,7 +29,7 @@ import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
-import sun.security.action.GetPropertyAction;
+import sun.security.action.GetIntegerAction;
 
 import java.lang.foreign.MemorySegment;
 
@@ -207,15 +207,6 @@ public final class SegmentBulkOperations {
             }
         }
         int remaining = length - offset;
-        // 0...XXX000
-        for (; remaining >= 8; remaining -= 8) {
-            final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, !Architecture.isLittleEndian());
-            final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, !Architecture.isLittleEndian());
-            if (s != d) {
-                return start + offset + mismatch(s, d);
-            }
-            offset += 8;
-        }
 
         // 0...0X00
         if (remaining >= 4) {
@@ -310,15 +301,8 @@ public final class SegmentBulkOperations {
 
     // The returned value is in the interval [0, 2^30]
     static int powerOfPropertyOr(String name, int defaultPower) {
-        final String property = GetPropertyAction.privilegedGetProperty(PROPERTY_PATH + name);
-        if (property != null) {
-            try {
-                return 1 << Math.clamp(Integer.parseInt(property), 0, Integer.SIZE - 2);
-            } catch (NumberFormatException _) {
-                // ignore
-            }
-        }
-        return defaultPower;
+        final int power = GetIntegerAction.privilegedGetProperty(PROPERTY_PATH + name, defaultPower);
+        return 1 << Math.clamp(power, 0, Integer.SIZE - 2);
     }
 
 }
