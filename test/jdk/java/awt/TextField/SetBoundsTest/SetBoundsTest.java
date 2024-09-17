@@ -36,7 +36,7 @@ import java.lang.reflect.InvocationTargetException;
 
 /*
  * @test
- * @bug 6198290, 6277332
+ * @bug 6198290 6277332
  * @summary TextField painting is broken when placed on a Scrollpane, XToolkit
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame

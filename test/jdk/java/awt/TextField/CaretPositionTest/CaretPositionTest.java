@@ -57,7 +57,7 @@ public class CaretPositionTest extends Frame {
         try {
             test.test();
             if (position != 9) {
-                System.err.println("Caret position should be at the end of the string");
+                throe new RuntimeException("Caret position should be at the end of the string");
             }
         } finally {
             EventQueue.invokeAndWait(test::dispose);

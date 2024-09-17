@@ -35,7 +35,7 @@ import java.lang.reflect.InvocationTargetException;
  * @bug 4307281
  * @summary verify that after setting the echo char to 0 disguises are
  *          removed and user input is echoed to the screen unchanged.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual ZeroEchoCharTest
  */

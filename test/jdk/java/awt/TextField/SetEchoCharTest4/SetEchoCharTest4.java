@@ -34,7 +34,7 @@ import java.lang.reflect.InvocationTargetException;
  * @test
  * @bug 4226580
  * @summary TextField with echoChar add+remove+add seems to be broken
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual SetEchoCharTest4
  */
@@ -72,7 +72,6 @@ public class SetEchoCharTest4 extends Frame implements ActionListener {
         add(tf2);
         add(tf3);
         add(b);
-        setVisible(true);
     }
 
     public void actionPerformed(ActionEvent ae) {

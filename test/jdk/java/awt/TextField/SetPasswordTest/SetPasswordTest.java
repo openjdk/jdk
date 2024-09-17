@@ -35,7 +35,7 @@ import java.lang.reflect.InvocationTargetException;
  * @bug 4084454
  * @summary Make sure that you can set the text in a "password mode"
  *          text field and that it echoes as the current echo char.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual SetPasswordTest
  */
