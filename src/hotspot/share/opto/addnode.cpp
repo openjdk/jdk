@@ -410,7 +410,7 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, Basic
   // During IGVN, to avoid same transformation applied to the every con in a subgraph, we use a depth limit to avoid
   // transforming a huge subgraph in one go and the risk of associated performance issues. Untransformed nodes will be
   // added to the worklist. Being iterative, the algorithm eventually transforms the whole subgraph.
-  jlong factor = extract_base_operand_from_serial_additions(phase, this, &base, can_reshape ? 5 : -1);
+  jlong factor = extract_base_operand_from_serial_additions(phase, this, bt, can_reshape ? 5 : -1, &base);
 
   // The subgraph cannot be transformed if:
   // 1. no common base operand can be extracted, i.e., nullptr
@@ -419,13 +419,12 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, Basic
   // 4. is simple additions not worth transforming, i.e., a + a
   if (base == nullptr
       || base == this
-      || is_optimized_multiplication(this, base)
+      || is_optimized_multiplication(this, bt, base)
       || (base == in(1) && base == in(2))) {
     return nullptr;
   }
 
-  Node* con = (bt == T_INT) ? (Node*) phase->intcon((jint) factor) : (Node*) phase->longcon(factor);
-  Node* mul = MulNode::make(base, con, bt);
+  Node* mul = MulNode::make(base, phase->integercon(factor, bt), bt);
 
   PhaseIterGVN* igvn = phase->is_IterGVN();
   if (igvn != nullptr) {
@@ -436,17 +435,19 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, Basic
 }
 
 // MulINode::Ideal() optimizes a multiplication to an addition of at most two terms if possible.
-bool AddNode::is_optimized_multiplication(Node* node, Node* base) {
+bool AddNode::is_optimized_multiplication(Node* node, BasicType bt, Node* base) {
+  int op = node->Opcode();
+
   // Look for pattern: LShiftNode(a, CON)
-  if (node->is_LShift() && node->in(2)->is_Con()) {
+  if (op == Op_LShift(bt) && node->in(2)->is_Con()) {
     return base == node->isa_LShift()->in(1);
   }
 
   // Look for patterns:
   //     - AddNode(LShiftNode(a, CON)/a, LShiftNode(a, CON))
   //     - AddNode(LShiftNode(a, CON), LShiftNode(a, CON)/a)
-  // giving that lhs is different from rhs
-  if (node->is_Add()
+  // given that lhs is different from rhs
+  if (op == Op_Add(bt)
       && node->in(1) != node->in(2)
       && (
           (node->in(1)->is_LShift() && node->in(1)->in(2)->is_Con()) // AddNode(LShiftNode(a, CON), *)
@@ -459,7 +460,7 @@ bool AddNode::is_optimized_multiplication(Node* node, Node* base) {
   }
 
   // Look for pattern: SubNode(LShiftNode(a, CON), a)
-  if (node->is_Sub() && node->in(1)->is_LShift() && node->in(1)->in(2)->is_Con()) {
+  if (op == Op_Sub(bt) && node->in(1)->Opcode() == Op_LShift(bt) && node->in(1)->in(2)->is_Con()) {
     Node* a1 = node->in(1)->in(1);
     Node* a2 = node->in(2);
 
@@ -470,61 +471,62 @@ bool AddNode::is_optimized_multiplication(Node* node, Node* base) {
 }
 
 // For a series of additions, extract the base operand and the multiplier. E.g., extract a*n from a + a + ... + a
-jlong AddNode::extract_base_operand_from_serial_additions(PhaseGVN* phase, Node* node, Node** base, int depth_limit) {
+jlong AddNode::extract_base_operand_from_serial_additions(PhaseGVN* phase, Node* node, BasicType bt, int depth_limit, Node** base) {
   *base = node;
 
   if (depth_limit == 0) {
     return 1;
   }
 
+  int op = node->Opcode();
+
   // MulNode(any, const), e.g., a*2
-  if (node->is_Mul()
-      && node->Opcode() != Op_AndI && node->Opcode() != Op_AndL // AndNode extends MulNode for some reason
+  if (op == Op_Mul(bt)
       && (node->in(1)->is_Con() || node->in(2)->is_Con())) {
     Node* const_node = node->in(1)->is_Con() ? node->in(1) : node->in(2);
     Node* operand_node = node->in(1)->is_Con() ? node->in(2) : node->in(1);
-    BasicType bt = phase->type(const_node)->basic_type();
+    BasicType const_bt = phase->type(const_node)->basic_type();
 
-    if (bt == T_INT || bt == T_LONG) { // const could potentially be void type
+    if (const_bt == T_INT || const_bt == T_LONG) { // const could potentially be void type
       Node* mul_base;
-      jlong multiplier = extract_base_operand_from_serial_additions(phase, operand_node, &mul_base, depth_limit - 1);
+      jlong multiplier = extract_base_operand_from_serial_additions(phase, operand_node, bt, depth_limit - 1, &mul_base);
 
       *base = mul_base;
-      return multiplier * const_node->get_integer_as_long(bt);
+      return multiplier * const_node->get_integer_as_long(const_bt);
     }
   }
 
   // LShiftNode(any, const), e.g, a<<2 => a*4
-  if (node->is_LShift() && node->isa_LShift()->in(2)->is_Con()) {
+  if (op == Op_LShift(bt) && node->in(2)->is_Con()) {
     Node* const_node = node->in(2);
     Node* operand_node = node->in(1);
-    BasicType bt = phase->type(const_node)->basic_type();
+    BasicType const_bt = phase->type(const_node)->basic_type();
 
-    if (bt == T_INT || bt == T_LONG) { // const could potentially be void type
+    if (const_bt == T_INT || const_bt == T_LONG) { // const could potentially be void type
       Node* shift_base;
-      jlong multiplier = extract_base_operand_from_serial_additions(phase, operand_node, &shift_base, depth_limit - 1);
+      jlong multiplier = extract_base_operand_from_serial_additions(phase, operand_node, bt, depth_limit - 1, &shift_base);
 
       *base = shift_base;
-      return multiplier * ((jlong) 1 << const_node->get_integer_as_long(bt)); // const could be void type
+      return multiplier * ((jlong) 1 << const_node->get_integer_as_long(const_bt)); // const could be void type
     }
   }
 
   // AddNode(any, any), e.g., a + a => a*2 or (a<<2) + a => a*5
   // SubNode(any, any), e.g., a<<3 - a => a*7
-  if (node->is_Add() || node->is_Sub()) {
+  if (op == Op_Add(bt) || op == Op_Sub(bt)) {
     Node* operand_node_left = node->in(1);
     Node* operand_node_right = node->in(2);
 
     Node* base_left;
     Node* base_right;
-    jlong multiplier_left = extract_base_operand_from_serial_additions(phase, operand_node_left, &base_left,
-                                                                       depth_limit - 1);
-    jlong multiplier_right = extract_base_operand_from_serial_additions(phase, operand_node_right, &base_right,
-                                                                        depth_limit - 1);
+    jlong multiplier_left = extract_base_operand_from_serial_additions(phase, operand_node_left, bt,
+                                                                       depth_limit - 1, &base_left);
+    jlong multiplier_right = extract_base_operand_from_serial_additions(phase, operand_node_right, bt,
+                                                                        depth_limit - 1, &base_right);
 
     if (base_left == base_right) {
       *base = base_left;
-      return node->is_Add() ? multiplier_left + multiplier_right : multiplier_left - multiplier_right;
+      return op == Op_Add(bt) ? multiplier_left + multiplier_right : multiplier_left - multiplier_right;
     }
   }
 
