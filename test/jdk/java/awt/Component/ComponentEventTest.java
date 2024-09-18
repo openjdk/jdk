@@ -41,12 +41,15 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.InputEvent;
 import java.lang.reflect.InvocationTargetException;
+import jdk.test.lib.Platform;
 
 /*
  * @test
  * @key headful
  * @bug 8333403
  * @summary Test performs various operations to check components events are triggered properly.
+ * @library /test/lib
+ * @build jdk.test.lib.Platform
  * @run main ComponentEventTest
  */
 public class ComponentEventTest {
@@ -146,17 +149,8 @@ public class ComponentEventTest {
 
     private static void doTest()
         throws InvocationTargetException, InterruptedException {
-        // Click on the Frame to ensure its gain Focus
-        EventQueue.invokeAndWait(() -> {
-            Point location = frame.getLocationOnScreen();
-            Dimension size = frame.getSize();
-            centerPoint = new Point(location.x + size.width / 2,
-                location.y + size.height / 2);
-        });
-
-        robot.mouseMove(centerPoint.x, centerPoint.y);
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+        // Click the frame to ensure it gains focus
+        clickFrame();
 
         robot.delay(DELAY);
 
@@ -170,6 +164,29 @@ public class ComponentEventTest {
 
         System.out.println("Iconify frame");
         resetValues();
+        iconifyFrame();
+
+        System.out.println("Deiconify frame");
+        resetValues();
+        deiconifyFrame();
+    }
+
+    private static void clickFrame()
+        throws InvocationTargetException, InterruptedException {
+        EventQueue.invokeAndWait(() -> {
+            Point location = frame.getLocationOnScreen();
+            Dimension size = frame.getSize();
+            centerPoint = new Point(location.x + size.width / 2,
+                location.y + size.height / 2);
+        });
+
+        robot.mouseMove(centerPoint.x, centerPoint.y);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+    }
+
+    private static void iconifyFrame()
+        throws InvocationTargetException, InterruptedException {
         EventQueue.invokeAndWait(() -> frame.setExtendedState(Frame.ICONIFIED));
 
         robot.waitForIdle();
@@ -179,32 +196,38 @@ public class ComponentEventTest {
             throw new RuntimeException(
                 "ComponentEvent triggered when frame is iconified");
         }
+    }
 
-        System.out.println("Deiconify frame");
-        resetValues();
+    private static void deiconifyFrame()
+        throws InvocationTargetException, InterruptedException {
         EventQueue.invokeAndWait(() -> frame.setExtendedState(Frame.NORMAL));
 
         robot.waitForIdle();
         robot.delay(DELAY);
 
         /*
-         * Because of the different behavior between MS Windows and other OS ,we
-         * natively received WM_SIZE/WM_MOVE events when set frame iconify to
-         * deiconify , The AWT sends the events to components when it receives
-         * the events from the native system.
-         * Please check the  JDK-6754618
+         * Because of the different behavior between MS Windows and other OS, we
+         * receive native events WM_SIZE and WM_MOVE on Windows when the frame
+         * state changes from iconified to normal. AWT sends these events to
+         * components when it receives the events from the native system. See
+         * JDK-6754618 for more information.
          */
 
-        String os = System.getProperty("os.name").toLowerCase();
-        if (os.contains("windows") && (componentShown || componentHidden
-            || !componentMoved || !componentResized)) {
+        if (componentShown || componentHidden) {
             throw new RuntimeException(
-                "FAIL: ComponentEvent triggered when frame set to normal");
+                "FAIL: componentShown or componentHidden triggered "
+                    + "when frame set to normal");
+        }
 
-        } else if (!os.contains("windows") && (componentShown || componentHidden
-            || componentMoved || componentResized)) {
+        if (Platform.isWindows() && (!componentMoved || !componentResized)) {
             throw new RuntimeException(
-                "ComponentEvent triggered when frame set to normal");
+                "FAIL: componentMoved or componentResized wasn't triggered "
+                    + "when frame set to normal");
+        }
+        if (!Platform.isWindows() && (componentMoved || componentResized)) {
+            throw new RuntimeException(
+                "FAIL: componentMoved or componentResized triggered "
+                    + "when frame set to normal");
         }
     }
 
