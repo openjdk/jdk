@@ -35,7 +35,6 @@
 #include "utilities/macros.hpp"
 #include "unittest.hpp"
 
-using ::testing::StrEq;
 using ::testing::HasSubstr;
 
 class OopStorageSetTest : public ::testing::Test {
@@ -121,9 +120,9 @@ private:
 
 public:
   void doit() {
+    PrintContainingClosure cl;
     for (auto id: EnumRange<OopStorageSet::Id>()) {
       OopStorage* oop_storage = OopStorageSet::storage(id);
-      PrintContainingClosure cl;
       oop_storage->oops_do(&cl);
     }
   }
@@ -135,7 +134,7 @@ TEST_VM_F(OopStorageSetTest, print_containing) {
     stringStream ss;
     bool printed = OopStorageSet::print_containing(nullptr, &ss);
     ASSERT_FALSE(printed);
-    ASSERT_THAT("", StrEq(ss.freeze()));
+    EXPECT_STREQ("", ss.freeze());
   }
 
   // Goofy values print nothing: unaligned out of storage pointer.
@@ -143,7 +142,7 @@ TEST_VM_F(OopStorageSetTest, print_containing) {
     stringStream ss;
     bool printed = OopStorageSet::print_containing((oop*)0x1, &ss);
     ASSERT_FALSE(printed);
-    ASSERT_THAT("", StrEq(ss.freeze()));
+    EXPECT_STREQ("", ss.freeze());
   }
 
   // Goofy values print nothing: aligned out of storage pointer.
@@ -151,7 +150,7 @@ TEST_VM_F(OopStorageSetTest, print_containing) {
     stringStream ss;
     bool printed = OopStorageSet::print_containing((oop*)0x8, &ss);
     ASSERT_FALSE(printed);
-    ASSERT_THAT("", StrEq(ss.freeze()));
+    EXPECT_STREQ("", ss.freeze());
   }
 
   // All slot addresses should print well.
