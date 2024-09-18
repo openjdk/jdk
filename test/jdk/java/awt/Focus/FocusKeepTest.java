@@ -25,58 +25,66 @@
  * @test
  * @bug 4128659
  * @summary Tests whether a focus request will work on a focus lost event.
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual FocusKeepTest
+ * @key headful
+ * @run main FocusKeepTest
  */
 
 import java.awt.BorderLayout;
+import java.awt.KeyboardFocusManager;
+import java.awt.Robot;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
-import java.awt.Frame;
+import java.awt.event.KeyEvent;
 import javax.swing.JFrame;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
 public class FocusKeepTest {
 
-    private static final String INSTRUCTIONS = """
-         When window comes up, hit tab key.
-         If Focus stay on the first component press Pass else press Fail""";
+    static JFrame frame;
+    static JTextField tf;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame.builder()
-                .title("FocusKeepTest Instructions")
-                .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
-                .columns(35)
-                .testUI(FocusKeepTest::createTestUI)
-                .build()
-                .awaitAndCheck();
+        Robot robot = new Robot();
+        robot.setAutoDelay(100);
+        try {
+            SwingUtilities.invokeAndWait(() -> createTestUI());
+            robot.waitForIdle();
+            robot.delay(1000);
+            robot.keyPress(KeyEvent.VK_TAB);
+            robot.keyRelease(KeyEvent.VK_TAB);
+            if (KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner() instanceof JTextField tf1) {
+                if (!tf1.getText().equals("TextField 1")) {
+                    throw new RuntimeException("Focus on wrong textfield");
+                }
+            } else {
+                throw new RuntimeException("Focus not on correct component");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
+    }
+   
+    private static void createTestUI() {    
+        frame = new JFrame("FocusKeepTest");        
+        tf = new JTextField("TextField 1");
+        tf.addFocusListener(new MyFocusAdapter("TextField 1"));
+        frame.add(tf, BorderLayout.NORTH);
+
+        tf = new JTextField("TextField 2");
+        tf.addFocusListener(new MyFocusAdapter("TextField 2"));
+        frame.add(tf, BorderLayout.SOUTH);
+
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true); 
     }
 
-    private static Frame createTestUI() {
-        return new TestFocusSwing();
-    }
-
-}
-
-class TestFocusSwing extends JFrame {
-
-    public TestFocusSwing() {
-        JTextField tf;
-
-        tf = new JTextField ("TextField 1");
-        tf.addFocusListener (new MyFocusAdapter ("TextField 1"));
-        add(tf, BorderLayout.NORTH);
-
-        tf = new JTextField ("TextField 2");
-        tf.addFocusListener (new MyFocusAdapter ("TextField 2"));
-        add(tf, BorderLayout.SOUTH);
-
-        pack();
-    }
-
-    class MyFocusAdapter extends FocusAdapter {
+    static class MyFocusAdapter extends FocusAdapter {
         private String myName;
 
         public MyFocusAdapter (String name) {
