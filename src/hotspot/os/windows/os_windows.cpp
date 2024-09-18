@@ -4108,6 +4108,10 @@ void os::win32::initialize_windows_version() {
     return;
   }
   strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
+  // On Windows Nanoserver the kernel32.dll is located in the forwarders subdirectory
+  if (!os::file_exists(kernel32_path)) {
+    strncat(kernel32_path, "\\forwarders\\kernel32.dll", MAX_PATH - ret);
+  }
 
   DWORD version_size = GetFileVersionInfoSize(kernel32_path, nullptr);
   if (version_size == 0) {
