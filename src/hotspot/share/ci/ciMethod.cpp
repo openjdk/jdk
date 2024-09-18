@@ -781,20 +781,33 @@ bool ciMethod::can_omit_stack_trace() const {
   return _can_omit_stack_trace;
 }
 
+#ifdef ASSERT
 // ------------------------------------------------------------------
 // ciMethod::equals
 //
 // Returns true if the methods are the same, taking redefined methods
-// into account.
-bool ciMethod::equals(const ciMethod* m) const {
+// into account.  Does not support deleted methods.
+//
+// Usage note: this is not a general-purpose API, but is only used for a C1
+// assert comparing two non-private methods, which means they cannot be
+// deleted.  To make this a general-purpose API, the compilers would need to
+// deal gracefully with added/deleted methods.
+bool ciMethod::equals_ignore_version(const ciMethod* m) const {
   if (this == m) return true;
   VM_ENTRY_MARK;
   Method* m1 = this->get_Method();
   Method* m2 = m->get_Method();
+  guarantee(!m1->is_private() && !m1->is_deleted(), "see usage note");
+  guarantee(!m2->is_private() && !m2->is_deleted(), "see usage note");
   if (m1->is_old()) m1 = m1->get_new_method();
   if (m2->is_old()) m2 = m2->get_new_method();
+  guarantee(m1 != nullptr, "get_new_method saw deleted method?");
+  guarantee(m2 != nullptr, "get_new_method saw deleted method?");
+  guarantee((m1 == m2) == (m1->name() == m2->name() && m1->signature() == m2->signature()),
+         "compare invariants failed");
   return m1 == m2;
 }
+#endif
 
 
 // ------------------------------------------------------------------

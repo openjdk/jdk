@@ -366,7 +366,9 @@ class ciMethod : public ciMetadata {
 
   bool can_omit_stack_trace() const;
 
-  bool equals(const ciMethod* m) const;
+#ifdef ASSERT
+  bool equals_ignore_version(const ciMethod* m) const;
+#endif
 
   // Replay data methods
   static void dump_name_as_ascii(outputStream* st, Method* method);
