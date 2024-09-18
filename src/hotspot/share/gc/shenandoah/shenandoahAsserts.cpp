@@ -65,7 +65,12 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
 
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
-  msg.append("  " PTR_FORMAT " - klass " PTR_FORMAT " %s\n", p2i(obj), p2i(obj->klass()), obj->klass()->external_name());
+  Klass* klass = obj->klass();
+  msg.append("  " PTR_FORMAT " - klass " PTR_FORMAT " %s\n", p2i(obj), p2i(klass), klass->external_name());
+  if (klass == vmClasses::Class_klass()) {
+    msg.append("  mirrored klass:       " PTR_FORMAT "\n", p2i(obj->metadata_field(java_lang_Class::klass_offset())));
+    msg.append("  mirrored array klass: " PTR_FORMAT "\n", p2i(obj->metadata_field(java_lang_Class::array_klass_offset())));
+  }
   msg.append("    %3s allocated after mark start\n", ctx->allocated_after_mark_start(obj) ? "" : "not");
   msg.append("    %3s after update watermark\n",     cast_from_oop<HeapWord*>(obj) >= r->get_update_watermark() ? "" : "not");
   msg.append("    %3s marked strong\n",              ctx->is_marked_strong(obj) ? "" : "not");
@@ -264,20 +269,22 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
   }
 
   // Do additional checks for special objects: their fields can hold metadata as well.
-  // We want to check class loading/unloading did not corrupt them.
+  // We want to check class loading/unloading did not corrupt them. We can only reasonably
+  // trust the forwarded objects, as the from-space object can have the klasses effectively
+  // dead.
 
   if (Universe::is_fully_initialized() && (obj_klass == vmClasses::Class_klass())) {
-    Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
+    Metadata* klass = fwd->metadata_field(java_lang_Class::klass_offset());
     if (klass != nullptr && !Metaspace::contains(klass)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Instance class mirror should point to Metaspace",
+                    "Mirrored instance class should point to Metaspace",
                     file, line);
     }
 
-    Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
+    Metadata* array_klass = fwd->metadata_field(java_lang_Class::array_klass_offset());
     if (array_klass != nullptr && !Metaspace::contains(array_klass)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                    "Array class mirror should point to Metaspace",
+                    "Mirrored array class should point to Metaspace",
                     file, line);
     }
   }
