@@ -202,7 +202,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 #ifdef ASSERT
 void VMATree::print_on(outputStream* out) {
   visit_in_order([&](TreapNode* current) {
-    out->print("%lu (%s) - %s - ", current->key(), NMTUtil::flag_to_name(current->val().out.flag()),
+    out->print(SIZE_FORMAT " (%s) - %s - ", current->key(), NMTUtil::flag_to_name(current->val().out.flag()),
                statetype_to_string(current->val().out.type()));
   });
   out->cr();
@@ -247,7 +247,7 @@ void VMATree::SummaryDiff::print_on(outputStream* out) {
     if (flag[i].reserve == 0 && flag[i].commit == 0) {
       continue;
     }
-    out->print_cr("Flag %s R: " SIZE_FORMAT " C: " SIZE_FORMAT, NMTUtil::flag_to_enum_name((MEMFLAGS)i), flag[i].reserve,
+    out->print_cr("Flag %s R: " INT64_FORMAT " C: " INT64_FORMAT, NMTUtil::flag_to_enum_name((MEMFLAGS)i), flag[i].reserve,
                   flag[i].commit);
   }
 }
