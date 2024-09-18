@@ -25,7 +25,7 @@
 #ifndef SHARE_NMT_ARRAYWITHFREELIST_HPP
 #define SHARE_NMT_ARRAYWITHFREELIST_HPP
 
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include <cstdint>
 #include <limits>
 #include <type_traits>
@@ -34,7 +34,7 @@
 // A flat array of elements E, backed by C-heap, growing on-demand. It allows for
 // returning arbitrary elements and keeps them in a freelist. Elements can be uniquely
 // identified via array index.
-template<typename E, MEMFLAGS flag, typename II = int32_t>
+template<typename E, MemTag MT, typename II = int32_t>
 class ArrayWithFreeList {
   constexpr void static_assert_E_satisfies_type_requirements(bool fixed) const {
     static_assert(std::numeric_limits<II>::is_exact, "must be");
@@ -88,7 +88,7 @@ private:
       }
 
       I next_cap = static_cast<I>(widened_cap);
-      void* next_array = os::realloc(_data, next_cap * sizeof(BackingElement), flag);
+      void* next_array = os::realloc(_data, next_cap * sizeof(BackingElement), MT);
       if (next_array == nullptr) {
         return false;
       }
@@ -102,7 +102,7 @@ private:
     : _fixed_size(false),
       _len(0),
       _cap(initial_cap),
-      _data(static_cast<BackingElement*>(os::malloc(initial_cap * sizeof(BackingElement), flag))) {
+      _data(static_cast<BackingElement*>(os::malloc(initial_cap * sizeof(BackingElement), MT))) {
     }
 
     resizable_array(BackingElement* data, II capacity)
