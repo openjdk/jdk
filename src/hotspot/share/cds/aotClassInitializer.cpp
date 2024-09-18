@@ -36,10 +36,10 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
 
   if (ik->is_initialized() && ik->java_super() == vmClasses::Enum_klass()) {
     return true;
-  } else if (ik->is_initialized() &&
-             (ik->name()->equals("jdk/internal/constant/PrimitiveClassDescImpl") ||
-              ik->name()->equals("jdk/internal/constant/ReferenceClassDescImpl") ||
-              ik->name()->equals("java/lang/constant/ConstantDescs"))) {
+  } else if (ik->name()->equals("jdk/internal/constant/PrimitiveClassDescImpl") ||
+             ik->name()->equals("jdk/internal/constant/ReferenceClassDescImpl") ||
+             ik->name()->equals("java/lang/constant/ConstantDescs")) {
+    assert(ik->is_initialized(), "must be");
     // The above 3 classes are special cases needed to support the aot-caching of
     // java.lang.invoke.MethodType instances:
     // - MethodType points to sun.invoke.util.Wrapper enums
