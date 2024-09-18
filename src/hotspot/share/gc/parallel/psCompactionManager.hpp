@@ -62,16 +62,18 @@ private:
   void* _holder;
 
   static const uintptr_t PartialArrayStateBit = 1;
+  static const uintptr_t TagSize = 1;
+  static const uintptr_t TagAlignment = 1 << TagSize;
 public:
   PSMarkTask() : _holder(nullptr) { }
 
   explicit PSMarkTask(oop obj) : _holder(obj) {
     assert(_holder != nullptr, "Not allowed to set null task queue element");
-    assert(is_aligned(_holder, 1), "Misaligned");
+    assert(is_aligned(_holder, TagAlignment), "Misaligned");
   }
 
   explicit PSMarkTask(PartialArrayState* p) : _holder((void*)((uintptr_t)p | PartialArrayStateBit)) {
-    assert(is_aligned(p, 1), "Misaligned");
+    assert(is_aligned(p, TagAlignment), "Misaligned");
   }
 
   oop obj() const {
