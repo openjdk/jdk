@@ -5359,7 +5359,9 @@ class StubGenerator: public StubCodeGenerator {
     __ vmseq_vi(v0, outputV1, -1);
     __ vfirst_m(failedIdx, v0);
     Label NoFailure, FailureAt0Idx;
-    __ bltz(failedIdx, NoFailure); // valid value can only be -1 when < 0
+    // valid value can only be -1 when < 0
+    __ bltz(failedIdx, NoFailure);
+    // when the first data (at index 0) fails, no need to process data anymore
     __ beqz(failedIdx, FailureAt0Idx);
     __ vsetvli(x0, failedIdx, Assembler::e8, lmul, Assembler::mu, Assembler::tu);
     __ slli(stepDst, failedIdx, 1);
