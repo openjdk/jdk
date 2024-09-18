@@ -48,7 +48,7 @@ public class LotsOfMenuItemsTest extends ComponentAdapter {
     public static void main(String[] args) throws Exception {
         LotsOfMenuItemsTest obj = new LotsOfMenuItemsTest();
         String INSTRUCTIONS = """
-                This test creates lots of frames with menubars.
+                This test creates lots of frames with menu bars.
                 When it's done you will see two frames.
                 Try to select menu items from each of them.
 

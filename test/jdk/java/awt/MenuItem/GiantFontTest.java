@@ -40,10 +40,12 @@ public class GiantFontTest {
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
                         A frame with one menu will appear.
-                        On Solaris, the menu's font should be quite large (48 point).
+                        On Solaris, the menu's (present on menu bar) font should
+                        be quite large (48 point).
                         If not, test fails.
 
-                        On Windows, the font should be normal size.  If so, test passes.
+                        On Windows, the menu's (present on menu bar) font should be normal size.
+                        If so, test passes.
                         If the menu text is clipped by the title bar, or is painted over
                         the title bar or client area, the test fails.""";
 
