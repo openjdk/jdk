@@ -268,7 +268,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
   }
 }
 
-TEST_VM_F(NMTVMATreeTest, SetFlag) {
+TEST_VM_F(NMTVMATreeTest, SetTag) {
   auto i = [](MemTag f) -> uint8_t { return (uint8_t)f; };
 
   // The gc/cds case with only reserved data
@@ -376,7 +376,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
   }
-  { // Adjacent reserved mappings with different flags
+  { // Adjacent reserved mappings with different tags
   Tree::RegionData rd(NCS::StackIndex(), mtTest);
     Tree::RegionData rd2(NCS::StackIndex(), mtNMT);
     Tree tree;

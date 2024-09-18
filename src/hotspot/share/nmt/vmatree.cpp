@@ -211,7 +211,7 @@ void VMATree::print_on(outputStream* out) {
 VMATree::SummaryDiff VMATree::set_tag(position from, size size, MemTag tag) {
   VMATreap::Range range = _tree.find_enclosing_range(from);
   assert(range.start != nullptr && range.end != nullptr,
-         "Setting a flag must be done within existing range");
+         "Setting a memory tag must be done within existing range");
   StateType type = range.start->val().out.type();
   RegionData new_data = RegionData(range.start->val().out.stack(), tag);
 
@@ -224,7 +224,7 @@ VMATree::SummaryDiff VMATree::set_tag(position from, size size, MemTag tag) {
   while (end < from + size) {
     range = _tree.find_enclosing_range(from);
     assert(range.start != nullptr && range.end != nullptr,
-           "Setting a flag must be done within existing range.");
+           "Setting a memory tag must be done within existing range.");
     if (range.start == nullptr || range.end == nullptr) {
       break;
     }
