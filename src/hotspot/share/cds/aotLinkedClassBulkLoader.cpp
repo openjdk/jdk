@@ -27,6 +27,7 @@
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLinkedClassTable.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -95,19 +96,22 @@ void AOTLinkedClassBulkLoader::load_classes_in_loader_impl(AOTLinkedClassCategor
   //
   // Only the classes in the static archive can have archived mirrors.
   AOTLinkedClassTable* static_table = AOTLinkedClassTable::for_static_archive();
-  switch (loader_kind) {
-  case LoaderKind::BOOT:
+  switch (class_category) {
+  case AOTLinkedClassCategory::BOOT1:
     // Delayed until finish_loading_javabase_classes(), as the VM is not ready to
     // execute some of the <clinit> methods.
     break;
-  case LoaderKind::BOOT2:
+  case AOTLinkedClassCategory::BOOT2:
     init_required_classes_for_loader(h_loader, static_table->boot2(), CHECK);
     break;
-  case LoaderKind::PLATFORM:
+  case AOTLinkedClassCategory::PLATFORM:
     init_required_classes_for_loader(h_loader, static_table->platform(), CHECK);
     break;
-  case LoaderKind::APP:
+  case AOTLinkedClassCategory::APP:
     init_required_classes_for_loader(h_loader, static_table->app(), CHECK);
+    break;
+  case AOTLinkedClassCategory::UNREGISTERED:
+    ShouldNotReachHere();
     break;
   }
 
