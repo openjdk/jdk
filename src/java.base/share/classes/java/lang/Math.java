@@ -31,6 +31,8 @@ import jdk.internal.math.FloatConsts;
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
+import static java.lang.Double.*;
+
 /**
  * The class {@code Math} contains methods for performing basic
  * numeric operations such as the elementary exponential, logarithm,
@@ -3283,6 +3285,9 @@ public final class Math {
         }
     }
 
+    private static final double F_UP = 0x1p1023;  // normal, exact, 2^DoubleConsts.EXP_BIAS
+    private static final double F_DOWN = 0x1p-1023;  // subnormal, exact, 2^-DoubleConsts.EXP_BIAS
+
     /**
      * Returns {@code d} &times; 2<sup>{@code scaleFactor}</sup>
      * rounded as if performed by a single correctly rounded
@@ -3314,60 +3319,25 @@ public final class Math {
      * @since 1.6
      */
     public static double scalb(double d, int scaleFactor) {
-        /*
-         * When scaling up, it does not matter what order the
-         * multiply-store operations are done; the result will be
-         * finite or overflow regardless of the operation ordering.
-         * However, to get the correct result when scaling down, a
-         * particular ordering must be used.
-         *
-         * When scaling down, the multiply-store operations are
-         * sequenced so that it is not possible for two consecutive
-         * multiply-stores to return subnormal results.  If one
-         * multiply-store result is subnormal, the next multiply will
-         * round it away to zero.  This is done by first multiplying
-         * by 2 ^ (scaleFactor % n) and then multiplying several
-         * times by 2^n as needed where n is the exponent of number
-         * that is a convenient power of two.  In this way, at most one
-         * real rounding error occurs.
-         */
-
-        // magnitude of a power of two so large that scaling a finite
-        // nonzero value by it would be guaranteed to over or
-        // underflow; due to rounding, scaling down takes an
-        // additional power of two which is reflected here
-        final int MAX_SCALE = Double.MAX_EXPONENT + -Double.MIN_EXPONENT +
-                              DoubleConsts.SIGNIFICAND_WIDTH + 1;
-        int exp_adjust = 0;
-        int scale_increment = 0;
-        double exp_delta = Double.NaN;
-
-        // Make sure scaling factor is in a reasonable range
-
-        if(scaleFactor < 0) {
-            scaleFactor = Math.max(scaleFactor, -MAX_SCALE);
-            scale_increment = -512;
-            exp_delta = 0x1p-512;
+        if (scaleFactor > -DoubleConsts.EXP_BIAS) {
+            if (scaleFactor <= DoubleConsts.EXP_BIAS) {
+                return d * primPowerOfTwoD(scaleFactor);
+            }
+            if (scaleFactor <= 2 * DoubleConsts.EXP_BIAS) {
+                return d * primPowerOfTwoD(scaleFactor - DoubleConsts.EXP_BIAS) * F_UP;
+            }
+            if (scaleFactor < 2 * DoubleConsts.EXP_BIAS + PRECISION - 1) {
+                return d * primPowerOfTwoD(scaleFactor - 2 * DoubleConsts.EXP_BIAS) * F_UP * F_UP;
+            }
+            return d * F_UP * F_UP * F_UP;
         }
-        else {
-            scaleFactor = Math.min(scaleFactor, MAX_SCALE);
-            scale_increment = 512;
-            exp_delta = 0x1p512;
+        if (scaleFactor > -2 * DoubleConsts.EXP_BIAS) {
+            return d * primPowerOfTwoD(scaleFactor + DoubleConsts.EXP_BIAS) * F_DOWN;
         }
-
-        // Calculate (scaleFactor % +/-512), 512 = 2^9, using
-        // technique from "Hacker's Delight" section 10-2.
-        int t = (scaleFactor >> 9-1) >>> 32 - 9;
-        exp_adjust = ((scaleFactor + t) & (512 -1)) - t;
-
-        d *= powerOfTwoD(exp_adjust);
-        scaleFactor -= exp_adjust;
-
-        while(scaleFactor != 0) {
-            d *= exp_delta;
-            scaleFactor -= scale_increment;
+        if (scaleFactor > -2 * DoubleConsts.EXP_BIAS - PRECISION) {
+            return d * primPowerOfTwoD(scaleFactor + 2 * DoubleConsts.EXP_BIAS) * F_DOWN * F_DOWN;
         }
-        return d;
+        return d * MIN_VALUE * MIN_VALUE;
     }
 
     /**
@@ -3426,9 +3396,15 @@ public final class Math {
      */
     static double powerOfTwoD(int n) {
         assert(n >= Double.MIN_EXPONENT && n <= Double.MAX_EXPONENT);
-        return Double.longBitsToDouble((((long)n + (long)DoubleConsts.EXP_BIAS) <<
-                                        (DoubleConsts.SIGNIFICAND_WIDTH-1))
-                                       & DoubleConsts.EXP_BIT_MASK);
+        return primPowerOfTwoD(n);
+    }
+
+    /**
+     * Returns a floating-point power of two in the normal range.
+     * No checks are performed on the argument.
+     */
+    private static double primPowerOfTwoD(int n) {
+        return longBitsToDouble((long) (n + DoubleConsts.EXP_BIAS) << PRECISION - 1);
     }
 
     /**
