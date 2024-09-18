@@ -613,6 +613,9 @@ class Parse : public GraphKit {
   // Use speculative type to optimize CmpP node
   Node* optimize_cmp_with_klass(Node* c);
 
+  // Load counter used by StressUnstableIfTraps
+  void load_trap_stress_counter(Node*& counter, Node*& incr_store);
+
  public:
 #ifndef PRODUCT
   // Handle PrintOpto, etc.
