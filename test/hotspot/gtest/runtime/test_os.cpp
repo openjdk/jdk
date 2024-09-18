@@ -414,26 +414,26 @@ TEST_VM(os, realpath) {
   static const char* nosuchpath = "/1234567890123456789";
   static const char* tmppath = "/tmp";
 
-	char buffer[MAX_PATH];
+  char buffer[MAX_PATH];
 
   errno = 0;
-	const char* returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) - 2);
+  const char* returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) - 2);
   /* Returns ENOENT on Linux, ENAMETOOLONG on Windows */
   EXPECT_TRUE(returnedBuffer == nullptr);
   EXPECT_TRUE(errno == ENAMETOOLONG || errno == ENOENT);
 
   errno = 0;
-	returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) + 3);
+  returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) + 3);
   /* Returns ENOENT on Linux, 0 on Windows */
   EXPECT_TRUE(errno == 0 || errno == ENOENT);
   EXPECT_TRUE(returnedBuffer == nullptr || returnedBuffer == buffer);
 
-	errno = 0;
-	returnedBuffer = os::realpath(tmppath, buffer, MAX_PATH);
+  errno = 0;
+  returnedBuffer = os::realpath(tmppath, buffer, MAX_PATH);
   EXPECT_TRUE(returnedBuffer == buffer);
 
   errno = 0;
-  returnedBuffer = os::realpath(tmppath, buffer, strlen(tmppath) + 3); 
+  returnedBuffer = os::realpath(tmppath, buffer, strlen(tmppath) + 3);
   EXPECT_TRUE(returnedBuffer == buffer);
 
   errno = 0;
