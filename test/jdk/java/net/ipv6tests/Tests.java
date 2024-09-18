@@ -123,7 +123,8 @@ public class Tests {
         }
 
         dprintln ("dest2 = " + dest2);
-
+        dprintln ("sender endpoint == " + s1.getLocalSocketAddress());
+        dprintln ("echo endpoint == " + s2.getLocalSocketAddress());
 
         DatagramPacket r1 = new DatagramPacket (new byte[256], 256);
         DatagramPacket r2 = new DatagramPacket (new byte[256], 256);
