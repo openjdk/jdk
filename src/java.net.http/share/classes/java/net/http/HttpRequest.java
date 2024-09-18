@@ -204,6 +204,12 @@ public abstract class HttpRequest {
          * <p>
          * The {@linkplain #name() name of this option} is {@code "H3_DISCOVERY"}.
          *
+         * @implNote
+         * If a {@linkplain HttpClient.Builder#proxy() proxy} is {@linkplain
+         * java.net.ProxySelector#select(URI) selected for the {@linkplain HttpRequest#uri()
+         * request URI}, the protocol version is downgraded to HTTP/2 or
+         * HTTP/1.1 and the {@link #H3_DISCOVERY} option is ignored.
+         *
          * @see H3DiscoveryMode
          * @see Builder#setOption(HttpRequestOption, Object)
          */
