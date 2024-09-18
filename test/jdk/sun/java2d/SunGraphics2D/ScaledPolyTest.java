@@ -28,13 +28,14 @@
  */
 
 import java.awt.Color;
+import static java.awt.Color.*;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.image.BufferedImage;
 
 public class ScaledPolyTest {
 
-    public static void main(String[] arg]) {
+    public static void main(String[] args) {
 
         Polygon poly = new Polygon();
         poly.addPoint(20, 10);
