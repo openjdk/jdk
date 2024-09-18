@@ -33,6 +33,7 @@ import java.util.List;
 /*
  * @test
  * @bug 4175790
+ * @requires os.family == "windows"
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Win32: Running out of command ids for menu items
