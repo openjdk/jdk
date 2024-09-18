@@ -33,6 +33,7 @@ class Type;
 class TypeInt;
 class TypeLong;
 
+// A simple range in the signed or unsigned domain
 template <class T>
 class RangeInt {
 public:
@@ -42,8 +43,17 @@ public:
 
 /**
  * Bits that are known to be 0 or 1. A value v satisfies this constraint iff
- * (v & zeros) == 0 && (v & ones) == ones. I.e, all bits that is set in zeros
- * must be unset in v, and all bits that is set in ones must be set in v.
+ * (v & zeros) == 0 && (v & ones) == ones. I.e, any bit that is 1 in zeros must
+ * be 0 in v, and any bit that is 1 in ones must be 1 in v.
+ *
+ * I.e, for each bit position from 0 to sizeof(U) - 1, the corresponding bits
+ * of zeros, ones and the allowed bit in v must follow:
+ *
+ * zeros    ones    allowed bits
+ * 0        0       0 or 1
+ * 1        0       0
+ * 0        1       1
+ * 1        1       none (impossible state)
  *
  * E.g:
  * zeros: 00110100
@@ -68,20 +78,9 @@ public:
   }
 };
 
-template <class S, class U>
-class TypeIntPrototype;
-
-template <class S, class U>
-class CanonicalizedTypeIntPrototype {
-public:
-  bool _present;
-  TypeIntPrototype<S, U> _data;
-
-  static CanonicalizedTypeIntPrototype<S, U> make_empty() {
-    return {false, {}};
-  }
-};
-
+// All the information needed to construct a TypeInt/TypeLong, the constraints
+// here may be arbitrary and need to be canonicalized to construct a
+// TypeInt/TypeLong
 template <class S, class U>
 class TypeIntPrototype {
 public:
@@ -93,7 +92,29 @@ public:
   RangeInt<U> _urange;
   KnownBits<U> _bits;
 
-  CanonicalizedTypeIntPrototype<S, U> canonicalize_constraints() const;
+private:
+  friend class TypeInt;
+  friend class TypeLong;
+
+  template <class T1, class T2>
+  friend void test_canonicalize_constraints_simple();
+
+  template <class T1, class T2>
+  friend void test_canonicalize_constraints_random();
+
+  // A canonicalized version of a TypeIntPrototype, if the prototype represents
+  // an empty type, _present is false, otherwise, _data is canonical
+  class CanonicalizedTypeIntPrototype {
+  public:
+    bool _present; // whether this is an empty set
+    TypeIntPrototype<S, U> _data;
+
+    static CanonicalizedTypeIntPrototype make_empty() {
+      return {false, {}};
+    }
+  };
+
+  CanonicalizedTypeIntPrototype canonicalize_constraints() const;
   int normalize_widen(int w) const;
 #ifdef ASSERT
   bool contains(S v) const;
@@ -101,49 +122,58 @@ public:
 #endif // ASSERT
 };
 
-// The result is tuned down by one since we do not have empty type
-// and this is not required to be accurate
-template <class S, class U>
-U cardinality_from_bounds(const RangeInt<S>& srange, const RangeInt<U>& urange) {
-  if (U(srange._lo) == urange._lo) {
-    return urange._hi - urange._lo;
+// Various helper functions for TypeInt/TypeLong operations
+class TypeIntHelper {
+public:
+  // Calculate the cardinality of a TypeInt/TypeLong ignoring the bits
+  // constraints, the result is tuned down by 1 to ensure the bottom type is
+  // correctly calculated
+  template <class S, class U>
+  static U cardinality_from_bounds(const RangeInt<S>& srange, const RangeInt<U>& urange) {
+    static_assert(std::is_signed<S>::value, "");
+    static_assert(std::is_unsigned<U>::value, "");
+    static_assert(sizeof(S) == sizeof(U), "");
+
+    if (U(srange._lo) == urange._lo) {
+      return urange._hi - urange._lo;
+    }
+
+    return (urange._hi - U(srange._lo)) + (U(srange._hi) - urange._lo) + 1;
   }
 
-  return (urange._hi - U(srange._lo)) + (U(srange._hi) - urange._lo) + 1;
-}
+  template <class CT, class S, class U>
+  static const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(const TypeIntPrototype<S, U>&, int, bool), bool dual);
 
-template <class CT, class S, class U>
-const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(const TypeIntPrototype<S, U>&, int, bool), bool dual);
+  template <class CT>
+  static bool int_type_equal(const CT* t1, const CT* t2) {
+    return t1->_lo == t2->_lo && t1->_hi == t2->_hi && t1->_ulo == t2->_ulo && t1->_uhi == t2->_uhi &&
+          t1->_bits._zeros == t2->_bits._zeros && t1->_bits._ones == t2->_bits._ones;
+  }
 
-template <class CT>
-bool int_type_equal(const CT* t1, const CT* t2) {
-  return t1->_lo == t2->_lo && t1->_hi == t2->_hi && t1->_ulo == t2->_ulo && t1->_uhi == t2->_uhi &&
-         t1->_bits._zeros == t2->_bits._zeros && t1->_bits._ones == t2->_bits._ones;
-}
+  template <class CT>
+  static bool int_type_subset(const CT* super, const CT* sub) {
+    return super->_lo <= sub->_lo && super->_hi >= sub->_hi && super->_ulo <= sub->_ulo && super->_uhi >= sub->_uhi &&
+          (super->_bits._zeros &~ sub->_bits._zeros) == 0 && (super->_bits._ones &~ sub->_bits._ones) == 0;
+  }
 
-template <class CT>
-bool int_type_subset(const CT* super, const CT* sub) {
-  return super->_lo <= sub->_lo && super->_hi >= sub->_hi && super->_ulo <= sub->_ulo && super->_uhi >= sub->_uhi &&
-         (super->_bits._zeros &~ sub->_bits._zeros) == 0 && (super->_bits._ones &~ sub->_bits._ones) == 0;
-}
+  template <class CT>
+  static const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt);
 
-template <class CT>
-const Type* int_type_widen(const CT* nt, const CT* ot, const CT* lt);
-
-template <class CT>
-const Type* int_type_narrow(const CT* nt, const CT* ot);
+  template <class CT>
+  static const Type* int_type_narrow(const CT* nt, const CT* ot);
 
 #ifndef PRODUCT
-const char* intname(char* buf, size_t buf_size, jint n);
-const char* uintname(char* buf, size_t buf_size, juint n);
-const char* longname(char* buf, size_t buf_size, jlong n);
-const char* ulongname(char* buf, size_t buf_size, julong n);
+  static const char* intname(char* buf, size_t buf_size, jint n);
+  static const char* uintname(char* buf, size_t buf_size, juint n);
+  static const char* longname(char* buf, size_t buf_size, jlong n);
+  static const char* ulongname(char* buf, size_t buf_size, julong n);
 
-template <class U>
-const char* bitname(char* buf, size_t buf_size, U zeros, U ones);
+  template <class U>
+  static const char* bitname(char* buf, size_t buf_size, U zeros, U ones);
 
-void int_type_dump(const TypeInt* t, outputStream* st, bool verbose);
-void int_type_dump(const TypeLong* t, outputStream* st, bool verbose);
+  static void int_type_dump(const TypeInt* t, outputStream* st, bool verbose);
+  static void int_type_dump(const TypeLong* t, outputStream* st, bool verbose);
 #endif // PRODUCT
+};
 
 #endif // SHARE_OPTO_RANGEINFERENCE_HPP

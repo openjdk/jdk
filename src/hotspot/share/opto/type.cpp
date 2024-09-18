@@ -1627,11 +1627,11 @@ bool TypeInt::contains(jint i) const {
 }
 
 bool TypeInt::contains(const TypeInt* t) const {
-  return int_type_subset(this, t);
+  return TypeIntHelper::int_type_subset(this, t);
 }
 
 const Type* TypeInt::xmeet(const Type* t) const {
-  return int_type_xmeet(this, t, TypeInt::try_make, _is_dual);
+  return TypeIntHelper::int_type_xmeet(this, t, TypeInt::try_make, _is_dual);
 }
 
 const Type* TypeInt::xdual() const {
@@ -1641,7 +1641,7 @@ const Type* TypeInt::xdual() const {
 
 const Type* TypeInt::widen(const Type* old, const Type* limit) const {
   assert(!_is_dual, "dual types should only be used for join calculation");
-  return int_type_widen(this, old->isa_int(), limit->isa_int());
+  return TypeIntHelper::int_type_widen(this, old->isa_int(), limit->isa_int());
 }
 
 const Type* TypeInt::narrow(const Type* old) const {
@@ -1650,7 +1650,7 @@ const Type* TypeInt::narrow(const Type* old) const {
     return this;
   }
 
-  return int_type_narrow(this, old->isa_int());
+  return TypeIntHelper::int_type_narrow(this, old->isa_int());
 }
 
 //-----------------------------filter------------------------------------------
@@ -1674,7 +1674,7 @@ const Type* TypeInt::filter_helper(const Type* kills, bool include_speculative) 
 // Structural equality check for Type representations
 bool TypeInt::eq(const Type* t) const {
   const TypeInt* r = t->is_int();
-  return int_type_equal(this, r) && _widen == r->_widen && _is_dual == r->_is_dual;
+  return TypeIntHelper::int_type_equal(this, r) && _widen == r->_widen && _is_dual == r->_is_dual;
 }
 
 //------------------------------hash-------------------------------------------
@@ -1751,11 +1751,11 @@ bool TypeLong::contains(jlong i) const {
 }
 
 bool TypeLong::contains(const TypeLong* t) const {
-  return int_type_subset(this, t);
+  return TypeIntHelper::int_type_subset(this, t);
 }
 
 const Type *TypeLong::xmeet(const Type* t) const {
-  return int_type_xmeet(this, t, TypeLong::try_make, _is_dual);
+  return TypeIntHelper::int_type_xmeet(this, t, TypeLong::try_make, _is_dual);
 }
 
 const Type* TypeLong::xdual() const {
@@ -1765,7 +1765,7 @@ const Type* TypeLong::xdual() const {
 
 const Type* TypeLong::widen(const Type* old, const Type* limit) const {
   assert(!_is_dual, "dual types should only be used for join calculation");
-  return int_type_widen(this, old->isa_long(), limit->isa_long());
+  return TypeIntHelper::int_type_widen(this, old->isa_long(), limit->isa_long());
 }
 
 const Type* TypeLong::narrow(const Type* old) const {
@@ -1774,7 +1774,7 @@ const Type* TypeLong::narrow(const Type* old) const {
     return this;
   }
 
-  return int_type_narrow(this, old->isa_long());
+  return TypeIntHelper::int_type_narrow(this, old->isa_long());
 }
 
 //-----------------------------filter------------------------------------------
@@ -1798,7 +1798,7 @@ const Type* TypeLong::filter_helper(const Type* kills, bool include_speculative)
 // Structural equality check for Type representations
 bool TypeLong::eq(const Type* t) const {
   const TypeLong* r = t->is_long();
-  return int_type_equal(this, r) && _widen == r->_widen && _is_dual == r->_is_dual;
+  return TypeIntHelper::int_type_equal(this, r) && _widen == r->_widen && _is_dual == r->_is_dual;
 }
 
 //------------------------------hash-------------------------------------------
@@ -1828,19 +1828,19 @@ bool TypeLong::empty(void) const {
 //------------------------------dump2------------------------------------------
 #ifndef PRODUCT
 void TypeInt::dump2(Dict& d, uint depth, outputStream* st) const {
-  int_type_dump(this, st, false);
+  TypeIntHelper::int_type_dump(this, st, false);
 }
 
 void TypeInt::dump_verbose() const {
-  int_type_dump(this, tty, true);
+  TypeIntHelper::int_type_dump(this, tty, true);
 }
 
 void TypeLong::dump2(Dict& d, uint depth, outputStream* st) const {
-  int_type_dump(this, st, false);
+  TypeIntHelper::int_type_dump(this, st, false);
 }
 
 void TypeLong::dump_verbose() const {
-  int_type_dump(this, tty, true);
+  TypeIntHelper::int_type_dump(this, tty, true);
 }
 #endif
 

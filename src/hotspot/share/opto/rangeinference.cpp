@@ -29,13 +29,12 @@
 
 constexpr juint SMALLINT = 3; // a value too insignificant to consider widening
 
+// This represents the result of an iterative calculation
 template <class T>
 class AdjustResult {
 public:
-  // Denote whether there is a change in _data compared to the previous
-  // iteration
-  bool _progress;
-  bool _present; // whether the constraints are contradictory
+  bool _progress; // whether there is progress compared to the last iteration
+  bool _present;  // whether the calculation arrives at contradiction
   T _data;
 
   static AdjustResult<T> make_empty() {
@@ -277,7 +276,7 @@ canonicalize_constraints_simple(const RangeInt<U>& bounds, const KnownBits<U>& b
 // values with the bit value at that position being set and unset, respectively,
 // such that both belong to the set represented by the constraints.
 template <class S, class U>
-CanonicalizedTypeIntPrototype<S, U>
+typename TypeIntPrototype<S, U>::CanonicalizedTypeIntPrototype
 TypeIntPrototype<S, U>::canonicalize_constraints() const {
   RangeInt<S> srange = _srange;
   RangeInt<U> urange = _urange;
@@ -285,7 +284,7 @@ TypeIntPrototype<S, U>::canonicalize_constraints() const {
   if (srange._lo > srange._hi ||
       urange._lo > urange._hi ||
       (_bits._zeros & _bits._ones) != 0) {
-    return CanonicalizedTypeIntPrototype<S, U>::make_empty();
+    return CanonicalizedTypeIntPrototype::make_empty();
   }
 
   // Trivially canonicalize the bounds so that srange._lo and urange._hi are
@@ -309,7 +308,7 @@ TypeIntPrototype<S, U>::canonicalize_constraints() const {
     urange._lo = MAX2<S>(urange._lo, srange._lo);
     urange._hi = MIN2<S>(urange._hi, srange._hi);
     if (urange._lo > urange._hi) {
-      return CanonicalizedTypeIntPrototype<S, U>::make_empty();
+      return CanonicalizedTypeIntPrototype::make_empty();
     }
 
     auto type = canonicalize_constraints_simple(urange, _bits);
@@ -325,7 +324,7 @@ TypeIntPrototype<S, U>::canonicalize_constraints() const {
   auto pos_type = canonicalize_constraints_simple({urange._lo, U(srange._hi)}, _bits);
 
   if (!neg_type._present && !pos_type._present) {
-    return CanonicalizedTypeIntPrototype<S, U>::make_empty();
+    return CanonicalizedTypeIntPrototype::make_empty();
   } else if (!neg_type._present) {
     return {true, {{S(pos_type._bounds._lo), S(pos_type._bounds._hi)},
                    pos_type._bounds, pos_type._bits}};
@@ -343,7 +342,7 @@ template <class S, class U>
 int TypeIntPrototype<S, U>::normalize_widen(int w) const {
   // Certain normalizations keep us sane when comparing types.
   // The 'SMALLINT' covers constants and also CC and its relatives.
-  if (cardinality_from_bounds(_srange, _urange) <= SMALLINT) {
+  if (TypeIntHelper::cardinality_from_bounds(_srange, _urange) <= SMALLINT) {
     return Type::WidenMin;
   }
   if (_srange._lo == std::numeric_limits<S>::min() && _srange._hi == std::numeric_limits<S>::max() &&
@@ -395,7 +394,7 @@ template class TypeIntPrototype<jlong, julong>;
 // Compute the meet of 2 types, when dual is true, we are actually computing the
 // join.
 template <class CT, class S, class U>
-const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(const TypeIntPrototype<S, U>&, int, bool), bool dual) {
+const Type* TypeIntHelper::int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(const TypeIntPrototype<S, U>&, int, bool), bool dual) {
   // Perform a fast test for common case; meeting the same types together.
   if (i1 == t2 || t2 == Type::TOP) {
     return i1;
@@ -444,16 +443,16 @@ const Type* int_type_xmeet(const CT* i1, const Type* t2, const Type* (*make)(con
     return nullptr;
   }
 }
-template const Type* int_type_xmeet(const TypeInt* i1, const Type* t2,
-                                    const Type* (*make)(const TypeIntPrototype<jint, juint>&, int, bool), bool dual);
-template const Type* int_type_xmeet(const TypeLong* i1, const Type* t2,
-                                    const Type* (*make)(const TypeIntPrototype<jlong, julong>&, int, bool), bool dual);
+template const Type* TypeIntHelper::int_type_xmeet(const TypeInt* i1, const Type* t2,
+                                                   const Type* (*make)(const TypeIntPrototype<jint, juint>&, int, bool), bool dual);
+template const Type* TypeIntHelper::int_type_xmeet(const TypeLong* i1, const Type* t2,
+                                                   const Type* (*make)(const TypeIntPrototype<jlong, julong>&, int, bool), bool dual);
 
 // Called in PhiNode::Value during CCP, monotically widen the value set, do so rigorously
 // first, after WidenMax attempts, if the type has still not converged we speed up the
 // convergence by abandoning the bounds
 template <class CT>
-const Type* int_type_widen(const CT* new_type, const CT* old_type, const CT* limit_type) {
+const Type* TypeIntHelper::int_type_widen(const CT* new_type, const CT* old_type, const CT* limit_type) {
   using S = std::remove_const_t<decltype(CT::_lo)>;
   using U = std::remove_const_t<decltype(CT::_ulo)>;
 
@@ -513,14 +512,14 @@ const Type* int_type_widen(const CT* new_type, const CT* old_type, const CT* lim
   TypeIntPrototype<S, U> prototype{{min, max}, {umin, umax}, {zeros, ones}};
   return CT::try_make(prototype, Type::WidenMax);
 }
-template const Type* int_type_widen(const TypeInt* new_type, const TypeInt* old_type, const TypeInt* limit_type);
-template const Type* int_type_widen(const TypeLong* new_type, const TypeLong* old_type, const TypeLong* limit_type);
+template const Type* TypeIntHelper::int_type_widen(const TypeInt* new_type, const TypeInt* old_type, const TypeInt* limit_type);
+template const Type* TypeIntHelper::int_type_widen(const TypeLong* new_type, const TypeLong* old_type, const TypeLong* limit_type);
 
 // Called by PhiNode::Value during GVN, monotonically narrow the value set, only
 // narrow if the bits change or if the bounds are tightened enough to avoid
 // slow convergence
 template <class CT>
-const Type* int_type_narrow(const CT* new_type, const CT* old_type) {
+const Type* TypeIntHelper::int_type_narrow(const CT* new_type, const CT* old_type) {
   using S = decltype(CT::_lo);
   using U = decltype(CT::_ulo);
 
@@ -555,8 +554,8 @@ const Type* int_type_narrow(const CT* new_type, const CT* old_type) {
                                  RangeInt<U>{new_type->_ulo, new_type->_uhi});
   return (nc > (oc >> 1) + (SMALLINT * 2)) ? old_type : new_type;
 }
-template const Type* int_type_narrow(const TypeInt* new_type, const TypeInt* old_type);
-template const Type* int_type_narrow(const TypeLong* new_type, const TypeLong* old_type);
+template const Type* TypeIntHelper::int_type_narrow(const TypeInt* new_type, const TypeInt* old_type);
+template const Type* TypeIntHelper::int_type_narrow(const TypeLong* new_type, const TypeLong* old_type);
 
 
 #ifndef PRODUCT
@@ -578,7 +577,7 @@ static const char* int_name_near(T origin, const char* xname, char* buf, size_t 
   return buf;
 }
 
-const char* intname(char* buf, size_t buf_size, jint n) {
+const char* TypeIntHelper::intname(char* buf, size_t buf_size, jint n) {
   const char* str = int_name_near<jint>(max_jint, "maxint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
@@ -593,7 +592,7 @@ const char* intname(char* buf, size_t buf_size, jint n) {
   return buf;
 }
 
-const char* uintname(char* buf, size_t buf_size, juint n) {
+const char* TypeIntHelper::uintname(char* buf, size_t buf_size, juint n) {
   const char* str = int_name_near<juint>(max_juint, "maxuint", buf, buf_size, n);
   if (str != nullptr) {
     return str;
@@ -608,7 +607,7 @@ const char* uintname(char* buf, size_t buf_size, juint n) {
   return buf;
 }
 
-const char* longname(char* buf, size_t buf_size, jlong n) {
+const char* TypeIntHelper::longname(char* buf, size_t buf_size, jlong n) {
   const char* str = int_name_near<jlong>(max_jlong, "maxlong", buf, buf_size, n);
   if (str != nullptr) {
     return str;
@@ -638,7 +637,7 @@ const char* longname(char* buf, size_t buf_size, jlong n) {
   return buf;
 }
 
-const char* ulongname(char* buf, size_t buf_size, julong n) {
+const char* TypeIntHelper::ulongname(char* buf, size_t buf_size, julong n) {
   const char* str = int_name_near<julong>(max_julong, "maxulong", buf, buf_size, n);
   if (str != nullptr) {
     return str;
@@ -664,7 +663,7 @@ const char* ulongname(char* buf, size_t buf_size, julong n) {
 }
 
 template <class U>
-const char* bitname(char* buf, size_t buf_size, U zeros, U ones) {
+const char* TypeIntHelper::bitname(char* buf, size_t buf_size, U zeros, U ones) {
   constexpr juint W = sizeof(U) * 8;
 
   if (buf_size < W + 1) {
@@ -684,10 +683,10 @@ const char* bitname(char* buf, size_t buf_size, U zeros, U ones) {
   buf[W] = 0;
   return buf;
 }
-template const char* bitname(char* buf, size_t buf_size, juint zeros, juint ones);
-template const char* bitname(char* buf, size_t buf_size, julong zeros, julong ones);
+template const char* TypeIntHelper::bitname(char* buf, size_t buf_size, juint zeros, juint ones);
+template const char* TypeIntHelper::bitname(char* buf, size_t buf_size, julong zeros, julong ones);
 
-void int_type_dump(const TypeInt* t, outputStream* st, bool verbose) {
+void TypeIntHelper::int_type_dump(const TypeInt* t, outputStream* st, bool verbose) {
   char buf1[40], buf2[40], buf3[40], buf4[40], buf5[40];
   if (int_type_equal(t, TypeInt::INT)) {
     st->print("int");
@@ -734,7 +733,7 @@ void int_type_dump(const TypeInt* t, outputStream* st, bool verbose) {
   }
 }
 
-void int_type_dump(const TypeLong* t, outputStream* st, bool verbose) {
+void TypeIntHelper::int_type_dump(const TypeLong* t, outputStream* st, bool verbose) {
   char buf1[80], buf2[80], buf3[80], buf4[80], buf5[80];
   if (int_type_equal(t, TypeLong::LONG)) {
     st->print("long");
