@@ -2065,7 +2065,9 @@ void SystemDictionary::restore_archived_method_handle_intrinsics() {
     EXCEPTION_MARK;
     restore_archived_method_handle_intrinsics_impl(THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      vm_exit_during_initialization(err_msg("Failed to restore archived method handle intrinsics"));
+      // This is probably caused by OOM -- other parts of the CDS archive have direct pointers to
+      // the archived method handle intrinsics, so we can't really recover from this failure.
+      vm_exit_during_initialization(err_msg("Failed to restore archived method handle intrinsics. Try to increase heap size."));
     }
   }
 }

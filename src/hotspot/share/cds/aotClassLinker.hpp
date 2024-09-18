@@ -38,7 +38,7 @@ class AOTLinkedClassTable;
 class InstanceKlass;
 class SerializeClosure;
 template <typename T> class Array;
-
+enum class AOTLinkedClassCategory : int;
 
 // AOTClassLinker is used during the AOTCache Assembly Phase.
 // It links eligible classes before they are written into the AOTCache
@@ -68,7 +68,8 @@ template <typename T> class Array;
 // In such situations, the JVM will refuse to load the AOTCache.
 //
 class AOTClassLinker :  AllStatic {
-  using ClassesTable = ResourceHashtable<InstanceKlass*, bool, 15889, AnyObj::C_HEAP, mtClassShared>;
+  static const int TABLE_SIZE = 15889; // prime number
+  using ClassesTable = ResourceHashtable<InstanceKlass*, bool, TABLE_SIZE, AnyObj::C_HEAP, mtClassShared>;
 
   // Classes loaded inside vmClasses::resolve_all()
   static ClassesTable* _vm_classes;
@@ -85,7 +86,7 @@ class AOTClassLinker :  AllStatic {
   static void add_candidate(InstanceKlass* ik);
 
   static Array<InstanceKlass*>* write_classes(oop class_loader, bool is_javabase);
-  static int num_initiated_classes(oop loader1, oop loader2);
+  static int count_public_classes(oop loader);
 
 public:
   static void initialize();
@@ -98,17 +99,31 @@ public:
 
   // When CDS is enabled, is ik guatanteed to be linked at deployment time (and
   // cannot be replaced by JVMTI, etc)?
-  // This is a necessary (not but sufficient) condition for keeping a direct pointer
+  // This is a necessary (but not sufficient) condition for keeping a direct pointer
   // to ik in AOT-computed data (such as ConstantPool entries in archived classes,
   // or in AOT-compiled code).
   static bool is_candidate(InstanceKlass* ik);
 
-  // Request that ik to be added to the candidates table. This will return succeed only if
+  // Request that ik be added to the candidates table. This will return true only if
   // ik is allowed to be aot-linked.
   static bool try_add_candidate(InstanceKlass* ik);
 
   static int num_app_initiated_classes();
   static int num_platform_initiated_classes();
+
+  // Used in logging: "boot1", "boot2", "plat", "app" and "unreg";
+  static const char* class_category_name(AOTLinkedClassCategory category);
+  static const char* class_category_name(Klass* k);
+};
+
+// AOT-linked classes are divided into different categories and are loaded
+// in two phases during the production run.
+enum class AOTLinkedClassCategory : int {
+  BOOT1,       // Only java.base classes are loaded in the 1st phase
+  BOOT2,       // All boots classes that not in java.base are loaded in the 2nd phase
+  PLATFORM,
+  APP,    
+  UNREGISTERED // classes loaded outside of the boot/platform/app loaders; currently not supported by AOTClassLinker
 };
 
 #endif // SHARE_CDS_AOTCLASSLINKER_HPP

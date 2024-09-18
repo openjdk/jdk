@@ -52,7 +52,8 @@ template <typename T> class GrowableArray;
 // at dump time, because at run time we will load a class from the CDS archive only
 // if all of its supertypes are loaded from the CDS archive.
 class AOTConstantPoolResolver :  AllStatic {
-  using ClassesTable = ResourceHashtable<InstanceKlass*, bool, 15889, AnyObj::C_HEAP, mtClassShared> ;
+  static const int TABLE_SIZE = 15889; // prime number
+  using ClassesTable = ResourceHashtable<InstanceKlass*, bool, TABLE_SIZE, AnyObj::C_HEAP, mtClassShared> ;
   static ClassesTable* _processed_classes;
 
 #ifdef ASSERT

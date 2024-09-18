@@ -816,9 +816,8 @@ void InstanceKlass::initialize_from_cds(TRAPS) {
     return;
   }
 
-  if (has_preinitialized_mirror() && CDSConfig::is_loading_heap() &&
+  if (has_aot_initialized_mirror() && CDSConfig::is_loading_heap() &&
       are_super_types_initialized(this)) {
-    // TODO: also check for events listeners such as JVMTI, JFR, etc
     if (log_is_enabled(Info, cds, init)) {
       ResourceMark rm;
       log_info(cds, init)("%s (quickest)", external_name());
@@ -826,10 +825,11 @@ void InstanceKlass::initialize_from_cds(TRAPS) {
 
     link_class(CHECK);
 
-#ifdef AZZERT
+#ifdef ASSERT
     {
-      MonitorLocker ml(THREAD, _init_monitor);
-      assert(!initialized(), "sanity");
+      Handle h_init_lock(THREAD, init_lock());
+      ObjectLocker ol(h_init_lock, THREAD);
+      assert(!is_initialized(), "sanity");
       assert(!is_being_initialized(), "sanity");
       assert(!is_in_error_state(), "sanity");
     }
@@ -841,9 +841,12 @@ void InstanceKlass::initialize_from_cds(TRAPS) {
   }
 
   if (log_is_enabled(Info, cds, init)) {
+    // If we have a preinit mirror, we may come to here if a supertype is not
+    // yet initialized. It will still be quicker than usual, as we will skip the
+    // execution of <clinit> of this class.
     ResourceMark rm;
     log_info(cds, init)("%s%s", external_name(),
-                        (has_preinitialized_mirror() && CDSConfig::is_loading_heap()) ? " (quicker)" : "");
+                        (has_aot_initialized_mirror() && CDSConfig::is_loading_heap()) ? " (quicker)" : "");
   }
   initialize(THREAD);
 }
@@ -1642,14 +1645,14 @@ void InstanceKlass::call_class_initializer(TRAPS) {
 
 #if INCLUDE_CDS
   // This is needed to ensure the consistency of the archived heap objects.
-  if (has_archived_enum_objs()) {
+  if (has_aot_initialized_mirror() && CDSConfig::is_loading_heap()) {
+    return;
+  } else if (has_archived_enum_objs()) {
     assert(is_shared(), "must be");
     bool initialized = CDSEnumKlass::initialize_enum_klass(this, CHECK);
     if (initialized) {
       return;
     }
-  } else if (has_preinitialized_mirror() && CDSConfig::is_loading_heap()) {
-    return;
   }
 #endif
 

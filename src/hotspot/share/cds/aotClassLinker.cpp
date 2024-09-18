@@ -139,6 +139,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
       if (!try_add_candidate(nest_host)) {
         return false; // FIXME -- add test case for JFR event class.
       }
+    }
   }
 
   InstanceKlass* s = ik->java_super();
@@ -157,9 +158,9 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
 
   add_candidate(ik);
 
-  if (log_is_enabled(Info, cds, aot, load)) {
+  if (log_is_enabled(Info, cds, aot, link)) {
     ResourceMark rm;
-    log_info(cds, aot, load)("%s %s", ArchiveUtils::class_category(ik), ik->external_name());
+    log_info(cds, aot, link)("%s %s", class_category_name(ik), ik->external_name());
   }
 
   return true;
@@ -219,31 +220,85 @@ Array<InstanceKlass*>* AOTClassLinker::write_classes(oop class_loader, bool is_j
   if (list.length() == 0) {
     return nullptr;
   } else {
-    const char* category = ArchiveUtils::class_category(list.at(0));
-    log_info(cds, aot, load)("written %d class(es) for category %s", list.length(), category);
+    const char* category = class_category_name(list.at(0));
+    log_info(cds, aot, link)("written %d class(es) for category %s", list.length(), category);
     return ArchiveUtils::archive_array(&list);
   }
 }
 
 int AOTClassLinker::num_platform_initiated_classes() {
-  // AOTLinkedClassBulkLoader will initiate loading of all public boot classes in the platform loader.
-  return num_initiated_classes(nullptr, nullptr);
+  if (CDSConfig::is_dumping_aot_linked_classes()) {
+    // AOTLinkedClassBulkLoader will initiate loading of all public boot classes in the platform loader.
+    return count_public_classes(nullptr);
+  } else {
+    return 0;
+  }
 }
 
 int AOTClassLinker::num_app_initiated_classes() {
-  // AOTLinkedClassBulkLoader will initiate loading of all public boot/platform classes in the app loader.
-  return num_initiated_classes(nullptr, SystemDictionary::java_platform_loader());
+  if (CDSConfig::is_dumping_aot_linked_classes()) {
+    // AOTLinkedClassBulkLoader will initiate loading of all public boot/platform classes in the app loader.
+    return count_public_classes(nullptr) + count_public_classes(SystemDictionary::java_platform_loader());
+  } else {
+    return 0;
+  }
 }
 
-int AOTClassLinker::num_initiated_classes(oop loader1, oop loader2) {
+int AOTClassLinker::count_public_classes(oop loader) {
   int n = 0;
   for (int i = 0; i < _sorted_candidates->length(); i++) {
     InstanceKlass* ik = _sorted_candidates->at(i);
-    if (ik->is_public() && !ik->is_hidden() &&
-        (ik->class_loader() == loader1 || ik->class_loader() == loader2)) {
+    if (ik->is_public() && !ik->is_hidden() && ik->class_loader() == loader) {
       n++;
     }
   }
 
   return n;
 }
+
+// Used in logging: "boot1", "boot2", "plat", "app" and "unreg", or "array"
+const char* AOTClassLinker::class_category_name(Klass* k) {
+  if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space(k)) {
+    k = ArchiveBuilder::current()->get_source_addr(k);
+  }
+
+  if (k->is_array_klass()) {
+    return "array";
+  } else {
+    oop loader = k->class_loader();
+    if (loader == nullptr) {
+      if (k->module() != nullptr &&
+          k->module()->name() != nullptr &&
+          k->module()->name()->equals("java.base")) {
+        return "boot1"; // boot classes in java.base are loaded in the 1st phase
+      } else {
+        return "boot2"; // boot classes outside of java.base are loaded in the 2nd phase phase
+      }
+    } else {
+      if (loader == SystemDictionary::java_platform_loader()) {
+        return "plat";
+      } else if (loader == SystemDictionary::java_system_loader()) {
+        return "app";
+      } else {
+        return "unreg";
+      }
+    }
+  }
+}
+
+const char* AOTClassLinker::class_category_name(AOTLinkedClassCategory category) {
+  switch (category) {
+  case AOTLinkedClassCategory::BOOT1:
+    return "boot1";
+  case AOTLinkedClassCategory::BOOT2:
+    return "boot2";
+  case AOTLinkedClassCategory::PLATFORM:
+    return "plat";
+  case AOTLinkedClassCategory::APP:
+    return "app";
+  case AOTLinkedClassCategory::UNREGISTERED:
+  default:
+      return "unreg";
+  }
+}
+

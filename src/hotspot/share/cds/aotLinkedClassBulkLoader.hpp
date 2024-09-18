@@ -36,35 +36,28 @@ class ClassLoaderData;
 class InstanceKlass;
 class SerializeClosure;
 template <typename T> class Array;
+enum class AOTLinkedClassCategory : int;
 
 // During a Production Run, the AOTLinkedClassBulkLoader loads all classes from
 // a AOTLinkedClassTable into their respective ClassLoaders. This happens very early
 // in the JVM bootstrap stage, before any application code is executed.
 //
 class AOTLinkedClassBulkLoader :  AllStatic {
-  enum class LoaderKind : int {
-    BOOT,
-    BOOT2,
-    PLATFORM,
-    APP
-  };
-
-  static void load_classes_in_loader(JavaThread* current, LoaderKind loader_kind, oop class_loader_oop);
-  static void load_table(AOTLinkedClassTable* table, LoaderKind loader_kind, Handle loader, TRAPS);
-  static void initiate_loading(JavaThread* current, const char* category, Handle loader, Array<InstanceKlass*>* classes);
-  static void load_classes_impl(LoaderKind loader_kind, Array<InstanceKlass*>* classes, const char* category, Handle loader, TRAPS);
-  static void maybe_init(Array<InstanceKlass*>* classes, TRAPS);
+  static void load_classes_in_loader(JavaThread* current, AOTLinkedClassCategory class_category, oop class_loader_oop);
+  static void load_classes_in_loader_impl(AOTLinkedClassCategory class_category, oop class_loader_oop, TRAPS);
+  static void load_table(AOTLinkedClassTable* table, AOTLinkedClassCategory class_category, Handle loader, TRAPS);
+  static void initiate_loading(JavaThread* current, const char* category, Handle initiating_loader, Array<InstanceKlass*>* classes);
+  static void load_classes_impl(AOTLinkedClassCategory class_category, Array<InstanceKlass*>* classes,
+                                const char* category_name, Handle loader, TRAPS);
   static void load_hidden_class(ClassLoaderData* loader_data, InstanceKlass* ik, TRAPS);
+  static void init_required_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
 
 public:
-  static void serialize(SerializeClosure* soc, bool is_static_archive);
+  static void serialize(SerializeClosure* soc, bool is_static_archive) NOT_CDS_RETURN;
 
-  static void load_javabase_boot_classes(JavaThread* current);
-  static void load_non_javabase_boot_classes(JavaThread* current);
-  static void load_platform_classes(JavaThread* current);
-  static void load_app_classes(JavaThread* current);
-
-  static void init_javabase_preloaded_classes(TRAPS) NOT_CDS_RETURN;
+  static void load_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
+  static void load_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
+  static void finish_loading_javabase_classes(TRAPS) NOT_CDS_RETURN;
 };
 
 #endif // SHARE_CDS_AOTLINKEDCLASSBULKLOADER_HPP

@@ -415,6 +415,8 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   assert(on_stack(), "should always be set for shared constant pools");
   assert(is_shared(), "should always be set for shared constant pools");
   if (is_for_method_handle_intrinsic()) {
+    // See the same check in remove_unshareable_info() below.
+    assert(cache() == NULL, "must not have cpCache");
     return;
   }
   assert(_cache != nullptr, "constant pool _cache should not be null");

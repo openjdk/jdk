@@ -297,7 +297,7 @@ private:
   // The "default subgraph" is the root of all archived objects that do not belong to any
   // of the classes defined in the <xxx>_archive_subgraph_entry_fields[] arrays:
   //    - interned strings
-  //    - Klass::java_mirror()
+  //    - Klass::java_mirror() -- including initialized mirrors such as those of Enum klasses.
   //    - ConstantPool::resolved_references()
   static KlassSubGraphInfo* _default_subgraph_info;
   static ArchivedKlassSubGraphInfoRecord* _runtime_default_subgraph_info;
@@ -337,7 +337,7 @@ private:
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
   static bool archive_object(oop obj);
-  static void copy_preinitialized_mirror(Klass* orig_k, oop orig_mirror, oop m);
+  static void copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop m);
   static void copy_interned_strings();
 
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
@@ -360,7 +360,6 @@ private:
   static void fill_failed_loaded_region();
   static void mark_native_pointers(oop orig_obj);
   static bool has_been_archived(oop orig_obj);
-  static bool can_mirror_be_used_in_subgraph(oop orig_java_mirror);
   static void archive_java_mirrors();
   static void archive_strings();
  public:
@@ -449,6 +448,7 @@ private:
   static void initialize_test_class_from_archive(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
 #endif
 
+  static void init_classes_reachable_from_archived_mirrors(Handle loader, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void initialize_java_lang_invoke(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void initialize_default_subgraph_classes(Handle loader, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
 
