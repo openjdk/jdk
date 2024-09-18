@@ -354,6 +354,7 @@ void G1BarrierSetAssembler::generate_c2_post_barrier_stub(MacroAssembler* masm,
   Register thread = stub->thread();
   Register tmp1 = stub->tmp1(); // tmp1 holds the card address.
   Register tmp2 = stub->tmp2();
+  assert(stub->tmp3() == noreg, "not needed in this platform");
 
   __ bind(*stub->entry());
   generate_post_barrier_slow_path(masm, thread, tmp1, tmp2, *stub->continuation(), runtime);

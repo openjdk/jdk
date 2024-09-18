@@ -393,7 +393,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre_c2(MacroAssembler* masm,
     assert_different_registers(obj, pre_val, tmp);
   }
 
-  stub->initialize_registers(obj, pre_val, thread, tmp, noreg);
+  stub->initialize_registers(obj, pre_val, thread, tmp);
 
   generate_pre_barrier_fast_path(masm, thread);
   // If marking is active (*(mark queue active address) != 0), jump to stub (slow path)
@@ -410,6 +410,7 @@ void G1BarrierSetAssembler::generate_c2_pre_barrier_stub(MacroAssembler* masm,
   Register pre_val = stub->pre_val();
   Register thread = stub->thread();
   Register tmp = stub->tmp1();
+  assert(stub->tmp2() == noreg, "not needed in this platform");
 
   __ bind(*stub->entry());
   generate_pre_barrier_slow_path(masm, obj, pre_val, thread, tmp, *stub->continuation(), runtime);
@@ -447,6 +448,7 @@ void G1BarrierSetAssembler::generate_c2_post_barrier_stub(MacroAssembler* masm,
   Register thread = stub->thread();
   Register tmp = stub->tmp1(); // tmp holds the card address.
   Register tmp2 = stub->tmp2();
+  assert(stub->tmp3() == noreg, "not needed in this platform");
 
   __ bind(*stub->entry());
   generate_post_barrier_slow_path(masm, thread, tmp, tmp2, *stub->continuation(), runtime);
