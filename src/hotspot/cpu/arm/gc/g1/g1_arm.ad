@@ -183,8 +183,6 @@ instruct g1GetAndSetP(indirect mem, iRegP newval, iRegP tmp1, iRegP tmp2, iRegP 
 
 instruct g1LoadP(iRegP dst, indirect mem, iRegP tmp1, iRegP tmp2, flagsReg icc)
 %{
-  // This instruction does not need an acquiring counterpart because it is only
-  // used for reference loading (Reference::get()). The same holds for g1LoadN.
   predicate(UseG1GC && n->as_Load()->barrier_data() != 0);
   match(Set dst (LoadP mem));
   effect(TEMP dst, TEMP tmp1, TEMP tmp2, KILL icc);
