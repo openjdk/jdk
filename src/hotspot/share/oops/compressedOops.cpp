@@ -115,7 +115,7 @@ CompressedOops::Mode CompressedOops::mode() {
     return DisjointBaseNarrowOop;
   }
 
-  if (base() != 0) {
+  if (base() != nullptr) {
     return HeapBasedNarrowOop;
   }
 
@@ -166,7 +166,7 @@ void CompressedOops::print_mode(outputStream* st) {
 
   st->print(", Compressed Oops mode: %s", mode_to_string(mode()));
 
-  if (base() != 0) {
+  if (base() != nullptr) {
     st->print(": " PTR_FORMAT, p2i(base()));
   }
 
