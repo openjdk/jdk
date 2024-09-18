@@ -44,8 +44,12 @@ public class GiantFontTest {
                         be quite large (48 point).
                         If not, test fails.
 
-                        On Windows and Mac, the menu's (present on menu bar) font
+                        On Windows, the menu's (present on menu bar) font
                         should be normal size.
+
+                        On both Windows and Linux, the menu items in the popup
+                        menu should be large.
+                        
                         If so, test passes.
                         If the menu text is clipped by the title bar, or is painted over
                         the title bar or client area, the test fails.""";
