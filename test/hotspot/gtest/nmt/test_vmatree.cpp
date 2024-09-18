@@ -269,7 +269,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 }
 
 TEST_VM_F(NMTVMATreeTest, SetFlag) {
-  auto i = [](MEMFLAGS f) -> uint8_t { return (uint8_t)f; };
+  auto i = [](MemTag f) -> uint8_t { return (uint8_t)f; };
 
   // The gc/cds case with only reserved data
   {
@@ -279,22 +279,22 @@ TEST_VM_F(NMTVMATreeTest, SetFlag) {
 
     VMATree::SummaryDiff result = tree.reserve_mapping(0, 500, rd);
     diff.apply(result);
-    EXPECT_EQ(500, diff.flag[i(mtNone)].reserve);
+    EXPECT_EQ(500, diff.tag[i(mtNone)].reserve);
 
     result = tree.reserve_mapping(500, 100, rd);
     diff.apply(result);
-    EXPECT_EQ(600, diff.flag[i(mtNone)].reserve);
+    EXPECT_EQ(600, diff.tag[i(mtNone)].reserve);
 
-    result = tree.set_flag(0, 500, mtGC);
+    result = tree.set_tag(0, 500, mtGC);
     diff.apply(result);
-    EXPECT_EQ(100, diff.flag[i(mtNone)].reserve);
-    EXPECT_EQ(500, diff.flag[i(mtGC)].reserve);
+    EXPECT_EQ(100, diff.tag[i(mtNone)].reserve);
+    EXPECT_EQ(500, diff.tag[i(mtGC)].reserve);
 
-    result = tree.set_flag(500, 100, mtClassShared);
+    result = tree.set_tag(500, 100, mtClassShared);
     diff.apply(result);
-    EXPECT_EQ(0, diff.flag[i(mtNone)].reserve);
-    EXPECT_EQ(500, diff.flag[i(mtGC)].reserve);
-    EXPECT_EQ(100, diff.flag[i(mtClassShared)].reserve);
+    EXPECT_EQ(0, diff.tag[i(mtNone)].reserve);
+    EXPECT_EQ(500, diff.tag[i(mtGC)].reserve);
+    EXPECT_EQ(100, diff.tag[i(mtClassShared)].reserve);
   }
 
   // Now let's add in some committed data
@@ -305,7 +305,7 @@ TEST_VM_F(NMTVMATreeTest, SetFlag) {
 
     VMATree::SummaryDiff result = tree.reserve_mapping(0, 600, rd);
     diff.apply(result);
-    EXPECT_EQ(600, diff.flag[i(mtNone)].reserve);
+    EXPECT_EQ(600, diff.tag[i(mtNone)].reserve);
 
     // The committed areas
     result = tree.commit_mapping(100, 125, rd);
@@ -315,18 +315,18 @@ TEST_VM_F(NMTVMATreeTest, SetFlag) {
     result = tree.commit_mapping(565, 10, rd);
     diff.apply(result);
 
-    // OK, set flag
-    result = tree.set_flag(0, 500, mtGC);
+    // OK, set tag
+    result = tree.set_tag(0, 500, mtGC);
     diff.apply(result);
-    EXPECT_EQ(100, diff.flag[i(mtNone)].reserve);
-    EXPECT_EQ(500, diff.flag[i(mtGC)].reserve);
-    EXPECT_EQ(125, diff.flag[i(mtGC)].commit);
+    EXPECT_EQ(100, diff.tag[i(mtNone)].reserve);
+    EXPECT_EQ(500, diff.tag[i(mtGC)].reserve);
+    EXPECT_EQ(125, diff.tag[i(mtGC)].commit);
 
-    result = tree.set_flag(500, 100, mtClassShared);
+    result = tree.set_tag(500, 100, mtClassShared);
     diff.apply(result);
-    EXPECT_EQ(0, diff.flag[i(mtNone)].reserve);
-    EXPECT_EQ(100, diff.flag[i(mtClassShared)].reserve);
-    EXPECT_EQ(20, diff.flag[i(mtClassShared)].commit);
+    EXPECT_EQ(0, diff.tag[i(mtNone)].reserve);
+    EXPECT_EQ(100, diff.tag[i(mtClassShared)].reserve);
+    EXPECT_EQ(20, diff.tag[i(mtClassShared)].commit);
   }
 }
 

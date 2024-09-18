@@ -170,9 +170,9 @@ public:
     }
 
     void apply(SummaryDiff& other) {
-      for (int i = 0; i < mt_number_of_types; i++) {
-        flag[i].reserve += other.flag[i].reserve;
-        flag[i].commit += other.flag[i].commit;
+      for (int i = 0; i < mt_number_of_tags; i++) {
+        tag[i].reserve += other.tag[i].reserve;
+        tag[i].commit += other.tag[i].commit;
       }
     }
 
@@ -187,7 +187,7 @@ public:
     return register_mapping(from, from + sz, StateType::Reserved, metadata);
   }
 
-  SummaryDiff set_flag(position from, size size, MEMFLAGS flag);
+  SummaryDiff set_tag(position from, size size, MemTag tag);
 
   SummaryDiff commit_mapping(position from, size sz, const RegionData& metadata) {
     return register_mapping(from, from + sz, StateType::Committed, metadata);

@@ -26,7 +26,6 @@
 #include "precompiled.hpp"
 #include "nmt/vmatree.hpp"
 #include "utilities/growableArray.hpp"
-#include <cinttypes>
 
 const VMATree::RegionData VMATree::empty_regiondata{NativeCallStackStorage::StackIndex{}, mtNone};
 
@@ -202,19 +201,19 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 #ifdef ASSERT
 void VMATree::print_on(outputStream* out) {
   visit_in_order([&](TreapNode* current) {
-    out->print(SIZE_FORMAT " (%s) - %s - ", current->key(), NMTUtil::flag_to_name(current->val().out.flag()),
+    out->print(SIZE_FORMAT " (%s) - %s - ", current->key(), NMTUtil::tag_to_name(current->val().out.mem_tag()),
                statetype_to_string(current->val().out.type()));
   });
   out->cr();
 }
 #endif
 
-VMATree::SummaryDiff VMATree::set_flag(position from, size size, MEMFLAGS flag) {
+VMATree::SummaryDiff VMATree::set_tag(position from, size size, MemTag tag) {
   VMATreap::Range range = _tree.find_enclosing_range(from);
   assert(range.start != nullptr && range.end != nullptr,
          "Setting a flag must be done within existing range");
   StateType type = range.start->val().out.type();
-  RegionData new_data = RegionData(range.start->val().out.stack(), flag);
+  RegionData new_data = RegionData(range.start->val().out.stack(), tag);
 
   position end = MIN2(from + size, range.end->key());
   SummaryDiff diff = register_mapping(from, end, type, new_data);
@@ -231,7 +230,7 @@ VMATree::SummaryDiff VMATree::set_flag(position from, size size, MEMFLAGS flag) 
     }
     end = MIN2(from + size, range.end->key());
     StateType type = range.start->val().out.type();
-    RegionData new_data = RegionData(range.start->val().out.stack(), flag);
+    RegionData new_data = RegionData(range.start->val().out.stack(), tag);
     SummaryDiff result = register_mapping(from, end, type, new_data);
     diff.apply(result);
     size = size - (end - from);
@@ -243,12 +242,12 @@ VMATree::SummaryDiff VMATree::set_flag(position from, size size, MEMFLAGS flag) 
 
 #ifdef ASSERT
 void VMATree::SummaryDiff::print_on(outputStream* out) {
-  for (int i = 0; i < mt_number_of_types; i++) {
-    if (flag[i].reserve == 0 && flag[i].commit == 0) {
+  for (int i = 0; i < mt_number_of_tags; i++) {
+    if (tag[i].reserve == 0 && tag[i].commit == 0) {
       continue;
     }
-    out->print_cr("Flag %s R: " INT64_FORMAT " C: " INT64_FORMAT, NMTUtil::flag_to_enum_name((MEMFLAGS)i), flag[i].reserve,
-                  flag[i].commit);
+    out->print_cr("Tag %s R: " INT64_FORMAT " C: " INT64_FORMAT, NMTUtil::tag_to_enum_name((MemTag)i), tag[i].reserve,
+                  tag[i].commit);
   }
 }
 #endif
