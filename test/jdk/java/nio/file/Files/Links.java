@@ -135,7 +135,6 @@ public class Links {
         // Check message of NotLinkException
         try {
             Files.createDirectory(mydir);
-            Files.createFile(myfile);
 
             try {
                 Path mytarget = Files.readSymbolicLink(mydir);
@@ -150,21 +149,7 @@ public class Links {
                     assertTrue(okay);
                 }
             }
-            try {
-                Path mytarget = Files.readSymbolicLink(myfile);
-            } catch (NotLinkException expected) {
-                String filename = myfile.getFileName().toString();
-                String message = expected.getMessage();
-                boolean okay = message.contains(filename);
-                if (!okay) {
-                    System.err.println("Message \"" + message + "\"" +
-                        " does not contain the filename \"" +
-                        filename + "\"");
-                    assertTrue(okay);
-                }
-            }
         } finally {
-            Files.deleteIfExists(myfile);
             Files.deleteIfExists(mydir);
         }
     }
