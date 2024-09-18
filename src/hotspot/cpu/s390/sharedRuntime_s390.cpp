@@ -416,7 +416,14 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
 
     __ z_vst(as_VectorRegister(reg_num), Address(Z_SP, offset));
 
-    map->set_callee_saved(VMRegImpl::stack2reg(offset>>2), RegisterSaver_LiveVRegs[i].vmreg);
+    map->set_callee_saved(VMRegImpl::stack2reg(offset>>2),
+		    RegisterSaver_LiveVRegs[i].vmreg);
+    map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size ) >> 2),
+		    RegisterSaver_LiveVRegs[i].vmreg->next());
+    map->set_callee_saved(VMRegImpl::stack2reg((offset + (half_reg_size * 2)) >> 2),
+		    RegisterSaver_LiveVRegs[i].vmreg->next(2));
+    map->set_callee_saved(VMRegImpl::stack2reg((offset + (half_reg_size * 3)) >> 2),
+		    RegisterSaver_LiveVRegs[i].vmreg->next(3));
   }
 
   assert(offset == frame_size_in_bytes, "consistency check");
