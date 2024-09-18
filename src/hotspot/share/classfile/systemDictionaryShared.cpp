@@ -91,6 +91,7 @@ InstanceKlass* SystemDictionaryShared::load_shared_class_for_builtin_loader(
   if (ik != nullptr && !ik->shared_loading_failed()) {
     if ((SystemDictionary::is_system_class_loader(class_loader()) && ik->is_shared_app_class())  ||
         (SystemDictionary::is_platform_class_loader(class_loader()) && ik->is_shared_platform_class())) {
+      SharedClassLoadingMark slm(THREAD, ik);
       PackageEntry* pkg_entry = CDSProtectionDomain::get_package_entry_from_class(ik, class_loader);
       Handle protection_domain =
         CDSProtectionDomain::init_security_info(class_loader, ik, pkg_entry, CHECK_NULL);
@@ -422,6 +423,7 @@ InstanceKlass* SystemDictionaryShared::find_or_load_shared_class(
 
       k = load_shared_class_for_builtin_loader(name, class_loader, THREAD);
       if (k != nullptr) {
+        SharedClassLoadingMark slm(THREAD, k);
         k = find_or_define_instance_class(name, class_loader, k, CHECK_NULL);
       }
     }

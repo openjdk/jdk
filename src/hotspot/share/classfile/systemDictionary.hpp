@@ -350,12 +350,6 @@ protected:
                                                        Handle protection_domain,
                                                        PackageEntry* pkg_entry,
                                                        TRAPS);
-  static InstanceKlass* load_shared_class_impl(InstanceKlass* ik,
-                                               Handle class_loader,
-                                               Handle protection_domain,
-                                               const ClassFileStream *cfs,
-                                               PackageEntry* pkg_entry,
-                                               TRAPS);
   static InstanceKlass* load_shared_class(InstanceKlass* ik,
                                           Handle class_loader,
                                           Handle protection_domain,
