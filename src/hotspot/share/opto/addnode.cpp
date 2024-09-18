@@ -398,6 +398,7 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   // Convert a + a + ... + a into a*n
   Node* serial_additions = convert_serial_additions(phase, can_reshape, bt);
   if (serial_additions != nullptr) {
+    fprintf (stderr, "");
     return serial_additions;
   }
 
@@ -424,7 +425,8 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, Basic
     return nullptr;
   }
 
-  Node* mul = MulNode::make(base, phase->integercon(factor, bt), bt);
+  Node* con = (bt == T_INT) ? (Node*) phase->intcon((jint) factor) : (Node*) phase->longcon(factor);
+  Node* mul = MulNode::make(base, con, bt);
 
   PhaseIterGVN* igvn = phase->is_IterGVN();
   if (igvn != nullptr) {
