@@ -189,10 +189,11 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
 
         // client wrap
         // *Yawn*  No response.  Shutdown client
-        log("---Client Wrap closeOutbound---");
+        log("---Client closeOutbound---");
         clientEngine.closeOutbound();
 
         // Sends an unencrypted user_cancelled
+        log("---Client Wrap user_cancelled---");
         clientResult = clientEngine.wrap(clientOut, cTOs);
         logEngineStatus(clientEngine, clientResult);
         runDelegatedTasks(clientEngine);
@@ -206,6 +207,20 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         runDelegatedTasks(serverEngine);
 
         cTOs.compact();
+
+        // Sends an unencrypted close_notify
+        log("---Client Wrap close_notify---");
+        clientResult = clientEngine.wrap(clientOut, cTOs);
+        logEngineStatus(clientEngine, clientResult);
+        runDelegatedTasks(clientEngine);
+
+        cTOs.flip();
+
+        // Server unwrap should process an unencrypted 2 byte packet,
+        log("---Server Unwrap close_notify alert---");
+        serverResult = serverEngine.unwrap(cTOs, serverIn);
+        logEngineStatus(serverEngine, serverResult);
+        runDelegatedTasks(serverEngine);
     }
 
     static boolean isOpen(SSLEngine engine) {

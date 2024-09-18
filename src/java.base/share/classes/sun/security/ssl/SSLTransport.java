@@ -108,38 +108,39 @@ interface SSLTransport {
 
         Plaintext[] plaintexts = null;
 
-        // Check for unexpected plaintext alert message during TLSv1.3 handshake, @bug 8331682
-        if (srcsLength == 1 && context.handshakeContext != null &&
-                ProtocolVersion.TLS13.equals(context.handshakeContext.negotiatedProtocol)) {
-            ByteBuffer packet = srcs[srcsOffset].slice();
-            byte contentType = packet.get();                   // pos: 0
-            byte majorVersion = packet.get();                  // pos: 1
-            byte minorVersion = packet.get();                  // pos: 2
-            int contentLen = Record.getInt16(packet);          // pos: 3, 4
-
-            if (contentLen == 2 && ContentType.ALERT.equals(ContentType.valueOf(contentType))) {
-                plaintexts = new Plaintext[]{
-                        new Plaintext(contentType, majorVersion, minorVersion, -1, -1L, packet)
-                };
-            }
-        }
-
-        if (plaintexts == null) {
-            try {
-                plaintexts = context.inputRecord.decode(srcs, srcsOffset, srcsLength);
-            } catch (UnsupportedOperationException unsoe) {         // SSLv2Hello
-                // Code to deliver SSLv2 error message for SSL/TLS connections.
-                if (!context.sslContext.isDTLS()) {
-                    context.outputRecord.encodeV2NoCipher();
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                        SSLLogger.finest("may be talking to SSLv2");
-                    }
+        try {
+            plaintexts = context.inputRecord.decode(srcs, srcsOffset, srcsLength);
+        } catch (UnsupportedOperationException unsoe) {         // SSLv2Hello
+            // Code to deliver SSLv2 error message for SSL/TLS connections.
+            if (!context.sslContext.isDTLS()) {
+                context.outputRecord.encodeV2NoCipher();
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    SSLLogger.finest("may be talking to SSLv2");
                 }
+            }
 
-                throw context.fatal(Alert.UNEXPECTED_MESSAGE, unsoe);
-            } catch (AEADBadTagException bte) {
-                throw context.fatal(Alert.BAD_RECORD_MAC, bte);
-            } catch (BadPaddingException bpe) {
+            throw context.fatal(Alert.UNEXPECTED_MESSAGE, unsoe);
+        } catch (AEADBadTagException bte) {
+            throw context.fatal(Alert.BAD_RECORD_MAC, bte);
+        } catch (BadPaddingException bpe) {
+            // Check for unexpected plaintext alert message during TLSv1.3 handshake, @bug 8331682
+            if (srcsLength == 1 && !context.isNegotiated && context.handshakeContext != null &&
+                    ProtocolVersion.TLS13.equals(context.handshakeContext.negotiatedProtocol)) {
+                ByteBuffer packet = srcs[srcsOffset].duplicate();
+                packet.position(0);
+                byte contentType = packet.get();                   // pos: 0
+                byte majorVersion = packet.get();                  // pos: 1
+                byte minorVersion = packet.get();                  // pos: 2
+                int contentLen = Record.getInt16(packet);          // pos: 3, 4
+
+                if (contentLen == 2 && ContentType.ALERT.equals(ContentType.valueOf(contentType))) {
+                    plaintexts = new Plaintext[]{
+                            new Plaintext(contentType, majorVersion, minorVersion, -1, -1L, packet)
+                    };
+                }
+            }
+
+            if (plaintexts == null) {
                 /*
                  * The basic SSLv3 record protection involves (optional)
                  * encryption for privacy, and an integrity check ensuring
@@ -150,18 +151,18 @@ interface SSLTransport {
                         Alert.HANDSHAKE_FAILURE :
                         Alert.BAD_RECORD_MAC;
                 throw context.fatal(alert, bpe);
-            } catch (SSLHandshakeException she) {
-                // may be record sequence number overflow
-                throw context.fatal(Alert.HANDSHAKE_FAILURE, she);
-            } catch (EOFException eofe) {
-                // rethrow EOFException, the call will handle it if needed.
-                throw eofe;
-            } catch (InterruptedIOException | SocketException se) {
-                // don't close the Socket in case of timeouts or interrupts or SocketException.
-                throw se;
-            } catch (IOException ioe) {
-                throw context.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
             }
+        } catch (SSLHandshakeException she) {
+            // may be record sequence number overflow
+            throw context.fatal(Alert.HANDSHAKE_FAILURE, she);
+        } catch (EOFException eofe) {
+            // rethrow EOFException, the call will handle it if needed.
+            throw eofe;
+        } catch (InterruptedIOException | SocketException se) {
+            // don't close the Socket in case of timeouts or interrupts or SocketException.
+            throw se;
+        } catch (IOException ioe) {
+            throw context.fatal(Alert.UNEXPECTED_MESSAGE, ioe);
         }
 
         if (plaintexts == null || plaintexts.length == 0) {
