@@ -68,9 +68,9 @@ public class FocusKeepTest {
             });
         }
     }
-   
-    private static void createTestUI() {    
-        frame = new JFrame("FocusKeepTest");        
+
+    private static void createTestUI() {
+        frame = new JFrame("FocusKeepTest");
         tf = new JTextField("TextField 1");
         tf.addFocusListener(new MyFocusAdapter("TextField 1"));
         frame.add(tf, BorderLayout.NORTH);
@@ -81,7 +81,7 @@ public class FocusKeepTest {
 
         frame.pack();
         frame.setLocationRelativeTo(null);
-        frame.setVisible(true); 
+        frame.setVisible(true);
     }
 
     static class MyFocusAdapter extends FocusAdapter {
