@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,14 +36,28 @@ import java.util.Iterator;
  * zero-argument constructor and some number of associated charset
  * implementation classes.  Charset providers may be installed in an instance
  * of the Java platform as extensions.  Providers may also be made available by
- * adding them to the applet or application class path or by some other
- * platform-specific means.  Charset providers are looked up via the current
+ * adding them to the application class path, application module path, or by some
+ * other platform-specific means.  Charset providers are looked up via the current
  * thread's {@link java.lang.Thread#getContextClassLoader() context class
- * loader}.
+ * loader}. See {@link java.util.ServiceLoader##developing-service-providers
+ * Deploying Service Providers} for further detail on deploying a charset
+ * provider as a module or on the class path.
  *
- * <p> A charset provider identifies itself with a provider-configuration file
- * named {@code java.nio.charset.spi.CharsetProvider} in the resource
- * directory {@code META-INF/services}.  The file should contain a list of
+ * <p> For a charset provider deployed in a module, the <i>provides</i>
+ * directive must be specified in the module declaration. The provides directive
+ * specifies both the service and the service provider. In this case, the service
+ * is {@code java.nio.charset.spi.CharsetProvider}.
+ *
+ * <p> As an example, a charset provider deployed as a module might specify the
+ * following directive:
+ * <pre>{@code
+ *     provides java.nio.charset.spi.CharsetProvider with com.example.ExternalCharsetProvider;
+ * }</pre>
+ *
+ * <p> For a charset provider deployed on the class path, it identifies itself
+ * with a provider-configuration file named {@code
+ * java.nio.charset.spi.CharsetProvider} in the resource directory
+ * {@code META-INF/services}.  The file should contain a list of
  * fully-qualified concrete charset-provider class names, one per line.  A line
  * is terminated by any one of a line feed ({@code '\n'}), a carriage return
  * ({@code '\r'}), or a carriage return followed immediately by a line feed.
