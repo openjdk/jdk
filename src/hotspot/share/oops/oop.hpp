@@ -319,8 +319,6 @@ class oopDesc {
 
   // for error reporting
   static void* load_oop_raw(oop obj, int offset);
-
-  DEBUG_ONLY(bool size_might_change();)
 };
 
 // An oopDesc is not initialized via a constructor.  Space is allocated in
