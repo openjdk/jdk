@@ -218,7 +218,6 @@ public abstract class HttpRequest {
     }
 
     private sealed interface HttpRequestOptionImpl<T> extends HttpRequestOption<T> {
-        Class<T> type();
         record H3Discovery(Class<H3DiscoveryMode> type, String name)
                 implements HttpRequestOptionImpl<H3DiscoveryMode> {
             @Override public String toString() {return name();}
