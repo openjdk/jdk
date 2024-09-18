@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     7150256
+ * @bug     7150256 8338603
  * @summary Basic Test for the DiagnosticCommandMBean
  * @author  Frederic Parain, Shanliang JIANG
  *
@@ -111,9 +111,9 @@ public class DcmdMBeanTest {
                     for(int k=0; k<desc3.getFieldNames().length; k++) {
                         String fieldName3 = desc3.getFieldNames()[k];
                         Object fieldValue3 = desc3.getFieldValue(fieldName3);
-                        System.out.print("\t\t\t" + fieldName + "=" + fieldValue);
-                        if (fieldName.equals("dcmd.arg.type")) {
-                            if (!isPublicType((String) fieldValue)) {
+                        System.out.print("\t\t\t" + fieldName3 + "=" + fieldValue3);
+                        if (fieldName3.equals("dcmd.arg.type")) {
+                            if (!isPublicType((String) fieldValue3)) {
                                 System.out.print("\t** FAILED ** not a standard type");
                                 failures++;
                             }
@@ -130,7 +130,7 @@ public class DcmdMBeanTest {
     }
 
     // Knowledge of the types made public by com.sun.management.internal.DiagnosticCommandImpl
-    private static final String [] publicTypes = new String [] { "INT", "SxxxTRING", "BOOLEAN", "STRING SET", "MEMORY SIZE", "NANOTIME" };
+    private static final String [] publicTypes = new String [] { "INT", "STRING", "BOOLEAN", "STRING SET", "MEMORY SIZE", "NANOTIME" };
 
     private static final boolean isPublicType(String typeName) {
         if (typeName == null) {
