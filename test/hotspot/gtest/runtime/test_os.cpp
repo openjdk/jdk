@@ -376,27 +376,34 @@ TEST_VM(os, jio_snprintf) {
 #endif
 
 TEST_VM(os, realpath) {
-  static const char* path = "/1234567890123456789";
+  /* POSIX requires that the file exists, Windows doesn't */
+  static const char* nosuchpath = "/1234567890123456789";
+  static const char* tmppath = "/tmp";
 
 	char buffer[MAX_PATH];
 
   errno = 0;
-	const char* returnedBuffer = os::realpath(path, buffer, 10);
-  EXPECT_TRUE(errno == ENAMETOOLONG);
+	const char* returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) - 2);
+  /* Returns ENOENT on Linux, ENAMETOOLONG on Windows */
   EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == ENAMETOOLONG || errno == ENOENT);
+
+  errno = 0;
+	returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) + 3);
+  /* Returns ENOENT on Linux, 0 on Windows */
+  EXPECT_TRUE(errno == 0 || errno == ENOENT);
+  EXPECT_TRUE(returnedBuffer == nullptr || returnedBuffer == buffer);
 
 	errno = 0;
-	returnedBuffer = os::realpath(path, buffer, MAX_PATH);
-  EXPECT_TRUE(errno == 0);
+	returnedBuffer = os::realpath(tmppath, buffer, MAX_PATH);
   EXPECT_TRUE(returnedBuffer == buffer);
 
   errno = 0;
-  returnedBuffer = os::realpath(path, buffer, strlen(path) + 3); 
-  EXPECT_TRUE(errno == 0);
+  returnedBuffer = os::realpath(tmppath, buffer, strlen(tmppath) + 3); 
   EXPECT_TRUE(returnedBuffer == buffer);
 
   errno = 0;
-  returnedBuffer = os::realpath(path, buffer, strlen(path) - 1);
+  returnedBuffer = os::realpath(tmppath, buffer, strlen(tmppath) - 1);
   EXPECT_TRUE(errno == ENAMETOOLONG);
   EXPECT_TRUE(returnedBuffer == nullptr);
 
@@ -408,12 +415,12 @@ TEST_VM(os, realpath) {
     EXPECT_TRUE(returnedBuffer == nullptr);
 
     errno = 0;
-    returnedBuffer = os::realpath(path, buffer, sizeof(buffer));
+    returnedBuffer = os::realpath(tmppath, buffer, sizeof(buffer));
     EXPECT_TRUE(errno == EINVAL);
     EXPECT_TRUE(returnedBuffer == nullptr);
 
     errno = 0;
-    returnedBuffer = os::realpath(path, buffer, 0);
+    returnedBuffer = os::realpath(tmppath, buffer, 0);
     EXPECT_TRUE(errno == EINVAL);
     EXPECT_TRUE(returnedBuffer == nullptr);
   }
