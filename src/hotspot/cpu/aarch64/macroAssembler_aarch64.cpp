@@ -324,16 +324,20 @@ public:
     Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
     Instruction_aarch64::patch(insn_addr, 30, 29, offset_lo);
 
-    // ## It is a bugfix. See "Maybe we have a third instruction" below: in fact ther is
-    //    either two or three instructions in adrp, the third one must be corrected too.
-    bool is_add_insn3 = ((insn_at(insn_addr, 2) >> 24) & 0b11111) == 0b10001;
-    if (is_add_insn3) {
-      bool same_Rd_insn3 = (_insn & 0xf) == (insn_at(insn_addr, 2) & 0xf);
-      if (same_Rd_insn3) {  // we have adrp+movk+add sequence
-        adrpAdd_impl(insn_addr + 4, target);
-        instructions = 3;
-      }
-    }
+    // A bugfix? How did it work?
+    // If the point is to correct the third instruction, then it has no sence as the target does not change while relocation:
+    //   adrp  x12, 0x0000fffe8b756000
+    //   movk  x12, #0xffff, lsl #32
+    //   add   x12, x12, #0xb0c
+    //
+    // bool is_add_insn3 = ((insn_at(insn_addr, 2) >> 24) & 0b11111) == 0b10001;
+    // if (is_add_insn3) {
+    //   bool same_Rd_insn3 = (_insn & 0xf) == (insn_at(insn_addr, 2) & 0xf);
+    //  if (same_Rd_insn3) {  // we have adrp+movk+add sequence
+    //    adrpAdd_impl(insn_addr + 4, target);
+    //    instructions = 3;
+    //  }
+    //}
 
     return instructions;
   }
