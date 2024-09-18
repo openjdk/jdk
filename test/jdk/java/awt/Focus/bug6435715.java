@@ -75,7 +75,7 @@ public class bug6435715 {
             public void focusGained(FocusEvent event) {
                 synchronized (this) {
                     try {
-                        wait(3000);
+                        wait(1000);
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -89,4 +89,3 @@ public class bug6435715 {
     }
 
 }
-

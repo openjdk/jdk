@@ -65,7 +65,8 @@ public class WindowDisposeFocusTest {
 class JFCFocusBug2 extends JPanel {
 
     static public Window test(String[] args) {
-        final JFrame frame = new JFrame();
+        final JFrame frame = new JFrame("WindowDisposeFrame");
+        frame.setSize(100, 100);
         frame.setVisible(true);
 
         final JFCFocusBug2 bug = new JFCFocusBug2();

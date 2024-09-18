@@ -31,8 +31,6 @@
 */
 
 import java.awt.Frame;
-import java.awt.Panel;
-import java.awt.Toolkit;
 import java.awt.Window;
 import java.util.List;
 
@@ -55,15 +53,14 @@ public class MinimizeNonfocusableWindowTest {
         PassFailJFrame.builder()
                 .title("MinimizeNonfocusableWindowTest Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 5)
-                .columns(35)
+                .rows((int) INSTRUCTIONS.lines().count() + 1)
+                .columns(40)
                 .testUI(MinimizeNonfocusableWindowTest::createTestUI)
                 .build()
                 .awaitAndCheck();
     }
 
     private static List<Window> createTestUI() {
-        Panel panel = new Panel();
         Frame frame1 = new Frame("Frame-1");
         Frame frame2 = new Frame("Frame-2");
         Frame frame3 = new Frame("Unfocusable");
