@@ -62,7 +62,7 @@ public class LotsOfMenuItemsTest extends ComponentAdapter {
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
-                .testUI(obj.createAndShowUI())
+                .testUI(obj::createAndShowUI)
                 .build()
                 .awaitAndCheck();
     }
@@ -80,6 +80,7 @@ public class LotsOfMenuItemsTest extends ComponentAdapter {
         return List.of(firstFrame, testFrame);
     }
 
+    @Override
     public void componentShown(ComponentEvent e) {
         PassFailJFrame.positionTestWindow(firstFrame,
                 PassFailJFrame.Position.HORIZONTAL);
