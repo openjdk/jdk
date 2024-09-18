@@ -863,7 +863,7 @@ final class Short256Vector extends ShortVector {
         @Override
         @ForceInline
         public Short256Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Short256Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Short256Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Short256Shuffle)(((AbstractShuffle<Short>)(s)).wrapIndexesTemplate())));
         }
 

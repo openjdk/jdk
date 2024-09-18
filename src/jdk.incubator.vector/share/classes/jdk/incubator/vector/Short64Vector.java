@@ -839,7 +839,7 @@ final class Short64Vector extends ShortVector {
         @Override
         @ForceInline
         public Short64Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Short64Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Short64Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Short64Shuffle)(((AbstractShuffle<Short>)(s)).wrapIndexesTemplate())));
         }
 

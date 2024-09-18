@@ -828,7 +828,7 @@ final class Float128Vector extends FloatVector {
         @Override
         @ForceInline
         public Float128Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Float128Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Float128Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Float128Shuffle)(((AbstractShuffle<Float>)(s)).wrapIndexesTemplate())));
         }
 

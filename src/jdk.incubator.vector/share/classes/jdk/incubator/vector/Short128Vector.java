@@ -847,7 +847,7 @@ final class Short128Vector extends ShortVector {
         @Override
         @ForceInline
         public Short128Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Short128Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Short128Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Short128Shuffle)(((AbstractShuffle<Short>)(s)).wrapIndexesTemplate())));
         }
 

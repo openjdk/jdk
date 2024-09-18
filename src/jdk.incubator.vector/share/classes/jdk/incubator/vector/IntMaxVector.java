@@ -844,7 +844,7 @@ final class IntMaxVector extends IntVector {
         @Override
         @ForceInline
         public IntMaxShuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, IntMaxShuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, IntMaxShuffle.class, this, VLENGTH,
                                                     (s) -> ((IntMaxShuffle)(((AbstractShuffle<Integer>)(s)).wrapIndexesTemplate())));
         }
 

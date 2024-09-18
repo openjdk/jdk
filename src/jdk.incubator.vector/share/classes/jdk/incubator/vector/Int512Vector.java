@@ -863,7 +863,7 @@ final class Int512Vector extends IntVector {
         @Override
         @ForceInline
         public Int512Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Int512Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Int512Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Int512Shuffle)(((AbstractShuffle<Integer>)(s)).wrapIndexesTemplate())));
         }
 

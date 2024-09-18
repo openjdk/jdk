@@ -959,7 +959,7 @@ final class Byte512Vector extends ByteVector {
         @Override
         @ForceInline
         public Byte512Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Byte512Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Byte512Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Byte512Shuffle)(((AbstractShuffle<Byte>)(s)).wrapIndexesTemplate())));
         }
 

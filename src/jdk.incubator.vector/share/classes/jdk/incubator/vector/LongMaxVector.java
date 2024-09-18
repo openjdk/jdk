@@ -823,7 +823,7 @@ final class LongMaxVector extends LongVector {
         @Override
         @ForceInline
         public LongMaxShuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, LongMaxShuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, LongMaxShuffle.class, this, VLENGTH,
                                                     (s) -> ((LongMaxShuffle)(((AbstractShuffle<Long>)(s)).wrapIndexesTemplate())));
         }
 

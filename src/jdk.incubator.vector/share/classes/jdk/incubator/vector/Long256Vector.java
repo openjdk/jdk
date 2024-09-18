@@ -829,7 +829,7 @@ final class Long256Vector extends LongVector {
         @Override
         @ForceInline
         public Long256Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Long256Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Long256Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Long256Shuffle)(((AbstractShuffle<Long>)(s)).wrapIndexesTemplate())));
         }
 

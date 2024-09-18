@@ -822,7 +822,7 @@ final class Double64Vector extends DoubleVector {
         @Override
         @ForceInline
         public Double64Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Double64Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Double64Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Double64Shuffle)(((AbstractShuffle<Double>)(s)).wrapIndexesTemplate())));
         }
 

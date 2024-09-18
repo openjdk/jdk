@@ -852,7 +852,7 @@ final class Float512Vector extends FloatVector {
         @Override
         @ForceInline
         public Float512Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Float512Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Float512Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Float512Shuffle)(((AbstractShuffle<Float>)(s)).wrapIndexesTemplate())));
         }
 

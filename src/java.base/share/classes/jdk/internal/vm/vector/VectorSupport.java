@@ -263,7 +263,7 @@ public class VectorSupport {
       return defaultImpl.apply(sh);
     }
 
-    public interface ShuffleWrapIndexesOperation<SH extends VectorShuffle<?>> {
+    public interface WrapShuffleIndexesOperation<SH extends VectorShuffle<?>> {
         SH apply(SH sh);
     }
 
@@ -271,8 +271,8 @@ public class VectorSupport {
     public static
     <E,
      SH extends VectorShuffle<E>>
-    SH shuffleWrapIndexes(Class<E> eClass, Class<? extends SH> shClass, SH sh, int length,
-                          ShuffleWrapIndexesOperation<SH> defaultImpl) {
+    SH wrapShuffleIndexes(Class<E> eClass, Class<? extends SH> shClass, SH sh, int length,
+                          WrapShuffleIndexesOperation<SH> defaultImpl) {
        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
        return defaultImpl.apply(sh);
     }

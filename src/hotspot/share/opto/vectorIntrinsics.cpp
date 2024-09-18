@@ -760,9 +760,9 @@ bool LibraryCallKit::inline_vector_shuffle_to_vector() {
 // public static
 // <E,
 //  SH extends VectorShuffle<E>>
-// SH shuffleWrapIndexes(Class<E> eClass, Class<? extends SH> shClass, SH sh, int length,
+// SH wrapShuffleIndexes(Class<E> eClass, Class<? extends SH> shClass, SH sh, int length,
 //                       ShuffleWrapIndexesOperation<SH> defaultImpl)
-bool LibraryCallKit::inline_vector_shuffle_wrap_indexes() {
+bool LibraryCallKit::inline_vector_wrap_shuffle_indexes() {
   const TypeInstPtr* elem_klass    = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* shuffle_klass = gvn().type(argument(1))->isa_instptr();
   Node*              shuffle       = argument(2);

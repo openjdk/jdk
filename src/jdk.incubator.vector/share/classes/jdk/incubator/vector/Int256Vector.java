@@ -847,7 +847,7 @@ final class Int256Vector extends IntVector {
         @Override
         @ForceInline
         public Int256Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Int256Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Int256Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Int256Shuffle)(((AbstractShuffle<Integer>)(s)).wrapIndexesTemplate())));
         }
 

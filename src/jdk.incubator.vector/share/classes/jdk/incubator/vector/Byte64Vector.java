@@ -847,7 +847,7 @@ final class Byte64Vector extends ByteVector {
         @Override
         @ForceInline
         public Byte64Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Byte64Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Byte64Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Byte64Shuffle)(((AbstractShuffle<Byte>)(s)).wrapIndexesTemplate())));
         }
 

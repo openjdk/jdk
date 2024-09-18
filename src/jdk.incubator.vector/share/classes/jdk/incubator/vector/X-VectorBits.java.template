@@ -1121,7 +1121,7 @@ final class $vectortype$ extends $abstractvectortype$ {
         @Override
         @ForceInline
         public $shuffletype$ wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, $shuffletype$.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, $shuffletype$.class, this, VLENGTH,
                                                     (s) -> (($shuffletype$)(((AbstractShuffle<$Boxtype$>)(s)).wrapIndexesTemplate())));
         }
 

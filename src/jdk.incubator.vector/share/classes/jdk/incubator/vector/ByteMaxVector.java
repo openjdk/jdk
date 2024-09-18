@@ -833,7 +833,7 @@ final class ByteMaxVector extends ByteVector {
         @Override
         @ForceInline
         public ByteMaxShuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, ByteMaxShuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, ByteMaxShuffle.class, this, VLENGTH,
                                                     (s) -> ((ByteMaxShuffle)(((AbstractShuffle<Byte>)(s)).wrapIndexesTemplate())));
         }
 

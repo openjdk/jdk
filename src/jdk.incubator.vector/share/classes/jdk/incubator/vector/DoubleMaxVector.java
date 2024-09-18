@@ -821,7 +821,7 @@ final class DoubleMaxVector extends DoubleVector {
         @Override
         @ForceInline
         public DoubleMaxShuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, DoubleMaxShuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, DoubleMaxShuffle.class, this, VLENGTH,
                                                     (s) -> ((DoubleMaxShuffle)(((AbstractShuffle<Double>)(s)).wrapIndexesTemplate())));
         }
 

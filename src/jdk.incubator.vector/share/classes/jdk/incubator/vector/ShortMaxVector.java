@@ -833,7 +833,7 @@ final class ShortMaxVector extends ShortVector {
         @Override
         @ForceInline
         public ShortMaxShuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, ShortMaxShuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, ShortMaxShuffle.class, this, VLENGTH,
                                                     (s) -> ((ShortMaxShuffle)(((AbstractShuffle<Short>)(s)).wrapIndexesTemplate())));
         }
 

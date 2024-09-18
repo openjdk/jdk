@@ -821,7 +821,7 @@ final class FloatMaxVector extends FloatVector {
         @Override
         @ForceInline
         public FloatMaxShuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, FloatMaxShuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, FloatMaxShuffle.class, this, VLENGTH,
                                                     (s) -> ((FloatMaxShuffle)(((AbstractShuffle<Float>)(s)).wrapIndexesTemplate())));
         }
 

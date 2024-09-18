@@ -828,7 +828,7 @@ final class Double256Vector extends DoubleVector {
         @Override
         @ForceInline
         public Double256Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Double256Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Double256Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Double256Shuffle)(((AbstractShuffle<Double>)(s)).wrapIndexesTemplate())));
         }
 

@@ -835,7 +835,7 @@ final class Int64Vector extends IntVector {
         @Override
         @ForceInline
         public Int64Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Int64Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Int64Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Int64Shuffle)(((AbstractShuffle<Integer>)(s)).wrapIndexesTemplate())));
         }
 

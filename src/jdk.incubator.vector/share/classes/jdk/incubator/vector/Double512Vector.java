@@ -836,7 +836,7 @@ final class Double512Vector extends DoubleVector {
         @Override
         @ForceInline
         public Double512Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Double512Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Double512Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Double512Shuffle)(((AbstractShuffle<Double>)(s)).wrapIndexesTemplate())));
         }
 

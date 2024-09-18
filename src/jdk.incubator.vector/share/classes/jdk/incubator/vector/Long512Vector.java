@@ -837,7 +837,7 @@ final class Long512Vector extends LongVector {
         @Override
         @ForceInline
         public Long512Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Long512Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Long512Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Long512Shuffle)(((AbstractShuffle<Long>)(s)).wrapIndexesTemplate())));
         }
 

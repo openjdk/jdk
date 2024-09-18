@@ -839,7 +839,7 @@ final class Int128Vector extends IntVector {
         @Override
         @ForceInline
         public Int128Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Int128Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Int128Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Int128Shuffle)(((AbstractShuffle<Integer>)(s)).wrapIndexesTemplate())));
         }
 

@@ -823,7 +823,7 @@ final class Long64Vector extends LongVector {
         @Override
         @ForceInline
         public Long64Shuffle wrapIndexes() {
-            return VectorSupport.shuffleWrapIndexes(ETYPE, Long64Shuffle.class, this, VLENGTH,
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Long64Shuffle.class, this, VLENGTH,
                                                     (s) -> ((Long64Shuffle)(((AbstractShuffle<Long>)(s)).wrapIndexesTemplate())));
         }
 
