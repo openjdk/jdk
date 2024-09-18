@@ -52,12 +52,14 @@ public abstract class EncodedKeySpec implements KeySpec {
     private String algorithmName;
 
     static {
-        SharedSecrets.setJavaSecuritySpecAccess(
-                EncodedKeySpec::clear);
+        SharedSecrets.setJavaSecuritySpecAccess(EncodedKeySpec::clear);
     }
 
     /**
      * Creates a new {@code EncodedKeySpec} with the given encoded key.
+     * This constructor extracts the algorithm name from the encoded bytes,
+     * which may be an OID if no standard algorithm name is defined. If the
+     * algorithm name cannot be extracted, it is set to null.
      *
      * @param encodedKey the encoded key. The contents of the
      * array are copied to protect against subsequent modification.
@@ -69,7 +71,7 @@ public abstract class EncodedKeySpec implements KeySpec {
         try {
             algorithmName = KeyUtil.getAlgorithm(this.encodedKey).getName();
         } catch (IOException e) {
-            // On error just leave algorithmName as is
+            // On error leave algorithmName as null.
         }
     }
 

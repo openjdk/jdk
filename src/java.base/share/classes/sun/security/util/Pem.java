@@ -36,6 +36,8 @@ import java.security.Security;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A utility class for PEM format encoding.
@@ -45,12 +47,20 @@ public class Pem {
 
     // Default algorithm from jdk.epkcs8.defaultAlgorithm in java.security
     public static final String DEFAULT_ALGO;
+
+    // Pattern matching for EKPI operations
+    private static final Pattern pbePattern;
+
+    // Lazy initialized PBES2 OID value
+    private static ObjectIdentifier PBES2OID;
+
     static {
         @SuppressWarnings("removal")
         String d = AccessController.doPrivileged(
             (PrivilegedAction<String>) () ->
                 Security.getProperty("jdk.epkcs8.defaultAlgorithm"));
         DEFAULT_ALGO = d;
+        pbePattern = Pattern.compile("^PBEWith.*And.*");
     }
 
     /**
@@ -67,24 +77,38 @@ public class Pem {
     }
 
     /**
-     * Extract the OID from the PBE algorithm.  PBEKS2, which are all AES-based,
-     * has uses one OID for all the standard algorithm, while PBEKS1 uses
-     * individual ones.
+     * Return the OID for a given PBE algorithm.  PBES1 has an OID for each
+     * algorithm, while PBES2 has one OID for everything that complies with
+     * the formatting.  Therefore, if the algorithm is not PBES1, it will
+     * return PBES2.  Cipher will determine if this is a valid PBE algorithm.
+     * PBES2 specifies AES as the cipher algorithm, but any block cipher could
+     * be supported.
      */
     public static ObjectIdentifier getPBEID(String algorithm) {
-        try {
-            if (algorithm.contains("AES")) {
-                return AlgorithmId.get("PBES2").getOID();
-            } else {
-                return AlgorithmId.get(algorithm).getOID();
-            }
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
 
-    public static PEMRecord readPEM(InputStream is) throws IOException {
-        return readPEM(is, false);
+        // Verify pattern matches PBE Standard Name spec
+        if (!pbePattern.matcher(algorithm).matches()) {
+            throw new IllegalArgumentException("Invalid algorithm format.");
+        }
+
+        // Return the PBES1 OID if it matches
+        try {
+            return AlgorithmId.get(algorithm).getOID();
+        } catch (NoSuchAlgorithmException e) {
+            // fall-through
+        }
+
+        // Lazy initialize
+        if (PBES2OID == null) {
+            try {
+                // Set to the hardcoded OID in KnownOID.java
+                PBES2OID = AlgorithmId.get("PBES2").getOID();
+            } catch (NoSuchAlgorithmException e) {
+                // Should never fail.
+                throw new IllegalArgumentException(e);
+            }
+        }
+        return PBES2OID;
     }
 
     /**
@@ -95,7 +119,8 @@ public class Pem {
      * footer or end of file
      * @param is The pem data
      * @param shortHeader if true, the hyphen length is 4 because the first
-     *                    hyphen is assumed to have been read.
+     *                    hyphen is assumed to have been read.  This is needed
+     *                    for the CertificateFactory X509 implementation.
      * @return A new Pem object containing the three components
      * @throws IOException on read errors
      */
@@ -242,4 +267,9 @@ public class Pem {
 
         return new PEMRecord(header, data);
     }
+
+    public static PEMRecord readPEM(InputStream is) throws IOException {
+        return readPEM(is, false);
+    }
+
 }

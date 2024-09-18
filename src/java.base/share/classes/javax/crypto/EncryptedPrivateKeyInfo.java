@@ -217,6 +217,9 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
         this.encoded = null;
     }
 
+    /**
+     * Create an EncryptedPrivateKeyInfo object from the given components
+     */
     private EncryptedPrivateKeyInfo(byte[] encoded, byte[] eData,
         AlgorithmId id, AlgorithmParameters p) {
         this.encoded = encoded;

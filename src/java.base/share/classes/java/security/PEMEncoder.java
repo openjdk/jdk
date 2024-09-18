@@ -89,9 +89,9 @@ public final class PEMEncoder {
     // Stores the key after the encoder is ready to encrypt.  The prevents
     // repeated SecretKeyFactory calls if the encoder is used on multiple keys.
     private SecretKey key;
-    // Makes SecretKeyFactory generation thread-safe
+    // Makes SecretKeyFactory generation thread-safe.
     private final ReentrantLock lock;
-
+    // Lazy initialize singleton encoder.
     private static Base64.Encoder b64Encoder;
 
     /**
@@ -137,7 +137,7 @@ public final class PEMEncoder {
      * Encoded a given {@code DEREncodable} and return the PEM encoding in a
      * String
      *
-     * @param so a cryptographic object to be PEM encoded that implements
+     * @param de a cryptographic object to be PEM encoded that implements
      *           DEREncodable.
      * @return PEM encoding in a String
      * @throws IllegalArgumentException when the passed object returns a null
@@ -147,9 +147,9 @@ public final class PEMEncoder {
      * @throws NullPointerException when object passed is null.
      * @see #withEncryption(char[])
      */
-    public String encodeToString(DEREncodable so) {
-        Objects.requireNonNull(so);
-        return switch (so) {
+    public String encodeToString(DEREncodable de) {
+        Objects.requireNonNull(de);
+        return switch (de) {
             case PublicKey pu -> build(null, pu.getEncoded());
             case PrivateKey pr -> build(pr.getEncoded(), null);
             case KeyPair kp -> {
@@ -192,14 +192,14 @@ public final class PEMEncoder {
                 }
             }
             default -> throw new IllegalArgumentException("PEM does not " +
-                "support " + so.getClass().getCanonicalName());
+                "support " + de.getClass().getCanonicalName());
         };
     }
 
     /**
      * Encoded a given {@code DEREncodable} into PEM.
      *
-     * @param so the object that implements DEREncodable.
+     * @param de the object that implements DEREncodable.
      * @return a PEM encoded byte[] of the given DEREncodable.
      * @throws IllegalArgumentException when the passed object returns a null
      * binary encoding. An exception is thrown when PEMEncoder is
@@ -208,8 +208,8 @@ public final class PEMEncoder {
      * @throws NullPointerException when object passed is null.
      * @see #withEncryption(char[])
      */
-    public byte[] encode(DEREncodable so) {
-        return encodeToString(so).getBytes(StandardCharsets.ISO_8859_1);
+    public byte[] encode(DEREncodable de) {
+        return encodeToString(de).getBytes(StandardCharsets.ISO_8859_1);
     }
 
     /**

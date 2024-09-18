@@ -94,9 +94,8 @@ public final class PEMDecoder {
      *                    decryption
      */
     private PEMDecoder(Provider withFactory, char[] withPassword) {
-        super();
+        password = withPassword != null ? withPassword.clone() : null;
         factory = withFactory;
-        password = withPassword;
     }
 
     /**
@@ -114,9 +113,7 @@ public final class PEMDecoder {
      * header and footer and proceed with decoding the base64 for the
      * appropriate type.
      */
-    private DEREncodable decode(PEMRecord pem)
-        throws IOException {
-
+    private DEREncodable decode(PEMRecord pem) throws IOException {
         if (password != null) {
             if (!PEMRecord.ENCRYPTED_PRIVATE_KEY.equalsIgnoreCase(pem.id())) {
                 throw new IllegalArgumentException("Decoder configured only " +
@@ -245,6 +242,7 @@ public final class PEMDecoder {
      * @return The DEREncodable typecast to tClass.
      * @throws IllegalArgumentException on error in decoding or if the PEM is
      * unsupported.
+     * @throws ClassCastException if the given class is invalid for the PEM .
      */
     public <S extends DEREncodable> S decode(String string, Class<S> tClass) {
         Objects.requireNonNull(string);
@@ -274,6 +272,8 @@ public final class PEMDecoder {
      * @throws IOException on IO error with the InputStream.
      * @throws IllegalArgumentException on error in decoding or if the PEM is
      * unsupported.
+     * @throws ClassCastException if the given class is invalid for the PEM .
+     *
      */
     public <S extends DEREncodable> S decode(InputStream is, Class<S> tClass)
         throws IOException {
