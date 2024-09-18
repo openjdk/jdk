@@ -38,6 +38,8 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
 import java.util.ArrayList;
 import java.util.List;
+
+import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -97,15 +99,14 @@ public sealed interface AnnotationValue {
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfConstant
-            extends AnnotationValue
-            permits OfString, OfDouble, OfFloat, OfLong, OfInt, OfShort, OfChar, OfByte,
-                    OfBoolean, AnnotationImpl.OfConstantImpl {
+    sealed interface OfConstant extends AnnotationValue {
         /**
          * {@return the constant pool entry backing this constant element}
          *
          * @apiNote
-         * Different types of constant values may share the same type of entry.
+         * Different types of constant values may share the same type of entry
+         * because they have the same {@linkplain TypeKind##computational-type
+         * computational type}.
          * For example, {@link OfInt} and {@link OfChar} are both
          * backed by {@link IntegerEntry}. Use {@link #resolvedValue
          * resolvedValue()} for a value of accurate type.
@@ -406,7 +407,7 @@ public sealed interface AnnotationValue {
 
         /** {@return the class descriptor} */
         default ClassDesc classSymbol() {
-            return ClassDesc.ofDescriptor(className().stringValue());
+            return Util.fieldTypeSymbol(className());
         }
     }
 
@@ -424,7 +425,7 @@ public sealed interface AnnotationValue {
 
         /** {@return the enum class descriptor} */
         default ClassDesc classSymbol() {
-            return ClassDesc.ofDescriptor(className().stringValue());
+            return Util.fieldTypeSymbol(className());
         }
 
         /** {@return the enum constant name} */
@@ -453,7 +454,7 @@ public sealed interface AnnotationValue {
      * @param constantName the name of the enum constant
      */
     static OfEnum ofEnum(ClassDesc className, String constantName) {
-        return ofEnum(TemporaryConstantPool.INSTANCE.utf8Entry(className.descriptorString()),
+        return ofEnum(TemporaryConstantPool.INSTANCE.utf8Entry(className),
                       TemporaryConstantPool.INSTANCE.utf8Entry(constantName));
     }
 
@@ -470,7 +471,7 @@ public sealed interface AnnotationValue {
      * @param className the descriptor of the class
      */
     static OfClass ofClass(ClassDesc className) {
-        return ofClass(TemporaryConstantPool.INSTANCE.utf8Entry(className.descriptorString()));
+        return ofClass(TemporaryConstantPool.INSTANCE.utf8Entry(className));
     }
 
     /**
