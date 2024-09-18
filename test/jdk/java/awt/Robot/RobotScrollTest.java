@@ -26,7 +26,7 @@
  * @bug 4374578
  * @summary Test robot wheel scrolling of Text
  * @requires (os.family == "Windows") | (os.family == "linux")
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual RobotScrollTest
 */

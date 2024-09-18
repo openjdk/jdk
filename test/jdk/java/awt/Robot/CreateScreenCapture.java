@@ -25,7 +25,7 @@
  * @test
  * @bug 4292503
  * @summary OutOfMemoryError with lots of Robot.createScreenCapture
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @requires (os.family == "linux")
  * @run main/manual CreateScreenCapture
