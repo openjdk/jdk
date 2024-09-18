@@ -205,10 +205,10 @@ public class HttpRestConnection implements MBeanServerConnection {
         throw new UnsupportedOperationException("unregisterMBean not supported");
     }
 
-    protected ObjectInstance objectInstanceForName(String objectName)
+    protected ObjectInstance objectInstanceForName(ObjectName objectName)
             throws InstanceNotFoundException, IOException {
 
-        JSONObject o = objectInfoForName(name);
+        JSONObject o = objectInfoForName(objectName);
         if (o == null) {
             throw new InstanceNotFoundException("Not known: " + objectName);
         }
@@ -216,19 +216,13 @@ public class HttpRestConnection implements MBeanServerConnection {
         if (className == null) {
             throw new InstanceNotFoundException("No className in MBean info: " + objectName);
         }
-        try {
-            return new ObjectInstance(objectName, className);
-        } catch (MalformedObjectNameException mone) {
-            mone.printStackTrace(System.err);
-            return null;
-        }
-
+        return new ObjectInstance(objectName, className);
     }
 
     public ObjectInstance getObjectInstance(ObjectName name)
             throws InstanceNotFoundException, IOException {
 
-        ObjectInstance i = objectInstanceForName(name.toString());
+        ObjectInstance i = objectInstanceForName(name);
         if (i == null) {
             throw new InstanceNotFoundException("Not found: " + name);
         }
@@ -253,7 +247,6 @@ public class HttpRestConnection implements MBeanServerConnection {
 
         Set<ObjectInstance> results = new HashSet<>();
         // Search objectInfoMap.
-        // XXX
         return results;
     }
 
@@ -266,8 +259,12 @@ public class HttpRestConnection implements MBeanServerConnection {
     }
 
     public boolean isRegistered(ObjectName name) throws IOException {
-        ObjectInstance i = objectInstanceForName(name.toString());
-        return (i != null);
+        try {
+            ObjectInstance i = objectInstanceForName(name);
+            return (i != null);
+        } catch (InstanceNotFoundException infe) {
+            return false;
+        }
     }
 
 
