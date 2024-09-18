@@ -278,20 +278,20 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     VMATree tree;
 
     VMATree::SummaryDiff result = tree.reserve_mapping(0, 500, rd);
-    diff.apply(result);
+    diff.add(result);
     EXPECT_EQ(500, diff.tag[i(mtNone)].reserve);
 
     result = tree.reserve_mapping(500, 100, rd);
-    diff.apply(result);
+    diff.add(result);
     EXPECT_EQ(600, diff.tag[i(mtNone)].reserve);
 
     result = tree.set_tag(0, 500, mtGC);
-    diff.apply(result);
+    diff.add(result);
     EXPECT_EQ(100, diff.tag[i(mtNone)].reserve);
     EXPECT_EQ(500, diff.tag[i(mtGC)].reserve);
 
     result = tree.set_tag(500, 100, mtClassShared);
-    diff.apply(result);
+    diff.add(result);
     EXPECT_EQ(0, diff.tag[i(mtNone)].reserve);
     EXPECT_EQ(500, diff.tag[i(mtGC)].reserve);
     EXPECT_EQ(100, diff.tag[i(mtClassShared)].reserve);
@@ -304,26 +304,26 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     VMATree tree;
 
     VMATree::SummaryDiff result = tree.reserve_mapping(0, 600, rd);
-    diff.apply(result);
+    diff.add(result);
     EXPECT_EQ(600, diff.tag[i(mtNone)].reserve);
 
     // The committed areas
     result = tree.commit_mapping(100, 125, rd);
-    diff.apply(result);
+    diff.add(result);
     result = tree.commit_mapping(550, 10, rd);
-    diff.apply(result);
+    diff.add(result);
     result = tree.commit_mapping(565, 10, rd);
-    diff.apply(result);
+    diff.add(result);
 
     // OK, set tag
     result = tree.set_tag(0, 500, mtGC);
-    diff.apply(result);
+    diff.add(result);
     EXPECT_EQ(100, diff.tag[i(mtNone)].reserve);
     EXPECT_EQ(500, diff.tag[i(mtGC)].reserve);
     EXPECT_EQ(125, diff.tag[i(mtGC)].commit);
 
     result = tree.set_tag(500, 100, mtClassShared);
-    diff.apply(result);
+    diff.add(result);
     EXPECT_EQ(0, diff.tag[i(mtNone)].reserve);
     EXPECT_EQ(100, diff.tag[i(mtClassShared)].reserve);
     EXPECT_EQ(20, diff.tag[i(mtClassShared)].commit);

@@ -169,7 +169,7 @@ public:
       }
     }
 
-    void apply(SummaryDiff& other) {
+    void add(SummaryDiff& other) {
       for (int i = 0; i < mt_number_of_tags; i++) {
         tag[i].reserve += other.tag[i].reserve;
         tag[i].commit += other.tag[i].commit;

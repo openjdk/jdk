@@ -232,7 +232,7 @@ VMATree::SummaryDiff VMATree::set_tag(position from, size size, MemTag tag) {
     StateType type = range.start->val().out.type();
     RegionData new_data = RegionData(range.start->val().out.stack(), tag);
     SummaryDiff result = register_mapping(from, end, type, new_data);
-    diff.apply(result);
+    diff.add(result);
     size = size - (end - from);
     from = end;
   }
