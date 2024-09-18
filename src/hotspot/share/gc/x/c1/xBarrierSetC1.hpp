@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ protected:
 public:
   XBarrierSetC1();
 
-  virtual void generate_c1_runtime_stubs(BufferBlob* blob);
+  virtual bool generate_c1_runtime_stubs(BufferBlob* blob);
 };
 
 #endif // SHARE_GC_X_C1_XBARRIERSETC1_HPP
