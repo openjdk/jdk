@@ -177,6 +177,15 @@ public class TestAlwaysPreTouchStacks {
           if (ratio_with < ratio_without) {
             throw new RuntimeException("Expected a higher ratio between stack committed and reserved.");
           }
+          double estimated_stack_usage = 1 * MB;
+          double expected_stack_use_with_pretouch = 0.75 * threadStackSizeMB * MB;
+          if (ratio_with > expected_stack_use_with_pretouch) {
+            throw new RuntimeException("Expected a higher ratio of committed to reserved of stack with pretouch.");
+          }
+          double expected_delta = numThreads * (expected_stack_use_with_pretouch - estimated_stack_usage);
+          if ((pretouch_result.committed - no_pretouch_result.committed) < expected_delta) {
+            throw new RuntimeException("Expected a higher delta between stack committed of with and without pretouch.");
+          }
       }
     }
 
