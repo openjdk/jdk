@@ -25,37 +25,34 @@ import java.awt.Frame;
 import java.awt.Menu;
 import java.awt.MenuBar;
 import java.awt.MenuItem;
-import java.awt.Rectangle;
+import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /*
  * @test
  * @bug 4175790
- * @requires os.family == "windows"
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Win32: Running out of command ids for menu items
  * @run main/manual LotsOfMenuItemsTest
  */
 
-public class LotsOfMenuItemsTest implements ComponentListener {
+public class LotsOfMenuItemsTest extends ComponentAdapter {
     private static final int NUM_WINDOWS = 400;
-    private static TestFrame firstFrame, testFrame;
-    private static Rectangle rect;
+    private static TestFrame firstFrame;
+    private static TestFrame testFrame;
 
     public static void main(String[] args) throws Exception {
         LotsOfMenuItemsTest obj = new LotsOfMenuItemsTest();
         String INSTRUCTIONS = """
-                This test creates a lots of frames with menubars.
+                This test creates lots of frames with menubars.
                 When it's done you will see two frames.
                 Try to select menu items from each of them.
 
                 If everything seems to work - test passed.
-                Click "Done" button in the test harness window.
+                Click "Pass" button in the test harness window.
 
                 If test crashes on you - test failed.""";
 
@@ -64,57 +61,47 @@ public class LotsOfMenuItemsTest implements ComponentListener {
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
-                .testTimeOut(5)
                 .testUI(obj.createAndShowUI())
                 .build()
                 .awaitAndCheck();
     }
 
-    private List<? extends Frame> createAndShowUI() {
-        List<Frame> list = new ArrayList<>();
+    private List<Frame> createAndShowUI() {
         firstFrame = new TestFrame("First frame");
         firstFrame.addComponentListener(this);
 
-        for (int i = 1; i < NUM_WINDOWS; ++i) {
+        for (int i = 1; i < NUM_WINDOWS - 1; ++i) {
             testFrame = new TestFrame("Running(" + i + ")...");
-            if (i != (NUM_WINDOWS - 1)) {
-                testFrame.setVisible(false);
-                testFrame.dispose();
-            } else {
-                testFrame.setTitle("Last Frame");
-            }
+            testFrame.setVisible(false);
+            testFrame.dispose();
         }
-        list.add(firstFrame);
-        list.add(testFrame);
-        return list;
+        testFrame = new TestFrame("Last Frame");
+        return List.of(firstFrame, testFrame);
     }
-    public void componentMoved(ComponentEvent e) {}
-
-    public void componentHidden(ComponentEvent e) {}
 
     public void componentShown(ComponentEvent e) {
-        firstFrame.setLocation(970, 350);
-        testFrame.setLocation(970, 510);
+        PassFailJFrame.positionTestWindow(firstFrame,
+                PassFailJFrame.Position.HORIZONTAL);
+        testFrame.setLocation(firstFrame.getX(),
+                firstFrame.getY() + firstFrame.getHeight() + 8);
     }
 
-    public void componentResized(ComponentEvent e) {}
-}
+    private static class TestFrame extends Frame {
+        static int n = 0;
 
-class TestFrame extends Frame {
-    static int n = 0;
-
-    public TestFrame(String title) {
-        super(title);
-        MenuBar mb = new MenuBar();
-        for (int i = 0; i < 10; ++i) {
-            Menu m = new Menu("Menu_" + (i + 1));
-            for (int j = 0; j < 20; ++j) {
-                MenuItem mi = new MenuItem("Menu item " + ++n);
-                m.add(mi);
+        public TestFrame(String title) {
+            super(title);
+            MenuBar mb = new MenuBar();
+            for (int i = 0; i < 10; ++i) {
+                Menu m = new Menu("Menu_" + (i + 1));
+                for (int j = 0; j < 20; ++j) {
+                    MenuItem mi = new MenuItem("Menu item " + ++n);
+                    m.add(mi);
+                }
+                mb.add(m);
             }
-            mb.add(m);
+            setMenuBar(mb);
+            setSize(450, 150);
         }
-        setMenuBar(mb);
-        setSize(450, 150);
     }
 }

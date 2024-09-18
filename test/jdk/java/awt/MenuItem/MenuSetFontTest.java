@@ -43,15 +43,15 @@ public class MenuSetFontTest {
         String INSTRUCTIONS = """
                     Look at the menu in the upper left corner of the 'SetFont Test' frame.
                     Click on the "File" menu. You will see "menu item" item.
-                    Press pass if menu item is displayed using bold and large font else fail.
-                    If you do not see menu at all, press fail.""";
+                    Press Pass if menu item is displayed using bold and large font,
+                    otherwise press Fail.
+                    If you do not see menu at all, press Fail.""";
 
         PassFailJFrame.builder()
                 .title("MenuSetFontTest")
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
-                .testTimeOut(5)
                 .testUI(MenuSetFontTest::createAndShowUI)
                 .build()
                 .awaitAndCheck();
@@ -64,7 +64,7 @@ public class MenuSetFontTest {
         MenuItem item = new MenuItem("menu item");
         menu.add(item);
         menuBar.add(menu);
-        menuBar.setFont(new Font("Monospaced", 1, 24));
+        menuBar.setFont(new Font(Font.MONOSPACED, Font.BOLD, 24));
         frame.setMenuBar(menuBar);
         frame.setSize(300, 200);
         return frame;

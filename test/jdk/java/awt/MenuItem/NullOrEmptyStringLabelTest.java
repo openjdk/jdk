@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Frame;
 import java.awt.Menu;
@@ -44,7 +45,7 @@ public class NullOrEmptyStringLabelTest {
         String INSTRUCTIONS = """
                 The bug is reproducible under Win32 and Solaris.
                 Setting 'null' and "" as a label of menu item
-                should by the spec set blank label on all platforms.
+                should set blank label on all platforms according to the specification.
                 But under Solaris setting "" as a label of menu item used to
                 cause some garbage to be set as label.
                 Under Win32 setting 'null' as a label used to result in
@@ -58,7 +59,6 @@ public class NullOrEmptyStringLabelTest {
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
-                .testTimeOut(5)
                 .testUI(NullOrEmptyStringLabelTest::createAndShowUI)
                 .build()
                 .awaitAndCheck();
@@ -73,18 +73,21 @@ public class NullOrEmptyStringLabelTest {
         Button button2 = new Button("Set MenuItem label to \"\"");
         Button button3 = new Button("Set MenuItem label to 'text'");
         button1.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent ev) {
                 System.out.println("Setting MenuItem label to null");
                 mi.setLabel(null);
             }
         });
         button2.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent ev) {
                 System.out.println("Setting MenuItem label to \"\"");
                 mi.setLabel("");
             }
         });
         button3.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent ev) {
                 System.out.println("Setting MenuItem label to 'text'");
                 mi.setLabel("text");
@@ -92,9 +95,9 @@ public class NullOrEmptyStringLabelTest {
         });
         menu.add(mi);
         mb.add(menu);
-        frame.add("North", button1);
-        frame.add("South", button2);
-        frame.add("Center", button3);
+        frame.add(button1, BorderLayout.NORTH);
+        frame.add(button2, BorderLayout.CENTER);
+        frame.add(button3, BorderLayout.SOUTH);
         frame.setMenuBar(mb);
         frame.setSize(200, 135);
         return frame;

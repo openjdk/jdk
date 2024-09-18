@@ -52,7 +52,6 @@ public class GiantFontTest {
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
-                .testTimeOut(5)
                 .testUI(GiantFontTest::createAndShowUI)
                 .build()
                 .awaitAndCheck();
@@ -69,7 +68,7 @@ public class GiantFontTest {
         }
         mb.add(m);
         f.setMenuBar(mb);
-        f.setSize (450, 400);
+        f.setSize(450, 400);
         return f;
     }
 }

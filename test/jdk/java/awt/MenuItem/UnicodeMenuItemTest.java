@@ -61,7 +61,6 @@ public class UnicodeMenuItemTest {
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
-                .testTimeOut(5)
                 .testUI(UnicodeMenuItemTest::createAndShowUI)
                 .build()
                 .awaitAndCheck();
@@ -71,17 +70,17 @@ public class UnicodeMenuItemTest {
         MenuBar mb = new MenuBar();
         Menu m = new Menu("Menu");
 
-        MenuItem mi2 = new MenuItem("\u00c4\u00cb\u00cf\u00d6\u00dc");
-        m.add(mi2);
+        MenuItem mi1 = new MenuItem("\u00c4\u00cb\u00cf\u00d6\u00dc");
+        m.add(mi1);
 
         MenuItem separator = new MenuItem("-");
         m.add(separator);
 
-        MenuItem mi6 = new MenuItem("\u012d");
-        m.add(mi6);
+        MenuItem mi2 = new MenuItem("\u012d");
+        m.add(mi2);
 
-        MenuItem mi7 = new MenuItem("\u022d");
-        m.add(mi7);
+        MenuItem mi3 = new MenuItem("\u022d");
+        m.add(mi3);
 
         mb.add(m);
 
