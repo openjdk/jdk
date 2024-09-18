@@ -25,7 +25,7 @@
  * @test
  * @bug 4693644
  * @summary verifies that there are no artifacts due to copying with GDI
- * @library java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual GdiLockTest
 */
