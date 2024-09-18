@@ -156,10 +156,58 @@ public abstract class HttpRequest {
         HTTP_3_ONLY
     }
 
+    /**
+     * This interface is used to provide additional request configuration
+     * option hints on how an HTTP request/response exchange should
+     * be carried out by the {@link HttpClient} implementation.
+     * Request configuration option hints can be provided to an
+     * {@link HttpRequest} with the {@linkplain
+     * Builder#setOption(HttpRequestOption, Object) HttpRequest.Builder
+     * setOption method}.
+     *
+     * <p> The {@link #H3_DISCOVERY} option can be used to help the
+     * {@link HttpClient} decide how to select or establish an
+     * HTTP/3 connection through which to carry out an HTTP/3
+     * request/response exchange.
+     *
+     * <p> Concrete instances of this class and its subclasses are immutable.
+     *
+     * @implNote
+     * In this version, the {@code HttpRequestOption} interface is sealed and
+     * only allows the {@link #H3_DISCOVERY} option. However, it could be
+     * extended in the future to support additional options
+     *
+     * @param <T> The {@linkplain #type() type of the option value}
+     *
+     * @since TBD
+     */
     public sealed interface HttpRequestOption<T> permits HttpRequestOptionImpl {
+        /**
+         * {@return The option name}
+         * @implSpec  Different options should have different names.
+         */
         String name();
+
+        /**
+         * {@return the type of the value associated with the option}
+         * @apiNote Different options may have the same type.
+         */
         Class<T> type();
-        public static final HttpRequestOption<H3DiscoveryMode> H3_DISCOVERY =
+
+        /**
+         * An option that can be used to configure how the {@link HttpClient} will
+         * select or establish an HTTP/3 connection through which to carry out
+         * the request. If {@link Version#HTTP_3} is not selected either as
+         * the {@linkplain Builder#version(Version) request preferred option}
+         * or the {@linkplain HttpClient.Builder#version(Version) HttpClient
+         * preferred version} setting this option on the request has no effect.
+         * <p>
+         * The {@linkplain #name() name of this option} is {@code "H3_DISCOVERY"}.
+         *
+         * @see H3DiscoveryMode
+         * @see Builder#setOption(HttpRequestOption, Object)
+         */
+        HttpRequestOption<H3DiscoveryMode> H3_DISCOVERY =
                 new HttpRequestOptionImpl.H3Discovery(H3DiscoveryMode.class, "H3_DISCOVERY");
     }
 
@@ -172,7 +220,7 @@ public abstract class HttpRequest {
     }
 
     /**
-     * {@return the value configured on this builder for the given option, if any}
+     * {@return the value configured on this request for the given option, if any}
      * @param option a request configuration option
      * @param <T> the type of the option
      *
