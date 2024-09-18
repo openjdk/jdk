@@ -817,10 +817,14 @@ final class ProxyGenerator {
          * loader is anticipated at local variable index 0.
          */
         private void codeClassForName(CodeBuilder cob, Class<?> cl) {
-            cob.ldc(cl.getName())
-               .iconst_0() // false
-               .aload(0)// classLoader
-               .invokestatic(classForName);
+            if (cl == Object.class) {
+                cob.ldc(objectCE);
+            } else {
+                cob.ldc(cl.getName())
+                        .iconst_0() // false
+                        .aload(0)// classLoader
+                        .invokestatic(classForName);
+            }
         }
 
         @Override
