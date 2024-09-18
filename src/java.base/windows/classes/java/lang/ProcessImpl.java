@@ -208,10 +208,10 @@ final class ProcessImpl extends Process {
         // We guarantee the only command file execution for implicit [cmd.exe] run.
         //    http://technet.microsoft.com/en-us/library/bb490954.aspx
         // All space characters require quoting are checked in needsEscaping().
-        "\t\"<>&|^",
-        "\t\"<>",
-        "\t\"<>",
-        "\t"
+        "\"<>&|^",
+        "\"<>",
+        "\"<>",
+        ""
     };
 
     private static String createCommandLine(int verificationType,
@@ -332,6 +332,7 @@ final class ProcessImpl extends Process {
                     continue;   // skip over common characters
                 // All space chars require quotes and other mode specific characters
                 if (Character.isSpaceChar(ch) ||
+                        Character.isWhitespace(ch) ||
                         ESCAPE_VERIFICATION[verificationType].indexOf(ch) >= 0) {
                     return true;
                 }
