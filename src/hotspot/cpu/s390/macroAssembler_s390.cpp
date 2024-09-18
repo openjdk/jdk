@@ -3663,7 +3663,8 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   z_release();
   z_lghi(temp, 0);
   z_stg(temp, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), currentHeader);
-  z_fence(); // membar(StoreLoad);
+  // We need a full fence after clearing owner to avoid stranding.
+  z_fence();
 
   // Check if the entry lists are empty.
   load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
@@ -3682,7 +3683,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   z_xilf(currentHeader, markWord::monitor_value);
   z_stg(currentHeader, Address(Z_thread, JavaThread::unlocked_inflated_monitor_offset()));
 
-  z_cr(currentHeader, Z_thread); // Set flag = NE
+  z_ltgr(oop, oop); // Set flag = NE
   z_bru(done);
 
   bind(set_eq_unlocked);
@@ -6425,7 +6426,8 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
       z_release();
       z_lghi(tmp2, 0);
       z_stg(tmp2, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor);
-      z_fence(); // membar(StoreLoad);
+      // We need a full fence after clearing owner to avoid stranding.
+      z_fence();
 
       // Check if the entry lists are empty.
       load_and_test_long(tmp2, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));

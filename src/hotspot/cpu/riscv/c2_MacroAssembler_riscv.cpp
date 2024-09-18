@@ -229,6 +229,8 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
   // Set owner to null.
   membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   sd(zr, Address(owner_addr));
+  // We need a full fence after clearing owner to avoid stranding.
+  // StoreLoad achieves this.
   membar(StoreLoad);
 
   // Check if the entry lists are empty.
@@ -558,6 +560,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
     // Set owner to null.
     membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
     sd(zr, Address(tmp2_owner_addr));
+    // We need a full fence after clearing owner to avoid stranding.
+    // StoreLoad achieves this.
     membar(StoreLoad);
 
     // Check if the entry lists are empty.

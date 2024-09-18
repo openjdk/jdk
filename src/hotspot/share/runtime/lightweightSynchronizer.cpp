@@ -711,7 +711,7 @@ void LightweightSynchronizer::exit(oop object, JavaThread* current) {
   assert(current == Thread::current(), "must be");
 
   markWord mark = object->mark();
-  assert(mark.is_locked(), "must be");
+  assert(!mark.is_unlocked(), "must be");
 
   LockStack& lock_stack = current->lock_stack();
   if (mark.is_fast_locked()) {

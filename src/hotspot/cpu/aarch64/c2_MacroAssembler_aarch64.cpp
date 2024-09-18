@@ -213,6 +213,8 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   // Set owner to null.
   // Release to satisfy the JMM
   stlr(zr, owner_addr);
+  // We need a full fence after clearing owner to avoid stranding.
+  // StoreLoad achieves this.
   membar(StoreLoad);
 
   // Check if the entry lists are empty.
@@ -532,6 +534,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Regi
     // Set owner to null.
     // Release to satisfy the JMM
     stlr(zr, t2_owner_addr);
+    // We need a full fence after clearing owner to avoid stranding.
+    // StoreLoad achieves this.
     membar(StoreLoad);
 
     // Check if the entry lists are empty.

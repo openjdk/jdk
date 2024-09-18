@@ -306,7 +306,7 @@ bool ObjectMonitor::enter_is_async_deflating() {
   return false;
 }
 
-bool ObjectMonitor::TryLock_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark) {
+bool ObjectMonitor::TryLockWithContentionMark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark) {
   // The monitor is private to or already owned by locking_thread which must be suspended.
   // So this code may only contend with deflation.
   assert(locking_thread == Thread::current() || locking_thread->is_obj_deopt_suspend(), "must be");
@@ -355,7 +355,7 @@ bool ObjectMonitor::TryLock_with_contention_mark(JavaThread* locking_thread, Obj
 
 void ObjectMonitor::enter_for_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark) {
   // Used by LightweightSynchronizer::inflate_and_enter in deoptimization path to enter for another thread.
-  bool success = ObjectMonitor::TryLock_with_contention_mark(locking_thread, contention_mark);
+  bool success = TryLockWithContentionMark(locking_thread, contention_mark);
 
   assert(success, "Failed to enter_for: locking_thread=" INTPTR_FORMAT
          ", this=" INTPTR_FORMAT "{owner=" INTPTR_FORMAT "}",
@@ -373,7 +373,7 @@ bool ObjectMonitor::enter_for(JavaThread* locking_thread) {
     return false;
   }
 
-  bool success = ObjectMonitor::TryLock_with_contention_mark(locking_thread, contention_mark);
+  bool success = TryLockWithContentionMark(locking_thread, contention_mark);
 
   assert(success, "Failed to enter_for: locking_thread=" INTPTR_FORMAT
          ", this=" INTPTR_FORMAT "{owner=" INTPTR_FORMAT "}",
@@ -382,27 +382,31 @@ bool ObjectMonitor::enter_for(JavaThread* locking_thread) {
   return true;
 }
 
-bool ObjectMonitor::try_enter(JavaThread* current) {
-  // TryLock avoids the CAS
+bool ObjectMonitor::try_enter(JavaThread* current, bool check_owner) {
+  // TryLock avoids the CAS and handles deflation.
   TryLockResult r = TryLock(current);
   if (r == TryLockResult::Success) {
     assert(_recursions == 0, "invariant");
     return true;
   }
 
-  if (r == TryLockResult::HasOwner && owner() == current) {
-    _recursions++;
-    return true;
-  }
+  // Set check_owner to false (it's default value is true) if you want
+  // to use ObjectMonitor::try_enter() as a public way of doing TryLock().
+  // Used this way in SharedRuntime::monitor_exit_helper().
+  if (check_owner) {
+    if (r == TryLockResult::HasOwner && owner() == current) {
+      _recursions++;
+      return true;
+    }
 
-  void* cur = owner_raw();
-  if (LockingMode == LM_LEGACY && current->is_lock_owned((address)cur)) {
-    assert(_recursions == 0, "internal state error");
-    _recursions = 1;
-    set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
-    return true;
+    void* cur = owner_raw();
+    if (LockingMode == LM_LEGACY && current->is_lock_owned((address)cur)) {
+      assert(_recursions == 0, "internal state error");
+      _recursions = 1;
+      set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
+      return true;
+    }
   }
-
   return false;
 }
 
@@ -575,7 +579,7 @@ ObjectMonitor::TryLockResult ObjectMonitor::TryLock(JavaThread* current) {
         // Treat deflation as interference.
         return TryLockResult::Interference;
       }
-      if (TryLock_with_contention_mark(current, contention_mark)) {
+      if (TryLockWithContentionMark(current, contention_mark)) {
         assert(_recursions == 0, "invariant");
         return TryLockResult::Success;
       } else {
@@ -1220,51 +1224,11 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
     // drain _cxq, so we need to reacquire the lock.  If we fail
     // to reacquire the lock the responsibility for ensuring succession
     // falls to the new owner.
-    //
-    void* owner = try_set_owner_from(nullptr, current);
-    if (owner != nullptr) {
-      if (owner != DEFLATER_MARKER) {
-        // Owned by another thread, so we are done.
-        return;
-      }
 
-      // The deflator owns the lock.  Now try to cancel the async
-      // deflation.  As part of the contended enter protocol,
-      // contentions was incremented to a positive value before
-      // EnterI() was called and that prevents the deflater thread
-      // from winning the last part of the 2-part async deflation
-      // protocol. After EnterI() returns to enter(), contentions is
-      // decremented because the caller now owns the monitor. We need
-      // to increment contentions an extra time here (done by the
-      // ObjectMonitorContentionMark constructor) to prevent the
-      // deflater thread from winning the last part of the 2-part
-      // async deflation protocol after the regular decrement occurs
-      // in enter().
-      ObjectMonitorContentionMark contention_mark(this);
-
-      if (is_being_async_deflated()) {
-        assert((intptr_t(_EntryList) | intptr_t(_cxq)) == 0 || _succ != nullptr, "");
-        // Mr. Deflator won the race, so we are done.
-        return;
-      }
-
-      // Now try to take the ownership.
-      if (try_set_owner_from(DEFLATER_MARKER, current) == DEFLATER_MARKER) {
-        // We successfully cancelled the in-progress async deflation.
-        // By extending the lifetime of the contention_mark, we
-        // prevent the destructor from decrementing the contentions
-        // counter when the contention_mark goes out of scope. Instead
-        // ObjectMonitor::deflate_monitor() will decrement contentions
-        // after it recognizes that the async deflation was cancelled.
-        contention_mark.extend();
-      } else {
-        owner = try_set_owner_from(nullptr, current);
-        if (owner != nullptr) {
-          // The lock is owned by another thread, who is now
-          // responsible for ensuring succession, so we are done.
-          return;
-        }
-      }
+    if (TryLock(current) != TryLockResult::Success) {
+      // Some other thread acquired the lock (or the monitor was
+      // deflated). Either way we are done.
+      return;
     }
 
     guarantee(owner_raw() == current, "invariant");

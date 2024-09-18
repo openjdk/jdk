@@ -348,16 +348,13 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      enter_for_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
   bool      enter_for(JavaThread* locking_thread);
   bool      enter(JavaThread* current);
-  bool      try_enter(JavaThread* current);
+  bool      try_enter(JavaThread* current, bool check_owner = true);
   bool      spin_enter(JavaThread* current);
   void      enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark& contention_mark);
   void      exit(JavaThread* current, bool not_suspended = true);
   void      wait(jlong millis, bool interruptible, TRAPS);
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
-
-  enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
-  TryLockResult  TryLock(JavaThread* current);
 
   void      print() const;
 #ifdef ASSERT
@@ -373,10 +370,16 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      INotify(JavaThread* current);
   ObjectWaiter* DequeueWaiter();
   void      DequeueSpecificWaiter(ObjectWaiter* waiter);
-  bool      TryLock_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
   void      EnterI(JavaThread* current);
   void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
   void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
+
+
+  enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
+
+  bool           TryLockWithContentionMark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
+  TryLockResult  TryLock(JavaThread* current);
+
   bool      TrySpin(JavaThread* current);
   bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);
   void      ExitEpilog(JavaThread* current, ObjectWaiter* Wakee);

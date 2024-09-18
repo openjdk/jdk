@@ -473,6 +473,8 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 
   // Release lock.
   movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
+  // We need a full fence after clearing owner to avoid stranding.
+  // StoreLoad achieves this.
   membar(StoreLoad);
 
   // Check if the entry lists are empty.
@@ -802,6 +804,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
 
     // Release lock.
     movptr(owner_address, NULL_WORD);
+    // We need a full fence after clearing owner to avoid stranding.
+    // StoreLoad achieves this.
     membar(StoreLoad);
 
     // Check if the entry lists are empty.

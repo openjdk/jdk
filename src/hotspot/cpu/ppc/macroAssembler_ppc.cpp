@@ -2729,6 +2729,8 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   release();
   li(temp, 0);
   std(temp, in_bytes(ObjectMonitor::owner_offset()), current_header);
+  // We need a full fence after clearing owner to avoid stranding.
+  // StoreLoad achieves this.
   membar(StoreLoad);
 
   // Check if the entry lists are empty.
@@ -3004,6 +3006,8 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
       release();
       li(t, 0);
       std(t, in_bytes(ObjectMonitor::owner_offset()), monitor);
+      // We need a full fence after clearing owner to avoid stranding.
+      // StoreLoad achieves this.
       membar(StoreLoad);
 
       // Check if the entry lists are empty.

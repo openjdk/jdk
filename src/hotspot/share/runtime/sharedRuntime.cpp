@@ -1967,10 +1967,10 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
     current->clear_unlocked_inflated_monitor();
 
     // We need to reacquire the lock before we can call ObjectSynchronizer::exit().
-    if (m->TryLock(current) != ObjectMonitor::TryLockResult::Success) {
+    if (!m->try_enter(current, false)) {
       // Some other thread acquired the lock (or the monitor was
       // deflated). Either way we are done.
-      current->inc_held_monitor_count(-1);
+      current->dec_held_monitor_count();
       return;
     }
   }
