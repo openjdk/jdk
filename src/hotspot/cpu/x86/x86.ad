@@ -10745,7 +10745,7 @@ instruct vector_saturating_subword_masked_reg(vec dst, vec src, kReg mask) %{
             n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned());
   match(Set dst (SaturatingAddV (Binary dst src) mask));
   match(Set dst (SaturatingSubV (Binary dst src) mask));
-  format %{ "vector_saturating_masked $dst, $mask, $src" %}
+  format %{ "vector_saturating_subword_masked $dst, $mask, $src" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     BasicType elem_bt = Matcher::vector_element_basic_type(this);
@@ -10760,7 +10760,7 @@ instruct vector_saturating_unsigned_subword_masked_reg(vec dst, vec src, kReg ma
             n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned());
   match(Set dst (SaturatingAddV (Binary dst src) mask));
   match(Set dst (SaturatingSubV (Binary dst src) mask));
-  format %{ "vector_saturating_unsigned_masked $dst, $mask, $src" %}
+  format %{ "vector_saturating_unsigned_subword_masked $dst, $mask, $src" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     BasicType elem_bt = Matcher::vector_element_basic_type(this);
@@ -10775,7 +10775,7 @@ instruct vector_saturating_subword_masked_mem(vec dst, memory src, kReg mask) %{
             n->is_SaturatingVector() && !n->as_SaturatingVector()->is_unsigned());
   match(Set dst (SaturatingAddV (Binary dst (LoadVector src)) mask));
   match(Set dst (SaturatingSubV (Binary dst (LoadVector src)) mask));
-  format %{ "vector_saturating_masked $dst, $mask, $src" %}
+  format %{ "vector_saturating_subword_masked $dst, $mask, $src" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     BasicType elem_bt = Matcher::vector_element_basic_type(this);
@@ -10790,7 +10790,7 @@ instruct vector_saturating_unsigned_subword_masked_mem(vec dst, memory src, kReg
             n->is_SaturatingVector() && n->as_SaturatingVector()->is_unsigned());
   match(Set dst (SaturatingAddV (Binary dst (LoadVector src)) mask));
   match(Set dst (SaturatingSubV (Binary dst (LoadVector src)) mask));
-  format %{ "vector_saturating_unsigned_masked $dst, $mask, $src" %}
+  format %{ "vector_saturating_unsigned_subword_masked $dst, $mask, $src" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     BasicType elem_bt = Matcher::vector_element_basic_type(this);

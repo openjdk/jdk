@@ -383,7 +383,7 @@ class SaturatingAddVNode : public SaturatingVectorNode {
 // Vector saturating subtraction.
 class SaturatingSubVNode : public SaturatingVectorNode {
  public:
-  SaturatingSubVNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1,in2,vt,is_unsigned) {}
+  SaturatingSubVNode(Node* in1, Node* in2, const TypeVect* vt, bool is_unsigned) : SaturatingVectorNode(in1, in2, vt, is_unsigned) {}
   virtual int Opcode() const;
 };
 
@@ -595,7 +595,7 @@ public:
 
 class UMinVNode : public VectorNode {
  public:
-  UMinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {
+  UMinVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2 ,vt) {
     assert(is_integral_type(vt->element_basic_type()), "");
   }
   virtual int Opcode() const;
@@ -611,7 +611,7 @@ class MaxVNode : public VectorNode {
 
 class UMaxVNode : public VectorNode {
  public:
-  UMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {
+  UMaxVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {
     assert(is_integral_type(vt->element_basic_type()), "");
   }
   virtual int Opcode() const;
