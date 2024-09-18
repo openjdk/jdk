@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.MenuItem;
 
 /*
  * @test
+ * @bug 4700350
  * @requires os.family != "mac"
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
@@ -50,7 +51,7 @@ public class GiantFontTest {
 
                         On both Windows and Linux, the menu items in the popup
                         menu should be large.
-                        
+
                         If so, test passes.
                         If the menu text is clipped by the title bar, or is painted over
                         the title bar or client area, the test fails.""";
