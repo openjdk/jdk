@@ -38,7 +38,6 @@ import jdk.incubator.vector.VectorShuffle;
 import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.Vector;
-import jdk.incubator.vector.VectorMath;
 
 import jdk.incubator.vector.DoubleVector;
 
@@ -1119,24 +1118,6 @@ relativeError));
             })
     );
 
-    static final List<IntFunction<double[]>> DOUBLE_SATURATING_GENERATORS = List.of(
-            withToString("double[Double.MIN_VALUE]", (int s) -> {
-                return fill(s * BUFFER_REPS,
-                            i -> (double)(Double.MIN_VALUE));
-            }),
-            withToString("double[Double.MAX_VALUE]", (int s) -> {
-                return fill(s * BUFFER_REPS,
-                            i -> (double)(Double.MAX_VALUE));
-            }),
-            withToString("double[Double.MAX_VALUE - 100]", (int s) -> {
-                return fill(s * BUFFER_REPS,
-                            i -> (double)(Double.MAX_VALUE - 100));
-            }),
-            withToString("double[Double.MIN_VALUE + 100]", (int s) -> {
-                return fill(s * BUFFER_REPS,
-                            i -> (double)(Double.MIN_VALUE + 100));
-            })
-    );
 
     // Create combinations of pairs
     // @@@ Might be sensitive to order e.g. div by 0
@@ -1145,10 +1126,6 @@ relativeError));
                 flatMap(fa -> DOUBLE_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
-    static final List<List<IntFunction<double[]>>> DOUBLE_SATURATING_GENERATOR_PAIRS =
-        Stream.of(DOUBLE_GENERATORS.get(0)).
-                flatMap(fa -> DOUBLE_SATURATING_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
-                collect(Collectors.toList());
 
     @DataProvider
     public Object[][] boolUnaryOpProvider() {
@@ -1168,11 +1145,6 @@ relativeError));
                 toArray(Object[][]::new);
     }
 
-    @DataProvider
-    public Object[][] doubleSaturatingBinaryOpProvider() {
-        return DOUBLE_SATURATING_GENERATOR_PAIRS.stream().map(List::toArray).
-                toArray(Object[][]::new);
-    }
 
     @DataProvider
     public Object[][] doubleIndexedOpProvider() {
@@ -1180,14 +1152,6 @@ relativeError));
                 toArray(Object[][]::new);
     }
 
-    @DataProvider
-    public Object[][] doubleSaturatingBinaryOpMaskProvider() {
-        return BOOLEAN_MASK_GENERATORS.stream().
-                flatMap(fm -> DOUBLE_SATURATING_GENERATOR_PAIRS.stream().map(lfa -> {
-                    return Stream.concat(lfa.stream(), Stream.of(fm)).toArray();
-                })).
-                toArray(Object[][]::new);
-    }
 
     @DataProvider
     public Object[][] doubleBinaryOpMaskProvider() {
