@@ -536,17 +536,17 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return r;
     }
 
-    static ByteVector selectFromTwoVectorHelper(Vector<Byte> v1, Vector<Byte> v2, Vector<Byte> v3) {
-        int vlen = v1.length();
+    static ByteVector selectFromTwoVectorHelper(Vector<Byte> wrappedIndex, Vector<Byte> src1, Vector<Byte> src2) {
+        int vlen = wrappedIndex.length();
         byte[] res = new byte[vlen];
-        byte[] vecPayload1 = ((ByteVector)v1).vec();
-        byte[] vecPayload2 = ((ByteVector)v2).vec();
-        byte[] vecPayload3 = ((ByteVector)v3).vec();
+        byte[] vecPayload1 = ((ByteVector)wrappedIndex).vec();
+        byte[] vecPayload2 = ((ByteVector)src1).vec();
+        byte[] vecPayload3 = ((ByteVector)src2).vec();
         for (int i = 0; i < vlen; i++) {
             int index = ((int)vecPayload1[i]);
-            res[i] = index >= vlen ? vecPayload3[index & (vlen - 1)] : vecPayload2[index];
+            res[i] = index >= vlen ? vecPayload3[index - vlen] : vecPayload2[index];
         }
-        return ((ByteVector)v2).vectorFactory(res);
+        return ((ByteVector)src1).vectorFactory(res);
     }
 
     // Static factories (other than memory operations)
@@ -2594,10 +2594,12 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     @ForceInline
     final ByteVector selectFromTemplate(Class<? extends Vector<Byte>> indexVecClass,
                                                   ByteVector v1, ByteVector v2) {
-        int twoVectorLenMask = (length() << 1) - 1;
+        int vlen = length();
+        assert ((vlen & (vlen -1)) == 0);
+        int twoVectorLenMask = (vlen << 1) - 1;
         ByteVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLenMask);
         return VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass, byte.class, byte.class,
-                                                   length(), wrapped_indexes, v1, v2,
+                                                   vlen, wrapped_indexes, v1, v2,
                                                    (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
         );
     }
