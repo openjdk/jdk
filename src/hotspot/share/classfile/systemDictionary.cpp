@@ -1145,17 +1145,19 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    TRAPS) {
   assert(ik != nullptr, "sanity");
   assert(!ik->is_unshareable_info_restored(), "shared class can be restored only once");
+  assert(Atomic::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
 
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
+    ik->set_shared_loading_failed();
     return nullptr;
   }
 
   if (!check_shared_class_super_types(ik, class_loader, protection_domain, THREAD)) {
+    ik->set_shared_loading_failed();
     return nullptr;
   }
 
-  assert(Atomic::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   InstanceKlass* new_ik = nullptr;
   // CFLH check is skipped for VM hidden classes (see KlassFactory::create_from_stream).
   // It will be skipped for shared VM hidden lambda proxy classes.
