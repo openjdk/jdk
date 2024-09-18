@@ -191,7 +191,11 @@ class SharedLibraryJVMCIReflection extends HotSpotJVMCIReflection {
             String name = theClass.getName().replace('.', '/');
             return (HotSpotResolvedObjectTypeImpl) runtime().compilerToVm.lookupType(theClass.getClassLoader(), name);
         }
-        return runtime().compilerToVm.getResolvedJavaType(object, runtime().getConfig().hubOffset, false);
+        // HotSpot tests if the offset is oopDesc::klass_offset_in_bytes() and returns
+        // the object type accordingly. When UseCompactClassPointers is enabled,
+        // oopDesc::klass_offset_in_bytes() will return an offset halfway into the
+        // object's markWord as a placeholder referring to the klass pointer.
+        return runtime().compilerToVm.getResolvedJavaType(object, runtime().getConfig().klassOffsetInBytes, false);
     }
 
     @Override
