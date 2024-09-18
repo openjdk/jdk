@@ -1595,6 +1595,10 @@ static void rewrite_klass_pointer(InstanceKlass*& ik, InstanceKlass* new_ik, Cla
   assert(IS_EVENT_OR_HOST_KLASS(new_ik), "invariant");
   assert(TRACE_ID(ik) == TRACE_ID(new_ik), "invariant");
   assert(!thread->has_pending_exception(), "invariant");
+  // Rewrite InstanceKlass* in associated Java mirror.
+  oop java_mirror = ik->java_mirror();
+  assert(java_mirror != nullptr, "invariant");
+  java_lang_Class::set_klass(java_mirror, new_ik);
   // Assign original InstanceKlass* back onto "its" parser object for proper destruction.
   parser.set_klass_to_deallocate(ik);
   // Finally rewrite the original pointer to the newly created InstanceKlass.
