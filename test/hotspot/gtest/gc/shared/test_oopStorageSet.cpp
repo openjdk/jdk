@@ -114,7 +114,7 @@ private:
       bool printed = OopStorageSet::print_containing(addr, &ss);
       ASSERT_TRUE(printed);
       ASSERT_THAT(ss.freeze(), HasSubstr("is a pointer"));
-      ASSERT_THAT(ss.freeze(), HasSubstr("in block"));
+      ASSERT_THAT(ss.freeze(), HasSubstr("into block"));
       ASSERT_THAT(ss.freeze(), HasSubstr("in oop storage"));
     }
   };
