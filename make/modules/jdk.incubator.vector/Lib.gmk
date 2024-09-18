@@ -43,8 +43,8 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, riscv64)+$(INCLUDE_COMPILER2
       NAME := sleef, \
       SRC := libsleef/lib, \
       EXTRA_SRC := libsleef/generated, \
-      DISABLED_WARNINGS_gcc := unused-function, \
-      DISABLED_WARNINGS_clang := unused-function, \
+      DISABLED_WARNINGS_gcc := unused-function sign-compare tautological-compare ignored-qualifiers, \
+      DISABLED_WARNINGS_clang := unused-function sign-compare tautological-compare ignored-qualifiers, \
       CFLAGS := $(CFLAGS_JDKLIB) -O3 -march=rv64gcv, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
