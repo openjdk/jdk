@@ -61,7 +61,7 @@ void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
   }
   if ((uint64_t)heap_space.end() <= OopEncodingHeapMax) {
     // Did reserve heap below 32Gb. Can use base == 0;
-    set_base(0);
+    set_base(nullptr);
   } else {
     set_base((address)heap_space.compressed_oop_base());
   }
