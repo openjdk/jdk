@@ -27,6 +27,7 @@ package java.net.http;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient.Version;
 import java.nio.ByteBuffer;
@@ -205,8 +206,8 @@ public abstract class HttpRequest {
          * The {@linkplain #name() name of this option} is {@code "H3_DISCOVERY"}.
          *
          * @implNote
-         * If a {@linkplain HttpClient.Builder#proxy() proxy} is {@linkplain
-         * java.net.ProxySelector#select(URI) selected for the {@linkplain HttpRequest#uri()
+         * If a {@linkplain HttpClient.Builder#proxy(ProxySelector)  proxy} is {@linkplain
+         * java.net.ProxySelector#select(URI) selected} for the {@linkplain HttpRequest#uri()
          * request URI}, the protocol version is downgraded to HTTP/2 or
          * HTTP/1.1 and the {@link #H3_DISCOVERY} option is ignored.
          *
