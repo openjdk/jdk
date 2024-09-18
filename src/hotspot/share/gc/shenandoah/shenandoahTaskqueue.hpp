@@ -354,12 +354,6 @@ public:
 
   bool is_empty();
   void clear();
-
-#if TASKQUEUE_STATS
-  static void print_taskqueue_stats_hdr(outputStream* const st);
-  void print_taskqueue_stats() const;
-  void reset_taskqueue_stats();
-#endif // TASKQUEUE_STATS
 };
 
 class ShenandoahTerminatorTerminator : public TerminatorTerminator {
