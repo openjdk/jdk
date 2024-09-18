@@ -5082,8 +5082,8 @@ MacroAssembler::KlassDecodeMode MacroAssembler::klass_decode_mode() {
 
   if (operand_valid_for_logical_immediate(
         /*is32*/false, (uint64_t)CompressedKlassPointers::base())) {
-    const uint64_t range_mask =
-      (1ULL << log2i(CompressedKlassPointers::range())) - 1;
+    const size_t range = CompressedKlassPointers::klass_range_end() - CompressedKlassPointers::base();
+    const uint64_t range_mask = (1ULL << log2i(range)) - 1;
     if (((uint64_t)CompressedKlassPointers::base() & range_mask) == 0) {
       return (_klass_decode_mode = KlassDecodeXor);
     }

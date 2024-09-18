@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
 
@@ -460,6 +461,16 @@ public interface JavaLangAccess {
     Object stringConcat1(String[] constants);
 
     /**
+     * Get the string initial coder, When COMPACT_STRINGS is on, it returns 0, and when it is off, it returns 1.
+     */
+    byte stringInitCoder();
+
+    /**
+     * Get the Coder of String, which is used by StringConcatFactory to calculate the initCoder of constants
+     */
+    byte stringCoder(String str);
+
+    /**
      * Join strings
      */
     String join(String prefix, String suffix, String delimiter, String[] elements, int size);
@@ -595,6 +606,11 @@ public interface JavaLangAccess {
      * @throws RejectedExecutionException if the scheduler cannot accept a task
      */
     void unparkVirtualThread(Thread thread);
+
+    /**
+     * Returns the virtual thread default scheduler.
+     */
+    Executor virtualThreadDefaultScheduler();
 
     /**
      * Creates a new StackWalker
