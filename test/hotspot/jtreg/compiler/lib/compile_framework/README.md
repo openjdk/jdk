@@ -28,7 +28,7 @@ Here a very simple example:
 
 ### Creating a new Compile Framework Instance
 
-First, one must create a `new CompileFramework()`, which creates two directories: a sources and a classes directory. The sources directory is where all the sources are placed by the Compile Framework, and the classes directory is where all the compiled classes are placed by the Compile Framework.
+First, one must create a `new CompileFramework()`, which creates two directories: a sources and a classes directory (see `sourcesDir` and `classesDir` in [CompileFramework](./CompileFramework.java)). The sources directory is where all the sources are placed by the Compile Framework, and the classes directory is where all the compiled classes are placed by the Compile Framework.
 
 The Compile Framework prints the names of the directories, they are subdirectories of the JTREG scratch directory `JTWork/scratch`.
 
