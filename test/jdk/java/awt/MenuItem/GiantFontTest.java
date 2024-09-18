@@ -29,6 +29,7 @@ import java.awt.MenuItem;
 
 /*
  * @test
+ * @requires os.family != "mac"
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests menu item font is big
