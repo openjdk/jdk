@@ -901,7 +901,6 @@ void EventLogDCmd::execute(DCmdSource source, TRAPS) {
   int max = -1;
   if (max_value != nullptr) {
     char* endptr = nullptr;
-    int max;
     if (!parse_integer(max_value, &max)) {
       output()->print_cr("Invalid max option: \"%s\".", max_value);
       return;
@@ -1175,7 +1174,7 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
   CompilationMemoryStatistic::print_all_by_size(output(), human_readable, minsize);
 }
 
-#if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
+#ifdef LINUX
 
 SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
 
@@ -1193,6 +1192,10 @@ SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
   const char* name = _filename.value();
+  if (name == nullptr || name[0] == 0) {
+    output()->print_cr("filename is empty or not specified.  No file written");
+    return;
+  }
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {

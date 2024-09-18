@@ -64,8 +64,8 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(hdr, obj);
-    lwu(hdr, Address(hdr, Klass::access_flags_offset()));
-    test_bit(temp, hdr, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+    lbu(hdr, Address(hdr, Klass::misc_flags_offset()));
+    test_bit(temp, hdr, exact_log2(KlassFlags::_misc_is_value_based_class));
     bnez(temp, slow_case, true /* is_far */);
   }
 
@@ -276,7 +276,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == x10, "must be");
-    far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::dtrace_object_alloc_id)));
+    far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)));
   }
 
   verify_oop(obj);
@@ -316,7 +316,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == x10, "must be");
-    far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::dtrace_object_alloc_id)));
+    far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)));
   }
 
   verify_oop(obj);

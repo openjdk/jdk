@@ -84,7 +84,10 @@ public:
     const DWORD bits = PAGE_NOACCESS | PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE
                         | PAGE_WRITECOPY | PAGE_EXECUTE_WRITECOPY | PAGE_EXECUTE
                         | PAGE_GUARD | PAGE_NOCACHE | PAGE_WRITECOMBINE;
-    assert((prot & bits) == prot, "Unknown Windows memory protection value: 0x%x unknown bits: 0x%x", prot, prot & ~bits);
+    if ((prot & bits) != prot) {
+      out.print_cr("Unknown Windows memory protection value: 0x%x unknown bits: 0x%x", prot, prot & ~bits);
+      assert(false, "Unknown Windows memory protection value: 0x%x unknown bits: 0x%x", prot, prot & ~bits);
+    }
   }
 
   void get_state_string(outputStream& out, MEMORY_BASIC_INFORMATION& mem_info) {
@@ -95,7 +98,8 @@ public:
     } else if (mem_info.State == MEM_RESERVE) {
       out.put('r');
     } else {
-         fatal("Unknown Windows memory state value: 0x%x", mem_info.State);
+      out.print_cr("Unknown Windows memory state value: 0x%x", mem_info.State);
+      assert(false, "Unknown Windows memory state value: 0x%x", mem_info.State);
     }
   }
 
@@ -109,7 +113,8 @@ public:
     } else if (mem_info.Type == 0 && mem_info.State == MEM_FREE) {
       out.print("---");
     } else {
-      fatal("Unknown Windows memory type 0x%x", mem_info.Type);
+      out.print_cr("Unknown Windows memory type 0x%x", mem_info.Type);
+      assert(false, "Unknown Windows memory type 0x%x", mem_info.Type);
     }
   }
 };
@@ -169,8 +174,8 @@ public:
     st->print("%s", mapping_info._protect_buffer.base());
     INDENT_BY(57);
     st->print("%s-%s", mapping_info._state_buffer.base(), mapping_info._type_buffer.base());
-    INDENT_BY(60);
-    st->print("%#9llx", reinterpret_cast<const unsigned long long>(mem_info.BaseAddress) - reinterpret_cast<const unsigned long long>(mem_info.AllocationBase));
+    INDENT_BY(63);
+    st->print("%#11llx", reinterpret_cast<const unsigned long long>(mem_info.BaseAddress) - reinterpret_cast<const unsigned long long>(mem_info.AllocationBase));
     INDENT_BY(72);
     if (_session.print_nmt_info_for_region(mem_info.BaseAddress, static_cast<const char*>(mem_info.BaseAddress) + mem_info.RegionSize)) {
       st->print(" ");
@@ -192,8 +197,9 @@ public:
     st->print_cr("state:   region state and type:");
     st->print_cr("             state: committed / reserved");
     st->print_cr("             type: image / mapped / private");
+    st->print_cr("offset:  offset from start of allocation block");
+    st->print_cr("vminfo:  VM information (requires NMT)");
     st->print_cr("file:    file mapped, if mapping is not anonymous");
-    st->print_cr("vm info: VM information (requires NMT)");
     {
       streamIndentor si(st, 16);
       _session.print_nmt_flag_legend();
@@ -202,11 +208,11 @@ public:
 
   void print_header() const {
     outputStream* st = _session.out();
-    //            0         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6         7
-    //            012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-    //            0x00007ffd5bd64000-0x00007ffd5c250000      5160960 r---  c-img 0x10d4000 C:\work\jdk\build\work-fastdebug\jdk\bin\server\jvm.dll
-    st->print_cr("from               to                        vsize prot  state    offset vm info/file");
-    st->print_cr("=============================================================================================================================");
+    //            0         1         2         3         4         5         6         7         8         9         0         1         2         3
+    //            01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+    //            0x00007ffb24565000-0x00007ffb24a7e000      5345280 r--   c-img   0x1155000 C:\work\jdk\build\fastdebug\jdk\bin\server\jvm.dll
+    st->print_cr("from               to                        vsize prot  state      offset vminfo/file");
+    st->print_cr("===========================================================================================");
   }
 };
 

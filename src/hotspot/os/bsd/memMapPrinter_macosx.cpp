@@ -320,7 +320,8 @@ public:
     st->print_cr("                     thpad: mapping is THP-madvised");
     st->print_cr("                     nothp: mapping is forbidden to use THP");
     st->print_cr("                      huge: mapping uses hugetlb pages");
-    st->print_cr("vm info:         VM information (requires NMT)");
+    st->print_cr("vminfo:          VM information (requires NMT)");
+    st->print_cr("file:            file mapped, if mapping is not anonymous");
     {
       streamIndentor si(st, 16);
       _session.print_nmt_flag_legend();
