@@ -82,6 +82,17 @@ template OopStorage* OopStorageSet::get_storage(StrongId);
 template OopStorage* OopStorageSet::get_storage(WeakId);
 template OopStorage* OopStorageSet::get_storage(Id);
 
+bool OopStorageSet::print_containing(oop* addr, outputStream* st) {
+  if (addr != nullptr) {
+    for (uint i = 0; i < OopStorageSet::all_count; i++) {
+      if (_storages[i]->print_containing(addr, st)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 #ifdef ASSERT
 
 void OopStorageSet::verify_initialized(uint index) {

@@ -23,14 +23,20 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/shared/oopStorage.hpp"
+#include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "memory/allocation.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "unittest.hpp"
+
+using ::testing::StrEq;
+using ::testing::HasSubstr;
 
 class OopStorageSetTest : public ::testing::Test {
 protected:
@@ -83,6 +89,8 @@ protected:
       EnumRange<OopStorageSet::Id>(),
       &OopStorageSet::fill_all);
   }
+
+  class VM_PrintAtSafepoint;
 };
 
 TEST_VM_F(OopStorageSetTest, strong_iteration) {
@@ -95,4 +103,63 @@ TEST_VM_F(OopStorageSetTest, weak_iteration) {
 
 TEST_VM_F(OopStorageSetTest, all_iteration) {
   test_all_iteration();
+}
+
+class OopStorageSetTest::VM_PrintAtSafepoint : public VM_GTestExecuteAtSafepoint {
+private:
+ class PrintContainingClosure : public Closure {
+  public:
+    void do_oop(oop* addr) {
+      stringStream ss;
+      bool printed = OopStorageSet::print_containing(addr, &ss);
+      ASSERT_TRUE(printed);
+      ASSERT_THAT(ss.freeze(), HasSubstr("is a pointer"));
+      ASSERT_THAT(ss.freeze(), HasSubstr("in block"));
+      ASSERT_THAT(ss.freeze(), HasSubstr("in oop storage"));
+    }
+  };
+
+public:
+  void doit() {
+    for (auto id: EnumRange<OopStorageSet::Id>()) {
+      OopStorage* oop_storage = OopStorageSet::storage(id);
+      PrintContainingClosure cl;
+      oop_storage->oops_do(&cl);
+    }
+  }
+};
+
+TEST_VM_F(OopStorageSetTest, print_containing) {
+  // nullptrs print nothing
+  {
+    stringStream ss;
+    bool printed = OopStorageSet::print_containing(nullptr, &ss);
+    ASSERT_FALSE(printed);
+    ASSERT_THAT("", StrEq(ss.freeze()));
+  }
+
+  // Goofy values print nothing: unaligned out of storage pointer.
+  {
+    stringStream ss;
+    bool printed = OopStorageSet::print_containing((oop*)0x1, &ss);
+    ASSERT_FALSE(printed);
+    ASSERT_THAT("", StrEq(ss.freeze()));
+  }
+
+  // Goofy values print nothing: aligned out of storage pointer.
+  {
+    stringStream ss;
+    bool printed = OopStorageSet::print_containing((oop*)0x8, &ss);
+    ASSERT_FALSE(printed);
+    ASSERT_THAT("", StrEq(ss.freeze()));
+  }
+
+  // All slot addresses should print well.
+  {
+    VM_PrintAtSafepoint op;
+    {
+      ThreadInVMfromNative invm(JavaThread::current());
+      VMThread::execute(&op);
+    }
+  }
 }

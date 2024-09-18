@@ -196,6 +196,8 @@ public:
 
   template<typename F> bool iterate(F f);
   template<typename F> bool iterate(F f) const;
+
+  bool print_containing(oop* addr, outputStream* st);
 }; // class Block
 
 inline OopStorage::Block* OopStorage::AllocationList::head() {
