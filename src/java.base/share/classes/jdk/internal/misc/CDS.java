@@ -78,7 +78,7 @@ public class CDS {
 
     /*
      * Wwhen dumping the static archive, CDS is able to archive MethodHandles.
-     * However, CDS cannot archive SoftReferences objects, so we need to
+     * However, CDS cannot archive SoftReference objects, so we need to
      * make sure the archived MethodHandles do not directly or indirectly use
      * SoftReferences.
      */

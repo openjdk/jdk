@@ -59,7 +59,7 @@ class MethodHandleStatics {
     static final int PROFILE_LEVEL;
     static final boolean PROFILE_GWT;
     static final int CUSTOMIZE_THRESHOLD;
-    static final boolean NO_SOFT_CACHE; // Don't use SoftReference in LambdaFormEditor and MethodTypeForm so they can archived by CDS.
+    static final boolean NO_SOFT_CACHE; // Don't use SoftReference in LambdaFormEditor and MethodTypeForm so they can be archived by CDS.
     static final boolean VAR_HANDLE_GUARDS;
     static final int MAX_ARITY;
     static final boolean VAR_HANDLE_IDENTITY_ADAPT;
