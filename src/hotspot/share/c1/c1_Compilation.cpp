@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,8 +274,6 @@ void Compilation::emit_lir() {
     // Assign physical registers to LIR operands using a linear scan algorithm.
     allocator->do_linear_scan();
     CHECK_BAILOUT();
-
-    _max_spills = allocator->max_spills();
   }
 
   if (BailoutAfterLIR) {
@@ -568,7 +566,6 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _method(method)
 , _osr_bci(osr_bci)
 , _hir(nullptr)
-, _max_spills(-1)
 , _frame_map(nullptr)
 , _masm(nullptr)
 , _has_exception_handlers(false)

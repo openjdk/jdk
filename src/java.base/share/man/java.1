@@ -3749,12 +3749,6 @@ future JDK release.
 They\[aq]re still accepted and acted upon, but a warning is issued when
 they\[aq]re used.
 .TP
-\f[V]-Xfuture\f[R]
-Enables strict class-file format checks that enforce close conformance
-to the class-file format specification.
-Developers should use this flag when developing new code.
-Stricter checks may become the default in future releases.
-.TP
 \f[V]-Xloggc:\f[R]\f[I]filename\f[R]
 Sets the file to which verbose GC events information should be
 redirected for logging.
@@ -3920,6 +3914,16 @@ of objects reachable from the old generation space into the young
 generation space.
 To disable GC of the young generation before each full GC, specify the
 option \f[V]-XX:-ScavengeBeforeFullGC\f[R].
+.TP
+\f[V]-Xfuture\f[R]
+Enables strict class-file format checks that enforce close conformance
+to the class-file format specification.
+Developers should use this flag when developing new code.
+Stricter checks may become the default in future releases.
+.RS
+.PP
+Use the option \f[V]-Xverify:all\f[R] instead.
+.RE
 .PP
 For the lists and descriptions of options removed in previous releases
 see the \f[I]Removed Java Options\f[R] section in:

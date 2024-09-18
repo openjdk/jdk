@@ -834,7 +834,8 @@ bool ClassLoader::add_to_app_classpath_entries(JavaThread* current,
   ClassPathEntry* e = _app_classpath_entries;
   if (check_for_duplicates) {
     while (e != nullptr) {
-      if (strcmp(e->name(), entry->name()) == 0) {
+      if (strcmp(e->name(), entry->name()) == 0 &&
+          e->from_class_path_attr() == entry->from_class_path_attr()) {
         // entry already exists
         return false;
       }
