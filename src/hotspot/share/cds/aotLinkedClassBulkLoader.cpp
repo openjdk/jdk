@@ -23,19 +23,14 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotClassLinker.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLinkedClassTable.hpp"
-#include "cds/archiveBuilder.hpp"
-#include "cds/archiveUtils.inline.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
-#include "classfile/classLoader.hpp"
-#include "classfile/dictionary.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/classLoaderData.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
-#include "gc/shared/gcVMOperations.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -46,28 +41,32 @@ void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc, bool is_static_a
   AOTLinkedClassTable::get(is_static_archive)->serialize(soc);
 }
 
-void AOTLinkedClassBulkLoader::load_javabase_boot_classes(JavaThread* current) {
-  load_classes_in_loader(current, LoaderKind::BOOT, nullptr);
+void AOTLinkedClassBulkLoader::load_javabase_classes(JavaThread* current) {
+  assert(CDSConfig::is_using_aot_linked_classes(), "sanity");
+  load_classes_in_loader(current, AOTLinkedClassCategory::BOOT1, nullptr); // only java.base classes
 }
 
-void AOTLinkedClassBulkLoader::load_non_javabase_boot_classes(JavaThread* current) {
-  load_classes_in_loader(current, LoaderKind::BOOT2, nullptr);
+void AOTLinkedClassBulkLoader::load_non_javabase_classes(JavaThread* current) {
+  assert(CDSConfig::is_using_aot_linked_classes(), "sanity");
+
+  // is_using_aot_linked_classes() requires is_using_full_module_graph(). As a result,
+  // the platform/system class loader should already have been initialized as part
+  // of the FMG support.
+  assert(CDSConfig::is_using_full_module_graph(), "must be");
+  assert(SystemDictionary::java_platform_loader() != nullptr, "must be");
+  assert(SystemDictionary::java_system_loader() != nullptr,   "must be");
+
+  load_classes_in_loader(current, AOTLinkedClassCategory::BOOT2, nullptr); // all boot classes outside of java.base
+  load_classes_in_loader(current, AOTLinkedClassCategory::PLATFORM, SystemDictionary::java_platform_loader());
+  load_classes_in_loader(current, AOTLinkedClassCategory::APP, SystemDictionary::java_system_loader());
 }
 
-void AOTLinkedClassBulkLoader::load_platform_classes(JavaThread* current) {
-  load_classes_in_loader(current, LoaderKind::PLATFORM, SystemDictionary::java_platform_loader());
-}
-
-void AOTLinkedClassBulkLoader::load_app_classes(JavaThread* current) {
-  load_classes_in_loader(current, LoaderKind::APP, SystemDictionary::java_system_loader());
-}
-
-void AOTLinkedClassBulkLoader::load_classes_in_loader(JavaThread* current, LoaderKind loader_kind, oop class_loader_oop) {
+void AOTLinkedClassBulkLoader::load_classes_in_loader(JavaThread* current, AOTLinkedClassCategory class_category, oop class_loader_oop) {
   ExceptionMark em(current);
   ResourceMark rm(current);
   HandleMark hm(current);
 
-  load_classes_in_loader_impl(loader_kind, class_loader_oop, current);
+  load_classes_in_loader_impl(class_category, class_loader_oop, current);
   if (current->has_pending_exception()) {
     // We cannot continue, as we might have loaded some of the aot-linked classes, which
     // may have dangling C++ pointers to other aot-linked classes that we have failed to load.
@@ -82,14 +81,14 @@ void AOTLinkedClassBulkLoader::load_classes_in_loader(JavaThread* current, Loade
   }
 }
 
-void AOTLinkedClassBulkLoader::load_classes_in_loader_impl(LoaderKind loader_kind, oop class_loader_oop, TRAPS) {
+void AOTLinkedClassBulkLoader::load_classes_in_loader_impl(AOTLinkedClassCategory class_category, oop class_loader_oop, TRAPS) {
   if (!CDSConfig::is_using_aot_linked_classes()) {
     return;
   }
 
   Handle h_loader(THREAD, class_loader_oop);
-  load_table(AOTLinkedClassTable::for_static_archive(),  loader_kind, h_loader, CHECK);
-  load_table(AOTLinkedClassTable::for_dynamic_archive(), loader_kind, h_loader, CHECK);
+  load_table(AOTLinkedClassTable::for_static_archive(),  class_category, h_loader, CHECK);
+  load_table(AOTLinkedClassTable::for_dynamic_archive(), class_category, h_loader, CHECK);
 
   // Initialize the InstanceKlasses of all archived heap objects that are reachable from the
   // archived java class mirrors.
@@ -119,42 +118,44 @@ void AOTLinkedClassBulkLoader::load_classes_in_loader_impl(LoaderKind loader_kin
   }
 }
 
-void AOTLinkedClassBulkLoader::load_table(AOTLinkedClassTable* table, LoaderKind loader_kind, Handle loader, TRAPS) {
-  if (loader_kind != LoaderKind::BOOT) {
+void AOTLinkedClassBulkLoader::load_table(AOTLinkedClassTable* table, AOTLinkedClassCategory class_category, Handle loader, TRAPS) {
+  if (class_category != AOTLinkedClassCategory::BOOT1) {
     assert(Universe::is_module_initialized(), "sanity");
   }
 
-  switch (loader_kind) {
-  case LoaderKind::BOOT:
-    load_classes_impl(loader_kind, table->boot(), "boot ", loader, CHECK);
+  const char* category_name = AOTClassLinker::class_category_name(class_category);
+  switch (class_category) {
+  case AOTLinkedClassCategory::BOOT1:
+    load_classes_impl(class_category, table->boot(), category_name, loader, CHECK);
     break;
 
-  case LoaderKind::BOOT2:
-    load_classes_impl(loader_kind, table->boot2(), "boot2", loader, CHECK);
+  case AOTLinkedClassCategory::BOOT2:
+    load_classes_impl(class_category, table->boot2(), category_name, loader, CHECK);
     break;
 
-  case LoaderKind::PLATFORM:
+  case AOTLinkedClassCategory::PLATFORM:
     {
-      const char* category = "plat ";
-      initiate_loading(THREAD, category, loader, table->boot());
-      initiate_loading(THREAD, category, loader, table->boot2());
-
-      load_classes_impl(loader_kind, table->platform(), category, loader, CHECK);
+      initiate_loading(THREAD, category_name, loader, table->boot());
+      initiate_loading(THREAD, category_name, loader, table->boot2());
+      load_classes_impl(class_category, table->platform(), category_name, loader, CHECK);
     }
     break;
-  case LoaderKind::APP:
+  case AOTLinkedClassCategory::APP:
     {
-      const char* category = "app  ";
-      initiate_loading(THREAD, category, loader, table->boot());
-      initiate_loading(THREAD, category, loader, table->boot2());
-      initiate_loading(THREAD, category, loader, table->platform());
-
-      load_classes_impl(loader_kind, table->app(), category, loader, CHECK);
+      initiate_loading(THREAD, category_name, loader, table->boot());
+      initiate_loading(THREAD, category_name, loader, table->boot2());
+      initiate_loading(THREAD, category_name, loader, table->platform());
+      load_classes_impl(class_category, table->app(), category_name, loader, CHECK);
     }
+    break;
+  case AOTLinkedClassCategory::UNREGISTERED:
+    ShouldNotReachHere(); // Currently aot-linked classes are not supported for this category.
+    break;
   }
 }
 
-void AOTLinkedClassBulkLoader::load_classes_impl(LoaderKind loader_kind, Array<InstanceKlass*>* classes, const char* category, Handle loader, TRAPS) {
+void AOTLinkedClassBulkLoader::load_classes_impl(AOTLinkedClassCategory class_category, Array<InstanceKlass*>* classes,
+                                                 const char* category_name, Handle loader, TRAPS) {
   if (classes == nullptr) {
     return;
   }
@@ -165,7 +166,7 @@ void AOTLinkedClassBulkLoader::load_classes_impl(LoaderKind loader_kind, Array<I
     InstanceKlass* ik = classes->at(i);
     if (log_is_enabled(Info, cds, aot, load)) {
       ResourceMark rm(THREAD);
-      log_info(cds, aot, load)("%s %s%s%s", category, ik->external_name(),
+      log_info(cds, aot, load)("%-5s %s%s%s", category_name, ik->external_name(),
                                ik->is_loaded() ? " (already loaded)" : "",
                                ik->is_hidden() ? " (hidden)" : "");
     }
@@ -184,7 +185,7 @@ void AOTLinkedClassBulkLoader::load_classes_impl(LoaderKind loader_kind, Array<I
 
         if (actual != ik) {
           ResourceMark rm(THREAD);
-          log_error(cds)("Unable to resolve %s class from CDS archive: %s", category, ik->external_name());
+          log_error(cds)("Unable to resolve %s class from CDS archive: %s", category_name, ik->external_name());
           log_error(cds)("Expected: " INTPTR_FORMAT ", actual: " INTPTR_FORMAT, p2i(ik), p2i(actual));
           log_error(cds)("JVMTI class retransformation is not supported when archive was generated with -XX:+AOTClassLinking.");
           MetaspaceShared::unrecoverable_loading_error();
@@ -203,7 +204,7 @@ void AOTLinkedClassBulkLoader::load_classes_impl(LoaderKind loader_kind, Array<I
 //
 // TODO: we can limit the number of initiated classes to only those that are actually referenced by
 // AOT-linked classes loaded by <initiating_loader>.
-void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char* category,
+void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char* category_name,
                                                 Handle initiating_loader, Array<InstanceKlass*>* classes) {
   if (classes == nullptr) {
     return;
@@ -224,7 +225,7 @@ void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char*
       if (log_is_enabled(Info, cds, aot, load)) {
         ResourceMark rm(current);
         const char* defining_loader = (ik->class_loader() == nullptr ? "boot" : "plat");
-        log_info(cds, aot, load)("%s %s (initiated, defined by %s)", category, ik->external_name(),
+        log_info(cds, aot, load)("%s %s (initiated, defined by %s)", category_name, ik->external_name(),
                                  defining_loader);
       }
       SystemDictionary::add_to_initiating_loader(current, ik, loader_data);
