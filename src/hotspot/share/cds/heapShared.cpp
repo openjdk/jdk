@@ -982,7 +982,8 @@ void HeapShared::resolve_classes_for_subgraphs(JavaThread* current, ArchivableSt
 //   }
 //
 // the pre-inited mirror of Fruit references HashSet, which should be initialized
-// before any Java code can access the Fruit class.
+// before any Java code can access the Fruit class. Note that HashSet itself doesn't
+// necessary need to be an aot-initialized class.
 //
 // The set of classes that are required to be initialized for the archived
 // java mirrors are recorded in _runtime_default_subgraph_info (which probably
