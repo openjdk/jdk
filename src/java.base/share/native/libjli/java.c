@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1464,17 +1464,10 @@ ParseArguments(int *pargc, char ***pargv,
             return JNI_FALSE;
         } else if (JLI_StrCmp(arg, "-verbosegc") == 0) {
             AddOption("-verbose:gc", NULL);
-        } else if (JLI_StrCmp(arg, "-t") == 0) {
-            AddOption("-Xt", NULL);
-        } else if (JLI_StrCmp(arg, "-tm") == 0) {
-            AddOption("-Xtm", NULL);
         } else if (JLI_StrCmp(arg, "-debug") == 0) {
             JLI_ReportErrorMessage(ARG_DEPRECATED, "-debug");
         } else if (JLI_StrCmp(arg, "-noclassgc") == 0) {
             AddOption("-Xnoclassgc", NULL);
-        } else if (JLI_StrCmp(arg, "-Xfuture") == 0) {
-            JLI_ReportErrorMessage(ARG_DEPRECATED, "-Xfuture");
-            AddOption("-Xverify:all", NULL);
         } else if (JLI_StrCmp(arg, "-verify") == 0) {
             AddOption("-Xverify:all", NULL);
         } else if (JLI_StrCmp(arg, "-verifyremote") == 0) {
@@ -1493,11 +1486,6 @@ ParseArguments(int *pargc, char ***pargv,
             char *tmp = JLI_MemAlloc(tmpSize);
             snprintf(tmp, tmpSize, "-X%s", arg + 1); /* skip '-' */
             AddOption(tmp, NULL);
-        } else if (JLI_StrCmp(arg, "-checksource") == 0 ||
-                   JLI_StrCmp(arg, "-cs") == 0 ||
-                   JLI_StrCmp(arg, "-noasyncgc") == 0) {
-            /* No longer supported */
-            JLI_ReportErrorMessage(ARG_WARN, arg);
         } else if (JLI_StrCCmp(arg, "-splash:") == 0) {
             ; /* Ignore machine independent options already handled */
         } else if (JLI_StrCmp(arg, "--disable-@files") == 0) {
