@@ -2751,8 +2751,8 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
     lbz(tmp1, in_bytes(Klass::misc_flags_offset()), tmp1);
-    testbitdi(flag, R0, tmp1, exact_log2(KlassFlags::_misc_is_value_based_class));
-    bne(flag, slow_path);
+    testbitdi(CCR0, R0, tmp1, exact_log2(KlassFlags::_misc_is_value_based_class));
+    bne(CCR0, slow_path);
   }
 
   const Register mark = tmp1;
@@ -2767,8 +2767,8 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
 
     // Check if lock-stack is full.
     lwz(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
-    cmplwi(flag, top, LockStack::end_offset() - 1);
-    bgt(flag, slow_path);
+    cmplwi(CCR0, top, LockStack::end_offset() - 1);
+    bgt(CCR0, slow_path);
 
     // The underflow check is elided. The recursive check will always fail
     // when the lock stack is empty because of the _bad_oop_sentinel field.
@@ -2776,15 +2776,15 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
     // Check if recursive.
     subi(t, top, oopSize);
     ldx(t, R16_thread, t);
-    cmpd(flag, obj, t);
-    beq(flag, push);
+    cmpd(CCR0, obj, t);
+    beq(CCR0, push);
 
     // Check for monitor (0b10) or locked (0b00).
     ld(mark, oopDesc::mark_offset_in_bytes(), obj);
     andi_(t, mark, markWord::lock_mask_in_place);
-    cmpldi(flag, t, markWord::unlocked_value);
-    bgt(flag, inflated);
-    bne(flag, slow_path);
+    cmpldi(CCR0, t, markWord::unlocked_value);
+    bgt(CCR0, inflated);
+    bne(CCR0, slow_path);
 
     // Not inflated.
 
@@ -2852,18 +2852,18 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
     }
 
     // CAS owner (null => current thread).
-    cmpxchgd(/*flag=*/flag,
+    cmpxchgd(/*flag=*/CCR0,
             /*current_value=*/t,
             /*compare_value=*/(intptr_t)0,
             /*exchange_value=*/R16_thread,
             /*where=*/owner_addr,
             MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
             MacroAssembler::cmpxchgx_hint_acquire_lock());
-    beq(flag, monitor_locked);
+    beq(CCR0, monitor_locked);
 
     // Check if recursive.
-    cmpd(flag, t, R16_thread);
-    bne(flag, slow_path);
+    cmpd(CCR0, t, R16_thread);
+    bne(CCR0, slow_path);
 
     // Recursive.
     if (!UseObjectMonitorTable) {
@@ -2890,13 +2890,13 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
 #ifdef ASSERT
   // Check that locked label is reached with flag == EQ.
   Label flag_correct;
-  beq(flag, flag_correct);
+  beq(CCR0, flag_correct);
   stop("Fast Lock Flag != EQ");
 #endif
   bind(slow_path);
 #ifdef ASSERT
   // Check that slow_path label is reached with flag == NE.
-  bne(flag, flag_correct);
+  bne(CCR0, flag_correct);
   stop("Fast Lock Flag != NE");
   bind(flag_correct);
 #endif
@@ -2926,9 +2926,9 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     lwz(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
     subi(top, top, oopSize);
     ldx(t, R16_thread, top);
-    cmpd(flag, obj, t);
+    cmpd(CCR0, obj, t);
     // Top of lock stack was not obj. Must be monitor.
-    bne(flag, inflated_load_monitor);
+    bne(CCR0, inflated_load_monitor);
 
     // Pop lock-stack.
     DEBUG_ONLY(li(t, 0);)
@@ -2941,8 +2941,8 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     // Check if recursive.
     subi(t, top, oopSize);
     ldx(t, R16_thread, t);
-    cmpd(flag, obj, t);
-    beq(flag, unlocked);
+    cmpd(CCR0, obj, t);
+    beq(CCR0, unlocked);
 
     // Not recursive.
 
@@ -2993,8 +2993,8 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     cmplwi(CCR0, top, in_bytes(JavaThread::lock_stack_base_offset()));
     blt(CCR0, check_done);
     ldx(t, R16_thread, top);
-    cmpd(flag, obj, t);
-    bne(flag, inflated);
+    cmpd(CCR0, obj, t);
+    bne(CCR0, inflated);
     stop("Fast Unlock lock on stack");
     bind(check_done);
 #endif
@@ -3035,8 +3035,8 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     ld(t, in_bytes(ObjectMonitor::EntryList_offset()), monitor);
     ld(t2, in_bytes(ObjectMonitor::cxq_offset()), monitor);
     orr(t, t, t2);
-    cmpdi(flag, t, 0);
-    beq(flag, release_);
+    cmpdi(CCR0, t, 0);
+    beq(CCR0, release_);
 
     // The owner may be anonymous and we removed the last obj entry in
     // the lock-stack. This loses the information about the owner.
@@ -3057,13 +3057,13 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
 #ifdef ASSERT
   // Check that unlocked label is reached with flag == EQ.
   Label flag_correct;
-  beq(flag, flag_correct);
+  beq(CCR0, flag_correct);
   stop("Fast Lock Flag != EQ");
 #endif
   bind(slow_path);
 #ifdef ASSERT
   // Check that slow_path label is reached with flag == NE.
-  bne(flag, flag_correct);
+  bne(CCR0, flag_correct);
   stop("Fast Lock Flag != NE");
   bind(flag_correct);
 #endif
