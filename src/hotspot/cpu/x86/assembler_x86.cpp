@@ -16040,6 +16040,15 @@ void Assembler::xorq(Address dst, Register src) {
   emit_operand(src, dst, 0);
 }
 
+void Assembler::esetzucc(Condition cc, Register dst) {
+  assert(VM_Version::supports_apx_f(), "");
+  assert(0 <= cc && cc < 16, "illegal cc");
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  // Encoding Format : eevex_prefix (4 bytes) | opcode_cc | modrm
+  int encode =  evex_prefix_and_encode_ndd(0, 0, dst->encoding(), VEX_SIMD_F2, /* MAP4 */VEX_OPCODE_0F_3C, &attributes);
+  emit_opcode_prefix_and_encoding((0x40 | cc), 0xC0, encode);
+}
+
 void Assembler::exorq(Register dst, Address src1, Register src2, bool no_flags) {
   InstructionMark im(this);
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
