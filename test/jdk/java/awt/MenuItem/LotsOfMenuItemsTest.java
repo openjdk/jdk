@@ -66,21 +66,22 @@ public class LotsOfMenuItemsTest extends ComponentAdapter {
     }
 
     private Frame createAndShowUI() {
-        firstFrame = new TestFrame("First frame", false);
+        firstFrame = new TestFrame("First frame");
         firstFrame.addComponentListener(this);
         return firstFrame;
     }
 
     @Override
     public void componentShown(ComponentEvent e) {
+        final int x = firstFrame.getX();
+        final int y = firstFrame.getY() + firstFrame.getHeight() + 8;
+
         for (int i = 1; i < NUM_WINDOWS - 1; ++i) {
-            testFrame = new TestFrame("Running(" + i + ")...");
+            testFrame = new TestFrame("Running(" + i + ")...", x, y);
             testFrame.setVisible(false);
             testFrame.dispose();
         }
-        testFrame = new TestFrame("Last Frame");
-        testFrame.setLocation(firstFrame.getX(),
-                firstFrame.getY() + firstFrame.getHeight() + 8);
+        testFrame = new TestFrame("Last Frame", x, y);
         PassFailJFrame.addTestWindow(testFrame);
     }
 
@@ -88,10 +89,14 @@ public class LotsOfMenuItemsTest extends ComponentAdapter {
         static int n = 0;
 
         public TestFrame(String title) {
-            this(title, true);
+            this(title, 0, 0, false);
         }
 
-        public TestFrame(String title, boolean visible) {
+        public TestFrame(String s, int x, int y) {
+            this(s, x, y, true);
+        }
+
+        private TestFrame(String title, int x, int y, boolean visible) {
             super(title);
             MenuBar mb = new MenuBar();
             for (int i = 0; i < 10; ++i) {
@@ -103,6 +108,7 @@ public class LotsOfMenuItemsTest extends ComponentAdapter {
                 mb.add(m);
             }
             setMenuBar(mb);
+            setLocation(x, y);
             setSize(450, 150);
             if (visible) {
                 setVisible(true);
