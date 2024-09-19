@@ -2975,8 +2975,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         // which will enable the idle timer (if it hasn't been already)
         final long timeout = this.localTransportParameters.getIntParameter(max_idle_timeout, 0);
         this.idleTimeoutManager.localIdleTimeout(timeout);
-        // TODO uncomment this
-        // this.localConnIdManager.sendNewConnectionIdFrame();
+        this.localConnIdManager.sendNewConnectionIdFrame();
         return this.endpoint;
     }
 
