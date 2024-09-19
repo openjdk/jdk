@@ -43,8 +43,8 @@ import java.util.concurrent.TimeUnit;
  * Benchmark measuring java.lang.reflect.ProxyGenerator.generateProxyClass.
  * It bypasses the cache of proxies to measure the time to construct a proxy.
  */
-@Warmup(iterations = 5)
-@Measurement(iterations = 10)
+@Warmup(iterations = 5, time = 2)
+@Measurement(iterations = 5, time = 2)
 @Fork(value = 1, jvmArgsPrepend = "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED")
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
