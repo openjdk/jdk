@@ -136,9 +136,8 @@ private:
 public:
   void doit() {
     PrintContainingClosure cl;
-    for (auto id: EnumRange<OopStorageSet::Id>()) {
-      OopStorage* oop_storage = OopStorageSet::storage(id);
-      oop_storage->oops_do(&cl);
+    for (OopStorage* storage : OopStorageSet::Range<OopStorageSet::Id>()) {
+      storage->oops_do(&cl);
     }
   }
 };
@@ -163,7 +162,7 @@ TEST_VM_F(OopStorageSetTest, print_containing) {
   // Goofy values print nothing: aligned out of storage pointer.
   {
     stringStream ss;
-    bool printed = OopStorageSet::print_containing((char*)0x8, &ss);
+    bool printed = OopStorageSet::print_containing((char*)alignof(oop), &ss);
     ASSERT_FALSE(printed);
     EXPECT_STREQ("", ss.freeze());
   }

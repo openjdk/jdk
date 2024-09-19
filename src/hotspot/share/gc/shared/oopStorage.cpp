@@ -1137,7 +1137,7 @@ const char* OopStorage::name() const { return _name; }
 
 bool OopStorage::print_containing(const oop* addr, outputStream* st) {
   if (addr != nullptr) {
-    Block *block = find_block_or_null(addr);
+    Block* block = find_block_or_null(addr);
     if (block != nullptr && block->print_containing(addr, st)) {
       st->print(" in oop storage \"%s\"", name());
       return true;
