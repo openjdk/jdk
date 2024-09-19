@@ -2518,17 +2518,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
     add_debug_info_for_null_check_here(info);
   }
 
-  if (UseCompressedClassPointers) {
-    if (UseCompactObjectHeaders) {
-      __ ldr(result, Address(obj, oopDesc::mark_offset_in_bytes()));
-      __ lsr(result, result, markWord::klass_shift);
-    } else {
-      __ ldrw(result, Address (obj, oopDesc::klass_offset_in_bytes()));
-    }
-    __ decode_klass_not_null(result);
-  } else {
-    __ ldr(result, Address (obj, oopDesc::klass_offset_in_bytes()));
-  }
+  __ load_klass(result, obj);
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
