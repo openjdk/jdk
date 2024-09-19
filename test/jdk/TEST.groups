@@ -262,6 +262,7 @@ jdk_text = \
 
 jdk_management = \
     java/lang/management \
+    jdk/management \
     com/sun/management \
     sun/management \
     jdk/internal/agent
@@ -287,6 +288,7 @@ jdk_launcher = \
 jdk_loom = \
     com/sun/management/HotSpotDiagnosticMXBean \
     com/sun/management/ThreadMXBean \
+    jdk/management/VirtualThreadSchedulerMXBean \
     java/lang/Thread \
     java/lang/ThreadGroup \
     java/lang/management/ThreadMXBean \

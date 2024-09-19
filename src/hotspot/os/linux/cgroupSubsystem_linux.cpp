@@ -609,7 +609,7 @@ jlong CgroupSubsystem::memory_limit_in_bytes() {
 bool CgroupController::read_string(const char* filename, char* buf, size_t buf_size) {
   assert(buf != nullptr, "buffer must not be null");
   assert(filename != nullptr, "filename must be given");
-  char* s_path = subsystem_path();
+  const char* s_path = subsystem_path();
   if (s_path == nullptr) {
     log_debug(os, container)("read_string: subsystem path is null");
     return false;
@@ -679,7 +679,7 @@ bool CgroupController::read_numerical_key_value(const char* filename, const char
   assert(key != nullptr, "key must be given");
   assert(result != nullptr, "result pointer must not be null");
   assert(filename != nullptr, "file to search in must be given");
-  char* s_path = subsystem_path();
+  const char* s_path = subsystem_path();
   if (s_path == nullptr) {
     log_debug(os, container)("read_numerical_key_value: subsystem path is null");
     return false;
