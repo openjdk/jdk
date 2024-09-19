@@ -1129,14 +1129,12 @@ relativeError));
             })
     );
 
-
     // Create combinations of pairs
     // @@@ Might be sensitive to order e.g. div by 0
     static final List<List<IntFunction<float[]>>> FLOAT_GENERATOR_PAIRS =
         Stream.of(FLOAT_GENERATORS.get(0)).
                 flatMap(fa -> FLOAT_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
-
 
     @DataProvider
     public Object[][] boolUnaryOpProvider() {
@@ -1156,13 +1154,11 @@ relativeError));
                 toArray(Object[][]::new);
     }
 
-
     @DataProvider
     public Object[][] floatIndexedOpProvider() {
         return FLOAT_GENERATOR_PAIRS.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
-
 
     @DataProvider
     public Object[][] floatBinaryOpMaskProvider() {

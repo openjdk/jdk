@@ -1113,14 +1113,12 @@ relativeError));
             })
     );
 
-
     // Create combinations of pairs
     // @@@ Might be sensitive to order e.g. div by 0
     static final List<List<IntFunction<double[]>>> DOUBLE_GENERATOR_PAIRS =
         Stream.of(DOUBLE_GENERATORS.get(0)).
                 flatMap(fa -> DOUBLE_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
-
 
     @DataProvider
     public Object[][] boolUnaryOpProvider() {
@@ -1140,13 +1138,11 @@ relativeError));
                 toArray(Object[][]::new);
     }
 
-
     @DataProvider
     public Object[][] doubleIndexedOpProvider() {
         return DOUBLE_GENERATOR_PAIRS.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
-
 
     @DataProvider
     public Object[][] doubleBinaryOpMaskProvider() {

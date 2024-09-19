@@ -6509,7 +6509,7 @@ instruct vector_uminmax_reg(vec dst, vec a, vec b) %{
   predicate(VM_Version::supports_avx512vl() || Matcher::vector_element_basic_type(n) != T_LONG);
   match(Set dst (UMinV a b));
   match(Set dst (UMaxV a b));
-  format %{ "vector_uminmax_reg  $dst,$a,$b\t!" %}
+  format %{ "vector_uminmax $dst,$a,$b\t!" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
     int vlen_enc = vector_length_encoding(this);
@@ -6524,7 +6524,7 @@ instruct vector_uminmax_mem(vec dst, vec a, memory b) %{
   predicate(VM_Version::supports_avx512vl() || Matcher::vector_element_basic_type(n) != T_LONG);
   match(Set dst (UMinV a (LoadVector b)));
   match(Set dst (UMaxV a (LoadVector b)));
-  format %{ "vector_uminmax_mem  $dst,$a,$b\t!" %}
+  format %{ "vector_uminmax $dst,$a,$b\t!" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
     int vlen_enc = vector_length_encoding(this);
@@ -6540,7 +6540,7 @@ instruct vector_uminmaxq_reg(vec dst, vec a, vec b, vec xtmp1, vec xtmp2) %{
   match(Set dst (UMinV a b));
   match(Set dst (UMaxV a b));
   effect(TEMP xtmp1, TEMP xtmp2);
-  format %{ "vector_uminmaxq_reg  $dst,$a,$b\t! using xtmp1 and xtmp2 as TEMP" %}
+  format %{ "vector_uminmaxq $dst,$a,$b\t! using xtmp1 and xtmp2 as TEMP" %}
   ins_encode %{
     int opcode = this->ideal_Opcode();
     int vlen_enc = vector_length_encoding(this);
@@ -6552,7 +6552,7 @@ instruct vector_uminmaxq_reg(vec dst, vec a, vec b, vec xtmp1, vec xtmp2) %{
 instruct vector_uminmax_reg_masked(vec dst, vec src1, vec src2, kReg mask) %{
   match(Set dst (UMinV (Binary src1 src2) mask));
   match(Set dst (UMaxV (Binary src1 src2) mask));
-  format %{ "vector_uminmax_masked_reg $dst, $src1, $src2, $mask\t! umin/max masked operation" %}
+  format %{ "vector_uminmax_masked $dst, $src1, $src2, $mask\t! umin/max masked operation" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     BasicType bt = Matcher::vector_element_basic_type(this);
@@ -6566,7 +6566,7 @@ instruct vector_uminmax_reg_masked(vec dst, vec src1, vec src2, kReg mask) %{
 instruct vector_uminmax_mem_masked(vec dst, vec src1, memory src2, kReg mask) %{
   match(Set dst (UMinV (Binary src1 (LoadVector src2)) mask));
   match(Set dst (UMaxV (Binary src1 (LoadVector src2)) mask));
-  format %{ "vector_uminmax_masked_mem $dst, $dst, $src2, $mask\t! umin/max masked operation" %}
+  format %{ "vector_uminmax_masked $dst, $dst, $src2, $mask\t! umin/max masked operation" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
     BasicType bt = Matcher::vector_element_basic_type(this);
