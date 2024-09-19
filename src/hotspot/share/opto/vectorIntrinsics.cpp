@@ -768,12 +768,12 @@ bool LibraryCallKit::inline_vector_wrap_shuffle_indexes() {
   Node*              shuffle       = argument(2);
   const TypeInt*     vlen          = gvn().type(argument(3))->isa_int();
 
-  if (elem_klass == nullptr || shuffle_klass == nullptr || shuffle->is_top() || vlen == nullptr) {
-    return false; // dead code
+  if (elem_klass == nullptr || shuffle_klass == nullptr || shuffle->is_top() || vlen == nullptr ||
+      !vlen->is_con() || shuffle_klass->const_oop() == nullptr) {
+    // not enough info for intrinsification
+    return false;
   }
-  if (!vlen->is_con() || shuffle_klass->const_oop() == nullptr) {
-    return false; // not enough info for intrinsification
-  }
+
   if (!is_klass_initialized(shuffle_klass)) {
     log_if_needed("  ** klass argument not initialized");
     return false;
@@ -787,9 +787,10 @@ bool LibraryCallKit::inline_vector_wrap_shuffle_indexes() {
 
   // Shuffles use byte array based backing storage
   BasicType shuffle_bt = T_BYTE;
-
   if (!arch_supports_vector(Op_AndV, num_elem, shuffle_bt, VecMaskNotUsed) ||
       !arch_supports_vector(Op_Replicate, num_elem, shuffle_bt, VecMaskNotUsed)) {
+    log_if_needed("  ** not supported: op=wrapShuffleIndexes vlen=%d etype=%s",
+                  num_elem, type2name(shuffle_bt));
     return false;
   }
 
@@ -802,10 +803,8 @@ bool LibraryCallKit::inline_vector_wrap_shuffle_indexes() {
 
   const TypeVect* vt  = TypeVect::make(shuffle_bt, num_elem);
   const Type* shuffle_type_bt = Type::get_const_basic_type(shuffle_bt);
-
   Node* mod_mask = gvn().makecon(TypeInt::make(num_elem-1));
   Node* bcast_mod_mask  = gvn().transform(VectorNode::scalar2vector(mod_mask, num_elem, shuffle_type_bt));
-
   // Wrap the indices greater than lane count.
   Node* res = gvn().transform(VectorNode::make(Op_AndV, shuffle_vec, bcast_mod_mask, vt));
 
@@ -2116,10 +2115,8 @@ bool LibraryCallKit::inline_vector_select_from() {
   const TypeInstPtr* elem_klass    = gvn().type(argument(2))->isa_instptr();
   const TypeInt*     vlen          = gvn().type(argument(3))->isa_int();
 
-  if (vector_klass == nullptr  || elem_klass == nullptr || vlen == nullptr) {
-    return false; // dead code
-  }
-  if (vector_klass->const_oop()  == nullptr ||
+  if (vector_klass == nullptr  || elem_klass == nullptr || vlen == nullptr ||
+      vector_klass->const_oop()  == nullptr ||
       elem_klass->const_oop()    == nullptr ||
       !vlen->is_con()) {
     log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s",
@@ -2138,10 +2135,9 @@ bool LibraryCallKit::inline_vector_select_from() {
     return false; // should be primitive type
   }
   BasicType elem_bt = elem_type->basic_type();
-
   int num_elem = vlen->get_con();
-  if ((num_elem < 4) || !is_power_of_2(num_elem)) {
-    log_if_needed("  ** vlen < 4 or not power of two=%d", num_elem);
+  if (!is_power_of_2(num_elem)) {
+    log_if_needed("  ** vlen not power of two=%d", num_elem);
     return false;
   }
 
@@ -2184,7 +2180,13 @@ bool LibraryCallKit::inline_vector_select_from() {
   // v2 is the vector being rearranged
   Node* v2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
 
-  if (v1 == nullptr || v2 == nullptr) {
+  if (v1 == nullptr) {
+    log_if_needed("  ** unbox failed v1=%s", NodeClassNames[argument(4)->Opcode()]);
+    return false; // operand unboxing failed
+  }
+
+  if (v2 == nullptr) {
+    log_if_needed("  ** unbox failed v2=%s", NodeClassNames[argument(5)->Opcode()]);
     return false; // operand unboxing failed
   }
 
@@ -2194,8 +2196,7 @@ bool LibraryCallKit::inline_vector_select_from() {
     const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
     mask = unbox_vector(argument(6), mbox_type, elem_bt, num_elem);
     if (mask == nullptr) {
-      log_if_needed("  ** not supported: op=selectFrom vlen=%d etype=%s is_masked_op=1",
-                      num_elem, type2name(elem_bt));
+      log_if_needed("  ** unbox failed mask=%s", NodeClassNames[argument(6)->Opcode()]);
       return false;
     }
   }
