@@ -24,10 +24,10 @@ package org.openjdk.bench.jdk.classfile;
 
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.constant.ClassDesc;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import jdk.internal.classfile.impl.Util;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -36,15 +36,14 @@ import static java.lang.constant.ConstantDescs.*;
 import static org.openjdk.bench.jdk.classfile.TestConstants.*;
 
 /**
- * Tests constant pool builder lookup performance for existing entries.
+ * Tests constant pool builder lookup performance for ClassEntry.
+ * Note that ClassEntry is available only for reference types.
  */
 @Warmup(iterations = 3)
 @Measurement(iterations = 5)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @BenchmarkMode(Mode.Throughput)
-@Fork(value = 1, jvmArgsAppend = {
-        "--enable-preview",
-        "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
+@Fork(value = 1, jvmArgsAppend = {"--enable-preview"})
 @State(Scope.Benchmark)
 public class ConstantPoolBuildingClassEntry {
     // JDK-8338546
@@ -52,17 +51,20 @@ public class ConstantPoolBuildingClassEntry {
     List<ClassDesc> classDescs;
     List<ClassDesc> nonIdenticalClassDescs;
     List<String> internalNames;
+    List<ClassDesc> nonDuplicateClassDescs;
+    List<String> nonDuplicateInternalNames;
     int size;
 
     @Setup(Level.Iteration)
     public void setup() {
         builder = ConstantPoolBuilder.of();
+        // Note these can only be reference types, no primitives
         classDescs = List.of(
                 CD_Byte, CD_Object, CD_Long.arrayType(), CD_String, CD_String, CD_Object, CD_Short,
                 CD_MethodHandle, CD_MethodHandle, CD_Object, CD_Character, CD_List, CD_ArrayList,
                 CD_List, CD_Set, CD_Integer, CD_Object.arrayType(), CD_Enum, CD_Object, CD_MethodHandles_Lookup,
                 CD_Long, CD_Set, CD_Object, CD_Character, CD_Integer, CD_System, CD_String, CD_String,
-                CD_CallSite, CD_Collection, CD_List, CD_Collection, CD_String
+                CD_CallSite, CD_Collection, CD_List, CD_Collection, CD_String, CD_int.arrayType()
         );
         size = classDescs.size();
         nonIdenticalClassDescs = classDescs.stream().map(cd -> {
@@ -78,6 +80,18 @@ public class ConstantPoolBuildingClassEntry {
             ret.hashCode(); // pre-computes hash code for stringValue
             return ret;
         }).toList();
+        nonDuplicateClassDescs = List.copyOf(new LinkedHashSet<>(classDescs));
+        nonDuplicateInternalNames = nonDuplicateClassDescs.stream().map(cd ->
+                builder.classEntry(cd).asInternalName()).toList();
+    }
+
+    // Copied from jdk.internal.classfile.impl.Util::toInternalName
+    // to reduce internal dependencies
+    public static String toInternalName(ClassDesc cd) {
+        var desc = cd.descriptorString();
+        if (desc.charAt(0) == 'L')
+            return desc.substring(1, desc.length() - 1);
+        throw new IllegalArgumentException(desc);
     }
 
     /**
@@ -121,8 +135,30 @@ public class ConstantPoolBuildingClassEntry {
     @Benchmark
     public void oldStyleLookup(Blackhole bh) {
         for (var cd : classDescs) {
-            var s = cd.isClassOrInterface() ? Util.toInternalName(cd) : cd.descriptorString();
+            var s = cd.isClassOrInterface() ? toInternalName(cd) : cd.descriptorString();
             bh.consume(builder.classEntry(builder.utf8Entry(s)));
+        }
+    }
+
+    /**
+     * Measures performance of creating new class entries in new constant pools with symbols.
+     */
+    @Benchmark
+    public void freshCreationWithDescs(Blackhole bh) {
+        var cp = ConstantPoolBuilder.of();
+        for (var cd : nonDuplicateClassDescs) {
+            bh.consume(cp.classEntry(cd));
+        }
+    }
+
+    /**
+     * Measures performance of creating new class entries in new constant pools with internal names.
+     */
+    @Benchmark
+    public void freshCreationWithInternalNames(Blackhole bh) {
+        var cp = ConstantPoolBuilder.of();
+        for (var name : nonDuplicateInternalNames) {
+            bh.consume(cp.classEntry(cp.utf8Entry(name)));
         }
     }
 }
