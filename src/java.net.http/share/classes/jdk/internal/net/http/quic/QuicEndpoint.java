@@ -1246,7 +1246,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     }
 
     private static Stream<QuicConnectionId> allConnectionIds(QuicPacketReceiver quicConnection) {
-        return Stream.concat(quicConnection.connectionIds(), quicConnection.initialConnectionId().stream());
+        return Stream.concat(quicConnection.connectionIds().stream(), quicConnection.initialConnectionId().stream());
     }
 
     /**
@@ -1548,8 +1548,9 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             return draining;
         } else if (conn instanceof QuicConnectionImpl impl) {
             final long idleTimeout = impl.peerPtoMs() * 3; // 3 PTO
+            impl.localConnectionIdManager().close();
             if (debugOn) debug.log("remapping %s to DrainingConnection", id);
-            var draining = new DrainingConnection(id, idleTimeout);
+            var draining = new DrainingConnection(conn.connectionIds(), idleTimeout);
             // we can ignore stateless reset in the draining state.
             remapPeerIssuedResetToken(impl, draining);
             draining.startTimer();
@@ -1586,8 +1587,9 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             return draining;
         } else if (conn instanceof QuicConnectionImpl impl) {
             final long idleTimeout = impl.peerPtoMs() * 3; // 3 PTO
+            impl.localConnectionIdManager().close();
             if (debugOn) debug.log("remapping %s to ClosingConnection", id);
-            var closing = new ClosingConnection(id, idleTimeout, datagram);
+            var closing = new ClosingConnection(conn.connectionIds(), idleTimeout, datagram);
             remapPeerIssuedResetToken(impl, closing);
             closing.startTimer();
             return closing;
@@ -1689,7 +1691,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         // PTO information is not available (if 0 is passed as idleTimeoutMs when creating
         // an instance of this class)
         final static long NO_IDLE_TIMEOUT = 2000;
-        final QuicConnectionId localConnectionId;
+        final List<QuicConnectionId> localConnectionIds;
         final long maxIdleTimeMs;
         final long id;
         int more = 1;
@@ -1697,18 +1699,17 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         volatile Deadline deadline;
         volatile Deadline updatedDeadline;
 
-        ClosedConnection(QuicConnectionId localConnectionId,
-                         long maxIdleTimeMs) {
+        ClosedConnection(List<QuicConnectionId> localConnectionIds, long maxIdleTimeMs) {
             this.id = QuicTimerQueue.newEventId();
             this.maxIdleTimeMs = maxIdleTimeMs == 0 ? NO_IDLE_TIMEOUT : maxIdleTimeMs;
             this.deadline = Deadline.MAX;
             this.updatedDeadline = Deadline.MAX;
-            this.localConnectionId = localConnectionId;
+            this.localConnectionIds = List.copyOf(localConnectionIds);
         }
 
         @Override
-        public Stream<QuicConnectionId> connectionIds() {
-            return Stream.of(localConnectionId);
+        public List<QuicConnectionId> connectionIds() {
+            return localConnectionIds;
         }
 
         @Override
@@ -1814,10 +1815,9 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
 
         final List<ByteBuffer> closePackets = Collections.synchronizedList(new ArrayList<>());
 
-        ClosingConnection(QuicConnectionId localConnectionId,
-                          long maxIdleTimeMs,
-                          ByteBuffer... closePackets) {
-            super(localConnectionId, maxIdleTimeMs);
+        ClosingConnection(List<QuicConnectionId> localConnIdManager, long maxIdleTimeMs,
+                          ByteBuffer closePackets) {
+            super(localConnIdManager, maxIdleTimeMs);
             this.closePackets.addAll(Arrays.asList(closePackets));
         }
 
@@ -1831,7 +1831,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                 return;
             }
             if (debug.on() && !closePackets.isEmpty()) {
-                debug.log("ClosingConnection(%s): sending closed packets", localConnectionId);
+                debug.log("ClosingConnection(%s): sending closed packets", localConnectionIds);
             }
             for (ByteBuffer buf : closePackets) {
                 pushDatagram(this, source, buf.slice());
@@ -1841,12 +1841,12 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         @Override
         protected void dropIncoming(SocketAddress source, ByteBuffer idbytes, HeadersType headersType, ByteBuffer buffer) {
             if (debug.on()) {
-                debug.log("ClosingConnection(%s): dropping %s packet", localConnectionId, headersType);
+                debug.log("ClosingConnection(%s): dropping %s packet", localConnectionIds, headersType);
             }
         }
 
         private DrainingConnection toDraining() {
-            return new DrainingConnection(localConnectionId, maxIdleTimeMs);
+            return new DrainingConnection(localConnectionIds, maxIdleTimeMs);
         }
     }
 
@@ -1856,15 +1856,15 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      */
     public final class DrainingConnection extends ClosedConnection {
 
-        DrainingConnection(QuicConnectionId localConnectionId,
-                           long maxIdleTimeMs) {
-            super(localConnectionId, maxIdleTimeMs);
+        DrainingConnection(List<QuicConnectionId> localConnIdManager, long maxIdleTimeMs) {
+            super(localConnIdManager, maxIdleTimeMs);
         }
 
         @Override
         public void dropIncoming(SocketAddress source, ByteBuffer idbytes, HeadersType headersType, ByteBuffer buffer) {
             if (debug.on()) {
-                debug.log("DrainingConnection(%s): dropping %s packet", localConnectionId, headersType);
+                debug.log("DrainingConnection(%s): dropping %s packet",
+                        localConnectionIds, headersType);
             }
         }
 

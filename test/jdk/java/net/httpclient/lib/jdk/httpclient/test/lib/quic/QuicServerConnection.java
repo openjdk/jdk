@@ -28,6 +28,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
@@ -153,7 +154,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
     }
 
     @Override
-    public Stream<QuicConnectionId> connectionIds() {
+    public List<QuicConnectionId> connectionIds() {
         var connectionIds = super.connectionIds();
         // we can stop using the original connection id if we have
         // received the ClientHello fully.
@@ -164,7 +165,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
         if (!connectionIdAcknowledged) {
             // Add client's initial connection ID (original or retry)
             QuicConnectionId initial = this.clientSentDestConnId;
-            connectionIds = Stream.concat(connectionIds, Stream.of(initial));
+            connectionIds = Stream.concat(connectionIds.stream(), Stream.of(initial)).toList();
         }
         return connectionIds;
     }

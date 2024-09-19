@@ -32,12 +32,11 @@ import jdk.internal.net.http.quic.packets.QuicPacket;
 import jdk.internal.net.quic.QuicTransportException;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Stream;
 
 import static jdk.internal.net.quic.QuicTransportErrors.PROTOCOL_VIOLATION;
 
@@ -53,6 +52,7 @@ final class LocalConnIdManager {
     private final QuicConnectionImpl connection;
     private long nextConnectionIdSequence;
     private final ReentrantLock lock = new ReentrantLock();
+    private boolean closed; // when true, no more connection IDs are registered
 
     // the connection ids (there can be more than one) with which the endpoint identifies this connection.
     // the key of this Map is a (RFC defined) sequence number for the connection id
@@ -126,6 +126,7 @@ final class LocalConnIdManager {
         byte[] token = statelessTokenFor(cid);
         lock.lock();
         try {
+            if (closed) return;
             assert localConnectionIds.size() < 2;
             newCidFrame = new NewConnectionIDFrame(nextConnectionIdSequence++, 0,
                     cid.asReadOnlyBuffer(), ByteBuffer.wrap(token));
@@ -140,13 +141,19 @@ final class LocalConnIdManager {
         }
     }
 
-    public Stream<QuicConnectionId> connectionIds() {
+    public List<QuicConnectionId> connectionIds() {
         lock.lock();
         try {
             // copy to avoid ConcurrentModificationException
-            return new ArrayList<>(localConnectionIds.values()).stream();
+            return List.copyOf(localConnectionIds.values());
         } finally {
             lock.unlock();
         }
+    }
+
+    public void close() {
+        lock.lock();
+        closed = true;
+        lock.unlock();
     }
 }

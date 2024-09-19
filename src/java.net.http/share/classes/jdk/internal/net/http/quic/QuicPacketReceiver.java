@@ -29,8 +29,8 @@ import jdk.internal.net.http.quic.packets.QuicPacket;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 /**
  * The {@code QuicPacketReceiver} is an abstraction that defines the
@@ -44,16 +44,13 @@ import java.util.stream.Stream;
  * protocol (typically for retransmitting the CLOSE_CONNECTION frame
  * if needed).
  */
-public interface QuicPacketReceiver {
+interface QuicPacketReceiver {
 
     /**
-     * A stream of local connectionIds.
-     * According to Quic-Transport, a connection may have several
-     * connection IDs;
-     *
+     * A list of local connectionIds for this connection.
      * @return a stream of local connectionIds for this connection.
      */
-    Stream<QuicConnectionId> connectionIds();
+    List<QuicConnectionId> connectionIds();
 
     /**
      * The initial connection id assigned by the peer.

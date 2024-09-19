@@ -1630,15 +1630,13 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return streams.quicStreams();
     }
 
-    /**
-     * A stream of local connectionIds.
-     * According to Quic-Transport, a connection may have several
-     * connection IDs;
-     * @return a stream of local connectionIds for this connection.
-     */
     @Override
-    public Stream<QuicConnectionId> connectionIds() {
+    public List<QuicConnectionId> connectionIds() {
         return localConnIdManager.connectionIds();
+    }
+
+    public LocalConnIdManager localConnectionIdManager() {
+        return localConnIdManager;
     }
 
     /**
