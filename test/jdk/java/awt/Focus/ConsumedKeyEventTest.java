@@ -25,7 +25,7 @@
  * @test
  * @bug 4700276
  * @summary Peers process KeyEvents before KeyEventPostProcessors
- * @requires (os.family == "Windows")
+ * @requires (os.family == "windows")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual ConsumedKeyEventTest
