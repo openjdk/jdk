@@ -48,14 +48,14 @@ public class JarUtilsTest {
                 Files.writeString(Path.of("b2"), ""),
                 Files.writeString(Path.of("bx/x"), ""),
                 Files.writeString(Path.of("c"), ""));
-        Asserts.assertEquals(content("a.jar"), Set.of("a", "b1", "b2", "bx/x", "c"));
+        Asserts.assertEquals(Set.of("a", "b1", "b2", "bx/x", "c"), content("a.jar"));
 
         JarUtils.deleteEntries(Path.of("a.jar"), "a");
-        Asserts.assertEquals(content("a.jar"), Set.of("b1", "b2", "bx/x", "c"));
+        Asserts.assertEquals(Set.of("b1", "b2", "bx/x", "c"), content("a.jar"));
 
         // Note: b* covers everything starting with b, even bx/x
         JarUtils.deleteEntries(Path.of("a.jar"), "b*");
-        Asserts.assertEquals(content("a.jar"), Set.of("c"));
+        Asserts.assertEquals(Set.of("c"), content("a.jar"));
     }
 
     static Set<String> content(String name) throws IOException {
