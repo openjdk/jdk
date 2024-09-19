@@ -87,22 +87,102 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     return lo;
   }
 
-  // The principle here is that, consider the first bit in result that is
-  // different from the corresponding bit in lo, since result is larger than lo
-  // the bit must be 0 in lo and 1 in result. As result should be the smallest
-  // value, this bit should be the last one possible.
-  // E.g:      1 2 3 4 5 6
-  //      lo = 1 0 0 1 1 0
-  //       x = 1 0 1 0 1 0
-  //       y = 0 1 1 1 1 1
-  // x would be larger than lo since the first different bit is the 3rd one,
-  // while y is smaller than lo because the first different bit is the 1st bit.
-  // Next consider:
-  //      x1 = 1 0 1 0 1 0
-  //      x2 = 1 0 0 1 1 1
-  // Both x1 and x2 are larger than lo, but x1 > x2 since its first different
-  // bit from lo is the 3rd one, while with x2 it is the 7th one. As a result,
-  // if both x1 and x2 satisfy bits, x2 would be closer to our true result.
+  /*
+  1. Intuition:
+  Call res the lowest value not smaller than lo that satisfies bits, consider
+  the first bit in res that is different from the corresponding bit in lo,
+  since res is larger than lo the bit must be 0 in lo and 1 in res. Since res
+  must satisify bits the bit must be 0 in zeros. Finally, as res should be the
+  smallest value, this bit should be the last one possible.
+
+  E.g:      1 2 3 4 5 6
+       lo = 1 0 0 1 1 0
+        x = 1 0 1 0 1 0
+        y = 0 1 1 1 1 1
+  x would be larger than lo since the first different bit is the 3rd one,
+  while y is smaller than lo because the first different bit is the 1st bit.
+  Next, consider:
+       x1 = 1 0 1 0 1 0
+       x2 = 1 0 0 1 1 1
+  Both x1 and x2 are larger than lo, but x1 > x2 since its first different
+  bit from lo is the 3rd one, while with x2 it is the 7th one. As a result,
+  if both x1 and x2 satisfy bits, x2 would be closer to our true result.
+
+  2. Formality:
+  Call i the largest value such that (with v[0] being the first bit of v, v[1]
+  being the second bit of v and so on):
+
+  - lo[x] satisfies bits for 0 <= x < i
+  - zeros[i] = 0
+  - lo[i] = 0
+
+  Consider v:
+
+  - v[x] = lo[x], for 0 <= x < i
+  - v[i] = 1
+  - v[x] = ones[x], for j > i
+
+  We will prove that v is the smallest value not smaller than lo that
+  satisfies bits.
+
+  Call r the smallest value not smaller than lo that satisfies bits.
+
+  a. Firstly, we prove that r <= v:
+
+  Trivially, lo < v since lo[i] < v[i] and lo[x] == v[x] for x < i.
+
+  As established above, the first (i + 1) bits of v satisfy bits.
+  The remaining bits satisfy zeros, since any bit x > i such that zeros[x] == 1, v[x] == ones[x] == 0
+  They also satisfy ones, since any bit j > i such that ones[x] == 1, v[x] == ones[x] == 1
+
+  As a result, v > lo and v satisfies bits since all of its bits satisfy bits. Which
+  means r <= v since r is the smallest such value.
+
+  b. Secondly, we prove that r >= v. Suppose r < v:
+
+  Since r < v, there must be a bit position j that:
+
+  r[j] == 0, v[j] == 1
+  r[x] == v[x], for x < j
+
+  - If j < i
+  r[j] == 0, v[j] == lo[j] == 1
+  r[x] == v[x] == lo[x], for x < j
+
+  This means r < lo, which contradicts that r >= lo
+
+  - If j == i
+  This means that lo[i] == r[i]. Call k the bit position such that:
+
+  r[k] == 1, lo[k] == 0
+  r[x] == lo[x], for x < k
+
+  k > i since r[x] == lo[x], for x <= i
+  lo[x] satisfies bits for 0 <= x < k
+  zeros[k] == 0
+  This contradicts the assumption that i being the largest value satisfying such conditions.
+
+  - If j > i:
+  ones[j] == v[j] == 1, which contradicts that r satisfies bits.
+
+  All cases lead to contradictions, which mean r < v is incorrect, which means
+  that r >= v.
+
+  As a result, r == v, which means the value v having the above form is the
+  lowest value not smaller than lo that satisfies bits.
+
+  Our objective now is to find the largest value i that satisfies:
+  - lo[x] satisfies bits for 0 <= x < i
+  - zeros[i] = 0
+  - lo[i] = 0
+
+  Call j the largest value such that lo[x] satisfies bits for 0 <= x < j. This
+  means that j is the smallest value such that lo[j] does not satisfy bits. We
+  call this the first violation. i then can be computed as the largest value
+  <= j such that:
+
+  zeros[i] == lo[i] == 0
+  */
 
   // The algorithm depends on whether the first violation violates zeros or
   // ones, if it violates zeros, we have the bit being 1 in zero_violation and
@@ -111,12 +191,9 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
   // first violation violates ones, we have zero_violation < one_violation.
   if (zero_violation < one_violation) {
     // This means that the first bit that does not satisfy the bit requirement
-    // is a 0 that should be a 1, this may be the first different bit we want
-    // to find. The smallest value higher than lo with this bit being 1 would
-    // have all lower bits being 0. This value satisfies zeros, because all
-    // bits before the first violation have already satisfied zeros, and all
-    // bits after the first violation are 0. To satisfy 1, simply | this value
-    // with ones
+    // is a 0 that should be a 1. Obviously, since the bit at that position in
+    // ones is 1, the same bit in zeros is 0. Which means this is the value of
+    // i we are looking for.
     //
     // E.g:      1 2 3 4 5 6 7 8
     //      lo = 1 0 0 1 0 0 1 0
@@ -128,29 +205,23 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     //           1 1 0 0 0 0 0 0
     // This value must satisfy zeros, because all bits before the 2nd bit have
     // already satisfied zeros, and all bits after the 2nd bit are all 0 now.
-    // Just | this value with ones to obtain the final result.
+    // Just OR this value with ones to obtain the final result.
 
     // first_violation is the position of the violation counting from the
-    // lowest bit up (0-based)
+    // lowest bit up (0-based), since i == 2, first_difference == 6
     juint first_violation = W - 1 - count_leading_zeros(one_violation); // 6
     //           0 1 0 0 0 0 0 0
     U alignment = U(1) << first_violation;
-    // This is the first value which have the violated bit set, which means
+    // This is the first value which have the violated bit being 1, which means
     // that the result should not be smaller than this
     //           1 1 0 0 0 0 0 0
     lo = (lo & -alignment) + alignment;
     //           1 1 0 0 1 0 1 0
     return lo | bits._ones;
   } else {
-    // This is more difficult because trying to unset a bit requires us to flip
-    // some bits before it.
-    // Consider the first bit that is changed, it must not be 1 already, and it
-    // must not be 1 in zeros. As a result, it must be the last bit before the
-    // first bit violation that is 0 in both zeros and lo. As a result, the
-    // smallest number not smaller than lo that satisfies zeros would have this
-    // bit being 1 and all lower bits being 0. Similar to the case with
-    // zero_violation < one_violation, | this value with ones gives us the
-    // final result.
+    // This means that the first bit that does not satisfy the bit requirement
+    // is a 1 that should be a 0. Trace backward to find i which is the last
+    // bit that is 0 in both lo and zeros.
     //
     // E.g:      1 2 3 4 5 6 7 8
     //      lo = 1 0 0 0 1 1 1 0
@@ -174,15 +245,16 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     U find_mask = std::numeric_limits<U>::max() << first_violation;
     //           1 0 0 1 1 1 1 0
     U either = lo | bits._zeros;
-    // The bit we want to set is the last bit unset in either that stands before
-    // the first violation, which is the last set bit of tmp
+    // i is the last bit being 0 in either that stands before the first
+    // violation, which is the last set bit of tmp
     //           0 1 1 0 0 0 0 0
     U tmp = ~either & find_mask;
-    // Isolate the last bit
+    // i == 2 here, shortcut the calculation instead of explicitly spelling out
+    // i
     //           0 0 1 0 0 0 0 0
     U alignment = tmp & (-tmp);
-    // Set the bit and unset all the bit after, this is the smallest value that
-    // satisfies bits._zeros
+    // Set the bit at i and unset all the bit after, this is the smallest value
+    // that satisfies bits._zeros
     //           1 0 1 0 0 0 0 0
     lo = (lo & -alignment) + alignment;
     // Satisfy bits._ones
