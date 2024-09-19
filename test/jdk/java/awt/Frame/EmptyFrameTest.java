@@ -48,7 +48,6 @@ public class EmptyFrameTest {
     private static volatile Dimension d;
     private static final int TOLERANCE = 5;
     public static void main(String[] args) throws Exception {
-
         robot = new Robot();
         robot.setAutoDelay(100);
         try {

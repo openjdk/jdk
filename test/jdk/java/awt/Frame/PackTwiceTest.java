@@ -53,7 +53,7 @@ public class PackTwiceTest {
     }
 
     private static Frame createUI() {
-        Frame f = new Frame("TestFrame");
+        Frame f = new Frame("PackTwiceTest TestFrame");
         TextField tf = new TextField();
         f.add(tf, "Center");
         tf.setText("I am a short sentence");

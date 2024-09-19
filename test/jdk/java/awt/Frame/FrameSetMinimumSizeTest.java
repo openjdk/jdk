@@ -35,37 +35,36 @@ import java.awt.Frame;
 
 public class FrameSetMinimumSizeTest {
     private static Frame f;
+    private static volatile boolean passed;
 
     public static void main(String[] args) throws Exception {
-        try {
-            EventQueue.invokeAndWait(() -> {
+        EventQueue.invokeAndWait(() -> {
+            try {
                 createAndShowUI();
-            });
 
-            f.setSize(200, 200);
-            boolean passed = verifyFrameSize(new Dimension(300, 300));
+                f.setSize(200, 200);
+                passed = verifyFrameSize(new Dimension(300, 300));
+                isFrameSizeOk(passed);
 
-            f.setSize(200, 400);
-            passed = verifyFrameSize(new Dimension(300, 400));
+                f.setSize(200, 400);
+                passed = verifyFrameSize(new Dimension(300, 400));
+                isFrameSizeOk(passed);
 
-            f.setSize(400, 200);
-            passed = verifyFrameSize(new Dimension(400, 300));
+                f.setSize(400, 200);
+                passed = verifyFrameSize(new Dimension(400, 300));
+                isFrameSizeOk(passed);
 
-            f.setMinimumSize(null);
+                f.setMinimumSize(null);
 
-            f.setSize(200, 200);
-            passed = verifyFrameSize(new Dimension(200, 200));
-
-            if (!passed) {
-                throw new RuntimeException("Frame's setMinimumSize not honoured");
-             }
-        } finally {
-            EventQueue.invokeAndWait(() -> {
+                f.setSize(200, 200);
+                passed = verifyFrameSize(new Dimension(200, 200));
+                isFrameSizeOk(passed);
+            } finally {
                 if (f != null) {
                     f.dispose();
                 }
-            });
-        }
+            }
+        });
     }
 
     private static void createAndShowUI() {
@@ -81,5 +80,12 @@ public class FrameSetMinimumSizeTest {
             return false;
         }
         return true;
+    }
+
+    private static void isFrameSizeOk(boolean passed) {
+        if (!passed) {
+            throw new RuntimeException("Frame's setMinimumSize not honoured for the" +
+                    " frame size: " + f.getSize());
+        }
     }
 }
