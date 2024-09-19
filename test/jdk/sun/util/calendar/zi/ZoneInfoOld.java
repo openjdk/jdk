@@ -85,13 +85,6 @@ public class ZoneInfoOld extends TimeZone {
     private static final long ABBR_MASK = 0xf00L;
     private static final int TRANSITION_NSHIFT = 12;
 
-    // Flag for supporting JDK backward compatible IDs, such as "EST".
-    static final boolean USE_OLDMAPPING;
-    static {
-      String oldmapping = System.getProperty("sun.timezone.ids.oldmapping", "false").toLowerCase(Locale.ROOT);
-      USE_OLDMAPPING = (oldmapping.equals("yes") || oldmapping.equals("true"));
-    }
-
     // IDs having conflicting data between Olson and JDK 1.1
     static final String[] conflictingIDs = {
         "EST", "MST", "HST"
@@ -653,18 +646,6 @@ public class ZoneInfoOld extends TimeZone {
     public static TimeZone getTimeZone(String ID) {
         String givenID = null;
 
-        /*
-         * If old JDK compatibility is specified, get the old alias
-         * name.
-         */
-        if (USE_OLDMAPPING) {
-            String compatibleID = TzIDOldMapping.MAP.get(ID);
-            if (compatibleID != null) {
-                givenID = ID;
-                ID = compatibleID;
-            }
-        }
-
         ZoneInfoOld zi = ZoneInfoFile.getZoneInfoOld(ID);
         if (zi == null) {
             // if we can't create an object for the ID, try aliases.
@@ -842,11 +823,9 @@ public class ZoneInfoOld extends TimeZone {
          if (aliases == null) {
              aliases = ZoneInfoFile.getZoneAliases();
              if (aliases != null) {
-                 if (!USE_OLDMAPPING) {
-                     // Remove the conflicting IDs from the alias table.
-                     for (String key : conflictingIDs) {
-                         aliases.remove(key);
-                     }
+                 // Remove the conflicting IDs from the alias table.
+                 for (String key : conflictingIDs) {
+                     aliases.remove(key);
                  }
                  aliasTable = new SoftReference<Map<String, String>>(aliases);
              }

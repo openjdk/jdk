@@ -36,6 +36,7 @@ import java.io.StreamCorruptedException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,14 +44,12 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.SimpleTimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.CRC32;
 
 import jdk.internal.util.StaticProperty;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Loads TZDB time-zone rules for j.u.TimeZone
@@ -65,19 +64,12 @@ public final class ZoneInfoFile {
      * @return a set of time zone IDs.
      */
     public static String[] getZoneIds() {
-        int len = regions.length + oldMappings.length;
-        if (!USE_OLDMAPPING) {
-            len += 3;    // EST/HST/MST not in tzdb.dat
-        }
+        var shortIDs = ZoneId.SHORT_IDS.keySet();
+        int len = regions.length + shortIDs.size();
         String[] ids = Arrays.copyOf(regions, len);
         int i = regions.length;
-        if (!USE_OLDMAPPING) {
-            ids[i++] = "EST";
-            ids[i++] = "HST";
-            ids[i++] = "MST";
-        }
-        for (int j = 0; j < oldMappings.length; j++) {
-            ids[i++] = oldMappings[j][0];
+        for (var id : shortIDs) {
+            ids[i++] = id;
         }
         return ids;
     }
@@ -216,42 +208,7 @@ public final class ZoneInfoFile {
     private static String[] regions;
     private static int[] indices;
 
-    // Flag for supporting JDK backward compatible IDs, such as "EST".
-    private static final boolean USE_OLDMAPPING;
-
-    private static final String[][] oldMappings = new String[][] {
-        { "ACT", "Australia/Darwin" },
-        { "AET", "Australia/Sydney" },
-        { "AGT", "America/Argentina/Buenos_Aires" },
-        { "ART", "Africa/Cairo" },
-        { "AST", "America/Anchorage" },
-        { "BET", "America/Sao_Paulo" },
-        { "BST", "Asia/Dhaka" },
-        { "CAT", "Africa/Harare" },
-        { "CNT", "America/St_Johns" },
-        { "CST", "America/Chicago" },
-        { "CTT", "Asia/Shanghai" },
-        { "EAT", "Africa/Addis_Ababa" },
-        { "ECT", "Europe/Paris" },
-        { "IET", "America/Indiana/Indianapolis" },
-        { "IST", "Asia/Kolkata" },
-        { "JST", "Asia/Tokyo" },
-        { "MIT", "Pacific/Apia" },
-        { "NET", "Asia/Yerevan" },
-        { "NST", "Pacific/Auckland" },
-        { "PLT", "Asia/Karachi" },
-        { "PNT", "America/Phoenix" },
-        { "PRT", "America/Puerto_Rico" },
-        { "PST", "America/Los_Angeles" },
-        { "SST", "Pacific/Guadalcanal" },
-        { "VST", "Asia/Ho_Chi_Minh" },
-    };
-
     static {
-        String oldmapping = GetPropertyAction
-                .privilegedGetProperty("sun.timezone.ids.oldmapping", "false")
-                .toLowerCase(Locale.ROOT);
-        USE_OLDMAPPING = (oldmapping.equals("yes") || oldmapping.equals("true"));
         loadTZDB();
     }
 
@@ -275,22 +232,14 @@ public final class ZoneInfoFile {
     }
 
     private static void addOldMapping() {
-        for (String[] alias : oldMappings) {
-            aliases.put(alias[0], alias[1]);
+        for (var key : ZoneId.SHORT_IDS.keySet()) {
+            switch (key) {
+                case "EST" -> zones.put(key, new ZoneInfo(key, -18000000));
+                case "HST" -> zones.put(key, new ZoneInfo(key, -36000000));
+                case "MST" -> zones.put(key, new ZoneInfo(key, -25200000));
+                default -> aliases.put(key, ZoneId.SHORT_IDS.get(key));
+            }
         }
-        if (USE_OLDMAPPING) {
-            aliases.put("EST", "America/New_York");
-            aliases.put("MST", "America/Denver");
-            aliases.put("HST", "Pacific/Honolulu");
-        } else {
-            zones.put("EST", new ZoneInfo("EST", -18000000));
-            zones.put("MST", new ZoneInfo("MST", -25200000));
-            zones.put("HST", new ZoneInfo("HST", -36000000));
-        }
-    }
-
-    public static boolean useOldMapping() {
-       return USE_OLDMAPPING;
     }
 
     /**
