@@ -72,10 +72,9 @@ public class LotsOfMenuItemsTest extends ComponentAdapter {
 
     @Override
     public void componentShown(ComponentEvent e) {
-        TestFrame testFrame;
         final int x = firstFrame.getX();
         final int y = firstFrame.getY() + firstFrame.getHeight() + 8;
-
+        TestFrame testFrame;
         for (int i = 1; i < NUM_WINDOWS - 1; ++i) {
             testFrame = new TestFrame("Running(" + i + ")...", x, y);
             testFrame.setVisible(false);
