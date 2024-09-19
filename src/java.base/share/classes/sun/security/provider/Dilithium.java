@@ -584,11 +584,10 @@ public class Dilithium {
             dilithiumH.update(mu);
             dilithiumH.update(simpleBitPack(wCoeffSize, w1));
             commitmentHash = dilithiumH.squeeze(lambda/4);
-            byte[] c1Tilde = Arrays.copyOfRange(commitmentHash, 0, 32);
             dilithiumH.reset();
 
             //Get z and r0
-            int[] c = sampleInBall(c1Tilde);
+            int[] c = sampleInBall(commitmentHash);
             mlDsaNtt(c); //c is now in NTT domain
             int[][] cs1 = nttConstMultiply(c, s1); //todo: can make this one allocation before loop and modify nttConstMul
             int[][] cs2 = nttConstMultiply(c, s2);
@@ -634,9 +633,7 @@ public class Dilithium {
         dilithiumH.reset();
 
         //Get verifiers challenge
-        byte[] c1Tilde = new byte[32];
-        System.arraycopy(sig.commitmentHash(), 0, c1Tilde, 0, 32);
-        int[] cHat = sampleInBall(c1Tilde);
+        int[] cHat = sampleInBall(sig.commitmentHash());
         mlDsaNtt(cHat);
 
         //Deal with z
