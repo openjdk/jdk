@@ -126,8 +126,8 @@ private:
 class TypeIntHelper {
 public:
   // Calculate the cardinality of a TypeInt/TypeLong ignoring the bits
-  // constraints, the result is tuned down by 1 to ensure the bottom type is
-  // correctly calculated
+  // constraints, the return value is the cardinality minus 1 to not overflow
+  // with the bottom type
   template <class S, class U>
   static U cardinality_from_bounds(const RangeInt<S>& srange, const RangeInt<U>& urange) {
     static_assert(std::is_signed<S>::value, "");
@@ -135,9 +135,13 @@ public:
     static_assert(sizeof(S) == sizeof(U), "");
 
     if (U(srange._lo) == urange._lo) {
+      // srange is the same as urange
+      assert(U(srange._hi) == urange._hi, "");
       return urange._hi - urange._lo;
     }
 
+    // srange intersects with urange in 2 intervals [srange._lo, urange._hi]
+    // and [urange._lo, srange._hi]
     return (urange._hi - U(srange._lo)) + (U(srange._hi) - urange._lo) + 1;
   }
 

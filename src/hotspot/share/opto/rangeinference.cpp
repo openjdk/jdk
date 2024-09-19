@@ -33,9 +33,9 @@ constexpr juint SMALLINT = 3; // a value too insignificant to consider widening
 template <class T>
 class AdjustResult {
 public:
-  bool _progress; // whether there is progress compared to the last iteration
-  bool _present;  // whether the calculation arrives at contradiction
-  T _data;
+  bool _progress;             // whether there is progress compared to the last iteration
+  bool _is_result_consistent; // whether the calculation arrives at contradiction
+  T _result;
 
   static AdjustResult<T> make_empty() {
     return {true, false, {}};
@@ -62,7 +62,12 @@ public:
   }
 };
 
-// Find the minimum value that is not less than lo and satisfies bits
+// Find the minimum value that is not less than lo and satisfies bits.
+// Here, we view a number in binary as a bit string. As a result,  the first
+// bit refers to the highest bit (the MSB), the last bit refers to the lowest
+// bit (the LSB), a bit comes before (being higher than) another if it is more
+// significant, and a bit comes after (being lower than) another if it is less
+// significant.
 template <class U>
 static U adjust_lo(U lo, const KnownBits<U>& bits) {
   constexpr size_t W = sizeof(U) * 8;
@@ -71,9 +76,9 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
   //      zeros = 0100
   //      ones  = 1001
   // zero_violation = 0100, i.e the second bit should be zero, but it is 1 in
-  // lo. Similarly, one_violation = 0001, i.e the LSB should be one, but it is
-  // 0 in lo. These make lo not satisfy the bit constraints, which results in
-  // us having to find the smallest value that satisfies bits
+  // lo. Similarly, one_violation = 0001, i.e the last bit should be one, but
+  // it is 0 in lo. These make lo not satisfy the bit constraints, which
+  // results in us having to find the smallest value that satisfies bits
   U zero_violation = lo & bits._zeros;
   U one_violation = ~lo & bits._ones;
   if (zero_violation == one_violation) {
@@ -85,7 +90,7 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
   // The principle here is that, consider the first bit in result that is
   // different from the corresponding bit in lo, since result is larger than lo
   // the bit must be 0 in lo and 1 in result. As result should be the smallest
-  // value, this bit should be the rightmost one possible.
+  // value, this bit should be the last one possible.
   // E.g:      1 2 3 4 5 6
   //      lo = 1 0 0 1 1 0
   //       x = 1 0 1 0 1 0
@@ -98,10 +103,21 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
   // Both x1 and x2 are larger than lo, but x1 > x2 since its first different
   // bit from lo is the 3rd one, while with x2 it is the 7th one. As a result,
   // if both x1 and x2 satisfy bits, x2 would be closer to our true result.
+
+  // The algorithm depends on whether the first violation violates zeros or
+  // ones, if it violates zeros, we have the bit being 1 in zero_violation and
+  // 0 in one_violation. Since all higher bits are 0 in zero_violation and
+  // one_violation, we have zero_violation > one_violation. Similarly, if the
+  // first violation violates ones, we have zero_violation < one_violation.
   if (zero_violation < one_violation) {
     // This means that the first bit that does not satisfy the bit requirement
     // is a 0 that should be a 1, this may be the first different bit we want
-    // to find.
+    // to find. The smallest value higher than lo with this bit being 1 would
+    // have all lower bits being 0. This value satisfies zeros, because all
+    // bits before the first violation have already satisfied zeros, and all
+    // bits after the first violation are 0. To satisfy 1, simply | this value
+    // with ones
+    //
     // E.g:      1 2 3 4 5 6 7 8
     //      lo = 1 0 0 1 0 0 1 0
     //   zeros = 0 0 1 0 0 1 0 0
@@ -112,11 +128,7 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     //           1 1 0 0 0 0 0 0
     // This value must satisfy zeros, because all bits before the 2nd bit have
     // already satisfied zeros, and all bits after the 2nd bit are all 0 now.
-    // Continue the logic with each 1 bit in ones, we will set each bit in our
-    // new lo (11000000 -> 11001000 -> 11001010). The final value is our
-    // result.
-    // Implementationwise, from 11000000 we can just | with ones to obtain the
-    // final result.
+    // Just | this value with ones to obtain the final result.
 
     // first_violation is the position of the violation counting from the
     // lowest bit up (0-based)
@@ -129,49 +141,54 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     lo = (lo & -alignment) + alignment;
     //           1 1 0 0 1 0 1 0
     return lo | bits._ones;
+  } else {
+    // This is more difficult because trying to unset a bit requires us to flip
+    // some bits before it.
+    // Consider the first bit that is changed, it must not be 1 already, and it
+    // must not be 1 in zeros. As a result, it must be the last bit before the
+    // first bit violation that is 0 in both zeros and lo. As a result, the
+    // smallest number not smaller than lo that satisfies zeros would have this
+    // bit being 1 and all lower bits being 0. Similar to the case with
+    // zero_violation < one_violation, | this value with ones gives us the
+    // final result.
+    //
+    // E.g:      1 2 3 4 5 6 7 8
+    //      lo = 1 0 0 0 1 1 1 0
+    //   zeros = 0 0 0 1 0 1 0 0
+    //    ones = 1 0 0 0 0 0 1 1
+    //   1-vio = 0 0 0 0 0 0 0 1
+    //   0-vio = 0 0 0 0 0 1 0 0
+    // The first violation is the 6th bit, which should be 0. The 5th cannot be
+    // the first different bit we are looking for, because it is already 1, the
+    // 4th bit also cannot be, because it must be 0. As a result, the first
+    // different bit between the result and lo must be the 3rd bit. As a result,
+    // the result must not be smaller than:
+    //           1 0 1 0 0 0 0 0
+    // This one satisfies zeros so we can use the logic in the previous case to
+    // obtain our final result, which is:
+    //           1 0 1 0 0 0 1 1
+
+    juint first_violation = W - count_leading_zeros(zero_violation);
+    // This mask out all bits from the first violation
+    //           1 1 1 1 1 0 0 0
+    U find_mask = std::numeric_limits<U>::max() << first_violation;
+    //           1 0 0 1 1 1 1 0
+    U either = lo | bits._zeros;
+    // The bit we want to set is the last bit unset in either that stands before
+    // the first violation, which is the last set bit of tmp
+    //           0 1 1 0 0 0 0 0
+    U tmp = ~either & find_mask;
+    // Isolate the last bit
+    //           0 0 1 0 0 0 0 0
+    U alignment = tmp & (-tmp);
+    // Set the bit and unset all the bit after, this is the smallest value that
+    // satisfies bits._zeros
+    //           1 0 1 0 0 0 0 0
+    lo = (lo & -alignment) + alignment;
+    // Satisfy bits._ones
+    //           1 0 1 0 0 0 1 1
+    return lo | bits._ones;
   }
-
-  // This is more difficult because trying to unset a bit requires us to flip
-  // some bits before it (higher bits).
-  // Consider the first bit that is changed, it must not be 1 already, and it
-  // must not be 1 in zeros. As a result, it must be the last bit before the
-  // first bit violation that is 0 in both zeros and lo.
-  // E.g:      1 2 3 4 5 6 7 8
-  //      lo = 1 0 0 0 1 1 1 0
-  //   zeros = 0 0 0 1 0 1 0 0
-  //    ones = 1 0 0 0 0 0 1 1
-  //   1-vio = 0 0 0 0 0 0 0 1
-  //   0-vio = 0 0 0 0 0 1 0 0
-  // The first violation is the 6th bit, which should be 0. The 5th cannot be
-  // the first different bit we are looking for, because it is already 1, the
-  // 4th bit also cannot be, because it must be 0. As a result, the first
-  // different bit between the result and lo must be the 3rd bit. As a result,
-  // the result must not be smaller than:
-  //           1 0 1 0 0 0 0 0
-  // This one satisfies zeros so we can use the logic in the previous case to
-  // obtain our final result, which is:
-  //           1 0 1 0 0 0 1 1
-
-  juint first_violation = W - count_leading_zeros(zero_violation);
-  // This mask out all bits from the first violation
-  //           1 1 1 1 1 0 0 0
-  U find_mask = std::numeric_limits<U>::max() << first_violation;
-  //           1 0 0 1 1 1 1 0
-  U either = lo | bits._zeros;
-  // The bit we want to set is the last bit unset in either that stands before
-  // the first violation, which is the last set bit of tmp
-  //           0 1 1 0 0 0 0 0
-  U tmp = ~either & find_mask;
-  // Isolate the last bit
-  //           0 0 1 0 0 0 0 0
-  U alignment = tmp & (-tmp);
-  // Set the bit and unset all the bit after, this is the smallest value that
-  // satisfies bits._zeros
-  //           1 0 1 0 0 0 0 0
-  lo = (lo & -alignment) + alignment;
-  // Satisfy bits._ones
-  //           1 0 1 0 0 0 1 1
-  return lo | bits._ones;
 }
 
 // Try to tighten the bound constraints from the known bit information. I.e, we
@@ -251,7 +268,7 @@ template <class U>
 static SimpleCanonicalResult<U>
 canonicalize_constraints_simple(const RangeInt<U>& bounds, const KnownBits<U>& bits) {
   AdjustResult<KnownBits<U>> nbits = adjust_bits_from_bounds(bits, bounds);
-  if (!nbits._present) {
+  if (!nbits._is_result_consistent) {
     return SimpleCanonicalResult<U>::make_empty();
   }
   AdjustResult<RangeInt<U>> nbounds{true, true, bounds};
@@ -259,13 +276,13 @@ canonicalize_constraints_simple(const RangeInt<U>& bounds, const KnownBits<U>& b
   // versa, if one does not show progress, the other will also not show
   // progress, so we terminate early
   while (true) {
-    nbounds = adjust_bounds_from_bits(nbounds._data, nbits._data);
-    if (!nbounds._progress || !nbounds._present) {
-      return {nbounds._present, nbounds._data, nbits._data};
+    nbounds = adjust_bounds_from_bits(nbounds._result, nbits._result);
+    if (!nbounds._progress || !nbounds._is_result_consistent) {
+      return {nbounds._is_result_consistent, nbounds._result, nbits._result};
     }
-    nbits = adjust_bits_from_bounds(nbits._data, nbounds._data);
-    if (!nbits._progress || !nbits._present) {
-      return {nbits._present, nbounds._data, nbits._data};
+    nbits = adjust_bits_from_bounds(nbits._result, nbounds._result);
+    if (!nbits._progress || !nbits._is_result_consistent) {
+      return {nbits._is_result_consistent, nbounds._result, nbits._result};
     }
   }
 }
@@ -374,16 +391,16 @@ void TypeIntPrototype<S, U>::verify_constraints() const {
   } else {
     RangeInt<U> neg_range{U(_srange._lo), _urange._hi};
     auto neg_bits = adjust_bits_from_bounds(_bits, neg_range);
-    assert(neg_bits._present, "");
-    assert(!adjust_bounds_from_bits(neg_range, neg_bits._data)._progress, "");
+    assert(neg_bits._is_result_consistent, "");
+    assert(!adjust_bounds_from_bits(neg_range, neg_bits._result)._progress, "");
 
     RangeInt<U> pos_range{_urange._lo, U(_srange._hi)};
     auto pos_bits = adjust_bits_from_bounds(_bits, pos_range);
-    assert(pos_bits._present, "");
-    assert(!adjust_bounds_from_bits(pos_range, pos_bits._data)._progress, "");
+    assert(pos_bits._is_result_consistent, "");
+    assert(!adjust_bounds_from_bits(pos_range, pos_bits._result)._progress, "");
 
-    assert((neg_bits._data._zeros & pos_bits._data._zeros) == _bits._zeros &&
-           (neg_bits._data._ones & pos_bits._data._ones) == _bits._ones, "");
+    assert((neg_bits._result._zeros & pos_bits._result._zeros) == _bits._zeros &&
+           (neg_bits._result._ones & pos_bits._result._ones) == _bits._ones, "");
   }
 }
 #endif // ASSERT
