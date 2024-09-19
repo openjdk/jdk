@@ -232,7 +232,12 @@ public final class KDF {
     public static KDF getInstance(String algorithm)
             throws NoSuchAlgorithmException {
         Objects.requireNonNull(algorithm, "algorithm must not be null");
-        return getInstance(algorithm, (KDFParameters) null);
+        try {
+            return getInstance(algorithm, (KDFParameters) null);
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new NoSuchAlgorithmException(
+                    "No implementation found using null KDFParameters", e);
+        }
     }
 
     /**
@@ -321,6 +326,10 @@ public final class KDF {
      * @throws NoSuchAlgorithmException
      *         if no {@code Provider} supports a {@code KDF} implementation for
      *         the specified algorithm
+     * @throws InvalidAlgorithmParameterException
+     *         if at least one {@code Provider} supports a {@code KDF}
+     *         implementation for the specified algorithm but none of them
+     *         support the specified parameters
      * @throws NullPointerException
      *         if {@code algorithm} is {@code null}
      * @implNote The JDK Reference Implementation additionally uses the
@@ -335,19 +344,15 @@ public final class KDF {
      */
     public static KDF getInstance(String algorithm,
                                   KDFParameters kdfParameters)
-            throws NoSuchAlgorithmException {
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         Objects.requireNonNull(algorithm, "algorithm must not be null");
         // make sure there is at least one service from a signed provider
         Iterator<Service> t = GetInstance.getServices("KDF", algorithm);
 
         Delegate d = getNext(t, kdfParameters);
-        if (d != null) {
-            return (t.hasNext() ?
-                            new KDF(d, t, algorithm, kdfParameters) :
-                            new KDF(d, algorithm, kdfParameters));
-        }
-        throw new NoSuchAlgorithmException(
-                "Algorithm " + algorithm + " not available");
+        return (t.hasNext() ?
+                        new KDF(d, t, algorithm, kdfParameters) :
+                        new KDF(d, algorithm, kdfParameters));
     }
 
     /**
@@ -586,37 +591,39 @@ public final class KDF {
                 throw new RuntimeException("Unexpected Error: candidate is null!");
             }
             Delegate currOne = candidate;
-            do {
-                try {
-                    Object result = (isDeriveData) ?
-                                            currOne.spi().engineDeriveData(derivationSpec) :
-                                            currOne.spi().engineDeriveKey(algorithm,
-                                                                          derivationSpec);
-                    // found a working KDFSpi
-                    this.theOne = currOne;
-                    return result;
-                } catch (Exception e) {
-                    if (lastException == null) {
-                        lastException = e;
+            try {
+                while (true) {
+                    try {
+                        Object result = (isDeriveData) ?
+                                currOne.spi().engineDeriveData(derivationSpec) :
+                                currOne.spi().engineDeriveKey(algorithm,
+                                        derivationSpec);
+                        // found a working KDFSpi
+                        this.theOne = currOne;
+                        return result;
+                    } catch (Exception e) {
+                        if (lastException == null) {
+                            lastException = e;
+                        }
+                        // try next one if available
+                        assert serviceIterator != null : "serviceIterator was null";
+                        currOne = getNext(serviceIterator, kdfParameters);
                     }
-                    // try next one if available
-                    assert serviceIterator != null : "serviceIterator was null";
-                    currOne = getNext(serviceIterator, kdfParameters);
                 }
-            } while (currOne != null);
-            // no working provider found, fail
-            if (lastException instanceof InvalidAlgorithmParameterException) {
-                throw (InvalidAlgorithmParameterException) lastException;
+            } catch (InvalidAlgorithmParameterException e) {
+                throw e; // getNext reached end and have seen IAPE
+            } catch (NoSuchAlgorithmException e) {
+                // getNext reached end without finding an implementation
+                throw new InvalidAlgorithmParameterException(lastException);
             }
         }
-        throw new InvalidAlgorithmParameterException(
-                "No installed provider can successfully perform a derivation " +
-                "with these parameters");
     }
 
     private static Delegate getNext(Iterator<Service> serviceIter,
-                                    KDFParameters kdfParameters) {
+                                    KDFParameters kdfParameters)
+            throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         // fetch next one if available
+        boolean hasOne = false;
         while (serviceIter.hasNext()) {
             Service s = serviceIter.next();
             Provider prov = s.getProvider();
@@ -624,6 +631,7 @@ public final class KDF {
                 // continue to next iteration
                 continue;
             }
+            hasOne = true;
             try {
                 Object obj = s.newInstance(kdfParameters);
                 if (!(obj instanceof KDFSpi)) {
@@ -649,7 +657,8 @@ public final class KDF {
                     "No provider can be found that supports the "
                     + "specified algorithm and parameters");
         }
-        return null;
+        if (hasOne) throw new InvalidAlgorithmParameterException();
+        else throw new NoSuchAlgorithmException();
     }
 
     private static boolean checkSpiNonNull(Delegate d) {
