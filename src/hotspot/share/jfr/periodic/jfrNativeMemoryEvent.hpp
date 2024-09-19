@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_PERIODIC_JFRNATIVEMEMORYEVENT_HPP
 #define SHARE_JFR_PERIODIC_JFRNATIVEMEMORYEVENT_HPP
 
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "nmt/nmtUsage.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ticks.hpp"
@@ -35,7 +35,7 @@
 // so no more synchronization is needed.
 class JfrNativeMemoryEvent : public AllStatic {
 private:
-  static void send_type_event(const Ticks& starttime, MEMFLAGS flag, size_t reserved, size_t committed);
+  static void send_type_event(const Ticks& starttime, MemTag mem_tag, size_t reserved, size_t committed);
  public:
   static void send_total_event(const Ticks& timestamp);
   static void send_type_events(const Ticks& timestamp);

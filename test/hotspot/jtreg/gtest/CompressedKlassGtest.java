@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,17 @@
  *
  */
 
-#ifndef SHARE_NMT_MEMFLAGBITMAP_HPP
-#define SHARE_NMT_MEMFLAGBITMAP_HPP
+/*
+ * This runs the "compressedKlass" class of gtests.
+ * Note: we try to trigger bugs by enforcing the JVM to use zero-based mode. To increase the chance of zero-based
+ * mode, we start with CDS disabled, a small class space and a large (albeit uncommitted, to save memory) heap. The
+ * JVM will likely place the class space in low-address territory.
+ * (If it does not manage to do this, the test will still succeed, but it won't alert us on regressions)
+ */
 
-#include "nmt/memflags.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
-
-class MemFlagBitmap {
-  uint32_t _v;
-  STATIC_ASSERT(sizeof(_v) * BitsPerByte >= mt_number_of_types);
-
-public:
-  MemFlagBitmap(uint32_t v = 0) : _v(v) {}
-  MemFlagBitmap(const MemFlagBitmap& o) : _v(o._v) {}
-
-  uint32_t raw_value() const { return _v; }
-
-  void set_flag(MEMFLAGS f) {
-    const int bitno = (int)f;
-    _v |= nth_bit(bitno);
-  }
-
-  bool has_flag(MEMFLAGS f) const {
-    const int bitno = (int)f;
-    return _v & nth_bit(bitno);
-  }
-
-  bool has_any() const { return _v > 0; }
-};
-
-#endif // SHARE_NMT_NMTUSAGE_HPP
+/* @test id=use-zero-based-encoding
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @run main/native GTestWrapper --gtest_filter=CompressedKlass* -Xlog:metaspace* -Xmx6g -Xms128m -Xshare:off -XX:CompressedClassSpaceSize=128m
+ */
