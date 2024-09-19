@@ -62,10 +62,10 @@ static void asm_check(const uint8_t *insns, const uint8_t *insns1, const unsigne
 TEST_VM(AssemblerX86, validate) {
   FlagSetting flag_change_apx(UseAPX, true);
   VM_Version::set_apx_cpuFeatures();
-	BufferBlob* b = BufferBlob::create("x64Test", 500000);
-	CodeBuffer code(b);
-	MacroAssembler _masm(&code);
-	address entry = __ pc();
+  BufferBlob* b = BufferBlob::create("x64Test", 500000);
+  CodeBuffer code(b);
+  MacroAssembler _masm(&code);
+  address entry = __ pc();
 
   // python x86-asmtest.py | expand > asmtest.out.h
 #include "asmtest.out.h"
