@@ -35,7 +35,12 @@ import java.awt.Rectangle;
 import java.awt.Window;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
 
 import sun.awt.image.SurfaceManager;
 import sun.awt.util.ThreadGroupUtils;
