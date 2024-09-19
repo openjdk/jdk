@@ -2419,6 +2419,7 @@ void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fa
 
   // Fast path check: class is fully initialized
   lbz(R0, in_bytes(InstanceKlass::init_state_offset()), klass);
+  lwsync(); // acquire
   cmpwi(CCR0, R0, InstanceKlass::fully_initialized);
   beq(CCR0, *L_fast_path);
 
