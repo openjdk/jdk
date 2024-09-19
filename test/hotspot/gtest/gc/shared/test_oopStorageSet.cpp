@@ -36,6 +36,7 @@
 #include "unittest.hpp"
 
 using ::testing::HasSubstr;
+using ::testing::Not;
 
 class OopStorageSetTest : public ::testing::Test {
 protected:
@@ -117,6 +118,7 @@ private:
           ASSERT_THAT(ss.freeze(), HasSubstr("is a pointer"));
           ASSERT_THAT(ss.freeze(), HasSubstr("into block"));
           ASSERT_THAT(ss.freeze(), HasSubstr("in oop storage"));
+          ASSERT_THAT(ss.freeze(), Not(HasSubstr("(unaligned)")));
         }
 
         // Unaligned pointer to adjacent slot, should still be in oop storage range.
