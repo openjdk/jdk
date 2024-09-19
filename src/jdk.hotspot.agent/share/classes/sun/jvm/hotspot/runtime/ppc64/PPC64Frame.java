@@ -253,9 +253,6 @@ public class PPC64Frame extends Frame {
     return true;
   }
 
-  // FIXME: not applicable in current system
-  //  void    patch_pc(Thread* thread, address pc);
-
   public Frame sender(RegisterMap regMap, CodeBlob cb) {
     PPC64RegisterMap map = (PPC64RegisterMap) regMap;
 
@@ -278,8 +275,9 @@ public class PPC64Frame extends Frame {
       }
     }
 
-    if (cb != null) {
-      return cb.isUpcallStub() ? senderForUpcallStub(map, (UpcallStub)cb) : senderForCompiledFrame(map, cb);
+    if (cb != null && !cb.isUpcallStub()) {
+      // Note: Other platforms use the UpcallStub. We use the Backchain instead which works for all ABI compliant frames.
+      return senderForCompiledFrame(map, cb);
     }
 
     // Must be native-compiled frame, i.e. the marshaling code for native
@@ -306,34 +304,6 @@ public class PPC64Frame extends Frame {
       fr = new PPC64Frame(jcw.getLastJavaSP(), jcw.getLastJavaFP(), jcw.getLastJavaPC());
     } else {
       fr = new PPC64Frame(jcw.getLastJavaSP(), jcw.getLastJavaFP());
-    }
-    map.clear();
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(map.getIncludeArgumentOops(), "should be set by clear");
-    }
-    return fr;
-  }
-
-  private Frame senderForUpcallStub(PPC64RegisterMap map, UpcallStub stub) {
-    if (DEBUG) {
-      System.out.println("senderForUpcallStub");
-    }
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(map != null, "map must be set");
-    }
-
-    var lastJavaFP = stub.getLastJavaFP(this); // This will be null
-    var lastJavaSP = stub.getLastJavaSP(this);
-    var lastJavaPC = stub.getLastJavaPC(this);
-
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(lastJavaSP.greaterThan(getSP()), "must be above this frame on stack");
-    }
-    PPC64Frame fr;
-    if (lastJavaPC != null) {
-      fr = new PPC64Frame(lastJavaSP, lastJavaFP, lastJavaPC);
-    } else {
-      fr = new PPC64Frame(lastJavaSP, lastJavaFP);
     }
     map.clear();
     if (Assert.ASSERTS_ENABLED) {
