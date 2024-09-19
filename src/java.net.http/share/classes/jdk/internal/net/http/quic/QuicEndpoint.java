@@ -43,9 +43,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
@@ -1581,7 +1579,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         if (closed) return null;
         var debugOn =  debug.on() && !Thread.currentThread().isVirtual();
         if (conn instanceof ClosingConnection closing) {
-            closing.closePackets.add(datagram);
+            // we already have a closing datagram, drop the new one
             return closing;
         } else if (conn instanceof DrainingConnection draining) {
             return draining;
@@ -1813,12 +1811,12 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      */
     public final class ClosingConnection extends ClosedConnection {
 
-        final List<ByteBuffer> closePackets = Collections.synchronizedList(new ArrayList<>());
+        final ByteBuffer closePacket;
 
         ClosingConnection(List<QuicConnectionId> localConnIdManager, long maxIdleTimeMs,
-                          ByteBuffer closePackets) {
+                          ByteBuffer closePacket) {
             super(localConnIdManager, maxIdleTimeMs);
-            this.closePackets.addAll(Arrays.asList(closePackets));
+            this.closePacket = Objects.requireNonNull(closePacket);
         }
 
         @Override
@@ -1830,12 +1828,10 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                 dropIncoming(source, idbytes, headersType, buffer);
                 return;
             }
-            if (debug.on() && !closePackets.isEmpty()) {
+            if (debug.on()) {
                 debug.log("ClosingConnection(%s): sending closed packets", localConnectionIds);
             }
-            for (ByteBuffer buf : closePackets) {
-                pushDatagram(this, source, buf.slice());
-            }
+            pushDatagram(this, source, closePacket.asReadOnlyBuffer());
         }
 
         @Override
