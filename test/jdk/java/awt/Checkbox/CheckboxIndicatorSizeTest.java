@@ -169,4 +169,3 @@ public class CheckboxIndicatorSizeTest implements ActionListener {
         frame.setVisible(true);
     }
 }
-
