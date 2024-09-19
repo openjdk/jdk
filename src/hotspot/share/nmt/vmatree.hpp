@@ -116,7 +116,7 @@ private:
       type_flag[1] = static_cast<uint8_t>(flag);
     }
 
-    const NativeCallStackStorage::StackIndex stack() const {
+    NativeCallStackStorage::StackIndex stack() const {
      return sidx;
     }
   };
