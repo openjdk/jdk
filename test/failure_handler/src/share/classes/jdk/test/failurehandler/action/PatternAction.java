@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,15 @@
 
 package jdk.test.failurehandler.action;
 
+import jdk.test.failurehandler.Utils;
 import jdk.test.failurehandler.value.InvalidValueException;
 import jdk.test.failurehandler.HtmlSection;
 import jdk.test.failurehandler.value.Value;
 import jdk.test.failurehandler.value.ValueHandler;
 
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PatternAction implements Action {
     @Value(name = "pattern")
@@ -57,6 +60,7 @@ public class PatternAction implements Action {
 
     public ProcessBuilder prepareProcess(HtmlSection section,
                                          ActionHelper helper, String value) {
+        Pattern filePattern = Pattern.compile("%\\{(.*?)}");
         action.sections[0] = value;
         section = getSection(section);
         String[] args = action.args;
@@ -67,6 +71,16 @@ public class PatternAction implements Action {
         }
         for (int i = 0, n = args.length; i < n; ++i) {
             args[i] = args[i].replace("%java", helper.findApp("java").getAbsolutePath());
+        }
+        for (int i = 0, n = args.length; i < n; ++i) {
+            if (args[i].matches(filePattern.pattern())) {
+                Matcher matcher = filePattern.matcher(args[i]);
+                while (matcher.find()) {
+                    String filename = matcher.group(1);
+                    String unpackedFilename = Utils.unpack(filename);
+                    args[i] = args[i].replace("%{" + filename + "}", unpackedFilename);
+                }
+            }
         }
         // replace occurrences of the pattern in the "successArtifacts" param
         if (originalSuccessArtifacts != null) {

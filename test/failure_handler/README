@@ -1,4 +1,4 @@
-Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,12 @@ parameter 'p1' will be:
  - 'C' for 'a.b.c'
  - 'B' for 'a.c'
  - 'A' for 'b.c'
+
+The '%' could be used to define parameters substituted during execution:
+ %p - pid or core of target processes
+ %java - path to java executable
+ %{filename} - the scripts, which are located in 'conf' directory
+
 
 RUNNING
 

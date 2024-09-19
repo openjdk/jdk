@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,13 @@
 
 package jdk.test.failurehandler;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.file.Files;
 import java.util.Properties;
 
 public final class Utils {
@@ -82,6 +84,27 @@ public final class Utils {
                     resourceName, e.getMessage()), e);
         }
         return properties;
+    }
+
+    public static String unpack(String filename) {
+        InputStream stream = Utils.class.getResourceAsStream("/" + filename);
+        if (stream == null) {
+            throw new IllegalStateException(String.format(
+                    "file '%s' doesn't exist%n", filename));
+        }
+        try {
+            File file = new File(filename);
+            if (file.exists()) {
+                file.delete();
+            }
+            Files.copy(stream, file.toPath());
+            return file.getAbsolutePath();
+        } catch (IOException e) {
+            throw new IllegalStateException(String.format(
+                    "can't unpack resource '%s' : %s%n",
+                    filename, e.getMessage()), e);
+        }
+
     }
 
     private Utils() { }
