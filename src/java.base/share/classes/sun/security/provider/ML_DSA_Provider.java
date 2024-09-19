@@ -118,9 +118,16 @@ public class ML_DSA_Provider {
         @Override
         public byte[] sign0(String name, byte[] skBytes, byte[] msg, SecureRandom sr) {
             var size = name2int(name);
+            byte[] rnd;
+            if (sr == null) {
+                rnd = new byte[32];
+            } else {
+                rnd = new byte[32];
+                sr.nextBytes(rnd);
+            }
             var dilithium = new Dilithium(size);
             var sk = dilithium.skDecode(skBytes);
-            Dilithium.DilithiumSignature sig = dilithium.sign(msg, sk);
+            Dilithium.DilithiumSignature sig = dilithium.sign(msg, rnd, sk);
             return dilithium.sigEncode(sig);
         }
 

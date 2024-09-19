@@ -500,6 +500,8 @@ public class Dilithium {
 
         //Expand seed
         dilithiumH.update(randomBytes);
+        dilithiumH.update((byte)dilithium_k);
+        dilithiumH.update((byte)dilithium_l);
         byte[] rho = dilithiumH.squeeze(dilithiumASeedLength);
         byte[] rhoPrime = dilithiumH.squeeze(dilithiumS1S2SeedLength);
         byte[] k = dilithiumH.squeeze(dilithiumKLength);
@@ -534,7 +536,7 @@ public class Dilithium {
         return new DilithiumKeyPair(sk, pk);
     }
 
-    public DilithiumSignature sign(byte[] message, DilithiumPrivateKey sk) {
+    public DilithiumSignature sign(byte[] message, byte[] rnd, DilithiumPrivateKey sk) {
         //Initialize hash functions
         var dilithiumH = new SHAKE256(0);
 
@@ -555,7 +557,6 @@ public class Dilithium {
         dilithiumH.reset();
 
         //Compute rho'
-        byte[] rnd = new byte[32];
         dilithiumH.update(sk.k());
         dilithiumH.update(rnd);
         dilithiumH.update(mu);
