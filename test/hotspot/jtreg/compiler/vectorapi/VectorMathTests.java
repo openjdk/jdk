@@ -63,44 +63,44 @@ public class VectorMathTests {
     public static final int   UMAXI = -1;
     public static final long  UMAXL = -1L;
 
-    public static byte  [] sbinput = {Byte.MIN_VALUE,    (byte)(Byte.MIN_VALUE + TENB),     ZEROB,   (byte)(Byte.MAX_VALUE - TENB),    Byte.MAX_VALUE};
-    public static short [] ssinput = {Short.MIN_VALUE,   (short)(Short.MIN_VALUE + TENS),   ZEROS,   (short)(Short.MAX_VALUE - TENS),  Short.MAX_VALUE};
-    public static int   [] siinput = {Integer.MIN_VALUE, (Integer.MIN_VALUE + TENI),        ZEROI,   Integer.MAX_VALUE - TENI,         Integer.MAX_VALUE};
-    public static long  [] slinput = {Long.MIN_VALUE,    Long.MIN_VALUE + TENL,             ZEROL,   Long.MAX_VALUE - TENL,            Long.MAX_VALUE};
+    public static byte  [] sbinput = {Byte.MIN_VALUE,    (byte)(Byte.MIN_VALUE + TENB),   ZEROB, (byte)(Byte.MAX_VALUE - TENB),   Byte.MAX_VALUE};
+    public static short [] ssinput = {Short.MIN_VALUE,   (short)(Short.MIN_VALUE + TENS), ZEROS, (short)(Short.MAX_VALUE - TENS), Short.MAX_VALUE};
+    public static int   [] siinput = {Integer.MIN_VALUE, (Integer.MIN_VALUE + TENI),      ZEROI, Integer.MAX_VALUE - TENI,        Integer.MAX_VALUE};
+    public static long  [] slinput = {Long.MIN_VALUE,    Long.MIN_VALUE + TENL,           ZEROL, Long.MAX_VALUE - TENL,           Long.MAX_VALUE};
 
-    public static int   [] saddended    = {-FIFTYI,           -FIFTYI,           -FIFTYI,    FIFTYI,            FIFTYI};
-    public static byte  [] boutput_sadd = {Byte.MIN_VALUE,    Byte.MIN_VALUE,    -FIFTYB,    Byte.MAX_VALUE,    Byte.MAX_VALUE};
-    public static short [] soutput_sadd = {Short.MIN_VALUE,   Short.MIN_VALUE,   -FIFTYS,    Short.MAX_VALUE,   Short.MAX_VALUE};
-    public static int   [] ioutput_sadd = {Integer.MIN_VALUE, Integer.MIN_VALUE, -FIFTYI,    Integer.MAX_VALUE, Integer.MAX_VALUE};
-    public static long  [] loutput_sadd = {Long.MIN_VALUE,    Long.MIN_VALUE,    -FIFTYL,    Long.MAX_VALUE,    Long.MAX_VALUE};
+    public static int   [] saddended    = {-FIFTYI,           -FIFTYI,           -FIFTYI, FIFTYI,            FIFTYI};
+    public static byte  [] boutput_sadd = {Byte.MIN_VALUE,    Byte.MIN_VALUE,    -FIFTYB, Byte.MAX_VALUE,    Byte.MAX_VALUE};
+    public static short [] soutput_sadd = {Short.MIN_VALUE,   Short.MIN_VALUE,   -FIFTYS, Short.MAX_VALUE,   Short.MAX_VALUE};
+    public static int   [] ioutput_sadd = {Integer.MIN_VALUE, Integer.MIN_VALUE, -FIFTYI, Integer.MAX_VALUE, Integer.MAX_VALUE};
+    public static long  [] loutput_sadd = {Long.MIN_VALUE,    Long.MIN_VALUE,    -FIFTYL, Long.MAX_VALUE,    Long.MAX_VALUE};
 
-    public static int   [] ssubtrahend  = {FIFTYI,            FIFTYI,             FIFTYI,    -FIFTYI,           -FIFTYI};
-    public static byte  [] boutput_ssub = {Byte.MIN_VALUE,    Byte.MIN_VALUE,    -FIFTYB,    Byte.MAX_VALUE,    Byte.MAX_VALUE};
-    public static short [] soutput_ssub = {Short.MIN_VALUE,   Short.MIN_VALUE,   -FIFTYS,    Short.MAX_VALUE,   Short.MAX_VALUE};
-    public static int   [] ioutput_ssub = {Integer.MIN_VALUE, Integer.MIN_VALUE, -FIFTYI,        Integer.MAX_VALUE, Integer.MAX_VALUE};
-    public static long  [] loutput_ssub = {Long.MIN_VALUE,    Long.MIN_VALUE,    -FIFTYL,       Long.MAX_VALUE,    Long.MAX_VALUE};
+    public static int   [] ssubtrahend  = {FIFTYI,            FIFTYI,             FIFTYI, -FIFTYI,           -FIFTYI};
+    public static byte  [] boutput_ssub = {Byte.MIN_VALUE,    Byte.MIN_VALUE,    -FIFTYB, Byte.MAX_VALUE,    Byte.MAX_VALUE};
+    public static short [] soutput_ssub = {Short.MIN_VALUE,   Short.MIN_VALUE,   -FIFTYS, Short.MAX_VALUE,   Short.MAX_VALUE};
+    public static int   [] ioutput_ssub = {Integer.MIN_VALUE, Integer.MIN_VALUE, -FIFTYI, Integer.MAX_VALUE, Integer.MAX_VALUE};
+    public static long  [] loutput_ssub = {Long.MIN_VALUE,    Long.MIN_VALUE,    -FIFTYL, Long.MAX_VALUE,    Long.MAX_VALUE};
 
-    public static byte  [] ubinput = {ZEROB,   (byte)(ZEROB + TENB),   (byte)(UMAXB - TENB),   UMAXB};
-    public static short [] usinput = {ZEROS,   (short)(ZEROS + TENS),  (short)(UMAXS - TENS),  UMAXS};
-    public static int   [] uiinput = {ZEROI,   ZEROI + TENI,           UMAXI - TENI,           UMAXI};
-    public static long  [] ulinput = {ZEROL,   ZEROL + TENL,           UMAXL - TENL,           UMAXL};
+    public static byte  [] ubinput = {ZEROB, (byte)(ZEROB + TENB),  (byte)(UMAXB - TENB),  UMAXB};
+    public static short [] usinput = {ZEROS, (short)(ZEROS + TENS), (short)(UMAXS - TENS), UMAXS};
+    public static int   [] uiinput = {ZEROI, ZEROI + TENI,          UMAXI - TENI,          UMAXI};
+    public static long  [] ulinput = {ZEROL, ZEROL + TENL,          UMAXL - TENL,          UMAXL};
 
-    public static int   [] uaddended     = {FIFTYI,  FIFTYI,   FIFTYI,    FIFTYI};
-    public static byte  [] boutput_usadd = {FIFTYB,  SIXTYB,   UMAXB,     UMAXB};
-    public static short [] soutput_usadd = {FIFTYS,  SIXTYS,   UMAXS,     UMAXS};
-    public static int   [] ioutput_usadd = {FIFTYI,  SIXTYI,   UMAXI,     UMAXI};
-    public static long  [] loutput_usadd = {FIFTYL,  SIXTYL,   UMAXL,     UMAXL};
+    public static int   [] uaddended     = {FIFTYI, FIFTYI, FIFTYI, FIFTYI};
+    public static byte  [] boutput_usadd = {FIFTYB, SIXTYB, UMAXB,  UMAXB};
+    public static short [] soutput_usadd = {FIFTYS, SIXTYS, UMAXS,  UMAXS};
+    public static int   [] ioutput_usadd = {FIFTYI, SIXTYI, UMAXI,  UMAXI};
+    public static long  [] loutput_usadd = {FIFTYL, SIXTYL, UMAXL,  UMAXL};
 
-    public static int   [] usubtrahend   = {FIFTYI,  FIFTYI,  FIFTYI,  FIFTYI};
-    public static byte  [] boutput_ussub = {ZEROB,   ZEROB,   UMAXB - SIXTYB,  UMAXB - FIFTYB};
-    public static short [] soutput_ussub = {ZEROS,   ZEROS,   UMAXS - SIXTYS,  UMAXS - FIFTYS};
-    public static int   [] ioutput_ussub = {ZEROI,   ZEROI,   UMAXI - SIXTYI,  UMAXI - FIFTYI};
-    public static long  [] loutput_ussub = {ZEROL,   ZEROL,   UMAXL - SIXTYL,  UMAXL - FIFTYL};
+    public static int   [] usubtrahend   = {FIFTYI, FIFTYI, FIFTYI, FIFTYI};
+    public static byte  [] boutput_ussub = {ZEROB,  ZEROB,  UMAXB - SIXTYB,  UMAXB - FIFTYB};
+    public static short [] soutput_ussub = {ZEROS,  ZEROS,  UMAXS - SIXTYS,  UMAXS - FIFTYS};
+    public static int   [] ioutput_ussub = {ZEROI,  ZEROI,  UMAXI - SIXTYI,  UMAXI - FIFTYI};
+    public static long  [] loutput_ussub = {ZEROL,  ZEROL,  UMAXL - SIXTYL,  UMAXL - FIFTYL};
 
-    public static byte  [] boutput_umin = {ZEROB,   TENB,   ZEROB,   Byte.MAX_VALUE - TENB};
-    public static short [] soutput_umin = {ZEROS,   TENS,   ZEROS,   Short.MAX_VALUE - TENS};
-    public static int   [] ioutput_umin = {ZEROI,   TENI,   ZEROI,   Integer.MAX_VALUE - TENI};
-    public static long  [] loutput_umin = {ZEROL,   TENL,   ZEROL,   Long.MAX_VALUE - TENL};
+    public static byte  [] boutput_umin = {ZEROB, TENB, ZEROB, Byte.MAX_VALUE - TENB};
+    public static short [] soutput_umin = {ZEROS, TENS, ZEROS, Short.MAX_VALUE - TENS};
+    public static int   [] ioutput_umin = {ZEROI, TENI, ZEROI, Integer.MAX_VALUE - TENI};
+    public static long  [] loutput_umin = {ZEROL, TENL, ZEROL, Long.MAX_VALUE - TENL};
 
     public static byte  [] boutput_umax = {Byte.MIN_VALUE,    (byte)(Byte.MIN_VALUE + TENB),   (byte)(UMAXB - TENB),  UMAXB};
     public static short [] soutput_umax = {Short.MIN_VALUE,   (short)(Short.MIN_VALUE + TENS), (short)(UMAXS - TENS), UMAXS};
