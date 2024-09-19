@@ -657,8 +657,7 @@ static void emit_cmpfp3(MacroAssembler* masm, Register dst) {
   __ movl(dst, -1);
   __ jcc(Assembler::parity, done);
   __ jcc(Assembler::below, done);
-  __ setb(Assembler::notEqual, dst);
-  __ movzbl(dst, dst);
+  __ setcc(Assembler::notEqual, dst);
   __ bind(done);
 }
 
@@ -7070,13 +7069,11 @@ instruct compareAndSwapP(rRegI res,
 
   format %{ "cmpxchgq $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"
-            "sete    $res\n\t"
-            "movzbl  $res, $res" %}
+            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
   ins_encode %{
     __ lock();
     __ cmpxchgq($newval$$Register, $mem_ptr$$Address);
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7092,13 +7089,11 @@ instruct compareAndSwapL(rRegI res,
 
   format %{ "cmpxchgq $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"
-            "sete    $res\n\t"
-            "movzbl  $res, $res" %}
+            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
   ins_encode %{
     __ lock();
     __ cmpxchgq($newval$$Register, $mem_ptr$$Address);
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7114,13 +7109,11 @@ instruct compareAndSwapI(rRegI res,
 
   format %{ "cmpxchgl $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"
-            "sete    $res\n\t"
-            "movzbl  $res, $res" %}
+            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
   ins_encode %{
     __ lock();
     __ cmpxchgl($newval$$Register, $mem_ptr$$Address);
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7136,13 +7129,11 @@ instruct compareAndSwapB(rRegI res,
 
   format %{ "cmpxchgb $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"
-            "sete    $res\n\t"
-            "movzbl  $res, $res" %}
+            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
   ins_encode %{
     __ lock();
     __ cmpxchgb($newval$$Register, $mem_ptr$$Address);
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7158,13 +7149,11 @@ instruct compareAndSwapS(rRegI res,
 
   format %{ "cmpxchgw $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"
-            "sete    $res\n\t"
-            "movzbl  $res, $res" %}
+            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
   ins_encode %{
     __ lock();
     __ cmpxchgw($newval$$Register, $mem_ptr$$Address);
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -7179,13 +7168,11 @@ instruct compareAndSwapN(rRegI res,
 
   format %{ "cmpxchgl $mem_ptr,$newval\t# "
             "If rax == $mem_ptr then store $newval into $mem_ptr\n\t"
-            "sete    $res\n\t"
-            "movzbl  $res, $res" %}
+            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
   ins_encode %{
     __ lock();
     __ cmpxchgl($newval$$Register, $mem_ptr$$Address);
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
 %}
@@ -9729,13 +9716,11 @@ instruct cmpLTMask(rRegI dst, rRegI p, rRegI q, rFlagsReg cr)
 
   ins_cost(400);
   format %{ "cmpl    $p, $q\t# cmpLTMask\n\t"
-            "setlt   $dst\n\t"
-            "movzbl  $dst, $dst\n\t"
+            "setcc   $dst \t# emits setlt + movzbl or setzul for APX"
             "negl    $dst" %}
   ins_encode %{
     __ cmpl($p$$Register, $q$$Register);
-    __ setb(Assembler::less, $dst$$Register);
-    __ movzbl($dst$$Register, $dst$$Register);
+    __ setcc(Assembler::less, $dst$$Register);
     __ negl($dst$$Register);
   %}
   ins_pipe(pipe_slow);
@@ -11860,16 +11845,14 @@ instruct cmpU3_reg_reg(rRegI dst, rRegI src1, rRegI src2, rFlagsReg flags)
   format %{ "cmpl    $src1, $src2\t# CmpL3\n\t"
             "movl    $dst, -1\n\t"
             "jb,u    done\n\t"
-            "setne   $dst\n\t"
-            "movzbl  $dst, $dst\n\t"
+            "setcc   $dst \t# emits setne + movzbl or setzune for APX"
     "done:" %}
   ins_encode %{
     Label done;
     __ cmpl($src1$$Register, $src2$$Register);
     __ movl($dst$$Register, -1);
     __ jccb(Assembler::below, done);
-    __ setb(Assembler::notZero, $dst$$Register);
-    __ movzbl($dst$$Register, $dst$$Register);
+    __ setcc(Assembler::notZero, $dst$$Register);
     __ bind(done);
   %}
   ins_pipe(pipe_slow);
@@ -11886,16 +11869,14 @@ instruct cmpL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
   format %{ "cmpq    $src1, $src2\t# CmpL3\n\t"
             "movl    $dst, -1\n\t"
             "jl,s    done\n\t"
-            "setne   $dst\n\t"
-            "movzbl  $dst, $dst\n\t"
+            "setcc   $dst \t# emits setne + movzbl or setzune for APX"
     "done:" %}
   ins_encode %{
     Label done;
     __ cmpq($src1$$Register, $src2$$Register);
     __ movl($dst$$Register, -1);
     __ jccb(Assembler::less, done);
-    __ setb(Assembler::notZero, $dst$$Register);
-    __ movzbl($dst$$Register, $dst$$Register);
+    __ setcc(Assembler::notZero, $dst$$Register);
     __ bind(done);
   %}
   ins_pipe(pipe_slow);
@@ -11912,16 +11893,14 @@ instruct cmpUL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
   format %{ "cmpq    $src1, $src2\t# CmpL3\n\t"
             "movl    $dst, -1\n\t"
             "jb,u    done\n\t"
-            "setne   $dst\n\t"
-            "movzbl  $dst, $dst\n\t"
+            "setcc   $dst \t# emits setne + movzbl or setzune for APX"
     "done:" %}
   ins_encode %{
     Label done;
     __ cmpq($src1$$Register, $src2$$Register);
     __ movl($dst$$Register, -1);
     __ jccb(Assembler::below, done);
-    __ setb(Assembler::notZero, $dst$$Register);
-    __ movzbl($dst$$Register, $dst$$Register);
+    __ setcc(Assembler::notZero, $dst$$Register);
     __ bind(done);
   %}
   ins_pipe(pipe_slow);

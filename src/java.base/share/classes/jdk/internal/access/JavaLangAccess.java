@@ -466,6 +466,11 @@ public interface JavaLangAccess {
     byte stringInitCoder();
 
     /**
+     * Get the Coder of String, which is used by StringConcatFactory to calculate the initCoder of constants
+     */
+    byte stringCoder(String str);
+
+    /**
      * Join strings
      */
     String join(String prefix, String suffix, String delimiter, String[] elements, int size);
