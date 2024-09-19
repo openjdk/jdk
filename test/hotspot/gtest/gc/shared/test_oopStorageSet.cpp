@@ -106,16 +106,16 @@ TEST_VM_F(OopStorageSetTest, all_iteration) {
 
 class OopStorageSetTest::VM_PrintAtSafepoint : public VM_GTestExecuteAtSafepoint {
 private:
- class PrintContainingClosure : public Closure {
-  public:
-    void do_oop(oop* addr) {
-      stringStream ss;
-      bool printed = OopStorageSet::print_containing(addr, &ss);
-      ASSERT_TRUE(printed);
-      ASSERT_THAT(ss.freeze(), HasSubstr("is a pointer"));
-      ASSERT_THAT(ss.freeze(), HasSubstr("into block"));
-      ASSERT_THAT(ss.freeze(), HasSubstr("in oop storage"));
-    }
+  class PrintContainingClosure : public Closure {
+    public:
+      void do_oop(oop* addr) {
+        stringStream ss;
+        bool printed = OopStorageSet::print_containing(addr, &ss);
+        ASSERT_TRUE(printed);
+        ASSERT_THAT(ss.freeze(), HasSubstr("is a pointer"));
+        ASSERT_THAT(ss.freeze(), HasSubstr("into block"));
+        ASSERT_THAT(ss.freeze(), HasSubstr("in oop storage"));
+      }
   };
 
 public:

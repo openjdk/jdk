@@ -1148,7 +1148,7 @@ bool OopStorage::print_containing(oop* addr, outputStream* st) {
 
 bool OopStorage::Block::print_containing(oop* addr, outputStream* st) {
   if (contains(addr)) {
-    st->print(INTPTR_FORMAT " is a pointer %u/" SIZE_FORMAT " into block %zu",
+    st->print(PTR_FORMAT " is a pointer %u/%zu into block %zu",
               p2i(addr), get_index(addr), ARRAY_SIZE(_data), _active_index);
     return true;
   }
