@@ -103,14 +103,14 @@
 #define ZFILENAME_HEAP                   "java_heap"
 
 // Preferred tmpfs mount points, ordered by priority
-static const char* z_preferred_tmpfs_mountpoints[] = {
+static const char* ZPreferredTmpfsMountpoints[] = {
   "/dev/shm",
   "/run/shm",
   nullptr
 };
 
 // Preferred hugetlbfs mount points, ordered by priority
-static const char* z_preferred_hugetlbfs_mountpoints[] = {
+static const char* ZPreferredHugetlbfsMountpoints[] = {
   "/dev/hugepages",
   "/hugepages",
   nullptr
@@ -226,8 +226,8 @@ int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
                                  ? ZFILESYSTEM_HUGETLBFS
                                  : ZFILESYSTEM_TMPFS;
   const char** const preferred_mountpoints = ZLargePages::is_explicit()
-                                             ? z_preferred_hugetlbfs_mountpoints
-                                             : z_preferred_tmpfs_mountpoints;
+                                             ? ZPreferredHugetlbfsMountpoints
+                                             : ZPreferredTmpfsMountpoints;
 
   // Find mountpoint
   ZMountPoint mountpoint(filesystem, preferred_mountpoints);
