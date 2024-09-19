@@ -466,7 +466,7 @@ public class SinceChecker {
         if (mappedVersion.equals("9")) {
             message = elementSimpleName + ": `@since` version is " + sinceVersion + " but the element exists before JDK 10";
         } else {
-            message = elementSimpleName + ": `@since` version: " + sinceVersion + "; found: " + mappedVersion;
+            message = elementSimpleName + ": `@since` version: " + sinceVersion + "; should be: " + mappedVersion;
         }
         return prefix + message;
     }
