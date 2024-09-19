@@ -206,7 +206,7 @@ public abstract class HttpRequest {
          * The {@linkplain #name() name of this option} is {@code "H3_DISCOVERY"}.
          *
          * @implNote
-         * If a {@linkplain HttpClient.Builder#proxy(ProxySelector)  proxy} is {@linkplain
+         * If a {@linkplain HttpClient.Builder#proxy(ProxySelector) proxy} is {@linkplain
          * java.net.ProxySelector#select(URI) selected} for the {@linkplain HttpRequest#uri()
          * request URI}, the protocol version is downgraded to HTTP/2 or
          * HTTP/1.1 and the {@link #H3_DISCOVERY} option is ignored.
@@ -316,7 +316,9 @@ public abstract class HttpRequest {
          * The JDK built-in implementation of the {@link HttpClient} understands the
          * request option {@link HttpRequestOption#H3_DISCOVERY} hint.<br>
          * If no H3_DISCOVERY hint is provided, and {@linkplain  HttpClient.Version#HTTP_3
-         * HTTP/3 version} is selected, the JDK built-in implementation of
+         * HTTP/3 version} is selected, either as {@linkplain Builder#version(Version)
+         * request preferred version} or {@linkplain HttpClient.Builder#version(Version)
+         * client preferred version}, the JDK built-in implementation of
          * the {@link HttpClient} will select one:
          * <ul>
          *     <li> If the {@linkplain Builder#version(Version) request preferred version} is
@@ -329,6 +331,9 @@ public abstract class HttpRequest {
          *          the exchange will be established as per {@link
          *          H3DiscoveryMode#HTTP_3_ALT_SVC}.</li>
          * </ul>
+         * In case of {@linkplain HttpClient.Redirect redirect}, the
+         * {@link HttpRequestOption#H3_DISCOVERY} option is always transferred to
+         * the new request.
          *
          * @param option the request configuration option
          * @param value  the request configuration option value (can be null)
