@@ -138,7 +138,6 @@ public class SystemMapTestBase {
         }
     }
     protected static String[] shouldMatchIfNMTIsEnabled() {
-        return isWindows ?  : shouldMatchIfNMTIsEnabled_linux;
         if (isWindows) {
             return shouldMatchIfNMTIsEnabled_windows;
         } else if (isMacOS) {
