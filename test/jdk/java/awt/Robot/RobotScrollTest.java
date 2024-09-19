@@ -44,7 +44,7 @@ public class RobotScrollTest {
 
     private static final String INSTRUCTIONS = """
          0. DON'T TOUCH ANYTHING!
-         1. This test is for Windown and Linux only.
+         1. This test is for Windows and Linux only.
          2. Just sit back, and watch the Robot move the mouse to the TextArea.
          3. Once the pointer is on the text area, the Robot will use the mouse wheel
             to scroll the text.

@@ -40,7 +40,6 @@ import java.awt.TextArea;
 
 public class CreateScreenCapture {
 
-    static Robot robot;
     static TextArea messageText;
 
     private static final String INSTRUCTIONS = """
@@ -55,7 +54,7 @@ public class CreateScreenCapture {
          Small oscillations of the memory size are, however, acceptable.""";
 
     public static void main(String[] args) throws Exception {
-        robot = new Robot();
+        Robot robot = new Robot();
         PassFailJFrame passFail = new PassFailJFrame(INSTRUCTIONS);
         Dialog dialog = new Dialog(new Frame(), "Instructions");
         messageText = new TextArea("", 5, 80, TextArea.SCROLLBARS_BOTH);
@@ -76,7 +75,7 @@ public class CreateScreenCapture {
     }
 
     private static void log(String messageIn) {
-        messageText.append( messageIn + "\n");
+        messageText.append(messageIn + "\n");
     }
 }
 
