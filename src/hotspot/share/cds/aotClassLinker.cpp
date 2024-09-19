@@ -210,7 +210,7 @@ Array<InstanceKlass*>* AOTClassLinker::write_classes(oop class_loader, bool is_j
     return nullptr;
   } else {
     const char* category = class_category_name(list.at(0));
-    log_info(cds, aot, link)("written %d class(es) for category %s", list.length(), category);
+    log_info(cds, aot, link)("wrote %d class(es) for category %s", list.length(), category);
     return ArchiveUtils::archive_array(&list);
   }
 }
