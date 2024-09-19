@@ -106,8 +106,9 @@ public:
   inline void report_updaterefs(size_t words);
 
   inline void report_alloc(size_t words);
+  template<bool FORCE>
+  bool claim_for_alloc(size_t words);
 
-  bool claim_for_alloc(size_t words, bool force);
   void pace_for_alloc(size_t words);
   void unpace_for_alloc(intptr_t epoch, size_t words);
 
