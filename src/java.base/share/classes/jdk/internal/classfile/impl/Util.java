@@ -30,6 +30,7 @@ import java.lang.classfile.FieldBuilder;
 import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.PseudoInstruction;
 import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.AbstractList;
@@ -220,12 +221,20 @@ public class Util {
         return (flag.mask() & flagsMask) == flag.mask() && flag.locations().contains(location);
     }
 
+    public static ClassDesc fieldTypeSymbol(Utf8Entry utf8) {
+        return ((AbstractPoolEntry.Utf8EntryImpl) utf8).fieldTypeSymbol();
+    }
+
+    public static MethodTypeDesc methodTypeSymbol(Utf8Entry utf8) {
+        return ((AbstractPoolEntry.Utf8EntryImpl) utf8).methodTypeSymbol();
+    }
+
     public static ClassDesc fieldTypeSymbol(NameAndTypeEntry nat) {
-        return ((AbstractPoolEntry.NameAndTypeEntryImpl)nat).fieldTypeSymbol();
+        return fieldTypeSymbol(nat.type());
     }
 
     public static MethodTypeDesc methodTypeSymbol(NameAndTypeEntry nat) {
-        return ((AbstractPoolEntry.NameAndTypeEntryImpl)nat).methodTypeSymbol();
+        return methodTypeSymbol(nat.type());
     }
 
     @SuppressWarnings("unchecked")

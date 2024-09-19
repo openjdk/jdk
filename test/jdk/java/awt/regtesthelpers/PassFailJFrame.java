@@ -74,6 +74,7 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 
 import static java.util.Collections.unmodifiableList;
+import static javax.swing.BorderFactory.createEmptyBorder;
 import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.isEventDispatchThread;
 
@@ -501,6 +502,7 @@ public final class PassFailJFrame {
         JTextArea text = new JTextArea(instructions, rows, columns);
         text.setLineWrap(true);
         text.setWrapStyleWord(true);
+        text.setBorder(createEmptyBorder(4, 4, 4, 4));
         return text;
     }
 
@@ -1247,6 +1249,29 @@ public final class PassFailJFrame {
             checkWindowsLists();
 
             this.windowListCreator = () -> List.of(windowCreator.createTestUI());
+            return this;
+        }
+
+        /**
+         * Adds an implementation of {@link PositionWindows PositionWindows}
+         * which the framework will use to position multiple test UI windows.
+         *
+         * @param positionWindows an implementation of {@code PositionWindows}
+         *                        to position multiple test UI windows
+         * @return this builder
+         * @throws IllegalArgumentException if the {@code positionWindows}
+         *              parameter is {@code null}
+         * @throws IllegalStateException if the {@code positionWindows} field
+         *              is already set
+         */
+        public Builder positionTestUI(PositionWindows positionWindows) {
+            if (positionWindows == null) {
+                throw new IllegalArgumentException("positionWindows parameter can't be null");
+            }
+            if (this.positionWindows != null) {
+                throw new IllegalStateException("PositionWindows is already set");
+            }
+            this.positionWindows = positionWindows;
             return this;
         }
 
