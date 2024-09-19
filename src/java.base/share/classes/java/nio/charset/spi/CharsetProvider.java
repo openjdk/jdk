@@ -36,7 +36,7 @@ import java.util.Iterator;
  * zero-argument constructor and some number of associated charset
  * implementation classes.  Charset providers may be installed in an instance
  * of the Java platform as extensions.  Providers may also be made available by
- * adding them to the application class path, application module path, or by some
+ * adding them to the application module path, application class path, or by some
  * other platform-specific means.  Charset providers are looked up via the current
  * thread's {@link java.lang.Thread#getContextClassLoader() context class
  * loader}. See {@link java.util.ServiceLoader##developing-service-providers
