@@ -2882,7 +2882,7 @@ template<typename R, typename... Rx>
   }
 
   // MUL - Vector - Scalar
-  INSN(mulv, 0, 0b1000);
+  INSN(mulvs, 0, 0b1000);
 
 #undef INSN
 

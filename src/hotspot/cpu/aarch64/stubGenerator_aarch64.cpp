@@ -5445,7 +5445,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(SMALL_LOOP);
 
     __ ld1(vdata0, load_arrangement, Address(__ post(ary, vf * type2aelembytes(eltype))));
-    __ mulv(vmul0, Assembler::T4S, vmul0, vpowm, 0);
+    __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 0);
     __ subsw(rscratch2, rscratch2, vf);
 
     if (load_arrangement == Assembler::T8B) {
@@ -5476,7 +5476,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // Process the upper half of a vector
     if (load_arrangement == Assembler::T8B || load_arrangement == Assembler::T8H) {
-      __ mulv(vmul0, Assembler::T4S, vmul0, vpowm, 0);
+      __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 0);
       if (is_signed_subword_type(eltype)) {
         __ sshll2(vhalf0, Assembler::T4S, vdata0, Assembler::T8H, 0);
       } else {
@@ -5563,10 +5563,10 @@ class StubGenerator: public StubCodeGenerator {
     start = __ offset();
     __ bind(LARGE_LOOP);
 
-    __ mulv(vmul3, Assembler::T4S, vmul3, vpowm, 0);
-    __ mulv(vmul2, Assembler::T4S, vmul2, vpowm, 0);
-    __ mulv(vmul1, Assembler::T4S, vmul1, vpowm, 0);
-    __ mulv(vmul0, Assembler::T4S, vmul0, vpowm, 0);
+    __ mulvs(vmul3, Assembler::T4S, vmul3, vpowm, 0);
+    __ mulvs(vmul2, Assembler::T4S, vmul2, vpowm, 0);
+    __ mulvs(vmul1, Assembler::T4S, vmul1, vpowm, 0);
+    __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 0);
 
     __ ld1(vdata3, vdata2, vdata1, vdata0, load_arrangement,
            Address(__ post(ary, evf * type2aelembytes(eltype))));
@@ -5617,10 +5617,10 @@ class StubGenerator: public StubCodeGenerator {
 
     // Process the upper half of a vector
     if (load_arrangement == Assembler::T8B || load_arrangement == Assembler::T8H) {
-      __ mulv(vmul3, Assembler::T4S, vmul3, vpowm, 1);
-      __ mulv(vmul2, Assembler::T4S, vmul2, vpowm, 1);
-      __ mulv(vmul1, Assembler::T4S, vmul1, vpowm, 1);
-      __ mulv(vmul0, Assembler::T4S, vmul0, vpowm, 1);
+      __ mulvs(vmul3, Assembler::T4S, vmul3, vpowm, 1);
+      __ mulvs(vmul2, Assembler::T4S, vmul2, vpowm, 1);
+      __ mulvs(vmul1, Assembler::T4S, vmul1, vpowm, 1);
+      __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 1);
       if (is_signed_subword_type(eltype)) {
         __ sshll2(vhalf3, Assembler::T4S, vdata3, Assembler::T8H, 0);
         __ sshll2(vhalf2, Assembler::T4S, vdata2, Assembler::T8H, 0);
