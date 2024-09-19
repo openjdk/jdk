@@ -5354,12 +5354,30 @@ class StubGenerator: public StubCodeGenerator {
 
     Label SMALL_LOOP, LARGE_LOOP_PREHEADER, LARGE_LOOP, TAIL, TAIL_SHORTCUT, BR_BASE;
 
-    // Vectorization factor
-    const size_t vf = eltype == T_BOOLEAN || eltype == T_BYTE ? 8
-                      : eltype == T_CHAR || eltype == T_SHORT ? 8
-                      : eltype == T_INT                       ? 4
-                                                              : 0;
-    guarantee(vf, "unsupported eltype");
+    size_t vf; // vectorization factor
+    int multiply_by_halves;
+    Assembler::SIMD_Arrangement load_arrangement;
+    switch (eltype) {
+    case T_BOOLEAN:
+    case T_BYTE:
+      load_arrangement = Assembler::T8B;
+      multiply_by_halves = true;
+      vf = 8;
+      break;
+    case T_CHAR:
+    case T_SHORT:
+      load_arrangement = Assembler::T8H;
+      multiply_by_halves = true;
+      vf = 8;
+      break;
+    case T_INT:
+      load_arrangement = Assembler::T4S;
+      multiply_by_halves = false;
+      vf = 4;
+      break;
+    default:
+      ShouldNotReachHere();
+    }
 
     // Unroll factor
     const size_t uf = 4;
@@ -5395,19 +5413,6 @@ class StubGenerator: public StubCodeGenerator {
 
     address entry = __ pc();
     __ enter();
-
-    Assembler::SIMD_Arrangement load_arrangement =
-        eltype == T_BOOLEAN || eltype == T_BYTE ? Assembler::T8B
-        : eltype == T_CHAR || eltype == T_SHORT ? Assembler::T8H
-        : eltype == T_INT                       ? Assembler::T4S
-                                                : Assembler::INVALID_ARRANGEMENT;
-    guarantee(load_arrangement != Assembler::INVALID_ARRANGEMENT, "invalid arrangement");
-
-    const int multiply_by_halves =
-        load_arrangement == Assembler::T4S || load_arrangement == Assembler::T4H   ? false
-        : load_arrangement == Assembler::T8B || load_arrangement == Assembler::T8H ? true
-                                                                                   : -1;
-    guarantee(multiply_by_halves != -1, "unknown multiplication algorithm");
 
     // Put 0-3'th powers of 31 into a single SIMD register together. The register will be used in
     // the SMALL and LARGE LOOPS' epilogues. The initialization is hoisted here and the register's
@@ -5448,10 +5453,13 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    if (load_arrangement == Assembler::T4S) {
+    switch (load_arrangement) {
+    case Assembler::T4S:
       __ addv(vmul0, load_arrangement, vmul0, vdata0);
-    } else if (load_arrangement == Assembler::T8B || load_arrangement == Assembler::T4H ||
-               load_arrangement == Assembler::T8H) {
+      break;
+    case Assembler::T8B:
+    case Assembler::T4H:
+    case Assembler::T8H:
       assert(is_subword_type(eltype), "subword type expected");
       if (is_signed_subword_type(eltype)) {
         __ sxtl(vhalf0, Assembler::T4S, vdata0, Assembler::T4H);
@@ -5459,7 +5467,8 @@ class StubGenerator: public StubCodeGenerator {
         __ uxtl(vhalf0, Assembler::T4S, vdata0, Assembler::T4H);
       }
       __ addv(vmul0, Assembler::T4S, vmul0, vhalf0);
-    } else {
+      break;
+    default:
       __ should_not_reach_here();
     }
 
@@ -5554,13 +5563,16 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    if (load_arrangement == Assembler::T4S) {
+    switch (load_arrangement) {
+    case Assembler::T4S:
       __ addv(vmul3, load_arrangement, vmul3, vdata3);
       __ addv(vmul2, load_arrangement, vmul2, vdata2);
       __ addv(vmul1, load_arrangement, vmul1, vdata1);
       __ addv(vmul0, load_arrangement, vmul0, vdata0);
-    } else if (load_arrangement == Assembler::T8B || load_arrangement == Assembler::T4H ||
-               load_arrangement == Assembler::T8H) {
+      break;
+    case Assembler::T8B:
+    case Assembler::T4H:
+    case Assembler::T8H:
       assert(is_subword_type(eltype), "subword type expected");
       if (is_signed_subword_type(eltype)) {
         __ sxtl(vhalf3, Assembler::T4S, vdata3, Assembler::T4H);
@@ -5577,7 +5589,8 @@ class StubGenerator: public StubCodeGenerator {
       __ addv(vmul2, Assembler::T4S, vmul2, vhalf2);
       __ addv(vmul1, Assembler::T4S, vmul1, vhalf1);
       __ addv(vmul0, Assembler::T4S, vmul0, vhalf0);
-    } else {
+      break;
+    default:
       __ should_not_reach_here();
     }
 
