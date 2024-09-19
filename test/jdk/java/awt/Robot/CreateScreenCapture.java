@@ -41,7 +41,6 @@ import java.awt.TextArea;
 public class CreateScreenCapture {
 
     static Robot robot;
-    static Dialog dialog;
     static TextArea messageText;
 
     private static final String INSTRUCTIONS = """
@@ -58,8 +57,8 @@ public class CreateScreenCapture {
     public static void main(String[] args) throws Exception {
         robot = new Robot();
         PassFailJFrame passFail = new PassFailJFrame(INSTRUCTIONS);
-        dialog = new Dialog(new Frame(), "Instructions");
-        messageText = new TextArea( "", 5, 80, TextArea.SCROLLBARS_BOTH);
+        Dialog dialog = new Dialog(new Frame(), "Instructions");
+        messageText = new TextArea("", 5, 80, TextArea.SCROLLBARS_BOTH);
         dialog.add(messageText);
         PassFailJFrame.addTestWindow(dialog);
         PassFailJFrame.positionTestWindow(dialog, PassFailJFrame.Position.HORIZONTAL);
@@ -71,13 +70,13 @@ public class CreateScreenCapture {
             image.flush();
             image = null;
             robot.delay(200);
-            log("step #"+i);
+            log("step #" + i);
         }
         passFail.awaitAndCheck();
     }
 
     private static void log(String messageIn) {
-        messageText.append( messageIn + "\n" );
+        messageText.append( messageIn + "\n");
     }
 }
 

@@ -48,7 +48,7 @@ public class RobotScrollTest {
          2. Just sit back, and watch the Robot move the mouse to the TextArea.
          3. Once the pointer is on the text area, the Robot will use the mouse wheel
             to scroll the text.
-            If the text scrolled, hit PASS, else, hit fail.""";
+            If the text scrolled, press PASS, else, press FAIL.""";
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -92,7 +92,7 @@ public class RobotScrollTest {
             }
 
             for (int k = 0; k < 5; k++) {
-                robot.mouseWheel(-1*j);
+                robot.mouseWheel(-1 * j);
             }
         }
     }
