@@ -29,43 +29,25 @@
 </head>
 <body>
 <h1 id="restricted">Restricted methods</h1>
-
-Some methods in the Java SE API are considered <em>restricted</em>. Restricted methods
-are typically used to bind native foreign data and/or functions to first-class
-Java API elements which can then be used directly by clients. For instance the
-restricted method <a href="../MemorySegment.html#reinterpret(long)"><code>MemorySegment.reinterpret(long)</code></a>
-can be used to create a fresh segment with the same address and temporal bounds, but with
-the provided size. This can be useful to resize memory segments obtained when
-interacting with native functions.
-<p>
-    Binding foreign data and/or functions is generally unsafe and, if done incorrectly,
-    can result in VM crashes, or memory corruption when the bound Java API element
-    is accessed. For instance, incorrectly resizing a native memory segment using
-    <a href="../MemorySegment.html#reinterpret(long)"><code>MemorySegment.reinterpret(long)</code></a>
-    can lead to a JVM crash, or, worse, lead to silent memory corruption when attempting to
-    access the resized segment. For these reasons, it is crucial for code that calls
-    a restricted method to never pass arguments that might cause incorrect binding
-    of foreign data and/or functions to a Java API.
-</p>
-<p>
-    Given the potential danger of restricted methods, the Java runtime issues a warning on
+<p>Various methods in the Java SE API allow Java code to interoperate with resources outside the Java runtime
+    in such a way that the runtime cannot prove correct or safe use of the resources. These methods can,
+    when used incorrectly, violate the integrity of the Java Virtual Machine, but are conditionally made available
+    to users, as they provide essential functionality. They are known as <em>restricted methods</em>.</p>
+<p>Given the potential danger of restricted methods, the Java runtime issues a warning on
     the standard error stream every time a restricted method is invoked. Such warnings can
     be disabled by granting access to restricted methods to selected modules. This can be
     done either via implementation-specific command line options or programmatically, e.g.
-    by calling <a href="../../ModuleLayer.Controller.html#enableNativeAccess(java.lang.Module)"><code>ModuleLayer.Controller.enableNativeAccess(java.lang.Module)</code></a>.
-</p>
-    When a restricted method is invoked by <a href="../../../../specs/jni/index.html">JNI code</a>,
+    by calling <a href="../../ModuleLayer.Controller.html#enableNativeAccess(java.lang.Module)"><code>ModuleLayer.Controller.enableNativeAccess(java.lang.Module)</code></a>.</p>
+<p>When a restricted method is invoked by <a href="../../../../specs/jni/index.html">JNI code</a>,
     or from an <a href="../Linker.html#upcallStub(java.lang.invoke.MethodHandle,java.lang.foreign.FunctionDescriptor,java.lang.foreign.Arena,java.lang.foreign.Linker.Option...)">upcall stub</a>
-    and there is no caller class on the stack, it is as if the restricted method call occurred in an <em>unnamed module</em>.
-<p>
-    In the reference implementation, access to restricted methods can be granted to
+    and there is no caller class on the stack, it is as if the restricted method call occurred in an <em>unnamed module</em>.</p>
+<p>In the reference implementation, access to restricted methods can be granted to
     specific modules using the command line option <code>--enable-native-access=M1,M2, ... Mn</code>,
     where <code>M1</code>, <code>M2</code>, <code>... Mn</code> are module names (for the unnamed module,
     the special value <code>ALL-UNNAMED</code> can be used).  Access to restricted methods
     from modules not listed by that option is deemed <em>illegal</em>. Clients can
     control how access to restricted methods is handled, using the command line
     option <code>--illegal-native-access</code>. If this option is not specified,
-    illegal access to restricted methods will result in runtime warnings.
-</p>
+    illegal access to restricted methods will result in runtime warnings.</p>
 </body>
 </html>
