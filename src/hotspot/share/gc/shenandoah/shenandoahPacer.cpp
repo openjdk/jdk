@@ -251,24 +251,20 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
   }
 
   double start = os::elapsedTime();
-  double end;
-
   size_t const max_ms = ShenandoahPacingMaxDelay;
   double total_delay = 0;
 
   while (!claimed) {
     // We could instead assist GC, but this would suffice for now.
     wait(1);
-    claimed = claim_for_alloc<false>(words);
-    end = os::elapsedTime();
-    total_delay = end - start;
-
+    total_delay = os::elapsedTime() - start;
     if (static_cast<size_t>(total_delay * 1000) > max_ms) {
       // Exiting if spent local time budget to wait for enough GC progress.
       // Breaking out and allocating anyway, which may mean we outpace GC,
       // and start Degenerated GC cycle.
       break;
     }
+    claimed = claim_for_alloc<false>(words);
   }
 
   if (total_delay > 0) {
