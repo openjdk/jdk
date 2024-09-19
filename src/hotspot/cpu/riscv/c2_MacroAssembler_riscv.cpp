@@ -2385,6 +2385,74 @@ void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mas
   expand_bits_v(dst, src, mask, /* is_long */ true);
 }
 
+// j.l.Math.round(float)
+//  Returns the closest int to the argument, with ties rounding to positive infinity.
+// We need to handle 3 special cases defined by java api spec:
+//    NaN,
+//    float >= Integer.MAX_VALUE,
+//    float <= Integer.MIN_VALUE.
+void C2_MacroAssembler::java_round_float_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp,
+                                           BasicType bt, uint vector_length) {
+  // In riscv, there is no straight corresponding rounding mode to satisfy the behaviour defined,
+  // in java api spec, i.e. any rounding mode can not handle some corner cases, e.g.
+  //  RNE is the closest one, but it ties to "even", which means 1.5/2.5 both will be converted
+  //    to 2, instead of 2 and 3 respectively.
+  //  RUP does not work either, although java api requires "rounding to positive infinity",
+  //    but both 1.3/1.8 will be converted to 2, instead of 1 and 2 respectively.
+  //
+  // The optimal solution for non-NaN cases is:
+  //    src+0.5 => dst, with rdn rounding mode,
+  //    convert dst from float to int, with rnd rounding mode.
+  // and, this solution works as expected for float >= Integer.MAX_VALUE and float <= Integer.MIN_VALUE.
+  //
+  // But, we still need to handle NaN explicilty with vector mask instructions.
+  //
+  // Check MacroAssembler::java_round_float and C2_MacroAssembler::vector_round_sve in aarch64 for more details.
+
+  csrwi(CSR_FRM, C2_MacroAssembler::rdn);
+  vsetvli_helper(bt, vector_length);
+
+  // don't rearrage the instructions sequence order without performance testing.
+  // check MacroAssembler::java_round_float in riscv64 for more details.
+  mv(t0, jint_cast(0.5f));
+  fmv_w_x(ftmp, t0);
+
+  // replacing vfclass with feq as performance optimization
+  vmfeq_vv(v0, src, src);
+  // set dst = 0 in cases of NaN
+  vmv_v_x(dst, zr);
+
+  // dst = (src + 0.5) rounded down towards negative infinity
+  vfadd_vf(dst, src, ftmp, Assembler::v0_t);
+  vfcvt_x_f_v(dst, dst, Assembler::v0_t); // in RoundingMode::rdn
+
+  csrwi(CSR_FRM, C2_MacroAssembler::rne);
+}
+
+// java.lang.Math.round(double a)
+// Returns the closest long to the argument, with ties rounding to positive infinity.
+void C2_MacroAssembler::java_round_double_v(VectorRegister dst, VectorRegister src, FloatRegister ftmp,
+                                            BasicType bt, uint vector_length) {
+  // check C2_MacroAssembler::java_round_float_v above for more details.
+
+  csrwi(CSR_FRM, C2_MacroAssembler::rdn);
+  vsetvli_helper(bt, vector_length);
+
+  mv(t0, julong_cast(0.5));
+  fmv_d_x(ftmp, t0);
+
+  // replacing vfclass with feq as performance optimization
+  vmfeq_vv(v0, src, src);
+  // set dst = 0 in cases of NaN
+  vmv_v_x(dst, zr);
+
+  // dst = (src + 0.5) rounded down towards negative infinity
+  vfadd_vf(dst, src, ftmp, Assembler::v0_t);
+  vfcvt_x_f_v(dst, dst, Assembler::v0_t); // in RoundingMode::rdn
+
+  csrwi(CSR_FRM, C2_MacroAssembler::rne);
+}
+
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
                                         VectorRegister vr1, VectorRegister vr2, VectorRegister vrs, bool islatin, Label &DONE,
                                         Assembler::LMUL lmul) {

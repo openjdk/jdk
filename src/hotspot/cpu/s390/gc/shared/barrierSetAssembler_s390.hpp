@@ -51,6 +51,7 @@ public:
                         const Address& addr, Register val, Register tmp1, Register tmp2, Register tmp3);
 
   virtual void resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2);
+  virtual void resolve_global_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2);
 
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);

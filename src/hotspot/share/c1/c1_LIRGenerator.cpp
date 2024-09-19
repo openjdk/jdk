@@ -659,7 +659,7 @@ void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unr
   if (UseFastNewInstance && klass->is_loaded()
       && !Klass::layout_helper_needs_slow_path(klass->layout_helper())) {
 
-    Runtime1::StubID stub_id = klass->is_initialized() ? Runtime1::fast_new_instance_id : Runtime1::fast_new_instance_init_check_id;
+    C1StubId stub_id = klass->is_initialized() ? C1StubId::fast_new_instance_id : C1StubId::fast_new_instance_init_check_id;
 
     CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, stub_id);
 
@@ -670,7 +670,7 @@ void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unr
     __ allocate_object(dst, scratch1, scratch2, scratch3, scratch4,
                        oopDesc::header_size(), instance_size, klass_reg, !klass->is_initialized(), slow_path);
   } else {
-    CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, Runtime1::new_instance_id);
+    CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, C1StubId::new_instance_id);
     __ branch(lir_cond_always, slow_path);
     __ branch_destination(slow_path->continuation());
   }
@@ -1479,7 +1479,7 @@ void LIRGenerator::do_RegisterFinalizer(Intrinsic* x) {
   args->append(receiver.result());
   CodeEmitInfo* info = state_for(x, x->state());
   call_runtime(&signature, args,
-               CAST_FROM_FN_PTR(address, Runtime1::entry_for(Runtime1::register_finalizer_id)),
+               CAST_FROM_FN_PTR(address, Runtime1::entry_for(C1StubId::register_finalizer_id)),
                voidType, info);
 
   set_no_result(x);
