@@ -21,6 +21,5 @@
  * questions.
  */
 module provider {
-    exports spi;
     provides java.nio.charset.spi.CharsetProvider with spi.BazProvider;
 }
