@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4957669 5017871
+ * @bug 4957669 5017871 8340326
  * @summary cannot load class names containing some JSR 202 characters;
  *          plugin does not escape unicode character in http request
  * @modules java.base/sun.net.www
@@ -95,9 +95,9 @@ public class ClassnameCharTest {
             server.stop(0);
         }
     }
-    // the class loader code was copied from the now deleted AppletClassLoader
+
     static class MyURLClassLoader extends URLClassLoader {
-        private URL base;   /* applet code base URL */
+        private URL base;   /* code base URL */
         private CodeSource codesource; /* codesource for the base URL */
         private AccessControlContext acc;
         MyURLClassLoader(URL base) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import sun.awt.SunToolkit;
 
 /**
  * @test
- * @bug 8026404
+ * @bug 8026404 8340326
  * @summary checks that calling getLogger() from a Thread whose ThreadGroup is
  *          a child of the main root group doesn't throw an exception.
  * @modules java.desktop/sun.awt
@@ -46,8 +46,8 @@ public class TestMainAppContext {
             rootTG = rootTG.getParent();
         }
 
-        ThreadGroup tg = new ThreadGroup(rootTG, "FakeApplet");
-        final Thread t1 = new Thread(tg, "createNewAppContext") {
+        ThreadGroup tg = new ThreadGroup(rootTG, "main");
+        final Thread t1 = new Thread(tg, "child") {
             @Override
             public void run() {
                 try {

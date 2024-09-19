@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,6 +24,7 @@
 
 /**
  * @test
+ * @bug 8340326
  * @summary Validate and test -?, -h and --help flags. All tools in the jdk
  *          should take the same flags to display the help message. These
  *          flags should be documented in the printed help message. The
@@ -45,7 +46,6 @@ public class HelpFlagsTest extends TestHelper {
 
     // Tools that should not be tested because a usage message is pointless.
     static final String[] TOOLS_NOT_TO_TEST = {
-        "appletviewer",     // deprecated, don't test
         "jaccessinspector", // gui, don't test, win only
         "jaccessinspector-32", // gui, don't test, win-32 only
         "jaccesswalker",    // gui, don't test, win only
