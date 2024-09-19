@@ -28,8 +28,6 @@ import java.awt.MenuItem;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
-import java.util.List;
-
 /*
  * @test
  * @bug 4175790
@@ -67,31 +65,33 @@ public class LotsOfMenuItemsTest extends ComponentAdapter {
                 .awaitAndCheck();
     }
 
-    private List<Frame> createAndShowUI() {
-        firstFrame = new TestFrame("First frame");
+    private Frame createAndShowUI() {
+        firstFrame = new TestFrame("First frame", false);
         firstFrame.addComponentListener(this);
+        return firstFrame;
+    }
 
+    @Override
+    public void componentShown(ComponentEvent e) {
         for (int i = 1; i < NUM_WINDOWS - 1; ++i) {
             testFrame = new TestFrame("Running(" + i + ")...");
             testFrame.setVisible(false);
             testFrame.dispose();
         }
         testFrame = new TestFrame("Last Frame");
-        return List.of(firstFrame, testFrame);
-    }
-
-    @Override
-    public void componentShown(ComponentEvent e) {
-        PassFailJFrame.positionTestWindow(firstFrame,
-                PassFailJFrame.Position.HORIZONTAL);
         testFrame.setLocation(firstFrame.getX(),
                 firstFrame.getY() + firstFrame.getHeight() + 8);
+        PassFailJFrame.addTestWindow(testFrame);
     }
 
     private static class TestFrame extends Frame {
         static int n = 0;
 
         public TestFrame(String title) {
+            this(title, true);
+        }
+
+        public TestFrame(String title, boolean visible) {
             super(title);
             MenuBar mb = new MenuBar();
             for (int i = 0; i < 10; ++i) {
@@ -104,6 +104,9 @@ public class LotsOfMenuItemsTest extends ComponentAdapter {
             }
             setMenuBar(mb);
             setSize(450, 150);
+            if (visible) {
+                setVisible(true);
+            }
         }
     }
 }
