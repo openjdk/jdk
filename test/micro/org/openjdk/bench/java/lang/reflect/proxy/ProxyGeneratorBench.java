@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,19 +49,15 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-public class ProxyPerf {
+public class ProxyGeneratorBench {
 
     /**
      * Sample results from a Dell T7610.
      * Benchmark                        Mode  Cnt      Score      Error  Units
      *      ProxyPerf.genIntf_1              avgt   10  35325.428 +/-  780.459  ns/op
-     *      ProxyPerf.genIntf_1_V49          avgt   10  34309.423 +/-  727.188  ns/op
      *      ProxyPerf.genStringsIntf_3       avgt   10  46600.366 +/-  663.812  ns/op
-     *      ProxyPerf.genStringsIntf_3_V49   avgt   10  45911.817 +/- 1598.536  ns/op
      *      ProxyPerf.genZeroParams          avgt   10  33245.048 +/-  437.988  ns/op
-     *      ProxyPerf.genZeroParams_V49      avgt   10  32954.254 +/- 1041.932  ns/op
      *      ProxyPerf.genPrimsIntf_2         avgt   10  43987.819 +/-  837.443  ns/op
-     *      ProxyPerf.getPrimsIntf_2_V49     avgt   10  42863.462 +/- 1193.480  ns/op
      */
 
     public interface Intf_1 {
@@ -79,7 +75,6 @@ public class ProxyPerf {
         public String m2String(String s1, String s2);
     }
 
-    private InvocationHandler handler;
     private ClassLoader classloader;
     private Method proxyGen;
     private Method proxyGenV49;
@@ -87,7 +82,6 @@ public class ProxyPerf {
     @Setup
     public void setup() {
         try {
-            handler = (Object proxy, Method method, Object[] args) -> null;
             classloader = ClassLoader.getSystemClassLoader();
             Class<?> proxyGenClass = Class.forName("java.lang.reflect.ProxyGenerator");
             proxyGen = proxyGenClass.getDeclaredMethod("generateProxyClass",
@@ -124,7 +118,7 @@ public class ProxyPerf {
     }
 
     public static void main(String... args) throws Exception {
-        var benchmark = new ProxyPerf();
+        var benchmark = new ProxyGeneratorBench();
         benchmark.setup();
         benchmark.genZeroParams();
         benchmark.genIntf_1();
