@@ -66,18 +66,26 @@ import java.util.Objects;
 /// a copy of the input private key. A `KEM` implementation also must
 /// not keep a copy of the shared secret key, no matter if it's an
 /// encapsulator or a decapsulator.
+///
+/// The `NamedSignature` and `NamedKEM` classes provide `checkPublicKey0`
+/// and `checkPrivateKey0` methods that allow an implementation to validate
+/// a key before using it. An implementation may return a parsed key of
+/// a local type, and this parsed key will be passed to a operational method
+/// (For example, `sign0`) later. An implementation must not retain
+/// a reference of the parsed key.
 public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
 
     private final String fname; // family name
-    private final String[] pnames; // allowed parameter set name, need at least one
+    private final String[] pnames; // allowed parameter set name (at least one)
 
     protected String name = null; // init as
     private SecureRandom secureRandom;
 
+    /// Creates a new `NamedKeyPairGenerator` object.
+    ///
     /// @param fname the family name
-    /// @param pnames supported parameter set names. Implementors should
-    ///     call this ctor with at least one. If multiple, the first one
-    ///     becomes the default parameter set name.
+    /// @param pnames supported parameter set names, at least one is needed.
+    ///     If multiple, the first one becomes the default parameter set name.
     protected NamedKeyPairGenerator(String fname, String... pnames) {
         this.fname = Objects.requireNonNull(fname);
         if (pnames == null || pnames.length == 0) {
@@ -93,7 +101,8 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
                 return pname;
             }
         }
-        throw new InvalidAlgorithmParameterException("Unknown parameter set name: " + name);
+        throw new InvalidAlgorithmParameterException(
+                "Unknown parameter set name: " + name);
     }
 
     @Override
@@ -111,6 +120,8 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
     @Override
     public void initialize(int keysize, SecureRandom random) {
         if (keysize != -1) {
+            // Bonus: a chance to provide a SecureRandom without
+            // specifying a parameter set name
             throw new InvalidParameterException("keysize not supported");
         }
         this.secureRandom = random;

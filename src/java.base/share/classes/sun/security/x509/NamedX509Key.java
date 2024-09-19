@@ -79,7 +79,7 @@ public final class NamedX509Key extends X509Key {
     }
 
     /// Returns the reference to the internal key. Caller must not modify
-    /// the content or keep a reference
+    /// the content or keep a reference.
     public byte[] getRawBytes() {
         return h;
     }

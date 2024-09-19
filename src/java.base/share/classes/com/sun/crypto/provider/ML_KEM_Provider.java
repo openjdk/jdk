@@ -108,7 +108,7 @@ public final class ML_KEM_Provider {
     // TODO: check key in newEnc and newDec? No interfaces. Name is checked
     public static class K extends NamedKEM {
         @Override
-        public byte[][] encap0(String name, byte[] pk, SecureRandom sr) {
+        public byte[][] encap0(String name, byte[] pk, Object pk2, SecureRandom sr) {
             var seed = new byte[32];
             if (sr == null) sr = JCAUtil.getDefSecureRandom();
             sr.nextBytes(seed);
@@ -116,7 +116,7 @@ public final class ML_KEM_Provider {
         }
 
         @Override
-        public byte[] decap0(String name, byte[] sk, byte[] encap) {
+        public byte[] decap0(String name, byte[] sk, Object sk2, byte[] encap) {
             return ML_KEM.Dec(sk, encap, PARAMS.get(name).params());
         }
 

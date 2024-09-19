@@ -47,14 +47,18 @@ import java.util.Objects;
 ///
 /// Bonus: This factory can read from a RAW key using `translateKey`
 /// if `key.getFormat` is "RAW", and write to a RAW `EncodedKeySpec`
-/// `using getKeySpec(key, EncodedKeySpec.class)`.
+/// using `getKeySpec(key, EncodedKeySpec.class)`.
+///
+/// @see NamedKeyPairGenerator
 public class NamedKeyFactory extends KeyFactorySpi {
 
     private final String fname; // family name
-    private final String[] pnames; // allowed parameter set name, need at least one
+    private final String[] pnames; // allowed parameter set name (at least one)
 
+    /// Creates a new `NamedKeyFactory` object.
+    ///
     /// @param fname the family name
-    /// @param pnames the standard parameter set names. At least one is needed
+    /// @param pnames the standard parameter set names, at least one is needed.
     protected NamedKeyFactory(String fname, String... pnames) {
         this.fname = Objects.requireNonNull(fname);
         if (pnames == null || pnames.length == 0) {
@@ -184,10 +188,10 @@ public class NamedKeyFactory extends KeyFactorySpi {
             var kAlg = key.getAlgorithm();
             if (key instanceof AsymmetricKey pk) {
                 String name;
-                // Three case that we can find the parameter set name:
+                // Three case that we can find the parameter set name from a RAW key:
                 // 1. getParams() returns one
-                // 2. getAlgorithm() returns family name but this KF is init from param set name
-                // 3. getAlgorithm() returns param set name (some provider does this)
+                // 2. getAlgorithm() returns param set name (some provider does this)
+                // 3. getAlgorithm() returns family name but this KF is for param set name
                 if (pk.getParams() instanceof NamedParameterSpec nps) {
                     name = checkName(nps.getName());
                 } else {

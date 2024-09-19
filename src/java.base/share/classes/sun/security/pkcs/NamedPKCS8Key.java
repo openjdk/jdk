@@ -29,6 +29,7 @@ import sun.security.util.DerInputStream;
 import sun.security.util.DerValue;
 import sun.security.x509.AlgorithmId;
 
+import javax.security.auth.DestroyFailedException;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -37,6 +38,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.spec.NamedParameterSpec;
+import java.util.Arrays;
 
 public final class NamedPKCS8Key extends PKCS8Key {
     @Serial
@@ -45,6 +47,8 @@ public final class NamedPKCS8Key extends PKCS8Key {
     private final String fname;
     private final transient NamedParameterSpec paramSpec;
     private final byte[] h;
+
+    private transient boolean destroyed = false;
 
     /// Ctor from family name, parameter set name, raw key bytes.
     /// Key bytes won't be cloned, caller must relinquish ownership
@@ -89,7 +93,7 @@ public final class NamedPKCS8Key extends PKCS8Key {
     }
 
     /// Returns the reference to the internal key. Caller must not modify
-    /// the content or keep a reference
+    /// the content or keep a reference.
     public byte[] getRawBytes() {
         return h;
     }
@@ -109,5 +113,20 @@ public final class NamedPKCS8Key extends PKCS8Key {
             throws IOException, ClassNotFoundException {
         throw new InvalidObjectException(
                 "NamedPKCS8Key keys are not directly deserializable");
+    }
+
+    @Override
+    public void destroy() throws DestroyFailedException {
+        Arrays.fill(h, (byte)0);
+        Arrays.fill(this.key, (byte)0);
+        if (this.encodedKey != null) {
+            Arrays.fill(this.encodedKey, (byte)0);
+        }
+        destroyed = true;
+    }
+
+    @Override
+    public boolean isDestroyed() {
+        return destroyed;
     }
 }
