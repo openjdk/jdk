@@ -54,7 +54,7 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
 
   Register tmp1 = rscratch1, tmp2 = rscratch2;
 
-  Label TAIL, STUB_SWITCH, STUB_SWITCH_OUT, LOOP, RELATIVE, LARGE, DONE;
+  Label TAIL, STUB_SWITCH, STUB_SWITCH_OUT, LOOP, BR_BASE, LARGE, DONE;
 
   // Vectorization factor. Number of array elements loaded to one SIMD&FP registers by the stubs. We
   // use 8H load arrangements for chars and shorts and 8B for booleans and bytes. It's possible to
@@ -102,7 +102,7 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
   // Iteration eats up the remainder, uf elements at a time.
   assert(is_power_of_2(unroll_factor), "can't use this value to calculate the jump target PC");
   andr(tmp2, cnt, unroll_factor - 1);
-  adr(tmp1, RELATIVE);
+  adr(tmp1, BR_BASE);
   sub(tmp1, tmp1, tmp2, ext::sxtw, 3);
   movw(tmp2, 0x1f);
   br(tmp1);
@@ -112,7 +112,7 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
     arrays_hashcode_elload(tmp1, Address(post(ary, type2aelembytes(eltype))), eltype);
     maddw(result, result, tmp2, tmp1);
   }
-  bind(RELATIVE);
+  bind(BR_BASE);
   subsw(cnt, cnt, unroll_factor);
   br(Assembler::HS, LOOP);
 
@@ -124,7 +124,7 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
   assert(stub.target() != nullptr, "array_hashcode stub has not been generated");
   address tpc = trampoline_call(stub);
   if (tpc == nullptr) {
-    DEBUG_ONLY(reset_labels(TAIL, RELATIVE));
+    DEBUG_ONLY(reset_labels(TAIL, BR_BASE));
     postcond(pc() == badAddress);
     return nullptr;
   }

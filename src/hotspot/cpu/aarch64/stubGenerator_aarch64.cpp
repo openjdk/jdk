@@ -5352,7 +5352,7 @@ class StubGenerator: public StubCodeGenerator {
     assert_different_registers(vdata0, vdata1, vdata2, vdata3, vhalf0, vhalf1, vhalf2, vhalf3,
                                vmul0, vmul1, vmul2, vmul3, vpow, vpowm);
 
-    Label SMALL_LOOP, LARGE_LOOP_PREHEADER, LARGE_LOOP, TAIL, TAIL_SHORTCUT, RELATIVE;
+    Label SMALL_LOOP, LARGE_LOOP_PREHEADER, LARGE_LOOP, TAIL, TAIL_SHORTCUT, BR_BASE;
 
     // Vectorization factor
     const size_t vf = eltype == T_BOOLEAN || eltype == T_BYTE ? 8
@@ -5509,7 +5509,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(is_power_of_2(vf), "can't use this value to calculate the jump target PC");
     __ andr(rscratch2, cnt, vf - 1);
     __ bind(TAIL_SHORTCUT);
-    __ adr(rscratch1, RELATIVE);
+    __ adr(rscratch1, BR_BASE);
     __ sub(rscratch1, rscratch1, rscratch2, ext::uxtw, 3);
     __ movw(rscratch2, 0x1f);
     __ br(rscratch1);
@@ -5519,7 +5519,7 @@ class StubGenerator: public StubCodeGenerator {
                                    eltype);
       __ maddw(result, result, rscratch2, rscratch1);
     }
-    __ bind(RELATIVE);
+    __ bind(BR_BASE);
 
     __ leave();
     __ ret(lr);
