@@ -624,11 +624,11 @@ final class ProxyGenerator {
                             Label failLabel = cob.newLabel();
                             ClassEntry mhl = cp.classEntry(CD_MethodHandles_Lookup);
                             ClassEntry iae = cp.classEntry(CD_IllegalAccessException);
-                            cob.aload(cob.parameterSlot(0))
+                            cob.aload(0)
                                .invokevirtual(cp.methodRefEntry(mhl, cp.nameAndTypeEntry("lookupClass", MTD_Class)))
                                .ldc(proxyCE)
                                .if_acmpne(failLabel)
-                               .aload(cob.parameterSlot(0))
+                               .aload(0)
                                .invokevirtual(cp.methodRefEntry(mhl, cp.nameAndTypeEntry("hasFullPrivilegeAccess", MTD_boolean)))
                                .ifeq(failLabel)
                                .invokestatic(CD_MethodHandles, "lookup", MTD_MethodHandles$Lookup)
@@ -636,7 +636,7 @@ final class ProxyGenerator {
                                .labelBinding(failLabel)
                                .new_(iae)
                                .dup()
-                               .aload(cob.parameterSlot(0))
+                               .aload(0)
                                .invokevirtual(cp.methodRefEntry(mhl, cp.nameAndTypeEntry("toString", MTD_String)))
                                .invokespecial(cp.methodRefEntry(iae, exInit))
                                .athrow()
@@ -696,10 +696,10 @@ final class ProxyGenerator {
             var desc = methodTypeDesc(returnType, parameterTypes());
             int accessFlags = (method.isVarArgs()) ? ACC_VARARGS | ACC_PUBLIC | ACC_FINAL
                                                    : ACC_PUBLIC | ACC_FINAL;
-            var catchList = computeUniqueCatchList(exceptionTypes);
             clb.withMethod(method.getName(), desc, accessFlags, mb ->
                   mb.with(ExceptionsAttribute.of(toClassEntries(cp, List.of(exceptionTypes))))
                     .withCode(cob -> {
+                        var catchList = computeUniqueCatchList(exceptionTypes);
                         cob.aload(cob.receiverSlot())
                            .getfield(handlerField)
                            .aload(cob.receiverSlot())
