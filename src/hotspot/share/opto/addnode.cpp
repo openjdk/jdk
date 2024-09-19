@@ -396,9 +396,14 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   }
 
   // Convert a + a + ... + a into a*n
+  static int timestamp = 0;
+  timestamp++;
+  PhaseIterGVN* igvn = phase->is_IterGVN();
+//  printf("%d, <, %p, %d, %s\n", timestamp, igvn, this->_idx, this->Name());
+
   Node* serial_additions = convert_serial_additions(phase, can_reshape, bt);
   if (serial_additions != nullptr) {
-    fprintf (stderr, "");
+//    printf("%d, >, %p, %d, %s\n", timestamp, igvn, serial_additions->_idx, serial_additions->Name());
     return serial_additions;
   }
 
@@ -426,7 +431,7 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, Basic
   }
 
   Node* con = (bt == T_INT) ? (Node*) phase->intcon((jint) factor) : (Node*) phase->longcon(factor);
-  Node* mul = MulNode::make(base, con, bt);
+  Node* mul = MulNode::make(con, base, bt);
 
   PhaseIterGVN* igvn = phase->is_IterGVN();
   if (igvn != nullptr) {
@@ -455,10 +460,19 @@ bool AddNode::is_optimized_multiplication(Node* node, BasicType bt, Node* base) 
           (node->in(1)->is_LShift() && node->in(1)->in(2)->is_Con()) // AddNode(LShiftNode(a, CON), *)
               || (node->in(2)->is_LShift() && node->in(2)->in(2)->is_Con()) // AddNode(*, LShiftNode(a, CON))
       )) {
-    Node* a1 = node->in(1)->is_LShift() ? node->in(1)->in(1) : node->in(1);
-    Node* a2 = node->in(2)->is_LShift() ? node->in(2)->in(1) : node->in(2);
+    Node* lhs = node->in(1);
+    Node* rhs = node->in(2);
 
-    return a1 == a2 && base == a1;
+    Node* lhs_base = lhs->is_LShift() ? lhs->in(1) : lhs;
+    Node* rhs_base = rhs->is_LShift() ? rhs->in(1) : rhs;
+
+    if (lhs == rhs_base || rhs == lhs_base) {
+      return (lhs == rhs_base && lhs == base)
+          || (rhs == lhs_base && rhs == base);
+    }
+
+    // #31 + #27 => (#27 << 1) + #27
+    return lhs_base == rhs_base && base == lhs_base;
   }
 
   // Look for pattern: SubNode(LShiftNode(a, CON), a)
