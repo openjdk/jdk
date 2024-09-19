@@ -52,19 +52,19 @@ inline size_t ZLiveMap::live_bytes() const {
 }
 
 inline const BitMapView ZLiveMap::segment_live_bits() const {
-  return BitMapView(const_cast<BitMap::bm_word_t*>(&_segment_live_bits), nsegments);
+  return BitMapView(const_cast<BitMap::bm_word_t*>(&_segment_live_bits), NumSegments);
 }
 
 inline const BitMapView ZLiveMap::segment_claim_bits() const {
-  return BitMapView(const_cast<BitMap::bm_word_t*>(&_segment_claim_bits), nsegments);
+  return BitMapView(const_cast<BitMap::bm_word_t*>(&_segment_claim_bits), NumSegments);
 }
 
 inline BitMapView ZLiveMap::segment_live_bits() {
-  return BitMapView(&_segment_live_bits, nsegments);
+  return BitMapView(&_segment_live_bits, NumSegments);
 }
 
 inline BitMapView ZLiveMap::segment_claim_bits() {
-  return BitMapView(&_segment_claim_bits, nsegments);
+  return BitMapView(&_segment_claim_bits, NumSegments);
 }
 
 inline bool ZLiveMap::is_segment_live(BitMap::idx_t segment) const {
@@ -80,15 +80,15 @@ inline bool ZLiveMap::claim_segment(BitMap::idx_t segment) {
 }
 
 inline BitMap::idx_t ZLiveMap::first_live_segment() const {
-  return segment_live_bits().find_first_set_bit(0, nsegments);
+  return segment_live_bits().find_first_set_bit(0, NumSegments);
 }
 
 inline BitMap::idx_t ZLiveMap::next_live_segment(BitMap::idx_t segment) const {
-  return segment_live_bits().find_first_set_bit(segment + 1, nsegments);
+  return segment_live_bits().find_first_set_bit(segment + 1, NumSegments);
 }
 
 inline BitMap::idx_t ZLiveMap::segment_size() const {
-  return _bitmap.size() / nsegments;
+  return _bitmap.size() / NumSegments;
 }
 
 inline BitMap::idx_t ZLiveMap::index_to_segment(BitMap::idx_t index) const {
@@ -167,7 +167,7 @@ inline void ZLiveMap::iterate(ZGenerationId id, Function function) {
     return true;
   };
 
-  for (BitMap::idx_t segment = first_live_segment(); segment < nsegments; segment = next_live_segment(segment)) {
+  for (BitMap::idx_t segment = first_live_segment(); segment < NumSegments; segment = next_live_segment(segment)) {
     // For each live segment
     iterate_segment(segment, live_only);
   }
