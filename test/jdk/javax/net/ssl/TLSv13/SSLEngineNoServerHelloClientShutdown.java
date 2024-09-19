@@ -30,14 +30,19 @@
  * @summary Slow networks/Impatient clients can potentially send
  *          unencrypted TLSv1.3 alerts that won't parse on the server.
  * @library /javax/net/ssl/templates
+ * @library /test/lib
  * @run main/othervm SSLEngineNoServerHelloClientShutdown
  */
+
+import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.test.lib.Asserts.assertTrue;
 
 import java.nio.ByteBuffer;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLSession;
 
 /**
@@ -187,7 +192,6 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         runDelegatedTasks(serverEngine);
         sTOc.clear();  // EE/etc. packet went missing.  Timeout on Client.
 
-        // client wrap
         // *Yawn*  No response.  Shutdown client
         log("---Client closeOutbound---");
         clientEngine.closeOutbound();
@@ -206,25 +210,41 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         logEngineStatus(serverEngine, serverResult);
         runDelegatedTasks(serverEngine);
 
-        cTOs.compact();
+        cTOs.clear();
 
         // Sends an unencrypted close_notify
         log("---Client Wrap close_notify---");
         clientResult = clientEngine.wrap(clientOut, cTOs);
         logEngineStatus(clientEngine, clientResult);
+        assertEquals(clientResult.getStatus(), Status.CLOSED);
         runDelegatedTasks(clientEngine);
 
         cTOs.flip();
 
-        // Server unwrap should process an unencrypted 2 byte packet,
+        // Server unwrap should process an unencrypted 2 byte close_notify alert.
         log("---Server Unwrap close_notify alert---");
         serverResult = serverEngine.unwrap(cTOs, serverIn);
         logEngineStatus(serverEngine, serverResult);
+        assertTrue(serverEngine.isInboundDone());
+        assertEquals(serverResult.getStatus(), Status.CLOSED);
         runDelegatedTasks(serverEngine);
-    }
 
-    static boolean isOpen(SSLEngine engine) {
-        return (!engine.isOutboundDone() || !engine.isInboundDone());
+        log("---Last Server Wrap ---");
+        serverResult = serverEngine.wrap(serverOut, sTOc);
+        logEngineStatus(serverEngine, serverResult);
+        assertTrue(serverEngine.isOutboundDone());
+        runDelegatedTasks(serverEngine);
+
+        /* TODO: Final client unwrap fails because server doesn't send an alert to terminate
+           the handshake after receiving close_notify alert from the client. Investigate why.
+
+        sTOc.flip();
+
+        log("---Last Client Unwrap---");
+        clientResult = clientEngine.unwrap(sTOc, clientIn);
+        logEngineStatus(clientEngine, clientResult);
+        runDelegatedTasks(clientEngine);
+        */
     }
 
     private static void logEngineStatus(SSLEngine engine) {
