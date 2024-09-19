@@ -91,14 +91,6 @@ public final class DirectClassBuilder
     }
 
     @Override
-    public ClassBuilder withField(String name,
-                                  ClassDesc descriptor,
-                                  int flags) {
-        return withField(new DirectFieldBuilder(constantPool, context,
-                constantPool.utf8Entry(name), constantPool.utf8Entry(descriptor), flags, null));
-    }
-
-    @Override
     public ClassBuilder withField(Utf8Entry name,
                                   Utf8Entry descriptor,
                                   int flags) {
@@ -128,13 +120,6 @@ public final class DirectClassBuilder
                                    Consumer<? super MethodBuilder> handler) {
         return withMethod(new DirectMethodBuilder(constantPool, context, name, descriptor, flags, null)
                                   .run(handler));
-    }
-
-    @Override
-    public ClassBuilder withMethod(String name, MethodTypeDesc descriptor, int flags, Consumer<? super MethodBuilder> handler) {
-        var method = new DirectMethodBuilder(constantPool, context, constantPool.utf8Entry(name), constantPool.utf8Entry(descriptor), flags, null);
-        method.mDesc = descriptor;
-        return withMethod(method.run(handler));
     }
 
     @Override

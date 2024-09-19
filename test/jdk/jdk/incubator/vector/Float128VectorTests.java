@@ -71,6 +71,16 @@ public class Float128VectorTests extends AbstractVectorTest {
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 128);
 
+    static void assertArraysStrictlyEquals(float[] r, float[] a) {
+        for (int i = 0; i < a.length; i++) {
+            int ir = Float.floatToRawIntBits(r[i]);
+            int ia = Float.floatToRawIntBits(a[i]);
+            if (ir != ia) {
+                Assert.fail(String.format("at index #%d, expected = %08X, actual = %08X", i, ia, ir));
+            }
+        }
+    }
+
     interface FUnOp {
         float apply(float a);
     }
@@ -245,25 +255,6 @@ relativeError));
             }
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
-        }
-    }
-
-    static void assertInsertArraysEquals(float[] r, float[] a, float element, int index, int start, int end) {
-        int i = start;
-        try {
-            for (; i < end; i += 1) {
-                if(i%SPECIES.length() == index) {
-                    Assert.assertEquals(r[i], element);
-                } else {
-                    Assert.assertEquals(r[i], a[i]);
-                }
-            }
-        } catch (AssertionError e) {
-            if (i%SPECIES.length() == index) {
-                Assert.assertEquals(r[i], element, "at index #" + i);
-            } else {
-                Assert.assertEquals(r[i], a[i], "at index #" + i);
-            }
         }
     }
 
@@ -792,21 +783,6 @@ relativeError));
                              b[(i / SPECIES.length()) * SPECIES.length()] + ", actual = " + r[i] +
                              ", expected (within 1 ulp) = " + strictmathf.apply(a[i],
                              b[(i / SPECIES.length()) * SPECIES.length()]));
-        }
-    }
-
-    interface FBinArrayOp {
-        float apply(float[] a, int b);
-    }
-
-    static void assertArraysEquals(float[] r, float[] a, FBinArrayOp f) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a, i));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a,i), "at index #" + i);
         }
     }
 
@@ -1367,26 +1343,16 @@ relativeError));
     }
 
     static float cornerCaseValue(int i) {
-        switch(i % 7) {
-            case 0:
-                return Float.MAX_VALUE;
-            case 1:
-                return Float.MIN_VALUE;
-            case 2:
-                return Float.NEGATIVE_INFINITY;
-            case 3:
-                return Float.POSITIVE_INFINITY;
-            case 4:
-                return Float.NaN;
-            case 5:
-                return (float)0.0;
-            default:
-                return (float)-0.0;
-        }
-    }
-
-    static float get(float[] a, int i) {
-        return (float) a[i];
+        return switch(i % 8) {
+            case 0  -> Float.MAX_VALUE;
+            case 1  -> Float.MIN_VALUE;
+            case 2  -> Float.NEGATIVE_INFINITY;
+            case 3  -> Float.POSITIVE_INFINITY;
+            case 4  -> Float.NaN;
+            case 5  -> Float.intBitsToFloat(0x7F812345);
+            case 6  -> (float)0.0;
+            default -> (float)-0.0;
+        };
     }
 
     static final IntFunction<float[]> fr = (vl) -> {
@@ -2613,22 +2579,23 @@ relativeError));
                 Float128VectorTests::FIRST_NONZEROReduceMasked, Float128VectorTests::FIRST_NONZEROReduceAllMasked);
     }
 
-    @Test(dataProvider = "floatUnaryOpProvider")
-    static void withFloat128VectorTests(IntFunction<float []> fa) {
+    @Test(dataProvider = "floatBinaryOpProvider")
+    static void withFloat128VectorTests(IntFunction<float []> fa, IntFunction<float []> fb) {
         float[] a = fa.apply(SPECIES.length());
+        float[] b = fb.apply(SPECIES.length());
         float[] r = fr.apply(SPECIES.length());
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.withLane((j++ & (SPECIES.length()-1)), (float)(65535+i)).intoArray(r, i);
+                av.withLane(j, b[i + j]).intoArray(r, i);
+                a[i + j] = b[i + j];
+                j = (j + 1) & (SPECIES.length() - 1);
             }
         }
 
 
-        for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
-            assertInsertArraysEquals(r, a, (float)(65535+i), (j++ & (SPECIES.length()-1)), i , i + SPECIES.length());
-        }
+        assertArraysStrictlyEquals(r, a);
     }
 
     static boolean testIS_DEFAULT(float a) {
@@ -3518,7 +3485,7 @@ relativeError));
             }
         }
 
-        assertArraysEquals(r, a, Float128VectorTests::get);
+        assertArraysStrictlyEquals(r, a);
     }
 
     @Test(dataProvider = "floatUnaryOpProvider")
