@@ -91,7 +91,7 @@ public:
   static void strong_oops_do(Closure* cl);
 
   // Debugging: print location info, if in storage.
-  static bool print_containing(oop* addr, outputStream* st);
+  static bool print_containing(const void* addr, outputStream* st);
 };
 
 ENUMERATOR_VALUE_RANGE(OopStorageSet::StrongId,

@@ -1319,7 +1319,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
 #endif
 
   // Ask if any OopStorage knows about this address.
-  if (OopStorageSet::print_containing((oop*)addr, st)) {
+  if (OopStorageSet::print_containing(addr, st)) {
     return;
   }
 

@@ -109,12 +109,27 @@ private:
   class PrintContainingClosure : public Closure {
     public:
       void do_oop(oop* addr) {
-        stringStream ss;
-        bool printed = OopStorageSet::print_containing(addr, &ss);
-        ASSERT_TRUE(printed);
-        ASSERT_THAT(ss.freeze(), HasSubstr("is a pointer"));
-        ASSERT_THAT(ss.freeze(), HasSubstr("into block"));
-        ASSERT_THAT(ss.freeze(), HasSubstr("in oop storage"));
+        // Direct slot hit.
+        {
+          stringStream ss;
+          bool printed = OopStorageSet::print_containing(addr, &ss);
+          ASSERT_TRUE(printed);
+          ASSERT_THAT(ss.freeze(), HasSubstr("is a pointer"));
+          ASSERT_THAT(ss.freeze(), HasSubstr("into block"));
+          ASSERT_THAT(ss.freeze(), HasSubstr("in oop storage"));
+        }
+
+        // Unaligned pointer to adjacent slot, should still be in oop storage range.
+        {
+          char* unaligned_addr = (char*)addr + 1;
+          stringStream ss;
+          bool printed = OopStorageSet::print_containing(unaligned_addr, &ss);
+          ASSERT_TRUE(printed);
+          ASSERT_THAT(ss.freeze(), HasSubstr("is a pointer"));
+          ASSERT_THAT(ss.freeze(), HasSubstr("into block"));
+          ASSERT_THAT(ss.freeze(), HasSubstr("in oop storage"));
+          ASSERT_THAT(ss.freeze(), HasSubstr("(unaligned)"));
+        }
       }
   };
 
@@ -140,7 +155,7 @@ TEST_VM_F(OopStorageSetTest, print_containing) {
   // Goofy values print nothing: unaligned out of storage pointer.
   {
     stringStream ss;
-    bool printed = OopStorageSet::print_containing((oop*)0x1, &ss);
+    bool printed = OopStorageSet::print_containing((char*)0x1, &ss);
     ASSERT_FALSE(printed);
     EXPECT_STREQ("", ss.freeze());
   }
@@ -148,7 +163,7 @@ TEST_VM_F(OopStorageSetTest, print_containing) {
   // Goofy values print nothing: aligned out of storage pointer.
   {
     stringStream ss;
-    bool printed = OopStorageSet::print_containing((oop*)0x8, &ss);
+    bool printed = OopStorageSet::print_containing((char*)0x8, &ss);
     ASSERT_FALSE(printed);
     EXPECT_STREQ("", ss.freeze());
   }

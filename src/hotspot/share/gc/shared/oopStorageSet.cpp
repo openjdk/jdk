@@ -82,10 +82,16 @@ template OopStorage* OopStorageSet::get_storage(StrongId);
 template OopStorage* OopStorageSet::get_storage(WeakId);
 template OopStorage* OopStorageSet::get_storage(Id);
 
-bool OopStorageSet::print_containing(oop* addr, outputStream* st) {
-  if (addr != nullptr) {
+bool OopStorageSet::print_containing(const void* addr, outputStream* st) {
+  const void* aligned_addr = align_down(addr, alignof(oop*));
+  if (aligned_addr != nullptr) {
     for (uint i = 0; i < OopStorageSet::all_count; i++) {
-      if (_storages[i]->print_containing(addr, st)) {
+      if (_storages[i]->print_containing((oop*) aligned_addr, st)) {
+        if (aligned_addr != addr) {
+          st->print_cr(" (unaligned)");
+        } else {
+          st->cr();
+        }
         return true;
       }
     }
