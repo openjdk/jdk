@@ -78,7 +78,7 @@ public:
 
     static bool equals(const RegionData& a, const RegionData& b) {
       return a.flag == b.flag &&
-             NativeCallStackStorage::StackIndex::equals(a.stack_idx, b.stack_idx);
+             NativeCallStackStorage::equals(a.stack_idx, b.stack_idx);
     }
   };
 
