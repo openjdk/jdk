@@ -46,7 +46,6 @@ public final class DirectMethodBuilder
     final Utf8Entry desc;
     int flags;
     int[] parameterSlots;
-    MethodTypeDesc mDesc;
 
     public DirectMethodBuilder(SplitConstantPool constantPool,
                                ClassFileImpl context,
@@ -87,14 +86,7 @@ public final class DirectMethodBuilder
 
     @Override
     public MethodTypeDesc methodTypeSymbol() {
-        if (mDesc == null) {
-            if (original instanceof MethodInfo mi) {
-                mDesc = mi.methodTypeSymbol();
-            } else {
-                mDesc = MethodTypeDesc.ofDescriptor(methodType().stringValue());
-            }
-        }
-        return mDesc;
+        return Util.methodTypeSymbol(methodType());
     }
 
     @Override

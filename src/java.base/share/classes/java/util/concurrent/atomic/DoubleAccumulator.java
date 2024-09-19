@@ -189,8 +189,7 @@ public class DoubleAccumulator extends Striped64 implements Serializable {
     }
 
     /**
-     * Returns the String representation of the current value.
-     * @return the String representation of the current value
+     * {@return the String representation of the current value}
      */
     public String toString() {
         return Double.toString(get());

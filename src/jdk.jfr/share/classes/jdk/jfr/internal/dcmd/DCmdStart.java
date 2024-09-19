@@ -353,7 +353,7 @@ final class DCmdStart extends AbstractDCmd {
                Options:
 
                  delay            (Optional) Length of time to wait before starting to record
-                                  (INTEGER followed by 's' for seconds 'm' for minutes or h' for
+                                  (INT followed by 's' for seconds 'm' for minutes or h' for
                                   hours, 0s)
 
                  disk             (Optional) Flag for also writing the data to disk while recording
@@ -368,7 +368,7 @@ final class DCmdStart extends AbstractDCmd {
                                   id-1-2021_09_14_09_00.jfr) (BOOLEAN, false)
 
                  duration         (Optional) Length of time to record. Note that 0s means forever
-                                  (INTEGER followed by 's' for seconds 'm' for minutes or 'h' for
+                                  (INT followed by 's' for seconds 'm' for minutes or 'h' for
                                   hours, 0s)
 
                  filename         (Optional) Name of the file to which the flight recording data is
@@ -385,7 +385,7 @@ final class DCmdStart extends AbstractDCmd {
 
                  maxage           (Optional) Maximum time to keep the recorded data on disk. This
                                   parameter is valid only when the disk parameter is set to true.
-                                  Note 0s means forever. (INTEGER followed by 's' for seconds 'm'
+                                  Note 0s means forever. (INT followed by 's' for seconds 'm'
                                   for minutes or 'h' for hours, 0s)
 
                  maxsize          (Optional) Maximum size of the data to keep on disk in bytes if

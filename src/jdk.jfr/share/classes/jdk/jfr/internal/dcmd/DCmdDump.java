@@ -237,7 +237,7 @@ final class DCmdDump extends AbstractDCmd {
                                   'yyyy_MM_dd_HH_mm_ss' format.
 
                  maxage           (Optional) Length of time for dumping the flight recording data to a
-                                  file. (INTEGER followed by 's' for seconds 'm' for minutes or 'h' for
+                                  file. (INT followed by 's' for seconds 'm' for minutes or 'h' for
                                   hours, no default value)
 
                  maxsize          (Optional) Maximum size for the amount of data to dump from a flight
