@@ -96,7 +96,7 @@
            range(0, 2)                                                      \
                                                                             \
   /*========== New "AOT" flags =========================================*/  \
-  /* The following 3 flags are aliases of -Xshare:dump, */                  \
+  /* The following 3 flags are aliases of -Xshare:dump,                 */  \
   /* -XX:SharedArchiveFile=..., etc. See CDSConfig::check_flag_aliases()*/  \
                                                                             \
   product(ccstr, AOTMode, nullptr,                                          \

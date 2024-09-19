@@ -313,7 +313,12 @@ size_t ArchiveBuilder::estimate_archive_size() {
   _estimated_hashtable_bytes = symbol_table_est + dictionary_est;
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
-    _estimated_hashtable_bytes += _klasses->length() * 16 * sizeof(Klass*);
+    // This is difficult to estimate when dumping the dynamic archive, as the
+    // AOTLinkedClassTable may need to contain classes in the static archive as well.
+    //
+    // Just give a generous estimate for now. We will remove estimate_archive_size()
+    // in JDK-8340416
+    _estimated_hashtable_bytes += 20 * 1024 * 1024;
   }
 
   size_t total = 0;
@@ -825,6 +830,8 @@ void ArchiveBuilder::make_klasses_shareable() {
         ik->assign_class_loader_type();
       }
       if (ik->is_hidden()) {
+        ADD_COUNT(num_hidden_klasses);
+        hidden = " hidden";
         oop loader = k->class_loader();
         if (loader == nullptr) {
           type = "boot";
@@ -872,10 +879,6 @@ void ArchiveBuilder::make_klasses_shareable() {
         }
       }
 
-      if (ik->is_hidden()) {
-        ADD_COUNT(num_hidden_klasses);
-        hidden = " hidden";
-      }
 
       if (ik->is_generated_shared_class()) {
         generated = " generated";
