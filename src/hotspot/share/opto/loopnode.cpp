@@ -3992,12 +3992,13 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // expressions.
     Node* init2 = phi2->in(LoopNode::EntryControl);
 
-    // determine the basic type of the stride constant (and the iv being incremented)
+    // Determine the basic type of the stride constant (and the iv being incremented).
     BasicType stride_con2_bt = incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
     jlong stride_con2 = incr2->in(2)->get_integer_as_long(stride_con2_bt);
 
     // The ratio of the two strides cannot be represented as an int
-    // if stride_con2 is min_int and stride_con is -1.
+    // if stride_con2 is min_jint (or min_jlong, respectively) and
+    // stride_con is -1.
     if (((stride_con2_bt == T_INT && stride_con2 == min_jint) ||
         (stride_con2_bt == T_LONG && stride_con2 == min_jlong)) &&
         stride_con == -1) {

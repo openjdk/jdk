@@ -23,15 +23,12 @@
 
 package compiler.loopopts.parallel_iv;
 
-import compiler.lib.ir_framework.Argument;
-import compiler.lib.ir_framework.Arguments;
-import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.Test;
-import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.*;
 
 import java.util.Random;
 import java.util.function.Function;
+
+import jdk.test.lib.Asserts;
 
 /**
  * @test
@@ -45,9 +42,11 @@ public class TestParallelIvInIntCountedLoop {
     private static final int stride2;
 
     static {
+        Random rng = new Random();
+
         // stride2 must be a multiple of stride and must not overflow for the optimization to work
-        stride = new Random().nextInt(1, Integer.MAX_VALUE / 16);
-        stride2 = stride * new Random().nextInt(1, 16);
+        stride = rng.nextInt(1, Integer.MAX_VALUE / 16);
+        stride2 = stride * rng.nextInt(1, 16);
     }
 
     public static void main(String[] args) {
@@ -62,9 +61,23 @@ public class TestParallelIvInIntCountedLoop {
      *
      * For good measures, a randomly initialized static final stride and stride2 is also tested.
      */
+
+    // A controlled test making sure a simple non-counted loop can be found by the test framework.
+    @Test
+    @Arguments(values = {Argument.NUMBER_42}) // otherwise a large number may take too long
+    @IR(counts = {IRNode.COUNTED_LOOP, ">=1"})
+    private static int testControlledSimpleLoop(int stop) {
+        int a = 0;
+        for (int i = 0; i < stop; i++) {
+            a += i; // cannot be extracted to multiplications
+        }
+
+        return a;
+    }
+
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIV(int stop) {
         int a = 0;
         for (int i = 0; i < stop; i++) {
@@ -76,7 +89,19 @@ public class TestParallelIvInIntCountedLoop {
 
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
+    private static int testIntCountedLoopWithIntIVLeq(int stop) {
+        int a = 0;
+        for (int i = 0; i <= stop; i++) {
+            a += 1;
+        }
+
+        return a;
+    }
+
+    @Test
+    @Arguments(values = {Argument.RANDOM_ONCE})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIVZero(int stop) {
         int a = 0;
         for (int i = 0; i < stop; i++) {
@@ -88,7 +113,7 @@ public class TestParallelIvInIntCountedLoop {
 
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIVMax(int stop) {
         int a = 0;
         for (int i = 0; i < stop; i++) {
@@ -100,7 +125,7 @@ public class TestParallelIvInIntCountedLoop {
 
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIVMaxMinusOne(int stop) {
         int a = 0;
         for (int i = 0; i < stop; i++) {
@@ -112,7 +137,7 @@ public class TestParallelIvInIntCountedLoop {
 
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIVMaxPlusOne(int stop) {
         int a = 0;
         for (int i = 0; i < stop; i++) {
@@ -124,7 +149,7 @@ public class TestParallelIvInIntCountedLoop {
 
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIVWithStrideTwo(int stop) {
         int a = 0;
         for (int i = 0; i < stop; i += 2) {
@@ -136,7 +161,7 @@ public class TestParallelIvInIntCountedLoop {
 
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIVWithStrideMinusOne(int stop) {
         int a = 0;
         for (int i = stop; i > 0; i += -1) {
@@ -148,7 +173,7 @@ public class TestParallelIvInIntCountedLoop {
 
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIVWithRandomStrides(int stop) {
         int a = 0;
         for (int i = 0; i < stop; i += stride) {
@@ -159,8 +184,20 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
+    @Arguments(values = {Argument.RANDOM_ONCE, Argument.RANDOM_ONCE, Argument.RANDOM_ONCE})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
+    private static int testIntCountedLoopWithIntIVWithRandomStridesAndInits(int init, int init2, int stop) {
+        int a = init;
+        for (int i = init2; i < stop; i += stride) {
+            a += stride2;
+        }
+
+        return a;
+    }
+
+    @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIV(int stop) {
         long a = 0;
         for (int i = 0; i < stop; i++) {
@@ -172,7 +209,19 @@ public class TestParallelIvInIntCountedLoop {
 
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
+    private static long testIntCountedLoopWithLongIVLeq(int stop) {
+        long a = 0;
+        for (int i = 0; i <= stop; i++) {
+            a += 1;
+        }
+
+        return a;
+    }
+
+    @Test
+    @Arguments(values = {Argument.RANDOM_ONCE})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIVZero(int stop) {
         long a = 0;
         for (int i = 0; i < stop; i++) {
@@ -184,7 +233,7 @@ public class TestParallelIvInIntCountedLoop {
 
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIVMax(int stop) {
         long a = 0;
         for (int i = 0; i < stop; i++) {
@@ -196,7 +245,7 @@ public class TestParallelIvInIntCountedLoop {
 
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIVMaxMinusOne(int stop) {
         long a = 0;
         for (int i = 0; i < stop; i++) {
@@ -208,7 +257,7 @@ public class TestParallelIvInIntCountedLoop {
 
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIVMaxPlusOne(int stop) {
         long a = 0;
         for (int i = 0; i < stop; i++) {
@@ -220,7 +269,7 @@ public class TestParallelIvInIntCountedLoop {
 
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIVWithStrideTwo(int stop) {
         long a = 0;
         for (int i = 0; i < stop; i += 2) {
@@ -232,7 +281,7 @@ public class TestParallelIvInIntCountedLoop {
 
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIVWithStrideMinusOne(int stop) {
         long a = 0;
         for (int i = stop; i > 0; i += -1) {
@@ -244,7 +293,7 @@ public class TestParallelIvInIntCountedLoop {
 
     @Test
     @Arguments(values = {Argument.RANDOM_ONCE})
-    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIVWithRandomStrides(int stop) {
         long a = 0;
         for (int i = 0; i < stop; i += stride) {
@@ -254,37 +303,55 @@ public class TestParallelIvInIntCountedLoop {
         return a;
     }
 
-    private static <T extends Number> void test(Function<Integer, T> function, int iteration, T expected) {
-        T result = function.apply(iteration);
-        if (!result.equals(expected)) {
-            throw new RuntimeException("Bad result for IV with stop = " + iteration + ", expected " + expected
-                    + ", got " + result);
+    @Test
+    @Arguments(values = {Argument.RANDOM_ONCE, Argument.RANDOM_ONCE, Argument.RANDOM_ONCE})
+    @IR(failOn = {IRNode.COUNTED_LOOP})
+    private static long testIntCountedLoopWithLongIVWithRandomStridesAndInits(long init, int init2, int stop) {
+        long a = init;
+        for (int i = init2; i < stop; i += stride) {
+            a += stride2;
         }
+
+        return a;
     }
 
     private static void testCorrectness() {
-        int[] iterations = {0, 1, 2, 42, 100};
+        Random rng = new Random();
+
+        int[] iterations = {0, 1, 2, 42, 100, rng.nextInt(0, Integer.MAX_VALUE)};
 
         for (int i : iterations) {
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIV, i, i);
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIVZero, i, 0);
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIVMax, i, i * Integer.MAX_VALUE);
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIVMaxMinusOne, i, i * (Integer.MAX_VALUE - 1));
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIVMaxPlusOne, i, i * (Integer.MAX_VALUE + 1));
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIVWithStrideTwo, i, Math.ceilDiv(i, 2) * 2);
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIVWithStrideMinusOne, i, i);
+            Asserts.assertEQ(i, testIntCountedLoopWithIntIV(i));
+            Asserts.assertEQ(i + 1, testIntCountedLoopWithIntIVLeq(i));
+            Asserts.assertEQ(0, testIntCountedLoopWithIntIVZero(i));
+            Asserts.assertEQ(i * Integer.MAX_VALUE, testIntCountedLoopWithIntIVMax(i));
+            Asserts.assertEQ(i * (Integer.MAX_VALUE - 1), testIntCountedLoopWithIntIVMaxMinusOne(i));
+            Asserts.assertEQ(i * (Integer.MAX_VALUE + 1), testIntCountedLoopWithIntIVMaxPlusOne(i));
+            Asserts.assertEQ(Math.ceilDiv(i, 2) * 2, testIntCountedLoopWithIntIVWithStrideTwo(i));
+            Asserts.assertEQ(i, testIntCountedLoopWithIntIVWithStrideMinusOne(i));
 
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIV, i, (long) i);
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVZero, i, (long) 0);
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVMax, i, (long) i * Long.MAX_VALUE);
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVMaxMinusOne, i, (long) i * (Long.MAX_VALUE - 1));
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVMaxPlusOne, i, (long) i * (Long.MAX_VALUE + 1));
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVWithStrideTwo, i, Math.ceilDiv(i, (long) 2) * 2);
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVWithStrideMinusOne, i, (long) i);
+            Asserts.assertEQ((long) i, testIntCountedLoopWithLongIV(i));
+            Asserts.assertEQ((long) i + 1l, testIntCountedLoopWithLongIVLeq(i));
+            Asserts.assertEQ((long) 0, testIntCountedLoopWithLongIVZero(i));
+            Asserts.assertEQ((long) i * Long.MAX_VALUE, testIntCountedLoopWithLongIVMax(i));
+            Asserts.assertEQ((long) i * (Long.MAX_VALUE - 1l), testIntCountedLoopWithLongIVMaxMinusOne(i));
+            Asserts.assertEQ((long) i * (Long.MAX_VALUE + 1l), testIntCountedLoopWithLongIVMaxPlusOne(i));
+            Asserts.assertEQ(Math.ceilDiv(i, 2l) * 2l, testIntCountedLoopWithLongIVWithStrideTwo(i));
+            Asserts.assertEQ((long) i, testIntCountedLoopWithLongIVWithStrideMinusOne(i));
 
-            // test with random stride and stride2 for good measure
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIVWithRandomStrides, i, Math.ceilDiv(i, stride) * stride2);
-            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVWithRandomStrides, i, Math.ceilDiv(i, (long) stride) * stride2);
+            // test with random stride and stride2
+            Asserts.assertEQ(Math.ceilDiv(i, stride) * stride2, testIntCountedLoopWithIntIVWithRandomStrides(i));
+            Asserts.assertEQ(Math.ceilDiv(i, (long) stride) * (long) stride2, testIntCountedLoopWithLongIVWithRandomStrides(i));
+
+            // also test with random init and init2
+            int init1 = rng.nextInt();
+            int init2 = rng.nextInt(Integer.MIN_VALUE, i);
+            Asserts.assertEQ(Math.ceilDiv((i - init2), stride) * stride2 + init1,
+                    testIntCountedLoopWithIntIVWithRandomStridesAndInits(init1, init2, i));
+
+            long init1L = rng.nextLong(Long.MIN_VALUE, i);
+            Asserts.assertEQ(Math.ceilDiv(((long) i - init2), (long) stride) * (long) stride2 + init1L,
+                    testIntCountedLoopWithLongIVWithRandomStridesAndInits(init1L, init2, i));
         }
     }
 }
