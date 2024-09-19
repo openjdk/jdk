@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023 Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024 Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,12 +184,8 @@ public:
           EXPECT_FREEBLOCKS_UNCHANGED(nca);
         }
         return bl;
-
-      } // end: is_class
-
-      else
-
-      {
+        // end: is_class
+      } else {
         // Nonclass arena allocation.
         // Allocation waste can happen:
         // - if we allocate from nonclass freeblocks, the block remainder

@@ -239,7 +239,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 
   } else {
 
-    // Traditional (non-compact) header mode)
+    // Traditional (non-compact) header mode
     const uintptr_t unscaled_max = nth_bit(narrow_klass_pointer_bits());
     const uintptr_t zerobased_max = nth_bit(narrow_klass_pointer_bits() + max_shift());
 

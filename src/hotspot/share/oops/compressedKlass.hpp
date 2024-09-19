@@ -259,4 +259,5 @@ public:
   }
 
 };
+
 #endif // SHARE_OOPS_COMPRESSEDKLASS_HPP
