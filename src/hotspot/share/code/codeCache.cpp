@@ -781,7 +781,6 @@ void CodeCache::gc_on_allocation() {
 
   size_t free = unallocated_capacity();
   size_t max = max_capacity();
-  size_t used = max - free;
   double free_ratio = double(free) / double(max);
   if (free_ratio <= StartAggressiveSweepingAt / 100.0)  {
     // In case the GC is concurrent, we make sure only one thread requests the GC.
@@ -789,34 +788,8 @@ void CodeCache::gc_on_allocation() {
       log_info(codecache)("Triggering aggressive GC due to having only %.3f%% free memory", free_ratio * 100.0);
       Universe::heap()->collect(GCCause::_codecache_GC_aggressive);
     }
-    return;
   }
-
-  size_t last_used = _last_unloading_used;
-  if (last_used >= used) {
-    // No increase since last GC; no need to sweep yet
-    return;
-  }
-  size_t allocated_since_last = used - last_used;
-  double allocated_since_last_ratio = double(allocated_since_last) / double(max);
-  double threshold = SweeperThreshold / 100.0;
-  double used_ratio = double(used) / double(max);
-  double last_used_ratio = double(last_used) / double(max);
-  if (used_ratio > threshold) {
-    // After threshold is reached, scale it by free_ratio so that more aggressive
-    // GC is triggered as we approach code cache exhaustion
-    threshold *= free_ratio;
-  }
-  // If code cache has been allocated without any GC at all, let's make sure
-  // it is eventually invoked to avoid trouble.
-  if (allocated_since_last_ratio > threshold) {
-    // In case the GC is concurrent, we make sure only one thread requests the GC.
-    if (Atomic::cmpxchg(&_unloading_threshold_gc_requested, false, true) == false) {
-      log_info(codecache)("Triggering threshold (%.3f%%) GC due to allocating %.3f%% since last unloading (%.3f%% used -> %.3f%% used)",
-                          threshold * 100.0, allocated_since_last_ratio * 100.0, last_used_ratio * 100.0, used_ratio * 100.0);
-      Universe::heap()->collect(GCCause::_codecache_GC_threshold);
-    }
-  }
+  return;
 }
 
 // We initialize the _gc_epoch to 2, because previous_completed_gc_marking_cycle

@@ -250,7 +250,6 @@ static bool should_clear_all_soft_references(GCCause::Cause cause) {
   case GCCause::_z_allocation_rate:
   case GCCause::_z_proactive:
   case GCCause::_metadata_GC_threshold:
-  case GCCause::_codecache_GC_threshold:
   case GCCause::_codecache_GC_aggressive:
     break;
 
@@ -288,7 +287,6 @@ static bool should_preclean_young(GCCause::Cause cause) {
   case GCCause::_z_allocation_rate:
   case GCCause::_z_proactive:
   case GCCause::_metadata_GC_threshold:
-  case GCCause::_codecache_GC_threshold:
   case GCCause::_codecache_GC_aggressive:
     break;
 
@@ -352,7 +350,6 @@ void ZDriverMajor::collect(const ZDriverRequest& request) {
   case GCCause::_z_allocation_rate:
   case GCCause::_z_allocation_stall:
   case GCCause::_z_proactive:
-  case GCCause::_codecache_GC_threshold:
   case GCCause::_metadata_GC_threshold:
     // Start asynchronous GC
     _port.send_async(request);

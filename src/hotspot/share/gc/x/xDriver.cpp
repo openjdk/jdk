@@ -247,7 +247,6 @@ void XDriver::collect(const XDriverRequest& request) {
   case GCCause::_z_allocation_stall:
   case GCCause::_z_proactive:
   case GCCause::_z_high_usage:
-  case GCCause::_codecache_GC_threshold:
   case GCCause::_metadata_GC_threshold:
     // Start asynchronous GC
     _gc_cycle_port.send_async(request);
