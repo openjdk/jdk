@@ -41,7 +41,6 @@ import java.awt.event.ComponentEvent;
 public class LotsOfMenuItemsTest extends ComponentAdapter {
     private static final int NUM_WINDOWS = 400;
     private static TestFrame firstFrame;
-    private static TestFrame testFrame;
 
     public static void main(String[] args) throws Exception {
         LotsOfMenuItemsTest obj = new LotsOfMenuItemsTest();
@@ -73,6 +72,7 @@ public class LotsOfMenuItemsTest extends ComponentAdapter {
 
     @Override
     public void componentShown(ComponentEvent e) {
+        TestFrame testFrame;
         final int x = firstFrame.getX();
         final int y = firstFrame.getY() + firstFrame.getHeight() + 8;
 
