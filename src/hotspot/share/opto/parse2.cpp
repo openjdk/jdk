@@ -1374,7 +1374,7 @@ inline int Parse::repush_if_args() {
 // Used by StressUnstableIfTraps
 static volatile int _trap_stress_counter = 0;
 
-void Parse::load_trap_stress_counter(Node*& counter, Node*& incr_store) {
+void Parse::increment_trap_stress_counter(Node*& counter, Node*& incr_store) {
   Node* counter_addr = makecon(TypeRawPtr::make((address)&_trap_stress_counter));
   counter = make_load(control(), counter_addr, TypeInt::INT, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
   counter = _gvn.transform(new AddINode(counter, intcon(1)));
@@ -1389,7 +1389,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   Node* incr_store = nullptr;
   bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
   if (do_stress_trap) {
-    load_trap_stress_counter(counter, incr_store);
+    increment_trap_stress_counter(counter, incr_store);
   }
 
   Block* branch_block = successor_for_bci(target_bci);
@@ -1493,7 +1493,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   Node* incr_store = nullptr;
   bool do_stress_trap = StressUnstableIfTraps && ((C->random() % 2) == 0);
   if (do_stress_trap) {
-    load_trap_stress_counter(counter, incr_store);
+    increment_trap_stress_counter(counter, incr_store);
   }
 
   // Sanity check the probability value
@@ -1588,16 +1588,9 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
   // Search for an unstable if trap
   CallStaticJavaNode* trap = nullptr;
   assert(orig_iff->Opcode() == Op_If && orig_iff->outcnt() == 2, "malformed if");
-  for (int i = 0; i <= 1; ++i) {
-    trap = (CallStaticJavaNode*)orig_iff->raw_out(i)->find_out_with(Op_CallStaticJava);
-    if (trap != nullptr && trap->is_uncommon_trap() && trap->jvms()->should_reexecute() &&
-        Deoptimization::trap_request_reason(trap->uncommon_trap_request()) == Deoptimization::Reason_unstable_if) {
-      break; // Trap found
-    }
-    trap = nullptr;
-  }
-  if (trap == nullptr) {
-    // No trap found. Remove unused counter load and increment.
+  ProjNode* trap_proj = orig_iff->uncommon_trap_proj(trap, Deoptimization::Reason_unstable_if);
+  if (trap == nullptr || !trap->jvms()->should_reexecute()) {
+    // No suitable trap found. Remove unused counter load and increment.
     C->gvn_replace_by(incr_store, incr_store->in(MemNode::Memory));
     return;
   }
@@ -1618,7 +1611,6 @@ void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
   assert(!if_true->is_top() && !if_false->is_top(), "trap always / never taken");
 
   // Trap
-  ProjNode* trap_proj = trap->in(0)->as_Proj();
   assert(trap_proj->outcnt() == 1, "some other nodes are dependent on the trap projection");
 
   Node* trap_region = new RegionNode(3);

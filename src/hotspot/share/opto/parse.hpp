@@ -614,8 +614,8 @@ class Parse : public GraphKit {
 
   // Stress unstable if traps
   void stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store);
-  // Load counter used by StressUnstableIfTraps
-  void load_trap_stress_counter(Node*& counter, Node*& incr_store);
+  // Increment counter used by StressUnstableIfTraps
+  void increment_trap_stress_counter(Node*& counter, Node*& incr_store);
 
  public:
 #ifndef PRODUCT
