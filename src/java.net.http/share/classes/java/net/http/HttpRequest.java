@@ -185,7 +185,7 @@ public abstract class HttpRequest {
     public sealed interface HttpRequestOption<T> permits HttpRequestOptionImpl {
         /**
          * {@return The option name}
-         * @implSpec  Different options should have different names.
+         * @implSpec  Different options must have different names.
          */
         String name();
 
