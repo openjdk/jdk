@@ -5409,13 +5409,6 @@ class StubGenerator: public StubCodeGenerator {
                                                                                    : -1;
     guarantee(multiply_by_halves != -1, "unknown multiplication algorithm");
 
-    const int small_loop_size = load_arrangement == Assembler::T4S   ? 20  // 5 insts
-                                : load_arrangement == Assembler::T4H ? 24  // 6 insts
-                                : load_arrangement == Assembler::T8H ? 36  // 9 insts
-                                : load_arrangement == Assembler::T8B ? 40  // 10 insts
-                                                                     : -1; // invalid
-    guarantee(small_loop_size != -1, "invalid small_loop_size");
-
     // Put 0-3'th powers of 31 into a single SIMD register together. The register will be used in
     // the SMALL and LARGE LOOPS' epilogues. The initialization is hoisted here and the register's
     // value shouldn't change throughout both loops.
@@ -5437,11 +5430,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(rscratch1, intpow(31U, multiply_by_halves ? vf / 2 : vf));
     __ mov(vpowm, Assembler::S, 0, rscratch1);
 
-    if (small_loop_size % 32 > 32 - __ offset() % 32) {
-      __ align(32);
-    }
-
-    auto start = __ offset();
+    // SMALL LOOP
     __ bind(SMALL_LOOP);
 
     __ ld1(vdata0, load_arrangement, Address(__ post(ary, vf * type2aelembytes(eltype))));
@@ -5486,10 +5475,8 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     __ br(Assembler::HI, SMALL_LOOP);
-    guarantee(__ offset() - start == small_loop_size, "Incorrect small_loop_size");
 
     // SMALL LOOP'S EPILOQUE
-
     __ lsr(rscratch2, cnt, exact_log2(evf));
     __ cbnz(rscratch2, LARGE_LOOP_PREHEADER);
 
@@ -5498,14 +5485,8 @@ class StubGenerator: public StubCodeGenerator {
     __ umov(result, vmul0, Assembler::S, 0);
 
     // TAIL
-
-    const int tail_size = (8 + (vf - 1) * 2) * 4; // 14 or 22 insts
-    if (tail_size % 32 > 32 - __ offset() % 32) {
-      __ align(32);
-    }
-
     __ bind(TAIL);
-    start = __ offset();
+
     assert(is_power_of_2(vf), "can't use this value to calculate the jump target PC");
     __ andr(rscratch2, cnt, vf - 1);
     __ bind(TAIL_SHORTCUT);
@@ -5523,11 +5504,8 @@ class StubGenerator: public StubCodeGenerator {
 
     __ leave();
     __ ret(lr);
-    guarantee(__ offset() - start == tail_size, "unexptected size of the tail code block");
 
     // LARGE LOOP
-
-    __ align(32);
     __ bind(LARGE_LOOP_PREHEADER);
 
     __ lsr(rscratch2, cnt, exact_log2(evf));
@@ -5549,18 +5527,6 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(vmul2, Assembler::T16B, 0);
     __ mov(vmul1, Assembler::T16B, 0);
 
-    const int large_loop_size = load_arrangement == Assembler::T4S   ? 44  // 11 insts
-                                : load_arrangement == Assembler::T4H ? 60  // 15 insts
-                                : load_arrangement == Assembler::T8H ? 108 // 27 insts
-                                : load_arrangement == Assembler::T8B ? 124 // 31 insts
-                                                                     : -1; // invalid
-    guarantee(large_loop_size != -1, "invalid small_loop_size");
-
-    if (large_loop_size % 32 > 32 - __ offset() % 32) {
-      __ align(32);
-    }
-
-    start = __ offset();
     __ bind(LARGE_LOOP);
 
     __ mulvs(vmul3, Assembler::T4S, vmul3, vpowm, 0);
@@ -5640,7 +5606,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ subsw(rscratch2, rscratch2, 1);
     __ br(Assembler::HI, LARGE_LOOP);
-    guarantee(__ offset() - start == large_loop_size, "Incorrect large_loop_size");
 
     __ mulv(vmul3, Assembler::T4S, vmul3, vpow);
     __ addv(vmul3, Assembler::T4S, vmul3);
