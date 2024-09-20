@@ -1066,12 +1066,12 @@ public final class StackMapGenerator {
                     locals[localsSize + 1] = Type.DOUBLE2_TYPE;
                     localsSize += 2;
                 } else {
-                    if (desc == CD_int || desc == CD_boolean || desc == CD_byte || desc == CD_char || desc == CD_short) {
-                        type = Type.INTEGER_TYPE;
+                    if (desc instanceof ReferenceClassDescImpl) {
+                        type = Type.referenceType(desc);
                     } else if (desc == CD_float) {
                         type = Type.FLOAT_TYPE;
                     } else {
-                        type = Type.referenceType(desc);
+                        type = Type.INTEGER_TYPE;
                     }
                     locals[localsSize++] = type;
                 }
