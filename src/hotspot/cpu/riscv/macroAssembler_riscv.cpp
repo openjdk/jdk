@@ -1454,6 +1454,103 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
   xorr(crc, crc, tmp2);
 }
 
+
+// This improvement (vectorization) is based on java.base/share/native/libzip/zlib/zcrc32.c.
+// To make it, following steps are taken:
+//  1. in zcrc32.c, modify N to 16 and related code,
+//  2. re-generate the tables needed, we use tables of (N == 16, W == 4)
+//  3. finally vectorize the code (original implementation in zcrc32.c is just scalar code).
+// New tables for vector version is after table3.
+void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register len,
+                                         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
+                                         Register table0, Register table3) {
+    assert_different_registers(t1, crc, buf, len, tmp1, tmp2, tmp3, tmp4, tmp5, table0, table3);
+    const int N = 16, W = 4;
+    const int64_t single_table_size = 256;
+    const Register blks = tmp2;
+    const Register tmpTable = tmp3, tableN16 = tmp4;
+    const VectorRegister vcrc = v4, vword = v8, vtmp = v12;
+    Label VectorLoop;
+    Label LastBlock;
+
+    add(tableN16, table3, 1*single_table_size*sizeof(juint), tmp1);
+    mv(tmp5, 0xff);
+
+    if (MaxVectorSize == 16) {
+      vsetivli(zr, N, Assembler::e32, Assembler::m4, Assembler::ma, Assembler::ta);
+    } else if (MaxVectorSize == 32) {
+      vsetivli(zr, N, Assembler::e32, Assembler::m2, Assembler::ma, Assembler::ta);
+    } else {
+      assert(MaxVectorSize > 32, "sanity");
+      vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
+    }
+
+    vmv_v_x(vcrc, zr);
+    vmv_s_x(vcrc, crc);
+
+    // multiple of 64
+    srli(blks, len, 6);
+    slli(t1, blks, 6);
+    sub(len, len, t1);
+    sub(blks, blks, 1);
+    blez(blks, LastBlock);
+
+    bind(VectorLoop);
+    {
+      mv(tmpTable, tableN16);
+
+      vle32_v(vword, buf);
+      vxor_vv(vword, vword, vcrc);
+
+      addi(buf, buf, N*4);
+
+      vand_vx(vtmp, vword, tmp5);
+      vsll_vi(vtmp, vtmp, 2);
+      vluxei32_v(vcrc, tmpTable, vtmp);
+
+      mv(tmp1, 1);
+      for (int k = 1; k < W; k++) {
+        addi(tmpTable, tmpTable, single_table_size*4);
+
+        slli(t1, tmp1, 3);
+        vsrl_vx(vtmp, vword, t1);
+
+        vand_vx(vtmp, vtmp, tmp5);
+        vsll_vi(vtmp, vtmp, 2);
+        vluxei32_v(vtmp, tmpTable, vtmp);
+
+        vxor_vv(vcrc, vcrc, vtmp);
+
+        addi(tmp1, tmp1, 1);
+      }
+
+      sub(blks, blks, 1);
+      bgtz(blks, VectorLoop);
+    }
+
+    bind(LastBlock);
+    {
+      vle32_v(vtmp, buf);
+      vxor_vv(vcrc, vcrc, vtmp);
+      mv(crc, zr);
+      for (int i = 0; i < N; i++) {
+        vmv_x_s(tmp2, vcrc);
+        // in vmv_x_s, the value is sign-extended to SEW bits, but we need zero-extended here.
+        zext_w(tmp2, tmp2);
+        vslidedown_vi(vcrc, vcrc, 1);
+        xorr(crc, crc, tmp2);
+        for (int j = 0; j < W; j++) {
+          andr(t1, crc, tmp5);
+          shadd(t1, t1, table0, tmp1, 2);
+          lwu(t1, Address(t1, 0));
+          srli(tmp2, crc, 8);
+          xorr(crc, tmp2, t1);
+        }
+      }
+      addi(buf, buf, N*4);
+    }
+}
+
 /**
  * @param crc   register containing existing CRC (32-bit)
  * @param buf   register pointing to input byte buffer (byte*)
@@ -1465,21 +1562,28 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
   assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
-  Label L_by16_loop, L_unroll_loop, L_unroll_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
+  Label L_by16_loop, L_vector_entry, L_unroll_loop, L_unroll_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
 
+  const int64_t single_table_size = 256;
   const int64_t unroll = 16;
   const int64_t unroll_words = unroll*wordSize;
   mv(tmp5, right_32_bits);
-  subw(len, len, unroll_words);
   andn(crc, tmp5, crc);
 
   const ExternalAddress table_addr = StubRoutines::crc_table_addr();
   la(table0, table_addr);
-  add(table1, table0, 1*256*sizeof(juint), tmp1);
-  add(table2, table0, 2*256*sizeof(juint), tmp1);
-  add(table3, table2, 1*256*sizeof(juint), tmp1);
+  add(table1, table0, 1*single_table_size*sizeof(juint), tmp1);
+  add(table2, table0, 2*single_table_size*sizeof(juint), tmp1);
+  add(table3, table2, 1*single_table_size*sizeof(juint), tmp1);
 
+  if (UseRVV) {
+    const int64_t tmp_limit = MaxVectorSize >= 32 ? unroll_words*3 : unroll_words*5;
+    mv(tmp1, tmp_limit);
+    bge(len, tmp1, L_vector_entry);
+  }
+  subw(len, len, unroll_words);
   bge(len, zr, L_unroll_loop_entry);
+
   addiw(len, len, unroll_words-4);
   bge(len, zr, L_by4_loop);
   addiw(len, len, 4);
@@ -1538,6 +1642,19 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     srli(tmp2, tmp1, 24);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
+
+  // put vector code here, otherwise "offset is too large" error occurs.
+  if (UseRVV) {
+    j(L_exit); // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
+
+    bind(L_vector_entry);
+    vector_update_crc32(crc, buf, len, tmp1, tmp2, tmp3, tmp4, tmp6, table0, table3);
+
+    addiw(len, len, -4);
+    bge(len, zr, L_by4_loop);
+    addiw(len, len, 4);
+    bgt(len, zr, L_by1_loop);
+  }
 
   bind(L_exit);
     andn(crc, tmp5, crc);
@@ -1853,9 +1970,9 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
 void MacroAssembler::reinit_heapbase() {
   if (UseCompressedOops) {
     if (Universe::is_fully_initialized()) {
-      mv(xheapbase, CompressedOops::ptrs_base());
+      mv(xheapbase, CompressedOops::base());
     } else {
-      ExternalAddress target(CompressedOops::ptrs_base_addr());
+      ExternalAddress target(CompressedOops::base_addr());
       relocate(target.rspec(), [&] {
         int32_t offset;
         la(xheapbase, target.target(), offset);

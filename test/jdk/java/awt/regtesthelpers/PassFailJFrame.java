@@ -74,6 +74,7 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 
 import static java.util.Collections.unmodifiableList;
+import static javax.swing.BorderFactory.createEmptyBorder;
 import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.isEventDispatchThread;
 
@@ -501,6 +502,7 @@ public final class PassFailJFrame {
         JTextArea text = new JTextArea(instructions, rows, columns);
         text.setLineWrap(true);
         text.setWrapStyleWord(true);
+        text.setBorder(createEmptyBorder(4, 4, 4, 4));
         return text;
     }
 
@@ -1182,11 +1184,45 @@ public final class PassFailJFrame {
             return this;
         }
 
+        /**
+         * Sets the number of rows for displaying the instruction text.
+         * The default value is the number of lines in the text plus 1:
+         * {@code ((int) instructions.lines().count() + 1)}.
+         *
+         * @param rows the number of rows for instruction text
+         * @return this builder
+         */
         public Builder rows(int rows) {
             this.rows = rows;
             return this;
         }
 
+        private int getDefaultRows() {
+            return (int) instructions.lines().count() + 1;
+        }
+
+        /**
+         * Adds a certain number of rows for displaying the instruction text.
+         *
+         * @param rowsAdd the number of rows to add to the number of rows
+         * @return this builder
+         * @see #rows
+         */
+        public Builder rowsAdd(int rowsAdd) {
+            if (rows == 0) {
+                rows = getDefaultRows();
+            }
+            rows += rowsAdd;
+
+            return this;
+        }
+
+        /**
+         * Sets the number of columns for displaying the instruction text.
+         *
+         * @param columns the number of columns for instruction text
+         * @return this builder
+         */
         public Builder columns(int columns) {
             this.columns = columns;
             return this;
@@ -1247,6 +1283,29 @@ public final class PassFailJFrame {
             checkWindowsLists();
 
             this.windowListCreator = () -> List.of(windowCreator.createTestUI());
+            return this;
+        }
+
+        /**
+         * Adds an implementation of {@link PositionWindows PositionWindows}
+         * which the framework will use to position multiple test UI windows.
+         *
+         * @param positionWindows an implementation of {@code PositionWindows}
+         *                        to position multiple test UI windows
+         * @return this builder
+         * @throws IllegalArgumentException if the {@code positionWindows}
+         *              parameter is {@code null}
+         * @throws IllegalStateException if the {@code positionWindows} field
+         *              is already set
+         */
+        public Builder positionTestUI(PositionWindows positionWindows) {
+            if (positionWindows == null) {
+                throw new IllegalArgumentException("positionWindows parameter can't be null");
+            }
+            if (this.positionWindows != null) {
+                throw new IllegalStateException("PositionWindows is already set");
+            }
+            this.positionWindows = positionWindows;
             return this;
         }
 
@@ -1458,7 +1517,7 @@ public final class PassFailJFrame {
             }
 
             if (rows == 0) {
-                rows = ROWS;
+                rows = getDefaultRows();
             }
 
             if (columns == 0) {

@@ -1716,10 +1716,10 @@ void FileMapInfo::close() {
  */
 static char* map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,
-                        bool allow_exec, MEMFLAGS flags = mtNone) {
+                        bool allow_exec, MemTag mem_tag = mtNone) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
                              AlwaysPreTouch ? false : read_only,
-                             allow_exec, flags);
+                             allow_exec, mem_tag);
   if (mem != nullptr && AlwaysPreTouch) {
     os::pretouch_memory(mem, mem + bytes);
   }
@@ -2178,7 +2178,7 @@ bool FileMapInfo::map_heap_region_impl() {
 
   _mapped_heap_memregion = MemRegion(start, word_size);
 
-  // Map the archived heap data. No need to call MemTracker::record_virtual_memory_type()
+  // Map the archived heap data. No need to call MemTracker::record_virtual_memory_tag()
   // for mapped region as it is part of the reserved java heap, which is already recorded.
   char* addr = (char*)_mapped_heap_memregion.start();
   char* base;
