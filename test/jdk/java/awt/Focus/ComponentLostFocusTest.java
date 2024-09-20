@@ -25,7 +25,7 @@
  * @test
  * @bug 4982943
  * @key headful
- * @summary focus lost in text fields or text areas, unable to enter characters from keyboar
+ * @summary focus lost in text fields or text areas, unable to enter characters from keyboard
  * @run main ComponentLostFocusTest
  */
 
