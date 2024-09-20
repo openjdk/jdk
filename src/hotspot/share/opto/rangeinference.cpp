@@ -62,7 +62,10 @@ public:
   }
 };
 
-// Find the minimum value that is not less than lo and satisfies bits.
+// Find the minimum value that is not less than lo and satisfies bits. If there
+// does not exist one such number, the calculation will overflow and return a
+// value < lo.
+//
 // Here, we view a number in binary as a bit string. As a result,  the first
 // bit refers to the highest bit (the MSB), the last bit refers to the lowest
 // bit (the LSB), a bit comes before (being higher than) another if it is more
@@ -215,9 +218,11 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // This is the first value which have the violated bit being 1, which means
     // that the result should not be smaller than this
     //           1 1 0 0 0 0 0 0
-    lo = (lo & -alignment) + alignment;
+    U new_lo = (lo & -alignment) + alignment;
     //           1 1 0 0 1 0 1 0
-    return lo | bits._ones;
+    new_lo |= bits._ones;
+    assert(lo < new_lo, "this case cannot overflow");
+    return new_lo;
   } else {
     // This means that the first bit that does not satisfy the bit requirement
     // is a 1 that should be a 0. Trace backward to find i which is the last
@@ -256,10 +261,12 @@ static U adjust_lo(U lo, const KnownBits<U>& bits) {
     // Set the bit at i and unset all the bit after, this is the smallest value
     // that satisfies bits._zeros
     //           1 0 1 0 0 0 0 0
-    lo = (lo & -alignment) + alignment;
+    U new_lo = (lo & -alignment) + alignment;
     // Satisfy bits._ones
     //           1 0 1 0 0 0 1 1
-    return lo | bits._ones;
+    new_lo |= bits._ones;
+    assert(lo < new_lo || new_lo == bits._ones, "overflow must return bits._ones");
+    return new_lo;
   }
 }
 
