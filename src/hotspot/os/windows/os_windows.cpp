@@ -88,6 +88,7 @@
 #endif
 
 #include <windows.h>
+#include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/timeb.h>
@@ -4090,6 +4091,33 @@ int    os::win32::_build_minor               = 0;
 bool   os::win32::_processor_group_warning_displayed = false;
 bool   os::win32::_job_object_processor_group_warning_displayed = false;
 
+std::string GetWindowsInstallationType() {
+  HKEY hKey;
+  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+  const char* valueName = "InstallationType";
+  char value[256];
+  DWORD valueLength = sizeof(value);
+
+  // Open the registry key
+  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
+      return "";
+  }
+
+  // Query the value
+  if (RegQueryValueExA(hKey, valueName, NULL, NULL, (LPBYTE)value, &valueLength) != ERROR_SUCCESS) {
+      RegCloseKey(hKey);
+      return "";
+  }
+
+  RegCloseKey(hKey);
+  return std::string(value, valueLength - 1); // Exclude null terminator
+}
+
+bool IsNanoServer() {
+  std::string installationType = GetWindowsInstallationType();
+  return installationType == "Nano Server";
+}
+
 void os::win32::initialize_windows_version() {
   assert(_major_version == 0, "windows version already initialized.");
 
@@ -4107,10 +4135,12 @@ void os::win32::initialize_windows_version() {
     warning("Attempt to determine system directory failed: %s", buf_len != 0 ? error_msg_buffer : "<unknown error>");
     return;
   }
-  strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
-  // On Windows Nanoserver the kernel32.dll is located in the forwarders subdirectory
-  if (!os::file_exists(kernel32_path)) {
+
+  if (IsNanoServer()) {
+    // On Windows Nanoserver the kernel32.dll is located in the forwarders subdirectory
     strncat(kernel32_path, "\\forwarders\\kernel32.dll", MAX_PATH - ret);
+  } else {
+    strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
   }
 
   DWORD version_size = GetFileVersionInfoSize(kernel32_path, nullptr);
