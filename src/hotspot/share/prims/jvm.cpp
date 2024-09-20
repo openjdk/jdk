@@ -2949,11 +2949,10 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
     // VM thread needs Threads_lock when announcing a safepoint. We do not
     // want StartThread to delay safepoint, so we wrap with this second lock
     // to reduce competition for Threads_lock.
-    ConditionalMutexLocker mu1(ThreadStart_lock, UseExtraThreadStartLock
-                               && Universe::is_fully_initialized());
+    ConditionalMutexLocker ml1(ThreadStart_lock, UseThreadStartLock);
     // Ensure that the C++ Thread and OSThread structures aren't freed before
     // we operate.
-    MutexLocker mu2(Threads_lock);
+    MutexLocker ml2(Threads_lock);
 
     // Since JDK 5 the java.lang.Thread threadStatus is used to prevent
     // re-starting an already started thread, so we should usually find
