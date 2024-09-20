@@ -83,7 +83,7 @@ void CompiledICData::initialize(CallInfo* call_info, Klass* receiver_klass) {
     _speculated_klass = (uintptr_t)receiver_klass;
   }
   if (call_info->call_kind() == CallInfo::itable_call) {
-    guarantee(call_info->resolved_method() != nullptr, "virtual or interface method must be found");
+    assert(call_info->resolved_method() != nullptr, "virtual or interface method must be found");
     _itable_defc_klass = call_info->resolved_method()->method_holder();
     _itable_refc_klass = call_info->resolved_klass();
   }
@@ -256,7 +256,7 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info) {
     }
   }
 
-  guarantee(call_info->selected_method() != nullptr, "virtual or interface method must be found");
+  assert(call_info->selected_method() != nullptr, "virtual or interface method must be found");
   log_trace(inlinecache)("IC@" INTPTR_FORMAT ": to megamorphic %s entry: " INTPTR_FORMAT,
                          p2i(_call->instruction_address()), call_info->selected_method()->print_value_string(), p2i(entry));
 
