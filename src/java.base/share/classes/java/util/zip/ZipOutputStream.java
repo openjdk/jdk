@@ -379,9 +379,9 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * the underlying stream. Use this method when applying multiple filters
      * in succession to the same output stream.
      * <p>
-     * A ZipException will be thrown if the combined length of the entry name,
-     * the extra field data, the entry comment and {@linkplain #CENHDR CEN Header size},
-     * exceeds 65,535 bytes.
+     * A ZipException will be thrown if the combined length, after encoding,
+     * of the entry name, the extra field data, the entry comment and
+     * {@linkplain #CENHDR CEN Header size}, exceeds 65,535 bytes.
      * @throws    ZipException if a ZIP file error has occurred
      * @throws    IOException if an I/O exception has occurred
      */
@@ -402,11 +402,9 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     }
 
     /**
-     * Closes the ZIP output stream as well as the stream being filtered.
-     * <p>
-     * A ZipException will be thrown if the combined length of the entry name,
-     * the extra field data, the entry comment and {@linkplain #CENHDR CEN Header size},
-     * exceeds 65,535 bytes.
+     * Finishes writing the contents of the ZIP output stream and closes the
+     * underlying stream. The stream being filtered will also be closed.
+     *
      * @throws    ZipException if a ZIP file error has occurred
      * @throws    IOException if an I/O error has occurred
      */
