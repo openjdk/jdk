@@ -685,7 +685,7 @@ public abstract class HtmlDocletWriter {
         return (bottom == null || bottom.isEmpty())
                 ? null
                 : HtmlTree.FOOTER()
-                    .add(new HtmlTree(HtmlTag.HR))
+                    .add(HtmlTree.HR())
                     .add(HtmlTree.P(HtmlStyles.legalCopy,
                             HtmlTree.SMALL(
                                     RawHtml.of(replaceDocRootDir(bottom)))));
@@ -2405,7 +2405,7 @@ public abstract class HtmlDocletWriter {
      * @return an HtmlTree for the BODY tag
      */
     public HtmlTree getBody(String title) {
-        var body = new HtmlTree(HtmlTag.BODY).setStyle(getBodyStyle());
+        var body = HtmlTree.BODY(getBodyStyle());
 
         this.winTitle = title;
         // Don't print windowtitle script for overview-frame, allclasses-frame
@@ -2601,7 +2601,7 @@ public abstract class HtmlDocletWriter {
                 });
         return contents.getContent(key,
                                    HtmlTree.CODE(Text.of(className)),
-                                   new HtmlTree(HtmlTag.EM).add(featureName),
+                                   HtmlTree.EM(featureName),
                                    featureCodes);
     }
 

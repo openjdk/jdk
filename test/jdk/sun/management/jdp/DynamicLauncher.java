@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.util.UUID;
  */
 public abstract class DynamicLauncher {
 
+    private static final int MAX_RETRY_ATTEMPTS = 10;
+
     final String jdpName = UUID.randomUUID().toString();
     OutputAnalyzer output;
     int jmxPort;
@@ -52,7 +54,7 @@ public abstract class DynamicLauncher {
             try {
                 output.shouldNotContain("Port already in use");
             } catch (RuntimeException e) {
-                if (retries < 3) {
+                if (retries < MAX_RETRY_ATTEMPTS) {
                     retries++;
                     tryAgain = true;
                 }

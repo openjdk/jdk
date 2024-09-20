@@ -285,7 +285,12 @@ public class Flags {
     /**
      * Flag that marks a synthetic method body for a lambda expression
      */
-    public static final long LAMBDA_METHOD = 1L<<49;
+    public static final long LAMBDA_METHOD = 1L<<49; //MethodSymbols only
+
+    /**
+     * Flag that marks a synthetic local capture field in a local/anon class
+     */
+    public static final long LOCAL_CAPTURE_FIELD = 1L<<49; //VarSymbols only
 
     /**
      * Flag to control recursion in TransTypes
