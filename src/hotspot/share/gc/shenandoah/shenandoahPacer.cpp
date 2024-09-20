@@ -264,7 +264,7 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
     claimed = claim_for_alloc<true>(words);
     assert(claimed, "Should always succeed");
   }
-  ShenandoahThreadLocalData::add_paced_time(JavaThread::current(), (double)(os::elapsed_counter() - start_time) / (double) NANOSECS_PER_SEC);
+  ShenandoahThreadLocalData::add_paced_time(current, (double)(os::elapsed_counter() - start_time) / NANOSECS_PER_SEC);
 }
 
 void ShenandoahPacer::wait(size_t time_ms) {
