@@ -87,6 +87,15 @@ bool VTransformGraph::schedule() {
 
       for (int i = 0; i < vtn->outs(); i++) {
         VTransformNode* use = vtn->out(i);
+
+        // Skip backedges
+        VTransformScalarNode* use_scalar = use->isa_Scalar();
+        if (use_scalar != nullptr &&
+            use_scalar->node()->is_Phi() &&
+            use_scalar->in(2) == vtn) {
+          continue;
+        }
+
         if (post_visited.test(use->_idx)) { continue; }
         if (pre_visited.test(use->_idx)) {
           // Cycle detected!
