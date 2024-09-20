@@ -77,9 +77,27 @@ class FloatRegister(Register):
     def __str__(self):
         return self.astr("v")
 
+    def generate(self):
+        self.number = random.randint(0, 31)
+        return self
+
     def nextReg(self):
         next = FloatRegister()
         next.number = (self.number + 1) % 32
+        return next
+
+class LowFloatRegister(Register):
+
+    def __str__(self):
+        return self.astr("v")
+
+    def generate(self):
+        self.number = random.randint(0, 15)
+        return self
+
+    def nextReg(self):
+        next = FloatRegister()
+        next.number = (self.number + 1) % 16
         return next
 
 class GeneralRegister(Register):
@@ -1271,6 +1289,40 @@ class CommonNEONInstruction(Instruction):
     def aname(self):
         return self._name
 
+class VectorScalarNEONInstruction(Instruction):
+    def __init__(self, args):
+        self._name, self.insname, self.arrangement = args
+
+    def generate(self):
+        vectorLength = {"8B" : 8, "16B" : 16, "4H" : 4, "8H" : 8, "2S" : 2, "4S" : 4, "1D" : 1, "2D" : 2} [self.arrangement]
+        self.elemIndex = random.randrange(0, vectorLength)
+        self.elemSizeSpecifier = self.arrangement[len(self.arrangement) - 1:]
+        self._firstSIMDreg = LowFloatRegister().generate()
+        self.numRegs = 3
+        return self
+
+    def cstr(self):
+        buf = Instruction.cstr(self) + str(self._firstSIMDreg)
+        buf = '%s, __ T%s' % (buf, self.arrangement)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numRegs - 1):
+            buf = '%s, %s' % (buf, current.nextReg())
+            current = current.nextReg()
+        buf = '%s, %s, %d' % (buf, current.nextReg(), self.elemIndex)
+        return '%s);' % (buf)
+
+    def astr(self):
+        buf = '%s\t%s.%s' % (self.insname, self._firstSIMDreg, self.arrangement)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numRegs - 1):
+            buf = '%s, %s.%s' % (buf, current.nextReg(), self.arrangement)
+            current = current.nextReg()
+        buf = '%s, %s.%s[%d]' % (buf, current.nextReg(), self.elemSizeSpecifier, self.elemIndex)
+        return buf
+
+    def aname(self):
+        return self._name
+
 class SHA512SIMDOp(Instruction):
 
     def generate(self):
@@ -1746,6 +1798,17 @@ generate(ThreeRegNEONOp,
           ["fmin", "fmin", "2D"],
           ["facgt", "facgt", "2S"], ["facgt", "facgt", "4S"],
           ["facgt", "facgt", "2D"],
+          ])
+
+generate(VectorScalarNEONInstruction,
+         [["fmlavs", "fmla", "2S"], ["mulvs", "mul", "4S"],
+          ["fmlavs", "fmla", "2D"],
+          ["fmlsvs", "fmls", "2S"], ["mulvs", "mul", "4S"],
+          ["fmlsvs", "fmls", "2D"],
+          ["fmulxvs", "fmulx", "2S"], ["mulvs", "mul", "4S"],
+          ["fmulxvs", "fmulx", "2D"],
+          ["mulvs", "mul", "4H"], ["mulvs", "mul", "8H"],
+          ["mulvs", "mul", "2S"], ["mulvs", "mul", "4S"],
           ])
 
 neonVectorCompareInstructionPrefix = ['cm', 'fcm']
