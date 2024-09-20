@@ -313,6 +313,7 @@ public:
   virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
   virtual VTransformInputScalarNode* isa_InputScalar() { return nullptr; }
   virtual VTransformOutputScalarNode* isa_OutputScalar() { return nullptr; }
+  virtual VTransformLoopPhiNode* isa_LoopPhi() { return nullptr; }
   virtual const VTransformLoopPhiNode* isa_LoopPhi() const { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
@@ -378,6 +379,7 @@ class VTransformLoopPhiNode : public VTransformScalarNode {
 public:
   VTransformLoopPhiNode(VTransform& vtransform, PhiNode* n) :
     VTransformScalarNode(vtransform, n) {}
+  virtual VTransformLoopPhiNode* isa_LoopPhi() override { return this; }
   virtual const VTransformLoopPhiNode* isa_LoopPhi() const override { return this; }
   NOT_PRODUCT(virtual const char* name() const override { return "LoopPhi"; };)
 };
@@ -453,6 +455,10 @@ public:
     }
   }
 
+  uint vector_length() const { return _nodes.length(); }
+  BasicType basic_type() const { return _nodes.at(0)->bottom_type()->basic_type(); }
+  int scalar_opcode() const { return _nodes.at(0)->Opcode(); }
+
   const GrowableArray<Node*>& nodes() const { return _nodes; }
   virtual VTransformVectorNode* isa_Vector() override { return this; }
   void register_new_node_from_vectorization_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const;
@@ -499,10 +505,16 @@ public:
   VTransformReductionVectorNode(VTransform& vtransform, uint number_of_nodes) :
     VTransformVectorNode(vtransform, 3, number_of_nodes) {}
   virtual VTransformReductionVectorNode* isa_ReductionVector() override { return this; }
+  virtual bool optimize() override;
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ReductionVector"; };)
+
+private:
+  int vector_reduction_opcode() const;
+  bool requires_strict_order() const;
+  bool optimize_move_non_strict_order_reductions_out_of_loop();
 };
 
 class VTransformLoadVectorNode : public VTransformVectorNode {

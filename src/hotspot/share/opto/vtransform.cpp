@@ -352,14 +352,107 @@ VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
 
+bool VTransformReductionVectorNode::optimize() {
+  return optimize_move_non_strict_order_reductions_out_of_loop();
+}
+
+int VTransformReductionVectorNode::vector_reduction_opcode() const {
+  return ReductionNode::opcode(scalar_opcode(), basic_type());
+}
+
+bool VTransformReductionVectorNode::requires_strict_order() const {
+  int vopc = vector_reduction_opcode();
+  return ReductionNode::auto_vectorization_requires_strict_order(vopc);
+}
+
+bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop() {
+
+  tty->print_cr("VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop");
+  this->print();
+
+  uint vlen        = vector_length();
+  BasicType bt     = basic_type();
+  const Type* bt_t = Type::get_const_basic_type(bt); // TODO needed?
+  int ropc         = vector_reduction_opcode();
+
+  if (requires_strict_order()) {
+    return false; // cannot move strict order reduction out of loop
+  }
+
+  const int sopc = scalar_opcode();
+  assert(sopc == VectorNode::scalar_opcode(ropc, bt), "equivalent"); // TODO rm?
+  const int vopc = VectorNode::opcode(sopc, bt);
+  if (!Matcher::match_rule_supported_vector(vopc, vlen, bt)) {
+    DEBUG_ONLY( this->print(); )
+    assert(false, "do not have normal vector op for this reduction");
+    return false; // not implemented
+  }
+
+  // We have a phi with a single use.
+  VTransformLoopPhiNode* phi = in(1)->isa_LoopPhi();
+  if (phi == nullptr || phi->outs() != 1) { return false; }
+
+  // Traverse up the chain of non strict order reductions, checking that it loops
+  // back to the phi. Check that all non strict order reductions only have a single
+  // use, except for the last (last_red), which only has phi as a use in the loop,
+  // and all other uses are outside the loop.
+  VTransformReductionVectorNode* first_red   = this;
+  VTransformReductionVectorNode* last_red    = phi->in(2)->isa_ReductionVector();
+  VTransformReductionVectorNode* current_red = last_red;
+  while (true) {
+    if (current_red == nullptr ||
+        current_red->vector_reduction_opcode() != ropc ||
+        current_red->basic_type() != bt ||
+        current_red->vector_length() != vlen) {
+      return false; // not compatible
+    }
+
+    VTransformVectorNode* vector_input = current_red->in(2)->isa_Vector();
+    if (vector_input == nullptr) {
+      assert(false, "reduction has a bad vector input");
+      return false;
+    }
+
+    // Expect single use of the non strict order reduction. Except for the last_red.
+    if (current_red == last_red) {
+      // All uses must be outside loop body, except for the phi.
+      for (int i = 0; i < current_red->outs(); i++) {
+        VTransformNode* use = current_red->out(i);
+        if (use->isa_LoopPhi() == nullptr &&
+            use->isa_OutputScalar() == nullptr) {
+          // Should not be allowed by SuperWord::mark_reductions
+          assert(false, "reduction has use inside loop");
+          return false;
+        }
+      }
+    } else {
+      if (current_red->outs() != 1) {
+        return false; // Only single use allowed
+      }
+    }
+
+    // If the scalar input is a phi, we passed all checks.
+    VTransformNode* scalar_input = current_red->in(1);
+    if (scalar_input == phi) {
+      break;
+    }
+
+    // We expect another non strict reduction, verify it in the next iteration.
+    current_red = scalar_input->isa_ReductionVector();
+  }
+
+  // All checks were successful. Edit the vtransform graph now.
+
+  tty->print_cr("success");
+  return false;
+}
+
 float VTransformReductionVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   Node* first = nodes().at(0);
   uint  vlen = nodes().length();
-  int   opc  = first->Opcode();
   BasicType bt = first->bottom_type()->basic_type();
-
-  int vopc = ReductionNode::opcode(opc, bt);
-  return ReductionNode::cost(vopc, vlen, bt, true);
+  int vopc = vector_reduction_opcode();
+  return ReductionNode::cost(vopc, vlen, bt);
 }
 
 VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,

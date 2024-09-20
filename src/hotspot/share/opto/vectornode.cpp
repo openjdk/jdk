@@ -276,6 +276,7 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   }
 }
 
+// TODO we could remove this now???
 // Return the scalar opcode for the specified vector opcode
 // and basic type.
 int VectorNode::scalar_opcode(int sopc, BasicType bt) {
@@ -1561,27 +1562,36 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
   return false;
 }
 
-float ReductionNode::cost(int vopc, uint vlen, BasicType bt, bool requires_strict_order) {
-  // For these reductions, we know that we never require strict order:
-  switch (vopc) {
-  case Op_AddReductionVI:
-  case Op_AddReductionVL:
-  case Op_MulReductionVI:
-  case Op_MulReductionVL:
-  case Op_MinReductionV:
-  case Op_MaxReductionV:
-  case Op_AndReductionV:
-  case Op_OrReductionV:
-  case Op_XorReductionV:
-    requires_strict_order = false;
-  }
-
-  if (requires_strict_order) {
+// TODO use bt?
+float ReductionNode::cost(int vopc, uint vlen, BasicType bt) {
+  if (auto_vectorization_requires_strict_order(vopc)) {
     // Linear: shuffle and reduce
     return 2 * vlen;
   } else {
     // Recursive: shuffle and reduce
     return 2 * exact_log2(vlen);
+  }
+}
+
+bool ReductionNode::auto_vectorization_requires_strict_order(int vopc) {
+  switch (vopc) {
+    case Op_AddReductionVI:
+    case Op_AddReductionVL:
+    case Op_MulReductionVI:
+    case Op_MulReductionVL:
+    case Op_MinReductionV:
+    case Op_MaxReductionV:
+    case Op_AndReductionV:
+    case Op_OrReductionV:
+    case Op_XorReductionV:
+      // These are cases that all have associative operations, which can
+      // thus be reordered, allowing non-strict order reductions.
+      return false;
+    default:
+      // Floating-point addition and multiplication are non-associative,
+      // so AddReductionVF/D and MulReductionVF/D require strict ordering
+      // in auto-vectorization.
+      return true;
   }
 }
 

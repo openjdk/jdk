@@ -211,9 +211,7 @@ class ReductionNode : public Node {
                              bool requires_strict_order = true);
   static int  opcode(int opc, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
-  static float cost(int vopc, uint vlen, BasicType bt,
-                    // This only effects floating-point add and mul reductions.
-                    bool requires_strict_order = true);
+  static float cost(int vopc, uint vlen, BasicType bt);
 
   // Make an identity scalar (zero for add, one for mul, etc) for scalar opc.
   static Node* make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType bt);
@@ -245,6 +243,8 @@ class ReductionNode : public Node {
   virtual bool requires_strict_order() const {
     return false;
   }
+
+  static bool auto_vectorization_requires_strict_order(int vopc);
 
 #ifndef PRODUCT
   void dump_spec(outputStream* st) const {
