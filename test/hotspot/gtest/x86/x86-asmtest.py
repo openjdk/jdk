@@ -286,19 +286,19 @@ def generate(RegOp, ops, print_lp64_flag=True):
         op_name = op[0]
         width = op[2]
         lp64_flag = False
-        
+
         if RegOp in [RegInstruction, CondRegInstruction]:
             for i in range(len(test_regs)):
                 lp64_flag = handle_lp64_flag(i, lp64_flag, print_lp64_flag)
                 instr = RegOp(*op, reg=test_regs[i])
                 print_instruction(instr, lp64_flag, print_lp64_flag)
-                
+
         elif RegOp in [TwoRegInstruction]:
             for i in range(len(test_regs)):
                 lp64_flag = handle_lp64_flag((i + 1) % len(test_regs), lp64_flag, print_lp64_flag)
                 instr = RegOp(*op, reg1=test_regs[i], reg2=test_regs[(i + 1) % len(test_regs)])
                 print_instruction(instr, lp64_flag, print_lp64_flag)
-                
+
         elif RegOp in [MemRegInstruction, RegMemInstruction, CondRegMemInstruction]:
             for i in range(len(test_regs)):
                 if test_regs[(i + 2) % len(test_regs)] == 'rsp':
@@ -306,7 +306,7 @@ def generate(RegOp, ops, print_lp64_flag=True):
                 lp64_flag = handle_lp64_flag((i + 2) % len(test_regs), lp64_flag, print_lp64_flag)
                 instr = RegOp(*op, reg=test_regs[i], mem_base=test_regs[(i + 1) % len(test_regs)], mem_idx=test_regs[(i + 2) % len(test_regs)])
                 print_instruction(instr, lp64_flag, print_lp64_flag)
-        
+
         elif RegOp in [RegImmInstruction]:
             imm_list = get_immediate_list(op_name, width)
             for i in range(len(test_regs)):
@@ -314,7 +314,7 @@ def generate(RegOp, ops, print_lp64_flag=True):
                 for imm in imm_list:
                     instr = RegOp(*op, reg=test_regs[i], imm=imm)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
-        
+
         elif RegOp in [MemImmInstruction]:
             imm_list = get_immediate_list(op_name, width)
             for imm in imm_list:
@@ -324,7 +324,7 @@ def generate(RegOp, ops, print_lp64_flag=True):
                     lp64_flag = handle_lp64_flag((i + 1) % len(test_regs), lp64_flag, print_lp64_flag)
                     instr = RegOp(*op, imm=imm, mem_base=test_regs[i], mem_idx=test_regs[(i + 1) % len(test_regs)])
                     print_instruction(instr, lp64_flag, print_lp64_flag)
-        
+
         elif RegOp in [MemInstruction]:
             for i in range(len(test_regs)):
                 if test_regs[(i + 1) % len(test_regs)] == 'rsp':
@@ -332,7 +332,7 @@ def generate(RegOp, ops, print_lp64_flag=True):
                 lp64_flag = handle_lp64_flag((i + 1) % len(test_regs), lp64_flag, print_lp64_flag)
                 instr = RegOp(*op, mem_base=test_regs[i], mem_idx=test_regs[(i + 1) % len(test_regs)])
                 print_instruction(instr, lp64_flag, print_lp64_flag)
-                
+
         elif RegOp in [RegRegImmInstruction]:
             imm_list = get_immediate_list(op_name, width)
             for i in range(len(test_regs)):
@@ -340,7 +340,7 @@ def generate(RegOp, ops, print_lp64_flag=True):
                 for imm in imm_list:
                     instr = RegOp(*op, reg1=test_regs[i], reg2=test_regs[(i + 1) % len(test_regs)], imm=imm)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
-        
+
         elif RegOp in [RegMemImmInstruction]:
             imm_list = get_immediate_list(op_name, width)
             for i in range(len(test_regs)):
@@ -350,7 +350,7 @@ def generate(RegOp, ops, print_lp64_flag=True):
                         continue
                     instr = RegOp(*op, reg=test_regs[i], mem_base=test_regs[(i + 1) % len(test_regs)], mem_idx=test_regs[(i + 2) % len(test_regs)], imm=imm)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
-                    
+
         elif RegOp in [Push2Instruction, Pop2Instruction]:
             for i in range(len(test_regs)):
                 lp64_flag = handle_lp64_flag((i + 1) % len(test_regs), lp64_flag, print_lp64_flag)
@@ -358,22 +358,22 @@ def generate(RegOp, ops, print_lp64_flag=True):
                     continue
                 instr = RegOp(*op, reg1=test_regs[i], reg2=test_regs[(i + 1) % len(test_regs)])
                 print_instruction(instr, lp64_flag, print_lp64_flag)
-                
+
         elif RegOp in [RegImm32Instruction]:
             for i in range(len(test_regs)):
                 lp64_flag = handle_lp64_flag(i, lp64_flag, print_lp64_flag)
                 for imm in immediate_values_16_to_32_bit:
                     instr = RegOp(*op, reg=test_regs[i], imm=imm)
                     print_instruction(instr, lp64_flag, print_lp64_flag)
-        
+
         else:
             raise ValueError(f"Unsupported instruction type: {RegOp}")
-        
+
         if lp64_flag and print_lp64_flag:
             print("#endif // _LP64")
             lp64_flag = False
 
-def print_with_ifdef(ifdef_flags, items, item_formatter, end=",", items_per_line=1):
+def print_with_ifdef(ifdef_flags, items, item_formatter, items_per_line=1):
     under_defined = False
     current_line_length = 0
     for idx, item in enumerate(items):
@@ -392,8 +392,8 @@ def print_with_ifdef(ifdef_flags, items, item_formatter, end=",", items_per_line
                 under_defined = False
                 current_line_length = 0
         if current_line_length == 0:
-            print("    ", end="")
-        print(f"{item_formatter(item)}{end}", end=" ")
+            print("   ", end="")
+        print(f" {item_formatter(item)},", end="")
         current_line_length += 1
         if idx % items_per_line == items_per_line - 1:
             print()
@@ -402,7 +402,7 @@ def print_with_ifdef(ifdef_flags, items, item_formatter, end=",", items_per_line
         if current_line_length > 0:
             print()
         print("#endif // _LP64")
-        
+
 print("// BEGIN  Generated code -- do not edit")
 print("// Generated by x86-asmtest.py")
 
@@ -638,7 +638,7 @@ print("#ifdef _LP64")
 
 for RegOp, ops in instruction_set64.items():
     generate(RegOp, ops, False)
-    
+
 print("#endif // _LP64")
 
 outfile.close()
@@ -670,7 +670,7 @@ print_with_ifdef(ifdef_flags, instructions, lambda x: x[1], items_per_line=1)
 print("  };")
 print("  static const unsigned int insns_lens[] =")
 print("  {")
-print_with_ifdef(ifdef_flags, instructions, lambda x: x[0], end=", ", items_per_line=8)
+print_with_ifdef(ifdef_flags, instructions, lambda x: x[0], items_per_line=8)
 print()
 print("  };")
 print()
