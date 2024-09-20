@@ -396,14 +396,10 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   }
 
   // Convert a + a + ... + a into a*n
-  static int timestamp = 0;
-  timestamp++;
   PhaseIterGVN* igvn = phase->is_IterGVN();
-//  printf("%d, <, %p, %d, %s\n", timestamp, igvn, this->_idx, this->Name());
 
   Node* serial_additions = convert_serial_additions(phase, can_reshape, bt);
   if (serial_additions != nullptr) {
-//    printf("%d, >, %p, %d, %s\n", timestamp, igvn, serial_additions->_idx, serial_additions->Name());
     return serial_additions;
   }
 
@@ -471,7 +467,6 @@ bool AddNode::is_optimized_multiplication(Node* node, BasicType bt, Node* base) 
           || (rhs == lhs_base && rhs == base);
     }
 
-    // #31 + #27 => (#27 << 1) + #27
     return lhs_base == rhs_base && base == lhs_base;
   }
 
