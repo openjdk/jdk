@@ -145,6 +145,7 @@ Thread::Thread(MemTag mem_tag) {
   MACOS_AARCH64_ONLY(DEBUG_ONLY(_wx_init = false));
 }
 
+#ifndef DEBUG
 address Thread::stack_base() const {
   // Note: can't report Thread::name() here as that can require a ResourceMark which we
   // can't use because this gets called too early in the thread initialization.
@@ -152,6 +153,7 @@ address Thread::stack_base() const {
          osthread() != nullptr ? osthread()->thread_id() : 0);
   return _stack_base;
 }
+#endif
 
 void Thread::initialize_tlab() {
   if (UseTLAB) {
