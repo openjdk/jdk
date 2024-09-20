@@ -30,5 +30,5 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.compiler/com.sun.tools.javac.code
- * @run main SinceChecker java.base
+ * @run main SinceChecker java.base --exclude java.lang.classfile
  */

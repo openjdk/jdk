@@ -100,6 +100,9 @@ note: The `<unique-Element-ID>` for methods looks like
       `method: <erased-return-descriptor> <binary-name-of-enclosing-class>.<method-name>(<ParameterDescriptor>)`.
 it is somewhat inspired from the VM Method Descriptors. But we use the erased return so that methods
 that were later generified remain the same.
+
+usage: the checker is run from a module specific test
+        `@run main SinceChecker <moduleName> [--exclude package1,package2 | --exclude package1 package2]`
 */
 
 public class SinceChecker {
@@ -109,9 +112,7 @@ public class SinceChecker {
     private int errorCount = 0;
 
     // packages to skip during the test
-    private static final Set<String> EXCLUDE_LIST = Set.of(
-            "java.lang.classfile"
-    );
+    private static final Set<String> EXCLUDE_LIST = new HashSet<>();
 
     public static class IntroducedIn {
         public String introducedPreview;
@@ -122,8 +123,26 @@ public class SinceChecker {
         if (args.length == 0) {
             throw new IllegalArgumentException("Test module not specified");
         }
-        SinceChecker sinceCheckerTestHelper = new SinceChecker(args[0]);
-        sinceCheckerTestHelper.checkModule(args[0]);
+        String moduleName = args[0];
+        boolean excludeFlag = false;
+
+        for (int i = 1; i < args.length; i++) {
+            if ("--exclude".equals(args[i])) {
+                excludeFlag = true;
+                continue;
+            }
+
+            if (excludeFlag) {
+                if (args[i].contains(",")) {
+                    EXCLUDE_LIST.addAll(Arrays.asList(args[i].split(",")));
+                } else {
+                    EXCLUDE_LIST.add(args[i]);
+                }
+            }
+        }
+
+        SinceChecker sinceCheckerTestHelper = new SinceChecker(moduleName);
+        sinceCheckerTestHelper.checkModule(moduleName);
     }
 
     private void error(String message) {
