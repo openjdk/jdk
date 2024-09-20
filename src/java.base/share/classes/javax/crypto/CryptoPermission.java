@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import javax.crypto.spec.*;
  * The {@code CryptoPermission} class extends the
  * {@code java.security.Permission} class. A
  * {@code CryptoPermission} object is used to represent
- * the ability of an application/applet to use certain
+ * the ability of an application to use certain
  * algorithms with certain key sizes and other
  * restrictions in certain environments.
  *

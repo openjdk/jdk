@@ -754,14 +754,14 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
       init_tf(TypeFunc::make(domain, range));
       StartNode* s = new StartOSRNode(root(), domain);
       initial_gvn()->set_type_bottom(s);
-      init_start(s);
+      verify_start(s);
       cg = CallGenerator::for_osr(method(), entry_bci());
     } else {
       // Normal case.
       init_tf(TypeFunc::make(method()));
       StartNode* s = new StartNode(root(), tf()->domain());
       initial_gvn()->set_type_bottom(s);
-      init_start(s);
+      verify_start(s);
       if (method()->intrinsic_id() == vmIntrinsics::_Reference_get) {
         // With java.lang.ref.reference.get() we must go through the
         // intrinsic - even when get() is the root
@@ -1105,13 +1105,12 @@ void Compile::Init(bool aliasing) {
   probe_alias_cache(nullptr)->_index = AliasIdxTop;
 }
 
-//---------------------------init_start----------------------------------------
-// Install the StartNode on this compile object.
-void Compile::init_start(StartNode* s) {
-  if (failing())
-    return; // already failing
-  assert(s == start(), "");
+#ifdef ASSERT
+// Verify that the current StartNode is valid.
+void Compile::verify_start(StartNode* s) const {
+  assert(failing() || s == start(), "should be StartNode");
 }
+#endif
 
 /**
  * Return the 'StartNode'. We must not have a pending failure, since the ideal graph
@@ -1700,6 +1699,8 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
       if (flat->offset() == in_bytes(Klass::modifier_flags_offset()))
         alias_type(idx)->set_rewritable(false);
       if (flat->offset() == in_bytes(Klass::access_flags_offset()))
+        alias_type(idx)->set_rewritable(false);
+      if (flat->offset() == in_bytes(Klass::misc_flags_offset()))
         alias_type(idx)->set_rewritable(false);
       if (flat->offset() == in_bytes(Klass::java_mirror_offset()))
         alias_type(idx)->set_rewritable(false);
@@ -3160,6 +3161,30 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
   }
 }
 
+void Compile::handle_div_mod_op(Node* n, BasicType bt, bool is_unsigned) {
+  if (!UseDivMod) {
+    return;
+  }
+
+  // Check if "a % b" and "a / b" both exist
+  Node* d = n->find_similar(Op_DivIL(bt, is_unsigned));
+  if (d == nullptr) {
+    return;
+  }
+
+  // Replace them with a fused divmod if supported
+  if (Matcher::has_match_rule(Op_DivModIL(bt, is_unsigned))) {
+    DivModNode* divmod = DivModNode::make(n, bt, is_unsigned);
+    d->subsume_by(divmod->div_proj(), this);
+    n->subsume_by(divmod->mod_proj(), this);
+  } else {
+    // Replace "a % b" with "a - ((a / b) * b)"
+    Node* mult = MulNode::make(d, d->in(2), bt);
+    Node* sub = SubNode::make(d->in(1), mult, bt);
+    n->subsume_by(sub, this);
+  }
+}
+
 void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& frc, uint nop, Unique_Node_List& dead_nodes) {
   switch( nop ) {
   // Count all float operations that may use FPU
@@ -3322,8 +3347,9 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
       bool is_oop   = t->isa_oopptr() != nullptr;
       bool is_klass = t->isa_klassptr() != nullptr;
 
-      if ((is_oop   && Matcher::const_oop_prefer_decode()  ) ||
-          (is_klass && Matcher::const_klass_prefer_decode())) {
+      if ((is_oop   && UseCompressedOops          && Matcher::const_oop_prefer_decode()  ) ||
+          (is_klass && UseCompressedClassPointers && Matcher::const_klass_prefer_decode() &&
+           t->isa_klassptr()->exact_klass()->is_in_encoding_range())) {
         Node* nn = nullptr;
 
         int op = is_oop ? Op_ConN : Op_ConNKlass;
@@ -3608,83 +3634,19 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 #endif
 
   case Op_ModI:
-    if (UseDivMod) {
-      // Check if a%b and a/b both exist
-      Node* d = n->find_similar(Op_DivI);
-      if (d) {
-        // Replace them with a fused divmod if supported
-        if (Matcher::has_match_rule(Op_DivModI)) {
-          DivModINode* divmod = DivModINode::make(n);
-          d->subsume_by(divmod->div_proj(), this);
-          n->subsume_by(divmod->mod_proj(), this);
-        } else {
-          // replace a%b with a-((a/b)*b)
-          Node* mult = new MulINode(d, d->in(2));
-          Node* sub  = new SubINode(d->in(1), mult);
-          n->subsume_by(sub, this);
-        }
-      }
-    }
+    handle_div_mod_op(n, T_INT, false);
     break;
 
   case Op_ModL:
-    if (UseDivMod) {
-      // Check if a%b and a/b both exist
-      Node* d = n->find_similar(Op_DivL);
-      if (d) {
-        // Replace them with a fused divmod if supported
-        if (Matcher::has_match_rule(Op_DivModL)) {
-          DivModLNode* divmod = DivModLNode::make(n);
-          d->subsume_by(divmod->div_proj(), this);
-          n->subsume_by(divmod->mod_proj(), this);
-        } else {
-          // replace a%b with a-((a/b)*b)
-          Node* mult = new MulLNode(d, d->in(2));
-          Node* sub  = new SubLNode(d->in(1), mult);
-          n->subsume_by(sub, this);
-        }
-      }
-    }
+    handle_div_mod_op(n, T_LONG, false);
     break;
 
   case Op_UModI:
-    if (UseDivMod) {
-      // Check if a%b and a/b both exist
-      Node* d = n->find_similar(Op_UDivI);
-      if (d) {
-        // Replace them with a fused unsigned divmod if supported
-        if (Matcher::has_match_rule(Op_UDivModI)) {
-          UDivModINode* divmod = UDivModINode::make(n);
-          d->subsume_by(divmod->div_proj(), this);
-          n->subsume_by(divmod->mod_proj(), this);
-        } else {
-          // replace a%b with a-((a/b)*b)
-          Node* mult = new MulINode(d, d->in(2));
-          Node* sub  = new SubINode(d->in(1), mult);
-          n->subsume_by(sub, this);
-        }
-      }
-    }
+    handle_div_mod_op(n, T_INT, true);
     break;
 
   case Op_UModL:
-    if (UseDivMod) {
-      // Check if a%b and a/b both exist
-      Node* d = n->find_similar(Op_UDivL);
-      if (d) {
-        // Replace them with a fused unsigned divmod if supported
-        if (Matcher::has_match_rule(Op_UDivModL)) {
-          UDivModLNode* divmod = UDivModLNode::make(n);
-          d->subsume_by(divmod->div_proj(), this);
-          n->subsume_by(divmod->mod_proj(), this);
-        } else {
-          // replace a%b with a-((a/b)*b)
-          Node* mult = new MulLNode(d, d->in(2));
-          Node* sub  = new SubLNode(d->in(1), mult);
-          n->subsume_by(sub, this);
-        }
-      }
-    }
+    handle_div_mod_op(n, T_LONG, true);
     break;
 
   case Op_LoadVector:
@@ -5196,7 +5158,20 @@ void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
     ss.print(" %d", iter);
   }
   if (n != nullptr) {
-    ss.print(": %d %s ", n->_idx, NodeClassNames[n->Opcode()]);
+    ss.print(": %d %s", n->_idx, NodeClassNames[n->Opcode()]);
+    if (n->is_Call()) {
+      CallNode* call = n->as_Call();
+      if (call->_name != nullptr) {
+        // E.g. uncommon traps etc.
+        ss.print(" - %s", call->_name);
+      } else if (call->is_CallJava()) {
+        CallJavaNode* call_java = call->as_CallJava();
+        if (call_java->method() != nullptr) {
+          ss.print(" -");
+          call_java->method()->print_short_name(&ss);
+        }
+      }
+    }
   }
 
   const char* name = ss.as_string();

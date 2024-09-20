@@ -51,7 +51,7 @@ void ObjectStartArray::initialize(MemRegion reserved_region) {
   if (!backing_store.is_reserved()) {
     vm_exit_during_initialization("Could not reserve space for ObjectStartArray");
   }
-  MemTracker::record_virtual_memory_type(backing_store.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(backing_store.base(), mtGC);
 
   // We do not commit any memory initially
   _virtual_space.initialize(backing_store);
