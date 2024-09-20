@@ -824,11 +824,8 @@ public class SinceChecker {
             if (element.getKind() != ElementKind.MODULE) {
                 version = effectiveSinceVersion(element.getEnclosingElement().getEnclosingElement(), element.getEnclosingElement(), types, elementUtils);
             }
-            if (version == null) {
-                //may be null for private elements
-            }
-            return version;
 
+            return version;
         }
 
         private Pair<JavacTask, CompilationUnitTree> findSource(Element forElement, Elements elementUtils) throws IOException {
