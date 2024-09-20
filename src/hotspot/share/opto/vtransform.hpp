@@ -59,6 +59,7 @@
 // - If-conversion: convert predicated nodes into CFG.
 
 typedef int VTransformNodeIDX;
+class VTransform;
 class VTransformNode;
 class VTransformScalarNode;
 class VTransformInputScalarNode;
@@ -158,7 +159,7 @@ public:
   DEBUG_ONLY( bool is_scheduled() const { return _schedule.is_nonempty(); } )
   const GrowableArray<VTransformNode*>& vtnodes() const { return _vtnodes; }
 
-  void optimize();
+  void optimize(VTransform& vtransform);
   bool schedule();
   float cost() const;
   void apply_memops_reordering_with_schedule() const;
@@ -224,7 +225,7 @@ public:
   DEBUG_ONLY( bool has_graph() const { return !_graph.is_empty(); } )
   VTransformGraph& graph() { return _graph; }
 
-  void optimize() { return _graph.optimize(); }
+  void optimize() { return _graph.optimize(*this); }
   bool schedule() { return _graph.schedule(); }
   float cost() const { return _graph.cost(); }
   void apply();
@@ -273,9 +274,17 @@ public:
     vtransform.graph().add_vtnode(this);
   }
 
-  void set_req(uint i, VTransformNode* n) {
+  void init_req(uint i, VTransformNode* n) {
     assert(i < _req, "must be a req");
     assert(_in.at(i) == nullptr && n != nullptr, "only set once");
+    _in.at_put(i, n);
+    n->add_out(this);
+  }
+
+  void set_req(uint i, VTransformNode* n) {
+    assert(i < _req, "must be a req");
+    VTransformNode* old = _in.at(i);
+    if (old != nullptr) { old->del_out(this); }
     _in.at_put(i, n);
     n->add_out(this);
   }
@@ -298,10 +307,21 @@ public:
     _out.push(n);
   }
 
+  void del_out(VTransformNode* n) {
+    VTransformNode* last = _out.top();
+    int i = _out.find(n);
+    _out.delete_at(i); // replace with last
+  }
+
   uint req() const { return _req; }
   VTransformNode* in(int i) const { return _in.at(i); }
   int outs() const { return _out.length(); }
   VTransformNode* out(int i) const { return _out.at(i); }
+
+  VTransformNode* unique_out() const {
+    assert(outs() == 1, "must be unique");
+    return _out.at(0);
+  }
 
   bool has_req_or_dependency() const {
     for (int i = 0; i < _in.length(); i++) {
@@ -320,7 +340,7 @@ public:
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
 
-  virtual bool optimize() { return false; }
+  virtual bool optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) { return false; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const = 0;
 
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
@@ -455,6 +475,12 @@ public:
     }
   }
 
+  void set_nodes(const GrowableArray<Node*>& nodes) {
+    for (int k = 0; k < nodes.length(); k++) {
+      _nodes.at_put(k, nodes.at(k));
+    }
+  }
+
   uint vector_length() const { return _nodes.length(); }
   BasicType basic_type() const { return _nodes.at(0)->bottom_type()->basic_type(); }
   int scalar_opcode() const { return _nodes.at(0)->Opcode(); }
@@ -505,7 +531,7 @@ public:
   VTransformReductionVectorNode(VTransform& vtransform, uint number_of_nodes) :
     VTransformVectorNode(vtransform, 3, number_of_nodes) {}
   virtual VTransformReductionVectorNode* isa_ReductionVector() override { return this; }
-  virtual bool optimize() override;
+  virtual bool optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) override;
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
@@ -514,7 +540,7 @@ public:
 private:
   int vector_reduction_opcode() const;
   bool requires_strict_order() const;
-  bool optimize_move_non_strict_order_reductions_out_of_loop();
+  bool optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform);
 };
 
 class VTransformLoadVectorNode : public VTransformVectorNode {

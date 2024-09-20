@@ -22,23 +22,24 @@
  */
 
 #include "precompiled.hpp"
+#include "opto/convertnode.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/vtransform.hpp"
 #include "opto/vectornode.hpp"
-#include "opto/convertnode.hpp"
 
 void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
   assert(vtnode->_idx == _vtnodes.length(), "position must match idx");
   _vtnodes.push(vtnode);
 }
 
-void VTransformGraph::optimize() {
+void VTransformGraph::optimize(VTransform& vtransform) {
   tty->print_cr("VTransformGraph::optimize");
 
   while (true) {
     bool progress = false;
     for (int i = 0; i < _vtnodes.length(); i++) {
       VTransformNode* vtn = _vtnodes.at(i);
-      progress |= vtn->optimize();
+      progress |= vtn->optimize(_vloop_analyzer, vtransform);
     }
     if (!progress) { break; }
   }
@@ -352,8 +353,8 @@ VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
 
-bool VTransformReductionVectorNode::optimize() {
-  return optimize_move_non_strict_order_reductions_out_of_loop();
+bool VTransformReductionVectorNode::optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
+  return optimize_move_non_strict_order_reductions_out_of_loop(vloop_analyzer, vtransform);
 }
 
 int VTransformReductionVectorNode::vector_reduction_opcode() const {
@@ -365,15 +366,15 @@ bool VTransformReductionVectorNode::requires_strict_order() const {
   return ReductionNode::auto_vectorization_requires_strict_order(vopc);
 }
 
-bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop() {
+bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
 
   tty->print_cr("VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop");
   this->print();
 
-  uint vlen        = vector_length();
-  BasicType bt     = basic_type();
-  const Type* bt_t = Type::get_const_basic_type(bt); // TODO needed?
-  int ropc         = vector_reduction_opcode();
+  uint vlen                = vector_length();
+  BasicType bt             = basic_type();
+  const Type* element_type = Type::get_const_basic_type(bt);
+  int ropc                 = vector_reduction_opcode();
 
   if (requires_strict_order()) {
     return false; // cannot move strict order reduction out of loop
@@ -442,6 +443,40 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   }
 
   // All checks were successful. Edit the vtransform graph now.
+  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+
+  // Create a vector of identity values.
+  Node* identity = ReductionNode::make_identity_con_scalar(phase->igvn(), sopc, bt);
+  phase->set_ctrl(identity, phase->C->root());
+  VTransformNode* vtn_identity = new (vtransform.arena()) VTransformInputScalarNode(vtransform, identity);
+
+  VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vlen, element_type);
+  vtn_identity_vector->init_req(1, vtn_identity);
+
+  // Turn the scalar phi into a vector phi.
+  VTransformNode* init = phi->in(1);
+  phi->set_req(1, vtn_identity_vector);
+
+  // Traverse down the chain of reductions, and replace them with vector_accumulators.
+  VTransformNode* current_vector_accumulator = phi;
+  current_red = first_red;
+  while (true) {
+    VTransformNode* vector_input = current_red->in(2);
+    VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, 3, vlen);
+    vector_accumulator->init_req(1, current_vector_accumulator);
+    vector_accumulator->init_req(2, vector_input);
+    vector_accumulator->set_nodes(current_red->nodes());
+    current_vector_accumulator = vector_accumulator;
+    if (current_red == last_red) { break; }
+    current_red = current_red->unique_out()->isa_ReductionVector();
+  }
+
+  // Feed vector accumulator into the backedge.
+  phi->set_req(2, current_vector_accumulator);
+
+  // Create post-loop reduction. last_red keeps all uses outside the loop.
+  last_red->set_req(1, init);
+  last_red->set_req(2, current_vector_accumulator);
 
   tty->print_cr("success");
   return false;
