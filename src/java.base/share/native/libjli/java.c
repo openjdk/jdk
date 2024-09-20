@@ -1463,14 +1463,18 @@ ParseArguments(int *pargc, char ***pargv,
             JLI_ShowMessage("%s %s", _launcher_name, GetFullVersion());
             return JNI_FALSE;
         } else if (JLI_StrCmp(arg, "-verbosegc") == 0) {
+            JLI_ReportErrorMessage(ARG_DEPRECATED, "-verbosegc");
             AddOption("-verbose:gc", NULL);
         } else if (JLI_StrCmp(arg, "-debug") == 0) {
             JLI_ReportErrorMessage(ARG_DEPRECATED, "-debug");
         } else if (JLI_StrCmp(arg, "-noclassgc") == 0) {
+            JLI_ReportErrorMessage(ARG_DEPRECATED, "-noclassgc");
             AddOption("-Xnoclassgc", NULL);
         } else if (JLI_StrCmp(arg, "-verify") == 0) {
+            JLI_ReportErrorMessage(ARG_DEPRECATED, "-verify");
             AddOption("-Xverify:all", NULL);
         } else if (JLI_StrCmp(arg, "-verifyremote") == 0) {
+            JLI_ReportErrorMessage(ARG_DEPRECATED, "-verifyremote");
             AddOption("-Xverify:remote", NULL);
         } else if (JLI_StrCmp(arg, "-noverify") == 0) {
             /*
@@ -1479,9 +1483,10 @@ ParseArguments(int *pargc, char ***pargv,
              */
             AddOption("-Xverify:none", NULL);
         } else if (JLI_StrCCmp(arg, "-ss") == 0 ||
-                   JLI_StrCCmp(arg, "-oss") == 0 ||
                    JLI_StrCCmp(arg, "-ms") == 0 ||
                    JLI_StrCCmp(arg, "-mx") == 0) {
+            JLI_ReportErrorMessage("Warning: %.3s option is deprecated"
+                                   " and may be removed in a future release.", arg);
             size_t tmpSize = JLI_StrLen(arg) + 6;
             char *tmp = JLI_MemAlloc(tmpSize);
             snprintf(tmp, tmpSize, "-X%s", arg + 1); /* skip '-' */

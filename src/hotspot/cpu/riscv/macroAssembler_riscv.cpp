@@ -1970,9 +1970,9 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
 void MacroAssembler::reinit_heapbase() {
   if (UseCompressedOops) {
     if (Universe::is_fully_initialized()) {
-      mv(xheapbase, CompressedOops::ptrs_base());
+      mv(xheapbase, CompressedOops::base());
     } else {
-      ExternalAddress target(CompressedOops::ptrs_base_addr());
+      ExternalAddress target(CompressedOops::base_addr());
       relocate(target.rspec(), [&] {
         int32_t offset;
         la(xheapbase, target.target(), offset);
