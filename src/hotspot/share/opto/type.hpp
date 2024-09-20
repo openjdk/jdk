@@ -616,7 +616,7 @@ public:
  * be elements of such TypeInt. Or else, we can tighted the bounds by narrowing
  * it by one, which contradicts the assumption of the TypeInt being canonical.
  *
- * 2. Either _lo == jint(_lo) and _hi == jint(_uhi), or all elements of a
+ * 2. Either _lo == jint(_ulo) and _hi == jint(_uhi), or all elements of a
  * TypeInt lie in the intervals [_lo, jint(_uhi)] or [jint(_ulo), _hi]
  *
  * Proof: For 2 jint value x, y such that they are both >= 0 or < 0. Then:
