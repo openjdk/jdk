@@ -273,7 +273,7 @@ public final class TzdbZoneRulesCompiler {
             // link version-region-rules
             out.writeShort(builtZones.size());
             for (Map.Entry<String, ZoneRules> entry : builtZones.entrySet()) {
-                 int regionIndex = Arrays.binarySearch(regionArray, entry.getKey());
+                 int regionIndex = findRegionIndex(regionArray, entry.getKey());
                  int rulesIndex = rulesList.indexOf(entry.getValue());
                  out.writeShort(regionIndex);
                  out.writeShort(rulesIndex);
@@ -281,8 +281,8 @@ public final class TzdbZoneRulesCompiler {
             // alias-region
             out.writeShort(links.size());
             for (Map.Entry<String, String> entry : links.entrySet()) {
-                 int aliasIndex = Arrays.binarySearch(regionArray, entry.getKey());
-                 int regionIndex = Arrays.binarySearch(regionArray, entry.getValue());
+                 int aliasIndex = findRegionIndex(regionArray, entry.getKey());
+                 int regionIndex = findRegionIndex(regionArray, entry.getValue());
                  out.writeShort(aliasIndex);
                  out.writeShort(regionIndex);
             }
@@ -292,6 +292,14 @@ public final class TzdbZoneRulesCompiler {
             ex.printStackTrace();
             System.exit(1);
         }
+    }
+
+    private static int findRegionIndex(String[] regionArray, String region) {
+        int index = Arrays.binarySearch(regionArray, region);
+        if (index < 0) {
+            throw new IllegalArgumentException("Unknown region: " + region);
+        }
+        return index;
     }
 
     /** Whether to output verbose messages. */
