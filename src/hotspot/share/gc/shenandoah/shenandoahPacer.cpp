@@ -257,6 +257,7 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
   while (!claimed) {
     // We could instead assist GC, but this would suffice for now.
     wait(1);
+    claimed = claim_for_alloc<false>(words);
     total_delay = os::elapsedTime() - start;
     if (static_cast<size_t>(total_delay * 1000) > max_ms) {
       // Exiting if spent local time budget to wait for enough GC progress.
@@ -264,7 +265,6 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
       // and start Degenerated GC cycle.
       break;
     }
-    claimed = claim_for_alloc<false>(words);
   }
 
   if (total_delay > 0) {
