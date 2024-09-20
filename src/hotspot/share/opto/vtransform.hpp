@@ -172,6 +172,7 @@ private:
   bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
   void collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const;
+  int count_alive_vtnodes() const;
 
   template<typename Callback>
   void for_each_memop_in_schedule(Callback callback) const;
@@ -259,6 +260,8 @@ public:
   const VTransformNodeIDX _idx;
 
 private:
+  bool _is_alive;
+
   // _in is split into required inputs (_req), and additional dependencies.
   const uint _req;
   GrowableArray<VTransformNode*> _in;
@@ -267,6 +270,7 @@ private:
 public:
   VTransformNode(VTransform& vtransform, const uint req) :
     _idx(vtransform.graph().new_idx()),
+    _is_alive(true),
     _req(req),
     _in(vtransform.arena(),  req, req, nullptr),
     _out(vtransform.arena(), 4, 0, nullptr)
@@ -286,7 +290,7 @@ public:
     VTransformNode* old = _in.at(i);
     if (old != nullptr) { old->del_out(this); }
     _in.at_put(i, n);
-    n->add_out(this);
+    if (n != nullptr) { n->add_out(this); }
   }
 
   void swap_req(uint i, uint j) {
@@ -328,6 +332,16 @@ public:
       if (_in.at(i) != nullptr) { return true; }
     }
     return false;
+  }
+
+  bool is_alive() const { return _is_alive; }
+
+  void mark_dead() {
+    _is_alive = false;
+    // Remove all inputs
+    for (uint i = 0; i < req(); i++) {
+      set_req(i, nullptr);
+    }
   }
 
   virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
@@ -575,7 +589,7 @@ public:
 // Invoke callback on all memops, in the order of the schedule.
 template<typename Callback>
 void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
-  assert(_schedule.length() == _vtnodes.length(), "schedule was computed");
+  assert(is_scheduled(), "schedule was computed");
 
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);

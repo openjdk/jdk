@@ -39,7 +39,12 @@ void VTransformGraph::optimize(VTransform& vtransform) {
     bool progress = false;
     for (int i = 0; i < _vtnodes.length(); i++) {
       VTransformNode* vtn = _vtnodes.at(i);
+      if (!vtn->is_alive()) { continue; }
       progress |= vtn->optimize(_vloop_analyzer, vtransform);
+      if (vtn->outs() == 0 && vtn->isa_OutputScalar() == nullptr) {
+        vtn->mark_dead();
+        progress = true;
+      }
     }
     if (!progress) { break; }
   }
@@ -72,10 +77,11 @@ bool VTransformGraph::schedule() {
   VectorSet post_visited;
 
   collect_nodes_without_req_or_dependency(stack);
+  int num_alive_nodes = count_alive_vtnodes();
 
   // We create a reverse-post-visit order. This gives us a linearization, if there are
   // no cycles. Then, we simply reverse the order, and we have a schedule.
-  int rpo_idx = _vtnodes.length() - 1;
+  int rpo_idx = num_alive_nodes - 1;
   while (!stack.is_empty()) {
     VTransformNode* vtn = stack.top();
     if (!pre_visited.test_set(vtn->_idx)) {
@@ -88,6 +94,9 @@ bool VTransformGraph::schedule() {
 
       for (int i = 0; i < vtn->outs(); i++) {
         VTransformNode* use = vtn->out(i);
+
+        // Skip dead nodes
+        if (!use->is_alive()) { continue; }
 
         // Skip backedges
         const VTransformLoopPhiNode* use_loop_phi = use->isa_LoopPhi();
@@ -167,10 +176,19 @@ float VTransformGraph::cost() const {
 void VTransformGraph::collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const {
   for (int i = 0; i < _vtnodes.length(); i++) {
     VTransformNode* vtn = _vtnodes.at(i);
-    if (!vtn->has_req_or_dependency()) {
+    if (vtn->is_alive() && !vtn->has_req_or_dependency()) {
       stack.push(vtn);
     }
   }
+}
+
+int VTransformGraph::count_alive_vtnodes() const {
+  int count = 0;
+  for (int i = 0; i < _vtnodes.length(); i++) {
+    VTransformNode* vtn = _vtnodes.at(i);
+    if (vtn->is_alive()) { count++; }
+  }
+  return count;
 }
 
 #ifndef PRODUCT
@@ -638,7 +656,8 @@ void VTransformNode::print() const {
       print_node_idx(_in.at(i));
     }
   }
-  tty->print(") [");
+  tty->print(") %s{", _is_alive ? "" : "dead ");
+  tty->print("[");
   for (int i = 0; i < _out.length(); i++) {
     print_node_idx(_out.at(i));
   }
