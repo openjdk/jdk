@@ -1,3 +1,5 @@
+/* 
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +25,7 @@
  * @test
  * @bug 4259548
  * @summary tests that MemoryImageSource correctly handles images with offsets
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual ImageOffsetTest
  */
