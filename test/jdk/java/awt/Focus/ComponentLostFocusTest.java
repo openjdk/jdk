@@ -51,6 +51,8 @@ public class ComponentLostFocusTest {
     static Dialog dialog = null;
     static volatile boolean passed;
     static Point loc;
+    static int width;
+    static int top;
 
     private static void createTestUI() {
 
@@ -104,7 +106,7 @@ public class ComponentLostFocusTest {
 
     private static void doRequestFocusToTextField() {
         // do activation using press title
-        r.mouseMove(loc.x + frame.getWidth() / 2, loc.y + frame.getInsets().top / 2);
+        r.mouseMove(loc.x + width / 2, loc.y + top / 2);
         r.waitForIdle();
         r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
@@ -118,7 +120,6 @@ public class ComponentLostFocusTest {
         r = new Robot();
         r.setAutoDelay(100);
 
-        ComponentLostFocusTest test;
         EventQueue.invokeAndWait(() -> createTestUI());
         r.waitForIdle();
         r.delay(1000);
@@ -126,6 +127,8 @@ public class ComponentLostFocusTest {
             EventQueue.invokeAndWait(() -> {
                 doTest();
                 loc = frame.getLocationOnScreen();
+                width = frame.getWidth();
+                top = frame.getInsets().top;
             });
             doRequestFocusToTextField();
 
