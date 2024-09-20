@@ -250,31 +250,26 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
     return;
   }
 
-  double start = os::elapsedTime();
-  size_t const max_ms = ShenandoahPacingMaxDelay;
+  double const max_delay = static_cast<double>(ShenandoahPacingMaxDelay) / 1000;
   double total_delay = 0;
 
+  double start = os::elapsedTime();
   while (!claimed) {
     // We could instead assist GC, but this would suffice for now.
     wait(1);
     total_delay = os::elapsedTime() - start;
-    if (static_cast<size_t>(total_delay * 1000) > max_ms) {
+    if (total_delay > max_delay) {
       // Exiting if spent local time budget to wait for enough GC progress.
       // Breaking out and allocating anyway, which may mean we outpace GC,
       // and start Degenerated GC cycle.
-      break;
+      claim_for_alloc<true>(words);
+      ShenandoahThreadLocalData::add_paced_time(JavaThread::current(), total_delay);
+      return;
     }
-  }
-
-  if (total_delay > 0) {
-    ShenandoahThreadLocalData::add_paced_time(JavaThread::current(), total_delay);
-  }
-
-  // Forcefully claim if still not claimed after attempts above.
-  if (!claimed) {
-    claimed = claim_for_alloc<true>(words);
+    claimed = claim_for_alloc<false>(words);
   }
   assert(claimed, "Should always succeed");
+  ShenandoahThreadLocalData::add_paced_time(JavaThread::current(), total_delay);
 }
 
 void ShenandoahPacer::wait(size_t time_ms) {
