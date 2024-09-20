@@ -50,16 +50,8 @@ public class DefaultLocationTest {
 
         PassFailJFrame passFailJFrame = new PassFailJFrame("DefaultLocationTest " +
                 " Instructions", INSTRUCTIONS, 5, 10, 40);
-        try {
-            EventQueue.invokeAndWait(DefaultLocationTest::createAndShowUI);
-            passFailJFrame.awaitAndCheck();
-        } finally {
-            EventQueue.invokeAndWait(() -> {
-                if (f != null) {
-                    f.dispose();
-                }
-            });
-        }
+        EventQueue.invokeAndWait(DefaultLocationTest::createAndShowUI);
+        passFailJFrame.awaitAndCheck();
     }
 
     private static void createAndShowUI() {
