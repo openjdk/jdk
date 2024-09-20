@@ -1175,8 +1175,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
     @PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
     public static final class ShutdownOnFailure extends StructuredTaskScope<Object> {
         private static final VarHandle FIRST_EXCEPTION =
-                MhUtil.findVarHandle(MethodHandles.lookup(),
-                        ShutdownOnFailure.class, "firstException", Throwable.class);
+                MhUtil.findVarHandle(MethodHandles.lookup(), "firstException", Throwable.class);
         private volatile Throwable firstException;
 
         /**
