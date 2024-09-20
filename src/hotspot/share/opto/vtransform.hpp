@@ -345,6 +345,8 @@ public:
 
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const = 0;
+  virtual void apply_cleanup(const VLoopAnalyzer& vloop_analyzer,
+                             const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {};
 
   Node* find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const;
 
@@ -401,6 +403,10 @@ public:
     VTransformScalarNode(vtransform, n) {}
   virtual VTransformLoopPhiNode* isa_LoopPhi() override { return this; }
   virtual const VTransformLoopPhiNode* isa_LoopPhi() const override { return this; }
+  virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
+                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
+  virtual void apply_cleanup(const VLoopAnalyzer& vloop_analyzer,
+                             const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoopPhi"; };)
 };
 

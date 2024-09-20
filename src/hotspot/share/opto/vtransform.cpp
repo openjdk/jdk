@@ -219,9 +219,6 @@ VTransformApplyResult VTransformScalarNode::apply(const VLoopAnalyzer& vloop_ana
   for (uint i = 0; i < req(); i++) {
     VTransformNode* vtn_def = in(i);
     if (vtn_def != nullptr) {
-      // Backedges are not transformed yet, handle will them later: TODO
-      if (this->isa_LoopPhi() != nullptr && i == 2) { continue; }
-
       Node* def = vnode_idx_to_transformed_node.at(vtn_def->_idx);
       assert(def != nullptr, "must find input IR node");
       phase->igvn().replace_input_of(_node, i, def);
@@ -229,6 +226,35 @@ VTransformApplyResult VTransformScalarNode::apply(const VLoopAnalyzer& vloop_ana
   }
 
   return VTransformApplyResult::make_scalar(_node);
+}
+
+VTransformApplyResult VTransformLoopPhiNode::apply(const VLoopAnalyzer& vloop_analyzer,
+                                                   const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+  PhiNode* phi = node()->as_Phi();
+  Node* in0 = find_transformed_input(0, vnode_idx_to_transformed_node);
+  Node* in1 = find_transformed_input(1, vnode_idx_to_transformed_node);
+  phase->igvn().replace_input_of(phi, 0, in0);
+  phase->igvn().replace_input_of(phi, 1, in1);
+  // Note: the backedge is hooked up later.
+
+  // The Phi's inputs may have been modified, and the types changes, e.g. from
+  // scalar to vector.
+  const Type* t = in1->bottom_type();
+  phi->as_Type()->set_type(t);
+  phase->igvn().set_type(phi, t);
+
+  return VTransformApplyResult::make_scalar(phi);
+}
+
+// Cleanup: hook up backedge, which may only be generated long after we called
+//          apply on the phi, because it is further down the schedule.
+void VTransformLoopPhiNode::apply_cleanup(const VLoopAnalyzer& vloop_analyzer,
+                                          const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+  PhiNode* phi = node()->as_Phi();
+  Node* in2 = find_transformed_input(2, vnode_idx_to_transformed_node);
+  phase->igvn().replace_input_of(phi, 2, in2);
 }
 
 VTransformApplyResult VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer,

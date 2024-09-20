@@ -2004,6 +2004,13 @@ void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_lengt
     max_vector_length = MAX2(max_vector_length, result.vector_length());
     max_vector_width  = MAX2(max_vector_width,  result.vector_width());
   }
+
+  // Cleanup: The Phi are processed before their backedges. Now that also all
+  //          backedges are processed, we can update the Phis accordingly.
+  for (int i = 0; i < _schedule.length(); i++) {
+    VTransformNode* vtn = _schedule.at(i);
+    vtn->apply_cleanup(_vloop_analyzer, vtnode_idx_to_transformed_node);
+  }
 }
 
 // We call "apply" on every VTransformNode, which replaces the packed scalar nodes with vector nodes.
