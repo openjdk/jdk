@@ -2061,6 +2061,7 @@ public class ObjectOutputStream
                 char c = str.charAt(stroff++);
                 int csize = c != 0 && c < 0x80 ? 1 : c >= 0x800 ? 3 : 2;
                 if (pos + csize >= MAX_BLOCK_SIZE) {
+                    this.pos = pos;
                     drain();
                     pos = 0;
                 }
