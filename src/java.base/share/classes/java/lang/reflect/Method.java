@@ -755,7 +755,7 @@ public final class Method extends Executable {
      *     {@link Class} and no definition can be found for the
      *     default class value.
      * @since  1.5
-     * @jls 9.6.2 Defaults for Annotation Type Elements
+     * @jls 9.6.2 Defaults for Annotation Interface Elements
      */
     public Object getDefaultValue() {
         if  (annotationDefault == null)

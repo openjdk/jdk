@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
  * @bug     4982128
  * @summary Test low memory detection of non-heap memory pool
  *
- * @run main/othervm/timeout=600 -noclassgc -XX:MaxMetaspaceSize=32m
+ * @run main/othervm/timeout=600 -Xnoclassgc -XX:MaxMetaspaceSize=32m
  * LowMemoryTest2
  */
 
@@ -45,7 +45,7 @@
  * @bug     4982128
  * @summary Test low memory detection of non-heap memory pool
  *
- * @run main/othervm/timeout=600 -noclassgc -XX:MaxMetaspaceSize=16m
+ * @run main/othervm/timeout=600 -Xnoclassgc -XX:MaxMetaspaceSize=16m
  * -XX:CompressedClassSpaceSize=4m LowMemoryTest2
  */
 

@@ -295,7 +295,7 @@ public sealed interface ClassFile
         DROP_UNKNOWN_ATTRIBUTES,
 
         /** Drop unknown and unstable original attributes during transformation */
-        DROP_UNSTABLE_ATRIBUTES;
+        DROP_UNSTABLE_ATTRIBUTES
     }
 
     /**
