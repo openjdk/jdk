@@ -1178,6 +1178,7 @@ public class ZipFile implements ZipConstants, Closeable {
         // "META-INF/".length()
         private static final int META_INF_LEN = 9;
         private static final int[] EMPTY_META_VERSIONS = new int[0];
+        public static final String INDEX_OVERFLOW = "index overflow";
 
         private final Key key;               // the key in files
         private final @Stable ZipCoder zc;   // ZIP coder used to decode/encode
@@ -1218,8 +1219,15 @@ public class ZipFile implements ZipConstants, Closeable {
         // Checks the entry at offset pos in the CEN, calculates the Entry values as per above,
         // then returns the length of the entry name.
         private int checkAndAddEntry(int pos, int index)
-            throws ZipException
+            throws IOException
         {
+            if (index >= entries.length) {
+                // This will only happen if the ZIP file has an incorrect
+                // ENDTOT field, which usually means it contains more than
+                // 65535 entries.
+                initCEN(countCENHeaders(cen, cen.length - ENDHDR));
+                throw new ZipException(INDEX_OVERFLOW);
+            }
             byte[] cen = this.cen;
             if (CENSIG(cen, pos) != CENSIG) {
                 zerror("invalid CEN header (bad signature)");
@@ -1765,49 +1773,46 @@ public class ZipFile implements ZipConstants, Closeable {
             // Iterate through the entries in the central directory
             int idx = 0; // Index into the entries array
             int pos = 0;
-            int entryPos = CENHDR;
-            int limit = cen.length - ENDHDR;
+            int limit = cen.length - ENDHDR - CENHDR;
             manifestNum = 0;
-            while (entryPos <= limit) {
-                if (idx >= entriesLength) {
-                    // This will only happen if the ZIP file has an incorrect
-                    // ENDTOT field, which usually means it contains more than
-                    // 65535 entries.
-                    initCEN(countCENHeaders(cen, limit));
-                    return;
-                }
+            try {
+                while (pos <= limit) {
+                    // Checks the entry and adds values to entries[idx ... idx+2]
+                    int nlen = checkAndAddEntry(pos, idx);
+                    idx += 3;
 
-                // Checks the entry and adds values to entries[idx ... idx+2]
-                int nlen = checkAndAddEntry(pos, idx);
-                idx += 3;
+                    // Adds name to metanames.
+                    if (isMetaName(cen, pos, nlen)) {
+                        // nlen is at least META_INF_LENGTH
+                        if (isManifestName(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN)) {
+                            manifestPos = pos;
+                            manifestNum++;
+                        } else {
+                            if (isSignatureRelated(pos + CENHDR, nlen)) {
+                                if (signatureNames == null)
+                                    signatureNames = new ArrayList<>(4);
+                                signatureNames.add(pos);
+                            }
 
-                // Adds name to metanames.
-                if (isMetaName(cen, entryPos, nlen)) {
-                    // nlen is at least META_INF_LENGTH
-                    if (isManifestName(entryPos + META_INF_LEN, nlen - META_INF_LEN)) {
-                        manifestPos = pos;
-                        manifestNum++;
-                    } else {
-                        if (isSignatureRelated(entryPos, nlen)) {
-                            if (signatureNames == null)
-                                signatureNames = new ArrayList<>(4);
-                            signatureNames.add(pos);
-                        }
-
-                        // If this is a versioned entry, parse the version
-                        // and store it for later. This optimizes lookup
-                        // performance in multi-release jar files
-                        int version = getMetaVersion(entryPos + META_INF_LEN, nlen - META_INF_LEN);
-                        if (version > 0) {
-                            if (metaVersionsSet == null)
-                                metaVersionsSet = new TreeSet<>();
-                            metaVersionsSet.add(version);
+                            // If this is a versioned entry, parse the version
+                            // and store it for later. This optimizes lookup
+                            // performance in multi-release jar files
+                            int version = getMetaVersion(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN);
+                            if (version > 0) {
+                                if (metaVersionsSet == null)
+                                    metaVersionsSet = new TreeSet<>();
+                                metaVersionsSet.add(version);
+                            }
                         }
                     }
+                    // skip to the start of the next entry
+                    pos = nextEntryPos(pos, nlen);
                 }
-                // skip to the start of the next entry
-                pos = nextEntryPos(pos, entryPos, nlen);
-                entryPos = pos + CENHDR;
+            } catch (ZipException ze) {
+                if (ze.getMessage().equals(INDEX_OVERFLOW)) {
+                    return;
+                }
+                throw ze;
             }
 
             // Adjust the total entries
@@ -1834,8 +1839,8 @@ public class ZipFile implements ZipConstants, Closeable {
             }
         }
 
-        private int nextEntryPos(int pos, int entryPos, int nlen) {
-            return entryPos + nlen + CENCOM(cen, pos) + CENEXT(cen, pos);
+        private int nextEntryPos(int pos, int nlen) {
+            return pos + CENHDR + nlen + CENCOM(cen, pos) + CENEXT(cen, pos);
         }
 
         private static void zerror(String msg) throws ZipException {
@@ -1909,6 +1914,7 @@ public class ZipFile implements ZipConstants, Closeable {
         private static boolean isMetaName(byte[] name, int off, int len) {
             // Use the "oldest ASCII trick in the book":
             // ch | 0x20 == Character.toLowerCase(ch)
+            off += CENHDR;
             return len > META_INF_LEN       // "META-INF/".length()
                 && name[off + len - 1] != '/'  // non-directory
                 && (name[off++] | 0x20) == 'm'
