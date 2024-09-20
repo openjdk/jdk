@@ -107,4 +107,11 @@ public class ZipFileOpen {
         zf.close();
         zf2.close();
     }
+
+    public static void main(String... args) throws Exception {
+        var bench = new ZipFileOpen();
+        bench.beforeRun();
+        bench.openCloseZipFile();
+        bench.openCloseZipFilex2();
+    }
 }
