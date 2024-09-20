@@ -250,8 +250,8 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
     return;
   }
 
-  jlong max_delay = ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC;
-  jlong start_time = os::elapsed_counter();
+  jlong const max_delay = ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC;
+  jlong const start_time = os::elapsed_counter();
   while (!claimed && (os::elapsed_counter() - start_time) < max_delay) {
     // We could instead assist GC, but this would suffice for now.
     wait(1);
