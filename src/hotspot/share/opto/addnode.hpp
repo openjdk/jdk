@@ -45,8 +45,8 @@ class AddNode : public Node {
 
 private:
   Node* convert_serial_additions(PhaseGVN* phase, bool can_reshape, BasicType bt);
-  static bool is_optimized_multiplication(Node* node, Node* base);
-  static jlong extract_base_operand_from_serial_additions(PhaseGVN* phase, Node* node, Node** base, int depth_limit);
+  static bool is_optimized_multiplication(Node* node, BasicType bt, Node* base);
+  static jlong extract_base_operand_from_serial_additions(PhaseGVN* phase, Node* node, BasicType bt, int depth_limit, Node** base);
 
 public:
   AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
