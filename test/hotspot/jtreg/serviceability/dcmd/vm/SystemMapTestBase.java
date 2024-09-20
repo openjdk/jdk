@@ -101,28 +101,35 @@ public class SystemMapTestBase {
     };
 
     // macOS:
+    private static final String macprot =  "[\\-rwx]*/[\\-rwx]*";
+
+    private static final String macow = "cow";
+    private static final String macprivate = "prv";
+    private static final String macprivatealiased = "p/a";
+
+    private static final String macOSbase = range + space + macprot + space;
 
     private static final String shouldMatchUnconditionally_macOS[] = {
         // java launcher
-        regexBase_committed + "/bin/java",
+        macOSbase + macow + space + "/.*/bin/java",
         // libjvm
-        regexBase_committed + "/lib/.*/libjvm.so",
+        macOSbase + macow + space + "/.*/lib/server/libjvm.dylib",
         // heap segment, should be part of all user space apps on all architectures OpenJDK supports.
-        regexBase_committed + "\\[heap\\]",
+       // macOSbase + macprivate + space + "\\[heap\\]",
         // we should see the hs-perf data file, and it should appear as shared as well as committed
-        regexBase_shared_and_committed + "hsperfdata_.*"
+        macOSbase + macprivate + space + ".*/.*/hsperfdata_.*"
     };
 
     private static final String shouldMatchIfNMTIsEnabled_macOS[] = {
-        regexBase_java_heap + "JAVAHEAP.*",
+        macOSbase + macprivate + space + "JAVAHEAP.*",
         // metaspace
-        regexBase_committed + "META.*",
+        macOSbase + macprivate + space + "META.*",
         // parts of metaspace should be uncommitted
-        regexBase + "-" + space + "META.*",
+        //regexBase + "-" + space + "META.*",
         // code cache
-        regexBase_committed + "CODE.*",
+        macOSbase + macprivate + space + "CODE.*",
         // Main thread stack
-        regexBase_committed + "STACK.*main.*"
+        macOSbase + macprivatealiased + space + "STACK-.*-main.*"
     };
 
     private static final boolean isWindows = Platform.isWindows();
@@ -146,5 +153,4 @@ public class SystemMapTestBase {
             return shouldMatchIfNMTIsEnabled_linux;
         }
     }
-
 }

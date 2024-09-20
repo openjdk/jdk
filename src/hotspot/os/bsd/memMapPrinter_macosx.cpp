@@ -95,7 +95,7 @@ public:
 
   static void get_share_mode(outputStream& out, const proc_regioninfo& rinfo) {
     static const char* share_strings[] = {
-      "cow", "prv", "---", "shr", "tsh", "pva", "sha", "lrg"
+      "cow", "prv", "---", "shr", "tsh", "p/a", "s/a", "lpg"
     };
     const bool valid_share_mode = rinfo.pri_share_mode >= SM_COW && rinfo.pri_share_mode <= SM_LARGE_PAGE;
     assert(valid_share_mode, "invalid pri_share_mode (%d)", rinfo.pri_share_mode);
