@@ -880,8 +880,8 @@ void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k
       !CDSConfig::is_using_optimized_module_handling() &&
       // archive was created with --module-path
       ClassLoaderExt::num_module_paths() > 0) {
-    log_info(cds, heap)("    is_using_optimized_module_handling %d num_module_paths %d jdk.module.main %s",
-        CDSConfig::is_using_optimized_module_handling(), ClassLoaderExt::num_module_paths(), Arguments::get_property("jdk.module.main"));
+    log_info(cds, heap)("Skip initializing ArchivedModuleGraph subgraph: is_using_optimized_module_handling=%s num_module_paths=%d",
+                        BOOL_TO_STR(CDSConfig::is_using_optimized_module_handling()), ClassLoaderExt::num_module_paths());
     return;
   }
 

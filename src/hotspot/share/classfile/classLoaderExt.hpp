@@ -61,6 +61,7 @@ private:
   static bool _has_non_jar_in_classpath;
 
   static char* read_manifest(JavaThread* current, ClassPathEntry* entry, jint *manifest_size, bool clean_text);
+  static bool has_jar_suffix(const char* filename);
 
 public:
   static void process_jar_manifest(JavaThread* current, ClassPathEntry* entry);
@@ -70,6 +71,7 @@ public:
 
   static void setup_search_paths(JavaThread* current);
   static void setup_module_paths(JavaThread* current);
+  static void extract_jar_files_from_path(const char* path, GrowableArray<const char*>* module_paths);
   static int compare_module_path_by_name(const char** p1, const char** p2);
 
   static char* read_manifest(JavaThread* current, ClassPathEntry* entry, jint *manifest_size) {

@@ -98,11 +98,10 @@ class ModuleReferences {
                 return new JarModuleReader(fileString, uri);
             }
         };
-        byte[] hash = ModuleHashes.computeHash(supplier);
         HashSupplier hasher = new HashSupplier() {
             @Override
             public byte[] generate(String algorithm) {
-                return hash;
+              return ModuleHashes.computeHash(supplier, algorithm);
             }
         };
         return newModule(attrs, uri, supplier, patcher, hasher);

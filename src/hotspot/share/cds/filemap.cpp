@@ -926,36 +926,12 @@ void FileMapInfo::log_paths(const char* msg, int start_idx, int end_idx) {
   }
 }
 
-bool FileMapInfo::is_jar_suffix(const char* filename) {
-  const char* dot = strrchr(filename, '.');
-  if (strcmp(dot + 1, "jar") == 0) {
-    return true;
-  }
-  return false;
-}
-
 void FileMapInfo::extract_module_paths(const char* runtime_path, GrowableArray<const char*>* module_paths) {
   GrowableArray<const char*>* path_array = create_path_array(runtime_path);
   int num_paths = path_array->length();
   for (int i = 0; i < num_paths; i++) {
     const char* name = path_array->at(i);
-    DIR* dirp = os::opendir(name);
-    if (dirp == nullptr && errno == ENOTDIR && is_jar_suffix(name)) {
-      module_paths->append(name);
-    } else {
-      struct dirent* dentry;
-      while ((dentry = os::readdir(dirp)) != nullptr) {
-        const char* file_name = dentry->d_name;
-        if (is_jar_suffix(file_name)) {
-          size_t full_name_len = strlen(name) + strlen(file_name) + strlen(os::file_separator()) + 1;
-          char* full_name = NEW_RESOURCE_ARRAY(char, full_name_len);
-          int n = os::snprintf(full_name, full_name_len, "%s%s%s", name, os::file_separator(), file_name);
-          assert((size_t)n == full_name_len - 1, "Unexpected number of characters in string");
-          module_paths->append(full_name);
-        }
-      }
-      os::closedir(dirp);
-    }
+    ClassLoaderExt::extract_jar_files_from_path(name, module_paths);
   }
 }
 

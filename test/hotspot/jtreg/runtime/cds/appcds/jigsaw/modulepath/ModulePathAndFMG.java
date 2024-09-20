@@ -75,10 +75,13 @@ public class ModulePathAndFMG {
     private static String FMG_DISABLED = "] full module graph: disabled";
     private static String MAIN_FROM_JAR = "class,load.*com.bars.Main.*[.]jar";
     private static String MAIN_FROM_CDS = "class,load.*com.bars.Main.*shared objects file";
+    private static String MAIN_FROM_MODULE = "class,load.*com.bars.Main.*mody/com.bars";
     private static String TEST_FROM_JAR = "class,load.*com.foos.Test.*[.]jar";
     private static String TEST_FROM_CDS = "class,load.*com.foos.Test.*shared objects file";
     private static String MAP_FAILED  = "Unable to use shared archive";
     private static String PATH_SEPARATOR = File.pathSeparator;
+    private static String appClasses[] = {MAIN_CLASS, TEST_CLASS};
+    private static String prefix[] = {"-Djava.class.path=", "-Xlog:cds,class+load,class+path=info"};
 
     public static void buildTestModule() throws Exception {
 
@@ -112,6 +115,7 @@ public class ModulePathAndFMG {
 
     public static void main(String... args) throws Exception {
         runWithModulePath();
+        runWithExplodedModule();
     }
 
     private static void tty(String... args) {
@@ -124,7 +128,6 @@ public class ModulePathAndFMG {
     public static void runWithModulePath(String... extraRuntimeArgs) throws Exception {
         // compile the modules and create the modular jar files
         buildTestModule();
-        String appClasses[] = {MAIN_CLASS, TEST_CLASS};
         // create an archive with the classes in the modules built in the
         // previous step
         OutputAnalyzer output = TestCommon.createArchive(
@@ -135,7 +138,6 @@ public class ModulePathAndFMG {
         TestCommon.checkDump(output);
 
         tty("1. run with CDS on, with module path same as dump time");
-        String prefix[] = {"-Djava.class.path=", "-Xlog:cds,class+load,class+path=info"};
         TestCommon.runWithModules(prefix,
                                  null,               // --upgrade-module-path
                                  libsDir.toString(), // --module-path
@@ -279,4 +281,24 @@ public class ModulePathAndFMG {
             });
     }
 
+    public static void runWithExplodedModule(String... extraRuntimeArgs) throws Exception {
+        // create an archive with an exploded module in the module path.
+        OutputAnalyzer output = TestCommon.createArchive(
+                                        null, appClasses,
+                                        "--module-path",
+                                        MODS_DIR.toString(),
+                                        "-m", MAIN_MODULE + "/" + MAIN_CLASS);
+        TestCommon.checkDump(output);
+
+        tty("10. run with CDS on, with exploded module in the module path");
+        TestCommon.runWithModules(prefix,
+                                 null,               // --upgrade-module-path
+                                 MODS_DIR.toString(), // --module-path
+                                 MAIN_MODULE + "/" + MAIN_CLASS)        // -m
+            .assertNormalExit(out -> {
+                out.shouldContain(FMG_DISABLED)
+                   .shouldMatch(MAIN_FROM_MODULE) // Main class loaded from the exploded module 
+                   .shouldContain(CLASS_FOUND_MESSAGE);
+            });
+    }
 }

@@ -108,9 +108,7 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
       char* path = m->location()->as_C_string();
       if (strncmp(path, "file:", 5) == 0) {
         path = ClassLoader::skip_uri_protocol(path);
-        char* path_copy = NEW_RESOURCE_ARRAY(char, strlen(path) + 1);
-        strcpy(path_copy, path);
-        _module_paths->append(path_copy);
+        extract_jar_files_from_path(path, _module_paths);
       }
     }
   };
@@ -138,6 +136,34 @@ void ClassLoaderExt::setup_module_paths(JavaThread* current) {
   Handle system_class_loader (current, SystemDictionary::java_system_loader());
   ModuleEntryTable* met = Modules::get_module_entry_table(system_class_loader);
   process_module_table(current, met);
+}
+
+bool ClassLoaderExt::has_jar_suffix(const char* filename) {
+  const char* dot = strrchr(filename, '.');
+  if (dot != nullptr && strcmp(dot + 1, "jar") == 0) {
+    return true;
+  }
+  return false;
+}
+
+void ClassLoaderExt::extract_jar_files_from_path(const char* path, GrowableArray<const char*>* module_paths) {
+  DIR* dirp = os::opendir(path);
+  if (dirp == nullptr && errno == ENOTDIR && has_jar_suffix(path)) {
+    module_paths->append(path);
+  } else {
+    struct dirent* dentry;
+    while ((dentry = os::readdir(dirp)) != nullptr) {
+      const char* file_name = dentry->d_name;
+      if (has_jar_suffix(file_name)) {
+        size_t full_name_len = strlen(path) + strlen(file_name) + strlen(os::file_separator()) + 1;
+        char* full_name = NEW_RESOURCE_ARRAY(char, full_name_len);
+        int n = os::snprintf(full_name, full_name_len, "%s%s%s", path, os::file_separator(), file_name);
+        assert((size_t)n == full_name_len - 1, "Unexpected number of characters in string");
+        module_paths->append(full_name);
+      }
+    }
+    os::closedir(dirp);
+  }
 }
 
 char* ClassLoaderExt::read_manifest(JavaThread* current, ClassPathEntry* entry,

@@ -152,13 +152,6 @@ public final class ModuleHashes {
     }
 
     /**
-     * Computes the SHA-256 hash from the names and content of a module.
-     */
-    static byte[] computeHash(Supplier<ModuleReader> supplier) {
-        return computeHash(supplier, "SHA-256");
-    }
-
-    /**
      * Computes the hash from the names and content of a set of modules. Returns
      * a {@code ModuleHashes} to encapsulate the result.
      *

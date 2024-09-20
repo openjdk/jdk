@@ -33,6 +33,7 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -463,18 +464,21 @@ public final class ModuleBootstrap {
 
         // Step 8: CDS dump phase
 
-        if (CDS.isDumpingStaticArchive() && !haveUpgradeModulePath && addModules.isEmpty()) {
+        if (CDS.isDumpingStaticArchive()
+                && !haveUpgradeModulePath
+                && addModules.isEmpty()
+                && allJrtOrModularJar(cf)) {
             assert !isPatched;
 
             // Archive module graph and maybe boot layer
             boolean hasSplitPackages = containsSplitPackages(cf);
             boolean hasIncubatorModules = containsIncubatorModule(cf);
             ArchivedModuleGraph.archive(hasSplitPackages,
-                                        hasIncubatorModules,
-                                        systemModuleFinder,
-                                        cf,
-                                        clf,
-                                        mainModule);
+                    hasIncubatorModules,
+                    systemModuleFinder,
+                    cf,
+                    clf,
+                    mainModule);
             if (!hasSplitPackages && !hasIncubatorModules) {
                 ArchivedBootLayer.archive(bootLayer);
             }
@@ -507,6 +511,29 @@ public final class ModuleBootstrap {
             } else if (loader instanceof BuiltinClassLoader) {
                 ((BuiltinClassLoader) loader).loadModule(mref);
             }
+        }
+    }
+
+    /**
+     * Returns true if all modules in the configuration are in the run-time image or
+     * modular JAR files.
+     */
+    private static boolean allJrtOrModularJar(Configuration cf) {
+        return !cf.modules().stream()
+                .map(m -> m.reference().location().orElseThrow())
+                .anyMatch(uri -> !uri.getScheme().equalsIgnoreCase("jrt")
+                        && !isJarFile(uri));
+    }
+
+    /**
+     * Returns true if the given URI locates a jar file on the file system.
+     */
+    private static boolean isJarFile(URI uri) {
+        if ("file".equalsIgnoreCase(uri.getScheme())) {
+            Path path = Path.of(uri);
+            return path.toString().endsWith(".jar") && Files.isRegularFile(path);
+        } else {
+            return false;
         }
     }
 

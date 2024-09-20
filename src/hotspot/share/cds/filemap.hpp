@@ -555,7 +555,6 @@ public:
                     GrowableArray<const char*>* rp_array,
                     unsigned int dumptime_prefix_len,
                     unsigned int runtime_prefix_len) NOT_CDS_RETURN_(false);
-  bool  is_jar_suffix(const char* filename);
   void  extract_module_paths(const char* runtime_path, GrowableArray<const char*>* module_paths);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
