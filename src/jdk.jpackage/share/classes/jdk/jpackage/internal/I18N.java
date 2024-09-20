@@ -63,7 +63,7 @@ class I18N {
         private final Object[][] contents;
     }
 
-    private final static MultiResourceBundle BUNDLE;
+    private static final MultiResourceBundle BUNDLE;
 
     static {
         List<String> bundleNames = new ArrayList<>();
