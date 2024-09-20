@@ -50,9 +50,9 @@ public class ComponentLostFocusTest {
     static Robot r;
     static Dialog dialog = null;
     static volatile boolean passed;
-    static Point loc;
-    static int width;
-    static int top;
+    static volatile Point loc;
+    static volatile int width;
+    static volatile int top;
 
     private static void createTestUI() {
 
