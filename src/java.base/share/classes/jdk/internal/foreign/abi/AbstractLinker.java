@@ -57,7 +57,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.HashSet;
 import java.util.List;
-import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Set;
 
@@ -213,8 +212,9 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             checkGroupSize(ul, maxUnpaddedLayout);
         } else if (layout instanceof SequenceLayout sl) {
             checkHasNaturalAlignment(layout);
-            if (sl.elementLayout() instanceof PaddingLayout) {
-                throw new IllegalArgumentException("Sequence layouts with padding not supported");
+            if (sl.elementLayout() instanceof PaddingLayout pl) {
+                throw memberException(sl, pl,
+                        "not supported because a sequence of a padding layout is not allowed");
             }
             checkLayoutRecursive(sl.elementLayout());
         }
@@ -235,9 +235,16 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                                           long lastUnpaddedOffset, long offset) {
         long expectedOffset = Utils.alignUp(lastUnpaddedOffset, memberLayout.byteAlignment());
         if (expectedOffset != offset) {
-            throw new IllegalArgumentException("Member layout '" + memberLayout + "', of '" + parent + "'" +
-                    " found at unexpected offset: " + offset + " != " + expectedOffset);
+            throw memberException(parent, memberLayout,
+                    "found at unexpected offset: " + offset + " != " + expectedOffset);
         }
+    }
+
+    private static IllegalArgumentException memberException(MemoryLayout parent,
+                                                            MemoryLayout member,
+                                                            String info) {
+        return new IllegalArgumentException(
+                "Member layout '" + member + "', of '" + parent + "' " + info);
     }
 
     private void checkSupported(ValueLayout valueLayout) {
