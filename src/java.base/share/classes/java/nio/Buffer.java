@@ -27,6 +27,7 @@ package java.nio;
 
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.access.foreign.MappedMemoryUtilsProxy;
 import jdk.internal.access.foreign.UnmapperProxy;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
@@ -804,6 +805,7 @@ public abstract sealed class Buffer
     }
 
     static {
+
         // setup access to this package in SharedSecrets
         SharedSecrets.setJavaNioAccess(
             new JavaNioAccess() {
@@ -886,23 +888,8 @@ public abstract sealed class Buffer
                 }
 
                 @Override
-                public void force(FileDescriptor fd, long address, boolean isSync, long offset, long size) {
-                    MappedMemoryUtils.force(fd, address, isSync, offset, size);
-                }
-
-                @Override
-                public void load(long address, boolean isSync, long size) {
-                    MappedMemoryUtils.load(address, isSync, size);
-                }
-
-                @Override
-                public void unload(long address, boolean isSync, long size) {
-                    MappedMemoryUtils.unload(address, isSync, size);
-                }
-
-                @Override
-                public boolean isLoaded(long address, boolean isSync, long size) {
-                    return MappedMemoryUtils.isLoaded(address, isSync, size);
+                public MappedMemoryUtilsProxy mappedMemoryUtils() {
+                    return MappedMemoryUtils.PROXY;
                 }
 
                 @Override

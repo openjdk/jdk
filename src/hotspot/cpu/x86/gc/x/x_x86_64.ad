@@ -126,8 +126,7 @@ instruct xCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rFla
 
   format %{ "lock\n\t"
             "cmpxchgq $newval, $mem\n\t"
-            "sete     $res\n\t"
-            "movzbl   $res, $res" %}
+            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
 
   ins_encode %{
     precond($oldval$$Register == rax);
@@ -135,8 +134,7 @@ instruct xCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rFla
     if (barrier_data() != XLoadBarrierElided) {
       __ cmpptr($tmp$$Register, rax);
     }
-    __ setb(Assembler::equal, $res$$Register);
-    __ movzbl($res$$Register, $res$$Register);
+    __ setcc(Assembler::equal, $res$$Register);
   %}
 
   ins_pipe(pipe_cmpxchg);

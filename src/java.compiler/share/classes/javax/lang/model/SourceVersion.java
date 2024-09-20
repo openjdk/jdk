@@ -70,8 +70,14 @@ public enum SourceVersion {
      *  21: pattern matching for switch and record patterns (string
      *      templates in preview, unnamed patterns and variables in
      *      preview, unnamed classes and instance main methods in preview)
-     *  22: Unnamed Variables & Patterns (Statements before super(...)
-     *      in Preview)
+     *  22: unnamed variables & patterns (statements before super(...)
+     *      in preview, string templates in second preview, implicitly
+     *      declared classes and instance main methods in second preview)
+     *  23: no changes (primitive Types in Patterns, instanceof, and
+     *      switch in preview, module Import Declarations in preview,
+     *      implicitly declared classes and instance main in third
+     *      preview, flexible constructor bodies in second preview)
+     *  24: tbd
      */
 
     /**

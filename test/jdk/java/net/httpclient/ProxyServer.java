@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,6 +194,9 @@ public class ProxyServer extends Thread implements Closeable {
         Thread out, in;
         volatile InputStream clientIn, serverIn;
         volatile OutputStream clientOut, serverOut;
+
+        boolean proxyInClosed;  // only accessed from synchronized block
+        boolean proxyOutClosed; // only accessed from synchronized block
 
         final static int CR = 13;
         final static int LF = 10;
@@ -594,9 +597,7 @@ public class ProxyServer extends Thread implements Closeable {
                         if (log)
                             System.out.printf("Proxy Forwarding [request body]: total %d%n", body);
                     }
-                    closing = true;
-                    serverSocket.close();
-                    clientSocket.close();
+                    closeClientIn();
                 } catch (IOException e) {
                     if (!closing && debug) {
                         System.out.println("Proxy: " + e);
@@ -615,9 +616,7 @@ public class ProxyServer extends Thread implements Closeable {
                         if (log) System.out.printf("Proxy Forwarding [response]: %s%n", new String(bb, 0, n, UTF_8));
                         if (log) System.out.printf("Proxy Forwarding [response]: total %d%n", resp);
                     }
-                    closing = true;
-                    serverSocket.close();
-                    clientSocket.close();
+                    closeClientOut();
                 } catch (IOException e) {
                     if (!closing && debug) {
                         System.out.println("Proxy: " + e);
@@ -639,6 +638,28 @@ public class ProxyServer extends Thread implements Closeable {
             // might fail if we're closing, but we don't care.
             clientOut.write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
             proxyCommon(false);
+        }
+
+        synchronized void closeClientIn() throws IOException {
+            closing = true;
+            proxyInClosed = true;
+            clientSocket.shutdownInput();
+            serverSocket.shutdownOutput();
+            if (proxyOutClosed) {
+                serverSocket.close();
+                clientSocket.close();
+            }
+        }
+
+        synchronized void closeClientOut() throws IOException {
+            closing = true;
+            proxyOutClosed = true;
+            serverSocket.shutdownInput();
+            clientSocket.shutdownOutput();
+            if (proxyInClosed) {
+                serverSocket.close();
+                clientSocket.close();
+            }
         }
 
         @Override
