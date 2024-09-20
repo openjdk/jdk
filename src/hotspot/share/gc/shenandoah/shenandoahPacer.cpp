@@ -188,6 +188,7 @@ void ShenandoahPacer::restart_with(size_t non_taxable_bytes, double tax_rate) {
   // Shake up stalled waiters after budget update.
   _need_notify_waiters.try_set();
 }
+
 template<bool FORCE>
 bool ShenandoahPacer::claim_for_alloc(size_t words) {
   assert(ShenandoahPacing, "Only be here when pacing is enabled");
@@ -203,8 +204,7 @@ bool ShenandoahPacer::claim_for_alloc(size_t words) {
       return false;
     }
     new_val = cur - tax;
-  } while (Atomic::load(&_budget) == cur &&
-           Atomic::cmpxchg(&_budget, cur, new_val, memory_order_relaxed) != cur);
+  } while (Atomic::cmpxchg(&_budget, cur, new_val, memory_order_relaxed) != cur);
   return true;
 }
 
@@ -250,26 +250,21 @@ void ShenandoahPacer::pace_for_alloc(size_t words) {
     return;
   }
 
-  double const max_delay = static_cast<double>(ShenandoahPacingMaxDelay) / 1000;
-  double total_delay = 0;
-
-  double start = os::elapsedTime();
-  while (!claimed) {
+  jlong max_delay = ShenandoahPacingMaxDelay * NANOSECS_PER_MILLISEC;
+  jlong start_time = os::elapsed_counter();
+  while (!claimed && (os::elapsed_counter() - start_time) < max_delay) {
     // We could instead assist GC, but this would suffice for now.
     wait(1);
-    total_delay = os::elapsedTime() - start;
-    if (total_delay > max_delay) {
-      // Exiting if spent local time budget to wait for enough GC progress.
-      // Breaking out and allocating anyway, which may mean we outpace GC,
-      // and start Degenerated GC cycle.
-      claim_for_alloc<true>(words);
-      ShenandoahThreadLocalData::add_paced_time(JavaThread::current(), total_delay);
-      return;
-    }
     claimed = claim_for_alloc<false>(words);
   }
-  assert(claimed, "Should always succeed");
-  ShenandoahThreadLocalData::add_paced_time(JavaThread::current(), total_delay);
+  if (!claimed) {
+    // Spent local time budget to wait for enough GC progress.
+    // Force allocating anyway, which may mean we outpace GC,
+    // and start Degenerated GC cycle.
+    claimed = claim_for_alloc<true>(words);
+    assert(claimed, "Should always succeed");
+  }
+  ShenandoahThreadLocalData::add_paced_time(JavaThread::current(), (double)(os::elapsed_counter() - start_time) / (double) NANOSECS_PER_SEC);
 }
 
 void ShenandoahPacer::wait(size_t time_ms) {

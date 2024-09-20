@@ -106,6 +106,7 @@ public:
   inline void report_updaterefs(size_t words);
 
   inline void report_alloc(size_t words);
+
   template<bool FORCE>
   bool claim_for_alloc(size_t words);
 
