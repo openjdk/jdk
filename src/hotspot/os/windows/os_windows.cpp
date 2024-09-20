@@ -3428,7 +3428,7 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MEMFLAGS flag = mtNone) {
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag = mtNone) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
       "Alignment must be a multiple of allocation granularity (page size)");
   assert(is_aligned(size, os::vm_allocation_granularity()),
@@ -3441,8 +3441,8 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   static const int max_attempts = 20;
 
   for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
-    char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc, flag) :
-                                         os::reserve_memory(extra_size, false, flag);
+    char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc, mem_tag) :
+                                         os::reserve_memory(extra_size, false, mem_tag);
     if (extra_base == nullptr) {
       return nullptr;
     }
@@ -3458,8 +3458,8 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 
     // Attempt to map, into the just vacated space, the slightly smaller aligned area.
     // Which may fail, hence the loop.
-    aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, flag) :
-                                     os::attempt_reserve_memory_at(aligned_base, size, false, flag);
+    aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, mem_tag) :
+                                     os::attempt_reserve_memory_at(aligned_base, size, false, mem_tag);
   }
 
   assert(aligned_base != nullptr,
@@ -3473,8 +3473,8 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
 }
 
-char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag) {
-  return map_or_reserve_memory_aligned(size, alignment, fd, flag);
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag) {
+  return map_or_reserve_memory_aligned(size, alignment, fd, mem_tag);
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {

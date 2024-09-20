@@ -247,10 +247,6 @@ Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signatur
   return nullptr;
 }
 
-void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
-  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
-}
-
 Klass::Klass() : _kind(UnknownKlassKind) {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for cds");
 }
