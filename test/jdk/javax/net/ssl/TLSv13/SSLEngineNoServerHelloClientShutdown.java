@@ -36,6 +36,7 @@
 
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Utils.inspectTlsFlight;
 
 import java.nio.ByteBuffer;
 
@@ -70,9 +71,6 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
     protected final ByteBuffer serverOut;       // write side of serverEngine
     protected final ByteBuffer serverIn;        // read side of serverEngine
 
-    // For data transport, this example uses local ByteBuffers.  This
-    // isn't really useful, but the purpose of this example is to show
-    // SSLEngine concepts, not how to do network transport.
     protected final ByteBuffer cTOs;      // "reliable" transport client->server
     protected final ByteBuffer sTOc;      // "reliable" transport server->client
 
@@ -83,8 +81,7 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         clientEngine = configureClientEngine(
                 createClientSSLContext().createSSLEngine());
 
-        // We'll assume the buffer sizes are the same
-        // between client and server.
+        // We'll assume the buffer sizes are the same between client and server.
         SSLSession session = clientEngine.getSession();
         int appBufferMax = session.getApplicationBufferSize();
         int netBufferMax = session.getPacketBufferSize();
@@ -92,10 +89,6 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         // We'll make the input buffers a bit bigger than the max needed
         // size, so that unwrap()s following a successful data transfer
         // won't generate BUFFER_OVERFLOWS.
-        //
-        // We'll use a mix of direct and indirect ByteBuffers for
-        // tutorial purposes only.  In reality, only use direct
-        // ByteBuffers when they give a clear performance enhancement.
         clientIn = ByteBuffer.allocate(appBufferMax + 50);
         serverIn = ByteBuffer.allocate(appBufferMax + 50);
 
@@ -109,10 +102,6 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
     protected ByteBuffer createServerOutputBuffer() {
         return ByteBuffer.wrap("Hello Client, I'm Server".getBytes());
     }
-
-    //
-    // Protected methods could be used to customize the test case.
-    //
 
     protected ByteBuffer createClientOutputBuffer() {
         return ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
@@ -216,6 +205,7 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         log("---Client Wrap close_notify---");
         clientResult = clientEngine.wrap(clientOut, cTOs);
         logEngineStatus(clientEngine, clientResult);
+        assertTrue(clientEngine.isOutboundDone());
         assertEquals(clientResult.getStatus(), Status.CLOSED);
         runDelegatedTasks(clientEngine);
 
@@ -229,22 +219,37 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         assertEquals(serverResult.getStatus(), Status.CLOSED);
         runDelegatedTasks(serverEngine);
 
-        log("---Last Server Wrap ---");
+        log("---Server Wrap user_cancelled---");
         serverResult = serverEngine.wrap(serverOut, sTOc);
         logEngineStatus(serverEngine, serverResult);
-        assertTrue(serverEngine.isOutboundDone());
         runDelegatedTasks(serverEngine);
 
-        /* TODO: Final client unwrap fails because server doesn't send an alert to terminate
-           the handshake after receiving close_notify alert from the client. Investigate why.
-
         sTOc.flip();
+        inspectTlsFlight(sTOc);
 
-        log("---Last Client Unwrap---");
+        log("---Client Unwrap user_cancelled alert---");
         clientResult = clientEngine.unwrap(sTOc, clientIn);
         logEngineStatus(clientEngine, clientResult);
         runDelegatedTasks(clientEngine);
-        */
+
+        sTOc.clear();
+
+        log("---Server Wrap close_notify---");
+        serverResult = serverEngine.wrap(serverOut, sTOc);
+        logEngineStatus(serverEngine, serverResult);
+        assertTrue(serverEngine.isOutboundDone());
+        assertTrue(serverEngine.isInboundDone());
+        runDelegatedTasks(serverEngine);
+
+        sTOc.flip();
+        inspectTlsFlight(sTOc);
+
+        log("---Client Unwrap close_notify alert---");
+        clientResult = clientEngine.unwrap(sTOc, clientIn);
+        logEngineStatus(clientEngine, clientResult);
+        assertTrue(clientEngine.isOutboundDone());
+        assertTrue(clientEngine.isInboundDone());
+        runDelegatedTasks(clientEngine);
     }
 
     private static void logEngineStatus(SSLEngine engine) {

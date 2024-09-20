@@ -25,6 +25,8 @@
 
 package sun.security.ssl;
 
+import sun.security.ssl.SSLCipher.SSLWriteCipher;
+
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -123,20 +125,31 @@ interface SSLTransport {
         } catch (AEADBadTagException bte) {
             throw context.fatal(Alert.BAD_RECORD_MAC, bte);
         } catch (BadPaddingException bpe) {
-            // Check for unexpected plaintext alert message during TLSv1.3 handshake, @bug 8331682
-            if (srcsLength == 1 && !context.isNegotiated && context.handshakeContext != null &&
+            // Check for unexpected plaintext alert message during TLSv1.3 handshake.
+            // This can happen if client doesn't receive ServerHello due to network timeout
+            // and tries to close the connection by sending an alert message.
+            if (srcsLength == 1 && !context.sslConfig.isClientMode && !context.isNegotiated &&
+                    context.handshakeContext != null &&
                     ProtocolVersion.TLS13.equals(context.handshakeContext.negotiatedProtocol)) {
                 ByteBuffer packet = srcs[srcsOffset].duplicate();
                 packet.position(0);
-                byte contentType = packet.get();                   // pos: 0
-                byte majorVersion = packet.get();                  // pos: 1
-                byte minorVersion = packet.get();                  // pos: 2
-                int contentLen = Record.getInt16(packet);          // pos: 3, 4
+                byte contentType = (byte) Record.getInt8(packet);                   // pos: 0
+                byte majorVersion = (byte) Record.getInt8(packet);                  // pos: 1
+                byte minorVersion = (byte) Record.getInt8(packet);                  // pos: 2
+                int contentLen = Record.getInt16(packet);                           // pos: 3, 4
 
                 if (contentLen == 2 && ContentType.ALERT.equals(ContentType.valueOf(contentType))) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                        SSLLogger.finest("Processing plaintext alert during TLSv1.3 handshake");
+                    }
+
                     plaintexts = new Plaintext[]{
                             new Plaintext(contentType, majorVersion, minorVersion, -1, -1L, packet)
                     };
+
+                    // Switch server to use plaintext.
+                    context.handshakeContext.conContext.outputRecord.changeWriteCiphers(
+                            SSLWriteCipher.nullTlsWriteCipher(), false);
                 }
             }
 

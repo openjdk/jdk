@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.net.ssl.HandshakeCompletedEvent;
 import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
@@ -589,11 +590,7 @@ final class TransportContext implements ConnectionContext {
 
     // Initiate a close by sending a close_notify alert.
     private void initiateOutboundClose() throws IOException {
-        // initial handshake
-        boolean useUserCanceled = !isNegotiated &&
-                (handshakeContext != null) && !peerUserCanceled;
-
-        closeNotify(useUserCanceled);
+        closeNotify(!isNegotiated && handshakeContext != null);
     }
 
     // Note: HandshakeStatus.FINISHED status is retrieved in other places.
