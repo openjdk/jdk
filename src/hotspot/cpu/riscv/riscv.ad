@@ -1920,6 +1920,18 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_EncodeISOArray:
       return UseRVV;
 
+    // Current test shows that, it brings performance gain when MaxVectorSize >= 32, but brings
+    // regression when MaxVectorSize == 16. So only enable the intrinsic when MaxVectorSize >= 32.
+    case Op_RoundVF:
+      return UseRVV && MaxVectorSize >= 32;
+
+    // For double, current test shows that even with MaxVectorSize == 32, there is still some regression.
+    // Although there is no hardware to verify it for now, from the trend of performance data on hardwares
+    // (with vlenb == 16 and 32 respectively), it's promising to bring better performance rather than
+    // regression for double when MaxVectorSize == 64+. So only enable the intrinsic when MaxVectorSize >= 64.
+    case Op_RoundVD:
+      return UseRVV && MaxVectorSize >= 64;
+
     case Op_PopCountI:
     case Op_PopCountL:
       return UsePopCountInstruction;

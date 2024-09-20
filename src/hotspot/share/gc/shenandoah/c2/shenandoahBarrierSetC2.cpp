@@ -281,7 +281,8 @@ bool ShenandoahBarrierSetC2::is_shenandoah_lrb_call(Node* call) {
          (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow)) ||
          (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak)) ||
          (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow)) ||
-         (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom));
+         (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom)) ||
+         (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom_narrow));
 }
 
 bool ShenandoahBarrierSetC2::is_shenandoah_marking_if(PhaseValues* phase, Node* n) {

@@ -1009,7 +1009,9 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &cset_regions) {
       }
     }
   }
-  _partitions.establish_mutator_intervals(mutator_leftmost, mutator_rightmost, mutator_leftmost_empty, mutator_rightmost_empty,
+  idx_t rightmost_idx = (mutator_leftmost == max_regions)? -1: (idx_t) mutator_rightmost;
+  idx_t rightmost_empty_idx = (mutator_leftmost_empty == max_regions)? -1: (idx_t) mutator_rightmost_empty;
+  _partitions.establish_mutator_intervals(mutator_leftmost, rightmost_idx, mutator_leftmost_empty, rightmost_empty_idx,
                                           mutator_regions, mutator_used);
 }
 
@@ -1134,7 +1136,7 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve) {
   }
 
   if (LogTarget(Info, gc, free)::is_enabled()) {
-    size_t reserve = _partitions.capacity_of(ShenandoahFreeSetPartitionId::Collector);
+    size_t reserve = _partitions.available_in(ShenandoahFreeSetPartitionId::Collector);
     if (reserve < to_reserve) {
       log_debug(gc)("Wanted " PROPERFMT " for young reserve, but only reserved: " PROPERFMT,
                     PROPERFMTARGS(to_reserve), PROPERFMTARGS(reserve));
