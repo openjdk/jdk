@@ -38,6 +38,10 @@ void SuperWordVTransformBuilder::build() {
   VectorSet vtn_dependencies; // Shared, but cleared for every vtnode.
   build_inputs_for_vector_vtnodes(vtn_dependencies);
   build_inputs_for_scalar_vtnodes(vtn_dependencies);
+
+  // Create vtnodes for all output nodes, i.e. the nodes that are outside
+  // the loop body and have inputs coming from the loop.
+  build_outputs();
 }
 
 void SuperWordVTransformBuilder::build_vector_vtnodes_for_packed_nodes() {
@@ -54,7 +58,13 @@ void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
   for (int i = 0; i < _vloop_analyzer.body().body().length(); i++) {
     Node* n = _vloop_analyzer.body().body().at(i);
     if (_packset.get_pack(n) != nullptr) { continue; }
-    VTransformScalarNode* vtn = new (_vtransform.arena()) VTransformScalarNode(_vtransform, n);
+
+    VTransformScalarNode* vtn = nullptr;
+    if (n->is_Phi()) {
+      vtn = new (_vtransform.arena()) VTransformLoopPhiNode(_vtransform, n->as_Phi());
+    } else {
+      vtn = new (_vtransform.arena()) VTransformScalarNode(_vtransform, n);
+    }
     map_node_to_vtnode(n, vtn);
   }
 }
@@ -127,6 +137,36 @@ void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_
     }
 
     add_dependencies_of_node_to_vtnode(n, vtn, vtn_dependencies);
+  }
+}
+
+void SuperWordVTransformBuilder::build_outputs() {
+  for (int i = 0; i < _vloop_analyzer.body().body().length(); i++) {
+    Node* n = _vloop_analyzer.body().body().at(i);
+    VTransformNode* vtn = get_vtnode(n);
+
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* use = n->fast_out(i);
+
+      if (!_vloop.in_bb(use)) {
+        // Found an output node: use
+        VTransformNode* vtn_use = get_vtnode_or_null(use);
+
+        // Create a new one if it does not exist
+        if (vtn_use == nullptr) {
+          vtn_use = new (_vtransform.arena()) VTransformOutputScalarNode(_vtransform, use);
+          map_node_to_vtnode(use, vtn_use);
+        }
+
+        // Set all edges
+        for (uint j = 0; j < use->req(); j++) {
+          Node* def = use->in(j);
+          if (n == def) {
+            vtn_use->set_req(j, vtn);
+          }
+        }
+      }
+    }
   }
 }
 

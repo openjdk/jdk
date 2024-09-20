@@ -89,10 +89,9 @@ bool VTransformGraph::schedule() {
         VTransformNode* use = vtn->out(i);
 
         // Skip backedges
-        VTransformScalarNode* use_scalar = use->isa_Scalar();
-        if (use_scalar != nullptr &&
-            use_scalar->node()->is_Phi() &&
-            use_scalar->in(2) == vtn) {
+        const VTransformLoopPhiNode* use_loop_phi = use->isa_LoopPhi();
+        if (use_loop_phi != nullptr &&
+            use_loop_phi->in(2) == vtn) {
           continue;
         }
 
@@ -122,7 +121,7 @@ bool VTransformGraph::schedule() {
   }
 
 #ifndef PRODUCT
-  if (_trace._verbose) {
+  if (_trace._info) {
     print_schedule();
   }
 #endif
@@ -214,7 +213,20 @@ float VTransformScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
 
 VTransformApplyResult VTransformScalarNode::apply(const VLoopAnalyzer& vloop_analyzer,
                                                   const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  // This was just wrapped. Now we simply unwap without touching the inputs.
+  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+  // Set all inputs that have a vtnode: they may have changed
+  for (uint i = 0; i < req(); i++) {
+    VTransformNode* vtn_def = in(i);
+    if (vtn_def != nullptr) {
+      // Backedges are not transformed yet, handle will them later: TODO
+      if (this->isa_LoopPhi() != nullptr && i == 2) { continue; }
+
+      Node* def = vnode_idx_to_transformed_node.at(vtn_def->_idx);
+      assert(def != nullptr, "must find input IR node");
+      phase->igvn().replace_input_of(_node, i, def);
+    }
+  }
+
   return VTransformApplyResult::make_scalar(_node);
 }
 

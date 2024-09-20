@@ -62,6 +62,8 @@ typedef int VTransformNodeIDX;
 class VTransformNode;
 class VTransformScalarNode;
 class VTransformInputScalarNode;
+class VTransformOutputScalarNode;
+class VTransformLoopPhiNode;
 class VTransformVectorNode;
 class VTransformElementWiseVectorNode;
 class VTransformBoolVectorNode;
@@ -310,6 +312,8 @@ public:
 
   virtual VTransformScalarNode* isa_Scalar() { return nullptr; }
   virtual VTransformInputScalarNode* isa_InputScalar() { return nullptr; }
+  virtual VTransformOutputScalarNode* isa_OutputScalar() { return nullptr; }
+  virtual const VTransformLoopPhiNode* isa_LoopPhi() const { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
@@ -356,6 +360,26 @@ public:
     VTransformScalarNode(vtransform, n) {}
   virtual VTransformInputScalarNode* isa_InputScalar() override { return this; }
   NOT_PRODUCT(virtual const char* name() const override { return "InputScalar"; };)
+};
+
+// Wrapper node for nodes outside the loop that are outputs from nodes in the loop.
+// Since we want the loop-internal nodes to be able to reference all inputs as vtnodes,
+// we must wrap the outputs that are outside the loop into special vtnodes, too.
+class VTransformOutputScalarNode : public VTransformScalarNode {
+public:
+  VTransformOutputScalarNode(VTransform& vtransform, Node* n) :
+    VTransformScalarNode(vtransform, n) {}
+  virtual VTransformOutputScalarNode* isa_OutputScalar() override { return this; }
+  NOT_PRODUCT(virtual const char* name() const override { return "OutputScalar"; };)
+};
+
+// We want to be able to conveniently find all Phis that belong to the LoopNode.
+class VTransformLoopPhiNode : public VTransformScalarNode {
+public:
+  VTransformLoopPhiNode(VTransform& vtransform, PhiNode* n) :
+    VTransformScalarNode(vtransform, n) {}
+  virtual const VTransformLoopPhiNode* isa_LoopPhi() const override { return this; }
+  NOT_PRODUCT(virtual const char* name() const override { return "LoopPhi"; };)
 };
 
 // Transform produces a ReplicateNode, replicating the input to all vector lanes.
