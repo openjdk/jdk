@@ -24,15 +24,16 @@
  */
 package jdk.internal.net.http.quic;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.NavigableSet;
+import java.util.Queue;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
@@ -57,6 +58,7 @@ import static jdk.internal.net.quic.QuicTransportErrors.PROTOCOL_VIOLATION;
  * - handles incoming transport parameters (preferred_address, stateless_reset_token)
  * - stores original and retry peer IDs
  */
+// TODO implement voluntary switching of connection IDs
 final class PeerConnIdManager {
     private final Logger debug;
     private final QuicConnectionImpl connection;
@@ -73,12 +75,24 @@ final class PeerConnIdManager {
 
     private QuicConnectionId clientSelectedDestConnId;
     private QuicConnectionId peerDecidedRetryConnId;
+    // sequence number of active connection ID
+    private long activeConnIdSeq = -1;
+    private QuicConnectionId activeConnId;
+
     // the connection ids (there can be more than one) with which the peer identifies this connection.
     // the key of this Map is a (RFC defined) sequence number for the connection id
     private final NavigableMap<Long, PeerConnectionId> peerConnectionIds =
             Collections.synchronizedNavigableMap(new TreeMap<>());
-    // the largest retirePriorTo value received across multiple NEW_CONNECTION_ID frames
+    // the connection id sequence numbers that we haven't received yet.
+    // We need to know which sequence numbers are retired, and which are not assigned yet
+    private final NavigableSet<Long> gaps =
+            Collections.synchronizedNavigableSet(new TreeSet<>());
+    // the connection id sequence numbers that are awaiting retirement.
+    private final Queue<Long> toRetire = new ArrayDeque<>();
+    // the largest retirePriorTo value received across NEW_CONNECTION_ID frames
     private volatile long largestReceivedRetirePriorTo = -1; // -1 implies none received so far
+    // the largest sequenceNumber value received across NEW_CONNECTION_ID frames
+    private volatile long largestReceivedSequenceNumber;
 
     PeerConnIdManager(final QuicConnectionImpl connection, final String dbTag) {
         this.isClient = connection.isClientConnection();
@@ -87,6 +101,10 @@ final class PeerConnIdManager {
         this.connection = connection;
     }
 
+    /**
+     * Save the client-selected original server connection ID
+     * @param peerConnId the client-selected original server connection ID
+     */
     void originalServerConnId(final QuicConnectionId peerConnId) {
         final var st = this.state;
         if (st != State.INITIAL_PKT_NOT_RECEIVED_FROM_PEER) {
@@ -94,8 +112,12 @@ final class PeerConnIdManager {
                     " in current state " + st);
         }
         this.clientSelectedDestConnId = peerConnId;
+        this.activeConnId = peerConnId;
     }
 
+    /**
+     * {@return the client-selected original server connection ID}
+     */
     QuicConnectionId originalServerConnId() {
         final var id = this.clientSelectedDestConnId;
         if (id == null) {
@@ -104,6 +126,10 @@ final class PeerConnIdManager {
         return id;
     }
 
+    /**
+     * Save the server-selected retry connection ID
+     * @param peerConnId the server-selected retry connection ID
+     */
     void retryConnId(final QuicConnectionId peerConnId) {
         if (!isClient) {
             throw new IllegalStateException("Should not be used on the server");
@@ -114,6 +140,7 @@ final class PeerConnIdManager {
                     " in current state " + st);
         }
         this.peerDecidedRetryConnId = peerConnId;
+        this.activeConnId = peerConnId;
         this.state = State.RETRY_PKT_RECEIVED_FROM_PEER;
     }
 
@@ -161,6 +188,8 @@ final class PeerConnIdManager {
         // The sequence number of the initial connection ID is 0.
         this.peerConnectionIds.put(0L, handshakePeerConnId);
         this.state = State.PEER_CONN_ID_FINALIZED;
+        this.activeConnIdSeq = 0;
+        this.activeConnId = handshakePeerConnId;
         if (debug.on()) {
             debug.log("scid: %s finalized handshake peerConnectionId as: %s",
                     connection.localConnectionId().toHexString(),
@@ -168,6 +197,11 @@ final class PeerConnIdManager {
         }
     }
 
+    /**
+     * Save the connection ID from the preferred address QUIC transport parameter
+     * @param preferredConnId preferred connection ID
+     * @param preferredStatelessResetToken preferred stateless reset token
+     */
     void handlePreferredAddress(final ByteBuffer preferredConnId,
                                 final byte[] preferredStatelessResetToken) {
         if (!isClient) {
@@ -178,9 +212,15 @@ final class PeerConnIdManager {
         // keep track of this peer connection id
         // RFC-9000, section 5.1.1:  If the preferred_address transport parameter is sent,
         // the sequence number of the supplied connection ID is 1
+        assert largestReceivedSequenceNumber == 0;
         this.peerConnectionIds.put(1L, peerConnId);
+        largestReceivedSequenceNumber = 1;
     }
 
+    /**
+     * Save the stateless reset token QUIC transport parameter
+     * @param statelessResetToken stateless reset token
+     */
     void handshakeStatelessResetToken(final byte[] statelessResetToken) {
         if (!isClient) {
             throw new IllegalStateException("Should not be used on the server");
@@ -192,35 +232,32 @@ final class PeerConnIdManager {
         // recreate the conn id with the stateless token
         this.peerConnectionIds.put(0L, new PeerConnectionId(handshakeConnId.asReadOnlyBuffer(),
                 statelessResetToken));
+        // register with the endpoint
+        connection.endpoint.associateStatelessResetToken(statelessResetToken, connection);
     }
 
+    /**
+     * {@return the active peer connection ID}
+     */
     QuicConnectionId getPeerConnId() {
-        final var st = this.state;
-        return switch (st) {
-            case INITIAL_PKT_NOT_RECEIVED_FROM_PEER -> clientSelectedDestConnId;
-            case RETRY_PKT_RECEIVED_FROM_PEER -> peerDecidedRetryConnId;
-            case PEER_CONN_ID_FINALIZED -> {
-                final Map.Entry<Long, PeerConnectionId> entry = this.peerConnectionIds.firstEntry();
-                final QuicConnectionId connId = entry == null ? null : entry.getValue();
-                if (connId == null) {
-                    throw new IllegalStateException("No peer connection id available for connection "
-                            + connection);
-                }
-                yield connId;
-            }
-        };
+        return activeConnId;
     }
 
     private QuicConnectionId getPeerConnId(final long sequenceNum) {
         return this.peerConnectionIds.get(sequenceNum);
     }
 
-    void handleNewConnectionIdFrame(final QuicPacket.PacketType packetType,
-                                    final NewConnectionIDFrame newCid)
-            throws QuicTransportException, IOException {
+    /**
+     * Process the incoming NEW_CONNECTION_ID frame.
+     * @param newCid the NEW_CONNECTION_ID frame
+     * @throws QuicTransportException if the frame violates the protocol
+     */
+    void handleNewConnectionIdFrame(final NewConnectionIDFrame newCid)
+            throws QuicTransportException {
         if (debug.on()) {
             debug.log("Received NEW_CONNECTION_ID frame: %s", newCid);
         }
+        // pre-checks
         final long sequenceNumber = newCid.sequenceNumber();
         assert sequenceNumber >= 0 : "negative sequence number disallowed in new connection id frame";
         final long retirePriorTo = newCid.retirePriorTo();
@@ -229,7 +266,7 @@ final class PeerConnIdManager {
             // than that in the Sequence Number field MUST be treated as a connection error of
             // type FRAME_ENCODING_ERROR
             throw new QuicTransportException("Invalid retirePriorTo " + retirePriorTo,
-                    packetType.keySpace().orElse(null),
+                    QuicTLSEngine.KeySpace.ONE_RTT,
                     newCid.getTypeField(), QuicTransportErrors.FRAME_ENCODING_ERROR);
         }
         final ByteBuffer connectionId = newCid.connectionId();
@@ -238,7 +275,7 @@ final class PeerConnIdManager {
             // RFC-9000, section 19.15: Values less than 1 and greater than 20 are invalid and
             // MUST be treated as a connection error of type FRAME_ENCODING_ERROR
             throw new QuicTransportException("Invalid connection id length " + connIdLength,
-                    packetType.keySpace().orElse(null),
+                    QuicTLSEngine.KeySpace.ONE_RTT,
                     newCid.getTypeField(), QuicTransportErrors.FRAME_ENCODING_ERROR);
         }
         final ByteBuffer statelessResetToken = newCid.statelessResetToken();
@@ -266,80 +303,143 @@ final class PeerConnIdManager {
             // mismatch, throw protocol violation error
             throw new QuicTransportException("Invalid connection id in (duplicated)" +
                     " new connection id frame with sequence number " + sequenceNumber,
-                    packetType.keySpace().orElse(null),
+                    QuicTLSEngine.KeySpace.ONE_RTT,
                     newCid.getTypeField(), PROTOCOL_VIOLATION);
         }
-        final QuicEndpoint endpoint = this.connection.endpoint();
-        final List<RetireConnectionIDFrame> retireConnIdFrames = retirePriorTo(retirePriorTo);
-        final long numCurrentActivePeerConnIds = this.peerConnectionIds.size();
-        if (numCurrentActivePeerConnIds == this.connection.getLocalActiveConnIDLimit()) {
-            // even after removing any connection ids to retire, we have reached the maximum active
-            // conn id limit that we advertised to our peer
+        if ((sequenceNumber <= largestReceivedSequenceNumber && !gaps.contains(sequenceNumber))
+                || sequenceNumber < largestReceivedRetirePriorTo) {
+            if (Log.trace()) {
+                Log.logTrace("{0} Ignoring (retired) new connection id frame with" +
+                        " sequence number {1}", logTag, sequenceNumber);
+            }
+            if (debug.on()) {
+                debug.log("Ignoring (retired) new connection id frame with" +
+                        " sequence number %d", sequenceNumber);
+            }
+            return;
+        }
+        long numConnIdsToAdd = Math.max(sequenceNumber - largestReceivedSequenceNumber, 0);
+        final long numCurrentActivePeerConnIds = this.peerConnectionIds.size() + this.gaps.size();
+        // we can temporarily store up to 3x the active connection ID limit,
+        // including active and retired IDs.
+        if (numCurrentActivePeerConnIds + numConnIdsToAdd + toRetire.size()
+                > 3 * this.connection.getLocalActiveConnIDLimit()) {
+            // RFC-9000, section 5.1.1: After processing a NEW_CONNECTION_ID frame and adding and
+            // retiring active connection IDs, if the number of active connection IDs exceeds
+            // the value advertised in its active_connection_id_limit transport parameter,
+            // an endpoint MUST close the connection with an error of type CONNECTION_ID_LIMIT_ERROR
+            throw new QuicTransportException("Connection id limit reached",
+                    QuicTLSEngine.KeySpace.ONE_RTT, newCid.getTypeField(),
+                    QuicTransportErrors.CONNECTION_ID_LIMIT_ERROR);
+        }
+        // end pre-checks
+        // if we reached here, the number of connection IDs is less than twice the active limit.
+        // Insert gaps for the sequence numbers we haven't seen yet
+        insertGaps(sequenceNumber);
+        // Update the list of sequence numbers to retire
+        retirePriorTo(retirePriorTo);
+        // insert the new connection ID
+        final byte[] statelessResetTokenBytes = new byte[QuicConnectionImpl.RESET_TOKEN_LENGTH];
+        statelessResetToken.get(statelessResetTokenBytes);
+        final PeerConnectionId newPeerConnId = new PeerConnectionId(connectionId, statelessResetTokenBytes);
+        final var previous = this.peerConnectionIds.putIfAbsent(sequenceNumber, newPeerConnId);
+        assert previous == null : "A peer connection id already exists for sequence number "
+                + sequenceNumber;
+        // post-checks
+        // now we can accurately check the number of active and retired connection IDs
+        if (peerConnectionIds.size() + gaps.size()
+                > this.connection.getLocalActiveConnIDLimit()) {
             // RFC-9000, section 5.1.1: After processing a NEW_CONNECTION_ID frame and adding and
             // retiring active connection IDs, if the number of active connection IDs exceeds
             // the value advertised in its active_connection_id_limit transport parameter,
             // an endpoint MUST close the connection with an error of type CONNECTION_ID_LIMIT_ERROR
             throw new QuicTransportException("Active connection id limit reached",
-                    packetType.keySpace().orElse(null), newCid.getTypeField(),
+                    QuicTLSEngine.KeySpace.ONE_RTT, newCid.getTypeField(),
                     QuicTransportErrors.CONNECTION_ID_LIMIT_ERROR);
         }
-        final byte[] statelessResetTokenBytes = new byte[QuicConnectionImpl.RESET_TOKEN_LENGTH];
-        statelessResetToken.get(statelessResetTokenBytes);
-        // link the peer issued stateless reset token to this connection
-        endpoint.associateStatelessResetToken(statelessResetTokenBytes, this.connection);
-        // we first retire and then add new connection id. this ordering is necessary and is
-        // explained in the RFC.
-        // RFC-9000, section 5.1.2: Upon receipt of an increased Retire Prior To field, the peer
-        // MUST stop using the corresponding connection IDs and retire them with
-        // RETIRE_CONNECTION_ID frames before adding the newly provided connection ID to the
-        // set of active connection IDs.
-        if (retireConnIdFrames != null) {
-            if (debug.on()) {
-                debug.log("Sending %d RETIRE_CONNECTION_ID frame(s) to retire prior to %d",
-                        retireConnIdFrames.size(), retirePriorTo);
-            }
-            for (QuicFrame f : retireConnIdFrames) {
-                this.connection.sendFrame(f);
-            }
-            // TODO: implement the RFC-9000, section 5.1.2 part which states:
+        if (toRetire.size() > 2 * this.connection.getLocalActiveConnIDLimit()) {
+            // RFC-9000, section 5.1.2:
             // An endpoint SHOULD limit the number of connection IDs it has retired locally for
-            // which RETIRE_CONNECTION_ID frames have not yet been acknowledged....
+            // which RETIRE_CONNECTION_ID frames have not yet been acknowledged.
+            // An endpoint SHOULD allow for sending and tracking a number
+            // of RETIRE_CONNECTION_ID frames of at least twice the value
+            // of the active_connection_id_limit transport parameter
+            throw new QuicTransportException("Retired connection id limit reached",
+                    QuicTLSEngine.KeySpace.ONE_RTT, newCid.getTypeField(),
+                    QuicTransportErrors.CONNECTION_ID_LIMIT_ERROR);
         }
-        final PeerConnectionId newPeerConnId = new PeerConnectionId(connectionId, statelessResetTokenBytes);
-        final var previous = this.peerConnectionIds.putIfAbsent(sequenceNumber, newPeerConnId);
-        assert previous == null : "A peer connection id already exists for sequence number "
-                + sequenceNumber;
+        // update retirePriorTo, switch connection ID if needed
+        if (this.largestReceivedRetirePriorTo < retirePriorTo) {
+            this.largestReceivedRetirePriorTo = retirePriorTo;
+            if (activeConnIdSeq < retirePriorTo) {
+                // stop using the old connection ID
+                switchConnectionId();
+            }
+        }
     }
 
-    private List<RetireConnectionIDFrame> retirePriorTo(final long priorTo) {
-        // RFC-9000, section 19.15: A receiver MUST ignore any Retire Prior To fields that do not
-        // increase the largest received Retire Prior To value
-        if (priorTo <= largestReceivedRetirePriorTo) {
-            // nothing to do
-            return Collections.emptyList();
+    private void switchConnectionId() {
+        // the caller is expected to retire the active connection id prior to calling this
+        assert !peerConnectionIds.containsKey(activeConnIdSeq);
+        Map.Entry<Long, PeerConnectionId> entry = peerConnectionIds.ceilingEntry(largestReceivedRetirePriorTo);
+        activeConnIdSeq = entry.getKey();
+        activeConnId = entry.getValue();
+        // link the peer issued stateless reset token to this connection
+        final QuicEndpoint endpoint = this.connection.endpoint();
+        endpoint.associateStatelessResetToken(entry.getValue().getStatelessResetToken(), this.connection);
+    }
+
+    private void insertGaps(long sequenceNumber) {
+        for (long i = largestReceivedSequenceNumber + 1; i < sequenceNumber; i++) {
+            gaps.add(i);
         }
-        this.largestReceivedRetirePriorTo = priorTo;
+    }
+
+    private void retirePriorTo(final long priorTo) {
         // remove/retire (in preparation of sending a RETIRE_CONNECTION_ID frames)
-        // TODO: this needs a better data structure
-        final Iterator<Map.Entry<Long, PeerConnectionId>> entries = this.peerConnectionIds
-                .entrySet().iterator();
-        List<RetireConnectionIDFrame> retireConnIdFrames = new ArrayList<>();
-        while (entries.hasNext()) {
-            final var entry = entries.next();
+        for (Iterator<Map.Entry<Long, PeerConnectionId>> iterator = peerConnectionIds.entrySet().iterator(); iterator.hasNext(); ) {
+            Map.Entry<Long, PeerConnectionId> entry = iterator.next();
             final long seqNumToRetire = entry.getKey();
-            if (seqNumToRetire < priorTo) {
-                entries.remove();
-                retireConnIdFrames.add(new RetireConnectionIDFrame(seqNumToRetire));
-                // Note that the QuicEndpoint only stores local connection ids and doesn't store peer
-                // connection ids. It does however store the peer-issued stateless reset token of a
-                // peer connection id, so we let the endpoint know that the stateless reset token needs
-                // to be forgotten since the corresponding peer connection id is being retired
-                final byte[] resetTokenToForget = entry.getValue().getStatelessResetToken();
-                if (resetTokenToForget != null) {
-                    this.connection.endpoint().forgetStatelessResetToken(resetTokenToForget);
-                }
+            if (seqNumToRetire >= priorTo) {
+                break;
+            }
+            iterator.remove();
+            toRetire.add(seqNumToRetire);
+            // Note that the QuicEndpoint only stores local connection ids and doesn't store peer
+            // connection ids. It does however store the peer-issued stateless reset token of a
+            // peer connection id, so we let the endpoint know that the stateless reset token needs
+            // to be forgotten since the corresponding peer connection id is being retired
+            final byte[] resetTokenToForget = entry.getValue().getStatelessResetToken();
+            if (resetTokenToForget != null) {
+                this.connection.endpoint().forgetStatelessResetToken(resetTokenToForget);
             }
         }
-        return retireConnIdFrames;
+        for (Iterator<Long> iterator = gaps.iterator(); iterator.hasNext(); ) {
+            Long gap = iterator.next();
+            if (gap >= priorTo) {
+                return;
+            }
+            iterator.remove();
+            toRetire.add(gap);
+        }
+    }
+
+    /**
+     * Produce a queued RETIRE_CONNECTION_ID frame, if it fits in the packet
+     * @param remaining bytes remaining in the packet
+     * @return a RetireConnectionIdFrame, or null if none is queued or remaining is too low
+     */
+    public QuicFrame nextFrame(int remaining) {
+        // retire connection id:
+        // type - 1 byte
+        // sequence number - var int
+        if (remaining < 9) {
+            return null;
+        }
+        final Long seqNumToRetire = toRetire.poll();
+        if (seqNumToRetire != null) {
+            return new RetireConnectionIDFrame(seqNumToRetire);
+        }
+        return null;
     }
 }

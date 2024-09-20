@@ -27,6 +27,7 @@ package jdk.internal.net.http.quic;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.quic.frames.NewConnectionIDFrame;
+import jdk.internal.net.http.quic.frames.QuicFrame;
 import jdk.internal.net.http.quic.frames.RetireConnectionIDFrame;
 import jdk.internal.net.http.quic.packets.QuicPacket;
 import jdk.internal.net.quic.QuicTransportException;
@@ -111,7 +112,6 @@ final class LocalConnIdManager {
             // forget this id from our local store
             this.localConnectionIds.remove(seqNumber);
             this.connection.endpoint().removeConnectionId(toRetire, connection);
-            sendNewConnectionIdFrame();
         } finally {
             lock.unlock();
         }
@@ -120,14 +120,30 @@ final class LocalConnIdManager {
         }
     }
 
-    void sendNewConnectionIdFrame() {
+    public QuicFrame nextFrame(int remaining) {
+        if (localConnectionIds.size() >= 2) {
+            return null;
+        }
+        int cidlen = connection.quicInstance().idFactory().connectionIdLength();
+        if (cidlen == 0) {
+            return null;
+        }
+        // frame:
+        // type - 1 byte
+        // sequence number - var int
+        // retire prior to - 1 byte (always zero)
+        // connection id: <length> + 1 byte
+        // stateless reset token - 16 bytes
+        int len = 19 + cidlen + VariableLengthEncoder.getEncodedSize(nextConnectionIdSequence);
+        if (len > remaining) {
+            return null;
+        }
         NewConnectionIDFrame newCidFrame;
         QuicConnectionId cid = newConnectionId();
         byte[] token = statelessTokenFor(cid);
         lock.lock();
         try {
-            if (closed) return;
-            assert localConnectionIds.size() < 2;
+            if (closed) return null;
             newCidFrame = new NewConnectionIDFrame(nextConnectionIdSequence++, 0,
                     cid.asReadOnlyBuffer(), ByteBuffer.wrap(token));
             this.localConnectionIds.put(newCidFrame.sequenceNumber(), cid);
@@ -135,7 +151,7 @@ final class LocalConnIdManager {
             if (debug.on()) {
                 debug.log("Sending NEW_CONNECTION_ID frame");
             }
-            this.connection.sendFrame(newCidFrame);
+            return newCidFrame;
         } finally {
             lock.unlock();
         }

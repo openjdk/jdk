@@ -1217,6 +1217,23 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     break;
                 }
             }
+            // NEW_CONNECTION_ID
+            while ((f = localConnIdManager.nextFrame(remaining)) != null) {
+                final int frameSize = f.size();
+                assert frameSize <= remaining : "Frame too large";
+                frames.add(f);
+                added += frameSize;
+                remaining -= frameSize;
+            }
+            // RETIRE_CONNECTION_ID
+            while ((f = peerConnIdManager.nextFrame(remaining)) != null) {
+                final int frameSize = f.size();
+                assert frameSize <= remaining : "Frame too large";
+                frames.add(f);
+                added += frameSize;
+                remaining -= frameSize;
+            }
+
             if (remaining == 0) {
                 return added;
             }
@@ -2113,7 +2130,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                 "NEW_CONNECTION_ID not allowed here",
                                 null, frame.getTypeField(), PROTOCOL_VIOLATION);
                     }
-                    this.peerConnIdManager.handleNewConnectionIdFrame(PacketType.ONERTT, newCid);
+                    this.peerConnIdManager.handleNewConnectionIdFrame(newCid);
                 } else if (frame instanceof RetireConnectionIDFrame retireCid) {
                     this.localConnIdManager.handleRetireConnectionIdFrame(oneRTT.destinationId(),
                             PacketType.ONERTT, retireCid);
@@ -2975,7 +2992,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         // which will enable the idle timer (if it hasn't been already)
         final long timeout = this.localTransportParameters.getIntParameter(max_idle_timeout, 0);
         this.idleTimeoutManager.localIdleTimeout(timeout);
-        this.localConnIdManager.sendNewConnectionIdFrame();
         return this.endpoint;
     }
 
@@ -3796,8 +3812,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         if (params.isPresent(ParameterId.stateless_reset_token)) {
             // the stateless reset token for the handshake connection id
             final byte[] statelessResetToken = params.getParameter(ParameterId.stateless_reset_token);
-            // register with the endpoint
-            endpoint.associateStatelessResetToken(statelessResetToken, this);
             // register with peer connid manager
             this.peerConnIdManager.handshakeStatelessResetToken(statelessResetToken);
         }
@@ -3807,8 +3821,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             final byte[] preferredStatelessResetToken = QuicTransportParameters
                     .getPreferredStatelessResetToken(val);
             this.peerConnIdManager.handlePreferredAddress(preferredConnId, preferredStatelessResetToken);
-            // register the stateless reset token with the endpoint
-            endpoint.associateStatelessResetToken(preferredStatelessResetToken, this);
         }
     }
 
