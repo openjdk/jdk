@@ -62,6 +62,7 @@ extern Monitor* CodeCache_lock;                  // a lock on the CodeCache
 extern Mutex*   TouchedMethodLog_lock;           // a lock on allocation of LogExecutedMethods info
 extern Mutex*   RetData_lock;                    // a lock on installation of RetData inside method data
 extern Monitor* VMOperation_lock;                // a lock on queue of vm_operations waiting to execute
+extern Monitor* ThreadStart_lock;                // used by JVM_ThreadStart to serialize requests for Threads_lock
 extern Monitor* Threads_lock;                    // a lock on the Threads table of active Java threads
                                                  // (also used by Safepoints too to block threads creation/destruction)
 extern Mutex*   NonJavaThreadsList_lock;         // a lock on the NonJavaThreads list

@@ -1997,6 +1997,10 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, StressSecondarySupers, false, DIAGNOSTIC,                   \
           "Use a terrible hash function in order to generate many collisions.") \
+                                                                            \
+  product(bool, UseThreadStartLock, true, DIAGNOSTIC,                       \
+          "Use an extra lock in JVM_ThreadStart to reduce "                 \
+          "time-to-safepoint while creating threads.")                      \
 
 // end of RUNTIME_FLAGS
 

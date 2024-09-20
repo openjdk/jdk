@@ -67,6 +67,7 @@ Monitor* CodeCache_lock               = nullptr;
 Mutex*   TouchedMethodLog_lock        = nullptr;
 Mutex*   RetData_lock                 = nullptr;
 Monitor* VMOperation_lock             = nullptr;
+Monitor* ThreadStart_lock             = nullptr;
 Monitor* Threads_lock                 = nullptr;
 Mutex*   NonJavaThreadsList_lock      = nullptr;
 Mutex*   NonJavaThreadsListSync_lock  = nullptr;
@@ -327,7 +328,8 @@ void mutex_init() {
   // tty_lock is held when printing nmethod and its relocations which use this lock.
   MUTEX_DEFL(ExternalsRecorder_lock         , PaddedMutex  , tty_lock);
 
-  MUTEX_DEFL(Threads_lock                   , PaddedMonitor, CompileThread_lock, true);
+  MUTEX_DEFL(ThreadStart_lock               , PaddedMonitor, CompileThread_lock);
+  MUTEX_DEFL(Threads_lock                   , PaddedMonitor, ThreadStart_lock, true);
   MUTEX_DEFL(Compile_lock                   , PaddedMutex  , MethodCompileQueue_lock);
   MUTEX_DEFL(Heap_lock                      , PaddedMonitor, AdapterHandlerLibrary_lock);
 
