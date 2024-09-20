@@ -348,8 +348,7 @@ void AOTConstantPoolResolver::preresolve_indy_cp_entries(JavaThread* current, In
   }
 }
 
-static GrowableArrayCHeap<char*, mtClassShared>* _invokedynamic_filter = nullptr;
-
+// Does <clinit> exist for ik or any of its supertypes?
 static bool has_clinit(InstanceKlass* ik) {
   if (ik->class_initializer() != nullptr) {
     return true;
@@ -369,7 +368,10 @@ static bool has_clinit(InstanceKlass* ik) {
   return false;
 }
 
-bool AOTConstantPoolResolver::check_signature(ConstantPool* cp, Symbol* sig, bool check_return_type) {
+// Check the method signatures used by parameters to LambdaMetafactory::metafactory. Make sure we don't
+// use types that have been excluded, or else we might end up creating MethodTypes that cannot be stored
+// in the AOT cache.
+bool AOTConstantPoolResolver::check_lambda_metafactory_signature(ConstantPool* cp, Symbol* sig, bool check_return_type) {
   ResourceMark rm;
   for (SignatureStream ss(sig); !ss.is_done(); ss.next()) {
     if (ss.is_reference()) {
@@ -397,7 +399,7 @@ bool AOTConstantPoolResolver::check_signature(ConstantPool* cp, Symbol* sig, boo
         if (has_clinit(InstanceKlass::cast(k))) {
           // We initialize the class of the archived lambda proxy at VM start-up, which will also initialize
           // the interface that it implements. If that interface has a clinit method, we can potentially
-          // change program execution order. See test/hotspot/jtreg/runtime/cds/appcds/indy/IndyMiscTests.java
+          // change program execution order.
           if (log_is_enabled(Debug, cds, resolve)) {
             ResourceMark rm;
             log_debug(cds, resolve)("Cannot aot-resolve Lambda proxy of interface type %s (has <cilint>)", k->external_name());
@@ -423,7 +425,7 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodtype_arg(ConstantPo
     log_debug(cds, resolve)("Checking MethodType for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
   }
 
-  return check_signature(cp, sig, false);
+  return check_lambda_metafactory_signature(cp, sig, false);
 }
 
 bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(ConstantPool* cp, int bsms_attribute_index, int arg_i) {
@@ -438,38 +440,14 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(Constant
     ResourceMark rm;
     log_debug(cds, resolve)("Checking MethodType of MethodHandle for  LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
   }
-  if (!check_signature(cp, sig, false)) {
+  if (!check_lambda_metafactory_signature(cp, sig, false)) {
     return false;
   }
 
-  // See ConstantPool::resolve_constant_at_impl()
-  int ref_kind       = cp->method_handle_ref_kind_at(mh_index);
-  int mh_klass_index = cp->method_handle_klass_index_at(mh_index);
-  Symbol* mh_name    = cp->method_handle_name_ref_at(mh_index);
-  Symbol* mh_sig     = cp->method_handle_signature_ref_at(mh_index);
-  
-  if (!check_signature(cp, mh_sig, false)) {
+  Symbol* mh_sig = cp->method_handle_signature_ref_at(mh_index);
+  if (!check_lambda_metafactory_signature(cp, mh_sig, false)) {
     return false;
   }
-
-
-/*
-  // FIXME - Do we want to filter out the cases that need <useImplMethodHandle>?
-  // See the following code from InnerClassLambdaMetafactory.java:
-
-  // If the target class invokes a protected method inherited from a
-  // superclass in a different package, or does 'invokespecial', the
-  // lambda class has no access to the resolved method, or does
-  // 'invokestatic' on a hidden class which cannot be resolved by name.
-  // Instead, we need to pass the live implementation method handle to
-  // the proxy class to invoke directly. (javac prefers to avoid this
-  // situation by generating bridges in the target class)
-  useImplMethodHandle = (Modifier.isProtected(implInfo.getModifiers()) &&
-                         !VerifyAccess.isSamePackage(targetClass, implInfo.getDeclaringClass())) ||
-                         implKind == MethodHandleInfo.REF_invokeSpecial ||
-                         implKind == MethodHandleInfo.REF_invokeStatic && implClass.isHidden();
-
-*/
 
   return true;
 }
@@ -516,7 +494,7 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
       log_debug(cds, resolve)("Checking resolved callsite signature: %s", resolved_callsite_sig->as_C_string());
     }
 
-    if (!check_signature(cp, resolved_callsite_sig, true)) {
+    if (!check_lambda_metafactory_signature(cp, resolved_callsite_sig, true)) {
       return false;
     }
 

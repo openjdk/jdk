@@ -124,23 +124,30 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   ADD_EXCL("sun/invoke/util/ValueConversions",           "ONE_INT",                // E
                                                          "ZERO_INT");              // E
 
- if (CDSConfig::is_dumping_invokedynamic()) {
-  ADD_EXCL("java/lang/invoke/DirectMethodHandle",        "LONG_OBJ_TYPE",
+  if (CDSConfig::is_dumping_invokedynamic()) {
+#if 0
+    ADD_EXCL("java/lang/invoke/DirectMethodHandle",      "LONG_OBJ_TYPE",
                                                          "OBJ_OBJ_TYPE");
 
-  ADD_EXCL("sun/invoke/util/Wrapper",                    "FLOAT_ZERO",
+    ADD_EXCL("sun/invoke/util/Wrapper",                  "FLOAT_ZERO",
                                                          "DOUBLE_ZERO");
 
-  ADD_EXCL("java/lang/invoke/BoundMethodHandle$Specializer",   "BMH_TRANSFORMS",
-                                                               "SPECIES_DATA_ACCESSOR");
-  ADD_EXCL("java/lang/invoke/BoundMethodHandle",               "SPECIALIZER");
-  ADD_EXCL("java/lang/invoke/DelegatingMethodHandle",          "NF_getTarget");
-  ADD_EXCL("java/lang/invoke/MethodHandleImpl$ArrayAccessor",  "OBJECT_ARRAY_GETTER",
-                                                               "OBJECT_ARRAY_SETTER");
-  ADD_EXCL("java/lang/invoke/SimpleMethodHandle",              "BMH_SPECIES");
+    ADD_EXCL("java/lang/invoke/BoundMethodHandle$Specializer",   "BMH_TRANSFORMS",
+                                                                 "SPECIES_DATA_ACCESSOR");
+    ADD_EXCL("java/lang/invoke/BoundMethodHandle",               "SPECIALIZER");
+    ADD_EXCL("java/lang/invoke/DelegatingMethodHandle",          "NF_getTarget");
+    ADD_EXCL("java/lang/invoke/MethodHandleImpl$ArrayAccessor",  "OBJECT_ARRAY_GETTER",
+                                                                 "OBJECT_ARRAY_SETTER");
+#endif
 
-  ADD_EXCL("java/lang/invoke/StringConcatFactory",             "NEW_ARRAY");
- }
+    // TODO: put these in AOTHolder classes
+    ADD_EXCL("java/lang/invoke/MethodHandles",                   "IMPL_NAMES");
+    ADD_EXCL("java/lang/invoke/MemberName$Factory",              "INSTANCE");
+    ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator",        "MEMBERNAME_FACTORY");
+
+    ADD_EXCL("java/lang/invoke/SimpleMethodHandle",              "BMH_SPECIES");
+    ADD_EXCL("java/lang/invoke/StringConcatFactory",             "NEW_ARRAY");
+}
 
 # undef ADD_EXCL
 

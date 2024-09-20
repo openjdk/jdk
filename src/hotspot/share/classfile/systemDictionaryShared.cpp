@@ -285,7 +285,7 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   if (!k->is_hidden() && k->shared_classpath_index() < 0 && is_builtin(k)) {
     // These are classes loaded from unsupported locations (such as those loaded by JVMTI native
     // agent during dump time).
-    if (k->name()->starts_with("java/lang/invoke/BoundMethodHandle$Species_")) {
+    if (CDSConfig::is_dumping_aot_linked_classes() && k->name()->starts_with("java/lang/invoke/BoundMethodHandle$Species_")) {
       // Such classes are dynamically generated since JDK-8336856. TODO: need a general solution.
       k->set_shared_classpath_index(0);
     } else {
@@ -583,10 +583,11 @@ void SystemDictionaryShared::validate_before_archiving(InstanceKlass* k) {
   guarantee(!info->is_excluded(), "Should not attempt to archive excluded class %s", name);
   if (is_builtin(k)) {
     if (k->is_hidden()) {
-      if (CDSConfig::is_dumping_invokedynamic()) { // FIXME -- clean up
-        return;
+      if (CDSConfig::is_dumping_invokedynamic()) {
+        assert(should_hidden_class_be_archived(k), "unexpected hidden class %s", name);
+      } else {
+        assert(is_registered_lambda_proxy_class(k), "unexpected hidden class %s", name);
       }
-      assert(should_hidden_class_be_archived(k), "unexpected hidden class %s", name);
     }
     guarantee(!k->is_shared_unregistered_class(),
               "Class loader type must be set for BUILTIN class %s", name);

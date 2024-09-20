@@ -953,8 +953,7 @@ void InterpreterRuntime::cds_resolve_invokehandle(int raw_index,
                                                   constantPoolHandle& pool, TRAPS) {
   const Bytecodes::Code bytecode = Bytecodes::_invokehandle;
   CallInfo info;
-  LinkResolver::resolve_invoke(info, Handle(), pool,
-                               raw_index, bytecode, CHECK);
+  LinkResolver::resolve_invoke(info, Handle(), pool, raw_index, bytecode, CHECK);
 
   pool->cache()->set_method_handle(raw_index, info);
 }
@@ -982,8 +981,7 @@ void InterpreterRuntime::cds_resolve_invokedynamic(int raw_index,
                                                    constantPoolHandle& pool, TRAPS) {
   const Bytecodes::Code bytecode = Bytecodes::_invokedynamic;
   CallInfo info;
-  LinkResolver::resolve_invoke(info, Handle(), pool,
-                               raw_index, bytecode, CHECK);
+  LinkResolver::resolve_invoke(info, Handle(), pool, raw_index, bytecode, CHECK);
   pool->cache()->set_dynamic_call(info, raw_index);
 }
 

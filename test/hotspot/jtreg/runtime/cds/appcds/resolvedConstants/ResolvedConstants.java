@@ -33,7 +33,7 @@
  * @build ResolvedConstants
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 ResolvedConstantsApp ResolvedConstantsFoo ResolvedConstantsBar
- *                 ResolvedConstantsINTF
+ *                 MyInterface InterfaceWithClinit
  *                 OldProvider OldClass OldConsumer
  * @run driver ResolvedConstants
  */
@@ -148,7 +148,8 @@ public class ResolvedConstants {
         if (aotClassLinking) {
             out.shouldContain("Cannot aot-resolve Lambda proxy because OldConsumer is excluded")
                .shouldContain("Cannot aot-resolve Lambda proxy because OldProvider is excluded")
-               .shouldContain("Cannot aot-resolve Lambda proxy because OldClass is excluded");
+               .shouldContain("Cannot aot-resolve Lambda proxy because OldClass is excluded")
+               .shouldContain("Cannot aot-resolve Lambda proxy of interface type InterfaceWithClinit (has <cilint>)");
         }
     }
 
@@ -198,26 +199,36 @@ class ResolvedConstantsApp implements Runnable {
         // A captured value is an instance of an excluded Class
         OldClass c = new OldClass();
         Runnable r = () -> {
-            System.out.println("Test 1" + c);
+            System.out.println("Test 1 " + c);
         };
         r.run();
 
         // The functional interface accepts an argument that's an excluded class
-        ResolvedConstantsINTF i = (o) -> {
-            System.out.println("Test 1" + o);
+        MyInterface i = (o) -> {
+            System.out.println("Test 2 " + o);
         };
         i.dispatch(c);
 
-        // Use method reference to old class
+        // Method reference to old class
         OldConsumer oldConsumer = new OldConsumer();
         Consumer<String> wrapper = oldConsumer::consumeString;
         wrapper.accept("Hello");
 
+        //
+        InterfaceWithClinit i2 = () -> {
+            System.out.println("Test 3");
+        };
+        i2.dispatch();
     }
 }
 
-interface ResolvedConstantsINTF {
+interface MyInterface {
     void dispatch(OldClass c);
+}
+
+interface InterfaceWithClinit {
+    static final long X = System.currentTimeMillis();
+    void dispatch();
 }
 
 class ResolvedConstantsFoo {

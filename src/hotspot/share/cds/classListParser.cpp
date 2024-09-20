@@ -617,7 +617,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
         // Avoid resolving indys that refer to excluded classes, or else we would create
         // MethodTypes and MethodHandles that have native pointers to excluded InstanceKlasses.
         continue;
-      }      
+      }
       constantPoolHandle pool(THREAD, cp);
       BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
       Handle bsm = bootstrap_specifier.resolve_bsm(CHECK);

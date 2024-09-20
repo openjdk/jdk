@@ -412,10 +412,10 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   check_flag_aliases();
 
   if (AOTClassLinking) {
-    // If AOTClassLinking is specified, enable all these optimizations by default.
+    // If AOTClassLinking is specified, enable all AOT optimizations by default.
     FLAG_SET_ERGO_IF_DEFAULT(AOTInvokeDynamicLinking, true);
   } else {
-    // All of these *might* depend on AOTClassLinking. Better be safe than sorry.
+    // AOTInvokeDynamicLinking depends on AOTClassLinking.
     FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
   }
 

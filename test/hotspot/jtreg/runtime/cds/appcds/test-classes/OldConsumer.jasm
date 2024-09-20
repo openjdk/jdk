@@ -22,33 +22,32 @@
  *
  */
 super class OldConsumer
-	version 49:0
+    version 49:0
 {
 
 
 Method "<init>":"()V"
-	stack 1 locals 1
+    stack 1 locals 1
 {
-		aload_0;
-		invokespecial	Method java/lang/Object."<init>":"()V";
-		return;
+        aload_0;
+        invokespecial    Method java/lang/Object."<init>":"()V";
+        return;
 }
 
 public Method consumeString:"(Ljava/lang/String;)V"
-	stack 3 locals 2
+    stack 3 locals 2
 {
-		getstatic	Field java/lang/System.out:"Ljava/io/PrintStream;";
-		new	class java/lang/StringBuilder;
-		dup;
-		invokespecial	Method java/lang/StringBuilder."<init>":"()V";
-		ldc	String "Hello: ";
-		invokevirtual	Method java/lang/StringBuilder.append:"(Ljava/lang/String;)Ljava/lang/StringBuilder;";
-		aload_1;
-		invokevirtual	Method java/lang/StringBuilder.append:"(Ljava/lang/String;)Ljava/lang/StringBuilder;";
-		invokevirtual	Method java/lang/StringBuilder.toString:"()Ljava/lang/String;";
-		invokevirtual	Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
-		return;
+        getstatic        Field java/lang/System.out:"Ljava/io/PrintStream;";
+        new              class java/lang/StringBuilder;
+        dup;
+        invokespecial    Method java/lang/StringBuilder."<init>":"()V";
+        ldc              String "Hello: ";
+        invokevirtual    Method java/lang/StringBuilder.append:"(Ljava/lang/String;)Ljava/lang/StringBuilder;";
+        aload_1;
+        invokevirtual    Method java/lang/StringBuilder.append:"(Ljava/lang/String;)Ljava/lang/StringBuilder;";
+        invokevirtual    Method java/lang/StringBuilder.toString:"()Ljava/lang/String;";
+        invokevirtual    Method java/io/PrintStream.println:"(Ljava/lang/String;)V";
+        return;
 }
-
 
 } // end Class OldConsumer

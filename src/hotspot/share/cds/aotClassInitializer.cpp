@@ -81,7 +81,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
       //name->equals("java/lang/invoke/MethodHandleStatics") || /* need?*/
         name->equals("java/lang/invoke/MethodType$AOTHolder") ||
       //name->equals("java/lang/reflect/ClassFileFormatVersion") || /* need?*/
-        name->equals("java/util/HexFormat") ||
+      //name->equals("java/util/HexFormat") ||
         name->starts_with("java/lang/invoke/ClassSpecializer$")) {
       assert(ik->is_initialized(), "must be");
       return true;

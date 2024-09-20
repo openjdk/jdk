@@ -475,11 +475,11 @@ void HeapShared::copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop
     }
   }
 
+  java_lang_Class::set_class_data(m, java_lang_Class::class_data(orig_mirror));
+
   // Class::reflectData use SoftReference, which cannot be archived. Set it
   // to null and it will be recreated at runtime.
   java_lang_Class::set_reflection_data(m, nullptr);
-
-  java_lang_Class::set_class_data(m, java_lang_Class::class_data(orig_mirror));
 
   if (log_is_enabled(Info, cds, init)) {
     ResourceMark rm;
