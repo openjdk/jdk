@@ -297,7 +297,7 @@ public class ModulePathAndFMG {
                                  MAIN_MODULE + "/" + MAIN_CLASS)        // -m
             .assertNormalExit(out -> {
                 out.shouldContain(FMG_DISABLED)
-                   .shouldMatch(MAIN_FROM_MODULE) // Main class loaded from the exploded module 
+                   .shouldMatch(MAIN_FROM_MODULE) // Main class loaded from the exploded module
                    .shouldContain(CLASS_FOUND_MESSAGE);
             });
     }
