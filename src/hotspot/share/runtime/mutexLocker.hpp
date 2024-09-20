@@ -194,7 +194,7 @@ class MutexLockerImpl: public StackObj {
   MutexLockerImpl(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
-    if (_mutex != nullptr && Thread::current_or_null() != nullptr) {
+    if (_mutex != nullptr) {
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check();
       } else {
@@ -206,7 +206,7 @@ class MutexLockerImpl: public StackObj {
   MutexLockerImpl(Thread* thread, Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
-    if (_mutex != nullptr && Thread::current_or_null() != nullptr) {
+    if (_mutex != nullptr) {
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check(thread);
       } else {
@@ -216,7 +216,7 @@ class MutexLockerImpl: public StackObj {
   }
 
   ~MutexLockerImpl() {
-    if (_mutex != nullptr && Thread::current_or_null() != nullptr) {
+    if (_mutex != nullptr) {
       assert_lock_strong(_mutex);
       _mutex->unlock();
     }
@@ -241,15 +241,6 @@ class MutexLocker: public MutexLockerImpl {
    }
 };
 
-// Same as MutexLocker but can be used during VM init.
-// Performs no action if given a null mutex or with detached threads.
-class NMTMutexLocker: public MutexLockerImpl {
-public:
-    NMTMutexLocker() :
-            MutexLockerImpl(NMT_lock, Mutex::_no_safepoint_check_flag) {
-    }
-};
-
 // Conditional mutex locker.
 // Like MutexLocker above, but only locks when condition is true.
 class ConditionalMutexLocker: public MutexLockerImpl {
@@ -263,6 +254,15 @@ class ConditionalMutexLocker: public MutexLockerImpl {
      MutexLockerImpl(thread, condition ? mutex : nullptr, flag) {
      assert(!condition || mutex != nullptr, "null mutex not allowed when locking");
    }
+};
+
+// Same as MutexLocker but can be used during VM init.
+// Performs no action if given a null mutex or with detached threads.
+class NMTMutexLocker: public ConditionalMutexLocker {
+public:
+    NMTMutexLocker() :
+            ConditionalMutexLocker(NMT_lock, Thread::current_or_null_safe() != nullptr, Mutex::_no_safepoint_check_flag) {
+    }
 };
 
 // A MonitorLocker is like a MutexLocker above, except it allows
