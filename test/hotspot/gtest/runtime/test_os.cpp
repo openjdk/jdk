@@ -420,43 +420,61 @@ TEST_VM(os, realpath) {
   const char* returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) - 2);
   /* Returns ENOENT on Linux, ENAMETOOLONG on Windows */
   EXPECT_TRUE(returnedBuffer == nullptr);
-  EXPECT_TRUE(errno == ENAMETOOLONG || errno == ENOENT);
+#if defined(_WINDOWS)
+  EXPECT_TRUE(errno == ENAMETOOLONG);
+#else
+  EXPECT_TRUE(errno == ENOENT);
+#endif
 
   errno = 0;
   returnedBuffer = os::realpath(nosuchpath, buffer, sizeof(nosuchpath) + 3);
   /* Returns ENOENT on Linux, 0 on Windows */
-  EXPECT_TRUE(errno == 0 || errno == ENOENT);
-  EXPECT_TRUE(returnedBuffer == nullptr || returnedBuffer == buffer);
+#if defined(_WINDOWS)
+  EXPECT_TRUE(returnedBuffer == buffer);
+  EXPECT_TRUE(errno == 0);
+//#else if defined(__APPLE_)
+ // EXPECT_TRUE(returnedBuffer == nullptr);
+ // EXPECT_TRUE(errno == ENOENT);
+#else
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == ENOENT);
+#endif
 
   errno = 0;
   returnedBuffer = os::realpath(tmppath, buffer, MAX_PATH);
-  EXPECT_TRUE(returnedBuffer == buffer);
+  EXPECT_TRUE(returnedBuffer != nullptr);
 
   errno = 0;
   returnedBuffer = os::realpath(tmppath, buffer, strlen(tmppath) + 3);
+  /* on MacOS, /tmp is a symlink to /private/tmp, so doesn't fit in a small buffer. */
+#if !defined(__APPLE__)
   EXPECT_TRUE(returnedBuffer == buffer);
+#else
+  EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == ENAMETOOLONG);
+#endif
 
   errno = 0;
   returnedBuffer = os::realpath(tmppath, buffer, strlen(tmppath) - 1);
-  EXPECT_TRUE(errno == ENAMETOOLONG);
   EXPECT_TRUE(returnedBuffer == nullptr);
+  EXPECT_TRUE(errno == ENAMETOOLONG);
 
   /* the following tests cause an assert in fastdebug mode */
   DEBUG_ONLY(if (false)) {
     errno = 0;
     returnedBuffer = os::realpath(nullptr, buffer, sizeof(buffer));
-    EXPECT_TRUE(errno == EINVAL);
     EXPECT_TRUE(returnedBuffer == nullptr);
+    EXPECT_TRUE(errno == EINVAL);
 
     errno = 0;
     returnedBuffer = os::realpath(tmppath, buffer, sizeof(buffer));
-    EXPECT_TRUE(errno == EINVAL);
     EXPECT_TRUE(returnedBuffer == nullptr);
+    EXPECT_TRUE(errno == EINVAL);
 
     errno = 0;
     returnedBuffer = os::realpath(tmppath, buffer, 0);
-    EXPECT_TRUE(errno == EINVAL);
     EXPECT_TRUE(returnedBuffer == nullptr);
+    EXPECT_TRUE(errno == EINVAL);
   }
 }
 
