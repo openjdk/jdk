@@ -40,7 +40,7 @@ import javax.lang.model.SourceVersion;
  * subset of the annotations found on the
  * {@linkplain RoundEnvironment#getRootElements() source and class files
  * produced by a prior round}.  The inputs to the first round of
- * processing are the <dfn>{@index initial inputs}</dfn> to a run of the tool; these
+ * processing are the <dfn>{@index "initial inputs"}</dfn> to a run of the tool; these
  * initial inputs can be regarded as the output of a virtual zeroth
  * round of processing.  If a processor was asked to process on a
  * given round, it will be asked to process on subsequent rounds,
