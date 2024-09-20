@@ -479,6 +479,8 @@ void HeapShared::copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop
   // to null and it will be recreated at runtime.
   java_lang_Class::set_reflection_data(m, nullptr);
 
+  java_lang_Class::set_class_data(m, java_lang_Class::class_data(orig_mirror));
+
   if (log_is_enabled(Info, cds, init)) {
     ResourceMark rm;
     log_debug(cds, init)("copied %3d field(s) in aot-initialized mirror %s%s", nfields, ik->external_name(),

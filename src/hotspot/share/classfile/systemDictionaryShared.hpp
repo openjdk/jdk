@@ -291,6 +291,7 @@ public:
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
 
   static void check_excluded_classes();
+  static bool check_for_exclusion(Klass* k);
   static bool check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info);
   static void validate_before_archiving(InstanceKlass* k);
   static bool is_excluded_class(InstanceKlass* k);

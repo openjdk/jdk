@@ -94,7 +94,7 @@ public class CustomClassListDump {
             .shouldContain("unreg CustomLoadee")
             .shouldContain("unreg CustomLoadee2")
             .shouldContain("unreg CustomLoadee3Child")
-            .shouldContain("unreg OldClass unlinked");
+            .shouldContain("unreg OldClass old unlinked");
 
         // Use the dumped static archive
         opts = (new CDSOptions())

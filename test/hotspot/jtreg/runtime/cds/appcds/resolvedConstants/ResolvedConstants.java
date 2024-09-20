@@ -24,19 +24,25 @@
 
 /*
  * @test
- * @summary Dump time resolutiom of constant pool entries.
+ * @summary Dump time resolution of constant pool entries.
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.compMode != "Xcomp"
- * @library /test/lib
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes/
+ * @build OldProvider OldClass OldConsumer
  * @build ResolvedConstants
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar ResolvedConstantsApp ResolvedConstantsFoo ResolvedConstantsBar
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 ResolvedConstantsApp ResolvedConstantsFoo ResolvedConstantsBar
+ *                 ResolvedConstantsINTF
+ *                 OldProvider OldClass OldConsumer
  * @run driver ResolvedConstants
  */
 
+import java.util.function.Consumer;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.helpers.ClassFileInstaller;
+import jdk.test.lib.process.OutputAnalyzer;
 
 public class ResolvedConstants {
     static final String classList = "ResolvedConstants.classlist";
@@ -66,11 +72,11 @@ public class ResolvedConstants {
             opts.addPrefix("-XX:-AOTClassLinking");
         }
 
-        CDSTestUtils.createArchiveAndCheck(opts)
+        OutputAnalyzer out = CDSTestUtils.createArchiveAndCheck(opts);
           // Class References ---
 
             // Always resolve reference when a class references itself
-            .shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => ResolvedConstantsApp app"))
+        out.shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => ResolvedConstantsApp app"))
 
             // Always resolve reference when a class references a super class
             .shouldMatch(ALWAYS("klass.* ResolvedConstantsApp app => java/lang/Object boot"))
@@ -136,6 +142,14 @@ public class ResolvedConstants {
 
           // End ---
             ;
+
+
+        // Indy References ---
+        if (aotClassLinking) {
+            out.shouldContain("Cannot aot-resolve Lambda proxy because OldConsumer is excluded")
+               .shouldContain("Cannot aot-resolve Lambda proxy because OldProvider is excluded")
+               .shouldContain("Cannot aot-resolve Lambda proxy because OldClass is excluded");
+        }
     }
 
     static String ALWAYS(String s) {
@@ -166,12 +180,44 @@ class ResolvedConstantsApp implements Runnable {
         bar.a ++;
         bar.b ++;
         bar.doit();
+
+        testLambda();
     }
     private static void staticCall() {}
     private void privateInstanceCall() {}
     public void publicInstanceCall() {}
 
     public void run() {}
+
+    static void testLambda() {
+        // The functional type used in the Lambda is an excluded class
+        OldProvider op = () -> {
+            return null;
+        };
+
+        // A captured value is an instance of an excluded Class
+        OldClass c = new OldClass();
+        Runnable r = () -> {
+            System.out.println("Test 1" + c);
+        };
+        r.run();
+
+        // The functional interface accepts an argument that's an excluded class
+        ResolvedConstantsINTF i = (o) -> {
+            System.out.println("Test 1" + o);
+        };
+        i.dispatch(c);
+
+        // Use method reference to old class
+        OldConsumer oldConsumer = new OldConsumer();
+        Consumer<String> wrapper = oldConsumer::consumeString;
+        wrapper.accept("Hello");
+
+    }
+}
+
+interface ResolvedConstantsINTF {
+    void dispatch(OldClass c);
 }
 
 class ResolvedConstantsFoo {

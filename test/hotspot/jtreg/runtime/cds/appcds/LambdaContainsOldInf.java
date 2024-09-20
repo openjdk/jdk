@@ -64,7 +64,11 @@ public class LambdaContainsOldInf {
             OutputAnalyzer output = CDSTestUtils.createArchiveAndCheck(opts);
             TestCommon.checkExecReturn(output, 0, true,
                                        "Skipping OldProvider: Old class has been linked");
-            output.shouldMatch("Skipping.LambdaContainsOldInfApp[$][$]Lambda.*0x.*:.*Old.class.has.been.linked");
+            if (CDSTestUtils.isAOTClassLinkingEnabled()) {
+                output.shouldMatch("Cannot aot-resolve Lambda proxy because OldProvider is excluded");
+            } else {
+                output.shouldMatch("Skipping.LambdaContainsOldInfApp[$][$]Lambda.*0x.*:.*Old.class.has.been.linked");
+            }
 
             // run with archive
             CDSOptions runOpts = (new CDSOptions())

@@ -863,15 +863,20 @@ public class CDSTestUtils {
     // Some tests were initially written without the knowledge of -XX:+AOTClassLinking. These tests need to
     // be adjusted if -XX:+AOTClassLinking is specified in jtreg -vmoptions or -javaoptions:
     public static boolean isAOTClassLinkingEnabled() {
-        String vmopts = System.getProperty("test.vm.opts");
-        String javaopts = System.getProperty("test.java.opts");
-        if (vmopts != null && vmopts.contains("-XX:+AOTClassLinking")) {
-            return true;
-        }
-        if (javaopts != null && javaopts.contains("-XX:+AOTClassLinking")) {
-            return true;
-        }
+        return isBooleanVMOptionEnabledInCommandLine("AOTClassLinking");
+    }
 
+    public static boolean isBooleanVMOptionEnabledInCommandLine(String optionName) {
+        String lastMatch = null;
+        String pattern = "^-XX:." + optionName + "$";
+        for (String s : Utils.getTestJavaOpts()) {
+            if (s.matches(pattern)) {
+                lastMatch = s;
+            }
+        }
+        if (lastMatch != null && lastMatch.equals("-XX:+" +  optionName)) {
+            return true;
+        }
         return false;
     }
 }

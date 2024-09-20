@@ -63,9 +63,26 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     return true;
   }
   if (CDSConfig::is_dumping_invokedynamic()) {
-    if (name->equals("java/lang/invoke/DirectMethodHandle$AOTHolder") ||
+    if (name->equals("java/lang/Character$CharacterCache") ||
+        name->equals("java/lang/invoke/BoundMethodHandle$Specializer") ||
+        name->equals("java/lang/invoke/ClassSpecializer") ||
+        name->equals("java/lang/invoke/DelegatingMethodHandle") ||
+        name->equals("java/lang/invoke/DelegatingMethodHandle$Holder") ||
+        name->equals("java/lang/invoke/DirectMethodHandle") ||
+        name->equals("java/lang/invoke/DirectMethodHandle$AOTHolder") ||
+        name->equals("java/lang/invoke/DirectMethodHandle$Holder") ||
+        name->equals("java/lang/invoke/Invokers") ||
+        name->equals("java/lang/invoke/Invokers$Holder") ||
+        name->equals("java/lang/invoke/LambdaForm") ||
+        name->equals("java/lang/invoke/LambdaForm$NamedFunction") ||
         name->equals("java/lang/invoke/LambdaForm$NamedFunction$AOTHolder") ||
-        name->equals("java/lang/invoke/MethodType$AOTHolder")) {
+        name->equals("java/lang/invoke/MethodHandle") ||
+        name->equals("java/lang/invoke/MethodHandles$Lookup") ||
+      //name->equals("java/lang/invoke/MethodHandleStatics") || /* need?*/
+        name->equals("java/lang/invoke/MethodType$AOTHolder") ||
+      //name->equals("java/lang/reflect/ClassFileFormatVersion") || /* need?*/
+        name->equals("java/util/HexFormat") ||
+        name->starts_with("java/lang/invoke/ClassSpecializer$")) {
       assert(ik->is_initialized(), "must be");
       return true;
     }

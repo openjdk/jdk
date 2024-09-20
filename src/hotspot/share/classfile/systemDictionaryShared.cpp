@@ -663,6 +663,42 @@ bool SystemDictionaryShared::should_hidden_class_be_archived(InstanceKlass* k) {
   return false;
 }
 
+// Returns true if the class should be excluded. This can be called before
+// SystemDictionaryShared::check_excluded_classes().
+bool SystemDictionaryShared::check_for_exclusion(Klass* k) {
+  assert(CDSConfig::is_dumping_archive(), "sanity");
+
+  if (k->is_objArray_klass()) {
+    return check_for_exclusion(ObjArrayKlass::cast(k)->bottom_klass());
+  }
+
+  if (!k->is_instance_klass()) {
+    return false;
+  } else {
+    InstanceKlass* ik = InstanceKlass::cast(k);
+
+    if (SafepointSynchronize::is_at_safepoint()) {
+      return is_excluded_class(ik);
+    }
+
+    if (!ik->is_linked()) {
+      JavaThread* THREAD = JavaThread::current();
+      ik->link_class(THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        CLEAR_PENDING_EXCEPTION;
+        return true;
+      }
+    }
+
+    MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+    DumpTimeClassInfo* p = get_info_locked(ik);
+    if (p->is_excluded()) {
+      return true;
+    }
+    return check_for_exclusion(ik, p);
+  }
+}
+
 void SystemDictionaryShared::check_excluded_classes() {
   assert(!class_loading_may_happen(), "class loading must be disabled");
   assert_lock_strong(DumpTimeTable_lock);

@@ -613,6 +613,11 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
     bool found = false;
     for (int indy_index = 0; indy_index < cpcache->resolved_indy_entries_length(); indy_index++) {
       int pool_index = cpcache->resolved_indy_entry_at(indy_index)->constant_pool_index();
+      if (CDSConfig::is_dumping_invokedynamic() && !AOTConstantPoolResolver::is_resolution_deterministic(cp, pool_index)) {
+        // Avoid resolving indys that refer to excluded classes, or else we would create
+        // MethodTypes and MethodHandles that have native pointers to excluded InstanceKlasses.
+        continue;
+      }      
       constantPoolHandle pool(THREAD, cp);
       BootstrapInfo bootstrap_specifier(pool, pool_index, indy_index);
       Handle bsm = bootstrap_specifier.resolve_bsm(CHECK);
