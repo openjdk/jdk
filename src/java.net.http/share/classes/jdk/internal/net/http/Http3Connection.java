@@ -1089,13 +1089,11 @@ public final class Http3Connection implements AutoCloseable {
 
     /**
      * Schedules sending of max push id that this (client) connection allows.
-     * @return a completable future that will be completed with the
-     * {@link QuicStreamWriter} allowing to write to the local control
-     * stream
+     * @param writer the control stream writer
+     * @return the {@link QuicStreamWriter} passed as parameter
      */
     private QuicStreamWriter sendMaxPushId(QuicStreamWriter writer) {
         try {
-            // TODO: ideally this is should configurable for each client instance
             long maxPushId = pushManager.getMaxPushId();
             if (maxPushId > 0 && maxPushId > maxPushIdSent.get()) {
                 return sendMaxPushId(writer, maxPushId);
@@ -1524,6 +1522,10 @@ public final class Http3Connection implements AutoCloseable {
         pushManager.cancelPushPromise(pushId, null, CancelPushReason.NO_HANDLER);
     }
 
+    boolean acceptPromises() {
+        return exchanges.values().stream().anyMatch(Http3ExchangeImpl::acceptPushPromise);
+    }
+
     /**
      * {@return a completable future that will be completed when a pushId has been
      * accepted by the exchange in charge of creating the response body}
@@ -1665,6 +1667,10 @@ public final class Http3Connection implements AutoCloseable {
             return io;
         }
         return null;
+    }
+
+    public long getMinPushId() {
+        return pushManager.getMinPushId();
     }
 
     private static final VarHandle CLOSED_STATE;

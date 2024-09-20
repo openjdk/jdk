@@ -32,6 +32,7 @@ import java.net.http.HttpResponse.PushPromiseHandler.PushId;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -92,13 +93,20 @@ public final class Http3PushManager {
     private final AtomicLong minPushId = new AtomicLong();
     // the max history we keep in the promiseMap. We start expunging old
     // entries from the map when the size of the map exceeds this value
-    private final long MAX_PUSH_HISTORY_SIZE = MAX_HTTP3_PUSH_STREAMS;
+    private final long MAX_PUSH_HISTORY_SIZE = (3*MAX_HTTP3_PUSH_STREAMS)/2;
     // the maxPushId increments, we send on MAX_PUSH_ID frame
     // with a maxPushId incremented by that amount.
     // Ideally should be <= to MAX_PUSH_HISTORY_SIZE, to avoid
     // filling up the history right after the first MAX_PUSH_ID
-    private final long MAX_PUSH_ID_INCREMENTS = MAX_PUSH_HISTORY_SIZE;
+    private final long MAX_PUSH_ID_INCREMENTS = MAX_HTTP3_PUSH_STREAMS;
     private final Http3Connection connection;
+
+    // number of pending promises
+    private final AtomicInteger pendingPromises = new AtomicInteger();
+    // push promises are considered blocked if we have failed to send
+    // the last MAX_PUSH_ID update due to pendingPromises
+    // count having reached MAX_HTTP3_PUSH_STREAMS
+    private volatile boolean pushPromisesBlocked;
 
 
     Http3PushManager(Http3Connection connection) {
@@ -202,6 +210,8 @@ public final class Http3PushManager {
         BodyHandler<T> handler;
         final CompletableFuture<Boolean> accepted; // whether the push promise was accepted
 
+        public long pushId() { return pushId; }
+
         public boolean ready() {
             if (stream == null) return false;
             if (exchange == null) return false;
@@ -242,6 +252,14 @@ public final class Http3PushManager {
     }
 
     /**
+     * {@return the minimum pushId that can be accepted from the server}
+     * Any pushId strictly less than this value should be ignored
+     */
+    long getMinPushId() {
+        return minPushId.get();
+    }
+
+    /**
      * Called when a new push promise stream is created by the peer, and
      * the pushId has been read.
      * @param pushStream the new push promise stream
@@ -265,11 +283,21 @@ public final class Http3PushManager {
      */
     void checkSendMaxPushId() {
         if (MAX_PUSH_ID_INCREMENTS <= 0) return;
+        long pendingCount =  pendingPromises.get();
+        long availableSlots = MAX_HTTP3_PUSH_STREAMS - pendingCount;
+        if (availableSlots <= 0) {
+            pushPromisesBlocked = true;
+            if (debug.on()) debug.log("Push promises blocked: availableSlots=%s", pendingCount);
+            return;
+        }
         long maxPushIdSent = maxPushId.get();
         long maxPushIdReceived = maxPushReceived.get();
         long half = Math.max(1, MAX_PUSH_ID_INCREMENTS /2);
         if (maxPushIdSent - maxPushIdReceived < half) {
-            long update = maxPushIdSent + MAX_PUSH_ID_INCREMENTS;
+            // do not send a maxPushId that would consume more
+            // than our available slots
+            long increment = Math.min(availableSlots, MAX_PUSH_ID_INCREMENTS);
+            long update = maxPushIdSent + increment;
             boolean updated = false;
             try {
                 // let's update the counter before sending the frame,
@@ -277,13 +305,24 @@ public final class Http3PushManager {
                 // before updating the counter.
                 do {
                     if (maxPushId.compareAndSet(maxPushIdSent, update)) {
-                        debug.log("MAX_PUSH_ID updated: %s", update);
+                        if (debug.on()) {
+                            debug.log("MAX_PUSH_ID updated: %s (%s -> %s), increment %s, pending %s, availableSlots %s",
+                                    update, maxPushIdSent, update, increment,
+                                    promises.values().stream().filter(PendingPushPromise.class::isInstance)
+                                            .map(p -> (PendingPushPromise<?>) p)
+                                            .map(PendingPushPromise::pushId).toList(),
+                                    availableSlots);
+                        }
                         updated = true;
                         break;
                     }
                     maxPushIdSent = maxPushId.get();
                 } while (maxPushIdSent < update);
                 if (updated) {
+                    if (pushPromisesBlocked) {
+                        if (debug.on()) debug.log("Push promises unblocked: maxPushIdSent=%s", update);
+                        pushPromisesBlocked = false;
+                    }
                     connection.sendMaxPushId(update);
                 }
             } catch (IOException io) {
@@ -440,10 +479,17 @@ public final class Http3PushManager {
                 if (ppp.promiseStream == null || reason != CancelPushReason.NO_HANDLER) {
                     var cancelled = new CancelledPushPromise(connection.newPushId(pushId));
                     promises.put(pushId, cancelled);
+                    long pendingCount = pendingPromises.decrementAndGet();
+                    long ppc = 0;
+                    assert (ppc = promises.values().stream().filter(PendingPushPromise.class::isInstance).count()) == pendingCount
+                            : "bad pending promise count: expected %s but found %s".formatted(pendingCount, ppc);
                     ppp.accepted.complete(false); // NO OP if already completed
                     pending = ppp;
                     // send cancel push; do not send if we received
                     // a CancelPushFrame from the peer
+                    // also do not update MAX_PUSH_ID here - MAX_PUSH_ID will
+                    // be updated when starting the next request/response exchange that accepts
+                    // push promises.
                     sendCancelPush = reason != CancelPushReason.CANCEL_RECEIVED;
                 }
             }
@@ -492,6 +538,13 @@ public final class Http3PushManager {
                 var processed = new ProcessedPushPromise(connection.newPushId(pushId),
                         ppp.promiseHeaders);
                 promises.put(pushId, processed);
+                var pendingCount = pendingPromises.decrementAndGet();
+                long ppc = 0;
+                assert (ppc = promises.values().stream().filter(PendingPushPromise.class::isInstance).count()) == pendingCount
+                        : "bad pending promise count: expected %s but found %s".formatted(pendingCount, ppc);
+                // do not update MAX_PUSH_ID here - MAX_PUSH_ID will
+                // be updated when starting the next request/response exchange that accepts
+                // push promises.
             }
         } finally {
             promiseLock.unlock();
@@ -568,7 +621,7 @@ public final class Http3PushManager {
                                                      long pushId,
                                                      HttpHeaders promiseHeaders) {
         PushPromise promise = promises.get(pushId);
-        boolean sendCancelPush = false;
+        boolean cancelStream = false;
         if (promise == null) {
             promiseLock.lock();
             try {
@@ -580,10 +633,14 @@ public final class Http3PushManager {
                             checkExpungePromiseMap();
                             var pp = new PendingPushPromise<>(exchange, pushId, promiseHeaders);
                             promises.put(pushId, pp);
+                            long pendingCount = pendingPromises.incrementAndGet();
+                            long ppc = 0;
+                            assert (ppc = promises.values().stream().filter(PendingPushPromise.class::isInstance).count()) == pendingCount
+                                    : "bad pending promise count: expected %s but found %s".formatted(pendingCount, ppc);
                             return pp;
                         } else {
                             // pushId < minPushId
-                            sendCancelPush = true;
+                            cancelStream = true;
                         }
                     } else return null;
                 }
@@ -591,8 +648,10 @@ public final class Http3PushManager {
                 promiseLock.unlock();
             }
         }
-        if (sendCancelPush) {
-            connection.sendCancelPush(pushId, null);
+        if (cancelStream) {
+            // we don't have the stream;
+            // the stream will be canceled if it comes later
+            // do not send push cancel frame (already cancelled, or abandoned)
             return null;
         }
         if (promise instanceof PendingPushPromise<?> ppp) {
@@ -624,6 +683,8 @@ public final class Http3PushManager {
                 connection.protocolError(
                         new IOException("push headers do not match with previous promise for " + pushId));
             }
+        } else if (promise instanceof CancelledPushPromise) {
+            // already cancelled - nothing to do
         }
         return null;
     }
@@ -634,23 +695,26 @@ public final class Http3PushManager {
     //       after a while.
     private <U> PendingPushPromise<U> addPushPromise(QuicReceiverStream stream, long pushId) {
         PushPromise promise = promises.get(pushId);
-        boolean sendCancelPush = false;
+        boolean cancelStream = false;
         if (promise == null) {
             promiseLock.lock();
             try {
                 promise = promises.get(pushId);
                 if (promise == null) {
-                    var maxPushId = this.maxPushId.get();
                     if (checkMaxPushId(pushId) == null) {
                         if (pushId >= minPushId.get()) {
                             if (pushId > maxPushReceived.get()) maxPushReceived.set(pushId);
                             checkExpungePromiseMap();
                             var pp = new PendingPushPromise<U>(stream, pushId);
                             promises.put(pushId, pp);
+                            long pendingCount = pendingPromises.incrementAndGet();
+                            long ppc = 0;
+                            assert (ppc = promises.values().stream().filter(PendingPushPromise.class::isInstance).count()) == pendingCount
+                                    : "bad pending promise count: expected %s but found %s".formatted(pendingCount, ppc);
                             return pp;
                         } else {
                             // pushId < minPushId
-                            sendCancelPush = true;
+                            cancelStream = true;
                         }
                     } else return null; // maxPushId exceeded, connection closed
                 }
@@ -658,8 +722,8 @@ public final class Http3PushManager {
                 promiseLock.unlock();
             }
         }
-        if (sendCancelPush) {
-            connection.sendCancelPush(pushId, null);
+        if (cancelStream) {
+            // do not send push cancel frame (already cancelled, or abandoned)
             stream.requestStopSending(Http3Error.H3_REQUEST_CANCELLED.code());
             return null;
         }
@@ -688,8 +752,9 @@ public final class Http3PushManager {
             var io = new IOException("HTTP/3 pushId %s already used on this connection".formatted(pushId));
             connection.connectionError(io, Http3Error.H3_ID_ERROR);
         } else {
+            // already cancelled?
             // Error! cancel stream...
-            connection.sendCancelPush(pushId, null);
+            // connection.sendCancelPush(pushId, null);
             stream.requestStopSending(Http3Error.H3_REQUEST_CANCELLED.code());
         }
         return null;
@@ -705,6 +770,10 @@ public final class Http3PushManager {
             long min = minPushId.getAndIncrement();
             var pp = promises.remove(min);
             if (pp instanceof PendingPushPromise<?> ppp) {
+                var pendingCount = pendingPromises.decrementAndGet();
+                long ppc = 0;
+                assert (ppc = promises.values().stream().filter(PendingPushPromise.class::isInstance).count()) == pendingCount
+                        : "bad pending promise count: expected %s but found %s".formatted(pendingCount, ppc);
                 var http3 = ppp.promiseStream;
                 IOException io = null;
                 if (http3 != null) {
@@ -721,4 +790,5 @@ public final class Http3PushManager {
             }
         }
     }
+
 }

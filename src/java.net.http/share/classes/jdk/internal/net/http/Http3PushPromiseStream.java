@@ -380,14 +380,14 @@ final class Http3PushPromiseStream<T> extends Http3Stream<T> {
                     if (t != null) {
                         responseCF.completeExceptionally(t);
                         debug.log("Cancelling push promise %s (stream %s) due to: %s", pushId, streamId(), t);
-                        cancelImpl(t, Http3Error.H3_REQUEST_CANCELLED);
                         pushManager.cancelPushPromise(pushId, t, CancelPushReason.PUSH_CANCELLED);
+                        cancelImpl(t, Http3Error.H3_REQUEST_CANCELLED);
                     } else {
                         HttpResponseImpl<T> resp =
                                 new HttpResponseImpl<>(r.request, r, null, body, getExchange());
                         debug.log("Completing responseCF: " + resp);
-                        responseCF.complete(resp);
                         pushManager.pushPromiseProcessed(pushId);
+                        responseCF.complete(resp);
                     }
                 });
         start.completeAsync(() -> null, getExchange().executor());
@@ -415,8 +415,8 @@ final class Http3PushPromiseStream<T> extends Http3Stream<T> {
      * same as above but for errors
      */
     void completeResponseExceptionally(Throwable t) {
-        responseCF.completeExceptionally(t);
         pushManager.cancelPushPromise(pushId, t, CancelPushReason.PUSH_CANCELLED);
+        responseCF.completeExceptionally(t);
     }
 
     void nullBody(HttpResponse<T> resp, Throwable t) {

@@ -97,7 +97,6 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     private final HttpHeaders requestPseudoHeaders;
     private final HeaderFrameReader headerFrameReader;
     private final HeaderFrameWriter headerFrameWriter;
-    private final HeadersConsumer promiseHeadersConsumer;
     private final Decoder qpackDecoder;
     private final Encoder qpackEncoder;
     private final AtomicReference<Throwable> errorRef;
@@ -151,7 +150,6 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         this.requestPublisher = request.requestPublisher;  // may be null
         this.responseHeadersBuilder = new HttpHeadersBuilder();
         this.rspHeadersConsumer = new HeadersConsumer(ValidatingHeadersConsumer.Context.RESPONSE);
-        this.promiseHeadersConsumer = new PushHeadersConsumer();
         this.qpackDecoder = connection.qpackDecoder();
         this.qpackEncoder = connection.qpackEncoder();
         this.headerFrameReader = qpackDecoder.newHeaderFrameReader(rspHeadersConsumer);
@@ -173,6 +171,10 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                     request, Long.toString(exchange.multi.id));
         }
         this.reader.start();
+    }
+
+    boolean acceptPushPromise() {
+        return exchange.pushGroup != null;
     }
 
     String dbgTag() {
@@ -1351,10 +1353,65 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                             HttpHeadersBuilder headersBuilder,
                             DecodingCallback consumer) {}
     final ConcurrentHashMap<PushPromiseFrame, PushPromiseState> promiseMap = new ConcurrentHashMap<>();
+
+    private void ignorePushPromiseData(PushPromiseFrame ppf, List<ByteBuffer> payload) {
+        boolean completed = ppf.remaining() == 0;
+        boolean eof = false;
+        if (payload != null) {
+            int last = payload.size() - 1;
+            for (int i = 0; i <= last; i++) {
+                ByteBuffer buf = payload.get(i);
+                buf.limit(buf.position());
+                if (buf == QuicStreamReader.EOF) {
+                    eof = true;
+                }
+            }
+        }
+        if (!completed && eof) {
+            cancelImpl(new EOFException("EOF reached promise: " + ppf),
+                    Http3Error.H3_FRAME_ERROR);
+        }
+    }
+
+    private boolean ignorePushPromiseFrame(PushPromiseFrame ppf, List<ByteBuffer> payload)
+        throws IOException {
+        long pushId = ppf.getPushId();
+        long minPushId = connection.getMinPushId();
+        if (exchange.pushGroup == null) {
+            IOException checkFailed = connection.checkMaxPushId(pushId);
+            if (checkFailed != null) {
+                // connection is closed
+                throw checkFailed;
+            }
+            if (!connection.acceptPromises()) {
+                // if no stream accept promises, we can ignore the data and
+                // cancel the promise right away.
+                if (debug.on()) {
+                    debug.log("ignoring PushPromiseFrame (no promise handler): %s%n", ppf);
+                }
+                ignorePushPromiseData(ppf, payload);
+                if (pushId >= minPushId) {
+                    connection.noPushHandlerFor(pushId);
+                }
+                return true;
+            }
+        }
+        if (pushId < minPushId) {
+            if (debug.on()) {
+                debug.log("ignoring PushPromiseFrame (pushId=%s < %s): %s%n",
+                        pushId, minPushId, ppf);
+            }
+            ignorePushPromiseData(ppf, payload);
+            return true;
+        }
+        return false;
+    }
+
     void receivePushPromiseFrame(PushPromiseFrame ppf, List<ByteBuffer> payload)
         throws IOException {
         var state = promiseMap.get(ppf);
         if (state == null) {
+            if (ignorePushPromiseFrame(ppf, payload)) return;
             if (debug.on())
                 debug.log("received PushPromiseFrame: " + ppf);
             var checkFailed = connection.checkMaxPushId(ppf.getPushId());
