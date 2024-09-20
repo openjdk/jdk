@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4090743
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Make sure that there is no garbage drawn on the rotated image
  * @run main/manual TransformImage

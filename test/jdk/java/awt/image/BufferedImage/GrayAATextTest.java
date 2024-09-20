@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4309915
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Check that Antialiased text drawn on a BYTE_GRAY image
  *              resolves the color correctly
@@ -42,6 +42,7 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 
 public class GrayAATextTest extends Panel {
+
     public static final int WIDTH = 600;
     public static final int HEIGHT = 200;
 
@@ -95,7 +96,7 @@ public class GrayAATextTest extends Panel {
     }
 
     private static Frame createTestUI() {
-        Frame f = new Frame();
+        Frame f = new Frame("GrayAATextTest Frame");
         f.add(new GrayAATextTest());
         f.setSize(WIDTH, HEIGHT);
         return f;

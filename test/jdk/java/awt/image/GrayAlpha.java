@@ -27,7 +27,7 @@
  * @summary This test should show two windows filled with checker
  *          board pattern. The transparency should runs from left to right from
  *          total transparent to total opaque.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual GrayAlpha
  */
