@@ -432,9 +432,6 @@ TEST_VM(os, realpath) {
 #if defined(_WINDOWS)
   EXPECT_TRUE(returnedBuffer == buffer);
   EXPECT_TRUE(errno == 0);
-//#else if defined(__APPLE_)
- // EXPECT_TRUE(returnedBuffer == nullptr);
- // EXPECT_TRUE(errno == ENOENT);
 #else
   EXPECT_TRUE(returnedBuffer == nullptr);
   EXPECT_TRUE(errno == ENOENT);
