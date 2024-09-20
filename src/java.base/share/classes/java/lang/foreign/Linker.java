@@ -249,6 +249,7 @@ import java.util.stream.Stream;
  * <ol>
  * <li>the alignment constraint of {@code S} is set to its
  *     <a href="MemoryLayout.html#layout-align">natural alignment</a>, and</li>
+ * <li>{@code S.elementLayout()} is not a padding layout.</li>
  * <li>{@code S.elementLayout()} is a layout supported by {@code NL}.</li>
  * </ol>
  * </li>
