@@ -438,7 +438,7 @@ public class ReflectionFactory {
     }
 
     public final MethodHandle defaultReadObjectForSerialization(Class<?> cl) {
-        if (! isValidSerializable(cl)) {
+        if (hasDefaultOrNoSerialization(cl)) {
             return null;
         }
 
@@ -446,7 +446,7 @@ public class ReflectionFactory {
     }
 
     public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
-        if (! isValidSerializable(cl)) {
+        if (hasDefaultOrNoSerialization(cl)) {
             return null;
         }
 
@@ -475,24 +475,6 @@ public class ReflectionFactory {
         }
     }
 
-    public final long serialVersionUID(Class<?> cl) {
-        if (! Serializable.class.isAssignableFrom(cl) || cl.isInterface() || cl.isEnum()) {
-            return 0;
-        }
-
-        try {
-            Field field = cl.getDeclaredField("serialVersionUID");
-            int mods = field.getModifiers();
-            if (! (Modifier.isStatic(mods) && Modifier.isPrivate(mods) && Modifier.isFinal(mods))) {
-                return 0;
-            }
-            field.setAccessible(true);
-            return field.getLong(null);
-        } catch (ReflectiveOperationException e) {
-            return 0;
-        }
-    }
-
     /**
      * These are specific leaf classes which appear to be Serializable, but which
      * have special semantics according to the serialization specification. We
@@ -505,16 +487,16 @@ public class ReflectionFactory {
         ObjectStreamClass.class
     );
 
-    private static boolean isValidSerializable(Class<?> cl) {
-        return Serializable.class.isAssignableFrom(cl)
-            && ! cl.isInterface()
-            && ! cl.isArray()
-            && ! Proxy.isProxyClass(cl)
-            && ! Externalizable.class.isAssignableFrom(cl)
-            && ! cl.isEnum()
-            && ! cl.isRecord()
-            && ! cl.isHidden()
-            && ! nonSerializableLeafClasses.contains(cl);
+    private static boolean hasDefaultOrNoSerialization(Class<?> cl) {
+        return ! Serializable.class.isAssignableFrom(cl)
+            || cl.isInterface()
+            || cl.isArray()
+            || Proxy.isProxyClass(cl)
+            || Externalizable.class.isAssignableFrom(cl)
+            || cl.isEnum()
+            || cl.isRecord()
+            || cl.isHidden()
+            || nonSerializableLeafClasses.contains(cl);
     }
 
     /**

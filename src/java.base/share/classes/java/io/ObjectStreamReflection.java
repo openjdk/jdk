@@ -34,9 +34,9 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArray;
 
 /**
- *
+ * Utilities relating to serialization and deserialization of objects.
  */
-final class ObjectStreamDefaultSupport {
+final class ObjectStreamReflection {
 
     // todo: these could be constants
     private static final MethodHandle DRO_HANDLE;
@@ -46,16 +46,34 @@ final class ObjectStreamDefaultSupport {
         try {
             MethodHandles.Lookup lookup = MethodHandles.lookup();
             MethodType droType = MethodType.methodType(void.class, ObjectStreamClass.class, Object.class, ObjectInputStream.class);
-            DRO_HANDLE = lookup.findStatic(ObjectStreamDefaultSupport.class, "defaultReadObject", droType);
+            DRO_HANDLE = lookup.findStatic(ObjectStreamReflection.class, "defaultReadObject", droType);
             MethodType dwoType = MethodType.methodType(void.class, ObjectStreamClass.class, Object.class, ObjectOutputStream.class);
-            DWO_HANDLE = lookup.findStatic(ObjectStreamDefaultSupport.class, "defaultWriteObject", dwoType);
-        } catch (NoSuchMethodException e) {
-            throw new NoSuchMethodError(e.getMessage());
-        } catch (IllegalAccessException e) {
-            throw new IllegalAccessError(e.getMessage());
+            DWO_HANDLE = lookup.findStatic(ObjectStreamReflection.class, "defaultWriteObject", dwoType);
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new InternalError(e);
         }
     }
 
+    /**
+     * Populate a serializable object from data acquired from the stream's
+     * {@link java.io.ObjectInputStream.GetField} object independently of
+     * the actual {@link ObjectInputStream} implementation which may
+     * arbitrarily override the {@link ObjectInputStream#readFields()} method
+     * in order to deserialize using a custom object format.
+     * <p>
+     * The fields are populated using the mechanism defined in {@link ObjectStreamClass},
+     * which requires objects and primitives to each be packed into a separate array
+     * whose relative field offsets are defined in the {@link ObjectStreamField}
+     * corresponding to each field.
+     * Utility methods on the {@code ObjectStreamClass} instance are then used
+     * to validate and perform the actual field accesses.
+     *
+     * @param streamClass the object stream class of the object (must not be {@code null})
+     * @param obj the object to deserialize (must not be {@code null})
+     * @param ois the object stream (must not be {@code null})
+     * @throws IOException if the call to {@link ObjectInputStream#readFields} or one of its field accessors throws this exception type
+     * @throws ClassNotFoundException if the call to {@link ObjectInputStream#readFields} or one of its field accessors throws this exception type
+     */
     private static void defaultReadObject(ObjectStreamClass streamClass, Object obj, ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField getField = ois.readFields();
         byte[] bytes = new byte[streamClass.getPrimDataSize()];
@@ -77,9 +95,28 @@ final class ObjectStreamDefaultSupport {
             }
         }
         streamClass.setPrimFieldValues(obj, bytes);
+        streamClass.checkObjFieldValueTypes(obj, objs);
         streamClass.setObjFieldValues(obj, objs);
     }
 
+    /**
+     * Populate and write a stream's {@link java.io.ObjectOutputStream.PutField} object
+     * from field data acquired from a serializable object independently of
+     * the actual {@link ObjectOutputStream} implementation which may
+     * arbitrarily override the {@link ObjectOutputStream#putFields()}
+     * and {@link ObjectOutputStream#writeFields()} methods
+     * in order to deserialize using a custom object format.
+     * <p>
+     * The fields are accessed using the mechanism defined in {@link ObjectStreamClass},
+     * which causes objects and primitives to each be packed into a separate array
+     * whose relative field offsets are defined in the {@link ObjectStreamField}
+     * corresponding to each field.
+     *
+     * @param streamClass the object stream class of the object (must not be {@code null})
+     * @param obj the object to serialize (must not be {@code null})
+     * @param oos the object stream (must not be {@code null})
+     * @throws IOException if the call to {@link ObjectInputStream#readFields} or one of its field accessors throws this exception type
+     */
     private static void defaultWriteObject(ObjectStreamClass streamClass, Object obj, ObjectOutputStream oos) throws IOException {
         ObjectOutputStream.PutField putField = oos.putFields();
         byte[] bytes = new byte[streamClass.getPrimDataSize()];

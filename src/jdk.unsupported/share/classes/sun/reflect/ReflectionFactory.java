@@ -193,19 +193,6 @@ public class ReflectionFactory {
     }
 
     /**
-     * {@return the declared <code>serialVersionUID</code> from a serializable class,
-     * or <code>0L</code> if none is declared or the class is not a valid
-     * serializable class}
-     *
-     * @param cl a Serializable class
-     *
-     * @since 24
-     */
-    public final long serialVersionUID(Class<?> cl) {
-        return delegate.serialVersionUID(cl);
-    }
-
-    /**
      * Returns a direct MethodHandle for the {@code writeObject} method on
      * a Serializable class.
      * The first argument of {@link MethodHandle#invoke} is the serializable
