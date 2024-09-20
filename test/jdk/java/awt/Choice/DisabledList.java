@@ -40,7 +40,7 @@ import java.awt.event.ItemEvent;
 public class DisabledList {
 
     private static final String INSTRUCTIONS = """
-            1) Switch checkbox
+            1) Select the checkbox
             2) Open Choice
             3) Drag mouse over the scrollbar or drag out it the choice
             4) If choice's items become disabled press fail, otherwise pass
