@@ -636,7 +636,7 @@ void ZBarrierSetAssembler::copy_load_at(MacroAssembler* masm,
 
   // Remove metadata bits so that the store side (vectorized or non-vectorized) can
   // inject the store-good color with an or instruction.
-  __ andq(dst, _zpointer_address_mask);
+  __ andq(dst, ZPointerAddressMask);
 
   if ((decorators & ARRAYCOPY_CHECKCAST) != 0) {
     // The checkcast arraycopy needs to be able to dereference the oops in order to perform a typechecks.
