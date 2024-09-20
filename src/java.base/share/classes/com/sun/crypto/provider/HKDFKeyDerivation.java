@@ -54,15 +54,17 @@ abstract class HKDFKeyDerivation extends KDFSpi {
     private final int hmacLen;
     private final String hmacAlgName;
 
-    private static final int SHA256_HMAC_SIZE = 32;
-    private static final int SHA384_HMAC_SIZE = 48;
-    private static final int SHA512_HMAC_SIZE = 64;
+    private enum SupportedHmac {
+        SHA256("HmacSHA256", 32),
+        SHA384("HmacSHA384", 48),
+        SHA512("HmacSHA512", 64);
 
-    // since we are using Arrays.binarySearch later, order is important
-    private static final int[] SUPPORTED_HMAC_SIZES = new int[]{
-            SHA256_HMAC_SIZE,
-            SHA384_HMAC_SIZE,
-            SHA512_HMAC_SIZE
+        private final String hmacAlg;
+        private final int hmacLen;
+        SupportedHmac(String hmacAlg, int hmacLen) {
+            this.hmacAlg = hmacAlg;
+            this.hmacLen = hmacLen;
+        }
     };
 
     /**
@@ -75,21 +77,16 @@ abstract class HKDFKeyDerivation extends KDFSpi {
      *         if the initialization parameters are inappropriate for this
      *         {@code KDFSpi}
      */
-    private HKDFKeyDerivation(String hmacAlgName, int hmacLen,
+    private HKDFKeyDerivation(SupportedHmac supportedHmac,
                               KDFParameters kdfParameters)
             throws InvalidAlgorithmParameterException {
         super(kdfParameters);
         if (kdfParameters != null) {
             throw new InvalidAlgorithmParameterException(
-                    hmacAlgName + " does not support parameters");
+                    supportedHmac.hmacAlg + " does not support parameters");
         }
-        // added to enforce valid values at reviewer's request
-        if (Arrays.binarySearch(SUPPORTED_HMAC_SIZES, hmacLen) < 0) {
-            throw new InternalError(
-                    "Subclass attempted to use an invalid hmacLen");
-        }
-        this.hmacAlgName = hmacAlgName;
-        this.hmacLen = hmacLen;
+        this.hmacAlgName = supportedHmac.hmacAlg;
+        this.hmacLen = supportedHmac.hmacLen;
     }
 
     /**
@@ -393,21 +390,21 @@ abstract class HKDFKeyDerivation extends KDFSpi {
     public static final class HKDFSHA256 extends HKDFKeyDerivation {
         public HKDFSHA256(KDFParameters kdfParameters)
                 throws InvalidAlgorithmParameterException {
-            super("HmacSHA256", SHA256_HMAC_SIZE, kdfParameters);
+            super(SupportedHmac.SHA256, kdfParameters);
         }
     }
 
     public static final class HKDFSHA384 extends HKDFKeyDerivation {
         public HKDFSHA384(KDFParameters kdfParameters)
                 throws InvalidAlgorithmParameterException {
-            super("HmacSHA384", SHA384_HMAC_SIZE, kdfParameters);
+            super(SupportedHmac.SHA384, kdfParameters);
         }
     }
 
     public static final class HKDFSHA512 extends HKDFKeyDerivation {
         public HKDFSHA512(KDFParameters kdfParameters)
                 throws InvalidAlgorithmParameterException {
-            super("HmacSHA512", SHA512_HMAC_SIZE, kdfParameters);
+            super(SupportedHmac.SHA512, kdfParameters);
         }
     }
 

@@ -79,11 +79,13 @@ import java.util.Objects;
  * <i>delayed provider selection</i>. The primary reason this is done is to
  * ensure that the selected provider can handle the key material that is passed
  * to those methods - for example, the key material may reside on a hardware
- * device that only a specific {@code KDF} provider can utilize. Once initiated,
- * the selection process traverses the list of registered security providers,
- * starting with the most preferred {@code Provider}. A new {@code KDF} object
- * encapsulating the {@code KDFSpi} implementation from the first provider that
- * supports the specified algorithm and optional parameters is returned.
+ * device that only a specific {@code KDF} provider can utilize. The {@code
+ * getInstance} method returns a {@code KDF} object as long as there exists
+ * at least one registered security provider that implements the algorithm
+ * and supports the optional parameters. The delayed provider selection
+ * process traverses the list of registered security providers, starting with
+ * the most preferred {@code Provider}. The first provider that supports the
+ * specified algorithm, optional parameters, and key material is selected.
  * <p>
  * If the {@code getProviderName} or {@code getParameters} method is called
  * before the {@code deriveKey} or {@code deriveData} methods, the first

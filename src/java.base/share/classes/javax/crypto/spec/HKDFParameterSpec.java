@@ -160,7 +160,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
 
         /**
          * Adds input keying material (IKM) to the builder. Note that an
-         * {@code ikm} byte array of length zero will discarded.
+         * {@code ikm} byte array of length zero will be discarded.
          * <p>
          * {@code addIKM} may be called multiple times when the input keying
          * material value is to be assembled piece-meal or if part of the IKM is
@@ -212,7 +212,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
 
         /**
          * Adds a salt to the builder. Note that a {@code salt} byte array of
-         * length zero will discarded.
+         * length zero will be discarded.
          * <p>
          * {@code addSalt} may be called multiple times when the salt value is
          * to be assembled piece-meal or if part of the salt is to be supplied

@@ -39,14 +39,16 @@ import java.security.spec.AlgorithmParameterSpec;
  * cryptographic service provider who wishes to supply the implementation of a
  * particular key derivation algorithm.
  * <p>
- * In addition, all implementations must provide a public constructor which
- * accepts a {@code KDFParameters} object. The constructor must call
- * {@code super(params)} passing the parameters supplied. The constructor must
- * also throw an {@code InvalidAlgorithmParameterException} if the supplied
- * parameters are inappropriate. If a {@code KDF} object is instantiated with
- * one of the {@code getInstance} methods that contains a {@code KDFParameters}
- * parameter, the user-provided {@code KDFParameters} object will be passed to
- * the constructor of the {@code KDFSpi} implementation. Otherwise, if it is
+ * Implementations must provide a public constructor which accepts a {@code
+ * KDFParameters} object if they depend on the default implementation of
+ * {@code Provider.Service.newInstance} to construct {@code KDFSpi} instances.
+ * The constructor must call {@code super(params)} passing the parameters
+ * supplied. The constructor must also throw an
+ * {@code InvalidAlgorithmParameterException} if the supplied parameters are
+ * inappropriate. If a {@code KDF} object is instantiated with one of the
+ * {@code getInstance} methods that contains a {@code KDFParameters} parameter,
+ * the user-provided {@code KDFParameters} object will be passed to the
+ * constructor of the {@code KDFSpi} implementation. Otherwise, if it is
  * instantiated with one of the {@code getInstance} methods without a
  * {@code KDFParameters} parameter, a {@code null} value will be passed to the
  * constructor.
