@@ -269,7 +269,7 @@ public class Asserts {
         if (!Arrays.equals(lhs, rhs)) {
             msg = Objects.toString(msg, "assertEqualsByteArray")
                     + ": expected " + HexFormat.of().formatHex(lhs)
-                    + " to equal " + HexFormat.of().formatHex(rhs);
+                    + " but was " + HexFormat.of().formatHex(rhs);
             fail(msg);
         }
     }
@@ -285,8 +285,7 @@ public class Asserts {
     public static void assertNotEqualsByteArray(byte[] lhs, byte[] rhs, String msg) {
         if (Arrays.equals(lhs, rhs)) {
             msg = Objects.toString(msg, "assertNotEqualsByteArray")
-                    + ": expected " + HexFormat.of().formatHex(lhs)
-                    + " to not equal " + HexFormat.of().formatHex(rhs);
+                    + ": expected not equals but was " + HexFormat.of().formatHex(lhs);
             fail(msg);
         }
     }
@@ -446,8 +445,7 @@ public class Asserts {
     public static void assertNotEquals(Object lhs, Object rhs, String msg) {
         if ((lhs == rhs) || (lhs != null && lhs.equals(rhs))) {
             msg = Objects.toString(msg, "assertNotEquals")
-                    + ": expected " + Objects.toString(lhs)
-                    + " to not equal " + Objects.toString(rhs);
+                    + ": expected not equals but was " + Objects.toString(lhs);
             fail(msg);
         }
     }
