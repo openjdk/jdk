@@ -46,7 +46,6 @@ import java.awt.event.WindowEvent;
 
 public class AltTabEventsTest {
 
-
     private static final String INSTRUCTIONS = """
            This test verifies that when user switches between windows using Alt-tab
            key combination then appropriate window events are generated. Also, when
@@ -58,7 +57,7 @@ public class AltTabEventsTest {
            1. Make F1 active by clicking on it.
            2. Press Alt-tab.
            In the messqge dialog area you should see that
-           WINDOW_DEACTIVATED,WINDOW_LOST_FOCUS event were generated.
+           WINDOW_DEACTIVATED, WINDOW_LOST_FOCUS event were generated.
            If you switched to F2 then also WINDOW_ACTIVATED, WINDOW_GAINED_FOCUS
            were generated.
            If no events were generated the test FAILED.
@@ -77,15 +76,12 @@ public class AltTabEventsTest {
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 5)
                 .columns(35)
-                .testUI(AltTabEventsTest::createTestUI)
+                .testUI(Test::new)
                 .logArea()
                 .build()
                 .awaitAndCheck();
     }
 
-    private static Frame createTestUI() {
-        return new Test();
-    }
 }
 
 

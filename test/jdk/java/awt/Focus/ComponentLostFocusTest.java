@@ -30,6 +30,7 @@
  */
 
 import java.awt.Dialog;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.KeyboardFocusManager;
@@ -44,29 +45,25 @@ import java.awt.event.WindowEvent;
 
 public class ComponentLostFocusTest {
 
-    Frame frame = new Frame("Frame");
-    TextField tf = new TextField("Text Field");
+    static Frame frame;
+    static TextField tf;
     static Robot r;
-    Dialog dialog = null;
-    volatile boolean passed;
+    static Dialog dialog = null;
+    static volatile boolean passed;
+    static Point loc;
 
-    public ComponentLostFocusTest() {
-        try{
-            r = new Robot();
-        } catch(Exception e){
-            throw new RuntimeException(e);
-        }
-        r.setAutoDelay(100);
+    private static void createTestUI() {
 
         dialog = new Dialog(frame, "Dialog", true);
 
+        frame = new Frame("ComponentLostFocusTest Frame");
+        frame.setLayout(new FlowLayout());
         frame.addWindowFocusListener(new WindowAdapter() {
             public void windowGainedFocus(WindowEvent e) {
                 System.out.println("Frame gained focus: "+e);
             }
         });
-
-        frame.setLayout (new FlowLayout ());
+        tf = new TextField("Text Field");
         frame.add(tf);
         frame.setSize(400,300);
         frame.setVisible(true);
@@ -74,9 +71,7 @@ public class ComponentLostFocusTest {
         frame.validate();
     }
 
-    public void doTest() {
-        // Do requesting focus to the modal dialog in order to after that
-        // to do requesting focus to the frame
+    public static void doTest() {
         System.out.println("dialog.setVisible.... ");
         new Thread(new Runnable() {
             public void run() {
@@ -100,25 +95,16 @@ public class ComponentLostFocusTest {
         // We want to track the GAIN_FOCUS from this time
         tf.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent e) {
-                System.out.println("TextField gained focus: "+e);
+                System.out.println("TextField gained focus: " + e);
                 passed = true;
             }
         });
 
-        doRequestFocusToTextField();
-
-        System.out.println("Focused window: " + KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusedWindow());
-        System.out.println("Focus owner: " + KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner());
-
-        if (!passed) {
-            throw new RuntimeException("TextField got no focus! Test failed.");
-        }
     }
 
-    private void doRequestFocusToTextField(){
+    private static void doRequestFocusToTextField() {
         // do activation using press title
-        Point loc = frame.getLocationOnScreen();
-        r.mouseMove(loc.x + frame.getWidth()/2, loc.y + frame.getInsets().top/2);
+        r.mouseMove(loc.x + frame.getWidth() / 2, loc.y + frame.getInsets().top / 2);
         r.waitForIdle();
         r.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         r.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
@@ -128,11 +114,38 @@ public class ComponentLostFocusTest {
         tf.requestFocus();
     }
 
-    public static final void main(String args[]){
-        ComponentLostFocusTest test = new ComponentLostFocusTest();
+    public static final void main(String args[]) throws Exception {
+        r = new Robot();
+        r.setAutoDelay(100);
+
+        ComponentLostFocusTest test;
+        EventQueue.invokeAndWait(() -> createTestUI());
         r.waitForIdle();
         r.delay(1000);
-        test.doTest();
+        try {
+            EventQueue.invokeAndWait(() -> {
+                doTest();
+                loc = frame.getLocationOnScreen();
+            });
+            doRequestFocusToTextField();
+
+            System.out.println("Focused window: " +
+                KeyboardFocusManager.getCurrentKeyboardFocusManager().
+                                     getFocusedWindow());
+            System.out.println("Focus owner: " +
+                KeyboardFocusManager.getCurrentKeyboardFocusManager().
+                                     getFocusOwner());
+
+            if (!passed) {
+                throw new RuntimeException("TextField got no focus! Test failed.");
+            }
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
     }
 }
 
