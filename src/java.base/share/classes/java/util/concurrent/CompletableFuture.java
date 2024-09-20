@@ -3084,7 +3084,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         MethodHandles.Lookup l = MethodHandles.lookup();
         RESULT = MhUtil.findVarHandle(l, "result", Object.class);
         STACK = MhUtil.findVarHandle(l, "stack", Completion.class);
-        NEXT = MhUtil.findVarHandle(l, "next", Completion.class);
+        NEXT = MhUtil.findVarHandle(l, Completion.class, "next", Completion.class);
 
         // Reduce the risk of rare disastrous classloading in first call to
         // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
