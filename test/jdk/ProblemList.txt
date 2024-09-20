@@ -516,6 +516,8 @@ java/io/pathNames/GeneralWin32.java                             8180264 windows-
 
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
+com/sun/management/DiagnosticCommandMBean/DcmdMBeanPermissionsTest.java 8340401 windows-all
+
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
