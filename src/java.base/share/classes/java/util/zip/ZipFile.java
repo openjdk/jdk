@@ -1216,16 +1216,18 @@ public class ZipFile implements ZipConstants, Closeable {
         //
         private int[] entries;                  // array of hashed cen entry
 
-        // Checks the entry at offset pos in the CEN, calculates the Entry values as per above,
-        // then returns the length of the entry name.
-        private int checkAndAddEntry(int pos, int index, List<Integer> signatureNames, List<Integer> metaVersionsSet)
+        // Checks the entry at offset pos in the CEN, calculates the Entry values as per above.
+        // Returns false if the last entry has been processed
+        private boolean checkAndAddEntry(CheckState state)
             throws IOException
         {
+            int pos = state.pos;
+            if (pos > state.limit) {
+                return false;
+            }
+            int index = state.idx;
+            int[] entries = this.entries;
             if (index >= entries.length) {
-                // This will only happen if the ZIP file has an incorrect
-                // ENDTOT field, which usually means it contains more than
-                // 65535 entries.
-                initCEN(countCENHeaders(cen, cen.length - ENDHDR));
                 throw new ZipException(INDEX_OVERFLOW);
             }
 
@@ -1267,6 +1269,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 ZipCoder zcp = zipCoderForPos(pos);
                 int hash = zcp.checkedHash(cen, entryPos, nlen);
                 int hsh = (hash & 0x7fffffff) % tablelen;
+                int[] table = this.table;
                 int next = table[hsh];
                 table[hsh] = index + 1; // Store index + 1, reserving 0 for end-of-chain
                 // Record the CEN offset and the name hash in our hash cell.
@@ -1292,7 +1295,10 @@ public class ZipFile implements ZipConstants, Closeable {
                     manifestNum++;
                 } else {
                     if (isSignatureRelated(pos + CENHDR, nlen)) {
-                        signatureNames.add(pos);
+                        if (state.signatureNames == null) {
+                            state.signatureNames = new ArrayList<>(4);
+                        }
+                        state.signatureNames.add(pos);
                     }
 
                     // If this is a versioned entry, parse the version
@@ -1300,11 +1306,16 @@ public class ZipFile implements ZipConstants, Closeable {
                     // performance in multi-release jar files
                     int version = getMetaVersion(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN);
                     if (version > 0) {
-                        metaVersionsSet.add(version);
+                        if (state.metaVersionsSet == null) {
+                            state.metaVersionsSet = new TreeSet<>();
+                        }
+                        state.metaVersionsSet.add(version);
                     }
                 }
             }
-            return nextEntryPos(pos, nlen);
+            state.pos = nextEntryPos(pos, nlen);
+            state.idx += 3;
+            return true;
         }
 
         /**
@@ -1738,6 +1749,15 @@ public class ZipFile implements ZipConstants, Closeable {
             throw new ZipException("zip END header not found");
         }
 
+        private static class CheckState {
+            int pos;
+            int idx;
+            final int limit;
+            List<Integer> signatureNames;
+            Set<Integer> metaVersionsSet;
+            CheckState(int limit) { this.limit = limit; }
+        }
+
         // Reads ZIP file central directory.
         private void initCEN(int knownTotal) throws IOException {
             // Prefer locals for better performance during startup
@@ -1783,51 +1803,45 @@ public class ZipFile implements ZipConstants, Closeable {
             int[] table = new int[tablelen];
             this.table = table;
 
-            // list for all meta entries
-            ArrayList<Integer> signatureNames = new ArrayList<>();
-            // Set of all version numbers seen in META-INF/versions/
-            ArrayList<Integer> metaVersionList = new ArrayList<>();
-
             // Iterate through the entries in the central directory
-            int idx = 0; // Index into the entries array
-            int pos = 0;
-            int limit = cen.length - ENDHDR - CENHDR;
-            manifestNum = 0;
+            var state = new CheckState(cen.length - ENDHDR - CENHDR); // state holder
             try {
-                while (pos <= limit) {
-                    // Checks the entry and adds values to entries[idx ... idx+2], returns position of next entry
-                    pos = checkAndAddEntry(pos, idx, signatureNames, metaVersionList);
-                    idx += 3;
-                }
+                // Checks the entry and adds values to entries[idx ... idx+2], state.pos will contain position of next entry
+                while (checkAndAddEntry(state)) {}
             } catch (ZipException ze) {
                 if (ze.getMessage().equals(INDEX_OVERFLOW)) {
+                    // This will only happen if the ZIP file has an incorrect
+                    // ENDTOT field, which usually means it contains more than
+                    // 65535 entries.
+                    manifestNum = 0;
+                    manifestPos = -1;
+                    initCEN(countCENHeaders(cen, cen.length - ENDHDR));
                     return;
                 }
                 throw ze;
             }
 
             // Adjust the total entries
-            this.total = idx / 3;
+            this.total = state.idx / 3;
 
-            int signatures = signatureNames.size();
-            if (signatures > 0) {
+            if (state.signatureNames != null) {
+                int signatures = state.signatureNames.size();
                 signatureMetaNames = new int[signatures];
                 for (int j = 0; j < signatures; j++) {
-                    signatureMetaNames[j] = signatureNames.get(j);
+                    signatureMetaNames[j] = state.signatureNames.get(j);
                 }
             }
-            if (!metaVersionList.isEmpty()) {
-                TreeSet<Integer> metaVersionsSet = new TreeSet<>(metaVersionList);
-                int size = metaVersionsSet.size();
+            if (state.metaVersionsSet != null) {
+                int size = state.metaVersionsSet.size();
                 metaVersions = new int[size];
                 int c = 0;
-                for (Integer version : metaVersionsSet) {
+                for (Integer version : state.metaVersionsSet) {
                     metaVersions[c++] = version;
                 }
             } else {
                 metaVersions = EMPTY_META_VERSIONS;
             }
-            if (pos + ENDHDR != cen.length) {
+            if (state.pos + ENDHDR != cen.length) {
                 zerror("invalid CEN header (bad header size)");
             }
         }
