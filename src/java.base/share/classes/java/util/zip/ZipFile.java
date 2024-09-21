@@ -1222,11 +1222,7 @@ public class ZipFile implements ZipConstants, Closeable {
             throws IOException
         {
             if (index >= entries.length) {
-                // This will only happen if the ZIP file has an incorrect
-                // ENDTOT field, which usually means it contains more than
-                // 65535 entries.
-                initCEN(countCENHeaders(cen, cen.length - ENDHDR));
-                throw new ZipException(INDEX_OVERFLOW);
+                zerror(INDEX_OVERFLOW);
             }
             byte[] cen = this.cen;
             if (CENSIG(cen, pos) != CENSIG) {
@@ -1811,6 +1807,10 @@ public class ZipFile implements ZipConstants, Closeable {
                 }
             } catch (ZipException ze) {
                 if (ze.getMessage().equals(INDEX_OVERFLOW)) {
+                    // This will only happen if the ZIP file has an incorrect
+                    // ENDTOT field, which usually means it contains more than
+                    // 65535 entries.
+                    initCEN(countCENHeaders(cen, cen.length - ENDHDR));
                     return;
                 }
                 throw ze;
