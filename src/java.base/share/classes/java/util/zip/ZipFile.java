@@ -1218,7 +1218,7 @@ public class ZipFile implements ZipConstants, Closeable {
 
         // Checks the entry at offset pos in the CEN, calculates the Entry values as per above,
         // then returns the length of the entry name.
-        private int checkAndAddEntry(int pos, int index)
+        private int checkAndAddEntry(int pos, int index, List<Integer> signatureNames, Set<Integer> metaVersionsSet)
             throws IOException
         {
             if (index >= entries.length) {
@@ -1228,6 +1228,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 initCEN(countCENHeaders(cen, cen.length - ENDHDR));
                 throw new ZipException(INDEX_OVERFLOW);
             }
+
             byte[] cen = this.cen;
             if (CENSIG(cen, pos) != CENSIG) {
                 zerror("invalid CEN header (bad signature)");
@@ -1282,7 +1283,28 @@ public class ZipFile implements ZipConstants, Closeable {
             } catch (Exception e) {
                 zerror("invalid CEN header (bad entry name or comment)");
             }
-            return nlen;
+
+            // Adds name to metanames.
+            if (isMetaName(cen, pos, nlen)) {
+                // nlen is at least META_INF_LENGTH
+                if (isManifestName(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN)) {
+                    manifestPos = pos;
+                    manifestNum++;
+                } else {
+                    if (isSignatureRelated(pos + CENHDR, nlen)) {
+                        signatureNames.add(pos);
+                    }
+
+                    // If this is a versioned entry, parse the version
+                    // and store it for later. This optimizes lookup
+                    // performance in multi-release jar files
+                    int version = getMetaVersion(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN);
+                    if (version > 0) {
+                        metaVersionsSet.add(version);
+                    }
+                }
+            }
+            return nextEntryPos(pos, nlen);
         }
 
         /**
@@ -1766,9 +1788,9 @@ public class ZipFile implements ZipConstants, Closeable {
             Arrays.fill(table, ZIP_ENDCHAIN);
 
             // list for all meta entries
-            ArrayList<Integer> signatureNames = null;
+            ArrayList<Integer> signatureNames = new ArrayList<>(4);
             // Set of all version numbers seen in META-INF/versions/
-            Set<Integer> metaVersionsSet = null;
+            Set<Integer> metaVersionsSet = new TreeSet<>();
 
             // Iterate through the entries in the central directory
             int idx = 0; // Index into the entries array
@@ -1777,36 +1799,9 @@ public class ZipFile implements ZipConstants, Closeable {
             manifestNum = 0;
             try {
                 while (pos <= limit) {
-                    // Checks the entry and adds values to entries[idx ... idx+2]
-                    int nlen = checkAndAddEntry(pos, idx);
+                    // Checks the entry and adds values to entries[idx ... idx+2], returns position of next entry
+                    pos = checkAndAddEntry(pos, idx, signatureNames, metaVersionsSet);
                     idx += 3;
-
-                    // Adds name to metanames.
-                    if (isMetaName(cen, pos, nlen)) {
-                        // nlen is at least META_INF_LENGTH
-                        if (isManifestName(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN)) {
-                            manifestPos = pos;
-                            manifestNum++;
-                        } else {
-                            if (isSignatureRelated(pos + CENHDR, nlen)) {
-                                if (signatureNames == null)
-                                    signatureNames = new ArrayList<>(4);
-                                signatureNames.add(pos);
-                            }
-
-                            // If this is a versioned entry, parse the version
-                            // and store it for later. This optimizes lookup
-                            // performance in multi-release jar files
-                            int version = getMetaVersion(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN);
-                            if (version > 0) {
-                                if (metaVersionsSet == null)
-                                    metaVersionsSet = new TreeSet<>();
-                                metaVersionsSet.add(version);
-                            }
-                        }
-                    }
-                    // skip to the start of the next entry
-                    pos = nextEntryPos(pos, nlen);
                 }
             } catch (ZipException ze) {
                 if (ze.getMessage().equals(INDEX_OVERFLOW)) {
@@ -1818,15 +1813,16 @@ public class ZipFile implements ZipConstants, Closeable {
             // Adjust the total entries
             this.total = idx / 3;
 
-            if (signatureNames != null) {
-                int len = signatureNames.size();
-                signatureMetaNames = new int[len];
-                for (int j = 0; j < len; j++) {
+            int signatures = signatureNames.size();
+            if (signatures > 0) {
+                signatureMetaNames = new int[signatures];
+                for (int j = 0; j < signatures; j++) {
                     signatureMetaNames[j] = signatureNames.get(j);
                 }
             }
-            if (metaVersionsSet != null) {
-                metaVersions = new int[metaVersionsSet.size()];
+            int metaVersionsLen = metaVersionsSet.size();
+            if (metaVersionsLen > 0) {
+                metaVersions = new int[metaVersionsLen];
                 int c = 0;
                 for (Integer version : metaVersionsSet) {
                     metaVersions[c++] = version;
