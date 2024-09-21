@@ -52,9 +52,9 @@ GrowableArrayCHeap<u1, mtClassShared>* ArchiveHeapWriter::_buffer = nullptr;
 
 // The following are offsets from buffer_bottom()
 size_t ArchiveHeapWriter::_buffer_used;
-size_t ArchiveHeapWriter::_heap_roots_offset;
 
-size_t ArchiveHeapWriter::_heap_roots_word_size;
+// Heap root segments
+HeapRootSegments ArchiveHeapWriter::_heap_root_segments;
 
 address ArchiveHeapWriter::_requested_bottom;
 address ArchiveHeapWriter::_requested_top;
@@ -88,7 +88,6 @@ void ArchiveHeapWriter::init() {
     _native_pointers = new GrowableArrayCHeap<NativePointerInfo, mtClassShared>(2048);
     _source_objs = new GrowableArrayCHeap<oop, mtClassShared>(10000);
 
-    guarantee(UseG1GC, "implementation limitation");
     guarantee(MIN_GC_REGION_ALIGNMENT <= G1HeapRegion::min_region_size_in_words() * HeapWordSize, "must be");
   }
 }
@@ -164,10 +163,6 @@ address ArchiveHeapWriter::buffered_addr_to_requested_addr(address buffered_addr
   return _requested_bottom + buffered_address_to_offset(buffered_addr);
 }
 
-oop ArchiveHeapWriter::heap_roots_requested_address() {
-  return cast_to_oop(_requested_bottom + _heap_roots_offset);
-}
-
 address ArchiveHeapWriter::requested_address() {
   assert(_buffer != nullptr, "must be initialized");
   return _requested_bottom;
@@ -186,47 +181,71 @@ void ArchiveHeapWriter::ensure_buffer_space(size_t min_bytes) {
   _buffer->at_grow(to_array_index(min_bytes));
 }
 
+objArrayOop ArchiveHeapWriter::allocate_root_segment(size_t offset, int element_count) {
+  HeapWord* mem = offset_to_buffered_address<HeapWord *>(offset);
+  memset(mem, 0, objArrayOopDesc::object_size(element_count));
+
+  // The initialization code is copied from MemAllocator::finish and ObjArrayAllocator::initialize.
+  oopDesc::set_mark(mem, markWord::prototype());
+  oopDesc::release_set_klass(mem, Universe::objectArrayKlass());
+  arrayOopDesc::set_length(mem, element_count);
+  return objArrayOop(cast_to_oop(mem));
+}
+
+void ArchiveHeapWriter::root_segment_at_put(objArrayOop segment, int index, oop root) {
+  // Do not use arrayOop->obj_at_put(i, o) as arrayOop is outside the real heap!
+  if (UseCompressedOops) {
+    *segment->obj_at_addr<narrowOop>(index) = CompressedOops::encode(root);
+  } else {
+    *segment->obj_at_addr<oop>(index) = root;
+  }
+}
+
 void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
-  Klass* k = Universe::objectArrayKlass(); // already relocated to point to archived klass
-  int length = roots->length();
-  _heap_roots_word_size = objArrayOopDesc::object_size(length);
-  size_t byte_size = _heap_roots_word_size * HeapWordSize;
-  if (byte_size >= MIN_GC_REGION_ALIGNMENT) {
-    log_error(cds, heap)("roots array is too large. Please reduce the number of classes");
-    vm_exit(1);
-  }
+  // Depending on the number of classes we are archiving, a single roots array may be
+  // larger than MIN_GC_REGION_ALIGNMENT. Roots are allocated first in the buffer, which
+  // allows us to chop the large array into a series of "segments". Current layout
+  // starts with zero or more segments exactly fitting MIN_GC_REGION_ALIGNMENT, and end
+  // with a single segment that may be smaller than MIN_GC_REGION_ALIGNMENT.
+  // This is simple and efficient. We do not need filler objects anywhere between the segments,
+  // or immediately after the last segment. This allows starting the object dump immediately
+  // after the roots.
 
-  maybe_fill_gc_region_gap(byte_size);
+  assert((_buffer_used % MIN_GC_REGION_ALIGNMENT) == 0,
+         "Pre-condition: Roots start at aligned boundary: " SIZE_FORMAT, _buffer_used);
 
-  size_t new_used = _buffer_used + byte_size;
-  ensure_buffer_space(new_used);
+  int max_elem_count = ((MIN_GC_REGION_ALIGNMENT - arrayOopDesc::header_size_in_bytes()) / heapOopSize);
+  assert(objArrayOopDesc::object_size(max_elem_count)*HeapWordSize == MIN_GC_REGION_ALIGNMENT,
+         "Should match exactly");
 
-  HeapWord* mem = offset_to_buffered_address<HeapWord*>(_buffer_used);
-  memset(mem, 0, byte_size);
-  {
-    // This is copied from MemAllocator::finish
-    oopDesc::set_mark(mem, markWord::prototype());
-    oopDesc::release_set_klass(mem, k);
-  }
-  {
-    // This is copied from ObjArrayAllocator::initialize
-    arrayOopDesc::set_length(mem, length);
-  }
+  HeapRootSegments segments(_buffer_used,
+                            roots->length(),
+                            MIN_GC_REGION_ALIGNMENT,
+                            max_elem_count);
 
-  objArrayOop arrayOop = objArrayOop(cast_to_oop(mem));
-  for (int i = 0; i < length; i++) {
-    // Do not use arrayOop->obj_at_put(i, o) as arrayOop is outside of the real heap!
-    oop o = roots->at(i);
-    if (UseCompressedOops) {
-      * arrayOop->obj_at_addr<narrowOop>(i) = CompressedOops::encode(o);
-    } else {
-      * arrayOop->obj_at_addr<oop>(i) = o;
+  for (size_t seg_idx = 0; seg_idx < segments.count(); seg_idx++) {
+    int size_elems = segments.size_in_elems(seg_idx);
+    size_t size_bytes = segments.size_in_bytes(seg_idx);
+
+    size_t oop_offset = _buffer_used;
+    _buffer_used = oop_offset + size_bytes;
+    ensure_buffer_space(_buffer_used);
+
+    assert((oop_offset % MIN_GC_REGION_ALIGNMENT) == 0,
+           "Roots segment " SIZE_FORMAT " start is not aligned: " SIZE_FORMAT,
+           segments.count(), oop_offset);
+
+    int root_index = 0;
+    objArrayOop seg_oop = allocate_root_segment(oop_offset, size_elems);
+    for (int i = 0; i < size_elems; i++) {
+      root_segment_at_put(seg_oop, i, roots->at(root_index++));
     }
-  }
-  log_info(cds, heap)("archived obj roots[%d] = " SIZE_FORMAT " bytes, klass = %p, obj = %p", length, byte_size, k, mem);
 
-  _heap_roots_offset = _buffer_used;
-  _buffer_used = new_used;
+    log_info(cds, heap)("archived obj root segment [%d] = " SIZE_FORMAT " bytes, obj = " PTR_FORMAT,
+                        size_elems, size_bytes, p2i(seg_oop));
+  }
+
+  _heap_root_segments = segments;
 }
 
 static int oop_sorting_rank(oop o) {
@@ -282,6 +301,10 @@ void ArchiveHeapWriter::sort_source_objs() {
 }
 
 void ArchiveHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
+  // There could be multiple root segments, which we want to be aligned by region.
+  // Putting them ahead of objects makes sure we waste no space.
+  copy_roots_to_buffer(roots);
+
   sort_source_objs();
   for (int i = 0; i < _source_objs_order->length(); i++) {
     int src_obj_index = _source_objs_order->at(i)._index;
@@ -294,8 +317,6 @@ void ArchiveHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtCla
     _buffer_offset_to_source_obj_table->put_when_absent(buffer_offset, src_obj);
     _buffer_offset_to_source_obj_table->maybe_grow();
   }
-
-  copy_roots_to_buffer(roots);
 
   log_info(cds)("Size of heap region = " SIZE_FORMAT " bytes, %d objects, %d roots, %d native ptrs",
                 _buffer_used, _source_objs->length() + 1, roots->length(), _num_native_ptrs);
@@ -430,32 +451,36 @@ size_t ArchiveHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
 
 void ArchiveHeapWriter::set_requested_address(ArchiveHeapInfo* info) {
   assert(!info->is_used(), "only set once");
-  assert(UseG1GC, "must be");
-  address heap_end = (address)G1CollectedHeap::heap()->reserved().end();
-  log_info(cds, heap)("Heap end = %p", heap_end);
 
   size_t heap_region_byte_size = _buffer_used;
   assert(heap_region_byte_size > 0, "must archived at least one object!");
 
-
   if (UseCompressedOops) {
-    _requested_bottom = align_down(heap_end - heap_region_byte_size, G1HeapRegion::GrainBytes);
+    if (UseG1GC) {
+      address heap_end = (address)G1CollectedHeap::heap()->reserved().end();
+      log_info(cds, heap)("Heap end = %p", heap_end);
+      _requested_bottom = align_down(heap_end - heap_region_byte_size, G1HeapRegion::GrainBytes);
+      _requested_bottom = align_down(_requested_bottom, MIN_GC_REGION_ALIGNMENT);
+      assert(is_aligned(_requested_bottom, G1HeapRegion::GrainBytes), "sanity");
+    } else {
+      _requested_bottom = align_up(CompressedOops::begin(), MIN_GC_REGION_ALIGNMENT);
+    }
   } else {
     // We always write the objects as if the heap started at this address. This
     // makes the contents of the archive heap deterministic.
     //
     // Note that at runtime, the heap address is selected by the OS, so the archive
     // heap will not be mapped at 0x10000000, and the contents need to be patched.
-    _requested_bottom = (address)NOCOOPS_REQUESTED_BASE;
+    _requested_bottom = align_up((address)NOCOOPS_REQUESTED_BASE, MIN_GC_REGION_ALIGNMENT);
   }
 
-  assert(is_aligned(_requested_bottom, G1HeapRegion::GrainBytes), "sanity");
+  assert(is_aligned(_requested_bottom, MIN_GC_REGION_ALIGNMENT), "sanity");
 
   _requested_top = _requested_bottom + _buffer_used;
 
   info->set_buffer_region(MemRegion(offset_to_buffered_address<HeapWord*>(0),
                                     offset_to_buffered_address<HeapWord*>(_buffer_used)));
-  info->set_heap_roots_offset(_heap_roots_offset);
+  info->set_heap_root_segments(_heap_root_segments);
 }
 
 // Oop relocation
@@ -543,12 +568,6 @@ void ArchiveHeapWriter::update_header_for_requested_obj(oop requested_obj, oop s
   }
 }
 
-// Relocate an element in the buffered copy of HeapShared::roots()
-template <typename T> void ArchiveHeapWriter::relocate_root_at(oop requested_roots, int index, CHeapBitMap* oopmap) {
-  size_t offset = (size_t)((objArrayOop)requested_roots)->obj_at_offset<T>(index);
-  relocate_field_in_buffer<T>((T*)(buffered_heap_roots_addr() + offset), oopmap);
-}
-
 class ArchiveHeapWriter::EmbeddedOopRelocator: public BasicOopIterateClosure {
   oop _src_obj;
   address _buffered_obj;
@@ -600,14 +619,24 @@ void ArchiveHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassSh
 
   // Relocate HeapShared::roots(), which is created in copy_roots_to_buffer() and
   // doesn't have a corresponding src_obj, so we can't use EmbeddedOopRelocator on it.
-  oop requested_roots = requested_obj_from_buffer_offset(_heap_roots_offset);
-  update_header_for_requested_obj(requested_roots, nullptr, Universe::objectArrayKlass());
-  int length = roots != nullptr ? roots->length() : 0;
-  for (int i = 0; i < length; i++) {
+  for (size_t seg_idx = 0; seg_idx < _heap_root_segments.count(); seg_idx++) {
+    size_t seg_offset = _heap_root_segments.segment_offset(seg_idx);
+
+    objArrayOop requested_obj = (objArrayOop)requested_obj_from_buffer_offset(seg_offset);
+    update_header_for_requested_obj(requested_obj, nullptr, Universe::objectArrayKlass());
+    address buffered_obj = offset_to_buffered_address<address>(seg_offset);
+    int length = _heap_root_segments.size_in_elems(seg_idx);
+
     if (UseCompressedOops) {
-      relocate_root_at<narrowOop>(requested_roots, i, heap_info->oopmap());
+      for (int i = 0; i < length; i++) {
+        narrowOop* addr = (narrowOop*)(buffered_obj + objArrayOopDesc::obj_at_offset<narrowOop>(i));
+        relocate_field_in_buffer<narrowOop>(addr, heap_info->oopmap());
+      }
     } else {
-      relocate_root_at<oop>(requested_roots, i, heap_info->oopmap());
+      for (int i = 0; i < length; i++) {
+        oop* addr = (oop*)(buffered_obj + objArrayOopDesc::obj_at_offset<oop>(i));
+        relocate_field_in_buffer<oop>(addr, heap_info->oopmap());
+      }
     }
   }
 

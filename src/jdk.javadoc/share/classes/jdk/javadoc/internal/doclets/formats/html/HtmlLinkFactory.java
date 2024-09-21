@@ -395,14 +395,14 @@ public class HtmlLinkFactory {
         }
         if (!vars.isEmpty()) {
             if (linkInfo.addLineBreakOpportunitiesInTypeParameters()) {
-                links.add(new HtmlTree(HtmlTag.WBR));
+                links.add(HtmlTree.WBR());
             }
             links.add("<");
             boolean many = false;
             for (TypeMirror t : vars) {
                 if (many) {
                     links.add(",");
-                    links.add(new HtmlTree(HtmlTag.WBR));
+                    links.add(HtmlTree.WBR());
                     if (linkInfo.addLineBreaksInTypeParameters()) {
                         links.add(Text.NL);
                     }

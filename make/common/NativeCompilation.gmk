@@ -182,7 +182,7 @@ define SetupNativeCompilationBody
 
   # Now call CreateCompiledNativeFile for each source file we are going to compile.
   $$(foreach file, $$($1_SRCS), \
-      $$(eval $$(call CreateCompiledNativeFile,$1_$$(notdir $$(file)),\
+      $$(eval $$(call CreateCompiledNativeFile,$1_$$(notdir $$(file)), \
           FILE := $$(file), \
           BASE := $1, \
       )) \
@@ -292,6 +292,7 @@ define SetupBasicVariables
   $1_TARGET := $$($1_OUTPUT_DIR)/$$($1_BASENAME)
   $1_NOSUFFIX := $$($1_PREFIX)$$($1_NAME)
   $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
+  $1_UNIQUE_NAME = $$($1_TYPE)_$$(subst /,_,$$(patsubst $$(OUTPUTDIR)/%/,%,$$(dir $$($1_OBJECT_DIR))))_$$($1_NOSUFFIX)
 endef
 
 ################################################################################

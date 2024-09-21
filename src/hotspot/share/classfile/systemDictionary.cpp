@@ -285,8 +285,7 @@ Symbol* SystemDictionary::class_name_symbol(const char* name, Symbol* exception,
     return nullptr;
   }
   // Callers should ensure that the name is never an illegal UTF8 string.
-  assert(UTF8::is_legal_utf8((const unsigned char*)name,
-                             static_cast<int>(name_len), false),
+  assert(UTF8::is_legal_utf8((const unsigned char*)name, name_len, false),
          "Class name is not a valid utf8 string.");
 
   // Make a new symbol for the class name.
@@ -1150,10 +1149,12 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   Symbol* class_name = ik->name();
 
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
+    ik->set_shared_loading_failed();
     return nullptr;
   }
 
   if (!check_shared_class_super_types(ik, class_loader, protection_domain, THREAD)) {
+    ik->set_shared_loading_failed();
     return nullptr;
   }
 

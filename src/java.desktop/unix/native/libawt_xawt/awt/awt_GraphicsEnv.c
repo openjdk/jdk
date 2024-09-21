@@ -304,7 +304,6 @@ getAllConfigs (JNIEnv *env, int screen, AwtScreenDataPtr screenDataPtr) {
     AwtGraphicsConfigDataPtr *graphicsConfigs;
     AwtGraphicsConfigDataPtr defaultConfig;
     int ind;
-    char errmsg[128];
     int xinawareScreen;
     void* xrenderLibHandle = NULL;
     XRenderFindVisualFormatFunc* xrenderFindVisualFormat = NULL;
@@ -722,7 +721,6 @@ awt_init_Display(JNIEnv *env, jobject this)
     jclass klass;
     Display *dpy;
     char errmsg[128];
-    int i;
 
     if (awt_display) {
         return awt_display;
@@ -872,7 +870,6 @@ extern int mitShmPermissionMask;
 void TryInitMITShm(JNIEnv *env, jint *shmExt, jint *shmPixmaps) {
     XShmSegmentInfo shminfo;
     int XShmMajor, XShmMinor;
-    int a, b, c;
 
     AWT_LOCK();
     if (canUseShmExt != UNSET_MITSHM) {
@@ -1154,7 +1151,7 @@ JNIEnv *env, jobject this, jint visualNum, jint screen)
 
     AwtGraphicsConfigData *adata = NULL;
     AwtScreenData asd = x11Screens[screen];
-    int i, n;
+    int i;
     int depth;
     XImage * tempImage;
 

@@ -33,8 +33,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJ2GSS, \
     NAME := j2gss, \
     OPTIMIZATION := LOW, \
     EXTRA_HEADER_DIRS := java.base:libjava, \
-    DISABLED_WARNINGS_gcc := undef, \
-    DISABLED_WARNINGS_clang := undef, \
+    DISABLED_WARNINGS_gcc := undef unused-but-set-variable, \
+    DISABLED_WARNINGS_clang := undef unused-but-set-variable, \
     LIBS_unix := $(LIBDL), \
 ))
 
