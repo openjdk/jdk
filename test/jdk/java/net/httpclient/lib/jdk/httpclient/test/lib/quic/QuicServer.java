@@ -649,7 +649,7 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
                 final byte[] clientInitialToken = new byte[token.remaining()];
                 token.get(clientInitialToken);
                 connection = new QuicServerConnection(this, version, preferredVersion,
-                        peerAddress, header.sourceId(), header.destinationId(),
+                        peerAddress, header.destinationId(),
                         sslParameters, clientInitialToken, retryData);
                 debug.log("Created new server connection " + connection + " (with a retry token) " +
                         "to client " + peerAddress);
@@ -669,7 +669,7 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
                 final byte[] clientInitialToken = new byte[token.remaining()];
                 token.get(clientInitialToken);
                 connection = new QuicServerConnection(this, version, preferredVersion,
-                        peerAddress, header.sourceId(), header.destinationId(),
+                        peerAddress, header.destinationId(),
                         sslParameters, clientInitialToken);
                 debug.log("Created new server connection " + connection
                         + " (with NEW_TOKEN initial token) to client " + peerAddress);
@@ -702,7 +702,7 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
             // we are now ready to create the connection
             final SSLParameters sslParameters = createSSLParameters(peerAddress);
             connection = new QuicServerConnection(this, version, preferredVersion,
-                    peerAddress, header.sourceId(), header.destinationId(),
+                    peerAddress, header.destinationId(),
                     sslParameters, null);
             debug.log("Created new server connection " + connection
                     + " (without any initial token) to client " + peerAddress);

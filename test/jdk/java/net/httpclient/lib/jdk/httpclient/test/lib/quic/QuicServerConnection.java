@@ -85,7 +85,6 @@ public final class QuicServerConnection extends QuicConnectionImpl {
     private volatile boolean connectionIdAcknowledged;
     private final QuicServer server;
     private final byte[] clientInitialToken;
-    private final QuicConnectionId peerConnId;
     private final QuicConnectionId clientSentDestConnId;
     private final QuicConnectionId originalServerConnId;
     private final QuicServer.RetryData retryData;
@@ -98,11 +97,10 @@ public final class QuicServerConnection extends QuicConnectionImpl {
                          QuicVersion quicVersion,
                          QuicVersion preferredQuicVersion,
                          InetSocketAddress peerAddress,
-                         QuicConnectionId peerConnectionId,
                          QuicConnectionId clientSentDestConnId,
                          SSLParameters sslParameters,
                          byte[] initialToken) {
-        this(server, quicVersion, preferredQuicVersion, peerAddress, peerConnectionId, clientSentDestConnId,
+        this(server, quicVersion, preferredQuicVersion, peerAddress, clientSentDestConnId,
                 sslParameters, initialToken, null);
 
     }
@@ -111,7 +109,6 @@ public final class QuicServerConnection extends QuicConnectionImpl {
                          QuicVersion quicVersion,
                          QuicVersion preferredQuicVersion,
                          InetSocketAddress peerAddress,
-                         QuicConnectionId peerConnectionId,
                          QuicConnectionId clientSentDestConnId,
                          SSLParameters sslParameters,
                          byte[] initialToken,
@@ -123,7 +120,6 @@ public final class QuicServerConnection extends QuicConnectionImpl {
         Objects.requireNonNull(quicVersion, "quic version");
         this.clientInitialToken = initialToken;
         this.server = server;
-        this.peerConnId = peerConnectionId;
         this.clientSentDestConnId = clientSentDestConnId;
         this.retryData = retryData;
         this.originalServerConnId = retryData == null ? clientSentDestConnId : retryData.originalServerConnId();
@@ -136,11 +132,6 @@ public final class QuicServerConnection extends QuicConnectionImpl {
         assert quicVersion == quicVersion() : "unexpected quic version on" +
                 " server connection, expected " + quicVersion + " but found " + quicVersion();
         getTLSEngine().deriveInitialKeys(quicVersion, clientSentDestConnId.asReadOnlyBuffer());
-    }
-
-    @Override
-    public QuicConnectionId peerConnectionId() {
-        return this.peerConnId;
     }
 
     @Override
