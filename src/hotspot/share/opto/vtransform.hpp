@@ -177,6 +177,8 @@ private:
   template<typename Callback>
   void for_each_memop_in_schedule(Callback callback) const;
 
+  void mark_vtnodes_in_loop(VectorSet& in_loop) const;
+
 #ifndef PRODUCT
   void print_vtnodes() const;
   void print_schedule() const;
@@ -222,6 +224,7 @@ public:
     _aw_for_main_loop_alignment(aw_for_main_loop_alignment) {}
 
   const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
+  const VLoop& vloop() const { return _vloop; }
   Arena* arena() { return &_arena; }
   DEBUG_ONLY( bool has_graph() const { return !_graph.is_empty(); } )
   VTransformGraph& graph() { return _graph; }

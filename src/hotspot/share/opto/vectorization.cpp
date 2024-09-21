@@ -437,7 +437,7 @@ bool VLoopAnalyzer::has_zero_cost(Node* n) const {
 float VLoopAnalyzer::cost() const {
 #ifndef PRODUCT
   if (_vloop.is_trace_cost()) {
-    tty->print_cr("VLoopAnalyzer::cost:");
+    tty->print_cr("\nVLoopAnalyzer::cost:");
   }
 #endif
 

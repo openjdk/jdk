@@ -167,6 +167,10 @@ public:
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
   }
 
+  bool is_trace_optimization() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::OPTIMIZATION);
+  }
+
   bool is_trace_cost() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::COST);
   }

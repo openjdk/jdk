@@ -32,8 +32,15 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
   _vtnodes.push(vtnode);
 }
 
+#define TRACE_OPTIMIZE(code)                          \
+  NOT_PRODUCT(                                        \
+    if (vtransform.vloop().is_trace_optimization()) { \
+      code                                            \
+    }                                                 \
+  )
+
 void VTransformGraph::optimize(VTransform& vtransform) {
-  tty->print_cr("VTransformGraph::optimize");
+  TRACE_OPTIMIZE( tty->print_cr("\nVTransformGraph::optimize"); )
 
   while (true) {
     bool progress = false;
@@ -140,20 +147,63 @@ bool VTransformGraph::schedule() {
   return true;
 }
 
+// Find all nodes that in the loop, in a 2-phase process:
+// - First, find all nodes that are not before the loop:
+//   We accept all loop-phis and all their transitive uses.
+// - Second, we find all nodes that are not after the loop:
+//   We accept the backedges and all their transitive defs.
+void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
+  assert(is_scheduled(), "must already be scheduled");
+
+  // Phase 1: find all nodes that are not before the loop.
+  VectorSet is_not_before_loop;
+  for (int i = 0; i < _schedule.length(); i++) {
+    VTransformNode* vtn = _schedule.at(i);
+    // Is vtn a loop-phi?
+    if (vtn->isa_LoopPhi() != nullptr) {
+      is_not_before_loop.set(vtn->_idx);
+      continue;
+    }
+    // Or one of its transitive uses?
+    for (uint j = 0; j < vtn->req(); j++) {
+      VTransformNode* def = vtn->in(j);
+      if (def != nullptr && is_not_before_loop.test(def->_idx)) {
+        is_not_before_loop.set(vtn->_idx);
+        break;
+      }
+    }
+  }
+
+  // Phase 2: find all nodes that are not after the loop.
+  for (int i = _schedule.length()-1; i >= 0; i--) {
+    VTransformNode* vtn = _schedule.at(i);
+    if (!is_not_before_loop.test(vtn->_idx)) { continue; }
+    for (int i = 0; i < vtn->outs(); i++) {
+      VTransformNode* use = vtn->out(i);
+      // Is vtn a backedge or one of its transitive defs?
+      if (in_loop.test(use->_idx) || use->isa_LoopPhi() != nullptr) {
+        in_loop.set(vtn->_idx);
+        break;
+      }
+    }
+  }
+}
+
 float VTransformGraph::cost() const {
   assert(is_scheduled(), "must already be scheduled");
 #ifndef PRODUCT
   if (_vloop.is_trace_cost()) {
-    tty->print_cr("VTransformGraph::cost:");
+    tty->print_cr("\nVTransformGraph::cost:");
   }
 #endif
 
-  // TODO: determine what nodes are inside the loop: only count those!
-  //       must be connected up and down... so far can only do up...
-  //       but need down when we are doing the reductions anyway.
+  VectorSet in_loop;
+  mark_vtnodes_in_loop(in_loop);
+
   float sum = 0;
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
+    if (!in_loop.test(vtn->_idx)) { continue; }
     float c = vtn->cost(_vloop_analyzer);
     sum += c;
 #ifndef PRODUCT
@@ -411,10 +461,6 @@ bool VTransformReductionVectorNode::requires_strict_order() const {
 }
 
 bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
-
-  tty->print_cr("VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop");
-  this->print();
-
   uint vlen                = vector_length();
   BasicType bt             = basic_type();
   const Type* element_type = Type::get_const_basic_type(bt);
@@ -486,6 +532,10 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     current_red = scalar_input->isa_ReductionVector();
   }
 
+  TRACE_OPTIMIZE(
+    tty->print_cr("VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop");
+  )
+
   // All checks were successful. Edit the vtransform graph now.
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
 
@@ -510,6 +560,12 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     vector_accumulator->init_req(1, current_vector_accumulator);
     vector_accumulator->init_req(2, vector_input);
     vector_accumulator->set_nodes(current_red->nodes());
+    TRACE_OPTIMIZE(
+      tty->print("  replace    ");
+      current_red->print();
+      tty->print("  with       ");
+      vector_accumulator->print();
+    )
     current_vector_accumulator = vector_accumulator;
     if (current_red == last_red) { break; }
     current_red = current_red->unique_out()->isa_ReductionVector();
@@ -522,7 +578,12 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   last_red->set_req(1, init);
   last_red->set_req(2, current_vector_accumulator);
 
-  tty->print_cr("success");
+  TRACE_OPTIMIZE(
+    tty->print("  phi        ");
+    phi->print();
+    tty->print("  after loop ");
+    last_red->print();
+  )
   return false;
 }
 
@@ -656,8 +717,7 @@ void VTransformNode::print() const {
       print_node_idx(_in.at(i));
     }
   }
-  tty->print(") %s{", _is_alive ? "" : "dead ");
-  tty->print("[");
+  tty->print(") %s[", _is_alive ? "" : "dead ");
   for (int i = 0; i < _out.length(); i++) {
     print_node_idx(_out.at(i));
   }
