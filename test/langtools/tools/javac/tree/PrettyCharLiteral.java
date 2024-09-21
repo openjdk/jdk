@@ -57,26 +57,22 @@ public class PrettyCharLiteral {
                 prettyPrintLiteral('\''),
                 """
                 '\\''
-                """
-                        .trim());
+                """.trim());
         assertEquals(
                 prettyPrintLiteral('"'),
                 """
                 '"'
-                """
-                        .trim());
+                """.trim());
         assertEquals(
                 prettyPrintLiteral("'"),
                 """
                 "'"
-                """
-                        .trim());
+                """.trim());
         assertEquals(
                 prettyPrintLiteral("\""),
                 """
                 "\\""
-                """
-                        .trim());
+                """.trim());
     }
 
     private void assertEquals(String actual, String expected) {
