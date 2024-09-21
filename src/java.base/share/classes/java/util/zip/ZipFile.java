@@ -1218,7 +1218,7 @@ public class ZipFile implements ZipConstants, Closeable {
 
         // Checks the entry at offset pos in the CEN, calculates the Entry values as per above,
         // then returns the length of the entry name.
-        private int checkAndAddEntry(int pos, int index, List<Integer> signatureNames, Set<Integer> metaVersionsSet)
+        private int checkAndAddEntry(int pos, int index, List<Integer> signatureNames, List<Integer> metaVersionsSet)
             throws IOException
         {
             if (index >= entries.length) {
@@ -1788,9 +1788,9 @@ public class ZipFile implements ZipConstants, Closeable {
             Arrays.fill(table, ZIP_ENDCHAIN);
 
             // list for all meta entries
-            ArrayList<Integer> signatureNames = new ArrayList<>(4);
+            ArrayList<Integer> signatureNames = new ArrayList<>();
             // Set of all version numbers seen in META-INF/versions/
-            Set<Integer> metaVersionsSet = new TreeSet<>();
+            ArrayList<Integer> metaVersionList = new ArrayList<>();
 
             // Iterate through the entries in the central directory
             int idx = 0; // Index into the entries array
@@ -1800,7 +1800,7 @@ public class ZipFile implements ZipConstants, Closeable {
             try {
                 while (pos <= limit) {
                     // Checks the entry and adds values to entries[idx ... idx+2], returns position of next entry
-                    pos = checkAndAddEntry(pos, idx, signatureNames, metaVersionsSet);
+                    pos = checkAndAddEntry(pos, idx, signatureNames, metaVersionList);
                     idx += 3;
                 }
             } catch (ZipException ze) {
@@ -1820,9 +1820,10 @@ public class ZipFile implements ZipConstants, Closeable {
                     signatureMetaNames[j] = signatureNames.get(j);
                 }
             }
-            int metaVersionsLen = metaVersionsSet.size();
-            if (metaVersionsLen > 0) {
-                metaVersions = new int[metaVersionsLen];
+            if (!metaVersionList.isEmpty()) {
+                TreeSet<Integer> metaVersionsSet = new TreeSet<>(metaVersionList);
+                int size = metaVersionsSet.size();
+                metaVersions = new int[size];
                 int c = 0;
                 for (Integer version : metaVersionsSet) {
                     metaVersions[c++] = version;
