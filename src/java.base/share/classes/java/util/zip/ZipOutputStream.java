@@ -402,8 +402,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     }
 
     /**
-     * Finishes writing the contents of the ZIP output stream and closes the
-     * underlying stream. The stream being filtered will also be closed.
+     * Closes the underlying stream and the stream being filtered after
+     * the contents of the ZIP output stream are fully written.
      *
      * @throws    ZipException if a ZIP file error has occurred
      * @throws    IOException if an I/O error has occurred
