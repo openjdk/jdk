@@ -93,7 +93,6 @@ class VectorNode : public TypeNode {
   static bool is_rotate_opcode(int opc);
 
   static int opcode(int sopc, BasicType bt);         // scalar_opc -> vector_opc
-  static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc
 
   // Limits on vector size (number of elements) for auto-vectorization.
   static bool vector_size_supported_auto_vectorization(const BasicType bt, int size);

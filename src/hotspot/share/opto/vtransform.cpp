@@ -471,7 +471,6 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   }
 
   const int sopc = scalar_opcode();
-  assert(sopc == VectorNode::scalar_opcode(ropc, bt), "equivalent"); // TODO rm?
   const int vopc = VectorNode::opcode(sopc, bt);
   if (!Matcher::match_rule_supported_vector(vopc, vlen, bt)) {
     DEBUG_ONLY( this->print(); )
