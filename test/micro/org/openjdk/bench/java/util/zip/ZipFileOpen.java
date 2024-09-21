@@ -110,7 +110,7 @@ public class ZipFileOpen {
 
     public static void main(String... args) throws Exception {
         var bench = new ZipFileOpen();
-        bench.size = 1024;
+        bench.size = 1024*8;
         bench.beforeRun();
         bench.openCloseZipFile();
         bench.openCloseZipFilex2();

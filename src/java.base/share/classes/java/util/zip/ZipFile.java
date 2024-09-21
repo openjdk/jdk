@@ -1269,9 +1269,10 @@ public class ZipFile implements ZipConstants, Closeable {
                 int next = table[hsh];
                 table[hsh] = index;
                 // Record the CEN offset and the name hash in our hash cell.
-                entries[index++] = hash;
-                entries[index++] = next;
-                entries[index  ] = pos;
+                int[] entries = this.entries;
+                entries[index] = hash;
+                entries[index + 1] = next;
+                entries[index + 2] = pos;
                 // Validate comment if it exists.
                 // If the bytes representing the comment cannot be converted to
                 // a String via zcp.toString, an Exception will be thrown
