@@ -276,7 +276,7 @@ float VTransformScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   if (vloop_analyzer.has_zero_cost(_node)) {
     return 0;
   } else {
-    return 1;
+    return Matcher::cost_for_scalar(_node->Opcode());
   }
 }
 
@@ -325,6 +325,12 @@ void VTransformLoopPhiNode::apply_cleanup(const VLoopAnalyzer& vloop_analyzer,
   phase->igvn().replace_input_of(phi, 2, in2);
 }
 
+float VTransformReplicateNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
+  // TODO
+  assert(false, "we should never have a replicate in a loop");
+  return 1;
+}
+
 VTransformApplyResult VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer,
                                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
@@ -333,12 +339,21 @@ VTransformApplyResult VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
+float VTransformConvI2LNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
+  return Matcher::cost_for_scalar(Op_ConvI2L);
+}
+
 VTransformApplyResult VTransformConvI2LNode::apply(const VLoopAnalyzer& vloop_analyzer,
                                                    const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
   Node* n = new ConvI2LNode(val);
   register_new_node_from_vectorization(vloop_analyzer, n, val);
   return VTransformApplyResult::make_scalar(n);
+}
+
+float VTransformShiftCountNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
+  // TODO
+  return 1;
 }
 
 VTransformApplyResult VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop_analyzer,
@@ -357,6 +372,10 @@ VTransformApplyResult VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
+float VTransformPopulateIndexNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
+  // TODO
+  return 1;
+}
 
 VTransformApplyResult VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vloop_analyzer,
                                                          const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
@@ -368,6 +387,11 @@ VTransformApplyResult VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vl
   VectorNode* vn = new PopulateIndexNode(val, phase->igvn().intcon(1), vt);
   register_new_node_from_vectorization(vloop_analyzer, vn, val);
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
+}
+
+float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
+  // TODO
+  return 1;
 }
 
 VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
@@ -591,7 +615,8 @@ float VTransformReductionVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) c
   uint  vlen = nodes().length();
   BasicType bt = first->bottom_type()->basic_type();
   int vopc = vector_reduction_opcode();
-  return ReductionNode::cost(vopc, vlen, bt);
+  bool requires_strict_order = ReductionNode::auto_vectorization_requires_strict_order(vopc);
+  return Matcher::cost_for_vector_reduction(vopc, vlen, bt, requires_strict_order);
 }
 
 VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
@@ -607,6 +632,11 @@ VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& 
   ReductionNode* vn = ReductionNode::make(opc, nullptr, init, vec, bt);
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
+}
+
+float VTransformLoadVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
+  // TODO
+  return 1;
 }
 
 VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
@@ -637,6 +667,11 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
+}
+
+float VTransformStoreVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
+  // TODO
+  return 1;
 }
 
 VTransformApplyResult VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,

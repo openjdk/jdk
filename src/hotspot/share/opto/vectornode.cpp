@@ -1450,17 +1450,6 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
   return false;
 }
 
-// TODO use bt?
-float ReductionNode::cost(int vopc, uint vlen, BasicType bt) {
-  if (auto_vectorization_requires_strict_order(vopc)) {
-    // Linear: shuffle and reduce
-    return 2 * vlen;
-  } else {
-    // Recursive: shuffle and reduce
-    return 2 * exact_log2(vlen);
-  }
-}
-
 bool ReductionNode::auto_vectorization_requires_strict_order(int vopc) {
   switch (vopc) {
     case Op_AddReductionVI:

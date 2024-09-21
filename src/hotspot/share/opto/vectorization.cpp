@@ -445,7 +445,7 @@ float VLoopAnalyzer::cost() const {
   for (int j = 0; j < body().body().length(); j++) {
     Node* n = body().body().at(j);
     if (!has_zero_cost(n)) {
-      float c = 1;
+      float c = Matcher::cost_for_scalar(n->Opcode());
       sum += c;
 
 #ifndef PRODUCT
