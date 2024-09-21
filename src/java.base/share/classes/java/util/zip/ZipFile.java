@@ -1268,7 +1268,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 int hash = zcp.checkedHash(cen, entryPos, nlen);
                 int hsh = (hash & 0x7fffffff) % tablelen;
                 int next = table[hsh];
-                table[hsh] = index;
+                table[hsh] = index + 1; // Store index + 1, reserving 0 for end-of-chain
                 // Record the CEN offset and the name hash in our hash cell.
                 entries[index++] = hash;
                 entries[index++] = next;
@@ -1469,10 +1469,8 @@ public class ZipFile implements ZipConstants, Closeable {
             return expectedBlockSize == blockSize;
 
         }
-        private int getEntryHash(int index) { return entries[index]; }
-        private int getEntryNext(int index) { return entries[index + 1]; }
+
         private int getEntryPos(int index)  { return entries[index + 2]; }
-        private static final int ZIP_ENDCHAIN  = -1;
         private int total;                   // total number of entries
         private int[] table;                 // Hash chain heads: indexes into entries
         private int tablelen;                // number of hash heads
@@ -1785,8 +1783,6 @@ public class ZipFile implements ZipConstants, Closeable {
             int[] table = new int[tablelen];
             this.table = table;
 
-            Arrays.fill(table, ZIP_ENDCHAIN);
-
             // list for all meta entries
             ArrayList<Integer> signatureNames = new ArrayList<>();
             // Set of all version numbers seen in META-INF/versions/
@@ -1860,10 +1856,10 @@ public class ZipFile implements ZipConstants, Closeable {
 
             // Search down the target hash chain for a entry whose
             // 32 bit hash matches the hashed name.
-            while (idx != ZIP_ENDCHAIN) {
-                if (getEntryHash(idx) == hsh) {
-
-                    int pos = getEntryPos(idx);
+            int[] entries = this.entries;
+            while (idx != 0) {
+                if (entries[idx - 1] == hsh) {
+                    int pos = getEntryPos(idx - 1);
                     int noff = pos + CENHDR;
                     int nlen = CENNAM(cen, pos);
 
@@ -1883,7 +1879,7 @@ public class ZipFile implements ZipConstants, Closeable {
                             // Hash collision, continue searching
                     }
                 }
-                idx = getEntryNext(idx);
+                idx = entries[idx];
             }
             // Reaching this point means we did not find "name".
             // Return the position of "name/" if we found it
