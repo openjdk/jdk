@@ -149,9 +149,13 @@ bool VTransformGraph::schedule() {
 
 // Find all nodes that in the loop, in a 2-phase process:
 // - First, find all nodes that are not before the loop:
-//   We accept all loop-phis and all their transitive uses.
+//   - loop-phis
+//   - loads and stores that are in the loop
+//   - and all their transitive uses.
 // - Second, we find all nodes that are not after the loop:
-//   We accept the backedges and all their transitive defs.
+//   - backedges
+//   - loads and stores that are in the loop
+//   - and all their transitive uses.
 void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
   assert(is_scheduled(), "must already be scheduled");
 
@@ -160,7 +164,8 @@ void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
     // Is vtn a loop-phi?
-    if (vtn->isa_LoopPhi() != nullptr) {
+    if (vtn->isa_LoopPhi() != nullptr ||
+        vtn->is_load_or_store_in_loop()) {
       is_not_before_loop.set(vtn->_idx);
       continue;
     }
@@ -178,9 +183,14 @@ void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
   for (int i = _schedule.length()-1; i >= 0; i--) {
     VTransformNode* vtn = _schedule.at(i);
     if (!is_not_before_loop.test(vtn->_idx)) { continue; }
+    // Is load or store?
+    if (vtn->is_load_or_store_in_loop()) {
+        in_loop.set(vtn->_idx);
+        break;
+    }
     for (int i = 0; i < vtn->outs(); i++) {
       VTransformNode* use = vtn->out(i);
-      // Is vtn a backedge or one of its transitive defs?
+      // Or is vtn a backedge or one of its transitive defs?
       if (in_loop.test(use->_idx) || use->isa_LoopPhi() != nullptr) {
         in_loop.set(vtn->_idx);
         break;

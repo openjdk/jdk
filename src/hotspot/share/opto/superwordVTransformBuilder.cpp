@@ -98,13 +98,13 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
         init_req_with_scalar(p0,   vtn, vtn_dependencies, 2); // constant rounding mode
       } else if (p0->is_CMove()) {
         // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
-        set_all_req_with_vectors(pack, vtn, vtn_dependencies);
+        init_all_req_with_vectors(pack, vtn, vtn_dependencies);
         VTransformBoolVectorNode* vtn_mask_cmp = vtn->in(1)->isa_BoolVector();
         if (vtn_mask_cmp->test()._is_negated) {
           vtn->swap_req(2, 3); // swap if test was negated.
         }
       } else {
-        set_all_req_with_vectors(pack, vtn, vtn_dependencies);
+        init_all_req_with_vectors(pack, vtn, vtn_dependencies);
       }
     }
 
@@ -130,10 +130,10 @@ void SuperWordVTransformBuilder::build_inputs_for_scalar_vtnodes(VectorSet& vtn_
       continue; // Is "root", has no dependency.
     } else if (n->is_Phi()) {
       assert(n->in(0) == _vloop.cl(), "only Phi's from the CountedLoop allowed");
-      set_all_req_with_scalars(n, vtn, vtn_dependencies);
+      init_all_req_with_scalars(n, vtn, vtn_dependencies);
       continue;
     } else {
-      set_all_req_with_scalars(n, vtn, vtn_dependencies);
+      init_all_req_with_scalars(n, vtn, vtn_dependencies);
     }
 
     add_dependencies_of_node_to_vtnode(n, vtn, vtn_dependencies);
@@ -307,7 +307,7 @@ void SuperWordVTransformBuilder::init_req_with_vector(const Node_List* pack, VTr
   vtn_dependencies.set(req->_idx);
 }
 
-void SuperWordVTransformBuilder::set_all_req_with_scalars(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies) {
+void SuperWordVTransformBuilder::init_all_req_with_scalars(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies) {
   assert(vtn->req() == n->req(), "scalars must have same number of reqs");
   for (uint j = 0; j < n->req(); j++) {
     Node* def = n->in(j);
@@ -316,7 +316,7 @@ void SuperWordVTransformBuilder::set_all_req_with_scalars(Node* n, VTransformNod
   }
 }
 
-void SuperWordVTransformBuilder::set_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies) {
+void SuperWordVTransformBuilder::init_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies) {
   Node* p0 = pack->at(0);
   assert(vtn->req() <= p0->req(), "must have at at most as many reqs");
   // Vectors have no ctrl, so ignore it.

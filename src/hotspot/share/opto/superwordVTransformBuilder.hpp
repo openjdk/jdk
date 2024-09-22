@@ -80,8 +80,8 @@ private:
   VTransformNode* get_vtnode_or_wrap_as_input_scalar(Node* n);
   void init_req_with_scalar(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies, const int index);
   void init_req_with_vector(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies, const int index);
-  void set_all_req_with_scalars(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
-  void set_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies);
+  void init_all_req_with_scalars(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
+  void init_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies);
   void add_dependencies_of_node_to_vtnode(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
 };
 
