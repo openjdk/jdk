@@ -198,14 +198,13 @@ public final class DirectClassBuilder
         attributes.writeTo(tail);
 
         // Now we have to append the BSM, if there is one
-        boolean written = constantPool.writeBootstrapMethods(tail);
-        if (written) {
+        if (constantPool.writeBootstrapMethods(tail)) {
             // Update attributes count
             tail.patchU2(attributesOffset, attributes.size() + 1);
         }
 
         // Now we can make the head
-        head.writeMagic(minorVersion, majorVersion);
+        head.writeLong(((long) ClassFile.MAGIC_NUMBER) << 32 | minorVersion << 16 | majorVersion);
         constantPool.writeTo(head);
         head.writeU2(flags);
         head.writeIndex(thisClassEntry);

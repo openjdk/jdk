@@ -38,8 +38,6 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.ForceInline;
 
-import static java.lang.classfile.ClassFile.MAGIC_NUMBER;
-
 public final class BufWriterImpl implements BufWriter {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
@@ -94,21 +92,6 @@ public final class BufWriterImpl implements BufWriter {
 
     public ClassFileImpl context() {
         return context;
-    }
-
-    void writeMagic(int minorVersion, int majorVersion) {
-        reserveSpace(8);
-        byte[] elems = this.elems;
-        int offset = this.offset;
-        elems[offset    ] = (byte) (MAGIC_NUMBER >> 24);
-        elems[offset + 1] = (byte) (MAGIC_NUMBER >> 16);
-        elems[offset + 2] = (byte) (MAGIC_NUMBER >> 8);
-        elems[offset + 3] = (byte)  MAGIC_NUMBER;
-        elems[offset + 4] = (byte) (minorVersion >> 8);
-        elems[offset + 5] = (byte)  minorVersion;
-        elems[offset + 6] = (byte) (majorVersion >> 8);
-        elems[offset + 7] = (byte)  majorVersion;
-        this.offset = offset + 8;
     }
 
     @Override
