@@ -1272,7 +1272,6 @@ public class ZipFile implements ZipConstants, Closeable {
                 int next = table[hsh];
                 table[hsh] = index + 1; // Store index + 1, reserving 0 for end-of-chain
                 // Record the CEN offset and the name hash in our hash cell.
-                int[] entries = this.entries;
                 entries[index] = hash;
                 entries[index + 1] = next;
                 entries[index + 2] = pos;
