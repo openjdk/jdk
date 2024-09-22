@@ -50,12 +50,28 @@ public interface Range<T extends Comparable<T>> {
     boolean isBefore(Range<? extends T> other);
 
     /**
+     * Returns whether the span is before the given point.
+     *
+     * @param point the instant to check
+     * @return true if the span is before the given instant, false otherwise
+     */
+    boolean isBefore(T point);
+
+    /**
      * Returns whether the span is after the given span.
      *
      * @param other the span to check
      * @return true if the span is after the given span, false otherwise
      */
     boolean isAfter(Range<? extends T> other);
+
+    /**
+     * Returns whether the span is after the given point.
+     *
+     * @param point the instant to check
+     * @return true if the span is after the given instant, false otherwise
+     */
+    boolean isAfter(T point);
 
     /**
      * Returns whether the span is bounded at the start.

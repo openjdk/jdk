@@ -1,70 +1,34 @@
 package java.time;
 
+import java.io.Serializable;
 import java.time.chrono.ChronoLocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * Represents a range of {@link ChronoLocalDateTime} values.
- */
-public abstract sealed class Timespan implements Range<ChronoLocalDateTime<?>> {
+public abstract sealed class Timespan implements Serializable, Range<ChronoLocalDateTime<?>> {
 
     private final boolean isNegative;
 
-    /**
-     * Creates a new {@link Timespan} that is negative if the given flag is set.
-     * @param isNegative whether the timespan is negative
-     */
     protected Timespan(boolean isNegative) {
         this.isNegative = isNegative;
     }
 
-    /**
-     * Creates a new positive {@link Timespan}.
-     */
     protected Timespan() {
         this(false);
     }
 
-    /**
-     * Creates a new {@link Timespan} bounded by the given start and end.
-     * If the start is after the end, the timespan will be negative.
-     * @param start the start of the timespan
-     * @param end the end of the timespan
-     * @return a new {@link Timespan} bounded by the given start and end
-     */
     public static Timespan of(ChronoLocalDateTime<?> start, ChronoLocalDateTime<?> end) {
         return new BoundedTimespan(start, end);
     }
 
-    /**
-     * Creates a new {@link Timespan} that is unbounded neither by start nor end.
-     * Timespan created by this method will contain all possible {@link ChronoLocalDateTime} values, as well as all possible {@link Timespan} ranges.
-     * It is guaranteed to be positive.
-     * @return a new unbounded {@link Timespan}
-     */
     public static Timespan unbounded() {
         return UnboundedTimespan.INSTANCE;
     }
 
-    /**
-     * Creates a new {@link Timespan} that is unbounded at the end.
-     * The timespan will contain all {@link ChronoLocalDateTime} values that are not after the given end.
-     * It is guaranteed to be positive.
-     * @param end the end of the timespan
-     * @return a new {@link Timespan} that is unbounded at the end
-     */
     public static Timespan unboundedEndingAt(ChronoLocalDateTime<?> end) {
         return new UnboundedStartTimespan(end);
     }
 
-    /**
-     * Creates a new {@link Timespan} that is unbounded at the start.
-     * The timespan will contain all {@link ChronoLocalDateTime} values that are not before the given start.
-     * It is guaranteed to be positive.
-     * @param start the start of the timespan
-     * @return a new {@link Timespan} that is unbounded at the start
-     */
     public static Timespan unboundedStartAt(ChronoLocalDateTime<?> start) {
         return new UnboundedEndTimespan(start);
     }
@@ -114,6 +78,11 @@ public abstract sealed class Timespan implements Range<ChronoLocalDateTime<?>> {
         }
 
         @Override
+        public boolean isBefore(ChronoLocalDateTime<?> point) {
+            return premierOfBounds().isBefore(point);
+        }
+
+        @Override
         public boolean isAfter(Range<? extends ChronoLocalDateTime<?>> other) {
             if (!other.isBoundedAtEnd()) {
                 return false;
@@ -124,6 +93,11 @@ public abstract sealed class Timespan implements Range<ChronoLocalDateTime<?>> {
             }
             var otherEnd = other.isNegative() ? other.start() : other.end();
             return premierOfBounds().isAfter(otherEnd);
+        }
+
+        @Override
+        public boolean isAfter(ChronoLocalDateTime<?> point) {
+            return latterOfBounds().isAfter(point);
         }
 
         @Override
@@ -223,7 +197,7 @@ public abstract sealed class Timespan implements Range<ChronoLocalDateTime<?>> {
         }
 
         @Override
-        @SuppressWarnings({"rawtypes", "unchecked"})
+        @SuppressWarnings("unchecked")
         public Range<ChronoLocalDateTime<?>>[] union(Range<? extends ChronoLocalDateTime<?>> other) {
             var otherStart = other.start().query(LocalDateTime::from);
             var otherEnd = other.end().query(LocalDateTime::from);
@@ -308,7 +282,7 @@ public abstract sealed class Timespan implements Range<ChronoLocalDateTime<?>> {
         }
 
         @Override
-        @SuppressWarnings({"rawtypes", "unchecked"})
+        @SuppressWarnings("unchecked")
         public Range<ChronoLocalDateTime<?>>[] union(Range<? extends ChronoLocalDateTime<?>> other) {
             return new Range[] {INSTANCE};
         }
@@ -324,7 +298,17 @@ public abstract sealed class Timespan implements Range<ChronoLocalDateTime<?>> {
         }
 
         @Override
+        public boolean isBefore(ChronoLocalDateTime<?> point) {
+            return false;
+        }
+
+        @Override
         public boolean isAfter(Range<? extends ChronoLocalDateTime<?>> other) {
+            return false;
+        }
+
+        @Override
+        public boolean isAfter(ChronoLocalDateTime<?> point) {
             return false;
         }
 
@@ -382,7 +366,6 @@ public abstract sealed class Timespan implements Range<ChronoLocalDateTime<?>> {
         }
 
         @Override
-        @SuppressWarnings({"unchecked"})
         public Optional<Range<ChronoLocalDateTime<?>>> intersection(Range<? extends ChronoLocalDateTime<?>> other) {
             ChronoLocalDateTime<?> otherStart;
             ChronoLocalDateTime<?> otherEnd;
@@ -420,12 +403,22 @@ public abstract sealed class Timespan implements Range<ChronoLocalDateTime<?>> {
         }
 
         @Override
+        public boolean isBefore(ChronoLocalDateTime<?> point) {
+            return end().isBefore(point);
+        }
+
+        @Override
         public boolean isAfter(Range<? extends ChronoLocalDateTime<?>> other) {
             return false;
         }
 
         @Override
-        @SuppressWarnings({"rawtypes", "unchecked"})
+        public boolean isAfter(ChronoLocalDateTime<?> point) {
+            return false;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
         public Range<ChronoLocalDateTime<?>>[] union(Range<? extends ChronoLocalDateTime<?>> other) {
             ChronoLocalDateTime<?> otherStart;
             ChronoLocalDateTime<?> otherEnd;
@@ -507,7 +500,6 @@ public abstract sealed class Timespan implements Range<ChronoLocalDateTime<?>> {
         }
 
         @Override
-        @SuppressWarnings({"unchecked"})
         public Optional<Range<ChronoLocalDateTime<?>>> intersection(Range<? extends ChronoLocalDateTime<?>> other) {
             ChronoLocalDateTime<?> otherStart;
             ChronoLocalDateTime<?> otherEnd;
@@ -544,13 +536,23 @@ public abstract sealed class Timespan implements Range<ChronoLocalDateTime<?>> {
         }
 
         @Override
+        public boolean isBefore(ChronoLocalDateTime<?> point) {
+            return false;
+        }
+
+        @Override
         public boolean isAfter(Range<? extends ChronoLocalDateTime<?>> other) {
             var otherEnd = other.isNegative() ? other.start() : other.end();
             return otherEnd.isBefore(start());
         }
 
         @Override
-        @SuppressWarnings({"rawtypes", "unchecked"})
+        public boolean isAfter(ChronoLocalDateTime<?> point) {
+            return start().isAfter(point);
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
         public Range<ChronoLocalDateTime<?>>[] union(Range<? extends ChronoLocalDateTime<?>> other) {
             ChronoLocalDateTime<?> otherStart;
             ChronoLocalDateTime<?> otherEnd;
