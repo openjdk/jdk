@@ -68,7 +68,7 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::iterate_oops_do(const frame 
   #ifndef COMPILER2
       COMPILER1_PRESENT(ShouldNotReachHere();)
   #if INCLUDE_JVMCI
-      if (UseJVMCICompiler) {
+      if (EnableJVMCI) {
         ShouldNotReachHere();
       }
   #endif
