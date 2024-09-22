@@ -2,22 +2,46 @@ package java.util;
 
 /**
  * Represents a range of values.
+ *
  * @param <T> the type of the values
  */
 public abstract sealed class Range<T extends Comparable<T>> {
-
+    /**
+     * Returns an unbounded range.
+     * @return an unbounded range
+     * @param <T> the type of the values
+     */
     public static <T extends Comparable<T>> Range<T> unbounded() {
         return new UnboundedRange<>();
     }
 
+    /**
+     * Returns an unbounded range ending at the given value.
+     * @param end the end of the range
+     * @return an unbounded range ending at the given value
+     * @param <T> the type of the values
+     */
     public static <T extends Comparable<T>> Range<T> unboundedEndingAt(T end) {
         return new UnboundedStartRange<>(end);
     }
 
+    /**
+     * Returns an unbounded range starting at the given value.
+     * @param start the start of the range
+     * @return an unbounded range starting at the given value
+     * @param <T> the type of the values
+     */
     public static <T extends Comparable<T>> Range<T> unboundedStartAt(T start) {
         return new UnboundedEndRange<>(start);
     }
 
+    /**
+     * Returns a bounded range.
+     * @param start the start of the range
+     * @param end the end of the range
+     * @return a bounded range
+     * @param <T> the type of the values
+     */
     public static <T extends Comparable<T>> Range<T> of(T start, T end) {
         return new BoundedRange<>(start, end);
     }
@@ -120,6 +144,24 @@ public abstract sealed class Range<T extends Comparable<T>> {
      */
     public abstract Optional<Range<? extends T>> intersection(Range<? extends T> other);
 
+    /**
+     * Returns the union of the span with the given span.
+     *
+     * @param other the span to union with
+     * @return the union of the span with the given span.
+     * If the spans do not overlap, the result is an array of two spans.
+     * If the spans overlap, the result is an array of one combined span.
+     */
+    public abstract Union<? extends T> union(Range<? extends T> other);
+
+    /**
+     * Returns the gap between the span and the given span.
+     *
+     * @param other the span to gap with
+     * @return the gap between the span and the given span. If the spans overlap, the result is an empty optional.
+     */
+    public abstract Optional<Range<T>> gap(Range<? extends T> other);
+
     protected Optional<Range<? extends T>> intersectionBoundedWithHalfUnbounded(
         Range<? extends T> other,
         T bound,
@@ -137,24 +179,6 @@ public abstract sealed class Range<T extends Comparable<T>> {
             }
         }
     }
-
-    /**
-     * Returns the union of the span with the given span.
-     *
-     * @param other the span to union with
-     * @return the union of the span with the given span.
-     * If the spans do not overlap, the result is an array of two spans.
-     * If the spans overlap, the result is an array of one combined span.
-     */
-    public abstract Range<T>[] union(Range<? extends T> other);
-
-    /**
-     * Returns the gap between the span and the given span.
-     *
-     * @param other the span to gap with
-     * @return the gap between the span and the given span. If the spans overlap, the result is an empty optional.
-     */
-    public abstract Optional<Range<T>> gap(Range<? extends T> other);
 
     private static final class UnboundedRange<T extends Comparable<T>> extends Range<T> {
 
@@ -219,8 +243,8 @@ public abstract sealed class Range<T extends Comparable<T>> {
         }
 
         @Override
-        public Range<T>[] union(Range<? extends T> other) {
-            throw new UnsupportedOperationException("Waiting to be redesigned");
+        public Union<T> union(Range<? extends T> other) {
+            return new UnionOfOne<>(this);
         }
 
         @Override
@@ -330,8 +354,29 @@ public abstract sealed class Range<T extends Comparable<T>> {
         }
 
         @Override
-        public Range<T>[] union(Range<? extends T> other) {
-            throw new UnsupportedOperationException("Waiting to be redesigned");
+        @SuppressWarnings("unchecked")
+        public Union<? extends T> union(Range<? extends T> other) {
+            if (other.isBoundedAtStart()) {
+                if (other.isBoundedAtEnd()) {
+                    T otherStart;
+                    T otherEnd;
+
+                    if (other.isNegative()) {
+                        otherStart = other.end();
+                        otherEnd = other.start();
+                    } else {
+                        otherStart = other.start();
+                        otherEnd = other.end();
+                    }
+
+                    if (otherStart.compareTo(end) <= 0 && otherEnd.compareTo(end) >= 0) {
+                        return new UnionOfOne<>(new UnboundedStartRange<>(otherEnd));
+                    }
+                }
+            } else if (other.isBoundedAtEnd()) {
+                return other.end().compareTo(end) > 0 ? new UnionOfOne<>((Range<T>) other) : new UnionOfOne<>(this);
+            }
+            return new UnionOfTwo<>(this, (Range<T>) other);
         }
 
         @Override
@@ -465,8 +510,29 @@ public abstract sealed class Range<T extends Comparable<T>> {
         }
 
         @Override
-        public Range<T>[] union(Range<? extends T> other) {
-            throw new UnsupportedOperationException("Waiting to be redesigned");
+        @SuppressWarnings("unchecked")
+        public Union<? extends T> union(Range<? extends T> other) {
+            if (other.isBoundedAtEnd()) {
+                if (other.isBoundedAtStart()) {
+                    T otherStart;
+                    T otherEnd;
+
+                    if (other.isNegative()) {
+                        otherStart = other.end();
+                        otherEnd = other.start();
+                    } else {
+                        otherStart = other.start();
+                        otherEnd = other.end();
+                    }
+
+                    if (otherStart.compareTo(start) >= 0 && otherEnd.compareTo(start) <= 0) {
+                        return new UnionOfOne<>(new UnboundedEndRange<>(otherStart));
+                    }
+                }
+            } else if (other.isBoundedAtStart()) {
+                return other.start().compareTo(start) < 0 ? new UnionOfOne<>((Range<T>) other) : new UnionOfOne<>(this);
+            }
+            return new UnionOfTwo<>(this, (Range<T>) other);
         }
 
         @Override
@@ -606,18 +672,18 @@ public abstract sealed class Range<T extends Comparable<T>> {
                         otherStart = other.start();
                         otherEnd = other.end();
                     }
-                    if (otherStart.compareTo(end) > 0 || otherEnd.compareTo(start) < 0) {
+                    if (otherStart.compareTo(latterOfBounds()) > 0 || otherEnd.compareTo(start) < 0) {
                         return Optional.empty();
                     }
                     return Optional.of(new BoundedRange<>(
-                        otherStart.compareTo(start) > 0 ? otherStart : start,
-                        otherEnd.compareTo(end) < 0 ? otherEnd : end)
+                        otherStart.compareTo(formerOfBounds()) > 0 ? otherStart : formerOfBounds(),
+                        otherEnd.compareTo(latterOfBounds()) < 0 ? otherEnd : latterOfBounds())
                     );
-                } else if (other.start().compareTo(end) > 0) {
+                } else if (other.start().compareTo(latterOfBounds()) > 0) {
                     return Optional.empty();
                 }
             } else if (other.isBoundedAtEnd()) {
-                if (other.end().compareTo(start) < 0) {
+                if (other.end().compareTo(formerOfBounds()) < 0) {
                     return Optional.empty();
                 }
             }
@@ -625,8 +691,42 @@ public abstract sealed class Range<T extends Comparable<T>> {
         }
 
         @Override
-        public Range<T>[] union(Range<? extends T> other) {
-            throw new UnsupportedOperationException("Waiting to be redesigned");
+        @SuppressWarnings("unchecked")
+        public Union<? extends T> union(Range<? extends T> other) {
+            if (other.isBoundedAtStart()) {
+                if (other.isBoundedAtEnd()) {
+                    T otherStart;
+                    T otherEnd;
+                    if (other.isNegative()) {
+                        otherStart = other.end();
+                        otherEnd = other.start();
+                    } else {
+                        otherStart = other.start();
+                        otherEnd = other.end();
+                    }
+                    if (otherStart.compareTo(formerOfBounds()) >= 0 && otherEnd.compareTo(latterOfBounds()) <= 0) {
+                        return new UnionOfOne<>(this);
+                    } else if (otherStart.compareTo(latterOfBounds()) <= 0 && otherEnd.compareTo(formerOfBounds()) >= 0) {
+                        return new UnionOfOne<>(new BoundedRange<>(
+                            otherStart.compareTo(formerOfBounds()) < 0 ? otherStart : formerOfBounds(),
+                            otherEnd.compareTo(latterOfBounds()) > 0 ? otherEnd : latterOfBounds())
+                        );
+                    }
+                } else {
+                    if (other.start().compareTo(formerOfBounds()) <= 0) {
+                        return new UnionOfOne<>((Range<T>) other);
+                    } else if (other.start().compareTo(latterOfBounds()) <= 0) {
+                        return new UnionOfOne<>(new UnboundedEndRange<>(other.start()));
+                    }
+                }
+            } else if (other.isBoundedAtEnd()) {
+                if (other.end().compareTo(latterOfBounds()) >= 0) {
+                    return new UnionOfOne<>((Range<T>) other);
+                } else {
+                    return new UnionOfOne<>(new UnboundedStartRange<>(latterOfBounds()));
+                }
+            }
+            return new UnionOfTwo<>(this, (Range<T>) other);
         }
 
         @Override
@@ -643,17 +743,17 @@ public abstract sealed class Range<T extends Comparable<T>> {
                         otherStart = other.start();
                         otherEnd = other.end();
                     }
-                    if (otherStart.compareTo(end) > 0) {
-                        return Optional.of(new BoundedRange<>(end, otherStart));
-                    } else if (otherEnd.compareTo(start) < 0) {
-                        return Optional.of(new BoundedRange<>(otherEnd, start));
+                    if (otherStart.compareTo(latterOfBounds()) > 0) {
+                        return Optional.of(new BoundedRange<>(latterOfBounds(), otherStart));
+                    } else if (otherEnd.compareTo(formerOfBounds()) < 0) {
+                        return Optional.of(new BoundedRange<>(otherEnd, formerOfBounds()));
                     }
-                } else if (other.start().compareTo(end) > 0) {
-                    return Optional.of(new BoundedRange<>(end, other.start()));
+                } else if (other.start().compareTo(latterOfBounds()) > 0) {
+                    return Optional.of(new BoundedRange<>(latterOfBounds(), other.start()));
                 }
             } else if (other.isBoundedAtEnd()) {
-                if (other.end().compareTo(start) < 0) {
-                    return Optional.of(new BoundedRange<>(other.end(), start));
+                if (other.end().compareTo(formerOfBounds()) < 0) {
+                    return Optional.of(new BoundedRange<>(other.end(), formerOfBounds()));
                 }
             }
             return Optional.empty();
@@ -673,6 +773,96 @@ public abstract sealed class Range<T extends Comparable<T>> {
         @Override
         public int hashCode() {
             return Objects.hash(start, end);
+        }
+
+        private T latterOfBounds() {
+            return start.compareTo(end) < 0 ? end : start;
+        }
+
+        private T formerOfBounds() {
+            return start.compareTo(end) < 0 ? start : end;
+        }
+    }
+
+    /**
+     * Represents a union of two spans.
+     * The spans are guaranteed to either abut or not touch at all.
+     * @param <T> the type of the values
+     */
+    public sealed interface Union<T extends Comparable<T>> {
+    }
+
+    /**
+     * Represents a result of union operation where the result is a single span.
+     * @param <T> the type of the values
+     */
+    public static final class UnionOfOne<T extends Comparable<T>> implements Union<T> {
+
+        private final Range<T> range;
+
+        private UnionOfOne(Range<T> range) {
+            this.range = range;
+        }
+
+        /**
+         * Returns the span.
+         * @return the span
+         */
+        public Range<T> range() {
+            return range;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof UnionOfOne<?> that)) {
+                return false;
+            }
+            return Objects.equals(range, that.range);
+        }
+    }
+
+    /**
+     * Represents a result of union operation where the result is two spans.
+     * @param <T> the type of the values
+     */
+    public static final class UnionOfTwo<T extends Comparable<T>> implements Union<T> {
+
+        private final Range<T> first;
+        private final Range<T> second;
+
+        private UnionOfTwo(Range<T> first, Range<T> second) {
+            this.first = first;
+            this.second = second;
+        }
+
+        /**
+         * Returns the first span.
+         * @return the first span
+         */
+        public Range<T> first() {
+            return first;
+        }
+
+        /**
+         * Returns the second span.
+         * @return the second span
+         */
+        public Range<T> second() {
+            return second;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof UnionOfTwo<?> that)) {
+                return false;
+            }
+            return Objects.equals(first, that.first) && Objects.equals(second, that.second);
         }
     }
 }
