@@ -36,6 +36,7 @@ import java.lang.classfile.constantpool.PoolEntry;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.ForceInline;
 
 import static java.lang.classfile.ClassFile.MAGIC_NUMBER;
 
@@ -300,12 +301,17 @@ public final class BufWriterImpl implements BufWriter {
     // writeIndex methods ensure that any CP info written
     // is relative to the correct constant pool
 
+    @ForceInline
     @Override
     public void writeIndex(PoolEntry entry) {
         int idx = AbstractPoolEntry.maybeClone(constantPool, entry).index();
         if (idx < 1 || idx > Character.MAX_VALUE)
-            throw new IllegalArgumentException(idx + " is not a valid index. Entry: " + entry);
+            throw invalidIndex(idx, entry);
         writeU2(idx);
+    }
+
+    static IllegalArgumentException invalidIndex(int idx, PoolEntry entry) {
+        return new IllegalArgumentException(idx + " is not a valid index. Entry: " + entry);
     }
 
     @Override
