@@ -510,6 +510,7 @@ public:
 
   uint vector_length() const { return _nodes.length(); }
   BasicType basic_type() const { return _nodes.at(0)->bottom_type()->basic_type(); }
+  // TODO should be: vloop_analyzer.types().velt_basic_type(first);
   int scalar_opcode() const { return _nodes.at(0)->Opcode(); }
 
   const GrowableArray<Node*>& nodes() const { return _nodes; }
