@@ -1247,25 +1247,9 @@ public final class StackMapGenerator {
                         type = Type.FLOAT_TYPE;
                     } else {
                         type = Type.INTEGER_TYPE;
-                assert desc != CD_void;
-                Type type;
-                if (desc instanceof PrimitiveClassDescImpl) {
-                    if (desc == CD_long) {
-                        setLocalRawInternal(localsSize, Type.LONG_TYPE, Type.LONG2_TYPE);
-                        localsSize += 2;
-                        continue;
                     }
                     locals[localsSize++] = type;
-                    if (desc == CD_double) {
-                        setLocalRawInternal(localsSize, Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-                        localsSize += 2;
-                        continue;
-                    }
-                    type = desc == CD_float ? Type.FLOAT_TYPE : Type.INTEGER_TYPE;
-                } else {
-                    type = Type.referenceType(desc);
                 }
-                setLocalRawInternal(localsSize++, type);
             }
             this.localsSize = localsSize;
         }
