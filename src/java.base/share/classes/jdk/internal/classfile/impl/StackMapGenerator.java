@@ -1096,10 +1096,10 @@ public final class StackMapGenerator {
             int localsSize = this.localsSize;
             int stackSize = this.stackSize;
             if (target.flags == -1) {
-                target.locals = locals == null ? null : Arrays.copyOf(locals, localsSize);
+                target.locals = locals == null ? null : locals.clone();
                 target.localsSize = localsSize;
                 if (stackSize > 0) {
-                    target.stack = Arrays.copyOf(stack, stackSize);
+                    target.stack = stack.clone();
                     target.stackSize = stackSize;
                 }
                 target.flags = flags;
