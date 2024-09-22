@@ -478,6 +478,13 @@ public interface Document {
      * {@code insertUpdate} method on the {@code DocumentListener}.
      * The offset and length of the generated {@code DocumentEvent}
      * will indicate what change was actually made to the {@code Document}.
+     * <p>
+     * For example, if the document contains the text
+     * <i>&lsquo;The brown fox&rsquo;</i>,
+     * calling {@code insert(4, "quick ", null)} will insert the word
+     * <i>&lsquo;quick&rsquo;</i> and the following space into the text,
+     * and all the marks at 4 and above will be moved by 6 (the number
+     * of inserted characters).
      * <p style="text-align:center"><img src="doc-files/Document-insert.svg"
      *  alt="Diagram shows insertion of 'quick' in 'The quick brown fox'">
      * <p>
