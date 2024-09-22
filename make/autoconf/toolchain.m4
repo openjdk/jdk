@@ -23,14 +23,14 @@
 # questions.
 #
 
-########################################################################
+################################################################################
 # This file is responsible for detecting, verifying and setting up the
 # toolchain, i.e. the compiler, linker and related utilities. It will setup
 # proper paths to the binaries, but it will not setup any flags.
 #
 # The binaries used is determined by the toolchain type, which is the family of
 # compilers and related tools that are used.
-########################################################################
+################################################################################
 
 m4_include([toolchain_microsoft.m4])
 

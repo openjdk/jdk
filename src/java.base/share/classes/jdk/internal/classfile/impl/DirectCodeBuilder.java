@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +25,6 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
-
 import java.lang.classfile.Attribute;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
@@ -43,7 +35,6 @@ import java.lang.classfile.CustomAttribute;
 import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
-import java.lang.classfile.instruction.SwitchCase;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.LineNumberTableAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
@@ -55,19 +46,25 @@ import java.lang.classfile.constantpool.InvokeDynamicEntry;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.LongEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.constantpool.MethodRefEntry;
 import java.lang.classfile.instruction.CharacterRange;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.lang.classfile.instruction.LocalVariable;
 import java.lang.classfile.instruction.LocalVariableType;
+import java.lang.classfile.instruction.SwitchCase;
+import java.lang.constant.ConstantDesc;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
-import static java.lang.classfile.Opcode.GOTO;
-import static java.lang.classfile.Opcode.GOTO_W;
-import static java.lang.classfile.Opcode.IINC;
-import static java.lang.classfile.Opcode.IINC_W;
-import static java.lang.classfile.Opcode.JSR;
-import static java.lang.classfile.Opcode.JSR_W;
-import static java.lang.classfile.Opcode.LDC2_W;
-import static java.lang.classfile.Opcode.LDC_W;
+import static java.lang.classfile.Opcode.*;
+
+import static jdk.internal.classfile.impl.BytecodeHelpers.*;
 
 public final class DirectCodeBuilder
         extends AbstractDirectBuilder<CodeModel>
@@ -106,7 +103,7 @@ public final class DirectCodeBuilder
             handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, context, original, false));
             cb.buildContent();
         } catch (LabelOverflowException loe) {
-            if (context.shortJumpsOption() == ClassFile.ShortJumpsOption.FIX_SHORT_JUMPS) {
+            if (context.fixShortJumps()) {
                 handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, context, original, true));
                 cb.buildContent();
             }
@@ -125,7 +122,7 @@ public final class DirectCodeBuilder
         setOriginal(original);
         this.methodInfo = methodInfo;
         this.transformFwdJumps = transformFwdJumps;
-        this.transformBackJumps = context.shortJumpsOption() == ClassFile.ShortJumpsOption.FIX_SHORT_JUMPS;
+        this.transformBackJumps = context.fixShortJumps();
         bytecodesBufWriter = (original instanceof CodeImpl cai) ? new BufWriterImpl(constantPool, context, cai.codeLength())
                 : new BufWriterImpl(constantPool, context);
         this.startLabel = new LabelImpl(this, 0);
@@ -198,7 +195,7 @@ public final class DirectCodeBuilder
             int endPc = labelToBci(h.tryEnd());
             int handlerPc = labelToBci(h.handler());
             if (startPc == -1 || endPc == -1 || handlerPc == -1) {
-                if (context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS) {
+                if (context.dropDeadLabels()) {
                     handlersSize--;
                 } else {
                     throw new IllegalArgumentException("Unbound label in exception handler");
@@ -212,7 +209,7 @@ public final class DirectCodeBuilder
             }
         }
         if (handlersSize < handlers.size())
-            buf.patchInt(pos, 2, handlersSize);
+            buf.patchU2(pos, handlersSize);
     }
 
     private void buildContent() {
@@ -222,7 +219,7 @@ public final class DirectCodeBuilder
         // Backfill branches for which Label didn't have position yet
         processDeferredLabels();
 
-        if (context.debugElementsOption() == ClassFile.DebugElementsOption.PASS_DEBUG) {
+        if (context.passDebugElements()) {
             if (!characterRanges.isEmpty()) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.characterRangeTable()) {
 
@@ -235,7 +232,7 @@ public final class DirectCodeBuilder
                             var start = labelToBci(cr.startScope());
                             var end = labelToBci(cr.endScope());
                             if (start == -1 || end == -1) {
-                                if (context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS) {
+                                if (context.dropDeadLabels()) {
                                     crSize--;
                                 } else {
                                     throw new IllegalArgumentException("Unbound label in character range");
@@ -249,7 +246,7 @@ public final class DirectCodeBuilder
                             }
                         }
                         if (crSize < characterRanges.size())
-                            b.patchInt(pos, 2, crSize);
+                            b.patchU2(pos, crSize);
                     }
                 };
                 attributes.withAttribute(a);
@@ -264,7 +261,7 @@ public final class DirectCodeBuilder
                         b.writeU2(lvSize);
                         for (LocalVariable l : localVariables) {
                             if (!Util.writeLocalVariable(b, l)) {
-                                if (context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS) {
+                                if (context.dropDeadLabels()) {
                                     lvSize--;
                                 } else {
                                     throw new IllegalArgumentException("Unbound label in local variable type");
@@ -272,7 +269,7 @@ public final class DirectCodeBuilder
                             }
                         }
                         if (lvSize < localVariables.size())
-                            b.patchInt(pos, 2, lvSize);
+                            b.patchU2(pos, lvSize);
                     }
                 };
                 attributes.withAttribute(a);
@@ -287,7 +284,7 @@ public final class DirectCodeBuilder
                         b.writeU2(localVariableTypes.size());
                         for (LocalVariableType l : localVariableTypes) {
                             if (!Util.writeLocalVariable(b, l)) {
-                                if (context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS) {
+                                if (context.dropDeadLabels()) {
                                     lvtSize--;
                                 } else {
                                     throw new IllegalArgumentException("Unbound label in local variable type");
@@ -295,7 +292,7 @@ public final class DirectCodeBuilder
                             }
                         }
                         if (lvtSize < localVariableTypes.size())
-                            b.patchInt(pos, 2, lvtSize);
+                            b.patchU2(pos, lvtSize);
                     }
                 };
                 attributes.withAttribute(a);
@@ -360,24 +357,21 @@ public final class DirectCodeBuilder
                 }
 
                 if (codeAndExceptionsMatch(codeLength)) {
-                    switch (context.stackMapsOption()) {
-                        case STACK_MAPS_WHEN_REQUIRED -> {
-                            attributes.withAttribute(original.findAttribute(Attributes.stackMapTable()).orElse(null));
-                            writeCounters(true, buf);
-                        }
-                        case GENERATE_STACK_MAPS ->
-                            generateStackMaps(buf);
-                        case DROP_STACK_MAPS ->
-                            writeCounters(true, buf);
+                    if (context.stackMapsWhenRequired()) {
+                        attributes.withAttribute(original.findAttribute(Attributes.stackMapTable()).orElse(null));
+                        writeCounters(true, buf);
+                    } else if (context.generateStackMaps()) {
+                        generateStackMaps(buf);
+                    } else if (context.dropStackMaps()) {
+                        writeCounters(true, buf);
                     }
                 } else {
-                    switch (context.stackMapsOption()) {
-                        case STACK_MAPS_WHEN_REQUIRED ->
-                            tryGenerateStackMaps(false, buf);
-                        case GENERATE_STACK_MAPS ->
-                            generateStackMaps(buf);
-                        case DROP_STACK_MAPS ->
-                            writeCounters(false, buf);
+                    if (context.stackMapsWhenRequired()) {
+                        tryGenerateStackMaps(false, buf);
+                    } else if (context.generateStackMaps()) {
+                        generateStackMaps(buf);
+                    } else if (context.dropStackMaps()) {
+                        writeCounters(false, buf);
                     }
                 }
 
@@ -458,8 +452,7 @@ public final class DirectCodeBuilder
     private void writeLabelOffset(int nBytes, int instructionPc, Label label) {
         int targetBci = labelToBci(label);
         if (targetBci == -1) {
-            int pc = curPc();
-            bytecodesBufWriter.writeIntBytes(nBytes, 0);
+            int pc = bytecodesBufWriter.skip(nBytes);
             if (deferredLabels == null)
                 deferredLabels = new ArrayList<>();
             deferredLabels.add(new DeferredLabel(pc, nBytes, instructionPc, label));
@@ -475,8 +468,13 @@ public final class DirectCodeBuilder
         if (deferredLabels != null) {
             for (DeferredLabel dl : deferredLabels) {
                 int branchOffset = labelToBci(dl.label) - dl.instructionPc;
-                if (dl.size == 2 && (short)branchOffset != branchOffset) throw new LabelOverflowException();
-                bytecodesBufWriter.patchInt(dl.labelPc, dl.size, branchOffset);
+                if (dl.size == 2) {
+                    if ((short)branchOffset != branchOffset) throw new LabelOverflowException();
+                    bytecodesBufWriter.patchU2(dl.labelPc, branchOffset);
+                } else {
+                    assert dl.size == 4;
+                    bytecodesBufWriter.patchInt(dl.labelPc, branchOffset);
+                }
             }
         }
     }
@@ -543,14 +541,14 @@ public final class DirectCodeBuilder
 
     public void writeLookupSwitch(Label defaultTarget, List<SwitchCase> cases) {
         int instructionPc = curPc();
-        writeBytecode(Opcode.LOOKUPSWITCH);
+        writeBytecode(LOOKUPSWITCH);
         int pad = 4 - (curPc() % 4);
         if (pad != 4)
-            bytecodesBufWriter.writeIntBytes(pad, 0);
+            bytecodesBufWriter.skip(pad); // padding content can be anything
         writeLabelOffset(4, instructionPc, defaultTarget);
         bytecodesBufWriter.writeInt(cases.size());
         cases = new ArrayList<>(cases);
-        cases.sort(new Comparator<SwitchCase>() {
+        cases.sort(new Comparator<>() {
             @Override
             public int compare(SwitchCase c1, SwitchCase c2) {
                 return Integer.compare(c1.caseValue(), c2.caseValue());
@@ -564,10 +562,10 @@ public final class DirectCodeBuilder
 
     public void writeTableSwitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
         int instructionPc = curPc();
-        writeBytecode(Opcode.TABLESWITCH);
+        writeBytecode(TABLESWITCH);
         int pad = 4 - (curPc() % 4);
         if (pad != 4)
-            bytecodesBufWriter.writeIntBytes(pad, 0);
+            bytecodesBufWriter.skip(pad); // padding content can be anything
         writeLabelOffset(4, instructionPc, defaultTarget);
         bytecodesBufWriter.writeInt(low);
         bytecodesBufWriter.writeInt(high);
@@ -600,28 +598,28 @@ public final class DirectCodeBuilder
     }
 
     public void writeInvokeDynamic(InvokeDynamicEntry ref) {
-        writeBytecode(Opcode.INVOKEDYNAMIC);
+        writeBytecode(INVOKEDYNAMIC);
         bytecodesBufWriter.writeIndex(ref);
         bytecodesBufWriter.writeU2(0);
     }
 
     public void writeNewObject(ClassEntry type) {
-        writeBytecode(Opcode.NEW);
+        writeBytecode(NEW);
         bytecodesBufWriter.writeIndex(type);
     }
 
     public void writeNewPrimitiveArray(int newArrayCode) {
-        writeBytecode(Opcode.NEWARRAY);
+        writeBytecode(NEWARRAY);
         bytecodesBufWriter.writeU1(newArrayCode);
     }
 
     public void writeNewReferenceArray(ClassEntry type) {
-        writeBytecode(Opcode.ANEWARRAY);
+        writeBytecode(ANEWARRAY);
         bytecodesBufWriter.writeIndex(type);
     }
 
     public void writeNewMultidimensionalArray(int dimensions, ClassEntry type) {
-        writeBytecode(Opcode.MULTIANEWARRAY);
+        writeBytecode(MULTIANEWARRAY);
         bytecodesBufWriter.writeIndex(type);
         bytecodesBufWriter.writeU1(dimensions);
     }
@@ -776,5 +774,750 @@ public final class DirectCodeBuilder
         public LabelOverflowException() {
             super("Label target offset overflow");
         }
+    }
+
+    // Fast overrides to avoid intermediate instructions
+    // These are helpful for direct class building
+
+    @Override
+    public CodeBuilder return_(TypeKind tk) {
+        writeBytecode(BytecodeHelpers.returnOpcode(tk));
+        return this;
+    }
+
+    @Override
+    public CodeBuilder storeLocal(TypeKind tk, int slot) {
+        writeLocalVar(BytecodeHelpers.storeOpcode(tk, slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder loadLocal(TypeKind tk, int slot) {
+        writeLocalVar(BytecodeHelpers.loadOpcode(tk, slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder invoke(Opcode opcode, MemberRefEntry ref) {
+        if (opcode == INVOKEINTERFACE) {
+            int slots = Util.parameterSlots(Util.methodTypeSymbol(ref.nameAndType())) + 1;
+            writeInvokeInterface(opcode, (InterfaceMethodRefEntry) ref, slots);
+        } else {
+            writeInvokeNormal(opcode, ref);
+        }
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fieldAccess(Opcode opcode, FieldRefEntry ref) {
+        writeFieldAccess(opcode, ref);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder arrayLoad(TypeKind tk) {
+        writeBytecode(BytecodeHelpers.arrayLoadOpcode(tk));
+        return this;
+    }
+
+    @Override
+    public CodeBuilder arrayStore(TypeKind tk) {
+        writeBytecode(BytecodeHelpers.arrayStoreOpcode(tk));
+        return this;
+    }
+
+    @Override
+    public CodeBuilder branch(Opcode op, Label target) {
+        writeBranch(op, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder nop() {
+        writeBytecode(NOP);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder aconst_null() {
+        writeBytecode(ACONST_NULL);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder aload(int slot) {
+        writeLocalVar(BytecodeHelpers.aload(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder anewarray(ClassEntry entry) {
+        writeNewReferenceArray(entry);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder arraylength() {
+        writeBytecode(ARRAYLENGTH);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder astore(int slot) {
+        writeLocalVar(BytecodeHelpers.astore(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder athrow() {
+        writeBytecode(ATHROW);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder bipush(int b) {
+        BytecodeHelpers.validateBipush(b);
+        writeArgumentConstant(BIPUSH, b);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder checkcast(ClassEntry type) {
+        writeTypeCheck(CHECKCAST, type);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder d2f() {
+        writeBytecode(D2F);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder d2i() {
+        writeBytecode(D2I);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder d2l() {
+        writeBytecode(D2L);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dadd() {
+        writeBytecode(DADD);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dcmpg() {
+        writeBytecode(DCMPG);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dcmpl() {
+        writeBytecode(DCMPL);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dconst_0() {
+        writeBytecode(DCONST_0);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dconst_1() {
+        writeBytecode(DCONST_1);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ddiv() {
+        writeBytecode(DDIV);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dload(int slot) {
+        writeLocalVar(BytecodeHelpers.dload(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dmul() {
+        writeBytecode(DMUL);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dneg() {
+        writeBytecode(DNEG);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder drem() {
+        writeBytecode(DREM);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dstore(int slot) {
+        writeLocalVar(BytecodeHelpers.dstore(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dsub() {
+        writeBytecode(DSUB);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dup() {
+        writeBytecode(DUP);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dup2() {
+        writeBytecode(DUP2);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dup2_x1() {
+        writeBytecode(DUP2_X1);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dup2_x2() {
+        writeBytecode(DUP2_X2);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dup_x1() {
+        writeBytecode(DUP_X1);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder dup_x2() {
+        writeBytecode(DUP_X2);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder f2d() {
+        writeBytecode(F2D);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder f2i() {
+        writeBytecode(F2I);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder f2l() {
+        writeBytecode(F2L);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fadd() {
+        writeBytecode(FADD);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fcmpg() {
+        writeBytecode(FCMPG);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fcmpl() {
+        writeBytecode(FCMPL);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fconst_0() {
+        writeBytecode(FCONST_0);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fconst_1() {
+        writeBytecode(FCONST_1);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fconst_2() {
+        writeBytecode(FCONST_2);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fdiv() {
+        writeBytecode(FDIV);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fload(int slot) {
+        writeLocalVar(BytecodeHelpers.fload(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fmul() {
+        writeBytecode(FMUL);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fneg() {
+        writeBytecode(FNEG);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder frem() {
+        writeBytecode(FREM);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fstore(int slot) {
+        writeLocalVar(BytecodeHelpers.fstore(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fsub() {
+        writeBytecode(FSUB);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder i2b() {
+        writeBytecode(I2B);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder i2c() {
+        writeBytecode(I2C);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder i2d() {
+        writeBytecode(I2D);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder i2f() {
+        writeBytecode(I2F);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder i2l() {
+        writeBytecode(I2L);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder i2s() {
+        writeBytecode(I2S);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder iadd() {
+        writeBytecode(IADD);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder iand() {
+        writeBytecode(IAND);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder iconst_0() {
+        writeBytecode(ICONST_0);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder iconst_1() {
+        writeBytecode(ICONST_1);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder iconst_2() {
+        writeBytecode(ICONST_2);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder iconst_3() {
+        writeBytecode(ICONST_3);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder iconst_4() {
+        writeBytecode(ICONST_4);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder iconst_5() {
+        writeBytecode(ICONST_5);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder iconst_m1() {
+        writeBytecode(ICONST_M1);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder idiv() {
+        writeBytecode(IDIV);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder iinc(int slot, int val) {
+        writeIncrement(slot, val);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder iload(int slot) {
+        writeLocalVar(BytecodeHelpers.iload(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder imul() {
+        writeBytecode(IMUL);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ineg() {
+        writeBytecode(INEG);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder instanceOf(ClassEntry target) {
+        writeTypeCheck(INSTANCEOF, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder invokedynamic(InvokeDynamicEntry ref) {
+        writeInvokeDynamic(ref);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder invokeinterface(InterfaceMethodRefEntry ref) {
+        writeInvokeInterface(INVOKEINTERFACE, ref, Util.parameterSlots(ref.typeSymbol()) + 1);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder invokespecial(InterfaceMethodRefEntry ref) {
+        writeInvokeNormal(INVOKESPECIAL, ref);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder invokespecial(MethodRefEntry ref) {
+        writeInvokeNormal(INVOKESPECIAL, ref);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder invokestatic(InterfaceMethodRefEntry ref) {
+        writeInvokeNormal(INVOKESTATIC, ref);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder invokestatic(MethodRefEntry ref) {
+        writeInvokeNormal(INVOKESTATIC, ref);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder invokevirtual(MethodRefEntry ref) {
+        writeInvokeNormal(INVOKEVIRTUAL, ref);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ior() {
+        writeBytecode(IOR);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder irem() {
+        writeBytecode(IREM);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ishl() {
+        writeBytecode(ISHL);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ishr() {
+        writeBytecode(ISHR);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder istore(int slot) {
+        writeLocalVar(BytecodeHelpers.istore(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder isub() {
+        writeBytecode(ISUB);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder iushr() {
+        writeBytecode(IUSHR);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ixor() {
+        writeBytecode(IXOR);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lookupswitch(Label defaultTarget, List<SwitchCase> cases) {
+        writeLookupSwitch(defaultTarget, cases);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder l2d() {
+        writeBytecode(L2D);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder l2f() {
+        writeBytecode(L2F);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder l2i() {
+        writeBytecode(L2I);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ladd() {
+        writeBytecode(LADD);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder land() {
+        writeBytecode(LAND);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lcmp() {
+        writeBytecode(LCMP);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lconst_0() {
+        writeBytecode(LCONST_0);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lconst_1() {
+        writeBytecode(LCONST_1);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ldc(LoadableConstantEntry entry) {
+        writeLoadConstant(BytecodeHelpers.ldcOpcode(entry), entry);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ldiv() {
+        writeBytecode(LDIV);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lload(int slot) {
+        writeLocalVar(BytecodeHelpers.lload(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lmul() {
+        writeBytecode(LMUL);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lneg() {
+        writeBytecode(LNEG);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lor() {
+        writeBytecode(LOR);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lrem() {
+        writeBytecode(LREM);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lshl() {
+        writeBytecode(LSHL);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lshr() {
+        writeBytecode(LSHR);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lstore(int slot) {
+        writeLocalVar(BytecodeHelpers.lstore(slot), slot);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lsub() {
+        writeBytecode(LSUB);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lushr() {
+        writeBytecode(LUSHR);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder lxor() {
+        writeBytecode(LXOR);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder monitorenter() {
+        writeBytecode(MONITORENTER);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder monitorexit() {
+        writeBytecode(MONITOREXIT);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder multianewarray(ClassEntry array, int dims) {
+        writeNewMultidimensionalArray(dims, array);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder new_(ClassEntry clazz) {
+        writeNewObject(clazz);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder newarray(TypeKind typeKind) {
+        int atype = typeKind.newarrayCode(); // implicit null check
+        if (atype < 0)
+            throw new IllegalArgumentException("Illegal component type: ".concat(typeKind.upperBound().displayName()));
+        writeNewPrimitiveArray(atype);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder pop() {
+        writeBytecode(POP);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder pop2() {
+        writeBytecode(POP2);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder sipush(int s) {
+        BytecodeHelpers.validateSipush(s);
+        writeArgumentConstant(SIPUSH, s);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder swap() {
+        writeBytecode(SWAP);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder tableswitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
+        writeTableSwitch(low, high, defaultTarget, cases);
+        return this;
     }
 }

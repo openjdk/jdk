@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,8 +73,7 @@ public:
     UnscaledNarrowOop  = 0,
     ZeroBasedNarrowOop = 1,
     DisjointBaseNarrowOop = 2,
-    HeapBasedNarrowOop = 3,
-    AnyNarrowOopMode = 4
+    HeapBasedNarrowOop = 3
   };
 
   // The representation type for narrowOop is assumed to be uint32_t.
@@ -88,14 +87,12 @@ public:
   static void set_use_implicit_null_checks(bool use);
 
   static address  base()                     { return _narrow_oop._base; }
+  static address  base_addr()                { return (address)&_narrow_oop._base; }
   static address  begin()                    { return (address)_heap_address_range.start(); }
   static address  end()                      { return (address)_heap_address_range.end(); }
   static bool     is_base(void* addr)        { return (base() == (address)addr); }
   static int      shift()                    { return _narrow_oop._shift; }
   static bool     use_implicit_null_checks() { return _narrow_oop._use_implicit_null_checks; }
-
-  static address  ptrs_base_addr()           { return (address)&_narrow_oop._base; }
-  static address  ptrs_base()                { return _narrow_oop._base; }
 
   static bool is_in(void* addr);
   static bool is_in(MemRegion mr);

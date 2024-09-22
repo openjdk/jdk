@@ -23,7 +23,7 @@
 # questions.
 #
 
-ifeq (,$(_MAKEBASE_GMK))
+ifeq ($(_MAKEBASE_GMK), )
   $(error You must include MakeBase.gmk prior to including MakeIO.gmk)
 endif
 
@@ -67,22 +67,22 @@ else # HAS_FILE_FUNCTION = false
   $(eval compress_paths += \
       $(strip $(shell $(CAT) $(TOPDIR)/make/common/support/ListPathsSafely-post-compress.incl)))
 
-  decompress_paths=$(SED) -f $(TOPDIR)/make/common/support/ListPathsSafely-uncompress.sed \
+  decompress_paths = $(SED) -f $(TOPDIR)/make/common/support/ListPathsSafely-uncompress.sed \
       -e 's|X99|\\n|g' \
       -e 's|X98|$(OUTPUTDIR)|g' -e 's|X97|$(TOPDIR)|g' \
       -e 's|X00|X|g'
 
   ListPathsSafely_IfPrintf = \
-      $(if $(word $3,$($(strip $1))), \
+      $(if $(word $3, $($(strip $1))), \
           $(shell $(PRINTF) -- "$(strip $(call EscapeDollar, \
-              $(call compress_paths, $(wordlist $3,$4,$($(strip $1))))))\n" \
+              $(call compress_paths, $(wordlist $3, $4, $($(strip $1))))))\n" \
               | $(decompress_paths) >> $2))
 
   # Param 1 - Name of variable containing paths/arguments to output
   # Param 2 - File to print to
   # Param 3 - Set to true to append to file instead of overwriting
   define ListPathsSafely
-    ifneq (,$$(word 30001,$$($$(strip $1))))
+    ifneq ($$(word 30001, $$($$(strip $1))), )
       $$(error Cannot list safely more than 30000 paths. $1 has $$(words $$($$(strip $1))) paths!)
     endif
     $$(call MakeDir, $$(dir $2))

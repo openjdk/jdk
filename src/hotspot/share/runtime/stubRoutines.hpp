@@ -404,7 +404,7 @@ class StubRoutines: AllStatic {
 
   static address unsafe_setmemory()     { return _unsafe_setmemory; }
 
-  typedef void (*UnsafeSetMemoryStub)(const void* src, size_t count, char byte);
+  typedef void (*UnsafeSetMemoryStub)(void* dst, size_t count, char byte);
   static UnsafeSetMemoryStub UnsafeSetMemory_stub()         { return CAST_TO_FN_PTR(UnsafeSetMemoryStub,  _unsafe_setmemory); }
 
   static address generic_arraycopy()   { return _generic_arraycopy; }

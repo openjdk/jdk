@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,12 +210,16 @@ public class ShutdownNow implements HttpServerAdapters {
             }
             CompletableFuture.allOf(responses.toArray(new CompletableFuture<?>[0])).get();
         } finally {
-            if (client.awaitTermination(Duration.ofMillis(2000))) {
+            if (client.awaitTermination(Duration.ofMillis(2500))) {
                 out.println("Client terminated within expected delay");
+                assertTrue(client.isTerminated());
             } else {
-                throw new AssertionError("client still running");
+                client = null;
+                var error = TRACKER.check(500);
+                if (error != null) throw error;
+                throw new AssertionError("client was still running, but exited after further delay: "
+                        + "timeout should be adjusted");
             }
-            assertTrue(client.isTerminated());
         }
     }
 
@@ -272,12 +276,16 @@ public class ShutdownNow implements HttpServerAdapters {
                 }).thenCompose((c) -> c).get();
             }
        } finally {
-            if (client.awaitTermination(Duration.ofMillis(2000))) {
+            if (client.awaitTermination(Duration.ofMillis(2500))) {
                 out.println("Client terminated within expected delay");
+                assertTrue(client.isTerminated());
             } else {
-                throw new AssertionError("client still running");
+                client = null;
+                var error = TRACKER.check(500);
+                if (error != null) throw error;
+                throw new AssertionError("client was still running, but exited after further delay: "
+                        + "timeout should be adjusted");
             }
-            assertTrue(client.isTerminated());
         }
     }
 

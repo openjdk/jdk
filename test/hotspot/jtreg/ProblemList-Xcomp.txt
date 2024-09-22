@@ -51,3 +51,5 @@ vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 829
 vmTestbase/nsk/stress/thread/thread006.java 8321476 linux-all
 
 gc/arguments/TestNewSizeFlags.java 8299116 macosx-aarch64
+
+runtime/condy/escapeAnalysis/TestEscapeCondy.java 8339694 generic-all
