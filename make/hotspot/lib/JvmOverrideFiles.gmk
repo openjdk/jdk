@@ -86,6 +86,11 @@ else ifeq ($(call isTargetOs, macosx), true)
     # for the clang bug was still needed.
     BUILD_LIBJVM_loopTransform.cpp_CXXFLAGS := $(CXX_O_FLAG_NONE)
 
+    # See JDK-8340341
+    ifeq "$(firstword $(subst ., ,$(CXX_VERSION_NUMBER)))" "16"
+      BUILD_LIBJVM_stackMapTable.cpp_CXXFLAGS := "-O1"
+    endif
+
     # The following files are compiled at various optimization
     # levels due to optimization issues encountered at the
     # default level. The Clang compiler issues a compile
