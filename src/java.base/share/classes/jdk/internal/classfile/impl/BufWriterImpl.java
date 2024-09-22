@@ -117,6 +117,7 @@ public final class BufWriterImpl implements BufWriter {
         elems[offset++] = (byte) x;
     }
 
+    @ForceInline
     @Override
     public void writeU2(int x) {
         reserveSpace(2);
