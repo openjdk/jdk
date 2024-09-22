@@ -555,7 +555,7 @@ VectorNode* VectorNode::make_mask_node(int vopc, Node* n1, Node* n2, uint vlen, 
   }
 }
 
-// Make a vector node for binary operation
+// Make a vector node for binary (or unary) operation
 VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, bool is_mask, bool is_var_shift) {
   // This method should not be called for unimplemented vectors.
   guarantee(vopc > 0, "vopc must be > 0");
@@ -633,6 +633,9 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_URShiftVI: return new URShiftVINode(n1, n2, vt, is_var_shift);
   case Op_URShiftVL: return new URShiftVLNode(n1, n2, vt, is_var_shift);
 
+  case Op_LShiftCntV: return new LShiftCntVNode(n1, vt);
+  case Op_RShiftCntV: return new RShiftCntVNode(n1, vt);
+
   case Op_AndV: return new AndVNode(n1, n2, vt);
   case Op_OrV:  return new OrVNode (n1, n2, vt);
   case Op_XorV: return new XorVNode(n1, n2, vt);
@@ -701,22 +704,27 @@ VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, const Type* opd_t, boo
 }
 
 VectorNode* VectorNode::shift_count(int opc, Node* cnt, uint vlen, BasicType bt) {
-  // Match shift count type with shift vector type.
+  int vopc = VectorNode::shift_count_opcode(opc);
   const TypeVect* vt = TypeVect::make(bt, vlen);
+  return VectorNode::make(vopc, cnt, nullptr, vt);
+}
+
+int VectorNode::shift_count_opcode(int opc) {
+  // Match shift count type with shift vector type.
   switch (opc) {
   case Op_LShiftI:
   case Op_LShiftL:
-    return new LShiftCntVNode(cnt, vt);
+    return Op_LShiftCntV;
   case Op_RShiftI:
   case Op_RShiftL:
   case Op_URShiftB:
   case Op_URShiftS:
   case Op_URShiftI:
   case Op_URShiftL:
-    return new RShiftCntVNode(cnt, vt);
+    return Op_RShiftCntV;
   default:
-    fatal("Missed vector creation for '%s'", NodeClassNames[opc]);
-    return nullptr;
+    fatal("Type '%s' is not supported for shift count", NodeClassNames[opc]);
+    return -1;
   }
 }
 

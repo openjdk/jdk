@@ -362,8 +362,9 @@ VTransformApplyResult VTransformConvI2LNode::apply(const VLoopAnalyzer& vloop_an
 }
 
 float VTransformShiftCountNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  // TODO
-  return 1;
+  int shift_count_opc = VectorNode::shift_count_opcode(_shift_opcode);
+  return Matcher::cost_for_scalar(Op_AndI) +
+         Matcher::cost_for_vector(shift_count_opc, _vlen, _element_bt);
 }
 
 VTransformApplyResult VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop_analyzer,
