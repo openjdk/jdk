@@ -2730,9 +2730,9 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   bind(failure);
 }
 
-void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister flag, Register obj, Register tmp1,
-                                                           Register tmp2, Register tmp3) {
-  assert_different_registers(obj, tmp1, tmp2, tmp3);
+void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister flag, Register obj, Register box,
+                                                           Register tmp1, Register tmp2, Register tmp3) {
+  assert_different_registers(obj, box, tmp1, tmp2, tmp3);
   assert(flag == CCR0, "bad condition register");
 
   // Handle inflated monitor.
@@ -2742,11 +2742,17 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
   // Finish fast lock unsuccessfully. MUST branch to with flag == EQ
   Label slow_path;
 
+  if (UseObjectMonitorTable) {
+    // Clear cache in case fast locking succeeds.
+    li(tmp1, 0);
+    std(tmp1, in_bytes(BasicObjectLock::lock_offset()) + BasicLock::object_monitor_cache_offset_in_bytes(), box);
+  }
+
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
     lbz(tmp1, in_bytes(Klass::misc_flags_offset()), tmp1);
-    testbitdi(flag, R0, tmp1, exact_log2(KlassFlags::_misc_is_value_based_class));
-    bne(flag, slow_path);
+    testbitdi(CCR0, R0, tmp1, exact_log2(KlassFlags::_misc_is_value_based_class));
+    bne(CCR0, slow_path);
   }
 
   const Register mark = tmp1;
@@ -2761,8 +2767,8 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
 
     // Check if lock-stack is full.
     lwz(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
-    cmplwi(flag, top, LockStack::end_offset() - 1);
-    bgt(flag, slow_path);
+    cmplwi(CCR0, top, LockStack::end_offset() - 1);
+    bgt(CCR0, slow_path);
 
     // The underflow check is elided. The recursive check will always fail
     // when the lock stack is empty because of the _bad_oop_sentinel field.
@@ -2770,19 +2776,19 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
     // Check if recursive.
     subi(t, top, oopSize);
     ldx(t, R16_thread, t);
-    cmpd(flag, obj, t);
-    beq(flag, push);
+    cmpd(CCR0, obj, t);
+    beq(CCR0, push);
 
     // Check for monitor (0b10) or locked (0b00).
     ld(mark, oopDesc::mark_offset_in_bytes(), obj);
     andi_(t, mark, markWord::lock_mask_in_place);
-    cmpldi(flag, t, markWord::unlocked_value);
-    bgt(flag, inflated);
-    bne(flag, slow_path);
+    cmpldi(CCR0, t, markWord::unlocked_value);
+    bgt(CCR0, inflated);
+    bne(CCR0, slow_path);
 
     // Not inflated.
 
-    // Try to lock. Transition lock bits 0b00 => 0b01
+    // Try to lock. Transition lock bits 0b01 => 0b00
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a lea");
     atomically_flip_locked_state(/* is_unlock */ false, obj, mark, slow_path, MacroAssembler::MemBarAcq);
 
@@ -2797,38 +2803,84 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
   { // Handle inflated monitor.
     bind(inflated);
 
+    // mark contains the tagged ObjectMonitor*.
+    const uintptr_t monitor_tag = markWord::monitor_value;
+    const Register monitor = mark;
+    const Register owner_addr = tmp2;
+    Label monitor_locked;
+
     if (!UseObjectMonitorTable) {
-      // mark contains the tagged ObjectMonitor*.
-      const Register tagged_monitor = mark;
-      const uintptr_t monitor_tag = markWord::monitor_value;
-      const Register owner_addr = tmp2;
+      // Compute owner address.
+      addi(owner_addr, mark, in_bytes(ObjectMonitor::owner_offset()) - monitor_tag);
+    } else {
+      Label monitor_found;
+      Register cache_addr = tmp2;
+
+      // Load cache address
+      addi(cache_addr, R16_thread, in_bytes(JavaThread::om_cache_oops_offset()));
+
+      const int num_unrolled = 2;
+      for (int i = 0; i < num_unrolled; i++) {
+        ld(tmp3, 0, cache_addr);
+        cmpd(CCR0, tmp3, obj);
+        beq(CCR0, monitor_found);
+        addi(cache_addr, cache_addr, in_bytes(OMCache::oop_to_oop_difference()));
+      }
+
+      Label loop;
+
+      // Search for obj in cache.
+      bind(loop);
+
+      // Check for match.
+      ld(tmp3, 0, cache_addr);
+      cmpd(CCR0, tmp3, obj);
+      beq(CCR0, monitor_found);
+
+      // Search until null encountered, guaranteed _null_sentinel at end.
+      addi(cache_addr, cache_addr, in_bytes(OMCache::oop_to_oop_difference()));
+      cmpdi(CCR1, tmp3, 0);
+      bne(CCR1, loop);
+      // Cache Miss, CCR0.NE set from cmp above
+      b(slow_path);
+
+      bind(monitor_found);
+      ld(monitor, in_bytes(OMCache::oop_to_monitor_difference()), cache_addr);
 
       // Compute owner address.
-      addi(owner_addr, tagged_monitor, in_bytes(ObjectMonitor::owner_offset()) - monitor_tag);
+      addi(owner_addr, monitor, in_bytes(ObjectMonitor::owner_offset()));
+    }
 
-      // CAS owner (null => current thread).
-      cmpxchgd(/*flag=*/flag,
-              /*current_value=*/t,
-              /*compare_value=*/(intptr_t)0,
-              /*exchange_value=*/R16_thread,
-              /*where=*/owner_addr,
-              MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
-              MacroAssembler::cmpxchgx_hint_acquire_lock());
-      beq(flag, locked);
+    // CAS owner (null => current thread).
+    cmpxchgd(/*flag=*/CCR0,
+            /*current_value=*/t,
+            /*compare_value=*/(intptr_t)0,
+            /*exchange_value=*/R16_thread,
+            /*where=*/owner_addr,
+            MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
+            MacroAssembler::cmpxchgx_hint_acquire_lock());
+    beq(CCR0, monitor_locked);
 
-      // Check if recursive.
-      cmpd(flag, t, R16_thread);
-      bne(flag, slow_path);
+    // Check if recursive.
+    cmpd(CCR0, t, R16_thread);
+    bne(CCR0, slow_path);
 
-      // Recursive.
+    // Recursive.
+    if (!UseObjectMonitorTable) {
+      assert_different_registers(tmp1, owner_addr);
       ld(tmp1, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
       addi(tmp1, tmp1, 1);
       std(tmp1, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
     } else {
-      // OMCache lookup not supported yet. Take the slowpath.
-      // Set flag to NE
-      crxor(flag, Assembler::equal, flag, Assembler::equal);
-      b(slow_path);
+      assert_different_registers(tmp2, monitor);
+      ld(tmp2, in_bytes(ObjectMonitor::recursions_offset()), monitor);
+      addi(tmp2, tmp2, 1);
+      std(tmp2, in_bytes(ObjectMonitor::recursions_offset()), monitor);
+    }
+
+    bind(monitor_locked);
+    if (UseObjectMonitorTable) {
+      std(monitor, BasicLock::object_monitor_cache_offset_in_bytes(), box);
     }
   }
 
@@ -2838,21 +2890,21 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
 #ifdef ASSERT
   // Check that locked label is reached with flag == EQ.
   Label flag_correct;
-  beq(flag, flag_correct);
+  beq(CCR0, flag_correct);
   stop("Fast Lock Flag != EQ");
 #endif
   bind(slow_path);
 #ifdef ASSERT
   // Check that slow_path label is reached with flag == NE.
-  bne(flag, flag_correct);
+  bne(CCR0, flag_correct);
   stop("Fast Lock Flag != NE");
   bind(flag_correct);
 #endif
   // C2 uses the value of flag (NE vs EQ) to determine the continuation.
 }
 
-void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister flag, Register obj, Register tmp1,
-                                                             Register tmp2, Register tmp3) {
+void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister flag, Register obj, Register box,
+                                                             Register tmp1, Register tmp2, Register tmp3) {
   assert_different_registers(obj, tmp1, tmp2, tmp3);
   assert(flag == CCR0, "bad condition register");
 
@@ -2874,9 +2926,9 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     lwz(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
     subi(top, top, oopSize);
     ldx(t, R16_thread, top);
-    cmpd(flag, obj, t);
+    cmpd(CCR0, obj, t);
     // Top of lock stack was not obj. Must be monitor.
-    bne(flag, inflated_load_monitor);
+    bne(CCR0, inflated_load_monitor);
 
     // Pop lock-stack.
     DEBUG_ONLY(li(t, 0);)
@@ -2889,8 +2941,8 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     // Check if recursive.
     subi(t, top, oopSize);
     ldx(t, R16_thread, t);
-    cmpd(flag, obj, t);
-    beq(flag, unlocked);
+    cmpd(CCR0, obj, t);
+    beq(CCR0, unlocked);
 
     // Not recursive.
 
@@ -2941,62 +2993,62 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     cmplwi(CCR0, top, in_bytes(JavaThread::lock_stack_base_offset()));
     blt(CCR0, check_done);
     ldx(t, R16_thread, top);
-    cmpd(flag, obj, t);
-    bne(flag, inflated);
+    cmpd(CCR0, obj, t);
+    bne(CCR0, inflated);
     stop("Fast Unlock lock on stack");
     bind(check_done);
 #endif
 
-    if (!UseObjectMonitorTable) {
-      // mark contains the tagged ObjectMonitor*.
-      const Register monitor = mark;
-      const uintptr_t monitor_tag = markWord::monitor_value;
+    // mark contains the tagged ObjectMonitor*.
+    const Register monitor = mark;
+    const uintptr_t monitor_tag = markWord::monitor_value;
 
+    if (!UseObjectMonitorTable) {
       // Untag the monitor.
       subi(monitor, mark, monitor_tag);
-
-      const Register recursions = tmp2;
-      Label not_recursive;
-
-      // Check if recursive.
-      ld(recursions, in_bytes(ObjectMonitor::recursions_offset()), monitor);
-      addic_(recursions, recursions, -1);
-      blt(CCR0, not_recursive);
-
-      // Recursive unlock.
-      std(recursions, in_bytes(ObjectMonitor::recursions_offset()), monitor);
-      crorc(CCR0, Assembler::equal, CCR0, Assembler::equal);
-      b(unlocked);
-
-      bind(not_recursive);
-
-      Label release_;
-      const Register t2 = tmp2;
-
-      // Check if the entry lists are empty.
-      ld(t, in_bytes(ObjectMonitor::EntryList_offset()), monitor);
-      ld(t2, in_bytes(ObjectMonitor::cxq_offset()), monitor);
-      orr(t, t, t2);
-      cmpdi(flag, t, 0);
-      beq(flag, release_);
-
-      // The owner may be anonymous and we removed the last obj entry in
-      // the lock-stack. This loses the information about the owner.
-      // Write the thread to the owner field so the runtime knows the owner.
-      std(R16_thread, in_bytes(ObjectMonitor::owner_offset()), monitor);
-      b(slow_path);
-
-      bind(release_);
-      // Set owner to null.
-      release();
-      // t contains 0
-      std(t, in_bytes(ObjectMonitor::owner_offset()), monitor);
     } else {
-      // OMCache lookup not supported yet. Take the slowpath.
-      // Set flag to NE
-      crxor(flag, Assembler::equal, flag, Assembler::equal);
-      b(slow_path);
+      ld(monitor, BasicLock::object_monitor_cache_offset_in_bytes(), box);
+      // null check with Flags == NE, no valid pointer below alignof(ObjectMonitor*)
+      cmpldi(CCR0, monitor, checked_cast<uint8_t>(alignof(ObjectMonitor*)));
+      blt(CCR0, slow_path);
     }
+
+    const Register recursions = tmp2;
+    Label not_recursive;
+
+    // Check if recursive.
+    ld(recursions, in_bytes(ObjectMonitor::recursions_offset()), monitor);
+    addic_(recursions, recursions, -1);
+    blt(CCR0, not_recursive);
+
+    // Recursive unlock.
+    std(recursions, in_bytes(ObjectMonitor::recursions_offset()), monitor);
+    crorc(CCR0, Assembler::equal, CCR0, Assembler::equal);
+    b(unlocked);
+
+    bind(not_recursive);
+
+    Label release_;
+    const Register t2 = tmp2;
+
+    // Check if the entry lists are empty.
+    ld(t, in_bytes(ObjectMonitor::EntryList_offset()), monitor);
+    ld(t2, in_bytes(ObjectMonitor::cxq_offset()), monitor);
+    orr(t, t, t2);
+    cmpdi(CCR0, t, 0);
+    beq(CCR0, release_);
+
+    // The owner may be anonymous and we removed the last obj entry in
+    // the lock-stack. This loses the information about the owner.
+    // Write the thread to the owner field so the runtime knows the owner.
+    std(R16_thread, in_bytes(ObjectMonitor::owner_offset()), monitor);
+    b(slow_path);
+
+    bind(release_);
+    // Set owner to null.
+    release();
+    // t contains 0
+    std(t, in_bytes(ObjectMonitor::owner_offset()), monitor);
   }
 
   bind(unlocked);
@@ -3005,13 +3057,13 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
 #ifdef ASSERT
   // Check that unlocked label is reached with flag == EQ.
   Label flag_correct;
-  beq(flag, flag_correct);
+  beq(CCR0, flag_correct);
   stop("Fast Lock Flag != EQ");
 #endif
   bind(slow_path);
 #ifdef ASSERT
   // Check that slow_path label is reached with flag == NE.
-  bne(flag, flag_correct);
+  bne(CCR0, flag_correct);
   stop("Fast Lock Flag != NE");
   bind(flag_correct);
 #endif
@@ -4640,14 +4692,20 @@ void MacroAssembler::atomically_flip_locked_state(bool is_unlock, Register obj, 
 //
 //  - obj: the object to be locked
 //  - t1, t2: temporary register
-void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Label& slow) {
+void MacroAssembler::lightweight_lock(Register box, Register obj, Register t1, Register t2, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, t1, t2);
+  assert_different_registers(box, obj, t1, t2);
 
   Label push;
   const Register top = t1;
   const Register mark = t2;
   const Register t = R0;
+
+  if (UseObjectMonitorTable) {
+    // Clear cache in case fast locking succeeds.
+    li(t, 0);
+    std(t, in_bytes(BasicObjectLock::lock_offset()) + BasicLock::object_monitor_cache_offset_in_bytes(), box);
+  }
 
   // Check if the lock-stack is full.
   lwz(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
@@ -4669,7 +4727,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, La
   andi_(t, t, markWord::lock_mask_in_place);
   bne(CCR0, slow);
 
-  // Try to lock. Transition lock bits 0b00 => 0b01
+  // Try to lock. Transition lock bits 0b01 => 0b00
   atomically_flip_locked_state(/* is_unlock */ false, obj, mark, slow, MacroAssembler::MemBarAcq);
 
   bind(push);

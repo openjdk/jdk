@@ -32,7 +32,7 @@ import java.security.cert.*;
 import java.security.spec.PSSParameterSpec;
 import java.util.*;
 
-import sun.security.provider.SHAKE256;
+import sun.security.provider.SHA3.SHAKE256;
 import sun.security.timestamp.TimestampToken;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;

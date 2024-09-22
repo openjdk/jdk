@@ -479,8 +479,8 @@ private:
 
  public:
   // Constructor
-  JavaThread(MEMFLAGS flags = mtThread);   // delegating constructor
-  JavaThread(ThreadFunction entry_point, size_t stack_size = 0, MEMFLAGS flags = mtThread);
+  JavaThread(MemTag mem_tag = mtThread);   // delegating constructor
+  JavaThread(ThreadFunction entry_point, size_t stack_size = 0, MemTag mem_tag = mtThread);
   ~JavaThread();
 
   // Factory method to create a new JavaThread whose attach state is "is attaching"

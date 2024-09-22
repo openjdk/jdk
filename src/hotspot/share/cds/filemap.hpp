@@ -25,6 +25,7 @@
 #ifndef SHARE_CDS_FILEMAP_HPP
 #define SHARE_CDS_FILEMAP_HPP
 
+#include "cds/archiveUtils.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "include/cds.h"
 #include "logging/logLevel.hpp"
@@ -225,8 +226,7 @@ private:
   bool   _use_optimized_module_handling;// No module-relation VM options were specified, so we can skip
                                         // some expensive operations.
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
-  size_t _heap_roots_offset;            // Offset of the HeapShared::roots() object, from the bottom
-                                        // of the archived heap objects, in bytes.
+  HeapRootSegments _heap_root_segments; // Heap root segments info
   size_t _heap_oopmap_start_pos;        // The first bit in the oopmap corresponds to this position in the heap.
   size_t _heap_ptrmap_start_pos;        // The first bit in the ptrmap corresponds to this position in the heap.
   size_t _rw_ptrmap_start_pos;          // The first bit in the ptrmap corresponds to this position in the rw region
@@ -270,7 +270,7 @@ public:
   bool has_non_jar_in_classpath()          const { return _has_non_jar_in_classpath; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
-  size_t heap_roots_offset()               const { return _heap_roots_offset; }
+  HeapRootSegments heap_root_segments()    const { return _heap_root_segments; }
   size_t heap_oopmap_start_pos()           const { return _heap_oopmap_start_pos; }
   size_t heap_ptrmap_start_pos()           const { return _heap_ptrmap_start_pos; }
   size_t rw_ptrmap_start_pos()             const { return _rw_ptrmap_start_pos; }
@@ -285,7 +285,7 @@ public:
   void set_cloned_vtables(char* p)               { set_as_offset(p, &_cloned_vtables_offset); }
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
-  void set_heap_roots_offset(size_t n)           { _heap_roots_offset = n; }
+  void set_heap_root_segments(HeapRootSegments segments) { _heap_root_segments = segments; }
   void set_heap_oopmap_start_pos(size_t n)       { _heap_oopmap_start_pos = n; }
   void set_heap_ptrmap_start_pos(size_t n)       { _heap_ptrmap_start_pos = n; }
   void set_rw_ptrmap_start_pos(size_t n)         { _rw_ptrmap_start_pos = n; }
@@ -385,7 +385,7 @@ public:
   address narrow_oop_base()    const { return header()->narrow_oop_base(); }
   int     narrow_oop_shift()   const { return header()->narrow_oop_shift(); }
   uintx   max_heap_size()      const { return header()->max_heap_size(); }
-  size_t  heap_roots_offset()  const { return header()->heap_roots_offset(); }
+  HeapRootSegments heap_root_segments() const { return header()->heap_root_segments(); }
   size_t  core_region_alignment() const { return header()->core_region_alignment(); }
   size_t  heap_oopmap_start_pos() const { return header()->heap_oopmap_start_pos(); }
   size_t  heap_ptrmap_start_pos() const { return header()->heap_ptrmap_start_pos(); }
