@@ -458,6 +458,11 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
   return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
+float VTransformBoolVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
+  // TODO
+  return 1;
+}
+
 VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
                                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   BoolNode* first = nodes().at(0)->as_Bool();
