@@ -1216,14 +1216,21 @@ public class ZipFile implements ZipConstants, Closeable {
         //
         private int[] entries;                  // array of hashed cen entry
 
-        // Checks the entry at offset pos in the CEN, calculates the Entry values as per above,
-        // then returns the length of the entry name.
-        private int checkAndAddEntry(int pos, int index)
+        // Checks the entry at offset state.pos in the CEN, calculates the Entry values as per above.
+        // Returns false if the last entry has been processed
+        private boolean processNextCENEntry(CENState state)
             throws IOException
         {
+            int pos = state.pos;
+            if (pos > state.limit) {
+                return false;
+            }
+            int index = state.idx;
+            int[] entries = this.entries;
             if (index >= entries.length) {
                 zerror(INDEX_OVERFLOW);
             }
+
             byte[] cen = this.cen;
             if (CENSIG(cen, pos) != CENSIG) {
                 zerror("invalid CEN header (bad signature)");
@@ -1236,7 +1243,6 @@ public class ZipFile implements ZipConstants, Closeable {
             if (method != STORED && method != DEFLATED) {
                 zerror("invalid CEN header (bad compression method: " + method + ")");
             }
-            int entryPos = pos + CENHDR;
             int nlen = CENNAM(cen, pos);
             int elen = CENEXT(cen, pos);
             int clen = CENCOM(cen, pos);
@@ -1250,7 +1256,7 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             if (elen > 0 && !DISABLE_ZIP64_EXTRA_VALIDATION) {
-                checkExtraFields(pos, entryPos + nlen, elen);
+                checkExtraFields(pos, pos + CENHDR + nlen, elen);
             } else if (elen == 0 && (CENSIZ(cen, pos) == ZIP64_MAGICVAL
                     || CENLEN(cen, pos) == ZIP64_MAGICVAL
                     || CENOFF(cen, pos) == ZIP64_MAGICVAL
@@ -1260,8 +1266,9 @@ public class ZipFile implements ZipConstants, Closeable {
 
             try {
                 ZipCoder zcp = zipCoderForPos(pos);
-                int hash = zcp.checkedHash(cen, entryPos, nlen);
+                int hash = zcp.checkedHash(cen, pos + CENHDR, nlen);
                 int hsh = (hash & 0x7fffffff) % tablelen;
+                int[] table = this.table;
                 int next = table[hsh];
                 table[hsh] = index + 1; // Store index + 1, reserving 0 for end-of-chain
                 // Record the CEN offset and the name hash in our hash cell.
@@ -1273,13 +1280,41 @@ public class ZipFile implements ZipConstants, Closeable {
                 // If the bytes representing the comment cannot be converted to
                 // a String via zcp.toString, an Exception will be thrown
                 if (clen > 0) {
-                    int start = entryPos + nlen + elen;
-                    zcp.toString(cen, start, clen);
+                    zcp.toString(cen, (int)headerSize - clen, clen);
                 }
             } catch (Exception e) {
                 zerror("invalid CEN header (bad entry name or comment)");
             }
-            return nlen;
+
+            // Adds name to metanames.
+            if (isMetaName(cen, pos, nlen)) {
+                // nlen is at least META_INF_LENGTH
+                if (isManifestName(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN)) {
+                    manifestPos = pos;
+                    manifestNum++;
+                } else {
+                    if (isSignatureRelated(pos + CENHDR, nlen)) {
+                        if (state.signatureNames == null) {
+                            state.signatureNames = new ArrayList<>(4);
+                        }
+                        state.signatureNames.add(pos);
+                    }
+
+                    // If this is a versioned entry, parse the version
+                    // and store it for later. This optimizes lookup
+                    // performance in multi-release jar files
+                    int version = getMetaVersion(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN);
+                    if (version > 0) {
+                        if (state.metaVersionsSet == null) {
+                            state.metaVersionsSet = new TreeSet<>();
+                        }
+                        state.metaVersionsSet.add(version);
+                    }
+                }
+            }
+            state.pos += (int)headerSize;
+            state.idx += 3;
+            return true;
         }
 
         /**
@@ -1713,6 +1748,15 @@ public class ZipFile implements ZipConstants, Closeable {
             throw new ZipException("zip END header not found");
         }
 
+        private static class CENState {
+            int pos;
+            int idx;
+            final int limit;
+            List<Integer> signatureNames;
+            Set<Integer> metaVersionsSet;
+            CENState(int limit) { this.limit = limit; }
+        }
+
         // Reads ZIP file central directory.
         private void initCEN(int knownTotal) throws IOException {
             // Prefer locals for better performance during startup
@@ -1758,54 +1802,18 @@ public class ZipFile implements ZipConstants, Closeable {
             int[] table = new int[tablelen];
             this.table = table;
 
-            // list for all meta entries
-            ArrayList<Integer> signatureNames = null;
-            // Set of all version numbers seen in META-INF/versions/
-            Set<Integer> metaVersionsSet = null;
-
             // Iterate through the entries in the central directory
-            int idx = 0; // Index into the entries array
-            int pos = 0;
-            int limit = cen.length - ENDHDR - CENHDR;
-            manifestNum = 0;
+            var state = new CENState(cen.length - ENDHDR - CENHDR); // state holder
             try {
-                while (pos <= limit) {
-                    // Checks the entry and adds values to entries[idx ... idx+2]
-                    int nlen = checkAndAddEntry(pos, idx);
-                    idx += 3;
-
-                    // Adds name to metanames.
-                    if (isMetaName(cen, pos, nlen)) {
-                        // nlen is at least META_INF_LENGTH
-                        if (isManifestName(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN)) {
-                            manifestPos = pos;
-                            manifestNum++;
-                        } else {
-                            if (isSignatureRelated(pos + CENHDR, nlen)) {
-                                if (signatureNames == null)
-                                    signatureNames = new ArrayList<>(4);
-                                signatureNames.add(pos);
-                            }
-
-                            // If this is a versioned entry, parse the version
-                            // and store it for later. This optimizes lookup
-                            // performance in multi-release jar files
-                            int version = getMetaVersion(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN);
-                            if (version > 0) {
-                                if (metaVersionsSet == null)
-                                    metaVersionsSet = new TreeSet<>();
-                                metaVersionsSet.add(version);
-                            }
-                        }
-                    }
-                    // skip to the start of the next entry
-                    pos = nextEntryPos(pos, nlen);
-                }
+                // Checks the entry and adds values to entries[idx ... idx+2], state.pos will contain position of next entry
+                while (processNextCENEntry(state)) {}
             } catch (ZipException ze) {
                 if (ze.getMessage().equals(INDEX_OVERFLOW)) {
                     // This will only happen if the ZIP file has an incorrect
                     // ENDTOT field, which usually means it contains more than
                     // 65535 entries.
+                    manifestNum = 0;
+                    manifestPos = -1;
                     initCEN(countCENHeaders(cen, cen.length - ENDHDR));
                     return;
                 }
@@ -1813,31 +1821,28 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             // Adjust the total entries
-            this.total = idx / 3;
+            this.total = state.idx / 3;
 
-            if (signatureNames != null) {
-                int len = signatureNames.size();
-                signatureMetaNames = new int[len];
-                for (int j = 0; j < len; j++) {
-                    signatureMetaNames[j] = signatureNames.get(j);
+            if (state.signatureNames != null) {
+                int signatures = state.signatureNames.size();
+                signatureMetaNames = new int[signatures];
+                for (int j = 0; j < signatures; j++) {
+                    signatureMetaNames[j] = state.signatureNames.get(j);
                 }
             }
-            if (metaVersionsSet != null) {
-                metaVersions = new int[metaVersionsSet.size()];
+            if (state.metaVersionsSet != null) {
+                int size = state.metaVersionsSet.size();
+                metaVersions = new int[size];
                 int c = 0;
-                for (Integer version : metaVersionsSet) {
+                for (Integer version : state.metaVersionsSet) {
                     metaVersions[c++] = version;
                 }
             } else {
                 metaVersions = EMPTY_META_VERSIONS;
             }
-            if (pos + ENDHDR != cen.length) {
+            if (state.pos + ENDHDR != cen.length) {
                 zerror("invalid CEN header (bad header size)");
             }
-        }
-
-        private int nextEntryPos(int pos, int nlen) {
-            return pos + CENHDR + nlen + CENCOM(cen, pos) + CENEXT(cen, pos);
         }
 
         private static void zerror(String msg) throws ZipException {
