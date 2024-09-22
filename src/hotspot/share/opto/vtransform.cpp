@@ -48,7 +48,9 @@ void VTransformGraph::optimize(VTransform& vtransform) {
       VTransformNode* vtn = _vtnodes.at(i);
       if (!vtn->is_alive()) { continue; }
       progress |= vtn->optimize(_vloop_analyzer, vtransform);
-      if (vtn->outs() == 0 && vtn->isa_OutputScalar() == nullptr) {
+      if (vtn->outs() == 0 &&
+          !(vtn->isa_OutputScalar() != nullptr ||
+            vtn->is_load_or_store_in_loop())) {
         vtn->mark_dead();
         progress = true;
       }
@@ -186,7 +188,7 @@ void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
     // Is load or store?
     if (vtn->is_load_or_store_in_loop()) {
         in_loop.set(vtn->_idx);
-        break;
+        continue;
     }
     for (int i = 0; i < vtn->outs(); i++) {
       VTransformNode* use = vtn->out(i);
@@ -336,9 +338,7 @@ void VTransformLoopPhiNode::apply_cleanup(const VLoopAnalyzer& vloop_analyzer,
 }
 
 float VTransformReplicateNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  // TODO
-  assert(false, "we should never have a replicate in a loop");
-  return 1;
+  return Matcher::cost_for_vector(Op_Replicate, _vlen, _element_type->basic_type());
 }
 
 VTransformApplyResult VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer,
