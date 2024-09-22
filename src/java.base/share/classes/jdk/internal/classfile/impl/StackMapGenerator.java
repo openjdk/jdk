@@ -292,18 +292,8 @@ public final class StackMapGenerator {
     private void generate() {
         exMin = bytecode.length();
         exMax = -1;
-        for (var exhandler : handlers) {
-            int start_pc = labelContext.labelToBci(exhandler.tryStart());
-            int end_pc = labelContext.labelToBci(exhandler.tryEnd());
-            int handler_pc = labelContext.labelToBci(exhandler.handler());
-            if (start_pc >= 0 && end_pc >= 0 && end_pc > start_pc && handler_pc >= 0) {
-                if (start_pc < exMin) exMin = start_pc;
-                if (end_pc > exMax) exMax = end_pc;
-                var catchType = exhandler.catchType();
-                rawHandlers.add(new RawExceptionCatch(start_pc, end_pc, handler_pc,
-                        catchType.isPresent() ? cpIndexToType(catchType.get().index(), cp)
-                                              : Type.THROWABLE_TYPE));
-            }
+        if (!handlers.isEmpty()) {
+            generateHandlers();
         }
         BitSet frameOffsets = detectFrameOffsets();
         int framesCount = frameOffsets.cardinality();
@@ -334,6 +324,22 @@ public final class StackMapGenerator {
                 arr[end] = (byte) ATHROW;
                 //patch handlers
                 removeRangeFromExcTable(frame.offset, end + 1);
+            }
+        }
+    }
+
+    private void generateHandlers() {
+        for (var exhandler : handlers) {
+            int start_pc = labelContext.labelToBci(exhandler.tryStart());
+            int end_pc = labelContext.labelToBci(exhandler.tryEnd());
+            int handler_pc = labelContext.labelToBci(exhandler.handler());
+            if (start_pc >= 0 && end_pc >= 0 && end_pc > start_pc && handler_pc >= 0) {
+                if (start_pc < exMin) exMin = start_pc;
+                if (end_pc > exMax) exMax = end_pc;
+                var catchType = exhandler.catchType();
+                rawHandlers.add(new RawExceptionCatch(start_pc, end_pc, handler_pc,
+                        catchType.isPresent() ? cpIndexToType(catchType.get().index(), cp)
+                                              : Type.THROWABLE_TYPE));
             }
         }
     }
@@ -430,13 +436,17 @@ public final class StackMapGenerator {
                     currentFrame.copyFrom(nextFrame);
                     nextFrame.dirty = false;
                 } else if (thisOffset < bcs.bci()) {
-                    throw new ClassFormatError(String.format("Bad stack map offset %d", thisOffset));
+                    throw classFormatError(thisOffset);
                 }
             } else if (ncf) {
                 throw generatorError("Expecting a stack map frame");
             }
             ncf = processBlock(bcs);
         }
+    }
+
+    private static ClassFormatError classFormatError(int thisOffset) {
+        throw new ClassFormatError(String.format("Bad stack map offset %d", thisOffset));
     }
 
     private boolean processBlock(RawBytecodeHelper bcs) {
@@ -657,7 +667,9 @@ public final class StackMapGenerator {
     }
 
     private void processLdc(int index) {
-        switch (cp.entryByIndex(index).tag()) {
+        var e = cp.entryByIndex(index);
+        byte tag = e.tag();
+        switch (tag) {
             case TAG_UTF8 ->
                 currentFrame.pushStack(Type.OBJECT_TYPE);
             case TAG_STRING ->
@@ -677,9 +689,9 @@ public final class StackMapGenerator {
             case TAG_METHODTYPE ->
                 currentFrame.pushStack(Type.METHOD_TYPE);
             case TAG_CONSTANTDYNAMIC ->
-                currentFrame.pushStack(cp.entryByIndex(index, ConstantDynamicEntry.class).asSymbol().constantType());
+                currentFrame.pushStack(ClassReaderImpl.checkType(e, index, ConstantDynamicEntry.class).asSymbol().constantType());
             default ->
-                throw generatorError("CP entry #%d %s is not loadable constant".formatted(index, cp.entryByIndex(index).tag()));
+                throw generatorError("CP entry #%d %s is not loadable constant".formatted(index, tag));
         }
     }
 
@@ -728,17 +740,13 @@ public final class StackMapGenerator {
             case GETSTATIC ->
                 currentFrame.pushStack(desc);
             case PUTSTATIC -> {
-                currentFrame.popStack();
-                if (Util.isDoubleSlot(desc)) currentFrame.popStack();
+                currentFrame.decStack(Util.isDoubleSlot(desc) ? 2 : 1);
             }
             case GETFIELD -> {
-                currentFrame.popStack();
-                currentFrame.pushStack(desc);
+                currentFrame.dec1PushStack(desc);
             }
             case PUTFIELD -> {
-                currentFrame.popStack();
-                currentFrame.popStack();
-                if (Util.isDoubleSlot(desc)) currentFrame.popStack();
+                currentFrame.decStack(Util.isDoubleSlot(desc) ? 3 : 2);
             }
             default -> throw new AssertionError("Should not reach here");
         }
@@ -750,12 +758,11 @@ public final class StackMapGenerator {
         var nameAndType = opcode == INVOKEDYNAMIC
                 ? cp.entryByIndex(index, InvokeDynamicEntry.class).nameAndType()
                 : cp.entryByIndex(index, MemberRefEntry.class).nameAndType();
-        String invokeMethodName = nameAndType.name().stringValue();
         var mDesc = Util.methodTypeSymbol(nameAndType);
         int bci = bcs.bci();
         currentFrame.decStack(Util.parameterSlots(mDesc));
         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
-            if (OBJECT_INITIALIZER_NAME.equals(invokeMethodName)) {
+            if (nameAndType.name().equalsString(OBJECT_INITIALIZER_NAME)) {
                 Type type = currentFrame.popStack();
                 if (type == Type.UNITIALIZED_THIS_TYPE) {
                     if (inTryBlock) {
@@ -764,9 +771,7 @@ public final class StackMapGenerator {
                     currentFrame.initializeObject(type, thisType);
                     thisUninit = true;
                 } else if (type.tag == ITEM_UNINITIALIZED) {
-                    int new_offset = type.bci;
-                    int new_class_index = bcs.getU2(new_offset + 1);
-                    Type new_class_type = cpIndexToType(new_class_index, cp);
+                    Type new_class_type = cpIndexToType(bcs.getU2(type.bci + 1), cp);
                     if (inTryBlock) {
                         processExceptionHandlerTargets(bci, thisUninit);
                     }
@@ -1029,6 +1034,16 @@ public final class StackMapGenerator {
             if (desc == CD_double) return pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             return desc == CD_void ? this
                     : pushStack(
+                    desc instanceof PrimitiveClassDescImpl
+                            ? (desc == CD_float ? Type.FLOAT_TYPE : Type.INTEGER_TYPE)
+                            : Type.referenceType(desc));
+        }
+
+        Frame dec1PushStack(ClassDesc desc) {
+            if (desc == CD_long)   return decStack1PushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
+            if (desc == CD_double) return decStack1PushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+            return desc == CD_void ? this
+                    : decStack1PushStack(
                     desc instanceof PrimitiveClassDescImpl
                             ? (desc == CD_float ? Type.FLOAT_TYPE : Type.INTEGER_TYPE)
                             : Type.referenceType(desc));
