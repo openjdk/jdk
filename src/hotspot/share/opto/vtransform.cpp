@@ -384,8 +384,7 @@ VTransformApplyResult VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop
 }
 
 float VTransformPopulateIndexNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  // TODO
-  return 1;
+  return Matcher::cost_for_vector(Op_PopulateIndex, _vlen, _element_bt);;
 }
 
 VTransformApplyResult VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vloop_analyzer,
