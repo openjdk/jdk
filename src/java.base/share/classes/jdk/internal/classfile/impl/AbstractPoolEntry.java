@@ -57,6 +57,8 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.Stable;
 
+import static java.lang.classfile.ClassFile.*;
+
 public abstract sealed class AbstractPoolEntry {
     /*
     Invariant: a {CP,BSM} entry for pool P refer only to {CP,BSM} entries
@@ -96,12 +98,10 @@ public abstract sealed class AbstractPoolEntry {
     }
 
     final ConstantPool constantPool;
-    public final byte tag;
     private final int index;
     private final int hash;
 
-    private AbstractPoolEntry(ConstantPool constantPool, int tag, int index, int hash) {
-        this.tag = (byte) tag;
+    private AbstractPoolEntry(ConstantPool constantPool, int index, int hash) {
         this.index = index;
         this.hash = hash;
         this.constantPool = constantPool;
@@ -116,12 +116,10 @@ public abstract sealed class AbstractPoolEntry {
         return hash;
     }
 
-    public byte tag() {
-        return tag;
-    }
+    public abstract byte tag();
 
     public int width() {
-        return (tag == ClassFile.TAG_LONG || tag == ClassFile.TAG_DOUBLE) ? 2 : 1;
+        return 1;
     }
 
     abstract void writeTo(BufWriterImpl buf);
@@ -159,7 +157,7 @@ public abstract sealed class AbstractPoolEntry {
 
         Utf8EntryImpl(ConstantPool cpm, int index,
                           byte[] rawBytes, int offset, int rawLen) {
-            super(cpm, ClassFile.TAG_UTF8, index, 0);
+            super(cpm, index, 0);
             this.rawBytes = rawBytes;
             this.offset = offset;
             this.rawLen = rawLen;
@@ -171,7 +169,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, String s, int hash) {
-            super(cpm, ClassFile.TAG_UTF8, index, 0);
+            super(cpm, index, 0);
             this.rawBytes = null;
             this.offset = 0;
             this.rawLen = 0;
@@ -182,7 +180,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, Utf8EntryImpl u) {
-            super(cpm, ClassFile.TAG_UTF8, index, 0);
+            super(cpm, index, 0);
             this.rawBytes = u.rawBytes;
             this.offset = u.offset;
             this.rawLen = u.rawLen;
@@ -192,6 +190,11 @@ public abstract sealed class AbstractPoolEntry {
             this.chars = u.chars;
             this.stringValue = u.stringValue;
             this.typeSym = u.typeSym;
+        }
+
+        @Override
+        public byte tag() {
+            return TAG_UTF8;
         }
 
         /**
@@ -417,7 +420,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(tag);
+            pool.writeU1(TAG_UTF8);
             if (rawBytes != null) {
                 pool.writeU2(rawLen);
                 pool.writeBytes(rawBytes, offset, rawLen);
@@ -449,7 +452,7 @@ public abstract sealed class AbstractPoolEntry {
         protected final T ref1;
 
         public AbstractRefEntry(ConstantPool constantPool, int tag, int index, T ref1) {
-            super(constantPool, tag, index, hash1(tag, ref1.index()));
+            super(constantPool, index, hash1(tag, ref1.index()));
             this.ref1 = ref1;
         }
 
@@ -458,7 +461,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(tag);
+            pool.writeU1(tag());
             pool.writeU2(ref1.index());
         }
 
@@ -474,7 +477,7 @@ public abstract sealed class AbstractPoolEntry {
         protected final U ref2;
 
         public AbstractRefsEntry(ConstantPool constantPool, int tag, int index, T ref1, U ref2) {
-            super(constantPool, tag, index, hash2(tag, ref1.index(), ref2.index()));
+            super(constantPool, index, hash2(tag, ref1.index(), ref2.index()));
             this.ref1 = ref1;
             this.ref2 = ref2;
         }
@@ -488,7 +491,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(tag);
+            pool.writeU1(tag());
             pool.writeU2(ref1.index());
             pool.writeU2(ref2.index());
         }
@@ -519,7 +522,12 @@ public abstract sealed class AbstractPoolEntry {
         public ClassDesc sym = null;
 
         ClassEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name) {
-            super(cpm, ClassFile.TAG_CLASS, index, name);
+            super(cpm, TAG_CLASS, index, name);
+        }
+
+        @Override
+        public byte tag() {
+            return TAG_CLASS;
         }
 
         @Override
@@ -557,7 +565,12 @@ public abstract sealed class AbstractPoolEntry {
     public static final class PackageEntryImpl extends AbstractNamedEntry implements PackageEntry {
 
         PackageEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name) {
-            super(cpm, ClassFile.TAG_PACKAGE, index, name);
+            super(cpm, TAG_PACKAGE, index, name);
+        }
+
+        @Override
+        public byte tag() {
+            return TAG_PACKAGE;
         }
 
         @Override
@@ -583,7 +596,12 @@ public abstract sealed class AbstractPoolEntry {
     public static final class ModuleEntryImpl extends AbstractNamedEntry implements ModuleEntry {
 
         ModuleEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name) {
-            super(cpm, ClassFile.TAG_MODULE, index, name);
+            super(cpm, TAG_MODULE, index, name);
+        }
+
+        @Override
+        public byte tag() {
+            return TAG_MODULE;
         }
 
         @Override
@@ -610,7 +628,12 @@ public abstract sealed class AbstractPoolEntry {
             implements NameAndTypeEntry {
 
         NameAndTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name, Utf8EntryImpl type) {
-            super(cpm, ClassFile.TAG_NAMEANDTYPE, index, name, type);
+            super(cpm, TAG_NAMEANDTYPE, index, name, type);
+        }
+
+        @Override
+        public byte tag() {
+            return TAG_NAMEANDTYPE;
         }
 
         @Override
@@ -670,7 +693,7 @@ public abstract sealed class AbstractPoolEntry {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o instanceof AbstractMemberRefEntry m) {
-                return tag == m.tag()
+                return tag() == m.tag()
                 && owner().equals(m.owner())
                 && nameAndType().equals(m.nameAndType());
             }
@@ -682,7 +705,12 @@ public abstract sealed class AbstractPoolEntry {
 
         FieldRefEntryImpl(ConstantPool cpm, int index,
                               ClassEntryImpl owner, NameAndTypeEntryImpl nameAndType) {
-            super(cpm, ClassFile.TAG_FIELDREF, index, owner, nameAndType);
+            super(cpm, TAG_FIELDREF, index, owner, nameAndType);
+        }
+
+        @Override
+        public byte tag() {
+            return TAG_FIELDREF;
         }
 
         @Override
@@ -699,6 +727,11 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
+        public byte tag() {
+            return TAG_METHODREF;
+        }
+
+        @Override
         public MethodRefEntry clone(ConstantPoolBuilder cp) {
             return cp.canWriteDirect(constantPool) ? this : cp.methodRefEntry(ref1, ref2);
         }
@@ -709,6 +742,11 @@ public abstract sealed class AbstractPoolEntry {
         InterfaceMethodRefEntryImpl(ConstantPool cpm, int index, ClassEntryImpl owner,
                                         NameAndTypeEntryImpl nameAndType) {
             super(cpm, ClassFile.TAG_INTERFACEMETHODREF, index, owner, nameAndType);
+        }
+
+        @Override
+        public byte tag() {
+            return TAG_INTERFACEMETHODREF;
         }
 
         @Override
@@ -723,17 +761,17 @@ public abstract sealed class AbstractPoolEntry {
         private BootstrapMethodEntryImpl bootstrapMethod;
         private final NameAndTypeEntryImpl nameAndType;
 
-        AbstractDynamicConstantPoolEntry(ConstantPool cpm, int tag, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
+        AbstractDynamicConstantPoolEntry(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                          NameAndTypeEntryImpl nameAndType) {
-            super(cpm, tag, index, hash);
+            super(cpm, index, hash);
             this.bsmIndex = bootstrapMethod.bsmIndex();
             this.bootstrapMethod = bootstrapMethod;
             this.nameAndType = nameAndType;
         }
 
-        AbstractDynamicConstantPoolEntry(ConstantPool cpm, int tag, int index, int hash, int bsmIndex,
+        AbstractDynamicConstantPoolEntry(ConstantPool cpm, int index, int hash, int bsmIndex,
                                          NameAndTypeEntryImpl nameAndType) {
-            super(cpm, tag, index, hash);
+            super(cpm, index, hash);
             this.bsmIndex = bsmIndex;
             this.bootstrapMethod = null;
             this.nameAndType = nameAndType;
@@ -764,7 +802,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(tag);
+            pool.writeU1(tag());
             pool.writeU2(bsmIndex);
             pool.writeU2(nameAndType.index());
         }
@@ -793,13 +831,18 @@ public abstract sealed class AbstractPoolEntry {
 
         InvokeDynamicEntryImpl(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                    NameAndTypeEntryImpl nameAndType) {
-            super(cpm, ClassFile.TAG_INVOKEDYNAMIC, index, hash, bootstrapMethod, nameAndType);
+            super(cpm, index, hash, bootstrapMethod, nameAndType);
         }
 
         InvokeDynamicEntryImpl(ConstantPool cpm, int index, int bsmIndex,
                                    NameAndTypeEntryImpl nameAndType) {
-            super(cpm, ClassFile.TAG_INVOKEDYNAMIC, index, hash2(ClassFile.TAG_INVOKEDYNAMIC, bsmIndex, nameAndType.index()),
+            super(cpm, index, hash2(TAG_INVOKEDYNAMIC, bsmIndex, nameAndType.index()),
                   bsmIndex, nameAndType);
+        }
+
+        @Override
+        public byte tag() {
+            return TAG_INVOKEDYNAMIC;
         }
 
         @Override
@@ -813,13 +856,18 @@ public abstract sealed class AbstractPoolEntry {
 
         ConstantDynamicEntryImpl(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                      NameAndTypeEntryImpl nameAndType) {
-            super(cpm, ClassFile.TAG_CONSTANTDYNAMIC, index, hash, bootstrapMethod, nameAndType);
+            super(cpm, index, hash, bootstrapMethod, nameAndType);
         }
 
         ConstantDynamicEntryImpl(ConstantPool cpm, int index, int bsmIndex,
                                      NameAndTypeEntryImpl nameAndType) {
-            super(cpm, ClassFile.TAG_CONSTANTDYNAMIC, index, hash2(ClassFile.TAG_CONSTANTDYNAMIC, bsmIndex, nameAndType.index()),
+            super(cpm, index, hash2(TAG_CONSTANTDYNAMIC, bsmIndex, nameAndType.index()),
                   bsmIndex, nameAndType);
+        }
+
+        @Override
+        public byte tag() {
+            return TAG_CONSTANTDYNAMIC;
         }
 
         @Override
@@ -836,16 +884,21 @@ public abstract sealed class AbstractPoolEntry {
 
         MethodHandleEntryImpl(ConstantPool cpm, int index, int hash, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
                 reference) {
-            super(cpm, ClassFile.TAG_METHODHANDLE, index, hash);
+            super(cpm, index, hash);
             this.refKind = refKind;
             this.reference = reference;
         }
 
         MethodHandleEntryImpl(ConstantPool cpm, int index, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
                 reference) {
-            super(cpm, ClassFile.TAG_METHODHANDLE, index, hash2(ClassFile.TAG_METHODHANDLE, refKind, reference.index()));
+            super(cpm, index, hash2(ClassFile.TAG_METHODHANDLE, refKind, reference.index()));
             this.refKind = refKind;
             this.reference = reference;
+        }
+
+        @Override
+        public byte tag() {
+            return TAG_METHODHANDLE;
         }
 
         @Override
@@ -869,7 +922,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(tag);
+            pool.writeU1(TAG_METHODHANDLE);
             pool.writeU1(refKind);
             pool.writeU2(reference.index());
         }
@@ -901,7 +954,12 @@ public abstract sealed class AbstractPoolEntry {
             implements MethodTypeEntry {
 
         MethodTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl descriptor) {
-            super(cpm, ClassFile.TAG_METHODTYPE, index, descriptor);
+            super(cpm, TAG_METHODTYPE, index, descriptor);
+        }
+
+        @Override
+        public byte tag() {
+            return TAG_METHODTYPE;
         }
 
         @Override
@@ -937,7 +995,12 @@ public abstract sealed class AbstractPoolEntry {
             implements StringEntry {
 
         StringEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl utf8) {
-            super(cpm, ClassFile.TAG_STRING, index, utf8);
+            super(cpm, TAG_STRING, index, utf8);
+        }
+
+        @Override
+        public byte tag() {
+            return TAG_STRING;
         }
 
         @Override
@@ -983,13 +1046,18 @@ public abstract sealed class AbstractPoolEntry {
         private final int val;
 
         IntegerEntryImpl(ConstantPool cpm, int index, int i) {
-            super(cpm, ClassFile.TAG_INTEGER, index, hash1(ClassFile.TAG_INTEGER, Integer.hashCode(i)));
+            super(cpm, index, hash1(ClassFile.TAG_INTEGER, Integer.hashCode(i)));
             val = i;
         }
 
         @Override
+        public byte tag() {
+            return TAG_INTEGER;
+        }
+
+        @Override
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(tag);
+            pool.writeU1(TAG_INTEGER);
             pool.writeInt(val);
         }
 
@@ -1024,13 +1092,18 @@ public abstract sealed class AbstractPoolEntry {
         private final float val;
 
         FloatEntryImpl(ConstantPool cpm, int index, float f) {
-            super(cpm, ClassFile.TAG_FLOAT, index, hash1(ClassFile.TAG_FLOAT, Float.hashCode(f)));
+            super(cpm, index, hash1(ClassFile.TAG_FLOAT, Float.hashCode(f)));
             val = f;
         }
 
         @Override
+        public byte tag() {
+            return TAG_FLOAT;
+        }
+
+        @Override
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(tag);
+            pool.writeU1(TAG_FLOAT);
             pool.writeFloat(val);
         }
 
@@ -1064,13 +1137,23 @@ public abstract sealed class AbstractPoolEntry {
         private final long val;
 
         LongEntryImpl(ConstantPool cpm, int index, long l) {
-            super(cpm, ClassFile.TAG_LONG, index, hash1(ClassFile.TAG_LONG, Long.hashCode(l)));
+            super(cpm, index, hash1(ClassFile.TAG_LONG, Long.hashCode(l)));
             val = l;
         }
 
         @Override
+        public byte tag() {
+            return TAG_LONG;
+        }
+
+        @Override
+        public int width() {
+            return 2;
+        }
+
+        @Override
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(tag);
+            pool.writeU1(TAG_LONG);
             pool.writeLong(val);
         }
 
@@ -1104,13 +1187,23 @@ public abstract sealed class AbstractPoolEntry {
         private final double val;
 
         DoubleEntryImpl(ConstantPool cpm, int index, double d) {
-            super(cpm, ClassFile.TAG_DOUBLE, index, hash1(ClassFile.TAG_DOUBLE, Double.hashCode(d)));
+            super(cpm, index, hash1(ClassFile.TAG_DOUBLE, Double.hashCode(d)));
             val = d;
         }
 
         @Override
+        public byte tag() {
+            return TAG_DOUBLE;
+        }
+
+        @Override
+        public int width() {
+            return 2;
+        }
+
+        @Override
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(tag);
+            pool.writeU1(TAG_DOUBLE);
             pool.writeDouble(val);
         }
 
