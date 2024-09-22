@@ -400,8 +400,29 @@ VTransformApplyResult VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vl
 }
 
 float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  // TODO
-  return 1;
+  Node* first = nodes().at(0);
+  uint  vlen = nodes().length();
+  int   opc  = first->Opcode();
+  BasicType bt = vloop_analyzer.types().velt_basic_type(first);
+
+  if (first->is_Cmp()) {
+    return 0; // empty
+  } else if (first->is_CMove()) {
+    return Matcher::cost_for_vector(Op_VectorBlend, vlen, bt);;
+  } else if (VectorNode::is_convert_opcode(opc)) {
+    return 1; // TODO - need input type - how to get it?
+  } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
+    int vopc = VectorNode::opcode(Op_RShiftI, bt);
+    return Matcher::cost_for_vector(vopc, vlen, bt);;
+  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
+    int vopc = VectorNode::opcode(opc, T_LONG);
+    return Matcher::cost_for_vector(vopc, vlen, T_LONG) +
+           Matcher::cost_for_vector(Op_VectorCastL2X, vlen, T_INT);
+  } else {
+    // Regular operations.
+    int vopc = VectorNode::opcode(opc, bt);
+    return Matcher::cost_for_vector(vopc, vlen, bt);
+  }
 }
 
 VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
@@ -459,8 +480,10 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
 }
 
 float VTransformBoolVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  // TODO
-  return 1;
+  BoolNode* first = nodes().at(0)->as_Bool();
+  uint  vlen = nodes().length();
+  BasicType bt = vloop_analyzer.types().velt_basic_type(first);
+  return Matcher::cost_for_vector(Op_VectorMaskCmp, vlen, bt);
 }
 
 VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
