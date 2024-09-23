@@ -5354,8 +5354,8 @@ class StubGenerator: public StubCodeGenerator {
 
     Label SMALL_LOOP, LARGE_LOOP_PREHEADER, LARGE_LOOP, TAIL, TAIL_SHORTCUT, BR_BASE;
 
-    size_t vf; // vectorization factor
-    int multiply_by_halves;
+    unsigned int vf; // vectorization factor
+    bool multiply_by_halves;
     Assembler::SIMD_Arrangement load_arrangement;
     switch (eltype) {
     case T_BOOLEAN:
@@ -5380,10 +5380,10 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     // Unroll factor
-    const size_t uf = 4;
+    const unsigned uf = 4;
 
     // Effective vectorization factor
-    const size_t evf = vf * uf;
+    const unsigned evf = vf * uf;
 
     __ align(CodeEntryAlignment);
 
