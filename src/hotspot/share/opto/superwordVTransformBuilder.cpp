@@ -272,8 +272,8 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       return shift_count;
     } else {
       // Replicate the scalar same_input to every vector element.
-      const Type* element_type = _vloop_analyzer.types().velt_type(p0);
-      if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_type->isa_long()) {
+      BasicType element_bt = _vloop_analyzer.types().velt_basic_type(p0);
+      if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_bt == T_LONG) {
         // Scalar rotate has int rotation value, but the scalar rotate expects longs.
         assert(same_input->bottom_type()->isa_int(), "scalar rotate expects int rotation");
         VTransformNodePrototype conv_prototype = VTransformNodePrototype(p0, Op_ConvI2L, 1, T_LONG);
@@ -281,9 +281,8 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
         conv->init_req(1, same_input_vtn);
         same_input_vtn = conv;
       }
-      BasicType element_bt = _vloop_analyzer.types().velt_basic_type(p0);
       VTransformNodePrototype prototype = VTransformNodePrototype(p0, -1, pack->size(), element_bt);
-      VTransformNode* replicate = new (_vtransform.arena()) VTransformReplicateNode(_vtransform, prototype, pack->size(), element_type);
+      VTransformNode* replicate = new (_vtransform.arena()) VTransformReplicateNode(_vtransform, prototype);
       replicate->init_req(1, same_input_vtn);
       return replicate;
     }

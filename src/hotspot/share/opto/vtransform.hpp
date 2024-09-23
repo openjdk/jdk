@@ -426,6 +426,7 @@ public:
   NOT_PRODUCT(static void print_node_idx(const VTransformNode* vtn);)
 };
 
+// TODO refactor scalar nodes. some have _node, some opcode... how to do?
 // Identity transform for scalar nodes.
 class VTransformScalarNode : public VTransformNode {
 private:
@@ -435,7 +436,7 @@ public:
     VTransformNode(vtransform, prototype, n->req()), _node(n) {}
   Node* node() const { return _node; }
   virtual VTransformScalarNode* isa_Scalar() override { return this; }
-  virtual bool is_load_or_store_in_loop() const override { return true; }
+  virtual bool is_load_or_store_in_loop() const override { return _node->is_Load() || _node->is_Store(); }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
@@ -483,12 +484,9 @@ public:
 
 // Transform produces a ReplicateNode, replicating the input to all vector lanes.
 class VTransformReplicateNode : public VTransformNode {
-private:
-  int _vlen;
-  const Type* _element_type;
 public:
-  VTransformReplicateNode(VTransform& vtransform, VTransformNodePrototype prototype, int vlen, const Type* element_type) :
-    VTransformNode(vtransform, prototype, 2), _vlen(vlen), _element_type(element_type) {}
+  VTransformReplicateNode(VTransform& vtransform, VTransformNodePrototype prototype) :
+    VTransformNode(vtransform, prototype, 2) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;

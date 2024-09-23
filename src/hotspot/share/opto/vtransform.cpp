@@ -338,15 +338,21 @@ void VTransformLoopPhiNode::apply_cleanup(const VLoopAnalyzer& vloop_analyzer,
 }
 
 float VTransformReplicateNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return vloop_analyzer.cost_for_vector(Op_Replicate, _vlen, _element_type->basic_type());
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
+  return vloop_analyzer.cost_for_vector(Op_Replicate, vlen, bt);
 }
 
 VTransformApplyResult VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer,
                                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
+  const Type* element_type = Type::get_const_basic_type(bt);
+
   Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
-  VectorNode* vn = VectorNode::scalar2vector(val, _vlen, _element_type);
+  VectorNode* vn = VectorNode::scalar2vector(val, vlen, element_type);
   register_new_node_from_vectorization(vloop_analyzer, vn);
-  return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
+  return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
 float VTransformConvI2LNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
@@ -532,9 +538,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
-
-  const Type* element_type = Type::get_const_basic_type(bt);
-  int ropc                 = vector_reduction_opcode();
+  int ropc     = vector_reduction_opcode();
 
   if (requires_strict_order()) {
     return false; // cannot move strict order reduction out of loop
@@ -616,7 +620,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   VTransformNode* vtn_identity = new (vtransform.arena()) VTransformInputScalarNode(vtransform, scalar_prototype, identity);
 
   VTransformNodePrototype vector_prototype = VTransformNodePrototype(first_red->approximate_origin(), -1, vlen, bt);
-  VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vector_prototype, vlen, element_type);
+  VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vector_prototype);
   vtn_identity_vector->init_req(1, vtn_identity);
 
   // Turn the scalar phi into a vector phi.
@@ -656,7 +660,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     tty->print("  after loop ");
     last_red->print();
   )
-  return false;
+  return true; // success
 }
 
 float VTransformReductionVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
@@ -824,8 +828,7 @@ void VTransformScalarNode::print_spec() const {
 }
 
 void VTransformReplicateNode::print_spec() const {
-  tty->print("vlen=%d element_type=", _vlen);
-  _element_type->dump();
+  tty->print("vlen=%d bt=%s", vector_length(), type2name(element_basic_type()));
 }
 
 void VTransformShiftCountNode::print_spec() const {
