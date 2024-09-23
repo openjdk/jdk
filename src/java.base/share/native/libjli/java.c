@@ -113,7 +113,7 @@ static jboolean InitializeJVM(JavaVM **pvm, JNIEnv **penv,
                               InvocationFunctions *ifn);
 static jstring NewPlatformString(JNIEnv *env, char *s);
 static jclass LoadMainClass(JNIEnv *env, int mode, char *name);
-static void SetupSplashScreenEnvVars(const char *splash_file_name, char *jar_path);
+static void SetupSplashScreenEnvVars(const char *splash_file_path, char *jar_path);
 static jclass GetApplicationClass(JNIEnv *env);
 
 static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***pargv);
@@ -1395,11 +1395,17 @@ ParseArguments(int *pargc, char ***pargv,
     return JNI_TRUE;
 }
 
+/*
+ * Sets the relevant environment variables that are subsequently used by
+ * the ShowSplashScreen() function. The splash_file_path and jar_path parameters
+ * are used to determine which environment variables to set.
+ * The splash_file_path is the value that was provided to the "-splash:" option
+ * when launching java. It may be null, which implies the "-splash:" option wasn't used.
+ * The jar_path is the value that was provided to the "-jar" option when launching java.
+ * It too may be null, which implies the "-jar" option wasn't used.
+ */
 static void
-SetupSplashScreenEnvVars(const char *splash_file_path, // "-splash:" option value (may be NULL)
-                         char *jar_path // the jar file being launched (may be NULL)
-) {
-
+SetupSplashScreenEnvVars(const char *splash_file_path, char *jar_path) {
     // Command line specified "-splash:" takes priority over manifest one.
     if (splash_file_path) {
         // We set up the splash file name as a env variable which then gets
