@@ -130,11 +130,11 @@ define(`CAEP_INSN',
 `
 // This pattern is generated automatically from g1_aarch64.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct g1CompareAndExchangeP$1(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
+instruct g1CompareAndExchangeP$1(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsReg cr)
 %{
   predicate(UseG1GC && ifelse($1,Acq,'needs_acquiring_load_exclusive(n)`,'!needs_acquiring_load_exclusive(n)`) && n->as_LoadStore()->barrier_data() != 0);
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
-  effect(TEMP res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+  effect(TEMP res, TEMP tmp1, TEMP tmp2, KILL cr);
   ins_cost(ifelse($1,Acq,VOLATILE_REF_COST,2 * VOLATILE_REF_COST));
   format %{ "cmpxchg$2 $res = $mem, $oldval, $newval\t# ptr" %}
   ins_encode %{
@@ -146,19 +146,17 @@ instruct g1CompareAndExchangeP$1(iRegPNoSp res, indirect mem, iRegP oldval, iReg
     write_barrier_pre(masm, this,
                       noreg /* obj */,
                       $oldval$$Register /* pre_val */,
-                      $tmp2$$Register /* tmp1 */,
-                      $tmp3$$Register /* tmp2 */,
+                      $tmp1$$Register /* tmp1 */,
+                      $tmp2$$Register /* tmp2 */,
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
-    __ mov($tmp1$$Register, $oldval$$Register);
-    __ mov($tmp2$$Register, $newval$$Register);
-    __ cmpxchg($mem$$Register, $tmp1$$Register, $tmp2$$Register, Assembler::xword,
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword,
                $3 /* acquire */, true /* release */, false /* weak */, $res$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
-                       $tmp2$$Register /* new_val */,
+                       $newval$$Register /* new_val */,
                        $tmp1$$Register /* tmp1 */,
-                       $tmp3$$Register /* tmp2 */);
+                       $tmp2$$Register /* tmp2 */);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -186,15 +184,13 @@ instruct g1CompareAndExchangeN$1(iRegNNoSp res, indirect mem, iRegN oldval, iReg
                       $tmp3$$Register /* tmp2 */,
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
-    __ mov($tmp1$$Register, $oldval$$Register);
-    __ mov($tmp2$$Register, $newval$$Register);
-    __ cmpxchg($mem$$Register, $tmp1$$Register, $tmp2$$Register, Assembler::word,
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word,
                $3 /* acquire */, true /* release */, false /* weak */, $res$$Register);
-    __ decode_heap_oop($tmp2$$Register);
+    __ decode_heap_oop($tmp1$$Register, $newval$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
-                       $tmp2$$Register /* new_val */,
-                       $tmp1$$Register /* tmp1 */,
+                       $tmp1$$Register /* new_val */,
+                       $tmp2$$Register /* tmp1 */,
                        $tmp3$$Register /* tmp2 */);
   %}
   ins_pipe(pipe_slow);
@@ -206,12 +202,12 @@ define(`CASP_INSN',
 `
 // This pattern is generated automatically from g1_aarch64.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct g1CompareAndSwapP$1(iRegINoSp res, indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegP oldval, rFlagsReg cr)
+instruct g1CompareAndSwapP$1(iRegINoSp res, indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegP oldval, rFlagsReg cr)
 %{
   predicate(UseG1GC && ifelse($1,Acq,'needs_acquiring_load_exclusive(n)`,'!needs_acquiring_load_exclusive(n)`) && n->as_LoadStore()->barrier_data() != 0);
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
-  effect(TEMP res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+  effect(TEMP res, TEMP tmp1, TEMP tmp2, KILL cr);
   ins_cost(ifelse($1,Acq,VOLATILE_REF_COST,2 * VOLATILE_REF_COST));
   format %{ "cmpxchg$2 $mem, $oldval, $newval\t# (ptr)\n\t"
             "cset $res, EQ" %}
@@ -221,20 +217,18 @@ instruct g1CompareAndSwapP$1(iRegINoSp res, indirect mem, iRegP newval, iRegPNoS
     write_barrier_pre(masm, this,
                       noreg /* obj */,
                       $oldval$$Register /* pre_val */,
-                      $tmp2$$Register /* tmp1 */,
-                      $tmp3$$Register /* tmp2 */,
+                      $tmp1$$Register /* tmp1 */,
+                      $tmp2$$Register /* tmp2 */,
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
-    __ mov($tmp1$$Register, $oldval$$Register);
-    __ mov($tmp2$$Register, $newval$$Register);
-    __ cmpxchg($mem$$Register, $tmp1$$Register, $tmp2$$Register, Assembler::xword,
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::xword,
                $3 /* acquire */, true /* release */, false /* weak */, noreg);
     __ cset($res$$Register, Assembler::EQ);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
-                       $tmp2$$Register /* new_val */,
+                       $newval$$Register /* new_val */,
                        $tmp1$$Register /* tmp1 */,
-                       $tmp3$$Register /* tmp2 */);
+                       $tmp2$$Register /* tmp2 */);
   %}
   ins_pipe(pipe_slow);
 %}')dnl
@@ -264,16 +258,14 @@ instruct g1CompareAndSwapN$1(iRegINoSp res, indirect mem, iRegN newval, iRegPNoS
                       $tmp3$$Register /* tmp2 */,
                       RegSet::of($mem$$Register, $oldval$$Register, $newval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
-    __ mov($tmp1$$Register, $oldval$$Register);
-    __ mov($tmp2$$Register, $newval$$Register);
-    __ cmpxchg($mem$$Register, $tmp1$$Register, $tmp2$$Register, Assembler::word,
+    __ cmpxchg($mem$$Register, $oldval$$Register, $newval$$Register, Assembler::word,
                $3 /* acquire */, true /* release */, false /* weak */, noreg);
     __ cset($res$$Register, Assembler::EQ);
-    __ decode_heap_oop($tmp2$$Register);
+    __ decode_heap_oop($tmp1$$Register, $newval$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register /* store_addr */,
-                       $tmp2$$Register /* new_val */,
-                       $tmp1$$Register /* tmp1 */,
+                       $tmp1$$Register /* new_val */,
+                       $tmp2$$Register /* tmp1 */,
                        $tmp3$$Register /* tmp2 */);
   %}
   ins_pipe(pipe_slow);
