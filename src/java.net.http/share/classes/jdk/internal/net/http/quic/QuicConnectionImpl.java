@@ -289,6 +289,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     private final ReentrantLock handshakeLock = new ReentrantLock();
     private final String cachedToString;
     private final String logTag;
+    // incoming PATH_CHALLENGE frames waiting for PATH_RESPONSE
+    private final Queue<PathChallengeFrame> pathChallengeFrameQueue = new ConcurrentLinkedQueue<>();
 
     static String dbgTag(QuicInstance quicInstance, String logTag) {
         return String.format("QuicConnection(%s, %s)",
@@ -1217,6 +1219,16 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     break;
                 }
             }
+            PathChallengeFrame pcf;
+            while (remaining >= 9 && (pcf = pathChallengeFrameQueue.poll()) != null) {
+                f = new PathResponseFrame(pcf.data());
+                final int frameSize = f.size();
+                assert frameSize <= remaining : "Frame too large";
+                frames.add(f);
+                added += frameSize;
+                remaining -= frameSize;
+            }
+
             // NEW_CONNECTION_ID
             while ((f = localConnIdManager.nextFrame(remaining)) != null) {
                 final int frameSize = f.size();
@@ -2168,7 +2180,12 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                             KeySpace.ONE_RTT,
                             frame.getTypeField(), PROTOCOL_VIOLATION);
                 } else if (frame instanceof PathChallengeFrame pathChallengeFrame) {
-                    sendFrame(new PathResponseFrame(pathChallengeFrame.data()));
+                    pathChallengeFrameQueue.offer(pathChallengeFrame);
+                    if (pathChallengeFrameQueue.size() > 3) {
+                        // we don't expect to hold more than 1 PathChallende per path.
+                        // If there's more than 3 outstanding challenges, drop the oldest one.
+                        pathChallengeFrameQueue.poll();
+                    }
                 } else {
                     if (debug.on()) {
                         debug.log("Frame type: %s not supported yet", frame.getClass());
