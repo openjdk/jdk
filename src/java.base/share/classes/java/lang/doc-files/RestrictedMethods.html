@@ -40,7 +40,7 @@
     by calling <a href="../../ModuleLayer.Controller.html#enableNativeAccess(java.lang.Module)"><code>ModuleLayer.Controller.enableNativeAccess(java.lang.Module)</code></a>.</p>
 <p>When a restricted method is invoked by <a href="../../../../specs/jni/index.html">JNI code</a>,
     or from an <a href="../Linker.html#upcallStub(java.lang.invoke.MethodHandle,java.lang.foreign.FunctionDescriptor,java.lang.foreign.Arena,java.lang.foreign.Linker.Option...)">upcall stub</a>
-    and a Java caller can not be determined, it is as if the restricted method call occurred in an <em>unnamed module</em>.</p>
+    and there is no caller class on the stack, it is as if the restricted method call occurred in an <em>unnamed module</em>.</p>
 <p>In the reference implementation, access to restricted methods can be granted to
     specific modules using the command line option <code>--enable-native-access=M1,M2, ... Mn</code>,
     where <code>M1</code>, <code>M2</code>, <code>... Mn</code> are module names (for the unnamed module,
