@@ -223,6 +223,26 @@ public final class PassFailJFrame {
         this(TITLE, instructions, testTimeOut);
     }
 
+    /**
+     * Constructs a frame which displays test instructions and
+     * the <i>Pass</i> / <i>Fail</i> buttons
+     * with the given title, instructions and timeout,
+     * it uses the default values of {@value #ROWS} and {@value #COLUMNS}
+     * for rows and columns.
+     * The screenshot feature is not enabled, if you use this constructor.
+     * <p>
+     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * more details.
+     *
+     * @param title        the title of the instruction frame
+     * @param instructions the instructions for the tester
+     * @param testTimeOut  the test timeout in minutes
+     *
+     * @throws InterruptedException if the current thread is interrupted
+     *              while waiting for EDT to finish creating UI components
+     * @throws InvocationTargetException if an exception is thrown while
+     *              creating UI components on EDT
+     */
     public PassFailJFrame(String title, String instructions,
                           long testTimeOut)
             throws InterruptedException, InvocationTargetException {
