@@ -2054,6 +2054,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
 
 #if INCLUDE_CDS
 void SystemDictionary::get_all_method_handle_intrinsics(GrowableArray<Method*>* methods) {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be");
   auto do_method = [&] (InvokeMethodKey& key, Method*& m) {
     methods->append(m);
   };
@@ -2086,13 +2087,14 @@ void SystemDictionary::restore_archived_method_handle_intrinsics_impl(TRAPS) {
       }
     }
 
+    MutexLocker ml(InvokeMethodIntrinsicTable_lock);
     const int iid_as_int = vmIntrinsics::as_int(m->intrinsic_id());
     InvokeMethodKey key(m->signature(), iid_as_int);
     bool created = _invoke_method_intrinsic_table->put(key, m());
     assert(created, "must be");
   }
 }
-#endif
+#endif // INCLUDE_CDS
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.
 static Method* unpack_method_and_appendix(Handle mname,
