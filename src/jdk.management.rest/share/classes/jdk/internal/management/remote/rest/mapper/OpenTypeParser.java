@@ -116,7 +116,7 @@ public final class OpenTypeParser {
         } else if (consume("javax.management.openmbean.ArrayType(")) {
             type = parseArrayType();
         } else {
-            System.err.println("OpenTypeParser: '" + s + "': unknown");
+//            System.err.println("OpenTypeParser: '" + s + "': unknown");
             //error("OpenTypeParser: '" + s + "': unknown");
         }
         if (consume(")")) {
@@ -239,7 +239,7 @@ public final class OpenTypeParser {
         if (typeName == null) {
             error("missing type name");
         }
-        System.err.println("XXX parseTabularType: typeName = '" + typeName + "'");
+//        System.err.println("XXX parseTabularType: typeName = '" + typeName + "'");
 
         if (!consume(",")) {
             error("missing ,"); 
@@ -273,7 +273,7 @@ public final class OpenTypeParser {
         // Build final type:
         try {
         TabularType type = new TabularType(typeName, "from JSON", rowType, indexNames.split(","));
-        System.err.println("CREATED: " + type);
+//        System.err.println("CREATED: " + type);
         return type;
         } catch (OpenDataException ode) {
             ode.printStackTrace(System.err);
@@ -316,7 +316,7 @@ public final class OpenTypeParser {
                 error("missing ,itemType=");
             }
 
-            System.err.println("ZZZ parseCompositeType: will parse itemType at: " + getRemainder());
+//            System.err.println("ZZZ parseCompositeType: will parse itemType at: " + getRemainder());
             OpenType<?> itemType = this.parse();
             if (itemType == null) {
                 error("cannot parse itemType");
@@ -343,7 +343,7 @@ public final class OpenTypeParser {
             itemDescriptions.toArray(new String[0]),
             itemTypes.toArray(new OpenType<?>[0])
             );
-        System.err.println("CREATED: " + type);
+//        System.err.println("CREATED: " + type);
         return type;
         } catch (OpenDataException ode) {
             ode.printStackTrace(System.err);
@@ -377,7 +377,7 @@ public final class OpenTypeParser {
             error("missing elementType=");
         }
         OpenType<?> elementType = parse();
-        System.err.println("ZZZZZZZZZZZZZZZZZZZZZZZ parseArrayType: elementType = " + elementType);
+//        System.err.println("ZZZZZZZZZZZZZZZZZZZZZZZ parseArrayType: elementType = " + elementType);
         if (!consume(",")) {
             error("missing ,");
         }
@@ -391,7 +391,7 @@ public final class OpenTypeParser {
         } catch (OpenDataException ode) {
             ode.printStackTrace(System.err);
         }
-        System.err.println("ZZZZZZZZZZZZZZZZZZZZZZZ parseArrayType: arrayType = " + type);
+//        System.err.println("ZZZZZZZZZZZZZZZZZZZZZZZ parseArrayType: arrayType = " + type);
 
         // Caller parses )
         return type;

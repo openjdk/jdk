@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -493,11 +493,19 @@ public class MBeanResource implements RestResource {
     }
 
     private JSONObject getDescriptorJSON(Descriptor descriptor) {
+        // descriptor can contain arbitrary text, e.g. DiagnosticCommandImpl shows dcmd.help text,
+        // where e.g. %p is a problem.  What else needs censoring? XXXX
         JSONObject jobj2 = new JSONObject();
         String[] descNames = descriptor.getFieldNames();
         for (String descName : descNames) {
             Object fieldValue = descriptor.getFieldValue(descName);
-            jobj2.put(descName, fieldValue != null ? fieldValue.toString() : null);
+            if (fieldValue != null) {
+                String s = fieldValue.toString();
+                s = s.replace("%", "X");
+                jobj2.put(descName, s);
+            } else {
+                jobj2.put(descName, (String) null);
+            }
         }
         return jobj2;
     }

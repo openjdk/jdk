@@ -275,7 +275,7 @@ public final class JSONMappingFactory {
      * e.g. "javax.management.openmbean.SimpleType(name=java.lang.Long)"
      */
     public JSONMapper getTypeMapper(String descriptor) {
-        System.err.println("getTypeMapper for String '" + descriptor + "'");
+//        System.err.println("getTypeMapper for String '" + descriptor + "'");
         if (descriptor == null) return null;
 
         JSONMapper result = null;
@@ -487,7 +487,7 @@ public final class JSONMappingFactory {
             } 
 
             CompositeType rowType = type.getRowType();
-            System.err.println("Tabular rowType: " + rowType);
+//            System.err.println("Tabular rowType: " + rowType);
             TabularDataSupport tds = new TabularDataSupport(type);
 
             // Convert JSON array elements into tabular rows:

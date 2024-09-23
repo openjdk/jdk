@@ -320,9 +320,9 @@ public class ThreadInfo {
             this.stackTrace = NO_STACK_TRACE;
         } else {
             this.stackTrace = stackTrace;
-            System.err.println("AAAA ThreadInfo.stackTrace = ");
+//            System.err.println("AAAA ThreadInfo.stackTrace = ");
             for (int i=0; i<stackTrace.length; i++) {
-                System.err.println("AAAA = " + stackTrace[i]);
+//                System.err.println("AAAA = " + stackTrace[i]);
             }
         }
         this.lockedMonitors = lockedMonitors;
