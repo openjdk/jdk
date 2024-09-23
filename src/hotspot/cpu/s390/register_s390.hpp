@@ -387,9 +387,9 @@ constexpr VectorRegister Z_V31 = as_VectorRegister(31);
 class ConcreteRegisterImpl : public AbstractRegisterImpl {
  public:
   enum {
-	  max_gpr = Register::number_of_registers * Register::max_slots_per_register,
-	  max_fpr = max_gpr + FloatRegister::number_of_registers * FloatRegister::max_slots_per_register,
-	  max_vr  = max_fpr + VectorRegister::number_of_registers * VectorRegister::max_slots_per_register,
+    max_gpr = Register::number_of_registers * Register::max_slots_per_register,
+    max_fpr = max_gpr + FloatRegister::number_of_registers * FloatRegister::max_slots_per_register,
+    max_vr  = max_fpr + VectorRegister::number_of_registers * VectorRegister::max_slots_per_register,
     // A big enough number for C2: all the registers plus flags
     // This number must be large enough to cover REG_COUNT (defined by c2) registers.
     // There is no requirement that any ordering here matches any ordering c2 gives

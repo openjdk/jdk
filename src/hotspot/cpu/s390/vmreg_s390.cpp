@@ -46,11 +46,11 @@ void VMRegImpl::set_regName() {
 
   VectorRegister vreg = ::as_VectorRegister(0);
   for (; i < ConcreteRegisterImpl::max_vr;) {
-		regName[i++] = vreg->name();
-		regName[i++] = vreg->name();
-		regName[i++] = vreg->name();
-		regName[i++] = vreg->name();
-		vreg = vreg->successor();
+    regName[i++] = vreg->name();
+    regName[i++] = vreg->name();
+    regName[i++] = vreg->name();
+    regName[i++] = vreg->name();
+    vreg = vreg->successor();
   }
 
   for (; i < ConcreteRegisterImpl::number_of_registers; i ++) {

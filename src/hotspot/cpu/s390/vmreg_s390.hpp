@@ -47,14 +47,14 @@ inline Register as_Register() {
 
 inline FloatRegister as_FloatRegister() {
   assert(is_FloatRegister() && is_even(value()), "must be");
-  return ::as_FloatRegister((value() - ConcreteRegisterImpl::max_gpr)
-					/ FloatRegister::max_slots_per_register);
+  return ::as_FloatRegister((value() - ConcreteRegisterImpl::max_gpr) /
+                                       FloatRegister::max_slots_per_register);
 }
 
 inline VectorRegister as_VectorRegister() {
   assert(is_VectorRegister(), "must be");
-  return ::as_VectorRegister((value() - ConcreteRegisterImpl::max_fpr)
-					/ VectorRegister::max_slots_per_register);
+  return ::as_VectorRegister((value() - ConcreteRegisterImpl::max_fpr) /
+                                        VectorRegister::max_slots_per_register);
 }
 
 inline bool is_concrete() {
