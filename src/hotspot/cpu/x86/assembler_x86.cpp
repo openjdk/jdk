@@ -1846,7 +1846,6 @@ void Assembler::cmpb(Address dst, int imm8) {
 }
 
 void Assembler::cmpb(Register dst, int imm8) {
-  assert(dst->has_byte_register(), "must have byte register");
   prefix(dst);
   emit_arith_b(0x80, 0xF8, dst, imm8);
 }
