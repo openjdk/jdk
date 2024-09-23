@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ import java.net.UnknownHostException;
  *
  * <P> Factory classes are specified by environment-specific configuration
  * mechanisms.  For example, the <em>getDefault</em> method could return
- * a factory that was appropriate for a particular user or applet, and a
+ * a factory that was appropriate for a particular application, and a
  * framework could use a factory customized to its own purposes.
  *
  * @since 1.4

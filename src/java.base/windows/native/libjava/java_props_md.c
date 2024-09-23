@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -444,6 +444,8 @@ GetJavaProperties(JNIEnv* env)
          *       where (buildNumber > 17762)
          * Windows Server 2022          10              0  (!VER_NT_WORKSTATION)
          *       where (buildNumber > 20347)
+         * Windows Server 2025          10              0  (!VER_NT_WORKSTATION)
+         *       where (buildNumber > 26039)
          *
          * This mapping will presumably be augmented as new Windows
          * versions are released.
@@ -527,7 +529,10 @@ GetJavaProperties(JNIEnv* env)
                     case  0:
                         /* Windows server 2019 GA 10/2018 build number is 17763 */
                         /* Windows server 2022 build number is 20348 */
-                        if (buildNumber > 20347) {
+                        /* Windows server 2025 Preview build is 26040 */
+                        if (buildNumber > 26039) {
+                            sprops.os_name = "Windows Server 2025";
+                        } else if (buildNumber > 20347) {
                             sprops.os_name = "Windows Server 2022";
                         } else if (buildNumber > 17762) {
                             sprops.os_name = "Windows Server 2019";

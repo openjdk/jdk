@@ -22,13 +22,13 @@
  *
  */
 
-#ifndef SHARE_NMT_MEMFLAGS_HPP
-#define SHARE_NMT_MEMFLAGS_HPP
+#ifndef SHARE_NMT_MEM_TAG_HPP
+#define SHARE_NMT_MEM_TAG_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
-#define MEMORY_TYPES_DO(f)                                                           \
-  /* Memory type by sub systems. It occupies lower byte. */                          \
+#define MEMORY_TAG_DO(f)                                                             \
+  /* Memory tag by sub systems. It occupies lower byte. */                           \
   f(mtJavaHeap,       "Java Heap")   /* Java heap                                 */ \
   f(mtClass,          "Class")       /* Java classes                              */ \
   f(mtThread,         "Thread")      /* thread objects                            */ \
@@ -61,22 +61,22 @@
   f(mtNone,           "Unknown")                                                     \
   //end
 
-#define MEMORY_TYPE_DECLARE_ENUM(type, human_readable) \
-  type,
+#define MEMORY_TAG_DECLARE_ENUM(mem_tag, human_readable) \
+mem_tag,
 
-enum class MEMFLAGS : uint8_t  {
-  MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_ENUM)
-  mt_number_of_types   // number of memory types (mtDontTrack
-                       // is not included as validate type)
+enum class MemTag : uint8_t  {
+  MEMORY_TAG_DO(MEMORY_TAG_DECLARE_ENUM)
+  mt_number_of_tags    // number of memory tags (mtDontTrack
+                       // is not included as validate tag)
 };
 
-#define MEMORY_TYPE_SHORTNAME(type, human_readable) \
-  constexpr MEMFLAGS type = MEMFLAGS::type;
+#define MEMORY_TAG_SHORTNAME(mem_tag, human_readable) \
+  constexpr MemTag mem_tag = MemTag::mem_tag;
 
-// Generate short aliases for the enum values. E.g. mtGC instead of MEMFLAGS::mtGC.
-MEMORY_TYPES_DO(MEMORY_TYPE_SHORTNAME)
+// Generate short aliases for the enum values. E.g. mtGC instead of MemTag::mtGC.
+MEMORY_TAG_DO(MEMORY_TAG_SHORTNAME)
 
 // Make an int version of the sentinel end value.
-constexpr int mt_number_of_types = static_cast<int>(MEMFLAGS::mt_number_of_types);
+constexpr int mt_number_of_tags = static_cast<int>(MemTag::mt_number_of_tags);
 
-#endif // SHARE_NMT_MEMFLAGS_HPP
+#endif // SHARE_NMT_MEM_TAG_HPP
