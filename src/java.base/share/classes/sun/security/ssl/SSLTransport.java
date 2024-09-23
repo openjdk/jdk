@@ -25,8 +25,6 @@
 
 package sun.security.ssl;
 
-import sun.security.ssl.SSLCipher.SSLWriteCipher;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
@@ -146,10 +144,6 @@ interface SSLTransport {
                     plaintexts = new Plaintext[]{
                             new Plaintext(contentType, majorVersion, minorVersion, -1, -1L, packet)
                     };
-
-                    // Switch server to use plaintext.
-                    context.handshakeContext.conContext.outputRecord.changeWriteCiphers(
-                            SSLWriteCipher.nullTlsWriteCipher(), false);
                 }
             }
 
