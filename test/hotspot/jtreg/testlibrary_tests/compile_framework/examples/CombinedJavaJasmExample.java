@@ -84,7 +84,7 @@ public class CombinedJavaJasmExample {
                """;
     }
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
@@ -110,6 +110,5 @@ public class CombinedJavaJasmExample {
         if (i != expected) {
             throw new RuntimeException("wrong value: " + i);
         }
-
     }
 }

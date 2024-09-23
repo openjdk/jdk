@@ -70,7 +70,6 @@ public class MultiFileJavaExample {
         // Compile the source files.
         comp.compile();
 
-
         // Object ret = XYZ9.test();
         Object ret = comp.invoke("p.xyz.XYZ9", "test", new Object[] {});
 

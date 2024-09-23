@@ -122,10 +122,10 @@ class Utils {
     }
 
     /**
-     * Write sources to file.
+     * Write each source in {@code sources} to a file inside {@code sourceDir}.
      */
-    public static List<Path> writeSourcesToFile(List<SourceCode> sources, Path sourceDir) {
-        List<Path> storedFiles = new ArrayList<Path>();
+    public static List<Path> writeSourcesToFiles(List<SourceCode> sources, Path sourceDir) {
+        List<Path> storedFiles = new ArrayList<>();
         for (SourceCode sourceCode : sources) {
             Path path = sourceDir.resolve(sourceCode.filePathName());
             writeCodeToFile(sourceCode.code(), path);

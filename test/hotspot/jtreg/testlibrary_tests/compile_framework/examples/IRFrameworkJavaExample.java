@@ -42,9 +42,9 @@ import java.lang.reflect.InvocationTargetException;
  * The "@compile" command for JTREG is required so that the IRFramework is compiled, other javac
  * might not compile it because it is not present in the class, only in the dynamically compiled
  * code.
- *
+ * <p>
  * Additionally, we must set the classpath for the Test-VM, so that it has access to all compiled
- * classes (see {@code getEscapedClassPathOfCompiledClasses}).
+ * classes (see {@link CompileFramework#getEscapedClassPathOfCompiledClasses}).
  */
 public class IRFrameworkJavaExample {
 
@@ -126,7 +126,7 @@ public class IRFrameworkJavaExample {
         comp.compile();
 
         // Load the compiled class.
-        Class c = comp.getClass("X2");
+        Class<?> c = comp.getClass("X2");
 
         // Invoke the "X2.main" method from the compiled and loaded class.
         try {

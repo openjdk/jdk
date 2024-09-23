@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Helper class for compilation of Java and Jasm {@code SourceCode}.
+ * Helper class for compilation of Java and Jasm {@link SourceCode}.
  */
 class Compile {
 

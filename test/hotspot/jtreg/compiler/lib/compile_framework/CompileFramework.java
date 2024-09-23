@@ -103,7 +103,7 @@ public class CompileFramework {
      * Access a class from the compiled code.
      *
      * @param name Name of the class to be retrieved.
-     * @return A class corresponding to the {@code name}.
+     * @return The class corresponding to the {@code name}.
      */
     public Class<?> getClass(String name) {
         try {
@@ -115,6 +115,7 @@ public class CompileFramework {
 
     /**
      * Invoke a static method from the compiled code.
+     
      * @param className Class name of a compiled class.
      * @param methodName Method name of the class.
      * @param args List of arguments for the method invocation.
@@ -154,10 +155,10 @@ public class CompileFramework {
     }
 
     /**
-     * Returns the classpath appended with the {@code classesDir}, where
+     * Returns the classpath appended with the {@link classesDir}, where
      * the compiled classes are stored. This enables another VM to load
      * the compiled classes. Note, the string is already backslash escaped,
-     * so that the windows paths which use backslashes can be used directly
+     * so that Windows paths which use backslashes can be used directly
      * as strings.
      *
      * @return Classpath appended with the path to the compiled classes.
@@ -166,4 +167,3 @@ public class CompileFramework {
         return Utils.getEscapedClassPathAndClassesDir(classesDir);
     }
 }
-
