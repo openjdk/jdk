@@ -1596,6 +1596,16 @@ public:
 
 #undef INSN
 
+  // Load/store a register, but with a BasicType parameter. Loaded signed integer values are
+  // extended to 64 bits.
+  void load(Register Rt, const Address &adr, BasicType bt) {
+    int op = (is_signed_subword_type(bt) || bt == T_INT) ? 0b10 : 0b01;
+    ld_st2(Rt, adr, exact_log2(type2aelembytes(bt)), op);
+  }
+  void store(Register Rt, const Address &adr, BasicType bt) {
+    ld_st2(Rt, adr, exact_log2(type2aelembytes(bt)), 0b00);
+  }
+
 /* SIMD extensions
  *
  * We just use FloatRegister in the following. They are exactly the same

@@ -109,7 +109,7 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
 
   bind(LOOP);
   for (size_t i = 0; i < unroll_factor; ++i) {
-    arrays_hashcode_elload(tmp1, Address(post(ary, type2aelembytes(eltype))), eltype);
+    load(tmp1, Address(post(ary, type2aelembytes(eltype))), eltype);
     maddw(result, result, tmp2, tmp1);
   }
   bind(BR_BASE);
@@ -135,29 +135,6 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
 
   postcond(pc() != badAddress);
   return pc();
-}
-
-void C2_MacroAssembler::arrays_hashcode_elload(Register dst, Address src, BasicType eltype) {
-  switch (eltype) {
-  // T_BOOLEAN used as surrogate for unsigned byte
-  case T_BOOLEAN:
-    ldrb(dst, src);
-    break;
-  case T_BYTE:
-    ldrsb(dst, src);
-    break;
-  case T_SHORT:
-    ldrsh(dst, src);
-    break;
-  case T_CHAR:
-    ldrh(dst, src);
-    break;
-  case T_INT:
-    ldrw(dst, src);
-    break;
-  default:
-    ShouldNotReachHere();
-  }
 }
 
 void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg, Register tmpReg,

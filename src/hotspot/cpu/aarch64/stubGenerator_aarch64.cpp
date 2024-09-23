@@ -5313,29 +5313,6 @@ class StubGenerator: public StubCodeGenerator {
     return entry;
   }
 
-  void large_arrays_hashcode_elload(Register dst, Address src, BasicType eltype) {
-    switch (eltype) {
-    // T_BOOLEAN used as surrogate for unsigned byte
-    case T_BOOLEAN:
-      __ ldrb(dst, src);
-      break;
-    case T_BYTE:
-      __ ldrsb(dst, src);
-      break;
-    case T_SHORT:
-      __ ldrsh(dst, src);
-      break;
-    case T_CHAR:
-      __ ldrh(dst, src);
-      break;
-    case T_INT:
-      __ ldrw(dst, src);
-      break;
-    default:
-      ShouldNotReachHere();
-    }
-  }
-
   // result = r0 - return value. Contains initial hashcode value on entry.
   // ary = r1 - array address
   // cnt = r2 - elements count
@@ -5505,7 +5482,7 @@ class StubGenerator: public StubCodeGenerator {
     __ br(rscratch1);
 
     for (size_t i = 0; i < vf - 1; ++i) {
-      large_arrays_hashcode_elload(rscratch1, Address(__ post(ary, type2aelembytes(eltype))),
+      __ load(rscratch1, Address(__ post(ary, type2aelembytes(eltype))),
                                    eltype);
       __ maddw(result, result, rscratch2, rscratch1);
     }
