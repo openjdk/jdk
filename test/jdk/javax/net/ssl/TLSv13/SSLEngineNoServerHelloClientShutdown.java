@@ -182,8 +182,8 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         log("---Client closeOutbound---");
         clientEngine.closeOutbound();
 
-        // Sends an unencrypted user_cancelled
-        log("---Client Wrap user_cancelled---");
+        // Sends an unencrypted user_canceled
+        log("---Client Wrap user_canceled---");
         clientResult = clientEngine.wrap(clientOut, cTOs);
         logEngineStatus(clientEngine, clientResult);
         runDelegatedTasks(clientEngine);
@@ -191,8 +191,8 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         cTOs.flip();
         inspectTlsFlight(cTOs);
 
-        // Server unwrap should process an unencrypted 2 byte packet user_cancelled alert.
-        log("---Server Unwrap user_cancelled alert---");
+        // Server unwrap should process an unencrypted 2 byte packet user_canceled alert.
+        log("---Server Unwrap user_canceled alert---");
         serverResult = serverEngine.unwrap(cTOs, serverIn);
         logEngineStatus(serverEngine, serverResult);
         runDelegatedTasks(serverEngine);
@@ -246,10 +246,10 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
 
         sTOc.compact();
 
-        // Only a stand-alone user_cancelled alert is needed in server -> client direction
-        // to terminate the handshake after the server already received user_cancelled:close_notify
+        // Only a stand-alone user_canceled alert is needed in server -> client direction
+        // to terminate the handshake after the server already received user_canceled:close_notify
         // sequence from the client.
-        log("---Server Wrap user_cancelled---");
+        log("---Server Wrap user_canceled---");
         serverResult = serverEngine.wrap(serverOut, sTOc);
         logEngineStatus(serverEngine, serverResult);
         assertTrue(serverEngine.isOutboundDone());
@@ -259,7 +259,7 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         sTOc.flip();
         inspectTlsFlight(sTOc);
 
-        log("---Client Unwrap user_cancelled alert---");
+        log("---Client Unwrap user_canceled alert---");
         clientResult = clientEngine.unwrap(sTOc, clientIn);
         logEngineStatus(clientEngine, clientResult);
         assertTrue(clientEngine.isOutboundDone());
