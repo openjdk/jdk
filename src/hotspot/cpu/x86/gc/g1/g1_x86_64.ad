@@ -109,9 +109,6 @@ instruct g1StoreN(memory mem, rRegN src, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFl
   ins_cost(125); // XXX
   format %{ "movl    $mem, $src\t# ptr" %}
   ins_encode %{
-    assert(!in(operand_index(2))->is_Mach() ||
-           (in(operand_index(2))->as_Mach()->ideal_Opcode() != Op_EncodeP),
-           "EncodeP src nodes should be matched with their corresponding StoreN nodes");
     __ lea($tmp1$$Register, $mem$$Address);
     write_barrier_pre(masm, this,
                       $tmp1$$Register /* obj */,
