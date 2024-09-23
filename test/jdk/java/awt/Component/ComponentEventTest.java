@@ -41,6 +41,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.InputEvent;
 import java.lang.reflect.InvocationTargetException;
+
 import jdk.test.lib.Platform;
 
 /*
@@ -164,11 +165,11 @@ public class ComponentEventTest {
 
         System.out.println("Iconify frame");
         resetValues();
-        iconifyFrame();
+        testIconifyFrame();
 
         System.out.println("Deiconify frame");
         resetValues();
-        deiconifyFrame();
+        testDeiconifyFrame();
     }
 
     private static void clickFrame()
@@ -185,7 +186,7 @@ public class ComponentEventTest {
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
 
-    private static void iconifyFrame()
+    private static void testIconifyFrame()
         throws InvocationTargetException, InterruptedException {
         EventQueue.invokeAndWait(() -> frame.setExtendedState(Frame.ICONIFIED));
 
@@ -198,7 +199,7 @@ public class ComponentEventTest {
         }
     }
 
-    private static void deiconifyFrame()
+    private static void testDeiconifyFrame()
         throws InvocationTargetException, InterruptedException {
         EventQueue.invokeAndWait(() -> frame.setExtendedState(Frame.NORMAL));
 
