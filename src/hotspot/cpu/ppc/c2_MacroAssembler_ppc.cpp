@@ -39,12 +39,12 @@
 
 void C2_MacroAssembler::fast_lock_lightweight(ConditionRegister flag, Register obj, Register box,
                                               Register tmp1, Register tmp2, Register tmp3) {
-  compiler_fast_lock_lightweight_object(flag, obj, tmp1, tmp2, tmp3);
+  compiler_fast_lock_lightweight_object(flag, obj, box, tmp1, tmp2, tmp3);
 }
 
 void C2_MacroAssembler::fast_unlock_lightweight(ConditionRegister flag, Register obj, Register box,
                                                 Register tmp1, Register tmp2, Register tmp3) {
-  compiler_fast_unlock_lightweight_object(flag, obj, tmp1, tmp2, tmp3);
+  compiler_fast_unlock_lightweight_object(flag, obj, box, tmp1, tmp2, tmp3);
 }
 
 // Intrinsics for CompactStrings

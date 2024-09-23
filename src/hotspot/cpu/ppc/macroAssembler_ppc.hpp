@@ -359,7 +359,7 @@ class MacroAssembler: public Assembler {
   address call_c(Register function_entry);
   // For tail calls: only branch, don't link, so callee returns to caller of this function.
   address call_c_and_return_to_caller(Register function_entry);
-  address call_c(address function_entry, relocInfo::relocType rt);
+  address call_c(address function_entry, relocInfo::relocType rt = relocInfo::none);
 #else
   // Call a C function via a function descriptor and use full C
   // calling conventions. Updates and returns _last_calls_return_pc.
@@ -367,6 +367,9 @@ class MacroAssembler: public Assembler {
   // For tail calls: only branch, don't link, so callee returns to caller of this function.
   address call_c_and_return_to_caller(Register function_descriptor);
   address call_c(const FunctionDescriptor* function_descriptor, relocInfo::relocType rt);
+  address call_c(address function_entry, relocInfo::relocType rt = relocInfo::none) {
+    return call_c((const FunctionDescriptor*)function_entry, rt);
+  }
   address call_c_using_toc(const FunctionDescriptor* function_descriptor, relocInfo::relocType rt,
                            Register toc);
 #endif
@@ -651,7 +654,7 @@ class MacroAssembler: public Assembler {
   void inc_held_monitor_count(Register tmp);
   void dec_held_monitor_count(Register tmp);
   void atomically_flip_locked_state(bool is_unlock, Register obj, Register tmp, Label& failed, int semantics);
-  void lightweight_lock(Register obj, Register t1, Register t2, Label& slow);
+  void lightweight_lock(Register box, Register obj, Register t1, Register t2, Label& slow);
   void lightweight_unlock(Register obj, Register t1, Label& slow);
 
   // allocation (for C1)
@@ -672,11 +675,11 @@ class MacroAssembler: public Assembler {
   void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
                                    Register tmp1, Register tmp2, Register tmp3);
 
-  void compiler_fast_lock_lightweight_object(ConditionRegister flag, Register oop, Register tmp1,
-                                             Register tmp2, Register tmp3);
+  void compiler_fast_lock_lightweight_object(ConditionRegister flag, Register oop, Register box,
+                                             Register tmp1, Register tmp2, Register tmp3);
 
-  void compiler_fast_unlock_lightweight_object(ConditionRegister flag, Register oop, Register tmp1,
-                                               Register tmp2, Register tmp3);
+  void compiler_fast_unlock_lightweight_object(ConditionRegister flag, Register oop, Register box,
+                                               Register tmp1, Register tmp2, Register tmp3);
 
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);

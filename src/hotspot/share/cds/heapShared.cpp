@@ -133,7 +133,9 @@ static ArchivableStaticFieldInfo fmg_archive_subgraph_entry_fields[] = {
 
 KlassSubGraphInfo* HeapShared::_default_subgraph_info;
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
-OopHandle HeapShared::_roots;
+GrowableArrayCHeap<OopHandle, mtClassShared>* HeapShared::_root_segments;
+int HeapShared::_root_segment_max_size_shift;
+int HeapShared::_root_segment_max_size_mask;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
 MetaspaceObjToOopHandleTable* HeapShared::_scratch_java_mirror_table = nullptr;
 MetaspaceObjToOopHandleTable* HeapShared::_scratch_references_table = nullptr;
@@ -225,7 +227,7 @@ int HeapShared::append_root(oop obj) {
   return _pending_roots->append(obj);
 }
 
-objArrayOop HeapShared::roots() {
+objArrayOop HeapShared::root_segment(int segment_idx) {
   if (CDSConfig::is_dumping_heap()) {
     assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
     if (!HeapShared::can_write()) {
@@ -235,17 +237,21 @@ objArrayOop HeapShared::roots() {
     assert(CDSConfig::is_using_archive(), "must be");
   }
 
-  objArrayOop roots = (objArrayOop)_roots.resolve();
-  assert(roots != nullptr, "should have been initialized");
-  return roots;
+  objArrayOop segment = (objArrayOop)_root_segments->at(segment_idx).resolve();
+  assert(segment != nullptr, "should have been initialized");
+  return segment;
 }
 
 // Returns an objArray that contains all the roots of the archived objects
 oop HeapShared::get_root(int index, bool clear) {
+  assert(_root_segment_max_size_shift > 0, "sanity");
+  assert(_root_segment_max_size_mask  > 0, "sanity");
   assert(index >= 0, "sanity");
   assert(!CDSConfig::is_dumping_heap() && CDSConfig::is_using_archive(), "runtime only");
-  assert(!_roots.is_empty(), "must have loaded shared heap");
-  oop result = roots()->obj_at(index);
+  assert(!_root_segments->is_empty(), "must have loaded shared heap");
+  int seg_idx = index >> _root_segment_max_size_shift;
+  int int_idx = index &  _root_segment_max_size_mask;
+  oop result = root_segment(seg_idx)->obj_at(int_idx);
   if (clear) {
     clear_root(index);
   }
@@ -256,11 +262,15 @@ void HeapShared::clear_root(int index) {
   assert(index >= 0, "sanity");
   assert(CDSConfig::is_using_archive(), "must be");
   if (ArchiveHeapLoader::is_in_use()) {
+    assert(_root_segment_max_size_shift > 0, "sanity");
+    assert(_root_segment_max_size_mask  > 0, "sanity");
+    int seg_idx = index >> _root_segment_max_size_shift;
+    int int_idx = index &  _root_segment_max_size_mask;
     if (log_is_enabled(Debug, cds, heap)) {
-      oop old = roots()->obj_at(index);
+      oop old = root_segment(seg_idx)->obj_at(int_idx);
       log_debug(cds, heap)("Clearing root %d: was " PTR_FORMAT, index, p2i(old));
     }
-    roots()->obj_at_put(index, nullptr);
+    root_segment(seg_idx)->obj_at_put(int_idx, nullptr);
   }
 }
 
@@ -461,11 +471,13 @@ void HeapShared::archive_objects(ArchiveHeapInfo *heap_info) {
     // Cache for recording where the archived objects are copied to
     create_archived_object_cache();
 
-    log_info(cds)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
-                   UseCompressedOops ? p2i(CompressedOops::begin()) :
-                                       p2i((address)G1CollectedHeap::heap()->reserved().start()),
-                   UseCompressedOops ? p2i(CompressedOops::end()) :
-                                       p2i((address)G1CollectedHeap::heap()->reserved().end()));
+    if (UseCompressedOops || UseG1GC) {
+      log_info(cds)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
+                    UseCompressedOops ? p2i(CompressedOops::begin()) :
+                                        p2i((address)G1CollectedHeap::heap()->reserved().start()),
+                    UseCompressedOops ? p2i(CompressedOops::end()) :
+                                        p2i((address)G1CollectedHeap::heap()->reserved().end()));
+    }
     copy_objects();
 
     CDSHeapVerifier::verify();
@@ -764,11 +776,19 @@ void HeapShared::write_subgraph_info_table() {
   }
 }
 
-void HeapShared::init_roots(oop roots_oop) {
-  if (roots_oop != nullptr) {
-    assert(ArchiveHeapLoader::is_in_use(), "must be");
-    _roots = OopHandle(Universe::vm_global(), roots_oop);
+void HeapShared::add_root_segment(objArrayOop segment_oop) {
+  assert(segment_oop != nullptr, "must be");
+  assert(ArchiveHeapLoader::is_in_use(), "must be");
+  if (_root_segments == nullptr) {
+    _root_segments = new GrowableArrayCHeap<OopHandle, mtClassShared>(10);
   }
+  _root_segments->push(OopHandle(Universe::vm_global(), segment_oop));
+}
+
+void HeapShared::init_root_segment_sizes(int max_size) {
+  assert(is_power_of_2(max_size), "must be");
+  _root_segment_max_size_shift = log2i_exact(max_size);
+  _root_segment_max_size_mask = max_size - 1;
 }
 
 void HeapShared::serialize_tables(SerializeClosure* soc) {
@@ -1304,6 +1324,9 @@ void HeapShared::check_default_subgraph_classes() {
               name == vmSymbols::java_lang_ArithmeticException() ||
               name == vmSymbols::java_lang_NullPointerException() ||
               name == vmSymbols::java_lang_InternalError() ||
+              name == vmSymbols::java_lang_ArrayIndexOutOfBoundsException() ||
+              name == vmSymbols::java_lang_ArrayStoreException() ||
+              name == vmSymbols::java_lang_ClassCastException() ||
               name == vmSymbols::object_array_signature() ||
               name == vmSymbols::byte_array_signature() ||
               name == vmSymbols::char_array_signature(),

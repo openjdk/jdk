@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,18 +55,10 @@ void ZRememberedSet::initialize(size_t page_size) {
   _bitmap[1].initialize(size_in_bits, true /* clear */);
 }
 
-void ZRememberedSet::resize(size_t page_size) {
-  // The bitmaps only need to be resized if remset has been
-  // initialized, and hence the bitmaps have been initialized.
-  if (is_initialized()) {
-    const BitMap::idx_t size_in_bits = to_bit_size(page_size);
-
-    // The bitmaps need to be cleared when free, but since this function is
-    // only used for shrinking the clear argument is correct but not crucial.
-    assert(size_in_bits <= _bitmap[0].size(), "Only used for shrinking");
-    _bitmap[0].resize(size_in_bits, true /* clear */);
-    _bitmap[1].resize(size_in_bits, true /* clear */);
-  }
+void ZRememberedSet::delete_all() {
+  assert(is_initialized(), "precondition");
+  _bitmap[0].resize(0);
+  _bitmap[1].resize(0);
 }
 
 bool ZRememberedSet::is_cleared_current() const {
@@ -75,15 +67,6 @@ bool ZRememberedSet::is_cleared_current() const {
 
 bool ZRememberedSet::is_cleared_previous() const {
   return previous()->is_empty();
-}
-
-void ZRememberedSet::clear_all() {
-  clear_current();
-  clear_previous();
-}
-
-void ZRememberedSet::clear_current() {
-  current()->clear_large();
 }
 
 void ZRememberedSet::clear_previous() {

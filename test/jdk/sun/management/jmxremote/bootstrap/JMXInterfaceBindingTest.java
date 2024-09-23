@@ -52,7 +52,7 @@ public class JMXInterfaceBindingTest {
     public static final int JMX_PORT_RANGE_UPPER = 9200;
     public static final int JMX_PORT_RANGE_LOWER_SSL = 9201; // 9200 might be RMI Port
     public static final int JMX_PORT_RANGE_UPPER_SSL = 9300;
-    private static final int MAX_RETRY_ATTEMTS = 10;
+    private static final int MAX_RETRY_ATTEMPTS = 10;
     public static final String READY_MSG = "MainThread: Ready for connections";
     public static final String TEST_CLASS = JMXAgentInterfaceBinding.class.getSimpleName();
     public static final String KEYSTORE_LOC = System.getProperty("test.src", ".") +
@@ -159,7 +159,7 @@ public class JMXInterfaceBindingTest {
                     System.err.println("Retrying the test for " + name);
                 }
                 needRetry = runTest();
-            } while (needRetry && (attempts++ < MAX_RETRY_ATTEMTS));
+            } while (needRetry && (attempts++ < MAX_RETRY_ATTEMPTS));
 
             if (testFailed) {
                 int exitValue = output.getExitValue();

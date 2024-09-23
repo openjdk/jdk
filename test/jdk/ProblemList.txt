@@ -133,6 +133,10 @@ java/awt/Focus/MouseClickRequestFocusRaceTest/MouseClickRequestFocusRaceTest.jav
 java/awt/Focus/NoAutotransferToDisabledCompTest/NoAutotransferToDisabledCompTest.java 7152980 macosx-all
 java/awt/Focus/ToFrontFocusTest/ToFrontFocus.java 7156130 linux-all
 java/awt/Focus/WrongKeyTypedConsumedTest/WrongKeyTypedConsumedTest.java 8169096 macosx-all
+java/awt/Focus/TestDisabledAutoTransfer.java 8159871 macosx-all,windows-all
+java/awt/Focus/TestDisabledAutoTransferSwing.java 6962362 windows-all
+java/awt/Focus/ActivateOnProperAppContextTest.java 8136516 macosx-all
+java/awt/Focus/FocusPolicyTest.java 7160904 linux-all
 java/awt/EventQueue/6980209/bug6980209.java 8198615 macosx-all
 java/awt/grab/EmbeddedFrameTest1/EmbeddedFrameTest1.java 7080150 macosx-all
 java/awt/event/InputEvent/EventWhenTest/EventWhenTest.java 8168646 generic-all
@@ -512,6 +516,8 @@ java/io/pathNames/GeneralWin32.java                             8180264 windows-
 
 com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java 8030957 aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  8030957 aix-all
+com/sun/management/DiagnosticCommandMBean/DcmdMBeanPermissionsTest.java 8340401 windows-all
+
 
 java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-all
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
@@ -565,8 +571,6 @@ java/nio/channels/DatagramChannel/AdaptorMulticasting.java      8308807 aix-ppc6
 java/nio/channels/DatagramChannel/AfterDisconnect.java          8308807 aix-ppc64
 java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
 java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
-
-java/nio/file/Path/ToRealPath.java                              8315273 windows-all
 
 ############################################################################
 
@@ -713,6 +717,7 @@ com/sun/jdi/InvokeHangTest.java                                 8218463 linux-al
 ############################################################################
 
 # jdk_util
+java/util/zip/CloseInflaterDeflaterTest.java  8339216 linux-s390x
 
 ############################################################################
 
@@ -784,3 +789,5 @@ java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windo
 java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java 8258103 linux-all
 java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
 java/awt/Frame/SizeMinimizedTest.java 8305915 linux-x64
+java/awt/PopupMenu/PopupHangTest.java 8340022 windows-all
+java/awt/Focus/MinimizeNonfocusableWindowTest.java 8024487 windows-all

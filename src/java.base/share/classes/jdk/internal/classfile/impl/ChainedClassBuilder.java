@@ -80,15 +80,6 @@ public final class ChainedClassBuilder
     }
 
     @Override
-    public ClassBuilder withMethod(String name, MethodTypeDesc descriptor, int flags, Consumer<? super MethodBuilder> handler) {
-        var mb = new BufferedMethodBuilder(terminal.constantPool, terminal.context,
-                constantPool().utf8Entry(name), constantPool().utf8Entry(descriptor), flags, null);
-        mb.mDesc = descriptor;
-        consumer.accept(mb.run(handler).toModel());
-        return this;
-    }
-
-    @Override
     public ClassBuilder transformMethod(MethodModel method, MethodTransform transform) {
         BufferedMethodBuilder builder = new BufferedMethodBuilder(terminal.constantPool, terminal.context,
                                                                   method.methodName(), method.methodType(), method.flags().flagsMask(), method);
