@@ -58,11 +58,11 @@ public class FrameLayoutTest {
 
     private static Frame createUI() {
         Frame f = new Frame("Maximize Test");
-        f.add(new Button("North"),BorderLayout.NORTH);
-        f.add(new Button("South"),BorderLayout.SOUTH);
-        f.add(new Button("East"),BorderLayout.EAST);
-        f.add(new Button("West"),BorderLayout.WEST);
-        f.add(new Button("Cent"),BorderLayout.CENTER);
+        f.add(new Button("North"), BorderLayout.NORTH);
+        f.add(new Button("South"), BorderLayout.SOUTH);
+        f.add(new Button("East"), BorderLayout.EAST);
+        f.add(new Button("West"), BorderLayout.WEST);
+        f.add(new Button("Cent"), BorderLayout.CENTER);
         f.pack();
         f.setState(Frame.ICONIFIED);
         return f;
