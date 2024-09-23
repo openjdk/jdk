@@ -1246,7 +1246,7 @@ public class ZipFile implements ZipConstants, Closeable {
             int nlen = CENNAM(cen, pos);
             int elen = CENEXT(cen, pos);
             int clen = CENCOM(cen, pos);
-            long headerSize = (long)CENHDR + nlen + clen + elen;
+            int headerSize = CENHDR + nlen + clen + elen;
             // CEN header size + name length + comment length + extra length
             // should not exceed 65,535 bytes per the PKWare APP.NOTE
             // 4.4.10, 4.4.11, & 4.4.12.  Also check that current CEN header will
@@ -1270,16 +1270,16 @@ public class ZipFile implements ZipConstants, Closeable {
                 int hsh = (hash & 0x7fffffff) % tablelen;
                 int[] table = this.table;
                 int next = table[hsh];
-                table[hsh] = index + 1; // Store index + 1, reserving 0 for end-of-chain
                 // Record the CEN offset and the name hash in our hash cell.
-                entries[index] = hash;
-                entries[index + 1] = next;
-                entries[index + 2] = pos;
+                entries[index++] = hash;
+                table[hsh] = index; // Store state.idx + 1, reserving 0 for end-of-chain
+                entries[index++] = next;
+                entries[index] = pos;
                 // Validate comment if it exists.
                 // If the bytes representing the comment cannot be converted to
                 // a String via zcp.toString, an Exception will be thrown
                 if (clen > 0) {
-                    zcp.toString(cen, (int)headerSize - clen, clen);
+                    zcp.toString(cen, headerSize - clen, clen);
                 }
             } catch (Exception e) {
                 zerror("invalid CEN header (bad entry name or comment)");
@@ -1311,7 +1311,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     }
                 }
             }
-            state.pos += (int)headerSize;
+            state.pos += headerSize;
             state.idx += 3;
             return true;
         }
@@ -1769,9 +1769,10 @@ public class ZipFile implements ZipConstants, Closeable {
                     this.cen = null;
                     return;         // only END header present
                 }
-                if (end.cenlen > end.endpos)
+                long cenlen = end.cenlen;
+                if (cenlen > end.endpos)
                     zerror("invalid END header (bad central directory size)");
-                long cenpos = end.endpos - end.cenlen;     // position of CEN table
+                long cenpos = end.endpos - cenlen;     // position of CEN table
                 // Get position of first local file (LOC) header, taking into
                 // account that there may be a stub prefixed to the ZIP file.
                 locpos = cenpos - end.cenoff;
@@ -1779,11 +1780,12 @@ public class ZipFile implements ZipConstants, Closeable {
                     zerror("invalid END header (bad central directory offset)");
                 }
                 // read in the CEN and END
-                if (end.cenlen + ENDHDR >= Integer.MAX_VALUE) {
+                if (cenlen + ENDHDR >= Integer.MAX_VALUE) {
                     zerror("invalid END header (central directory size too large)");
                 }
-                cen = this.cen = new byte[(int)(end.cenlen + ENDHDR)];
-                if (readFullyAt(cen, 0, cen.length, cenpos) != end.cenlen + ENDHDR) {
+                int len = (int)(cenlen + ENDHDR);
+                cen = this.cen = new byte[len];
+                if (readFullyAt(cen, 0, len, cenpos) != len) {
                     zerror("read CEN tables failed");
                 }
                 this.total = end.centot;
@@ -1802,7 +1804,8 @@ public class ZipFile implements ZipConstants, Closeable {
             this.table = table;
 
             // Iterate through the entries in the central directory
-            var state = new CENState(cen.length - ENDHDR - CENHDR); // state holder
+            int cenend = cen.length - ENDHDR;
+            var state = new CENState(cenend - CENHDR); // state holder
             try {
                 // Checks the entry and adds values to entries[idx ... idx+2], state.pos will contain position of next entry
                 while (processNextCENEntry(state)) {}
@@ -1813,7 +1816,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     // 65535 entries.
                     manifestNum = 0;
                     manifestPos = -1;
-                    initCEN(countCENHeaders(cen, cen.length - ENDHDR));
+                    initCEN(countCENHeaders(cen, cenend));
                     return;
                 }
                 throw ze;
@@ -1839,7 +1842,7 @@ public class ZipFile implements ZipConstants, Closeable {
             } else {
                 metaVersions = EMPTY_META_VERSIONS;
             }
-            if (state.pos + ENDHDR != cen.length) {
+            if (state.pos != cenend) {
                 zerror("invalid CEN header (bad header size)");
             }
         }
