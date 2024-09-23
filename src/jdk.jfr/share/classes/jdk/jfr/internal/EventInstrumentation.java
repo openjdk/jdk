@@ -562,7 +562,7 @@ final class EventInstrumentation {
         // write begin event
         getEventConfiguration(blockCodeBuilder);
         // stack: [EW], [EW], [EventConfiguration]
-        blockCodeBuilder.loadConstant(Opcode.LDC2_W, eventTypeId);
+        blockCodeBuilder.loadConstant(eventTypeId);
         // stack: [EW], [EW], [EventConfiguration] [long]
         invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.method());
         // stack: [EW], [integer]
@@ -676,7 +676,7 @@ final class EventInstrumentation {
         // stack: [EW] [EW]
         getEventConfiguration(blockCodeBuilder);
         // stack: [EW] [EW] [EC]
-        blockCodeBuilder.loadConstant(Opcode.LDC2_W, eventTypeId);
+        blockCodeBuilder.loadConstant(eventTypeId);
         invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.method());
         // stack: [EW] [int]
         blockCodeBuilder.ifeq(excluded);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @author Alexander Potochkin
  * @library ../../regtesthelpers
  * @build Util
- * @run main/othervm -mx128m bug6795356
+ * @run main/othervm -Xmx128m bug6795356
  */
 
 import java.lang.ref.WeakReference;

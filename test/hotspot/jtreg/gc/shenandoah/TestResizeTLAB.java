@@ -138,46 +138,6 @@
  *      TestResizeTLAB
  */
 
-/*
- * @test id=iu-aggressive
- * @key randomness
- * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahVerify
- *      -XX:+ResizeTLAB
- *      TestResizeTLAB
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahVerify
- *      -XX:-ResizeTLAB
- *      TestResizeTLAB
- */
-
-/*
- * @test id=iu
- * @key randomness
- * @summary Test that Shenandoah is able to work with(out) resizeable TLABs
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      -XX:+ShenandoahVerify
- *      -XX:+ResizeTLAB
- *      TestResizeTLAB
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      -XX:+ShenandoahVerify
- *      -XX:-ResizeTLAB
- *      TestResizeTLAB
- */
-
 import java.util.Random;
 import jdk.test.lib.Utils;
 

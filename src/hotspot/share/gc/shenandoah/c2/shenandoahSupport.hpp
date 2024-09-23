@@ -87,23 +87,6 @@ public:
 #endif
 };
 
-class ShenandoahIUBarrierNode : public Node {
-public:
-  ShenandoahIUBarrierNode(Node* val);
-
-  const Type *bottom_type() const;
-  const Type* Value(PhaseGVN* phase) const;
-  Node* Identity(PhaseGVN* phase);
-
-  int Opcode() const;
-
-private:
-  enum { Needed, NotNeeded, MaybeNeeded };
-
-  static int needed(Node* n);
-  static Node* next(Node* n);
-};
-
 class MemoryGraphFixer : public ResourceObj {
 private:
   Node_List _memory_nodes;

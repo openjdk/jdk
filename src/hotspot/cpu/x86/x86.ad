@@ -5109,7 +5109,7 @@ instruct reductionL_avx512dq(rRegL dst, rRegL src1, vec src2, vec vtmp1, vec vtm
 // =======================Float Reduction==========================================
 
 instruct reductionF128(regF dst, vec src, vec vtmp) %{
-  predicate(Matcher::vector_length(n->in(2)) <= 4); // src
+  predicate(n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) <= 4); // src
   match(Set dst (AddReductionVF dst src));
   match(Set dst (MulReductionVF dst src));
   effect(TEMP dst, TEMP vtmp);
@@ -5123,7 +5123,7 @@ instruct reductionF128(regF dst, vec src, vec vtmp) %{
 %}
 
 instruct reduction8F(regF dst, vec src, vec vtmp1, vec vtmp2) %{
-  predicate(Matcher::vector_length(n->in(2)) == 8); // src
+  predicate(n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 8); // src
   match(Set dst (AddReductionVF dst src));
   match(Set dst (MulReductionVF dst src));
   effect(TEMP dst, TEMP vtmp1, TEMP vtmp2);
@@ -5137,7 +5137,7 @@ instruct reduction8F(regF dst, vec src, vec vtmp1, vec vtmp2) %{
 %}
 
 instruct reduction16F(regF dst, legVec src, legVec vtmp1, legVec vtmp2) %{
-  predicate(Matcher::vector_length(n->in(2)) == 16); // src
+  predicate(n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 16); // src
   match(Set dst (AddReductionVF dst src));
   match(Set dst (MulReductionVF dst src));
   effect(TEMP dst, TEMP vtmp1, TEMP vtmp2);
@@ -5150,10 +5150,79 @@ instruct reduction16F(regF dst, legVec src, legVec vtmp1, legVec vtmp2) %{
   ins_pipe( pipe_slow );
 %}
 
+
+instruct unordered_reduction2F(regF dst, regF src1, vec src2) %{
+  // Non-strictly ordered floating-point add/mul reduction for floats. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add/mul reduction).
+  // src1 contains reduction identity
+  predicate(!n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 2); // src2
+  match(Set dst (AddReductionVF src1 src2));
+  match(Set dst (MulReductionVF src1 src2));
+  effect(TEMP dst);
+  format %{ "vector_reduction_float  $dst,$src1,$src2 ;" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ unordered_reduce_fp(opcode, vlen, $dst$$XMMRegister, $src2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct unordered_reduction4F(regF dst, regF src1, vec src2, vec vtmp) %{
+  // Non-strictly ordered floating-point add/mul reduction for floats. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add/mul reduction).
+  // src1 contains reduction identity
+  predicate(!n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 4); // src2
+  match(Set dst (AddReductionVF src1 src2));
+  match(Set dst (MulReductionVF src1 src2));
+  effect(TEMP dst, TEMP vtmp);
+  format %{ "vector_reduction_float  $dst,$src1,$src2 ; using $vtmp as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ unordered_reduce_fp(opcode, vlen, $dst$$XMMRegister, $src2$$XMMRegister, $vtmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct unordered_reduction8F(regF dst, regF src1, vec src2, vec vtmp1, vec vtmp2) %{
+  // Non-strictly ordered floating-point add/mul reduction for floats. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add/mul reduction).
+  // src1 contains reduction identity
+  predicate(!n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 8); // src2
+  match(Set dst (AddReductionVF src1 src2));
+  match(Set dst (MulReductionVF src1 src2));
+  effect(TEMP dst, TEMP vtmp1, TEMP vtmp2);
+  format %{ "vector_reduction_float $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ unordered_reduce_fp(opcode, vlen, $dst$$XMMRegister, $src2$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct unordered_reduction16F(regF dst, regF src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
+  // Non-strictly ordered floating-point add/mul reduction for floats. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add/mul reduction).
+  // src1 contains reduction identity
+  predicate(!n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 16); // src2
+  match(Set dst (AddReductionVF src1 src2));
+  match(Set dst (MulReductionVF src1 src2));
+  effect(TEMP dst, TEMP vtmp1, TEMP vtmp2);
+  format %{ "vector_reduction_float $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ unordered_reduce_fp(opcode, vlen, $dst$$XMMRegister, $src2$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 // =======================Double Reduction==========================================
 
 instruct reduction2D(regD dst, vec src, vec vtmp) %{
-  predicate(Matcher::vector_length(n->in(2)) == 2); // src
+  predicate(n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 2); // src
   match(Set dst (AddReductionVD dst src));
   match(Set dst (MulReductionVD dst src));
   effect(TEMP dst, TEMP vtmp);
@@ -5167,7 +5236,7 @@ instruct reduction2D(regD dst, vec src, vec vtmp) %{
 %}
 
 instruct reduction4D(regD dst, vec src, vec vtmp1, vec vtmp2) %{
-  predicate(Matcher::vector_length(n->in(2)) == 4); // src
+  predicate(n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 4); // src
   match(Set dst (AddReductionVD dst src));
   match(Set dst (MulReductionVD dst src));
   effect(TEMP dst, TEMP vtmp1, TEMP vtmp2);
@@ -5181,7 +5250,7 @@ instruct reduction4D(regD dst, vec src, vec vtmp1, vec vtmp2) %{
 %}
 
 instruct reduction8D(regD dst, legVec src, legVec vtmp1, legVec vtmp2) %{
-  predicate(Matcher::vector_length(n->in(2)) == 8); // src
+  predicate(n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 8); // src
   match(Set dst (AddReductionVD dst src));
   match(Set dst (MulReductionVD dst src));
   effect(TEMP dst, TEMP vtmp1, TEMP vtmp2);
@@ -5190,6 +5259,57 @@ instruct reduction8D(regD dst, legVec src, legVec vtmp1, legVec vtmp2) %{
     int opcode = this->ideal_Opcode();
     int vlen = Matcher::vector_length(this, $src);
     __ reduce_fp(opcode, vlen, $dst$$XMMRegister, $src$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct unordered_reduction2D(regD dst, regD src1, vec src2) %{
+  // Non-strictly ordered floating-point add/mul reduction for doubles. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add/mul reduction).
+  // src1 contains reduction identity
+  predicate(!n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 2); // src2
+  match(Set dst (AddReductionVD src1 src2));
+  match(Set dst (MulReductionVD src1 src2));
+  effect(TEMP dst);
+  format %{ "vector_reduction_double $dst,$src1,$src2 ;" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ unordered_reduce_fp(opcode, vlen, $dst$$XMMRegister, $src2$$XMMRegister);
+%}
+  ins_pipe( pipe_slow );
+%}
+
+instruct unordered_reduction4D(regD dst, regD src1, vec src2, vec vtmp) %{
+  // Non-strictly ordered floating-point add/mul reduction for doubles. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add/mul reduction).
+  // src1 contains reduction identity
+  predicate(!n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 4); // src2
+  match(Set dst (AddReductionVD src1 src2));
+  match(Set dst (MulReductionVD src1 src2));
+  effect(TEMP dst, TEMP vtmp);
+  format %{ "vector_reduction_double $dst,$src1,$src2 ; using $vtmp as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ unordered_reduce_fp(opcode, vlen, $dst$$XMMRegister, $src2$$XMMRegister, $vtmp$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct unordered_reduction8D(regD dst, regD src1, legVec src2, legVec vtmp1, legVec vtmp2) %{
+  // Non-strictly ordered floating-point add/mul reduction for doubles. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add/mul reduction).
+  // src1 contains reduction identity
+  predicate(!n->as_Reduction()->requires_strict_order() && Matcher::vector_length(n->in(2)) == 8); // src2
+  match(Set dst (AddReductionVD src1 src2));
+  match(Set dst (MulReductionVD src1 src2));
+  effect(TEMP dst, TEMP vtmp1, TEMP vtmp2);
+  format %{ "vector_reduction_double $dst,$src1,$src2 ; using $vtmp1, $vtmp2 as TEMP" %}
+  ins_encode %{
+    int opcode = this->ideal_Opcode();
+    int vlen = Matcher::vector_length(this, $src2);
+    __ unordered_reduce_fp(opcode, vlen, $dst$$XMMRegister, $src2$$XMMRegister, $vtmp1$$XMMRegister, $vtmp2$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}

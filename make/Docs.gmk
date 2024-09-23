@@ -247,7 +247,7 @@ define create_overview_file
       <!DOCTYPE html> \
       <html><head></head><body> \
       #
-  ifneq ($$($1_GROUPS),)
+  ifneq ($$($1_GROUPS), )
     $1_OVERVIEW_TEXT += \
       <p>This document is divided into \
       $$(subst 2,two,$$(subst 3,three,$$(words $$($1_GROUPS)))) sections:</p> \

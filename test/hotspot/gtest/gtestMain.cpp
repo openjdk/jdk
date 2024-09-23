@@ -336,7 +336,7 @@ static void run_in_new_thread(const args_t* args) {
 extern "C" void* thread_wrapper(void* p) {
   const args_t* const p_args = (const args_t*) p;
   runUnitTestsInner(p_args->argc, p_args->argv);
-  return 0;
+  return nullptr;
 }
 
 static void run_in_new_thread(const args_t* args) {
