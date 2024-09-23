@@ -2085,11 +2085,11 @@ void MacroAssembler::addw(Register Rd, Register Rn, int32_t increment, Register 
 }
 
 void MacroAssembler::sub(Register Rd, Register Rn, int64_t decrement, Register temp) {
-  add(Rd, Rn, -decrement, temp)
+  add(Rd, Rn, -decrement, temp);
 }
 
 void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register temp) {
-  addw(Rd, Rn, -decrement, temp)
+  addw(Rd, Rn, -decrement, temp);
 }
 
 void MacroAssembler::andrw(Register Rd, Register Rs1, Register Rs2) {
