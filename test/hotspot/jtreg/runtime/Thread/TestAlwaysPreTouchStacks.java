@@ -52,6 +52,9 @@ public class TestAlwaysPreTouchStacks {
     static int memoryCeilingMB = 128;
     static int threadStackSizeMB = 8;
     static int numThreads = memoryCeilingMB / threadStackSizeMB;
+    static double min_stack_usage_with_pretouch = 1 * MB;
+    static double max_stack_usage_with_pretouch = 0.75 * threadStackSizeMB * MB;
+
     static CyclicBarrier gate = new CyclicBarrier(numThreads + 1);
 
     static private final Thread createTestThread(int num) {
@@ -69,6 +72,9 @@ public class TestAlwaysPreTouchStacks {
                     }
                 },
                 "TestThread-" + num, threadStackSizeMB * MB);
+        // Let test threads run as daemons to ensure that they are still running and
+        // that their stacks are still allocated when the JVM shuts down and the final
+        // NMT report is printed.
         t.setDaemon(true);
         return t;
     }
@@ -177,14 +183,14 @@ public class TestAlwaysPreTouchStacks {
           if (ratio_with < ratio_without) {
             throw new RuntimeException("Expected a higher ratio between stack committed and reserved.");
           }
-          double estimated_stack_usage = 1 * MB;
-          double expected_stack_use_with_pretouch = 0.75 * threadStackSizeMB * MB;
-          if (ratio_with > expected_stack_use_with_pretouch) {
+          if (ratio_with > max_stack_usage_with_pretouch) {
             throw new RuntimeException("Expected a higher ratio of committed to reserved of stack with pretouch.");
           }
-          double expected_delta = numThreads * (expected_stack_use_with_pretouch - estimated_stack_usage);
-          if ((pretouch_result.committed - no_pretouch_result.committed) < expected_delta) {
-            throw new RuntimeException("Expected a higher delta between stack committed of with and without pretouch.");
+          double expected_delta = numThreads * (max_stack_usage_with_pretouch - min_stack_usage_with_pretouch);
+          double actual_delta = pretouch_result.committed - no_pretouch_result.committed;
+          if (actual_delta < expected_delta) {
+            throw new RuntimeException("Expected a higher delta between stack committed of with and without pretouch." +
+                                       "Expected: " + expected_delta + " Acvtual: " + actual_delta);
           }
       }
     }
