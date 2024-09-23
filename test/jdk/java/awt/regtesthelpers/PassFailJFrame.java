@@ -230,9 +230,9 @@ public final class PassFailJFrame {
     }
 
     /**
-     * Constructs a JFrame with a given title & serves as test instructional
+     * Constructs a JFrame with a given title &amp; serves as test instructional
      * frame where the user follows the specified test instruction in order
-     * to test the test case & mark the test pass or fail. If the expected
+     * to test the test case &amp; mark the test pass or fail. If the expected
      * result is seen then the user click on the 'Pass' button else click
      * on the 'Fail' button and the reason for the failure should be
      * specified in the JDialog JTextArea.
@@ -259,9 +259,9 @@ public final class PassFailJFrame {
     }
 
     /**
-     * Constructs a JFrame with a given title & serves as test instructional
+     * Constructs a JFrame with a given title &amp; serves as test instructional
      * frame where the user follows the specified test instruction in order
-     * to test the test case & mark the test pass or fail. If the expected
+     * to test the test case &amp; mark the test pass or fail. If the expected
      * result is seen then the user click on the 'Pass' button else click
      * on the 'Fail' button and the reason for the failure should be
      * specified in the JDialog JTextArea.
@@ -280,7 +280,7 @@ public final class PassFailJFrame {
      *                     instruction is show.
      * @param columns      Number of columns of the instructional
      *                     JTextArea
-     * @param enableScreenCapture if set to true, 'Capture Screen' button & its
+     * @param enableScreenCapture if set to true, 'Capture Screen' button &amp; its
      *                            associated UIs are added to test instruction
      *                            frame
      * @throws InterruptedException      exception thrown when thread is
