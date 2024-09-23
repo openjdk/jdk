@@ -410,7 +410,9 @@ float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer)
   } else if (first->is_CMove()) {
     return Matcher::cost_for_vector(Op_VectorBlend, vlen, bt);;
   } else if (VectorNode::is_convert_opcode(sopc)) {
-    return 1; // TODO - need input type - how to get it?
+    BasicType def_bt = in(1)->isa_Vector()->element_basic_type();
+    int vopc = VectorCastNode::opcode(sopc, def_bt);
+    return Matcher::cost_for_vector(vopc, vlen, bt);;
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     int vopc = VectorNode::opcode(Op_RShiftI, bt);
     return Matcher::cost_for_vector(vopc, vlen, bt);;
@@ -449,7 +451,9 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     vn = new VectorBlendNode(/* blend1 */ in2, /* blend2 */ in3, /* mask */ in1);
   } else if (VectorNode::is_convert_opcode(sopc)) {
     assert(first->req() == 2 && req() == 2, "only one input expected");
-    int vopc = VectorCastNode::opcode(sopc, in1->bottom_type()->is_vect()->element_basic_type());
+    BasicType def_bt = in(1)->isa_Vector()->element_basic_type();
+    assert(def_bt = in1->bottom_type()->is_vect()->element_basic_type(), "must be consistent");
+    int vopc = VectorCastNode::opcode(sopc, def_bt);
     vn = VectorCastNode::make(vopc, in1, bt, vlen);
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     sopc = Op_RShiftI;

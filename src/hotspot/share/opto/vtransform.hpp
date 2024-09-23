@@ -519,6 +519,8 @@ class VTransformVectorNode : public VTransformNode {
 private:
   VTransformVectorPrototype _prototype;
   // TODO goal to eventually remove: tricky is the memory graph though...
+  // also some types need to condition on the first elements type,
+  // and so we'd have to split those node types earlier
   GrowableArray<Node*> _nodes;
 public:
   VTransformVectorNode(VTransform& vtransform, const uint req, const VTransformVectorPrototype prototype) :
