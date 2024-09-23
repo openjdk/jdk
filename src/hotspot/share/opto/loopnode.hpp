@@ -1132,7 +1132,7 @@ private:
   }
 #endif
 
-  Node* insert_convert_node_if_needed(BasicType source, BasicType target, Node* input);
+  Node* insert_convert_node_if_needed(BasicType target, Node* input);
 
 public:
   Node* idom_no_update(Node* d) const {

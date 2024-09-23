@@ -4028,8 +4028,8 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
       Node* ratio = _igvn.integercon(ratio_con, stride_con2_bt);
       set_ctrl(ratio, C->root());
 
-      Node* init_converted = insert_convert_node_if_needed(T_INT, stride_con2_bt, init);
-      Node* phi_converted = insert_convert_node_if_needed(T_INT, stride_con2_bt, phi);
+      Node* init_converted = insert_convert_node_if_needed(stride_con2_bt, init);
+      Node* phi_converted = insert_convert_node_if_needed(stride_con2_bt, phi);
 
       Node* ratio_init = MulNode::make(init_converted, ratio, stride_con2_bt);
       _igvn.register_new_node_with_optimizer(ratio_init, init_converted);
@@ -4058,7 +4058,8 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   }
 }
 
-Node* PhaseIdealLoop::insert_convert_node_if_needed(BasicType source, BasicType target, Node* input) {
+Node* PhaseIdealLoop::insert_convert_node_if_needed(BasicType target, Node* input) {
+  BasicType source = _igvn.type(input)->basic_type();
   if (source == target) {
     return input;
   }
