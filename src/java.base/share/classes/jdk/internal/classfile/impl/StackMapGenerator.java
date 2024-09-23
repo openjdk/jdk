@@ -400,6 +400,8 @@ public final class StackMapGenerator {
     }
 
     private void processMethod() {
+        var frames = this.frames;
+        var currentFrame = this.currentFrame;
         currentFrame.setLocalsFromArg(methodName, methodDesc, isStatic, thisType);
         currentFrame.stackSize = 0;
         currentFrame.flags = 0;
@@ -429,13 +431,17 @@ public final class StackMapGenerator {
                     currentFrame.copyFrom(nextFrame);
                     nextFrame.dirty = false;
                 } else if (thisOffset < bcs.bci()) {
-                    throw new ClassFormatError(String.format("Bad stack map offset %d", thisOffset));
+                    throw classFormatError(thisOffset);
                 }
             } else if (ncf) {
                 throw generatorError("Expecting a stack map frame");
             }
             ncf = processBlock(bcs);
         }
+    }
+
+    private static ClassFormatError classFormatError(int thisOffset) {
+        throw new ClassFormatError(String.format("Bad stack map offset %d", thisOffset));
     }
 
     private boolean processBlock(RawBytecodeHelper bcs) {
