@@ -48,7 +48,7 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class IRFrameworkJavaExample {
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         testX1();
         testX2();
     }

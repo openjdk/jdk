@@ -58,7 +58,7 @@ public class MultiFileJavaExample {
         return writer.toString();
     }
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 

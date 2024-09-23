@@ -87,7 +87,7 @@ public class TestConcurrentCompilation {
         }
     }
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         System.out.println("Generating threads:");
         List<Thread> threads = new ArrayList<Thread>();
         for (int i = 0; i < 3; i++) {

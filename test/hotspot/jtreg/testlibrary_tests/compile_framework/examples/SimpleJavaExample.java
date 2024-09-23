@@ -50,7 +50,7 @@ public class SimpleJavaExample {
                """;
     }
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
