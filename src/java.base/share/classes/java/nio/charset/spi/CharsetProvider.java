@@ -34,9 +34,9 @@ import java.util.Iterator;
  *
  * <p> A charset provider is a concrete subclass of this class that has a
  * zero-argument constructor and some number of associated {@code Charset}
- * implementation classes.  Charset providers are deployed by adding them to either
- * the application module path or the application class path. In order to be looked
- * up, charset providers must be visible to the {@link ClassLoader#getSystemClassLoader() system
+ * implementation classes.  Charset providers are deployed on the application
+ * module path or the application class path. In order to be looked up, charset
+ * providers must be visible to the {@link ClassLoader#getSystemClassLoader() system
  * class loader}. See {@link java.util.ServiceLoader##developing-service-providers
  * Deploying Service Providers} for further detail on deploying a charset
  * provider as a module or on the class path.
