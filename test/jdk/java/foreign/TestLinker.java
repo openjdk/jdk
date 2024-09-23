@@ -173,7 +173,7 @@ public class TestLinker extends NativeTestHelper {
         FunctionDescriptor fd = FunctionDescriptor.of(struct, struct);
         Linker linker = Linker.nativeLinker();
         var x = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
-        assertTrue(x.getMessage().contains("only has padding layouts"));
+        assertTrue(x.getMessage().contains("is non-empty and only has padding layouts"));
     }
 
     @DataProvider

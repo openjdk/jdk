@@ -222,8 +222,8 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
 
     // check elements are not all padding layouts and for trailing padding
     private void checkGroup(GroupLayout gl, long maxUnpaddedOffset) {
-        if (gl.memberLayouts().stream().allMatch(e -> e instanceof PaddingLayout)) {
-            throw new IllegalArgumentException("Layout '" + gl + "' only has padding layouts");
+        if (!gl.memberLayouts().isEmpty() && gl.memberLayouts().stream().allMatch(e -> e instanceof PaddingLayout)) {
+            throw new IllegalArgumentException("Layout '" + gl + "' is non-empty and only has padding layouts");
         }
         long expectedSize = Utils.alignUp(maxUnpaddedOffset, gl.byteAlignment());
         if (gl.byteSize() != expectedSize) {

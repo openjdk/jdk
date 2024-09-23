@@ -260,7 +260,9 @@ import java.util.stream.Stream;
  * <li>each member layout in {@code G.memberLayouts()} is either a padding layout or
  *     a layout supported by {@code NL}, and</li>
  * <li>{@code G} does not contain padding other than what is strictly required to align
- *      its non-padding layout elements, or to satisfy (2).</li>
+ *      its non-padding layout elements, or to satisfy (2), and</li>
+ * <li>{@code G} is {@code G.memberLayouts().isEmpty()} or (at the same time) not all
+ * elements are padding layouts.</li>
  * </ol>
  * </li>
  * </ul>
