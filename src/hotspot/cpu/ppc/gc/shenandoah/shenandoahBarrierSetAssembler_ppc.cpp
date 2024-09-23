@@ -302,7 +302,7 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_impl(MacroAssembler *masm
   }
 
   // Invoke runtime.
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre_entry), pre_val, R16_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), pre_val, R16_thread);
 
   // Restore to-be-preserved registers.
   if (!preserve_gp_registers && preloaded_mode && pre_val->is_volatile()) {
@@ -906,7 +906,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   __ push_frame_reg_args(nbytes_save, R11_tmp1);
 
   // Invoke runtime.
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre_entry), R0_pre_val, R16_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), R0_pre_val, R16_thread);
 
   // Restore to-be-preserved registers.
   __ pop_frame();
