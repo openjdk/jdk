@@ -3860,13 +3860,14 @@ Node* LibraryCallKit::load_klass_from_mirror_common(Node* mirror,
 }
 
 //--------------------(inline_native_Class_query helpers)---------------------
-// Use this for JVM_ACC_INTERFACE, JVM_ACC_IS_CLONEABLE_FAST, JVM_ACC_HAS_FINALIZER.
+// Use this for JVM_ACC_INTERFACE.
 // Fall through if (mods & mask) == bits, take the guard otherwise.
-Node* LibraryCallKit::generate_access_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region) {
+Node* LibraryCallKit::generate_klass_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region,
+                                                 ByteSize offset, const Type* type, BasicType bt) {
   // Branch around if the given klass has the given modifier bit set.
   // Like generate_guard, adds a new path onto the region.
-  Node* modp = basic_plus_adr(kls, in_bytes(Klass::access_flags_offset()));
-  Node* mods = make_load(nullptr, modp, TypeInt::INT, T_INT, MemNode::unordered);
+  Node* modp = basic_plus_adr(kls, in_bytes(offset));
+  Node* mods = make_load(nullptr, modp, type, bt, MemNode::unordered);
   Node* mask = intcon(modifier_mask);
   Node* bits = intcon(modifier_bits);
   Node* mbit = _gvn.transform(new AndINode(mods, mask));
@@ -3875,10 +3876,18 @@ Node* LibraryCallKit::generate_access_flags_guard(Node* kls, int modifier_mask, 
   return generate_fair_guard(bol, region);
 }
 Node* LibraryCallKit::generate_interface_guard(Node* kls, RegionNode* region) {
-  return generate_access_flags_guard(kls, JVM_ACC_INTERFACE, 0, region);
+  return generate_klass_flags_guard(kls, JVM_ACC_INTERFACE, 0, region,
+                                    Klass::access_flags_offset(), TypeInt::INT, T_INT);
 }
+
+// Use this for testing if Klass is_hidden, has_finalizer, and is_cloneable_fast.
+Node* LibraryCallKit::generate_misc_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region) {
+  return generate_klass_flags_guard(kls, modifier_mask, modifier_bits, region,
+                                    Klass::misc_flags_offset(), TypeInt::UBYTE, T_BOOLEAN);
+}
+
 Node* LibraryCallKit::generate_hidden_class_guard(Node* kls, RegionNode* region) {
-  return generate_access_flags_guard(kls, JVM_ACC_IS_HIDDEN_CLASS, 0, region);
+  return generate_misc_flags_guard(kls, KlassFlags::_misc_is_hidden_class, 0, region);
 }
 
 //-------------------------inline_native_Class_query-------------------
@@ -5320,12 +5329,12 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       // The object must be easily cloneable and must not have a finalizer.
       // Both of these conditions may be checked in a single test.
       // We could optimize the test further, but we don't care.
-      generate_access_flags_guard(obj_klass,
-                                  // Test both conditions:
-                                  JVM_ACC_IS_CLONEABLE_FAST | JVM_ACC_HAS_FINALIZER,
-                                  // Must be cloneable but not finalizer:
-                                  JVM_ACC_IS_CLONEABLE_FAST,
-                                  slow_region);
+      generate_misc_flags_guard(obj_klass,
+                                // Test both conditions:
+                                KlassFlags::_misc_is_cloneable_fast | KlassFlags::_misc_has_finalizer,
+                                // Must be cloneable but not finalizer:
+                                KlassFlags::_misc_is_cloneable_fast,
+                                slow_region);
     }
 
     if (!stopped()) {

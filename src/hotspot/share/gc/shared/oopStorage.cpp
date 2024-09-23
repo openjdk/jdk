@@ -127,10 +127,10 @@ OopStorage::ActiveArray::~ActiveArray() {
 }
 
 OopStorage::ActiveArray* OopStorage::ActiveArray::create(size_t size,
-                                                         MEMFLAGS memflags,
+                                                         MemTag mem_tag,
                                                          AllocFailType alloc_fail) {
   size_t size_in_bytes = blocks_offset() + sizeof(Block*) * size;
-  void* mem = NEW_C_HEAP_ARRAY3(char, size_in_bytes, memflags, CURRENT_PC, alloc_fail);
+  void* mem = NEW_C_HEAP_ARRAY3(char, size_in_bytes, mem_tag, CURRENT_PC, alloc_fail);
   if (mem == nullptr) return nullptr;
   return new (mem) ActiveArray(size);
 }
@@ -343,7 +343,7 @@ OopStorage::Block* OopStorage::Block::new_block(const OopStorage* owner) {
   // _data must be first member: aligning block => aligning _data.
   STATIC_ASSERT(_data_pos == 0);
   size_t size_needed = allocation_size();
-  void* memory = NEW_C_HEAP_ARRAY_RETURN_NULL(char, size_needed, owner->memflags());
+  void* memory = NEW_C_HEAP_ARRAY_RETURN_NULL(char, size_needed, owner->mem_tag());
   if (memory == nullptr) {
     return nullptr;
   }
@@ -575,7 +575,7 @@ bool OopStorage::expand_active_array() {
   log_debug(oopstorage, blocks)("%s: expand active array " SIZE_FORMAT,
                                 name(), new_size);
   ActiveArray* new_array = ActiveArray::create(new_size,
-                                               memflags(),
+                                               mem_tag(),
                                                AllocFailStrategy::RETURN_NULL);
   if (new_array == nullptr) return false;
   new_array->copy_from(old_array);
@@ -805,8 +805,8 @@ void OopStorage::release(const oop* const* ptrs, size_t size) {
   }
 }
 
-OopStorage* OopStorage::create(const char* name, MEMFLAGS memflags) {
-  return new (memflags) OopStorage(name, memflags);
+OopStorage* OopStorage::create(const char* name, MemTag mem_tag) {
+  return new (mem_tag) OopStorage(name, mem_tag);
 }
 
 const size_t initial_active_array_size = 8;
@@ -819,9 +819,9 @@ static Mutex* make_oopstorage_mutex(const char* storage_name,
   return new PaddedMutex(rank, name);
 }
 
-OopStorage::OopStorage(const char* name, MEMFLAGS memflags) :
+OopStorage::OopStorage(const char* name, MemTag mem_tag) :
   _name(os::strdup(name)),
-  _active_array(ActiveArray::create(initial_active_array_size, memflags)),
+  _active_array(ActiveArray::create(initial_active_array_size, mem_tag)),
   _allocation_list(),
   _deferred_updates(nullptr),
   _allocation_mutex(make_oopstorage_mutex(name, "alloc", Mutex::oopstorage)),
@@ -829,7 +829,7 @@ OopStorage::OopStorage(const char* name, MEMFLAGS memflags) :
   _num_dead_callback(nullptr),
   _allocation_count(0),
   _concurrent_iteration_count(0),
-  _memflags(memflags),
+  _mem_tag(mem_tag),
   _needs_cleanup(false)
 {
   _active_array->increment_refcount();
@@ -1030,7 +1030,7 @@ size_t OopStorage::total_memory_usage() const {
   return total_size;
 }
 
-MEMFLAGS OopStorage::memflags() const { return _memflags; }
+MemTag OopStorage::mem_tag() const { return _mem_tag; }
 
 // Parallel iteration support
 

@@ -74,7 +74,7 @@ struct LL {
 // That's a very fancy word that means that a templated type like Foo<E> can be passed around like only Foo at first
 // and then be 'applied' to some E. Think of it like passing around a lambda or function pointer, but on a template level,
 // where Foo is a function that can be called on some type with the return type being Foo<E>.
-template<typename E, template<typename, MEMFLAGS> class Allocator>
+template<typename E, template<typename, MemTag> class Allocator>
 struct LL2 {
   struct Node;
   using NodeAllocator = Allocator<Node, mtTest>;

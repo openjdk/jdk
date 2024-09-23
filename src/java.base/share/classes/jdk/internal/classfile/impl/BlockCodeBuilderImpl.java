@@ -85,7 +85,7 @@ public final class BlockCodeBuilderImpl
         hasInstructions |= element instanceof Instruction;
 
         if (reachable) {
-            if (element instanceof Instruction i && i.opcode().isUnconditionalBranch())
+            if (element instanceof Instruction i && BytecodeHelpers.isUnconditionalBranch(i.opcode()))
                 reachable = false;
         }
         else if (element instanceof LabelTarget) {

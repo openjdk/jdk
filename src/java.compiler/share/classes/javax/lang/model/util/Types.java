@@ -185,7 +185,7 @@ public interface Types {
 
     /**
      * {@return the class of a boxed value of the primitive type argument}
-     * That is, <i>boxing conversion</i> is applied.
+     * That is, <dfn>boxing conversion</dfn> is applied.
      *
      * @param p  the primitive type to be converted
      * @jls 5.1.7 Boxing Conversion
