@@ -246,8 +246,9 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
 
         sTOc.compact();
 
-        // Only a stand-alone user_cancelled alert is needed in server -> client direction to terminate the handshake
-        // after the server already received user_cancelled:close_notify sequence from the client.
+        // Only a stand-alone user_cancelled alert is needed in server -> client direction
+        // to terminate the handshake after the server already received user_cancelled:close_notify
+        // sequence from the client.
         log("---Server Wrap user_cancelled---");
         serverResult = serverEngine.wrap(serverOut, sTOc);
         logEngineStatus(serverEngine, serverResult);
@@ -302,23 +303,5 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
             }
             logEngineStatus(engine);
         }
-    }
-
-    // Simple check to make sure everything came across as expected.
-    static void checkTransfer(ByteBuffer a, ByteBuffer b)
-            throws Exception {
-        a.flip();
-        b.flip();
-
-        if (!a.equals(b)) {
-            throw new Exception("Data didn't transfer cleanly");
-        } else {
-            log("\tData transferred cleanly");
-        }
-
-        a.position(a.limit());
-        b.position(b.limit());
-        a.limit(a.capacity());
-        b.limit(b.capacity());
     }
 }
