@@ -394,23 +394,19 @@ public final class KDF {
                    InvalidAlgorithmParameterException {
         Objects.requireNonNull(algorithm, "algorithm must not be null");
         Objects.requireNonNull(provider, "provider must not be null");
-        try {
-            Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
-                                                        algorithm,
-                                                        kdfParameters,
-                                                        provider);
-            if (!JceSecurity.canUseProvider(instance.provider)) {
-                String msg = "JCE cannot authenticate the provider "
-                             + instance.provider.getName();
-                throw new NoSuchProviderException(msg);
-            }
-            return new KDF(new Delegate((KDFSpi) instance.impl,
-                                        instance.provider), algorithm
-            );
 
-        } catch (NoSuchAlgorithmException nsae) {
-            return handleException(nsae);
+        Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
+                                                    algorithm,
+                                                    kdfParameters,
+                                                    provider);
+        if (!JceSecurity.canUseProvider(instance.provider)) {
+            String msg = "JCE cannot authenticate the provider "
+                         + instance.provider.getName();
+            throw new NoSuchProviderException(msg);
         }
+        return new KDF(new Delegate((KDFSpi) instance.impl,
+                                    instance.provider), algorithm
+        );
     }
 
     /**
@@ -446,33 +442,18 @@ public final class KDF {
                    InvalidAlgorithmParameterException {
         Objects.requireNonNull(algorithm, "algorithm must not be null");
         Objects.requireNonNull(provider, "provider must not be null");
-        try {
-            Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
-                                                        algorithm,
-                                                        kdfParameters,
-                                                        provider);
-            if (!JceSecurity.canUseProvider(instance.provider)) {
-                String msg = "JCE cannot authenticate the provider "
-                             + instance.provider.getName();
-                throw new SecurityException(msg);
-            }
-            return new KDF(new Delegate((KDFSpi) instance.impl,
-                                        instance.provider), algorithm
-            );
-
-        } catch (NoSuchAlgorithmException nsae) {
-            return handleException(nsae);
+        Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
+                                                    algorithm,
+                                                    kdfParameters,
+                                                    provider);
+        if (!JceSecurity.canUseProvider(instance.provider)) {
+            String msg = "JCE cannot authenticate the provider "
+                         + instance.provider.getName();
+            throw new SecurityException(msg);
         }
-    }
-
-    private static KDF handleException(NoSuchAlgorithmException e)
-            throws NoSuchAlgorithmException,
-                   InvalidAlgorithmParameterException {
-        Throwable cause = e.getCause();
-        if (cause instanceof InvalidAlgorithmParameterException) {
-            throw (InvalidAlgorithmParameterException) cause;
-        }
-        throw e;
+        return new KDF(new Delegate((KDFSpi) instance.impl,
+                                    instance.provider), algorithm
+        );
     }
 
     /**

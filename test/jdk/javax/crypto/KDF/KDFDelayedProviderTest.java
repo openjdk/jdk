@@ -38,6 +38,7 @@ import javax.crypto.KDFSpi;
 import javax.crypto.SecretKey;
 import java.security.InvalidAlgorithmParameterException;
 import javax.crypto.KDFParameters;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
@@ -61,6 +62,40 @@ public class KDFDelayedProviderTest {
         kdf = KDF.getInstance("X");
         kdf.deriveData(new AlgorithmParameterSpec() {});
         Asserts.assertEquals(kdf.getProviderName(), "P3");
+
+        boolean thrown = true;
+        try {
+            kdf = KDF.getInstance("Y");
+            thrown = false;
+        } catch(Exception nsae) {
+            // Expected exception
+            Asserts.assertTrue(nsae instanceof NoSuchAlgorithmException);
+            System.out.println("Expected NoSuchAlgorithmException");
+        }
+        Asserts.assertTrue(thrown);
+
+        thrown = true;
+        try {
+            kdf = KDF.getInstance("HKDF-SHA256", new MyKDFParameters());
+            thrown = false;
+        } catch (Exception iape) {
+            // Expected exception
+            Asserts.assertTrue(iape instanceof InvalidAlgorithmParameterException);
+            System.out.println("Expected InvalidAlgorithmParameterException");
+        }
+        Asserts.assertTrue(thrown);
+
+        thrown = true;
+        try {
+            kdf = KDF.getInstance("HKDF-SHA256");
+            kdf.deriveData(new MyDerivationSpec());
+            thrown = false;
+        } catch (Exception iape) {
+            // Expected exception
+            Asserts.assertTrue(iape instanceof InvalidAlgorithmParameterException);
+            System.out.println("Expected InvalidAlgorithmParameterException");
+        }
+        Asserts.assertTrue(thrown);
     }
 
     public static class Provider1 extends Provider {
@@ -140,4 +175,6 @@ public class KDFDelayedProviderTest {
     }
 
     static class MyDerivationSpec implements AlgorithmParameterSpec {}
+
+    static class MyKDFParameters implements KDFParameters {}
 }
