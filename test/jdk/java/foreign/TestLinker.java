@@ -166,6 +166,16 @@ public class TestLinker extends NativeTestHelper {
         assertTrue(x.getMessage().contains("not supported because a sequence of a padding layout is not allowed"));
     }
 
+    @Test
+    public void groupLayoutWithOnlyPadding() {
+        PaddingLayout padding = MemoryLayout.paddingLayout(1);
+        StructLayout struct = MemoryLayout.structLayout(padding);
+        FunctionDescriptor fd = FunctionDescriptor.of(struct, struct);
+        Linker linker = Linker.nativeLinker();
+        var x = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        assertTrue(x.getMessage().contains("only has padding layouts"));
+    }
+
     @DataProvider
     public static Object[][] canonicalTypeNames() {
         return new Object[][]{

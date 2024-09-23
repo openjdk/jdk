@@ -199,7 +199,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                     lastUnpaddedOffset = offset;
                 }
             }
-            checkGroupSize(sl, lastUnpaddedOffset);
+            checkGroup(sl, lastUnpaddedOffset);
         } else if (layout instanceof UnionLayout ul) {
             checkHasNaturalAlignment(layout);
             long maxUnpaddedLayout = 0;
@@ -209,7 +209,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                     maxUnpaddedLayout = Long.max(maxUnpaddedLayout, member.byteSize());
                 }
             }
-            checkGroupSize(ul, maxUnpaddedLayout);
+            checkGroup(ul, maxUnpaddedLayout);
         } else if (layout instanceof SequenceLayout sl) {
             checkHasNaturalAlignment(layout);
             if (sl.elementLayout() instanceof PaddingLayout pl) {
@@ -220,8 +220,11 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
         }
     }
 
-    // check for trailing padding
-    private void checkGroupSize(GroupLayout gl, long maxUnpaddedOffset) {
+    // check elements are not all padding layouts and for trailing padding
+    private void checkGroup(GroupLayout gl, long maxUnpaddedOffset) {
+        if (gl.memberLayouts().stream().allMatch(e -> e instanceof PaddingLayout)) {
+            throw new IllegalArgumentException("Layout '" + gl + "' only has padding layouts");
+        }
         long expectedSize = Utils.alignUp(maxUnpaddedOffset, gl.byteAlignment());
         if (gl.byteSize() != expectedSize) {
             throw new IllegalArgumentException("Layout '" + gl + "' has unexpected size: "
