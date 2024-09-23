@@ -167,7 +167,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
-  #if defined(X86)
+  #if defined(AMD64)
   case vmIntrinsics::_dtanh:
   #endif
   case vmIntrinsics::_dlog:
