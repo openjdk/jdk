@@ -1,9 +1,19 @@
-package java.util;
+
+// mock bugid
+
+/**
+ * @test
+ * @bug 8246353
+ * @summary Tests for the Range class
+ * @run junit RangeTest
+ */
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDateTime;
 import java.time.chrono.ChronoLocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -26,9 +36,13 @@ public class RangeTest {
             Arguments.of("Given start-unbounded starting timespan when contains instant then true for all before end",
                 Range.unboundedEndingAt(END), START.minusYears(1), true),
             Arguments.of("Given end-unbounded timespan when contains instant then true for all after start",
-                Range.unboundedStartAt(START), END.plusYears(1), true),
+                Range.unboundedStartingAt(START), END.plusYears(1), true),
             Arguments.of("Given unbounded timespan when contains instant then always true",
-                Range.unbounded(), START, true)
+                Range.unbounded(), START, true),
+            Arguments.of("Given start-unbounded exclusive timespan when contains instant then false if equal to start",
+                Range.unboundedEndingAt(START, true), START, false),
+            Arguments.of("Given end-unbounded exclusive timespan when contains instant then false if equal to end",
+                Range.unboundedStartingAt(END, true), END, false)
         );
     }
 
@@ -50,15 +64,23 @@ public class RangeTest {
             Arguments.of("Given unbounded timespan when overlaps with anything then always true",
                 Range.unbounded(), Range.of(START, END), true),
             Arguments.of("Given end-unbounded timespan when overlaps with bounded then true",
-                Range.unboundedStartAt(START), Range.of(START, END), true),
+                Range.unboundedStartingAt(START), Range.of(START, END), true),
             Arguments.of("Given end-unbounded timespan when starts when bounded starts then true",
-                Range.unboundedStartAt(START), Range.of(START, END), true),
+                Range.unboundedStartingAt(START), Range.of(START, END), true),
             Arguments.of("Given end-unbounded timespan when starts when bounded ends then true",
-                Range.unboundedStartAt(END), Range.of(START, END), true),
+                Range.unboundedStartingAt(END), Range.of(START, END), true),
             Arguments.of("Given start-unbounded timespan when end when bounded ends then true",
                 Range.unboundedEndingAt(END), Range.of(START, END), true),
             Arguments.of("Given start-unbounded timespan when end when bounded starts then true",
-                Range.unboundedEndingAt(START), Range.of(START, END), true)
+                Range.unboundedEndingAt(START), Range.of(START, END), true),
+            Arguments.of("Given start-unbounded exclusive timespan when end when bounded starts then false",
+                Range.unboundedEndingAt(START, true), Range.of(START, END), false),
+            Arguments.of("Given end-unbounded exclusive timespan when starts when bounded ends then false",
+                Range.unboundedStartingAt(END, true), Range.of(START, END), false),
+            Arguments.of("Given start-unbounded exclusive timespan when end of end-unbounded then false",
+                Range.unboundedEndingAt(START, true), Range.unboundedStartingAt(END), false),
+            Arguments.of("Given end-unbounded exclusive timespan when start of start-unbounded then false",
+                Range.unboundedStartingAt(END, true), Range.unboundedEndingAt(START), false)
         );
 
         return Stream.concat(list.stream(), createViceVersa(list));
@@ -74,7 +96,9 @@ public class RangeTest {
     static Stream<Arguments> isBeforeTestCases() {
         var list = List.of(
             Arguments.of("Given bounded timespan when before another then true if completely before",
-                Range.of(START, END), Range.of(END.plusDays(1), END.plusYears(1)), true)
+                Range.of(START, END), Range.of(END.plusDays(1), END.plusYears(1)), true),
+            Arguments.of("Given start-unbounded timespan when isBefore start-unbounded exclusive starting at end then true",
+                Range.unboundedEndingAt(START), Range.unboundedStartingAt(END, true), true)
         );
 
         var nonInverse = Stream.of(
@@ -83,7 +107,9 @@ public class RangeTest {
             Arguments.of("Given bounded timespan when before another then false if overlaps",
                 Range.of(START, END), Range.of(INTERSECTING_START, END), false),
             Arguments.of("Given unbounded start timespan when isBefore bounded then false",
-                Range.unboundedEndingAt(END), Range.of(START, END), false)
+                Range.unboundedEndingAt(END), Range.of(START, END), false),
+            Arguments.of("Given end-unbounded exclusive timespan when isBefore bounded then false",
+                Range.unboundedStartingAt(END, true), Range.of(START, END), false)
         );
 
         return Stream.concat(
@@ -103,7 +129,9 @@ public class RangeTest {
     static Stream<Arguments> isAfterTestCases() {
         var list = List.of(
             Arguments.of("Given bounded timespan when after another then true if completely after",
-                Range.of(END.plusDays(1), END.plusYears(1)), Range.of(START, END), true)
+                Range.of(END.plusDays(1), END.plusYears(1)), Range.of(START, END), true),
+            Arguments.of("Given end-unbounded timespan when isAfter start-unbounded exclusive ending at start then true",
+                Range.unboundedStartingAt(START, true), Range.unboundedEndingAt(START), true)
         );
 
         var nonInverse = Stream.of(
@@ -112,7 +140,9 @@ public class RangeTest {
             Arguments.of("Given bounded timespan when after another then false if overlaps",
                 Range.of(INTERSECTING_START, END), Range.of(START, END), false),
             Arguments.of("Given unbounded end timespan when isAfter bounded then always false",
-                Range.unboundedStartAt(START), Range.of(START, END), false)
+                Range.unboundedStartingAt(START), Range.of(START, END), false),
+            Arguments.of("Given end-unbounded exclusive timespan when isAfter bounded then false",
+                Range.unboundedStartingAt(START, true), Range.of(START, END), false)
         );
 
         return Stream.concat(
@@ -134,7 +164,17 @@ public class RangeTest {
                 Range.of(START, END), Range.of(END.plusDays(1), END.plusYears(1)),
                 Optional.of(Range.of(END, END.plusDays(1)))),
             Arguments.of("Given overlapping bounded timespans when gap then return empty",
-                Range.of(START, END), Range.of(INTERSECTING_START, END), Optional.empty())
+                Range.of(START, END), Range.of(INTERSECTING_START, END), Optional.empty()),
+            Arguments.of("Given start-unbounded exclusive timespan when gap with end-unbounded exclusive that starts where span ends then return gap",
+                Range.unboundedEndingAt(END, true), Range.unboundedStartingAt(END, true), Optional.of(Range.of(END, END))),
+            Arguments.of("Given end-unbounded timespan when gap with start-unbounded that ends where span starts then return empty",
+                Range.unboundedStartingAt(START), Range.unboundedEndingAt(START), Optional.empty()),
+            Arguments.of("Given unbounded timespan when gap with bounded then return empty",
+                Range.unbounded(), Range.of(START, END), Optional.empty()),
+            Arguments.of("Given start-unbounded exclusive timespan when starts where bounded end-exclusive ends then return empty",
+                Range.unboundedEndingAt(START, true), Range.of(START, END, Range.BoundsExclusion.BOTH), Optional.of(Range.of(START, START))),
+            Arguments.of("Given end-unbounded exclusive timespan when ends where bounded start-exclusive starts then return empty",
+                Range.unboundedStartingAt(END, true), Range.of(START, END, Range.BoundsExclusion.BOTH), Optional.of(Range.of(END, END)))
         );
 
         return Stream.concat(list.stream(), createViceVersa(list));
@@ -157,6 +197,16 @@ public class RangeTest {
             Arguments.of("Given overlapping bounded timespans when intersect then return intersection",
                 Range.of(START, END), Range.of(INTERSECTING_START, END),
                 Optional.of(Range.of(INTERSECTING_START, END))),
+            Arguments.of("Given two equal timespans when intersect then return same timespan",
+                Range.of(START, END), Range.of(START, END), Optional.of(Range.of(START, END))),
+            Arguments.of("Given start-unbounded timespan when intersect with bounded then return bounded",
+                Range.unboundedEndingAt(END), Range.of(START, END), Optional.of(Range.of(START, END))),
+            Arguments.of("Given end-unbounded timespan when intersect with bounded then return bounded",
+                Range.unboundedStartingAt(START), Range.of(START, END), Optional.of(Range.of(START, END))),
+            Arguments.of("Given unbounded timespan when intersect with bounded then return bounded",
+                Range.unbounded(), Range.of(START, END), Optional.of(Range.of(START, END))),
+            Arguments.of("Given start-unbounded timespan when intersect with end-unbounded then return bounded range",
+                Range.unboundedEndingAt(END), Range.unboundedStartingAt(START), Optional.of(Range.of(START, END))),
             Arguments.of("Given non-overlapping bounded timespans when intersect then return empty",
                 Range.of(START, END), Range.of(END.plusDays(1), END.plusYears(1)), Optional.empty())
         );

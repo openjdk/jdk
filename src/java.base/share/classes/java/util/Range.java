@@ -8,8 +8,9 @@ package java.util;
 public abstract sealed class Range<T extends Comparable<T>> {
     /**
      * Returns an unbounded range.
-     * @return an unbounded range
+     *
      * @param <T> the type of the values
+     * @return an unbounded range
      */
     public static <T extends Comparable<T>> Range<T> unbounded() {
         return new UnboundedRange<>();
@@ -17,33 +18,75 @@ public abstract sealed class Range<T extends Comparable<T>> {
 
     /**
      * Returns an unbounded range ending at the given value.
+     *
      * @param end the end of the range
-     * @return an unbounded range ending at the given value
      * @param <T> the type of the values
+     * @return an unbounded range ending at the given value
      */
     public static <T extends Comparable<T>> Range<T> unboundedEndingAt(T end) {
         return new UnboundedStartRange<>(end);
     }
 
     /**
-     * Returns an unbounded range starting at the given value.
-     * @param start the start of the range
-     * @return an unbounded range starting at the given value
+     * Returns an unbounded range ending at the given value.
+     *
+     * @param end the end of the range
+     * @param excludeEnd whether the end is exclusive
      * @param <T> the type of the values
+     * @return an unbounded range ending at the given value
      */
-    public static <T extends Comparable<T>> Range<T> unboundedStartAt(T start) {
+    public static <T extends Comparable<T>> Range<T> unboundedEndingAt(T end, boolean excludeEnd) {
+        return excludeEnd ? new UnboundedStartRange<>(end, true) : new UnboundedStartRange<>(end);
+    }
+
+    /**
+     * Returns an unbounded range starting at the given value with the start included.
+     *
+     * @param start the start of the range
+     * @param <T>   the type of the values
+     * @return an unbounded range starting at the given value
+     */
+    public static <T extends Comparable<T>> Range<T> unboundedStartingAt(T start) {
         return new UnboundedEndRange<>(start);
     }
 
     /**
-     * Returns a bounded range.
+     * Returns an unbounded range starting at the given value.
      * @param start the start of the range
-     * @param end the end of the range
-     * @return a bounded range
+     * @param excludeStart whether the start is exclusive
+     * @return an unbounded range starting at the given value
      * @param <T> the type of the values
      */
+    public static <T extends Comparable<T>> Range<T> unboundedStartingAt(T start, boolean excludeStart) {
+        return excludeStart ? new UnboundedEndRange<>(start, true) : new UnboundedEndRange<>(start);
+    }
+
+    /**
+     * Returns a bounded range with both bounds included.
+     *
+     * @param start the start of the range
+     * @param end   the end of the range
+     * @param <T>   the type of the values
+     * @return a bounded range
+     */
     public static <T extends Comparable<T>> Range<T> of(T start, T end) {
-        return new BoundedRange<>(start, end);
+        return Range.of(start, end, BoundsExclusion.NONE);
+    }
+
+    /**
+     * Returns a bounded range with the given bounds exclusion.
+     *
+     * @param start          the start of the range
+     * @param end            the end of the range
+     * @param boundsExclusion the bounds exclusion
+     * @param <T>            the type of the values
+     * @return a bounded range with the given bounds exclusion
+     */
+    public static <T extends Comparable<T>> Range<T> of(T start, T end, BoundsExclusion boundsExclusion) {
+        if (start.compareTo(end) > 0) {
+            throw new IllegalArgumentException("Start must be less than or equal to end");
+        }
+        return new BoundedRange<>(start, end, boundsExclusion);
     }
 
     /**
@@ -129,14 +172,6 @@ public abstract sealed class Range<T extends Comparable<T>> {
     public abstract boolean isBoundedAtEnd();
 
     /**
-     * Returns whether the span is negative.
-     * A span is considered negative if the start is after the end.
-     *
-     * @return true if the span is negative, false otherwise
-     */
-    public abstract boolean isNegative();
-
-    /**
      * Returns the intersection of the span with the given span.
      *
      * @param other the span to intersect with
@@ -162,22 +197,94 @@ public abstract sealed class Range<T extends Comparable<T>> {
      */
     public abstract Optional<Range<T>> gap(Range<? extends T> other);
 
-    protected Optional<Range<? extends T>> intersectionBoundedWithHalfUnbounded(
-        Range<? extends T> other,
-        T bound,
-        boolean flip
-    ) {
-        var otherEnd = flip != other.isNegative() ? other.start() : other.end();
-        if (otherEnd.compareTo(bound) < 0) {
-            return Optional.empty();
-        } else {
-            var otherStart = other.isNegative() ? other.end() : other.start();
-            if (otherStart.compareTo(bound) > 0) {
-                return Optional.of(other);
-            } else {
-                return Optional.of(new BoundedRange<>(bound, otherEnd));
-            }
-        }
+    public abstract boolean isEndExclusive();
+
+    public abstract boolean isStartExclusive();
+
+    protected abstract int endCompareOffset();
+
+    protected abstract int startCompareOffset();
+
+    protected boolean startBeforeOrAtEndOf(Range<? extends T> other) {
+        return !startAfterEndOf(other);
+    }
+
+    protected boolean endAfterOrAtStartOf(Range<? extends T> other) {
+        return !endBeforeStartOf(other);
+    }
+
+    protected boolean startBeforeOrAtStartOf(Range<? extends T> other) {
+        return !startAfterStartOf(other);
+    }
+
+    protected boolean endAfterOrAtEndOf(Range<? extends T> other) {
+        return !endBeforeEndOf(other);
+    }
+
+    protected boolean endBeforeOrAtStartOf(Range<? extends T> other) {
+        return !endAfterStartOf(other);
+    }
+
+    protected boolean startAfterOrAtEndOf(Range<? extends T> other) {
+        return !startBeforeEndOf(other);
+    }
+
+    protected boolean startAfterOrAtStartOf(Range<? extends T> other) {
+        return !startBeforeStartOf(other);
+    }
+
+    protected boolean endBeforeOrAtEndOf(Range<? extends T> other) {
+        return !endAfterEndOf(other);
+    }
+
+    // this set of methods models following matrix of offsets:
+    // | this  | other | result |
+    // |-------|-------|--------|
+    // |   0   |   0   |   1    |
+    // |   0   |   1   |   1    |
+    // |   1   |   0   |   0    |
+    // |   1   |   1   |   1    |
+    // where values in this and other are whether bound is exclusive or not
+    // and result is offset for comparison
+
+    @SuppressWarnings("unchecked")
+    protected boolean endBeforeEndOf(Range<? extends T> other) {
+        return end().compareTo(other.end()) <= -(1 ^ endCompareOffset() | other.endCompareOffset());
+    }
+
+    @SuppressWarnings("unchecked")
+    protected boolean startBeforeStartOf(Range<? extends T> other) {
+        return start().compareTo(other.start()) <= -(1 ^ startCompareOffset() | other.startCompareOffset());
+    }
+
+    @SuppressWarnings("unchecked")
+    protected boolean startAfterStartOf(Range<? extends T> other) {
+        return start().compareTo(other.start()) >= (startCompareOffset() | (1 ^ other.startCompareOffset()));
+    }
+
+    @SuppressWarnings("unchecked")
+    protected boolean endAfterEndOf(Range<? extends T> other) {
+        return end().compareTo(other.end()) >= (endCompareOffset() | (1 ^ other.endCompareOffset()));
+    }
+
+    @SuppressWarnings("unchecked")
+    protected boolean startAfterEndOf(Range<? extends T> other) {
+        return start().compareTo(other.end()) >= (1 ^ (startCompareOffset() | other.endCompareOffset()));
+    }
+
+    @SuppressWarnings("unchecked")
+    protected boolean endBeforeStartOf(Range<? extends T> other) {
+        return end().compareTo(other.start()) <= -(1 ^ (endCompareOffset() | other.startCompareOffset()));
+    }
+
+    @SuppressWarnings("unchecked")
+    protected boolean startBeforeEndOf(Range<? extends T> other) {
+        return start().compareTo(other.end()) < 0;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected boolean endAfterStartOf(Range<? extends T> other) {
+        return end().compareTo(other.start()) > 0;
     }
 
     private static final class UnboundedRange<T extends Comparable<T>> extends Range<T> {
@@ -233,11 +340,6 @@ public abstract sealed class Range<T extends Comparable<T>> {
         }
 
         @Override
-        public boolean isNegative() {
-            return false;
-        }
-
-        @Override
         public Optional<Range<? extends T>> intersection(Range<? extends T> other) {
             return Optional.of(other);
         }
@@ -252,6 +354,26 @@ public abstract sealed class Range<T extends Comparable<T>> {
             return Optional.empty();
         }
 
+        @Override
+        public boolean isEndExclusive() {
+            throw new UnsupportedOperationException("Unbounded range");
+        }
+
+        @Override
+        public boolean isStartExclusive() {
+            throw new UnsupportedOperationException("Unbounded range");
+        }
+
+        @Override
+        protected int endCompareOffset() {
+            throw new UnsupportedOperationException("Unbounded range");
+        }
+
+        @Override
+        protected int startCompareOffset() {
+            throw new UnsupportedOperationException("Unbounded range");
+        }
+
         public boolean equals(Object obj) {
             return obj instanceof UnboundedRange;
         }
@@ -259,14 +381,25 @@ public abstract sealed class Range<T extends Comparable<T>> {
         public int hashCode() {
             return 0;
         }
+
+        @Override
+        public String toString() {
+            return "∞ - ∞";
+        }
     }
 
     private static final class UnboundedStartRange<T extends Comparable<T>> extends Range<T> {
 
         private final T end;
+        private final boolean excludeEnd;
 
         public UnboundedStartRange(T end) {
+            this(end, false);
+        }
+
+        public UnboundedStartRange(T end, boolean excludeEnd) {
             this.end = end;
+            this.excludeEnd = excludeEnd;
         }
 
         @Override
@@ -281,18 +414,16 @@ public abstract sealed class Range<T extends Comparable<T>> {
 
         @Override
         public boolean contains(T instant) {
-            return instant.compareTo(end) <= 0;
+            return instant.compareTo(end) <= -endCompareOffset();
         }
 
         @Override
         public boolean overlaps(Range<? extends T> other) {
+            if (other instanceof Range.UnboundedRange) {
+                return true;
+            }
             if (other.isBoundedAtStart()) {
-                if (other.isBoundedAtEnd()) {
-                    var otherStart = other.isNegative() ? other.end() : other.start();
-                    return otherStart.compareTo(end) <= 0;
-                } else {
-                    return other.end().compareTo(end) <= 0;
-                }
+                return endAfterOrAtStartOf(other);
             }
             return true;
         }
@@ -328,27 +459,22 @@ public abstract sealed class Range<T extends Comparable<T>> {
         }
 
         @Override
-        public boolean isNegative() {
-            return false;
-        }
-
-        @Override
         @SuppressWarnings("unchecked")
         public Optional<Range<? extends T>> intersection(Range<? extends T> other) {
+            if (other instanceof Range.UnboundedRange) {
+                return Optional.of(this);
+            }
             if (other.isBoundedAtStart()) {
-                if (other.isBoundedAtEnd()) {
-                    return intersectionBoundedWithHalfUnbounded(other, end, true);
-                } else {
-                    if (other.start().compareTo(end) > 0) {
-                        return Optional.empty();
-                    } else {
-                        return Optional.of(new BoundedRange<>(other.start(), end));
-                    }
+                if (endBeforeStartOf(other)) {
+                    return Optional.empty();
                 }
-            } else if (other.isBoundedAtEnd()) {
-                if (other.end().compareTo(end) < 0) {
+                if (other.isBoundedAtEnd() && endAfterOrAtEndOf(other)) {
+                    // other is fully contained
                     return Optional.of(other);
                 }
+                return Optional.of(new BoundedRange<>(other.start(), end));
+            } else if (other.isBoundedAtEnd() && endAfterOrAtEndOf(other)) {
+                return Optional.of(other);
             }
             return Optional.of(this);
         }
@@ -356,25 +482,17 @@ public abstract sealed class Range<T extends Comparable<T>> {
         @Override
         @SuppressWarnings("unchecked")
         public Union<? extends T> union(Range<? extends T> other) {
-            if (other.isBoundedAtStart()) {
-                if (other.isBoundedAtEnd()) {
-                    T otherStart;
-                    T otherEnd;
-
-                    if (other.isNegative()) {
-                        otherStart = other.end();
-                        otherEnd = other.start();
-                    } else {
-                        otherStart = other.start();
-                        otherEnd = other.end();
-                    }
-
-                    if (otherStart.compareTo(end) <= 0 && otherEnd.compareTo(end) >= 0) {
-                        return new UnionOfOne<>(new UnboundedStartRange<>(otherEnd));
-                    }
+            if (other instanceof Range.UnboundedRange) {
+                return new UnionOfOne<T>(new UnboundedRange<>());
+            }
+            if (other.isBoundedAtEnd()) {
+                if (endBeforeOrAtEndOf(other)) {
+                    return new UnionOfOne<>(new UnboundedStartRange<>(other.end()));
                 }
-            } else if (other.isBoundedAtEnd()) {
-                return other.end().compareTo(end) > 0 ? new UnionOfOne<>((Range<T>) other) : new UnionOfOne<>(this);
+            } else if (other.isBoundedAtStart()) {
+                if (endAfterOrAtStartOf(other)) {
+                    return new UnionOfOne<T>(new UnboundedRange<>());
+                }
             }
             return new UnionOfTwo<>(this, (Range<T>) other);
         }
@@ -382,22 +500,36 @@ public abstract sealed class Range<T extends Comparable<T>> {
         @Override
         @SuppressWarnings("unchecked")
         public Optional<Range<T>> gap(Range<? extends T> other) {
+            if (other instanceof Range.UnboundedRange) {
+                return Optional.empty();
+            }
             if (other.isBoundedAtStart()) {
-                if (other.isBoundedAtEnd()) {
-                    var otherStart = other.isNegative() ? other.end() : other.start();
-                    if (otherStart.compareTo(end) > 0) {
-                        return Optional.of(new BoundedRange<>(end, otherStart));
-                    }
-                } else if (other.start().compareTo(end) > 0) {
+                var compResult = end.compareTo(other.start());
+                if (compResult > 0 || (compResult == 0 && excludeEnd && other.isStartExclusive())) {
                     return Optional.of(new BoundedRange<>(end, other.start()));
-
-                }
-            } else if (other.isBoundedAtEnd()) {
-                if (other.end().compareTo(end) > 0) {
-                    return Optional.of(new BoundedRange<>(end, other.end()));
                 }
             }
             return Optional.empty();
+        }
+
+        @Override
+        public boolean isEndExclusive() {
+            return excludeEnd;
+        }
+
+        @Override
+        public boolean isStartExclusive() {
+            throw new UnsupportedOperationException("Unbounded start range");
+        }
+
+        @Override
+        protected int endCompareOffset() {
+            return excludeEnd ? 1 : 0;
+        }
+
+        @Override
+        protected int startCompareOffset() {
+            throw new UnsupportedOperationException("Unbounded start range");
         }
 
         @Override
@@ -415,14 +547,26 @@ public abstract sealed class Range<T extends Comparable<T>> {
         public int hashCode() {
             return Objects.hashCode(end);
         }
+
+        @Override
+        public String toString() {
+            return "∞ - " + end;
+        }
     }
 
     private static final class UnboundedEndRange<T extends Comparable<T>> extends Range<T> {
 
         private final T start;
 
+        private final boolean excludeStart;
+
         public UnboundedEndRange(T start) {
+            this(start, false);
+        }
+
+        public UnboundedEndRange(T start, boolean excludeStart) {
             this.start = start;
+            this.excludeStart = excludeStart;
         }
 
         @Override
@@ -437,18 +581,16 @@ public abstract sealed class Range<T extends Comparable<T>> {
 
         @Override
         public boolean contains(T instant) {
-            return instant.compareTo(start) >= 0;
+            return instant.compareTo(start) >= (startCompareOffset());
         }
 
         @Override
         public boolean overlaps(Range<? extends T> other) {
+            if (other instanceof Range.UnboundedRange) {
+                return true;
+            }
             if (other.isBoundedAtEnd()) {
-                if (other.isBoundedAtStart()) {
-                    var otherEnd = other.isNegative() ? other.start() : other.end();
-                    return otherEnd.compareTo(start) >= 0;
-                } else {
-                    return other.start().compareTo(start) >= 0;
-                }
+                return startBeforeOrAtEndOf(other);
             }
             return true;
         }
@@ -484,25 +626,21 @@ public abstract sealed class Range<T extends Comparable<T>> {
         }
 
         @Override
-        public boolean isNegative() {
-            return false;
-        }
-
-        @Override
         @SuppressWarnings("unchecked")
         public Optional<Range<? extends T>> intersection(Range<? extends T> other) {
             if (other.isBoundedAtEnd()) {
                 if (other.isBoundedAtStart()) {
-                    return intersectionBoundedWithHalfUnbounded(other, start, false);
-                } else {
-                    if (other.end().compareTo(start) < 0) {
+                    if (startAfterEndOf(other)) {
                         return Optional.empty();
-                    } else {
-                        return Optional.of(new BoundedRange<>(start, other.end()));
+                    } else if (startBeforeOrAtStartOf(other)) {
+                        return Optional.of(other);
                     }
+                } else if (startAfterEndOf(other)) {
+                    return Optional.empty();
                 }
+                return Optional.of(new BoundedRange<>(start, other.end()));
             } else if (other.isBoundedAtStart()) {
-                if (other.start().compareTo(start) > 0) {
+                if (startBeforeOrAtStartOf(other)) {
                     return Optional.of(other);
                 }
             }
@@ -514,23 +652,17 @@ public abstract sealed class Range<T extends Comparable<T>> {
         public Union<? extends T> union(Range<? extends T> other) {
             if (other.isBoundedAtEnd()) {
                 if (other.isBoundedAtStart()) {
-                    T otherStart;
-                    T otherEnd;
-
-                    if (other.isNegative()) {
-                        otherStart = other.end();
-                        otherEnd = other.start();
-                    } else {
-                        otherStart = other.start();
-                        otherEnd = other.end();
+                    if (startBeforeOrAtEndOf(other)) {
+                        if (startAfterOrAtStartOf(other)) {
+                            return new UnionOfOne<>(new UnboundedEndRange<>(other.start()));
+                        }
+                        return new UnionOfOne<>(this);
                     }
-
-                    if (otherStart.compareTo(start) >= 0 && otherEnd.compareTo(start) <= 0) {
-                        return new UnionOfOne<>(new UnboundedEndRange<>(otherStart));
-                    }
+                } else if (startBeforeOrAtEndOf(other)) {
+                    return new UnionOfOne<>(new UnboundedRange<T>());
                 }
             } else if (other.isBoundedAtStart()) {
-                return other.start().compareTo(start) < 0 ? new UnionOfOne<>((Range<T>) other) : new UnionOfOne<>(this);
+                return startAfterStartOf(other) ? new UnionOfOne<>((Range<T>) other) : new UnionOfOne<>(this);
             }
             return new UnionOfTwo<>(this, (Range<T>) other);
         }
@@ -538,21 +670,36 @@ public abstract sealed class Range<T extends Comparable<T>> {
         @Override
         @SuppressWarnings("unchecked")
         public Optional<Range<T>> gap(Range<? extends T> other) {
+            if (other instanceof Range.UnboundedRange) {
+                return Optional.empty();
+            }
             if (other.isBoundedAtEnd()) {
-                if (other.isBoundedAtStart()) {
-                    var otherEnd = other.isNegative() ? other.start() : other.end();
-                    if (otherEnd.compareTo(start) < 0) {
-                        return Optional.of(new BoundedRange<>(otherEnd, start));
-                    }
-                } else if (other.end().compareTo(start) < 0) {
+                var compResult = start.compareTo(other.end());
+                if (compResult < 0 || (compResult == 0 && excludeStart && other.isEndExclusive())) {
                     return Optional.of(new BoundedRange<>(other.end(), start));
-                }
-            } else if (other.isBoundedAtStart()) {
-                if (other.start().compareTo(start) < 0) {
-                    return Optional.of(new BoundedRange<>(other.start(), start));
                 }
             }
             return Optional.empty();
+        }
+
+        @Override
+        public boolean isEndExclusive() {
+            throw new UnsupportedOperationException("Unbounded end range");
+        }
+
+        @Override
+        public boolean isStartExclusive() {
+            return excludeStart;
+        }
+
+        @Override
+        protected int endCompareOffset() {
+            throw new UnsupportedOperationException("Unbounded end range");
+        }
+
+        @Override
+        protected int startCompareOffset() {
+            return excludeStart ? 1 : 0;
         }
 
         @Override
@@ -570,16 +717,29 @@ public abstract sealed class Range<T extends Comparable<T>> {
         public int hashCode() {
             return Objects.hashCode(start);
         }
+
+        @Override
+        public String toString() {
+            return start + " - ∞";
+        }
     }
 
     private static final class BoundedRange<T extends Comparable<T>> extends Range<T> {
 
         private final T start;
         private final T end;
+        private final boolean excludeStart;
+        private final boolean excludeEnd;
 
         public BoundedRange(T start, T end) {
+            this(start, end, BoundsExclusion.NONE);
+        }
+
+        public BoundedRange(T start, T end, BoundsExclusion boundsExclusion) {
             this.start = start;
             this.end = end;
+            this.excludeStart = boundsExclusion == BoundsExclusion.START || boundsExclusion == BoundsExclusion.BOTH;
+            this.excludeEnd = boundsExclusion == BoundsExclusion.END || boundsExclusion == BoundsExclusion.BOTH;
         }
 
         @Override
@@ -598,33 +758,21 @@ public abstract sealed class Range<T extends Comparable<T>> {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public boolean overlaps(Range<? extends T> other) {
-            if (other.isBoundedAtStart()) {
-                if (other.isBoundedAtEnd()) {
-                    T otherStart;
-                    T otherEnd;
-                    if (other.isNegative()) {
-                        otherStart = other.end();
-                        otherEnd = other.start();
-                    } else {
-                        otherStart = other.start();
-                        otherEnd = other.end();
-                    }
-                    return otherStart.compareTo(end) <= 0 && otherEnd.compareTo(start) >= 0;
-                } else {
-                    return other.start().compareTo(end) <= 0;
+            if (other.isBoundedAtEnd()) {
+                if (other.isBoundedAtStart()) {
+                    return endAfterOrAtStartOf(other) && startBeforeOrAtEndOf(other);
                 }
-            } else if (other.isBoundedAtEnd()) {
-                return other.end().compareTo(start) >= 0;
+                return startBeforeOrAtEndOf(other);
+            } else if (other.isBoundedAtStart()) {
+                return endAfterOrAtStartOf(other);
             }
             return true;
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public boolean isBefore(Range<? extends T> other) {
-            return other.isBoundedAtStart() && end.compareTo(other.start()) < 0;
+            return other.isBoundedAtStart() && endBeforeStartOf(other);
         }
 
         @Override
@@ -633,9 +781,8 @@ public abstract sealed class Range<T extends Comparable<T>> {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public boolean isAfter(Range<? extends T> other) {
-            return other.isBoundedAtEnd() && start.compareTo(other.end()) > 0;
+            return other.isBoundedAtEnd() && startAfterEndOf(other);
         }
 
         @Override
@@ -654,36 +801,31 @@ public abstract sealed class Range<T extends Comparable<T>> {
         }
 
         @Override
-        public boolean isNegative() {
-            return start.compareTo(end) > 0;
-        }
-
-        @Override
         @SuppressWarnings("unchecked")
         public Optional<Range<? extends T>> intersection(Range<? extends T> other) {
             if (other.isBoundedAtStart()) {
                 if (other.isBoundedAtEnd()) {
-                    T otherStart;
-                    T otherEnd;
-                    if (other.isNegative()) {
-                        otherStart = other.end();
-                        otherEnd = other.start();
-                    } else {
-                        otherStart = other.start();
-                        otherEnd = other.end();
-                    }
-                    if (otherStart.compareTo(latterOfBounds()) > 0 || otherEnd.compareTo(start) < 0) {
+                    if (endBeforeStartOf(other) || startAfterEndOf(other)) {
                         return Optional.empty();
+                    } else if (endAfterOrAtEndOf(other)) {
+                        if (startBeforeOrAtStartOf(other)) {
+                            return Optional.of(other);
+                        } else if (startBeforeEndOf(other)) {
+                            return Optional.of(new BoundedRange<>(start, other.end()));
+                        } else {
+                            return Optional.empty();
+                        }
+                    } else {
+                        if (startBeforeOrAtStartOf(other)) {
+                            return Optional.of(new BoundedRange<>(other.start(), end));
+                        }
+                        return Optional.of(this);
                     }
-                    return Optional.of(new BoundedRange<>(
-                        otherStart.compareTo(formerOfBounds()) > 0 ? otherStart : formerOfBounds(),
-                        otherEnd.compareTo(latterOfBounds()) < 0 ? otherEnd : latterOfBounds())
-                    );
-                } else if (other.start().compareTo(latterOfBounds()) > 0) {
+                } else if (endBeforeStartOf(other)) {
                     return Optional.empty();
                 }
             } else if (other.isBoundedAtEnd()) {
-                if (other.end().compareTo(formerOfBounds()) < 0) {
+                if (startAfterEndOf(other)) {
                     return Optional.empty();
                 }
             }
@@ -694,36 +836,23 @@ public abstract sealed class Range<T extends Comparable<T>> {
         @SuppressWarnings("unchecked")
         public Union<? extends T> union(Range<? extends T> other) {
             if (other.isBoundedAtStart()) {
-                if (other.isBoundedAtEnd()) {
-                    T otherStart;
-                    T otherEnd;
-                    if (other.isNegative()) {
-                        otherStart = other.end();
-                        otherEnd = other.start();
-                    } else {
-                        otherStart = other.start();
-                        otherEnd = other.end();
-                    }
-                    if (otherStart.compareTo(formerOfBounds()) >= 0 && otherEnd.compareTo(latterOfBounds()) <= 0) {
-                        return new UnionOfOne<>(this);
-                    } else if (otherStart.compareTo(latterOfBounds()) <= 0 && otherEnd.compareTo(formerOfBounds()) >= 0) {
-                        return new UnionOfOne<>(new BoundedRange<>(
-                            otherStart.compareTo(formerOfBounds()) < 0 ? otherStart : formerOfBounds(),
-                            otherEnd.compareTo(latterOfBounds()) > 0 ? otherEnd : latterOfBounds())
-                        );
-                    }
-                } else {
-                    if (other.start().compareTo(formerOfBounds()) <= 0) {
+                if (other.isBoundedAtEnd() && endAfterOrAtStartOf(other)) {
+                    if (other.start().compareTo(start) >= 0) {
                         return new UnionOfOne<>((Range<T>) other);
-                    } else if (other.start().compareTo(latterOfBounds()) <= 0) {
+                    }
+                    return new UnionOfOne<>(new BoundedRange<>(other.start(), end));
+                } else {
+                    if (startAfterOrAtStartOf(other)) {
+                        return new UnionOfOne<>((Range<T>) other);
+                    } else if (other.start().compareTo(end) <= 0) {
                         return new UnionOfOne<>(new UnboundedEndRange<>(other.start()));
                     }
                 }
             } else if (other.isBoundedAtEnd()) {
-                if (other.end().compareTo(latterOfBounds()) >= 0) {
+                if (endBeforeOrAtEndOf(other)) {
                     return new UnionOfOne<>((Range<T>) other);
-                } else {
-                    return new UnionOfOne<>(new UnboundedStartRange<>(latterOfBounds()));
+                } else if (startBeforeOrAtEndOf(other)) {
+                    return new UnionOfOne<>(new UnboundedStartRange<>(other.end()));
                 }
             }
             return new UnionOfTwo<>(this, (Range<T>) other);
@@ -732,31 +861,32 @@ public abstract sealed class Range<T extends Comparable<T>> {
         @Override
         @SuppressWarnings("unchecked")
         public Optional<Range<T>> gap(Range<? extends T> other) {
-            if (other.isBoundedAtStart()) {
-                if (other.isBoundedAtEnd()) {
-                    T otherStart;
-                    T otherEnd;
-                    if (other.isNegative()) {
-                        otherStart = other.end();
-                        otherEnd = other.start();
-                    } else {
-                        otherStart = other.start();
-                        otherEnd = other.end();
-                    }
-                    if (otherStart.compareTo(latterOfBounds()) > 0) {
-                        return Optional.of(new BoundedRange<>(latterOfBounds(), otherStart));
-                    } else if (otherEnd.compareTo(formerOfBounds()) < 0) {
-                        return Optional.of(new BoundedRange<>(otherEnd, formerOfBounds()));
-                    }
-                } else if (other.start().compareTo(latterOfBounds()) > 0) {
-                    return Optional.of(new BoundedRange<>(latterOfBounds(), other.start()));
-                }
-            } else if (other.isBoundedAtEnd()) {
-                if (other.end().compareTo(formerOfBounds()) < 0) {
-                    return Optional.of(new BoundedRange<>(other.end(), formerOfBounds()));
-                }
+            if (other.isBoundedAtStart() && endBeforeStartOf(other)) {
+                return Optional.of(new BoundedRange<>(end, other.start()));
+            } else if (other.isBoundedAtEnd() && startAfterEndOf(other)) {
+                return Optional.of(new BoundedRange<>(other.end(), start));
             }
             return Optional.empty();
+        }
+
+        @Override
+        public boolean isEndExclusive() {
+            return excludeEnd;
+        }
+
+        @Override
+        public boolean isStartExclusive() {
+            return excludeStart;
+        }
+
+        @Override
+        protected int endCompareOffset() {
+            return excludeEnd ? 1 : 0;
+        }
+
+        @Override
+        protected int startCompareOffset() {
+            return excludeStart ? 1 : 0;
         }
 
         @Override
@@ -775,18 +905,16 @@ public abstract sealed class Range<T extends Comparable<T>> {
             return Objects.hash(start, end);
         }
 
-        private T latterOfBounds() {
-            return start.compareTo(end) < 0 ? end : start;
-        }
-
-        private T formerOfBounds() {
-            return start.compareTo(end) < 0 ? start : end;
+        @Override
+        public String toString() {
+            return start + " - " + end;
         }
     }
 
     /**
      * Represents a union of two spans.
      * The spans are guaranteed to either abut or not touch at all.
+     *
      * @param <T> the type of the values
      */
     public sealed interface Union<T extends Comparable<T>> {
@@ -794,6 +922,7 @@ public abstract sealed class Range<T extends Comparable<T>> {
 
     /**
      * Represents a result of union operation where the result is a single span.
+     *
      * @param <T> the type of the values
      */
     public static final class UnionOfOne<T extends Comparable<T>> implements Union<T> {
@@ -806,6 +935,7 @@ public abstract sealed class Range<T extends Comparable<T>> {
 
         /**
          * Returns the span.
+         *
          * @return the span
          */
         public Range<T> range() {
@@ -826,6 +956,7 @@ public abstract sealed class Range<T extends Comparable<T>> {
 
     /**
      * Represents a result of union operation where the result is two spans.
+     *
      * @param <T> the type of the values
      */
     public static final class UnionOfTwo<T extends Comparable<T>> implements Union<T> {
@@ -840,6 +971,7 @@ public abstract sealed class Range<T extends Comparable<T>> {
 
         /**
          * Returns the first span.
+         *
          * @return the first span
          */
         public Range<T> first() {
@@ -848,6 +980,7 @@ public abstract sealed class Range<T extends Comparable<T>> {
 
         /**
          * Returns the second span.
+         *
          * @return the second span
          */
         public Range<T> second() {
@@ -864,5 +997,12 @@ public abstract sealed class Range<T extends Comparable<T>> {
             }
             return Objects.equals(first, that.first) && Objects.equals(second, that.second);
         }
+    }
+
+    public enum BoundsExclusion {
+        NONE,
+        START,
+        END,
+        BOTH
     }
 }
