@@ -115,7 +115,7 @@ public class CompileFramework {
 
     /**
      * Invoke a static method from the compiled code.
-     
+     *
      * @param className Class name of a compiled class.
      * @param methodName Method name of the class.
      * @param args List of arguments for the method invocation.

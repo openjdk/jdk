@@ -43,7 +43,7 @@ class Compile {
         }
         Utils.printlnVerbose("Compiling Java sources: " + javaSources.size());
 
-        List<Path> javaFilePaths = Utils.writeSourcesToFile(javaSources, sourceDir);
+        List<Path> javaFilePaths = Utils.writeSourcesToFiles(javaSources, sourceDir);
         compileJavaFiles(javaFilePaths, classesDir);
         Utils.printlnVerbose("Java sources compiled.");
     }
@@ -79,7 +79,7 @@ class Compile {
         }
         Utils.printlnVerbose("Compiling jasm sources: " + jasmSources.size());
 
-        List<Path> jasmFilePaths = Utils.writeSourcesToFile(jasmSources, sourceDir);
+        List<Path> jasmFilePaths = Utils.writeSourcesToFiles(jasmSources, sourceDir);
         compileJasmFiles(jasmFilePaths, classesDir);
         Utils.printlnVerbose("Jasm sources compiled.");
     }

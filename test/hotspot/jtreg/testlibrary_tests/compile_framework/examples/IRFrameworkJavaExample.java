@@ -49,12 +49,12 @@ import java.lang.reflect.InvocationTargetException;
 public class IRFrameworkJavaExample {
 
     public static void main(String args[]) {
-        test_X1();
-        test_X2();
+        testX1();
+        testX2();
     }
 
     // Generate a source java file as String
-    public static String generate_X1(CompileFramework comp) {
+    public static String generateX1(CompileFramework comp) {
         return String.format("""
                import compiler.lib.ir_framework.*;
 
@@ -79,12 +79,12 @@ public class IRFrameworkJavaExample {
                """, comp.getEscapedClassPathOfCompiledClasses());
     }
 
-    static void test_X1() {
+    static void testX1() {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
-        comp.addJavaSourceCode("X1", generate_X1(comp));
+        comp.addJavaSourceCode("X1", generateX1(comp));
 
         // Compile the source file.
         comp.compile();
@@ -94,7 +94,7 @@ public class IRFrameworkJavaExample {
     }
 
     // Generate a source java file as String
-    public static String generate_X2(CompileFramework comp) {
+    public static String generateX2(CompileFramework comp) {
         // Example with conflicting "@IR" rules -> expect a IRViolationException.
         return String.format("""
                import compiler.lib.ir_framework.*;
@@ -115,12 +115,12 @@ public class IRFrameworkJavaExample {
                """, comp.getEscapedClassPathOfCompiledClasses());
     }
 
-    static void test_X2() {
+    static void testX2() {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
-        comp.addJavaSourceCode("X2", generate_X2(comp));
+        comp.addJavaSourceCode("X2", generateX2(comp));
 
         // Compile the source file.
         comp.compile();
