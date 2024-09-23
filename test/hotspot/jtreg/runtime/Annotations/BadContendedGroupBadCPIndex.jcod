@@ -1,0 +1,123 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/* Based on source:
+ * public class ContendedField {
+ *     @Contended("group1")
+ *     public int field;
+ * }
+ *
+ * We change the value of "value" so it refers to an invalid CP entry
+ */
+
+class BadContendedGroupBadCPIndex {
+  0xCAFEBABE;
+  0; // minor version
+  65; // version
+  [19] { // Constant Pool
+    ; // first element is empty
+    Method #2 #3; // #1     at 0x0A
+    class #4; // #2     at 0x0F
+    NameAndType #5 #6; // #3     at 0x12
+    Utf8 "java/lang/Object"; // #4     at 0x17
+    Utf8 "<init>"; // #5     at 0x2A
+    Utf8 "()V"; // #6     at 0x33
+    class #8; // #7     at 0x39
+    Utf8 "BadContendedGroupBadCPIndex"; // #8     at 0x3C
+    Utf8 "field"; // #9     at 0x4D
+    Utf8 "I"; // #10     at 0x55
+    Utf8 "RuntimeVisibleAnnotations"; // #11     at 0x59
+    Utf8 "Ljdk/internal/vm/annotation/Contended;"; // #12     at 0x75
+    Utf8 "value"; // #13     at 0x9E
+    Utf8 "group1"; // #14     at 0xA6
+    Utf8 "Code"; // #15     at 0xAF
+    Utf8 "LineNumberTable"; // #16     at 0xB6
+    Utf8 "SourceFile"; // #17     at 0xC8
+    Utf8 "BadContendedGroupBadCPIndex.java"; // #18     at 0xD5
+  } // Constant Pool
+
+  0x0021; // access [ ACC_PUBLIC ACC_SUPER ]
+  #7;// this_cpx
+  #2;// super_cpx
+
+  [0] { // Interfaces
+  } // Interfaces
+
+  [1] { // Fields
+    {  // field at 0xF5
+      0x0001; // access
+      #9; // name_index       : field
+      #10; // descriptor_index : I
+      [1] { // Attributes
+        Attr(#11, 11) { // RuntimeVisibleAnnotations at 0xFD
+          [1] { // annotations
+            {  //  annotation
+              #12;
+              [1] { // element_value_pairs
+                {  //  element value pair
+                  #13;
+                  {  //  element_value
+                    's';
+                    #1400; // Changed from #14 to #1400
+                  }  //  element_value
+                }  //  element value pair
+              }  //  element_value_pairs
+            }  //  annotation
+          }
+        } // end RuntimeVisibleAnnotations
+      } // Attributes
+    }
+  } // Fields
+
+  [1] { // Methods
+    {  // method at 0x0110
+      0x0001; // access
+      #5; // name_index       : <init>
+      #6; // descriptor_index : ()V
+      [1] { // Attributes
+        Attr(#15, 29) { // Code at 0x0118
+          1; // max_stack
+          1; // max_locals
+          Bytes[5]{
+            0x2AB70001B1;
+          }
+          [0] { // Traps
+          } // end Traps
+          [1] { // Attributes
+            Attr(#16, 6) { // LineNumberTable at 0x012F
+              [1] { // line_number_table
+                0  2; //  at 0x013B
+              }
+            } // end LineNumberTable
+          } // Attributes
+        } // end Code
+      } // Attributes
+    }
+  } // Methods
+
+  [1] { // Attributes
+    Attr(#17, 2) { // SourceFile at 0x013D
+      #18;
+    } // end SourceFile
+  } // Attributes
+} // end class BadContendedGroupBadCPIndex

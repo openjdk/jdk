@@ -87,9 +87,6 @@ final class VerificationBytecodes {
     }
 
     static final int _lengths[] = new int[number_of_codes];
-            case ClassFile.WIDE:
-            case ClassFile.TABLESWITCH:
-            case ClassFile.LOOKUPSWITCH:
 
     static int align(int n) {
         return (n + 3) & ~3;

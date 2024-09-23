@@ -1424,7 +1424,7 @@ public final class VerifierImpl {
         int default_offset = bcs.getIntUnchecked(aligned_bci);
         int keys, delta;
         current_frame.pop_stack(VerificationType.integer_type);
-        if (bcs.rawCode == ClassFile.TABLESWITCH) {
+        if (bcs.opcode() == TABLESWITCH) {
             int low = bcs.getIntUnchecked(aligned_bci + 4);
             int high = bcs.getIntUnchecked(aligned_bci + 2*4);
             if (low > high) {

@@ -218,14 +218,3 @@ void oopDesc::release_float_field_put(int offset, jfloat value)       { Atomic::
 
 jdouble oopDesc::double_field_acquire(int offset) const               { return Atomic::load_acquire(field_addr<jdouble>(offset)); }
 void oopDesc::release_double_field_put(int offset, jdouble value)     { Atomic::release_store(field_addr<jdouble>(offset), value); }
-
-#ifdef ASSERT
-bool oopDesc::size_might_change() {
-  // UseParallelGC and UseG1GC can change the length field
-  // of an "old copy" of an object array in the young gen so it indicates
-  // the grey portion of an already copied array. This will cause the first
-  // disjunct below to fail if the two comparands are computed across such
-  // a concurrent change.
-  return Universe::heap()->is_stw_gc_active() && is_objArray() && is_forwarded() && (UseParallelGC || UseG1GC);
-}
-#endif
