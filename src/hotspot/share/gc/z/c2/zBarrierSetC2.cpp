@@ -46,7 +46,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 
-template<typename K, typename V, size_t _table_size>
+template<typename K, typename V, size_t TableSize>
 class ZArenaHashtable : public ResourceObj {
   class ZArenaHashtableEntry : public ResourceObj {
   public:
@@ -55,10 +55,10 @@ class ZArenaHashtable : public ResourceObj {
     V _value;
   };
 
-  static const size_t _table_mask = _table_size - 1;
+  static const size_t TableMask = TableSize - 1;
 
   Arena* _arena;
-  ZArenaHashtableEntry* _table[_table_size];
+  ZArenaHashtableEntry* _table[TableSize];
 
 public:
   class Iterator {
@@ -84,7 +84,7 @@ public:
       if (_current_entry != nullptr) {
         _current_entry = _current_entry->_next;
       }
-      while (_current_entry == nullptr && ++_current_index < _table_size) {
+      while (_current_entry == nullptr && ++_current_index < TableSize) {
         _current_entry = _table->_table[_current_index];
       }
     }
@@ -100,12 +100,12 @@ public:
     ZArenaHashtableEntry* entry = new (_arena) ZArenaHashtableEntry();
     entry->_key = key;
     entry->_value = value;
-    entry->_next = _table[key & _table_mask];
-    _table[key & _table_mask] = entry;
+    entry->_next = _table[key & TableMask];
+    _table[key & TableMask] = entry;
   }
 
   V* get(K key) const {
-    for (ZArenaHashtableEntry* e = _table[key & _table_mask]; e != nullptr; e = e->_next) {
+    for (ZArenaHashtableEntry* e = _table[key & TableMask]; e != nullptr; e = e->_next) {
       if (e->_key == key) {
         return &(e->_value);
       }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -512,7 +512,7 @@ final class Double128Vector extends DoubleVector {
                      this, i,
                      (vec, ix) -> {
                      double[] vecarr = vec.vec();
-                     return (long)Double.doubleToLongBits(vecarr[ix]);
+                     return (long)Double.doubleToRawLongBits(vecarr[ix]);
                      });
     }
 
@@ -529,7 +529,7 @@ final class Double128Vector extends DoubleVector {
     public Double128Vector withLaneHelper(int i, double e) {
         return VectorSupport.insert(
                                 VCLASS, ETYPE, VLENGTH,
-                                this, i, (long)Double.doubleToLongBits(e),
+                                this, i, (long)Double.doubleToRawLongBits(e),
                                 (v, ix, bits) -> {
                                     double[] res = v.vec().clone();
                                     res[ix] = Double.longBitsToDouble((long)bits);

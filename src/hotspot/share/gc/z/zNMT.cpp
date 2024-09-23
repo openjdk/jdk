@@ -26,7 +26,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNMT.hpp"
 #include "gc/z/zVirtualMemory.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
