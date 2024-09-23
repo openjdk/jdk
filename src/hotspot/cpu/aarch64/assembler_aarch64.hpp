@@ -287,7 +287,7 @@ public:
     f(r->raw_encoding(), lsb + 4, lsb);
   }
 
-  //<0-15>reg
+  //<0-15>reg: As `rf(FloatRegister)`, but only the lower  16 FloatRegisters are allowed.
   void lrf(FloatRegister r, int lsb) {
     f(r->raw_encoding(), lsb + 3, lsb);
   }
