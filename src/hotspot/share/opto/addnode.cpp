@@ -424,7 +424,9 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, Basic
     return nullptr;
   }
 
-  Node* con = (bt == T_INT) ? (Node*) phase->intcon((jint) factor) : (Node*) phase->longcon(factor);
+  Node* con = (bt == T_INT)
+              ? (Node*) phase->intcon((jint) factor) // intentional type narrowing to allow overflow at max_jint
+              : (Node*) phase->longcon(factor);
   Node* mul = MulNode::make(con, base, bt);
 
   PhaseIterGVN* igvn = phase->is_IterGVN();
