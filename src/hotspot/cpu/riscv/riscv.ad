@@ -1261,11 +1261,11 @@ int MachCallRuntimeNode::ret_addr_offset() {
   //   jal(trampoline_stub)
   // for real runtime callouts it will be 11 instructions
   // see riscv_enc_java_to_runtime
-  //   la(t1, retaddr)                ->  auipc + addi
-  //   la(t0, RuntimeAddress(addr))   ->  lui + addi + slli + addi + slli + addi
+  //   la(t0, retaddr)                ->  auipc + addi
+  //   la(t1, RuntimeAddress(addr))   ->  lui + addi + slli + addi + slli + addi
   //   addi(sp, sp, -2 * wordSize)    ->  addi
   //   sd(t1, Address(sp, wordSize))  ->  sd
-  //   jalr(t0)                       ->  jalr
+  //   jalr(t1)                       ->  jalr
   CodeBlob *cb = CodeCache::find_blob(_entry_point);
   if (cb != nullptr) {
     if (UseTrampolines) {
@@ -1418,8 +1418,8 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
     Label L_skip_barrier;
 
-    __ mov_metadata(t1, C->method()->holder()->constant_encoding());
-    __ clinit_barrier(t1, t0, &L_skip_barrier);
+    __ mov_metadata(t0, C->method()->holder()->constant_encoding());
+    __ clinit_barrier(t0, t1, &L_skip_barrier);
     __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
     __ bind(L_skip_barrier);
   }
@@ -1857,8 +1857,8 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 // Emit exception handler code.
 int HandlerImpl::emit_exception_handler(C2_MacroAssembler* masm)
 {
-  // auipc t0, #exception_blob_entry_point
-  // jr (offset)t0
+  // auipc t1, #exception_blob_entry_point
+  // jr (offset)t1
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a handler.
   address base = __ start_a_stub(size_exception_handler());
@@ -2504,12 +2504,12 @@ encode %{
       __ post_call_nop();
     } else {
       Label retaddr;
-      __ la(t1, retaddr);
-      __ la(t0, RuntimeAddress(entry));
+      __ la(t0, retaddr);
+      __ la(t1, RuntimeAddress(entry));
       // Leave a breadcrumb for JavaFrameAnchor::capture_last_Java_pc()
       __ addi(sp, sp, -2 * wordSize);
-      __ sd(t1, Address(sp, wordSize));
-      __ jalr(t0);
+      __ sd(t0, Address(sp, wordSize));
+      __ jalr(t1);
       __ bind(retaddr);
       __ post_call_nop();
       __ addi(sp, sp, 2 * wordSize);

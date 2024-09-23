@@ -296,7 +296,8 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
       ;
   }
   if (entry_point != nullptr) {
-    __ jr(continuation);
+    __ mv(t1, continuation);
+    __ jr(t1);
   }
 
   return entry_point;

@@ -131,8 +131,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // xmethod: Method*
   // x12: receiver
   address ame_addr = __ pc();
-  __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
-  __ jr(t0);
+  __ ld(t1, Address(xmethod, Method::from_compiled_offset()));
+  __ jr(t1);
 
   masm->flush();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
@@ -171,7 +171,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
 
   // Entry arguments:
-  //  t1: CompiledICData
+  //  t0: CompiledICData
   //  j_rarg0: Receiver
 
   // This stub is called from compiled code which has no callee-saved registers,
@@ -181,7 +181,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   const Register resolved_klass_reg = x30; // resolved interface klass (REFC)
   const Register temp_reg           = x28;
   const Register temp_reg2          = x29;
-  const Register icdata_reg         = t1;
+  const Register icdata_reg         = t0;
 
   Label L_no_such_interface;
 
@@ -220,8 +220,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // xmethod: Method*
   // j_rarg0: receiver
   address ame_addr = __ pc();
-  __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
-  __ jr(t0);
+  __ ld(t1, Address(xmethod, Method::from_compiled_offset()));
+  __ jr(t1);
 
   __ bind(L_no_such_interface);
   // Handle IncompatibleClassChangeError in itable stubs.

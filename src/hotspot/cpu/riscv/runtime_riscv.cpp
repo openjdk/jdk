@@ -351,7 +351,7 @@ void OptoRuntime::generate_exception_blob() {
   // x10: exception handler
 
   // We have a handler in x10 (could be deopt blob).
-  __ mv(t0, x10);
+  __ mv(t1, x10);
 
   // Get the exception oop
   __ ld(x10, Address(xthread, JavaThread::exception_oop_offset()));
@@ -365,11 +365,11 @@ void OptoRuntime::generate_exception_blob() {
   __ sd(zr, Address(xthread, JavaThread::exception_oop_offset()));
 
   // x10: exception oop
-  // t0:  exception handler
+  // t1:  exception handler
   // x14: exception pc
   // Jump to handler
 
-  __ jr(t0);
+  __ jr(t1);
 
   // Make sure all code is generated
   masm->flush();
