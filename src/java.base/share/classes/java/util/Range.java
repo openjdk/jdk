@@ -384,7 +384,7 @@ public abstract sealed class Range<T extends Comparable<T>> {
 
         @Override
         public String toString() {
-            return "∞ - ∞";
+            return "inf - inf";
         }
     }
 
@@ -550,7 +550,7 @@ public abstract sealed class Range<T extends Comparable<T>> {
 
         @Override
         public String toString() {
-            return "∞ - " + end;
+            return "inf - " + end;
         }
     }
 
@@ -720,7 +720,7 @@ public abstract sealed class Range<T extends Comparable<T>> {
 
         @Override
         public String toString() {
-            return start + " - ∞";
+            return start + " - inf";
         }
     }
 
