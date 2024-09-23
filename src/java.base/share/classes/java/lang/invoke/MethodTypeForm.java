@@ -115,8 +115,8 @@ final class MethodTypeForm {
         Object entry = methodHandles[which];
         if (entry == null) {
             return null;
-        } else if (entry instanceof MethodHandle) {
-            return (MethodHandle) entry;
+        } else if (entry instanceof MethodHandle mh) {
+            return mh;
         } else {
             return ((SoftReference<MethodHandle>)entry).get();
         }
@@ -141,8 +141,8 @@ final class MethodTypeForm {
         Object entry = lambdaForms[which];
         if (entry == null) {
             return null;
-        } else if (entry instanceof LambdaForm) {
-            return (LambdaForm) entry;
+        } else if (entry instanceof LambdaForm lf) {
+            return lf;
         } else {
             return ((SoftReference<LambdaForm>)entry).get();
         }
