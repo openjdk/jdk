@@ -349,11 +349,9 @@ public final class PassFailJFrame {
                         builder.positionWindows
                                .positionTestWindows(unmodifiableList(builder.testWindows),
                                                     builder.instructionUIHandler));
-            } else if (builder.testWindows.size() == 1) {
+            } else {
                 Window window = builder.testWindows.get(0);
                 positionTestWindow(window, builder.position);
-            } else {
-                positionTestWindow(null, builder.position);
             }
         }
         showAllWindows();
