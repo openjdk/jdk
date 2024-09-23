@@ -680,8 +680,9 @@ VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& 
 }
 
 float VTransformLoadVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  // TODO
-  return 1;
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
+  return Matcher::cost_for_vector(Op_LoadVector, vlen, bt);
 }
 
 VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
@@ -699,6 +700,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
   // does not have any memory dependency.
+  // TODO: can we move this to optimize or out of SuperWord? Would require some refactor of VPointer!
   while (mem->is_StoreVector()) {
     VPointer p_store(mem->as_Mem(), vloop_analyzer.vloop());
     if (p_store.overlap_possible_with_any_in(nodes())) {
@@ -716,8 +718,9 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
 }
 
 float VTransformStoreVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  // TODO
-  return 1;
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
+  return Matcher::cost_for_vector(Op_StoreVector, vlen, bt);
 }
 
 VTransformApplyResult VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
