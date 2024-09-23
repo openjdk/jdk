@@ -144,8 +144,8 @@ class LambdaFormEditor {
 
         @SuppressWarnings({"rawtypes", "unchecked"})
         public LambdaForm get() {
-            if (cache instanceof LambdaForm) {
-                return (LambdaForm)cache;
+            if (cache instanceof LambdaForm lf) {
+                return lf;
             } else {
                 return ((SoftReference<LambdaForm>)cache).get();
             }
