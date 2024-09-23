@@ -406,28 +406,138 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
 
 // Convert a + a + ... + a into a*n
 Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, BasicType bt) {
-  Node* base = nullptr;
-  // During IGVN, to avoid same transformation applied to the every con in a subgraph, we use a depth limit to avoid
-  // transforming a huge subgraph in one go and the risk of associated performance issues. Untransformed nodes will be
-  // added to the worklist. Being iterative, the algorithm eventually transforms the whole subgraph.
-  jlong factor = extract_base_operand_from_serial_additions(phase, this, bt, can_reshape ? 5 : -1, &base);
-
-  // The subgraph cannot be transformed if:
-  // 1. no common base operand can be extracted, i.e., nullptr
-  // 2. the base operand is the same as the current con, i.e., a + b
-  // 3. input is an already-optimized multiplication, i.e., a*6 => (a<<1) + (a<<2)
-  // 4. is simple additions not worth transforming, i.e., a + a
-  if (base == nullptr
-      || base == this
-      || is_optimized_multiplication(this, bt, base)
-      || (base == in(1) && base == in(2))) {
+  if (is_optimized_multiplication()) {
     return nullptr;
   }
 
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+  int in1_op = in1->Opcode();
+
+  bool matched = false;
+  jlong multiplier;
+
+  // Convert (a + a) + a to 3 * a
+  // Look for LHS pattern: AddNode(a, a)
+  if (in1_op == Op_Add(bt) && in1->in(1) == in1->in(2)) {
+    if (in1->in(1) != in2) {
+      return nullptr;
+    }
+
+    multiplier = 2;
+    matched = true;
+  }
+
+  // Convert (a << CON) + a to a * ((1 << CON) + 1))
+  // Look for LHS pattern: LShiftNode(a, CON)
+  // Note that power-of-2 multiplication optimization could potentially convert a MulNode to this pattern
+  if (in1_op == Op_LShift(bt) && in1->in(2)->is_Con()) {
+    Node* base = in1->in(1);
+    if (base != in2) {
+      return nullptr;
+    }
+
+    Node* con = in1->in(2);
+    BasicType con_bt = phase->type(con)->basic_type();
+    if (con_bt == T_VOID) { // const could potentially be void type
+      return nullptr;
+    }
+
+    multiplier = (jlong) 1 << con->get_integer_as_long(con_bt);
+    matched = true;
+  }
+
+  // Convert (CON * a) + a to (CON + 1) * a
+  // Look for LHS patterns:
+  //     - MulNode(CON, a)
+  //     - MulNode(a, CON)
+  // This optimization technically only produces MulNode(CON, a), but we might as well transform (a * CON) + a, too.
+  if (in1_op == Op_Mul(bt) && (in1->in(1)->is_Con() || in1->in(2)->is_Con())) {
+    Node* base = in1->in(1)->is_Con() ? in1->in(2) : in1->in(1);
+    if (base != in2) {
+      return nullptr;
+    }
+
+    Node* con = in1->in(1)->is_Con() ? in1->in(1) : in1->in(2);
+    BasicType con_bt = phase->type(con)->basic_type();
+    if (con_bt == T_VOID) { // const could potentially be void type
+      return nullptr;
+    }
+
+    multiplier = con->get_integer_as_long(con_bt);
+    matched = true;
+  }
+
+  // Due to potential power-of-2 multiplication optimization, e.g., ((a << CON1) + (a << CON2)) + a,
+  // we also look for LHS patterns:
+  //     - AddNode(LShiftNode(a, CON)/a, LShiftNode(a, CON))
+  if (in1_op == Op_Add(bt) && in1->isa_Add()->is_optimized_multiplication()) {
+    Node* lhs = in1->in(1);
+    Node* rhs = in1->in(2);
+
+    Node* lhs_base = lhs->is_LShift() ? lhs->in(1) : lhs;
+    Node* rhs_base = rhs->is_LShift() ? rhs->in(1) : rhs;
+
+    Node* lhs_const = lhs->is_LShift() ? lhs->in(2) : nullptr;
+    Node* rhs_const = rhs->is_LShift() ? rhs->in(2) : nullptr;
+
+    jlong lhs_multiplier = 1;
+    if (lhs->is_LShift()) { // TODO: refactor
+      Node* con = lhs->in(2);
+      BasicType con_bt = phase->type(con)->basic_type();
+      if (con_bt == T_VOID) { // const could potentially be void type
+        return nullptr;
+      }
+
+      lhs_multiplier = ((jlong) 1 << con->get_integer_as_long(con_bt));
+    }
+
+    jlong rhs_multiplier = 1;
+    if (rhs->is_LShift()) { // TODO: refactor
+      Node* con = rhs->in(2);
+      BasicType con_bt = phase->type(con)->basic_type();
+      if (con_bt == T_VOID) { // const could potentially be void type
+        return nullptr;
+      }
+
+      rhs_multiplier = ((jlong) 1 << con->get_integer_as_long(con_bt));
+    }
+
+    multiplier = lhs_multiplier + rhs_multiplier;
+    matched = true;
+  }
+
+  // Due to potential power-of-2 multiplication optimization, e.g., ((a << CON) - a) + a,
+  //     - SubNode(LShiftNode(a, CON), a)
+  if (in1_op == Op_Sub(bt) && in1->in(1)->is_LShift() && in1->in(1)->in(2)->is_Con()) {
+    Node* lshift = in1->in(1);
+    Node* base = in1->in(2);
+
+    Node* lshift_base = lshift->in(1);
+    if (lshift_base != base || lshift_base != in2) {
+      return nullptr;
+    }
+
+    Node* con = lshift->in(2);
+    BasicType con_bt = phase->type(con)->basic_type();
+    if (con_bt == T_VOID) { // const could potentially be void type
+      return nullptr;
+    }
+
+    multiplier = ((jlong) 1 << con->get_integer_as_long(con_bt)) - 1;
+    matched = true;
+//    return lshift; // ((a << CON) - a) + a cancel out to a << CON
+  }
+
+  if (!matched) {
+    return nullptr;
+  }
+
+  multiplier++; // + 1 for current addition
   Node* con = (bt == T_INT)
-              ? (Node*) phase->intcon((jint) factor) // intentional type narrowing to allow overflow at max_jint
-              : (Node*) phase->longcon(factor);
-  Node* mul = MulNode::make(con, base, bt);
+              ? (Node*) phase->intcon((jint) multiplier) // intentional type narrowing to allow overflow at max_jint
+              : (Node*) phase->longcon(multiplier);
+  Node* mul = MulNode::make(con, in2, bt);
 
   PhaseIterGVN* igvn = phase->is_IterGVN();
   if (igvn != nullptr) {
@@ -438,110 +548,38 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, Basic
 }
 
 // MulINode::Ideal() optimizes a multiplication to an addition of at most two terms if possible.
-bool AddNode::is_optimized_multiplication(Node* node, BasicType bt, Node* base) {
-  int op = node->Opcode();
-
-  // Look for pattern: LShiftNode(a, CON)
-  if (op == Op_LShift(bt) && node->in(2)->is_Con()) {
-    return base == node->isa_LShift()->in(1);
-  }
+bool AddNode::is_optimized_multiplication() {
+  int op = Opcode();
+  Node* lhs = in(1);
+  Node* rhs = in(2);
 
   // Look for patterns:
-  //     - AddNode(LShiftNode(a, CON)/a, LShiftNode(a, CON))
   //     - AddNode(LShiftNode(a, CON), LShiftNode(a, CON)/a)
+  //     - AddNode(LShiftNode(a, CON)/a, LShiftNode(a, CON))
   // given that lhs is different from rhs
-  if (op == Op_Add(bt)
-      && node->in(1) != node->in(2)
-      && (
-          (node->in(1)->is_LShift() && node->in(1)->in(2)->is_Con()) // AddNode(LShiftNode(a, CON), *)
-              || (node->in(2)->is_LShift() && node->in(2)->in(2)->is_Con()) // AddNode(*, LShiftNode(a, CON))
-      )) {
-    Node* lhs = node->in(1);
-    Node* rhs = node->in(2);
-
-    Node* lhs_base = lhs->is_LShift() ? lhs->in(1) : lhs;
-    Node* rhs_base = rhs->is_LShift() ? rhs->in(1) : rhs;
-
-    if (lhs == rhs_base || rhs == lhs_base) {
-      return (lhs == rhs_base && lhs == base)
-          || (rhs == lhs_base && rhs == base);
-    }
-
-    return lhs_base == rhs_base && base == lhs_base;
+  if (lhs == rhs) {
+    return false;
   }
 
-  // Look for pattern: SubNode(LShiftNode(a, CON), a)
-  if (op == Op_Sub(bt) && node->in(1)->Opcode() == Op_LShift(bt) && node->in(1)->in(2)->is_Con()) {
-    Node* a1 = node->in(1)->in(1);
-    Node* a2 = node->in(2);
-
-    return a1 == a2 && base == a1;
+  // swap LShiftNode to lhs for easier matching
+  if (!lhs->is_LShift()) {
+    Node* tmp = lhs;
+    lhs = rhs;
+    rhs = tmp;
   }
 
-  return false;
-}
-
-// For a series of additions, extract the base operand and the multiplier. E.g., extract a*n from a + a + ... + a
-jlong AddNode::extract_base_operand_from_serial_additions(PhaseGVN* phase, Node* node, BasicType bt, int depth_limit, Node** base) {
-  *base = node;
-
-  if (depth_limit == 0) {
-    return 1;
+  // AddNode(LShiftNode(a, CON), LShiftNode(a, CON)/a)
+  if (!lhs->is_LShift() || !lhs->in(2)->is_Con()) {
+    return false;
   }
 
-  int op = node->Opcode();
-
-  // MulNode(any, const), e.g., a*2
-  if (op == Op_Mul(bt)
-      && (node->in(1)->is_Con() || node->in(2)->is_Con())) {
-    Node* const_node = node->in(1)->is_Con() ? node->in(1) : node->in(2);
-    Node* operand_node = node->in(1)->is_Con() ? node->in(2) : node->in(1);
-    BasicType const_bt = phase->type(const_node)->basic_type();
-
-    if (const_bt == T_INT || const_bt == T_LONG) { // const could potentially be void type
-      Node* mul_base;
-      jlong multiplier = extract_base_operand_from_serial_additions(phase, operand_node, bt, depth_limit - 1, &mul_base);
-
-      *base = mul_base;
-      return multiplier * const_node->get_integer_as_long(const_bt);
-    }
+  if (rhs->is_LShift() && lhs->in(1) != rhs->in(1)) {
+    return false;
   }
 
-  // LShiftNode(any, const), e.g, a<<2 => a*4
-  if (op == Op_LShift(bt) && node->in(2)->is_Con()) {
-    Node* const_node = node->in(2);
-    Node* operand_node = node->in(1);
-    BasicType const_bt = phase->type(const_node)->basic_type();
-
-    if (const_bt == T_INT || const_bt == T_LONG) { // const could potentially be void type
-      Node* shift_base;
-      jlong multiplier = extract_base_operand_from_serial_additions(phase, operand_node, bt, depth_limit - 1, &shift_base);
-
-      *base = shift_base;
-      return multiplier * ((jlong) 1 << const_node->get_integer_as_long(const_bt)); // const could be void type
-    }
-  }
-
-  // AddNode(any, any), e.g., a + a => a*2 or (a<<2) + a => a*5
-  // SubNode(any, any), e.g., a<<3 - a => a*7
-  if (op == Op_Add(bt) || op == Op_Sub(bt)) {
-    Node* operand_node_left = node->in(1);
-    Node* operand_node_right = node->in(2);
-
-    Node* base_left;
-    Node* base_right;
-    jlong multiplier_left = extract_base_operand_from_serial_additions(phase, operand_node_left, bt,
-                                                                       depth_limit - 1, &base_left);
-    jlong multiplier_right = extract_base_operand_from_serial_additions(phase, operand_node_right, bt,
-                                                                        depth_limit - 1, &base_right);
-
-    if (base_left == base_right) {
-      *base = base_left;
-      return op == Op_Add(bt) ? multiplier_left + multiplier_right : multiplier_left - multiplier_right;
-    }
-  }
-
-  return 1;
+  Node* lhs_base = lhs->in(1);
+  Node* rhs_base = rhs->is_LShift() ? rhs->in(1) : rhs;
+  return lhs_base == rhs_base;
 }
 
 Node* AddINode::Ideal(PhaseGVN* phase, bool can_reshape) {
