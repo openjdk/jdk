@@ -400,27 +400,27 @@ VTransformApplyResult VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vl
 }
 
 float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  Node* first = nodes().at(0);
-  uint  vlen = nodes().length();
-  int   opc  = first->Opcode();
-  BasicType bt = vloop_analyzer.types().velt_basic_type(first);
+  Node* first  = nodes().at(0);
+  int sopc     = scalar_opcode();
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
 
   if (first->is_Cmp()) {
     return 0; // empty
   } else if (first->is_CMove()) {
     return Matcher::cost_for_vector(Op_VectorBlend, vlen, bt);;
-  } else if (VectorNode::is_convert_opcode(opc)) {
+  } else if (VectorNode::is_convert_opcode(sopc)) {
     return 1; // TODO - need input type - how to get it?
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     int vopc = VectorNode::opcode(Op_RShiftI, bt);
     return Matcher::cost_for_vector(vopc, vlen, bt);;
-  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
-    int vopc = VectorNode::opcode(opc, T_LONG);
+  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
+    int vopc = VectorNode::opcode(sopc, T_LONG);
     return Matcher::cost_for_vector(vopc, vlen, T_LONG) +
            Matcher::cost_for_vector(Op_VectorCastL2X, vlen, T_INT);
   } else {
     // Regular operations.
-    int vopc = VectorNode::opcode(opc, bt);
+    int vopc = VectorNode::opcode(sopc, bt);
     return Matcher::cost_for_vector(vopc, vlen, bt);
   }
 }
@@ -428,9 +428,9 @@ float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer)
 VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
                                                              const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   Node* first = nodes().at(0);
-  uint  vlen = nodes().length();
-  int   opc  = first->Opcode();
-  BasicType bt = vloop_analyzer.types().velt_basic_type(first);
+  int sopc     = scalar_opcode();
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
 
   if (first->is_Cmp()) {
     // Cmp + Bool -> VectorMaskCmp
@@ -447,32 +447,32 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
   if (first->is_CMove()) {
     assert(req() == 4, "three inputs expected: mask, blend1, blend2");
     vn = new VectorBlendNode(/* blend1 */ in2, /* blend2 */ in3, /* mask */ in1);
-  } else if (VectorNode::is_convert_opcode(opc)) {
+  } else if (VectorNode::is_convert_opcode(sopc)) {
     assert(first->req() == 2 && req() == 2, "only one input expected");
-    int vopc = VectorCastNode::opcode(opc, in1->bottom_type()->is_vect()->element_basic_type());
+    int vopc = VectorCastNode::opcode(sopc, in1->bottom_type()->is_vect()->element_basic_type());
     vn = VectorCastNode::make(vopc, in1, bt, vlen);
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
-    opc = Op_RShiftI;
-    vn = VectorNode::make(opc, in1, in2, vlen, bt);
-  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc)) {
+    sopc = Op_RShiftI;
+    vn = VectorNode::make(sopc, in1, in2, vlen, bt);
+  } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
     // The scalar operation was a long -> int operation.
     // However, the vector operation is long -> long.
-    VectorNode* long_vn = VectorNode::make(opc, in1, nullptr, vlen, T_LONG);
+    VectorNode* long_vn = VectorNode::make(sopc, in1, nullptr, vlen, T_LONG);
     register_new_node_from_vectorization(vloop_analyzer, long_vn, first);
     // Cast long -> int, to mimic the scalar long -> int operation.
     vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
   } else if (req() == 3 ||
-             VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(opc)) {
+             VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(sopc)) {
     assert(!VectorNode::is_roundopD(first) || in2->is_Con(), "rounding mode must be constant");
-    vn = VectorNode::make(opc, in1, in2, vlen, bt); // unary and binary
+    vn = VectorNode::make(sopc, in1, in2, vlen, bt); // unary and binary
   } else {
     assert(req() == 4, "three inputs expected");
-    assert(opc == Op_FmaD ||
-           opc == Op_FmaF ||
-           opc == Op_SignumF ||
-           opc == Op_SignumD,
+    assert(sopc == Op_FmaD ||
+           sopc == Op_FmaF ||
+           sopc == Op_SignumF ||
+           sopc == Op_SignumD,
            "element wise operation must be from this list");
-    vn = VectorNode::make(opc, in1, in2, in3, vlen, bt); // ternary
+    vn = VectorNode::make(sopc, in1, in2, in3, vlen, bt); // ternary
   }
 
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
@@ -480,17 +480,20 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
 }
 
 float VTransformBoolVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  BoolNode* first = nodes().at(0)->as_Bool();
-  uint  vlen = nodes().length();
-  BasicType bt = vloop_analyzer.types().velt_basic_type(first);
+  int sopc     = scalar_opcode();
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
+  assert(sopc == Op_Bool, "must be bool node");
   return Matcher::cost_for_vector(Op_VectorMaskCmp, vlen, bt);
 }
 
 VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
                                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
   BoolNode* first = nodes().at(0)->as_Bool();
-  uint  vlen = nodes().length();
-  BasicType bt = vloop_analyzer.types().velt_basic_type(first);
+  int sopc     = scalar_opcode();
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
+  assert(sopc == Op_Bool, "must be bool node");
 
   // Cmp + Bool -> VectorMaskCmp
   VTransformElementWiseVectorNode* vtn_cmp = in(1)->isa_ElementWiseVector();
@@ -514,7 +517,7 @@ bool VTransformReductionVectorNode::optimize(const VLoopAnalyzer& vloop_analyzer
 }
 
 int VTransformReductionVectorNode::vector_reduction_opcode() const {
-  return ReductionNode::opcode(scalar_opcode(), basic_type());
+  return ReductionNode::opcode(scalar_opcode(), element_basic_type());
 }
 
 bool VTransformReductionVectorNode::requires_strict_order() const {
@@ -523,8 +526,10 @@ bool VTransformReductionVectorNode::requires_strict_order() const {
 }
 
 bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
-  uint vlen                = vector_length();
-  BasicType bt             = basic_type();
+  int sopc     = scalar_opcode();
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
+
   const Type* element_type = Type::get_const_basic_type(bt);
   int ropc                 = vector_reduction_opcode();
 
@@ -532,7 +537,6 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     return false; // cannot move strict order reduction out of loop
   }
 
-  const int sopc = scalar_opcode();
   const int vopc = VectorNode::opcode(sopc, bt);
   if (!Matcher::match_rule_supported_vector(vopc, vlen, bt)) {
     DEBUG_ONLY( this->print(); )
@@ -553,8 +557,9 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   VTransformReductionVectorNode* current_red = last_red;
   while (true) {
     if (current_red == nullptr ||
+        // TODO refactor with eq over prototype?
         current_red->vector_reduction_opcode() != ropc ||
-        current_red->basic_type() != bt ||
+        current_red->element_basic_type() != bt ||
         current_red->vector_length() != vlen) {
       return false; // not compatible
     }
@@ -617,7 +622,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   current_red = first_red;
   while (true) {
     VTransformNode* vector_input = current_red->in(2);
-    VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, 3, vlen);
+    VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, 3, current_red->prototype());
     vector_accumulator->init_req(1, current_vector_accumulator);
     vector_accumulator->init_req(2, vector_input);
     vector_accumulator->set_nodes(current_red->nodes());
@@ -649,9 +654,8 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
 }
 
 float VTransformReductionVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  Node* first = nodes().at(0);
-  uint  vlen = nodes().length();
-  BasicType bt = first->bottom_type()->basic_type();
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
   int vopc = vector_reduction_opcode();
   bool requires_strict_order = ReductionNode::auto_vectorization_requires_strict_order(vopc);
   return Matcher::cost_for_vector_reduction(vopc, vlen, bt, requires_strict_order);
@@ -659,15 +663,14 @@ float VTransformReductionVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) c
 
 VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
                                                            const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  Node* first = nodes().at(0);
-  uint  vlen = nodes().length();
-  int   opc  = first->Opcode();
-  BasicType bt = first->bottom_type()->basic_type();
+  int sopc     = scalar_opcode();
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
 
   Node* init = find_transformed_input(1, vnode_idx_to_transformed_node);
   Node* vec  = find_transformed_input(2, vnode_idx_to_transformed_node);
 
-  ReductionNode* vn = ReductionNode::make(opc, nullptr, init, vec, bt);
+  ReductionNode* vn = ReductionNode::make(sopc, nullptr, init, vec, bt);
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
@@ -679,14 +682,15 @@ float VTransformLoadVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const 
 
 VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
                                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  int sopc     = scalar_opcode();
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
+
   LoadNode* first = nodes().at(0)->as_Load();
-  uint  vlen = nodes().length();
   Node* ctrl = first->in(MemNode::Control);
   Node* mem  = first->in(MemNode::Memory);
   Node* adr  = first->in(MemNode::Address);
-  int   opc  = first->Opcode();
   const TypePtr* adr_type = first->adr_type();
-  BasicType bt = vloop_analyzer.types().velt_basic_type(first);
 
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
@@ -700,7 +704,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
     }
   }
 
-  LoadVectorNode* vn = LoadVectorNode::make(opc, ctrl, mem, adr, adr_type, vlen, bt,
+  LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, adr_type, vlen, bt,
                                             control_dependency());
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
@@ -714,16 +718,18 @@ float VTransformStoreVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const
 
 VTransformApplyResult VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
                                                        const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+  int sopc     = scalar_opcode();
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
+
   StoreNode* first = nodes().at(0)->as_Store();
-  uint  vlen = nodes().length();
   Node* ctrl = first->in(MemNode::Control);
   Node* mem  = first->in(MemNode::Memory);
   Node* adr  = first->in(MemNode::Address);
-  int   opc  = first->Opcode();
   const TypePtr* adr_type = first->adr_type();
 
   Node* value = find_transformed_input(MemNode::ValueIn, vnode_idx_to_transformed_node);
-  StoreVectorNode* vn = StoreVectorNode::make(opc, ctrl, mem, adr, adr_type, value, vlen);
+  StoreVectorNode* vn = StoreVectorNode::make(sopc, ctrl, mem, adr, adr_type, value, vlen);
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
