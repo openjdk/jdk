@@ -23,14 +23,10 @@
 
 package compiler.lib.compile_framework;
 
-import java.io.BufferedWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
-import java.io.IOException;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +35,6 @@ import java.util.List;
  */
 class Utils {
     private static final boolean VERBOSE = Boolean.getBoolean("CompileFrameworkVerbose");
-    private static final int COMPILE_TIMEOUT = 60;
 
     /**
      * Verbose printing, enabled with {@code -DCompileFrameworkVerbose=true}.
@@ -82,90 +77,5 @@ class Utils {
         // Escape the backslash for Windows paths. We are using the path in the
         // command-line and Java code, so we always want it to be escaped.
         return cp.replace("\\", "\\\\");
-    }
-
-    /**
-     * Get the path of asmtools, which is shipped with JTREG.
-     */
-    public static String getAsmToolsPath() {
-        for (String path : getClassPaths()) {
-            if (path.endsWith("jtreg.jar")) {
-                File jtreg = new File(path);
-                File dir = jtreg.getAbsoluteFile().getParentFile();
-                File asmtools = new File(dir, "asmtools.jar");
-                if (!asmtools.exists()) {
-                    throw new InternalCompileFrameworkException("Found jtreg.jar in classpath, but could not find asmtools.jar");
-                }
-                return asmtools.getAbsolutePath();
-            }
-        }
-        throw new InternalCompileFrameworkException("Could not find asmtools because could not find jtreg.jar in classpath");
-    }
-
-    private static void writeCodeToFile(String code, Path path) {
-        printlnVerbose("File: " + path);
-
-        // Ensure directory of the file exists.
-        Path dir = path.getParent();
-        try {
-            Files.createDirectories(dir);
-        } catch (Exception e) {
-            throw new CompileFrameworkException("Could not create directory: " + dir, e);
-        }
-
-        // Write to file.
-        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
-            writer.write(code);
-        } catch (Exception e) {
-            throw new CompileFrameworkException("Could not write file: " + path, e);
-        }
-    }
-
-    /**
-     * Write each source in {@code sources} to a file inside {@code sourceDir}.
-     */
-    public static List<Path> writeSourcesToFiles(List<SourceCode> sources, Path sourceDir) {
-        List<Path> storedFiles = new ArrayList<>();
-        for (SourceCode sourceCode : sources) {
-            Path path = sourceDir.resolve(sourceCode.filePathName());
-            writeCodeToFile(sourceCode.code(), path);
-            storedFiles.add(path);
-        }
-        return storedFiles;
-    }
-
-    /**
-     * Execute a given compilation, given as a {@code command}.
-     */
-    public static void executeCompileCommand(List<String> command) {
-        printlnVerbose("Compile command: " + String.join(" ", command));
-
-        ProcessBuilder builder = new ProcessBuilder(command);
-        builder.redirectErrorStream(true);
-
-        String output;
-        int exitCode;
-        try {
-            Process process = builder.start();
-            boolean exited = process.waitFor(COMPILE_TIMEOUT, TimeUnit.SECONDS);
-            if (!exited) {
-                process.destroyForcibly();
-                System.out.println("Timeout: compile command: " + String.join(" ", command));
-                throw new InternalCompileFrameworkException("Process timeout: compilation took too long.");
-            }
-            output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            exitCode = process.exitValue();
-        } catch (IOException e) {
-            throw new InternalCompileFrameworkException("IOException during compilation", e);
-        } catch (InterruptedException e) {
-            throw new CompileFrameworkException("InterruptedException during compilation", e);
-        }
-
-        if (exitCode != 0 || !output.isEmpty()) {
-            System.err.println("Compilation failed.");
-            System.err.println("Exit code: " + exitCode);
-            System.err.println("Output: '" + output + "'");
-            throw new CompileFrameworkException("Compilation failed.");
-        }
     }
 }

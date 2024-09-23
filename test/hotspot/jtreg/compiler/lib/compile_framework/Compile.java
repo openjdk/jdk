@@ -23,14 +23,21 @@
 
 package compiler.lib.compile_framework;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.List;
 
 /**
  * Helper class for compilation of Java and Jasm {@link SourceCode}.
  */
 class Compile {
+    private static final int COMPILE_TIMEOUT = 60;
 
     /**
      * Compile all sources in {@code javaSources}. First write them to the {@code sourceDir},
@@ -43,7 +50,7 @@ class Compile {
         }
         Utils.printlnVerbose("Compiling Java sources: " + javaSources.size());
 
-        List<Path> javaFilePaths = Utils.writeSourcesToFiles(javaSources, sourceDir);
+        List<Path> javaFilePaths = writeSourcesToFiles(javaSources, sourceDir);
         compileJavaFiles(javaFilePaths, classesDir);
         Utils.printlnVerbose("Java sources compiled.");
     }
@@ -65,7 +72,7 @@ class Compile {
             command.add(path.toAbsolutePath().toString());
         }
 
-        Utils.executeCompileCommand(command);
+        executeCompileCommand(command);
     }
 
     /**
@@ -79,7 +86,7 @@ class Compile {
         }
         Utils.printlnVerbose("Compiling jasm sources: " + jasmSources.size());
 
-        List<Path> jasmFilePaths = Utils.writeSourcesToFiles(jasmSources, sourceDir);
+        List<Path> jasmFilePaths = writeSourcesToFiles(jasmSources, sourceDir);
         compileJasmFiles(jasmFilePaths, classesDir);
         Utils.printlnVerbose("Jasm sources compiled.");
     }
@@ -93,7 +100,7 @@ class Compile {
 
         command.add("%s/bin/java".formatted(System.getProperty("compile.jdk")));
         command.add("-classpath");
-        command.add(Utils.getAsmToolsPath());
+        command.add(getAsmToolsPath());
         command.add("org.openjdk.asmtools.jasm.Main");
         command.add("-d");
         command.add(classesDir.toString());
@@ -101,6 +108,91 @@ class Compile {
             command.add(path.toAbsolutePath().toString());
         }
 
-        Utils.executeCompileCommand(command);
+        executeCompileCommand(command);
+    }
+
+    /**
+     * Get the path of asmtools, which is shipped with JTREG.
+     */
+    private static String getAsmToolsPath() {
+        for (String path : Utils.getClassPaths()) {
+            if (path.endsWith("jtreg.jar")) {
+                File jtreg = new File(path);
+                File dir = jtreg.getAbsoluteFile().getParentFile();
+                File asmtools = new File(dir, "asmtools.jar");
+                if (!asmtools.exists()) {
+                    throw new InternalCompileFrameworkException("Found jtreg.jar in classpath, but could not find asmtools.jar");
+                }
+                return asmtools.getAbsolutePath();
+            }
+        }
+        throw new InternalCompileFrameworkException("Could not find asmtools because could not find jtreg.jar in classpath");
+    }
+
+    private static void writeCodeToFile(String code, Path path) {
+        Utils.printlnVerbose("File: " + path);
+
+        // Ensure directory of the file exists.
+        Path dir = path.getParent();
+        try {
+            Files.createDirectories(dir);
+        } catch (Exception e) {
+            throw new CompileFrameworkException("Could not create directory: " + dir, e);
+        }
+
+        // Write to file.
+        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+            writer.write(code);
+        } catch (Exception e) {
+            throw new CompileFrameworkException("Could not write file: " + path, e);
+        }
+    }
+
+    /**
+     * Write each source in {@code sources} to a file inside {@code sourceDir}.
+     */
+    private static List<Path> writeSourcesToFiles(List<SourceCode> sources, Path sourceDir) {
+        List<Path> storedFiles = new ArrayList<>();
+        for (SourceCode sourceCode : sources) {
+            Path path = sourceDir.resolve(sourceCode.filePathName());
+            writeCodeToFile(sourceCode.code(), path);
+            storedFiles.add(path);
+        }
+        return storedFiles;
+    }
+
+    /**
+     * Execute a given compilation, given as a {@code command}.
+     */
+    private static void executeCompileCommand(List<String> command) {
+        Utils.printlnVerbose("Compile command: " + String.join(" ", command));
+
+        ProcessBuilder builder = new ProcessBuilder(command);
+        builder.redirectErrorStream(true);
+
+        String output;
+        int exitCode;
+        try {
+            Process process = builder.start();
+            boolean exited = process.waitFor(COMPILE_TIMEOUT, TimeUnit.SECONDS);
+            if (!exited) {
+                process.destroyForcibly();
+                System.out.println("Timeout: compile command: " + String.join(" ", command));
+                throw new InternalCompileFrameworkException("Process timeout: compilation took too long.");
+            }
+            output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            exitCode = process.exitValue();
+        } catch (IOException e) {
+            throw new InternalCompileFrameworkException("IOException during compilation", e);
+        } catch (InterruptedException e) {
+            throw new CompileFrameworkException("InterruptedException during compilation", e);
+        }
+
+        if (exitCode != 0 || !output.isEmpty()) {
+            System.err.println("Compilation failed.");
+            System.err.println("Exit code: " + exitCode);
+            System.err.println("Output: '" + output + "'");
+            throw new CompileFrameworkException("Compilation failed.");
+        }
     }
 }
