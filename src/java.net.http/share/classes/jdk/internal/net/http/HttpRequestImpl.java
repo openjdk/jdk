@@ -66,6 +66,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     private volatile AccessControlContext acc;
     private final Duration timeout;  // may be null
     private final Optional<HttpClient.Version> version;
+    private volatile boolean tryUserSetAuthorization = true;
 
     private static String userAgent() {
         PrivilegedAction<String> pa = () -> System.getProperty("java.version");
@@ -331,6 +332,14 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
 
     boolean isWebSocket() {
         return isWebSocket;
+    }
+
+    public boolean tryUserSetAuthorization() {
+        return tryUserSetAuthorization;
+    }
+
+    public void tryUserSetAuthorization(boolean value) {
+        this.tryUserSetAuthorization = value;
     }
 
     @Override

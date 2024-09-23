@@ -217,17 +217,28 @@ public final class Utils {
     // Needs to be BiPred<String,String> to fit with general form of predicates
     // used by caller.
 
-    public static final BiPredicate<String, String> CONTEXT_RESTRICTED(HttpClient client) {
-        return (k, v) -> client.authenticator().isEmpty() ||
-                (!k.equalsIgnoreCase("Authorization")
-                        && !k.equalsIgnoreCase("Proxy-Authorization"));
+    public static final BiPredicate<String, String> CONTEXT_RESTRICTED(
+        HttpClient client, HttpRequestImpl req)
+    {
+        return (k, v) -> {
+            if (client.authenticator().isEmpty())
+                return true;
+            boolean authKey = k.equalsIgnoreCase("Authorization");
+            boolean proxyAuthKey = k.equalsIgnoreCase("Proxy-Authorization");
+            if (!authKey && !proxyAuthKey)
+                return true;
+            // flag is true for first attempt, and will be false
+            // for subsequent attempts if the first attempt failed
+            // due to 401/407
+            return req.tryUserSetAuthorization();
+        };
     }
 
     public record ProxyHeaders(HttpHeaders userHeaders, HttpHeaders systemHeaders) {}
 
     private static final BiPredicate<String, String> HOST_RESTRICTED = (k,v) -> !"host".equalsIgnoreCase(k);
-    public static final BiPredicate<String, String> PROXY_TUNNEL_RESTRICTED(HttpClient client)  {
-        return CONTEXT_RESTRICTED(client).and(HOST_RESTRICTED);
+    public static final BiPredicate<String, String> PROXY_TUNNEL_RESTRICTED(HttpClient client, HttpRequestImpl req)  {
+        return CONTEXT_RESTRICTED(client, req).and(HOST_RESTRICTED);
     }
 
     private static final Predicate<String> IS_HOST = "host"::equalsIgnoreCase;
