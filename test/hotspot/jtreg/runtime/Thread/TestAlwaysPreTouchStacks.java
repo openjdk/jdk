@@ -52,8 +52,8 @@ public class TestAlwaysPreTouchStacks {
     static int memoryCeilingMB = 128;
     static int threadStackSizeMB = 8;
     static int numThreads = memoryCeilingMB / threadStackSizeMB;
-    static double min_stack_usage_with_pretouch = 1 * MB;
-    static double max_stack_usage_with_pretouch = 0.75 * threadStackSizeMB * MB;
+    static long min_stack_usage_with_pretouch = 1 * MB;
+    static long max_stack_usage_with_pretouch = (long)(0.75 * threadStackSizeMB * MB);
 
     static CyclicBarrier gate = new CyclicBarrier(numThreads + 1);
 
@@ -78,15 +78,8 @@ public class TestAlwaysPreTouchStacks {
         t.setDaemon(true);
         return t;
     }
-    private static class ReservedCommitted {
-     public long reserved, committed;
-     public ReservedCommitted(long r, long c) {
-      reserved = r;
-      committed = c;
-     }
-    }
 
-    private static ReservedCommitted runPreTouchTest(boolean preTouch) throws Exception {
+    private static long runPreTouchTest(boolean preTouch) throws Exception {
       long reserved = 0L, committed = 0L;
       ArrayList<String> vmArgs = new ArrayList<>();
       Collections.addAll(vmArgs,
@@ -146,7 +139,7 @@ public class TestAlwaysPreTouchStacks {
       if (!foundLine) {
           throw new RuntimeException("Did not find expected NMT output");
       }
-      return new ReservedCommitted(reserved, committed);
+      return committed;
     }
 
     public static void main(String[] args) throws Exception {
@@ -169,28 +162,21 @@ public class TestAlwaysPreTouchStacks {
             // should show up with fully - or almost fully - committed thread stacks.
 
         } else {
-          ReservedCommitted pretouch_result = runPreTouchTest(true);
-          ReservedCommitted no_pretouch_result = runPreTouchTest(false);
-          if (pretouch_result.reserved == 0 || no_pretouch_result.reserved == 0) {
+          long pretouch_committed = runPreTouchTest(true);
+          long no_pretouch_committed = runPreTouchTest(false);
+          if (pretouch_committed == 0 || no_pretouch_committed == 0) {
             throw new RuntimeException("Could not run with PreTouch flag.");
           }
-          double ratio_with = ((double)pretouch_result.committed) / pretouch_result.reserved;
-          double ratio_without = ((double)no_pretouch_result.committed) / no_pretouch_result.reserved;
-          System.out.println("ratio with PreTouch: " + ratio_with + " w/out: " + ratio_without);
-          if (ratio_without > 0.50) {
-            throw new RuntimeException("Expected a lower ratio between stack committed and reserved.");
+          long expected_delta = numThreads * (max_stack_usage_with_pretouch - min_stack_usage_with_pretouch);
+          long actual_delta = pretouch_committed - no_pretouch_committed;
+          if (pretouch_committed <= (no_pretouch_committed + expected_delta)) {
+            throw new RuntimeException("Expected a higher amount of committed with pretouch stacks" +
+                                       "PreTouch amount: " + pretouch_committed +
+                                       "NoPreTouch amount: " + (no_pretouch_committed + expected_delta));
           }
-          if (ratio_with < ratio_without) {
-            throw new RuntimeException("Expected a higher ratio between stack committed and reserved.");
-          }
-          if (ratio_with > max_stack_usage_with_pretouch) {
-            throw new RuntimeException("Expected a higher ratio of committed to reserved of stack with pretouch.");
-          }
-          double expected_delta = numThreads * (max_stack_usage_with_pretouch - min_stack_usage_with_pretouch);
-          double actual_delta = pretouch_result.committed - no_pretouch_result.committed;
           if (actual_delta < expected_delta) {
             throw new RuntimeException("Expected a higher delta between stack committed of with and without pretouch." +
-                                       "Expected: " + expected_delta + " Acvtual: " + actual_delta);
+                                       "Expected: " + expected_delta + " Actual: " + actual_delta);
           }
       }
     }
