@@ -56,7 +56,7 @@
  * java runtime (older, newer or same version JRE installed at a different location) than
  * the one the launcher belongs to.
  * That support was discontinued starting JDK 9. However, JDK 1.8 launcher can still
- * be launched with JRE version selection options to launch Java runtimes greater than Java 8.
+ * be started with JRE version selection options to launch Java runtimes greater than JDK 8.
  * In such cases, the JDK 1.8 launcher when exec()ing the JDK N launcher, will set and propagate
  * the _JAVA_VERSION_SET environment variable. The value of this environment variable is the
  * Main-Class name from within the executable jar file (if any).
