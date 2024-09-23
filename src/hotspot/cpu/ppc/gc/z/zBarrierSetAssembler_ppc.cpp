@@ -335,7 +335,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     // Try to self-heal null values for atomic accesses
     bool need_restore = false;
     if (!ind_or_offs.is_constant() || ind_or_offs.as_constant() != 0) {
-      __ add(ref_base, ind_or_offs, ref_base);
+      __ add(ref_base, ref_base, ind_or_offs);
       need_restore = true;
     }
     __ ld(R0, in_bytes(ZThreadLocalData::store_good_mask_offset()), R16_thread);
@@ -343,7 +343,7 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
                 MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
                 noreg, need_restore ? nullptr : &slow_path);
     if (need_restore) {
-      __ subf(ref_base, ind_or_offs, ref_base);
+      __ sub(ref_base, ref_base, ind_or_offs);
       __ bne(CCR0, slow_path);
     }
   } else {

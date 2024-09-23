@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,27 +263,27 @@ public:
 
 void ShenandoahBarrierSetC1::generate_c1_runtime_stubs(BufferBlob* buffer_blob) {
   C1ShenandoahPreBarrierCodeGenClosure pre_code_gen_cl;
-  _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, -1,
+  _pre_barrier_c1_runtime_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID,
                                                               "shenandoah_pre_barrier_slow",
                                                               false, &pre_code_gen_cl);
   if (ShenandoahLoadRefBarrier) {
     C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_strong_code_gen_cl(ON_STRONG_OOP_REF);
-    _load_reference_barrier_strong_rt_code_blob = Runtime1::generate_blob(buffer_blob, -1,
+    _load_reference_barrier_strong_rt_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID,
                                                                   "shenandoah_load_reference_barrier_strong_slow",
                                                                   false, &lrb_strong_code_gen_cl);
 
     C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_strong_native_code_gen_cl(ON_STRONG_OOP_REF | IN_NATIVE);
-    _load_reference_barrier_strong_native_rt_code_blob = Runtime1::generate_blob(buffer_blob, -1,
+    _load_reference_barrier_strong_native_rt_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID,
                                                                           "shenandoah_load_reference_barrier_strong_native_slow",
                                                                           false, &lrb_strong_native_code_gen_cl);
 
     C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_weak_code_gen_cl(ON_WEAK_OOP_REF);
-    _load_reference_barrier_weak_rt_code_blob = Runtime1::generate_blob(buffer_blob, -1,
+    _load_reference_barrier_weak_rt_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID,
                                                                           "shenandoah_load_reference_barrier_weak_slow",
                                                                           false, &lrb_weak_code_gen_cl);
 
     C1ShenandoahLoadReferenceBarrierCodeGenClosure lrb_phantom_code_gen_cl(ON_PHANTOM_OOP_REF | IN_NATIVE);
-    _load_reference_barrier_phantom_rt_code_blob = Runtime1::generate_blob(buffer_blob, -1,
+    _load_reference_barrier_phantom_rt_code_blob = Runtime1::generate_blob(buffer_blob, C1StubId::NO_STUBID,
                                                                            "shenandoah_load_reference_barrier_phantom_slow",
                                                                            false, &lrb_phantom_code_gen_cl);
   }
