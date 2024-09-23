@@ -260,15 +260,15 @@ class MemTracker : AllStatic {
     }
   }
 
-  static inline void record_virtual_memory_type(void* addr, MEMFLAGS flag) {
+  static inline void record_virtual_memory_type(void* addr, size_t size, MEMFLAGS flag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
       if (is_using_sorted_link_list())
-        VirtualMemoryTracker::set_reserved_region_type((address)addr, flag);
+        VirtualMemoryTracker::set_reserved_region_type((address)addr, size, flag);
       if (is_using_tree())
-        VirtualMemoryTrackerWithTree::Instance::set_reserved_region_type((address)addr, flag);
+        VirtualMemoryTrackerWithTree::Instance::set_reserved_region_type((address)addr, size, flag);
     }
   }
 

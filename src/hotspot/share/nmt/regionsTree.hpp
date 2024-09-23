@@ -44,18 +44,12 @@ class RegionsTree : public VMATree {
   using Node = VMATree::TreapNode;
 
   class NodeHelper {
-      Node *_node;
+      Node* _node;
       public:
       NodeHelper() : _node(nullptr) { }
       NodeHelper(Node* node) : _node(node) { }
       inline bool is_valid() { return _node != nullptr; }
       inline void clear_node() { _node = nullptr; }
-      // inline bool is_before(VMATree::position addr) { return VMATree::PositionComparator::cmp(_node->key(), addr) < 0; }
-      // inline bool is_after(VMATree::position addr) { return VMATree::PositionComparator::cmp(_node->key(), addr) > 0; }
-      // inline bool is_region_begin() { return is_reserved_begin()|| is_committed_begin(); }
-      // inline bool is_region_end(NodeHelper* node) { return is_released_begin() || (node != nullptr && node->out_flag() != out_flag()); }
-      // inline bool is_end_only(NodeHelper* node) { return !is_region_begin() && is_region_end(node); }
-      // inline bool is_joint(NodeHelper* node) { return is_region_begin() && is_region_end(node); }
       inline VMATree::position position() { return _node->key(); }
       inline bool is_committed_begin() { return ((uint8_t)out_state() & (uint8_t)VMATree::StateType::Committed) >= 2; }
       inline bool is_released_begin() { return out_state() == VMATree::StateType::Released; }
@@ -63,12 +57,12 @@ class RegionsTree : public VMATree {
       inline VMATree::StateType in_state() { return _node->val().in.type(); }
       inline VMATree::StateType out_state() { return _node->val().out.type(); }
       inline size_t distance_from(NodeHelper& other) { return position() - other.position(); }
-      inline const NativeCallStackStorage::StackIndex out_stack_index() { return _node->val().out.stack(); }
+      inline NativeCallStackStorage::StackIndex out_stack_index() { return _node->val().out.stack(); }
       inline MEMFLAGS in_flag() { return _node->val().in.flag(); }
       inline MEMFLAGS out_flag() { return _node->val().out.flag(); }
       inline void set_in_flag(MEMFLAGS flag) { _node->val().in.set_flag(flag); }
       inline void set_out_flag(MEMFLAGS flag) { _node->val().out.set_flag(flag); }
-      inline void dump(outputStream* st) {
+      inline void print_on(outputStream* st) {
         auto st_str = [&](int s){
           return s == (int)VMATree::StateType::Released ? "Rl" :
                  s ==  (int)VMATree::StateType::Reserved ? "Rv" : "Cm";
@@ -84,10 +78,10 @@ class RegionsTree : public VMATree {
       }
     };
 
-  void dump(outputStream* st) {
+  void print_on(outputStream* st) {
     visit_in_order([&](Node* node) {
       NodeHelper curr(node);
-      curr.dump(st);
+      curr.print_on(st);
       return true;
     });
   }
@@ -169,7 +163,7 @@ class RegionsTree : public VMATree {
 
   inline const NativeCallStack stack(NodeHelper& node) {
     NativeCallStackStorage::StackIndex si = node.out_stack_index();
-    if (!si.is_invalid()) {
+    if (!NativeCallStackStorage::is_invalid(si)) {
       return _ncs_storage.get(si);
     }
     return NativeCallStack::empty_stack();

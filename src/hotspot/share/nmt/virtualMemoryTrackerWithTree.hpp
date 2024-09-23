@@ -38,12 +38,12 @@ class VirtualMemoryTrackerWithTree {
  public:
   VirtualMemoryTrackerWithTree(bool is_detailed_mode) : _tree(is_detailed_mode) { }
 
-  bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
+  bool add_reserved_region       (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
   bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
   bool remove_uncommitted_region (address base_addr, size_t size);
   bool remove_released_region    (address base_addr, size_t size);
   bool remove_released_region    (ReservedMemoryRegion* rgn);
-  void set_reserved_region_type  (address addr, MEMFLAGS flag);
+  void set_reserved_region_type  (address addr, size_t size, MEMFLAGS flag);
 
   // Given an existing memory mapping registered with NMT, split the mapping in
   //  two. The newly created two mappings will be registered under the call
@@ -61,25 +61,23 @@ class VirtualMemoryTrackerWithTree {
   void snapshot_thread_stacks();
   void apply_summary_diff(VMATree::SummaryDiff diff);
   RegionsTree* tree() { return &_tree; }
+
   class Instance : public AllStatic {
     friend class VirtualMemoryTrackerTest;
     friend class CommittedVirtualMemoryTest;
-    friend class ReservedMemoryRegion;
 
-   private:
     static VirtualMemoryTrackerWithTree* _tracker;
 
    public:
     using RegionData = VMATree::RegionData;
     static bool initialize(NMT_TrackingLevel level);
 
-    static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
-
+    static bool add_reserved_region       (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
     static bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
     static bool remove_uncommitted_region (address base_addr, size_t size);
     static bool remove_released_region    (address base_addr, size_t size);
     static bool remove_released_region    (ReservedMemoryRegion* rgn);
-    static void set_reserved_region_type  (address addr, MEMFLAGS flag);
+    static void set_reserved_region_type  (address addr, size_t size, MEMFLAGS flag);
 
     // Given an existing memory mapping registered with NMT, split the mapping in
     //  two. The newly created two mappings will be registered under the call

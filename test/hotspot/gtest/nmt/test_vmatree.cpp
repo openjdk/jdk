@@ -584,3 +584,103 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
     }
   }
 }
+
+TEST_VM_F(NMTVMATreeTest, SetFlag) {
+  // The gc/cds case with only reserved data
+  {
+    VMATree::SummaryDiff diff;
+    Tree::RegionData rd(NCS::StackIndex(), mtNone);
+    VMATree tree;
+    diff = diff.apply(tree.reserve_mapping(0, 500, rd));
+    diff.print_self();
+    tree.print_self();
+    tty->cr();
+
+    diff = diff.apply(tree.reserve_mapping(500, 100, rd));
+    diff.print_self();
+    tree.print_self();
+    tty->cr();
+
+    diff = diff.apply(tree.set_flag(0, 500, mtGC));
+    diff.print_self();
+    tree.print_self();
+    tty->cr();
+
+    diff = diff.apply(tree.set_flag(500, 100, mtClassShared));
+    diff.print_self();
+    tree.print_self();
+    tty->cr();
+  }
+
+  // Now let's add in some committed data
+  {
+    VMATree::SummaryDiff diff;
+    Tree::RegionData rd(NCS::StackIndex(), mtNone);
+    VMATree tree;
+    diff = diff.apply(tree.reserve_mapping(0, 500, rd));
+    diff.print_self();
+    tree.print_self();
+    tty->cr();
+
+    diff = diff.apply(tree.reserve_mapping(500, 100, rd));
+    diff.print_self();
+    tree.print_self();
+    tty->cr();
+
+    // The committed areas
+
+    diff = diff.apply(tree.commit_mapping(100, 125, rd));
+    diff.print_self();
+    tree.print_self();
+    tty->cr();
+    diff = diff.apply(tree.commit_mapping(550, 10, rd));
+    diff.print_self();
+    tree.print_self();
+    tty->cr();
+
+    diff = diff.apply(tree.commit_mapping(565, 10, rd));
+    diff.print_self();
+    tree.print_self();
+    tty->cr();
+
+    diff = tree.set_flag(500, 100, mtClassShared);
+    diff.print_self();
+    tree.print_self();
+    tty->cr();
+
+    diff = tree.set_flag(0, 500, mtGC);
+    diff.print_self();
+    tree.print_self();
+    tty->cr();
+  }
+}
+
+TEST_VM_F(NMTVMATreeTest, SetMemTypeOfRegions) {
+  Tree tree;
+  Tree::RegionData rd(NCS::StackIndex(), mtNone);
+  int count = 0;
+  auto dump_and_count_nodes = [&](Node* n){
+    tty->print_cr(SIZE_FORMAT ",in.type: %d, in.flag: %s, out.type: %d, out.flag: %s" ,
+    (size_t)n->key(), (int)n->val().in.type(), NMTUtil::flag_to_name(n->val().out.flag()),
+    (int)n->val().out.type(), NMTUtil::flag_to_name(n->val().in.flag()));
+    count++;
+    return true;
+  };
+  tree.reserve_mapping(1200, 100, rd); // nodes in tree: 1200, 1300
+  tree.commit_mapping(1210, 50, rd);   // nodes in tree: 1200, 1210, 1260, 1300
+  tree.reserve_mapping(1100, 100, rd); // nodes in tree: 1100, 1210, 1260, 1300
+
+
+  VMATree::SummaryDiff diff = tree.set_flag(1200, 100, mtClassShared);
+  EXPECT_EQ(100, diff.flag[NMTUtil::flag_to_index(mtClassShared)].reserve);
+  EXPECT_EQ(50, diff.flag[NMTUtil::flag_to_index(mtClassShared)].commit);
+  EXPECT_EQ(-100, diff.flag[NMTUtil::flag_to_index(mtNone)].reserve);
+  EXPECT_EQ(-50, diff.flag[NMTUtil::flag_to_index(mtNone)].commit);
+
+  diff = tree.set_flag(1100, 100, mtGC);
+  EXPECT_EQ(100, diff.flag[NMTUtil::flag_to_index(mtGC)].reserve);
+  EXPECT_EQ(0, diff.flag[NMTUtil::flag_to_index(mtGC)].commit);
+  EXPECT_EQ(-100, diff.flag[NMTUtil::flag_to_index(mtNone)].reserve);
+  EXPECT_EQ(0, diff.flag[NMTUtil::flag_to_index(mtNone)].commit);
+}
+

@@ -170,6 +170,23 @@ public:
         flag[i] = SingleDiff{0, 0};
       }
     }
+    SummaryDiff apply(SummaryDiff other) {
+      SummaryDiff out;
+      for (int i = 0; i < mt_number_of_types; i++) {
+        out.flag[i] = SingleDiff {
+          this->flag[i].reserve + other.flag[i].reserve,
+          this->flag[i].commit + other.flag[i].commit
+        };
+      }
+      return out;
+    }
+
+    void print_self() {
+      for (int i = 0; i < mt_number_of_types; i++) {
+        if (flag[i].reserve == 0 && flag[i].commit == 0) { continue; }
+        tty->print_cr("Flag %s R: %ld C: %ld", NMTUtil::flag_to_enum_name((MEMFLAGS)i), flag[i].reserve, flag[i].commit);
+      }
+    }
   };
 
   SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata);
@@ -186,6 +203,23 @@ public:
     return register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata);
   }
 
+  SummaryDiff set_flag(position from, size_t sz, MEMFLAGS flag) {
+    VMATreap::Range rng = _tree.find_enclosing_range(from);
+    assert(rng.start != nullptr && rng.end != nullptr,
+           "Setting a flag must be done within existing range");
+    StateType type = rng.start->val().out.type();
+    RegionData old_data = rng.start->val().out.regiondata();
+    RegionData new_data = RegionData(old_data.stack_idx, flag);
+    position end = MIN2(from+sz, rng.end->key());
+    SummaryDiff diff = register_mapping(from, end, type, new_data);
+
+    if (end < from+sz) {
+      return diff.apply(set_flag(end, sz - (end - from), flag));
+    }  else {
+      return diff;
+    }
+  }
+
 public:
   template<typename F>
   void visit_in_order(F f) const {
@@ -196,7 +230,16 @@ public:
     _tree.visit_range_in_order(from, to, f);
   }
 
+  void put_if_absent(position A, position B, StateType state, const RegionData& region_data);
+
   VMATreap* tree() { return &_tree; }
+  void print_self() {
+    visit_in_order([&](TreapNode* current) {
+      tty->print("%lu (%s) - %s - ", current->key(), NMTUtil::flag_to_name(current->val().out.flag()), statetype_to_string(current->val().out.type()));
+      return true;
+    });
+    tty->cr();
+  }
 };
 
 #endif

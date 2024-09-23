@@ -58,54 +58,16 @@ bool VirtualMemoryTrackerWithTree::add_reserved_region(address base_addr, size_t
 
 }
 
-void VirtualMemoryTrackerWithTree::Instance::set_reserved_region_type(address addr, MEMFLAGS flag) {
+void VirtualMemoryTrackerWithTree::Instance::set_reserved_region_type(address addr, size_t size, MEMFLAGS flag) {
   assert(_tracker != nullptr, "Sanity check");
-  _tracker->set_reserved_region_type(addr, flag);
+  _tracker->set_reserved_region_type(addr, size, flag);
 }
 
-void VirtualMemoryTrackerWithTree::set_reserved_region_type(address addr, MEMFLAGS flag) {
-    ReservedMemoryRegion rgn = tree()->find_reserved_region(addr);
-    if (rgn.flag() == flag)
-      return;
-    const VMATree::position& start = (VMATree::position)addr;
-    const VMATree::position& end = (VMATree::position)(rgn.end() + 1);
-    RegionsTree::NodeHelper prev;
-    if (start > end) {
-      tree()->dump(tty);
-      tty->print_cr("requested addr: " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(addr), p2i((address) end));
-      rgn = tree()->find_reserved_region(addr, true);
-    }
-    size_t rgn_size = 0;
-    size_t comm_size = 0;
-    MEMFLAGS old_flag = mtNone, bak_out_flag;
-    bool base_flag_set = false;
-    bool release_node_found = false;
-    tree()->visit_range_in_order(start, end, [&](VMATree::TreapNode* node){
-      RegionsTree::NodeHelper curr(node);
-      if (!base_flag_set) {
-        old_flag = curr.out_flag();
-        base_flag_set = true;
-      }
-      bak_out_flag = curr.out_flag();
-      curr.set_out_flag(flag);
-      if (prev.is_valid()) {
-        curr.set_in_flag(flag);
-        rgn_size += curr.distance_from(prev);
-        if (prev.is_committed_begin())
-          comm_size += curr.distance_from(prev);
-      }
-      prev = curr;
-      if (curr.is_released_begin() || bak_out_flag != old_flag) {
-        if (bak_out_flag != old_flag) {
-          curr.set_out_flag(bak_out_flag);
-        }
-        VirtualMemorySummary::move_reserved_memory(old_flag, flag, rgn_size);
-        VirtualMemorySummary::move_committed_memory(old_flag, flag, comm_size);
-        release_node_found = true;
-        return false;
-      }
-      return true;
-    });
+void VirtualMemoryTrackerWithTree::set_reserved_region_type(address addr, size_t size, MEMFLAGS flag) {
+    VMATree::RegionData rd(NativeCallStackStorage::StackIndex(), flag);
+    VMATree::SummaryDiff diff = tree()->set_flag((VMATree::position) addr, size, flag);
+    apply_summary_diff(diff);
+
 }
 
 void VirtualMemoryTrackerWithTree::Instance::apply_summary_diff(VMATree::SummaryDiff diff) {

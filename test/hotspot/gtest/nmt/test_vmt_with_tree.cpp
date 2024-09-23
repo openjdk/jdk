@@ -98,7 +98,7 @@ class VMTWithVMATreeTest : public testing::Test {
       {
         TimeIt timer(&perf_data[i].set_type);
         region_base = region_address(rgn_no);
-        MemTracker::record_virtual_memory_type(region_base, mtTest);
+        MemTracker::record_virtual_memory_type(region_base, region_size, mtTest);
       }
     }
 
@@ -249,8 +249,17 @@ TEST_VM(VMTWithTree, ReleaseRegionWhole) {
 TEST_VM(VMTWithTree, SetRegionType) {
   COMMON_DEFS;
   CALL_OLD_AND_NEW(add_reserved_region(2500_a, 100, ncs, mtNone));
-  CALL_AND_COMPARE(set_reserved_region_type(2500_a, mtClass));
+  CALL_AND_COMPARE(set_reserved_region_type(2500_a, 100, mtClass));
   CALL_OLD_AND_NEW(remove_released_region(2500_a, 100));
+}
+
+TEST_VM(VMTWithTree, SetRegionTypeAfterMergedRegions) {
+  COMMON_DEFS;
+  CALL_OLD_AND_NEW(add_reserved_region(2500_a, 100, ncs, mtNone));
+  CALL_OLD_AND_NEW(add_reserved_region(2600_a, 200, ncs, mtNone));
+  CALL_AND_COMPARE(set_reserved_region_type(2500_a, 100, mtClass));
+  CALL_OLD_AND_NEW(remove_released_region(2500_a, 100));
+  CALL_OLD_AND_NEW(remove_released_region(2600_a, 200));
 }
 
 TEST_VM(VMTWithTree, SplitRegion) {
