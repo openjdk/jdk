@@ -441,7 +441,7 @@ public final class StackMapGenerator {
     }
 
     private static ClassFormatError classFormatError(int thisOffset) {
-        throw new ClassFormatError(String.format("Bad stack map offset %d", thisOffset));
+        return new ClassFormatError(String.format("Bad stack map offset %d", thisOffset));
     }
 
     private boolean processBlock(RawBytecodeHelper bcs) {
