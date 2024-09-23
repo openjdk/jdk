@@ -1584,6 +1584,9 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   }
 }
 
+// Force unstable if traps to be taken randomly to trigger intermittent bugs such as incorrect debug information.
+// Add another if before the unstable if that checks a "random" condition at runtime (a simple shared counter) and
+// then either takes the trap or executes the original, unstable if.
 void Parse::stress_trap(IfNode* orig_iff, Node* counter, Node* incr_store) {
   // Search for an unstable if trap
   CallStaticJavaNode* trap = nullptr;
