@@ -1250,8 +1250,9 @@ public class ZipFile implements ZipConstants, Closeable {
             // CEN header size + name length + comment length + extra length
             // should not exceed 65,535 bytes per the PKWare APP.NOTE
             // 4.4.10, 4.4.11, & 4.4.12.  Also check that current CEN header will
-            // not exceed the length of the CEN array
-            if (headerSize > 0xFFFF || pos + headerSize > cen.length - ENDHDR) {
+            // not exceed the length of the CEN array (while being concious that
+            // pos + headerSize could overflow)
+            if (headerSize > 0xFFFF || pos > cen.length - ENDHDR - headerSize) {
                 zerror("invalid CEN header (bad header size)");
             }
 
@@ -1279,7 +1280,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 // If the bytes representing the comment cannot be converted to
                 // a String via zcp.toString, an Exception will be thrown
                 if (clen > 0) {
-                    zcp.toString(cen, headerSize - clen, clen);
+                    zcp.toString(cen, pos + headerSize - clen, clen);
                 }
             } catch (Exception e) {
                 zerror("invalid CEN header (bad entry name or comment)");
