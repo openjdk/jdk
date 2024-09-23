@@ -213,19 +213,19 @@ public final class PassFailJFrame {
 
     public enum Position {HORIZONTAL, VERTICAL, TOP_LEFT_CORNER}
 
-    public PassFailJFrame(String instructions) throws InterruptedException,
-            InvocationTargetException {
+    public PassFailJFrame(String instructions)
+            throws InterruptedException, InvocationTargetException {
         this(instructions, TEST_TIMEOUT);
     }
 
-    public PassFailJFrame(String instructions, long testTimeOut) throws
-            InterruptedException, InvocationTargetException {
+    public PassFailJFrame(String instructions, long testTimeOut)
+            throws InterruptedException, InvocationTargetException {
         this(TITLE, instructions, testTimeOut);
     }
 
     public PassFailJFrame(String title, String instructions,
-                          long testTimeOut) throws InterruptedException,
-            InvocationTargetException {
+                          long testTimeOut)
+            throws InterruptedException, InvocationTargetException {
         this(title, instructions, testTimeOut, ROWS, COLUMNS);
     }
 
@@ -251,9 +251,10 @@ public final class PassFailJFrame {
      * @throws InvocationTargetException if an exception is thrown while
      *              creating UI components on EDT
      */
-    public PassFailJFrame(String title, String instructions, long testTimeOut,
-                          int rows, int columns) throws InterruptedException,
-            InvocationTargetException {
+    public PassFailJFrame(String title, String instructions,
+                          long testTimeOut,
+                          int rows, int columns)
+            throws InterruptedException, InvocationTargetException {
         this(title, instructions, testTimeOut, rows, columns, false);
     }
 
@@ -312,7 +313,8 @@ public final class PassFailJFrame {
      * @see JTextArea#JTextArea(int,int) JTextArea(int rows, int columns)
      * @see Builder Builder
      */
-    public PassFailJFrame(String title, String instructions, long testTimeOut,
+    public PassFailJFrame(String title, String instructions,
+                          long testTimeOut,
                           int rows, int columns,
                           boolean screenCapture)
             throws InterruptedException, InvocationTargetException {
