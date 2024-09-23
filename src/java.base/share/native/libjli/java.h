@@ -55,7 +55,7 @@
  * the java launcher in JDK 1.8 can be used to launch a java application using a different
  * java runtime (older, newer or same version JRE installed at a different location) than
  * the one the launcher belongs to.
- * That support was discontinued starting JDK 9. However, JDK 1.8 launcher can still
+ * That support was discontinued starting JDK 9. However, the JDK 8 launcher can still
  * be started with JRE version selection options to launch Java runtimes greater than JDK 8.
  * In such cases, the JDK 8 launcher when exec()ing the JDK N launcher, will set and propagate
  * the _JAVA_VERSION_SET environment variable. The value of this environment variable is the
