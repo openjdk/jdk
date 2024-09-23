@@ -134,9 +134,8 @@ public:
   static GrowableArray<JavaThread*>* get_pending_threads(ThreadsList * t_list,
                                                          int count, address monitor);
 
-  // Get owning Java thread from the monitor's owner field.
-  static JavaThread *owning_thread_from_monitor_owner(ThreadsList * t_list,
-                                                      address owner);
+  // Get owning Java thread from the basicLock address.
+  static JavaThread *owning_thread_from_stacklock(ThreadsList * t_list, address basicLock);
 
   static JavaThread* owning_thread_from_object(ThreadsList* t_list, oop obj);
   static JavaThread* owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* owner);

@@ -57,6 +57,7 @@ public class TestRecursiveMonitorChurn {
         if (WB.getIntVMFlag("LockingMode") == LM_MONITOR) {
             throw new SkippedException("LM_MONITOR always inflates. Invalid test.");
         }
+        System.out.println("Starting test...");
         final long pre_monitor_count = WB.getInUseMonitorCount();
         System.out.println(" Precount = " + pre_monitor_count);
         for (int i = 0; i < COUNT; i++) {

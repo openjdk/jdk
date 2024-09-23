@@ -78,28 +78,24 @@ int C2FastUnlockLightweightStub::max_size() const {
 }
 
 void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
-  assert(_t == rax, "must be");
-
-  Label restore_held_monitor_count_and_slow_path;
+  assert(_t1 == rax, "must be");
 
   { // Restore lock-stack and handle the unlock in runtime.
 
     __ bind(_push_and_slow_path);
 #ifdef ASSERT
     // The obj was only cleared in debug.
-    __ movl(_t, Address(_thread, JavaThread::lock_stack_top_offset()));
-    __ movptr(Address(_thread, _t), _obj);
+    __ movl(_t1, Address(_thread, JavaThread::lock_stack_top_offset()));
+    __ movptr(Address(_thread, _t1), _obj);
 #endif
     __ addl(Address(_thread, JavaThread::lock_stack_top_offset()), oopSize);
   }
 
-  { // Restore held monitor count and slow path.
+  { // Handle the unlock in runtime
 
-    __ bind(restore_held_monitor_count_and_slow_path);
     __ bind(_slow_path);
-    // Restore held monitor count.
-    __ increment(Address(_thread, JavaThread::held_monitor_count_offset()));
-    // increment will always result in ZF = 0 (no overflows).
+    // set ZF=0 to indicate failure
+    __ orl(_t1, 1);
     __ jmp(slow_path_continuation());
   }
 
@@ -111,7 +107,7 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
     const Register monitor = _mark;
 
 #ifndef _LP64
-    __ jmpb(restore_held_monitor_count_and_slow_path);
+    __ jmpb(_slow_path);
 #else // _LP64
     const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
     const Address succ_address(monitor, ObjectMonitor::succ_offset() - monitor_tag);
@@ -119,7 +115,7 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
 
     // successor null check.
     __ cmpptr(succ_address, NULL_WORD);
-    __ jccb(Assembler::equal, restore_held_monitor_count_and_slow_path);
+    __ jccb(Assembler::equal, _slow_path);
 
     // Release lock.
     __ movptr(owner_address, NULL_WORD);
@@ -138,8 +134,9 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
     //       not handle the monitor handoff. Currently only works
     //       due to the responsible thread.
     __ xorptr(rax, rax);
-    __ lock(); __ cmpxchgptr(_thread, owner_address);
-    __ jccb  (Assembler::equal, restore_held_monitor_count_and_slow_path);
+    __ movptr(_t2, Address(_thread, JavaThread::lock_id_offset()));
+    __ lock(); __ cmpxchgptr(_t2, owner_address);
+    __ jccb  (Assembler::equal, _slow_path);
 #endif
 
     __ bind(fix_zf_and_unlocked);

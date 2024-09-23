@@ -1350,10 +1350,6 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
   JavaThread* calling_thread = JavaThread::current();
   HandleMark hm(calling_thread);
 
-  // growable array of jvmti monitors info on the C-heap
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-      new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
-
   JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(calling_thread);
 
@@ -1361,22 +1357,28 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
   oop thread_oop = nullptr;
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, calling_thread, &java_thread, &thread_oop);
   if (err != JVMTI_ERROR_NONE) {
-    delete owned_monitors_list;
     return err;
   }
 
-  if (java_thread != nullptr) {
-    Handle thread_handle(calling_thread, thread_oop);
-    EscapeBarrier eb(true, calling_thread, java_thread);
-    if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
-      delete owned_monitors_list;
-      return JVMTI_ERROR_OUT_OF_MEMORY;
-    }
-    // get owned monitors info with handshake
-    GetOwnedMonitorInfoClosure op(this, calling_thread, owned_monitors_list);
-    JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
-    err = op.result();
+  if (LockingMode == LM_LEGACY && java_thread == nullptr) {
+    *owned_monitor_count_ptr = 0;
+    return JVMTI_ERROR_NONE;
   }
+
+  // growable array of jvmti monitors info on the C-heap
+  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
+      new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
+
+  Handle thread_handle(calling_thread, thread_oop);
+  EscapeBarrier eb(java_thread != nullptr, calling_thread, java_thread);
+  if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
+    delete owned_monitors_list;
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
+  // get owned monitors info with handshake
+  GetOwnedMonitorInfoClosure op(this, calling_thread, owned_monitors_list);
+  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
+  err = op.result();
 
   jint owned_monitor_count = owned_monitors_list->length();
   if (err == JVMTI_ERROR_NONE) {
@@ -1408,10 +1410,6 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
   JavaThread* calling_thread = JavaThread::current();
   HandleMark hm(calling_thread);
 
-  // growable array of jvmti monitors info on the C-heap
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
-         new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
-
   JvmtiVTMSTransitionDisabler disabler(thread);
   ThreadsListHandle tlh(calling_thread);
 
@@ -1419,22 +1417,28 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
   oop thread_oop = nullptr;
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, calling_thread, &java_thread, &thread_oop);
   if (err != JVMTI_ERROR_NONE) {
-    delete owned_monitors_list;
     return err;
   }
 
-  if (java_thread != nullptr) {
-    Handle thread_handle(calling_thread, thread_oop);
-    EscapeBarrier eb(true, calling_thread, java_thread);
-    if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
-      delete owned_monitors_list;
-      return JVMTI_ERROR_OUT_OF_MEMORY;
-    }
-    // get owned monitors info with handshake
-    GetOwnedMonitorInfoClosure op(this, calling_thread, owned_monitors_list);
-    JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
-    err = op.result();
+  if (LockingMode == LM_LEGACY && java_thread == nullptr) {
+    *monitor_info_count_ptr = 0;
+    return JVMTI_ERROR_NONE;
   }
+
+  // growable array of jvmti monitors info on the C-heap
+  GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
+      new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
+
+  Handle thread_handle(calling_thread, thread_oop);
+  EscapeBarrier eb(java_thread != nullptr, calling_thread, java_thread);
+  if (!eb.deoptimize_objects(MaxJavaStackTraceDepth)) {
+    delete owned_monitors_list;
+    return JVMTI_ERROR_OUT_OF_MEMORY;
+  }
+  // get owned monitors info with handshake
+  GetOwnedMonitorInfoClosure op(this, calling_thread, owned_monitors_list);
+  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
+  err = op.result();
 
   jint owned_monitor_count = owned_monitors_list->length();
   if (err == JVMTI_ERROR_NONE) {

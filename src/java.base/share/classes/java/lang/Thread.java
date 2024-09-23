@@ -201,8 +201,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  *     <th scope="row">
  *       {@systemProperty jdk.virtualThreadScheduler.parallelism}
  *     </th>
- *     <td> The number of platform threads available for scheduling virtual
- *       threads. It defaults to the number of available processors. </td>
+ *     <td> The scheduler's target parallelism. It defaults to the number of
+ *       available processors. </td>
  *   </tr>
  *   <tr>
  *     <th scope="row">
@@ -415,6 +415,12 @@ public class Thread implements Runnable {
      */
     @IntrinsicCandidate
     native void setCurrentThread(Thread thread);
+
+    /**
+     * Sets the current thread's lock ID.
+     */
+    @IntrinsicCandidate
+    static native void setCurrentLockId(long tid);
 
     // ScopedValue support:
 
@@ -722,10 +728,11 @@ public class Thread implements Runnable {
         }
 
         if (attached && VM.initLevel() < 1) {
-            this.tid = 1;  // primordial thread
+            this.tid = 3;  // primordial thread
         } else {
             this.tid = ThreadIdentifiers.next();
         }
+
         this.name = (name != null) ? name : genThreadName();
 
         if (acc != null) {

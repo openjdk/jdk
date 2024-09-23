@@ -418,6 +418,7 @@ class SerializeClosure;
   template(maxSize_name,                              "maxSize")                                  \
   template(reset_name,                                "reset")                                    \
   template(done_name,                                 "done")                                     \
+  template(preempted_name,                            "preempted")                                \
   template(mounted_name,                              "mounted")                                  \
   template(jfrTraceId_name,                           "jfrTraceId")                               \
   template(fp_name,                                   "fp")                                       \
@@ -517,6 +518,8 @@ class SerializeClosure;
   template(checkIndex_name,                           "checkIndex")                               \
   template(jfr_epoch_name,                            "jfr_epoch")                                \
   template(maxThawingSize_name,                       "maxThawingSize")                           \
+  template(lockStackSize_name,                        "lockStackSize")                            \
+  template(objectWaiter_name,                         "objectWaiter")                             \
                                                                                                   \
   /* name symbols needed by intrinsics */                                                         \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, VM_SYMBOL_IGNORE, template, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -565,6 +568,7 @@ class SerializeClosure;
   template(continuation_signature,                    "Ljdk/internal/vm/Continuation;")           \
   template(continuationscope_signature,               "Ljdk/internal/vm/ContinuationScope;")      \
   template(stackchunk_signature,                      "Ljdk/internal/vm/StackChunk;")             \
+  template(vthread_signature,                         "Ljava/lang/VirtualThread;")                \
   template(object_void_signature,                     "(Ljava/lang/Object;)V")                    \
   template(object_int_signature,                      "(Ljava/lang/Object;)I")                    \
   template(long_object_long_signature,                "(JLjava/lang/Object;)J")                   \
@@ -743,7 +747,7 @@ class SerializeClosure;
   template(toFileURL_signature,                             "(Ljava/lang/String;)Ljava/net/URL;")                 \
   template(url_array_classloader_void_signature,            "([Ljava/net/URL;Ljava/lang/ClassLoader;)V")          \
                                                                                                                   \
-  /* Thread.dump_to_file jcmd */                                                                                  \
+  /* jcmd Thread.dump_to_file */                                                                                  \
   template(jdk_internal_vm_ThreadDumper,           "jdk/internal/vm/ThreadDumper")                                \
   template(dumpThreads_name,                       "dumpThreads")                                                 \
   template(dumpThreadsToJson_name,                 "dumpThreadsToJson")                                           \

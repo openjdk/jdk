@@ -52,6 +52,9 @@ vmTestbase/nsk/jvmti/unit/GetLocalVariable/getlocal003/TestDescription.java 8300
 ## Test fails because it expects to find vthreads in GetAllThreads
 vmTestbase/nsk/jvmti/scenarios/allocation/AP11/ap11t001/TestDescription.java 8300712 generic-all
 
+vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.java 8338713 generic-all
+vmTestbase/nsk/jdb/kill/kill001/kill001.java 8338714 generic-all
+
 ##########
 ## NSK JDB Tests failing with wrapper
 

@@ -251,13 +251,14 @@ public class GetThreadStateMountedTest {
         }
     }
 
+    private static native void runFromNative(Runnable runnable);
+
     private static Thread createPinnedVThread(Runnable runnable) {
-        final Object syncObj = new Object();
-        return Thread.ofVirtual().unstarted(() -> {
-            synchronized (syncObj) {
-                runnable.run();
-            }
-        });
+        return Thread.ofVirtual().unstarted(() -> runFromNative(runnable));
+    }
+
+    private static void runUpcall(Runnable runnable) {
+        runnable.run();
     }
 
     // Native implementation of suspendWaiting.

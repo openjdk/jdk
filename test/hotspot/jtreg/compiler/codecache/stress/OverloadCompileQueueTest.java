@@ -39,6 +39,7 @@
  *                   -XX:CompileCommand=exclude,java.lang.Thread::sleepNanos
  *                   -XX:CompileCommand=exclude,java.lang.Thread::beforeSleep
  *                   -XX:CompileCommand=exclude,java.lang.Thread::afterSleep
+ *                   -XX:CompileCommand=exclude,java.util.concurrent.TimeUnit::toNanos
  *                   -XX:CompileCommand=exclude,java.lang.Math::min
  *                   -XX:CompileCommand=exclude,jdk.internal.event.ThreadSleepEvent::*
  *                   -XX:CompileCommand=exclude,jdk.internal.event.SleepEvent::*
@@ -52,6 +53,7 @@
  *                   -XX:CompileCommand=exclude,java.lang.Thread::sleepNanos
  *                   -XX:CompileCommand=exclude,java.lang.Thread::beforeSleep
  *                   -XX:CompileCommand=exclude,java.lang.Thread::afterSleep
+ *                   -XX:CompileCommand=exclude,java.util.concurrent.TimeUnit::toNanos
  *                   -XX:CompileCommand=exclude,java.lang.Math::min
  *                   -XX:CompileCommand=exclude,jdk.internal.event.ThreadSleepEvent::*
  *                   -XX:CompileCommand=exclude,jdk.internal.event.SleepEvent::*

@@ -57,11 +57,16 @@ public:
 
 public:
   static int _return_pc_offset; // friend gen_continuation_enter
+  static int _thaw_call_pc_offset;
+  static int _cleanup_offset;
+
   static void set_enter_code(nmethod* nm, int interpreted_entry_offset);
   static bool is_interpreted_call(address call_address);
 
 private:
   static address _return_pc;
+  static address _thaw_call_pc;
+  static address _cleanup_pc;
   static nmethod* _enter_special;
   static int _interpreted_entry_offset;
 
@@ -100,6 +105,9 @@ public:
   static address entry_pc() { return _return_pc; }
   intptr_t* entry_sp() const { return (intptr_t*)this; }
   intptr_t* entry_fp() const;
+
+  static address thaw_call_pc_address() { return (address)&_thaw_call_pc; }
+  static address cleanup_pc() { return _cleanup_pc; }
 
   static address compiled_entry();
   static address interpreted_entry();

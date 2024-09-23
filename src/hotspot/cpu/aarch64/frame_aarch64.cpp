@@ -703,7 +703,7 @@ static void internal_pf(uintptr_t sp, uintptr_t fp, uintptr_t pc, uintptr_t bcx)
   frame this_frame((intptr_t*)sp, (intptr_t*)fp, (address)pc);
   if (this_frame.is_compiled_frame() ||
       this_frame.is_interpreted_frame()) {
-    frame sender = this_frame.sender(reg_map);
+    frame sender = this_frame.sender_raw(reg_map);
     nextfp = (uintptr_t)sender.fp();
     nextpc = (uintptr_t)sender.pc();
     nextsp = (uintptr_t)sender.unextended_sp();

@@ -142,29 +142,7 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
      */
     public static <K, V> ReferencedKeyMap<K, V>
     create(boolean isSoft, Supplier<Map<ReferenceKey<K>, V>> supplier) {
-        return create(isSoft, false, supplier);
-    }
-
-    /**
-     * Create a new {@link ReferencedKeyMap} map.
-     *
-     * @param isSoft          true if {@link SoftReference} keys are to
-     *                        be used, {@link WeakReference} otherwise.
-     * @param useNativeQueue  true if uses NativeReferenceQueue
-     *                        otherwise use {@link ReferenceQueue}.
-     * @param supplier        {@link Supplier} of the backing map
-     *
-     * @return a new map with {@link Reference} keys
-     *
-     * @param <K> the type of keys maintained by the new map
-     * @param <V> the type of mapped values
-     */
-    public static <K, V> ReferencedKeyMap<K, V>
-    create(boolean isSoft, boolean useNativeQueue, Supplier<Map<ReferenceKey<K>, V>> supplier) {
-        return new ReferencedKeyMap<K, V>(isSoft, supplier.get(),
-                useNativeQueue ? SharedSecrets.getJavaLangRefAccess().newNativeReferenceQueue()
-                               : new ReferenceQueue<>()
-                );
+        return new ReferencedKeyMap<K, V>(isSoft, supplier.get(), new ReferenceQueue<>());
     }
 
     /**

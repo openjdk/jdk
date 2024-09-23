@@ -606,6 +606,41 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  if (!Continuations::enabled()) return nullptr;
+  address start = __ pc();
+
+  // Restore rfp first since we need it to restore rest of registers
+  __ leave();
+
+  // Restore constant pool cache
+  __ ldr(rcpool, Address(rfp, frame::interpreter_frame_cache_offset * wordSize));
+
+  // Restore Java expression stack pointer
+  __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(esp, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
+  // and NULL it as marker that esp is now tos until next java call
+  __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+
+  // Restore machine SP
+  __ ldr(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
+  __ lea(sp, Address(rfp, rscratch1, Address::lsl(LogBytesPerWord)));
+
+  // Prepare for adjustment on return to call_VM_leaf_base()
+  __ ldr(rmethod, Address(rfp, frame::interpreter_frame_method_offset * wordSize));
+  __ stp(rscratch1, rmethod, Address(__ pre(sp, -2 * wordSize)));
+
+  // Restore dispatch
+  uint64_t offset;
+  __ adrp(rdispatch, ExternalAddress((address)Interpreter::dispatch_table()), offset);
+  __ add(rdispatch, rdispatch, offset);
+
+  __ ret(lr);
+
+  return start;
+}
+
+
 // Helpers for commoning out cases in the various type of method entries.
 //
 
@@ -1313,6 +1348,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // result handler is in r0
   // set result handler
   __ mov(result_handler, r0);
+  __ str(r0, Address(rfp, frame::interpreter_frame_result_handler_offset * wordSize));
+
   // pass mirror handle if static call
   {
     Label L;
@@ -1371,9 +1408,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
 
+  __ push_cont_fastpath();
+
   // Call the native method.
   __ blr(r10);
-  __ bind(native_return);
+
+  __ pop_cont_fastpath();
+
   __ get_method(rmethod);
   // result potentially in r0 or v0
 
@@ -1431,6 +1472,23 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
 
+  if (LockingMode != LM_LEGACY) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ ldr(rscratch1, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    __ cbz(rscratch1, not_preempted);
+    __ str(zr, Address(rthread, JavaThread::preempt_alternate_return_offset()));
+    __ br(rscratch1);
+    __ bind(native_return);
+    // On resume we need to set up stack as expected
+    __ push(dtos);
+    __ push(ltos);
+    __ bind(not_preempted);
+  } else {
+    // any pc will do so just use this one for LM_LEGACY to keep code together.
+    __ bind(native_return);
+  }
+
   // reset_last_Java_frame
   __ reset_last_Java_frame(true);
 
@@ -1449,6 +1507,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label no_oop;
     __ adr(t, ExternalAddress(AbstractInterpreter::result_handler(T_OBJECT)));
+    __ ldr(result_handler, Address(rfp, frame::interpreter_frame_result_handler_offset*wordSize));
     __ cmp(t, result_handler);
     __ br(Assembler::NE, no_oop);
     // Unbox oop result, e.g. JNIHandles::resolve result.

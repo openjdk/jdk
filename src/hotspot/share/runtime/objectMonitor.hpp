@@ -28,13 +28,17 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.hpp"
 #include "oops/markWord.hpp"
+#include "oops/oopHandle.hpp"
 #include "oops/weakHandle.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "utilities/checkedCast.hpp"
 
 class ObjectMonitor;
 class ObjectMonitorContentionMark;
 class ParkEvent;
+class BasicLock;
+class ContinuationWrapper;
 
 // ObjectWaiter serves as a "proxy" or surrogate thread.
 // TODO-FIXME: Eliminate ObjectWaiter and use the thread-specific
@@ -42,20 +46,35 @@ class ParkEvent;
 // knows about ObjectWaiters, so we'll have to reconcile that code.
 // See next_waiter(), first_waiter(), etc.
 
-class ObjectWaiter : public StackObj {
+class ObjectWaiter : public CHeapObj<mtThread> {
  public:
-  enum TStates { TS_UNDEF, TS_READY, TS_RUN, TS_WAIT, TS_ENTER, TS_CXQ };
+  enum TStates : uint8_t { TS_UNDEF, TS_READY, TS_RUN, TS_WAIT, TS_ENTER, TS_CXQ };
   ObjectWaiter* volatile _next;
   ObjectWaiter* volatile _prev;
-  JavaThread*   _thread;
-  uint64_t      _notifier_tid;
-  ParkEvent *   _event;
-  volatile int  _notified;
+  JavaThread*     _thread;
+  OopHandle      _vthread;
+  ObjectMonitor* _monitor;
+  uint64_t  _notifier_tid;
+  int         _recursions;
   volatile TStates TState;
-  bool          _active;           // Contention monitoring is enabled
+  volatile bool _notified;
+  bool           _is_wait;
+  bool        _at_reenter;
+  bool       _interrupted;
+  bool            _active;    // Contention monitoring is enabled
  public:
   ObjectWaiter(JavaThread* current);
-
+  ObjectWaiter(oop vthread, ObjectMonitor* mon);
+  ~ObjectWaiter();
+  JavaThread* thread() { return _thread; }
+  bool is_vthread()    { return _thread == nullptr; }
+  uint8_t state()      { return TState; }
+  ObjectMonitor* monitor() { return _monitor; }
+  bool is_monitorenter()   { return !_is_wait; }
+  bool is_wait()           { return _is_wait; }
+  bool notified()          { return _notified; }
+  bool at_reenter()        { return _at_reenter; }
+  oop vthread();
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
 };
@@ -128,9 +147,13 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   friend class ObjectSynchronizer;
   friend class ObjectWaiter;
   friend class VMStructs;
+  friend class MonitorList;
   JVMCI_ONLY(friend class JVMCIVMStructs;)
 
   static OopStorage* _oop_storage;
+
+  static OopHandle _vthread_cxq_head;
+  static ParkEvent* _vthread_unparker_ParkEvent;
 
   // The sync code expects the metadata field to be at offset zero (0).
   // Enforced by the assert() in metadata_addr().
@@ -164,12 +187,13 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static void* anon_owner_ptr() { return reinterpret_cast<void*>(ANONYMOUS_OWNER); }
 
   void* volatile _owner;            // pointer to owning thread OR BasicLock
+  BasicLock* volatile _stack_locker;      // can this share a cache line with owner? they're used together
   volatile uint64_t _previous_owner_tid;  // thread id of the previous owner of the monitor
   // Separate _owner and _next_om on different cache lines since
   // both can have busy multi-threaded access. _previous_owner_tid is only
   // changed by ObjectMonitor::exit() so it is a good choice to share the
   // cache line with _owner.
-  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void* volatile) +
+  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, 2 * sizeof(void* volatile) +
                         sizeof(volatile uint64_t));
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry
@@ -195,6 +219,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
  public:
 
   static void Initialize();
+  static void Initialize2();
+
+  static OopHandle& vthread_cxq_head() { return _vthread_cxq_head; }
+  static ParkEvent* vthread_unparker_ParkEvent() { return _vthread_unparker_ParkEvent; }
 
   // Only perform a PerfData operation if the PerfData object has been
   // allocated and if the PerfDataManager has not freed the PerfData
@@ -224,6 +252,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   static ByteSize cxq_offset()         { return byte_offset_of(ObjectMonitor, _cxq); }
   static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
   static ByteSize EntryList_offset()   { return byte_offset_of(ObjectMonitor, _EntryList); }
+  static ByteSize stack_locker_offset(){ return byte_offset_of(ObjectMonitor, _stack_locker); }
 
   // ObjectMonitor references can be ORed with markWord::monitor_value
   // as part of the ObjectMonitor tagging mechanism. When we combine an
@@ -264,35 +293,42 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   const char* is_busy_to_string(stringStream* ss);
 
   bool is_entered(JavaThread* current) const;
+  int contentions() const;
 
   // Returns true if this OM has an owner, false otherwise.
-  bool      has_owner() const;
-  void*     owner() const;  // Returns null if DEFLATER_MARKER is observed.
+  bool   has_owner() const;
+  void*  owner() const;  // Returns null if DEFLATER_MARKER is observed.
+  bool   is_owner(JavaThread* thread) const { return owner() == owner_for(thread); }
+  bool   is_owner_anonymous() const { return owner_raw() == anon_owner_ptr(); }
+  bool   is_stack_locker(JavaThread* current);
+  BasicLock* stack_locker() const;
+
   void*     owner_raw() const;
+  void*     owner_for(JavaThread* thread) const;
   // Returns true if owner field == DEFLATER_MARKER and false otherwise.
   bool      owner_is_DEFLATER_MARKER() const;
   // Returns true if 'this' is being async deflated and false otherwise.
   bool      is_being_async_deflated();
   // Clear _owner field; current value must match old_value.
-  void      release_clear_owner(void* old_value);
+  void      release_clear_owner(JavaThread* old_value);
   // Simply set _owner field to new_value; current value must match old_value.
-  void      set_owner_from(void* old_value, void* new_value);
+  void      set_owner_from_raw(void* old_value, void* new_value);
+  void      set_owner_from(void* old_value, JavaThread* current);
   // Simply set _owner field to current; current value must match basic_lock_p.
-  void      set_owner_from_BasicLock(void* basic_lock_p, JavaThread* current);
+  void      set_owner_from_BasicLock(JavaThread* current);
   // Try to set _owner field to new_value if the current value matches
   // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
   // _owner field. Returns the prior value of the _owner field.
-  void*     try_set_owner_from(void* old_value, void* new_value);
+  void*     try_set_owner_from_raw(void* old_value, void* new_value);
+  void*     try_set_owner_from(void* old_value, JavaThread* current);
+
+  void set_stack_locker(BasicLock* locker);
 
   void set_owner_anonymous() {
-    set_owner_from(nullptr, anon_owner_ptr());
+    set_owner_from_raw(nullptr, anon_owner_ptr());
   }
 
-  bool is_owner_anonymous() const {
-    return owner_raw() == anon_owner_ptr();
-  }
-
-  void set_owner_from_anonymous(Thread* owner) {
+  void set_owner_from_anonymous(JavaThread* owner) {
     set_owner_from(anon_owner_ptr(), owner);
   }
 
@@ -301,14 +337,13 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // Simply set _next_om field to new_value.
   void set_next_om(ObjectMonitor* new_value);
 
-  int       waiters() const;
-
-  int       contentions() const;
   void      add_to_contentions(int value);
   intx      recursions() const                                         { return _recursions; }
   void      set_recursions(size_t recursions);
 
+ public:
   // JVM/TI GetObjectMonitorUsage() needs this:
+  int waiters() const;
   ObjectWaiter* first_waiter()                                         { return _WaitSet; }
   ObjectWaiter* next_waiter(ObjectWaiter* o)                           { return o->_next; }
   JavaThread* thread_of_waiter(ObjectWaiter* o)                        { return o->_thread; }
@@ -352,6 +387,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   bool      spin_enter(JavaThread* current);
   void      enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark& contention_mark);
   void      exit(JavaThread* current, bool not_suspended = true);
+  bool      resume_operation(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
   void      wait(jlong millis, bool interruptible, TRAPS);
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
@@ -370,10 +406,14 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      INotify(JavaThread* current);
   ObjectWaiter* DequeueWaiter();
   void      DequeueSpecificWaiter(ObjectWaiter* waiter);
+  void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
   void      EnterI(JavaThread* current);
   void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
-  void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
 
+  bool      VThreadMonitorEnter(JavaThread* current, ObjectWaiter* node = nullptr);
+  void      VThreadWait(JavaThread* current, jlong millis);
+  bool      VThreadWaitReenter(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
+  void      VThreadEpilog(JavaThread* current, ObjectWaiter* node);
 
   enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
 

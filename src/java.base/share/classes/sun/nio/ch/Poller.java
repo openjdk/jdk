@@ -143,6 +143,20 @@ abstract class Poller {
     }
 
     /**
+     * Parks the current thread until a Selector's file descriptor is ready.
+     * @param fdVal the Selector's file descriptor
+     * @param nanos the waiting time or 0 to wait indefinitely
+     */
+    static void pollSelector(int fdVal, long nanos) throws IOException {
+        assert nanos >= 0L;
+        Poller poller = POLLERS.masterPoller();
+        if (poller == null) {
+            poller = POLLERS.readPoller(fdVal);
+        }
+        poller.poll(fdVal, nanos, () -> true);
+    }
+
+    /**
      * If there is a thread polling the given file descriptor for the given event then
      * the thread is unparked.
      */
@@ -342,6 +356,13 @@ abstract class Poller {
                     startPlatformThread("Write-Poller", p::pollerLoop);
                 });
             }
+        }
+
+        /**
+         * Returns the master poller, or null if there is no master poller.
+         */
+        Poller masterPoller() {
+            return masterPoller;
         }
 
         /**

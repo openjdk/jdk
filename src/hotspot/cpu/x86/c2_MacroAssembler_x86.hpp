@@ -38,11 +38,11 @@ public:
   void fast_lock(Register obj, Register box, Register tmp,
                  Register scr, Register cx1, Register cx2, Register thread,
                  Metadata* method_data);
-  void fast_unlock(Register obj, Register box, Register tmp);
+  void fast_unlock(Register obj, Register box, Register tmp, Register scr);
 
   void fast_lock_lightweight(Register obj, Register box, Register rax_reg,
                              Register t, Register thread);
-  void fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread);
+  void fast_unlock_lightweight(Register obj, Register reg_rax, Register t1, Register t2, Register thread);
 
   // Generic instructions support for use in .ad files C2 code generation
   void vabsnegd(int opcode, XMMRegister dst, XMMRegister src);

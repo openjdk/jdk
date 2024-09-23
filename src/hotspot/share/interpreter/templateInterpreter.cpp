@@ -212,6 +212,8 @@ address    TemplateInterpreter::_throw_ClassCastException_entry             = nu
 address    TemplateInterpreter::_throw_NullPointerException_entry           = nullptr;
 address    TemplateInterpreter::_throw_StackOverflowError_entry             = nullptr;
 address    TemplateInterpreter::_throw_exception_entry                      = nullptr;
+address    TemplateInterpreter::_cont_resume_interpreter_adapter            = nullptr;
+address    TemplateInterpreter::_native_frame_resume_entry                  = nullptr;
 
 #ifndef PRODUCT
 EntryPoint TemplateInterpreter::_trace_code;

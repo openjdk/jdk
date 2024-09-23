@@ -65,4 +65,8 @@ inline oop OopHandle::xchg(oop new_value) {
   return NativeAccess<MO_SEQ_CST>::oop_atomic_xchg(_obj, new_value);
 }
 
+inline oop OopHandle::cmpxchg(oop old_value, oop new_value) {
+  return NativeAccess<MO_SEQ_CST>::oop_atomic_cmpxchg(_obj, old_value, new_value);
+}
+
 #endif // SHARE_OOPS_OOPHANDLE_INLINE_HPP

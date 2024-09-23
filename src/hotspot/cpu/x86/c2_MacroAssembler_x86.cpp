@@ -281,15 +281,16 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
     jcc(Assembler::notZero, DONE_LABEL);
   }
 
-  movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));          // [FETCH]
-  testptr(tmpReg, markWord::monitor_value); // inflated vs stack-locked|neutral
-  jcc(Assembler::notZero, IsInflated);
-
   if (LockingMode == LM_MONITOR) {
     // Clear ZF so that we take the slow path at the DONE label. objReg is known to be not 0.
     testptr(objReg, objReg);
   } else {
     assert(LockingMode == LM_LEGACY, "must be");
+
+    movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));          // [FETCH]
+    testptr(tmpReg, markWord::monitor_value); // inflated vs stack-locked|neutral
+    jcc(Assembler::notZero, IsInflated);
+
     // Attempt stack-locking ...
     orptr (tmpReg, markWord::unlocked_value);
     movptr(Address(boxReg, 0), tmpReg);          // Anticipate successful CAS
@@ -329,10 +330,10 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
   // Appears unlocked - try to swing _owner from null to non-null.
   // Ideally, I'd manifest "Self" with get_thread and then attempt
-  // to CAS the register containing Self into m->Owner.
+  // to CAS the register containing thread id into m->Owner.
   // But we don't have enough registers, so instead we can either try to CAS
   // rsp or the address of the box (in scr) into &m->owner.  If the CAS succeeds
-  // we later store "Self" into m->Owner.  Transiently storing a stack address
+  // we later store thread id into m->Owner.  Transiently storing a stack address
   // (rsp or the address of the box) into  m->owner is harmless.
   // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
   lock();
@@ -343,6 +344,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   jccb  (Assembler::notZero, NO_COUNT);
   // update _owner from BasicLock to thread
   get_thread (scrReg);                    // beware: clobbers ICCs
+  movptr(scrReg, Address(scrReg, JavaThread::lock_id_offset()));
   movptr(Address(boxReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), scrReg);
   xorptr(boxReg, boxReg);                 // set icc.ZFlag = 1 to indicate success
 
@@ -354,18 +356,21 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   //   Invariant: m->_recursions should already be 0, so we don't need to explicitly set it.
   // Intentional fall-through into DONE_LABEL ...
 #else // _LP64
-  // It's inflated and we use scrReg for ObjectMonitor* in this section.
-  movq(scrReg, tmpReg);
-  xorq(tmpReg, tmpReg);
-  lock();
-  cmpxchgptr(thread, Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   // Unconditionally set box->_displaced_header = markWord::unused_mark().
   // Without cast to int32_t this style of movptr will destroy r10 which is typically obj.
   movptr(Address(boxReg, 0), checked_cast<int32_t>(markWord::unused_mark().value()));
-  // Propagate ICC.ZF from CAS above into DONE_LABEL.
-  jccb(Assembler::equal, COUNT);          // CAS above succeeded; propagate ZF = 1 (success)
 
-  cmpptr(thread, rax);                // Check if we are already the owner (recursive lock)
+  // It's inflated and we use scrReg for ObjectMonitor* in this section.
+  movq(scrReg, tmpReg);
+  xorq(tmpReg, tmpReg);
+  movptr(boxReg, Address(r15_thread, JavaThread::lock_id_offset()));
+  lock();
+  cmpxchgptr(boxReg, Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+
+  // Propagate ICC.ZF from CAS above into DONE_LABEL.
+  jccb(Assembler::equal, COUNT);    // CAS above succeeded; propagate ZF = 1 (success)
+
+  cmpptr(boxReg, rax);                // Check if we are already the owner (recursive lock)
   jccb(Assembler::notEqual, NO_COUNT);    // If not recursive, ZF = 0 at this point (fail)
   incq(Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
   xorq(rax, rax); // Set ZF = 1 (success) for recursive lock, denoting locking success
@@ -422,7 +427,7 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 // A perfectly viable alternative is to elide the owner check except when
 // Xcheck:jni is enabled.
 
-void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpReg) {
+void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpReg, Register scrReg) {
   assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_unlock_lightweight");
   assert(boxReg == rax, "");
   assert_different_registers(objReg, boxReg, tmpReg);
@@ -531,8 +536,9 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 
   // box is really RAX -- the following CMPXCHG depends on that binding
   // cmpxchg R,[M] is equivalent to rax = CAS(M,rax,R)
+  movptr(scrReg, Address(r15_thread, JavaThread::lock_id_offset()));
   lock();
-  cmpxchgptr(r15_thread, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  cmpxchgptr(scrReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   // There's no successor so we tried to regrab the lock.
   // If that didn't work, then another thread grabbed the
   // lock so we're done (and exit was a success).
@@ -553,7 +559,7 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
     movptr(tmpReg, Address (boxReg, 0));      // re-fetch
     lock();
     cmpxchgptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // Uses RAX which is box
-    // Intentional fall-thru into DONE_LABEL
+     // Intentional fall-thru into DONE_LABEL
   }
 
   bind(DONE_LABEL);
@@ -563,13 +569,16 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   jccb(Assembler::notZero, NO_COUNT);
 
   bind(COUNT);
-  // Count monitors in fast path
+
+  if (LockingMode == LM_LEGACY) {
+    // Count monitors in fast path
 #ifndef _LP64
-  get_thread(tmpReg);
-  decrementl(Address(tmpReg, JavaThread::held_monitor_count_offset()));
+    get_thread(tmpReg);
+    decrementl(Address(tmpReg, JavaThread::held_monitor_count_offset()));
 #else // _LP64
-  decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
+    decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
 #endif
+  }
 
   xorl(tmpReg, tmpReg); // Set ZF == 1
 
@@ -692,27 +701,29 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
     Label monitor_locked;
     // Lock the monitor.
 
+    if (UseObjectMonitorTable) {
+      // Cache the monitor for unlock before trashing box. On failure to acquire
+      // the lock, the slow path will reset the entry accordingly (see CacheSetter).
+      movptr(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), monitor);
+    }
+
     // CAS owner (null => current thread).
     xorptr(rax_reg, rax_reg);
-    lock(); cmpxchgptr(thread, owner_address);
+    movptr(box, Address(thread, JavaThread::lock_id_offset()));
+    lock(); cmpxchgptr(box, owner_address);
     jccb(Assembler::equal, monitor_locked);
 
     // Check if recursive.
-    cmpptr(thread, rax_reg);
+    cmpptr(box, rax_reg);
     jccb(Assembler::notEqual, slow_path);
 
     // Recursive.
     increment(recursions_address);
 
     bind(monitor_locked);
-    if (UseObjectMonitorTable) {
-      // Cache the monitor for unlock
-      movptr(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), monitor);
-    }
   }
 
   bind(locked);
-  increment(Address(thread, JavaThread::held_monitor_count_offset()));
   // Set ZF = 1
   xorl(rax_reg, rax_reg);
 
@@ -736,29 +747,26 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
   // C2 uses the value of ZF to determine the continuation.
 }
 
-void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread) {
+void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, Register t1, Register t2, Register thread) {
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
   assert(reg_rax == rax, "Used for CAS");
-  assert_different_registers(obj, reg_rax, t);
+  assert_different_registers(obj, reg_rax, t1, t2);
 
   // Handle inflated monitor.
   Label inflated, inflated_check_lock_stack;
   // Finish fast unlock successfully.  MUST jump with ZF == 1
   Label unlocked;
 
-  // Assume success.
-  decrement(Address(thread, JavaThread::held_monitor_count_offset()));
-
-  const Register mark = t;
-  const Register monitor = t;
-  const Register top = UseObjectMonitorTable ? t : reg_rax;
+  const Register mark = t1;
+  const Register monitor = t1;
+  const Register top = UseObjectMonitorTable ? t1 : reg_rax;
   const Register box = reg_rax;
 
   Label dummy;
   C2FastUnlockLightweightStub* stub = nullptr;
 
   if (!Compile::current()->output()->in_scratch_emit_size()) {
-    stub = new (Compile::current()->comp_arena()) C2FastUnlockLightweightStub(obj, mark, reg_rax, thread);
+    stub = new (Compile::current()->comp_arena()) C2FastUnlockLightweightStub(obj, mark, reg_rax, t2, thread);
     Compile::current()->output()->add_stub(stub);
   }
 
@@ -860,7 +868,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     // Recursive unlock.
     bind(recursive);
     decrement(recursions_address);
-    xorl(t, t);
+    xorl(t1, t1);
   }
 
   bind(unlocked);

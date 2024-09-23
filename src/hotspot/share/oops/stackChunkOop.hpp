@@ -36,6 +36,8 @@ class frame;
 class MemRegion;
 class RegisterMap;
 class VMRegImpl;
+class ObjectMonitor;
+class ObjectWaiter;
 typedef VMRegImpl* VMReg;
 
 // A continuation stack-chunk oop.
@@ -58,6 +60,12 @@ private:
   static const uint8_t FLAG_NOTIFY_RELATIVIZE = 1 << 2; // Someone is waiting for relativization to complete
   static const uint8_t FLAG_GC_MODE = 1 << 3; // Once true it and FLAG_HAS_INTERPRETED_FRAMES can't change
   static const uint8_t FLAG_HAS_BITMAP = 1 << 4; // Can only be true if FLAG_GC_MODE is true
+  static const uint8_t FLAG_HAS_LOCKSTACK = 1 << 5; // LockStack was copied into stackChunk
+  static const uint8_t FLAG_PREEMPTED_MONITORENTER = 1 << 6; // Continuation was preempted on monitorenter
+  static const uint8_t FLAG_PREEMPTED_WAIT = 1 << 7; // Continuation was preempted on Object.wait()
+
+  static const uint8_t FLAGS_PREEMPTED = FLAG_PREEMPTED_MONITORENTER | FLAG_PREEMPTED_WAIT;
+  static const int preempt_shift = 6;
 
   bool try_acquire_relativization();
   void release_relativization();
@@ -91,6 +99,15 @@ public:
   inline int max_thawing_size() const;
   inline void set_max_thawing_size(int value);
 
+  inline uint8_t lockstack_size() const;
+  inline void set_lockstack_size(uint8_t value);
+
+  inline ObjectWaiter* object_waiter() const;
+  inline void set_object_waiter(ObjectWaiter* obj_waiter);
+
+  inline ObjectMonitor* current_pending_monitor() const;
+  inline ObjectMonitor* current_waiting_monitor() const;
+
   inline oop cont() const;
   template<typename P>
   inline oop cont() const;
@@ -122,10 +139,17 @@ public:
   inline bool is_flag_acquire(uint8_t flag) const;
   inline void set_flag(uint8_t flag, bool value);
   inline bool try_set_flags(uint8_t prev_flags, uint8_t new_flags);
+  inline void clear_flags(uint8_t flag);
   inline void clear_flags();
 
   inline bool has_mixed_frames() const;
   inline void set_has_mixed_frames(bool value);
+
+  inline void set_preempt_kind(int freeze_kind);
+  inline int get_and_clear_preempt_kind();
+
+  inline bool has_lockstack() const;
+  inline void set_has_lockstack(bool value);
 
   inline bool is_gc_mode() const;
   inline bool is_gc_mode_acquire() const;
@@ -146,6 +170,11 @@ public:
 
   template <typename RegisterMapT>
   void fix_thawed_frame(const frame& f, const RegisterMapT* map);
+
+  void copy_lockstack(oop* start);
+
+  template <typename OopT, class StackChunkLockStackClosureType>
+  inline void iterate_lockstack(StackChunkLockStackClosureType* closure);
 
   template <class StackChunkFrameClosureType>
   inline void iterate_stack(StackChunkFrameClosureType* closure);

@@ -257,6 +257,10 @@ void Runtime1::initialize_pd() {
   frame_size_in_bytes = align_up(sp_offset, frame::alignment_in_bytes);
 }
 
+uint Runtime1::runtime_blob_current_thread_offset(frame f) {
+  Unimplemented();
+  return 0;
+}
 
 OopMapSet* Runtime1::generate_exception_throw(StubAssembler* sasm, address target, bool has_argument) {
   // Make a frame and preserve the caller's caller-save registers.

@@ -36,6 +36,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/accessDecorators.hpp"
@@ -224,6 +225,36 @@ void MacroAssembler::pop_cont_fastpath(Register java_thread) {
   bltu(sp, t0, done);
   sd(zr, Address(java_thread, JavaThread::cont_fastpath_offset()));
   bind(done);
+}
+
+void MacroAssembler::inc_held_monitor_count(Register tmp) {
+  Address dst = Address(xthread, JavaThread::held_monitor_count_offset());
+  ld(tmp, dst);
+  addi(tmp, tmp, 1);
+  sd(tmp, dst);
+#ifdef ASSERT
+  Label ok;
+  test_bit(tmp, tmp, 63);
+  beqz(tmp, ok);
+  STOP("assert(held monitor count overflow)");
+  should_not_reach_here();
+  bind(ok);
+#endif
+}
+
+void MacroAssembler::dec_held_monitor_count(Register tmp) {
+  Address dst = Address(xthread, JavaThread::held_monitor_count_offset());
+  ld(tmp, dst);
+  addi(tmp, tmp, -1);
+  sd(tmp, dst);
+#ifdef ASSERT
+  Label ok;
+  test_bit(tmp, tmp, 63);
+  beqz(tmp, ok);
+  STOP("assert(held monitor count underflow)");
+  should_not_reach_here();
+  bind(ok);
+#endif
 }
 
 int MacroAssembler::align(int modulus, int extra_offset) {
@@ -768,11 +799,22 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        Label *retaddr) {
   int32_t offset = 0;
   push_reg(RegSet::of(t0, xmethod), sp);   // push << t0 & xmethod >> to sp
+
   mv(t0, entry_point, offset);
   jalr(t0, offset);
   if (retaddr != nullptr) {
     bind(*retaddr);
   }
+
+  Label not_preempted;
+  if (entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter)) {
+    ld(t0, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+    beqz(t0, not_preempted);
+    sd(zr, Address(xthread, JavaThread::preempt_alternate_return_offset()));
+    jr(t0);
+  }
+  bind(not_preempted);
+
   pop_reg(RegSet::of(t0, xmethod), sp);   // pop << t0 & xmethod >> from sp
 }
 

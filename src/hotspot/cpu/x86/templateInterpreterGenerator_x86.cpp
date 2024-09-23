@@ -387,6 +387,30 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(
   return entry;
 }
 
+address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter() {
+  if (!Continuations::enabled()) return nullptr;
+  address start = __ pc();
+
+  __ pop(rbp);
+
+  // We will return to the intermediate call made in call_VM skipping the restoration
+  // of bcp and locals done in InterpreterMacroAssembler::call_VM_base, so fix them here.
+  __ restore_bcp();
+  __ restore_locals();
+
+  // Get return address before adjusting rsp
+  __ movptr(rax, Address(rsp, 0));
+
+  // Restore stack bottom
+  __ movptr(rcx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(rsp, Address(rbp, rcx, Address::times_ptr));
+  // and NULL it as marker that esp is now tos until next java call
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
+
+  __ jmp(rax);
+
+  return start;
+}
 
 
 // Helpers for commoning out cases in the various type of method entries.
@@ -1049,10 +1073,14 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ movl(Address(thread, JavaThread::thread_state_offset()),
           _thread_in_native);
 
+  __ push_cont_fastpath();
+
   // Call the native method.
   __ call(rax);
   // 32: result potentially in rdx:rax or ST0
   // 64: result potentially in rax or xmm0
+
+  __ pop_cont_fastpath();
 
   // Verify or restore cpu control state after JNI call
   __ restore_cpu_control_state_after_jni(rscratch1);
@@ -1077,10 +1105,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     Label push_double;
     ExternalAddress float_handler(AbstractInterpreter::result_handler(T_FLOAT));
     ExternalAddress double_handler(AbstractInterpreter::result_handler(T_DOUBLE));
-    __ cmpptr(Address(rbp, (frame::interpreter_frame_oop_temp_offset + 1)*wordSize),
+    __ cmpptr(Address(rbp, (frame::interpreter_frame_result_handler_offset)*wordSize),
               float_handler.addr(), noreg);
     __ jcc(Assembler::equal, push_double);
-    __ cmpptr(Address(rbp, (frame::interpreter_frame_oop_temp_offset + 1)*wordSize),
+    __ cmpptr(Address(rbp, (frame::interpreter_frame_result_handler_offset)*wordSize),
               double_handler.addr(), noreg);
     __ jcc(Assembler::notEqual, L);
     __ bind(push_double);
@@ -1149,6 +1177,21 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // change thread state
   __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_Java);
+
+  if (LockingMode != LM_LEGACY) {
+    // Check preemption for Object.wait()
+    Label not_preempted;
+    __ movptr(rscratch1, Address(r15_thread, JavaThread::preempt_alternate_return_offset()));
+    __ cmpptr(rscratch1, NULL_WORD);
+    __ jccb(Assembler::equal, not_preempted);
+    __ movptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
+    __ jmp(rscratch1);
+    Interpreter::_native_frame_resume_entry = __ pc();
+    // On resume we need to set up stack as expected
+    __ push(dtos);
+    __ push(ltos);
+    __ bind(not_preempted);
+  }
 
   // reset_last_Java_frame
   __ reset_last_Java_frame(thread, true);

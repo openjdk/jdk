@@ -159,16 +159,8 @@ public class ByteArrayOutputStream extends OutputStream {
      * @throws  NullPointerException if {@code out} is {@code null}.
      * @throws  IOException if an I/O error occurs.
      */
-    public void writeTo(OutputStream out) throws IOException {
-        if (Thread.currentThread().isVirtual()) {
-            byte[] bytes;
-            synchronized (this) {
-                bytes = Arrays.copyOf(buf, count);
-            }
-            out.write(bytes);
-        } else synchronized (this) {
-            out.write(buf, 0, count);
-        }
+    public synchronized void writeTo(OutputStream out) throws IOException {
+        out.write(buf, 0, count);
     }
 
     /**

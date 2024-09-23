@@ -3563,9 +3563,10 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   // otherwise m->owner may contain a thread or a stack address.
 
   // Try to CAS m->owner from null to current thread.
-  // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
+  // If m->owner is null, then csg succeeds and sets m->owner=THREAD_ID and CR=EQ.
   // Otherwise, register zero is filled with the current owner.
   z_lghi(zero, 0);
+  z_csg(zero, Z_R1_scratch, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
   z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
 
   // Store a non-null value into the box.

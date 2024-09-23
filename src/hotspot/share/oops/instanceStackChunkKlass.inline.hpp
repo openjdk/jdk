@@ -65,6 +65,7 @@ void InstanceStackChunkKlass::oop_oop_iterate(oop obj, OopClosureType* closure) 
   }
   oop_oop_iterate_stack<T>(chunk, closure);
   oop_oop_iterate_header<T>(chunk, closure);
+  oop_oop_iterate_lockstack<T>(chunk, closure, chunk->range());
 }
 
 template <typename T, class OopClosureType>
@@ -73,6 +74,7 @@ void InstanceStackChunkKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* c
   stackChunkOop chunk = stackChunkOopDesc::cast(obj);
   oop_oop_iterate_stack<T>(chunk, closure);
   oop_oop_iterate_header<T>(chunk, closure);
+  oop_oop_iterate_lockstack<T>(chunk, closure, chunk->range());
 }
 
 template <typename T, class OopClosureType>
@@ -85,6 +87,7 @@ void InstanceStackChunkKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* c
   }
   oop_oop_iterate_stack_bounded<T>(chunk, closure, mr);
   oop_oop_iterate_header_bounded<T>(chunk, closure, mr);
+  oop_oop_iterate_lockstack<T>(chunk, closure, mr);
 }
 
 template <typename T, class OopClosureType>

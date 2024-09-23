@@ -78,7 +78,8 @@ void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
   assert(t != noreg, "need tmp register");
 
   // Fix owner to be the current thread.
-  __ str(rthread, Address(mon, ObjectMonitor::owner_offset()));
+  __ ldr(t, Address(rthread, JavaThread::lock_id_offset()));
+  __ str(t, Address(mon, ObjectMonitor::owner_offset()));
 
   // Pop owner object from lock-stack.
   __ ldrw(t, Address(rthread, JavaThread::lock_stack_top_offset()));

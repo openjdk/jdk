@@ -123,7 +123,7 @@ class StackValue : public ResourceObj {
   static StackValue* create_stack_value_from_oop_location(stackChunkOop chunk, void* addr);
   static StackValue* create_stack_value_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_register);
 
-  static BasicLock*  resolve_monitor_lock(const frame* fr, Location location);
+  static BasicLock*  resolve_monitor_lock(const frame& fr, Location location);
 
   template<typename RegisterMapT>
   static StackValue* create_stack_value(const frame* fr, const RegisterMapT* reg_map, ScopeValue* sv);

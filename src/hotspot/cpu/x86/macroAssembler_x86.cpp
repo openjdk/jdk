@@ -35,6 +35,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
 #include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -529,6 +530,15 @@ void MacroAssembler::call_VM_leaf_base(address entry_point, int num_args) {
   addq(rsp, frame::arg_reg_save_area_bytes);
 #endif
 
+  if (entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter)) {
+    Label not_preempted;
+    movptr(rscratch1, Address(r15_thread, JavaThread::preempt_alternate_return_offset()));
+    cmpptr(rscratch1, NULL_WORD);
+    jccb(Assembler::zero, not_preempted);
+    movptr(Address(r15_thread, JavaThread::preempt_alternate_return_offset()), NULL_WORD);
+    jmp(rscratch1);
+    bind(not_preempted);
+  }
 }
 
 void MacroAssembler::cmp64(Register src1, AddressLiteral src2, Register rscratch) {

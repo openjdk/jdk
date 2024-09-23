@@ -57,52 +57,52 @@ class PhaseTypeGuard : public StackObj {
 Semaphore PhaseTypeGuard::_mutex_semaphore(1);
 
 // Table for mapping compiler phases names to int identifiers.
-static GrowableArray<const char*>* phase_names = nullptr;
+static GrowableArray<const char*>* cphase_names = nullptr;
 
 class CompilerPhaseTypeConstant : public JfrSerializer {
  public:
   void serialize(JfrCheckpointWriter& writer) {
     PhaseTypeGuard guard;
-    assert(phase_names != nullptr, "invariant");
-    assert(phase_names->is_nonempty(), "invariant");
-    const u4 nof_entries = phase_names->length();
+    assert(cphase_names != nullptr, "invariant");
+    assert(cphase_names->is_nonempty(), "invariant");
+    const u4 nof_entries = cphase_names->length();
     writer.write_count(nof_entries);
     for (u4 i = 0; i < nof_entries; i++) {
       writer.write_key(i);
-      writer.write(phase_names->at(i));
+      writer.write(cphase_names->at(i));
     }
   }
 };
 
-static int lookup_phase(const char* phase_name) {
-  for (int i = 0; i < phase_names->length(); i++) {
-    const char* name = phase_names->at(i);
-    if (strcmp(name, phase_name) == 0) {
+static int lookup_phase(const char* cphase_name) {
+  for (int i = 0; i < cphase_names->length(); i++) {
+    const char* name = cphase_names->at(i);
+    if (strcmp(name, cphase_name) == 0) {
       return i;
     }
   }
   return -1;
 }
 
-int CompilerEvent::PhaseEvent::get_phase_id(const char* phase_name, bool may_exist, bool use_strdup, bool sync) {
+int CompilerEvent::PhaseEvent::get_phase_id(const char* cphase_name, bool may_exist, bool use_strdup, bool sync) {
   int index;
   bool register_jfr_serializer = false;
   {
     PhaseTypeGuard guard(sync);
-    if (phase_names == nullptr) {
-      phase_names = new (mtInternal) GrowableArray<const char*>(100, mtCompiler);
+    if (cphase_names == nullptr) {
+      cphase_names = new (mtInternal) GrowableArray<const char*>(100, mtCompiler);
       register_jfr_serializer = true;
     } else if (may_exist) {
-      index = lookup_phase(phase_name);
+      index = lookup_phase(cphase_name);
       if (index != -1) {
         return index;
       }
     } else {
-      assert((index = lookup_phase(phase_name)) == -1, "phase name \"%s\" already registered: %d", phase_name, index);
+      assert((index = lookup_phase(cphase_name)) == -1, "phase name \"%s\" already registered: %d", cphase_name, index);
     }
 
-    index = phase_names->length();
-    phase_names->append(use_strdup ? os::strdup(phase_name) : phase_name);
+    index = cphase_names->length();
+    cphase_names->append(use_strdup ? os::strdup(cphase_name) : cphase_name);
   }
   if (register_jfr_serializer) {
     JfrSerializer::register_serializer(TYPE_COMPILERPHASETYPE, false, new CompilerPhaseTypeConstant());
@@ -112,7 +112,7 @@ int CompilerEvent::PhaseEvent::get_phase_id(const char* phase_name, bool may_exi
     writer.write_type(TYPE_COMPILERPHASETYPE);
     writer.write_count(1);
     writer.write_key(index);
-    writer.write(phase_name);
+    writer.write(cphase_name);
   }
   return index;
 }

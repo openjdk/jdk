@@ -34,6 +34,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -3775,6 +3776,59 @@ address StubGenerator::generate_cont_returnBarrier_exception() {
   return generate_cont_thaw("Cont thaw return barrier exception", Continuation::thaw_return_barrier_exception);
 }
 
+address StubGenerator::generate_cont_preempt_stub() {
+  if (!Continuations::enabled()) return nullptr;
+  StubCodeMark mark(this, "StubRoutines","Continuation preempt stub");
+  address start = __ pc();
+
+#ifdef ASSERT
+  __ push(rax);
+  { Label L;
+    __ get_thread(rax);
+    __ cmpptr(r15_thread, rax);
+    __ jcc(Assembler::equal, L);
+    __ stop("r15 should have been preserved across VM call");
+    __ bind(L);
+  }
+  __ pop(rax);
+#endif
+
+  __ reset_last_Java_frame(true);
+
+  // reset _preempting flag
+#ifdef ASSERT
+  { Label L;
+    __ movbool(rscratch1, Address(r15_thread, JavaThread::preempting_offset()));
+    __ testbool(rscratch1);
+    __ jcc(Assembler::notZero, L);
+    __ stop("preempting flag should be set");
+    __ bind(L);
+  }
+#endif
+  __ movbool(Address(r15_thread, JavaThread::preempting_offset()), false);
+
+  // Set rsp to enterSpecial frame
+  __ movptr(rsp, Address(r15_thread, JavaThread::cont_entry_offset()));
+
+  Label preemption_cancelled;
+  __ movbool(rscratch1, Address(r15_thread, JavaThread::preemption_cancelled_offset()));
+  __ testbool(rscratch1);
+  __ jcc(Assembler::notZero, preemption_cancelled);
+
+  // Remove enterSpecial frame from the stack and return to Continuation.run()
+  SharedRuntime::continuation_enter_cleanup(_masm);
+  __ pop(rbp);
+  __ ret(0);
+
+  __ bind(preemption_cancelled);
+  __ movbool(Address(r15_thread, JavaThread::preemption_cancelled_offset()), false);
+  __ lea(rbp, Address(rsp, checked_cast<int32_t>(ContinuationEntry::size())));
+  __ movptr(rscratch1, ExternalAddress(ContinuationEntry::thaw_call_pc_address()));
+  __ jmp(rscratch1);
+
+  return start;
+}
+
 // exception handler for upcall stubs
 address StubGenerator::generate_upcall_stub_exception_handler() {
   StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
@@ -3925,6 +3979,7 @@ void StubGenerator::generate_continuation_stubs() {
   StubRoutines::_cont_thaw          = generate_cont_thaw();
   StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
   StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
+  StubRoutines::_cont_preempt_stub = generate_cont_preempt_stub();
 }
 
 void StubGenerator::generate_final_stubs() {

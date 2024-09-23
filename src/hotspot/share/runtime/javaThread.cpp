@@ -83,6 +83,7 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/threadIdentifier.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
@@ -235,6 +236,8 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
   // constructor calls Thread.current(), which must be set here.
   java_lang_Thread::set_thread(thread_oop(), this);
   set_threadOopHandles(thread_oop());
+  // Set the lock_id to the next thread_id temporarily while initialization runs.
+  set_lock_id(ThreadIdentifier::next());
 
   JavaValue result(T_VOID);
   if (thread_name != nullptr) {
@@ -260,6 +263,9 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             Handle(),
                             CHECK);
   }
+  // Update the lock_id with the tid value.
+  set_lock_id(java_lang_Thread::thread_id(thread_oop()));
+
   os::set_priority(this, NormPriority);
 
   if (daemon) {
@@ -429,6 +435,8 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _current_waiting_monitor(nullptr),
   _active_handles(nullptr),
   _free_handle_block(nullptr),
+  _lock_id(0),
+  _on_monitorenter(false),
 
   _suspend_flags(0),
 
@@ -449,6 +457,9 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _is_in_tmp_VTMS_transition(false),
   _is_disable_suspend(false),
   _VTMS_transition_mark(false),
+  _pending_jvmti_unmount_event(false),
+  _on_monitor_waited_event(false),
+  _contended_entered_monitor(nullptr),
 #ifdef ASSERT
   _is_VTMS_transition_disabler(false),
 #endif
@@ -487,6 +498,11 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _cont_fastpath_thread_state(1),
   _held_monitor_count(0),
   _jni_monitor_count(0),
+  _preempting(false),
+  _preemption_cancelled(false),
+  _pending_interrupted_exception(false),
+  _preempt_alternate_return(nullptr),
+  DEBUG_ONLY(_obj_locker_count(0) COMMA)
 
   _handshake(this),
 
@@ -933,6 +949,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     log_debug(jni)("JavaThread %s (tid: " UINTX_FORMAT ") with Objects still locked by JNI MonitorEnter.",
                    exit_type == JavaThread::normal_exit ? "exiting" : "detaching", os::current_thread_id());
   }
+  assert(obj_locker_count() == 0, "expected 0 but found: " INTX_FORMAT, obj_locker_count());
 
   // These things needs to be done while we are still a Java Thread. Make sure that thread
   // is in a consistent state, in case GC happens
@@ -1162,6 +1179,7 @@ void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
 
 #if INCLUDE_JVMTI
 void JavaThread::set_is_in_VTMS_transition(bool val) {
+  assert(is_in_VTMS_transition() != val, "already %s transition", val ? "inside" : "outside");
   _is_in_VTMS_transition = val;
 }
 
@@ -1525,9 +1543,8 @@ void JavaThread::print_on(outputStream *st, bool print_extended_info) const {
   st->print_cr("[" INTPTR_FORMAT "]", (intptr_t)last_Java_sp() & ~right_n_bits(12));
   if (thread_oop != nullptr) {
     if (is_vthread_mounted()) {
-      oop vt = vthread();
-      assert(vt != nullptr, "");
-      st->print_cr("   Carrying virtual thread #" INT64_FORMAT, (int64_t)java_lang_Thread::thread_id(vt));
+      // _lock_id is the thread ID of the mounted virtual thread
+      st->print_cr("   Carrying virtual thread #" INT64_FORMAT, lock_id());
     } else {
       st->print_cr("   java.lang.Thread.State: %s", java_lang_Thread::thread_status_name(thread_oop));
     }
@@ -1711,6 +1728,7 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
   assert(InstanceKlass::cast(thread_oop->klass())->is_linked(),
          "must be initialized");
   set_threadOopHandles(thread_oop());
+  set_lock_id(java_lang_Thread::thread_id(thread_oop()));
 
   if (prio == NoPriority) {
     prio = java_lang_Thread::priority(thread_oop());
@@ -1989,6 +2007,15 @@ void JavaThread::trace_stack() {
 // Slow-path increment of the held monitor counts. JNI locking is always
 // this slow-path.
 void JavaThread::inc_held_monitor_count(intx i, bool jni) {
+#ifdef LOOM_MONITOR_SUPPORT
+  if (LockingMode != LM_LEGACY) {
+    // Nothing to do. Just do some sanity check.
+    assert(_held_monitor_count == 0, "counter should not be used");
+    assert(_jni_monitor_count == 0, "counter should not be used");
+    return;
+  }
+#endif
+
 #ifdef SUPPORT_MONITOR_COUNT
   assert(_held_monitor_count >= 0, "Must always be non-negative: " INTX_FORMAT, _held_monitor_count);
   _held_monitor_count += i;
@@ -2004,12 +2031,21 @@ void JavaThread::inc_held_monitor_count(intx i, bool jni) {
 // Slow-path decrement of the held monitor counts. JNI unlocking is always
 // this slow-path.
 void JavaThread::dec_held_monitor_count(intx i, bool jni) {
+#ifdef LOOM_MONITOR_SUPPORT
+  if (LockingMode != LM_LEGACY) {
+    // Nothing to do. Just do some sanity check.
+    assert(_held_monitor_count == 0, "counter should not be used");
+    assert(_jni_monitor_count == 0, "counter should not be used");
+    return;
+  }
+#endif
+
 #ifdef SUPPORT_MONITOR_COUNT
   _held_monitor_count -= i;
-  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _held_monitor_count);
+  assert(_held_monitor_count >= 0, "Must always be non-negative: " INTX_FORMAT, _held_monitor_count);
   if (jni) {
     _jni_monitor_count -= i;
-    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _jni_monitor_count);
+    assert(_jni_monitor_count >= 0, "Must always be non-negative: " INTX_FORMAT, _jni_monitor_count);
   }
   // When a thread is detaching with still owned JNI monitors, the logic that releases
   // the monitors doesn't know to set the "jni" flag and so the counts can get out of sync.
@@ -2199,6 +2235,7 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
 
   // Now bind the thread_oop to the target JavaThread.
   target->set_threadOopHandles(thread_oop());
+  target->set_lock_id(java_lang_Thread::thread_id(thread_oop()));
 
   Threads::add(target); // target is now visible for safepoint/handshake
   // Publish the JavaThread* in java.lang.Thread after the JavaThread* is

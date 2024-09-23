@@ -101,15 +101,16 @@ class C2FastUnlockLightweightStub : public C2CodeStub {
 private:
   Register _obj;
   Register _mark;
-  Register _t;
+  Register _t1;
+  Register _t2;
   Register _thread;
   Label _slow_path;
   Label _push_and_slow_path;
   Label _check_successor;
   Label _unlocked_continuation;
 public:
-  C2FastUnlockLightweightStub(Register obj, Register mark, Register t, Register thread) : C2CodeStub(),
-    _obj(obj), _mark(mark), _t(t), _thread(thread) {}
+  C2FastUnlockLightweightStub(Register obj, Register mark, Register t1, Register t2, Register thread) : C2CodeStub(),
+    _obj(obj), _mark(mark), _t1(t1), _t2(t2), _thread(thread) {}
   int max_size() const;
   void emit(C2_MacroAssembler& masm);
   Label& slow_path() { return _slow_path; }

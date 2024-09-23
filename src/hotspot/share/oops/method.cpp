@@ -871,6 +871,10 @@ bool Method::needs_clinit_barrier() const {
   return is_static() && !method_holder()->is_initialized();
 }
 
+bool Method::is_object_wait0() const {
+  return name() == vmSymbols::wait_name();
+}
+
 objArrayHandle Method::resolved_checked_exceptions_impl(Method* method, TRAPS) {
   int length = method->checked_exceptions_length();
   if (length == 0) {  // common case

@@ -40,6 +40,22 @@ static inline intptr_t** link_address(const frame& f) {
             : (intptr_t**)(f.unextended_sp() + f.cb()->frame_size() - 2);
 }
 
+static inline void patch_return_pc_with_preempt_stub(frame& f) {
+  if (f.is_runtime_frame()) {
+    // Unlike x86 we don't know where in the callee frame the return pc is
+    // saved so we can't patch the return from the VM call back to Java.
+    // Instead, we will patch the return from the runtime stub back to the
+    // compiled method so that the target returns to the preempt cleanup stub.
+    intptr_t* caller_sp = f.sp() + f.cb()->frame_size();
+    caller_sp[-1] = (intptr_t)StubRoutines::cont_preempt_stub();
+  } else {
+    // The target will check for preemption once it returns to the interpreter
+    // or the native wrapper code and will manually jump to the preempt stub.
+    JavaThread *thread = JavaThread::current();
+    thread->set_preempt_alternate_return(StubRoutines::cont_preempt_stub());
+  }
+}
+
 inline int ContinuationHelper::frame_align_words(int size) {
 #ifdef _LP64
   return size & 1;
@@ -72,12 +88,12 @@ inline void ContinuationHelper::set_anchor_to_entry_pd(JavaFrameAnchor* anchor, 
   anchor->set_last_Java_fp(entry->entry_fp());
 }
 
-#ifdef ASSERT
 inline void ContinuationHelper::set_anchor_pd(JavaFrameAnchor* anchor, intptr_t* sp) {
   intptr_t* fp = *(intptr_t**)(sp - 2);
   anchor->set_last_Java_fp(fp);
 }
 
+#ifdef ASSERT
 inline bool ContinuationHelper::Frame::assert_frame_laid_out(frame f) {
   intptr_t* sp = f.sp();
   address pc = *(address*)(sp - frame::sender_sp_ret_address_offset());

@@ -38,6 +38,7 @@
 #include "runtime/continuationEntry.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -223,6 +224,7 @@
   nonstatic_field(JavaThread,                  _vthread,                                      OopHandle)                             \
   nonstatic_field(JavaThread,                  _scopedValueCache,                             OopHandle)                             \
   nonstatic_field(JavaThread,                  _anchor,                                       JavaFrameAnchor)                       \
+  nonstatic_field(JavaThread,                  _lock_id,                                      int64_t)                               \
   nonstatic_field(JavaThread,                  _vm_result,                                    oop)                                   \
   nonstatic_field(JavaThread,                  _stack_overflow_state._stack_overflow_limit,   address)                               \
   volatile_nonstatic_field(JavaThread,         _exception_oop,                                oop)                                   \
@@ -328,6 +330,7 @@
   volatile_nonstatic_field(ObjectMonitor,      _cxq,                                          ObjectWaiter*)                         \
   volatile_nonstatic_field(ObjectMonitor,      _EntryList,                                    ObjectWaiter*)                         \
   volatile_nonstatic_field(ObjectMonitor,      _succ,                                         JavaThread*)                           \
+  volatile_nonstatic_field(ObjectMonitor,      _stack_locker,                                 BasicLock*)                            \
                                                                                                                                      \
   volatile_nonstatic_field(oopDesc,            _mark,                                         markWord)                              \
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
@@ -804,6 +807,7 @@
   declare_constant(markWord::hash_mask_in_place)                          \
                                                                           \
   declare_constant(markWord::unlocked_value)                              \
+  declare_constant(markWord::marked_value)                                \
                                                                           \
   declare_constant(markWord::no_hash_in_place)                            \
   declare_constant(markWord::no_lock_in_place)                            \

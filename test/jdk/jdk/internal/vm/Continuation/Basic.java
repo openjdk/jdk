@@ -28,6 +28,7 @@
 * @summary Basic tests for jdk.internal.vm.Continuation
 * @requires vm.continuations
 * @modules java.base/jdk.internal.vm
+* @library /test/lib
 * @build java.base/java.lang.StackWalkerHelper
 *
 * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -Xint Basic
@@ -44,6 +45,7 @@
 * @requires vm.continuations
 * @requires vm.debug
 * @modules java.base/jdk.internal.vm
+* @library /test/lib
 * @build java.base/java.lang.StackWalkerHelper
 *
 * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -XX:+VerifyStack -Xint Basic
@@ -53,6 +55,8 @@
 
 import jdk.internal.vm.Continuation;
 import jdk.internal.vm.ContinuationScope;
+
+import jdk.test.lib.Platform;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -276,6 +280,8 @@ public class Basic {
 
     @Test
     public void testPinnedMonitor() {
+        if (Platform.isX64() || Platform.isAArch64() || Platform.isRISCV64()) return;
+
         // Test pinning due to held monitor
         final AtomicReference<Continuation.Pinned> res = new AtomicReference<>();
 

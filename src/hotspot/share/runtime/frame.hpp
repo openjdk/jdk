@@ -337,8 +337,8 @@ class frame {
   // Return the monitor owner and BasicLock for compiled synchronized
   // native methods. Used by JVMTI's GetLocalInstance method
   // (via VM_GetReceiver) to retrieve the receiver from a native wrapper frame.
-  BasicLock* get_native_monitor();
-  oop        get_native_receiver();
+  BasicLock* get_native_monitor() const;
+  oop        get_native_receiver() const;
 
   // Find receiver for an invoke when arguments are just pushed on stack (i.e., callee stack-frame is
   // not setup)
@@ -426,6 +426,8 @@ class frame {
   oop saved_oop_result(RegisterMap* map) const;
   void set_saved_oop_result(RegisterMap* map, oop obj);
 
+  static JavaThread** saved_thread_address(const frame& f);
+
   // For debugging
  private:
   const char* print_name() const;
@@ -442,7 +444,7 @@ class frame {
 
 #ifndef PRODUCT
   // Add annotated descriptions of memory locations belonging to this frame to values
-  void describe(FrameValues& values, int frame_no, const RegisterMap* reg_map=nullptr);
+  void describe(FrameValues& values, int frame_no, const RegisterMap* reg_map=nullptr, bool top = false);
 #endif
 
   // Conversion from a VMReg to physical stack location

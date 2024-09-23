@@ -784,8 +784,11 @@ public:
   void push_CPU_state(bool save_vectors = false, int vector_size_in_bytes = 0);
   void pop_CPU_state(bool restore_vectors = false, int vector_size_in_bytes = 0);
 
-  void push_cont_fastpath(Register java_thread);
-  void pop_cont_fastpath(Register java_thread);
+  void push_cont_fastpath(Register java_thread = xthread);
+  void pop_cont_fastpath(Register java_thread = xthread);
+
+  void inc_held_monitor_count(Register tmp = t0);
+  void dec_held_monitor_count(Register tmp = t0);
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();

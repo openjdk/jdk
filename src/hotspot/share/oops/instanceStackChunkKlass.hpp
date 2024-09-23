@@ -177,6 +177,9 @@ private:
   template <typename T, class OopClosureType>
   inline void oop_oop_iterate_stack_with_bitmap(stackChunkOop chunk, OopClosureType* closure, intptr_t* start, intptr_t* end);
 
+  template <typename OopT>
+  void oop_oop_iterate_lockstack(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr);
+
   void do_methods(stackChunkOop chunk, OopIterateClosure* cl);
 
   void oop_oop_iterate_stack_slow(stackChunkOop chunk, OopIterateClosure* closure, MemRegion mr);

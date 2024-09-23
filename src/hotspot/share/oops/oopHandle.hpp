@@ -71,6 +71,7 @@ public:
   inline void replace(oop obj);
 
   inline oop xchg(oop new_value);
+  inline oop cmpxchg(oop old_value, oop new_value);
 
   oop* ptr_raw() const { return _obj; }
 };

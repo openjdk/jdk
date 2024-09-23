@@ -368,7 +368,8 @@ class ObjectMonitorsDump : public MonitorClosure, public ObjectMonitorsView {
 
   // Implements the ObjectMonitorsView interface
   void visit(MonitorClosure* closure, JavaThread* thread) override {
-    ObjectMonitorLinkedList* list = get_list(thread);
+    void* key = (void*)java_lang_Thread::thread_id(thread->threadObj());
+    ObjectMonitorLinkedList* list = get_list(key);
     LinkedListIterator<ObjectMonitor*> iter(list != nullptr ? list->head() : nullptr);
     while (!iter.is_empty()) {
       ObjectMonitor* monitor = *iter.next();

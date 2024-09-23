@@ -75,6 +75,9 @@ import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
+import com.sun.management.HotSpotDiagnosticMXBean;
+import java.lang.management.ManagementFactory;
+
 public class Fuzz implements Runnable {
     static final boolean VERIFY_STACK = true; // could add significant time
     static final boolean FILE    = true;
@@ -470,7 +473,7 @@ public class Fuzz implements Runnable {
     }
 
     boolean shouldPin() {
-        return traceHas(Op.PIN::contains);
+        return traceHas(Op.PIN::contains) && (legacyLockingMode() || !(Platform.isX64() || Platform.isAArch64() || Platform.isRISCV64()));
     }
 
     void verifyPin(boolean yieldResult) {
@@ -1028,5 +1031,10 @@ public class Fuzz implements Runnable {
         }
 
         return log((int)res);
+    }
+
+    static boolean legacyLockingMode() {
+        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                    .getVMOption("LockingMode").getValue().equals("1");
     }
 }

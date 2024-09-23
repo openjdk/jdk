@@ -290,6 +290,9 @@ JNIEXPORT void JNICALL
 JVM_SetCurrentThread(JNIEnv *env, jobject thisThread, jobject theThread);
 
 JNIEXPORT void JNICALL
+JVM_SetCurrentLockId(JNIEnv* env, jclass threadClass, jlong tid);
+
+JNIEXPORT void JNICALL
 JVM_Interrupt(JNIEnv *env, jobject thread);
 
 JNIEXPORT jboolean JNICALL
@@ -1147,6 +1150,12 @@ JVM_VirtualThreadHideFrames(JNIEnv* env, jclass clazz, jboolean hide);
 
 JNIEXPORT void JNICALL
 JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jboolean enter);
+
+JNIEXPORT void JNICALL
+JVM_VirtualThreadPinnedEvent(jint reasonCode, jstring reasonString);
+
+JNIEXPORT jobject JNICALL
+JVM_TakeVirtualThreadListToUnblock(JNIEnv* env, jclass ignored);
 
 /*
  * Core reflection support.

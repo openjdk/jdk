@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,19 @@
  * questions.
  */
 
-#include "jni.h"
+import java.lang.management.ManagementFactory;
+import com.sun.management.HotSpotDiagnosticMXBean;
 
-JNIEXPORT void JNICALL Java_TracePinnedThreads_invokePark(JNIEnv *env, jclass clazz) {
-    jmethodID mid = (*env)->GetStaticMethodID(env, clazz, "park", "()V");
-    if (mid != NULL) {
-        (*env)->CallStaticVoidMethod(env, clazz, mid);
+class LockingMode {
+    private LockingMode() { }
+
+    /**
+     * Returns true if using legacy locking mode.
+     */
+    static boolean isLegacy() {
+        return ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class)
+                .getVMOption("LockingMode")
+                .getValue()
+                .equals("1");
     }
 }

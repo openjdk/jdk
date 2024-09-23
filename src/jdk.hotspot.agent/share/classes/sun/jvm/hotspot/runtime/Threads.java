@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,28 +212,20 @@ public class Threads {
         }
     }
 
-    // refer to Threads::owning_thread_from_monitor_owner
-    public JavaThread owningThreadFromMonitor(Address o) {
-        assert(VM.getVM().getCommandLineFlag("LockingMode").getInt() != LockingMode.getLightweight());
+    private JavaThread owningThreadFromMonitor(Address o) {
         if (o == null) return null;
         for (int i = 0; i < getNumberOfThreads(); i++) {
             JavaThread thread = getJavaThreadAt(i);
-            if (o.equals(thread.threadObjectAddress())) {
+            if (o.equals(thread.getLockId())) {
                 return thread;
             }
-        }
-
-        for (int i = 0; i < getNumberOfThreads(); i++) {
-            JavaThread thread = getJavaThreadAt(i);
-            if (thread.isLockOwned(o))
-                return thread;
         }
         return null;
     }
 
     public JavaThread owningThreadFromMonitor(ObjectMonitor monitor) {
-        if (VM.getVM().getCommandLineFlag("LockingMode").getInt() == LockingMode.getLightweight()) {
-            if (monitor.isOwnedAnonymous()) {
+        if (monitor.isOwnedAnonymous()) {
+            if (VM.getVM().getCommandLineFlag("LockingMode").getInt() == LockingMode.getLightweight()) {
                 OopHandle object = monitor.object();
                 for (int i = 0; i < getNumberOfThreads(); i++) {
                     JavaThread thread = getJavaThreadAt(i);
@@ -246,11 +238,16 @@ public class Threads {
                 System.out.println("Warning: We failed to find a thread that owns an anonymous lock. This is likely");
                 System.out.println("due to the JVM currently running a GC. Locking information may not be accurate.");
                 return null;
+            } else {
+                assert(VM.getVM().getCommandLineFlag("LockingMode").getInt() == LockingMode.getLegacy());
+                Address o = (Address)monitor.stackLocker();
+                for (int i = 0; i < getNumberOfThreads(); i++) {
+                    JavaThread thread = getJavaThreadAt(i);
+                    if (thread.isLockOwned(o))
+                        return thread;
+                }
+                return null;
             }
-            // Owner can only be threads at this point.
-            Address o = monitor.owner();
-            if (o == null) return null;
-            return new JavaThread(o);
         } else {
             return owningThreadFromMonitor(monitor.owner());
         }

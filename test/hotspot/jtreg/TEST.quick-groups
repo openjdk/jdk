@@ -1185,7 +1185,6 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/scenarios/bcinstr/BI02/bi02t002/TestDescription.java \
   vmTestbase/nsk/jvmti/scenarios/bcinstr/BI03/bi03t001/TestDescription.java \
   vmTestbase/nsk/jvmti/scenarios/bcinstr/BI03/bi03t002/TestDescription.java \
-  vmTestbase/nsk/jvmti/scenarios/bcinstr/BI04/bi04t002/TestDescription.java \
   vmTestbase/nsk/jvmti/scenarios/capability/CM01/cm01t001/TestDescription.java \
   vmTestbase/nsk/jvmti/scenarios/capability/CM01/cm01t002/TestDescription.java \
   vmTestbase/nsk/jvmti/scenarios/capability/CM01/cm01t003/TestDescription.java \

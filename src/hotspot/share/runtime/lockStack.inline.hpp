@@ -215,6 +215,45 @@ inline bool LockStack::contains(oop o) const {
   return false;
 }
 
+inline int LockStack::monitor_count() const {
+  int end = to_index(_top);
+  assert(end <= CAPACITY, "invariant");
+  return end;
+}
+
+inline void LockStack::move_to_address(oop* start) {
+  int end = to_index(_top);
+  for (int i = 0; i < end; i++) {
+    start[i] = _base[i];
+    DEBUG_ONLY(_base[i] = nullptr;)
+  }
+  _top = lock_stack_base_offset;
+}
+
+inline void LockStack::move_from_address(oop* start, int count) {
+  assert(to_index(_top) == 0, "lockstack should be empty");
+  for (int i = 0; i < count; i++) {
+    _base[i] = start[i];
+    _top += oopSize;
+  }
+}
+
+#ifdef ASSERT
+inline int LockStack::unique_count() const {
+  int end = to_index(_top);
+  oop previous = nullptr;
+  int count = 0;
+  for (int i = 0; i < end; i++) {
+    assert(_base[i] != nullptr, "invariant");
+    if (_base[i] != previous) {
+      previous = _base[i];
+      count++;
+    }
+  }
+  return count;
+}
+#endif
+
 inline void LockStack::oops_do(OopClosure* cl) {
   verify("pre-oops-do");
   int end = to_index(_top);

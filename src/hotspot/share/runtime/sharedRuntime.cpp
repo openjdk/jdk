@@ -66,6 +66,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
@@ -97,6 +98,8 @@
   type        SharedRuntime::BLOB_FIELD_NAME(name);
   SHARED_STUBS_DO(SHARED_STUB_FIELD_DEFINE)
 #undef SHARED_STUB_FIELD_DEFINE
+
+address             SharedRuntime::_native_frame_resume_entry = nullptr;
 
 nmethod*            SharedRuntime::_cont_doYield_stub;
 
@@ -1949,6 +1952,7 @@ void SharedRuntime::monitor_enter_helper(oopDesc* obj, BasicLock* lock, JavaThre
   // and the model is that an exception implies the method failed.
   JRT_BLOCK_NO_ASYNC
   Handle h_obj(THREAD, obj);
+  ThreadOnMonitorEnter tme(current);
   ObjectSynchronizer::enter(h_obj, lock, current);
   assert(!HAS_PENDING_EXCEPTION, "Should have no exception here");
   JRT_BLOCK_END

@@ -437,7 +437,7 @@ void Handshake::execute(AsyncHandshakeClosure* hs_cl, JavaThread* target) {
 }
 
 // Filters
-static bool non_self_executable_filter(HandshakeOperation* op) {
+static bool handshaker_filter(HandshakeOperation* op) {
   return !op->is_async();
 }
 static bool no_async_exception_filter(HandshakeOperation* op) {
@@ -478,7 +478,7 @@ void HandshakeState::add_operation(HandshakeOperation* op) {
 }
 
 bool HandshakeState::operation_pending(HandshakeOperation* op) {
-  MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(&_lock, !_lock.owned_by_self(), Mutex::_no_safepoint_check_flag);
   MatchOp mo(op);
   return _queue.contains(mo);
 }
@@ -532,24 +532,24 @@ void HandshakeState::clean_async_exception_operation() {
   }
 }
 
-bool HandshakeState::have_non_self_executable_operation() {
+bool HandshakeState::has_handshaker_operation() {
   assert(_handshakee != Thread::current(), "Must not be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
-  return _queue.contains(non_self_executable_filter);
+  return _queue.contains(handshaker_filter);
 }
 
-HandshakeOperation* HandshakeState::get_op() {
+HandshakeOperation* HandshakeState::get_op_for_handshaker() {
   assert(_handshakee != Thread::current(), "Must not be called by self");
   assert(_lock.owned_by_self(), "Lock must be held");
-  return _queue.peek(non_self_executable_filter);
-};
+  return _queue.peek(handshaker_filter);
+}
 
 void HandshakeState::remove_op(HandshakeOperation* op) {
   assert(_lock.owned_by_self(), "Lock must be held");
   MatchOp mo(op);
   HandshakeOperation* ret = _queue.pop(mo);
   assert(ret == op, "Popped op must match requested op");
-};
+}
 
 bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_exception) {
   assert(Thread::current() == _handshakee, "should call from _handshakee");
@@ -625,7 +625,7 @@ bool HandshakeState::claim_handshake() {
   // If all handshake operations for the handshakee are finished and someone
   // just adds an operation we may see it here. But if the handshakee is not
   // armed yet it is not safe to proceed.
-  if (have_non_self_executable_operation()) {
+  if (has_handshaker_operation()) {
     OrderAccess::loadload(); // Matches the implicit storestore in add_operation()
     if (SafepointMechanism::local_poll_armed(_handshakee)) {
       return true;
@@ -661,7 +661,7 @@ HandshakeState::ProcessResult HandshakeState::try_process(HandshakeOperation* ma
 
   Thread* current_thread = Thread::current();
 
-  HandshakeOperation* op = get_op();
+  HandshakeOperation* op = get_op_for_handshaker();
 
   assert(op != nullptr, "Must have an op");
   assert(SafepointMechanism::local_poll_armed(_handshakee), "Must be");

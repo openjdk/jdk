@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Test parking when pinned and emitting the JFR VirtualThreadPinnedEvent throws
- * @modules java.base/java.lang:+open java.base/jdk.internal.event jdk.management
+ * @modules java.base/jdk.internal.event jdk.management
  * @library /test/lib
  * @compile/module=java.base jdk/internal/event/VirtualThreadPinnedEvent.java
  * @run junit/othervm --enable-native-access=ALL-UNNAMED VirtualThreadPinnedEventThrows

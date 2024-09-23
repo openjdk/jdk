@@ -81,7 +81,8 @@ class ObjectSynchronizer : AllStatic {
     inflate_cause_hash_code = 4,
     inflate_cause_jni_enter = 5,
     inflate_cause_jni_exit = 6,
-    inflate_cause_nof = 7 // Number of causes
+    inflate_cause_cont_freeze = 7,
+    inflate_cause_nof = 8 // Number of causes
   } InflateCause;
 
   typedef enum {
@@ -137,7 +138,7 @@ public:
 
 private:
   // Shared implementation between the different LockingMode.
-  static ObjectMonitor* inflate_impl(oop obj, const InflateCause cause);
+  static ObjectMonitor* inflate_impl(JavaThread* inflating_thread, oop obj, const InflateCause cause);
 
 public:
   // This version is only for internal use
