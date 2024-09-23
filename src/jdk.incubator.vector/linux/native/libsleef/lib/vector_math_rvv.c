@@ -25,10 +25,11 @@
 // some compiler, e.g. gcc 14+.
 // __riscv_v_intrinsic is used to tell if the compiler supports vector intrinsic.
 //
-// At compile time, when current compiler does support vector intrinsic, there will be
-// bridge functions built in the library, otherwise no such fuctions in the library.
-// At runtime, if the library is found and bridge fuctions are found in the library,
-// then the java vector API will call into bridge functions and sleef, otherwise not.
+// At compile-time, if the current compiler does support vector intrinsics, bridge
+// functions will be built in the library. In case the current compiler doesn't support
+// vector intrinsics (gcc < 14), then the bridge functions won't be compiled.
+// At run-time, if the library is found and the bridge functions are available in the
+// library, then the java vector API will call into the bridge functions and sleef.
 
 #ifdef __riscv_v_intrinsic
 
