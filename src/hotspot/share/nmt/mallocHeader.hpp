@@ -26,7 +26,7 @@
 #ifndef SHARE_NMT_MALLOCHEADER_HPP
 #define SHARE_NMT_MALLOCHEADER_HPP
 
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
@@ -92,7 +92,7 @@ class MallocHeader {
   NOT_LP64(uint32_t _alt_canary);
   const size_t _size;
   const uint32_t _mst_marker;
-  const MEMFLAGS _flags;
+  const MemTag _mem_tag;
   const uint8_t _unused;
   uint16_t _canary;
 
@@ -121,19 +121,19 @@ public:
   // Contains all of the necessary data to to deaccount block with NMT.
   struct FreeInfo {
     const size_t size;
-    const MEMFLAGS flags;
+    const MemTag mem_tag;
     const uint32_t mst_marker;
   };
 
-  inline MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker);
+  inline MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker);
 
-  inline size_t   size()  const { return _size; }
-  inline MEMFLAGS flags() const { return _flags; }
+  inline size_t size()  const { return _size; }
+  inline MemTag mem_tag() const { return _mem_tag; }
   inline uint32_t mst_marker() const { return _mst_marker; }
 
   // Return the necessary data to deaccount the block with NMT.
   FreeInfo free_info() {
-    return FreeInfo{this->size(), this->flags(), this->mst_marker()};
+    return FreeInfo{this->size(), this->mem_tag(), this->mst_marker()};
   }
   inline void mark_block_as_dead();
   inline void revive();
