@@ -88,7 +88,6 @@
 #endif
 
 #include <windows.h>
-#include <string>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/timeb.h>
@@ -4091,31 +4090,37 @@ int    os::win32::_build_minor               = 0;
 bool   os::win32::_processor_group_warning_displayed = false;
 bool   os::win32::_job_object_processor_group_warning_displayed = false;
 
-std::string GetWindowsInstallationType() {
+void GetWindowsInstallationType(char* buffer, int bufferSize) {
   HKEY hKey;
   const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
   const char* valueName = "InstallationType";
-  char value[256];
-  DWORD valueLength = sizeof(value);
+
+  DWORD valueLength = bufferSize;
+
+  // Initialize buffer with empty string
+  buffer[0] = '\0';
 
   // Open the registry key
   if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
-      return "";
+    // Return empty buffer if key cannot be opened
+    return;
   }
 
   // Query the value
-  if (RegQueryValueExA(hKey, valueName, NULL, NULL, (LPBYTE)value, &valueLength) != ERROR_SUCCESS) {
-      RegCloseKey(hKey);
-      return "";
+  if (RegQueryValueExA(hKey, valueName, NULL, NULL, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
+    RegCloseKey(hKey);
+    buffer[0] = '\0';
+    return;
   }
 
   RegCloseKey(hKey);
-  return std::string(value, valueLength - 1); // Exclude null terminator
 }
 
 bool IsNanoServer() {
-  std::string installationType = GetWindowsInstallationType();
-  return installationType == "Nano Server";
+  const int BUFFER_SIZE = 256;
+  char installationType[BUFFER_SIZE];
+  GetWindowsInstallationType(installationType, BUFFER_SIZE);
+  return (lstrcmpA(installationType, "Nano Server") == 0);
 }
 
 void os::win32::initialize_windows_version() {
