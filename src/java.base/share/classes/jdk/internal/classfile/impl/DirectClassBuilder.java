@@ -175,6 +175,7 @@ public final class DirectClassBuilder
         // BSM writers until everything else is written.
 
         // Do this early because it might trigger CP activity
+        var constantPool = this.constantPool;
         ClassEntry superclass = superclassEntry;
         if (superclass != null)
             superclass = AbstractPoolEntry.maybeClone(constantPool, superclass);
@@ -204,7 +205,7 @@ public final class DirectClassBuilder
         }
 
         // Now we can make the head
-        head.writeMagic(minorVersion, majorVersion);
+        head.writeLong((((long) ClassFile.MAGIC_NUMBER) << 32) | ((minorVersion & 0xFFFFL) << 16) | majorVersion);
         constantPool.writeTo(head);
         head.writeU2(flags);
         head.writeIndex(thisClassEntry);

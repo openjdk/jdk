@@ -38,8 +38,6 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.ForceInline;
 
-import static java.lang.classfile.ClassFile.MAGIC_NUMBER;
-
 public final class BufWriterImpl implements BufWriter {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
@@ -94,10 +92,6 @@ public final class BufWriterImpl implements BufWriter {
 
     public ClassFileImpl context() {
         return context;
-    }
-
-    void writeMagic(int minorVersion, int majorVersion) {
-        writeLong((((long) MAGIC_NUMBER) << 32) | ((minorVersion & 0xFFFFL) << 16) | majorVersion);
     }
 
     @Override
