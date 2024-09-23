@@ -2089,8 +2089,8 @@ void MacroAssembler::sub(Register Rd, Register Rn, int64_t decrement, Register t
     addi(Rd, Rn, -decrement);
   } else {
     assert_different_registers(Rn, temp);
-    li(temp, decrement);
-    sub(Rd, Rn, temp);
+    li(temp, -decrement);
+    add(Rd, Rn, temp);
   }
 }
 
@@ -2099,8 +2099,8 @@ void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register 
     addiw(Rd, Rn, -decrement);
   } else {
     assert_different_registers(Rn, temp);
-    li(temp, decrement);
-    subw(Rd, Rn, temp);
+    li(temp, -decrement);
+    addw(Rd, Rn, temp);
   }
 }
 
