@@ -219,8 +219,8 @@ float VTransformGraph::cost() const {
     float c = vtn->cost(_vloop_analyzer);
     sum += c;
 #ifndef PRODUCT
-    if (c != 0 && _vloop.is_trace_cost()) {
-      tty->print("  cost = %.2f for ", c);
+    if (c != 0 && _vloop.is_trace_cost_verbose()) {
+      tty->print("  -> cost = %.2f for ", c);
       vtn->print();
     }
 #endif
@@ -288,7 +288,7 @@ float VTransformScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   if (vloop_analyzer.has_zero_cost(_node)) {
     return 0;
   } else {
-    return Matcher::cost_for_scalar(_node->Opcode());
+    return vloop_analyzer.cost_for_scalar(_node->Opcode());
   }
 }
 
@@ -338,7 +338,7 @@ void VTransformLoopPhiNode::apply_cleanup(const VLoopAnalyzer& vloop_analyzer,
 }
 
 float VTransformReplicateNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return Matcher::cost_for_vector(Op_Replicate, _vlen, _element_type->basic_type());
+  return vloop_analyzer.cost_for_vector(Op_Replicate, _vlen, _element_type->basic_type());
 }
 
 VTransformApplyResult VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer,
@@ -350,7 +350,7 @@ VTransformApplyResult VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_
 }
 
 float VTransformConvI2LNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return Matcher::cost_for_scalar(Op_ConvI2L);
+  return vloop_analyzer.cost_for_scalar(Op_ConvI2L);
 }
 
 VTransformApplyResult VTransformConvI2LNode::apply(const VLoopAnalyzer& vloop_analyzer,
@@ -363,8 +363,8 @@ VTransformApplyResult VTransformConvI2LNode::apply(const VLoopAnalyzer& vloop_an
 
 float VTransformShiftCountNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   int shift_count_opc = VectorNode::shift_count_opcode(_shift_opcode);
-  return Matcher::cost_for_scalar(Op_AndI) +
-         Matcher::cost_for_vector(shift_count_opc, _vlen, _element_bt);
+  return vloop_analyzer.cost_for_scalar(Op_AndI) +
+         vloop_analyzer.cost_for_vector(shift_count_opc, _vlen, _element_bt);
 }
 
 VTransformApplyResult VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop_analyzer,
@@ -384,7 +384,7 @@ VTransformApplyResult VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop
 }
 
 float VTransformPopulateIndexNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return Matcher::cost_for_vector(Op_PopulateIndex, _vlen, _element_bt);;
+  return vloop_analyzer.cost_for_vector(Op_PopulateIndex, _vlen, _element_bt);;
 }
 
 VTransformApplyResult VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vloop_analyzer,
@@ -408,22 +408,22 @@ float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer)
   if (first->is_Cmp()) {
     return 0; // empty
   } else if (first->is_CMove()) {
-    return Matcher::cost_for_vector(Op_VectorBlend, vlen, bt);;
+    return vloop_analyzer.cost_for_vector(Op_VectorBlend, vlen, bt);;
   } else if (VectorNode::is_convert_opcode(sopc)) {
     BasicType def_bt = in(1)->isa_Vector()->element_basic_type();
     int vopc = VectorCastNode::opcode(sopc, def_bt);
-    return Matcher::cost_for_vector(vopc, vlen, bt);;
+    return vloop_analyzer.cost_for_vector(vopc, vlen, bt);;
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     int vopc = VectorNode::opcode(Op_RShiftI, bt);
-    return Matcher::cost_for_vector(vopc, vlen, bt);;
+    return vloop_analyzer.cost_for_vector(vopc, vlen, bt);;
   } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {
     int vopc = VectorNode::opcode(sopc, T_LONG);
-    return Matcher::cost_for_vector(vopc, vlen, T_LONG) +
-           Matcher::cost_for_vector(Op_VectorCastL2X, vlen, T_INT);
+    return vloop_analyzer.cost_for_vector(vopc, vlen, T_LONG) +
+           vloop_analyzer.cost_for_vector(Op_VectorCastL2X, vlen, T_INT);
   } else {
     // Regular operations.
     int vopc = VectorNode::opcode(sopc, bt);
-    return Matcher::cost_for_vector(vopc, vlen, bt);
+    return vloop_analyzer.cost_for_vector(vopc, vlen, bt);
   }
 }
 
@@ -488,7 +488,7 @@ float VTransformBoolVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const 
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
   assert(sopc == Op_Bool, "must be bool node");
-  return Matcher::cost_for_vector(Op_VectorMaskCmp, vlen, bt);
+  return vloop_analyzer.cost_for_vector(Op_VectorMaskCmp, vlen, bt);
 }
 
 VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
@@ -662,7 +662,7 @@ float VTransformReductionVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) c
   BasicType bt = element_basic_type();
   int vopc = vector_reduction_opcode();
   bool requires_strict_order = ReductionNode::auto_vectorization_requires_strict_order(vopc);
-  return Matcher::cost_for_vector_reduction(vopc, vlen, bt, requires_strict_order);
+  return vloop_analyzer.cost_for_vector_reduction(vopc, vlen, bt, requires_strict_order);
 }
 
 VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
@@ -682,7 +682,7 @@ VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& 
 float VTransformLoadVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
-  return Matcher::cost_for_vector(Op_LoadVector, vlen, bt);
+  return vloop_analyzer.cost_for_vector(Op_LoadVector, vlen, bt);
 }
 
 VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
@@ -720,7 +720,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
 float VTransformStoreVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
-  return Matcher::cost_for_vector(Op_StoreVector, vlen, bt);
+  return vloop_analyzer.cost_for_vector(Op_StoreVector, vlen, bt);
 }
 
 VTransformApplyResult VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,

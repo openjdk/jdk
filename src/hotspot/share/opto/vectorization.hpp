@@ -174,6 +174,10 @@ public:
   bool is_trace_cost() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::COST);
   }
+
+  bool is_trace_cost_verbose() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::COST_VERBOSE);
+  }
 #endif
 
   // Is the node in the basic block of the loop?
@@ -680,6 +684,11 @@ public:
   // Compute the cost of the (scalar) body.
   float cost() const;
   bool has_zero_cost(Node* n) const;
+
+  // Cost-modeling with tracing.
+  float cost_for_scalar(int opcode) const;
+  float cost_for_vector(int opcode, int vlen, BasicType bt) const;
+  float cost_for_vector_reduction(int opcode, int vlen, BasicType bt, bool requires_strict_order) const;
 
 private:
   bool setup_submodules();

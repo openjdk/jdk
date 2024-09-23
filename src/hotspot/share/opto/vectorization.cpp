@@ -445,12 +445,11 @@ float VLoopAnalyzer::cost() const {
   for (int j = 0; j < body().body().length(); j++) {
     Node* n = body().body().at(j);
     if (!has_zero_cost(n)) {
-      float c = Matcher::cost_for_scalar(n->Opcode());
+      float c = cost_for_scalar(n->Opcode());
       sum += c;
-
 #ifndef PRODUCT
-      if (_vloop.is_trace_cost()) {
-        tty->print_cr("  cost = %.2f for %d %s", c, n->_idx, n->Name());
+      if (_vloop.is_trace_cost_verbose()) {
+        tty->print_cr("  -> cost = %.2f for %d %s", c, n->_idx, n->Name());
       }
 #endif
     }
@@ -462,6 +461,39 @@ float VLoopAnalyzer::cost() const {
   }
 #endif
   return sum;
+}
+
+float VLoopAnalyzer::cost_for_scalar(int opcode) const {
+  float c = Matcher::cost_for_scalar(opcode);
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s", c, NodeClassNames[opcode]);
+  }
+#endif
+  return c;
+}
+
+float VLoopAnalyzer::cost_for_vector(int opcode, int vlen, BasicType bt) const {
+  float c = Matcher::cost_for_vector(opcode, vlen, bt);
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s vlen=%d bt=%s",
+                  c, NodeClassNames[opcode], vlen, type2name(bt));
+  }
+#endif
+  return c;
+}
+
+float VLoopAnalyzer::cost_for_vector_reduction(int opcode, int vlen, BasicType bt, bool requires_strict_order) const {
+  float c = Matcher::cost_for_vector_reduction(opcode, vlen, bt, requires_strict_order);
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s vlen=%d bt=%s requires_strict_order=%s",
+                  c, NodeClassNames[opcode], vlen, type2name(bt),
+                  requires_strict_order ? "true" : "false");
+  }
+#endif
+  return c;
 }
 
 #ifndef PRODUCT
