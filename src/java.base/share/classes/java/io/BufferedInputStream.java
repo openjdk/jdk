@@ -50,11 +50,10 @@ import jdk.internal.util.ArraysSupport;
  * reread before new bytes are  taken from
  * the contained input stream.
  *
- * <p> More than one instance of {@code BufferedInputStream} should not be
- * used with the same underlying {@code InputStream} instance. Doing
- * so can cause the {@code BufferedInputStream} instances to return an
- * incorrect result since each instance of {@code BufferedInputStream}
- * maintains its own state.
+ * @apiNote
+ * Once wrapped in a {@code BufferedInputStream}, the underlying
+ * {@code InputStream} should not be used directly nor wrapped with
+ * another stream.
  *
  * @author  Arthur van Hoff
  * @since   1.0

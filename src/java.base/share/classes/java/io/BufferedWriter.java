@@ -58,10 +58,10 @@ import jdk.internal.misc.VM;
  * converted into bytes that would then be written immediately to the file,
  * which can be very inefficient.
  *
- * <p> More than one instance of {@code BufferedWriter} should not be used with
- * the same underlying {@code Writer} instance. Doing so can cause unpredictable
- * results as each {@code BufferedWriter} maintains its own state and flushes
- * its internal buffer according to that state.
+ * @apiNote
+ * Once wrapped in a {@code BufferedWriter}, the underlying
+ * {@code Writer} should not be used directly nor wrapped with
+ * another writer.
  *
  * @see PrintWriter
  * @see FileWriter

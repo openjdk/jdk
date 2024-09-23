@@ -61,10 +61,10 @@ import jdk.internal.misc.InternalLock;
  * localized by replacing each {@code DataInputStream} with an appropriate
  * {@code BufferedReader}.
  *
- * <p> More than one instance of {@code BufferedReader} should not be used
- * with the same underlying Reader instance. Doing so can cause the
- * {@code BufferedReader} instances to return an incorrect result since each
- * instance of {@code BufferedReader} maintains its own state.
+ * @apiNote
+ * Once wrapped in a {@code BufferedReader}, the underlying
+ * {@code Reader} should not be used directly nor wrapped with
+ * another reader.
  *
  * @see FileReader
  * @see InputStreamReader
