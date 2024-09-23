@@ -113,7 +113,7 @@ public final class KDF {
     //guarded by 'lock'
     private Delegate theOne;
     //guarded by 'lock'
-    private Delegate candidate;
+    private final Delegate candidate;
 
     // The name of the KDF algorithm.
     private final String algorithm;
@@ -137,12 +137,12 @@ public final class KDF {
     // @param delegate the delegate
     // @param algorithm the algorithm
     // @param kdfParameters the parameters
-    private KDF(Delegate delegate, String algorithm,
-                KDFParameters kdfParameters) {
+    private KDF(Delegate delegate, String algorithm) {
         this.theOne = delegate;
         this.algorithm = algorithm;
         // note that the parameters are being passed to the impl in getInstance
-        this.kdfParameters = kdfParameters;
+        this.kdfParameters = null;
+        this.candidate = null;
         serviceIterator = null;
     }
 
@@ -354,7 +354,7 @@ public final class KDF {
         Delegate d = getNext(t, kdfParameters);
         return (t.hasNext() ?
                         new KDF(d, t, algorithm, kdfParameters) :
-                        new KDF(d, algorithm, kdfParameters));
+                        new KDF(d, algorithm));
     }
 
     /**
@@ -405,8 +405,8 @@ public final class KDF {
                 throw new NoSuchProviderException(msg);
             }
             return new KDF(new Delegate((KDFSpi) instance.impl,
-                                        instance.provider), algorithm,
-                           kdfParameters);
+                                        instance.provider), algorithm
+            );
 
         } catch (NoSuchAlgorithmException nsae) {
             return handleException(nsae);
@@ -457,8 +457,8 @@ public final class KDF {
                 throw new SecurityException(msg);
             }
             return new KDF(new Delegate((KDFSpi) instance.impl,
-                                        instance.provider), algorithm,
-                           kdfParameters);
+                                        instance.provider), algorithm
+            );
 
         } catch (NoSuchAlgorithmException nsae) {
             return handleException(nsae);
@@ -551,7 +551,7 @@ public final class KDF {
                 return (byte[]) chooseProvider(null, derivationSpec);
             } catch (NoSuchAlgorithmException e) {
                 // this will never be thrown in the deriveData case
-                throw new RuntimeException(e);
+                throw new AssertionError(e);
             }
         }
     }
@@ -581,16 +581,16 @@ public final class KDF {
 
         boolean isDeriveData = (algorithm == null);
 
-        if (checkSpiNonNull(theOne)) {
-            return (isDeriveData) ?
-                           theOne.spi().engineDeriveData(derivationSpec) :
-                           theOne.spi().engineDeriveKey(algorithm, derivationSpec);
-        }
-
         synchronized (lock) {
+            if (checkSpiNonNull(theOne)) {
+                return (isDeriveData) ?
+                               theOne.spi().engineDeriveData(derivationSpec) :
+                               theOne.spi().engineDeriveKey(algorithm, derivationSpec);
+            }
+
             Exception lastException = null;
             if (!checkSpiNonNull(candidate)) {
-                throw new RuntimeException("Unexpected Error: candidate is null!");
+                throw new AssertionError("Unexpected Error: candidate is null!");
             }
             Delegate currOne = candidate;
             try {
@@ -604,6 +604,9 @@ public final class KDF {
                         this.theOne = currOne;
                         return result;
                     } catch (Exception e) {
+                        if (!skipDebug && pdebug != null) {
+                            e.printStackTrace(pdebug.getPrintStream());
+                        }
                         if (lastException == null) {
                             lastException = e;
                         }
@@ -615,6 +618,9 @@ public final class KDF {
             } catch (InvalidAlgorithmParameterException e) {
                 throw e; // getNext reached end and have seen IAPE
             } catch (NoSuchAlgorithmException e) {
+                if (!skipDebug && pdebug != null) {
+                    e.printStackTrace(pdebug.getPrintStream());
+                }
                 // getNext reached end without finding an implementation
                 throw new InvalidAlgorithmParameterException(lastException);
             }
@@ -648,9 +654,7 @@ public final class KDF {
             } catch (NoSuchAlgorithmException nsae) {
                 // continue to the next provider
                 if (!skipDebug && pdebug != null) {
-                    pdebug.println(
-                            "The evaluated provider does not support the "
-                            + "specified algorithm and parameters");
+                    nsae.printStackTrace(pdebug.getPrintStream());
                 }
             }
         }
@@ -659,11 +663,14 @@ public final class KDF {
                     "No provider can be found that supports the "
                     + "specified algorithm and parameters");
         }
-        if (hasOne) throw new InvalidAlgorithmParameterException();
+        if (hasOne) throw new InvalidAlgorithmParameterException(
+                "The KDFParameters supplied could not be used in combination "
+                + "with the supplied algorithm for the selected Provider");
         else throw new NoSuchAlgorithmException();
     }
 
     private static boolean checkSpiNonNull(Delegate d) {
-        return (d != null && d.spi() != null);
+        // d.spi() cannot be null if d != null
+        return (d != null);
     }
 }
