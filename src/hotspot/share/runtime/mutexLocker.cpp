@@ -319,6 +319,8 @@ void mutex_init() {
   MUTEX_DEFN(JVMCIRuntime_lock               , PaddedMonitor, safepoint, true);
 #endif
 
+  MUTEX_DEFN(ThreadStart_lock                , PaddedMonitor, safepoint);
+
   // These locks have relative rankings, and inherit safepoint checking attributes from that rank.
   MUTEX_DEFL(InlineCacheBuffer_lock         , PaddedMutex  , CompiledIC_lock);
   MUTEX_DEFL(VtableStubs_lock               , PaddedMutex  , CompiledIC_lock);  // Also holds DumpTimeTable_lock
@@ -328,8 +330,7 @@ void mutex_init() {
   // tty_lock is held when printing nmethod and its relocations which use this lock.
   MUTEX_DEFL(ExternalsRecorder_lock         , PaddedMutex  , tty_lock);
 
-  MUTEX_DEFL(ThreadStart_lock               , PaddedMonitor, CompileThread_lock);
-  MUTEX_DEFL(Threads_lock                   , PaddedMonitor, ThreadStart_lock, true);
+  MUTEX_DEFL(Threads_lock                   , PaddedMonitor, CompileThread_lock, true);
   MUTEX_DEFL(Compile_lock                   , PaddedMutex  , MethodCompileQueue_lock);
   MUTEX_DEFL(Heap_lock                      , PaddedMonitor, AdapterHandlerLibrary_lock);
 
