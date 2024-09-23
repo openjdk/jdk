@@ -4090,7 +4090,7 @@ int    os::win32::_build_minor               = 0;
 bool   os::win32::_processor_group_warning_displayed = false;
 bool   os::win32::_job_object_processor_group_warning_displayed = false;
 
-void GetWindowsInstallationType(char* buffer, int bufferSize) {
+void getWindowsInstallationType(char* buffer, int bufferSize) {
   HKEY hKey;
   const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
   const char* valueName = "InstallationType";
@@ -4116,11 +4116,11 @@ void GetWindowsInstallationType(char* buffer, int bufferSize) {
   RegCloseKey(hKey);
 }
 
-bool IsNanoServer() {
+bool isNanoServer() {
   const int BUFFER_SIZE = 256;
   char installationType[BUFFER_SIZE];
-  GetWindowsInstallationType(installationType, BUFFER_SIZE);
-  return (lstrcmpA(installationType, "Nano Server") == 0);
+  getWindowsInstallationType(installationType, BUFFER_SIZE);
+  return (strcmp(installationType, "Nano Server") == 0);
 }
 
 void os::win32::initialize_windows_version() {
@@ -4141,7 +4141,7 @@ void os::win32::initialize_windows_version() {
     return;
   }
 
-  if (IsNanoServer()) {
+  if (isNanoServer()) {
     // On Windows Nanoserver the kernel32.dll is located in the forwarders subdirectory
     strncat(kernel32_path, "\\forwarders\\kernel32.dll", MAX_PATH - ret);
   } else {
