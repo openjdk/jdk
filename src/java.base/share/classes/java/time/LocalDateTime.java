@@ -2024,8 +2024,8 @@ public final class LocalDateTime
 
     static {
         SharedSecrets.setJavaTimeAccess(new JavaTimeAccess() {
-            public void formatTo(StringBuilder buf, LocalDateTime ldt) {
-                ldt.formatTo(buf);
+            public void formatTo(StringBuilder buf, LocalDateTime timeToFormat) {
+                timeToFormat.formatTo(buf);
             }
         });
     }

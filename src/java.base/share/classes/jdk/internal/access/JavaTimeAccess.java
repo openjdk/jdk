@@ -31,5 +31,5 @@ public interface JavaTimeAccess {
     /**
      * Prints the toString result to the given buf, avoiding extra string allocations.
      */
-    void formatTo(StringBuilder buf, LocalDateTime ldt);
+    void formatTo(StringBuilder buf, LocalDateTime timeToFormat);
 }
