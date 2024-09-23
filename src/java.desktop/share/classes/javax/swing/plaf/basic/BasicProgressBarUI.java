@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.swing.event.*;
 import javax.swing.plaf.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
-import java.io.Serializable;
 import sun.swing.DefaultLookup;
 
 /**
@@ -1224,7 +1223,6 @@ public class BasicProgressBarUI extends ProgressBarUI {
     private class Animator implements ActionListener {
         private Timer timer;
         private long previousDelay; //used to tune the repaint interval
-        private int interval; //the fixed repaint interval
         private long lastCall; //the last time actionPerformed was called
         private int MINIMUM_DELAY = 5;
 
