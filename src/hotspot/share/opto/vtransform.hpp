@@ -275,12 +275,8 @@ public:
   static VTransformNodePrototype make_from_scalar(Node* n, const VLoopAnalyzer& vloop_analyzer) {
     int opc = n->Opcode();
     int vlen = 1;
-    BasicType bt;
-    if (vloop_analyzer.vloop().in_bb(n)) {
-      bt = vloop_analyzer.types().velt_basic_type(n);
-    } else {
-      bt = n->bottom_type()->basic_type();
-    }
+    BasicType bt = vloop_analyzer.vloop().in_bb(n) ? vloop_analyzer.types().velt_basic_type(n)
+                                                   : n->bottom_type()->basic_type();
     return VTransformNodePrototype(n, opc, vlen, bt);
   }
 
