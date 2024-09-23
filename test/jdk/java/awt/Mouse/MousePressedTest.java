@@ -36,7 +36,7 @@ import javax.swing.JToggleButton;
  * @bug 4268759
  * @summary Tests whether clicking on the edge of a lightweight button
  *          causes sticking behavior
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual MousePressedTest
  */

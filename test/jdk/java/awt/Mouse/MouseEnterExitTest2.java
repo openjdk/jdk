@@ -38,7 +38,7 @@ import java.awt.event.MouseListener;
  * @test
  * @bug 4150851
  * @summary Tests enter and exit events when a lightweight component is on a border
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual MouseEnterExitTest2
  */

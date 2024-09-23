@@ -34,7 +34,7 @@ import javax.swing.JButton;
  * @bug 4431868
  * @summary Tests that hw container doesn't receive mouse enter/exit events when mouse
  *          is moved between its lw and hw children
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual MouseEnterExitTest3
  */

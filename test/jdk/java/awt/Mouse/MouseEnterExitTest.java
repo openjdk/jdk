@@ -43,7 +43,7 @@ import java.util.List;
  * @bug 4050138
  * @summary Test to verify Lightweight components don't get
  *          enter/exit during drags
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual MouseEnterExitTest
  */

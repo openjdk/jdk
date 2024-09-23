@@ -35,7 +35,7 @@ import java.util.List;
  * @bug 4431868
  * @summary Tests that window totally obscured by its child doesn't receive
  *          enter/exit events when located over another frame
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual MouseEnterExitTest4
  */
