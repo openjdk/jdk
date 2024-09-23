@@ -41,8 +41,8 @@ import java.util.Queue;
 import java.util.stream.Collectors;
 
 import static java.lang.classfile.ClassFile.*;
-import static java.lang.classfile.Opcode.OpcodeValues.*;
 import static java.lang.classfile.constantpool.PoolEntry.*;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 public final class StackCounter {
 

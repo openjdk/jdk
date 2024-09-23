@@ -45,10 +45,10 @@ import java.lang.classfile.instruction.*;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static java.lang.classfile.Opcode.OpcodeValues.*;
 import static java.lang.classfile.Attributes.*;
 import static java.lang.classfile.constantpool.PoolEntry.*;
 import static helpers.ClassRecord.CompatibilityFilter.By_ClassBuilder;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 /**
  * ClassRecord
