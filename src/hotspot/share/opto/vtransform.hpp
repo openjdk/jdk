@@ -254,6 +254,51 @@ private:
   void apply_vectorization() const;
 };
 
+// Bundle information for VTransformNode.
+class VTransformNodePrototype : public StackObj {
+private:
+  Node* _approximate_origin;
+  int _scalar_opcode;
+  uint _vector_length;
+  BasicType _element_basic_type;
+
+public:
+  VTransformNodePrototype(Node* approximate_origin,
+                          int scalar_opcode,
+                          uint vector_length,
+                          BasicType element_basic_type) :
+    _approximate_origin(approximate_origin),
+    _scalar_opcode(scalar_opcode),
+    _vector_length(vector_length),
+    _element_basic_type(element_basic_type) {}
+
+  static VTransformNodePrototype make_from_scalar(Node* n, const VLoopAnalyzer& vloop_analyzer) {
+    int opc = n->Opcode();
+    int vlen = 1;
+    BasicType bt;
+    if (vloop_analyzer.vloop().in_bb(n)) {
+      bt = vloop_analyzer.types().velt_basic_type(n);
+    } else {
+      bt = n->bottom_type()->basic_type();
+    }
+    return VTransformNodePrototype(n, opc, vlen, bt);
+  }
+
+  static VTransformNodePrototype make_from_pack(const Node_List* pack, const VLoopAnalyzer& vloop_analyzer) {
+    Node* first = pack->at(0);
+    int opc = first->Opcode();
+    int vlen = pack->size();
+    BasicType bt = vloop_analyzer.types().velt_basic_type(first);
+    return VTransformNodePrototype(first, opc, vlen, bt);
+  }
+
+  Node* approximate_origin() const { return _approximate_origin; }
+  int scalar_opcode() const { return _scalar_opcode; }
+  uint vector_length() const { return _vector_length; }
+  BasicType element_basic_type() const { return _element_basic_type; }
+};
+
+
 // The vtnodes (VTransformNode) resemble the C2 IR Nodes, and model a part of the
 // VTransform. Many such vtnodes make up the VTransformGraph. The vtnodes represent
 // the resulting scalar and vector nodes as closely as possible.
@@ -265,21 +310,30 @@ public:
 private:
   bool _is_alive;
 
+  VTransformNodePrototype _prototype;
+
   // _in is split into required inputs (_req), and additional dependencies.
   const uint _req;
   GrowableArray<VTransformNode*> _in;
   GrowableArray<VTransformNode*> _out;
 
 public:
-  VTransformNode(VTransform& vtransform, const uint req) :
+  VTransformNode(VTransform& vtransform, VTransformNodePrototype prototype, const uint req) :
     _idx(vtransform.graph().new_idx()),
     _is_alive(true),
+    _prototype(prototype),
     _req(req),
     _in(vtransform.arena(),  req, req, nullptr),
     _out(vtransform.arena(), 4, 0, nullptr)
   {
     vtransform.graph().add_vtnode(this);
   }
+
+  VTransformNodePrototype prototype() const { return _prototype; }
+  Node* approximate_origin() const { return _prototype.approximate_origin(); }
+  int scalar_opcode() const { return _prototype.scalar_opcode(); }
+  uint vector_length() const { return _prototype.vector_length(); }
+  BasicType element_basic_type() const { return _prototype.element_basic_type(); }
 
   void init_req(uint i, VTransformNode* n) {
     assert(i < _req, "must be a req");
@@ -368,7 +422,7 @@ public:
 
   Node* find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const;
 
-  void register_new_node_from_vectorization(const VLoopAnalyzer& vloop_analyzer, Node* vn, Node* old_node) const;
+  void register_new_node_from_vectorization(const VLoopAnalyzer& vloop_analyzer, Node* vn) const;
 
   NOT_PRODUCT(virtual const char* name() const = 0;)
   NOT_PRODUCT(void print() const;)
@@ -381,8 +435,8 @@ class VTransformScalarNode : public VTransformNode {
 private:
   Node* _node;
 public:
-  VTransformScalarNode(VTransform& vtransform, Node* n) :
-    VTransformNode(vtransform, n->req()), _node(n) {}
+  VTransformScalarNode(VTransform& vtransform, VTransformNodePrototype prototype, Node* n) :
+    VTransformNode(vtransform, prototype, n->req()), _node(n) {}
   Node* node() const { return _node; }
   virtual VTransformScalarNode* isa_Scalar() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return true; }
@@ -398,8 +452,8 @@ public:
 // we must wrap the inputs that are outside the loop into special vtnodes, too.
 class VTransformInputScalarNode : public VTransformScalarNode {
 public:
-  VTransformInputScalarNode(VTransform& vtransform, Node* n) :
-    VTransformScalarNode(vtransform, n) {}
+  VTransformInputScalarNode(VTransform& vtransform, VTransformNodePrototype prototype, Node* n) :
+    VTransformScalarNode(vtransform, prototype, n) {}
   virtual VTransformInputScalarNode* isa_InputScalar() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return false; }
   NOT_PRODUCT(virtual const char* name() const override { return "InputScalar"; };)
@@ -410,8 +464,8 @@ public:
 // we must wrap the outputs that are outside the loop into special vtnodes, too.
 class VTransformOutputScalarNode : public VTransformScalarNode {
 public:
-  VTransformOutputScalarNode(VTransform& vtransform, Node* n) :
-    VTransformScalarNode(vtransform, n) {}
+  VTransformOutputScalarNode(VTransform& vtransform, VTransformNodePrototype prototype, Node* n) :
+    VTransformScalarNode(vtransform, prototype, n) {}
   virtual VTransformOutputScalarNode* isa_OutputScalar() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return false; }
   NOT_PRODUCT(virtual const char* name() const override { return "OutputScalar"; };)
@@ -420,8 +474,8 @@ public:
 // We want to be able to conveniently find all Phis that belong to the LoopNode.
 class VTransformLoopPhiNode : public VTransformScalarNode {
 public:
-  VTransformLoopPhiNode(VTransform& vtransform, PhiNode* n) :
-    VTransformScalarNode(vtransform, n) {}
+  VTransformLoopPhiNode(VTransform& vtransform, VTransformNodePrototype prototype, PhiNode* n) :
+    VTransformScalarNode(vtransform, prototype, n) {}
   virtual VTransformLoopPhiNode* isa_LoopPhi() override { return this; }
   virtual const VTransformLoopPhiNode* isa_LoopPhi() const override { return this; }
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
@@ -437,8 +491,8 @@ private:
   int _vlen;
   const Type* _element_type;
 public:
-  VTransformReplicateNode(VTransform& vtransform, int vlen, const Type* element_type) :
-    VTransformNode(vtransform, 2), _vlen(vlen), _element_type(element_type) {}
+  VTransformReplicateNode(VTransform& vtransform, VTransformNodePrototype prototype, int vlen, const Type* element_type) :
+    VTransformNode(vtransform, prototype, 2), _vlen(vlen), _element_type(element_type) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
@@ -446,10 +500,11 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
+// TODO refactor to a class that can produce all sorts of scalar ops
 // Transform introduces a scalar ConvI2LNode that was not previously in the C2 graph.
 class VTransformConvI2LNode : public VTransformNode {
 public:
-  VTransformConvI2LNode(VTransform& vtransform) : VTransformNode(vtransform, 2) {}
+  VTransformConvI2LNode(VTransform& vtransform, VTransformNodePrototype prototype) : VTransformNode(vtransform, prototype, 2) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
@@ -460,12 +515,12 @@ public:
 class VTransformShiftCountNode : public VTransformNode {
 private:
   int _vlen;
-  const BasicType _element_bt;
+  const BasicType _element_bt; // TODO could be element_basic_type
   juint _mask;
   int _shift_opcode;
 public:
-  VTransformShiftCountNode(VTransform& vtransform, int vlen, BasicType element_bt, juint mask, int shift_opcode) :
-    VTransformNode(vtransform, 2), _vlen(vlen), _element_bt(element_bt), _mask(mask), _shift_opcode(shift_opcode) {}
+  VTransformShiftCountNode(VTransform& vtransform, VTransformNodePrototype prototype, int vlen, BasicType element_bt, juint mask, int shift_opcode) :
+    VTransformNode(vtransform, prototype, 2), _vlen(vlen), _element_bt(element_bt), _mask(mask), _shift_opcode(shift_opcode) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
@@ -477,10 +532,10 @@ public:
 class VTransformPopulateIndexNode : public VTransformNode {
 private:
   int _vlen;
-  const BasicType _element_bt;
+  const BasicType _element_bt; // TODO can just be the element_basic_type
 public:
-  VTransformPopulateIndexNode(VTransform& vtransform, int vlen, const BasicType element_bt) :
-    VTransformNode(vtransform, 2), _vlen(vlen), _element_bt(element_bt) {}
+  VTransformPopulateIndexNode(VTransform& vtransform, VTransformNodePrototype prototype, int vlen, const BasicType element_bt) :
+    VTransformNode(vtransform, prototype, 2), _vlen(vlen), _element_bt(element_bt) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const override;
@@ -488,47 +543,19 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 
-// Bundle information for VTransformVectorNode.
-class VTransformVectorPrototype : public StackObj {
-private:
-  int _scalar_opcode;
-  uint _vector_length;
-  BasicType _element_basic_type;
-
-public:
-  VTransformVectorPrototype(int scalar_opcode, uint vector_length, BasicType element_basic_type) :
-    _scalar_opcode(scalar_opcode),
-    _vector_length(vector_length),
-    _element_basic_type(element_basic_type) {}
-
-  static VTransformVectorPrototype make(const Node_List* pack, const VLoopAnalyzer& vloop_analyzer) {
-    Node* first = pack->at(0);
-    int opc = first->Opcode();
-    int vlen = pack->size();
-    BasicType bt = vloop_analyzer.types().velt_basic_type(first);
-    return VTransformVectorPrototype(opc, vlen, bt);
-  }
-
-  int scalar_opcode() const { return _scalar_opcode; }
-  uint vector_length() const { return _vector_length; }
-  BasicType element_basic_type() const { return _element_basic_type; }
-};
-
 // Base class for all vector vtnodes.
 class VTransformVectorNode : public VTransformNode {
 private:
-  VTransformVectorPrototype _prototype;
   // TODO goal to eventually remove: tricky is the memory graph though...
   // also some types need to condition on the first elements type,
   // and so we'd have to split those node types earlier
   GrowableArray<Node*> _nodes;
 public:
-  VTransformVectorNode(VTransform& vtransform, const uint req, const VTransformVectorPrototype prototype) :
-    VTransformNode(vtransform, req),
-    _prototype(prototype),
+  VTransformVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const uint req) :
+    VTransformNode(vtransform, prototype, req),
     _nodes(vtransform.arena(),
-           _prototype.vector_length(),
-           _prototype.vector_length(),
+           vector_length(),
+           vector_length(),
 	   nullptr) {}
 
   void set_nodes(const Node_List* pack) {
@@ -545,11 +572,6 @@ public:
     }
   }
 
-  VTransformVectorPrototype prototype() const { return _prototype; }
-  int scalar_opcode() const { return _prototype.scalar_opcode(); }
-  uint vector_length() const { return _prototype.vector_length(); }
-  BasicType element_basic_type() const { return _prototype.element_basic_type(); }
-
   const GrowableArray<Node*>& nodes() const { return _nodes; }
   virtual VTransformVectorNode* isa_Vector() override { return this; }
   void register_new_node_from_vectorization_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const;
@@ -559,8 +581,8 @@ public:
 // Catch all for all element-wise vector operations.
 class VTransformElementWiseVectorNode : public VTransformVectorNode {
 public:
-  VTransformElementWiseVectorNode(VTransform& vtransform, uint req, VTransformVectorPrototype prototype) :
-    VTransformVectorNode(vtransform, req, prototype) {}
+  VTransformElementWiseVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, uint req) :
+    VTransformVectorNode(vtransform, prototype, req) {}
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,
@@ -580,8 +602,8 @@ class VTransformBoolVectorNode : public VTransformElementWiseVectorNode {
 private:
   const VTransformBoolTest _test;
 public:
-  VTransformBoolVectorNode(VTransform& vtransform, VTransformVectorPrototype prototype, VTransformBoolTest test) :
-    VTransformElementWiseVectorNode(vtransform, 2, prototype), _test(test) {}
+  VTransformBoolVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, VTransformBoolTest test) :
+    VTransformElementWiseVectorNode(vtransform, prototype, 2), _test(test) {}
   VTransformBoolTest test() const { return _test; }
   virtual VTransformBoolVectorNode* isa_BoolVector() override { return this; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
@@ -593,8 +615,8 @@ public:
 class VTransformReductionVectorNode : public VTransformVectorNode {
 public:
   // req = 3 -> [ctrl, scalar init, vector]
-  VTransformReductionVectorNode(VTransform& vtransform, VTransformVectorPrototype prototype) :
-    VTransformVectorNode(vtransform, 3, prototype) {}
+  VTransformReductionVectorNode(VTransform& vtransform, VTransformNodePrototype prototype) :
+    VTransformVectorNode(vtransform, prototype, 3) {}
   virtual VTransformReductionVectorNode* isa_ReductionVector() override { return this; }
   virtual bool optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) override;
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
@@ -611,8 +633,8 @@ private:
 class VTransformLoadVectorNode : public VTransformVectorNode {
 public:
   // req = 3 -> [ctrl, mem, adr]
-  VTransformLoadVectorNode(VTransform& vtransform, VTransformVectorPrototype prototype) :
-    VTransformVectorNode(vtransform, 3, prototype) {}
+  VTransformLoadVectorNode(VTransform& vtransform, VTransformNodePrototype prototype) :
+    VTransformVectorNode(vtransform, prototype, 3) {}
   LoadNode::ControlDependency control_dependency() const;
   virtual bool is_load_or_store_in_loop() const override { return true; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
@@ -624,8 +646,8 @@ public:
 class VTransformStoreVectorNode : public VTransformVectorNode {
 public:
   // req = 4 -> [ctrl, mem, adr, val]
-  VTransformStoreVectorNode(VTransform& vtransform, VTransformVectorPrototype prototype) :
-    VTransformVectorNode(vtransform, 4, prototype) {}
+  VTransformStoreVectorNode(VTransform& vtransform, VTransformNodePrototype prototype) :
+    VTransformVectorNode(vtransform, prototype, 4) {}
   virtual bool is_load_or_store_in_loop() const override { return true; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(const VLoopAnalyzer& vloop_analyzer,

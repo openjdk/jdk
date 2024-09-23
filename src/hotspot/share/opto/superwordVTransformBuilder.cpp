@@ -59,11 +59,12 @@ void SuperWordVTransformBuilder::build_scalar_vtnodes_for_non_packed_nodes() {
     Node* n = _vloop_analyzer.body().body().at(i);
     if (_packset.get_pack(n) != nullptr) { continue; }
 
+    VTransformNodePrototype prototype = VTransformNodePrototype::make_from_scalar(n, _vloop_analyzer);
     VTransformScalarNode* vtn = nullptr;
     if (n->is_Phi()) {
-      vtn = new (_vtransform.arena()) VTransformLoopPhiNode(_vtransform, n->as_Phi());
+      vtn = new (_vtransform.arena()) VTransformLoopPhiNode(_vtransform, prototype, n->as_Phi());
     } else {
-      vtn = new (_vtransform.arena()) VTransformScalarNode(_vtransform, n);
+      vtn = new (_vtransform.arena()) VTransformScalarNode(_vtransform, prototype, n);
     }
     map_node_to_vtnode(n, vtn);
   }
@@ -154,7 +155,8 @@ void SuperWordVTransformBuilder::build_outputs() {
 
         // Create a new one if it does not exist
         if (vtn_use == nullptr) {
-          vtn_use = new (_vtransform.arena()) VTransformOutputScalarNode(_vtransform, use);
+          VTransformNodePrototype prototype = VTransformNodePrototype::make_from_scalar(use, _vloop_analyzer);
+          vtn_use = new (_vtransform.arena()) VTransformOutputScalarNode(_vtransform, prototype, use);
           map_node_to_vtnode(use, vtn_use);
         }
 
@@ -175,7 +177,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   Node* p0 = pack->at(0);
   int opc = p0->Opcode();
   VTransformVectorNode* vtn = nullptr;
-  const VTransformVectorPrototype prototype = VTransformVectorPrototype::make(pack, _vloop_analyzer);
+  const VTransformNodePrototype prototype = VTransformNodePrototype::make_from_pack(pack, _vloop_analyzer);
 
   if (p0->is_Load()) {
     vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, prototype);
@@ -191,7 +193,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     // but reinterpreted as two "shorts" [a0, a1] and [b0, b1]:
     //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
     assert(p0->req() == 5, "MulAddS2I should have 4 operands");
-    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, 3, prototype);
+    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, prototype, 3);
   } else {
     assert(p0->req() == 3 ||
            p0->is_CMove() ||
@@ -203,7 +205,7 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
            opc == Op_SignumF ||
            opc == Op_SignumD,
            "pack type must be in this list");
-    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), prototype);
+    vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, prototype, p0->req());
   }
   vtn->set_nodes(pack);
   return vtn;
@@ -249,7 +251,8 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
     // then the p0_bt can also be L/F/D but we need to produce ints for the input of
     // the ConvI2L/F/D.
     BasicType element_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
-    VTransformNode* populate_index = new (_vtransform.arena()) VTransformPopulateIndexNode(_vtransform, pack->size(), element_bt);
+    VTransformNodePrototype prototype = VTransformNodePrototype(_vloop.iv(), Op_Phi, pack->size(), element_bt);
+    VTransformNode* populate_index = new (_vtransform.arena()) VTransformPopulateIndexNode(_vtransform, prototype, pack->size(), element_bt);
     populate_index->init_req(1, iv_vtn);
     return populate_index;
   }
@@ -262,7 +265,9 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       // create a special ShiftCount node.
       BasicType element_bt = _vloop_analyzer.types().velt_basic_type(p0);
       juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
-      VTransformNode* shift_count = new (_vtransform.arena()) VTransformShiftCountNode(_vtransform, pack->size(), element_bt, mask, p0->Opcode());
+      // TODO we may want to refactor this, and set a more adequate opc
+      VTransformNodePrototype prototype = VTransformNodePrototype(p0, p0->Opcode(), pack->size(), element_bt);
+      VTransformNode* shift_count = new (_vtransform.arena()) VTransformShiftCountNode(_vtransform, prototype, pack->size(), element_bt, mask, p0->Opcode());
       shift_count->init_req(1, same_input_vtn);
       return shift_count;
     } else {
@@ -271,11 +276,14 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_type->isa_long()) {
         // Scalar rotate has int rotation value, but the scalar rotate expects longs.
         assert(same_input->bottom_type()->isa_int(), "scalar rotate expects int rotation");
-        VTransformNode* conv = new (_vtransform.arena()) VTransformConvI2LNode(_vtransform);
+        VTransformNodePrototype conv_prototype = VTransformNodePrototype(p0, Op_ConvI2L, 1, T_LONG);
+        VTransformNode* conv = new (_vtransform.arena()) VTransformConvI2LNode(_vtransform, conv_prototype);
         conv->init_req(1, same_input_vtn);
         same_input_vtn = conv;
       }
-      VTransformNode* replicate = new (_vtransform.arena()) VTransformReplicateNode(_vtransform, pack->size(), element_type);
+      BasicType element_bt = _vloop_analyzer.types().velt_basic_type(p0);
+      VTransformNodePrototype prototype = VTransformNodePrototype(p0, -1, pack->size(), element_bt);
+      VTransformNode* replicate = new (_vtransform.arena()) VTransformReplicateNode(_vtransform, prototype, pack->size(), element_type);
       replicate->init_req(1, same_input_vtn);
       return replicate;
     }
@@ -296,7 +304,8 @@ VTransformNode* SuperWordVTransformBuilder::get_vtnode_or_wrap_as_input_scalar(N
   if (vtn != nullptr) { return vtn; }
 
   assert(!_vloop.in_bb(n), "only nodes outside the loop can be input nodes to the loop");
-  vtn = new (_vtransform.arena()) VTransformInputScalarNode(_vtransform, n);
+  VTransformNodePrototype prototype = VTransformNodePrototype::make_from_scalar(n, _vloop_analyzer);
+  vtn = new (_vtransform.arena()) VTransformInputScalarNode(_vtransform, prototype, n);
   map_node_to_vtnode(n, vtn);
   return vtn;
 }
