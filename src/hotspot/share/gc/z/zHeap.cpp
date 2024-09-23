@@ -34,6 +34,7 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zHeapIterator.hpp"
 #include "gc/z/zHeuristics.hpp"
+#include "gc/z/zInitialize.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageTable.inline.hpp"
 #include "gc/z/zResurrection.hpp"
@@ -74,7 +75,7 @@ ZHeap::ZHeap()
 
   // Prime cache
   if (!_page_allocator.prime_cache(_old.workers(), InitialHeapSize)) {
-    log_error_p(gc)("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", InitialHeapSize / M);
+    ZInitialize::error("Failed to allocate initial Java heap (" SIZE_FORMAT "M)", InitialHeapSize / M);
     return;
   }
 

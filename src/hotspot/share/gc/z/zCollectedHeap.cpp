@@ -49,6 +49,7 @@
 #include "memory/universe.hpp"
 #include "oops/stackChunkOop.hpp"
 #include "runtime/continuationJavaClasses.hpp"
+#include "runtime/java.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "services/memoryUsage.hpp"
@@ -78,10 +79,13 @@ const char* ZCollectedHeap::name() const {
 
 jint ZCollectedHeap::initialize() {
   if (!_heap.is_initialized()) {
+    vm_shutdown_during_initialization(_initialize.error_message());
     return JNI_ENOMEM;
   }
 
   Universe::set_verify_data(~(ZAddressHeapBase - 1) | 0x7, ZAddressHeapBase);
+
+  _initialize.finish();
 
   return JNI_OK;
 }

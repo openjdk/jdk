@@ -27,12 +27,27 @@
 #include "memory/allocation.hpp"
 
 class ZBarrierSet;
+class ZErrorMessage;
 
 class ZInitialize {
 private:
+  static ZErrorMessage* _error_message;
+  static bool           _had_error;
+  static bool           _finished;
+
+  static void register_error(bool debug, const char *error);
+
   void pd_initialize();
 
 public:
+  static void error(const char* msg_format, ...) ATTRIBUTE_PRINTF(1, 2);
+  static void error_d(const char* msg_format, ...) ATTRIBUTE_PRINTF(1, 2);
+
+  static bool had_error();
+  static const char* error_message();
+
+  static void finish();
+
   ZInitialize(ZBarrierSet* barrier_set);
 };
 
