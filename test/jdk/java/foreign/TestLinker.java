@@ -52,7 +52,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertThrows;
+import static org.testng.Assert.expectThrows;
 
 public class TestLinker extends NativeTestHelper {
 
@@ -162,7 +162,8 @@ public class TestLinker extends NativeTestHelper {
         StructLayout struct = MemoryLayout.structLayout(sequence);
         FunctionDescriptor fd = FunctionDescriptor.of(struct, struct);
         Linker linker = Linker.nativeLinker();
-        assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        var x = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        assertTrue(x.getMessage().contains("not supported because a sequence of a padding layout is not allowed"));
     }
 
     @DataProvider
