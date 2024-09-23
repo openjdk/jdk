@@ -4028,33 +4028,25 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
       Node* ratio = _igvn.integercon(ratio_con, stride_con2_bt);
       set_ctrl(ratio, C->root());
 
-      Node* init_converted = init;
-      if (stride_con2_bt == T_LONG) {
-        init_converted = new ConvI2LNode(init);
-        _igvn.register_new_node_with_optimizer(init_converted, init);
-        set_early_ctrl(init_converted, false);
-      }
+      Node* init_converted = insert_convert_node_if_needed(T_INT, stride_con2_bt, init);
+      Node* phi_converted = insert_convert_node_if_needed(T_INT, stride_con2_bt, phi);
 
       Node* ratio_init = MulNode::make(init_converted, ratio, stride_con2_bt);
       _igvn.register_new_node_with_optimizer(ratio_init, init_converted);
       set_early_ctrl(ratio_init, false);
+
       Node* diff = SubNode::make(init2, ratio_init, stride_con2_bt);
       _igvn.register_new_node_with_optimizer(diff, init2);
       set_early_ctrl(diff, false);
 
-      Node* phi_converted = phi;
-      if (stride_con2_bt == T_LONG) {
-        phi_converted = new ConvI2LNode(phi);
-        _igvn.register_new_node_with_optimizer(phi_converted, phi);
-        set_early_ctrl(phi_converted, false);
-      }
-
       Node* ratio_idx = MulNode::make(phi_converted, ratio, stride_con2_bt);
       _igvn.register_new_node_with_optimizer(ratio_idx, phi_converted);
       set_ctrl(ratio_idx, cl);
+
       Node* add = AddNode::make(ratio_idx, diff, stride_con2_bt);
       _igvn.register_new_node_with_optimizer(add);
       set_ctrl(add, cl);
+
       _igvn.replace_node( phi2, add );
       // Sometimes an induction variable is unused
       if (add->outcnt() == 0) {
@@ -4064,6 +4056,18 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
       continue;
     }
   }
+}
+
+Node* PhaseIdealLoop::insert_convert_node_if_needed(BasicType source, BasicType target, Node* input) {
+  if (source == target) {
+    return input;
+  }
+
+  Node* converted = ConvertNode::create_convert(source, target, input);
+  _igvn.register_new_node_with_optimizer(converted, input);
+  set_early_ctrl(converted, false);
+
+  return converted;
 }
 
 void IdealLoopTree::remove_safepoints(PhaseIdealLoop* phase, bool keep_one) {
