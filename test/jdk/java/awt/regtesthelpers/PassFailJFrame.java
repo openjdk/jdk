@@ -213,11 +213,48 @@ public final class PassFailJFrame {
 
     public enum Position {HORIZONTAL, VERTICAL, TOP_LEFT_CORNER}
 
+    /**
+     * Constructs a frame which displays test instructions and
+     * the <i>Pass</i> / <i>Fail</i> buttons with the given instructions, and
+     * the default timeout of {@value #TEST_TIMEOUT} minutes,
+     * the default title of {@value #TITLE} and
+     * the default values of {@value #ROWS} and {@value #COLUMNS}
+     * for rows and columns.
+     * <p>
+     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * more details.
+     *
+     * @param instructions the instructions for the tester
+     *
+     * @throws InterruptedException if the current thread is interrupted
+     *              while waiting for EDT to finish creating UI components
+     * @throws InvocationTargetException if an exception is thrown while
+     *              creating UI components on EDT
+     */
     public PassFailJFrame(String instructions)
             throws InterruptedException, InvocationTargetException {
         this(instructions, TEST_TIMEOUT);
     }
 
+    /**
+     * Constructs a frame which displays test instructions and
+     * the <i>Pass</i> / <i>Fail</i> buttons
+     * with the given instructions and timeout as well as
+     * the default title of {@value #TITLE}
+     * and the default values of {@value #ROWS} and {@value #COLUMNS}
+     * for rows and columns.
+     * <p>
+     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * more details.
+     *
+     * @param instructions the instructions for the tester
+     * @param testTimeOut  the test timeout in minutes
+     *
+     * @throws InterruptedException if the current thread is interrupted
+     *              while waiting for EDT to finish creating UI components
+     * @throws InvocationTargetException if an exception is thrown while
+     *              creating UI components on EDT
+     */
     public PassFailJFrame(String instructions, long testTimeOut)
             throws InterruptedException, InvocationTargetException {
         this(TITLE, instructions, testTimeOut);
@@ -226,8 +263,8 @@ public final class PassFailJFrame {
     /**
      * Constructs a frame which displays test instructions and
      * the <i>Pass</i> / <i>Fail</i> buttons
-     * with the given title, instructions and timeout,
-     * it uses the default values of {@value #ROWS} and {@value #COLUMNS}
+     * with the given title, instructions and timeout as well as
+     * the default values of {@value #ROWS} and {@value #COLUMNS}
      * for rows and columns.
      * The screenshot feature is not enabled, if you use this constructor.
      * <p>
