@@ -42,6 +42,7 @@ public class TestRestricted extends JavadocTester {
     public final ToolBox tb;
     public static void main(String... args) throws Exception {
         var tester = new TestRestricted();
+        tester.setAutomaticCheckLinks(false);
         tester.runTests();
     }
 
@@ -110,8 +111,8 @@ public class TestRestricted extends JavadocTester {
                 <div class="member-signature"><span class="return-type">void</span>&nbsp;<span \
                 class="element-name">restrictedMethod</span>()</div>
                 <div class="restricted-block" id="restricted-restrictedMethod()"><span class="restr\
-                icted-label"><code>restrictedMethod</code> is a restricted method of the Java platf\
-                orm.</span>
+                icted-label"><code>restrictedMethod</code> is a <a href="../java.base/java/lang/\
+                doc-files/RestrictedMethods.html">restricted method</a> of the Java platform.</span>
                 <div class="restricted-comment">Programs can only use <code>restrictedMethod</code>\
                  when access to restricted methods is enabled.</div>
                 <div class="restricted-comment">Restricted methods are unsafe, and, if used incorre\
@@ -131,8 +132,8 @@ public class TestRestricted extends JavadocTester {
                 r upgraded to permanent features of the Java platform.</div>
                 </div>
                 <div class="restricted-block" id="restricted-restrictedPreviewMethod()"><span class\
-                ="restricted-label"><code>restrictedPreviewMethod</code> is a restricted method of \
-                the Java platform.</span>
+                ="restricted-label"><code>restrictedPreviewMethod</code> is a <a href="../java.base/java/lang/\
+                doc-files/RestrictedMethods.html">restricted method</a> of the Java platform.</span>
                 <div class="restricted-comment">Programs can only use <code>restrictedPreviewMethod\
                 </code> when access to restricted methods is enabled.</div>
                 <div class="restricted-comment">Restricted methods are unsafe, and, if used incorre\
