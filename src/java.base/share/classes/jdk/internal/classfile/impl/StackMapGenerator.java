@@ -38,7 +38,6 @@ import java.lang.classfile.constantpool.InvokeDynamicEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -46,6 +45,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import jdk.internal.constant.ReferenceClassDescImpl;
+import jdk.internal.util.Preconditions;
 
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.constant.ConstantDescs.*;
@@ -152,7 +152,7 @@ public final class StackMapGenerator {
                 dcb.methodInfo.methodName().stringValue(),
                 dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
-                dcb.bytecodesBufWriter.asByteBuffer(),
+                dcb.bytecodesBufWriter.bytecodeView(),
                 dcb.constantPool,
                 dcb.context,
                 dcb.handlers);
@@ -188,7 +188,7 @@ public final class StackMapGenerator {
     private final Type thisType;
     private final String methodName;
     private final MethodTypeDesc methodDesc;
-    private final ByteBuffer bytecode;
+    private final RawBytecodeHelper.CodeRange bytecode;
     private final SplitConstantPool cp;
     private final boolean isStatic;
     private final LabelContext labelContext;
@@ -222,7 +222,7 @@ public final class StackMapGenerator {
                      String methodName,
                      MethodTypeDesc methodDesc,
                      boolean isStatic,
-                     ByteBuffer bytecode,
+                     RawBytecodeHelper.CodeRange bytecode,
                      SplitConstantPool cp,
                      ClassFileImpl context,
                      List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {
@@ -235,9 +235,9 @@ public final class StackMapGenerator {
         this.labelContext = labelContext;
         this.handlers = handlers;
         this.rawHandlers = new ArrayList<>(handlers.size());
-        this.classHierarchy = new ClassHierarchyImpl(context.classHierarchyResolverOption().classHierarchyResolver());
-        this.patchDeadCode = context.deadCodeOption() == ClassFile.DeadCodeOption.PATCH_DEAD_CODE;
-        this.filterDeadLabels = context.deadLabelsOption() == ClassFile.DeadLabelsOption.DROP_DEAD_LABELS;
+        this.classHierarchy = new ClassHierarchyImpl(context.classHierarchyResolver());
+        this.patchDeadCode = context.patchDeadCode();
+        this.filterDeadLabels = context.dropDeadLabels();
         this.currentFrame = new Frame(classHierarchy);
         generate();
     }
@@ -289,7 +289,7 @@ public final class StackMapGenerator {
     }
 
     private void generate() {
-        exMin = bytecode.capacity();
+        exMin = bytecode.length();
         exMax = -1;
         for (var exhandler : handlers) {
             int start_pc = labelContext.labelToBci(exhandler.tryStart());
@@ -326,15 +326,13 @@ public final class StackMapGenerator {
                 //patch frame
                 frame.pushStack(Type.THROWABLE_TYPE);
                 if (maxStack < 1) maxStack = 1;
-                int blockSize = (i < framesCount - 1 ? frames.get(i + 1).offset : bytecode.limit()) - frame.offset;
+                int end = (i < framesCount - 1 ? frames.get(i + 1).offset : bytecode.length()) - 1;
                 //patch bytecode
-                bytecode.position(frame.offset);
-                for (int n=1; n<blockSize; n++) {
-                    bytecode.put((byte) NOP);
-                }
-                bytecode.put((byte) ATHROW);
+                var arr = bytecode.array();
+                Arrays.fill(arr, frame.offset, end, (byte) NOP);
+                arr[end] = (byte) ATHROW;
                 //patch handlers
-                removeRangeFromExcTable(frame.offset, frame.offset + blockSize);
+                removeRangeFromExcTable(frame.offset, end + 1);
             }
         }
     }
@@ -407,17 +405,16 @@ public final class StackMapGenerator {
         currentFrame.flags = 0;
         currentFrame.offset = -1;
         int stackmapIndex = 0;
-        RawBytecodeHelper bcs = new RawBytecodeHelper(bytecode);
+        var bcs = bytecode.start();
         boolean ncf = false;
-        while (!bcs.isLastBytecode()) {
-            bcs.rawNext();
-            currentFrame.offset = bcs.bci;
+        while (bcs.next()) {
+            currentFrame.offset = bcs.bci();
             if (stackmapIndex < frames.size()) {
                 int thisOffset = frames.get(stackmapIndex).offset;
-                if (ncf && thisOffset > bcs.bci) {
+                if (ncf && thisOffset > bcs.bci()) {
                     throw generatorError("Expecting a stack map frame");
                 }
-                if (thisOffset == bcs.bci) {
+                if (thisOffset == bcs.bci()) {
                     if (!ncf) {
                         currentFrame.checkAssignableTo(frames.get(stackmapIndex));
                     }
@@ -426,11 +423,12 @@ public final class StackMapGenerator {
                         if (stackmapIndex == frames.size()) return; //skip the rest of this round
                         nextFrame = frames.get(stackmapIndex++);
                     }
-                    bcs.rawNext(nextFrame.offset); //skip code up-to the next frame
-                    currentFrame.offset = bcs.bci;
+                    bcs.reset(nextFrame.offset); //skip code up-to the next frame
+                    bcs.next();
+                    currentFrame.offset = bcs.bci();
                     currentFrame.copyFrom(nextFrame);
                     nextFrame.dirty = false;
-                } else if (thisOffset < bcs.bci) {
+                } else if (thisOffset < bcs.bci()) {
                     throw new ClassFormatError(String.format("Bad stack map offset %d", thisOffset));
                 }
             } else if (ncf) {
@@ -441,11 +439,11 @@ public final class StackMapGenerator {
     }
 
     private boolean processBlock(RawBytecodeHelper bcs) {
-        int opcode = bcs.rawCode;
+        int opcode = bcs.opcode();
         boolean ncf = false;
         boolean this_uninit = false;
         boolean verified_exc_handlers = false;
-        int bci = bcs.bci;
+        int bci = bcs.bci();
         Type type1, type2, type3, type4;
         if (RawBytecodeHelper.isStoreIntoLocal(opcode) && bci >= exMin && bci < exMax) {
             processExceptionHandlerTargets(bci, this_uninit);
@@ -651,7 +649,7 @@ public final class StackMapGenerator {
                 currentFrame.decStack(1).pushStack(cpIndexToType(bcs.getIndexU2(), cp));
             case MULTIANEWARRAY -> {
                 type1 = cpIndexToType(bcs.getIndexU2(), cp);
-                int dim = bcs.getU1(bcs.bci + 3);
+                int dim = bcs.getU1Unchecked(bcs.bci() + 3);
                 for (int i = 0; i < dim; i++) {
                     currentFrame.popStack();
                 }
@@ -708,14 +706,14 @@ public final class StackMapGenerator {
     }
 
     private void processSwitch(RawBytecodeHelper bcs) {
-        int bci = bcs.bci;
+        int bci = bcs.bci();
         int alignedBci = RawBytecodeHelper.align(bci + 1);
-        int defaultOfset = bcs.getInt(alignedBci);
+        int defaultOffset = bcs.getIntUnchecked(alignedBci);
         int keys, delta;
         currentFrame.popStack();
-        if (bcs.rawCode == TABLESWITCH) {
-            int low = bcs.getInt(alignedBci + 4);
-            int high = bcs.getInt(alignedBci + 2 * 4);
+        if (bcs.opcode() == TABLESWITCH) {
+            int low = bcs.getIntUnchecked(alignedBci + 4);
+            int high = bcs.getIntUnchecked(alignedBci + 2 * 4);
             if (low > high) {
                 throw generatorError("low must be less than or equal to high in tableswitch");
             }
@@ -725,31 +723,30 @@ public final class StackMapGenerator {
             }
             delta = 1;
         } else {
-            keys = bcs.getInt(alignedBci + 4);
+            keys = bcs.getIntUnchecked(alignedBci + 4);
             if (keys < 0) {
                 throw generatorError("number of keys in lookupswitch less than 0");
             }
             delta = 2;
             for (int i = 0; i < (keys - 1); i++) {
-                int this_key = bcs.getInt(alignedBci + (2 + 2 * i) * 4);
-                int next_key = bcs.getInt(alignedBci + (2 + 2 * i + 2) * 4);
+                int this_key = bcs.getIntUnchecked(alignedBci + (2 + 2 * i) * 4);
+                int next_key = bcs.getIntUnchecked(alignedBci + (2 + 2 * i + 2) * 4);
                 if (this_key >= next_key) {
                     throw generatorError("Bad lookupswitch instruction");
                 }
             }
         }
-        int target = bci + defaultOfset;
+        int target = bci + defaultOffset;
         checkJumpTarget(currentFrame, target);
         for (int i = 0; i < keys; i++) {
-            alignedBci = RawBytecodeHelper.align(bcs.bci + 1);
-            target = bci + bcs.getInt(alignedBci + (3 + i * delta) * 4);
+            target = bci + bcs.getIntUnchecked(alignedBci + (3 + i * delta) * 4);
             checkJumpTarget(currentFrame, target);
         }
     }
 
     private void processFieldInstructions(RawBytecodeHelper bcs) {
         var desc = Util.fieldTypeSymbol(cp.entryByIndex(bcs.getIndexU2(), MemberRefEntry.class).nameAndType());
-        switch (bcs.rawCode) {
+        switch (bcs.opcode()) {
             case GETSTATIC ->
                 currentFrame.pushStack(desc);
             case PUTSTATIC -> {
@@ -771,13 +768,13 @@ public final class StackMapGenerator {
 
     private boolean processInvokeInstructions(RawBytecodeHelper bcs, boolean inTryBlock, boolean thisUninit) {
         int index = bcs.getIndexU2();
-        int opcode = bcs.rawCode;
+        int opcode = bcs.opcode();
         var nameAndType = opcode == INVOKEDYNAMIC
                 ? cp.entryByIndex(index, InvokeDynamicEntry.class).nameAndType()
                 : cp.entryByIndex(index, MemberRefEntry.class).nameAndType();
         String invokeMethodName = nameAndType.name().stringValue();
         var mDesc = Util.methodTypeSymbol(nameAndType);
-        int bci = bcs.bci;
+        int bci = bcs.bci();
         currentFrame.decStack(Util.parameterSlots(mDesc));
         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
             if (OBJECT_INITIALIZER_NAME.equals(invokeMethodName)) {
@@ -790,7 +787,7 @@ public final class StackMapGenerator {
                     thisUninit = true;
                 } else if (type.tag == ITEM_UNINITIALIZED) {
                     int new_offset = type.bci;
-                    int new_class_index = bcs.getIndexU2Raw(new_offset + 1);
+                    int new_class_index = bcs.getU2(new_offset + 1);
                     Type new_class_type = cpIndexToType(new_class_index, cp);
                     if (inTryBlock) {
                         processExceptionHandlerTargets(bci, thisUninit);
@@ -849,16 +846,16 @@ public final class StackMapGenerator {
         var offsets = new BitSet() {
             @Override
             public void set(int i) {
-                if (i < 0 || i >= bytecode.capacity()) throw new IllegalArgumentException();
+                Preconditions.checkIndex(i, bytecode.length(), RawBytecodeHelper.IAE_FORMATTER);
                 super.set(i);
             }
         };
-        RawBytecodeHelper bcs = new RawBytecodeHelper(bytecode);
+        var bcs = bytecode.start();
         boolean no_control_flow = false;
         int opcode, bci = 0;
-        while (!bcs.isLastBytecode()) try {
-            opcode = bcs.rawNext();
-            bci = bcs.bci;
+        while (bcs.next()) try {
+            opcode = bcs.opcode();
+            bci = bcs.bci();
             if (no_control_flow) {
                 offsets.set(bci);
             }
@@ -880,20 +877,20 @@ public final class StackMapGenerator {
                         }
                 case TABLESWITCH, LOOKUPSWITCH -> {
                             int aligned_bci = RawBytecodeHelper.align(bci + 1);
-                            int default_ofset = bcs.getInt(aligned_bci);
+                            int default_ofset = bcs.getIntUnchecked(aligned_bci);
                             int keys, delta;
-                            if (bcs.rawCode == TABLESWITCH) {
-                                int low = bcs.getInt(aligned_bci + 4);
-                                int high = bcs.getInt(aligned_bci + 2 * 4);
+                            if (bcs.opcode() == TABLESWITCH) {
+                                int low = bcs.getIntUnchecked(aligned_bci + 4);
+                                int high = bcs.getIntUnchecked(aligned_bci + 2 * 4);
                                 keys = high - low + 1;
                                 delta = 1;
                             } else {
-                                keys = bcs.getInt(aligned_bci + 4);
+                                keys = bcs.getIntUnchecked(aligned_bci + 4);
                                 delta = 2;
                             }
                             offsets.set(bci + default_ofset);
                             for (int i = 0; i < keys; i++) {
-                                offsets.set(bci + bcs.getInt(aligned_bci + (3 + i * delta) * 4));
+                                offsets.set(bci + bcs.getIntUnchecked(aligned_bci + (3 + i * delta) * 4));
                             }
                             yield true;
                         }

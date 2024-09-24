@@ -31,7 +31,7 @@ template <typename T> class Array;
 class InstanceKlass;
 class SerializeClosure;
 
-// Classes to be buik-loaded, in the "linked" state, at VM bootstrap.
+// Classes to be bulk-loaded, in the "linked" state, at VM bootstrap.
 //
 // AOTLinkedClassTable is produced by AOTClassLinker when an AOTCache is assembled.
 //
