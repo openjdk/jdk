@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,15 @@
  * The interfaces in this package do not model the structure of a
  * program inside a method body; for example there is no
  * representation of a {@code for} loop or {@code try}-{@code finally}
- * block.  However, the interfaces can model some structures only
- * appearing inside method bodies, such as local variables and
- * anonymous classes.
+ * block. Concretely, there is no model of any abstract syntax tree
+ * (AST) structure of a Java program.  However, the interfaces can
+ * model some structures only appearing inside method bodies, such as
+ * {@linkplain ElementKind#LOCAL_VARIABLE local variables},
+ * {@linkplain NestingKind#ANONYMOUS anonymous classes}, and
+ * {@linkplain ElementKind#EXCEPTION_PARAMETER exception parameters}.
+ * Therefore, these interfaces can be used by an AST API to model the
+ * declarations found in the method bodies of Java compilation units
+ * (JLS {@jls 7.3}).
  *
  * <p id="accurate_model">When used in the context of annotation
  * processing, an accurate model of the element being represented must

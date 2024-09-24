@@ -55,7 +55,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     //   E.g., ConstantDescs.CD_Boolean.
     // - If we re-run the <clinit> of these 3 classes again during the production
     //   run, ConstantDescs.CD_Boolean will get a new value that has a different
-    //   object identity than the value referenced the the Wrapper enums.
+    //   object identity than the value referenced by the the Wrapper enums.
     // - However, Wrapper requires object identity (it allows the use of == to
     //   test the equality of ClassDesc, etc).
     // Therefore, we must preserve the static fields of these 3 classes from

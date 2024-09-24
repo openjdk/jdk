@@ -117,8 +117,9 @@ void AOTClassLinker::add_candidate(InstanceKlass* ik) {
 
 bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
   assert(is_initialized(), "sanity");
+  assert(CDSConfig::is_dumping_aot_linked_classes(), "sanity");
 
-  if (!CDSConfig::is_dumping_aot_linked_classes() || !SystemDictionaryShared::is_builtin(ik)) {
+  if (!SystemDictionaryShared::is_builtin(ik)) {
     return false;
   }
 
@@ -207,7 +208,7 @@ Array<InstanceKlass*>* AOTClassLinker::write_classes(oop class_loader, bool is_j
 
     if (ik->is_shared() && CDSConfig::is_dumping_dynamic_archive()) {
       if (CDSConfig::is_using_aot_linked_classes()) {
-        // This class was recorded as a AOT-linked for the base archive,
+        // This class was recorded as AOT-linked for the base archive,
         // so there's no need to do so again for the dynamic archive.
       } else {
         list.append(ik);
@@ -221,7 +222,7 @@ Array<InstanceKlass*>* AOTClassLinker::write_classes(oop class_loader, bool is_j
     return nullptr;
   } else {
     const char* category = class_category_name(list.at(0));
-    log_info(cds, aot, link)("written %d class(es) for category %s", list.length(), category);
+    log_info(cds, aot, link)("wrote %d class(es) for category %s", list.length(), category);
     return ArchiveUtils::archive_array(&list);
   }
 }

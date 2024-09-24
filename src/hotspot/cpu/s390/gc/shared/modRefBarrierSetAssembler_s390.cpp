@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "gc/shared/modRefBarrierSetAssembler.hpp"
+#include "runtime/jniHandles.hpp"
 
 #define __ masm->
 
@@ -57,4 +58,17 @@ void ModRefBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet deco
   } else {
     BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
   }
+}
+
+void ModRefBarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2) {
+  NearLabel done;
+
+  __ z_ltgr(value, value);
+  __ z_bre(done);  // use null as-is.
+
+  __ z_nill(value, ~JNIHandles::tag_mask);
+  __ z_lg(value, 0, value); // Resolve (untagged) jobject.
+
+  __ verify_oop(value, FILE_AND_LINE);
+  __ bind(done);
 }

@@ -64,12 +64,9 @@ void AOTLinkedClassBulkLoader::load_non_javabase_classes(JavaThread* current) {
 }
 
 void AOTLinkedClassBulkLoader::load_classes_in_loader(JavaThread* current, AOTLinkedClassCategory class_category, oop class_loader_oop) {
-  ExceptionMark em(current);
-  ResourceMark rm(current);
-  HandleMark hm(current);
-
   load_classes_in_loader_impl(class_category, class_loader_oop, current);
   if (current->has_pending_exception()) {
+    ResourceMark rm(current);
     // We cannot continue, as we might have loaded some of the aot-linked classes, which
     // may have dangling C++ pointers to other aot-linked classes that we have failed to load.
     if (current->pending_exception()->is_a(vmClasses::OutOfMemoryError_klass())) {
@@ -84,10 +81,6 @@ void AOTLinkedClassBulkLoader::load_classes_in_loader(JavaThread* current, AOTLi
 }
 
 void AOTLinkedClassBulkLoader::load_classes_in_loader_impl(AOTLinkedClassCategory class_category, oop class_loader_oop, TRAPS) {
-  if (!CDSConfig::is_using_aot_linked_classes()) {
-    return;
-  }
-
   Handle h_loader(THREAD, class_loader_oop);
   load_table(AOTLinkedClassTable::for_static_archive(),  class_category, h_loader, CHECK);
   load_table(AOTLinkedClassTable::for_dynamic_archive(), class_category, h_loader, CHECK);
@@ -117,7 +110,7 @@ void AOTLinkedClassBulkLoader::load_classes_in_loader_impl(AOTLinkedClassCategor
   }
 
   if (Universe::is_fully_initialized() && VerifyDuringStartup) {
-    // Make sure we're still in a clean slate.
+    // Make sure we're still in a clean state.
     VM_Verify verify_op;
     VMThread::execute(&verify_op);
   }
@@ -154,6 +147,7 @@ void AOTLinkedClassBulkLoader::load_table(AOTLinkedClassTable* table, AOTLinkedC
     }
     break;
   case AOTLinkedClassCategory::UNREGISTERED:
+  default:
     ShouldNotReachHere(); // Currently aot-linked classes are not supported for this category.
     break;
   }

@@ -127,6 +127,7 @@ public class thrstartreq002 extends JDIBase {
             log2("debuggee launched");
         } catch ( Exception e ) {
             log3("ERROR: Exception : " + e);
+            e.printStackTrace(System.out);
             log2("       test cancelled");
             return FAILED;
         }
@@ -170,6 +171,7 @@ public class thrstartreq002 extends JDIBase {
                           vm.exit(PASS_BASE);
                       } catch ( Exception e ) {
                           log3("ERROR: Exception : " + e);
+                          e.printStackTrace(System.out);
                       }
                       break;
 
@@ -183,6 +185,7 @@ public class thrstartreq002 extends JDIBase {
                           }
                       } catch ( Exception e ) {
                           log3("ERROR: Exception : " + e);
+                          e.printStackTrace(System.out);
                       }
                       break;
             }
@@ -211,9 +214,11 @@ public class thrstartreq002 extends JDIBase {
             return 1;
         } catch ( VMDisconnectedException e ) {
             log3("ERROR: VMDisconnectedException : " + e);
+            e.printStackTrace(System.out);
             return 2;
         } catch ( Exception e ) {
             log3("ERROR: Exception : " + e);
+            e.printStackTrace(System.out);
             return 1;
         }
 

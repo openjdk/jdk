@@ -36,7 +36,7 @@ import javax.print.PrintServiceLookup;
  * @summary Tests custom class loader cleanup
  * @library /javax/swing/regtesthelpers
  * @build Util
- * @run main/timeout=60/othervm -mx32m FlushCustomClassLoader
+ * @run main/timeout=60/othervm -Xmx32m FlushCustomClassLoader
  */
 public final class FlushCustomClassLoader {
 
