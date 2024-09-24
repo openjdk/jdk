@@ -105,16 +105,60 @@ void BarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet decorators
   }
 }
 
+// Generic implementation. GCs can provide an optimized one.
 void BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2) {
-  NearLabel Ldone;
-  __ z_ltgr(tmp1, value);
-  __ z_bre(Ldone);          // Use null result as-is.
 
-  __ z_nill(value, ~JNIHandles::tag_mask);
-  __ z_lg(value, 0, value); // Resolve (untagged) jobject.
+  assert_different_registers(value, tmp1, tmp2);
+  NearLabel done, weak_tag, verify, tagged;
+  __ z_ltgr(value, value);
+  __ z_bre(done);          // Use null result as-is.
 
+  __ z_tmll(value, JNIHandles::tag_mask);
+  __ z_btrue(tagged); // not zero
+
+  // Resolve Local handle
+  __ access_load_at(T_OBJECT, IN_NATIVE | AS_RAW, Address(value, 0), value, tmp1, tmp2);
+  __ z_bru(verify);
+
+  __ bind(tagged);
+  __ testbit(value, exact_log2(JNIHandles::TypeTag::weak_global)); // test for weak tag
+  __ z_btrue(weak_tag);
+
+  // resolve global handle
+  __ access_load_at(T_OBJECT, IN_NATIVE, Address(value, -JNIHandles::TypeTag::global), value, tmp1, tmp2);
+  __ z_bru(verify);
+
+  __ bind(weak_tag);
+  // resolve jweak.
+  __ access_load_at(T_OBJECT, IN_NATIVE | ON_PHANTOM_OOP_REF,
+                    Address(value, -JNIHandles::TypeTag::weak_global), value, tmp1, tmp2);
+  __ bind(verify);
   __ verify_oop(value, FILE_AND_LINE);
-  __ bind(Ldone);
+  __ bind(done);
+}
+
+// Generic implementation. GCs can provide an optimized one.
+void BarrierSetAssembler::resolve_global_jobject(MacroAssembler* masm, Register value, Register tmp1, Register tmp2) {
+  assert_different_registers(value, tmp1, tmp2);
+  NearLabel done;
+
+  __ z_ltgr(value, value);
+  __ z_bre(done); // use null as-is.
+
+#ifdef ASSERT
+  {
+    NearLabel valid_global_tag;
+    __ testbit(value, exact_log2(JNIHandles::TypeTag::global)); // test for global tag
+    __ z_btrue(valid_global_tag);
+    __ stop("non global jobject using resolve_global_jobject");
+    __ bind(valid_global_tag);
+  }
+#endif // ASSERT
+
+  // Resolve global handle
+  __ access_load_at(T_OBJECT, IN_NATIVE, Address(value, -JNIHandles::TypeTag::global), value, tmp1, tmp2);
+  __ verify_oop(value, FILE_AND_LINE);
+  __ bind(done);
 }
 
 void BarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,

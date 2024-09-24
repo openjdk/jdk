@@ -384,6 +384,7 @@ jobs:
       - build-windows-aarch64
       - test-linux-x64
       - test-macos-x64
+      - test-macos-aarch64
       - test-windows-x64
 
     steps:

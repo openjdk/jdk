@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,8 +248,7 @@ void ZHeap::free_page(ZPage* page) {
   _page_table.remove(page);
 
   if (page->is_old()) {
-    page->verify_remset_cleared_current();
-    page->verify_remset_cleared_previous();
+    page->remset_delete();
   }
 
   // Free page
@@ -261,12 +260,10 @@ size_t ZHeap::free_empty_pages(const ZArray<ZPage*>* pages) {
   // Remove page table entries
   ZArrayIterator<ZPage*> iter(pages);
   for (ZPage* page; iter.next(&page);) {
-    if (page->is_old()) {
-      // The remset of pages should be clean when installed into the page
-      // cache.
-      page->remset_clear();
-    }
     _page_table.remove(page);
+    if (page->is_old()) {
+      page->remset_delete();
+    }
     freed += page->size();
   }
 

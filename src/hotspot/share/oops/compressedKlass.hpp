@@ -31,6 +31,69 @@
 class outputStream;
 class Klass;
 
+// Narrow Klass Encoding
+//
+// Klass Range:
+//  a contiguous memory range into which we place Klass that should be encodable. Not every Klass
+//  needs to be encodable. There is only one such memory range.
+//  If CDS is disabled, this Klass Range is the same as the metaspace class space. If CDS is enabled, the
+//  Klass Range contains both CDS and class space adjacent to each other (with a potential small
+//  unused alignment gap between them).
+//
+// Encoding Range:
+//  This is the range covered by the current encoding scheme. The encoding scheme is defined by
+//  the encoding base, encoding shift and (implicitly) the bit size of the narrowKlass. The
+//  Encoding Range is:
+//   [ <encoding base> ... <encoding base> + (1 << (<narrowKlass-bitsize> + <shift>) )
+//
+// Note that while the Klass Range must be contained within the Encoding Range, the Encoding Range
+// is typically a lot larger than the Klass Range:
+//  - the encoding base can start before the Klass Range start (specifically, it can start at 0 for
+//    zero-based encoding)
+//  - the end of the Encoding Range usually extends far beyond the end of the Klass Range.
+//
+//
+// Examples:
+//
+// "unscaled" (zero-based zero-shift) encoding, CDS off, class space of 1G starts at 0x4B00_0000:
+// - Encoding Range: [0             .. 0x1_0000_0000 ) (4 GB)
+// - Klass Range:    [0x4B00_0000   .. 0x  8B00_0000 ) (1 GB)
+//
+//
+// _base        _klass_range_start              _klass_range_end             encoding end
+//   |                |//////////////////////////////|                             |
+//   |   ...          |///////1gb class space////////|               ...           |
+//   |                |//////////////////////////////|                             |
+//  0x0         0x4B00_0000                   0x8B00_0000                    0x1_0000_0000
+//
+//
+//
+// "zero-based" (but scaled) encoding, shift=3, CDS off, 1G Class space at 0x7_C000_0000 (31GB):
+// - Encoding Range: [0             .. 0x8_0000_0000 ) (32 GB)
+// - Klass Range:    [0x7_C000_0000 .. 0x8_0000_0000 ) (1 GB)
+//
+//                                                                  encoding end
+// _base                            _klass_range_start              _klass_range_end
+//   |                                   |//////////////////////////////|
+//   |   ...                             |///////1gb class space////////|
+//   |                                   |//////////////////////////////|
+//  0x0                            0x7_C000_0000                  0x8_0000_0000
+//
+//
+// CDS enabled, 128MB CDS region starts 0x8_0000_0000, followed by a 1GB class space. Encoding
+// base will point to CDS region start, shift=0:
+// - Encoding Range: [0x8_0000_0000 .. 0x9_0000_0000 ) (4 GB)
+// - Klass Range:    [0x8_0000_0000 .. 0x8_4800_0000 ) (128 MB + 1 GB)
+//
+//  _base
+// _klass_range_start                   _klass_range_end                        encoding end
+//   |//////////|///////////////////////////|                                         |
+//   |///CDS////|////1gb class space////////|            ...    ...                   |
+//   |//////////|///////////////////////////|                                         |
+//   |                                      |                                         |
+// 0x8_0000_0000                      0x8_4800_0000                            0x9_0000_0000
+//
+
 // If compressed klass pointers then use narrowKlass.
 typedef juint  narrowKlass;
 
@@ -50,12 +113,10 @@ class CompressedKlassPointers : public AllStatic {
   static address _base;
   static int _shift;
 
-  // Together with base, this defines the address range within which Klass
-  //  structures will be located: [base, base+range). While the maximal
-  //  possible encoding range is 4|32G for shift 0|3, if we know beforehand
-  //  the expected range of Klass* pointers will be smaller, a platform
-  //  could use this info to optimize encoding.
-  static size_t _range;
+  // Start and end of the Klass Range.
+  // Note: guaranteed to be aligned to KlassAlignmentInBytes
+  static address _klass_range_start;
+  static address _klass_range_end;
 
   // Helper function for common cases.
   static char* reserve_address_space_X(uintptr_t from, uintptr_t to, size_t size, size_t alignment, bool aslr);
@@ -92,8 +153,12 @@ public:
   static void     print_mode(outputStream* st);
 
   static address  base()               { return  _base; }
-  static size_t   range()              { return  _range; }
   static int      shift()              { return  _shift; }
+
+  static address  klass_range_start()  { return  _klass_range_start; }
+  static address  klass_range_end()    { return  _klass_range_end; }
+
+  static inline address encoding_range_end();
 
   static bool is_null(Klass* v)      { return v == nullptr; }
   static bool is_null(narrowKlass v) { return v == 0; }
@@ -110,14 +175,9 @@ public:
 
   // Returns whether the pointer is in the memory region used for encoding compressed
   // class pointers.  This includes CDS.
-
-  // encoding                                                               encoding
-  // base                                                                   end (base+range)
-  // |-----------------------------------------------------------------------|
-  // |----CDS---| |--------------------class space---------------------------|
-
-  static inline bool is_in_encoding_range(const void* p) {
-    return p >= _base && p < (_base + _range);
+  static inline bool is_encodable(const void* p) {
+    return (address) p >= _klass_range_start &&
+           (address) p < _klass_range_end;
   }
 };
 

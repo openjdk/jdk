@@ -1360,6 +1360,24 @@ DivModNode::DivModNode( Node *c, Node *dividend, Node *divisor ) : MultiNode(3) 
   init_req(2, divisor);
 }
 
+DivModNode* DivModNode::make(Node* div_or_mod, BasicType bt, bool is_unsigned) {
+  assert(bt == T_INT || bt == T_LONG, "only int or long input pattern accepted");
+
+  if (bt == T_INT) {
+    if (is_unsigned) {
+      return UDivModINode::make(div_or_mod);
+    } else {
+      return DivModINode::make(div_or_mod);
+    }
+  } else {
+    if (is_unsigned) {
+      return UDivModLNode::make(div_or_mod);
+    } else {
+      return DivModLNode::make(div_or_mod);
+    }
+  }
+}
+
 //------------------------------make------------------------------------------
 DivModINode* DivModINode::make(Node* div_or_mod) {
   Node* n = div_or_mod;
