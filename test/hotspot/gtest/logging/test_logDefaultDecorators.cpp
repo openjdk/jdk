@@ -45,53 +45,53 @@ class TestLogDecorators : public testing::Test {
 public:
   void test_default_decorators() {
     LogTagType tags[LogTag::MaxTags] = { LogTag::__NO_TAG, LogTag::__NO_TAG, LogTag::__NO_TAG, LogTag::__NO_TAG, LogTag::__NO_TAG };
-    uint out_mask;
+    uint out_mask = 0;
 
 
     // Log selection with matching tag exactly should find default
     tags[0] = LogTagType::_jit;
-    bool result = LD::has_default_decorator(LogSelection(tags, false, LogLevelType::Trace), &out_mask, defaults, defaults_cnt);
-    EXPECT_TRUE(result);
+    LD::get_default_decorators(LogSelection(tags, false, LogLevelType::Trace), &out_mask, defaults, defaults_cnt);
     EXPECT_EQ(LD::mask_from_decorators(LD::NoDecorators), out_mask);
 
 
     // Wildcards are ignored
-    tags[0] = LogTag::__NO_TAG;
-    result = LD::has_default_decorator(LogSelection(tags, true, LogLevelType::Trace), &out_mask, defaults, defaults_cnt);
-    EXPECT_FALSE(result);
+    tags[0] = LogTag::_compilation;
+    out_mask = 0;
+    LD::get_default_decorators(LogSelection(tags, true, LogLevelType::Debug), &out_mask, defaults, defaults_cnt);
+    EXPECT_EQ(LD::mask_from_decorators(LD::pid_decorator), out_mask);
 
 
     // If several defaults match with the same specificity, all defaults are applied
     tags[0] = LogTagType::_gc;
-    result = LD::has_default_decorator(LogSelection(tags, false, LogLevelType::Trace), &out_mask, defaults, defaults_cnt);
-    EXPECT_TRUE(result);
+    out_mask = 0;
+    LD::get_default_decorators(LogSelection(tags, false, LogLevelType::Trace), &out_mask, defaults, defaults_cnt);
     EXPECT_EQ(LD::mask_from_decorators(LD::pid_decorator, LD::time_decorator), out_mask);
 
 
     // If several defaults match but one has higher specificity, only its defaults are applied
     tags[0] = LogTagType::_compilation;
     tags[1] = LogTagType::_codecache;
-    result = LD::has_default_decorator(LogSelection(tags, false, LogLevelType::Debug), &out_mask, defaults, defaults_cnt);
-    EXPECT_TRUE(result);
+    out_mask = 0;
+    LD::get_default_decorators(LogSelection(tags, false, LogLevelType::Debug), &out_mask, defaults, defaults_cnt);
     EXPECT_EQ(LD::mask_from_decorators(LD::uptimemillis_decorator), out_mask);
 
 
     // If a level is not specified to match (via AnyTag or NotMentioned), it should not be taken into account
     tags[0] = LogTagType::_ref;
     tags[1] = LogTagType::__NO_TAG;
-    result = LD::has_default_decorator(LogSelection(tags, false, LogLevelType::Info), &out_mask, defaults, defaults_cnt);
-    EXPECT_TRUE(result);
+    out_mask = 0;
+    LD::get_default_decorators(LogSelection(tags, false, LogLevelType::Info), &out_mask, defaults, defaults_cnt);
     EXPECT_EQ(LD::mask_from_decorators(LD::pid_decorator, LD::tid_decorator), out_mask);
-    result = LD::has_default_decorator(LogSelection(tags, false, LogLevelType::Trace), &out_mask, defaults, defaults_cnt);
-    EXPECT_TRUE(result);
+    out_mask = 0;
+    LD::get_default_decorators(LogSelection(tags, false, LogLevelType::Trace), &out_mask, defaults, defaults_cnt);
     EXPECT_EQ(LD::mask_from_decorators(LD::pid_decorator, LD::tid_decorator), out_mask);
 
 
     // In spite of the previous, higher specificities should still prevail
     defaults[5] = { LogLevelType::Debug, LD::mask_from_decorators(LD::uptimemillis_decorator), LogTagType::_ref, LogTagType::_codecache };
     tags[1] = LogTagType::_codecache;
-    result = LD::has_default_decorator(LogSelection(tags, false, LogLevelType::Debug), &out_mask, defaults, defaults_cnt);
-    EXPECT_TRUE(result);
+    out_mask = 0;
+    LD::get_default_decorators(LogSelection(tags, false, LogLevelType::Debug), &out_mask, defaults, defaults_cnt);
     EXPECT_EQ(LD::mask_from_decorators(LD::uptimemillis_decorator), out_mask);
   }
 
