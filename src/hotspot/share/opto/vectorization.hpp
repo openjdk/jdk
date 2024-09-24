@@ -312,37 +312,6 @@ private:
 };
 
 // Submodule of VLoopAnalyzer.
-// Find the memory slices in the loop.
-class VLoopMemorySlices : public StackObj {
-private:
-  const VLoop& _vloop;
-
-  GrowableArray<PhiNode*> _heads;
-  GrowableArray<MemNode*> _tails;
-
-public:
-  VLoopMemorySlices(Arena* arena, const VLoop& vloop) :
-    _vloop(vloop),
-    _heads(arena, 8, 0, nullptr),
-    _tails(arena, 8, 0, nullptr) {};
-  NONCOPYABLE(VLoopMemorySlices);
-
-  void find_memory_slices();
-
-  const GrowableArray<PhiNode*>& heads() const { return _heads; }
-  const GrowableArray<MemNode*>& tails() const { return _tails; }
-
-  // Get all memory nodes of a slice, in reverse order
-  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
-
-  bool same_memory_slice(MemNode* m1, MemNode* m2) const;
-
-#ifndef PRODUCT
-  void print() const;
-#endif
-};
-
-// Submodule of VLoopAnalyzer.
 // Finds all nodes in the body, and creates a mapping node->_idx to a body_idx.
 // This mapping is used so that subsequent datastructures sizes only grow with
 // the body size, and not the number of all nodes in the compilation.
@@ -391,6 +360,43 @@ private:
   void set_bb_idx(Node* n, int i) {
     _body_idx.at_put_grow(n->_idx, i);
   }
+};
+
+// Submodule of VLoopAnalyzer.
+// Find the memory slices in the loop.
+class VLoopMemorySlices : public StackObj {
+private:
+  const VLoop&     _vloop;
+  const VLoopBody& _body;
+
+  GrowableArray<Node*>    _inputs;
+  GrowableArray<PhiNode*> _heads;
+
+public:
+  VLoopMemorySlices(Arena* arena, const VLoop& vloop, const VLoopBody& body) :
+    _vloop(vloop),
+    _body(body),
+    _inputs(arena, num_slices(), num_slices(), nullptr),
+    _heads(arena, num_slices(), num_slices(), nullptr) {}
+  NONCOPYABLE(VLoopMemorySlices);
+
+  void find_memory_slices();
+
+  const GrowableArray<PhiNode*>& heads() const { return _heads; }
+
+  // Get all memory nodes of a slice, in reverse order
+  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
+
+  bool same_memory_slice(MemNode* m1, MemNode* m2) const;
+
+private:
+#ifndef PRODUCT
+  void print() const;
+#endif
+
+  int num_slices() const { return _vloop.phase()->C->num_alias_types(); }
+  void add_phi(PhiNode* phi);
+  void add_load(LoadNode* load);
 };
 
 // Submodule of VLoopAnalyzer.
@@ -648,8 +654,8 @@ private:
 
   // Submodules
   VLoopReductions      _reductions;
-  VLoopMemorySlices    _memory_slices;
   VLoopBody            _body;
+  VLoopMemorySlices    _memory_slices;
   VLoopTypes           _types;
   VLoopVPointers       _vpointers;
   VLoopDependencyGraph _dependency_graph;
@@ -660,8 +666,8 @@ public:
     _arena(mtCompiler),
     _success(false),
     _reductions      (&_arena, vloop),
-    _memory_slices   (&_arena, vloop),
     _body            (&_arena, vloop, vshared),
+    _memory_slices   (&_arena, vloop, _body),
     _types           (&_arena, vloop, _body),
     _vpointers       (&_arena, vloop, _body),
     _dependency_graph(&_arena, vloop, _body, _memory_slices, _vpointers)

@@ -604,39 +604,9 @@ void SuperWord::create_adjacent_memop_pairs_in_one_group(const GrowableArray<con
   }
 }
 
-void VLoopMemorySlices::find_memory_slices() {
-  assert(_heads.is_empty(), "not yet computed");
-  assert(_tails.is_empty(), "not yet computed");
-  CountedLoopNode* cl = _vloop.cl();
-
-  // Iterate over all memory phis
-  for (DUIterator_Fast imax, i = cl->fast_outs(imax); i < imax; i++) {
-    PhiNode* phi = cl->fast_out(i)->isa_Phi();
-    if (phi != nullptr && _vloop.in_bb(phi) && phi->is_memory_phi()) {
-      Node* phi_tail = phi->in(LoopNode::LoopBackControl);
-      if (phi_tail != phi->in(LoopNode::EntryControl)) {
-        _heads.push(phi);
-        _tails.push(phi_tail->as_Mem());
-      }
-    }
-  }
-
-  NOT_PRODUCT( if (_vloop.is_trace_memory_slices()) { print(); } )
-}
-
-#ifndef PRODUCT
-void VLoopMemorySlices::print() const {
-  tty->print_cr("\nVLoopMemorySlices::print: %s",
-                heads().length() > 0 ? "" : "NONE");
-  for (int m = 0; m < heads().length(); m++) {
-    tty->print("%6d ", m);  heads().at(m)->dump();
-    tty->print("       ");  tails().at(m)->dump();
-  }
-}
-#endif
-
 // Get all memory nodes of a slice, in reverse order
 void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*> &slice) const {
+  assert(head != nullptr && tail != nullptr, "must be slice with memory state loop");
   assert(slice.is_empty(), "start empty");
   Node* n = tail;
   Node* prev = nullptr;
@@ -1920,7 +1890,7 @@ void VTransformGraph::apply_memops_reordering_with_schedule() const {
   // (1) Set up the initial memory state from Phi. And find the old last store.
   for (int i = 0; i < mem_slice_head.length(); i++) {
     Node* phi  = mem_slice_head.at(i);
-    assert(phi->is_Phi(), "must be phi");
+    if (phi == nullptr) { continue; }
     int alias_idx = phase()->C->get_alias_index(phi->adr_type());
     current_state_in_slice.at_put(alias_idx, phi);
 
@@ -1955,6 +1925,7 @@ void VTransformGraph::apply_memops_reordering_with_schedule() const {
   GrowableArray<Node*> uses_after_loop;
   for (int i = 0; i < mem_slice_head.length(); i++) {
     Node* phi  = mem_slice_head.at(i);
+    if (phi == nullptr) { continue; }
     int alias_idx = phase()->C->get_alias_index(phi->adr_type());
     Node* current_state = current_state_in_slice.at(alias_idx);
     assert(current_state != nullptr, "slice is mapped");
