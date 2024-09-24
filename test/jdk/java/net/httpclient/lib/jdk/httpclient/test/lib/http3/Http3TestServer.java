@@ -149,6 +149,14 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
         return this.serverAddr;
     }
 
+    public String serverAuthority() {
+        final InetSocketAddress inetSockAddr = getAddress();
+        final String hostIP = inetSockAddr.getAddress().getHostAddress();
+        // escape for ipv6
+        final String h = hostIP.contains(":") ? "[" + hostIP + "]" : hostIP;
+        return h + ":" + inetSockAddr.getPort();
+    }
+
     public void addHandler(final String path, final ThrowingConsumer<Http2TestExchange, IOException> handler) {
         if (this.handlerProvider != null) {
             throw new IllegalStateException("Cannot add handler to H3 server which uses a handler provider");

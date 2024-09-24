@@ -765,11 +765,17 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         try {
             if (!response_cfs.isEmpty()) {
                 // This CompletableFuture was created by completeResponse().
-                // it will be already completed.
-                cf = response_cfs.remove(0);
+                // it will be already completed, unless the expect continue
+                // timeout fired
+                cf = response_cfs.get(0);
+                if (cf.isDone()) {
+                    cf = response_cfs.remove(0);
+                }
+
                 // if we find a cf here it should be already completed.
                 // finding a non completed cf should not happen. just assert it.
-                assert cf.isDone() : "Removing uncompleted response: could cause code to hang!";
+                assert cf.isDone() || request.expectContinue && expectTimeoutRaised()
+                        : "Removing uncompleted response: could cause code to hang!";
             } else {
                 // getResponseAsync() is called first. Create a CompletableFuture
                 // that will be completed by completeResponse() when
@@ -808,7 +814,7 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
             int cfs_len = response_cfs.size();
             for (int i = 0; i < cfs_len; i++) {
                 cf = response_cfs.get(i);
-                if (!cf.isDone()) {
+                if (!cf.isDone() && !expectTimeoutRaised()) {
                     if (Log.trace()) {
                         Log.logTrace("Completing response (streamid={0}): {1}",
                                 streamId(), cf);
@@ -816,6 +822,14 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
                     if (debug.on())
                         debug.log("Completing responseCF(%d) with response headers", i);
                     response_cfs.remove(cf);
+                    cf.complete(resp);
+                    return;
+                } else if (expectTimeoutRaised()) {
+                    Log.logTrace("Completing response (streamid={0}): {1}",
+                            streamId(), cf);
+                    if (debug.on())
+                        debug.log("Completing responseCF(%d) with response headers", i);
+                    // The Request will be removed in getResponseAsync()
                     cf.complete(resp);
                     return;
                 } // else we found the previous response: just leave it alone.
