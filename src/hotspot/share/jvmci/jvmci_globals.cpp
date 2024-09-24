@@ -80,14 +80,6 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   CHECK_NOT_SET(JVMCIHostThreads,             UseJVMCICompiler)
   CHECK_NOT_SET(LibJVMCICompilerThreadHidden, UseJVMCICompiler)
 
-  if ((UseJVMCICompiler || EnableJVMCI) &&
-      FLAG_IS_DEFAULT(UseJVMCINativeLibrary) &&
-      !UseJVMCINativeLibrary && JVMCI::shared_library_exists()) {
-      // If a JVMCI native library is present,
-      // we enable UseJVMCINativeLibrary by default.
-      FLAG_SET_DEFAULT(UseJVMCINativeLibrary, true);
-  }
-
   if (UseJVMCICompiler) {
     if (!FLAG_IS_DEFAULT(EnableJVMCI) && !EnableJVMCI) {
       jio_fprintf(defaultStream::error_stream(),
@@ -95,6 +87,19 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
       return false;
     }
     FLAG_SET_DEFAULT(EnableJVMCI, true);
+  }
+
+  if (EnableJVMCI) {
+    if (FLAG_IS_DEFAULT(UseJVMCINativeLibrary) && !UseJVMCINativeLibrary) {
+      if (JVMCI::shared_library_exists()) {
+        // If a JVMCI native library is present,
+        // we enable UseJVMCINativeLibrary by default.
+        FLAG_SET_DEFAULT(UseJVMCINativeLibrary, true);
+      }
+    }
+  }
+
+  if (UseJVMCICompiler) {
     if (BootstrapJVMCI && UseJVMCINativeLibrary) {
       jio_fprintf(defaultStream::error_stream(), "-XX:+BootstrapJVMCI is not compatible with -XX:+UseJVMCINativeLibrary\n");
       return false;

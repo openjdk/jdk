@@ -143,13 +143,13 @@ class HeapShared: AllStatic {
   friend class VerifySharedOopClosure;
 
 public:
-  // Can this VM write a heap region into the CDS archive? Currently only G1+compressed{oops,cp}
+  // Can this VM write a heap region into the CDS archive? Currently only {G1|Parallel|Serial}+compressed_cp
   static bool can_write() {
     CDS_JAVA_HEAP_ONLY(
       if (_disable_writing) {
         return false;
       }
-      return (UseG1GC && UseCompressedClassPointers);
+      return (UseG1GC || UseParallelGC || UseSerialGC) && UseCompressedClassPointers;
     )
     NOT_CDS_JAVA_HEAP(return false;)
   }
@@ -290,7 +290,9 @@ private:
   static KlassSubGraphInfo* _default_subgraph_info;
 
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
-  static OopHandle _roots;
+  static GrowableArrayCHeap<OopHandle, mtClassShared>* _root_segments;
+  static int _root_segment_max_size_shift;
+  static int _root_segment_max_size_mask;
   static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
   static MetaspaceObjToOopHandleTable* _scratch_java_mirror_table;
   static MetaspaceObjToOopHandleTable* _scratch_references_table;
@@ -399,7 +401,7 @@ private:
   static GrowableArrayCHeap<oop, mtClassShared>* pending_roots() { return _pending_roots; }
 
   // Dump-time and runtime
-  static objArrayOop roots();
+  static objArrayOop root_segment(int segment_idx);
   static oop get_root(int index, bool clear=false);
 
   // Run-time only
@@ -422,7 +424,8 @@ private:
 
   static void init_for_dumping(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
-  static void init_roots(oop roots_oop) NOT_CDS_JAVA_HEAP_RETURN;
+  static void add_root_segment(objArrayOop segment_oop) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_root_segment_sizes(int max_size) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_tables(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 
 #ifndef PRODUCT

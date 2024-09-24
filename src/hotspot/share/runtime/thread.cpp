@@ -64,7 +64,7 @@ THREAD_LOCAL Thread* Thread::_thr_current = nullptr;
 
 DEBUG_ONLY(Thread* Thread::_starting_thread = nullptr;)
 
-Thread::Thread(MEMFLAGS flags) {
+Thread::Thread(MemTag mem_tag) {
 
   DEBUG_ONLY(_run_state = PRE_CALL_RUN;)
 
@@ -78,9 +78,9 @@ Thread::Thread(MEMFLAGS flags) {
 
   // allocated data structures
   set_osthread(nullptr);
-  set_resource_area(new (flags) ResourceArea(flags));
+  set_resource_area(new (mem_tag) ResourceArea(mem_tag));
   DEBUG_ONLY(_current_resource_mark = nullptr;)
-  set_handle_area(new (flags) HandleArea(flags, nullptr));
+  set_handle_area(new (mem_tag) HandleArea(mem_tag, nullptr));
   set_metadata_handles(new (mtClass) GrowableArray<Metadata*>(30, mtClass));
   set_last_handle_mark(nullptr);
   DEBUG_ONLY(_missed_ic_stub_refill_verifier = nullptr);
