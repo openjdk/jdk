@@ -245,15 +245,31 @@ public final class Http3PushManager {
     }
 
     /**
-     * {@return the maximum pushId that can be accepted from the server}
+     * {@return the maximum pushId that can be accepted from the peer}
+     * This corresponds to the pushId that has been included in the last
+     * MAX_PUSH_ID frame sent to the peer. A pushId greater than this
+     * value must be rejected, and cause the connection to close with
+     * error.
+     *
+     * @apiNote due to internal constraints it is possible that the
+     * MAX_PUSH_ID frame has not been sent yet, but the {@code Http3PushManager}
+     * will behave as if the peer had received that frame.
+     *
+     * @see Http3Connection#checkMaxPushId(long)
+     * @see #checkMaxPushId(long)
      */
     long getMaxPushId() {
         return maxPushId.get();
     }
 
     /**
-     * {@return the minimum pushId that can be accepted from the server}
-     * Any pushId strictly less than this value should be ignored
+     * {@return the minimum pushId that can be accepted from the peer}
+     * Any pushId strictly less than this value must be ignored.
+     *
+     * @apiNote The minimum pushId represents the smallest pushId that
+     * was recorded in our history. For smaller pushId, no history has
+     * been kept, due to history size constraints. Any pushId strictly
+     * less than this value must be ignored.
      */
     long getMinPushId() {
         return minPushId.get();

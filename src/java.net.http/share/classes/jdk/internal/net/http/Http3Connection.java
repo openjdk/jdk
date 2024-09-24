@@ -1669,6 +1669,15 @@ public final class Http3Connection implements AutoCloseable {
         return null;
     }
 
+    /**
+     * {@return the minimum pushId that can be accepted from the peer}
+     * Any pushId strictly less than this value must be ignored.
+     *
+     * @apiNote The minimum pushId represents the smallest pushId that
+     * was recorded in our history. For smaller pushId, no history has
+     * been kept, due to history size constraints. Any pushId strictly
+     * less than this value must be ignored.
+     */
     public long getMinPushId() {
         return pushManager.getMinPushId();
     }
