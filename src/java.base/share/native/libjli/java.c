@@ -34,20 +34,15 @@
 
 /*
  * One job of the launcher is to remove command line options which the
- * vm does not understand and will not process.  These options include
+ * vm does not understand and will not process. These options include
  * options which select which style of vm is run (e.g. -client and
- * -server) as well as options which select the data model to use.
+ * -server).
  * Additionally, for tools which invoke an underlying vm "-J-foo"
  * options are turned into "-foo" options to the vm.  This option
  * filtering is handled in a number of places in the launcher, some of
  * it in machine-dependent code.  In this file, the function
  * CheckJvmType removes vm style options and TranslateApplicationArgs
- * removes "-J" prefixes.  The CreateExecutionEnvironment function processes
- * and removes -d<n> options. On unix, there is a possibility that the running
- * data model may not match to the desired data model, in this case an exec is
- * required to start the desired model. If the data models match, then
- * ParseArguments will remove the -d<n> flags. If the data models do not match
- * the CreateExecutionEnviroment will remove the -d<n> flags.
+ * removes "-J" prefixes.
  */
 
 
@@ -55,11 +50,12 @@
 
 #include "java.h"
 #include "jni.h"
+#include "stdbool.h"
 
 /*
  * A NOTE TO DEVELOPERS: For performance reasons it is important that
- * the program image remain relatively small until after SelectVersion
- * CreateExecutionEnvironment have finished their possibly recursive
+ * the program image remain relatively small until after
+ * CreateExecutionEnvironment has finished its possibly recursive
  * processing. Watch everything, but resist all temptations to use Java
  * interfaces.
  */
@@ -88,10 +84,10 @@ static jboolean _wc_enabled = JNI_FALSE;
 static jboolean dumpSharedSpaces = JNI_FALSE; /* -Xshare:dump */
 
 /*
- * Entries for splash screen environment variables.
- * putenv is performed in SelectVersion. We need
- * them in memory until UnsetEnv, so they are made static
- * global instead of auto local.
+ * Values that will be stored into splash screen environment variables.
+ * putenv is performed to set _JAVA_SPLASH_FILE and _JAVA_SPLASH_JAR
+ * with these values. We need them in memory until UnsetEnv in
+ * ShowSplashScreen, so they are made static global instead of auto local.
  */
 static char* splash_file_entry = NULL;
 static char* splash_jar_entry = NULL;
@@ -110,14 +106,14 @@ static jboolean IsJavaArgs();
 static void SetJavaLauncherProp();
 static void SetClassPath(const char *s);
 static void SetMainModule(const char *s);
-static void SelectVersion(int argc, char **argv, char **main_class);
 static jboolean ParseArguments(int *pargc, char ***pargv,
                                int *pmode, char **pwhat,
-                               int *pret, const char *jrepath);
+                               int *pret);
 static jboolean InitializeJVM(JavaVM **pvm, JNIEnv **penv,
                               InvocationFunctions *ifn);
 static jstring NewPlatformString(JNIEnv *env, char *s);
 static jclass LoadMainClass(JNIEnv *env, int mode, char *name);
+static void SetupSplashScreenEnvVars(const char *splash_file_path, char *jar_path);
 static jclass GetApplicationClass(JNIEnv *env);
 
 static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***pargv);
@@ -240,7 +236,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 {
     int mode = LM_UNKNOWN;
     char *what = NULL;
-    char *main_class = NULL;
     int ret;
     InvocationFunctions ifn;
     jlong start = 0, end = 0;
@@ -257,6 +252,10 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     InitLauncher(javaw);
     DumpState();
     if (JLI_IsTraceLauncher()) {
+        char *env_in;
+        if ((env_in = getenv(MAIN_CLASS_ENV_ENTRY)) != NULL) {
+            printf("Launched through Multiple JRE (mJRE) support\n");
+        }
         int i;
         printf("Java args:\n");
         for (i = 0; i < jargc ; i++) {
@@ -268,18 +267,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         }
         AddOption("-Dsun.java.launcher.diag=true", NULL);
     }
-
-    /*
-     * SelectVersion() has several responsibilities:
-     *
-     *  1) Disallow specification of another JRE.  With 1.9, another
-     *     version of the JRE cannot be invoked.
-     *  2) Allow for a JRE version to invoke JDK 1.9 or later.  Since
-     *     all mJRE directives have been stripped from the request but
-     *     the pre 1.9 JRE [ 1.6 thru 1.8 ], it is as if 1.9+ has been
-     *     invoked from the command line.
-     */
-    SelectVersion(argc, argv, &main_class);
 
     CreateExecutionEnvironment(&argc, &argv,
                                jrepath, sizeof(jrepath),
@@ -323,7 +310,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     /* Parse command line options; if the return value of
      * ParseArguments is false, the program should exit.
      */
-    if (!ParseArguments(&argc, &argv, &mode, &what, &ret, jrepath)) {
+    if (!ParseArguments(&argc, &argv, &mode, &what, &ret)) {
         return(ret);
     }
 
@@ -1079,167 +1066,6 @@ SetMainModule(const char *s)
 }
 
 /*
- * The SelectVersion() routine ensures that an appropriate version of
- * the JRE is running.  The specification for the appropriate version
- * is obtained from either the manifest of a jar file (preferred) or
- * from command line options.
- * The routine also parses splash screen command line options and
- * passes on their values in private environment variables.
- */
-static void
-SelectVersion(int argc, char **argv, char **main_class)
-{
-    char    *arg;
-    char    *operand;
-    int     jarflag = 0;
-    int     headlessflag = 0;
-    manifest_info info;
-    char    *splash_file_name = NULL;
-    char    *splash_jar_name = NULL;
-    char    *env_in;
-    int     res;
-    jboolean has_arg;
-
-    /*
-     * If the version has already been selected, set *main_class
-     * with the value passed through the environment (if any) and
-     * simply return.
-     */
-
-    /*
-     * This environmental variable can be set by mJRE capable JREs
-     * [ 1.5 thru 1.8 ].  All other aspects of mJRE processing have been
-     * stripped by those JREs.  This environmental variable allows 1.9+
-     * JREs to be started by these mJRE capable JREs.
-     * Note that mJRE directives in the jar manifest file would have been
-     * ignored for a JRE started by another JRE...
-     * .. skipped for JRE 1.5 and beyond.
-     * .. not even checked for pre 1.5.
-     */
-    if ((env_in = getenv(ENV_ENTRY)) != NULL) {
-        if (*env_in != '\0')
-            *main_class = JLI_StringDup(env_in);
-        return;
-    }
-
-    /*
-     * Scan through the arguments for options relevant to multiple JRE
-     * support.  Multiple JRE support existed in JRE versions 1.5 thru 1.8.
-     *
-     * This capability is no longer available with JRE versions 1.9 and later.
-     * These command line options are reported as errors.
-     */
-
-    argc--;
-    argv++;
-    while (argc > 0 && *(arg = *argv) == '-') {
-        has_arg = IsOptionWithArgument(argc, argv);
-        if (JLI_StrCCmp(arg, "-version:") == 0) {
-            JLI_ReportErrorMessage(SPC_ERROR1);
-        } else if (JLI_StrCmp(arg, "-jre-restrict-search") == 0) {
-            JLI_ReportErrorMessage(SPC_ERROR2);
-        } else if (JLI_StrCmp(arg, "-jre-no-restrict-search") == 0) {
-            JLI_ReportErrorMessage(SPC_ERROR2);
-        } else {
-            if (JLI_StrCmp(arg, "-jar") == 0)
-                jarflag = 1;
-            if (IsWhiteSpaceOption(arg)) {
-                if (has_arg) {
-                    argc--;
-                    argv++;
-                    arg = *argv;
-                }
-            }
-
-            /*
-             * Checking for headless toolkit option in the some way as AWT does:
-             * "true" means true and any other value means false
-             */
-            if (JLI_StrCmp(arg, "-Djava.awt.headless=true") == 0) {
-                headlessflag = 1;
-            } else if (JLI_StrCCmp(arg, "-Djava.awt.headless=") == 0) {
-                headlessflag = 0;
-            } else if (JLI_StrCCmp(arg, "-splash:") == 0) {
-                splash_file_name = arg+8;
-            }
-        }
-        argc--;
-        argv++;
-    }
-    if (argc <= 0) {    /* No operand? Possibly legit with -[full]version */
-        operand = NULL;
-    } else {
-        argc--;
-        operand = *argv++;
-    }
-
-    /*
-     * If there is a jar file, read the manifest. If the jarfile can't be
-     * read, the manifest can't be read from the jar file, or the manifest
-     * is corrupt, issue the appropriate error messages and exit.
-     *
-     * Even if there isn't a jar file, construct a manifest_info structure
-     * containing the command line information.  It's a convenient way to carry
-     * this data around.
-     */
-    if (jarflag && operand) {
-        if ((res = JLI_ParseManifest(operand, &info)) != 0) {
-            if (res == -1)
-                JLI_ReportErrorMessage(JAR_ERROR2, operand);
-            else
-                JLI_ReportErrorMessage(JAR_ERROR3, operand);
-            exit(1);
-        }
-
-        /*
-         * Command line splash screen option should have precedence
-         * over the manifest, so the manifest data is used only if
-         * splash_file_name has not been initialized above during command
-         * line parsing
-         */
-        if (!headlessflag && !splash_file_name && info.splashscreen_image_file_name) {
-            splash_file_name = info.splashscreen_image_file_name;
-            splash_jar_name = operand;
-        }
-    } else {
-        info.manifest_version = NULL;
-        info.main_class = NULL;
-        info.jre_version = NULL;
-        info.jre_restrict_search = 0;
-    }
-
-    /*
-     * Passing on splash screen info in environment variables
-     */
-    if (splash_file_name && !headlessflag) {
-        splash_file_entry = JLI_MemAlloc(JLI_StrLen(SPLASH_FILE_ENV_ENTRY "=")+JLI_StrLen(splash_file_name)+1);
-        JLI_StrCpy(splash_file_entry, SPLASH_FILE_ENV_ENTRY "=");
-        JLI_StrCat(splash_file_entry, splash_file_name);
-        putenv(splash_file_entry);
-    }
-    if (splash_jar_name && !headlessflag) {
-        splash_jar_entry = JLI_MemAlloc(JLI_StrLen(SPLASH_JAR_ENV_ENTRY "=")+JLI_StrLen(splash_jar_name)+1);
-        JLI_StrCpy(splash_jar_entry, SPLASH_JAR_ENV_ENTRY "=");
-        JLI_StrCat(splash_jar_entry, splash_jar_name);
-        putenv(splash_jar_entry);
-    }
-
-
-    /*
-     * "Valid" returns (other than unrecoverable errors) follow.  Set
-     * main_class as a side-effect of this routine.
-     */
-    if (info.main_class != NULL)
-        *main_class = JLI_StringDup(info.main_class);
-
-    if (info.jre_version == NULL) {
-        JLI_FreeManifest();
-        return;
-    }
-
-}
-
-/*
  * Test if the current argv is an option, i.e. with a leading `-`
  * and followed with an argument without a leading `-`.
  */
@@ -1325,12 +1151,14 @@ GetOpt(int *pargc, char ***pargv, char **poption, char **pvalue) {
 static jboolean
 ParseArguments(int *pargc, char ***pargv,
                int *pmode, char **pwhat,
-               int *pret, const char *jrepath)
+               int *pret)
 {
     int argc = *pargc;
     char **argv = *pargv;
     int mode = LM_UNKNOWN;
     char *arg = NULL;
+    bool headless = false;
+    char *splash_file_path = NULL; // value of "-splash:" option
 
     *pret = 0;
 
@@ -1492,7 +1320,7 @@ ParseArguments(int *pargc, char ***pargv,
             snprintf(tmp, tmpSize, "-X%s", arg + 1); /* skip '-' */
             AddOption(tmp, NULL);
         } else if (JLI_StrCCmp(arg, "-splash:") == 0) {
-            ; /* Ignore machine independent options already handled */
+            splash_file_path = arg + 8;
         } else if (JLI_StrCmp(arg, "--disable-@files") == 0) {
             ; /* Ignore --disable-@files option already handled */
         } else if (ProcessPlatformOption(arg)) {
@@ -1501,6 +1329,14 @@ ParseArguments(int *pargc, char ***pargv,
             /* java.class.path set on the command line */
             if (JLI_StrCCmp(arg, "-Djava.class.path=") == 0) {
                 _have_classpath = JNI_TRUE;
+            } else if (JLI_StrCmp(arg, "-Djava.awt.headless=true") == 0) {
+                /*
+                 * Checking for headless toolkit option in the same way as AWT does:
+                 * "true" means true and any other value means false
+                 */
+                headless = true;
+            } else if (JLI_StrCCmp(arg, "-Djava.awt.headless=") == 0) {
+                headless = false;
             }
             AddOption(arg, NULL);
         }
@@ -1551,7 +1387,80 @@ ParseArguments(int *pargc, char ***pargv,
 
     *pmode = mode;
 
+    if (!headless) {
+        char *jar_path = NULL;
+        if (mode == LM_JAR) {
+            jar_path = *pwhat;
+        }
+        // Not in headless mode. We now set a couple of env variables that
+        // will be used later by ShowSplashScreen().
+        SetupSplashScreenEnvVars(splash_file_path, jar_path);
+    }
+
     return JNI_TRUE;
+}
+
+/*
+ * Sets the relevant environment variables that are subsequently used by
+ * the ShowSplashScreen() function. The splash_file_path and jar_path parameters
+ * are used to determine which environment variables to set.
+ * The splash_file_path is the value that was provided to the "-splash:" option
+ * when launching java. It may be null, which implies the "-splash:" option wasn't used.
+ * The jar_path is the value that was provided to the "-jar" option when launching java.
+ * It too may be null, which implies the "-jar" option wasn't used.
+ */
+static void
+SetupSplashScreenEnvVars(const char *splash_file_path, char *jar_path) {
+    // Command line specified "-splash:" takes priority over manifest one.
+    if (splash_file_path) {
+        // We set up the splash file name as a env variable which then gets
+        // used when showing the splash screen in ShowSplashScreen().
+
+        // create the string of the form _JAVA_SPLASH_FILE=<val>
+        splash_file_entry = JLI_MemAlloc(JLI_StrLen(SPLASH_FILE_ENV_ENTRY "=")
+                                         + JLI_StrLen(splash_file_path) + 1);
+        JLI_StrCpy(splash_file_entry, SPLASH_FILE_ENV_ENTRY "=");
+        JLI_StrCat(splash_file_entry, splash_file_path);
+        putenv(splash_file_entry);
+        return;
+    }
+    if (!jar_path) {
+        // no jar to look into for "SplashScreen-Image" manifest attribute
+        return;
+    }
+    // parse the jar's manifest to find any "SplashScreen-Image"
+    int res = 0;
+    manifest_info  info;
+    if ((res = JLI_ParseManifest(jar_path, &info)) != 0) {
+        JLI_FreeManifest(); // cleanup any manifest structure
+        if (res == -1) {
+            JLI_ReportErrorMessage(JAR_ERROR2, jar_path);
+        } else {
+            JLI_ReportErrorMessage(JAR_ERROR3, jar_path);
+        }
+        exit(1);
+    }
+    if (!info.splashscreen_image_file_name) {
+        JLI_FreeManifest(); // cleanup the manifest structure
+        // no "SplashScreen-Image" in jar's manifest
+        return;
+    }
+    // The jar's manifest had a "Splashscreen-Image" specified. We set up the jar entry name
+    // and the jar file name as env variables which then get used when showing the splash screen
+    // in ShowSplashScreen().
+
+    // create the string of the form _JAVA_SPLASH_FILE=<val>
+    splash_file_entry = JLI_MemAlloc(JLI_StrLen(SPLASH_FILE_ENV_ENTRY "=")
+                                     + JLI_StrLen(info.splashscreen_image_file_name) + 1);
+    JLI_StrCpy(splash_file_entry, SPLASH_FILE_ENV_ENTRY "=");
+    JLI_StrCat(splash_file_entry, info.splashscreen_image_file_name);
+    putenv(splash_file_entry);
+    // create the string of the form _JAVA_SPLASH_JAR=<val>
+    splash_jar_entry = JLI_MemAlloc(JLI_StrLen(SPLASH_JAR_ENV_ENTRY "=") + JLI_StrLen(jar_path) + 1);
+    JLI_StrCpy(splash_jar_entry, SPLASH_JAR_ENV_ENTRY "=");
+    JLI_StrCat(splash_jar_entry, jar_path);
+    putenv(splash_jar_entry);
+    JLI_FreeManifest(); // cleanup the manifest structure
 }
 
 /*
@@ -2340,7 +2249,7 @@ ShowSplashScreen()
      * Done with all command line processing and potential re-execs so
      * clean up the environment.
      */
-    (void)UnsetEnv(ENV_ENTRY);
+    (void)UnsetEnv(MAIN_CLASS_ENV_ENTRY);
     (void)UnsetEnv(SPLASH_FILE_ENV_ENTRY);
     (void)UnsetEnv(SPLASH_JAR_ENV_ENTRY);
 

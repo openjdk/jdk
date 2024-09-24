@@ -52,102 +52,86 @@
 #endif
 
 /*
- * Flowchart of launcher execs and options processing on unix
+ * Following is the high level flow of the launcher
+ * code residing in the common java.c and this
+ * unix specific java_md file:
  *
- * The selection of the proper vm shared library to open depends on
- * several classes of command line options, including vm "flavor"
- * options (-client, -server).
- * The vm selection options are not passed to the running
- * virtual machine; they must be screened out by the launcher.
+ *  - JLI_Launch function, which is the entry point
+ *    to the launcher, calls CreateExecutionEnvironment.
  *
- * The version specification (if any) is processed first by the
- * platform independent routine SelectVersion.  This may result in
- * the exec of the specified launcher version.
+ *  - CreateExecutionEnvironment does the following
+ *    (not necessarily in this order):
+ *      - determines the relevant JVM type that
+ *        needs to be ultimately created
+ *      - determines the path and asserts the presence
+ *        of libjava and relevant libjvm library
+ *      - removes any JVM selection options from the
+ *        arguments that were passed to the launcher
  *
- * Previously the launcher modified the LD_LIBRARY_PATH appropriately for the
- * desired data model path, regardless if data models matched or not. The
- * launcher subsequently exec'ed the desired executable, in order to make the
- * LD_LIBRARY_PATH path available, for the runtime linker.
+ *  - CreateExecutionEnvironment then determines (by calling
+ *    RequiresSetenv function) if LD_LIBRARY_PATH environment
+ *    variable needs to be set/updated.
+ *      - If LD_LIBRARY_PATH needs to be set/updated,
+ *        then CreateExecutionEnvironment exec()s
+ *        the current process with the appropriate value
+ *        for LD_LIBRARY_PATH.
+ *      - Else if LD_LIBRARY_PATH need not be set or
+ *        updated, then CreateExecutionEnvironment
+ *        returns back.
  *
- * Now, in most cases,the launcher will dlopen the target libjvm.so. All
- * required libraries are loaded by the runtime linker, using the
- * $RPATH/$ORIGIN baked into the shared libraries at compile time. Therefore,
- * in most cases, the launcher will only exec, if the data models are
- * mismatched, and will not set any environment variables, regardless of the
- * data models.
+ *  - If CreateExecutionEnvironment exec()ed the process
+ *    in the previous step, then the code control for the
+ *    process will again start from the process' entry
+ *    point and JLI_Launch is thus re-invoked and the
+ *    same above sequence of code flow repeats again.
+ *    During this "recursive" call into CreateExecutionEnvironment,
+ *    the implementation of the check for LD_LIBRARY_PATH
+ *    will realize that no further exec() is required and
+ *    the control will return back from CreateExecutionEnvironment.
  *
- * However, if the environment contains a LD_LIBRARY_PATH, this will cause the
- * launcher to inspect the LD_LIBRARY_PATH. The launcher will check
- *  a. if the LD_LIBRARY_PATH's first component is the path to the desired
- *     libjvm.so
- *  b. if any other libjvm.so is found in any of the paths.
- * If case b is true, then the launcher will set the LD_LIBRARY_PATH to the
- * desired JRE and reexec, in order to propagate the environment.
+ *  - The control returns back from CreateExecutionEnvironment
+ *    to JLI_Launch.
  *
- *  Main
- *  (incoming argv)
- *  |
- * \|/
- * CreateExecutionEnvironment
- * (determines desired data model)
- *  |
- *  |
- * \|/
- *  Have Desired Model ? --> NO --> Exit(with error)
- *  |
- *  |
- * \|/
- * YES
- *  |
- *  |
- * \|/
- * CheckJvmType
- * (removes -client, -server, etc.)
- *  |
- *  |
- * \|/
- * TranslateDashJArgs...
- * (Prepare to pass args to vm)
- *  |
- *  |
- * \|/
- * ParseArguments
- *   |
- *   |
- *  \|/
- * RequiresSetenv
- * Is LD_LIBRARY_PATH
- * and friends set ? --> NO --> Continue
- *  YES
- *   |
- *   |
- *  \|/
- * Path is desired JRE ? YES --> Continue
- *  NO
- *   |
- *   |
- *  \|/
- * Paths have well known
- * jvm paths ?       --> NO --> Error/Exit
- *  YES
- *   |
- *   |
- *  \|/
- *  Does libjvm.so exist
- *  in any of them ? --> NO  --> Continue
- *   YES
- *   |
- *   |
- *  \|/
- *  Set the LD_LIBRARY_PATH
- *   |
- *   |
- *  \|/
- * Re-exec
- *   |
- *   |
- *  \|/
- * Main
+ *  - JLI_Launch then invokes LoadJavaVM which dlopen()s
+ *    the JVM library and asserts the presence of
+ *    JNI Invocation Functions "JNI_CreateJavaVM",
+ *    "JNI_GetDefaultJavaVMInitArgs" and
+ *    "JNI_GetCreatedJavaVMs" in that library. It then
+ *    sets internal function pointers in the launcher to
+ *    point to those functions.
+ *
+ *  - JLI_Launch then translates any -J options by
+ *    invoking TranslateApplicationArgs.
+ *
+ *  - JLI_Launch then invokes ParseArguments to
+ *    parse/process the launcher arguments.
+ *
+ *  - JLI_Launch then ultimately calls JVMInit.
+ *
+ *  - JVMInit invokes ShowSplashScreen which displays
+ *    a splash screen for the application, if applicable.
+ *
+ *  - JVMInit then creates a new thread (T2), in the
+ *    current process, and invokes JavaMain function
+ *    in that new thread. The current thread (T1) then
+ *    waits for the newly launched thread (T2) to complete.
+ *
+ *  - JavaMain function, in thread T2, before launching
+ *    the application, invokes PostJVMInit.
+ *
+ *  - PostJVMInit is a no-op and returns back.
+ *
+ *  - Control then returns back from PostJVMInit into JavaMain,
+ *    which then loads the application's main class and invokes
+ *    the relevant main() Java method.
+ *
+ *  - JavaMain, in thread T2, then returns back an integer
+ *    result and thread T2 execution ends here.
+ *
+ *  - The thread T1 in JVMInit, which is waiting on T2 to
+ *    complete, receives the integer result and then propagates
+ *    it as a return value all the way out of the
+ *    JLI_Launch function.
  */
 
 /* Store the name of the executable once computed */
@@ -221,7 +205,7 @@ ContainsLibJVM(const char *env) {
 }
 
 /*
- * Test whether the environment variable needs to be set, see flowchart.
+ * Test whether the LD_LIBRARY_PATH environment variable needs to be set.
  */
 static jboolean
 RequiresSetenv(const char *jvmpath) {
