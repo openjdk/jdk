@@ -24,12 +24,18 @@
 #ifndef SHARE_GC_Z_ZINITIALIZE_HPP
 #define SHARE_GC_Z_ZINITIALIZE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/compilerWarnings.hpp"
 
 class ZBarrierSet;
 class ZErrorMessage;
 
-class ZInitialize {
+class ZInitializer {
+ public:
+  ZInitializer(ZBarrierSet* barrier_set);
+};
+
+class ZInitialize : public AllStatic {
 private:
   static ZErrorMessage* _error_message;
   static bool           _had_error;
@@ -37,7 +43,7 @@ private:
 
   static void register_error(bool debug, const char *error);
 
-  void pd_initialize();
+  static void pd_initialize();
 
 public:
   static void error(const char* msg_format, ...) ATTRIBUTE_PRINTF(1, 2);
@@ -46,9 +52,8 @@ public:
   static bool had_error();
   static const char* error_message();
 
+  static void initialize(ZBarrierSet* barrier_set);
   static void finish();
-
-  ZInitialize(ZBarrierSet* barrier_set);
 };
 
 #endif // SHARE_GC_Z_ZINITIALIZE_HPP

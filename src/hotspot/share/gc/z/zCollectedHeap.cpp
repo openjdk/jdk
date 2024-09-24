@@ -61,7 +61,7 @@ ZCollectedHeap* ZCollectedHeap::heap() {
 
 ZCollectedHeap::ZCollectedHeap()
   : _barrier_set(),
-    _initialize(&_barrier_set),
+    _initializer(&_barrier_set),
     _heap(),
     _driver_minor(new ZDriverMinor()),
     _driver_major(new ZDriverMajor()),
@@ -79,13 +79,13 @@ const char* ZCollectedHeap::name() const {
 
 jint ZCollectedHeap::initialize() {
   if (!_heap.is_initialized()) {
-    vm_shutdown_during_initialization(_initialize.error_message());
+    vm_shutdown_during_initialization(ZInitialize::error_message());
     return JNI_ENOMEM;
   }
 
   Universe::set_verify_data(~(ZAddressHeapBase - 1) | 0x7, ZAddressHeapBase);
 
-  _initialize.finish();
+  ZInitialize::finish();
 
   return JNI_OK;
 }

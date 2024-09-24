@@ -47,7 +47,11 @@ ZErrorMessage* ZInitialize::_error_message = nullptr;
 bool           ZInitialize::_had_error     = false;
 bool           ZInitialize::_finished      = false;
 
-ZInitialize::ZInitialize(ZBarrierSet* barrier_set) {
+ZInitializer::ZInitializer(ZBarrierSet* barrier_set) {
+  ZInitialize::initialize(barrier_set);
+}
+
+void ZInitialize::initialize(ZBarrierSet* barrier_set) {
   log_info(gc, init)("Initializing %s", ZName);
   log_info(gc, init)("Version: %s (%s)",
                      VM_Version::vm_release(),
