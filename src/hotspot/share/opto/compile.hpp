@@ -358,7 +358,6 @@ class Compile : public Phase {
   bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
   int                   _loop_opts_cnt;         // loop opts round
   uint                  _stress_seed;           // Seed for stress testing
-  bool                  _stress_seed_is_initialized; // True if _stress_seed has been set
 
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
