@@ -100,11 +100,11 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * @throws NullPointerException if the entry name is null
      * @throws IllegalArgumentException if the entry name is longer than
-     *         0xFFFF bytes
+     *         0xFFD1 bytes
      */
     public ZipEntry(String name) {
         Objects.requireNonNull(name, "name");
-        if (name.length() > 0xFFFF) {
+        if (name.length() > 0xFFD1) {
             throw new IllegalArgumentException("entry name too long");
         }
         this.name = name;
@@ -520,7 +520,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *         The extra field data bytes
      *
      * @throws IllegalArgumentException if the length of the specified
-     *         extra field data is greater than 0xFFFF bytes
+     *         extra field data is greater than 0xFFD1 bytes
      *
      * @see #getExtra()
      */
@@ -541,7 +541,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      */
     void setExtra0(byte[] extra, boolean doZIP64, boolean isLOC) {
         if (extra != null) {
-            if (extra.length > 0xFFFF) {
+            if (extra.length > 0xFFD1) {
                 throw new IllegalArgumentException("invalid extra field length");
             }
             // extra fields are in "HeaderID(2)DataSize(2)Data... format
@@ -643,9 +643,9 @@ public class ZipEntry implements ZipConstants, Cloneable {
     /**
      * Sets the optional comment string for the entry.
      *
-     * <p>ZIP entry comments have maximum length of 0xffff. If the length of the
-     * specified comment string is greater than 0xFFFF bytes after encoding, only
-     * the first 0xFFFF bytes are output to the ZIP file entry.
+     * <p>ZIP entry comments have maximum length of 0xFFD1. If the length of the
+     * specified comment string is greater than 0xFFD1 bytes after encoding, only
+     * the first 0xFFD1 bytes are output to the ZIP file entry.
      *
      * @param comment the comment string
      *
