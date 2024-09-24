@@ -31,11 +31,7 @@ import jdk.internal.constant.ArrayClassDescImpl;
 import jdk.internal.constant.PrimitiveClassDescImpl;
 import jdk.internal.constant.ReferenceClassDescImpl;
 
-import static jdk.internal.constant.ConstantUtils.binaryToInternal;
-import static jdk.internal.constant.ConstantUtils.forPrimitiveType;
-import static jdk.internal.constant.ConstantUtils.validateBinaryClassName;
-import static jdk.internal.constant.ConstantUtils.validateInternalClassName;
-import static jdk.internal.constant.ConstantUtils.validateMemberName;
+import static jdk.internal.constant.ConstantUtils.*;
 
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
@@ -289,7 +285,6 @@ public sealed interface ClassDesc
      * @return the human-readable name
      */
     String displayName();
-
 
     /**
      * Returns a field type descriptor string for this type

@@ -1066,7 +1066,7 @@ public final class StackMapGenerator {
                     locals[localsSize + 1] = Type.DOUBLE2_TYPE;
                     localsSize += 2;
                 } else {
-                    if (desc instanceof ReferenceClassDescImpl) {
+                    if (!desc.isPrimitive()) {
                         type = Type.referenceType(desc);
                     } else if (desc == CD_float) {
                         type = Type.FLOAT_TYPE;

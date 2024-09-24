@@ -101,21 +101,21 @@ public final class PrimitiveClassDescImpl
     @Override
     public ClassDesc arrayType(int rank) {
         ConstantUtils.validateArrayDepth(rank);
-        if (descriptor.charAt(0) == 'V')
+        if (this == CD_void)
             throw new IllegalArgumentException("not a valid reference type descriptor: " + "[".repeat(rank) + "V");
         return ArrayClassDescImpl.ofValidated(this, rank);
     }
 
     @Override
     public ClassDesc arrayType() {
-        if (descriptor.charAt(0) == 'V')
+        if (this == CD_void)
             throw new IllegalArgumentException("not a valid reference type descriptor: [V");
         return ArrayClassDescImpl.ofValidated(this, 1);
     }
 
     @Override
     public String displayName() {
-        return Wrapper.forBasicType(descriptorString().charAt(0)).primitiveSimpleName();
+        return wrapper().primitiveSimpleName();
     }
 
     @Override
