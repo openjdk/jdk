@@ -33,8 +33,8 @@
  * @build ResolvedConstants
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 ResolvedConstantsApp ResolvedConstantsFoo ResolvedConstantsBar
- *                 MyInterface InterfaceWithClinit
- *                 OldProvider OldClass OldConsumer
+ *                 MyInterface InterfaceWithClinit NormalClass
+ *                 OldProvider OldClass OldConsumer SubOfOldClass
  * @run driver ResolvedConstants
  */
 
@@ -65,7 +65,8 @@ public class ResolvedConstants {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
                        "-cp", appJar,
-                       "-Xlog:cds+resolve=trace");
+                       "-Xlog:cds+resolve=trace",
+                       "-Xlog:cds+class=debug");
         if (aotClassLinking) {
             opts.addPrefix("-XX:+AOTClassLinking");
         } else {
@@ -149,7 +150,9 @@ public class ResolvedConstants {
             out.shouldContain("Cannot aot-resolve Lambda proxy because OldConsumer is excluded")
                .shouldContain("Cannot aot-resolve Lambda proxy because OldProvider is excluded")
                .shouldContain("Cannot aot-resolve Lambda proxy because OldClass is excluded")
-               .shouldContain("Cannot aot-resolve Lambda proxy of interface type InterfaceWithClinit (has <cilint>)");
+               .shouldContain("Cannot aot-resolve Lambda proxy of interface type InterfaceWithClinit (has <cilint>)")
+               .shouldMatch("klasses.* app *NormalClass[$][$]Lambda/.* hidden aot-linked inited")
+               .shouldNotMatch("klasses.* app *SubOfOldClass[$][$]Lambda/");
         }
     }
 
@@ -214,11 +217,36 @@ class ResolvedConstantsApp implements Runnable {
         Consumer<String> wrapper = oldConsumer::consumeString;
         wrapper.accept("Hello");
 
-        //
+        // Lambda of interfaces that have <clinit> are not archived.
         InterfaceWithClinit i2 = () -> {
             System.out.println("Test 3");
         };
         i2.dispatch();
+
+        // These two classes have almost identical source code, but
+        // only NormalClass should have its lambdas pre-resolved.
+        // SubOfOldClass is "old" -- it should be excluded from the AOT cache,
+        // so none of its lambda proxies should be cached
+        NormalClass.testLambda();   // Lambda proxy should be cached
+        SubOfOldClass.testLambda(); // Lambda proxy shouldn't be cached
+    }
+}
+
+class NormalClass {
+    static void testLambda() {
+        Runnable r = () -> {
+            System.out.println("NormalClass testLambda");
+        };
+        r.run();
+    }
+}
+
+class SubOfOldClass extends OldClass {
+    static void testLambda() {
+        Runnable r = () -> {
+            System.out.println("SubOfOldClass testLambda");
+        };
+        r.run();
     }
 }
 

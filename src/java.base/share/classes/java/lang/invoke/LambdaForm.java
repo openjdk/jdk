@@ -1152,6 +1152,8 @@ class LambdaForm {
             return super.hashCode();
         }
 
+        // AOT cache support - there are references to this field by other cached Java objects. We need
+        // to preserve its identity across AOT cache assembly phase and production runs.
         static class AOTHolder {
             static final MethodType INVOKER_METHOD_TYPE =
                 MethodType.methodType(Object.class, MethodHandle.class, Object[].class);

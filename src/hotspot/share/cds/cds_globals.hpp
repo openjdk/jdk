@@ -111,8 +111,8 @@
           "Cache for improving start up and warm up")                       \
                                                                             \
   product(bool, AOTInvokeDynamicLinking, false, DIAGNOSTIC,                 \
-          "AOT-link JVM_CONSTANT_InvokeDynamic entries in archived "        \
-          "ConstantPools according to profile")                             \
+          "AOT-link JVM_CONSTANT_InvokeDynamic entries in cached "          \
+          "ConstantPools")                                                  \
                                                                             \
   product(bool, AOTClassLinking, false,                                     \
           "Load/link all archived classes for the boot/platform/app "       \

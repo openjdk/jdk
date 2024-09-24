@@ -46,7 +46,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
-import jdk.internal.misc.CDS;
 import jdk.internal.util.ReferencedKeySet;
 import jdk.internal.util.ReferenceKey;
 import jdk.internal.vm.annotation.Stable;
@@ -427,6 +426,9 @@ class MethodType
         return internTable.intern(mt);
     }
 
+    // AOT cache support - the identity of MethodTypes are important (their object equality are
+    // check with the == operator). We need to preserve the identity of all MethodTypes that
+    // we have created during the AOT cache assembly phase.
     static class AOTHolder {
         private static final @Stable MethodType[] objectOnlyTypes = new MethodType[20];
         private static @Stable HashMap<MethodType,MethodType> archivedMethodTypes;
@@ -1417,31 +1419,15 @@ s.writeObject(this.parameterArray());
 
         for (Iterator<MethodType> i = internTable.iterator(); i.hasNext(); ) {
             MethodType t = i.next();
-            if (canBeArchived(t)) {
-                copy.put(t, t);
-            }
+            copy.put(t, t);
         }
 
         return copy;
     }
 
-    static boolean canBeArchived(MethodType t) {
-        if (t.form == null) { // FIXME why?
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    // This is called from C code.
+    // This is called from C code, at the very end of Java code execution
+    // during the AOT cache assembly phase.
     static void createArchivedObjects() {
-        for (int i = 0; i < AOTHolder.objectOnlyTypes.length; i++) {
-            MethodType t = AOTHolder.objectOnlyTypes[i];
-            if (t != null && !canBeArchived(t)) {
-                AOTHolder.objectOnlyTypes[i] = null; // FIXME why?
-            }
-        }
-
         AOTHolder.archivedMethodTypes = copyInternTable();
     }
 }

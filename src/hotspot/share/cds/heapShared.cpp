@@ -106,7 +106,6 @@ static const ArchivedKlassSubGraphInfoRecord* _test_class_record = nullptr;
 //
 
 static ArchivableStaticFieldInfo archive_subgraph_entry_fields[] = {
-  {"java/lang/Boolean",                           "archivedCache"},
   {"java/lang/Integer$IntegerCache",              "archivedCache"},
   {"java/lang/Long$LongCache",                    "archivedCache"},
   {"java/lang/Byte$ByteCache",                    "archivedCache"},

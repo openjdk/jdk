@@ -129,7 +129,11 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
     ADD_EXCL("java/lang/invoke/MemberName$Factory",       "INSTANCE");             // D
     ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator", "MEMBERNAME_FACTORY");   // D
     ADD_EXCL("java/lang/invoke/SimpleMethodHandle",       "BMH_SPECIES");          // D
-}
+
+    // These are always the same as Boolean$AOTHolder::{TRUE,FALSE}
+    ADD_EXCL("java/lang/Boolean",                         "TRUE",                  // E
+                                                          "FALSE");                // E
+  }
 
 # undef ADD_EXCL
 
@@ -229,12 +233,18 @@ void CDSHeapVerifier::do_klass(Klass* k) {
 }
 
 void CDSHeapVerifier::add_static_obj_field(InstanceKlass* ik, oop field, Symbol* name) {
-  if (field->klass() == vmClasses::MethodType_klass() ||
-      field->klass() == vmClasses::LambdaForm_klass()) {
-    // LambdaForm and MethodType are non-modifiable and are not tested for object equality, so
-    // it's OK if the static fields are reinitialized at runtime with alternative instances.
+  if (field->klass() == vmClasses::MethodType_klass()) {
+    // The identity of MethodTypes are preserved between assembly phase and production runs
+    // (by MethodType::AOTHolder::archivedMethodTypes). No need to check.
     return;
   }
+  if (field->klass() == vmClasses::LambdaForm_klass()) {
+    // LambdaForms are non-modifiable and are not tested for object equality, so
+    // it's OK if static fields of the LambdaForm type are reinitialized at runtime with
+    // alternative instances. No need to check.
+    return;
+  }
+
   StaticFieldInfo info = {ik, name};
   _table.put(field, info);
 }

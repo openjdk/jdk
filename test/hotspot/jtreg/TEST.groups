@@ -544,11 +544,14 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/jigsaw/RedefineClassesInModuleGraph.java \
  -runtime/cds/appcds/JvmtiAddPath.java \
  -runtime/cds/appcds/jvmti \
+ -runtime/cds/appcds/LambdaProxyClasslist.java \
  -runtime/cds/appcds/loaderConstraints/LoaderConstraintsTest.java \
  -runtime/cds/appcds/redefineClass \
  -runtime/cds/appcds/resolvedConstants/ResolvedConstants.java \
  -runtime/cds/appcds/RewriteBytecodesTest.java \
  -runtime/cds/appcds/SpecifySysLoaderProp.java \
+ -runtime/cds/appcds/StaticArchiveWithLambda.java \
+ -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/TestSerialGCWithCDS.java \
  -runtime/cds/appcds/TestWithProfiler.java \
  -runtime/cds/serviceability/ReplaceCriticalClassesForSubgraphs.java \

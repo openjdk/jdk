@@ -873,7 +873,8 @@ void SystemDictionaryShared::add_lambda_proxy_class(InstanceKlass* caller_ik,
                                                     Symbol* instantiated_method_type,
                                                     TRAPS) {
   if (CDSConfig::is_dumping_invokedynamic()) {
-    // The proxy classes will be accessible through the archived CP entries.
+    // The lambda proxy classes will be stored as part of aot-resolved constant pool entries.
+    // There's no need to remember them in a separate table.
     return;
   }
 

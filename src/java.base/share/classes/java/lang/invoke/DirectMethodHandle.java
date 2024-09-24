@@ -874,6 +874,8 @@ sealed class DirectMethodHandle extends MethodHandle {
         return nf;
     }
 
+    // AOT cache support - there are references to these fields by other cached Java objects. We need
+    // to preserve their identity across AOT cache assembly phase and production runs.
     static class AOTHolder {
         private static final MethodType OBJ_OBJ_TYPE = MethodType.methodType(Object.class, Object.class);
         private static final MethodType LONG_OBJ_TYPE = MethodType.methodType(long.class, Object.class);
