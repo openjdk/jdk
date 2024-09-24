@@ -70,6 +70,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bin">ബിനി</language>
 			<language type="bkm">കോം</language>
 			<language type="bla">സിക്സിക</language>
+			<language type="blo">അനി</language>
 			<language type="bm">ബംബാറ</language>
 			<language type="bn">ബംഗ്ലാ</language>
 			<language type="bo">ടിബറ്റൻ</language>
@@ -298,6 +299,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="kv">കോമി</language>
 			<language type="kw">കോർണിഷ്</language>
 			<language type="kwk">ക്വാക്വല</language>
+			<language type="kxv">കുവി</language>
 			<language type="ky">കിർഗിസ്</language>
 			<language type="la">ലാറ്റിൻ</language>
 			<language type="lad">ലഡീനോ</language>
@@ -308,9 +310,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">ലസ്ഗിയൻ</language>
 			<language type="lg">ഗാണ്ട</language>
 			<language type="li">ലിംബർഗിഷ്</language>
+			<language type="lij">ലിഗൂറിയൻ</language>
 			<language type="lil">ലില്ലുവെറ്റ്</language>
 			<language type="lkt">ലകൗട്ട</language>
-			<language type="lmo" draft="contributed">ലൊംബാർഡ്</language>
+			<language type="lmo">ലൊംബാർഡ്</language>
 			<language type="ln">ലിംഗാല</language>
 			<language type="lo">ലാവോ</language>
 			<language type="lol">മോങ്കോ</language>
@@ -506,6 +509,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="swb">കൊമോറിയൻ</language>
 			<language type="syc">പുരാതന സുറിയാനിഭാഷ</language>
 			<language type="syr">സുറിയാനി</language>
+			<language type="szl">സൈലേഷ്യൻ</language>
 			<language type="ta">തമിഴ്</language>
 			<language type="tce">സതേൺ ടറ്റ്ഷോൺ</language>
 			<language type="te">തെലുങ്ക്</language>
@@ -555,7 +559,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="uz">ഉസ്‌ബെക്ക്</language>
 			<language type="vai">വൈ</language>
 			<language type="ve">വെന്ദ</language>
+			<language type="vec">വെനീഷ്യൻ</language>
 			<language type="vi">വിയറ്റ്നാമീസ്</language>
+			<language type="vmw">മഖുവ</language>
 			<language type="vo">വോളാപുക്</language>
 			<language type="vot">വോട്ടിക്</language>
 			<language type="vun">വുൻജോ</language>
@@ -569,6 +575,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="wuu">വു ചൈനീസ്</language>
 			<language type="xal">കാൽമിക്</language>
 			<language type="xh">ഖോസ</language>
+			<language type="xnr">കാങ്ടി</language>
 			<language type="xog">സോഗോ</language>
 			<language type="yao">യാവോ</language>
 			<language type="yap">യെപ്പീസ്</language>
@@ -930,7 +937,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ML">മാലി</territory>
 			<territory type="MM">മ്യാൻമാർ (ബർമ്മ)</territory>
 			<territory type="MN">മംഗോളിയ</territory>
-			<territory type="MO">മക്കാവു SAR ചൈന</territory>
+			<territory type="MO">മക്കാവു എസ്.എ.ആർ. ചൈന</territory>
 			<territory type="MO" alt="short">മക്കാവു</territory>
 			<territory type="MP">ഉത്തര മറിയാനാ ദ്വീപുകൾ</territory>
 			<territory type="MQ">മാർട്ടിനിക്ക്</territory>
@@ -1098,8 +1105,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="indian">ശകവർഷ കലണ്ടർ</type>
 			<type key="calendar" type="islamic">ഇസ്‌ലാമിക് കലണ്ടർ</type>
 			<type key="calendar" type="islamic-civil">ഇസ്ലാമിക് കലണ്ടർ</type>
-			<type key="calendar" type="islamic-rgsa" draft="provisional">ഇസ്ലാം-അറബിക് കലണ്ടർ</type>
-			<type key="calendar" type="islamic-tbla" draft="provisional">ഇസ്ലാം-ജ്യോതിഷ കലണ്ടർ</type>
+			<type key="calendar" type="islamic-rgsa" draft="contributed">ഇസ്ലാം-അറബിക് കലണ്ടർ</type>
+			<type key="calendar" type="islamic-tbla" draft="contributed">ഇസ്ലാം-ജ്യോതിഷ കലണ്ടർ</type>
 			<type key="calendar" type="islamic-umalqura">ഇസ്‌ലാമിക് കലണ്ടർ (ഉം അൽ ഖുറ)</type>
 			<type key="calendar" type="iso8601">ഐഎസ്ഓ 8601 കലണ്ടർ</type>
 			<type key="calendar" type="japanese">ജാപ്പനീസ് കലണ്ടർ</type>
@@ -1153,8 +1160,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="lb" type="loose">അനിയന്ത്രിത രേഖാ വിഭാജി ശൈലി</type>
 			<type key="lb" type="normal">സാധാരണ രേഖ വിഭാജി ശൈലി</type>
 			<type key="lb" type="strict">നിയന്ത്രിത രേഖ വിഭാജി ശൈലി</type>
-			<type key="m0" type="bgn">യു.എസ്. BGN ലിപ്യന്തരണം</type>
-			<type key="m0" type="ungegn">യു.എൻ. GEGN ലിപ്യന്തരണം</type>
+			<type key="m0" type="bgn">യു.എസ്. ബി.ജി.എൻ. ലിപ്യന്തരണം</type>
+			<type key="m0" type="ungegn">യു.എൻ. ജി.ഇ.ജി.എൻ. ലിപ്യന്തരണം</type>
 			<type key="ms" type="metric">മെട്രിക്ക് സംവിധാനം</type>
 			<type key="ms" type="uksystem">ബ്രിട്ടീഷ് അളക്കൽ സംവിധാനം</type>
 			<type key="ms" type="ussystem">യുഎസ് അളക്കൽ സംവിധാനം</type>
@@ -1248,10 +1255,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[അ ആ ഇ ഈ ഉ ഊ ഋ എ ഏ ഐ ഒ ഓ ഔ ക ഖ ഗ ഘ ങ ച ഛ ജ ഝ ഞ ട ഠ ഡ ഢ ണ ൺ ത ഥ ദ ധ ന ൻ പ ഫ ബ ഭ മ ം യ ര ർ ല ൽ വ ശ ഷ സ ഹ ള ൾ ഴ റ ാ ി ീ ു ൂ ൃ െ േ ൈ ൊ ോ ൌ ൗ ്]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u200C\u200Dഃ ൠ ഌ ൡ ൿ]</exemplarCharacters>
+		<exemplarCharacters>[അ{അഃ} {അം} ആ ഇ ഈ ഉ ഊ ഋ എ ഏ ഐ ഒ ഓ ഔ ക ഖ ഗ ഘ ങ ച ഛ ജ ഝ ഞ ട ഠ ഡ ഢ ണ ത ഥ ദ ധ ന പ ഫ ബ ഭ മ യ ര ല വ ശ ഷ സ ഹ ള ഴ റ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200Dഃ ൠ ഌ ൡ ൿ ൺ ൻ ം ർ ൽ ൾ ാ ി ീ ു ൂ ൃ െ േ ൈ ൊ ോ ൗ ്]</exemplarCharacters>
 		<exemplarCharacters type="index">[അ ആ ഇ ഈ ഉ ഊ ഋ എ ഏ ഐ ഒ ഓ ഔ ക ഖ ഗ ഘ ങ ച ഛ ജ ഝ ഞ ട ഠ ഡ ഢ ണ ത ഥ ദ ധ ന പ ഫ ബ ഭ മ യ ര ല വ ശ ഷ സ ഹ ള ഴ റ]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0൦ 1൧ 2൨ 3൩ 4൪ 5൫ 6൬ 7൭ 8൮ 9൯]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<parseLenients scope="number" level="lenient">
 			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
@@ -1600,7 +1606,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<era type="1" alt="variant">സി.ഇ.</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">ക്രി.മു.</era>
+						<era type="0">ബി.സി.</era>
 						<era type="0" alt="variant">ബിസിഇ</era>
 						<era type="1">എഡി</era>
 						<era type="1" alt="variant">സിഇ</era>
@@ -1682,7 +1688,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="EBhm">E, B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E, B h:mm:ss</dateFormatItem>
-						<dateFormatItem id="GyMd">M/d/y GGGGG</dateFormatItem>
+						<dateFormatItem id="GyMd">M/d/y G</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">d/M, E</dateFormatItem>
 						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
@@ -1836,6 +1842,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">മാഘം</month>
 							<month type="12">ഫൽഗുനം</month>
 						</monthWidth>
+						<monthWidth type="narrow">
+							<month type="1">1</month>
+							<month type="2">2</month>
+							<month type="3">3</month>
+							<month type="4">4</month>
+							<month type="5">5</month>
+							<month type="6">6</month>
+							<month type="7">7</month>
+							<month type="8">8</month>
+							<month type="9">9</month>
+							<month type="10">10</month>
+							<month type="11">11</month>
+							<month type="12">12</month>
+						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">ചൈത്രം</month>
 							<month type="2">വൈശാഖം</month>
@@ -1849,22 +1869,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10">പൗഷം</month>
 							<month type="11">മാഘം</month>
 							<month type="12">ഫാൽഗുനം</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="narrow">
-							<month type="1">ചൈ</month>
-							<month type="2">വൈ</month>
-							<month type="3">ജ്യേ</month>
-							<month type="4">ആ</month>
-							<month type="5">ശ്രാ</month>
-							<month type="6">ഭാ</month>
-							<month type="7">ആ</month>
-							<month type="8">കാ</month>
-							<month type="9">മാ</month>
-							<month type="10">പൗ</month>
-							<month type="11">മാ</month>
-							<month type="12">ഫ</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -2291,6 +2295,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} സമയം</regionFormat>
 			<regionFormat type="daylight">{0} ഡേലൈറ്റ് സമയം</regionFormat>
 			<regionFormat type="standard">{0} സ്റ്റാൻഡേർഡ് സമയം</regionFormat>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity>ഹോണലൂലു</exemplarCity>
+			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>കോർഡിനേറ്റഡ് യൂണിവേഴ്‌സൽ സമയം</standard>
@@ -3028,9 +3035,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Asia/Ulaanbaatar">
 				<exemplarCity>ഉലാൻബാത്തർ</exemplarCity>
 			</zone>
-			<zone type="Asia/Choibalsan">
-				<exemplarCity>ചൊയ്ബൽസൻ</exemplarCity>
-			</zone>
 			<zone type="Asia/Macau">
 				<exemplarCity>മക്കാവു</exemplarCity>
 			</zone>
@@ -3430,9 +3434,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Nome">
 				<exemplarCity>നോം</exemplarCity>
 			</zone>
-			<zone type="Pacific/Honolulu">
-				<exemplarCity>ഹോണലൂലു</exemplarCity>
-			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>ആങ്കറേജ്</exemplarCity>
 			</zone>
@@ -3812,13 +3813,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ചൈന ഡേലൈറ്റ് സമയം</daylight>
 				</long>
 			</metazone>
-			<metazone type="Choibalsan">
-				<long>
-					<generic>ചോയി‍ബൽസാൻ സമയം</generic>
-					<standard>ചോയ്‌ബൽസാൻ സ്റ്റാൻഡേർഡ് സമയം</standard>
-					<daylight>ചോയിബൽസാൻ ഗ്രീഷ്‌മകാല സമയം</daylight>
-				</long>
-			</metazone>
 			<metazone type="Christmas">
 				<long>
 					<standard>ക്രിസ്‌മസ് ദ്വീപ് സമയം</standard>
@@ -4070,6 +4064,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<generic>പെട്രോപാവ്‌ലോസ്ക് കംചാസ്കി സമയം</generic>
 					<standard>പെട്രോപാവ്‌ലോസ്ക് കംചാസ്കി സ്റ്റാൻഡേർഡ് സമയം</standard>
 					<daylight>പെട്രോപാവ്‌ലോസ്ക് കംചാസ്കി വേനൽക്കാല സമയം</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan">
+				<long>
+					<standard>കസാഖിസ്ഥാൻ സമയം</standard>
 				</long>
 			</metazone>
 			<metazone type="Kazakhstan_Eastern">
@@ -4543,12 +4542,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<pattern type="10000000" count="other">00 ദശലക്ഷം</pattern>
 					<pattern type="100000000" count="one">000 ദശലക്ഷം</pattern>
 					<pattern type="100000000" count="other">000 ദശലക്ഷം</pattern>
-					<pattern type="1000000000" count="one">0 ലക്ഷം കോടി</pattern>
-					<pattern type="1000000000" count="other">0 ലക്ഷം കോടി</pattern>
-					<pattern type="10000000000" count="one">00 ലക്ഷം കോടി</pattern>
-					<pattern type="10000000000" count="other">00 ലക്ഷം കോടി</pattern>
-					<pattern type="100000000000" count="one">000 ലക്ഷം കോടി</pattern>
-					<pattern type="100000000000" count="other">000 ലക്ഷം കോടി</pattern>
+					<pattern type="1000000000" count="one">0 ബില്യൺ</pattern>
+					<pattern type="1000000000" count="other">0 ബില്യൺ</pattern>
+					<pattern type="10000000000" count="one">00 ബില്യൺ</pattern>
+					<pattern type="10000000000" count="other">00 ബില്യൺ</pattern>
+					<pattern type="100000000000" count="one">000 ബില്യൺ</pattern>
+					<pattern type="100000000000" count="other">000 ബില്യൺ</pattern>
 					<pattern type="1000000000000" count="one">0 ട്രില്യൺ</pattern>
 					<pattern type="1000000000000" count="other">0 ട്രില്യൺ</pattern>
 					<pattern type="10000000000000" count="one">00 ട്രില്യൺ</pattern>
@@ -4633,8 +4632,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</currencyFormat>
 			</currencyFormatLength>
 			<currencyPatternAppendISO>{0} ¤¤</currencyPatternAppendISO>
-			<unitPattern count="one">{0} {1}</unitPattern>
-			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="ADP">
@@ -5804,8 +5801,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPrefixPattern>യോബൈ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="power2">
-				<compoundUnitPattern1 count="one">വർഗ്ഗം {0}</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">വർഗ്ഗം {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">ചതുരശ്ര {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="accusative">ചതുരശ്ര {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="dative">ചതുരശ്ര {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="genitive">ചതുരശ്ര {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="instrumental">ചതുരശ്ര {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="locative">ചതുരശ്ര {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one" case="sociative">ചതുരശ്ര {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">ചതുരശ്ര {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="accusative">ചതുരശ്ര {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="dative">ചതുരശ്ര {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="genitive">ചതുരശ്ര {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="instrumental">ചതുരശ്ര {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="locative">ചതുരശ്ര {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other" case="sociative">ചതുരശ്ര {0}</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1 count="one">ക്യുബിക് {0}</compoundUnitPattern1>
@@ -5819,7 +5828,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="genitive">{0} ജി-ഫോഴ്‌സിന്റെ</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} ജി-ഫോഴ്‌സിനാൽ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ജി-ഫോഴ്‌സിൽ</unitPattern>
-				<unitPattern count="one" case="sociative">{0} ജി-ഫോഴ്‌സ്</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ജി-ഫോഴ്‌സിനോട്</unitPattern>
 				<unitPattern count="other">{0} ജി-ഫോഴ്‌സ്</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ജി-ഫോഴ്‌സിനെ</unitPattern>
 				<unitPattern count="other" case="dative">{0} ജി-ഫോഴ്‌സിന്</unitPattern>
@@ -5853,7 +5862,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="angle-radian">
 				<gender>neuter</gender>
 				<unitPattern count="one">{0} റേഡിയൻ</unitPattern>
-				<unitPattern count="one" case="accusative">{0} റേഡിയൻ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} റേഡിയനിനെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} റേഡിയന്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} റേഡിയന്റെ</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} റേഡിയനാൽ</unitPattern>
@@ -5986,20 +5995,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-karat">
 				<gender>neuter</gender>
-				<unitPattern count="one">{0} ക്യാരറ്റ്</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ക്യാരറ്റിനെ</unitPattern>
-				<unitPattern count="one" case="dative">{0} ക്യാരറ്റിന്</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ക്യാരറ്റിന്റെ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ക്യാരറ്റിനാൽ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ക്യാരറ്റിൽ</unitPattern>
-				<unitPattern count="one" case="sociative">{0} ക്യാരറ്റിനോട്</unitPattern>
-				<unitPattern count="other">{0} ക്യാരറ്റ്</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ക്യാരറ്റിനെ</unitPattern>
-				<unitPattern count="other" case="dative">{0} ക്യാരറ്റിന്</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ക്യാരറ്റിന്റെ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ക്യാരറ്റിനാൽ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ക്യാരറ്റിൽ</unitPattern>
-				<unitPattern count="other" case="sociative">{0} ക്യാരറ്റിനോട്</unitPattern>
+				<displayName>കാരറ്റ്</displayName>
+				<unitPattern count="one">{0} കാരറ്റ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} കാരറ്റിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} കാരറ്റിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} കാരറ്റിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} കാരറ്റിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} കാരറ്റിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} കാരറ്റിനോട്</unitPattern>
+				<unitPattern count="other">{0} കാരറ്റ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} കാരറ്റിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} കാരറ്റിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} കാരറ്റിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} കാരറ്റിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} കാരറ്റിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} കാരറ്റിനോട്</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>മില്ലിഗ്രാം / ഡെസിലിറ്റർ</displayName>
@@ -6019,7 +6029,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="concentr-permillion">
 				<gender>neuter</gender>
 				<displayName>പാർട്‌സ് / മില്ല്യൺ</displayName>
-				<unitPattern count="one">പാർട്ട് / മില്ല്യൺ</unitPattern>
+				<unitPattern count="one">{0} പാർട്ട് / മില്ല്യൺ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} പാർട്ട് / മില്ല്യണിനെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} പാർട്ട് / മില്ല്യണിന്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} പാർട്ട് / മില്ല്യണിന്റെ</unitPattern>
@@ -6086,21 +6096,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-mole">
 				<gender>neuter</gender>
-				<displayName>മോളുകൾ</displayName>
-				<unitPattern count="one">{0} മോൾ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} മോളിനെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} മോളിന്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} മോളിന്റെ</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} മോളിനാൽ</unitPattern>
 				<unitPattern count="one" case="locative">{0} മോളിൽ</unitPattern>
 				<unitPattern count="one" case="sociative">{0} മോളിനോട്</unitPattern>
-				<unitPattern count="other">{0} മോളുകൾ</unitPattern>
-				<unitPattern count="other" case="accusative">{0} മോളുകളെ</unitPattern>
-				<unitPattern count="other" case="dative">{0} മോളുകൾക്ക്</unitPattern>
-				<unitPattern count="other" case="genitive">{0} മോളുകളുടെ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} മോളുകളാൽ</unitPattern>
-				<unitPattern count="other" case="locative">{0} മോളുകളിൽ</unitPattern>
-				<unitPattern count="other" case="sociative">{0} മോളുകളോട്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മോളിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} മോളിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മോളിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മോളിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} മോളിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മോളിനോട്</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ലിറ്റർ/കിലോമീറ്റർ</displayName>
@@ -6204,26 +6211,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="accusative">{0} നൂറ്റാണ്ടിനെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} നൂറ്റാണ്ടിന്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} നൂറ്റാണ്ടിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} നൂറ്റാണ്ട് കൊണ്ട്</unitPattern>
 				<unitPattern count="one" case="locative">{0} നൂറ്റാണ്ടിൽ</unitPattern>
 				<unitPattern count="one" case="sociative">{0} നൂറ്റാണ്ടിനോട്</unitPattern>
 				<unitPattern count="other">{0} നൂറ്റാണ്ടുകൾ</unitPattern>
 				<unitPattern count="other" case="accusative">{0} നൂറ്റാണ്ടുകളുടെ</unitPattern>
 				<unitPattern count="other" case="dative">{0} നൂറ്റാണ്ടിലെ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} നൂറ്റാണ്ടിന്റെ</unitPattern>
-				<unitPattern count="other" case="locative">{0} നൂറ്റാണ്ടുകൾ</unitPattern>
-				<unitPattern count="other" case="sociative">{0} നൂറ്റാണ്ടുകൾ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} നൂറ്റാണ്ട് കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} നൂറ്റാണ്ടിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} നൂറ്റാണ്ടിനോട്</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<gender>neuter</gender>
 				<displayName>ദശാബ്‌ദം</displayName>
-				<unitPattern count="one">ദശാബ്‌ദം</unitPattern>
-				<unitPattern count="one" case="accusative">ദശാബ്‌ദത്തിനെ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ദശാബ്‌ദത്തിനെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} ദശാബ്‌ദത്തിന്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ദശാബ്‌ദത്തിന്റെ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ദശാബ്‌ദം</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ദശാബ്‌ദം കൊണ്ട്</unitPattern>
 				<unitPattern count="one" case="locative">{0} ദശാബ്‌ദത്തിൽ</unitPattern>
 				<unitPattern count="one" case="sociative">{0} ദശാബ്‌ദത്തിനോട്</unitPattern>
-				<unitPattern count="other">{0} ദശാബ്‌ദം</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ദശാബ്‌ദങ്ങളിലെ</unitPattern>
 				<unitPattern count="other" case="dative">{0} ദശാബ്‌ദങ്ങളിലെ</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ദശാബ്‌ദത്തിന്റെ</unitPattern>
@@ -6237,10 +6244,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="accusative">{0} വർഷത്തെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} വർഷത്തിന്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} വർഷത്തിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} വർഷം കൊണ്ട്</unitPattern>
+				<unitPattern count="one" case="locative">{0} വർഷത്തിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} വർഷത്തോട്</unitPattern>
 				<unitPattern count="other">{0} വർഷം</unitPattern>
-				<unitPattern count="other" case="accusative">{0} വർഷം</unitPattern>
-				<unitPattern count="other" case="dative">{0} വർഷം</unitPattern>
-				<unitPattern count="other" case="genitive">{0} വർഷം</unitPattern>
+				<unitPattern count="other" case="accusative">{0} വർഷത്തെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} വർഷത്തിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} വർഷത്തിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} വർഷം കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} വർഷത്തിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} വർഷത്തോട്</unitPattern>
 				<perUnitPattern>{0} / വർഷം</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
@@ -6248,37 +6261,109 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-month">
 				<gender>neuter</gender>
+				<unitPattern count="one" case="accusative">{0} മാസത്തെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} മാസത്തിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} മാസത്തിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} മാസം കൊണ്ട്</unitPattern>
+				<unitPattern count="one" case="locative">{0} മാസത്തിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} മാസത്തോട്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മാസത്തെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} മാസത്തിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മാസത്തിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മാസം കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} മാസത്തിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മാസത്തോട്</unitPattern>
 				<perUnitPattern>{0} / മാസം</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<gender>neuter</gender>
 				<unitPattern count="one">{0} ആഴ്ച</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ആഴ്ചയെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ആഴ്ചയ്ക്ക്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ആഴ്ചയുടെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ആഴ്ച കൊണ്ട്</unitPattern>
+				<unitPattern count="one" case="locative">{0} ആഴ്ചയിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ആഴ്ചയോട്</unitPattern>
 				<unitPattern count="other">{0} ആഴ്ച</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ആഴ്ചയെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ആഴ്ചയ്ക്ക്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ആഴ്ചയുടെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ആഴ്ച കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} ആഴ്ചയിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ആഴ്ചയോട്</unitPattern>
 				<perUnitPattern>{0} / ആഴ്ച</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<gender>neuter</gender>
 				<unitPattern count="one">{0} ദിവസം</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ദിവസത്തെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ദിവസത്തിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ദിവസത്തിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ദിവസം കൊണ്ട്</unitPattern>
+				<unitPattern count="one" case="locative">{0} ദിവസത്തിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ദിവസത്തോട്</unitPattern>
 				<unitPattern count="other">{0} ദിവസം</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ദിവസത്തെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ദിവസത്തിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ദിവസത്തിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ദിവസം കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} ദിവസത്തിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ദിവസത്തോട്</unitPattern>
 				<perUnitPattern>{0} / ദിവസം</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<gender>neuter</gender>
 				<unitPattern count="one">{0} മണിക്കൂർ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} മണിക്കൂറിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} മണിക്കൂറിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} മണിക്കൂറിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} മണിക്കൂർ കൊണ്ട്</unitPattern>
+				<unitPattern count="one" case="locative">{0} മണിക്കൂറിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} മണിക്കൂറിനോട്</unitPattern>
 				<unitPattern count="other">{0} മണിക്കൂർ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മണിക്കൂറിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} മണിക്കൂറിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മണിക്കൂറിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മണിക്കൂർ കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} മണിക്കൂറിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മണിക്കൂറിനോട്</unitPattern>
 				<perUnitPattern>{0} / മണിക്കൂർ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<gender>neuter</gender>
 				<displayName>മിനിറ്റ്</displayName>
 				<unitPattern count="one">{0} മിനിറ്റ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} മിനിറ്റിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} മിനിറ്റിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} മിനിറ്റിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} മിനിറ്റ് കൊണ്ട്</unitPattern>
+				<unitPattern count="one" case="locative">{0} മിനിറ്റിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} മിനിറ്റിനോട്</unitPattern>
 				<unitPattern count="other">{0} മിനിറ്റ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മിനിറ്റിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} മിനിറ്റിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മിനിറ്റിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മിനിറ്റ് കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} മിനിറ്റിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മിനിറ്റിനോട്</unitPattern>
 				<perUnitPattern>{0} / മിനിറ്റ്</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<gender>neuter</gender>
 				<unitPattern count="one">{0} സെക്കൻഡ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} സെക്കൻഡിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} സെക്കൻഡിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} സെക്കൻഡിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} സെക്കൻഡ് കൊണ്ട്</unitPattern>
+				<unitPattern count="one" case="locative">{0} സെക്കൻഡിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} സെക്കൻഡിനോട്</unitPattern>
 				<unitPattern count="other">{0} സെക്കൻഡ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} സെക്കൻഡിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} സെക്കൻഡിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} സെക്കൻഡിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} സെക്കൻഡ് കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} സെക്കൻഡിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} സെക്കൻഡിനോട്</unitPattern>
 				<perUnitPattern>{0} / സെക്കൻഡ്</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
@@ -6420,7 +6505,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="force-newton">
 				<gender>neuter</gender>
-				<displayName>ന്യൂട്ടൻസ്</displayName>
 				<unitPattern count="one">{0} ന്യൂട്ടൻ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ന്യൂട്ടനെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} ന്യൂട്ടന്</unitPattern>
@@ -6428,7 +6512,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="instrumental">{0} ന്യൂട്ടനാൽ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ന്യൂട്ടനിൽ</unitPattern>
 				<unitPattern count="one" case="sociative">{0} ന്യൂട്ടനോട്</unitPattern>
-				<unitPattern count="other">{0} ന്യൂട്ടൻസ്</unitPattern>
+				<unitPattern count="other">{0} ന്യൂട്ടൻ</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ന്യൂട്ടനെ</unitPattern>
 				<unitPattern count="other" case="dative">{0} ന്യൂട്ടന്</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ന്യൂട്ടന്റെ</unitPattern>
@@ -6478,7 +6562,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>neuter</gender>
 				<displayName>ടൈപോഗ്രഫിക്ക് ems</displayName>
 				<unitPattern count="one">{0} em</unitPattern>
+				<unitPattern count="one" case="accusative">{0} em-നെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} em-ന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} em-ന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} em കൊണ്ട്</unitPattern>
+				<unitPattern count="one" case="locative">{0} em-ൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} em-നോട്</unitPattern>
 				<unitPattern count="other">{0} ems</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ems-നെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ems-ന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ems-ന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ems കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} ems-ൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ems-നോട്</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<gender>neuter</gender>
@@ -6490,13 +6586,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="instrumental">{0} പിക്സൽ കൊണ്ട്</unitPattern>
 				<unitPattern count="one" case="locative">{0} പിക്സലിൽ</unitPattern>
 				<unitPattern count="one" case="sociative">{0} പിക്സലിനോട്</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
-				<unitPattern count="other" case="accusative">{0} px</unitPattern>
-				<unitPattern count="other" case="dative">{0} px</unitPattern>
-				<unitPattern count="other" case="genitive">{0} px</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} px</unitPattern>
-				<unitPattern count="other" case="locative">{0} px</unitPattern>
-				<unitPattern count="other" case="sociative">{0} px</unitPattern>
+				<unitPattern count="other">{0} പിക്സൽ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} പിക്സലിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} പിക്സലിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} പിക്സലിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} പിക്സൽ കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} പിക്സലിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} പിക്സലിനോട്</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>മെഗാപിക്സൽസ്</displayName>
@@ -6532,7 +6628,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="length-meter">
 				<gender>neuter</gender>
 				<unitPattern count="one">{0} മീറ്റർ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} മീറ്ററിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} മീറ്ററിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} മീറ്ററിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} മീറ്റർ കൊണ്ട്</unitPattern>
+				<unitPattern count="one" case="locative">{0} മീറ്ററിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} മീറ്ററിനോട്</unitPattern>
 				<unitPattern count="other">{0} മീറ്റർ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മീറ്ററിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} മീറ്ററിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മീറ്ററിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മീറ്റർ കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} മീറ്ററിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മീറ്ററിനോട്</unitPattern>
 				<perUnitPattern>{0} / മീറ്റർ</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
@@ -6601,7 +6709,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>neuter</gender>
 				<displayName>സ്കാൻഡിനേവിയൻ മൈൽ</displayName>
 				<unitPattern count="one">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} സ്കാൻഡിനേവിയൻ മൈലിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} സ്കാൻഡിനേവിയൻ മൈലിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} സ്കാൻഡിനേവിയൻ മൈലിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} സ്കാൻഡിനേവിയൻ മൈൽ കൊണ്ട്</unitPattern>
+				<unitPattern count="one" case="locative">{0} സ്കാൻഡിനേവിയൻ മൈലിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} സ്കാൻഡിനേവിയൻ മൈലിനോട്</unitPattern>
 				<unitPattern count="other">{0} സ്കാൻഡിനേവിയൻ മൈൽ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} സ്കാൻഡിനേവിയൻ മൈലിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} സ്കാൻഡിനേവിയൻ മൈലിന്റെ</unitPattern>
+				<unitPattern count="other" case="genitive">{0} സ്കാൻഡിനേവിയൻ മൈലിന്</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} സ്കാൻഡിനേവിയൻ മൈൽ കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} സ്കാൻഡിനേവിയൻ മൈലിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} സ്കാൻഡിനേവിയൻ മൈലിനോട്</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<unitPattern count="one">{0} പോയിന്റ്</unitPattern>
@@ -6742,23 +6862,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-carat">
 				<gender>neuter</gender>
-				<unitPattern count="one">{0} ക്യാരറ്റ്</unitPattern>
-				<unitPattern count="one" case="accusative">{0} ക്യാരറ്റിനെ</unitPattern>
-				<unitPattern count="one" case="dative">{0} ക്യാരറ്റിന്</unitPattern>
-				<unitPattern count="one" case="genitive">{0} ക്യാരറ്റിന്റെ</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} ക്യാരറ്റിനാൽ</unitPattern>
-				<unitPattern count="one" case="locative">{0} ക്യാരറ്റിൽ</unitPattern>
-				<unitPattern count="one" case="sociative">{0} ക്യാരറ്റിനോട്</unitPattern>
-				<unitPattern count="other">{0} ക്യാരറ്റ്</unitPattern>
-				<unitPattern count="other" case="accusative">{0} ക്യാരറ്റിനെ</unitPattern>
-				<unitPattern count="other" case="dative">{0} ക്യാരറ്റിന്</unitPattern>
-				<unitPattern count="other" case="genitive">{0} ക്യാരറ്റിന്റെ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ക്യാരറ്റിനാൽ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ക്യാരറ്റിൽ</unitPattern>
-				<unitPattern count="other" case="sociative">{0} ക്യാരറ്റിനോട്</unitPattern>
+				<displayName>കാരറ്റ്</displayName>
+				<unitPattern count="one">{0} കാരറ്റ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} കാരറ്റിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} കാരറ്റിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} കാരറ്റിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} കാരറ്റിനാൽ</unitPattern>
+				<unitPattern count="one" case="locative">{0} കാരറ്റിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} കാരറ്റിനോട്</unitPattern>
+				<unitPattern count="other">{0} കാരറ്റ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} കാരറ്റിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} കാരറ്റിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} കാരറ്റിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} കാരറ്റിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} കാരറ്റിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} കാരറ്റിനോട്</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
-				<unitPattern count="one">ഡാൽട്ടൻ</unitPattern>
+				<unitPattern count="one">{0} ഡാൽട്ടൺ</unitPattern>
 				<unitPattern count="other">{0} ഡാൽട്ടണുകൾ</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
@@ -6829,20 +6950,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-bar">
 				<gender>neuter</gender>
 				<displayName>ബാറുകൾ</displayName>
-				<unitPattern count="one">{0} ബാർ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ബാറിനെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} ബാറിന്</unitPattern>
 				<unitPattern count="one" case="genitive">{0} ബാറിന്റെ</unitPattern>
 				<unitPattern count="one" case="instrumental">{0} ബാറിനാൽ</unitPattern>
 				<unitPattern count="one" case="locative">{0} ബാറിൽ</unitPattern>
 				<unitPattern count="one" case="sociative">{0} ബാറിനോട്</unitPattern>
-				<unitPattern count="other">{0} ബാറുകൾ</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ബാറിനെ</unitPattern>
 				<unitPattern count="other" case="dative">{0} ബാറിന്</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ബാറിന്റെ</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} ബാറുകളാൽ</unitPattern>
-				<unitPattern count="other" case="locative">{0} ബാറുകളിൽ</unitPattern>
-				<unitPattern count="other" case="sociative">{0} ബാറുകളോട്</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ബാറിനാൽ</unitPattern>
+				<unitPattern count="other" case="locative">{0} ബാറിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ബാറിനോട്</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>മില്ലിബാർ</displayName>
@@ -6869,7 +6988,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-pascal">
 				<gender>neuter</gender>
-				<displayName>പാസ്കൽസ്</displayName>
+				<displayName>പാസ്കൽ</displayName>
 				<unitPattern count="one">{0} പാസ്കൽ</unitPattern>
 				<unitPattern count="one" case="accusative">{0} പാസ്‌കലിനെ</unitPattern>
 				<unitPattern count="one" case="dative">{0} പാസ്‌കലിന്</unitPattern>
@@ -6886,9 +7005,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="sociative">{0} പാസ്‌കലിനോട്</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
-				<displayName>ഹെക്‌ടോപാസ്‌ക്കൽ</displayName>
-				<unitPattern count="one">{0} ഹെക്‌ടോപാസ്‌ക്കൽ</unitPattern>
-				<unitPattern count="other">{0} ഹെക്‌ടോപാസ്‌ക്കൽ</unitPattern>
+				<displayName>ഹെക്‌ടോപാസ്‌കൽ</displayName>
+				<unitPattern count="one">{0} ഹെക്‌ടോപാസ്‌കൽ</unitPattern>
+				<unitPattern count="other">{0} ഹെക്‌ടോപാസ്‌കൽ</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
 				<displayName>കിലോപാസ്കൽ</displayName>
@@ -6898,7 +7017,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="pressure-megapascal">
 				<displayName>മെഗാപാസ്കൽ</displayName>
 				<unitPattern count="one">{0} മെഗാപാസ്കൽ</unitPattern>
-				<unitPattern count="other">{0} മെഗാപാസ്കലുകൾ</unitPattern>
+				<unitPattern count="other">{0} മെഗാപാസ്കൽ</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>കിലോമീറ്റർ/മണിക്കൂർ</displayName>
@@ -6979,7 +7098,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="torque-newton-meter">
 				<displayName>ന്യൂട്ടൺ മീറ്റർ</displayName>
 				<unitPattern count="one">{0} ന്യൂട്ടൺ മീറ്റർ</unitPattern>
-				<unitPattern count="other">{0} ന്യൂട്ടൺ മീറ്ററുകൾ</unitPattern>
+				<unitPattern count="other">{0} ന്യൂട്ടൺ മീറ്റർ</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
 				<displayName>ക്യൂബിക് കിലോമീറ്റർ</displayName>
@@ -7031,7 +7150,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="volume-liter">
 				<gender>neuter</gender>
 				<unitPattern count="one">{0} ലിറ്റർ</unitPattern>
+				<unitPattern count="one" case="accusative">{0} ലിറ്ററിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} ലിറ്ററിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} ലിറ്ററിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} ലിറ്റർ കൊണ്ട്</unitPattern>
+				<unitPattern count="one" case="locative">{0} ലിറ്ററിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} ലിറ്ററിനോട്</unitPattern>
 				<unitPattern count="other">{0} ലിറ്റർ</unitPattern>
+				<unitPattern count="other" case="accusative">{0} ലിറ്ററിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} ലിറ്ററിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} ലിറ്ററിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} ലിറ്റർ കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} ലിറ്ററിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} ലിറ്ററിനോട്</unitPattern>
 				<perUnitPattern>{0} / ലിറ്റർ</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
@@ -7053,13 +7184,37 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<gender>neuter</gender>
 				<displayName>മെട്രിക് പൈന്റ്</displayName>
 				<unitPattern count="one">{0} മെട്രിക് പൈന്റ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} മെട്രിക് പൈന്റിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} മെട്രിക് പൈന്റിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} മെട്രിക് പൈന്റിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} മെട്രിക് പൈന്റ് കൊണ്ട്</unitPattern>
+				<unitPattern count="one" case="locative">{0} മെട്രിക് പൈന്റിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} മെട്രിക് പൈന്റിനോട്</unitPattern>
 				<unitPattern count="other">{0} മെട്രിക് പൈന്റ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മെട്രിക് പൈന്റിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} മെട്രിക് പൈന്റിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മെട്രിക് പൈന്റിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മെട്രിക് പൈന്റ് കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} മെട്രിക് പൈന്റിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മെട്രിക് പൈന്റിനോട്</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<gender>neuter</gender>
 				<displayName>മെട്രിക് കപ്പ്</displayName>
 				<unitPattern count="one">{0} മെട്രിക് കപ്പ്</unitPattern>
+				<unitPattern count="one" case="accusative">{0} മെട്രിക് കപ്പിനെ</unitPattern>
+				<unitPattern count="one" case="dative">{0} മെട്രിക് കപ്പിന്</unitPattern>
+				<unitPattern count="one" case="genitive">{0} മെട്രിക് കപ്പിന്റെ</unitPattern>
+				<unitPattern count="one" case="instrumental">{0} മെട്രിക് കപ്പ് കൊണ്ട്</unitPattern>
+				<unitPattern count="one" case="locative">{0} മെട്രിക് കപ്പിൽ</unitPattern>
+				<unitPattern count="one" case="sociative">{0} മെട്രിക് കപ്പിനോട്</unitPattern>
 				<unitPattern count="other">{0} മെട്രിക് കപ്പ്</unitPattern>
+				<unitPattern count="other" case="accusative">{0} മെട്രിക് കപ്പിനെ</unitPattern>
+				<unitPattern count="other" case="dative">{0} മെട്രിക് കപ്പിന്</unitPattern>
+				<unitPattern count="other" case="genitive">{0} മെട്രിക് കപ്പിന്റെ</unitPattern>
+				<unitPattern count="other" case="instrumental">{0} മെട്രിക് കപ്പ് കൊണ്ട്</unitPattern>
+				<unitPattern count="other" case="locative">{0} മെട്രിക് കപ്പിൽ</unitPattern>
+				<unitPattern count="other" case="sociative">{0} മെട്രിക് കപ്പിനോട്</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
 				<displayName>ഏക്കർ അടി</displayName>
@@ -7116,6 +7271,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} dram</unitPattern>
 				<unitPattern count="other">{0} dram</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>പാർട്‌സ്/ബില്ല്യൺ</displayName>
+				<unitPattern count="one">{0} പാർട്ട്/ബില്ല്യൺ</unitPattern>
+				<unitPattern count="other">{0} പാർട്‌സ്/ബില്ല്യൺ</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>രാത്രികൾ</displayName>
+				<unitPattern count="one">{0} രാത്രി</unitPattern>
+				<unitPattern count="other">{0} രാത്രികൾ</unitPattern>
+				<perUnitPattern>{0}/രാത്രി</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>കാർഡിനൽ ദിശ</displayName>
 				<coordinateUnitPattern type="east">{0} കിഴക്ക്</coordinateUnitPattern>
@@ -7130,6 +7296,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="10p-24">
 				<unitPrefixPattern>യോ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p3">
+				<unitPrefixPattern>കി.{0}</unitPrefixPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ജി-ഫോഴ്‌സ്</displayName>
@@ -7222,9 +7391,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ദുനം</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
-				<displayName>ക്യാരറ്റ്</displayName>
-				<unitPattern count="one">{0} ക്യാ.</unitPattern>
-				<unitPattern count="other">{0} ക്യാ.</unitPattern>
+				<displayName>കാരറ്റ്</displayName>
+				<unitPattern count="one">{0} കാ.</unitPattern>
+				<unitPattern count="other">{0} കാ.</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>മി.ഗ്രാം/ഡെ.ലി.</displayName>
@@ -7666,7 +7835,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ട്രോ.ഔ.</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<displayName>ക്യാരറ്റ്</displayName>
+				<displayName>കാരറ്റ്</displayName>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>ഡാൽട്ടണുകൾ</displayName>
@@ -7926,6 +8095,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} നുള്ള്</unitPattern>
 				<unitPattern count="other">{0} നുള്ള്</unitPattern>
 			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>പാർട്‌സ്/ബില്ല്യൺ</displayName>
+				<unitPattern count="one">{0} പി.പി.ബി.</unitPattern>
+				<unitPattern count="other">{0} പി.പി.ബി.</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>രാത്രികൾ</displayName>
+				<unitPattern count="one">{0} രാത്രി</unitPattern>
+				<unitPattern count="other">{0} രാത്രികൾ</unitPattern>
+				<perUnitPattern>{0}/രാത്രി</perUnitPattern>
+			</unit>
 			<coordinateUnit>
 				<displayName>ദിശ</displayName>
 				<coordinateUnitPattern type="east">{0} കി.</coordinateUnitPattern>
@@ -7977,6 +8157,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="area-dunam">
 				<displayName>ദുനം</displayName>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>കാരറ്റ്</displayName>
+				<unitPattern count="one">{0} കാ.</unitPattern>
+				<unitPattern count="other">{0}കാ.</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>‱</displayName>
@@ -8123,6 +8308,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ഔ</unitPattern>
 			</unit>
 			<unit type="mass-carat">
+				<displayName>കാരറ്റ്</displayName>
 				<unitPattern count="one">{0}CD</unitPattern>
 				<unitPattern count="other">{0}CD</unitPattern>
 			</unit>
@@ -8227,6 +8413,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>fl.dr.</displayName>
 				<unitPattern count="one">{0}fl.dr.</unitPattern>
 				<unitPattern count="other">{0}fl.dr.</unitPattern>
+			</unit>
+			<unit type="concentr-portion-per-1e9">
+				<displayName>പി.പി.ബി.</displayName>
+				<unitPattern count="one">{0}പി.പി.ബി.</unitPattern>
+				<unitPattern count="other">{0}പി.പി.ബി.</unitPattern>
+			</unit>
+			<unit type="duration-night">
+				<displayName>രാത്രികൾ</displayName>
+				<unitPattern count="one">{0}രാത്രി</unitPattern>
+				<unitPattern count="other">{0}രാത്രികൾ</unitPattern>
+				<perUnitPattern>{0}/രാത്രി</perUnitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="east">{0}കി.</coordinateUnitPattern>
