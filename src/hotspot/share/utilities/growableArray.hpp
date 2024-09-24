@@ -595,7 +595,7 @@ public:
 // CHeap allocator
 class GrowableArrayCHeapAllocator {
 public:
-  static void* allocate(int max, int element_size, MEMFLAGS memflags);
+  static void* allocate(int max, int element_size, MemTag mem_tag);
   static void deallocate(void* mem);
 };
 
@@ -628,9 +628,9 @@ class GrowableArrayMetadata {
   }
 
   // CHeap allocation
-  static uintptr_t bits(MEMFLAGS memflags) {
-    assert(memflags != mtNone, "Must provide a proper MEMFLAGS");
-    return (uintptr_t(memflags) << 1) | 1;
+  static uintptr_t bits(MemTag mem_tag) {
+    assert(mem_tag != mtNone, "Must provide a proper MemTag");
+    return (uintptr_t(mem_tag) << 1) | 1;
   }
 
   // Arena allocation
@@ -653,8 +653,8 @@ public:
   }
 
   // CHeap allocation
-  GrowableArrayMetadata(MEMFLAGS memflags) :
-      _bits(bits(memflags))
+  GrowableArrayMetadata(MemTag mem_tag) :
+      _bits(bits(mem_tag))
       debug_only(COMMA _nesting_check(false)) {
   }
 
@@ -683,14 +683,14 @@ public:
   bool on_arena() const         { return (_bits & 1) == 0 && _bits != 0; }
 
   Arena* arena() const      { return (Arena*)_bits; }
-  MEMFLAGS memflags() const { return MEMFLAGS(_bits >> 1); }
+  MemTag mem_tag() const { return MemTag(_bits >> 1); }
 };
 
 // THE GrowableArray.
 //
 // Supports multiple allocation strategies:
 //  - Resource stack allocation: if no extra argument is provided
-//  - CHeap allocation: if memflags is provided
+//  - CHeap allocation: if mem_tag is provided
 //  - Arena allocation: if an arena is provided
 //
 // There are some drawbacks of using GrowableArray, that are removed in some
@@ -712,8 +712,8 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
     return (E*)GrowableArrayResourceAllocator::allocate(max, sizeof(E));
   }
 
-  static E* allocate(int max, MEMFLAGS memflags) {
-    return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), memflags);
+  static E* allocate(int max, MemTag mem_tag) {
+    return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), mem_tag);
   }
 
   static E* allocate(int max, Arena* arena) {
@@ -736,7 +736,7 @@ class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
     }
 
     if (on_C_heap()) {
-      return allocate(this->_capacity, _metadata.memflags());
+      return allocate(this->_capacity, _metadata.mem_tag());
     }
 
     assert(on_arena(), "Sanity");
@@ -760,11 +760,11 @@ public:
     init_checks();
   }
 
-  GrowableArray(int initial_capacity, MEMFLAGS memflags) :
+  GrowableArray(int initial_capacity, MemTag mem_tag) :
       GrowableArrayWithAllocator<E, GrowableArray>(
-          allocate(initial_capacity, memflags),
+          allocate(initial_capacity, mem_tag),
           initial_capacity),
-      _metadata(memflags) {
+      _metadata(mem_tag) {
     init_checks();
   }
 
@@ -776,11 +776,11 @@ public:
     init_checks();
   }
 
-  GrowableArray(int initial_capacity, int initial_len, const E& filler, MEMFLAGS memflags) :
+  GrowableArray(int initial_capacity, int initial_len, const E& filler, MemTag mem_tag) :
       GrowableArrayWithAllocator<E, GrowableArray>(
-          allocate(initial_capacity, memflags),
+          allocate(initial_capacity, mem_tag),
           initial_capacity, initial_len, filler),
-      _metadata(memflags) {
+      _metadata(mem_tag) {
     init_checks();
   }
 
@@ -799,25 +799,25 @@ public:
   }
 };
 
-// Leaner GrowableArray for CHeap backed data arrays, with compile-time decided MEMFLAGS.
-template <typename E, MEMFLAGS F>
-class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> > {
-  friend class GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >;
+// Leaner GrowableArray for CHeap backed data arrays, with compile-time decided MemTag.
+template <typename E, MemTag MT>
+class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, MT> > {
+  friend class GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, MT> >;
 
-  STATIC_ASSERT(F != mtNone);
+  STATIC_ASSERT(MT != mtNone);
 
-  static E* allocate(int max, MEMFLAGS flags) {
+  static E* allocate(int max, MemTag mem_tag) {
     if (max == 0) {
       return nullptr;
     }
 
-    return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), flags);
+    return (E*)GrowableArrayCHeapAllocator::allocate(max, sizeof(E), mem_tag);
   }
 
   NONCOPYABLE(GrowableArrayCHeap);
 
   E* allocate() {
-    return allocate(this->_capacity, F);
+    return allocate(this->_capacity, MT);
   }
 
   void deallocate(E* mem) {
@@ -826,13 +826,13 @@ class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHe
 
 public:
   GrowableArrayCHeap(int initial_capacity = 0) :
-      GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >(
-          allocate(initial_capacity, F),
+      GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, MT> >(
+          allocate(initial_capacity, MT),
           initial_capacity) {}
 
   GrowableArrayCHeap(int initial_capacity, int initial_len, const E& filler) :
-      GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >(
-          allocate(initial_capacity, F),
+      GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, MT> >(
+          allocate(initial_capacity, MT),
           initial_capacity, initial_len, filler) {}
 
   ~GrowableArrayCHeap() {
@@ -840,11 +840,11 @@ public:
   }
 
   void* operator new(size_t size) {
-    return AnyObj::operator new(size, F);
+    return AnyObj::operator new(size, MT);
   }
 
   void* operator new(size_t size, const std::nothrow_t&  nothrow_constant) throw() {
-    return AnyObj::operator new(size, nothrow_constant, F);
+    return AnyObj::operator new(size, nothrow_constant, MT);
   }
   void operator delete(void *p) {
     AnyObj::operator delete(p);

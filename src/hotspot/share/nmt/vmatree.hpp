@@ -35,7 +35,7 @@
 // A VMATree stores a sequence of points on the natural number line.
 // Each of these points stores information about a state change.
 // For example, the state may go from released memory to committed memory,
-// or from committed memory of a certain MEMFLAGS to committed memory of a different MEMFLAGS.
+// or from committed memory of a certain MemTag to committed memory of a different MemTag.
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
 class VMATree {
   friend class NMTVMATreeTest;
@@ -69,15 +69,15 @@ public:
   // Each point has some stack and a flag associated with it.
   struct RegionData {
     const NativeCallStackStorage::StackIndex stack_idx;
-    const MEMFLAGS flag;
+    const MemTag mem_tag;
 
-    RegionData() : stack_idx(), flag(mtNone) {}
+    RegionData() : stack_idx(), mem_tag(mtNone) {}
 
-    RegionData(NativeCallStackStorage::StackIndex stack_idx, MEMFLAGS flag)
-    : stack_idx(stack_idx), flag(flag) {}
+    RegionData(NativeCallStackStorage::StackIndex stack_idx, MemTag mem_tag)
+    : stack_idx(stack_idx), mem_tag(mem_tag) {}
 
     static bool equals(const RegionData& a, const RegionData& b) {
-      return a.flag == b.flag &&
+      return a.mem_tag == b.mem_tag &&
              NativeCallStackStorage::equals(a.stack_idx, b.stack_idx);
     }
   };
@@ -87,16 +87,16 @@ public:
 private:
   struct IntervalState {
   private:
-    // Store the type and flag as two bytes
+    // Store the type and mem_tag as two bytes
     uint8_t type_flag[2];
     NativeCallStackStorage::StackIndex sidx;
 
   public:
     IntervalState() : type_flag{0,0}, sidx() {}
     IntervalState(const StateType type, const RegionData data) {
-      assert(!(type == StateType::Released) || data.flag == mtNone, "Released type must have flag mtNone");
+      assert(!(type == StateType::Released) || data.mem_tag == mtNone, "Released type must have memory tag mtNone");
       type_flag[0] = static_cast<uint8_t>(type);
-      type_flag[1] = static_cast<uint8_t>(data.flag);
+      type_flag[1] = static_cast<uint8_t>(data.mem_tag);
       sidx = data.stack_idx;
     }
 
@@ -104,12 +104,12 @@ private:
       return static_cast<StateType>(type_flag[0]);
     }
 
-    MEMFLAGS flag() const {
-      return static_cast<MEMFLAGS>(type_flag[1]);
+    MemTag mem_tag() const {
+      return static_cast<MemTag>(type_flag[1]);
     }
 
     RegionData regiondata() const {
-      return RegionData{sidx, flag()};
+      return RegionData{sidx, mem_tag()};
     }
 
     NativeCallStackStorage::StackIndex stack() const {
@@ -159,10 +159,10 @@ public:
     delta commit;
   };
   struct SummaryDiff {
-    SingleDiff flag[mt_number_of_types];
+    SingleDiff tag[mt_number_of_tags];
     SummaryDiff() {
-      for (int i = 0; i < mt_number_of_types; i++) {
-        flag[i] = SingleDiff{0, 0};
+      for (int i = 0; i < mt_number_of_tags; i++) {
+        tag[i] = SingleDiff{0, 0};
       }
     }
   };

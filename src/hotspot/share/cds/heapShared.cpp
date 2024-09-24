@@ -471,11 +471,13 @@ void HeapShared::archive_objects(ArchiveHeapInfo *heap_info) {
     // Cache for recording where the archived objects are copied to
     create_archived_object_cache();
 
-    log_info(cds)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
-                   UseCompressedOops ? p2i(CompressedOops::begin()) :
-                                       p2i((address)G1CollectedHeap::heap()->reserved().start()),
-                   UseCompressedOops ? p2i(CompressedOops::end()) :
-                                       p2i((address)G1CollectedHeap::heap()->reserved().end()));
+    if (UseCompressedOops || UseG1GC) {
+      log_info(cds)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
+                    UseCompressedOops ? p2i(CompressedOops::begin()) :
+                                        p2i((address)G1CollectedHeap::heap()->reserved().start()),
+                    UseCompressedOops ? p2i(CompressedOops::end()) :
+                                        p2i((address)G1CollectedHeap::heap()->reserved().end()));
+    }
     copy_objects();
 
     CDSHeapVerifier::verify();
@@ -1322,6 +1324,9 @@ void HeapShared::check_default_subgraph_classes() {
               name == vmSymbols::java_lang_ArithmeticException() ||
               name == vmSymbols::java_lang_NullPointerException() ||
               name == vmSymbols::java_lang_InternalError() ||
+              name == vmSymbols::java_lang_ArrayIndexOutOfBoundsException() ||
+              name == vmSymbols::java_lang_ArrayStoreException() ||
+              name == vmSymbols::java_lang_ClassCastException() ||
               name == vmSymbols::object_array_signature() ||
               name == vmSymbols::byte_array_signature() ||
               name == vmSymbols::char_array_signature(),
