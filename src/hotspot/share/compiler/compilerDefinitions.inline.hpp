@@ -142,8 +142,16 @@ inline size_t CompilerConfig::min_code_cache_size() {
   size_t min_code_cache_size = CodeCacheMinimumUseSpace;
   // Template Interpreter code is approximately 3X larger in debug builds.
   DEBUG_ONLY(min_code_cache_size *= 3);
-  COMPILER1_PRESENT(min_code_cache_size += Compiler::code_buffer_size());
-  COMPILER2_PRESENT(min_code_cache_size += C2Compiler::initial_code_buffer_size());
+#ifdef COMPILER1
+  if (is_c1_enabled()) {
+    min_code_cache_size += Compiler::code_buffer_size();
+  }
+#endif
+#ifdef COMPILER2
+  if (is_c2_enabled()) {
+    min_code_cache_size += C2Compiler::initial_code_buffer_size();
+  }
+#endif
   return min_code_cache_size;
 }
 
