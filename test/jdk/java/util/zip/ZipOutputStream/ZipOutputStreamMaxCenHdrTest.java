@@ -51,7 +51,7 @@ public class ZipOutputStreamMaxCenHdrTest {
     // CEN header size + name length + comment length + extra length
     // should not exceed 65,535 bytes per the PKWare APP.NOTE
     // 4.4.10, 4.4.11, & 4.4.12.
-    static final int MAX_COMBINED_CEN_HEADER_SIZE = 0xFFFF;
+    static final int MAX_COMBINED_CEN_HEADER_SIZE = 0xFFD1;
 
     // Maximum possible size of name length + comment length + extra length
     // for entries in order to not exceed 65,489 bytes minus 46 bytes for the CEN
