@@ -344,13 +344,27 @@ VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_s
   return VTransformApplyResult::make_scalar(phi);
 }
 
-// Cleanup: hook up backedge, which may only be generated long after we called
-//          apply on the phi, because it is further down the schedule.
+// Cleanup:
+// - Backedge: the backedge nodes are transformed after the phi, so we need to hook
+//   them into the phi now.
+// - Memory state after the loop: before apply, the last store has some memory state
+//   uses after the loop. Now, we reordered and replaced the stores, and need to
+//   fix up all memory state uses after the loop with the new last memory state.
 void VTransformLoopPhiNode::apply_cleanup(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
   PhiNode* phi = node()->as_Phi();
+
+  // Backedge
   Node* in2 = apply_state.transformed_node(in(2));
   phase->igvn().replace_input_of(phi, 2, in2);
+
+  // Memory state after the loop
+  if (phi->is_memory_phi()) {
+    Node* last_state = apply_state.memory_state(adr_type());
+    tty->print("last_state "); last_state->dump();
+    // TODO memory backedge. Looks like memory phi is not even present... it died?
+  }
+  assert(false, "TODO");
 }
 
 float VTransformReplicateNode::cost(const VLoopAnalyzer& vloop_analyzer) const {

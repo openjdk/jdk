@@ -1877,8 +1877,7 @@ void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_lengt
     max_vector_width  = MAX2(max_vector_width,  result.vector_width());
   }
 
-  // Cleanup: The Phi are processed before their backedges. Now that also all
-  //          backedges are processed, we can update the Phis accordingly.
+  // Cleanup: backedges and memory states after the loop.
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
     vtn->apply_cleanup(apply_state);
