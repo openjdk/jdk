@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2024 Red Hat and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Red Hat and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,9 +143,9 @@ public class TestSerialAdditions {
     }
 
     @Test
-    @IR(counts = { IRNode.ADD_I, "1", IRNode.LSHIFT_I, "2" })
+    @IR(counts = { IRNode.MUL_I, "1" })
     private static int addTo6(int a) {
-        return a + a + a + a + a + a; // a*6 => (a<<1) + (a<<2)
+        return a + a + a + a + a + a;
     }
 
     @Test

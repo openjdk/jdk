@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,27 +250,33 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     sign_flip = true;
   }
 
-  // Get low bit; check for being the only bit
+  // TODO: abs_con = (1<<m)+(1<<n) and con = -((1<<n)+1) was supported
+  // originally, but they are disabled since it's not performing in some cases,
+  // such as "mul then add" in a loop. On some architectures this can be
+  // vectorized as a vector mul-add instruction, which is more performing than
+  // two vector shifts and one vector add instruction.
+  //
+  // Tests show that conversion is beneficial if constant multiplication is
+  // converted to fewer than three normal or vector shift and add instructions.
+  //
+  // But if it's not vectorizable, maybe it's profitable to do the conversion on
+  // some architectures, support it in backends if it's worthwhile.
   Node *res = nullptr;
-  unsigned int bit1 = submultiple_power_of_2(abs_con);
-  if (bit1 == abs_con) {           // Found a power of 2?
-    res = new LShiftINode(in(1), phase->intcon(log2i_exact(bit1)));
+  if (is_power_of_2(abs_con)) {
+    // abs_con = 1<<n, (n > 0)
+    res = new LShiftINode(in(1), phase->intcon(log2i_exact(abs_con)));
+  } else if (is_power_of_2(abs_con - 1) && !sign_flip) {
+    // con = (1<<n) + 1, (n > 0)
+    Node* n1 = phase->transform(
+        new LShiftINode(in(1), phase->intcon(log2i_exact(abs_con - 1))));
+    res = new AddINode(in(1), n1);
+  } else if (is_power_of_2(abs_con + 1)) {
+    // abs_con = (1<<n) - 1, (n > 0)
+    Node* n1 = phase->transform(
+        new LShiftINode(in(1), phase->intcon(log2i_exact(abs_con + 1))));
+    res = new SubINode(n1, in(1));
   } else {
-    // Check for constant with 2 bits set
-    unsigned int bit2 = abs_con - bit1;
-    bit2 = bit2 & (0 - bit2);          // Extract 2nd bit
-    if (bit2 + bit1 == abs_con) {    // Found all bits in con?
-      Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit1))));
-      Node *n2 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(bit2))));
-      res = new AddINode(n2, n1);
-    } else if (is_power_of_2(abs_con + 1)) {
-      // Sleezy: power-of-2 - 1.  Next time be generic.
-      unsigned int temp = abs_con + 1;
-      Node *n1 = phase->transform(new LShiftINode(in(1), phase->intcon(log2i_exact(temp))));
-      res = new SubINode(n1, in(1));
-    } else {
-      return MulNode::Ideal(phase, can_reshape);
-    }
+    return MulNode::Ideal(phase, can_reshape);
   }
 
   if (sign_flip) {             // Need to negate result?
