@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.List;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code RuntimeInvisibleAnnotations} attribute {@jvms 4.7.17}, which
+ * Models the {@code RuntimeInvisibleAnnotations} attribute (JVMS {@jvms 4.7.17}), which
  * can appear on classes, methods, and fields. Delivered as a
  * {@link java.lang.classfile.ClassElement}, {@link java.lang.classfile.FieldElement}, or
  * {@link java.lang.classfile.MethodElement} when traversing the corresponding model type.

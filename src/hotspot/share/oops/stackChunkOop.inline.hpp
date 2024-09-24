@@ -201,7 +201,7 @@ inline void stackChunkOopDesc::iterate_stack(StackChunkFrameClosureType* closure
 
 template <ChunkFrames frame_kind, class StackChunkFrameClosureType>
 inline void stackChunkOopDesc::iterate_stack(StackChunkFrameClosureType* closure) {
-  const SmallRegisterMap* map = SmallRegisterMap::instance;
+  const SmallRegisterMap* map = SmallRegisterMap::instance();
   assert(!map->in_cont(), "");
 
   StackChunkFrameStream<frame_kind> f(this);

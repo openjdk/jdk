@@ -75,13 +75,13 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(hdr, obj);
-    ldrw(hdr, Address(hdr, Klass::access_flags_offset()));
-    tstw(hdr, JVM_ACC_IS_VALUE_BASED_CLASS);
+    ldrb(hdr, Address(hdr, Klass::misc_flags_offset()));
+    tst(hdr, KlassFlags::_misc_is_value_based_class);
     br(Assembler::NE, slow_case);
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(obj, hdr, temp, rscratch2, slow_case);
+    lightweight_lock(disp_hdr, obj, hdr, temp, rscratch2, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     Label done;
     // Load object header
@@ -267,7 +267,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == r0, "must be");
-    far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::dtrace_object_alloc_id)));
+    far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)));
   }
 
   verify_oop(obj);
@@ -308,7 +308,7 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == r0, "must be");
-    far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::dtrace_object_alloc_id)));
+    far_call(RuntimeAddress(Runtime1::entry_for(C1StubId::dtrace_object_alloc_id)));
   }
 
   verify_oop(obj);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,8 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RecordComponent;
 import com.sun.tools.javac.code.Type;
 import static com.sun.tools.javac.code.TypeTag.BOT;
+import static com.sun.tools.javac.code.TypeTag.VOID;
+
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
@@ -785,7 +787,7 @@ public class TransPatterns extends TreeTranslator {
         StringBuilder sb = new StringBuilder();
 
         PrimitiveGenerator() {
-            super(types);
+            types.super();
         }
 
         @Override
@@ -1260,7 +1262,11 @@ public class TransPatterns extends TreeTranslator {
                 tree.body = translate(tree.body);
                 if (deconstructorCalls != null) {
                     if (tree.body instanceof JCExpression value) {
-                        tree.body = make.Block(0, List.of(make.Return(value)));
+                        if (value.type.hasTag(VOID)) {
+                            tree.body = make.Block(0, List.of(make.Exec(value)));
+                        } else {
+                            tree.body = make.Block(0, List.of(make.Return(value)));
+                        }
                     }
                     if (tree.body instanceof JCBlock block) {
                         preparePatternMatchingCatchIfNeeded(block);

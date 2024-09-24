@@ -25,14 +25,15 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.RawHtml;
 
 /**
  * Abstract class to generate the top-level "overview" files.
@@ -135,8 +136,8 @@ public abstract class AbstractOverviewIndexWriter extends HtmlDocletWriter {
         if (!doctitle.isEmpty()) {
             var title = RawHtml.of(doctitle);
             var heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
-                    HtmlStyle.title, title);
-            var div = HtmlTree.DIV(HtmlStyle.header, heading);
+                    HtmlStyles.title, title);
+            var div = HtmlTree.DIV(HtmlStyles.header, heading);
             target.add(div);
         }
     }

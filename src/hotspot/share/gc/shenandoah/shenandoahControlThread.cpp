@@ -318,7 +318,8 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 
   ShenandoahConcurrentGC gc;
   if (gc.collect(cause)) {
-    // Cycle is complete
+    // Cycle is complete.  There were no failed allocation requests and no degeneration, so count this as good progress.
+    heap->notify_gc_progress();
     heap->heuristics()->record_success_concurrent();
     heap->shenandoah_policy()->record_success_concurrent(gc.abbreviated());
   } else {
@@ -370,6 +371,16 @@ void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
 }
 
 void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
+  // For normal requested GCs (System.gc) we want to block the caller. However,
+  // for whitebox requested GC, we want to initiate the GC and return immediately.
+  // The whitebox caller thread will arrange for itself to wait until the GC notifies
+  // it that has reached the requested breakpoint (phase in the GC).
+  if (cause == GCCause::_wb_breakpoint) {
+    _requested_gc_cause = cause;
+    _gc_requested.set();
+    return;
+  }
+
   // Make sure we have at least one complete GC cycle before unblocking
   // from the explicit GC request.
   //
@@ -389,9 +400,7 @@ void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
     _requested_gc_cause = cause;
     _gc_requested.set();
 
-    if (cause != GCCause::_wb_breakpoint) {
-      ml.wait();
-    }
+    ml.wait();
     current_gc_id = get_gc_id();
   }
 }

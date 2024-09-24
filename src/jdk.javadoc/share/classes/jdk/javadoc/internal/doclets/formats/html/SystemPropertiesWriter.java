@@ -38,15 +38,16 @@ import com.sun.source.doctree.DocTree;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
 import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -86,7 +87,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
         addSystemProperties(mainContent);
         body.add(new BodyContents()
                 .setHeader(getHeader(PageMode.SYSTEM_PROPERTIES))
-                .addMainContent(HtmlTree.DIV(HtmlStyle.header,
+                .addMainContent(HtmlTree.DIV(HtmlStyles.header,
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                                 contents.getContent("doclet.systemProperties"))))
                 .addMainContent(mainContent)
@@ -106,10 +107,10 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
     protected void addSystemProperties(Content target) {
         Map<String, List<IndexItem>> searchIndexMap = groupSystemProperties();
         Content separator = Text.of(", ");
-        var table = new Table<Void>(HtmlStyle.summaryTable)
+        var table = new Table<Void>(HtmlStyles.summaryTable)
                 .setCaption(contents.systemPropertiesSummaryLabel)
                 .setHeader(new TableHeader(contents.propertyLabel, contents.referencedIn))
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast);
         for (Entry<String, List<IndexItem>> entry : searchIndexMap.entrySet()) {
             Content propertyName = Text.of(entry.getKey());
             List<IndexItem> searchIndexItems = entry.getValue();
@@ -119,7 +120,7 @@ public class SystemPropertiesWriter extends HtmlDocletWriter {
                 separatedReferenceLinks.add(separator);
                 separatedReferenceLinks.add(createLink(searchIndexItems.get(i)));
             }
-            table.addRow(propertyName, HtmlTree.DIV(HtmlStyle.block, separatedReferenceLinks));
+            table.addRow(propertyName, HtmlTree.DIV(HtmlStyles.block, separatedReferenceLinks));
         }
         target.add(table);
     }

@@ -100,7 +100,7 @@ public class TestHandshake {
 
         @Override
         public final void run() {
-            start("\"Accessor #\" + id");
+            start("Accessor #" + id);
             while (segment.scope().isAlive()) {
                 try {
                     doAccess();

@@ -42,19 +42,20 @@ public class JavaCodeGenerator extends TestsGenerator {
     }
 
     @Override
-    public void accept(IRNode mainClass, IRNode privateClasses) {
+    public void accept(IRTreeGenerator.Test test) {
+        IRNode mainClass = test.mainClass();
         String mainClassName = mainClass.getName();
-        generateSources(mainClass, privateClasses);
+        generateSources(test.seed(), mainClass, test.privateClasses());
         compilePrinter();
         compileJavaFile(mainClassName);
         generateGoldenOut(mainClassName);
     }
 
-    private void generateSources(IRNode mainClass, IRNode privateClasses) {
+    private void generateSources(long seed, IRNode mainClass, IRNode privateClasses) {
         String mainClassName = mainClass.getName();
         StringBuilder code = new StringBuilder();
         JavaCodeVisitor vis = new JavaCodeVisitor();
-        code.append(getJtregHeader(mainClassName));
+        code.append(getJtregHeader(mainClassName, seed));
         if (privateClasses != null) {
             code.append(privateClasses.accept(vis));
         }
@@ -79,7 +80,19 @@ public class JavaCodeGenerator extends TestsGenerator {
         }
     }
 
-    private static String[] generatePrerunAction(String mainClassName) {
+    protected static String[] generatePrerunAction(String mainClassName) {
         return new String[] {"@compile " + mainClassName + ".java"};
+    }
+
+    public static void main(String[] args) throws Exception {
+        ProductionParams.initializeFromCmdline(args);
+        IRTreeGenerator.initializeWithProductionParams();
+
+        JavaCodeGenerator generator = new JavaCodeGenerator();
+
+        for (String mainClass : ProductionParams.mainClassNames.value()) {
+            var test = IRTreeGenerator.generateIRTree(mainClass);
+            generator.generateSources(test.seed(), test.mainClass(), test.privateClasses());
+        }
     }
 }

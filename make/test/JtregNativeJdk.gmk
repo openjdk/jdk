@@ -53,7 +53,8 @@ BUILD_JDK_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/jdk/jtreg
 BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeJliLaunchTest := \
     -I$(TOPDIR)/src/java.base/share/native/libjli \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
-    -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli
+    -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli \
+    #
 
 BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeJliLaunchTest := java.base:libjli
 BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeCallerAccessTest := java.base:libjvm
@@ -154,7 +155,7 @@ build-test-jdk-jtreg-native: $(BUILD_JDK_JTREG_LIBRARIES) $(BUILD_JDK_JTREG_EXEC
 ################################################################################
 
 # Copy to jdk jtreg test image
-$(eval $(call SetupCopyFiles,COPY_JDK_JTREG_NATIVE, \
+$(eval $(call SetupCopyFiles, COPY_JDK_JTREG_NATIVE, \
     SRC := $(BUILD_JDK_JTREG_OUTPUT_DIR), \
     DEST := $(TEST_IMAGE_DIR)/jdk/jtreg/native, \
     FILES := $(wildcard $(addprefix $(BUILD_JDK_JTREG_OUTPUT_DIR), /bin/* /lib/*)), \

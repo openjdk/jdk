@@ -112,11 +112,4 @@ public class Wrappers {
             bh.consume(Wrapper.forBasicType(c));
         }
     }
-
-    @Benchmark
-    public void forPrimitiveType(Blackhole bh) throws Throwable {
-        for (char c : PRIM_TYPES) {
-            bh.consume(Wrapper.forPrimitiveType(c));
-        }
-    }
 }

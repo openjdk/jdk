@@ -470,7 +470,7 @@ bool ClassPathImageEntry::is_modules_image() const {
 void ClassLoader::exit_with_path_failure(const char* error, const char* message) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   tty->print_cr("Hint: enable -Xlog:class+path=info to diagnose the failure");
-  vm_exit_during_initialization(error, message);
+  vm_exit_during_cds_dumping(error, message);
 }
 #endif
 
@@ -834,7 +834,8 @@ bool ClassLoader::add_to_app_classpath_entries(JavaThread* current,
   ClassPathEntry* e = _app_classpath_entries;
   if (check_for_duplicates) {
     while (e != nullptr) {
-      if (strcmp(e->name(), entry->name()) == 0) {
+      if (strcmp(e->name(), entry->name()) == 0 &&
+          e->from_class_path_attr() == entry->from_class_path_attr()) {
         // entry already exists
         return false;
       }

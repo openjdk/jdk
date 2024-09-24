@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import jdk.jfr.RecordingState;
 import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.management.EventByteStream;
+import jdk.jfr.internal.management.HiddenWait;
 import jdk.jfr.internal.management.ManagementSupport;
 
 public final class OngoingStream extends EventByteStream {
@@ -44,6 +45,7 @@ public final class OngoingStream extends EventByteStream {
 
     private final RepositoryFiles repositoryFiles;
     private final Recording recording;
+    private final HiddenWait threadSleeper = new HiddenWait();
     private final int blockSize;
     private final long endTimeNanos;
     private final byte[] headerBytes = new byte[HEADER_SIZE];
@@ -195,17 +197,11 @@ public final class OngoingStream extends EventByteStream {
                     return bytes;
                 }
             }
-            takeNap();
+            if (!threadSleeper.takeNap(10)) {
+                throw new IOException("Read operation interrupted");
+            }
         }
         return EMPTY_ARRAY;
-    }
-
-    private void takeNap() throws IOException {
-        try {
-            Thread.sleep(10);
-        } catch (InterruptedException ie) {
-            throw new IOException("Read operation interrupted", ie);
-        }
     }
 
     private boolean ensureInput() throws IOException {

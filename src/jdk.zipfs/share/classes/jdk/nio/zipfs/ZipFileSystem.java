@@ -1710,7 +1710,7 @@ class ZipFileSystem extends FileSystem {
     private void checkZip64ExtraFieldValues(byte[] cen, int off, int blockSize, long csize,
                                             long size, long locoff, int diskNo)
             throws ZipException {
-        // if ZIP64_EXTID blocksize == 0, which may occur with some older
+        // if EXTID_ZIP64 blocksize == 0, which may occur with some older
         // versions of Apache Ant and Commons Compress, validate csize and size
         // to make sure neither field == ZIP64_MAGICVAL
         if (blockSize == 0) {
@@ -1718,7 +1718,7 @@ class ZipFileSystem extends FileSystem {
                     locoff == ZIP64_MINVAL || diskNo == ZIP64_MINVAL32) {
                 zerror("Invalid CEN header (invalid zip64 extra data field size)");
             }
-            // Only validate the ZIP64_EXTID data if the block size > 0
+            // Only validate the EXTID_ZIP64 data if the block size > 0
             return;
         }
         // Validate the Zip64 Extended Information Extra Field (0x0001)

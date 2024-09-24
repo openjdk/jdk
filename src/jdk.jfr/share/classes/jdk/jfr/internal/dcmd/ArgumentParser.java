@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringJoiner;
 import jdk.jfr.internal.util.SpellChecker;
+import jdk.jfr.internal.util.TimespanUnit;
 
 final class ArgumentParser {
     private final Map<String, Object> options = new HashMap<>();
@@ -220,7 +221,7 @@ final class ArgumentParser {
 
     private Object value(String name, String type, String text) {
         return switch (type) {
-            case "JULONG" -> parseLong(name, text);
+            case "INT" -> parseLong(name, text);
             case "STRING", "STRING SET" -> text == null ? "" : text;
             case "BOOLEAN" -> parseBoolean(name, text);
             case "NANOTIME" -> parseNanotime(name, text);
@@ -302,16 +303,11 @@ final class ArgumentParser {
             }
             throw new IllegalArgumentException("Integer parsing error nanotime value: unit required");
         }
-        return switch(unit) {
-            case "ns" -> time;
-            case "us" -> time * 1000;
-            case "ms" -> time * 1000 * 1000;
-            case "s" -> time * 1000 * 1000 * 1000;
-            case "m" -> time * 60 * 1000 * 1000 * 1000;
-            case "h" -> time * 60 * 60* 1000 * 1000 * 1000;
-            case "d" -> time * 24 * 60 * 60 * 1000 * 1000 * 1000;
-            default -> throw new IllegalArgumentException("Integer parsing error nanotime value: illegal unit");
-        };
+        TimespanUnit tu = TimespanUnit.fromText(unit);
+        if (tu == null) {
+            throw new IllegalArgumentException("Integer parsing error nanotime value: illegal unit");
+        }
+        return tu.toNanos(time);
     }
 
     int indexOfUnit(String text) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@
 #include "runtime/orderAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 
-class MasterFreeRegionListChecker : public HeapRegionSetChecker {
+class G1MasterFreeRegionListChecker : public G1HeapRegionSetChecker {
 public:
   void check_mt_safety() {
     // Master Free List MT safety protocol:
@@ -62,20 +62,20 @@ public:
   const char* get_description() { return "Free Regions"; }
 };
 
-HeapRegionManager::HeapRegionManager() :
+G1HeapRegionManager::G1HeapRegionManager() :
   _bot_mapper(nullptr),
   _cardtable_mapper(nullptr),
   _committed_map(),
   _allocated_heapregions_length(0),
   _regions(), _heap_mapper(nullptr),
   _bitmap_mapper(nullptr),
-  _free_list("Free list", new MasterFreeRegionListChecker())
+  _free_list("Free list", new G1MasterFreeRegionListChecker())
 { }
 
-void HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
-                                   G1RegionToSpaceMapper* bitmap,
-                                   G1RegionToSpaceMapper* bot,
-                                   G1RegionToSpaceMapper* cardtable) {
+void G1HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
+                                     G1RegionToSpaceMapper* bitmap,
+                                     G1RegionToSpaceMapper* bot,
+                                     G1RegionToSpaceMapper* cardtable) {
   _allocated_heapregions_length = 0;
 
   _heap_mapper = heap_storage;
@@ -90,7 +90,7 @@ void HeapRegionManager::initialize(G1RegionToSpaceMapper* heap_storage,
   _committed_map.initialize(reserved_length());
 }
 
-G1HeapRegion* HeapRegionManager::allocate_free_region(HeapRegionType type, uint requested_node_index) {
+G1HeapRegion* G1HeapRegionManager::allocate_free_region(G1HeapRegionType type, uint requested_node_index) {
   G1HeapRegion* hr = nullptr;
   bool from_head = !type.is_young();
   G1NUMA* numa = G1NUMA::numa();
@@ -118,7 +118,7 @@ G1HeapRegion* HeapRegionManager::allocate_free_region(HeapRegionType type, uint 
   return hr;
 }
 
-G1HeapRegion* HeapRegionManager::allocate_humongous_from_free_list(uint num_regions) {
+G1HeapRegion* G1HeapRegionManager::allocate_humongous_from_free_list(uint num_regions) {
   uint candidate = find_contiguous_in_free_list(num_regions);
   if (candidate == G1_NO_HRM_INDEX) {
     return nullptr;
@@ -126,7 +126,7 @@ G1HeapRegion* HeapRegionManager::allocate_humongous_from_free_list(uint num_regi
   return allocate_free_regions_starting_at(candidate, num_regions);
 }
 
-G1HeapRegion* HeapRegionManager::allocate_humongous_allow_expand(uint num_regions) {
+G1HeapRegion* G1HeapRegionManager::allocate_humongous_allow_expand(uint num_regions) {
   uint candidate = find_contiguous_allow_expand(num_regions);
   if (candidate == G1_NO_HRM_INDEX) {
     return nullptr;
@@ -135,25 +135,25 @@ G1HeapRegion* HeapRegionManager::allocate_humongous_allow_expand(uint num_region
   return allocate_free_regions_starting_at(candidate, num_regions);
 }
 
-G1HeapRegion* HeapRegionManager::allocate_humongous(uint num_regions) {
+G1HeapRegion* G1HeapRegionManager::allocate_humongous(uint num_regions) {
   // Special case a single region to avoid expensive search.
   if (num_regions == 1) {
-    return allocate_free_region(HeapRegionType::Humongous, G1NUMA::AnyNodeIndex);
+    return allocate_free_region(G1HeapRegionType::Humongous, G1NUMA::AnyNodeIndex);
   }
   return allocate_humongous_from_free_list(num_regions);
 }
 
-G1HeapRegion* HeapRegionManager::expand_and_allocate_humongous(uint num_regions) {
+G1HeapRegion* G1HeapRegionManager::expand_and_allocate_humongous(uint num_regions) {
   return allocate_humongous_allow_expand(num_regions);
 }
 
 #ifdef ASSERT
-bool HeapRegionManager::is_free(G1HeapRegion* hr) const {
+bool G1HeapRegionManager::is_free(G1HeapRegion* hr) const {
   return _free_list.contains(hr);
 }
 #endif
 
-G1HeapRegion* HeapRegionManager::new_heap_region(uint hrm_index) {
+G1HeapRegion* G1HeapRegionManager::new_heap_region(uint hrm_index) {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   HeapWord* bottom = g1h->bottom_addr_for_region(hrm_index);
   MemRegion mr(bottom, bottom + G1HeapRegion::GrainWords);
@@ -161,7 +161,7 @@ G1HeapRegion* HeapRegionManager::new_heap_region(uint hrm_index) {
   return g1h->new_heap_region(hrm_index, mr);
 }
 
-void HeapRegionManager::expand(uint start, uint num_regions, WorkerThreads* pretouch_workers) {
+void G1HeapRegionManager::expand(uint start, uint num_regions, WorkerThreads* pretouch_workers) {
   commit_regions(start, num_regions, pretouch_workers);
   for (uint i = start; i < start + num_regions; i++) {
     G1HeapRegion* hr = _regions.get_by_index(i);
@@ -176,7 +176,7 @@ void HeapRegionManager::expand(uint start, uint num_regions, WorkerThreads* pret
   activate_regions(start, num_regions);
 }
 
-void HeapRegionManager::commit_regions(uint index, size_t num_regions, WorkerThreads* pretouch_workers) {
+void G1HeapRegionManager::commit_regions(uint index, size_t num_regions, WorkerThreads* pretouch_workers) {
   guarantee(num_regions > 0, "Must commit more than zero regions");
   guarantee(num_regions <= available(),
             "Cannot commit more than the maximum amount of regions");
@@ -190,7 +190,7 @@ void HeapRegionManager::commit_regions(uint index, size_t num_regions, WorkerThr
   _cardtable_mapper->commit_regions(index, num_regions, pretouch_workers);
 }
 
-void HeapRegionManager::uncommit_regions(uint start, uint num_regions) {
+void G1HeapRegionManager::uncommit_regions(uint start, uint num_regions) {
   guarantee(num_regions > 0, "No point in calling this for zero regions");
 
   uint end = start + num_regions;
@@ -215,7 +215,7 @@ void HeapRegionManager::uncommit_regions(uint start, uint num_regions) {
   _committed_map.uncommit(start, end);
 }
 
-void HeapRegionManager::initialize_regions(uint start, uint num_regions) {
+void G1HeapRegionManager::initialize_regions(uint start, uint num_regions) {
   for (uint i = start; i < start + num_regions; i++) {
     assert(is_available(i), "Just made region %u available but is apparently not.", i);
     G1HeapRegion* hr = at(i);
@@ -227,12 +227,12 @@ void HeapRegionManager::initialize_regions(uint start, uint num_regions) {
   }
 }
 
-void HeapRegionManager::activate_regions(uint start, uint num_regions) {
+void G1HeapRegionManager::activate_regions(uint start, uint num_regions) {
   _committed_map.activate(start, start + num_regions);
   initialize_regions(start, num_regions);
 }
 
-void HeapRegionManager::reactivate_regions(uint start, uint num_regions) {
+void G1HeapRegionManager::reactivate_regions(uint start, uint num_regions) {
   assert(num_regions > 0, "No point in calling this for zero regions");
 
   clear_auxiliary_data_structures(start, num_regions);
@@ -241,7 +241,7 @@ void HeapRegionManager::reactivate_regions(uint start, uint num_regions) {
   initialize_regions(start, num_regions);
 }
 
-void HeapRegionManager::deactivate_regions(uint start, uint num_regions) {
+void G1HeapRegionManager::deactivate_regions(uint start, uint num_regions) {
   assert(num_regions > 0, "Need to specify at least one region to uncommit, tried to uncommit zero regions at %u", start);
   assert(length() >= num_regions, "pre-condition");
 
@@ -256,7 +256,7 @@ void HeapRegionManager::deactivate_regions(uint start, uint num_regions) {
   _committed_map.deactivate(start, end);
 }
 
-void HeapRegionManager::clear_auxiliary_data_structures(uint start, uint num_regions) {
+void G1HeapRegionManager::clear_auxiliary_data_structures(uint start, uint num_regions) {
   // Signal marking bitmaps to clear the given regions.
   _bitmap_mapper->signal_mapping_changed(start, num_regions);
   // Signal G1BlockOffsetTable to clear the given regions.
@@ -265,7 +265,7 @@ void HeapRegionManager::clear_auxiliary_data_structures(uint start, uint num_reg
   _cardtable_mapper->signal_mapping_changed(start, num_regions);
 }
 
-MemoryUsage HeapRegionManager::get_auxiliary_data_memory_usage() const {
+MemoryUsage G1HeapRegionManager::get_auxiliary_data_memory_usage() const {
   size_t used_sz =
     _bitmap_mapper->committed_size() +
     _bot_mapper->committed_size() +
@@ -279,18 +279,18 @@ MemoryUsage HeapRegionManager::get_auxiliary_data_memory_usage() const {
   return MemoryUsage(0, used_sz, committed_sz, committed_sz);
 }
 
-bool HeapRegionManager::has_inactive_regions() const {
+bool G1HeapRegionManager::has_inactive_regions() const {
   return _committed_map.num_inactive() > 0;
 }
 
-uint HeapRegionManager::uncommit_inactive_regions(uint limit) {
+uint G1HeapRegionManager::uncommit_inactive_regions(uint limit) {
   assert(limit > 0, "Need to specify at least one region to uncommit");
 
   uint uncommitted = 0;
   uint offset = 0;
   do {
     MutexLocker uc(Uncommit_lock, Mutex::_no_safepoint_check_flag);
-    HeapRegionRange range = _committed_map.next_inactive_range(offset);
+    G1HeapRegionRange range = _committed_map.next_inactive_range(offset);
     // No more regions available for uncommit. Return the number of regions
     // already uncommitted or 0 if there were no longer any inactive regions.
     if (range.length() == 0) {
@@ -307,12 +307,12 @@ uint HeapRegionManager::uncommit_inactive_regions(uint limit) {
   return uncommitted;
 }
 
-uint HeapRegionManager::expand_inactive(uint num_regions) {
+uint G1HeapRegionManager::expand_inactive(uint num_regions) {
   uint offset = 0;
   uint expanded = 0;
 
   do {
-    HeapRegionRange regions = _committed_map.next_inactive_range(offset);
+    G1HeapRegionRange regions = _committed_map.next_inactive_range(offset);
     if (regions.length() == 0) {
       // No more unavailable regions.
       break;
@@ -327,14 +327,14 @@ uint HeapRegionManager::expand_inactive(uint num_regions) {
   return expanded;
 }
 
-uint HeapRegionManager::expand_any(uint num_regions, WorkerThreads* pretouch_workers) {
+uint G1HeapRegionManager::expand_any(uint num_regions, WorkerThreads* pretouch_workers) {
   assert(num_regions > 0, "Must expand at least 1 region");
 
   uint offset = 0;
   uint expanded = 0;
 
   do {
-    HeapRegionRange regions = _committed_map.next_committable_range(offset);
+    G1HeapRegionRange regions = _committed_map.next_committable_range(offset);
     if (regions.length() == 0) {
       // No more unavailable regions.
       break;
@@ -349,7 +349,7 @@ uint HeapRegionManager::expand_any(uint num_regions, WorkerThreads* pretouch_wor
   return expanded;
 }
 
-uint HeapRegionManager::expand_by(uint num_regions, WorkerThreads* pretouch_workers) {
+uint G1HeapRegionManager::expand_by(uint num_regions, WorkerThreads* pretouch_workers) {
   assert(num_regions > 0, "Must expand at least 1 region");
 
   // First "undo" any requests to uncommit memory concurrently by
@@ -365,7 +365,7 @@ uint HeapRegionManager::expand_by(uint num_regions, WorkerThreads* pretouch_work
   return expanded;
 }
 
-void HeapRegionManager::expand_exact(uint start, uint num_regions, WorkerThreads* pretouch_workers) {
+void G1HeapRegionManager::expand_exact(uint start, uint num_regions, WorkerThreads* pretouch_workers) {
   assert(num_regions != 0, "Need to request at least one region");
   uint end = start + num_regions;
 
@@ -393,7 +393,7 @@ void HeapRegionManager::expand_exact(uint start, uint num_regions, WorkerThreads
   verify_optional();
 }
 
-uint HeapRegionManager::expand_on_preferred_node(uint preferred_index) {
+uint G1HeapRegionManager::expand_on_preferred_node(uint preferred_index) {
   uint expand_candidate = UINT_MAX;
 
   if (available() >= 1) {
@@ -420,13 +420,13 @@ uint HeapRegionManager::expand_on_preferred_node(uint preferred_index) {
   return 1;
 }
 
-bool HeapRegionManager::is_on_preferred_index(uint region_index, uint preferred_node_index) {
+bool G1HeapRegionManager::is_on_preferred_index(uint region_index, uint preferred_node_index) {
   uint region_node_index = G1NUMA::numa()->preferred_node_index_for_index(region_index);
   return region_node_index == preferred_node_index;
 }
 
 #ifdef ASSERT
-void HeapRegionManager::assert_contiguous_range(uint start, uint num_regions) {
+void G1HeapRegionManager::assert_contiguous_range(uint start, uint num_regions) {
   // General sanity check, regions found should either be available and empty
   // or not available so that we can make them available and use them.
   for (uint i = start; i < (start + num_regions); i++) {
@@ -439,7 +439,7 @@ void HeapRegionManager::assert_contiguous_range(uint start, uint num_regions) {
 }
 #endif
 
-uint HeapRegionManager::find_contiguous_in_range(uint start, uint end, uint num_regions) {
+uint G1HeapRegionManager::find_contiguous_in_range(uint start, uint end, uint num_regions) {
   assert(start <= end, "precondition");
   assert(num_regions >= 1, "precondition");
   uint candidate = start;       // First region in candidate sequence.
@@ -465,9 +465,9 @@ uint HeapRegionManager::find_contiguous_in_range(uint start, uint end, uint num_
   return G1_NO_HRM_INDEX;
 }
 
-uint HeapRegionManager::find_contiguous_in_free_list(uint num_regions) {
+uint G1HeapRegionManager::find_contiguous_in_free_list(uint num_regions) {
   uint candidate = G1_NO_HRM_INDEX;
-  HeapRegionRange range(0,0);
+  G1HeapRegionRange range(0,0);
 
   do {
     range = _committed_map.next_active_range(range.end());
@@ -477,7 +477,7 @@ uint HeapRegionManager::find_contiguous_in_free_list(uint num_regions) {
   return candidate;
 }
 
-uint HeapRegionManager::find_contiguous_allow_expand(uint num_regions) {
+uint G1HeapRegionManager::find_contiguous_allow_expand(uint num_regions) {
   // Check if we can actually satisfy the allocation.
   if (num_regions > available()) {
     return G1_NO_HRM_INDEX;
@@ -486,7 +486,7 @@ uint HeapRegionManager::find_contiguous_allow_expand(uint num_regions) {
   return find_contiguous_in_range(0, reserved_length(), num_regions);
 }
 
-G1HeapRegion* HeapRegionManager::next_region_in_heap(const G1HeapRegion* r) const {
+G1HeapRegion* G1HeapRegionManager::next_region_in_heap(const G1HeapRegion* r) const {
   guarantee(r != nullptr, "Start region must be a valid region");
   guarantee(is_available(r->hrm_index()), "Trying to iterate starting from region %u which is not in the heap", r->hrm_index());
   for (uint i = r->hrm_index() + 1; i < _allocated_heapregions_length; i++) {
@@ -498,7 +498,7 @@ G1HeapRegion* HeapRegionManager::next_region_in_heap(const G1HeapRegion* r) cons
   return nullptr;
 }
 
-void HeapRegionManager::iterate(HeapRegionClosure* blk) const {
+void G1HeapRegionManager::iterate(G1HeapRegionClosure* blk) const {
   uint len = reserved_length();
 
   for (uint i = 0; i < len; i++) {
@@ -514,7 +514,7 @@ void HeapRegionManager::iterate(HeapRegionClosure* blk) const {
   }
 }
 
-void HeapRegionManager::iterate(HeapRegionIndexClosure* blk) const {
+void G1HeapRegionManager::iterate(G1HeapRegionIndexClosure* blk) const {
   uint len = reserved_length();
 
   for (uint i = 0; i < len; i++) {
@@ -529,29 +529,7 @@ void HeapRegionManager::iterate(HeapRegionIndexClosure* blk) const {
   }
 }
 
-uint HeapRegionManager::find_highest_free(bool* expanded) {
-  // Loop downwards from the highest region index, looking for an
-  // entry which is either free or not yet committed.  If not yet
-  // committed, expand at that index.
-  for (uint curr = reserved_length(); curr-- > 0;) {
-    G1HeapRegion* hr = _regions.get_by_index(curr);
-    if (hr == nullptr || !is_available(curr)) {
-      // Found uncommitted and free region, expand to make it available for use.
-      expand_exact(curr, 1, nullptr);
-      assert(at(curr)->is_free(), "Region (%u) must be available and free after expand", curr);
-
-      *expanded = true;
-      return curr;
-    }
-    if (hr->is_free()) {
-      *expanded = false;
-      return curr;
-    }
-  }
-  return G1_NO_HRM_INDEX;
-}
-
-bool HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* commit_count, WorkerThreads* pretouch_workers) {
+bool G1HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* commit_count, WorkerThreads* pretouch_workers) {
   size_t commits = 0;
   uint start_index = (uint)_regions.get_index_by_address(range.start());
   uint last_index = (uint)_regions.get_index_by_address(range.last());
@@ -574,7 +552,7 @@ bool HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* com
   return true;
 }
 
-void HeapRegionManager::par_iterate(HeapRegionClosure* blk, HeapRegionClaimer* hrclaimer, const uint start_index) const {
+void G1HeapRegionManager::par_iterate(G1HeapRegionClosure* blk, G1HeapRegionClaimer* hrclaimer, const uint start_index) const {
   // Every worker will actually look at all regions, skipping over regions that
   // are currently not committed.
   // This also (potentially) iterates over regions newly allocated during GC. This
@@ -603,7 +581,7 @@ void HeapRegionManager::par_iterate(HeapRegionClosure* blk, HeapRegionClaimer* h
   }
 }
 
-uint HeapRegionManager::shrink_by(uint num_regions_to_remove) {
+uint G1HeapRegionManager::shrink_by(uint num_regions_to_remove) {
   assert(length() > 0, "the region sequence should not be empty");
   assert(length() <= _allocated_heapregions_length, "invariant");
   assert(_allocated_heapregions_length > 0, "we should have at least one region committed");
@@ -633,7 +611,7 @@ uint HeapRegionManager::shrink_by(uint num_regions_to_remove) {
   return removed;
 }
 
-void HeapRegionManager::shrink_at(uint index, size_t num_regions) {
+void G1HeapRegionManager::shrink_at(uint index, size_t num_regions) {
 #ifdef ASSERT
   for (uint i = index; i < (index + num_regions); i++) {
     assert(is_available(i), "Expected available region at index %u", i);
@@ -645,7 +623,7 @@ void HeapRegionManager::shrink_at(uint index, size_t num_regions) {
   deactivate_regions(index, (uint) num_regions);
 }
 
-uint HeapRegionManager::find_empty_from_idx_reverse(uint start_idx, uint* res_idx) const {
+uint G1HeapRegionManager::find_empty_from_idx_reverse(uint start_idx, uint* res_idx) const {
   guarantee(start_idx <= _allocated_heapregions_length, "checking");
   guarantee(res_idx != nullptr, "checking");
 
@@ -679,7 +657,7 @@ uint HeapRegionManager::find_empty_from_idx_reverse(uint start_idx, uint* res_id
   return num_regions_found;
 }
 
-void HeapRegionManager::verify() {
+void G1HeapRegionManager::verify() {
   guarantee(length() <= _allocated_heapregions_length,
             "invariant: _length: %u _allocated_length: %u",
             length(), _allocated_heapregions_length);
@@ -724,65 +702,65 @@ void HeapRegionManager::verify() {
 }
 
 #ifndef PRODUCT
-void HeapRegionManager::verify_optional() {
+void G1HeapRegionManager::verify_optional() {
   verify();
 }
 #endif // PRODUCT
 
-HeapRegionClaimer::HeapRegionClaimer(uint n_workers) :
+G1HeapRegionClaimer::G1HeapRegionClaimer(uint n_workers) :
     _n_workers(n_workers), _n_regions(G1CollectedHeap::heap()->_hrm._allocated_heapregions_length), _claims(nullptr) {
   uint* new_claims = NEW_C_HEAP_ARRAY(uint, _n_regions, mtGC);
   memset(new_claims, Unclaimed, sizeof(*_claims) * _n_regions);
   _claims = new_claims;
 }
 
-HeapRegionClaimer::~HeapRegionClaimer() {
+G1HeapRegionClaimer::~G1HeapRegionClaimer() {
   FREE_C_HEAP_ARRAY(uint, _claims);
 }
 
-uint HeapRegionClaimer::offset_for_worker(uint worker_id) const {
+uint G1HeapRegionClaimer::offset_for_worker(uint worker_id) const {
   assert(_n_workers > 0, "must be set");
   assert(worker_id < _n_workers, "Invalid worker_id.");
   return _n_regions * worker_id / _n_workers;
 }
 
-bool HeapRegionClaimer::is_region_claimed(uint region_index) const {
+bool G1HeapRegionClaimer::is_region_claimed(uint region_index) const {
   assert(region_index < _n_regions, "Invalid index.");
   return _claims[region_index] == Claimed;
 }
 
-bool HeapRegionClaimer::claim_region(uint region_index) {
+bool G1HeapRegionClaimer::claim_region(uint region_index) {
   assert(region_index < _n_regions, "Invalid index.");
   uint old_val = Atomic::cmpxchg(&_claims[region_index], Unclaimed, Claimed);
   return old_val == Unclaimed;
 }
 
 class G1RebuildFreeListTask : public WorkerTask {
-  HeapRegionManager* _hrm;
-  FreeRegionList*    _worker_freelists;
-  uint               _worker_chunk_size;
-  uint               _num_workers;
+  G1HeapRegionManager* _hrm;
+  G1FreeRegionList*    _worker_freelists;
+  uint                 _worker_chunk_size;
+  uint                 _num_workers;
 
 public:
-  G1RebuildFreeListTask(HeapRegionManager* hrm, uint num_workers) :
+  G1RebuildFreeListTask(G1HeapRegionManager* hrm, uint num_workers) :
       WorkerTask("G1 Rebuild Free List Task"),
       _hrm(hrm),
-      _worker_freelists(NEW_C_HEAP_ARRAY(FreeRegionList, num_workers, mtGC)),
+      _worker_freelists(NEW_C_HEAP_ARRAY(G1FreeRegionList, num_workers, mtGC)),
       _worker_chunk_size((_hrm->reserved_length() + num_workers - 1) / num_workers),
       _num_workers(num_workers) {
     for (uint worker = 0; worker < _num_workers; worker++) {
-      ::new (&_worker_freelists[worker]) FreeRegionList("Appendable Worker Free List");
+      ::new (&_worker_freelists[worker]) G1FreeRegionList("Appendable Worker Free List");
     }
   }
 
   ~G1RebuildFreeListTask() {
     for (uint worker = 0; worker < _num_workers; worker++) {
-      _worker_freelists[worker].~FreeRegionList();
+      _worker_freelists[worker].~G1FreeRegionList();
     }
-    FREE_C_HEAP_ARRAY(FreeRegionList, _worker_freelists);
+    FREE_C_HEAP_ARRAY(G1FreeRegionList, _worker_freelists);
   }
 
-  FreeRegionList* worker_freelist(uint worker) {
+  G1FreeRegionList* worker_freelist(uint worker) {
     return &_worker_freelists[worker];
   }
 
@@ -800,7 +778,7 @@ public:
       return;
     }
 
-    FreeRegionList* free_list = worker_freelist(worker_id);
+    G1FreeRegionList* free_list = worker_freelist(worker_id);
     for (uint i = start; i < end; i++) {
       G1HeapRegion* region = _hrm->at_or_null(i);
       if (region != nullptr && region->is_free()) {
@@ -815,7 +793,7 @@ public:
   }
 };
 
-void HeapRegionManager::rebuild_free_list(WorkerThreads* workers) {
+void G1HeapRegionManager::rebuild_free_list(WorkerThreads* workers) {
   // Abandon current free list to allow a rebuild.
   _free_list.abandon();
 

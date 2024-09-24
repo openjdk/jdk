@@ -158,13 +158,6 @@ class ZipCoder {
         return hsh;
     }
 
-    boolean hasTrailingSlash(byte[] a, int end) {
-        byte[] slashBytes = slashBytes();
-        return end >= slashBytes.length &&
-            Arrays.mismatch(a, end - slashBytes.length, end, slashBytes, 0, slashBytes.length) == -1;
-    }
-
-    private byte[] slashBytes;
     private final Charset cs;
     protected CharsetDecoder dec;
     private CharsetEncoder enc;
@@ -189,23 +182,6 @@ class ZipCoder {
               .onUnmappableCharacter(CodingErrorAction.REPORT);
         }
         return enc;
-    }
-
-    // This method produces an array with the bytes that will correspond to a
-    // trailing '/' in the chosen character encoding.
-    //
-    // While in most charsets a trailing slash will be encoded as the byte
-    // value of '/', this does not hold in the general case. E.g., in charsets
-    // such as UTF-16 and UTF-32 it will be represented by a sequence of 2 or 4
-    // bytes, respectively.
-    private byte[] slashBytes() {
-        if (slashBytes == null) {
-            // Take into account charsets that produce a BOM, e.g., UTF-16
-            byte[] slash = "/".getBytes(cs);
-            byte[] doubleSlash = "//".getBytes(cs);
-            slashBytes = Arrays.copyOfRange(doubleSlash, slash.length, doubleSlash.length);
-        }
-        return slashBytes;
     }
 
     /**
@@ -297,8 +273,7 @@ class ZipCoder {
             return h;
         }
 
-        @Override
-        boolean hasTrailingSlash(byte[] a, int end) {
+        private boolean hasTrailingSlash(byte[] a, int end) {
             return end > 0 && a[end - 1] == '/';
         }
 
