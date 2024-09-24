@@ -137,7 +137,7 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
     if (HeapShared::is_lambda_proxy_klass(ik)) {
       InstanceKlass* nest_host = ik->nest_host_not_null();
       if (!try_add_candidate(nest_host)) {
-        return false; // FIXME -- add test case for JFR event class.
+        return false; // FIXME -- add test case: Class X has lambda, but X's super is old class so excluded.
       }
     }
   }

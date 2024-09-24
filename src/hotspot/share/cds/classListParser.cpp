@@ -611,11 +611,13 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
     ConstantPool* cp = ik->constants();
     ConstantPoolCache* cpcache = cp->cache();
     bool found = false;
+    bool non_deterministic = false;
     for (int indy_index = 0; indy_index < cpcache->resolved_indy_entries_length(); indy_index++) {
       int pool_index = cpcache->resolved_indy_entry_at(indy_index)->constant_pool_index();
       if (CDSConfig::is_dumping_invokedynamic() && !AOTConstantPoolResolver::is_resolution_deterministic(cp, pool_index)) {
         // Avoid resolving indys that refer to excluded classes, or else we would create
         // MethodTypes and MethodHandles that have native pointers to excluded InstanceKlasses.
+        non_deterministic = true;
         continue;
       }
       constantPoolHandle pool(THREAD, cp);
@@ -643,7 +645,7 @@ void ClassListParser::resolve_indy_impl(Symbol* class_name_symbol, TRAPS) {
         cpcache->set_dynamic_call(info, indy_index);
       }
     }
-    if (!found) {
+    if (!found && !non_deterministic) {
       ResourceMark rm(THREAD);
       log_warning(cds)("No invoke dynamic constant pool entry can be found for class %s. The classlist is probably out-of-date.",
                      class_name_symbol->as_C_string());
