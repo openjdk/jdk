@@ -488,7 +488,8 @@ static bool rule_major_allocation_rate(const ZDirectorStats& stats) {
 
   // Calculate the GC cost for each reclaimed byte
   const double current_young_gc_time_per_bytes_freed = double(young_gc_time) / double(reclaimed_per_young_gc);
-  const double current_old_gc_time_per_bytes_freed = double(old_gc_time) / double(reclaimed_per_old_gc);
+  const double current_old_gc_time_per_bytes_freed = reclaimed_per_old_gc == 0 ? std::numeric_limits<double>::infinity()
+                                                                               : (double(old_gc_time) / double(reclaimed_per_old_gc));
 
   // Calculate extra time per young collection inflicted by *not* doing an
   // old collection that frees up memory in the old generation.
@@ -838,7 +839,7 @@ void ZDirector::evaluate_rules() {
 }
 
 bool ZDirector::wait_for_tick() {
-  const uint64_t interval_ms = MILLIUNITS / decision_hz;
+  const uint64_t interval_ms = MILLIUNITS / DecisionHz;
 
   ZLocker<ZConditionLock> locker(&_monitor);
 
