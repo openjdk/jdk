@@ -96,9 +96,7 @@ public class RangeTest {
     static Stream<Arguments> isBeforeTestCases() {
         var list = List.of(
             Arguments.of("Given bounded timespan when before another then true if completely before",
-                Range.of(START, END), Range.of(END.plusDays(1), END.plusYears(1)), true),
-            Arguments.of("Given start-unbounded timespan when isBefore start-unbounded exclusive starting at end then true",
-                Range.unboundedEndingAt(START), Range.unboundedStartingAt(END, true), true)
+                Range.of(START, END), Range.of(END.plusDays(1), END.plusYears(1)), true)
         );
 
         var nonInverse = Stream.of(
@@ -108,8 +106,8 @@ public class RangeTest {
                 Range.of(START, END), Range.of(INTERSECTING_START, END), false),
             Arguments.of("Given unbounded start timespan when isBefore bounded then false",
                 Range.unboundedEndingAt(END), Range.of(START, END), false),
-            Arguments.of("Given end-unbounded exclusive timespan when isBefore bounded then false",
-                Range.unboundedStartingAt(END, true), Range.of(START, END), false)
+            Arguments.of("Given start-unbounded timespan when isBefore end-unbounded exclusive starting at end then true",
+                Range.unboundedEndingAt(START), Range.unboundedStartingAt(END, true), true)
         );
 
         return Stream.concat(
@@ -121,17 +119,15 @@ public class RangeTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("isBeforeTestCases")
     @DisplayName("Test isBefore method")
-    void testIsBefore(String description, Range<ChronoLocalDateTime<?>> timespan,
-                      Range<ChronoLocalDateTime<?>> other, boolean expected) {
+    void testIsBefore(String description, Range.BoundedAtEnd<ChronoLocalDateTime<?>> timespan,
+                      Range.BoundedAtStart<ChronoLocalDateTime<?>> other, boolean expected) {
         assertEquals(expected, timespan.isBefore(other), description);
     }
 
     static Stream<Arguments> isAfterTestCases() {
         var list = List.of(
             Arguments.of("Given bounded timespan when after another then true if completely after",
-                Range.of(END.plusDays(1), END.plusYears(1)), Range.of(START, END), true),
-            Arguments.of("Given end-unbounded timespan when isAfter start-unbounded exclusive ending at start then true",
-                Range.unboundedStartingAt(START, true), Range.unboundedEndingAt(START), true)
+                Range.of(END.plusDays(1), END.plusYears(1)), Range.of(START, END), true)
         );
 
         var nonInverse = Stream.of(
@@ -142,7 +138,9 @@ public class RangeTest {
             Arguments.of("Given unbounded end timespan when isAfter bounded then always false",
                 Range.unboundedStartingAt(START), Range.of(START, END), false),
             Arguments.of("Given end-unbounded exclusive timespan when isAfter bounded then false",
-                Range.unboundedStartingAt(START, true), Range.of(START, END), false)
+                Range.unboundedStartingAt(START, true), Range.of(START, END), false),
+            Arguments.of("Given end-unbounded timespan when isAfter start-unbounded exclusive ending at start then true",
+                Range.unboundedStartingAt(START, true), Range.unboundedEndingAt(START), true)
         );
 
         return Stream.concat(
@@ -154,7 +152,7 @@ public class RangeTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("isAfterTestCases")
     @DisplayName("Test isAfter method")
-    void testIsAfter(String description, Range<ChronoLocalDateTime<?>> timespan, Range<ChronoLocalDateTime<?>> other, boolean expected) {
+    void testIsAfter(String description, Range.BoundedAtStart<ChronoLocalDateTime<?>> timespan, Range.BoundedAtEnd<ChronoLocalDateTime<?>> other, boolean expected) {
         assertEquals(expected, timespan.isAfter(other), description);
     }
 
