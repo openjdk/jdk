@@ -401,6 +401,11 @@ C2V_VMENTRY_NULL(jobject, asResolvedJavaMethod, (JNIEnv* env, jobject, jobject e
   return JVMCIENV->get_jobject(result);
 }
 
+C2V_VMENTRY_0(jboolean, changeCompilerThreadCanCallJava, (JNIEnv* env, jobject, jboolean newState))
+  return CompilerThreadCanCallJava::update(THREAD, newState) != nullptr;
+C2V_END
+
+
 C2V_VMENTRY_NULL(jobject, getResolvedJavaMethod, (JNIEnv* env, jobject, jobject base, jlong offset))
   Method* method = nullptr;
   JVMCIObject base_object = JVMCIENV->wrap(base);
@@ -3387,6 +3392,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "notifyCompilerPhaseEvent",                     CC "(JIII)V",                                                                         FN_PTR(notifyCompilerPhaseEvent)},
   {CC "notifyCompilerInliningEvent",                  CC "(I" HS_METHOD2 HS_METHOD2 "ZLjava/lang/String;I)V",                               FN_PTR(notifyCompilerInliningEvent)},
   {CC "getOopMapAt",                                  CC "(" HS_METHOD2 "I[J)V",                                                            FN_PTR(getOopMapAt)},
+  {CC "changeCompilerThreadCanCallJava",              CC "(Z)Z",                                                                            FN_PTR(changeCompilerThreadCanCallJava)},
 };
 
 int CompilerToVM::methods_count() {
