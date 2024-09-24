@@ -66,4 +66,43 @@ public class SystemMapTestBase {
         // Main thread stack
         regexBase_committed + "STACK.*main.*"
     };
+
+    // windows:
+    private static final String winprot = "[\\-rwxcin]*";
+    private static final String wintype = "[rc]-(img|map|pvt)";
+
+    private static final String winbase = range + space + someSize + space + winprot + space;
+
+    private static final String winimage     = winbase + "c-img" + space + someNumber + space;
+    private static final String wincommitted = winbase + "(c-pvt|c-map)" + space + someNumber + space;
+    private static final String winreserved  = winbase + "r-pvt" + space + someNumber + space;
+
+    private static final String shouldMatchUnconditionally_windows[] = {
+        // java launcher
+        winimage + ".*[\\/\\\\]bin[\\/\\\\]java[.]exe",
+        // libjvm
+        winimage + ".*[\\/\\\\]bin[\\/\\\\].*[\\/\\\\]jvm.dll"
+    };
+
+    private static final String shouldMatchIfNMTIsEnabled_windows[] = {
+        wincommitted + "JAVAHEAP.*",
+        // metaspace
+        wincommitted + "META.*",
+        // parts of metaspace should be uncommitted
+        winreserved + "META.*",
+        // code cache
+        wincommitted + "CODE.*",
+        // Main thread stack
+        wincommitted + "STACK-\\d+-main.*"
+    };
+
+    private static final boolean isWindows = Platform.isWindows();
+
+    protected static String[] shouldMatchUnconditionally() {
+        return isWindows ? shouldMatchUnconditionally_windows : shouldMatchUnconditionally_linux;
+    }
+    protected static String[] shouldMatchIfNMTIsEnabled() {
+        return isWindows ? shouldMatchIfNMTIsEnabled_windows : shouldMatchIfNMTIsEnabled_linux;
+    }
+
 }
