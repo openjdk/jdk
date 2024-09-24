@@ -84,26 +84,27 @@ public class ReleaseInflaterOnEOF {
     @Test
     public void shouldReleaseInflaterAfterEof() throws Exception {
         zip = createZip("release-inflater.zip");
-        var zf = new ZipFile(zip.toFile());
+        try (var zf = new ZipFile(zip.toFile())) {
 
-        ZipEntry entry = new ZipEntry("deflated.txt");
+            ZipEntry entry = new ZipEntry("deflated.txt");
 
-        Inflater initialInflater;
+            Inflater initialInflater;
 
-        // Open an input stream
-        var in = zf.getInputStream(entry);
-        // Record its Inflater instance
-        initialInflater = getInflater(in);
-        // Close the input stream to release the Inflater back to the cache
-        in.close();
-        // The Inflater cache now has a single entry
+            // Open an input stream
+            try (var in = zf.getInputStream(entry)) {
+                // Record its Inflater instance
+                initialInflater = getInflater(in);
+            }
+            // Closing the input stream releases the Inflater back to the cache
+            // The Inflater cache now has a single entry
 
-        for (int i = 0; i < 100; i++) {
-            var is = zf.getInputStream(entry);
-            // Assert that the ZipFileInflaterInputStream reused the cached Inflater instance
-            assertSame(initialInflater, getInflater(is));
-            // Fully consume the stream to allow ZipFileInflaterInputStream to observe the EOF
-            is.transferTo(OutputStream.nullOutputStream());
+            for (int i = 0; i < 100; i++) {
+                var is = zf.getInputStream(entry);
+                // Assert that the ZipFileInflaterInputStream reused the cached Inflater instance
+                assertSame(initialInflater, getInflater(is));
+                // Fully consume the stream to allow ZipFileInflaterInputStream to observe the EOF
+                is.transferTo(OutputStream.nullOutputStream());
+            }
         }
     }
 
