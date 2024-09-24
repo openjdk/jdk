@@ -417,10 +417,10 @@ public final class StackMapGenerator {
                     throw generatorError("Expecting a stack map frame");
                 }
                 if (thisOffset == bcs.bci()) {
-                    if (!ncf) {
-                        currentFrame.checkAssignableTo(frames.get(stackmapIndex));
-                    }
                     Frame nextFrame = frames.get(stackmapIndex++);
+                    if (!ncf) {
+                        currentFrame.checkAssignableTo(nextFrame);
+                    }
                     while (!nextFrame.dirty) { //skip unmatched frames
                         if (stackmapIndex == frames.size()) return; //skip the rest of this round
                         nextFrame = frames.get(stackmapIndex++);
