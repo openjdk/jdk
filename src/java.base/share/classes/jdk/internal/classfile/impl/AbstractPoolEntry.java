@@ -89,7 +89,7 @@ public abstract sealed class AbstractPoolEntry {
     }
 
     static int hashClassFromDescriptor(int descriptorHash) {
-        return hash1(ClassFile.TAG_CLASS, descriptorHash);
+        return hash1(PoolEntry.TAG_CLASS, descriptorHash);
     }
 
     static boolean isArrayDescriptor(Utf8EntryImpl cs) {
@@ -567,15 +567,15 @@ public abstract sealed class AbstractPoolEntry {
             super(cpm, TAG_CLASS, index, name);
         }
 
+        ClassEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name, int hash, ClassDesc sym) {
+            super(cpm, TAG_CLASS, index, name);
+            this.hash = hash;
+            this.sym = sym;
+        }
+
         @Override
         public byte tag() {
             return TAG_CLASS;
-        }
-
-        ClassEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name, int hash, ClassDesc sym) {
-            super(cpm, ClassFile.TAG_CLASS, index, name);
-            this.hash = hash;
-            this.sym = sym;
         }
 
         @Override
