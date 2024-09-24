@@ -366,7 +366,8 @@ public class AtomicLongArray implements java.io.Serializable {
     }
 
     /**
-     * {@return the String representation of the current values of array}
+     * Returns the String representation of the current values of array.
+     * @return the String representation of the current values of array
      */
     public String toString() {
         int iMax = array.length - 1;

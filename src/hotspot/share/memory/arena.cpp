@@ -222,8 +222,8 @@ void Chunk::next_chop(Chunk* k) {
   k->_next = nullptr;
 }
 
-Arena::Arena(MemTag mem_tag, Tag tag, size_t init_size) :
-  _mem_tag(mem_tag), _tag(tag),
+Arena::Arena(MEMFLAGS flag, Tag tag, size_t init_size) :
+  _flags(flag), _tag(tag),
   _size_in_bytes(0),
   _first(nullptr), _chunk(nullptr),
   _hwm(nullptr), _max(nullptr)
@@ -233,13 +233,13 @@ Arena::Arena(MemTag mem_tag, Tag tag, size_t init_size) :
   _first = _chunk;
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
-  MemTracker::record_new_arena(mem_tag);
+  MemTracker::record_new_arena(flag);
   set_size_in_bytes(init_size);
 }
 
 Arena::~Arena() {
   destruct_contents();
-  MemTracker::record_arena_free(_mem_tag);
+  MemTracker::record_arena_free(_flags);
 }
 
 // Destroy this arenas contents and reset to empty
@@ -259,8 +259,8 @@ void Arena::set_size_in_bytes(size_t size) {
   if (_size_in_bytes != size) {
     ssize_t delta = size - size_in_bytes();
     _size_in_bytes = size;
-    MemTracker::record_arena_size_change(delta, _mem_tag);
-    if (CompilationMemoryStatistic::enabled() && _mem_tag == mtCompiler) {
+    MemTracker::record_arena_size_change(delta, _flags);
+    if (CompilationMemoryStatistic::enabled() && _flags == mtCompiler) {
       Thread* const t = Thread::current();
       if (t != nullptr && t->is_Compiler_thread()) {
         CompilationMemoryStatistic::on_arena_change(delta, this);
@@ -286,7 +286,7 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   // (Note: all chunk sizes have to be 64-bit aligned)
   size_t len = MAX2(ARENA_ALIGN(x), (size_t) Chunk::size);
 
-  if (MemTracker::check_exceeds_limit(x, _mem_tag)) {
+  if (MemTracker::check_exceeds_limit(x, _flags)) {
     return nullptr;
   }
 

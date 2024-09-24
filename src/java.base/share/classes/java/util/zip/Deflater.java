@@ -782,7 +782,8 @@ public class Deflater {
     }
 
     /**
-     * {@return the ADLER-32 value of the uncompressed data}
+     * Returns the ADLER-32 value of the uncompressed data.
+     * @return the ADLER-32 value of the uncompressed data
      */
     public int getAdler() {
         synchronized (zsRef) {

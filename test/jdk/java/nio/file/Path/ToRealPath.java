@@ -33,8 +33,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.Set;
 
 import jdk.test.lib.Platform;
 
@@ -53,7 +51,6 @@ public class ToRealPath {
     static final Path SUBDIR;
     static final Path FILE;
     static final Path LINK;
-    static final Set<Path> extraDeletions;
 
     static {
         try {
@@ -62,7 +59,6 @@ public class ToRealPath {
             FILE = Files.createFile(DIR.resolve("foo"));
             LINK = DIR.resolve("link");
             SUPPORTS_LINKS = TestUtil.supportsSymbolicLinks(DIR);
-            extraDeletions = new HashSet<Path>();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -158,15 +154,8 @@ public class ToRealPath {
         System.out.println("p: " + p);
         Path path = LINK.resolve(p);
         System.out.println("path:      " + path);
-        if (Platform.isWindows() && Files.notExists(path)) {
-            Files.createFile(path);
-            extraDeletions.add(path);
-        }
         System.out.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
-        if (Platform.isWindows())
-            assertTrue(Files.isSameFile(path.toRealPath(NOFOLLOW_LINKS), path));
-        else
-            assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
+        assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
 
         Files.delete(sub);
         Files.delete(sub.getParent());
@@ -188,15 +177,8 @@ public class ToRealPath {
         Path p = Path.of("aaa", "..", "..", "bbb", "..", "..", "out.txt");
         Path path = DIR.resolve(p);
         System.out.println("path:      " + path);
-        if (Platform.isWindows() && Files.notExists(path)) {
-            Files.createFile(path);
-            extraDeletions.add(path);
-        }
         System.out.println("no follow: " + path.toRealPath(NOFOLLOW_LINKS));
-        if (Platform.isWindows())
-            assertTrue(Files.isSameFile(path.toRealPath(NOFOLLOW_LINKS), path));
-        else
-            assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
+        assertEquals(path.toRealPath(NOFOLLOW_LINKS), path);
         System.out.println(path.toRealPath());
 
         Files.delete(sub);
@@ -253,7 +235,5 @@ public class ToRealPath {
         Files.delete(FILE);
         Files.delete(SUBDIR);
         Files.delete(DIR);
-        for (Path p : extraDeletions)
-            Files.deleteIfExists(p);
     }
 }

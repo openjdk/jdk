@@ -41,6 +41,7 @@ public final class MethodImpl
     private final int startPos, endPos, attributesPos;
     private List<Attribute<?>> attributes;
     private int[] parameterSlots;
+    private MethodTypeDesc mDesc;
 
     public MethodImpl(ClassReader reader, int startPos, int endPos, int attrStart) {
         this.reader = reader;
@@ -74,7 +75,10 @@ public final class MethodImpl
 
     @Override
     public MethodTypeDesc methodTypeSymbol() {
-        return Util.methodTypeSymbol(methodType());
+        if (mDesc == null) {
+            mDesc = MethodTypeDesc.ofDescriptor(methodType().stringValue());
+        }
+        return mDesc;
     }
 
     @Override

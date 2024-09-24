@@ -1,9 +1,0 @@
-prefix=@CMAKE_INSTALL_PREFIX@
-libdir=@CMAKE_INSTALL_FULL_LIBDIR@
-includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
-
-Name: SLEEF
-Description: SIMD Library for Evaluating Elementary Functions, vectorized libm and DFT
-Version: @SLEEF_VERSION_MAJOR@.@SLEEF_VERSION_MINOR@.@SLEEF_VERSION_PATCH@
-Cflags: -I${includedir}
-Libs: -L${libdir} -lsleef

@@ -264,13 +264,7 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
     }
 
     private String toGMTFormat(String id, boolean daylight, Locale l) {
-        LocaleResources lr = LocaleProviderAdapter.forType(Type.CLDR).getLocaleResources(l);
-        ResourceBundle fd = lr.getJavaTimeFormatData();
-        var zi = ZoneInfoFile.getZoneInfo(id);
-        if (zi == null) {
-            return fd.getString("timezone.gmtZeroFormat");
-        }
-        var zr = zi.toZoneId().getRules();
+        var zr = ZoneInfoFile.getZoneInfo(id).toZoneId().getRules();
         var now = Instant.now();
         var saving = zr.getTransitions().reversed().stream()
                 .dropWhile(zot -> zot.getInstant().isAfter(now))
@@ -282,6 +276,8 @@ public class CLDRTimeZoneNameProviderImpl extends TimeZoneNameProviderImpl {
                 .orElse(0);
         int offset = (zr.getStandardOffset(now).getTotalSeconds() +
                 (daylight ? saving : 0)) / 60;
+        LocaleResources lr = LocaleProviderAdapter.forType(Type.CLDR).getLocaleResources(l);
+        ResourceBundle fd = lr.getJavaTimeFormatData();
 
         if (offset == 0) {
             return fd.getString("timezone.gmtZeroFormat");

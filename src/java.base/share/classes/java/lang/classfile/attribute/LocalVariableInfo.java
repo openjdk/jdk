@@ -28,7 +28,6 @@ import java.lang.constant.ClassDesc;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundLocalVariable;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -66,7 +65,7 @@ public sealed interface LocalVariableInfo
      * {@return the field descriptor of the local variable}
      */
     default ClassDesc typeSymbol() {
-        return Util.fieldTypeSymbol(type());
+        return ClassDesc.ofDescriptor(type().stringValue());
     }
 
     /**

@@ -24,7 +24,6 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.constantpool.ConstantPoolException;
 import java.lang.constant.*;
 import java.lang.invoke.TypeDescriptor;
 import java.nio.charset.StandardCharsets;
@@ -55,7 +54,6 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.vm.annotation.Stable;
 
 public abstract sealed class AbstractPoolEntry {
     /*
@@ -148,14 +146,12 @@ public abstract sealed class AbstractPoolEntry {
         private final int offset;
         private final int rawLen;
         // Set in any state other than RAW
-        private @Stable int hash;
-        private @Stable int charLen;
+        private int hash;
+        private int charLen;
         // Set in CHAR state
-        private @Stable char[] chars;
+        private char[] chars;
         // Only set in STRING state
-        private @Stable String stringValue;
-        // The descriptor symbol, if this is a descriptor
-        @Stable TypeDescriptor typeSym;
+        private String stringValue;
 
         Utf8EntryImpl(ConstantPool cpm, int index,
                           byte[] rawBytes, int offset, int rawLen) {
@@ -191,7 +187,6 @@ public abstract sealed class AbstractPoolEntry {
             this.charLen = u.charLen;
             this.chars = u.chars;
             this.stringValue = u.stringValue;
-            this.typeSym = u.typeSym;
         }
 
         /**
@@ -259,11 +254,11 @@ public abstract sealed class AbstractPoolEntry {
                             // 110x xxxx  10xx xxxx
                             px += 2;
                             if (px > utfend) {
-                                throw malformedInput(utfend);
+                                throw new CpException("malformed input: partial character at end");
                             }
                             int char2 = rawBytes[px - 1];
                             if ((char2 & 0xC0) != 0x80) {
-                                throw malformedInput(px);
+                                throw new CpException("malformed input around byte " + px);
                             }
                             char v = (char) (((c & 0x1F) << 6) | (char2 & 0x3F));
                             chararr[chararr_count++] = v;
@@ -274,12 +269,12 @@ public abstract sealed class AbstractPoolEntry {
                             // 1110 xxxx  10xx xxxx  10xx xxxx
                             px += 3;
                             if (px > utfend) {
-                                throw malformedInput(utfend);
+                                throw new CpException("malformed input: partial character at end");
                             }
                             int char2 = rawBytes[px - 2];
                             int char3 = rawBytes[px - 1];
                             if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80)) {
-                                throw malformedInput(px - 1);
+                                throw new CpException("malformed input around byte " + (px - 1));
                             }
                             char v = (char) (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | (char3 & 0x3F));
                             chararr[chararr_count++] = v;
@@ -288,7 +283,7 @@ public abstract sealed class AbstractPoolEntry {
                         }
                         default:
                             // 10xx xxxx,  1111 xxxx
-                            throw malformedInput(px);
+                            throw new CpException("malformed input around byte " + px);
                     }
                 }
                 this.hash = hashString(hash);
@@ -296,10 +291,7 @@ public abstract sealed class AbstractPoolEntry {
                 this.chars = chararr;
                 state = State.CHAR;
             }
-        }
 
-        private ConstantPoolException malformedInput(int px) {
-            return new ConstantPoolException("#%d: malformed modified UTF8 around byte %d".formatted(index(), px));
         }
 
         @Override
@@ -426,22 +418,6 @@ public abstract sealed class AbstractPoolEntry {
                 // state == STRING and no raw bytes
                 pool.writeUTF(stringValue);
             }
-        }
-
-        public ClassDesc fieldTypeSymbol() {
-            if (typeSym instanceof ClassDesc cd)
-                return cd;
-            var ret = ClassDesc.ofDescriptor(stringValue());
-            typeSym = ret;
-            return ret;
-        }
-
-        public MethodTypeDesc methodTypeSymbol() {
-            if (typeSym instanceof MethodTypeDesc mtd)
-                return mtd;
-            var ret = MethodTypeDesc.ofDescriptor(stringValue());
-            typeSym = ret;
-            return ret;
         }
     }
 
@@ -609,6 +585,8 @@ public abstract sealed class AbstractPoolEntry {
     public static final class NameAndTypeEntryImpl extends AbstractRefsEntry<Utf8EntryImpl, Utf8EntryImpl>
             implements NameAndTypeEntry {
 
+        public TypeDescriptor typeSym = null;
+
         NameAndTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name, Utf8EntryImpl type) {
             super(cpm, ClassFile.TAG_NAMEANDTYPE, index, name, type);
         }
@@ -623,12 +601,31 @@ public abstract sealed class AbstractPoolEntry {
             return ref2;
         }
 
+        public ClassDesc fieldTypeSymbol() {
+            if (typeSym instanceof ClassDesc cd) {
+                return cd;
+            } else {
+                return (ClassDesc)(typeSym = ClassDesc.ofDescriptor(ref2.stringValue()));
+            }
+        }
+
+        public MethodTypeDesc methodTypeSymbol() {
+            if (typeSym instanceof MethodTypeDesc mtd) {
+                return mtd;
+            } else {
+                return (MethodTypeDesc)(typeSym = MethodTypeDesc.ofDescriptor(ref2.stringValue()));
+            }
+        }
+
         @Override
         public NameAndTypeEntry clone(ConstantPoolBuilder cp) {
             if (cp.canWriteDirect(constantPool)) {
                 return this;
+            } else {
+                var ret = (NameAndTypeEntryImpl)cp.nameAndTypeEntry(ref1, ref2);
+                ret.typeSym = typeSym;
+                return ret;
             }
-            return cp.nameAndTypeEntry(ref1, ref2);
         }
 
         @Override
@@ -900,6 +897,8 @@ public abstract sealed class AbstractPoolEntry {
             extends AbstractRefEntry<Utf8EntryImpl>
             implements MethodTypeEntry {
 
+        public MethodTypeDesc sym = null;
+
         MethodTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl descriptor) {
             super(cpm, ClassFile.TAG_METHODTYPE, index, descriptor);
         }
@@ -913,13 +912,20 @@ public abstract sealed class AbstractPoolEntry {
         public MethodTypeEntry clone(ConstantPoolBuilder cp) {
             if (cp.canWriteDirect(constantPool)) {
                 return this;
+            } else {
+                var ret = (MethodTypeEntryImpl)cp.methodTypeEntry(ref1);
+                ret.sym = sym;
+                return ret;
             }
-            return cp.methodTypeEntry(ref1);
         }
 
         @Override
         public MethodTypeDesc asSymbol() {
-            return ref1.methodTypeSymbol();
+            var sym = this.sym;
+            if (sym != null) {
+                return sym;
+            }
+            return this.sym = MethodTypeDesc.ofDescriptor(descriptor().stringValue());
         }
 
         @Override
@@ -1136,6 +1142,14 @@ public abstract sealed class AbstractPoolEntry {
                 return doubleValue() == e.doubleValue();
             }
             return false;
+        }
+    }
+
+    static class CpException extends RuntimeException {
+        static final long serialVersionUID = 32L;
+
+        CpException(String s) {
+            super(s);
         }
     }
 }

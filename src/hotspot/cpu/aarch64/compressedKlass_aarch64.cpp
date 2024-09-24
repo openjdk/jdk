@@ -129,7 +129,5 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   address const end = addr + len;
   _base = (end <= (address)unscaled_max) ? nullptr : addr;
 
-  // Remember the Klass range:
-  _klass_range_start = addr;
-  _klass_range_end = addr + len;
+  _range = end - _base;
 }

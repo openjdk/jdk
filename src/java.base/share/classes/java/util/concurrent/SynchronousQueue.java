@@ -477,7 +477,8 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * {@return a zero-length array}
+     * Returns a zero-length array.
+     * @return a zero-length array
      */
     public Object[] toArray() {
         return new Object[0];

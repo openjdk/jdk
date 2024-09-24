@@ -34,8 +34,6 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 import java.lang.constant.ClassDesc;
 import java.util.List;
-
-import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -80,7 +78,7 @@ public sealed interface Annotation
      * {@return the annotation interface, as a symbolic descriptor}
      */
     default ClassDesc classSymbol() {
-        return Util.fieldTypeSymbol(className());
+        return ClassDesc.ofDescriptor(className().stringValue());
     }
 
     /**
@@ -117,7 +115,7 @@ public sealed interface Annotation
      */
     static Annotation of(ClassDesc annotationClass,
                          List<AnnotationElement> elements) {
-        return of(TemporaryConstantPool.INSTANCE.utf8Entry(annotationClass), elements);
+        return of(TemporaryConstantPool.INSTANCE.utf8Entry(annotationClass.descriptorString()), elements);
     }
 
     /**
@@ -127,6 +125,6 @@ public sealed interface Annotation
      */
     static Annotation of(ClassDesc annotationClass,
                          AnnotationElement... elements) {
-        return of(TemporaryConstantPool.INSTANCE.utf8Entry(annotationClass), elements);
+        return of(TemporaryConstantPool.INSTANCE.utf8Entry(annotationClass.descriptorString()), elements);
     }
 }

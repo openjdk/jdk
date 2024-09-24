@@ -119,7 +119,8 @@ public class Manifest implements Cloneable {
     }
 
     /**
-     * {@return the main Attributes for the Manifest}
+     * Returns the main Attributes for the Manifest.
+     * @return the main Attributes for the Manifest
      */
     public Attributes getMainAttributes() {
         return attr;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ class outputStream;
 
 class OopStorage : public CHeapObjBase {
 public:
-  static OopStorage* create(const char* name, MemTag mem_tag);
+  static OopStorage* create(const char* name, MEMFLAGS memflags);
   ~OopStorage();
 
   // These count and usage accessors are racy unless at a safepoint.
@@ -89,8 +89,8 @@ public:
   // bookkeeping overhead, including this storage object.
   size_t total_memory_usage() const;
 
-  // The memory tag for allocations.
-  MemTag mem_tag() const;
+  // The memory type for allocations.
+  MEMFLAGS memflags() const;
 
   enum EntryStatus {
     INVALID_ENTRY,
@@ -273,14 +273,14 @@ private:
   // mutable because this gets set even for const iteration.
   mutable int _concurrent_iteration_count;
 
-  // The memory tag for allocations.
-  MemTag _mem_tag;
+  // The memory type for allocations.
+  MEMFLAGS _memflags;
 
   // Flag indicating this storage object is a candidate for empty block deletion.
   volatile bool _needs_cleanup;
 
   // Clients construct via "create" factory function.
-  OopStorage(const char* name, MemTag mem_tag);
+  OopStorage(const char* name, MEMFLAGS memflags);
   NONCOPYABLE(OopStorage);
 
   bool try_add_block();

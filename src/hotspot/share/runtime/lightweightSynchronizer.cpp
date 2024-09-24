@@ -29,7 +29,7 @@
 #include "logging/log.hpp"
 #include "memory/allStatic.hpp"
 #include "memory/resourceArea.hpp"
-#include "nmt/memTag.hpp"
+#include "nmt/memflags.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/basicLock.inline.hpp"
@@ -60,14 +60,14 @@ class ObjectMonitorTable : AllStatic {
     }
     static void* allocate_node(void* context, size_t size, Value const& value) {
       ObjectMonitorTable::inc_items_count();
-      return AllocateHeap(size, mtObjectMonitor);
+      return AllocateHeap(size, MEMFLAGS::mtObjectMonitor);
     };
     static void free_node(void* context, void* memory, Value const& value) {
       ObjectMonitorTable::dec_items_count();
       FreeHeap(memory);
     }
   };
-  using ConcurrentTable = ConcurrentHashTable<Config, mtObjectMonitor>;
+  using ConcurrentTable = ConcurrentHashTable<Config, MEMFLAGS::mtObjectMonitor>;
 
   static ConcurrentTable* _table;
   static volatile size_t _items_count;

@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2016, 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +28,7 @@
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
-#include "nmt/memTag.hpp"
+#include "nmt/memflags.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
@@ -37,11 +36,11 @@
 
 class ShenandoahHeap;
 
-template<class E, MemTag MT, unsigned int N = TASKQUEUE_SIZE>
-class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, MT, N>
+template<class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
+class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, F, N>
 {
 public:
-  typedef OverflowTaskQueue<E, MT, N> taskqueue_t;
+  typedef OverflowTaskQueue<E, F, N> taskqueue_t;
 
   BufferedOverflowTaskQueue() : _buf_empty(true) {};
 
@@ -302,8 +301,8 @@ public:
 typedef BufferedOverflowTaskQueue<ShenandoahMarkTask, mtGC> ShenandoahBufferedOverflowTaskQueue;
 typedef Padded<ShenandoahBufferedOverflowTaskQueue> ShenandoahObjToScanQueue;
 
-template <class T, MemTag MT>
-class ParallelClaimableQueueSet: public GenericTaskQueueSet<T, MT> {
+template <class T, MEMFLAGS F>
+class ParallelClaimableQueueSet: public GenericTaskQueueSet<T, F> {
 private:
   shenandoah_padding(0);
   volatile jint     _claimed_index;
@@ -312,10 +311,10 @@ private:
   debug_only(uint   _reserved;  )
 
 public:
-  using GenericTaskQueueSet<T, MT>::size;
+  using GenericTaskQueueSet<T, F>::size;
 
 public:
-  ParallelClaimableQueueSet(int n) : GenericTaskQueueSet<T, MT>(n), _claimed_index(0) {
+  ParallelClaimableQueueSet(int n) : GenericTaskQueueSet<T, F>(n), _claimed_index(0) {
     debug_only(_reserved = 0; )
   }
 
@@ -332,9 +331,9 @@ public:
   debug_only(uint get_reserved() const { return (uint)_reserved; })
 };
 
-template <class T, MemTag MT>
-T* ParallelClaimableQueueSet<T, MT>::claim_next() {
-  jint size = (jint)GenericTaskQueueSet<T, MT>::size();
+template <class T, MEMFLAGS F>
+T* ParallelClaimableQueueSet<T, F>::claim_next() {
+  jint size = (jint)GenericTaskQueueSet<T, F>::size();
 
   if (_claimed_index >= size) {
     return nullptr;
@@ -343,7 +342,7 @@ T* ParallelClaimableQueueSet<T, MT>::claim_next() {
   jint index = Atomic::add(&_claimed_index, 1, memory_order_relaxed);
 
   if (index <= size) {
-    return GenericTaskQueueSet<T, MT>::queue((uint)index - 1);
+    return GenericTaskQueueSet<T, F>::queue((uint)index - 1);
   } else {
     return nullptr;
   }

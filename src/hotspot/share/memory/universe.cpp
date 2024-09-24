@@ -229,9 +229,6 @@ public:
 static BuiltinException _null_ptr_exception;
 static BuiltinException _arithmetic_exception;
 static BuiltinException _internal_error;
-static BuiltinException _array_index_out_of_bounds_exception;
-static BuiltinException _array_store_exception;
-static BuiltinException _class_cast_exception;
 
 objArrayOop Universe::the_empty_class_array ()  {
   return (objArrayOop)_the_empty_class_array.resolve();
@@ -249,9 +246,6 @@ oop Universe::the_min_jint_string()               { return _the_min_jint_string.
 oop Universe::null_ptr_exception_instance()       { return _null_ptr_exception.instance(); }
 oop Universe::arithmetic_exception_instance()     { return _arithmetic_exception.instance(); }
 oop Universe::internal_error_instance()           { return _internal_error.instance(); }
-oop Universe::array_index_out_of_bounds_exception_instance() { return _array_index_out_of_bounds_exception.instance(); }
-oop Universe::array_store_exception_instance()    { return _array_store_exception.instance(); }
-oop Universe::class_cast_exception_instance()     { return _class_cast_exception.instance(); }
 
 oop Universe::the_null_sentinel()                 { return _the_null_sentinel.resolve(); }
 
@@ -308,9 +302,6 @@ void Universe::archive_exception_instances() {
   _null_ptr_exception.store_in_cds();
   _arithmetic_exception.store_in_cds();
   _internal_error.store_in_cds();
-  _array_index_out_of_bounds_exception.store_in_cds();
-  _array_store_exception.store_in_cds();
-  _class_cast_exception.store_in_cds();
 }
 
 void Universe::load_archived_object_instances() {
@@ -327,9 +318,6 @@ void Universe::load_archived_object_instances() {
     _null_ptr_exception.load_from_cds();
     _arithmetic_exception.load_from_cds();
     _internal_error.load_from_cds();
-    _array_index_out_of_bounds_exception.load_from_cds();
-    _array_store_exception.load_from_cds();
-    _class_cast_exception.load_from_cds();
   }
 }
 #endif
@@ -346,9 +334,6 @@ void Universe::serialize(SerializeClosure* f) {
   _null_ptr_exception.serialize(f);
   _arithmetic_exception.serialize(f);
   _internal_error.serialize(f);
-  _array_index_out_of_bounds_exception.serialize(f);
-  _array_store_exception.serialize(f);
-  _class_cast_exception.serialize(f);
 #endif
 
   f->do_ptr(&_fillerArrayKlass);
@@ -1098,12 +1083,10 @@ bool universe_post_init() {
     Universe::_delayed_stack_overflow_error_message = OopHandle(Universe::vm_global(), instance);
   }
 
-  // Setup preallocated exceptions used for a cheap & dirty solution in compiler exception handling
+  // Setup preallocated NullPointerException/ArithmeticException
+  // (used for a cheap & dirty solution in compiler exception handling)
   _null_ptr_exception.init_if_empty(vmSymbols::java_lang_NullPointerException(), CHECK_false);
   _arithmetic_exception.init_if_empty(vmSymbols::java_lang_ArithmeticException(), CHECK_false);
-  _array_index_out_of_bounds_exception.init_if_empty(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), CHECK_false);
-  _array_store_exception.init_if_empty(vmSymbols::java_lang_ArrayStoreException(), CHECK_false);
-  _class_cast_exception.init_if_empty(vmSymbols::java_lang_ClassCastException(), CHECK_false);
 
   // Virtual Machine Error for when we get into a situation we can't resolve
   Klass* k = vmClasses::InternalError_klass();

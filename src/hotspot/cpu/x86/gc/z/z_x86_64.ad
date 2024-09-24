@@ -212,7 +212,8 @@ instruct zCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rax_
 
   format %{ "lock\n\t"
             "cmpxchgq $newval, $mem\n\t"
-            "setcc $res \t# emits sete + movzbl or setzue for APX" %}
+            "sete     $res\n\t"
+            "movzbl   $res, $res" %}
 
   ins_encode %{
     assert_different_registers($oldval$$Register, $mem$$Register);
@@ -221,7 +222,8 @@ instruct zCompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp, rax_
     z_color(masm, this, $oldval$$Register);
     __ lock();
     __ cmpxchgptr($tmp$$Register, mem_addr);
-    __ setcc(Assembler::equal, $res$$Register);
+    __ setb(Assembler::equal, $res$$Register);
+    __ movzbl($res$$Register, $res$$Register);
   %}
 
   ins_pipe(pipe_cmpxchg);

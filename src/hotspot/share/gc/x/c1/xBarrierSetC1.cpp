@@ -225,7 +225,7 @@ public:
 
 static address generate_c1_runtime_stub(BufferBlob* blob, DecoratorSet decorators, const char* name) {
   XLoadBarrierRuntimeStubCodeGenClosure cl(decorators);
-  CodeBlob* const code_blob = Runtime1::generate_blob(blob, C1StubId::NO_STUBID /* stub_id */, name, false /* expect_oop_map*/, &cl);
+  CodeBlob* const code_blob = Runtime1::generate_blob(blob, -1 /* stub_id */, name, false /* expect_oop_map*/, &cl);
   return (code_blob != nullptr) ? code_blob->code_begin() : nullptr;
 }
 

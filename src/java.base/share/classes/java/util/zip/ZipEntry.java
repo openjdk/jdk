@@ -138,7 +138,8 @@ public class ZipEntry implements ZipConstants, Cloneable {
     }
 
     /**
-     * {@return the name of the entry}
+     * Returns the name of the entry.
+     * @return the name of the entry
      */
     public String getName() {
         return name;
