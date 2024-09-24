@@ -601,7 +601,7 @@ public class TestUnicodeExtension {
             {"mkskp", "Europe/Skopje"},
             {"mlbko", "Africa/Bamako"},
             {"mmrgn", "Asia/Rangoon"},
-            {"mncoq", "Asia/Choibalsan"},
+            {"mncoq", "Asia/Ulaanbaatar"},
             {"mnhvd", "Asia/Hovd"},
             {"mnuln", "Asia/Ulaanbaatar"},
             {"momfm", "Asia/Macau"},
