@@ -223,7 +223,9 @@ public class HttpRestConnection implements MBeanServerConnection {
             throw new InstanceNotFoundException("No className in MBean info: " + o);
         }
         try {
-            return new ObjectInstance(objectName, className);
+            ObjectInstance oi = new ObjectInstance(objectName, className);
+//            System.err.println("ZZZZ objectInstanceForJSON: " + objectName + ", " + className + " = " + oi);
+            return oi;
         } catch (MalformedObjectNameException mone) {
             throw new InstanceNotFoundException("Not found due to: " + mone);
         }
@@ -256,9 +258,6 @@ public class HttpRestConnection implements MBeanServerConnection {
         for (ObjectName n : objectInfoMap.keySet()) {
             String ref = objectInfoMap.get(n);
 //            System.err.println("ZZZZ queryMB: " + name + ": " + n + " -> " + ref);
-            // if (ref == null) {
-            //     continue;
-            // }
             URL url = url(ref);
 //            System.err.println("UUU: " + url);
             String text = executeHttpGetRequest(url);
@@ -432,11 +431,17 @@ public class HttpRestConnection implements MBeanServerConnection {
         }
 
         try {
-            return typeMapper.toJavaObject(a);
-            // MBeanResource may for error conditions populate the value with e.g.
+//            System.err.println("XXXXX a = '" + a.toJsonString() + "'");
+
+            // MBeanResource may indicate errors or not supported with e.g.
             // "< Attribute not supported >"
             // "< Error: No such attribute >"
             // "< Invalid attributes >"
+            if (a.toJsonString().equals("\"< Attribute not supported >\"")) {
+                throw new UnsupportedOperationException(a.toJsonString());
+            }
+            return typeMapper.toJavaObject(a);
+            // MBeanResource may for error conditions populate the value with e.g.
         } catch (JSONDataException jde) {
 //            jde.printStackTrace(System.err);
             throw new InstanceNotFoundException("Mapper " + typeMapper + " gives: " + jde);
@@ -506,7 +511,13 @@ public class HttpRestConnection implements MBeanServerConnection {
             // Attempt to match signature.
             // "arguments" is an array of objects containing name and type.
             JSONArray array = (JSONArray) o.get("arguments");
-            if (array.size() == signature.length) {
+            if (array == null) {
+                // Need to match a no-arg operation?
+                // System.err.println("ZZZ fmnows: null argumnets in op, signature = " + signature.length);
+                if (signature.length == 0) {
+                    return e;
+                }
+            } else if (array.size() == signature.length) {
                 // check signature types
                 int i = 0;
                 for (JSONElement item : array) {
@@ -537,7 +548,12 @@ public class HttpRestConnection implements MBeanServerConnection {
             // Attempt to match signature.
             // "signature" is an array of objects containing name and type.
             JSONArray array = (JSONArray) o.get("signature");
-            if (array.size() == signature.length) {
+            if (array == null) {
+                // Need to match a no-arg operation?
+                if (signature.length == 0) {
+                    return e;
+                }
+            } else if (array.size() == signature.length) {
                 // check signature types
                 int i = 0;
                 for (JSONElement item : array) {
@@ -671,6 +687,8 @@ public class HttpRestConnection implements MBeanServerConnection {
         // Call.
         String s = executeHttpPostRequest(url(href), postBody);
 
+        if (s != null) {
+
         // Parse result.
         JSONParser parser = new JSONParser(s);
         JSONElement json = parser.parse();
@@ -698,6 +716,7 @@ public class HttpRestConnection implements MBeanServerConnection {
         System.err.println("RETURNING: " + result);
         return result;
  */
+        }
         } catch (Exception e) {
             // JSOMappingException, ParseException
             throw new IOException(e);
@@ -722,7 +741,7 @@ public class HttpRestConnection implements MBeanServerConnection {
                                         Object handback)
             throws InstanceNotFoundException, IOException {
 
-        throw new UnsupportedOperationException("addNotificationListener not supported");
+//        throw new UnsupportedOperationException("addNotificationListener not supported");
     }
 
     public void addNotificationListener(ObjectName name,
@@ -731,7 +750,7 @@ public class HttpRestConnection implements MBeanServerConnection {
                                         Object handback)
             throws InstanceNotFoundException, IOException {
 
-        throw new UnsupportedOperationException("addNotificationListener not supported");
+//        throw new UnsupportedOperationException("addNotificationListener not supported");
     }
 
     public void removeNotificationListener(ObjectName name,
@@ -739,7 +758,7 @@ public class HttpRestConnection implements MBeanServerConnection {
         throws InstanceNotFoundException, ListenerNotFoundException,
                IOException {
 
-        throw new UnsupportedOperationException("removeNotificationListener not supported");
+//        throw new UnsupportedOperationException("removeNotificationListener not supported");
     }
 
     public void removeNotificationListener(ObjectName name,
@@ -749,7 +768,7 @@ public class HttpRestConnection implements MBeanServerConnection {
             throws InstanceNotFoundException, ListenerNotFoundException,
                    IOException {
 
-        throw new UnsupportedOperationException("removeNotificationListener not supported");
+//        throw new UnsupportedOperationException("removeNotificationListener not supported");
     }
 
     public void removeNotificationListener(ObjectName name,
@@ -757,7 +776,7 @@ public class HttpRestConnection implements MBeanServerConnection {
             throws InstanceNotFoundException, ListenerNotFoundException,
                    IOException {
 
-        throw new UnsupportedOperationException("removeNotificationListener not supported");
+//        throw new UnsupportedOperationException("removeNotificationListener not supported");
     }
 
     public void removeNotificationListener(ObjectName name,
@@ -767,7 +786,7 @@ public class HttpRestConnection implements MBeanServerConnection {
             throws InstanceNotFoundException, ListenerNotFoundException,
                    IOException {
 
-        throw new UnsupportedOperationException("removeNotificationListener not supported");
+//        throw new UnsupportedOperationException("removeNotificationListener not supported");
     }
 
     public MBeanInfo getMBeanInfo(ObjectName name)

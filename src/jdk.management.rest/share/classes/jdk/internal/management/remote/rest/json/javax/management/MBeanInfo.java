@@ -27,11 +27,15 @@ package jdk.internal.management.remote.rest.json.javax.management;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.Objects;
+import java.util.Set;
 
 import javax.management.*;
+import javax.management.modelmbean.DescriptorSupport;
 
 import jdk.internal.management.remote.rest.json.JSONArray;
 import jdk.internal.management.remote.rest.json.JSONObject;
@@ -69,7 +73,7 @@ public class MBeanInfo extends javax.management.MBeanInfo {
     }
 
     public static MBeanInfo from(JSONObject json) {
-        System.err.println("MBeanInfo FROM: " + json.toJsonString());
+//        System.err.println("MBeanInfo FROM: " + json.toJsonString());
 
         String        name = JSONObject.getObjectFieldString(json, "name");
         String   className = JSONObject.getObjectFieldString(json, "className");
@@ -87,11 +91,30 @@ public class MBeanInfo extends javax.management.MBeanInfo {
             String aType = JSONObject.getObjectFieldString(j, "type");
             String aAccess = JSONObject.getObjectFieldString(j, "access");
             String aDescription = JSONObject.getObjectFieldString(j, "description");
-            String aDescriptor = JSONObject.getObjectFieldString(j, "descriptor");
+            // Descriptor can be null, but can contain openType, etc...
+            JSONObject aDescriptorJSON = JSONObject.getObjectFieldObject(j, "descriptor");
+            Descriptor aDescriptor = null;
+            if (aDescriptorJSON != null) {
+                aDescriptor = createDescriptor(aDescriptorJSON);
+                // XXX do we use type info from aDescriptor?
 
+                /*String originalType = (String) aDescriptor.getFieldValue("originalType");
+                if (originalType != null) {
+                    aType = originalType;
+                    System.err.println("XXXX using originalType '" + aType + "' from: " + aDescriptorJSON.toJsonString());
+                } */
+               /* String openType = (String) aDescriptor.getFieldValue("openType");
+                if (openType != null) {
+                    aType = openType;
+                    System.err.println("XXXX using openType '" + aType + "' from: " + aDescriptorJSON.toJsonString());
+                } */
+            }
+
+            // Attribute type may have been CompositeData, but Descriptor has the full type definition.
             attributes[i] = new MBeanAttributeInfo(aName, aType, aDescription,
                                            aAccess.contains("read"), aAccess.contains("write"),
-                                           name.startsWith("is"));
+                                           name.startsWith("is"), aDescriptor);
+//            System.err.println("XXXX MBAI " + i + " = " + attributes[i]);
         }
         }
 
@@ -106,12 +129,17 @@ public class MBeanInfo extends javax.management.MBeanInfo {
             JSONObject j = (JSONObject) oi.get(i);
             String oName = JSONObject.getObjectFieldString(j, "name");
             String oDescription = JSONObject.getObjectFieldString(j, "description");
-            MBeanParameterInfo[] oSignature = createOperationSignature(JSONObject.getObjectFieldObject(j, "signature"));
-            String oType = JSONObject.getObjectFieldString(j, "type");
+            MBeanParameterInfo[] oSignature = createOperationSignature(JSONObject.getObjectFieldArray(j, "signature"));
+            String oType = JSONObject.getObjectFieldString(j, "returnType");
             int oImpact = parseImpact(JSONObject.getObjectFieldString(j, "impact"));
-            String oDescriptor = JSONObject.getObjectFieldString(j, "descriptor");
+            JSONObject oDescriptorJSON = JSONObject.getObjectFieldObject(j, "descriptor");
+            Descriptor oDescriptor = null;
+            if (oDescriptorJSON != null) {
+                oDescriptor = createDescriptor(oDescriptorJSON);
+            }
 
-            operations[i] = new MBeanOperationInfo(oName, oDescription, oSignature, oType, oImpact);
+            operations[i] = new MBeanOperationInfo(oName, oDescription, oSignature, oType, oImpact, oDescriptor);
+//            System.err.println("XXXX MBOI " + i + " = " + operations[i]);
         }
         }
 
@@ -121,16 +149,96 @@ public class MBeanInfo extends javax.management.MBeanInfo {
     }
 
     protected static int parseImpact(String s) {
-        return 1;
+        return 1; // XXXX
     }
-    
-    protected static MBeanParameterInfo[] createOperationSignature(JSONObject json) {
-        if (json == null) {
+
+    protected static Descriptor createDescriptor(JSONObject j) {
+        if (j == null) {
             return null;
         }
- 
-        MBeanParameterInfo[] mbpi = new MBeanParameterInfo[0];
+        Set<String> keys = j.keySet();
+        String [] k = new String[keys.size()];
+        String [] v = new String[keys.size()];
+        int i = 0;
+        for (String key : keys) {
+            k[i] = key;
+            v[i] = JSONObject.getObjectFieldString(j, key);
+            i++;
+        }
+        DescriptorSupport d = new DescriptorSupport(k,v);
+        return d;
+    }
 
+/*
+    protected static Descriptor parseDescriptor(String s) {
+        if (s == null) {
+            return null;
+        }
+        System.err.println("parseDescriptor: " + s);
+        // https://docs.oracle.com/en/java/javase/23/docs/api/java.management/javax/management/Descriptor.html
+        // DescriptorSupport can be constructed from arrays if names and values.
+        List<String> n = new ArrayList<>();
+        List<String> v = new ArrayList<>();
+        // Descriptor string is comma-separated, quoted name:value pairs.
+        int pos = 0;
+        while (true) {
+            String name = parseDescriptorComponent(s, pos);
+            if (name == null) {
+                break;
+            }
+            pos += name.length() + 2;
+            if (s.charAt(pos++) != ':') {
+                break;
+            }
+            if (s.charAt(pos++) != ' ') {
+                break;
+            }
+            String value = parseDescriptorComponent(s, pos);
+            if (value == null) {
+                break;
+            }
+            n.add(name);
+            n.add(value);
+            System.err.println("DDDDD " + name +", " + value);
+            pos += name.length() + 2;
+            if (s.charAt(pos) != ',') {
+                break;
+            }
+        } 
+         
+        DescriptorSupport d = new DescriptorSupport((String []) n.toArray(), (String []) v.toArray());
+        return d;
+    } 
+
+    protected static String parseDescriptorComponent(String s, int pos) {
+        // Parse one quoted value from the String.
+        if (s.charAt(pos) != '\"') {
+            return null;
+        }
+        pos = s.indexOf('\"', pos+1);
+        if (pos < 0) {
+            return null;
+        }
+        return s.substring(1, pos);
+    } */
+    
+    protected static MBeanParameterInfo[] createOperationSignature(JSONArray json) {
+        if (json == null) {
+            return null; // Valid empty signature.
+        }
+        // XXXX 
+        MBeanParameterInfo[] mbpi = new MBeanParameterInfo[json.size()];
+        for (int i = 0; i<json.size(); i++) {
+            JSONObject j = (JSONObject) json.get(i);
+            String name = JSONObject.getObjectFieldString(j, "name");
+            String type = JSONObject.getObjectFieldString(j, "type");
+            String description = JSONObject.getObjectFieldString(j, "description");
+            Descriptor descriptor = createDescriptor(JSONObject.getObjectFieldObject(j, "descriptor"));
+
+            MBeanParameterInfo mbp = new MBeanParameterInfo(name, type, description, descriptor);
+//            System.err.println("XXXX MBParamInfo: " + mbp);
+            mbpi[i] = mbp;
+        }
         return mbpi;
     }
 }
