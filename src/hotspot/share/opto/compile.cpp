@@ -636,7 +636,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _has_method_handle_invokes(false),
                   _clinit_barrier_on_entry(false),
                   _stress_seed(0),
-                  DEBUG_ONLY(_stress_seed_is_initialized(false) COMMA)
                   _comp_arena(mtCompiler),
                   _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
                   _env(ci_env),
@@ -917,7 +916,6 @@ Compile::Compile( ciEnv* ci_env,
     _has_method_handle_invokes(false),
     _clinit_barrier_on_entry(false),
     _stress_seed(0),
-    DEBUG_ONLY(_stress_seed_is_initialized(false) COMMA)
     _comp_arena(mtCompiler),
     _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
     _env(ci_env),
@@ -5025,9 +5023,6 @@ void Compile::initialize_stress_seed(const DirectiveSet* directive) {
   if (_log != nullptr) {
     _log->elem("stress_test seed='%u'", _stress_seed);
   }
-#ifdef ASSERT
-  _stress_seed_is_initialized = true;
-#endif
 }
 
 int Compile::random() {
@@ -5071,7 +5066,7 @@ bool Compile::randomized_select(int count) {
 #ifdef ASSERT
 // Failures are geometrically distributed with probability 1/StressBailoutMean.
 bool Compile::fail_randomly() {
-  if (!_stress_seed_is_initialized || ((random() % StressBailoutMean) != 0)) {
+  if ((random() % StressBailoutMean) != 0) {
     return false;
   }
   record_failure("StressBailout");
