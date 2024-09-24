@@ -34,6 +34,9 @@
  * -XX:+AlwaysIncrementalInline
  * -XX:CompileCommand=compileonly,compiler.parsing.TestUnsafeArrayAccessWithNullBase::test*
  * -XX:-TieredCompilation compiler.parsing.TestUnsafeArrayAccessWithNullBase
+ * @run main/othervm
+ * -Xbatch -XX:-TieredCompilation
+ * compiler.parsing.TestUnsafeArrayAccessWithNullBase
  */
 
 package compiler.parsing;
