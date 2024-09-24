@@ -275,7 +275,7 @@ bool ZPageAllocator::prime_cache(ZWorkers* workers, size_t size) {
     workers->run_all(&task);
   }
 
-  free_page(page);
+  free_page(page, false /* allow_defragment */);
 
   return true;
 }
@@ -794,9 +794,15 @@ void ZPageAllocator::recycle_page(ZPage* page) {
   _cache.free_page(page);
 }
 
-void ZPageAllocator::free_page(ZPage* page) {
+void ZPageAllocator::free_page(ZPage* page, bool allow_defragment) {
   const ZGenerationId generation_id = page->generation_id();
-  ZPage* const to_recycle = _safe_recycle.register_and_clone_if_activated(page);
+
+  ZPage* to_recycle;
+  if (allow_defragment && should_defragment(page)) {
+    to_recycle = defragment_page(_safe_recycle.register_and_clone_if_activated(page));
+  } else {
+    to_recycle = _safe_recycle.register_and_clone_if_activated(page);
+  }
 
   ZLocker<ZLock> locker(&_lock);
 
