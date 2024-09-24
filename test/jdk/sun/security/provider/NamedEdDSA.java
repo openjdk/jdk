@@ -84,17 +84,17 @@ public class NamedEdDSA {
         }
 
         @Override
-        public byte[] sign0(String name, byte[] sk, Object sk2, byte[] msg, SecureRandom sr) throws SignatureException {
+        public byte[] implSign(String name, byte[] sk, Object sk2, byte[] msg, SecureRandom sr) throws SignatureException {
             return getOps(name).sign(plain, sk, msg);
         }
 
         @Override
-        public boolean verify0(String name, byte[] pk, Object pk2, byte[] msg, byte[] sig) throws SignatureException {
+        public boolean implVerify(String name, byte[] pk, Object pk2, byte[] msg, byte[] sig) throws SignatureException {
             return getOps(name).verify(plain, (AffinePoint) pk2, pk, msg, sig);
         }
 
         @Override
-        public Object checkPublicKey(String name, byte[] pk) throws InvalidKeyException {
+        public Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
             return getOps(name).decodeAffinePoint(InvalidKeyException::new, pk);
         }
     }
@@ -143,7 +143,7 @@ public class NamedEdDSA {
         }
 
         @Override
-        public byte[][] generateKeyPair0(String pname, SecureRandom sr) {
+        public byte[][] implGenerateKeyPair(String pname, SecureRandom sr) {
             sr = sr == null ? JCAUtil.getDefSecureRandom() : sr;
             var op = getOps(pname);
             var sk = op.generatePrivate(sr);

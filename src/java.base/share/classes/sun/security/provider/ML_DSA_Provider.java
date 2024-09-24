@@ -49,7 +49,7 @@ public class ML_DSA_Provider {
         }
 
         @Override
-        public byte[][] generateKeyPair0(String name, SecureRandom sr) {
+        public byte[][] implGenerateKeyPair(String name, SecureRandom sr) {
             byte[] seed = new byte[32];
             var r = sr != null ? sr : JCAUtil.getDefSecureRandom();
             r.nextBytes(seed);
@@ -116,7 +116,7 @@ public class ML_DSA_Provider {
         }
 
         @Override
-        public byte[] sign0(String name, byte[] skBytes, Object sk2, byte[] msg, SecureRandom sr) {
+        public byte[] implSign(String name, byte[] skBytes, Object sk2, byte[] msg, SecureRandom sr) {
             var size = name2int(name);
             var r = sr != null ? sr : JCAUtil.getDefSecureRandom();
             byte[] rnd = new byte[32];
@@ -128,7 +128,7 @@ public class ML_DSA_Provider {
         }
 
         @Override
-        public boolean verify0(String name, byte[] pkBytes, Object pk2, byte[] msg, byte[] sigBytes) {
+        public boolean implVerify(String name, byte[] pkBytes, Object pk2, byte[] msg, byte[] sigBytes) {
             var size = name2int(name);
             var dilithium = new Dilithium(size);
             var pk = dilithium.pkDecode(pkBytes);

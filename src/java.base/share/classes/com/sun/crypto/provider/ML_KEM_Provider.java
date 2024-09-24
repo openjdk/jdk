@@ -52,7 +52,7 @@ public final class ML_KEM_Provider {
         }
 
         @Override
-        public byte[][] generateKeyPair0(String name, SecureRandom sr) {
+        public byte[][] implGenerateKeyPair(String name, SecureRandom sr) {
             var seed = new byte[64];
             if (sr == null) sr = JCAUtil.getDefSecureRandom();
             sr.nextBytes(seed);
@@ -108,7 +108,7 @@ public final class ML_KEM_Provider {
     // TODO: check key in newEnc and newDec? No interfaces. Name is checked
     public static class K extends NamedKEM {
         @Override
-        public byte[][] encap0(String name, byte[] pk, Object pk2, SecureRandom sr) {
+        public byte[][] implEncapsulate(String name, byte[] pk, Object pk2, SecureRandom sr) {
             var seed = new byte[32];
             if (sr == null) sr = JCAUtil.getDefSecureRandom();
             sr.nextBytes(seed);
@@ -116,17 +116,17 @@ public final class ML_KEM_Provider {
         }
 
         @Override
-        public byte[] decap0(String name, byte[] sk, Object sk2, byte[] encap) {
+        public byte[] implDecapsulate(String name, byte[] sk, Object sk2, byte[] encap) {
             return ML_KEM.Dec(sk, encap, PARAMS.get(name).params());
         }
 
         @Override
-        public int sslen0(String name) {
+        public int implSecretSize(String name) {
             return PARAMS.get(name).sslen();
         }
 
         @Override
-        public int clen0(String name) {
+        public int implEncapsulationSize(String name) {
             return PARAMS.get(name).clen();
         }
 

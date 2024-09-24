@@ -62,16 +62,16 @@ import java.util.Objects;
 ///
 /// Also, an implementation must not keep any extra copy of a private key.
 /// For key generation, the only copy is the one returned in the
-/// [#generateKeyPair0] call. For all other methods, it must not make
+/// [#implGenerateKeyPair] call. For all other methods, it must not make
 /// a copy of the input private key. A `KEM` implementation also must
 /// not keep a copy of the shared secret key, no matter if it's an
 /// encapsulator or a decapsulator.
 ///
-/// The `NamedSignature` and `NamedKEM` classes provide `checkPublicKey0`
-/// and `checkPrivateKey0` methods that allow an implementation to validate
+/// The `NamedSignature` and `NamedKEM` classes provide `implCheckPublicKey`
+/// and `implCheckPrivateKey` methods that allow an implementation to validate
 /// a key before using it. An implementation may return a parsed key of
-/// a local type, and this parsed key will be passed to a operational method
-/// (For example, `sign0`) later. An implementation must not retain
+/// a local type, and this parsed key will be passed to an operational method
+/// (For example, `implSign`) later. An implementation must not retain
 /// a reference of the parsed key.
 public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
 
@@ -130,7 +130,7 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
     @Override
     public KeyPair generateKeyPair() {
         String pname = name != null ? name : pnames[0];
-        var keys = generateKeyPair0(pname, secureRandom);
+        var keys = implGenerateKeyPair(pname, secureRandom);
         return new KeyPair(new NamedX509Key(fname, pname, keys[0]),
                 new NamedPKCS8Key(fname, pname, keys[1]));
     }
@@ -141,5 +141,5 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
     /// @param sr `SecureRandom` object, `null` if not initialized
     /// @return public key and private key (in this order) in raw bytes
     /// @throws ProviderException if there is an internal error
-    public abstract byte[][] generateKeyPair0(String pname, SecureRandom sr);
+    public abstract byte[][] implGenerateKeyPair(String pname, SecureRandom sr);
 }

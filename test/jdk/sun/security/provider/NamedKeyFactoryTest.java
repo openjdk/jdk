@@ -131,7 +131,7 @@ public class NamedKeyFactoryTest {
         }
 
         @Override
-        public byte[][] generateKeyPair0(String name, SecureRandom sr) {
+        public byte[][] implGenerateKeyPair(String name, SecureRandom sr) {
             var out = new byte[2][];
             out[0] = new byte[name.endsWith("256") ? 2 : 4];
             out[1] = new byte[name.endsWith("256") ? 2 : 4];

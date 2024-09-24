@@ -44,6 +44,8 @@ import java.util.Objects;
 
 /// An implementation extends this class to create its own `Signature`.
 ///
+/// This class does not work with preHash signatures.
+///
 /// @see NamedKeyPairGenerator
 public abstract class NamedSignature extends SignatureSpi {
 
@@ -79,7 +81,7 @@ public abstract class NamedSignature extends SignatureSpi {
                 .engineTranslateKey(publicKey);
         name = nk.getParams().getName();
         pubKey = nk.getRawBytes();
-        pk2 = checkPublicKey(name, pubKey);
+        pk2 = implCheckPublicKey(name, pubKey);
         secKey = null;
         bout.reset();
     }
@@ -91,7 +93,7 @@ public abstract class NamedSignature extends SignatureSpi {
                 .engineTranslateKey(privateKey);
         name = nk.getParams().getName();
         secKey = nk.getRawBytes();
-        sk2 = checkPrivateKey(name, secKey);
+        sk2 = implCheckPrivateKey(name, secKey);
         pubKey = null;
         bout.reset();
     }
@@ -111,7 +113,7 @@ public abstract class NamedSignature extends SignatureSpi {
         if (secKey != null) {
             var msg = bout.toByteArray();
             bout.reset();
-            return sign0(name, secKey, sk2, msg, appRandom);
+            return implSign(name, secKey, sk2, msg, appRandom);
         } else {
             throw new IllegalStateException("No private key");
         }
@@ -122,7 +124,7 @@ public abstract class NamedSignature extends SignatureSpi {
         if (pubKey != null) {
             var msg = bout.toByteArray();
             bout.reset();
-            return verify0(name, pubKey, pk2, msg, sig);
+            return implVerify(name, pubKey, pk2, msg, sig);
         } else {
             throw new IllegalStateException("No public key");
         }
@@ -164,7 +166,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @return the signature
     /// @throws ProviderException if there is an internal error
     /// @throws SignatureException if there is another error
-    public abstract byte[] sign0(String name, byte[] sk, Object sk2,
+    public abstract byte[] implSign(String name, byte[] sk, Object sk2,
             byte[] msg, SecureRandom sr) throws SignatureException;
 
     /// User-defined verify function.
@@ -177,7 +179,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @return true if verified
     /// @throws ProviderException if there is an internal error
     /// @throws SignatureException if there is another error
-    public abstract boolean verify0(String name, byte[] pk, Object pk2,
+    public abstract boolean implVerify(String name, byte[] pk, Object pk2,
             byte[] msg, byte[] sig) throws SignatureException;
 
     /// User-defined function to validate a public key.
@@ -185,7 +187,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// This method will be called in `initVerify`. This gives provider a chance to
     /// reject the key so an `InvalidKeyException` can be thrown earlier.
     /// An implementation can optional return a "parsed key" as an `Object` value.
-    /// This object will be passed into the [#verify0] method along with the raw key.
+    /// This object will be passed into the [#implVerify] method along with the raw key.
     ///
     /// The default implementation returns `null`.
     ///
@@ -193,7 +195,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @param pk public key in raw bytes
     /// @return a parsed key, `null` if none.
     /// @throws InvalidKeyException if the key is invalid
-    public Object checkPublicKey(String name, byte[] pk) throws InvalidKeyException {
+    public Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
         return null;
     }
 
@@ -202,7 +204,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// This method will be called in `initSign`. This gives provider a chance to
     /// reject the key so an `InvalidKeyException` can be thrown earlier.
     /// An implementation can optional return a "parsed key" as an `Object` value.
-    /// This object will be passed into the [#sign0] method along with the raw key.
+    /// This object will be passed into the [#implSign] method along with the raw key.
     ///
     /// The default implementation returns `null`.
     ///
@@ -210,7 +212,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @param sk public key in raw bytes
     /// @return a parsed key, `null` if none.
     /// @throws InvalidKeyException if the key is invalid
-    public Object checkPrivateKey(String name, byte[] sk) throws InvalidKeyException {
+    public Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
         return null;
     }
 }
