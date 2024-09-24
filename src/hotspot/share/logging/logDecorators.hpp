@@ -101,7 +101,6 @@ class LogDecorators {
  private:
   uint _decorators;
   static const char* _name[][2];
-  static const uint defaultsMask = (1 << uptime_decorator) | (1 << level_decorator) | (1 << tags_decorator);
   static const LogDecorators::DefaultDecorator default_decorators[];
   static const size_t number_of_default_decorators;
 
@@ -116,7 +115,7 @@ class LogDecorators {
 
   constexpr LogDecorators(uint mask) : _decorators(mask) {}
 
-  LogDecorators() : _decorators(defaultsMask) {}
+  LogDecorators() {}
 
   void clear() {
     _decorators = 0;
@@ -143,7 +142,7 @@ class LogDecorators {
 
   // Check if we have some default decorators for a given LogSelection. If that is the case,
   // the output parameter mask will contain the defaults-specified decorators mask
-  static bool has_default_decorator(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults = default_decorators, size_t defaults_count = number_of_default_decorators);
+  static void get_default_decorators(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults = default_decorators, size_t defaults_count = number_of_default_decorators);
 
   static LogDecorators::Decorator from_string(const char* str);
 

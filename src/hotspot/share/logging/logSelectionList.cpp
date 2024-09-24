@@ -53,18 +53,12 @@ bool LogSelectionList::verify_selections(outputStream* out) const {
   return valid;
 }
 
-bool LogSelectionList::triggers_default(uint* mask) const {
-  bool match = false;
+uint LogSelectionList::get_defaults_mask() const {
+  uint mask = 0;
   for (size_t i = 0; i < _nselections; ++i) {
-    if (LogDecorators::has_default_decorator(_selections[i], mask)) {
-      if (match) {
-        // None to be applied if several selections have conflicting defaults
-        return false;
-      }
-      match = true;
-    }
+    LogDecorators::get_default_decorators(_selections[i], &mask);
   }
-  return match;
+  return mask;
 }
 
 bool LogSelectionList::parse(const char* str, outputStream* errstream) {

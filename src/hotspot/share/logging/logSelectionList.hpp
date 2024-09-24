@@ -61,7 +61,7 @@ class LogSelectionList : public StackObj {
   // this function will list all the invalid selections on the stream.
   bool verify_selections(outputStream* out = nullptr) const;
 
-  bool triggers_default(uint* mask) const;
+  uint get_defaults_mask() const;
 };
 
 #endif // SHARE_LOGGING_LOGSELECTIONLIST_HPP

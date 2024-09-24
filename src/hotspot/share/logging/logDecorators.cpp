@@ -27,8 +27,10 @@
 #include "logDecorators.hpp"
 
 const LogLevelType AnyLevel = LogLevelType::NotMentioned;
+const LogTagType AnyTag     = LogTagType::__NO_TAG;
 #define DEFAULT_DECORATORS \
-  DEFAULT_VALUE(mask_from_decorators(NoDecorators), AnyLevel, LOG_TAGS(jit, inlining))
+  DEFAULT_VALUE(mask_from_decorators(NoDecorators), AnyLevel, LOG_TAGS(jit, inlining)) \
+  DEFAULT_VALUE(mask_from_decorators(uptime_decorator, level_decorator, tags_decorator), AnyLevel, AnyTag)
 
 template <LogDecorators::Decorator d>
 struct AllBitmask {
@@ -106,8 +108,9 @@ bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
   return result;
 }
 
-bool LogDecorators::has_default_decorator(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults, size_t defaults_count) {
+void LogDecorators::get_default_decorators(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults, size_t defaults_count) {
   size_t max_specificity = 0;
+  uint tmp_mask = 0;
   for (size_t i = 0; i < defaults_count; ++i) {
     auto current_default = defaults[i];
     const bool ignore_level = current_default.selection().level() == AnyLevel;
@@ -118,11 +121,11 @@ bool LogDecorators::has_default_decorator(const LogSelection& selection, uint* m
     }
     size_t specificity = current_default.selection().ntags();
     if (specificity > max_specificity) {
-      *mask = current_default.mask();
+      tmp_mask = current_default.mask();
       max_specificity = specificity;
     } else if (specificity == max_specificity) {
-      *mask |= current_default.mask();
+      tmp_mask |= current_default.mask();
     }
   }
-  return max_specificity > 0;
+  *mask |= tmp_mask;
 }

@@ -477,8 +477,7 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
 }
 
 LogDecorators LogConfiguration::get_default_decorators(LogSelectionList selection_list) {
-  uint mask = 0;
-  return selection_list.triggers_default(&mask) ? LogDecorators(mask) : LogDecorators();
+  return LogDecorators(selection_list.get_defaults_mask());
 }
 
 bool LogConfiguration::parse_log_arguments(const char* outputstr,
