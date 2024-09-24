@@ -36,15 +36,15 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Platform;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class ComplexURITest {
-    final static String listFileName = "test-classlist.txt";
-    final static String archiveName  = "test-dynamic.jsa";
     final static String moduleName = "mymodule";
+
     public static void main(String[] args) throws Exception {
         System.setProperty("test.noclasspath", "true");
         String jarFile = JarBuilder.build(moduleName, "mypackage/Main", "mypackage/Another");
@@ -55,34 +55,52 @@ public class ComplexURITest {
         Files.move(Path.of(jarFile), newJarFilePath);
         jarFile = newJarFilePath.toString();
 
-        File fileList = new File(listFileName);
-        Files.deleteIfExists(fileList.toPath());
-        File fileArchive = new File(archiveName);
-        Files.deleteIfExists(fileArchive.toPath());
+        final String listFileName = "test-classlist.txt";
+        final String staticArchiveName = "test-static.jsa";
+        final String dynamicArchiveName = "test-dynamic.jsa";
 
-        createClassList(jarFile);
+        // Verify static archive creation and use
+        File fileList = new File(listFileName);
+        delete(fileList.toPath());
+        File staticArchive = new File(staticArchiveName);
+        delete(staticArchive.toPath());
+
+        createClassList(jarFile, listFileName);
         if (!fileList.exists()) {
             throw new RuntimeException("No class list created at " + fileList);
         }
 
-        createArchive(jarFile);
-        if (!fileArchive.exists()) {
-            throw new RuntimeException("No shared classes archive created at " + fileArchive);
+        createArchive(jarFile, listFileName, staticArchiveName);
+        if (!staticArchive.exists()) {
+            throw new RuntimeException("No shared classes archive created at " + staticArchive);
         }
 
-        useArchive(jarFile);
-        Files.deleteIfExists(fileArchive.toPath());
+        useArchive(jarFile, staticArchiveName);
 
-        createDynamicArchive(jarFile);
-        if (!fileArchive.exists()) {
-            throw new RuntimeException("No dynamic archive created at " + fileArchive);
+        // Verify dynamic archive creation and use
+        File dynamicArchive = new File(dynamicArchiveName);
+        delete(dynamicArchive.toPath());
+
+        createDynamicArchive(jarFile, dynamicArchiveName);
+        if (!dynamicArchive.exists()) {
+            throw new RuntimeException("No dynamic archive created at " + dynamicArchive);
         }
-        testDynamicArchive(jarFile);
+
+        testDynamicArchive(jarFile, dynamicArchiveName);
     }
 
-    private static void createClassList(String jarFile) throws Exception {
+    private static void delete(Path path) throws Exception {
+        if (Files.exists(path)) {
+            if (Platform.isWindows()) {
+                Files.setAttribute(path, "dos:readonly", false);
+            }
+            Files.delete(path);
+        }
+    }
+
+    private static void createClassList(String jarFile, String list) throws Exception {
         String[] launchArgs  = {
-                "-XX:DumpLoadedClassList=" + listFileName,
+                "-XX:DumpLoadedClassList=" + list,
                 "--module-path",
                 jarFile,
                 "--module",
@@ -92,11 +110,11 @@ public class ComplexURITest {
         output.shouldHaveExitValue(0);
     }
 
-    private static void createArchive(String jarFile) throws Exception {
+    private static void createArchive(String jarFile, String list, String archive) throws Exception {
         String[] launchArgs  = {
                 "-Xshare:dump",
-                "-XX:SharedClassListFile=" + listFileName,
-                "-XX:SharedArchiveFile=" + archiveName,
+                "-XX:SharedClassListFile=" + list,
+                "-XX:SharedArchiveFile=" + archive,
                 "--module-path",
                 jarFile,
                 "--module",
@@ -106,10 +124,10 @@ public class ComplexURITest {
         output.shouldHaveExitValue(0);
     }
 
-    private static void useArchive(String jarFile) throws Exception {
+    private static void useArchive(String jarFile, String archive) throws Exception {
         String[] launchArgs  = {
                 "-Xshare:on",
-                "-XX:SharedArchiveFile=" + archiveName,
+                "-XX:SharedArchiveFile=" + archive,
                 "--module-path",
                 jarFile,
                 "--module",
@@ -119,9 +137,9 @@ public class ComplexURITest {
         output.shouldHaveExitValue(0);
     }
 
-    private static void createDynamicArchive(String jarFile) throws Exception {
+    private static void createDynamicArchive(String jarFile, String archive) throws Exception {
         String[] launchArgs  = {
-                "-XX:ArchiveClassesAtExit=" + archiveName,
+                "-XX:ArchiveClassesAtExit=" + archive,
                 "--module-path",
                 jarFile,
                 "--module",
@@ -131,9 +149,9 @@ public class ComplexURITest {
         output.shouldHaveExitValue(0);
     }
 
-    private static void testDynamicArchive(String jarFile) throws Exception {
+    private static void testDynamicArchive(String jarFile, String archive) throws Exception {
         String[] launchArgs  = {
-                "-XX:SharedArchiveFile=" + archiveName,
+                "-XX:SharedArchiveFile=" + archive,
                 "-XX:+PrintSharedArchiveAndExit",
                 "--module-path",
                 jarFile,
