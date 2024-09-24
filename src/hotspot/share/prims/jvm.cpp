@@ -2946,10 +2946,7 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
   // We must release the Threads_lock before we can post a jvmti event
   // in Thread::start.
   {
-    // VM thread needs Threads_lock when announcing a safepoint. We do not
-    // want StartThread to delay safepoint, so we wrap with this second lock
-    // to reduce competition for Threads_lock.
-    ConditionalMutexLocker ml1(ThreadStart_lock, UseThreadStartLock);
+    ConditionalMutexLocker ml1(ThreadsLockThrottle_lock, UseThreadsLockThrottleLock);
     // Ensure that the C++ Thread and OSThread structures aren't freed before
     // we operate.
     MutexLocker ml2(Threads_lock);

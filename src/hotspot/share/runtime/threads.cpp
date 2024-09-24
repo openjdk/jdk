@@ -1027,7 +1027,9 @@ void Threads::add(JavaThread* p, bool force_daemon) {
 void Threads::remove(JavaThread* p, bool is_daemon) {
   // Extra scope needed for Thread_lock, so we can check
   // that we do not remove thread without safepoint code notice
-  { MonitorLocker ml(Threads_lock);
+  {
+    ConditionalMutexLocker ml1(ThreadsLockThrottle_lock, UseThreadsLockThrottleLock);
+    MonitorLocker ml2(Threads_lock);
 
     if (ThreadIdTable::is_initialized()) {
       // This cleanup must be done before the current thread's GC barrier
@@ -1062,7 +1064,7 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
       // on destroy_vm will wake up. But that thread could be a daemon
       // or non-daemon, so we notify for both the 0 and 1 case.
       if (number_of_non_daemon_threads() <= 1) {
-        ml.notify_all();
+        ml2.notify_all();
       }
     }
     ThreadService::remove_thread(p, is_daemon);
@@ -1075,7 +1077,7 @@ void Threads::remove(JavaThread* p, bool is_daemon) {
 
     // Notify threads waiting in EscapeBarriers
     EscapeBarrier::thread_removed(p);
-  } // unlock Threads_lock
+  } // unlock Threads_lock and ThreadsLockThrottle_lock
 
   // Reduce the ObjectMonitor ceiling for the exiting thread.
   ObjectSynchronizer::dec_in_use_list_ceiling();

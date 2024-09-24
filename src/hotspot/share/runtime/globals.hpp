@@ -1998,9 +1998,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, StressSecondarySupers, false, DIAGNOSTIC,                   \
           "Use a terrible hash function in order to generate many collisions.") \
                                                                             \
-  product(bool, UseThreadStartLock, true, DIAGNOSTIC,                       \
-          "Use an extra lock during Thread.start to alleviate contention "  \
-          "on threads lock.")                                               \
+  product(bool, UseThreadsLockThrottleLock, true, DIAGNOSTIC,               \
+          "Use an extra lock during Thread start and exit to alleviate"     \
+          "contention on threads lock.")                                    \
 
 // end of RUNTIME_FLAGS
 
