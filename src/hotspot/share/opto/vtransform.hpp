@@ -265,16 +265,30 @@ private:
   // generated def (input) nodes when we are generating the use nodes in "apply".
   GrowableArray<Node*> _vtnode_idx_to_transformed_node;
 
+  // TODO
+  GrowableArray<Node*> _memory_states;
+
 public:
   VTransformApplyState(const VLoopAnalyzer& vloop_analyzer, int num_vtnodes) :
     _vloop_analyzer(vloop_analyzer),
-    _vtnode_idx_to_transformed_node(num_vtnodes, num_vtnodes, nullptr) {}
+    _vtnode_idx_to_transformed_node(num_vtnodes, num_vtnodes, nullptr),
+    _memory_states(num_slices(), num_slices(), nullptr)
+  {
+    init_memory_states();
+  }
 
   const VLoop& vloop() const { return _vloop_analyzer.vloop(); }
   PhaseIdealLoop* phase() const { return vloop().phase(); }
 
   void set_transformed_node(VTransformNode* vtn, Node* n);
   Node* transformed_node(const VTransformNode* vtn) const;
+
+  Node* memory_state(int alias_idx) const { return _memory_states.at(alias_idx); }
+  void set_memory_state(int alias_idx, Node* n) { _memory_states.at_put(alias_idx, n); }
+
+private:
+  int num_slices() const { return _vloop_analyzer.memory_slices().heads().length(); }
+  void init_memory_states();
 };
 
 // Bundle information for VTransformNode.

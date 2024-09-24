@@ -289,6 +289,13 @@ Node* VTransformApplyState::transformed_node(const VTransformNode* vtn) const {
   return n;
 }
 
+void VTransformApplyState::init_memory_states() {
+  const GrowableArray<Node*>& inputs = _vloop_analyzer.memory_slices().inputs();
+  for (int i = 0; i < inputs.length(); i++) {
+    _memory_states.at_put(i, inputs.at(i));
+  }
+}
+
 float VTransformScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   if (vloop_analyzer.has_zero_cost(_node)) {
     return 0;
@@ -693,7 +700,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   LoadNode* first = nodes().at(0)->as_Load();
   Node* ctrl = first->in(MemNode::Control);
   Node* mem  = first->in(MemNode::Memory);
-  Node* adr  = first->in(MemNode::Address);
+  Node* adr  = apply_state.transformed_node(in(MemNode::Address));
   const TypePtr* adr_type = first->adr_type();
 
   // Set the memory dependency of the LoadVector as early as possible.
@@ -730,7 +737,7 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
   StoreNode* first = nodes().at(0)->as_Store();
   Node* ctrl = first->in(MemNode::Control);
   Node* mem  = first->in(MemNode::Memory);
-  Node* adr  = first->in(MemNode::Address);
+  Node* adr  = apply_state.transformed_node(in(MemNode::Address));
   const TypePtr* adr_type = first->adr_type();
 
   Node* value = apply_state.transformed_node(in(MemNode::ValueIn));

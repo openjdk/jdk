@@ -380,9 +380,10 @@ public:
     _heads(arena, num_slices(), num_slices(), nullptr) {}
   NONCOPYABLE(VLoopMemorySlices);
 
-  void find_memory_slices();
-
+  const GrowableArray<Node*>& inputs() const { return _inputs; }
   const GrowableArray<PhiNode*>& heads() const { return _heads; }
+
+  void find_memory_slices();
 
   // Get all memory nodes of a slice, in reverse order
   void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
