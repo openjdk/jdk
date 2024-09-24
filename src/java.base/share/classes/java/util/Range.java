@@ -36,7 +36,7 @@ public abstract sealed class Range<T extends Comparable<T>> {
      * @return an unbounded range ending at the given value
      */
     public static <T extends Comparable<T>> Range<T> unboundedEndingAt(T end, boolean excludeEnd) {
-        return excludeEnd ? new UnboundedStartRange<>(end, true) : new UnboundedStartRange<>(end);
+        return new UnboundedStartRange<>(end, excludeEnd);
     }
 
     /**
@@ -58,7 +58,7 @@ public abstract sealed class Range<T extends Comparable<T>> {
      * @param <T> the type of the values
      */
     public static <T extends Comparable<T>> Range<T> unboundedStartingAt(T start, boolean excludeStart) {
-        return excludeStart ? new UnboundedEndRange<>(start, true) : new UnboundedEndRange<>(start);
+        return new UnboundedEndRange<>(start, excludeStart);
     }
 
     /**
