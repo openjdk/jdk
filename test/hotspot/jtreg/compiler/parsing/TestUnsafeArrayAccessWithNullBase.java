@@ -27,16 +27,11 @@
  * @summary Unsafe::getShortUnaligned with base null hidden behind CheckCastPP nodes
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run main/othervm
- * -Xbatch -XX:CompileCommand=quiet
- * -XX:+IgnoreUnrecognizedVMOptions
- * -XX:TypeProfileLevel=222
- * -XX:+AlwaysIncrementalInline
- * -XX:CompileCommand=compileonly,compiler.parsing.TestUnsafeArrayAccessWithNullBase::test*
- * -XX:-TieredCompilation compiler.parsing.TestUnsafeArrayAccessWithNullBase
- * @run main/othervm
- * -Xbatch -XX:-TieredCompilation
- * compiler.parsing.TestUnsafeArrayAccessWithNullBase
+ * @run main/othervm -Xbatch -XX:CompileCommand=quiet -XX:TypeProfileLevel=222
+ *      -XX:+IgnoreUnrecognizedVMOptions  -XX:+AlwaysIncrementalInline
+ *      -XX:CompileCommand=compileonly,compiler.parsing.TestUnsafeArrayAccessWithNullBase::test*
+ *      -XX:-TieredCompilation compiler.parsing.TestUnsafeArrayAccessWithNullBase
+ * @run main/othervm compiler.parsing.TestUnsafeArrayAccessWithNullBase
  */
 
 package compiler.parsing;
