@@ -26,13 +26,14 @@
  * @bug 8190951
  * @summary KDF API tests
  * @library /test/lib
- * @run main/othervm -Djava.security.egd=file:/dev/urandom HKDFTest
+ * @run main/othervm -Djava.security.egd=file:/dev/urandom TestKDFOperations
  * @enablePreview
  */
 
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.crypto.KDF;
@@ -45,7 +46,7 @@ import javax.crypto.spec.SecretKeySpec;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
-public class HKDFTest {
+public class TestKDFOperations {
 
     private static final String JDK_HKDF_SHA256 = "HKDF-SHA256";
     private static final String JDK_HKDF_SHA384 = "HKDF-SHA384";
@@ -72,7 +73,8 @@ public class HKDFTest {
     private static final int LARGE_LENGTH = 1000;
     private static final int NEGATIVE_LENGTH = -1;
 
-    private final static KdfVerifier<String, String, AlgorithmParameterSpec> KdfGetInstanceVerifier = (a, p, s) -> {
+    private final static KdfVerifier<String, String, AlgorithmParameterSpec>
+            KdfGetInstanceVerifier = (a, p, s) -> {
 
         // Test KDF getInstance methods, all should have same algo and provider
         KDF k1 = KDF.getInstance(a);
@@ -98,40 +100,24 @@ public class HKDFTest {
         Asserts.assertEquals(k2.getParameters(), k3.getParameters());
     };
 
-    private final static KdfExtractVerifier<Object, Object> KdfExtractVerifierImpl = (ikm, salt) -> {
-        // Extract
-        HKDFParameterSpec.Builder hkdfParameterSpecBuilder = HKDFParameterSpec.ofExtract();
+    private final static KdfExtractVerifier<Object, Object>
+            KdfExtractVerifierImpl = (ikm, salt) -> {
+        // ofExtract
+        HKDFParameterSpec.Builder hkdfParameterSpecBuilder =
+                HKDFParameterSpec.ofExtract();
+        addIkmAndSalt(hkdfParameterSpecBuilder, ikm, salt);
 
-        if (ikm instanceof SecretKey) {
-            hkdfParameterSpecBuilder.addIKM((SecretKey) ikm);
-        } else {
-            hkdfParameterSpecBuilder.addIKM((byte[]) ikm);
-        }
-
-        if (salt instanceof SecretKey) {
-            hkdfParameterSpecBuilder.addSalt((SecretKey) salt);
-        } else {
-            hkdfParameterSpecBuilder.addSalt((byte[]) salt);
-        }
-
-        // Extract
-        HKDFParameterSpec.Extract param = hkdfParameterSpecBuilder.extractOnly();
-
+        // extractOnly - it is possible to have empty key param so skip when length is 0
+        HKDFParameterSpec.Extract parameterSpec = hkdfParameterSpecBuilder.extractOnly();
         if ((ikm instanceof SecretKey) || ((byte[]) ikm).length != 0) {
-            Asserts.assertTrue(param.ikms().contains(
-                    (ikm instanceof SecretKey)
-                            ? ikm
-                            : (new SecretKeySpec((byte[]) ikm, "Generic"))));
+            Asserts.assertTrue(parameterSpec.ikms().contains(getSecretKey(ikm)));
         }
 
         if ((salt instanceof SecretKey) || ((byte[]) salt).length != 0) {
-            Asserts.assertTrue(param.salts().contains(
-                    (salt instanceof SecretKey)
-                            ? salt
-                            : (new SecretKeySpec((byte[]) salt, "Generic"))));
+            Asserts.assertTrue(parameterSpec.salts().contains(getSecretKey(salt)));
         }
 
-        return param;
+        return parameterSpec;
     };
 
     private final static KdfExpandVerifier<SecretKey, byte[], Integer>
@@ -146,37 +132,21 @@ public class HKDFTest {
         return parameterSpec;
     };
 
-    private final static KdfExtThenExpVerifier<Object, Object, byte[], Integer> KdfExtThenExpVerifierImpl = (ikm, salt, info, len) -> {
-        // Extract
+    private final static KdfExtThenExpVerifier<Object, Object, byte[], Integer>
+            KdfExtThenExpVerifierImpl = (ikm, salt, info, len) -> {
+        // ofExtract
         HKDFParameterSpec.Builder hkdfParameterSpecBuilder = HKDFParameterSpec.ofExtract();
+        addIkmAndSalt(hkdfParameterSpecBuilder, ikm, salt);
 
-        if ((ikm instanceof SecretKey)) {
-            hkdfParameterSpecBuilder.addIKM((SecretKey) ikm);
-        } else {
-            hkdfParameterSpecBuilder.addIKM((byte[]) ikm);
-        }
-
-        if (salt instanceof SecretKey) {
-            hkdfParameterSpecBuilder.addSalt((SecretKey) salt);
-        } else {
-            hkdfParameterSpecBuilder.addSalt((byte[]) salt);
-        }
-
-        // Then Expand
+        // thenExpand
         HKDFParameterSpec.ExtractThenExpand parameterSpec =
                 hkdfParameterSpecBuilder.thenExpand(info, len);
         if ((ikm instanceof SecretKey) || ((byte[]) ikm).length != 0) {
-            Asserts.assertTrue(parameterSpec.ikms().contains(
-                    (ikm instanceof SecretKey)
-                            ? ikm
-                            : (new SecretKeySpec((byte[]) ikm, "Generic"))));
+            Asserts.assertTrue(parameterSpec.ikms().contains(getSecretKey(ikm)));
         }
 
         if ((salt instanceof SecretKey) || ((byte[]) salt).length != 0) {
-            Asserts.assertTrue(parameterSpec.salts().contains(
-                    (salt instanceof SecretKeySpec)
-                            ? salt
-                            : (new SecretKeySpec((byte[]) salt, "Generic"))));
+            Asserts.assertTrue(parameterSpec.salts().contains(getSecretKey(salt)));
         }
 
         // Validate info and length
@@ -185,7 +155,6 @@ public class HKDFTest {
 
         return parameterSpec;
     };
-
     private final static DeriveComparator<KDF, HKDFParameterSpec, HKDFParameterSpec, String, SecretKey, Integer>
             deriveComparatorImpl = (hk, lhs, rhs, t, s, len) -> {
         // deriveKey using two passed in HKDFParameterSpec and compare
@@ -209,7 +178,6 @@ public class HKDFTest {
                     skUsingLhs, s.getEncoded());
         }
     };
-
     // Passed in HKDFParameterSpec returned from different methods and algorithms a1, a2.
     // Keys and data derived should be equal.
     private final static DeriveVerifier<KDF, HKDFParameterSpec, HKDFParameterSpec, String, String>
@@ -222,57 +190,28 @@ public class HKDFTest {
         Asserts.assertEqualsByteArray(bk1, sk1.getEncoded());
     };
 
-    public static void main(String[] args) throws Exception {
-        System.out.println("Starting Test '" + HKDFTest.class.getName() + "'");
+    private static SecretKey getSecretKey(Object data) {
+        return (data instanceof SecretKey)
+                ? (SecretKey) data
+                : new SecretKeySpec((byte[]) data, "Generic");
+    }
 
-        // POSITIVE TestCase[Operations - extractOnly, expandOnly, thenExpand]
-        // Run for all supported algorithms with non-empty parameters
-        // Uses SecretKey or byte[] for IKM and salt to cover addIKM and addSalt
-        for (boolean useKey : new boolean[]{true, false}) {
-            for (String algo : KDF_ALGORITHMS) {
-                System.out.println("Testing with " + algo + " and useKey " + useKey);
-                KDF hk = KDF.getInstance(algo);
-                for (SecretKey secretKey : SECRET_KEY_SPEC_KEYS) {
-                    for (byte[] bytes : RAW_DATA) {
-                        var key = useKey ? secretKey : secretKey.getEncoded();
-                        var raw = useKey
-                                ? new SecretKeySpec(bytes, "Generic")
-                                : bytes;
-                        // extract
-                        HKDFParameterSpec extract1 = KdfExtractVerifierImpl.extract(key, raw);
-                        HKDFParameterSpec extract2 = KdfExtractVerifierImpl.extract(key, raw);
-                        SecretKey sk = hk.deriveKey("PRK", extract1);
-                        deriveComparatorImpl.deriveAndCompare(hk, extract1, extract2, "PRK", null, NEGATIVE_LENGTH);
-
-                        // expand
-                        HKDFParameterSpec expand1 = KdfExpandVerifierImpl.expand(sk,
-                                ((raw instanceof SecretKey)
-                                        ? ((SecretKey) raw).getEncoded()
-                                        : (byte[]) raw),
-                                SHORT_LENGTH);
-                        HKDFParameterSpec expand2 = KdfExpandVerifierImpl.expand(sk,
-                                ((raw instanceof SecretKey)
-                                        ? ((SecretKey) raw).getEncoded()
-                                        : (byte[]) raw), SHORT_LENGTH);
-                        sk = hk.deriveKey("OKM", expand1);
-                        deriveComparatorImpl.deriveAndCompare(hk, expand1, expand2, "OKM", sk, SHORT_LENGTH);
-
-                        // extractExpand
-                        HKDFParameterSpec extractExpand1 = KdfExtThenExpVerifierImpl.extExp(key, raw,
-                                ((raw instanceof SecretKey)
-                                        ? ((SecretKey) raw).getEncoded()
-                                        : (byte[]) raw),
-                                SHORT_LENGTH);
-                        HKDFParameterSpec extractExpand2 = KdfExtThenExpVerifierImpl.extExp(key, raw,
-                                ((raw instanceof SecretKey)
-                                        ? ((SecretKey) raw).getEncoded()
-                                        : (byte[]) raw),
-                                SHORT_LENGTH);
-                        deriveComparatorImpl.deriveAndCompare(hk, extractExpand1, extractExpand2, "OKM", sk, SHORT_LENGTH);
-                    }
-                }
-            }
+    private static void addIkmAndSalt(HKDFParameterSpec.Builder hkdfParameterSpecBuilder, Object ikm, Object salt) {
+        if (ikm instanceof SecretKey) {
+            hkdfParameterSpecBuilder.addIKM((SecretKey) ikm);
+        } else {
+            hkdfParameterSpecBuilder.addIKM((byte[]) ikm);
         }
+
+        if (salt instanceof SecretKey) {
+            hkdfParameterSpecBuilder.addSalt((SecretKey) salt);
+        } else {
+            hkdfParameterSpecBuilder.addSalt((byte[]) salt);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        System.out.println("Starting Test '" + TestKDFOperations.class.getName() + "'");
 
         // Test KDF.getInstance methods
         System.out.println("Testing getInstance methods");
@@ -368,51 +307,42 @@ public class HKDFTest {
                 NoSuchProviderException.class);
 
         // getInstance(String algorithm, KDFParameters kdfParameters, Provider provider)
-        Utils.runAndCheckException(() -> KDF.getInstance(null, null, SUNJCE_PROVIDER),
+        Utils.runAndCheckException(() ->
+                        KDF.getInstance(null, null, SUNJCE_PROVIDER),
                 NullPointerException.class);
-        Utils.runAndCheckException(() -> KDF.getInstance(INVALID_STRING, null, SUNJCE_PROVIDER),
+        Utils.runAndCheckException(() ->
+                        KDF.getInstance(INVALID_STRING, null, SUNJCE_PROVIDER),
                 NoSuchAlgorithmException.class);
         Utils.runAndCheckException(() -> KDF.getInstance(KDF_ALGORITHMS[0],
                         (KDFParameters) new KDFAlgorithmParameterSpec(), SUNJCE_PROVIDER),
                 ClassCastException.class);
-        Utils.runAndCheckException(() -> KDF.getInstance(KDF_ALGORITHMS[0], null, (Provider) null),
+        Utils.runAndCheckException(() ->
+                        KDF.getInstance(KDF_ALGORITHMS[0], null, (Provider) null),
                 NullPointerException.class);
     }
 
     private static void testExtractMethod(KDF hk) throws InvalidAlgorithmParameterException
             , InvalidParameterSpecException, NoSuchAlgorithmException {
-        // POSITIVE TestCase: Extract - Empty bytes for IKM/SALT
-        HKDFParameterSpec ext1 = KdfExtractVerifierImpl.extract(EMPTY, RAW_DATA.getFirst());
-        HKDFParameterSpec ext2 = KdfExtractVerifierImpl.extract(EMPTY, RAW_DATA.getFirst());
-        deriveComparatorImpl.deriveAndCompare(hk, ext1, ext2, "PRK", null, NEGATIVE_LENGTH);
+        List<Object> ikmSaltTestData = new ArrayList<>();
+        ikmSaltTestData.add(null);
+        ikmSaltTestData.add(EMPTY);
+        ikmSaltTestData.add(RAW_DATA.getFirst());
+        ikmSaltTestData.add(SECRET_KEY_SPEC_KEYS.getFirst());
 
-        ext1 = KdfExtractVerifierImpl.extract(RAW_DATA.getFirst(), EMPTY);
-        ext2 = KdfExtractVerifierImpl.extract(RAW_DATA.getFirst(), EMPTY);
-        deriveComparatorImpl.deriveAndCompare(hk, ext1, ext2, "PRK", null, NEGATIVE_LENGTH);
-
-        ext1 = KdfExtractVerifierImpl.extract(EMPTY, SECRET_KEY_SPEC_KEYS.getFirst());
-        ext2 = KdfExtractVerifierImpl.extract(EMPTY, SECRET_KEY_SPEC_KEYS.getFirst());
-        deriveComparatorImpl.deriveAndCompare(hk, ext1, ext2, "PRK", null, NEGATIVE_LENGTH);
-
-        ext1 = KdfExtractVerifierImpl.extract(SECRET_KEY_SPEC_KEYS.getFirst(), EMPTY);
-        ext2 = KdfExtractVerifierImpl.extract(SECRET_KEY_SPEC_KEYS.getFirst(), EMPTY);
-        deriveComparatorImpl.deriveAndCompare(hk, ext1, ext2, "PRK", null, NEGATIVE_LENGTH);
-
-        ext1 = KdfExtractVerifierImpl.extract(EMPTY, EMPTY);
-        ext2 = KdfExtractVerifierImpl.extract(EMPTY, EMPTY);
-        deriveComparatorImpl.deriveAndCompare(hk, ext1, ext2, "PRK", null, NEGATIVE_LENGTH);
-
-        // NEGATIVE TestCase: Extract - NULL IKM/SALT
-        Utils.runAndCheckException(() -> KdfExtractVerifierImpl.extract(null, RAW_DATA.getFirst()),
-                NullPointerException.class);
-        Utils.runAndCheckException(() -> KdfExtractVerifierImpl.extract(RAW_DATA.getFirst(), null),
-                NullPointerException.class);
-        Utils.runAndCheckException(() -> KdfExtractVerifierImpl.extract(null, SECRET_KEY_SPEC_KEYS.getFirst()),
-                NullPointerException.class);
-        Utils.runAndCheckException(() -> KdfExtractVerifierImpl.extract(SECRET_KEY_SPEC_KEYS.getFirst(), null),
-                NullPointerException.class);
-        Utils.runAndCheckException(() -> KdfExtractVerifierImpl.extract(null, null),
-                NullPointerException.class);
+        for (Object ikm : ikmSaltTestData) {
+            for (Object salt : ikmSaltTestData) {
+                // NEGATIVE Testcase: expects NullPointerException
+                if (ikm == null || salt == null) {
+                    Utils.runAndCheckException(() -> KdfExtractVerifierImpl.extract(ikm, salt),
+                            NullPointerException.class);
+                } else {
+                    // POSITIVE Testcase: Extract - Empty bytes for IKM/SALT
+                    HKDFParameterSpec ext1 = KdfExtractVerifierImpl.extract(ikm, salt);
+                    HKDFParameterSpec ext2 = KdfExtractVerifierImpl.extract(ikm, salt);
+                    deriveComparatorImpl.deriveAndCompare(hk, ext1, ext2, "PRK", null, NEGATIVE_LENGTH);
+                }
+            }
+        }
     }
 
     private static void testDeriveKeyDataWithExtract(KDF hk) throws InvalidAlgorithmParameterException,
@@ -421,47 +351,46 @@ public class HKDFTest {
         deriveVerifierImpl.derive(hk,
                 KdfExtractVerifierImpl.extract(SECRET_KEY_SPEC_KEYS.getFirst(), RAW_DATA.getFirst()),
                 KdfExtractVerifierImpl.extract(SECRET_KEY_SPEC_KEYS.getFirst(), RAW_DATA.getFirst()),
-                "XYZ", "ABC");
+                "XYZ",
+                "ABC");
 
-        // NEGATIVE TestCase: Extract - NULL algo to derive key
+        // NEGATIVE TestCase: Extract - {null, ""} algo to derive key
         Utils.runAndCheckException(() -> hk.deriveKey(null,
                         KdfExtractVerifierImpl.extract(SECRET_KEY_SPEC_KEYS.getFirst(), RAW_DATA.getFirst())),
                 NullPointerException.class);
         Utils.runAndCheckException(() -> hk.deriveKey("",
                         KdfExtractVerifierImpl.extract(SECRET_KEY_SPEC_KEYS.getFirst(), RAW_DATA.getFirst())),
                 NoSuchAlgorithmException.class);
-        Utils.runAndCheckException(() -> hk.deriveKey(null,
-                        KdfExtractVerifierImpl.extract(RAW_DATA.getFirst(), SECRET_KEY_SPEC_KEYS.getFirst())),
-                NullPointerException.class);
     }
 
     private static void testExpandMethod(KDF hk) throws InvalidAlgorithmParameterException
             , InvalidParameterSpecException, NoSuchAlgorithmException {
         SecretKey prk = hk.deriveKey("PRK",
                 KdfExtractVerifierImpl.extract(SECRET_KEY_SPEC_KEYS.get(1), RAW_DATA.getFirst()));
-        // POSITIVE TestCase: Expand - 'info' is null
-        HKDFParameterSpec exp1 = KdfExpandVerifierImpl.expand(prk, null, SHORT_LENGTH);
-        HKDFParameterSpec exp2 = KdfExpandVerifierImpl.expand(prk, null, SHORT_LENGTH);
-        deriveComparatorImpl.deriveAndCompare(hk, exp1, exp2, "OKM", null, SHORT_LENGTH);
-        exp1 = KdfExpandVerifierImpl.expand(prk, null, LARGE_LENGTH);
-        exp2 = KdfExpandVerifierImpl.expand(prk, null, LARGE_LENGTH);
-        deriveComparatorImpl.deriveAndCompare(hk, exp1, exp2, "OKM", null, LARGE_LENGTH);
 
-        // POSITIVE TestCase: Expand parameter 'info' is empty byte
-        exp1 = KdfExpandVerifierImpl.expand(prk, EMPTY, SHORT_LENGTH);
-        exp2 = KdfExpandVerifierImpl.expand(prk, EMPTY, SHORT_LENGTH);
-        deriveComparatorImpl.deriveAndCompare(hk, exp1, exp2, "OKM", null, SHORT_LENGTH);
-        exp1 = KdfExpandVerifierImpl.expand(prk, EMPTY, LARGE_LENGTH);
-        exp2 = KdfExpandVerifierImpl.expand(prk, EMPTY, LARGE_LENGTH);
-        deriveComparatorImpl.deriveAndCompare(hk, exp1, exp2, "OKM", null, LARGE_LENGTH);
+        // Test extExp with {null, EMPTY} info and {SHORT_LENGTH, LARGE_LENGTH} length
+        for (byte[] info : new byte[][]{null, EMPTY}) {
+            for (int length : new Integer[]{SHORT_LENGTH, LARGE_LENGTH}) {
+                HKDFParameterSpec exp1 = KdfExpandVerifierImpl.expand(prk, info, length);
+                HKDFParameterSpec exp2 = KdfExpandVerifierImpl.expand(prk, info, length);
+                deriveComparatorImpl.deriveAndCompare(hk,
+                        exp1,
+                        exp2,
+                        "OKM",
+                        null,
+                        length);
+            }
+        }
 
         // NEGATIVE TestCase: Expand - PRK=null
         Utils.runAndCheckException(() -> KdfExpandVerifierImpl.expand(null,
-                RAW_DATA.getFirst(), SHORT_LENGTH), NullPointerException.class);
+                        RAW_DATA.getFirst(), SHORT_LENGTH),
+                NullPointerException.class);
 
         // NEGATIVE TestCase: Expand - Derive keys/data of negative length
         Utils.runAndCheckException(() -> KdfExpandVerifierImpl.expand(SECRET_KEY_SPEC_KEYS.getFirst(),
-                RAW_DATA.getFirst(), -1), IllegalArgumentException.class);
+                        RAW_DATA.getFirst(), NEGATIVE_LENGTH),
+                IllegalArgumentException.class);
     }
 
     private static void testDeriveKeyDataWithExpand(KDF hk) throws InvalidAlgorithmParameterException,
@@ -473,71 +402,85 @@ public class HKDFTest {
         deriveVerifierImpl.derive(hk,
                 KdfExpandVerifierImpl.expand(prk, RAW_DATA.getFirst(), SHORT_LENGTH),
                 KdfExpandVerifierImpl.expand(prk, RAW_DATA.getFirst(), SHORT_LENGTH),
-                "XYZ", "ABC");
+                "XYZ",
+                "ABC");
 
         // NEGATIVE TestCase: Expand - PRK is not derived
         Utils.runAndCheckException(() -> hk.deriveKey("PRK",
-                KdfExpandVerifierImpl.expand(SECRET_KEY_SPEC_KEYS.get(1),
-                        RAW_DATA.getFirst(), SHORT_LENGTH)), InvalidAlgorithmParameterException.class);
+                        KdfExpandVerifierImpl.expand(SECRET_KEY_SPEC_KEYS.get(1),
+                                RAW_DATA.getFirst(),
+                                SHORT_LENGTH)),
+                InvalidAlgorithmParameterException.class);
 
     }
 
     private static void testExtractExpandMethod(KDF hk) throws InvalidAlgorithmParameterException
             , InvalidParameterSpecException, NoSuchAlgorithmException {
-        // POSITIVE TestCase: ExtractExpand - 'info' is null
-        HKDFParameterSpec exep1 = KdfExtThenExpVerifierImpl.extExp(RAW_DATA.getFirst(), RAW_DATA.getFirst(), null, SHORT_LENGTH);
-        HKDFParameterSpec exep2 = KdfExtThenExpVerifierImpl.extExp(RAW_DATA.getFirst(), RAW_DATA.getFirst(), null, SHORT_LENGTH);
-        deriveComparatorImpl.deriveAndCompare(hk, exep1, exep2, "OKM", null, SHORT_LENGTH);
-        exep1 = KdfExtThenExpVerifierImpl.extExp(RAW_DATA.getFirst(), RAW_DATA.getFirst(), null, LARGE_LENGTH);
-        exep2 = KdfExtThenExpVerifierImpl.extExp(RAW_DATA.getFirst(), RAW_DATA.getFirst(), null, LARGE_LENGTH);
-        deriveComparatorImpl.deriveAndCompare(hk, exep1, exep2, "OKM", null, LARGE_LENGTH);
+        // Test extExp with {null, EMPTY} info and {SHORT_LENGTH, LARGE_LENGTH} length
+        for (byte[] info : new byte[][]{null, EMPTY}) {
+            for (int length : new Integer[]{SHORT_LENGTH, LARGE_LENGTH}) {
+                HKDFParameterSpec extractExpand1 =
+                        KdfExtThenExpVerifierImpl.extExp(RAW_DATA.getFirst(),
+                                RAW_DATA.getFirst(),
+                                info,
+                                length);
+                HKDFParameterSpec extractExpand2 =
+                        KdfExtThenExpVerifierImpl.extExp(RAW_DATA.getFirst(),
+                                RAW_DATA.getFirst(),
+                                info,
+                                length);
+                deriveComparatorImpl.deriveAndCompare(hk,
+                        extractExpand1,
+                        extractExpand2,
+                        "OKM",
+                        null,
+                        length);
+            }
+        }
 
-        // POSITIVE TestCase: ExtractExpand - 'info' is empty byte
-        exep1 = KdfExtThenExpVerifierImpl.extExp(RAW_DATA.getFirst(), RAW_DATA.getFirst(), EMPTY, SHORT_LENGTH);
-        exep2 = KdfExtThenExpVerifierImpl.extExp(RAW_DATA.getFirst(), RAW_DATA.getFirst(), EMPTY, SHORT_LENGTH);
-        deriveComparatorImpl.deriveAndCompare(hk, exep1, exep2, "OKM", null, SHORT_LENGTH);
-        exep1 = KdfExtThenExpVerifierImpl.extExp(RAW_DATA.getFirst(), RAW_DATA.getFirst(), EMPTY, LARGE_LENGTH);
-        exep2 = KdfExtThenExpVerifierImpl.extExp(RAW_DATA.getFirst(), RAW_DATA.getFirst(), EMPTY, LARGE_LENGTH);
-        deriveComparatorImpl.deriveAndCompare(hk, exep1, exep2, "OKM", null, LARGE_LENGTH);
+        // NEGATIVE TestCases: ExtractExpand
+        List<Object> ikmSaltTestData = new ArrayList<>();
+        ikmSaltTestData.add(null);
+        ikmSaltTestData.add(RAW_DATA.getFirst());
+        ikmSaltTestData.add(SECRET_KEY_SPEC_KEYS.getFirst());
 
-        // NEGATIVE TestCase: ExtractExpand - NULL IKM/SALT
-        Utils.runAndCheckException(() ->
-                        KdfExtThenExpVerifierImpl.extExp(null, RAW_DATA.getFirst(), RAW_DATA.getFirst(), SHORT_LENGTH),
-                NullPointerException.class);
-        Utils.runAndCheckException(() ->
-                        KdfExtThenExpVerifierImpl.extExp(null, SECRET_KEY_SPEC_KEYS.getFirst(), RAW_DATA.getFirst(), SHORT_LENGTH),
-                NullPointerException.class);
-        Utils.runAndCheckException(() ->
-                        KdfExtThenExpVerifierImpl.extExp(RAW_DATA.getFirst(), null, RAW_DATA.getFirst(), SHORT_LENGTH),
-                NullPointerException.class);
-        Utils.runAndCheckException(() ->
-                        KdfExtThenExpVerifierImpl.extExp(SECRET_KEY_SPEC_KEYS.getFirst(), null, RAW_DATA.getFirst(), SHORT_LENGTH),
-                NullPointerException.class);
-
-        // NEGATIVE: ExtractExpand Parameters - negative length
-        Utils.runAndCheckException(() ->
-                        KdfExtThenExpVerifierImpl.extExp(RAW_DATA.getFirst(), RAW_DATA.getFirst(), RAW_DATA.getFirst(), -1),
-                IllegalArgumentException.class);
-        Utils.runAndCheckException(() ->
-                        KdfExtThenExpVerifierImpl.extExp(SECRET_KEY_SPEC_KEYS.getFirst(), SECRET_KEY_SPEC_KEYS.getFirst(), RAW_DATA.getFirst(), -1),
-                IllegalArgumentException.class);
-        Utils.runAndCheckException(() ->
-                        KdfExtThenExpVerifierImpl.extExp(RAW_DATA.getFirst(), SECRET_KEY_SPEC_KEYS.getFirst(), RAW_DATA.getFirst(), -1),
-                IllegalArgumentException.class);
-        Utils.runAndCheckException(() ->
-                        KdfExtThenExpVerifierImpl.extExp(SECRET_KEY_SPEC_KEYS.getFirst(), RAW_DATA.getFirst(), RAW_DATA.getFirst(), -1),
-                IllegalArgumentException.class);
+        for (Object ikm : ikmSaltTestData) {
+            for (Object salt : ikmSaltTestData) {
+                if (ikm == null || salt == null) {
+                    // ikm and/or salt are null, expect NullPointerException
+                    Utils.runAndCheckException(() ->
+                                    KdfExtThenExpVerifierImpl.extExp(ikm,
+                                            salt,
+                                            RAW_DATA.getFirst(),
+                                            SHORT_LENGTH),
+                            NullPointerException.class);
+                } else {
+                    // ikm and salt are not null, test with negative length
+                    Utils.runAndCheckException(() ->
+                                    KdfExtThenExpVerifierImpl.extExp(ikm,
+                                            salt,
+                                            RAW_DATA.getFirst(),
+                                            NEGATIVE_LENGTH),
+                            IllegalArgumentException.class);
+                }
+            }
+        }
     }
 
-    private static void testDeriveKeyDataWithExtExpand(KDF hk) throws InvalidAlgorithmParameterException,
-            InvalidParameterSpecException, NoSuchAlgorithmException {
+    private static void testDeriveKeyDataWithExtExpand(KDF hk)
+            throws InvalidAlgorithmParameterException, InvalidParameterSpecException, NoSuchAlgorithmException {
         // POSITIVE TestCase: ExtractExpand - Derive keys/data with unknown algorithm names
         deriveVerifierImpl.derive(hk,
                 KdfExtThenExpVerifierImpl.extExp(SECRET_KEY_SPEC_KEYS.getFirst(),
-                        RAW_DATA.getFirst(), RAW_DATA.getFirst(), SHORT_LENGTH),
+                        RAW_DATA.getFirst(),
+                        RAW_DATA.getFirst(),
+                        SHORT_LENGTH),
                 KdfExtThenExpVerifierImpl.extExp(SECRET_KEY_SPEC_KEYS.getFirst(),
-                        RAW_DATA.getFirst(), RAW_DATA.getFirst(), SHORT_LENGTH),
-                "XYZ", "ABC");
+                        RAW_DATA.getFirst(),
+                        RAW_DATA.getFirst(),
+                        SHORT_LENGTH),
+                "XYZ",
+                "ABC");
     }
 
     @FunctionalInterface
@@ -566,13 +509,17 @@ public class HKDFTest {
     @FunctionalInterface
     private interface DeriveComparator<HK, L, R, T, S, LN> {
         void deriveAndCompare(HK hk, L lh, R rh, T t, S s, LN l)
-                throws InvalidParameterSpecException, InvalidAlgorithmParameterException, NoSuchAlgorithmException;
+                throws InvalidParameterSpecException,
+                InvalidAlgorithmParameterException,
+                NoSuchAlgorithmException;
     }
 
     @FunctionalInterface
     private interface DeriveVerifier<HK, L, R, A1, A2> {
         void derive(HK hk, L lh, R rh, A1 a1, A2 a2)
-                throws InvalidParameterSpecException, InvalidAlgorithmParameterException, NoSuchAlgorithmException;
+                throws InvalidParameterSpecException,
+                InvalidAlgorithmParameterException,
+                NoSuchAlgorithmException;
     }
 
     private static class KDFAlgorithmParameterSpec implements AlgorithmParameterSpec {
