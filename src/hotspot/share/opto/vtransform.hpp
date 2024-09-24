@@ -162,7 +162,6 @@ public:
   void optimize(VTransform& vtransform);
   bool schedule();
   float cost() const;
-  void apply_memops_reordering_with_schedule() const;
   void apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const;
 
 private:

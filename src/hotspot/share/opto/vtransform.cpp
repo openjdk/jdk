@@ -752,7 +752,6 @@ void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scal
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
 
   // TODO obsolete once register_new_node_from_vectorization fixed
-  assert(false, "we used to replace here, now the memory graph is broken!");
   phase->C->copy_node_notes_to(vn, nodes().at(0));
   register_new_node_from_vectorization(vloop_analyzer, vn);
 }
