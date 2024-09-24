@@ -103,7 +103,7 @@ public class ReleaseInflaterOnEOF {
             // Assert that the ZipFileInflaterInputStream reused the cached Inflater instance
             assertSame(initialInflater, getInflater(is));
             // Fully consume the stream to allow ZipFileInflaterInputStream to observe the EOF
-            in.transferTo(OutputStream.nullOutputStream());
+            is.transferTo(OutputStream.nullOutputStream());
         }
     }
 
