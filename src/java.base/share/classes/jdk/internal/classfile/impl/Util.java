@@ -50,6 +50,7 @@ import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ModuleDesc;
 import java.lang.reflect.AccessFlag;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.classfile.ClassFile.ACC_STATIC;
 import java.lang.classfile.attribute.CodeAttribute;
@@ -336,5 +337,83 @@ public class Util {
 
     interface WritableLocalVariable {
         boolean writeLocalTo(BufWriterImpl buf);
+    }
+
+    /**
+     * Returns the hash code of an internal name given the class or interface L descriptor.
+     */
+    public static int internalNameHash(String desc) {
+        if (desc.length() > 0xffff)
+            throw new IllegalArgumentException("String too long: ".concat(Integer.toString(desc.length())));
+        return (desc.hashCode() - pow31(desc.length() - 1) * 'L' - ';') * INVERSE_31;
+    }
+
+    /**
+     * Returns the hash code of a class or interface L descriptor given the internal name.
+     */
+    public static int descriptorStringHash(int length, int hash) {
+        if (length > 0xffff)
+            throw new IllegalArgumentException("String too long: ".concat(Integer.toString(length)));
+        return 'L' * pow31(length + 1) + hash * 31 + ';';
+    }
+
+    // k is at most 65536, length of Utf8 entry + 1
+    public static int pow31(int k) {
+        int r = 1;
+        // calculate the power contribution from index-th octal digit
+        // from least to most significant (right to left)
+        // e.g. decimal 26=octal 32, power(26)=powerOctal(2,0)*powerOctal(3,1)
+        for (int i = 0; i < SIGNIFICANT_OCTAL_DIGITS; i++) {
+            r *= powerOctal(k & 7, i);
+            k >>= 3;
+        }
+        return r;
+    }
+
+    // The inverse of 31 in Z/2^32Z* modulo group, a * INVERSE_31 * 31 = a
+    static final int INVERSE_31 = 0xbdef7bdf;
+
+    // k is at most 65536 = octal 200000, only consider 6 octal digits
+    // Note: 31 powers repeat beyond 1 << 27, only 9 octal digits matter
+    static final int SIGNIFICANT_OCTAL_DIGITS = 6;
+
+    // for base k, storage is k * log_k(N)=k/ln(k) * ln(N)
+    // k = 2 or 4 is better for space at the cost of more multiplications
+    /**
+     * The code below is as if:
+     * {@snippet lang=java :
+     * int[] powers = new int[7 * SIGNIFICANT_OCTAL_DIGITS];
+     *
+     * for (int i = 1, k = 31; i <= 7; i++, k *= 31) {
+     *    int t = powers[powersIndex(i, 0)] = k;
+     *    for (int j = 1; j < SIGNIFICANT_OCTAL_DIGITS; j++) {
+     *        t *= t;
+     *        t *= t;
+     *        t *= t;
+     *        powers[powersIndex(i, j)] = t;
+     *    }
+     * }
+     * }
+     * This is converted to explicit initialization to avoid bootstrap overhead.
+     * Validated in UtilTest.
+     */
+    static final @Stable int[] powers = new int[] {
+            0x0000001f, 0x000003c1, 0x0000745f, 0x000e1781, 0x01b4d89f, 0x34e63b41, 0x67e12cdf,
+            0x94446f01, 0x50a9de01, 0x84304d01, 0x7dd7bc01, 0x8ca02b01, 0xff899a01, 0x25940901,
+            0x4dbf7801, 0xe3bef001, 0xc1fe6801, 0xe87de001, 0x573d5801, 0x0e3cd001, 0x0d7c4801,
+            0x54fbc001, 0xb9f78001, 0x2ef34001, 0xb3ef0001, 0x48eac001, 0xede68001, 0xa2e24001,
+            0x67de0001, 0xcfbc0001, 0x379a0001, 0x9f780001, 0x07560001, 0x6f340001, 0xd7120001,
+            0x3ef00001, 0x7de00001, 0xbcd00001, 0xfbc00001, 0x3ab00001, 0x79a00001, 0xb8900001,
+    };
+
+    static int powersIndex(int digit, int index) {
+        return (digit - 1) + index * 7;
+    }
+
+    // (31 ^ digit) ^ (8 * index) = 31 ^ (digit * (8 ^ index))
+    // digit: 0 - 7
+    // index: 0 - SIGNIFICANT_OCTAL_DIGITS - 1
+    private static int powerOctal(int digit, int index) {
+        return digit == 0 ? 1 : powers[powersIndex(digit, index)];
     }
 }
