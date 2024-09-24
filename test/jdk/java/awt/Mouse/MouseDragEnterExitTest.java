@@ -65,11 +65,13 @@ class MouseEvents extends Frame {
         setSize(300, 300);
 
         addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseEntered(MouseEvent e) {
                 PassFailJFrame.log("Frame MOUSE_ENTERED" + ": " + " " +
                         e.getX() + " " + e.getY());
             }
 
+            @Override
             public void mouseExited(MouseEvent e) {
                 PassFailJFrame.log("Frame MOUSE_EXITED" + ": " + " " +
                         e.getX() + " " + e.getY());
