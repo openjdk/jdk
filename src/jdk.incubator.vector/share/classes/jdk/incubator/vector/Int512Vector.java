@@ -511,7 +511,7 @@ final class Int512Vector extends IntVector {
     public Int512Vector selectFrom(Vector<Integer> v1,
                                    Vector<Integer> v2) {
         return (Int512Vector)
-            super.selectFromTemplate(Int512Vector.class, (Int512Vector) v1, (Int512Vector) v2);  // specialize
+            super.selectFromTemplate((Int512Vector) v1, (Int512Vector) v2);  // specialize
     }
 
     @ForceInline

@@ -498,7 +498,7 @@ final class Float64Vector extends FloatVector {
     public Float64Vector selectFrom(Vector<Float> v1,
                                    Vector<Float> v2) {
         return (Float64Vector)
-            super.selectFromTemplate(Int64Vector.class, (Float64Vector) v1, (Float64Vector) v2);  // specialize
+            super.selectFromTemplate((Float64Vector) v1, (Float64Vector) v2);  // specialize
     }
 
     @ForceInline

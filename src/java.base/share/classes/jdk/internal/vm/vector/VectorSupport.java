@@ -383,20 +383,17 @@ public class VectorSupport {
     }
     /* ============================================================================ */
 
-    public interface SelectFromTwoVector<V extends Vector<?>, VI extends Vector<?>> {
-        V apply(VI v1, V v2, V v3);
+    public interface SelectFromTwoVector<V extends Vector<?>> {
+        V apply(V v1, V v2, V v3);
     }
 
     @IntrinsicCandidate
     public static
-    <V extends Vector<E1>,
-     VI extends Vector<E2>,
-     E1,
-     E2>
-    V selectFromTwoVectorOp(Class<? extends V> vClass, Class<? extends VI> viClass,
-                            Class<E1> eClass, Class<E2> iClass, int length,
-                            VI v1, V v2, V v3,
-                            SelectFromTwoVector<V,VI> defaultImpl) {
+    <V extends Vector<E>,
+     E>
+    V selectFromTwoVectorOp(Class<? extends V> vClass, Class<E> eClass, int length,
+                            V v1, V v2, V v3,
+                            SelectFromTwoVector<V> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v1, v2, v3);
     }

@@ -979,8 +979,6 @@ class methodHandle;
   do_intrinsic(_VectorSelectFromTwoVectorOp, jdk_internal_vm_vector_VectorSupport, vector_select_from_op_name, vector_select_from_op_sig, F_S) \
    do_signature(vector_select_from_op_sig, "(Ljava/lang/Class;"                                                                                \
                                             "Ljava/lang/Class;"                                                                                \
-                                            "Ljava/lang/Class;"                                                                                \
-                                            "Ljava/lang/Class;"                                                                                \
                                             "I"                                                                                                \
                                             "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                    \
                                             "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                    \

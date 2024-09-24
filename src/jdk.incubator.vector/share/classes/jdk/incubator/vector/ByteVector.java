@@ -536,15 +536,15 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return r;
     }
 
-    static ByteVector selectFromTwoVectorHelper(Vector<Byte> wrappedIndex, Vector<Byte> src1, Vector<Byte> src2) {
-        int vlen = wrappedIndex.length();
+    static ByteVector selectFromTwoVectorHelper(Vector<Byte> indexes, Vector<Byte> src1, Vector<Byte> src2) {
+        int vlen = indexes.length();
         byte[] res = new byte[vlen];
-        byte[] vecPayload1 = ((ByteVector)wrappedIndex).vec();
+        byte[] vecPayload1 = ((ByteVector)indexes).vec();
         byte[] vecPayload2 = ((ByteVector)src1).vec();
         byte[] vecPayload3 = ((ByteVector)src2).vec();
         for (int i = 0; i < vlen; i++) {
-            int index = ((int)vecPayload1[i]);
-            res[i] = index >= vlen ? vecPayload3[index - vlen] : vecPayload2[index];
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
         }
         return ((ByteVector)src1).vectorFactory(res);
     }
@@ -2592,16 +2592,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     /*package-private*/
     @ForceInline
-    final ByteVector selectFromTemplate(Class<? extends Vector<Byte>> indexVecClass,
-                                                  ByteVector v1, ByteVector v2) {
-        int vlen = length();
-        assert ((vlen & (vlen -1)) == 0);
-        int twoVectorLenMask = (vlen << 1) - 1;
-        ByteVector wrapped_indexes = this.lanewise(VectorOperators.AND, twoVectorLenMask);
-        return VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass, byte.class, byte.class,
-                                                   vlen, wrapped_indexes, v1, v2,
-                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
-        );
+    final ByteVector selectFromTemplate(ByteVector v1, ByteVector v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), byte.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations

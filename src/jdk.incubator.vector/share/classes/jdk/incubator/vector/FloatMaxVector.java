@@ -498,7 +498,7 @@ final class FloatMaxVector extends FloatVector {
     public FloatMaxVector selectFrom(Vector<Float> v1,
                                    Vector<Float> v2) {
         return (FloatMaxVector)
-            super.selectFromTemplate(IntMaxVector.class, (FloatMaxVector) v1, (FloatMaxVector) v2);  // specialize
+            super.selectFromTemplate((FloatMaxVector) v1, (FloatMaxVector) v2);  // specialize
     }
 
     @ForceInline

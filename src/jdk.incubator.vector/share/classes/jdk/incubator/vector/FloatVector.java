@@ -525,15 +525,15 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return r;
     }
 
-    static FloatVector selectFromTwoVectorHelper(Vector<Integer> wrappedIndex, Vector<Float> src1, Vector<Float> src2) {
-        int vlen = wrappedIndex.length();
+    static FloatVector selectFromTwoVectorHelper(Vector<Float> indexes, Vector<Float> src1, Vector<Float> src2) {
+        int vlen = indexes.length();
         float[] res = new float[vlen];
-        int[] vecPayload1 = ((IntVector)wrappedIndex).vec();
+        float[] vecPayload1 = ((FloatVector)indexes).vec();
         float[] vecPayload2 = ((FloatVector)src1).vec();
         float[] vecPayload3 = ((FloatVector)src2).vec();
         for (int i = 0; i < vlen; i++) {
-            int index = ((int)vecPayload1[i]);
-            res[i] = index >= vlen ? vecPayload3[index - vlen] : vecPayload2[index];
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
         }
         return ((FloatVector)src1).vectorFactory(res);
     }
@@ -2446,17 +2446,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     /*package-private*/
     @ForceInline
-    final FloatVector selectFromTemplate(Class<? extends Vector<Integer>> indexVecClass,
-                                                  FloatVector v1, FloatVector v2) {
-        int vlen = length();
-        assert ((vlen & (vlen -1)) == 0);
-        int twoVectorLenMask = (vlen << 1) - 1;
-        Vector<Integer> wrapped_indexes = this.convert(VectorOperators.F2I, 0)
-                                                   .lanewise(VectorOperators.AND, twoVectorLenMask);
-        return VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass , float.class, int.class,
-                                                   vlen, wrapped_indexes, v1, v2,
-                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
-        );
+    final FloatVector selectFromTemplate(FloatVector v1, FloatVector v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), float.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations

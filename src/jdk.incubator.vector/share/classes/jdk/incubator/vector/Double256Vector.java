@@ -498,7 +498,7 @@ final class Double256Vector extends DoubleVector {
     public Double256Vector selectFrom(Vector<Double> v1,
                                    Vector<Double> v2) {
         return (Double256Vector)
-            super.selectFromTemplate(Long256Vector.class, (Double256Vector) v1, (Double256Vector) v2);  // specialize
+            super.selectFromTemplate((Double256Vector) v1, (Double256Vector) v2);  // specialize
     }
 
     @ForceInline

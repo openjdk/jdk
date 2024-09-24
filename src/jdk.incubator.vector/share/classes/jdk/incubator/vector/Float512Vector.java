@@ -498,7 +498,7 @@ final class Float512Vector extends FloatVector {
     public Float512Vector selectFrom(Vector<Float> v1,
                                    Vector<Float> v2) {
         return (Float512Vector)
-            super.selectFromTemplate(Int512Vector.class, (Float512Vector) v1, (Float512Vector) v2);  // specialize
+            super.selectFromTemplate((Float512Vector) v1, (Float512Vector) v2);  // specialize
     }
 
     @ForceInline

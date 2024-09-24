@@ -525,15 +525,15 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         return r;
     }
 
-    static DoubleVector selectFromTwoVectorHelper(Vector<Long> wrappedIndex, Vector<Double> src1, Vector<Double> src2) {
-        int vlen = wrappedIndex.length();
+    static DoubleVector selectFromTwoVectorHelper(Vector<Double> indexes, Vector<Double> src1, Vector<Double> src2) {
+        int vlen = indexes.length();
         double[] res = new double[vlen];
-        long[] vecPayload1 = ((LongVector)wrappedIndex).vec();
+        double[] vecPayload1 = ((DoubleVector)indexes).vec();
         double[] vecPayload2 = ((DoubleVector)src1).vec();
         double[] vecPayload3 = ((DoubleVector)src2).vec();
         for (int i = 0; i < vlen; i++) {
-            int index = ((int)vecPayload1[i]);
-            res[i] = index >= vlen ? vecPayload3[index - vlen] : vecPayload2[index];
+            int wrapped_index = VectorIntrinsics.wrapToRange((int)vecPayload1[i], 2 * vlen);
+            res[i] = wrapped_index >= vlen ? vecPayload3[wrapped_index - vlen] : vecPayload2[wrapped_index];
         }
         return ((DoubleVector)src1).vectorFactory(res);
     }
@@ -2434,17 +2434,9 @@ public abstract class DoubleVector extends AbstractVector<Double> {
 
     /*package-private*/
     @ForceInline
-    final DoubleVector selectFromTemplate(Class<? extends Vector<Long>> indexVecClass,
-                                                  DoubleVector v1, DoubleVector v2) {
-        int vlen = length();
-        assert ((vlen & (vlen -1)) == 0);
-        int twoVectorLenMask = (vlen << 1) - 1;
-        Vector<Long> wrapped_indexes = this.convert(VectorOperators.D2L, 0)
-                                                   .lanewise(VectorOperators.AND, twoVectorLenMask);
-        return VectorSupport.selectFromTwoVectorOp(getClass(), indexVecClass , double.class, long.class,
-                                                   vlen, wrapped_indexes, v1, v2,
-                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3)
-        );
+    final DoubleVector selectFromTemplate(DoubleVector v1, DoubleVector v2) {
+        return VectorSupport.selectFromTwoVectorOp(getClass(), double.class, length(), this, v1, v2,
+                                                   (vec1, vec2, vec3) -> selectFromTwoVectorHelper(vec1, vec2, vec3));
     }
 
     /// Ternary operations
