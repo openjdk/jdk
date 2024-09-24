@@ -1247,7 +1247,7 @@ public final class Class<T> implements java.io.Serializable,
      * @return the fully qualified package name
      *
      * @since 9
-     * @jls 6.7 Fully Qualified Names
+     * @jls 6.7 Fully Qualified Names and Canonical Names
      */
     public String getPackageName() {
         String pn = this.packageName;
@@ -1460,7 +1460,7 @@ public final class Class<T> implements java.io.Serializable,
      * programming language and JVM modeling in core reflection</a>
      * @since 1.1
      * @jls 8.1.1 Class Modifiers
-     * @jls 9.1.1. Interface Modifiers
+     * @jls 9.1.1 Interface Modifiers
      * @jvms 4.1 The {@code ClassFile} Structure
      */
     @IntrinsicCandidate
@@ -1994,7 +1994,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return {@code true} if and only if this class is a local class.
      * @since 1.5
-     * @jls 14.3 Local Class Declarations
+     * @jls 14.3 Local Class and Interface Declarations
      */
     public boolean isLocalClass() {
         return isLocalOrAnonymousClass() &&
@@ -2007,7 +2007,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return {@code true} if and only if this class is a member class.
      * @since 1.5
-     * @jls 8.5 Member Type Declarations
+     * @jls 8.5 Member Class and Interface Declarations
      */
     public boolean isMemberClass() {
         return !isLocalOrAnonymousClass() && getDeclaringClass0() != null;
@@ -2544,7 +2544,7 @@ public final class Class<T> implements java.io.Serializable,
      *         </ul>
      *
      * @since 1.1
-     * @jls 8.5 Member Type Declarations
+     * @jls 8.5 Member Class and Interface Declarations
      */
     @CallerSensitive
     public Class<?>[] getDeclaredClasses() throws SecurityException {
@@ -4647,7 +4647,7 @@ public final class Class<T> implements java.io.Serializable,
             return Wrapper.forPrimitiveType(this).basicTypeString();
 
         if (isArray()) {
-            return "[" + componentType.descriptorString();
+            return "[".concat(componentType.descriptorString());
         } else if (isHidden()) {
             String name = getName();
             int index = name.indexOf('/');
@@ -4660,11 +4660,7 @@ public final class Class<T> implements java.io.Serializable,
                     .toString();
         } else {
             String name = getName().replace('.', '/');
-            return new StringBuilder(name.length() + 2)
-                    .append('L')
-                    .append(name)
-                    .append(';')
-                    .toString();
+            return StringConcatHelper.concat("L", name, ";");
         }
     }
 

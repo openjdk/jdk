@@ -79,7 +79,7 @@ public sealed interface ClassDesc
      */
     static ClassDesc of(String name) {
         validateBinaryClassName(name);
-        return ClassDesc.ofDescriptor("L" + binaryToInternal(name) + ";");
+        return ClassDesc.ofDescriptor(concat("L", binaryToInternal(name), ";"));
     }
 
     /**
@@ -105,7 +105,7 @@ public sealed interface ClassDesc
      */
     static ClassDesc ofInternalName(String name) {
         validateInternalClassName(name);
-        return ClassDesc.ofDescriptor("L" + name + ";");
+        return ClassDesc.ofDescriptor(concat("L", name, ";"));
     }
 
     /**
@@ -128,8 +128,8 @@ public sealed interface ClassDesc
             return of(className);
         }
         validateMemberName(className, false);
-        return ofDescriptor("L" + binaryToInternal(packageName) +
-                "/" + className + ";");
+        return ofDescriptor('L' + binaryToInternal(packageName) +
+                '/' + className + ';');
     }
 
     /**
@@ -289,6 +289,7 @@ public sealed interface ClassDesc
      * @return the human-readable name
      */
     String displayName();
+
 
     /**
      * Returns a field type descriptor string for this type

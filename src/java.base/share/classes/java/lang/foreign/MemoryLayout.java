@@ -574,7 +574,9 @@ public sealed interface MemoryLayout
      * <p>
      * For any given dynamic argument {@code x_i}, it must be that {@code 0 <= x_i < size_i},
      * where {@code size_i} is the size of the open path element associated with {@code x_i}.
-     * Otherwise, the returned method handle throws {@link IndexOutOfBoundsException}.
+     * Otherwise, the returned method handle throws {@link IndexOutOfBoundsException}. Moreover,
+     * the value of {@code b} must be such that the computation for {@code offset} does not overflow,
+     * or the returned method handle throws {@link ArithmeticException}.
      *
      * @apiNote The returned method handle can be used to compute a layout offset,
      *          similarly to {@link #byteOffset(PathElement...)}, but more flexibly, as
