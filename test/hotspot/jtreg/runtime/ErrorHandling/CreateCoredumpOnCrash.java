@@ -88,7 +88,10 @@ public class CreateCoredumpOnCrash {
   }
 
   public static OutputAnalyzer runTest(String option) throws Exception {
-    return runTest(option, "");
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xmx128m",
+                                                                         "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
+                                                                         option, Crasher.class.getName());
+    return new OutputAnalyzer(pb.start());
   }
   public static OutputAnalyzer runTest(String option, String limit) throws Exception {
     ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xmx128m",
