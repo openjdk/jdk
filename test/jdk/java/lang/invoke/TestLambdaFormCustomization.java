@@ -29,7 +29,7 @@ import java.util.ArrayList;
   * @test
   * @bug 8340812
   * @summary Verify that LambdaForm customization via MethodHandle::updateForm is thread safe.
-  * @run driver TestLambdaFormCustomization
+  * @run main TestLambdaFormCustomization
   * @run main/othervm -Djava.lang.invoke.MethodHandle.CUSTOMIZE_THRESHOLD=0 TestLambdaFormCustomization
   */
 public class TestLambdaFormCustomization {
