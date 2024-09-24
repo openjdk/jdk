@@ -449,7 +449,7 @@ void CompilationPolicy::initialize() {
   size_t max_code_cache_size = ReservedCodeCacheSize - CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
   size_t compiler_buffer_size = c1_size;
 #ifdef COMPILER1
-  if (compiler_buffer_size > max_code_cache_size) { //fatal("c1");
+  if (compiler_buffer_size > max_code_cache_size) {
     compiler_buffer_size -= c1_size;
     set_c1_count(0);
     c2_only = true;
@@ -457,7 +457,7 @@ void CompilationPolicy::initialize() {
 #endif
 #ifdef COMPILER2
   compiler_buffer_size += c2_size;
-  if (compiler_buffer_size > max_code_cache_size) { //fatal("c2");
+  if (compiler_buffer_size > max_code_cache_size) {
     compiler_buffer_size -= c2_size;
     set_c2_count(0);
 #ifdef COMPILER1
