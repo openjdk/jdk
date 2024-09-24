@@ -544,7 +544,9 @@ public final class KDF {
         if (checkSpiNonNull(theOne)) return;
 
         synchronized (lock) {
-            theOne = candidate;
+            if (!checkSpiNonNull(theOne)) {
+                theOne = candidate;
+            }
         }
     }
 
