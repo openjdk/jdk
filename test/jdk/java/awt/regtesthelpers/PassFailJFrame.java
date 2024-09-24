@@ -321,9 +321,8 @@ public final class PassFailJFrame {
      * as well as supporting UI components with the given title, instructions,
      * timeout, number of rows and columns,
      * and screen capture functionality.
-     * All the UI components are created on the event dispatching
-     * thread (<dfn>EDT</dfn>), so it is safe to call the constructor
-     * on the main thread.
+     * All the UI components are created on the EDT, so it is safe to call
+     * the constructor on the main thread.
      * <p>
      * After you create a test UI window, register the window using
      * {@link #addTestWindow(Window) addTestWindow} for disposing of, and
