@@ -896,5 +896,15 @@ public abstract class Policy {
         @Override public Enumeration<Permission> elements() {
             return perms.elements();
         }
+
+        /**
+         * If this object is readonly, no new objects can be added to it using {@code add}.
+         *
+         * @return {@code true} if this object is marked as readonly, {@code false} otherwise.
+         */
+        @Override
+        public boolean isReadOnly() {
+            return perms.isReadOnly();
+        }
     }
 }
