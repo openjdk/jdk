@@ -205,7 +205,9 @@ public final class DirectClassBuilder
         }
 
         // Now we can make the head
-        head.writeLong((((long) ClassFile.MAGIC_NUMBER) << 32) | ((minorVersion & 0xFFFFL) << 16) | majorVersion);
+        head.writeLong((((long) ClassFile.MAGIC_NUMBER) << 32)
+                | ((minorVersion & 0xFFFFL) << 16)
+                | (majorVersion & 0xFFFFL));
         constantPool.writeTo(head);
         head.writeU2(flags);
         head.writeIndex(thisClassEntry);
