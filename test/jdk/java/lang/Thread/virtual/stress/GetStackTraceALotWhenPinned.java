@@ -26,7 +26,7 @@
  * @bug 8322818
  * @summary Stress test Thread.getStackTrace on a virtual thread that is pinned
  * @requires vm.debug != true
- * @modules java.base/java.lang:+open
+ * @modules jdk.management
  * @library /test/lib
  * @run main/othervm --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 500000
  */
@@ -34,7 +34,7 @@
 /*
  * @test
  * @requires vm.debug == true
- * @modules java.base/java.lang:+open
+ * @modules jdk.management
  * @library /test/lib
  * @run main/othervm/timeout=300 --enable-native-access=ALL-UNNAMED GetStackTraceALotWhenPinned 200000
  */
@@ -42,7 +42,7 @@
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
-import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.management
 import jdk.test.lib.thread.VThreadPinner;
 
 public class GetStackTraceALotWhenPinned {

@@ -272,9 +272,9 @@ public class Head extends Content {
      * @return the HTML
      */
     private Content toContent() {
-        var head = new HtmlTree(HtmlTag.HEAD);
-        head.add(getGeneratedBy(showTimestamp, generatedDate));
-        head.add(HtmlTree.TITLE(title));
+        var head = HtmlTree.of(HtmlTag.HEAD)
+            .add(getGeneratedBy(showTimestamp, generatedDate))
+            .add(HtmlTree.TITLE(title));
 
         head.add(HtmlTree.META("viewport", "width=device-width, initial-scale=1"));
 
@@ -300,9 +300,9 @@ public class Head extends Content {
         }
 
         if (canonicalLink != null) {
-            var link = new HtmlTree(HtmlTag.LINK);
-            link.put(HtmlAttr.REL, "canonical");
-            link.put(HtmlAttr.HREF, canonicalLink.getPath());
+            var link = HtmlTree.of(HtmlTag.LINK)
+                .put(HtmlAttr.REL, "canonical")
+                .put(HtmlAttr.HREF, canonicalLink.getPath());
             head.add(link);
         }
 
