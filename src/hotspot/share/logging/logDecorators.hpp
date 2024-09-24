@@ -115,7 +115,7 @@ class LogDecorators {
 
   constexpr LogDecorators(uint mask) : _decorators(mask) {}
 
-  LogDecorators() {}
+  LogDecorators() : _decorators(0) {}
 
   void clear() {
     _decorators = 0;
