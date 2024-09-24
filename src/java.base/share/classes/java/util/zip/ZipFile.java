@@ -445,7 +445,8 @@ public class ZipFile implements ZipConstants, Closeable {
 
     private class ZipFileInflaterInputStream extends InflaterInputStream {
         private volatile boolean closeRequested;
-        private boolean eof = false;
+        private boolean compressedEof;
+        private boolean eof;
         private final Cleanable cleanable;
 
         ZipFileInflaterInputStream(ZipFileInputStream zfin,
@@ -472,24 +473,40 @@ public class ZipFile implements ZipConstants, Closeable {
             cleanable.clean();
         }
 
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            if (eof && !closeRequested) {
+                // Inflater has been released, avoid reading
+                return -1;
+            }
+            int read = super.read(b, off, len);
+            if (read == -1) {
+                // Release Inflater back to the pool
+                cleanable.clean();
+                eof = true;
+
+            }
+            return read;
+        }
+
         // Override fill() method to provide an extra "dummy" byte
         // at the end of the input stream. This is required when
         // using the "nowrap" Inflater option.
         protected void fill() throws IOException {
-            if (eof) {
+            if (compressedEof) {
                 throw new EOFException("Unexpected end of ZLIB input stream");
             }
             len = in.read(buf, 0, buf.length);
             if (len == -1) {
                 buf[0] = 0;
                 len = 1;
-                eof = true;
+                compressedEof = true;
             }
             inf.setInput(buf, 0, len);
         }
 
         public int available() throws IOException {
-            if (closeRequested)
+            if (closeRequested || eof)
                 return 0;
             long avail = ((ZipFileInputStream)in).size() - inf.getBytesWritten();
             return (avail > (long) Integer.MAX_VALUE ?
