@@ -489,6 +489,6 @@ void Predicates::dump_at(Node* node) {
 
 // Debug method to dump all predicates that are found above 'loop_node'.
 void Predicates::dump_for_loop(LoopNode* loop_node) {
-  dump_at(loop_node->skip_strip_mined(LoopNode::EntryControl));
+  dump_at(loop_node->skip_strip_mined()->in(LoopNode::EntryControl));
 }
 #endif // NOT PRODUCT
