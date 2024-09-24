@@ -2879,22 +2879,21 @@ template<typename R, typename... Rx>
 
 #undef INSN
 
-#define INSN(NAME, op1, op2)                                                                        \
-  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm, int index) {  \
-    starti;                                                                                         \
-    assert(T == T4H || T == T8H || T == T2S || T == T4S, "invalid arrangement");                    \
-    assert(index >= 0 &&                                                                            \
-               ((T == T2S && index <= 1) || (T != T2S && index <= 3) || (T == T8H && index <= 7)),  \
-           "invalid index");                                                                        \
-    assert((T != T4H && T != T8H) || Vm->encoding() < 16, "invalid source SIMD&FP register");       \
-    f(0, 31), f((int)T & 1, 30), f(op1, 29);                                                        \
-    f(0b01111, 28, 24);                                                                             \
-    if (T == T4H || T == T8H) {                                                                     \
-      f(0b01, 23, 22), f(index & 0b11, 21, 20), lrf(Vm, 16), f(op2, 15, 12), f(index >> 2 & 1, 11); \
-    } else {                                                                                        \
-      f(0b10, 23, 22), f(index & 1, 21), rf(Vm, 16), f(op2, 15, 12), f(index >> 1, 11);             \
-    }                                                                                               \
-    f(0, 10), rf(Vn, 5), rf(Vd, 0);                                                                 \
+#define INSN(NAME, op1, op2)                                                                       \
+  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm, int index) { \
+    starti;                                                                                        \
+    assert(T == T4H || T == T8H || T == T2S || T == T4S, "invalid arrangement");                   \
+    assert(index >= 0 &&                                                                           \
+               ((T == T2S && index <= 1) || (T != T2S && index <= 3) || (T == T8H && index <= 7)), \
+           "invalid index");                                                                       \
+    assert((T != T4H && T != T8H) || Vm->encoding() < 16, "invalid source SIMD&FP register");      \
+    f(0, 31), f((int)T & 1, 30), f(op1, 29), f(0b01111, 28, 24);                                   \
+    if (T == T4H || T == T8H) {                                                                    \
+      f(0b01, 23, 22), f(index & 0b11, 21, 20), lrf(Vm, 16), f(index >> 2 & 1, 11);                \
+    } else {                                                                                       \
+      f(0b10, 23, 22), f(index & 1, 21), rf(Vm, 16), f(index >> 1, 11);                            \
+    }                                                                                              \
+    f(op2, 15, 12), f(0, 10), rf(Vn, 5), rf(Vd, 0);                                                \
   }
 
   // MUL - Vector - Scalar
