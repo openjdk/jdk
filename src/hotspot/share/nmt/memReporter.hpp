@@ -108,7 +108,7 @@ class MemReporterBase : public StackObj {
 
   // Print summary total, malloc and virtual memory
   void print_total(size_t reserved, size_t committed, size_t peak = 0) const;
-  void print_malloc(const MemoryCounter* c, MEMFLAGS flag = mtNone) const;
+  void print_malloc(const MemoryCounter* c, MemTag mem_tag = mtNone) const;
   void print_virtual_memory(size_t reserved, size_t committed, size_t peak) const;
   void print_arena(const MemoryCounter* c) const;
 
@@ -138,8 +138,8 @@ class MemSummaryReporter : public MemReporterBase {
   // Generate summary report
   virtual void report();
  private:
-  // Report summary for each memory type
-  void report_summary_of_type(MEMFLAGS type, MallocMemory* malloc_memory,
+  // Report summary for each memory tag
+  void report_summary_of_type(MemTag mem_tag, MallocMemory* malloc_memory,
     VirtualMemory* virtual_memory);
 
   void report_metadata(Metaspace::MetadataType type) const;
@@ -203,8 +203,8 @@ class MemSummaryDiffReporter : public MemReporterBase {
   virtual void report_diff();
 
  private:
-  // report the comparison of each memory type
-  void diff_summary_of_type(MEMFLAGS type,
+  // report the comparison of each mem_tag
+  void diff_summary_of_type(MemTag mem_tag,
     const MallocMemory* early_malloc, const VirtualMemory* early_vm,
     const MetaspaceCombinedStats& early_ms,
     const MallocMemory* current_malloc, const VirtualMemory* current_vm,
@@ -212,7 +212,7 @@ class MemSummaryDiffReporter : public MemReporterBase {
 
  protected:
   void print_malloc_diff(size_t current_amount, size_t current_count,
-    size_t early_amount, size_t early_count, MEMFLAGS flags) const;
+    size_t early_amount, size_t early_count, MemTag mem_tag) const;
   void print_virtual_memory_diff(size_t current_reserved, size_t current_committed,
     size_t early_reserved, size_t early_committed) const;
   void print_arena_diff(size_t current_amount, size_t current_count,
@@ -262,9 +262,9 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
                                 const VirtualMemoryAllocationSite* current)  const;
 
   void diff_malloc_site(const NativeCallStack* stack, size_t current_size,
-    size_t currrent_count, size_t early_size, size_t early_count, MEMFLAGS flags) const;
+    size_t currrent_count, size_t early_size, size_t early_count, MemTag mem_tag) const;
   void diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
-    size_t current_committed, size_t early_reserved, size_t early_committed, MEMFLAGS flag) const;
+    size_t current_committed, size_t early_reserved, size_t early_committed, MemTag mem_tag) const;
 };
 
 #endif // SHARE_NMT_MEMREPORTER_HPP

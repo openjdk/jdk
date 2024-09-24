@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,10 +167,6 @@ typedef struct zentry { /* Zip file entry */
  * Java launcher).
  */
 typedef struct manifest_info {  /* Interesting fields from the Manifest */
-    char        *manifest_version;      /* Manifest-Version string */
-    char        *main_class;            /* Main-Class entry */
-    char        *jre_version;           /* Appropriate J2SE release spec */
-    char        jre_restrict_search;    /* Restricted JRE search */
     char        *splashscreen_image_file_name; /* splashscreen image file */
 } manifest_info;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.internal.reflect;
 
 import jdk.internal.access.JavaLangInvokeAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.invoke.MhUtil;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
@@ -310,17 +311,10 @@ class DirectMethodHandleAccessor extends MethodAccessorImpl {
                 }
             }
 
-            static final JavaLangInvokeAccess JLIA;
-            static final MethodHandle NATIVE_ACCESSOR_INVOKE;
-            static {
-                try {
-                    JLIA = SharedSecrets.getJavaLangInvokeAccess();
-                    NATIVE_ACCESSOR_INVOKE = MethodHandles.lookup().findVirtual(NativeAccessor.class, "invoke",
-                            genericMethodType(1, true));
-                } catch (NoSuchMethodException|IllegalAccessException e) {
-                    throw new InternalError(e);
-                }
-            }
+            static final JavaLangInvokeAccess JLIA = SharedSecrets.getJavaLangInvokeAccess();
+            static final MethodHandle NATIVE_ACCESSOR_INVOKE = MhUtil.findVirtual(
+                    MethodHandles.lookup(), NativeAccessor.class, "invoke",
+                    genericMethodType(1, true));
         }
     }
 
