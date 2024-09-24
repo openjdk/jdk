@@ -83,14 +83,24 @@ public abstract sealed class AbstractPoolEntry {
         return stringHash | NON_ZERO;
     }
 
-    public static Utf8Entry rawUtf8EntryFromStandardAttributeName(String name) {
-        //assuming standard attribute names are all US_ASCII
-        var raw = name.getBytes(StandardCharsets.US_ASCII);
-        return new Utf8EntryImpl(null, 0, raw, 0, raw.length);
+    static int hashClassFromUtf8(boolean isArray, Utf8EntryImpl content) {
+        int hash = content.contentHash();
+        return hashClassFromDescriptor(isArray ? hash : Util.descriptorStringHash(content.length(), hash));
+    }
+
+    static int hashClassFromDescriptor(int descriptorHash) {
+        return hash1(ClassFile.TAG_CLASS, descriptorHash);
+    }
+
+    static boolean isArrayDescriptor(Utf8EntryImpl cs) {
+        // Do not throw out-of-bounds for empty strings
+        return !cs.isEmpty() && cs.charAt(0) == '[';
     }
 
     @SuppressWarnings("unchecked")
     public static <T extends PoolEntry> T maybeClone(ConstantPoolBuilder cp, T entry) {
+        if (cp.canWriteDirect(entry.constantPool()))
+            return entry;
         return (T)((AbstractPoolEntry)entry).clone(cp);
     }
 
@@ -143,7 +153,7 @@ public abstract sealed class AbstractPoolEntry {
         private final int offset;
         private final int rawLen;
         // Set in any state other than RAW
-        private @Stable int hash;
+        private @Stable int contentHash;
         private @Stable int charLen;
         // Set in CHAR state
         private @Stable char[] chars;
@@ -162,10 +172,10 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, String s) {
-            this(cpm, index, s, hashString(s.hashCode()));
+            this(cpm, index, s, s.hashCode());
         }
 
-        Utf8EntryImpl(ConstantPool cpm, int index, String s, int hash) {
+        Utf8EntryImpl(ConstantPool cpm, int index, String s, int contentHash) {
             super(cpm, index, 0);
             this.rawBytes = null;
             this.offset = 0;
@@ -173,7 +183,7 @@ public abstract sealed class AbstractPoolEntry {
             this.state = State.STRING;
             this.stringValue = s;
             this.charLen = s.length();
-            this.hash = hash;
+            this.contentHash = contentHash;
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, Utf8EntryImpl u) {
@@ -182,7 +192,7 @@ public abstract sealed class AbstractPoolEntry {
             this.offset = u.offset;
             this.rawLen = u.rawLen;
             this.state = u.state;
-            this.hash = u.hash;
+            this.contentHash = u.contentHash;
             this.charLen = u.charLen;
             this.chars = u.chars;
             this.stringValue = u.stringValue;
@@ -233,7 +243,7 @@ public abstract sealed class AbstractPoolEntry {
             int singleBytes = JLA.countPositives(rawBytes, offset, rawLen);
             int hash = ArraysSupport.hashCodeOfUnsigned(rawBytes, offset, singleBytes, 0);
             if (singleBytes == rawLen) {
-                this.hash = hashString(hash);
+                this.contentHash = hash;
                 charLen = rawLen;
                 state = State.BYTE;
             }
@@ -291,7 +301,7 @@ public abstract sealed class AbstractPoolEntry {
                             throw malformedInput(px);
                     }
                 }
-                this.hash = hashString(hash);
+                this.contentHash = hash;
                 charLen = chararr_count;
                 this.chars = chararr;
                 state = State.CHAR;
@@ -304,8 +314,6 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public Utf8EntryImpl clone(ConstantPoolBuilder cp) {
-            if (cp.canWriteDirect(constantPool))
-                return this;
             return (state == State.STRING && rawBytes == null)
                    ? (Utf8EntryImpl) cp.utf8Entry(stringValue)
                    : ((SplitConstantPool) cp).maybeCloneUtf8Entry(this);
@@ -313,9 +321,13 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public int hashCode() {
+            return hashString(contentHash());
+        }
+
+        int contentHash() {
             if (state == State.RAW)
                 inflate();
-            return hash;
+            return contentHash;
         }
 
         @Override
@@ -386,6 +398,38 @@ public abstract sealed class AbstractPoolEntry {
                 return stringValue().equals(u.stringValue());
         }
 
+        /**
+         * Returns if this utf8 entry's content equals a substring
+         * of {@code s} obtained as {@code s.substring(start, end - start)}.
+         * This check avoids a substring allocation.
+         */
+        public boolean equalsRegion(String s, int start, int end) {
+            // start and end values trusted
+            if (state == State.RAW)
+                inflate();
+            int len = charLen;
+            if (len != end - start)
+                return false;
+
+            var sv = stringValue;
+            if (sv != null) {
+                return sv.regionMatches(0, s, start, len);
+            }
+
+            var chars = this.chars;
+            if (chars != null) {
+                for (int i = 0; i < len; i++)
+                    if (chars[i] != s.charAt(start + i))
+                        return false;
+            } else {
+                var bytes = this.rawBytes;
+                for (int i = 0; i < len; i++)
+                    if (bytes[offset + i] != s.charAt(start + i))
+                        return false;
+            }
+            return true;
+        }
+
         @Override
         public boolean equalsString(String s) {
             if (state == State.RAW)
@@ -394,7 +438,7 @@ public abstract sealed class AbstractPoolEntry {
                 case STRING:
                     return stringValue.equals(s);
                 case CHAR:
-                    if (charLen != s.length() || hash != hashString(s.hashCode()))
+                    if (charLen != s.length() || contentHash != s.hashCode())
                         return false;
                     for (int i=0; i<charLen; i++)
                         if (chars[i] != s.charAt(i))
@@ -403,7 +447,7 @@ public abstract sealed class AbstractPoolEntry {
                     state = State.STRING;
                     return true;
                 case BYTE:
-                    if (rawLen != s.length() || hash != hashString(s.hashCode()))
+                    if (rawLen != s.length() || contentHash != s.hashCode())
                         return false;
                     for (int i=0; i<rawLen; i++)
                         if (rawBytes[offset+i] != s.charAt(i))
@@ -516,7 +560,8 @@ public abstract sealed class AbstractPoolEntry {
 
     public static final class ClassEntryImpl extends AbstractNamedEntry implements ClassEntry {
 
-        public ClassDesc sym = null;
+        public @Stable ClassDesc sym;
+        private @Stable int hash;
 
         ClassEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name) {
             super(cpm, TAG_CLASS, index, name);
@@ -527,15 +572,15 @@ public abstract sealed class AbstractPoolEntry {
             return TAG_CLASS;
         }
 
+        ClassEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name, int hash, ClassDesc sym) {
+            super(cpm, ClassFile.TAG_CLASS, index, name);
+            this.hash = hash;
+            this.sym = sym;
+        }
+
         @Override
         public ClassEntry clone(ConstantPoolBuilder cp) {
-            if (cp.canWriteDirect(constantPool)) {
-                return this;
-            } else {
-                ClassEntryImpl ret = (ClassEntryImpl)cp.classEntry(ref1);
-                ret.sym = sym;
-                return ret;
-            }
+            return ((SplitConstantPool) cp).cloneClassEntry(this);
         }
 
         @Override
@@ -544,18 +589,41 @@ public abstract sealed class AbstractPoolEntry {
             if (sym != null) {
                 return sym;
             }
-            return this.sym = Util.toClassDesc(asInternalName());
+
+            if (isArrayDescriptor(ref1)) {
+                sym = ref1.fieldTypeSymbol(); // array, symbol already available
+            } else {
+                sym = ClassDesc.ofInternalName(asInternalName()); // class or interface
+            }
+            return this.sym = sym;
         }
 
         @Override
         public boolean equals(Object o) {
             if (o == this) return true;
-            if (o instanceof ClassEntryImpl cce) {
-                return cce.name().equals(this.name());
-            } else if (o instanceof ClassEntry c) {
-                return c.asSymbol().equals(this.asSymbol());
+            if (o instanceof ClassEntryImpl other) {
+                return equalsEntry(other);
             }
             return false;
+        }
+
+        boolean equalsEntry(ClassEntryImpl other) {
+            var tsym = this.sym;
+            var osym = other.sym;
+            if (tsym != null && osym != null) {
+                return tsym.equals(osym);
+            }
+
+            return ref1.equalsUtf8(other.ref1);
+        }
+
+        @Override
+        public int hashCode() {
+            var hash = this.hash;
+            if (hash != 0)
+                return hash;
+
+            return this.hash = hashClassFromUtf8(isArrayDescriptor(ref1), ref1);
         }
     }
 
@@ -572,7 +640,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public PackageEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.packageEntry(ref1);
+            return cp.packageEntry(ref1);
         }
 
         @Override
@@ -603,7 +671,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public ModuleEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.moduleEntry(ref1);
+            return cp.moduleEntry(ref1);
         }
 
         @Override
@@ -645,9 +713,6 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public NameAndTypeEntry clone(ConstantPoolBuilder cp) {
-            if (cp.canWriteDirect(constantPool)) {
-                return this;
-            }
             return cp.nameAndTypeEntry(ref1, ref2);
         }
 
@@ -712,7 +777,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public FieldRefEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.fieldRefEntry(ref1, ref2);
+            return cp.fieldRefEntry(ref1, ref2);
         }
     }
 
@@ -730,7 +795,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public MethodRefEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.methodRefEntry(ref1, ref2);
+            return cp.methodRefEntry(ref1, ref2);
         }
     }
 
@@ -748,7 +813,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public InterfaceMethodRefEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.interfaceMethodRefEntry(ref1, ref2);
+            return cp.interfaceMethodRefEntry(ref1, ref2);
         }
     }
 
@@ -844,7 +909,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public InvokeDynamicEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.invokeDynamicEntry(bootstrap(), nameAndType());
+            return cp.invokeDynamicEntry(bootstrap(), nameAndType());
         }
     }
 
@@ -869,7 +934,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public ConstantDynamicEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.constantDynamicEntry(bootstrap(), nameAndType());
+            return cp.constantDynamicEntry(bootstrap(), nameAndType());
         }
     }
 
@@ -926,7 +991,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public MethodHandleEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.methodHandleEntry(refKind, reference);
+            return cp.methodHandleEntry(refKind, reference);
         }
 
         @Override
@@ -966,9 +1031,6 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public MethodTypeEntry clone(ConstantPoolBuilder cp) {
-            if (cp.canWriteDirect(constantPool)) {
-                return this;
-            }
             return cp.methodTypeEntry(ref1);
         }
 
@@ -1017,7 +1079,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public StringEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.stringEntry(ref1);
+            return cp.stringEntry(ref1);
         }
 
         @Override
@@ -1060,7 +1122,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public IntegerEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.intEntry(val);
+            return cp.intEntry(val);
         }
 
         @Override
@@ -1106,7 +1168,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public FloatEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.floatEntry(val);
+            return cp.floatEntry(val);
         }
 
         @Override
@@ -1156,7 +1218,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public LongEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.longEntry(val);
+            return cp.longEntry(val);
         }
 
         @Override
@@ -1206,7 +1268,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public DoubleEntry clone(ConstantPoolBuilder cp) {
-            return cp.canWriteDirect(constantPool) ? this : cp.doubleEntry(val);
+            return cp.doubleEntry(val);
         }
 
         @Override

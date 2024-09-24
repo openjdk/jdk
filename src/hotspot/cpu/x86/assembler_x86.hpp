@@ -2631,6 +2631,7 @@ private:
 
   // Bitwise Logical AND of Packed Floating-Point Values
   void andpd(XMMRegister dst, XMMRegister src);
+  void andnpd(XMMRegister dst, XMMRegister src);
   void andps(XMMRegister dst, XMMRegister src);
   void vandpd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vandps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
