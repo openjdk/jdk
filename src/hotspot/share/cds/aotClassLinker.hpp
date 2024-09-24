@@ -57,7 +57,7 @@ enum class AOTLinkedClassCategory : int;
 //     - The ClassLoader, Package and Module of C
 //     - The visibility of C
 //
-// During an Production Run, the JVM can use an AOTCache with an AOTLinkedClassTable
+// During a production run, the JVM can use an AOTCache with an AOTLinkedClassTable
 // only if it's guaranteed to produce the same results for the above set of properties
 // for each class C in the AOTLinkedClassTable.
 //
@@ -97,7 +97,7 @@ public:
   // Is this class resolved as part of vmClasses::resolve_all()?
   static bool is_vm_class(InstanceKlass* ik);
 
-  // When CDS is enabled, is ik guatanteed to be linked at deployment time (and
+  // When CDS is enabled, is ik guaranteed to be linked at deployment time (and
   // cannot be replaced by JVMTI, etc)?
   // This is a necessary (but not sufficient) condition for keeping a direct pointer
   // to ik in AOT-computed data (such as ConstantPool entries in archived classes,

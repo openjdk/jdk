@@ -221,7 +221,7 @@ final class ArgumentParser {
 
     private Object value(String name, String type, String text) {
         return switch (type) {
-            case "JULONG" -> parseLong(name, text);
+            case "INT" -> parseLong(name, text);
             case "STRING", "STRING SET" -> text == null ? "" : text;
             case "BOOLEAN" -> parseBoolean(name, text);
             case "NANOTIME" -> parseNanotime(name, text);
