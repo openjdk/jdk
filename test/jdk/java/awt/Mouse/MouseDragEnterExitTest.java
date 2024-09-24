@@ -23,12 +23,10 @@
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Frame;
 import java.awt.Panel;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.util.List;
 
 /*
@@ -59,80 +57,29 @@ public class MouseDragEnterExitTest {
     }
 }
 
-class MouseEvents extends Frame implements MouseListener,
-        MouseMotionListener {
+class MouseEvents extends Frame {
     static int WITH_WIDGET = 0;
 
     public MouseEvents(int mode) {
         super("Mouse Drag Enter/Exit Test");
         setSize(300, 300);
 
-        addMouseListener(this);
-        addMouseMotionListener(this);
+        addMouseListener(new MouseAdapter() {
+            public void mouseEntered(MouseEvent e) {
+                PassFailJFrame.log("Frame MOUSE_ENTERED" + ": " + " " +
+                        e.getX() + " " + e.getY());
+            }
+
+            public void mouseExited(MouseEvent e) {
+                PassFailJFrame.log("Frame MOUSE_EXITED" + ": " + " " +
+                        e.getX() + " " + e.getY());
+            }
+        });
 
         if (mode == WITH_WIDGET) {
             setLayout(new BorderLayout());
             add("Center", new SimplePanel());
         }
-    }
-
-    public void mouseMoved(MouseEvent e) {
-    }
-
-    public void mouseDragged(MouseEvent e) {
-    }
-
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    public void mouseEntered(MouseEvent e) {
-        printEvent(e);
-    }
-
-
-    public void mouseExited(MouseEvent e) {
-        printEvent(e);
-    }
-
-    public void mousePressed(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
-    }
-
-    public static void printEvent(MouseEvent e) {
-        Component source = e.getComponent();
-
-        String type = "none";
-
-        if (e.getID() == MouseEvent.MOUSE_PRESSED)
-            type = "MOUSE_PRESSED";
-
-        if (e.getID() == MouseEvent.MOUSE_CLICKED)
-            type = "MOUSE_CLICKED";
-
-        if (e.getID() == MouseEvent.MOUSE_RELEASED)
-            type = "MOUSE_RELEASED";
-
-        if (e.getID() == MouseEvent.MOUSE_MOVED)
-            type = "MOUSE_MOVED";
-
-        if (e.getID() == MouseEvent.MOUSE_ENTERED)
-            type = "MOUSE_ENTERED";
-
-        if (e.getID() == MouseEvent.MOUSE_ENTERED)
-            type = "MOUSE_ENTERED";
-
-        if (e.getID() == MouseEvent.MOUSE_EXITED)
-            type = "MOUSE_EXITED";
-
-
-        if (e.getID() == MouseEvent.MOUSE_DRAGGED)
-            type = "MOUSE_DRAGGED";
-
-        PassFailJFrame.log(source.getName() + ": " + type + " " +
-                e.getX() + " " + e.getY());
-
     }
 
     public static List<Frame> initialize() {
@@ -144,44 +91,25 @@ class MouseEvents extends Frame implements MouseListener,
     }
 }
 
-class SimplePanel extends Panel implements MouseListener,
-        MouseMotionListener {
-
+class SimplePanel extends Panel {
     public SimplePanel() {
         super();
         setName("Test Panel");
-        addMouseListener(this);
-        addMouseMotionListener(this);
+        addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                PassFailJFrame.log("Panel MOUSE_ENTERED" + ": " + " " +
+                        e.getX() + " " + e.getY());
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                PassFailJFrame.log("Panel MOUSE_EXITED" + ": " + " " +
+                        e.getX() + " " + e.getY());
+            }
+        });
         setSize(100, 100);
-        setVisible(true);
         setBackground(Color.blue);
-    }
-
-    public void mouseMoved(MouseEvent e) {
-    }
-
-    public void mouseDragged(MouseEvent e) {
-    }
-
-    public void mouseClicked(MouseEvent e) {
-    }
-
-    public void mouseEntered(MouseEvent e) {
-        printEvent(e);
-    }
-
-    public void mouseExited(MouseEvent e) {
-        printEvent(e);
-    }
-
-    public void mousePressed(MouseEvent e) {
-    }
-
-    public void mouseReleased(MouseEvent e) {
-    }
-
-    public static void printEvent(MouseEvent e) {
-        MouseEvents.printEvent(e);
     }
 }
 
