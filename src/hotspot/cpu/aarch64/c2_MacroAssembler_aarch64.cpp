@@ -89,7 +89,7 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
   }
 
   // large_arrays_hashcode(T_INT) performs worse than the scalar loop below when the Neon loop
-  // implemented by the stub executes just once. Call the stub only if at least two iteration will
+  // implemented by the stub executes just once. Call the stub only if at least two iterations will
   // be executed.
   const size_t large_threshold = eltype == T_INT ? vf * 2 : vf;
   cmpw(cnt, large_threshold);
