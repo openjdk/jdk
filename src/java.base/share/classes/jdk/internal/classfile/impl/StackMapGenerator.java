@@ -431,17 +431,13 @@ public final class StackMapGenerator {
                     currentFrame.copyFrom(nextFrame);
                     nextFrame.dirty = false;
                 } else if (thisOffset < bcs.bci()) {
-                    throw classFormatError(thisOffset);
+                    throw generatorError("Bad stack map offset");
                 }
             } else if (ncf) {
                 throw generatorError("Expecting a stack map frame");
             }
             ncf = processBlock(bcs);
         }
-    }
-
-    private static ClassFormatError classFormatError(int thisOffset) {
-        return new ClassFormatError(String.format("Bad stack map offset %d", thisOffset));
     }
 
     private boolean processBlock(RawBytecodeHelper bcs) {
