@@ -211,7 +211,6 @@ static jboolean
 RequiresSetenv(const char *jvmpath) {
     char jpath[PATH_MAX + 1];
     char *llp;
-    char *dmllp = NULL;
     char *p; /* a utility pointer */
 
 #ifdef MUSL_LIBC
@@ -229,7 +228,7 @@ RequiresSetenv(const char *jvmpath) {
 
     llp = getenv("LD_LIBRARY_PATH");
     /* no environment variable is a good environment variable */
-    if (llp == NULL && dmllp == NULL) {
+    if (llp == NULL) {
         return JNI_FALSE;
     }
 #ifdef __linux
@@ -266,9 +265,6 @@ RequiresSetenv(const char *jvmpath) {
 
     /* scrutinize all the paths further */
     if (llp != NULL &&  ContainsLibJVM(llp)) {
-        return JNI_TRUE;
-    }
-    if (dmllp != NULL && ContainsLibJVM(dmllp)) {
         return JNI_TRUE;
     }
     return JNI_FALSE;
