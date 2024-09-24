@@ -278,10 +278,13 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 }
 #endif
 
-Node* VTransformNode::find_transformed_input(int i, const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  Node* n = vnode_idx_to_transformed_node.at(in(i)->_idx);
-  assert(n != nullptr, "must find input IR node");
-  return n;
+void VTransformApplyState::set_transformed_node(VTransformNode* vtn, Node* n) {
+  assert(get_transformed_node_or_null(vtn) == nullptr, "only set once");
+  _vtnode_idx_to_transformed_node.at_put(vtn->_idx, n);
+}
+
+Node* VTransformApplyState::get_transformed_node_or_null(const VTransformNode* vtn) const {
+  return _vtnode_idx_to_transformed_node.at(vtn->_idx);
 }
 
 float VTransformScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
@@ -292,15 +295,13 @@ float VTransformScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   }
 }
 
-VTransformApplyResult VTransformScalarNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                  const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+VTransformApplyResult VTransformScalarNode::apply(VTransformApplyState& apply_state) const {
+  PhaseIdealLoop* phase = apply_state.phase();
   // Set all inputs that have a vtnode: they may have changed
   for (uint i = 0; i < req(); i++) {
     VTransformNode* vtn_def = in(i);
     if (vtn_def != nullptr) {
-      Node* def = vnode_idx_to_transformed_node.at(vtn_def->_idx);
-      assert(def != nullptr, "must find input IR node");
+      Node* def = apply_state.get_transformed_node(vtn_def);
       phase->igvn().replace_input_of(_node, i, def);
     }
   }
@@ -308,12 +309,11 @@ VTransformApplyResult VTransformScalarNode::apply(const VLoopAnalyzer& vloop_ana
   return VTransformApplyResult::make_scalar(_node);
 }
 
-VTransformApplyResult VTransformLoopPhiNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                   const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_state) const {
+  PhaseIdealLoop* phase = apply_state.phase();
   PhiNode* phi = node()->as_Phi();
-  Node* in0 = find_transformed_input(0, vnode_idx_to_transformed_node);
-  Node* in1 = find_transformed_input(1, vnode_idx_to_transformed_node);
+  Node* in0 = apply_state.get_transformed_node(in(0));
+  Node* in1 = apply_state.get_transformed_node(in(1));
   phase->igvn().replace_input_of(phi, 0, in0);
   phase->igvn().replace_input_of(phi, 1, in1);
   // Note: the backedge is hooked up later.
@@ -329,11 +329,10 @@ VTransformApplyResult VTransformLoopPhiNode::apply(const VLoopAnalyzer& vloop_an
 
 // Cleanup: hook up backedge, which may only be generated long after we called
 //          apply on the phi, because it is further down the schedule.
-void VTransformLoopPhiNode::apply_cleanup(const VLoopAnalyzer& vloop_analyzer,
-                                          const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+void VTransformLoopPhiNode::apply_cleanup(VTransformApplyState& apply_state) const {
+  PhaseIdealLoop* phase = apply_state.phase();
   PhiNode* phi = node()->as_Phi();
-  Node* in2 = find_transformed_input(2, vnode_idx_to_transformed_node);
+  Node* in2 = apply_state.get_transformed_node(in(2));
   phase->igvn().replace_input_of(phi, 2, in2);
 }
 
@@ -343,15 +342,14 @@ float VTransformReplicateNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   return vloop_analyzer.cost_for_vector(Op_Replicate, vlen, bt);
 }
 
-VTransformApplyResult VTransformReplicateNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                     const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformReplicateNode::apply(VTransformApplyState& apply_state) const {
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
   const Type* element_type = Type::get_const_basic_type(bt);
 
-  Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
+  Node* val = apply_state.get_transformed_node(in(1));
   VectorNode* vn = VectorNode::scalar2vector(val, vlen, element_type);
-  register_new_node_from_vectorization(vloop_analyzer, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
@@ -359,11 +357,10 @@ float VTransformConvI2LNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
   return vloop_analyzer.cost_for_scalar(Op_ConvI2L);
 }
 
-VTransformApplyResult VTransformConvI2LNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                   const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
+VTransformApplyResult VTransformConvI2LNode::apply(VTransformApplyState& apply_state) const {
+  Node* val = apply_state.get_transformed_node(in(1));
   Node* n = new ConvI2LNode(val);
-  register_new_node_from_vectorization(vloop_analyzer, n);
+  register_new_node_from_vectorization(apply_state, n);
   return VTransformApplyResult::make_scalar(n);
 }
 
@@ -373,19 +370,18 @@ float VTransformShiftCountNode::cost(const VLoopAnalyzer& vloop_analyzer) const 
          vloop_analyzer.cost_for_vector(shift_count_opc, _vlen, _element_bt);
 }
 
-VTransformApplyResult VTransformShiftCountNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
-  Node* shift_count_in = find_transformed_input(1, vnode_idx_to_transformed_node);
+VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& apply_state) const {
+  PhaseIdealLoop* phase = apply_state.phase();
+  Node* shift_count_in = apply_state.get_transformed_node(in(1));
   assert(shift_count_in->bottom_type()->isa_int(), "int type only for shift count");
   // The shift_count_in would be automatically truncated to the lowest _mask
   // bits in a scalar shift operation. But vector shift does not truncate, so
   // we must apply the mask now.
   Node* shift_count_masked = new AndINode(shift_count_in, phase->igvn().intcon(_mask));
-  register_new_node_from_vectorization(vloop_analyzer, shift_count_masked);
+  register_new_node_from_vectorization(apply_state, shift_count_masked);
   // Now that masked value is "boadcast" (some platforms only set the lowest element).
   VectorNode* vn = VectorNode::shift_count(_shift_opcode, shift_count_masked, _vlen, _element_bt);
-  register_new_node_from_vectorization(vloop_analyzer, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
@@ -393,15 +389,14 @@ float VTransformPopulateIndexNode::cost(const VLoopAnalyzer& vloop_analyzer) con
   return vloop_analyzer.cost_for_vector(Op_PopulateIndex, _vlen, _element_bt);;
 }
 
-VTransformApplyResult VTransformPopulateIndexNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                         const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
-  Node* val = find_transformed_input(1, vnode_idx_to_transformed_node);
+VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& apply_state) const {
+  PhaseIdealLoop* phase = apply_state.phase();
+  Node* val = apply_state.get_transformed_node(in(1));
   assert(val->is_Phi(), "expected to be iv");
   assert(VectorNode::is_populate_index_supported(_element_bt), "should support");
   const TypeVect* vt = TypeVect::make(_element_bt, _vlen);
   VectorNode* vn = new PopulateIndexNode(val, phase->igvn().intcon(1), vt);
-  register_new_node_from_vectorization(vloop_analyzer, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
 }
 
@@ -433,8 +428,7 @@ float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer)
   }
 }
 
-VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                             const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyState& apply_state) const {
   Node* first = nodes().at(0);
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
@@ -448,9 +442,9 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
 
   assert(2 <= req() && req() <= 4, "Must have 1-3 inputs");
   VectorNode* vn = nullptr;
-  Node* in1 =                find_transformed_input(1, vnode_idx_to_transformed_node);
-  Node* in2 = (req() >= 3) ? find_transformed_input(2, vnode_idx_to_transformed_node) : nullptr;
-  Node* in3 = (req() >= 4) ? find_transformed_input(3, vnode_idx_to_transformed_node) : nullptr;
+  Node* in1 =                apply_state.get_transformed_node(in(1));
+  Node* in2 = (req() >= 3) ? apply_state.get_transformed_node(in(2)) : nullptr;
+  Node* in3 = (req() >= 4) ? apply_state.get_transformed_node(in(3)) : nullptr;
 
   if (first->is_CMove()) {
     assert(req() == 4, "three inputs expected: mask, blend1, blend2");
@@ -468,7 +462,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     // The scalar operation was a long -> int operation.
     // However, the vector operation is long -> long.
     VectorNode* long_vn = VectorNode::make(sopc, in1, nullptr, vlen, T_LONG);
-    register_new_node_from_vectorization(vloop_analyzer, long_vn);
+    register_new_node_from_vectorization(apply_state, long_vn);
     // Cast long -> int, to mimic the scalar long -> int operation.
     vn = VectorCastNode::make(Op_VectorCastL2X, long_vn, T_INT, vlen);
   } else if (req() == 3 ||
@@ -485,7 +479,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     vn = VectorNode::make(sopc, in1, in2, in3, vlen, bt); // ternary
   }
 
-  register_new_node_from_vectorization(vloop_analyzer, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
@@ -497,8 +491,7 @@ float VTransformBoolVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const 
   return vloop_analyzer.cost_for_vector(Op_VectorMaskCmp, vlen, bt);
 }
 
-VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& apply_state) const {
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
@@ -509,15 +502,15 @@ VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop
   assert(vtn_cmp != nullptr, // TODO: && vtn_cmp->nodes().at(0)->is_Cmp(),
          "bool vtn expects cmp vtn as input");
 
-  Node* cmp_in1 = vtn_cmp->find_transformed_input(1, vnode_idx_to_transformed_node);
-  Node* cmp_in2 = vtn_cmp->find_transformed_input(2, vnode_idx_to_transformed_node);
+  Node* cmp_in1 = apply_state.get_transformed_node(vtn_cmp->in(1));
+  Node* cmp_in2 = apply_state.get_transformed_node(vtn_cmp->in(2));
   BoolTest::mask mask = test()._mask;
 
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+  PhaseIdealLoop* phase = apply_state.phase();
   ConINode* mask_node  = phase->igvn().intcon((int)mask);
   const TypeVect* vt = TypeVect::make(bt, vlen);
   VectorNode* vn = new VectorMaskCmpNode(mask, cmp_in1, cmp_in2, mask_node, vt);
-  register_new_node_from_vectorization(vloop_analyzer, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
 
@@ -671,17 +664,16 @@ float VTransformReductionVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) c
   return vloop_analyzer.cost_for_vector_reduction(vopc, vlen, bt, requires_strict_order);
 }
 
-VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                           const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState& apply_state) const {
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
 
-  Node* init = find_transformed_input(1, vnode_idx_to_transformed_node);
-  Node* vec  = find_transformed_input(2, vnode_idx_to_transformed_node);
+  Node* init = apply_state.get_transformed_node(in(1));
+  Node* vec  = apply_state.get_transformed_node(in(2));
 
   ReductionNode* vn = ReductionNode::make(sopc, nullptr, init, vec, bt);
-  register_new_node_from_vectorization(vloop_analyzer, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
 
@@ -691,8 +683,7 @@ float VTransformLoadVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const 
   return vloop_analyzer.cost_for_vector(Op_LoadVector, vlen, bt);
 }
 
-VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                      const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& apply_state) const {
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
@@ -708,7 +699,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   // does not have any memory dependency.
   // TODO: can we move this to optimize or out of SuperWord? Would require some refactor of VPointer!
   while (mem->is_StoreVector()) {
-    VPointer p_store(mem->as_Mem(), vloop_analyzer.vloop());
+    VPointer p_store(mem->as_Mem(), apply_state.vloop());
     if (p_store.overlap_possible_with_any_in(nodes())) {
       break;
     } else {
@@ -719,7 +710,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, adr_type, vlen, bt,
                                             control_dependency());
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
-  register_new_node_from_vectorization(vloop_analyzer, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
 }
 
@@ -729,8 +720,7 @@ float VTransformStoreVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const
   return vloop_analyzer.cost_for_vector(Op_StoreVector, vlen, bt);
 }
 
-VTransformApplyResult VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloop_analyzer,
-                                                       const GrowableArray<Node*>& vnode_idx_to_transformed_node) const {
+VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& apply_state) const {
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
@@ -741,18 +731,18 @@ VTransformApplyResult VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloo
   Node* adr  = first->in(MemNode::Address);
   const TypePtr* adr_type = first->adr_type();
 
-  Node* value = find_transformed_input(MemNode::ValueIn, vnode_idx_to_transformed_node);
+  Node* value = apply_state.get_transformed_node(in(MemNode::ValueIn));
   StoreVectorNode* vn = StoreVectorNode::make(sopc, ctrl, mem, adr, adr_type, value, vlen);
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
-  register_new_node_from_vectorization(vloop_analyzer, vn);
+  register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
 }
 
-void VTransformNode::register_new_node_from_vectorization(const VLoopAnalyzer& vloop_analyzer, Node* vn) const {
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+void VTransformNode::register_new_node_from_vectorization(VTransformApplyState& apply_state, Node* vn) const {
+  PhaseIdealLoop* phase = apply_state.phase();
   phase->C->copy_node_notes_to(vn, approximate_origin());
   // The control is incorrect, but we set major_progress anyway.
-  phase->register_new_node(vn, vloop_analyzer.vloop().cl());
+  phase->register_new_node(vn, apply_state.vloop().cl());
   phase->igvn()._worklist.push(vn);
   VectorNode::trace_new_vector(vn, "AutoVectorization");
 }
