@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,10 @@
 #include "runtime/globals.hpp"
 
 // For UseCompressedOops.
-NarrowPtrStruct CompressedOops::_narrow_oop = { nullptr, 0, true };
-MemRegion       CompressedOops::_heap_address_range;
+address CompressedOops::_base = nullptr;
+int CompressedOops::_shift = 0;
+bool CompressedOops::_use_implicit_null_checks = true;
+MemRegion CompressedOops::_heap_address_range;
 
 // Choose the heap base address and oop encoding mode
 // when compressed oops are used:
@@ -88,16 +90,16 @@ void CompressedOops::initialize(const ReservedHeapSpace& heap_space) {
 
 void CompressedOops::set_base(address base) {
   assert(UseCompressedOops, "no compressed oops?");
-  _narrow_oop._base    = base;
+  _base = base;
 }
 
 void CompressedOops::set_shift(int shift) {
-  _narrow_oop._shift   = shift;
+  _shift = shift;
 }
 
 void CompressedOops::set_use_implicit_null_checks(bool use) {
   assert(UseCompressedOops, "no compressed ptrs?");
-  _narrow_oop._use_implicit_null_checks   = use;
+  _use_implicit_null_checks = use;
 }
 
 bool CompressedOops::is_in(void* addr) {
@@ -148,14 +150,14 @@ bool CompressedOops::is_disjoint_heap_base_address(address addr) {
 
 // Check for disjoint base compressed oops.
 bool CompressedOops::base_disjoint() {
-  return _narrow_oop._base != nullptr && is_disjoint_heap_base_address(_narrow_oop._base);
+  return _base != nullptr && is_disjoint_heap_base_address(_base);
 }
 
 // Check for real heapbased compressed oops.
 // We must subtract the base as the bits overlap.
 // If we negate above function, we also get unscaled and zerobased.
 bool CompressedOops::base_overlaps() {
-  return _narrow_oop._base != nullptr && !is_disjoint_heap_base_address(_narrow_oop._base);
+  return _base != nullptr && !is_disjoint_heap_base_address(_base);
 }
 
 void CompressedOops::print_mode(outputStream* st) {

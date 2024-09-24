@@ -848,7 +848,7 @@ private:
     to_page->reset(to_age);
     to_page->reset_top_for_allocation();
     if (promotion) {
-      to_page->remset_initialize();
+      to_page->remset_alloc();
     }
 
     // Verify that the inactive remset is clear when resetting the page for
@@ -943,35 +943,15 @@ public:
     return ZGeneration::old()->active_remset_is_current();
   }
 
-  void clear_remset_before_reuse(ZPage* page, bool in_place) {
+  void clear_remset_before_in_place_reuse(ZPage* page) {
     if (_forwarding->from_age() != ZPageAge::old) {
       // No remset bits
       return;
     }
 
-    if (in_place) {
-      // Clear 'previous' remset bits. For in-place relocated pages, the previous
-      // remset bits are always used, even when active_remset_is_current().
-      page->clear_remset_previous();
-
-      return;
-    }
-
-    // Normal relocate
-
-    // Clear active remset bits
-    if (active_remset_is_current()) {
-      page->clear_remset_current();
-    } else {
-      page->clear_remset_previous();
-    }
-
-    // Verify that inactive remset bits are all cleared
-    if (active_remset_is_current()) {
-      page->verify_remset_cleared_previous();
-    } else {
-      page->verify_remset_cleared_current();
-    }
+    // Clear 'previous' remset bits. For in-place relocated pages, the previous
+    // remset bits are always used, even when active_remset_is_current().
+    page->clear_remset_previous();
   }
 
   void finish_in_place_relocation() {
@@ -1017,7 +997,7 @@ public:
       ZPage* const page = _forwarding->detach_page();
 
       // Ensure that previous remset bits are cleared
-      clear_remset_before_reuse(page, true /* in_place */);
+      clear_remset_before_in_place_reuse(page);
 
       page->log_msg(" (relocate page done in-place)");
 
@@ -1028,11 +1008,6 @@ public:
     } else {
       // Wait for all other threads to call release_page
       ZPage* const page = _forwarding->detach_page();
-
-      // Ensure that all remset bits are cleared
-      // Note: cleared after detach_page, when we know that
-      // the young generation isn't scanning the remset.
-      clear_remset_before_reuse(page, false /* in_place */);
 
       page->log_msg(" (relocate page done normal)");
 
@@ -1292,7 +1267,7 @@ public:
       new_page->reset(to_age);
       new_page->reset_livemap();
       if (promotion) {
-        new_page->remset_initialize();
+        new_page->remset_alloc();
       }
 
       if (promotion) {
