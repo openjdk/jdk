@@ -1879,6 +1879,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
                 if (oldForm != newForm) {
                     assert (newForm.customized == null || newForm.customized == this);
                     newForm.prepare(); // as in MethodHandle.<init>
+                    UNSAFE.storeStoreFence(); // properly publish newForm
                     UNSAFE.putReference(this, FORM_OFFSET, newForm);
                     UNSAFE.fullFence();
                 }
