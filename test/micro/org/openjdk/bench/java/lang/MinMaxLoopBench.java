@@ -103,7 +103,7 @@ public class MinMaxLoopBench
     }
 
     @Benchmark
-    public int[] loopIntMin() {
+    public int[] intLoopMin() {
         final int[] result = new int[size];
         for (int i = 0; i < size; i++) {
             result[i] = Math.min(minIntA[i], minIntB[i]);
@@ -112,16 +112,7 @@ public class MinMaxLoopBench
     }
 
     @Benchmark
-    public long[] loopLongMin() {
-        final long[] result = new long[size];
-        for (int i = 0; i < size; i++) {
-            result[i] = Math.min(minLongA[i], minLongB[i]);
-        }
-        return result;
-    }
-
-    @Benchmark
-    public int[] loopIntMax() {
+    public int[] intLoopMax() {
         final int[] result = new int[size];
         for (int i = 0; i < size; i++) {
             result[i] = Math.max(maxIntA[i], maxIntB[i]);
@@ -130,16 +121,7 @@ public class MinMaxLoopBench
     }
 
     @Benchmark
-    public long[] loopLongMax() {
-        final long[] result = new long[size];
-        for (int i = 0; i < size; i++) {
-            result[i] = Math.max(maxLongA[i], maxLongB[i]);
-        }
-        return result;
-    }
-
-    @Benchmark
-    public int reductionIntMin() {
+    public int intReductionMin() {
         int result = 0;
         for (int i = 0; i < size; i++) {
             result = Math.min(result, minIntA[i]);
@@ -148,16 +130,7 @@ public class MinMaxLoopBench
     }
 
     @Benchmark
-    public long reductionLongMin() {
-        long result = 0;
-        for (int i = 0; i < size; i++) {
-            result = Math.min(result, minLongA[i]);
-        }
-        return result;
-    }
-
-    @Benchmark
-    public int reductionIntMax() {
+    public int intReductionMax() {
         int result = 0;
         for (int i = 0; i < size; i++) {
             result = Math.max(result, maxIntA[i]);
@@ -166,7 +139,34 @@ public class MinMaxLoopBench
     }
 
     @Benchmark
-    public long reductionLongMax() {
+    public long[] longLoopMin() {
+        final long[] result = new long[size];
+        for (int i = 0; i < size; i++) {
+            result[i] = Math.min(minLongA[i], minLongB[i]);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public long[] longLoopMax() {
+        final long[] result = new long[size];
+        for (int i = 0; i < size; i++) {
+            result[i] = Math.max(maxLongA[i], maxLongB[i]);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public long longReductionMin() {
+        long result = 0;
+        for (int i = 0; i < size; i++) {
+            result = Math.min(result, minLongA[i]);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public long longReductionMax() {
         long result = 0;
         for (int i = 0; i < size; i++) {
             result = Math.max(result, maxLongA[i]);
