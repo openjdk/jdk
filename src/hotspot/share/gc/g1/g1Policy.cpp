@@ -1327,6 +1327,7 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
   if (!mixed_gc_pending) {
     abort_time_to_mixed_tracking();
     log_debug(gc, ergo)("request young-only gcs (candidate old regions not available)");
+    if (!UseNewCode) _g1h->expand(G1HeapRegion::GrainBytes);
   }
   collector_state()->set_in_young_gc_before_mixed(mixed_gc_pending);
   collector_state()->set_mark_or_rebuild_in_progress(false);
