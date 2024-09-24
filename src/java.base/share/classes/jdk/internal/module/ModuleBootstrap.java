@@ -474,11 +474,11 @@ public final class ModuleBootstrap {
             boolean hasSplitPackages = containsSplitPackages(cf);
             boolean hasIncubatorModules = containsIncubatorModule(cf);
             ArchivedModuleGraph.archive(hasSplitPackages,
-                    hasIncubatorModules,
-                    systemModuleFinder,
-                    cf,
-                    clf,
-                    mainModule);
+                                        hasIncubatorModules,
+                                        systemModuleFinder,
+                                        cf,
+                                        clf,
+                                        mainModule);
             if (!hasSplitPackages && !hasIncubatorModules) {
                 ArchivedBootLayer.archive(bootLayer);
             }
