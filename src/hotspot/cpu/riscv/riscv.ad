@@ -1978,6 +1978,7 @@ bool Matcher::supports_vector_calling_convention(void) {
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
   assert(EnableVectorSupport && UseVectorStubs, "sanity");
   assert(ideal_reg == Op_VecA, "sanity");
+  // check more info at https://github.com/riscv-non-isa/riscv-elf-psabi-doc/blob/master/riscv-cc.adoc
   int lo = V8_num;
   int hi = V8_K_num;
   return OptoRegPair(hi, lo);
@@ -10071,11 +10072,11 @@ instruct CallLeafDirect(method meth, rFlagsReg cr)
 
 // Call Runtime Instruction without safepoint and with vector arguments
 
-instruct CallLeafDirectVector(method meth)
+instruct CallLeafDirectVector(method meth, rFlagsReg cr)
 %{
   match(CallLeafVector);
 
-  effect(USE meth);
+  effect(USE meth, KILL cr);
 
   ins_cost(BRANCH_COST);
 
