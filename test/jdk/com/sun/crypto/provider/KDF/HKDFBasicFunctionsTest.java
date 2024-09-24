@@ -33,10 +33,9 @@ import jdk.test.lib.Asserts;
 
 import javax.crypto.KDF;
 import javax.crypto.spec.HKDFParameterSpec;
-import java.util.Arrays;
 import java.util.HexFormat;
 
-public class BasicHKDFFunctions {
+public class HKDFBasicFunctionsTest {
     public static void main(String[] args) throws Exception {
         var ikm = HexFormat.of().parseHex("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b");
         var salt = HexFormat.of().parseHex("000102030405060708090a0b0c");
