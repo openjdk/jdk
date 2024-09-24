@@ -31,7 +31,7 @@ public sealed interface Range<T extends Comparable<T>> permits Range.BoundedAtEn
      * @return an unbounded range ending at the given value
      */
     static <T extends Comparable<T>> Range<T> unboundedEndingAt(T end, boolean excludeEnd) {
-        return excludeEnd ? new Ranges.UnboundedStartRange<>(end, true) : new Ranges.UnboundedStartRange<>(end);
+        return new Ranges.UnboundedStartRange<>(end, excludeEnd);
     }
 
     /**
@@ -54,7 +54,7 @@ public sealed interface Range<T extends Comparable<T>> permits Range.BoundedAtEn
      * @return an unbounded range starting at the given value
      */
     static <T extends Comparable<T>> Range<T> unboundedStartingAt(T start, boolean excludeStart) {
-        return excludeStart ? new Ranges.UnboundedEndRange<>(start, true) : new Ranges.UnboundedEndRange<>(start);
+        return new Ranges.UnboundedEndRange<>(start, excludeStart);
     }
 
     /**
