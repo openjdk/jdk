@@ -83,17 +83,21 @@ Deoptimization::DeoptReason RegularPredicateWithUCT::uncommon_trap_reason(IfProj
 
 bool RegularPredicateWithUCT::is_predicate(Node* maybe_success_proj) {
   if (RegularPredicate::may_be_predicate_if(maybe_success_proj)) {
-    IfProjNode* success_proj = maybe_success_proj->as_IfProj();
-    const Deoptimization::DeoptReason deopt_reason = uncommon_trap_reason(success_proj);
-    return (deopt_reason == Deoptimization::Reason_loop_limit_check ||
-            deopt_reason == Deoptimization::Reason_predicate ||
-            deopt_reason == Deoptimization::Reason_profile_predicate);
+    return has_valid_uncommon_trap(maybe_success_proj);
   } else {
     return false;
   }
 }
 
-bool RegularPredicateWithUCT::is_predicate(Node* node, Deoptimization::DeoptReason deopt_reason) {
+bool RegularPredicateWithUCT::has_valid_uncommon_trap(const Node* success_proj) {
+  assert(RegularPredicate::may_be_predicate_if(success_proj), "must have been checked before");
+  const Deoptimization::DeoptReason deopt_reason = uncommon_trap_reason(success_proj->as_IfProj());
+  return (deopt_reason == Deoptimization::Reason_loop_limit_check ||
+          deopt_reason == Deoptimization::Reason_predicate ||
+          deopt_reason == Deoptimization::Reason_profile_predicate);
+}
+
+bool RegularPredicateWithUCT::is_predicate(const Node* node, Deoptimization::DeoptReason deopt_reason) {
   if (RegularPredicate::may_be_predicate_if(node)) {
     return deopt_reason == uncommon_trap_reason(node->as_IfProj());
   } else {
@@ -102,7 +106,7 @@ bool RegularPredicateWithUCT::is_predicate(Node* node, Deoptimization::DeoptReas
 }
 
 // A Regular Predicate must have an If or a RangeCheck node, while the If should not be a zero trip guard check.
-bool RegularPredicate::may_be_predicate_if(Node* node) {
+bool RegularPredicate::may_be_predicate_if(const Node* node) {
   if (node->is_IfProj()) {
     const IfNode* if_node = node->in(0)->as_If();
     const int opcode_if = if_node->Opcode();
@@ -132,7 +136,7 @@ bool TemplateAssertionPredicate::is_predicate(Node* node) {
   }
   IfNode* if_node = node->in(0)->as_If();
   if (if_node->in(1)->is_Opaque4()) {
-    return RegularPredicateWithUCT::is_predicate(node) || AssertionPredicateWithHalt::is_predicate(node);
+    return RegularPredicateWithUCT::has_valid_uncommon_trap(node) || AssertionPredicateWithHalt::has_halt(node);
   }
   return false;
 }

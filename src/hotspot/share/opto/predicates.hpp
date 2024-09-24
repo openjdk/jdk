@@ -269,15 +269,15 @@ class AssertionPredicatesWithHalt : public StackObj {
 // Note that all other Regular Predicates have an UCT node.
 class AssertionPredicateWithHalt : public StackObj {
   static bool has_assertion_predicate_opaque(const Node* predicate_proj);
-  static bool has_halt(const Node* success_proj);
  public:
   static bool is_predicate(const Node* maybe_success_proj);
+  static bool has_halt(const Node* success_proj);
 };
 
 // Utility class representing a Regular Predicate which is either a Runtime Predicate or an Assertion Predicate.
 class RegularPredicate : public StackObj {
  public:
-  static bool may_be_predicate_if(Node* node);
+  static bool may_be_predicate_if(const Node* node);
 };
 
 // Class to represent a single Regular Predicate with an UCT. This could either be:
@@ -289,7 +289,8 @@ class RegularPredicateWithUCT : public StackObj {
 
  public:
   static bool is_predicate(Node* maybe_success_proj);
-  static bool is_predicate(Node* node, Deoptimization::DeoptReason deopt_reason);
+  static bool is_predicate(const Node* node, Deoptimization::DeoptReason deopt_reason);
+  static bool has_valid_uncommon_trap(const Node* success_proj);
 };
 
 // Class to represent a Parse Predicate.
