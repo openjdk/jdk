@@ -36,7 +36,7 @@ import java.util.List;
  * @bug 4141361
  * @summary Test to Ensures that mouse enter / exit is delivered to a new
  *          frame or component during a drag
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual MouseDragEnterExitTest
  */

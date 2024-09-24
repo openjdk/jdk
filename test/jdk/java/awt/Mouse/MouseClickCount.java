@@ -30,7 +30,7 @@ import java.awt.event.MouseEvent;
  * @test
  * @bug 4199397
  * @summary Test to mouse click count
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual MouseClickCount
  */

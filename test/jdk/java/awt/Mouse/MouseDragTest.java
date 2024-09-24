@@ -39,7 +39,7 @@ import java.awt.event.MouseMotionListener;
  * @test
  * @bug 4035189
  * @summary Test to verify that Drag events go to wrong component
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual MouseDragTest
  */

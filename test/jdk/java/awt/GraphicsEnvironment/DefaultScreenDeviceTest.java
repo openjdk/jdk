@@ -40,7 +40,7 @@ import java.util.List;
  * @summary Test to verify GraphicsEnvironment.getDefaultScreenDevice always
  *          returning first screen
  * @requires (os.family == "windows")
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual DefaultScreenDeviceTest
  */
