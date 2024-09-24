@@ -251,7 +251,7 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
     // then the p0_bt can also be L/F/D but we need to produce ints for the input of
     // the ConvI2L/F/D.
     BasicType element_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
-    VTransformNodePrototype prototype = VTransformNodePrototype(_vloop.iv(), Op_Phi, pack->size(), element_bt);
+    VTransformNodePrototype prototype = VTransformNodePrototype(_vloop.iv(), Op_Phi, pack->size(), element_bt, nullptr);
     VTransformNode* populate_index = new (_vtransform.arena()) VTransformPopulateIndexNode(_vtransform, prototype, pack->size(), element_bt);
     populate_index->init_req(1, iv_vtn);
     return populate_index;
@@ -266,7 +266,7 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       BasicType element_bt = _vloop_analyzer.types().velt_basic_type(p0);
       juint mask = (p0->bottom_type() == TypeInt::INT) ? (BitsPerInt - 1) : (BitsPerLong - 1);
       // TODO we may want to refactor this, and set a more adequate opc
-      VTransformNodePrototype prototype = VTransformNodePrototype(p0, p0->Opcode(), pack->size(), element_bt);
+      VTransformNodePrototype prototype = VTransformNodePrototype(p0, p0->Opcode(), pack->size(), element_bt, nullptr);
       VTransformNode* shift_count = new (_vtransform.arena()) VTransformShiftCountNode(_vtransform, prototype, pack->size(), element_bt, mask, p0->Opcode());
       shift_count->init_req(1, same_input_vtn);
       return shift_count;
@@ -276,12 +276,12 @@ VTransformNode* SuperWordVTransformBuilder::get_or_make_vtnode_vector_input_at_i
       if (index == 2 && VectorNode::is_scalar_rotate(p0) && element_bt == T_LONG) {
         // Scalar rotate has int rotation value, but the scalar rotate expects longs.
         assert(same_input->bottom_type()->isa_int(), "scalar rotate expects int rotation");
-        VTransformNodePrototype conv_prototype = VTransformNodePrototype(p0, Op_ConvI2L, 1, T_LONG);
+        VTransformNodePrototype conv_prototype = VTransformNodePrototype(p0, Op_ConvI2L, 1, T_LONG, nullptr);
         VTransformNode* conv = new (_vtransform.arena()) VTransformConvI2LNode(_vtransform, conv_prototype);
         conv->init_req(1, same_input_vtn);
         same_input_vtn = conv;
       }
-      VTransformNodePrototype prototype = VTransformNodePrototype(p0, -1, pack->size(), element_bt);
+      VTransformNodePrototype prototype = VTransformNodePrototype(p0, -1, pack->size(), element_bt, nullptr);
       VTransformNode* replicate = new (_vtransform.arena()) VTransformReplicateNode(_vtransform, prototype);
       replicate->init_req(1, same_input_vtn);
       return replicate;

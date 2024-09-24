@@ -286,6 +286,16 @@ public:
   Node* memory_state(int alias_idx) const { return _memory_states.at(alias_idx); }
   void set_memory_state(int alias_idx, Node* n) { _memory_states.at_put(alias_idx, n); }
 
+  Node* memory_state(const TypePtr* adr_type) const {
+    int alias_idx = phase()->C->get_alias_index(adr_type);
+    return memory_state(alias_idx);
+  }
+
+  void set_memory_state(const TypePtr* adr_type, Node* n) {
+    int alias_idx = phase()->C->get_alias_index(adr_type);
+    return set_memory_state(alias_idx, n);
+  }
+
 private:
   int num_slices() const { return _vloop_analyzer.memory_slices().heads().length(); }
   void init_memory_states();
@@ -294,27 +304,31 @@ private:
 // Bundle information for VTransformNode.
 class VTransformNodePrototype : public StackObj {
 private:
-  Node* _approximate_origin;
+  Node* _approximate_origin; // for proper propagation of node notes
   int _scalar_opcode;
   uint _vector_length;
   BasicType _element_basic_type;
+  const TypePtr* _adr_type; // carries slice information for memory ops (load, store, phi)
 
 public:
   VTransformNodePrototype(Node* approximate_origin,
                           int scalar_opcode,
                           uint vector_length,
-                          BasicType element_basic_type) :
+                          BasicType element_basic_type,
+                          const TypePtr* adr_type) :
     _approximate_origin(approximate_origin),
     _scalar_opcode(scalar_opcode),
     _vector_length(vector_length),
-    _element_basic_type(element_basic_type) {}
+    _element_basic_type(element_basic_type),
+    _adr_type(adr_type) {}
 
   static VTransformNodePrototype make_from_scalar(Node* n, const VLoopAnalyzer& vloop_analyzer) {
     int opc = n->Opcode();
     int vlen = 1;
     BasicType bt = vloop_analyzer.vloop().in_bb(n) ? vloop_analyzer.types().velt_basic_type(n)
                                                    : n->bottom_type()->basic_type();
-    return VTransformNodePrototype(n, opc, vlen, bt);
+    const TypePtr* adr_type = n->adr_type();
+    return VTransformNodePrototype(n, opc, vlen, bt, adr_type);
   }
 
   static VTransformNodePrototype make_from_pack(const Node_List* pack, const VLoopAnalyzer& vloop_analyzer) {
@@ -322,13 +336,15 @@ public:
     int opc = first->Opcode();
     int vlen = pack->size();
     BasicType bt = vloop_analyzer.types().velt_basic_type(first);
-    return VTransformNodePrototype(first, opc, vlen, bt);
+    const TypePtr* adr_type = first->adr_type();
+    return VTransformNodePrototype(first, opc, vlen, bt, adr_type);
   }
 
   Node* approximate_origin() const { return _approximate_origin; }
   int scalar_opcode() const { return _scalar_opcode; }
   uint vector_length() const { return _vector_length; }
   BasicType element_basic_type() const { return _element_basic_type; }
+  const TypePtr* adr_type() const { return _adr_type; }
 };
 
 // The vtnodes (VTransformNode) resemble the C2 IR Nodes, and model a part of the
@@ -366,6 +382,7 @@ public:
   int scalar_opcode() const { return _prototype.scalar_opcode(); }
   uint vector_length() const { return _prototype.vector_length(); }
   BasicType element_basic_type() const { return _prototype.element_basic_type(); }
+  const TypePtr* adr_type() const { return _prototype.adr_type(); }
 
   void init_req(uint i, VTransformNode* n) {
     assert(i < _req, "must be a req");

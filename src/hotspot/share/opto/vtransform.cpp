@@ -291,8 +291,16 @@ Node* VTransformApplyState::transformed_node(const VTransformNode* vtn) const {
 
 void VTransformApplyState::init_memory_states() {
   const GrowableArray<Node*>& inputs = _vloop_analyzer.memory_slices().inputs();
+  const GrowableArray<PhiNode*>& heads = _vloop_analyzer.memory_slices().heads();
   for (int i = 0; i < inputs.length(); i++) {
-    _memory_states.at_put(i, inputs.at(i));
+    PhiNode* head = heads.at(i);
+    if (head != nullptr) {
+      // Slice with Phi (i.e. with stores)
+      _memory_states.at_put(i, head);
+    } else {
+      // Slice without Phi (i.e. only loads)
+      _memory_states.at_put(i, inputs.at(i));
+    }
   }
 }
 
@@ -621,7 +629,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   VTransformNodePrototype scalar_prototype = VTransformNodePrototype::make_from_scalar(identity, vloop_analyzer);
   VTransformNode* vtn_identity = new (vtransform.arena()) VTransformInputScalarNode(vtransform, scalar_prototype, identity);
 
-  VTransformNodePrototype vector_prototype = VTransformNodePrototype(first_red->approximate_origin(), -1, vlen, bt);
+  VTransformNodePrototype vector_prototype = VTransformNodePrototype(first_red->approximate_origin(), -1, vlen, bt, nullptr);
   VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vector_prototype);
   vtn_identity_vector->init_req(1, vtn_identity);
 
@@ -696,12 +704,12 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
+  const TypePtr* load_adr_type = adr_type();
 
   LoadNode* first = nodes().at(0)->as_Load();
   Node* ctrl = first->in(MemNode::Control);
-  Node* mem  = first->in(MemNode::Memory);
+  Node* mem  = apply_state.memory_state(load_adr_type);
   Node* adr  = apply_state.transformed_node(in(MemNode::Address));
-  const TypePtr* adr_type = first->adr_type();
 
   // Set the memory dependency of the LoadVector as early as possible.
   // Walk up the memory chain, and ignore any StoreVector that provably
@@ -716,7 +724,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
     }
   }
 
-  LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, adr_type, vlen, bt,
+  LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, load_adr_type, vlen, bt,
                                             control_dependency());
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization(apply_state, vn);
@@ -733,17 +741,18 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
+  const TypePtr* store_adr_type = adr_type();
 
   StoreNode* first = nodes().at(0)->as_Store();
   Node* ctrl = first->in(MemNode::Control);
-  Node* mem  = first->in(MemNode::Memory);
+  Node* mem  = apply_state.memory_state(store_adr_type);
   Node* adr  = apply_state.transformed_node(in(MemNode::Address));
-  const TypePtr* adr_type = first->adr_type();
 
   Node* value = apply_state.transformed_node(in(MemNode::ValueIn));
-  StoreVectorNode* vn = StoreVectorNode::make(sopc, ctrl, mem, adr, adr_type, value, vlen);
+  StoreVectorNode* vn = StoreVectorNode::make(sopc, ctrl, mem, adr, store_adr_type, value, vlen);
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization(apply_state, vn);
+  apply_state.set_memory_state(store_adr_type, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
 }
 
@@ -780,6 +789,7 @@ void VTransformGraph::print_schedule() const {
 void VTransformGraph::print_memops_schedule() const {
   tty->print_cr("\nVTransformGraph::print_memops_schedule:");
   int i = 0;
+  // TODO last use - remove? anything else from apply mem schedule?
   for_each_memop_in_schedule([&] (MemNode* mem) {
     tty->print(" %3d: ", i++);
     mem->dump();
