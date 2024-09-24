@@ -37,9 +37,9 @@
     the standard error stream every time a restricted method is invoked. Such warnings can
     be disabled by granting access to restricted methods to selected modules. This can be
     done either via implementation-specific command line options or programmatically, e.g.
-    by calling <a href="../../ModuleLayer.Controller.html#enableNativeAccess(java.lang.Module)"><code>ModuleLayer.Controller.enableNativeAccess(java.lang.Module)</code></a>.</p>
-<p>When a restricted method is invoked by <a href="../../../../specs/jni/index.html">JNI code</a>,
-    or from an <a href="../Linker.html#upcallStub(java.lang.invoke.MethodHandle,java.lang.foreign.FunctionDescriptor,java.lang.foreign.Arena,java.lang.foreign.Linker.Option...)">upcall stub</a>
+    by calling <a href="{@docRoot}/java.base/java/lang/ModuleLayer.Controller.html#enableNativeAccess(java.lang.Module)"><code>ModuleLayer.Controller.enableNativeAccess(java.lang.Module)</code></a>.</p>
+<p>When a restricted method is invoked by <a href="{@docRoot}/../specs/jni/index.html">JNI code</a>,
+    or from an <a href="{@docRoot}/java.base/java/lang/foreign/Linker.html#upcallStub(java.lang.invoke.MethodHandle,java.lang.foreign.FunctionDescriptor,java.lang.foreign.Arena,java.lang.foreign.Linker.Option...)">upcall stub</a>
     and there is no caller class on the stack, it is as if the restricted method call occurred in an <em>unnamed module</em>.</p>
 <p>In the reference implementation, access to restricted methods can be granted to
     specific modules using the command line option <code>--enable-native-access=M1,M2, ... Mn</code>,
