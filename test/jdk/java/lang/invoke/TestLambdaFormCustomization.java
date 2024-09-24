@@ -30,7 +30,7 @@ import java.util.ArrayList;
   * @bug 8340812
   * @summary Verify that LambdaForm customization via MethodHandle::updateForm is thread safe.
   * @run driver TestLambdaFormCustomization
-  * @run main/othervm -Djava.lang.invoke.MethodHandle.CUSTOMIZE_THRESHOLD=0 -Djava.lang.invoke.MethodHandle.COMPILE_THRESHOLD=1 TestLambdaFormCustomization
+  * @run main/othervm -Djava.lang.invoke.MethodHandle.CUSTOMIZE_THRESHOLD=0 TestLambdaFormCustomization
   */
 public class TestLambdaFormCustomization {
 
@@ -38,7 +38,9 @@ public class TestLambdaFormCustomization {
     static final String value = "test" + 42;
 
     // Trigger concurrent LambdaForm customization for VarHandle invokers
-    void test(VarHandle varHandle) {
+    void test() throws NoSuchFieldException, IllegalAccessException {
+        VarHandle varHandle = MethodHandles.lookup().in(getClass()).findVarHandle(getClass(), "str", String.class);
+
         ArrayList<Thread> threads = new ArrayList<>();
         for (int threadIdx = 0; threadIdx < 10; threadIdx++) {
             threads.add(new Thread(() -> {
@@ -59,11 +61,10 @@ public class TestLambdaFormCustomization {
         });
     }
 
-    public static void main(String[] args) throws NoSuchFieldException, IllegalAccessException {
+    public static void main(String[] args) throws Exception {
         TestLambdaFormCustomization t = new TestLambdaFormCustomization();
-        VarHandle varHandle = MethodHandles.lookup().in(t.getClass()).findVarHandle(t.getClass(), "str", String.class);
         for (int i = 0; i < 4000; ++i) {
-            t.test(varHandle);
+            t.test();
         }
     }
 }
