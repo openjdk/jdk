@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4396407
- * @summary Tests that after proxied window were hidden focus is being restored correctly
+ * @summary Tests that after a proxied window is hidden, focus is being restored correctly
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual ProxiedWindowHideTest
@@ -40,7 +40,7 @@ import javax.swing.JFrame;
 public class ProxiedWindowHideTest {
 
     private static final String INSTRUCTIONS = """
-           You will see JFrame with title 'TEST'.
+           You will see a JFrame.
            Click on JComboBox, list will expand then select any item in it.
            After selection, list should collapse.
            Click on Button('Push').

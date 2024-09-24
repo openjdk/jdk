@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4472032
- * @summary Switching between lightweight menus by holizontal arrow key works incorrect
+ * @summary Switching between lightweight menus by horizontal arrow key works incorrect
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual LightweightPopupTest
