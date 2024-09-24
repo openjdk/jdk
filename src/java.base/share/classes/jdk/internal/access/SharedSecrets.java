@@ -73,7 +73,7 @@ public class SharedSecrets {
     private static JavaObjectInputStreamReadString javaObjectInputStreamReadString;
     private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
     private static JavaObjectInputFilterAccess javaObjectInputFilterAccess;
-    private static JavaObjectStreamDefaultSupportAccess javaObjectStreamDefaultSupportAccess;
+    private static JavaObjectStreamReflectionAccess javaObjectStreamReflectionAccess;
     private static JavaNetInetAddressAccess javaNetInetAddressAccess;
     private static JavaNetHttpCookieAccess javaNetHttpCookieAccess;
     private static JavaNetUriAccess javaNetUriAccess;
@@ -454,19 +454,19 @@ public class SharedSecrets {
         javaObjectInputFilterAccess = access;
     }
 
-    public static JavaObjectStreamDefaultSupportAccess getJavaObjectStreamDefaultSupportAccess() {
-        var access = javaObjectStreamDefaultSupportAccess;
+    public static JavaObjectStreamReflectionAccess getJavaObjectStreamReflectionAccess() {
+        var access = javaObjectStreamReflectionAccess;
         if (access == null) {
             try {
-                Class.forName("java.io.ObjectStreamDefaultSupport$Access", true, null);
-                access = javaObjectStreamDefaultSupportAccess;
+                Class.forName("java.io.ObjectStreamReflection$Access", true, null);
+                access = javaObjectStreamReflectionAccess;
             } catch (ClassNotFoundException e) {}
         }
         return access;
     }
 
-    public static void setJavaObjectStreamDefaultSupportAccess(JavaObjectStreamDefaultSupportAccess access) {
-        javaObjectStreamDefaultSupportAccess = access;
+    public static void setJavaObjectStreamReflectionAccess(JavaObjectStreamReflectionAccess access) {
+        javaObjectStreamReflectionAccess = access;
     }
 
     public static void setJavaIORandomAccessFileAccess(JavaIORandomAccessFileAccess jirafa) {

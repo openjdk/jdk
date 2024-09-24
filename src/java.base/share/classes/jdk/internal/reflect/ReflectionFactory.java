@@ -46,7 +46,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import jdk.internal.access.JavaLangReflectAccess;
-import jdk.internal.access.JavaObjectStreamDefaultSupportAccess;
+import jdk.internal.access.JavaObjectStreamReflectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.Stable;
@@ -74,10 +74,10 @@ public class ReflectionFactory {
     private static volatile Method hasStaticInitializerMethod;
 
     private final JavaLangReflectAccess langReflectAccess;
-    private final JavaObjectStreamDefaultSupportAccess javaObjectStreamDefaultSupportAccess;
+    private final JavaObjectStreamReflectionAccess javaObjectStreamDefaultSupportAccess;
     private ReflectionFactory() {
         this.langReflectAccess = SharedSecrets.getJavaLangReflectAccess();
-        this.javaObjectStreamDefaultSupportAccess = SharedSecrets.getJavaObjectStreamDefaultSupportAccess();
+        this.javaObjectStreamDefaultSupportAccess = SharedSecrets.getJavaObjectStreamReflectionAccess();
     }
 
     /**

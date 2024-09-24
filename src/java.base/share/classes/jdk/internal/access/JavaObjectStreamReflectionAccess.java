@@ -27,7 +27,7 @@ package jdk.internal.access;
 
 import java.lang.invoke.MethodHandle;
 
-public interface JavaObjectStreamDefaultSupportAccess {
+public interface JavaObjectStreamReflectionAccess {
     MethodHandle defaultReadObject(Class<?> clazz);
     MethodHandle defaultWriteObject(Class<?> clazz);
 }

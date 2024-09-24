@@ -38,7 +38,6 @@ import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Proxy;
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
@@ -826,25 +825,9 @@ public class ReflectionFactoryTest {
     // Check our simple accessors
     @Test
     static void testAccessors() {
-        Assert.assertEquals(factory.serialVersionUID(Ser3.class), -1234752876749422678L);
         Assert.assertEquals(factory.serialPersistentFields(Ser3.class), Ser3.serialPersistentFields);
         Assert.assertNotSame(factory.serialPersistentFields(Ser3.class), Ser3.serialPersistentFields);
         Assert.assertNull(factory.serialPersistentFields(SerInvalidFields.class));
-        Assert.assertEquals(factory.serialVersionUID(Ext1.class), 7109990719266285013L);
-        Assert.assertEquals(factory.serialVersionUID(Ext2.class), 0);
-        Assert.assertEquals(factory.serialVersionUID(Rec1.class), 12349876L);
-        // make sure we cannot access the forbidden ones
-        Assert.assertEquals(factory.serialVersionUID(Object.class), 0);
-        Assert.assertEquals(factory.serialVersionUID(Enum1.class), 0);
-        Assert.assertEquals(factory.serialVersionUID(
-            Proxy.newProxyInstance(
-                ReflectionFactoryTest.class.getClassLoader(),
-                new Class<?>[] { Proxy1.class },
-                (_, _, _) -> null).getClass()
-            ), 0
-        );
-        Assert.assertEquals(factory.serialVersionUID(byte[].class), 0);
-        Assert.assertEquals(factory.serialVersionUID(Externalizable.class), 0);
     }
 
     // Ensure that classes with serialPersistentFields do not allow default setting/getting

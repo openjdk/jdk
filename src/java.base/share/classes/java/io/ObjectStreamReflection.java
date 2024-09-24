@@ -29,7 +29,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
-import jdk.internal.access.JavaObjectStreamDefaultSupportAccess;
+import jdk.internal.access.JavaObjectStreamReflectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ByteArray;
 
@@ -142,9 +142,9 @@ final class ObjectStreamReflection {
         oos.writeFields();
     }
 
-    static final class Access implements JavaObjectStreamDefaultSupportAccess {
+    static final class Access implements JavaObjectStreamReflectionAccess {
         static {
-            SharedSecrets.setJavaObjectStreamDefaultSupportAccess(new Access());
+            SharedSecrets.setJavaObjectStreamReflectionAccess(new Access());
         }
 
         public MethodHandle defaultReadObject(Class<?> clazz) {
