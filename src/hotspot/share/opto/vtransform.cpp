@@ -279,12 +279,14 @@ void VTransformApplyResult::trace(VTransformNode* vtnode) const {
 #endif
 
 void VTransformApplyState::set_transformed_node(VTransformNode* vtn, Node* n) {
-  assert(get_transformed_node_or_null(vtn) == nullptr, "only set once");
+  assert(_vtnode_idx_to_transformed_node.at(vtn->_idx) == nullptr, "only set once");
   _vtnode_idx_to_transformed_node.at_put(vtn->_idx, n);
 }
 
-Node* VTransformApplyState::get_transformed_node_or_null(const VTransformNode* vtn) const {
-  return _vtnode_idx_to_transformed_node.at(vtn->_idx);
+Node* VTransformApplyState::transformed_node(const VTransformNode* vtn) const {
+  Node* n = _vtnode_idx_to_transformed_node.at(vtn->_idx);
+  assert(n != nullptr, "must find IR node for vtnode");
+  return n;
 }
 
 float VTransformScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
@@ -301,7 +303,7 @@ VTransformApplyResult VTransformScalarNode::apply(VTransformApplyState& apply_st
   for (uint i = 0; i < req(); i++) {
     VTransformNode* vtn_def = in(i);
     if (vtn_def != nullptr) {
-      Node* def = apply_state.get_transformed_node(vtn_def);
+      Node* def = apply_state.transformed_node(vtn_def);
       phase->igvn().replace_input_of(_node, i, def);
     }
   }
@@ -312,8 +314,8 @@ VTransformApplyResult VTransformScalarNode::apply(VTransformApplyState& apply_st
 VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
   PhiNode* phi = node()->as_Phi();
-  Node* in0 = apply_state.get_transformed_node(in(0));
-  Node* in1 = apply_state.get_transformed_node(in(1));
+  Node* in0 = apply_state.transformed_node(in(0));
+  Node* in1 = apply_state.transformed_node(in(1));
   phase->igvn().replace_input_of(phi, 0, in0);
   phase->igvn().replace_input_of(phi, 1, in1);
   // Note: the backedge is hooked up later.
@@ -332,7 +334,7 @@ VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_s
 void VTransformLoopPhiNode::apply_cleanup(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
   PhiNode* phi = node()->as_Phi();
-  Node* in2 = apply_state.get_transformed_node(in(2));
+  Node* in2 = apply_state.transformed_node(in(2));
   phase->igvn().replace_input_of(phi, 2, in2);
 }
 
@@ -347,7 +349,7 @@ VTransformApplyResult VTransformReplicateNode::apply(VTransformApplyState& apply
   BasicType bt = element_basic_type();
   const Type* element_type = Type::get_const_basic_type(bt);
 
-  Node* val = apply_state.get_transformed_node(in(1));
+  Node* val = apply_state.transformed_node(in(1));
   VectorNode* vn = VectorNode::scalar2vector(val, vlen, element_type);
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
@@ -358,7 +360,7 @@ float VTransformConvI2LNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
 }
 
 VTransformApplyResult VTransformConvI2LNode::apply(VTransformApplyState& apply_state) const {
-  Node* val = apply_state.get_transformed_node(in(1));
+  Node* val = apply_state.transformed_node(in(1));
   Node* n = new ConvI2LNode(val);
   register_new_node_from_vectorization(apply_state, n);
   return VTransformApplyResult::make_scalar(n);
@@ -372,7 +374,7 @@ float VTransformShiftCountNode::cost(const VLoopAnalyzer& vloop_analyzer) const 
 
 VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
-  Node* shift_count_in = apply_state.get_transformed_node(in(1));
+  Node* shift_count_in = apply_state.transformed_node(in(1));
   assert(shift_count_in->bottom_type()->isa_int(), "int type only for shift count");
   // The shift_count_in would be automatically truncated to the lowest _mask
   // bits in a scalar shift operation. But vector shift does not truncate, so
@@ -391,7 +393,7 @@ float VTransformPopulateIndexNode::cost(const VLoopAnalyzer& vloop_analyzer) con
 
 VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
-  Node* val = apply_state.get_transformed_node(in(1));
+  Node* val = apply_state.transformed_node(in(1));
   assert(val->is_Phi(), "expected to be iv");
   assert(VectorNode::is_populate_index_supported(_element_bt), "should support");
   const TypeVect* vt = TypeVect::make(_element_bt, _vlen);
@@ -442,9 +444,9 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
 
   assert(2 <= req() && req() <= 4, "Must have 1-3 inputs");
   VectorNode* vn = nullptr;
-  Node* in1 =                apply_state.get_transformed_node(in(1));
-  Node* in2 = (req() >= 3) ? apply_state.get_transformed_node(in(2)) : nullptr;
-  Node* in3 = (req() >= 4) ? apply_state.get_transformed_node(in(3)) : nullptr;
+  Node* in1 =                apply_state.transformed_node(in(1));
+  Node* in2 = (req() >= 3) ? apply_state.transformed_node(in(2)) : nullptr;
+  Node* in3 = (req() >= 4) ? apply_state.transformed_node(in(3)) : nullptr;
 
   if (first->is_CMove()) {
     assert(req() == 4, "three inputs expected: mask, blend1, blend2");
@@ -502,8 +504,8 @@ VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& appl
   assert(vtn_cmp != nullptr, // TODO: && vtn_cmp->nodes().at(0)->is_Cmp(),
          "bool vtn expects cmp vtn as input");
 
-  Node* cmp_in1 = apply_state.get_transformed_node(vtn_cmp->in(1));
-  Node* cmp_in2 = apply_state.get_transformed_node(vtn_cmp->in(2));
+  Node* cmp_in1 = apply_state.transformed_node(vtn_cmp->in(1));
+  Node* cmp_in2 = apply_state.transformed_node(vtn_cmp->in(2));
   BoolTest::mask mask = test()._mask;
 
   PhaseIdealLoop* phase = apply_state.phase();
@@ -669,8 +671,8 @@ VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState&
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
 
-  Node* init = apply_state.get_transformed_node(in(1));
-  Node* vec  = apply_state.get_transformed_node(in(2));
+  Node* init = apply_state.transformed_node(in(1));
+  Node* vec  = apply_state.transformed_node(in(2));
 
   ReductionNode* vn = ReductionNode::make(sopc, nullptr, init, vec, bt);
   register_new_node_from_vectorization(apply_state, vn);
@@ -731,7 +733,7 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
   Node* adr  = first->in(MemNode::Address);
   const TypePtr* adr_type = first->adr_type();
 
-  Node* value = apply_state.get_transformed_node(in(MemNode::ValueIn));
+  Node* value = apply_state.transformed_node(in(MemNode::ValueIn));
   StoreVectorNode* vn = StoreVectorNode::make(sopc, ctrl, mem, adr, adr_type, value, vlen);
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization(apply_state, vn);

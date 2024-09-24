@@ -274,12 +274,7 @@ public:
   PhaseIdealLoop* phase() const { return vloop().phase(); }
 
   void set_transformed_node(VTransformNode* vtn, Node* n);
-  Node* get_transformed_node_or_null(const VTransformNode* vtn) const;
-  Node* get_transformed_node(const VTransformNode* vtn) const {
-    Node* n = get_transformed_node_or_null(vtn);
-    assert(n != nullptr, "must find IR node for vtnode");
-    return n;
-  }
+  Node* transformed_node(const VTransformNode* vtn) const;
 };
 
 // Bundle information for VTransformNode.
