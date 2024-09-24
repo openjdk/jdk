@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ public abstract class AbstractProcessor implements Processor {
      *
      * @implSpec
      * Initializes the processor with the processing environment by
-     * setting the {@code processingEnv} field to the value of the
+     * setting the {@link #processingEnv} field to the value of the
      * {@code processingEnv} argument.  An {@code
      * IllegalStateException} will be thrown if this method is called
      * more than once on the same object.

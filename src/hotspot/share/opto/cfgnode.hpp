@@ -347,7 +347,6 @@ class IfNode : public MultiBranchNode {
   bool is_null_check(ProjNode* proj, PhaseIterGVN* igvn);
   bool is_side_effect_free_test(ProjNode* proj, PhaseIterGVN* igvn);
   void reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn);
-  ProjNode* uncommon_trap_proj(CallStaticJavaNode*& call) const;
   bool fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
   static bool is_dominator_unc(CallStaticJavaNode* dom_unc, CallStaticJavaNode* unc);
 
@@ -442,6 +441,7 @@ public:
   static Node* up_one_dom(Node* curr, bool linear_only = false);
   bool is_zero_trip_guard() const;
   Node* dominated_by(Node* prev_dom, PhaseIterGVN* igvn, bool pin_array_access_nodes);
+  ProjNode* uncommon_trap_proj(CallStaticJavaNode*& call, Deoptimization::DeoptReason reason = Deoptimization::Reason_none) const;
 
   // Takes the type of val and filters it through the test represented
   // by if_proj and returns a more refined type if one is produced.

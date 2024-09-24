@@ -1581,39 +1581,38 @@ static size_t write_bitmap(const CHeapBitMap* map, char* output, size_t offset) 
   return offset + size_in_bytes;
 }
 
-// The start of the archived heap has many primitive arrays (String
-// bodies) that are not marked by the oop/ptr maps. So we must have
-// lots of leading zeros.
-size_t FileMapInfo::remove_bitmap_leading_zeros(CHeapBitMap* map) {
-  size_t old_zeros = map->find_first_set_bit(0);
+// The sorting code groups the objects with non-null oop/ptrs together.
+// Relevant bitmaps then have lots of leading and trailing zeros, which
+// we do not have to store.
+size_t FileMapInfo::remove_bitmap_zeros(CHeapBitMap* map) {
+  BitMap::idx_t first_set = map->find_first_set_bit(0);
+  BitMap::idx_t last_set  = map->find_last_set_bit(0);
   size_t old_size = map->size();
 
   // Slice and resize bitmap
-  map->truncate(old_zeros, map->size());
+  map->truncate(first_set, last_set + 1);
 
-  DEBUG_ONLY(
-    size_t new_zeros = map->find_first_set_bit(0);
-    assert(new_zeros == 0, "Should have removed leading zeros");
-  )
+  assert(map->at(0), "First bit should be set");
+  assert(map->at(map->size() - 1), "Last bit should be set");
   assert(map->size() <= old_size, "sanity");
-  return old_zeros;
+
+  return first_set;
 }
 
 char* FileMapInfo::write_bitmap_region(CHeapBitMap* rw_ptrmap, CHeapBitMap* ro_ptrmap, ArchiveHeapInfo* heap_info,
                                        size_t &size_in_bytes) {
-  size_t removed_rw_zeros = remove_bitmap_leading_zeros(rw_ptrmap);
-  size_t removed_ro_zeros = remove_bitmap_leading_zeros(ro_ptrmap);
-  header()->set_rw_ptrmap_start_pos(removed_rw_zeros);
-  header()->set_ro_ptrmap_start_pos(removed_ro_zeros);
+  size_t removed_rw_leading_zeros = remove_bitmap_zeros(rw_ptrmap);
+  size_t removed_ro_leading_zeros = remove_bitmap_zeros(ro_ptrmap);
+  header()->set_rw_ptrmap_start_pos(removed_rw_leading_zeros);
+  header()->set_ro_ptrmap_start_pos(removed_ro_leading_zeros);
   size_in_bytes = rw_ptrmap->size_in_bytes() + ro_ptrmap->size_in_bytes();
 
   if (heap_info->is_used()) {
-    // Remove leading zeros
-    size_t removed_oop_zeros = remove_bitmap_leading_zeros(heap_info->oopmap());
-    size_t removed_ptr_zeros = remove_bitmap_leading_zeros(heap_info->ptrmap());
-
-    header()->set_heap_oopmap_start_pos(removed_oop_zeros);
-    header()->set_heap_ptrmap_start_pos(removed_ptr_zeros);
+    // Remove leading and trailing zeros
+    size_t removed_oop_leading_zeros = remove_bitmap_zeros(heap_info->oopmap());
+    size_t removed_ptr_leading_zeros = remove_bitmap_zeros(heap_info->ptrmap());
+    header()->set_heap_oopmap_start_pos(removed_oop_leading_zeros);
+    header()->set_heap_ptrmap_start_pos(removed_ptr_leading_zeros);
 
     size_in_bytes += heap_info->oopmap()->size_in_bytes();
     size_in_bytes += heap_info->ptrmap()->size_in_bytes();
