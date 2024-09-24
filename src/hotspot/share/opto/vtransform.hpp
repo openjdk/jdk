@@ -57,6 +57,8 @@
 // - Pack/Unpack/Shuffle: introduce additional nodes not present in the scalar loop.
 //                        This is difficult to do with the SuperWord packset approach.
 // - If-conversion: convert predicated nodes into CFG.
+//
+// TODO update description
 
 typedef int VTransformNodeIDX;
 class VTransform;
@@ -567,7 +569,6 @@ public:
 
   const GrowableArray<Node*>& nodes() const { return _nodes; }
   virtual VTransformVectorNode* isa_Vector() override { return this; }
-  void register_new_node_from_vectorization_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const;
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 

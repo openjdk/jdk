@@ -485,7 +485,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(const VLoopAnalyzer
     vn = VectorNode::make(sopc, in1, in2, in3, vlen, bt); // ternary
   }
 
-  register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
+  register_new_node_from_vectorization(vloop_analyzer, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
@@ -517,7 +517,7 @@ VTransformApplyResult VTransformBoolVectorNode::apply(const VLoopAnalyzer& vloop
   ConINode* mask_node  = phase->igvn().intcon((int)mask);
   const TypeVect* vt = TypeVect::make(bt, vlen);
   VectorNode* vn = new VectorMaskCmpNode(mask, cmp_in1, cmp_in2, mask_node, vt);
-  register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
+  register_new_node_from_vectorization(vloop_analyzer, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
 
@@ -681,7 +681,7 @@ VTransformApplyResult VTransformReductionVectorNode::apply(const VLoopAnalyzer& 
   Node* vec  = find_transformed_input(2, vnode_idx_to_transformed_node);
 
   ReductionNode* vn = ReductionNode::make(sopc, nullptr, init, vec, bt);
-  register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
+  register_new_node_from_vectorization(vloop_analyzer, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->vect_type()->length_in_bytes());
 }
 
@@ -719,7 +719,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(const VLoopAnalyzer& vloop
   LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, adr_type, vlen, bt,
                                             control_dependency());
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
-  register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
+  register_new_node_from_vectorization(vloop_analyzer, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
 }
 
@@ -744,21 +744,13 @@ VTransformApplyResult VTransformStoreVectorNode::apply(const VLoopAnalyzer& vloo
   Node* value = find_transformed_input(MemNode::ValueIn, vnode_idx_to_transformed_node);
   StoreVectorNode* vn = StoreVectorNode::make(sopc, ctrl, mem, adr, adr_type, value, vlen);
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
-  register_new_node_from_vectorization_and_replace_scalar_nodes(vloop_analyzer, vn);
+  register_new_node_from_vectorization(vloop_analyzer, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
 }
 
-void VTransformVectorNode::register_new_node_from_vectorization_and_replace_scalar_nodes(const VLoopAnalyzer& vloop_analyzer, Node* vn) const {
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
-
-  // TODO obsolete once register_new_node_from_vectorization fixed
-  phase->C->copy_node_notes_to(vn, nodes().at(0));
-  register_new_node_from_vectorization(vloop_analyzer, vn);
-}
-
 void VTransformNode::register_new_node_from_vectorization(const VLoopAnalyzer& vloop_analyzer, Node* vn) const {
-  // TODO have some _src node, and copy_node_notes_to
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+  phase->C->copy_node_notes_to(vn, approximate_origin());
   // The control is incorrect, but we set major_progress anyway.
   phase->register_new_node(vn, vloop_analyzer.vloop().cl());
   phase->igvn()._worklist.push(vn);
