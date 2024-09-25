@@ -114,13 +114,6 @@ public final class PEMDecoder {
      * appropriate type.
      */
     private DEREncodable decode(PEMRecord pem) throws IOException {
-        if (password != null) {
-            if (!PEMRecord.ENCRYPTED_PRIVATE_KEY.equalsIgnoreCase(pem.id())) {
-                throw new IllegalArgumentException("Decoder configured only " +
-                    "for encrypted PEM.");
-            }
-        }
-
         Base64.Decoder decoder = Base64.getMimeDecoder();
 
         try {
@@ -282,10 +275,6 @@ public final class PEMDecoder {
         PEMRecord pem = Pem.readPEM(is);
         if (pem == null) {
             throw new IllegalArgumentException("No PEM data found.");
-        }
-
-        if (tClass.isAssignableFrom(PEMRecord.class)) {
-            return tClass.cast(pem);
         }
 
         DEREncodable so = decode(pem);

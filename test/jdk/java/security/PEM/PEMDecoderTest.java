@@ -74,6 +74,12 @@ public class PEMDecoderTest {
         testClass(PEMCerts.getEntry("oasrfc8410"), PublicKey.class, true);
         System.out.println("Decoder test encEdECkey:");
         testFailure(PEMCerts.pubecpem.makeNoCRLF("pubecpem-no"));
+        System.out.println("Decoder test RSAcert with decryption Decoder:");
+        PEMDecoder d = PEMDecoder.of().withDecryption("123".toCharArray());
+        d.decode(PEMCerts.getEntry("rsaCert").pem());
+        System.out.println("Decoder test ECpriv with decryption Decoder:");
+        d.decode(PEMCerts.getEntry("ecprivpem").pem());
+
     }
 
     static void testFailure(PEMCerts.Entry entry) {
