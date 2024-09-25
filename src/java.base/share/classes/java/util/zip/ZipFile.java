@@ -473,6 +473,8 @@ public class ZipFile implements ZipConstants, Closeable {
             cleanable.clean();
         }
 
+        // Override read(byte[], int, int) method to track EOF
+        // and release the Inflater when it's no longer needed
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
             if (eof && !closeRequested) {
@@ -484,7 +486,6 @@ public class ZipFile implements ZipConstants, Closeable {
                 // Release Inflater back to the pool
                 cleanable.clean();
                 eof = true;
-
             }
             return read;
         }
