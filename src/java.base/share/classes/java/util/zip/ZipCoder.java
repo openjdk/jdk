@@ -62,17 +62,17 @@ class ZipCoder {
      * CEN byte array.
      */
     static final byte
-        /**
+        /*
          * The lookup string is exactly equal
          * to the encoded string.
-          */
+         */
         EXACT_MATCH = 1,
-        /**
+        /*
          * The lookup string and the encoded string differs only
          * by the encoded string having a trailing '/' character.
          */
         DIRECTORY_MATCH = 2,
-        /**
+        /*
          * The lookup string and the encoded string do not match.
          * (They are neither an exact match or a directory match.)
          */
