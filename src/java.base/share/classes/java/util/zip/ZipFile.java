@@ -1250,7 +1250,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // CEN header size + name length + comment length + extra length
             // should not exceed 65,535 bytes per the PKWare APP.NOTE
             // 4.4.10, 4.4.11, & 4.4.12.  Also check that current CEN header will
-            // not exceed the length of the CEN array (while being concious that
+            // not exceed the length of the CEN array (while being conscious that
             // pos + headerSize could overflow)
             if (headerSize > 0xFFFF || pos > cen.length - ENDHDR - headerSize) {
                 zerror("invalid CEN header (bad header size)");
