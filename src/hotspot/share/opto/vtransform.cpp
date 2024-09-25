@@ -349,6 +349,14 @@ VTransformApplyResult VTransformScalarNode::apply(VTransformApplyState& apply_st
     }
   }
 
+  if (is_load_or_store_in_loop()) {
+    Node* mem = apply_state.memory_state(adr_type());
+    phase->igvn().replace_input_of(_node, 1, mem);
+    if (_node->is_Store()) {
+      apply_state.set_memory_state(adr_type(), _node);
+    }
+  }
+
   return VTransformApplyResult::make_scalar(_node);
 }
 

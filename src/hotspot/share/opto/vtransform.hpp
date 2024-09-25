@@ -255,7 +255,8 @@ private:
   void apply_vectorization() const;
 };
 
-// TODO
+// During "VTransform::apply", we keep track of the already transformed nodes, as
+// well as the current memory states.
 class VTransformApplyState : public StackObj {
 private:
   const VLoopAnalyzer& _vloop_analyzer;
@@ -265,7 +266,10 @@ private:
   // generated def (input) nodes when we are generating the use nodes in "apply".
   GrowableArray<Node*> _vtnode_idx_to_transformed_node;
 
-  // TODO
+  // We keep track of the current memory state in each slice. If the slice has only
+  // loads (and no phi), then this is always the input memory state from before the
+  // loop. If there is a memory phi, this is initially the memory phi, and each time
+  // a store is processed, it is updated to that store.
   GrowableArray<Node*> _memory_states;
 
   // Class to denote which use after the loop depends on the last memory
@@ -519,6 +523,7 @@ public:
     VTransformScalarNode(vtransform, prototype, n) {}
   virtual VTransformInputScalarNode* isa_InputScalar() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return false; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { ShouldNotReachHere(); };
   NOT_PRODUCT(virtual const char* name() const override { return "InputScalar"; };)
 };
 
@@ -531,6 +536,7 @@ public:
     VTransformScalarNode(vtransform, prototype, n) {}
   virtual VTransformOutputScalarNode* isa_OutputScalar() override { return this; }
   virtual bool is_load_or_store_in_loop() const override { return false; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { ShouldNotReachHere(); };
   NOT_PRODUCT(virtual const char* name() const override { return "OutputScalar"; };)
 };
 
