@@ -682,24 +682,31 @@ private:
   bool optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform);
 };
 
-class VTransformLoadVectorNode : public VTransformVectorNode {
+class VTransformMemVectorNode : public VTransformVectorNode {
+private:
+  // TODO mem_ref or VPointer
+public:
+  VTransformMemVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const uint req) :
+    VTransformVectorNode(vtransform, prototype, req) {}
+  virtual bool is_load_or_store_in_loop() const override { return true; }
+};
+
+class VTransformLoadVectorNode : public VTransformMemVectorNode {
 public:
   // req = 3 -> [ctrl, mem, adr]
   VTransformLoadVectorNode(VTransform& vtransform, VTransformNodePrototype prototype) :
-    VTransformVectorNode(vtransform, prototype, 3) {}
+    VTransformMemVectorNode(vtransform, prototype, 3) {}
   LoadNode::ControlDependency control_dependency() const;
-  virtual bool is_load_or_store_in_loop() const override { return true; }
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoadVector"; };)
 };
 
-class VTransformStoreVectorNode : public VTransformVectorNode {
+class VTransformStoreVectorNode : public VTransformMemVectorNode {
 public:
   // req = 4 -> [ctrl, mem, adr, val]
   VTransformStoreVectorNode(VTransform& vtransform, VTransformNodePrototype prototype) :
-    VTransformVectorNode(vtransform, prototype, 4) {}
-  virtual bool is_load_or_store_in_loop() const override { return true; }
+    VTransformMemVectorNode(vtransform, prototype, 4) {}
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)

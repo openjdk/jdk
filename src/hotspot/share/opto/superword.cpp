@@ -2455,7 +2455,7 @@ bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
 }
 
 LoadNode::ControlDependency VTransformLoadVectorNode::control_dependency() const {
-  // TODO do we really still need this?
+  // TODO do we really still need this? Ah, make it a field of LoadVector!
   LoadNode::ControlDependency dep = LoadNode::DependsOnlyOnTest;
   for (int i = 0; i < xnodes().length(); i++) {
     Node* n = xnodes().at(i);
@@ -2489,11 +2489,16 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
   for (int i = 0; i < vtnodes.length(); i++) {
     VTransformVectorNode* vtn = vtnodes.at(i)->isa_Vector();
     if (vtn == nullptr) { continue; }
-    // TODO replace with different check
+    // TODO replace with different check - well but we also need the mem_ref... yikes
+    // We currently are passing along the mem_ref so we can get its VPointer... but that
+    // looks like it could be refactored. Maybe I should do the VPointer refactor first.
+    // I suppose for now we can just keep a Node* for the vector's mem_ref, later replace
+    // that with a VPointer.
     MemNode* p0 = vtn->xnodes().at(0)->isa_Mem();
     if (p0 == nullptr) { continue; }
 
-    int vw = p0->memory_size() * vtn->xnodes().length();
+    int element_size_in_bytes = type2aelembytes(vtn->element_basic_type());
+    int vw = element_size_in_bytes * vtn->vector_length();
     if (vw > max_aw) {
       max_aw = vw;
       mem_ref = p0;
