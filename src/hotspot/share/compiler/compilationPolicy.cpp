@@ -469,7 +469,7 @@ void CompilationPolicy::initialize() {
 #endif
   }
 #endif
-assert(c1_count() != 0 || c2_count != 0, "No compiler available");
+assert(c1_count() != 0 || c2_count() != 0, "No compiler available");
 
 #ifdef _LP64
     // Turn on ergonomic compiler count selection
@@ -483,7 +483,7 @@ assert(c1_count() != 0 || c2_count != 0, "No compiler available");
       count = MAX2(log_cpu * loglog_cpu * 3 / 2, 2);
       // Make sure there is enough space in the code cache to hold all the compiler buffers
       size_t buffer_size = c1_only ? c1_size : (c1_size/3 + 2*c2_size/3);
-      int max_count = (max_code_cache_size) / (int)buffer_size;
+      int max_count = (int)max_code_cache_size / (int)buffer_size;
       if (count > max_count) {
         // Lower the compiler count such that all buffers fit into the code cache
         count = MAX2(max_count, c1_only ? 1 : 2);
