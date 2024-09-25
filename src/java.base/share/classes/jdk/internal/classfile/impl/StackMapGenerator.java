@@ -911,6 +911,7 @@ public final class StackMapGenerator {
     }
 
     private void addFrame(List<Frame> frames, int offset) {
+        Preconditions.checkIndex(offset, bytecode.length(), RawBytecodeHelper.IAE_FORMATTER);
         int i = 0;
         for (; i < frames.size(); i++) {
             Frame frame = frames.get(i);
