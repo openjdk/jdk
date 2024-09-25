@@ -43,7 +43,7 @@ LogSelection::LogSelection(const LogTagType tags[LogTag::MaxTags], bool wildcard
     _ntags++;
   }
 
-  for (int i = _ntags; i < _LogTag::MaxTags; i++) {
+  for (size_t i = _ntags; i < LogTag::MaxTags; i++) {
     _tags[i] = LogTag::__NO_TAG;
   }
 
