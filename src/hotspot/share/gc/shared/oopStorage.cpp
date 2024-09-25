@@ -1135,6 +1135,26 @@ void OopStorage::BasicParState::report_num_dead() const {
 
 const char* OopStorage::name() const { return _name; }
 
+bool OopStorage::print_containing(const oop* addr, outputStream* st) {
+  if (addr != nullptr) {
+    Block* block = find_block_or_null(addr);
+    if (block != nullptr && block->print_containing(addr, st)) {
+      st->print(" in oop storage \"%s\"", name());
+      return true;
+    }
+  }
+  return false;
+}
+
+bool OopStorage::Block::print_containing(const oop* addr, outputStream* st) {
+  if (contains(addr)) {
+    st->print(PTR_FORMAT " is a pointer %u/%zu into block %zu",
+              p2i(addr), get_index(addr), ARRAY_SIZE(_data), _active_index);
+    return true;
+  }
+  return false;
+}
+
 #ifndef PRODUCT
 
 void OopStorage::print_on(outputStream* st) const {

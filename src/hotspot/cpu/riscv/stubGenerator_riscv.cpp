@@ -5491,9 +5491,7 @@ class StubGenerator: public StubCodeGenerator {
       Register stepSrcM2 = doff;
       Register stepDst   = isURL;
       Register size      = x29;   // t4
-      Register minusOne  = x30;   // t5
 
-      __ mv(minusOne, -1);
       __ mv(size, MaxVectorSize * 2);
       __ mv(stepSrcM1, MaxVectorSize * 4);
       __ slli(stepSrcM2, stepSrcM1, 1);
@@ -5513,7 +5511,8 @@ class StubGenerator: public StubCodeGenerator {
       __ sub(length, length, stepSrcM2);
 
       // error check
-      __ bne(failedIdx, minusOne, Exit);
+      // valid value of failedIdx can only be -1 when < 0
+      __ bgez(failedIdx, Exit);
 
       __ bge(length, stepSrcM2, ProcessM2);
 
@@ -5533,7 +5532,8 @@ class StubGenerator: public StubCodeGenerator {
       __ sub(length, length, stepSrcM1);
 
       // error check
-      __ bne(failedIdx, minusOne, Exit);
+      // valid value of failedIdx can only be -1 when < 0
+      __ bgez(failedIdx, Exit);
 
       __ BIND(ProcessScalar);
       __ beqz(length, Exit);

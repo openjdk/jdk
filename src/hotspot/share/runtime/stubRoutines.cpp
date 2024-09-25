@@ -171,6 +171,7 @@ address StubRoutines::_dlibm_sin_cos_huge = nullptr;
 address StubRoutines::_dlibm_reduce_pi04l = nullptr;
 address StubRoutines::_dlibm_tan_cot_huge = nullptr;
 address StubRoutines::_dtan = nullptr;
+address StubRoutines::_dtanh = nullptr;
 
 address StubRoutines::_f2hf = nullptr;
 address StubRoutines::_hf2f = nullptr;
