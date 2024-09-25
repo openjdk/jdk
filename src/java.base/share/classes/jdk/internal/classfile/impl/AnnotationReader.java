@@ -281,8 +281,13 @@ public final class AnnotationReader {
     }
 
     public static void writeAnnotation(BufWriterImpl buf, Annotation annotation) {
-        // TODO annotation cleanup later
-        ((Util.Writable) annotation).writeTo(buf);
+        buf.writeIndex(annotation.className());
+        var elements = annotation.elements();
+        buf.writeU2(elements.size());
+        for (var e : elements) {
+            buf.writeIndex(e.name());
+            AnnotationReader.writeAnnotationValue(buf, e.value());
+        }
     }
 
     public static void writeAnnotations(BufWriter buf, List<Annotation> list) {
@@ -354,7 +359,26 @@ public final class AnnotationReader {
     }
 
     public static void writeAnnotationValue(BufWriterImpl buf, AnnotationValue value) {
-        // TODO annotation cleanup later
-        ((Util.Writable) value).writeTo(buf);
+        var tag = value.tag();
+        buf.writeU1(tag);
+        switch (value.tag()) {
+            case AEV_BOOLEAN, AEV_BYTE, AEV_CHAR, AEV_DOUBLE, AEV_FLOAT, AEV_INT, AEV_LONG, AEV_SHORT, AEV_STRING ->
+                    buf.writeIndex(((AnnotationValue.OfConstant) value).constant());
+            case AEV_CLASS -> buf.writeIndex(((AnnotationValue.OfClass) value).className());
+            case AEV_ENUM -> {
+                var enumValue = (AnnotationValue.OfEnum) value;
+                buf.writeIndex(enumValue.className());
+                buf.writeIndex(enumValue.constantName());
+            }
+            case AEV_ANNOTATION -> writeAnnotation(buf, ((AnnotationValue.OfAnnotation) value).annotation());
+            case AEV_ARRAY -> {
+                var array = ((AnnotationValue.OfArray) value).values();
+                buf.writeU2(array.size());
+                for (var e : array) {
+                    writeAnnotationValue(buf, e);
+                }
+            }
+            default -> throw new InternalError("Unknown value " + value);
+        }
     }
 }

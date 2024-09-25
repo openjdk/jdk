@@ -25,7 +25,10 @@
 
 package jdk.internal.classfile.impl;
 
+import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -82,17 +85,30 @@ public final class DirectClassBuilder
     }
 
     @Override
+    public ClassBuilder withFlags(int flags) {
+        setFlags(flags);
+        return this;
+    }
+
+    @Override
+    public ClassBuilder withField(Utf8Entry name,
+                                  Utf8Entry descriptor,
+                                  int flags) {
+        return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, flags, null));
+    }
+
+    @Override
     public ClassBuilder withField(Utf8Entry name,
                                   Utf8Entry descriptor,
                                   Consumer<? super FieldBuilder> handler) {
-        return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, null)
+        return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, 0, null)
                                  .run(handler));
     }
 
     @Override
     public ClassBuilder transformField(FieldModel field, FieldTransform transform) {
         DirectFieldBuilder builder = new DirectFieldBuilder(constantPool, context, field.fieldName(),
-                                                            field.fieldType(), field);
+                                                            field.fieldType(), 0, field);
         builder.transform(field, transform);
         return withField(builder);
     }
@@ -184,7 +200,7 @@ public final class DirectClassBuilder
         boolean written = constantPool.writeBootstrapMethods(tail);
         if (written) {
             // Update attributes count
-            tail.patchInt(attributesOffset, 2, attributes.size() + 1);
+            tail.patchU2(attributesOffset, attributes.size() + 1);
         }
 
         // Now we can make the head

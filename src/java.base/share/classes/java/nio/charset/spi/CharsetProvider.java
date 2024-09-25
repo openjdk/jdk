@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.util.Iterator;
  * zero-argument constructor and some number of associated charset
  * implementation classes.  Charset providers may be installed in an instance
  * of the Java platform as extensions.  Providers may also be made available by
- * adding them to the applet or application class path or by some other
+ * adding them to the application class path or by some other
  * platform-specific means.  Charset providers are looked up via the current
  * thread's {@link java.lang.Thread#getContextClassLoader() context class
  * loader}.

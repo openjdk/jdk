@@ -347,9 +347,12 @@ public class ZipFile implements ZipConstants, Closeable {
         ZipEntry entry = null;
         synchronized (this) {
             ensureOpen();
-            int pos = res.zsrc.getEntryPos(name, true);
-            if (pos != -1) {
-                entry = getZipEntry(name, pos);
+            // Look up the name and CEN header position of the entry.
+            // The resolved name may include a trailing slash.
+            // See Source::getEntryPos for details.
+            EntryPos pos = res.zsrc.getEntryPos(name, true);
+            if (pos != null) {
+                entry = getZipEntry(pos.name, pos.pos);
             }
         }
         return entry;
@@ -387,7 +390,12 @@ public class ZipFile implements ZipConstants, Closeable {
             if (Objects.equals(lastEntryName, entry.name)) {
                 pos = lastEntryPos;
             } else {
-                pos = zsrc.getEntryPos(entry.name, false);
+                EntryPos entryPos = zsrc.getEntryPos(entry.name, false);
+                if (entryPos != null) {
+                    pos = entryPos.pos;
+                } else {
+                    pos = -1;
+                }
             }
             if (pos == -1) {
                 return null;
@@ -490,8 +498,7 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * Returns the path name of the ZIP file.
-     * @return the path name of the ZIP file
+     * {@return the path name of the ZIP file}
      */
     public String getName() {
         return filePath;
@@ -540,7 +547,8 @@ public class ZipFile implements ZipConstants, Closeable {
                     throw new NoSuchElementException();
                 }
                 // each "entry" has 3 ints in table entries
-                return (T)getZipEntry(null, res.zsrc.getEntryPos(i++ * 3));
+                int pos = res.zsrc.getEntryPos(i++ * 3);
+                return (T)getZipEntry(getEntryName(pos), pos);
             }
         }
 
@@ -551,8 +559,7 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * Returns an enumeration of the ZIP file entries.
-     * @return an enumeration of the ZIP file entries
+     * {@return an enumeration of the ZIP file entries}
      * @throws IllegalStateException if the ZIP file has been closed
      */
     public Enumeration<? extends ZipEntry> entries() {
@@ -612,7 +619,7 @@ public class ZipFile implements ZipConstants, Closeable {
         synchronized (this) {
             ensureOpen();
             return StreamSupport.stream(new EntrySpliterator<>(0, res.zsrc.total,
-                pos -> getZipEntry(null, pos)), false);
+                pos -> getZipEntry(getEntryName(pos), pos)), false);
        }
     }
 
@@ -655,7 +662,7 @@ public class ZipFile implements ZipConstants, Closeable {
         synchronized (this) {
             ensureOpen();
             return StreamSupport.stream(new EntrySpliterator<>(0, res.zsrc.total,
-                pos -> (JarEntry)getZipEntry(null, pos)), false);
+                pos -> (JarEntry)getZipEntry(getEntryName(pos), pos)), false);
         }
     }
 
@@ -665,30 +672,10 @@ public class ZipFile implements ZipConstants, Closeable {
     /* Check ensureOpen() before invoking this method */
     private ZipEntry getZipEntry(String name, int pos) {
         byte[] cen = res.zsrc.cen;
-        int nlen = CENNAM(cen, pos);
-        int elen = CENEXT(cen, pos);
-        int clen = CENCOM(cen, pos);
+        ZipEntry e = this instanceof JarFile jarFile
+                ? Source.JUJA.entryFor(jarFile, name)
+                : new ZipEntry(name);
 
-        ZipCoder zc = res.zsrc.zipCoderForPos(pos);
-        if (name != null) {
-            // only need to check for mismatch of trailing slash
-            if (nlen > 0 &&
-                !name.isEmpty() &&
-                zc.hasTrailingSlash(cen, pos + CENHDR + nlen) &&
-                !name.endsWith("/"))
-            {
-                name += '/';
-            }
-        } else {
-            // invoked from iterator, use the entry name stored in cen
-            name = zc.toString(cen, pos + CENHDR, nlen);
-        }
-        ZipEntry e;
-        if (this instanceof JarFile) {
-            e = Source.JUJA.entryFor((JarFile)this, name);
-        } else {
-            e = new ZipEntry(name);
-        }
         e.flag = CENFLG(cen, pos);
         e.xdostime = CENTIM(cen, pos);
         e.crc = CENCRC(cen, pos);
@@ -700,12 +687,17 @@ public class ZipFile implements ZipConstants, Closeable {
             e.externalFileAttributes = CENATX_PERMS(cen, pos) & 0xFFFF;
         }
 
+        int nlen = CENNAM(cen, pos);
+        int elen = CENEXT(cen, pos);
+        int clen = CENCOM(cen, pos);
+
         if (elen != 0) {
             int start = pos + CENHDR + nlen;
             e.setExtra0(Arrays.copyOfRange(cen, start, start + elen), true, false);
         }
         if (clen != 0) {
             int start = pos + CENHDR + nlen + elen;
+            ZipCoder zc = res.zsrc.zipCoderForPos(pos);
             e.comment = zc.toString(cen, start, clen);
         }
         lastEntryName = e.name;
@@ -1176,6 +1168,8 @@ public class ZipFile implements ZipConstants, Closeable {
              }
         );
     }
+    // Represents the resolved name and position of a CEN record
+    static record EntryPos(String name, int pos) {}
 
     private static class Source {
         // While this is only used from ZipFile, defining it there would cause
@@ -1849,12 +1843,12 @@ public class ZipFile implements ZipConstants, Closeable {
         }
 
         /*
-         * Returns the {@code pos} of the ZIP cen entry corresponding to the
-         * specified entry name, or -1 if not found.
+         * Returns the resolved name and position of the ZIP cen entry corresponding
+         *  to the specified entry name, or {@code null} if not found.
          */
-        private int getEntryPos(String name, boolean addSlash) {
+        private EntryPos getEntryPos(String name, boolean addSlash) {
             if (total == 0) {
-                return -1;
+                return null;
             }
 
             int hsh = ZipCoder.hash(name);
@@ -1877,7 +1871,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     switch (zc.compare(name, cen, noff, nlen, addSlash)) {
                         case EXACT_MATCH:
                             // We found an exact match for "name"
-                            return pos;
+                            return new EntryPos(name, pos);
                         case DIRECTORY_MATCH:
                             // We found the directory "name/"
                             // Track its position, then continue the search for "name"
@@ -1892,10 +1886,10 @@ public class ZipFile implements ZipConstants, Closeable {
             // Reaching this point means we did not find "name".
             // Return the position of "name/" if we found it
             if (dirPos != -1) {
-                return dirPos;
+                return new EntryPos(name + "/", dirPos);
             }
             // No entry found
-            return -1;
+            return null;
         }
 
         private ZipCoder zipCoderForPos(int pos) {

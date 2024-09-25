@@ -65,4 +65,10 @@ public class SeededSecureRandom extends SecureRandom {
         rnd.nextBytes(out);
         return out;
     }
+
+    public byte[] nBytes(int n) {
+        var out = new byte[n];
+        nextBytes(out);
+        return out;
+    }
 }
