@@ -34,10 +34,6 @@
   void neon_reduce_logical_helper(int opc, bool sf, Register Rd, Register Rn, Register Rm,
                                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
 
-  // Helper functions for arrays_hashcode.
-  void arrays_hashcode_elload(Register dst, Address src, BasicType eltype);
-  int arrays_hashcode_elsize(BasicType eltype);
-
  public:
   // jdk.internal.util.ArraysSupport.vectorizedHashCode
   address arrays_hashcode(Register ary, Register cnt, Register result, BasicType eltype);
