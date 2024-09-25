@@ -54,7 +54,7 @@ import javax.net.ssl.SSLParameters;
  * -Djdk.httpclient.HttpClient.log=
  *          errors,requests,headers,
  *          frames[:control:data:window:all..],content,ssl,trace,channel,
- *          quic[:control:processed:retransmit:ack:crypto:data:ping:all]
+ *          quic[:control:processed:retransmit:ack:crypto:data:cc:dbb:ping:all]
  *
  * Any of errors, requests, headers or content are optional.
  *
@@ -275,6 +275,7 @@ public abstract class Log implements System.Logger {
         return (logging & QUIC) != 0 && (quictypes & QUIC_PROCESSED) != 0;
     }
 
+    // not called directly - but impacts isLogging(QuicFrame)
     public static boolean quicData() {
         return (logging & QUIC) != 0 && (quictypes & QUIC_DATA) != 0;
     }
