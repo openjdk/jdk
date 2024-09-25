@@ -140,7 +140,6 @@ class VM_Version: public Abstract_VM_Version {
   static const char*   _model_string;
 
   static bool test_feature_bit(unsigned long* featureBuffer, int featureNum, unsigned int bufLen);
-  static int  get_model_index();
   static void set_features_string();
   static void print_features_internal(const char* text, bool print_anyway=false);
   static void determine_features();
@@ -171,6 +170,8 @@ class VM_Version: public Abstract_VM_Version {
   static unsigned int Icache_lineSize(unsigned int level = 0) { return _Icache_lineSize; }
 
  public:
+
+  static int  get_model_index();
 
   // Get the CPU type from feature bit settings.
   static bool is_z900() { return has_long_displacement()      && !has_long_displacement_fast(); }
