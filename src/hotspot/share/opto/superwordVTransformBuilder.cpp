@@ -87,6 +87,22 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
     } else if (vtn->isa_ReductionVector() != nullptr) {
       init_req_with_scalar(p0,   vtn, vtn_dependencies, 1); // scalar init
       init_req_with_vector(pack, vtn, vtn_dependencies, 2); // vector
+    } else if (vtn->isa_XYZVector() != nullptr) {
+      if (p0->is_CMove()) {
+        // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
+        init_all_req_with_vectors(pack, vtn, vtn_dependencies);
+        // Inputs must be permuted from (mask, blend1, blend2) -> (blend1, blend2, mask)
+        vtn->swap_req(1, 2);
+        vtn->swap_req(2, 3);
+        // If the test was negated: (blend1, blend2, mask) -> (blend2, blend1, mask)
+        VTransformBoolVectorNode* vtn_mask_cmp = vtn->in(3)->isa_BoolVector();
+        if (vtn_mask_cmp->test()._is_negated) {
+          vtn->swap_req(1, 2);
+        }
+      } else {
+        assert(false, "TODO not yet expected");
+        init_all_req_with_vectors(pack, vtn, vtn_dependencies);
+      }
     } else {
       assert(vtn->isa_ElementWiseVector() != nullptr, "all other vtnodes are handled above");
       if (VectorNode::is_scalar_rotate(p0) &&
@@ -97,13 +113,6 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
       } else if (VectorNode::is_roundopD(p0)) {
         init_req_with_vector(pack, vtn, vtn_dependencies, 1);
         init_req_with_scalar(p0,   vtn, vtn_dependencies, 2); // constant rounding mode
-      } else if (p0->is_CMove()) {
-        // Cmp + Bool + CMove -> VectorMaskCmp + VectorBlend.
-        init_all_req_with_vectors(pack, vtn, vtn_dependencies);
-        VTransformBoolVectorNode* vtn_mask_cmp = vtn->in(1)->isa_BoolVector();
-        if (vtn_mask_cmp->test()._is_negated) {
-          vtn->swap_req(2, 3); // swap if test was negated.
-        }
       } else {
         init_all_req_with_vectors(pack, vtn, vtn_dependencies);
       }
@@ -186,6 +195,8 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   } else if (p0->is_Store()) {
     const VPointer* vpointer = &_vloop_analyzer.vpointers().vpointer(p0->as_Store());
     vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, prototype, vpointer);
+  } else if (p0->is_CMove()) {
+    vtn = new (_vtransform.arena()) VTransformXYZVectorNode(_vtransform, prototype, p0->req(), Op_VectorBlend);
   } else if (p0->is_Bool()) {
     VTransformBoolTest kind = _packset.get_bool_test(pack);
     vtn = new (_vtransform.arena()) VTransformBoolVectorNode(_vtransform, prototype, kind);
@@ -199,7 +210,6 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, prototype, 3);
   } else {
     assert(p0->req() == 3 ||
-           p0->is_CMove() ||
            VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc) ||
            VectorNode::is_convert_opcode(opc) ||
            VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(opc) ||

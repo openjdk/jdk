@@ -68,6 +68,7 @@ class VTransformInputScalarNode;
 class VTransformOutputScalarNode;
 class VTransformLoopPhiNode;
 class VTransformVectorNode;
+class VTransformXYZVectorNode;
 class VTransformElementWiseVectorNode;
 class VTransformBoolVectorNode;
 class VTransformReductionVectorNode;
@@ -475,6 +476,7 @@ public:
   virtual VTransformLoopPhiNode* isa_LoopPhi() { return nullptr; }
   virtual const VTransformLoopPhiNode* isa_LoopPhi() const { return nullptr; }
   virtual VTransformVectorNode* isa_Vector() { return nullptr; }
+  virtual VTransformXYZVectorNode* isa_XYZVector() { return nullptr; }
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() { return nullptr; }
   virtual VTransformBoolVectorNode* isa_BoolVector() { return nullptr; }
   virtual VTransformReductionVectorNode* isa_ReductionVector() { return nullptr; }
@@ -632,6 +634,21 @@ public:
 
   const GrowableArray<Node*>& xnodes() const { return _xnodes; }
   virtual VTransformVectorNode* isa_Vector() override { return this; }
+  NOT_PRODUCT(virtual void print_spec() const override;)
+};
+
+// TODO the new element wise - or maybe it just replaces all of VectorNode
+class VTransformXYZVectorNode : public VTransformVectorNode {
+private:
+  const int _vector_opcode;
+
+public:
+  VTransformXYZVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, uint req, const int vector_opcode) :
+    VTransformVectorNode(vtransform, prototype, req), _vector_opcode(vector_opcode) {}
+  virtual VTransformXYZVectorNode* isa_XYZVector() override { return this; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
+  virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
+  NOT_PRODUCT(virtual const char* name() const override { return "XYZVector"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
 };
 

@@ -447,7 +447,7 @@ VTransformApplyResult VTransformShiftCountNode::apply(VTransformApplyState& appl
 }
 
 float VTransformPopulateIndexNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return vloop_analyzer.cost_for_vector(Op_PopulateIndex, _vlen, _element_bt);;
+  return vloop_analyzer.cost_for_vector(Op_PopulateIndex, _vlen, _element_bt);
 }
 
 VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& apply_state) const {
@@ -459,6 +459,32 @@ VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& a
   VectorNode* vn = new PopulateIndexNode(val, phase->igvn().intcon(1), vt);
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, _vlen, vn->length_in_bytes());
+}
+
+float VTransformXYZVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
+  return vloop_analyzer.cost_for_vector(_vector_opcode, vector_length(), element_basic_type());
+}
+
+VTransformApplyResult VTransformXYZVectorNode::apply(VTransformApplyState& apply_state) const {
+  int vopc     = _vector_opcode;
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
+  const TypeVect* vt = TypeVect::make(bt, vlen);
+
+  assert(2 <= req() && req() <= 4, "Must have 1-3 inputs");
+  Node* in1 =                apply_state.transformed_node(in(1));
+  Node* in2 = (req() >= 3) ? apply_state.transformed_node(in(2)) : nullptr;
+  Node* in3 = (req() >= 4) ? apply_state.transformed_node(in(3)) : nullptr;
+
+  VectorNode* vn = nullptr;
+  if (req() <= 3) {
+    vn = VectorNode::make(vopc, in1, in2, vt); // unary and binary
+  } else {
+    vn = VectorNode::make(vopc, in1, in2, in3, vt); // ternary
+  }
+
+  register_new_node_from_vectorization(apply_state, vn);
+  return VTransformApplyResult::make_vector(vn, vlen, vn->length_in_bytes());
 }
 
 float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
@@ -507,10 +533,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
   Node* in2 = (req() >= 3) ? apply_state.transformed_node(in(2)) : nullptr;
   Node* in3 = (req() >= 4) ? apply_state.transformed_node(in(3)) : nullptr;
 
-  if (first->is_CMove()) {
-    assert(req() == 4, "three inputs expected: mask, blend1, blend2");
-    vn = new VectorBlendNode(/* blend1 */ in2, /* blend2 */ in3, /* mask */ in1);
-  } else if (VectorNode::is_convert_opcode(sopc)) {
+  if (VectorNode::is_convert_opcode(sopc)) {
     assert(first->req() == 2 && req() == 2, "only one input expected");
     BasicType def_bt = in(1)->element_basic_type();
     assert(def_bt = in1->bottom_type()->is_vect()->element_basic_type(), "must be consistent");
@@ -884,5 +907,12 @@ void VTransformVectorNode::print_spec() const {
     tty->print("%d %s", n->_idx, n->Name());
   }
   tty->print("]");
+}
+
+void VTransformXYZVectorNode::print_spec() const {
+  tty->print("vopc=%s vlen=%d bt=%s",
+             NodeClassNames[_vector_opcode],
+             vector_length(),
+             type2name(element_basic_type()));
 }
 #endif
