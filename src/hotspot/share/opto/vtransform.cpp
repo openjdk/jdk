@@ -50,6 +50,7 @@ void VTransformGraph::optimize(VTransform& vtransform) {
       progress |= vtn->optimize(_vloop_analyzer, vtransform);
       if (vtn->outs() == 0 &&
           !(vtn->isa_OutputScalar() != nullptr ||
+            vtn->isa_LoopPhi() != nullptr ||
             vtn->is_load_or_store_in_loop())) {
         vtn->mark_dead();
         progress = true;
@@ -297,10 +298,35 @@ void VTransformApplyState::init_memory_states() {
     if (head != nullptr) {
       // Slice with Phi (i.e. with stores)
       _memory_states.at_put(i, head);
+
+      // Remember uses outside the loop of the last memory state
+      Node* old_backedge = head->in(2);
+      assert(vloop().in_bb(old_backedge), "backedge should be in the loop");
+      for (DUIterator_Fast jmax, j = old_backedge->fast_outs(jmax); j < jmax; j++) {
+        Node* use = old_backedge->fast_out(j);
+        if (!vloop().in_bb(use)) {
+          for (uint k = 0; k < use->req(); k++) {
+            if (use->in(k) == old_backedge) {
+              _memory_state_uses_after_loop.push(MemoryStateUseAfterLoop(use, k, i));
+            }
+          }
+        }
+      }
     } else {
       // Slice without Phi (i.e. only loads)
       _memory_states.at_put(i, inputs.at(i));
     }
+  }
+}
+
+// We may have reordered the scalar stores, or replaced them with vectors. Now
+// the last memory state in the loop may have changed. Thus, we need to change
+// the uses of the old last memory state the the new last memory state.
+void VTransformApplyState::fix_memory_state_uses_after_loop() {
+  for (int i = 0; i < _memory_state_uses_after_loop.length(); i++) {
+    MemoryStateUseAfterLoop& use = _memory_state_uses_after_loop.at(i);
+    Node* last_state = memory_state(use._alias_idx);
+    phase()->igvn().replace_input_of(use._use, use._in_idx, last_state);
   }
 }
 
@@ -344,27 +370,23 @@ VTransformApplyResult VTransformLoopPhiNode::apply(VTransformApplyState& apply_s
   return VTransformApplyResult::make_scalar(phi);
 }
 
-// Cleanup:
-// - Backedge: the backedge nodes are transformed after the phi, so we need to hook
-//   them into the phi now.
-// - Memory state after the loop: before apply, the last store has some memory state
-//   uses after the loop. Now, we reordered and replaced the stores, and need to
-//   fix up all memory state uses after the loop with the new last memory state.
+// Cleanup backedges. In the schedule, the backedges come after their phis. Hence,
+// we only have the transformed backedges after the phis are already transformed.
+// We hook the backedges into the phis now, during cleanup.
 void VTransformLoopPhiNode::apply_cleanup(VTransformApplyState& apply_state) const {
   PhaseIdealLoop* phase = apply_state.phase();
   PhiNode* phi = node()->as_Phi();
 
-  // Backedge
-  Node* in2 = apply_state.transformed_node(in(2));
-  phase->igvn().replace_input_of(phi, 2, in2);
-
-  // Memory state after the loop
   if (phi->is_memory_phi()) {
+    // Memory phi/backedge
+    // The last memory state of that slice is the backedge.
     Node* last_state = apply_state.memory_state(adr_type());
-    tty->print("last_state "); last_state->dump();
-    // TODO memory backedge. Looks like memory phi is not even present... it died?
+    phase->igvn().replace_input_of(phi, 2, last_state);
+  } else {
+    // Data phi/backedge
+    Node* in2 = apply_state.transformed_node(in(2));
+    phase->igvn().replace_input_of(phi, 2, in2);
   }
-  assert(false, "TODO");
 }
 
 float VTransformReplicateNode::cost(const VLoopAnalyzer& vloop_analyzer) const {

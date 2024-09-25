@@ -268,6 +268,22 @@ private:
   // TODO
   GrowableArray<Node*> _memory_states;
 
+  // Class to denote which use after the loop depends on the last memory
+  // state in the loop.
+  // use->in(in_idx) = <last memory state in loop of slice alias_idx>
+  class MemoryStateUseAfterLoop : public StackObj {
+  public:
+    Node* _use;
+    int _in_idx;
+    int _alias_idx;
+
+    MemoryStateUseAfterLoop(Node* use, int in_idx, int alias_idx) :
+      _use(use), _in_idx(in_idx), _alias_idx(alias_idx) {}
+    MemoryStateUseAfterLoop() : MemoryStateUseAfterLoop(nullptr, 0, 0) {}
+  };
+
+  GrowableArray<MemoryStateUseAfterLoop> _memory_state_uses_after_loop;
+
 public:
   VTransformApplyState(const VLoopAnalyzer& vloop_analyzer, int num_vtnodes) :
     _vloop_analyzer(vloop_analyzer),
@@ -295,6 +311,8 @@ public:
     int alias_idx = phase()->C->get_alias_index(adr_type);
     return set_memory_state(alias_idx, n);
   }
+
+  void fix_memory_state_uses_after_loop();
 
 private:
   int num_slices() const { return _vloop_analyzer.memory_slices().heads().length(); }

@@ -1877,11 +1877,13 @@ void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_lengt
     max_vector_width  = MAX2(max_vector_width,  result.vector_width());
   }
 
-  // Cleanup: backedges and memory states after the loop.
+  // Cleanup: backedges
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
     vtn->apply_cleanup(apply_state);
   }
+
+  apply_state.fix_memory_state_uses_after_loop();
 }
 
 // We call "apply" on every VTransformNode, which replaces the packed scalar nodes with vector nodes.
