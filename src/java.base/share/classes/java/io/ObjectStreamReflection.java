@@ -71,10 +71,13 @@ final class ObjectStreamReflection {
      * @param streamClass the object stream class of the object (must not be {@code null})
      * @param obj the object to deserialize (must not be {@code null})
      * @param ois the object stream (must not be {@code null})
-     * @throws IOException if the call to {@link ObjectInputStream#readFields} or one of its field accessors throws this exception type
-     * @throws ClassNotFoundException if the call to {@link ObjectInputStream#readFields} or one of its field accessors throws this exception type
+     * @throws IOException if the call to {@link ObjectInputStream#readFields}
+     *                     or one of its field accessors throws this exception type
+     * @throws ClassNotFoundException if the call to {@link ObjectInputStream#readFields}
+     *                                or one of its field accessors throws this exception type
      */
-    private static void defaultReadObject(ObjectStreamClass streamClass, Object obj, ObjectInputStream ois) throws IOException, ClassNotFoundException {
+    private static void defaultReadObject(ObjectStreamClass streamClass, Object obj, ObjectInputStream ois)
+            throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField getField = ois.readFields();
         byte[] bytes = new byte[streamClass.getPrimDataSize()];
         Object[] objs = new Object[streamClass.getNumObjFields()];
@@ -94,8 +97,8 @@ final class ObjectStreamReflection {
                 default -> throw new IllegalStateException();
             }
         }
-        streamClass.setPrimFieldValues(obj, bytes);
         streamClass.checkObjFieldValueTypes(obj, objs);
+        streamClass.setPrimFieldValues(obj, bytes);
         streamClass.setObjFieldValues(obj, objs);
     }
 
@@ -115,9 +118,11 @@ final class ObjectStreamReflection {
      * @param streamClass the object stream class of the object (must not be {@code null})
      * @param obj the object to serialize (must not be {@code null})
      * @param oos the object stream (must not be {@code null})
-     * @throws IOException if the call to {@link ObjectInputStream#readFields} or one of its field accessors throws this exception type
+     * @throws IOException if the call to {@link ObjectInputStream#readFields}
+     *                     or one of its field accessors throws this exception type
      */
-    private static void defaultWriteObject(ObjectStreamClass streamClass, Object obj, ObjectOutputStream oos) throws IOException {
+    private static void defaultWriteObject(ObjectStreamClass streamClass, Object obj, ObjectOutputStream oos)
+            throws IOException {
         ObjectOutputStream.PutField putField = oos.putFields();
         byte[] bytes = new byte[streamClass.getPrimDataSize()];
         Object[] objs = new Object[streamClass.getNumObjFields()];
@@ -148,26 +153,25 @@ final class ObjectStreamReflection {
         }
 
         public MethodHandle defaultReadObject(Class<?> clazz) {
-            ObjectStreamClass streamClass = getStreamClass(clazz);
-            return streamClass == null ? null : DRO_HANDLE.bindTo(streamClass).asType(MethodType.methodType(void.class, streamClass.forClass(), ObjectInputStream.class));
+            return handleForClass(DRO_HANDLE, clazz, ObjectInputStream.class);
         }
 
         public MethodHandle defaultWriteObject(Class<?> clazz) {
-            ObjectStreamClass streamClass = getStreamClass(clazz);
-            return streamClass == null ? null : DWO_HANDLE.bindTo(streamClass).asType(MethodType.methodType(void.class, streamClass.forClass(), ObjectOutputStream.class));
+            return handleForClass(DWO_HANDLE, clazz, ObjectOutputStream.class);
         }
 
-        private static ObjectStreamClass getStreamClass(final Class<?> clazz) {
+        private static MethodHandle handleForClass(final MethodHandle handle, final Class<?> clazz, final Class<?> ioClass) {
             ObjectStreamClass streamClass = ObjectStreamClass.lookup(clazz);
-            if (streamClass == null) {
-                return null;
+            if (streamClass != null) {
+                try {
+                    streamClass.checkDefaultSerialize();
+                    return handle.bindTo(streamClass)
+                        .asType(MethodType.methodType(void.class, clazz, ioClass));
+                } catch (InvalidClassException e) {
+                    // ignore and return null
+                }
             }
-            try {
-                streamClass.checkDefaultSerialize();
-            } catch (InvalidClassException e) {
-                return null;
-            }
-            return streamClass;
+            return null;
         }
     }
 }

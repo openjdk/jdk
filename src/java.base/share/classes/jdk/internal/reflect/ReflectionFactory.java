@@ -74,10 +74,10 @@ public class ReflectionFactory {
     private static volatile Method hasStaticInitializerMethod;
 
     private final JavaLangReflectAccess langReflectAccess;
-    private final JavaObjectStreamReflectionAccess javaObjectStreamDefaultSupportAccess;
+    private final JavaObjectStreamReflectionAccess javaObjectStreamReflectionAccess;
     private ReflectionFactory() {
         this.langReflectAccess = SharedSecrets.getJavaLangReflectAccess();
-        this.javaObjectStreamDefaultSupportAccess = SharedSecrets.getJavaObjectStreamReflectionAccess();
+        this.javaObjectStreamReflectionAccess = SharedSecrets.getJavaObjectStreamReflectionAccess();
     }
 
     /**
@@ -442,7 +442,7 @@ public class ReflectionFactory {
             return null;
         }
 
-        return javaObjectStreamDefaultSupportAccess.defaultReadObject(cl);
+        return javaObjectStreamReflectionAccess.defaultReadObject(cl);
     }
 
     public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
@@ -450,7 +450,7 @@ public class ReflectionFactory {
             return null;
         }
 
-        return javaObjectStreamDefaultSupportAccess.defaultWriteObject(cl);
+        return javaObjectStreamReflectionAccess.defaultWriteObject(cl);
     }
 
     public final ObjectStreamField[] serialPersistentFields(Class<?> cl) {
