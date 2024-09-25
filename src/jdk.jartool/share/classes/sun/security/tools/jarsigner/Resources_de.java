@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"key.bit.disabled", "%d-Bit-Schl\u00FCssel (deaktiviert)"},
         {"key.bit.eccurve.disabled", "%1$d-Bit-%2$s-Schl\u00FCssel (deaktiviert)"},
         {"unknown.size", "unbekannte Gr\u00F6\u00DFe"},
-        {"extra.attributes.detected", "POSIX-Dateiberechtigung und/oder Symlink-Attribute erkannt. Diese Attribute werden bei der Signatur ignoriert und sind nicht durch die Signatur gesch\u00FCtzt."},
+        {"external.file.attributes.detected", "POSIX-Dateiberechtigung und/oder Symlink-Attribute erkannt. Diese Attribute werden bei der Signatur ignoriert und sind nicht durch die Signatur gesch\u00FCtzt."},
 
         {"jarsigner.", "jarsigner: "},
         {"signature.filename.must.consist.of.the.following.characters.A.Z.0.9.or.",

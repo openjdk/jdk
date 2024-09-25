@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -2098,9 +2098,9 @@ void TemplateTable::_return(TosState state) {
 
     __ ld(c_rarg1, aaddress(0));
     __ load_klass(x13, c_rarg1);
-    __ lwu(x13, Address(x13, Klass::access_flags_offset()));
+    __ lbu(x13, Address(x13, Klass::misc_flags_offset()));
     Label skip_register_finalizer;
-    __ test_bit(t0, x13, exact_log2(JVM_ACC_HAS_FINALIZER));
+    __ test_bit(t0, x13, exact_log2(KlassFlags::_misc_has_finalizer));
     __ beqz(t0, skip_register_finalizer);
 
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), c_rarg1);
@@ -3592,8 +3592,7 @@ void TemplateTable::_new() {
     __ store_klass_gap(x10, zr);   // zero klass gap for compressed oops
     __ store_klass(x10, x14);      // store klass last
 
-    {
-      SkipIfEqual skip(_masm, &DTraceAllocProbes, false);
+    if (DTraceAllocProbes) {
       // Trigger dtrace event for fastpath
       __ push(atos); // save the return value
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), x10);

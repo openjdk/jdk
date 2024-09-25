@@ -85,7 +85,7 @@ void print_percentage(outputStream* st, size_t total, size_t part);
          SIZE_FORMAT_X " is not aligned to "                 \
          SIZE_FORMAT_X, (size_t)(uintptr_t)value, (size_t)(alignment))
 #define assert_is_aligned_metaspace_pointer(p) \
-  assert_is_aligned((p), metaspace::AllocationAlignmentByteSize);
+  assert_is_aligned((p), metaspace::AllocationAlignmentByteSize)
 #else
 #define assert_is_aligned(value, alignment)
 #define assert_is_aligned_metaspace_pointer(pointer)
@@ -141,8 +141,8 @@ void print_number_of_classes(outputStream* out, uintx classes, uintx classes_sha
 #define HAVE_UL
 
 #ifdef HAVE_UL
-#define UL(level, message)        log_##level(metaspace)(LOGFMT ": " message, LOGFMT_ARGS);
-#define UL2(level, message, ...)  log_##level(metaspace)(LOGFMT ": " message, LOGFMT_ARGS, __VA_ARGS__);
+#define UL(level, message)        log_##level(metaspace)(LOGFMT ": " message, LOGFMT_ARGS)
+#define UL2(level, message, ...)  log_##level(metaspace)(LOGFMT ": " message, LOGFMT_ARGS, __VA_ARGS__)
 #else
 #define UL(level, ...)
 #define UL2(level, ...)

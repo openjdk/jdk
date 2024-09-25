@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1612,11 +1612,6 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
       if (node->is_ideal_if() && new_inst->is_ideal_if()) {
         fprintf(fp, "  ((MachIfNode*)n%d)->_prob = _prob;\n", cnt);
         fprintf(fp, "  ((MachIfNode*)n%d)->_fcnt = _fcnt;\n", cnt);
-      }
-
-      if (node->is_ideal_fastlock() && new_inst->is_ideal_fastlock()) {
-        fprintf(fp, "  ((MachFastLockNode*)n%d)->_rtm_counters = _rtm_counters;\n", cnt);
-        fprintf(fp, "  ((MachFastLockNode*)n%d)->_stack_rtm_counters = _stack_rtm_counters;\n", cnt);
       }
 
       // Fill in the bottom_type where requested
@@ -4007,10 +4002,6 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
   }
   if (inst->is_ideal_jump()) {
     fprintf(fp_cpp, "%s node->_probs = _leaf->as_Jump()->_probs;\n", indent);
-  }
-  if( inst->is_ideal_fastlock() ) {
-    fprintf(fp_cpp, "%s node->_rtm_counters = _leaf->as_FastLock()->rtm_counters();\n", indent);
-    fprintf(fp_cpp, "%s node->_stack_rtm_counters = _leaf->as_FastLock()->stack_rtm_counters();\n", indent);
   }
 
 }

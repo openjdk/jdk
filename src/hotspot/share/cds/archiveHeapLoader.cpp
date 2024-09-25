@@ -34,6 +34,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "sanitizers/ub.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
 
@@ -61,6 +62,7 @@ ptrdiff_t ArchiveHeapLoader::_mapped_heap_delta = 0;
 
 // Every mapped region is offset by _mapped_heap_delta from its requested address.
 // See FileMapInfo::heap_region_requested_address().
+ATTRIBUTE_NO_UBSAN
 void ArchiveHeapLoader::init_mapped_heap_info(address mapped_heap_bottom, ptrdiff_t delta, int dumptime_oop_shift) {
   assert(!_mapped_heap_relocation_initialized, "only once");
   if (!UseCompressedOops) {
@@ -372,8 +374,18 @@ void ArchiveHeapLoader::finish_initialization() {
   if (is_in_use()) {
     patch_native_pointers();
     intptr_t bottom = is_loaded() ? _loaded_heap_bottom : _mapped_heap_bottom;
-    intptr_t roots_oop = bottom + FileMapInfo::current_info()->heap_roots_offset();
-    HeapShared::init_roots(cast_to_oop(roots_oop));
+
+    // The heap roots are stored in one or more segments that are laid out consecutively.
+    // The byte size of each segment (except for the last one) is max_size.
+    HeapRootSegments segments = FileMapInfo::current_info()->heap_root_segments();
+    int max_size = segments.max_size_in_bytes();
+    HeapShared::init_root_segment_sizes(max_size);
+    intptr_t first_segment_addr = bottom + segments.base_offset();
+    for (size_t c = 0; c < segments.count(); c++) {
+      oop segment_oop = cast_to_oop(first_segment_addr + (c * max_size));
+      assert(segment_oop->is_objArray(), "Must be");
+      HeapShared::add_root_segment((objArrayOop)segment_oop);
+    }
   }
 }
 

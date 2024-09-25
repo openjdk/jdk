@@ -39,7 +39,6 @@ import java.nio.ByteOrder;
  * @summary Test AlignVector with various loop init, stride, scale, invar, etc.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @run driver compiler.loopopts.superword.TestAlignVector NoAlignVector
  */
 
@@ -49,7 +48,6 @@ import java.nio.ByteOrder;
  * @summary Test AlignVector with various loop init, stride, scale, invar, etc.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @run driver compiler.loopopts.superword.TestAlignVector AlignVector
  */
 
@@ -59,7 +57,6 @@ import java.nio.ByteOrder;
  * @summary Test AlignVector with various loop init, stride, scale, invar, etc.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @run driver compiler.loopopts.superword.TestAlignVector VerifyAlignVector
  */
 
@@ -96,7 +93,7 @@ public class TestAlignVector {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework(TestAlignVector.class);
         framework.addFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                           "-XX:LoopUnrollLimit=250");
+                           "-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=250");
 
         switch (args[0]) {
             case "NoAlignVector"     -> { framework.addFlags("-XX:-AlignVector"); }

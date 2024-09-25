@@ -172,9 +172,10 @@ public:
       // Deleting permanent symbol should not occur very often (insert race condition),
       // so log it.
       log_trace_symboltable_helper(&value, "Freeing permanent symbol");
-      size_t alloc_size = _local_table->get_node_size() + value.byte_size() + value.effective_length();
+      size_t alloc_size = SymbolTableHash::get_dynamic_node_size(value.byte_size());
       if (!SymbolTable::arena()->Afree(memory, alloc_size)) {
-        log_trace_symboltable_helper(&value, "Leaked permanent symbol");
+        // Can't access the symbol after Afree, but we just printed it above.
+        NOT_PRODUCT(log_trace(symboltable)(" - Leaked permanent symbol");)
       }
     }
     SymbolTable::item_removed();
@@ -182,7 +183,7 @@ public:
 
 private:
   static void* allocate_node_impl(size_t size, Value const& value) {
-    size_t alloc_size = size + value.byte_size() + value.effective_length();
+    size_t alloc_size = SymbolTableHash::get_dynamic_node_size(value.byte_size());
 #if INCLUDE_CDS
     if (CDSConfig::is_dumping_static_archive()) {
       MutexLocker ml(DumpRegion_lock, Mutex::_no_safepoint_check_flag);
@@ -193,7 +194,7 @@ private:
       // We cannot use arena because arena chunks are allocated by the OS. As a result, for example,
       // the archived symbol of "java/lang/Object" may sometimes be lower than "java/lang/String", and
       // sometimes be higher. This would cause non-deterministic contents in the archive.
-      DEBUG_ONLY(static void* last = 0);
+      DEBUG_ONLY(static void* last = nullptr);
       void* p = (void*)MetaspaceShared::symbol_space_alloc(alloc_size);
       assert(p > last, "must increase monotonically");
       DEBUG_ONLY(last = p);
@@ -344,8 +345,24 @@ Symbol* SymbolTable::lookup_common(const char* name,
   return sym;
 }
 
+// Symbols should represent entities from the constant pool that are
+// limited to <64K in length, but usage errors creep in allowing Symbols
+// to be used for arbitrary strings. For debug builds we will assert if
+// a string is too long, whereas product builds will truncate it.
+static int check_length(const char* name, int len) {
+  assert(len >= 0, "negative length %d suggests integer overflow in the caller", len);
+  assert(len <= Symbol::max_length(),
+         "String length %d exceeds the maximum Symbol length of %d", len, Symbol::max_length());
+  if (len > Symbol::max_length()) {
+    warning("A string \"%.80s ... %.80s\" exceeds the maximum Symbol "
+            "length of %d and has been truncated", name, (name + len - 80), Symbol::max_length());
+    len = Symbol::max_length();
+  }
+  return len;
+}
+
 Symbol* SymbolTable::new_symbol(const char* name, int len) {
-  assert(len <= Symbol::max_length(), "sanity");
+  len = check_length(name, len);
   unsigned int hash = hash_symbol(name, len, _alt_hash);
   Symbol* sym = lookup_common(name, len, hash);
   if (sym == nullptr) {
@@ -446,33 +463,33 @@ Symbol* SymbolTable::lookup_only(const char* name, int len, unsigned int& hash) 
 // and probing logic, so there is no need for convert_to_utf8 until
 // an actual new Symbol* is created.
 Symbol* SymbolTable::new_symbol(const jchar* name, int utf16_length) {
-  int utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
+  size_t utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
   char stack_buf[ON_STACK_BUFFER_LENGTH];
-  if (utf8_length < (int) sizeof(stack_buf)) {
+  if (utf8_length < sizeof(stack_buf)) {
     char* chars = stack_buf;
     UNICODE::convert_to_utf8(name, utf16_length, chars);
-    return new_symbol(chars, utf8_length);
+    return new_symbol(chars, checked_cast<int>(utf8_length));
   } else {
     ResourceMark rm;
     char* chars = NEW_RESOURCE_ARRAY(char, utf8_length + 1);
     UNICODE::convert_to_utf8(name, utf16_length, chars);
-    return new_symbol(chars, utf8_length);
+    return new_symbol(chars, checked_cast<int>(utf8_length));
   }
 }
 
 Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
                                          unsigned int& hash) {
-  int utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
+  size_t utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
   char stack_buf[ON_STACK_BUFFER_LENGTH];
-  if (utf8_length < (int) sizeof(stack_buf)) {
+  if (utf8_length < sizeof(stack_buf)) {
     char* chars = stack_buf;
     UNICODE::convert_to_utf8(name, utf16_length, chars);
-    return lookup_only(chars, utf8_length, hash);
+    return lookup_only(chars, checked_cast<int>(utf8_length), hash);
   } else {
     ResourceMark rm;
     char* chars = NEW_RESOURCE_ARRAY(char, utf8_length + 1);
     UNICODE::convert_to_utf8(name, utf16_length, chars);
-    return lookup_only(chars, utf8_length, hash);
+    return lookup_only(chars, checked_cast<int>(utf8_length), hash);
   }
 }
 
@@ -485,6 +502,7 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
   for (int i = 0; i < names_count; i++) {
     const char *name = names[i];
     int len = lengths[i];
+    assert(len <= Symbol::max_length(), "must be - these come from the constant pool");
     unsigned int hash = hashValues[i];
     assert(lookup_shared(name, len, hash) == nullptr, "must have checked already");
     Symbol* sym = do_add_if_needed(name, len, hash, is_permanent);
@@ -494,6 +512,7 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
 }
 
 Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, bool is_permanent) {
+  assert(len <= Symbol::max_length(), "caller should have ensured this");
   SymbolTableLookup lookup(name, len, hash);
   SymbolTableGet stg;
   bool clean_hint = false;
@@ -542,7 +561,7 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
 
 Symbol* SymbolTable::new_permanent_symbol(const char* name) {
   unsigned int hash = 0;
-  int len = (int)strlen(name);
+  int len = check_length(name, (int)strlen(name));
   Symbol* sym = SymbolTable::lookup_only(name, len, hash);
   if (sym == nullptr) {
     sym = do_add_if_needed(name, len, hash, /* is_permanent */ true);

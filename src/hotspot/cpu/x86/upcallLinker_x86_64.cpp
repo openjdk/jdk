@@ -40,13 +40,17 @@
 #define __ _masm->
 
 static bool is_valid_XMM(XMMRegister reg) {
-  return reg->is_valid() && (UseAVX >= 3 || (reg->encoding() < 16)); // why is this not covered by is_valid()?
+  return reg->is_valid() && (reg->encoding() < (UseAVX >= 3 ? 32 : 16)); // why is this not covered by is_valid()?
+}
+
+static bool is_valid_gp(Register reg) {
+  return reg->is_valid() && (reg->encoding() < (UseAPX ? 32 : 16));
 }
 
 // for callee saved regs, according to the caller's ABI
 static int compute_reg_save_area_size(const ABIDescriptor& abi) {
   int size = 0;
-  for (Register reg = as_Register(0); reg->is_valid(); reg = reg->successor()) {
+  for (Register reg = as_Register(0); is_valid_gp(reg); reg = reg->successor()) {
     if (reg == rbp || reg == rsp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
       size += 8; // bytes
@@ -84,7 +88,7 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
   int offset = reg_save_area_offset;
 
   __ block_comment("{ preserve_callee_saved_regs ");
-  for (Register reg = as_Register(0); reg->is_valid(); reg = reg->successor()) {
+  for (Register reg = as_Register(0); is_valid_gp(reg); reg = reg->successor()) {
     if (reg == rbp || reg == rsp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
       __ movptr(Address(rsp, offset), reg);
@@ -134,7 +138,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
   int offset = reg_save_area_offset;
 
   __ block_comment("{ restore_callee_saved_regs ");
-  for (Register reg = as_Register(0); reg->is_valid(); reg = reg->successor()) {
+  for (Register reg = as_Register(0); is_valid_gp(reg); reg = reg->successor()) {
     if (reg == rbp || reg == rsp) continue; // saved/restored by prologue/epilogue
     if (!abi.is_volatile_reg(reg)) {
       __ movptr(reg, Address(rsp, offset));

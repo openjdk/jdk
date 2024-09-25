@@ -27,7 +27,7 @@
 #include "nmt/memTracker.hpp"
 #include "unittest.hpp"
 
-class MemoryFileTrackerTest : public testing::Test {
+class NMTMemoryFileTrackerTest : public testing::Test {
 public:
   size_t sz(int x) { return (size_t) x; }
   void basics() {
@@ -48,6 +48,6 @@ public:
   };
 };
 
-TEST_VM_F(MemoryFileTrackerTest, Basics) {
+TEST_VM_F(NMTMemoryFileTrackerTest, Basics) {
   this->basics();
 }

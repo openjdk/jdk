@@ -68,6 +68,7 @@ class WhiteBox : public AllStatic {
     JNINativeMethod* method_array, int method_count);
   static void register_extended(JNIEnv* env, jclass wbclass, JavaThread* thread);
   static bool compile_method(Method* method, int comp_level, int bci, JavaThread* THREAD);
+  static size_t get_in_use_monitor_count();
 #ifdef LINUX
   static bool validate_cgroup(const char* proc_cgroups, const char* proc_self_cgroup, const char* proc_self_mountinfo, u1* cg_flags);
 #endif

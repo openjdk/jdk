@@ -102,45 +102,6 @@ package gc.stress.gcold;
  *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
  */
 
-/*
- * @test id=iu-aggressive
- * @key stress randomness
- * @library / /test/lib
- * @requires vm.gc.Shenandoah
- * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
- *
- * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahOOMDuringEvacALot
- *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
- *
- * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -XX:+ShenandoahAllocFailureALot
- *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
- *
- * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
- */
-
-/*
- * @test id=iu
- * @key stress randomness
- * @library / /test/lib
- * @requires vm.gc.Shenandoah
- * @summary Stress the GC by trying to make old objects more likely to be garbage than young objects.
- *
- * @run main/othervm/timeout=600 -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      -XX:+ShenandoahVerify
- *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
- *
- * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
- */
-
 public class TestGCOldWithShenandoah {
 
     public static void main(String[] args) {

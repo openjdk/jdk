@@ -80,6 +80,10 @@ class ShenandoahParallelCodeHeapIterator;
 class NativePostCallNop;
 class DeoptimizationScope;
 
+#ifdef LINUX
+#define DEFAULT_PERFMAP_FILENAME "/tmp/perf-%p.map"
+#endif
+
 class CodeCache : AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
@@ -223,7 +227,7 @@ class CodeCache : AllStatic {
   static void print_trace(const char* event, CodeBlob* cb, uint size = 0) PRODUCT_RETURN;
   static void print_summary(outputStream* st, bool detailed = true); // Prints a summary of the code cache usage
   static void log_state(outputStream* st);
-  LINUX_ONLY(static void write_perf_map(const char* filename = nullptr);)
+  LINUX_ONLY(static void write_perf_map(const char* filename, outputStream* st);) // Prints warnings and error messages to outputStream
   static const char* get_code_heap_name(CodeBlobType code_blob_type)  { return (heap_available(code_blob_type) ? get_code_heap(code_blob_type)->name() : "Unused"); }
   static void report_codemem_full(CodeBlobType code_blob_type, bool print);
 

@@ -41,10 +41,10 @@
 define WriteCompileCommandsFragment
   $(call LogInfo, Creating compile commands fragment for $(notdir $3))
   $(call MakeDir, $(dir $1))
-  $(call WriteFile,{ \
+  $(call WriteFile, { \
       "directory": "$(strip $(call FixPath, $2))"$(COMMA) \
       "file": "$(strip $(call FixPath, $3))"$(COMMA) \
-      "command": "$(strip $(subst $(DQUOTE),\$(DQUOTE),$(subst \,\\,\
+      "command": "$(strip $(subst $(DQUOTE),\$(DQUOTE),$(subst \,\\, \
         $(subst $(FIXPATH),,$(call FixPath, $4)))))" \
     }$(COMMA), \
     $1)
@@ -344,7 +344,7 @@ define CreateWindowsResourceFile
 		$(ECHO) $$($1_RES): \\ > $$($1_RES_DEPS_FILE) ; \
 		$(SED) $(WINDOWS_SHOWINCLUDE_SED_PATTERN) $$($1_RES_DEPS_FILE)$(OBJ_SUFFIX).log \
 		    >> $$($1_RES_DEPS_FILE) ; \
-		$(ECHO) >> $$($1_RES_DEPS_FILE) ;\
+		$(ECHO) >> $$($1_RES_DEPS_FILE) ; \
 		$(SED) $(DEPENDENCY_TARGET_SED_PATTERN) $$($1_RES_DEPS_FILE) \
 		    > $$($1_RES_DEPS_TARGETS_FILE)
   endif

@@ -28,6 +28,7 @@ package jdk.internal.classfile.impl;
 import java.lang.classfile.Annotation;
 import java.lang.classfile.AnnotationElement;
 import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassReader;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.TypeAnnotation;
@@ -39,7 +40,7 @@ import java.lang.classfile.Label;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.access.SharedSecrets;
 
-class AnnotationReader {
+public final class AnnotationReader {
     private AnnotationReader() { }
 
     public static List<Annotation> readAnnotations(ClassReader classReader, int p) {
@@ -59,16 +60,17 @@ class AnnotationReader {
         ++p;
         return switch (tag) {
             case AEV_BYTE -> new AnnotationImpl.OfByteImpl(classReader.readEntry(p, IntegerEntry.class));
-            case AEV_CHAR -> new AnnotationImpl.OfCharacterImpl(classReader.readEntry(p, IntegerEntry.class));
+            case AEV_CHAR -> new AnnotationImpl.OfCharImpl(classReader.readEntry(p, IntegerEntry.class));
             case AEV_DOUBLE -> new AnnotationImpl.OfDoubleImpl(classReader.readEntry(p, DoubleEntry.class));
             case AEV_FLOAT -> new AnnotationImpl.OfFloatImpl(classReader.readEntry(p, FloatEntry.class));
-            case AEV_INT -> new AnnotationImpl.OfIntegerImpl(classReader.readEntry(p, IntegerEntry.class));
+            case AEV_INT -> new AnnotationImpl.OfIntImpl(classReader.readEntry(p, IntegerEntry.class));
             case AEV_LONG -> new AnnotationImpl.OfLongImpl(classReader.readEntry(p, LongEntry.class));
             case AEV_SHORT -> new AnnotationImpl.OfShortImpl(classReader.readEntry(p, IntegerEntry.class));
             case AEV_BOOLEAN -> new AnnotationImpl.OfBooleanImpl(classReader.readEntry(p, IntegerEntry.class));
-            case AEV_STRING -> new AnnotationImpl.OfStringImpl(classReader.readUtf8Entry(p));
-            case AEV_ENUM -> new AnnotationImpl.OfEnumImpl(classReader.readUtf8Entry(p), classReader.readUtf8Entry(p + 2));
-            case AEV_CLASS -> new AnnotationImpl.OfClassImpl(classReader.readUtf8Entry(p));
+            case AEV_STRING -> new AnnotationImpl.OfStringImpl(classReader.readEntry(p, Utf8Entry.class));
+            case AEV_ENUM -> new AnnotationImpl.OfEnumImpl(classReader.readEntry(p, Utf8Entry.class),
+                    classReader.readEntry(p + 2, Utf8Entry.class));
+            case AEV_CLASS -> new AnnotationImpl.OfClassImpl(classReader.readEntry(p, Utf8Entry.class));
             case AEV_ANNOTATION -> new AnnotationImpl.OfAnnotationImpl(readAnnotation(classReader, p));
             case AEV_ARRAY -> {
                 int numValues = classReader.readU2(p);
@@ -127,7 +129,7 @@ class AnnotationReader {
     }
 
     private static Annotation readAnnotation(ClassReader classReader, int p) {
-        Utf8Entry annotationClass = classReader.entryByIndex(classReader.readU2(p), Utf8Entry.class);
+        Utf8Entry annotationClass = classReader.readEntry(p, Utf8Entry.class);
         p += 2;
         List<AnnotationElement> elems = readAnnotationElementValuePairs(classReader, p);
         return new AnnotationImpl(annotationClass, elems);
@@ -150,7 +152,7 @@ class AnnotationReader {
         p += 2;
         var annotationElements = new Object[numElementValuePairs];
         for (int i = 0; i < numElementValuePairs; ++i) {
-            Utf8Entry elementName = classReader.readUtf8Entry(p);
+            Utf8Entry elementName = classReader.readEntry(p, Utf8Entry.class);
             p += 2;
             AnnotationValue value = readElementValue(classReader, p);
             annotationElements[i] = new AnnotationImpl.AnnotationElementImpl(elementName, value);
@@ -239,10 +241,8 @@ class AnnotationReader {
             };
         }
         // the annotation info for this annotation
-        Utf8Entry type = classReader.readUtf8Entry(p);
-        p += 2;
-        return TypeAnnotation.of(targetInfo, List.of(typePath), type,
-                                 readAnnotationElementValuePairs(classReader, p));
+        var anno = readAnnotation(classReader, p);
+        return TypeAnnotation.of(targetInfo, List.of(typePath), anno);
     }
 
     private static List<TypeAnnotation.LocalVarTargetInfo> readLocalVarEntries(ClassReader classReader, int p, LabelContext lc, int targetType) {
@@ -278,5 +278,107 @@ class AnnotationReader {
         p += 2;
         p = skipElementValuePairs(classReader, p);
         return p;
+    }
+
+    public static void writeAnnotation(BufWriterImpl buf, Annotation annotation) {
+        buf.writeIndex(annotation.className());
+        var elements = annotation.elements();
+        buf.writeU2(elements.size());
+        for (var e : elements) {
+            buf.writeIndex(e.name());
+            AnnotationReader.writeAnnotationValue(buf, e.value());
+        }
+    }
+
+    public static void writeAnnotations(BufWriter buf, List<Annotation> list) {
+        var internalBuf = (BufWriterImpl) buf;
+        internalBuf.writeU2(list.size());
+        for (var e : list) {
+            writeAnnotation(internalBuf, e);
+        }
+    }
+
+    private static int labelToBci(LabelContext lr, Label label, TypeAnnotation ta) {
+        //helper method to avoid NPE
+        if (lr == null) throw new IllegalArgumentException("Illegal targetType '%s' in TypeAnnotation outside of Code attribute".formatted(ta.targetInfo().targetType()));
+        return lr.labelToBci(label);
+    }
+
+    public static void writeTypeAnnotation(BufWriterImpl buf, TypeAnnotation ta) {
+        LabelContext lr = buf.labelContext();
+        // target_type
+        buf.writeU1(ta.targetInfo().targetType().targetTypeValue());
+
+        // target_info
+        switch (ta.targetInfo()) {
+            case TypeAnnotation.TypeParameterTarget tpt -> buf.writeU1(tpt.typeParameterIndex());
+            case TypeAnnotation.SupertypeTarget st -> buf.writeU2(st.supertypeIndex());
+            case TypeAnnotation.TypeParameterBoundTarget tpbt -> {
+                buf.writeU1(tpbt.typeParameterIndex());
+                buf.writeU1(tpbt.boundIndex());
+            }
+            case TypeAnnotation.EmptyTarget _ -> {
+                // nothing to write
+            }
+            case TypeAnnotation.FormalParameterTarget fpt -> buf.writeU1(fpt.formalParameterIndex());
+            case TypeAnnotation.ThrowsTarget tt -> buf.writeU2(tt.throwsTargetIndex());
+            case TypeAnnotation.LocalVarTarget lvt -> {
+                buf.writeU2(lvt.table().size());
+                for (var e : lvt.table()) {
+                    int startPc = labelToBci(lr, e.startLabel(), ta);
+                    buf.writeU2(startPc);
+                    buf.writeU2(labelToBci(lr, e.endLabel(), ta) - startPc);
+                    buf.writeU2(e.index());
+                }
+            }
+            case TypeAnnotation.CatchTarget ct -> buf.writeU2(ct.exceptionTableIndex());
+            case TypeAnnotation.OffsetTarget ot -> buf.writeU2(labelToBci(lr, ot.target(), ta));
+            case TypeAnnotation.TypeArgumentTarget tat -> {
+                buf.writeU2(labelToBci(lr, tat.target(), ta));
+                buf.writeU1(tat.typeArgumentIndex());
+            }
+        }
+
+        // target_path
+        buf.writeU1(ta.targetPath().size());
+        for (TypeAnnotation.TypePathComponent component : ta.targetPath()) {
+            buf.writeU1(component.typePathKind().tag());
+            buf.writeU1(component.typeArgumentIndex());
+        }
+
+        // annotation data
+        writeAnnotation(buf, ta.annotation());
+    }
+
+    public static void writeTypeAnnotations(BufWriter buf, List<TypeAnnotation> list) {
+        var internalBuf = (BufWriterImpl) buf;
+        internalBuf.writeU2(list.size());
+        for (var e : list) {
+            writeTypeAnnotation(internalBuf, e);
+        }
+    }
+
+    public static void writeAnnotationValue(BufWriterImpl buf, AnnotationValue value) {
+        var tag = value.tag();
+        buf.writeU1(tag);
+        switch (value.tag()) {
+            case AEV_BOOLEAN, AEV_BYTE, AEV_CHAR, AEV_DOUBLE, AEV_FLOAT, AEV_INT, AEV_LONG, AEV_SHORT, AEV_STRING ->
+                    buf.writeIndex(((AnnotationValue.OfConstant) value).constant());
+            case AEV_CLASS -> buf.writeIndex(((AnnotationValue.OfClass) value).className());
+            case AEV_ENUM -> {
+                var enumValue = (AnnotationValue.OfEnum) value;
+                buf.writeIndex(enumValue.className());
+                buf.writeIndex(enumValue.constantName());
+            }
+            case AEV_ANNOTATION -> writeAnnotation(buf, ((AnnotationValue.OfAnnotation) value).annotation());
+            case AEV_ARRAY -> {
+                var array = ((AnnotationValue.OfArray) value).values();
+                buf.writeU2(array.size());
+                for (var e : array) {
+                    writeAnnotationValue(buf, e);
+                }
+            }
+            default -> throw new InternalError("Unknown value " + value);
+        }
     }
 }

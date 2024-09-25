@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ import javax.swing.plaf.basic.BasicPopupMenuUI;
 import com.sun.java.swing.plaf.windows.TMSchema.Part;
 import com.sun.java.swing.plaf.windows.TMSchema.State;
 import com.sun.java.swing.plaf.windows.XPStyle.Skin;
+import sun.swing.MnemonicHandler;
 import sun.swing.StringUIClientPropertyKey;
 
 import static sun.swing.SwingUtilities2.BASICMENUITEMUI_MAX_TEXT_OFFSET;
@@ -99,13 +100,13 @@ public class WindowsPopupMenuUI extends BasicPopupMenuUI {
             MenuSelectionManager msm = (MenuSelectionManager)ev.getSource();
             MenuElement[] path = msm.getSelectedPath();
             if (path.length == 0) {
-                if(!WindowsLookAndFeel.isMnemonicHidden()) {
+                if (!MnemonicHandler.isMnemonicHidden()) {
                     // menu was canceled -- hide mnemonics
-                    WindowsLookAndFeel.setMnemonicHidden(true);
+                    MnemonicHandler.setMnemonicHidden(true);
                     if (repaintRoot != null) {
                         Window win =
                             SwingUtilities.getWindowAncestor(repaintRoot);
-                        WindowsGraphicsUtils.repaintMnemonicsInWindow(win);
+                        MnemonicHandler.repaintMnemonicsInWindow(win);
                     }
                 }
                 repaintRoot = null;

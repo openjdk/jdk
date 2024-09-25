@@ -56,14 +56,6 @@ class Direct$Type$Buffer$RW$$BO$
 {
 
 #if[rw]
-
-    // Cached unaligned-access capability
-    protected static final boolean UNALIGNED = Bits.unaligned();
-
-    // Base address, used in all indexing calculations
-    // NOTE: moved up to Buffer.java for speed in JNI GetDirectBufferAddress
-    //    protected long address;
-
     // An object attached to this buffer. If this buffer is a view of another
     // buffer then we use this field to keep a reference to that buffer to
     // ensure that its memory isn't freed before we are done with it.
@@ -74,6 +66,8 @@ class Direct$Type$Buffer$RW$$BO$
     }
 
 #if[byte]
+    // Cached unaligned-access capability
+    static final boolean UNALIGNED = Bits.unaligned();
 
     private record Deallocator(long address, long size, int capacity) implements Runnable {
         private Deallocator {

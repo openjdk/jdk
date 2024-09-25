@@ -31,6 +31,7 @@
 #include "cds/classPrelinker.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/regeneratedClasses.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -117,6 +118,9 @@ public:
       log_warning(cds, dynamic)("There is no class to be included in the dynamic archive.");
       return;
     }
+
+    log_info(cds,dynamic)("CDS dynamic dump: clinit = " JLONG_FORMAT "ms)",
+                          ClassLoader::class_init_time_ms());
 
     init_header();
     gather_source_objs();

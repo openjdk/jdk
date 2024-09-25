@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,7 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
+import static com.sun.tools.javac.main.Option.DOE;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.util.Iterators.createCompoundIterator;
 
@@ -100,6 +101,7 @@ public class Resolve {
     DeferredAttr deferredAttr;
     Check chk;
     Infer infer;
+    Preview preview;
     ClassFinder finder;
     ModuleFinder moduleFinder;
     Types types;
@@ -111,6 +113,7 @@ public class Resolve {
     private final boolean allowYieldStatement;
     final EnumSet<VerboseResolutionMode> verboseResolutionMode;
     final boolean dumpMethodReferenceSearchResults;
+    final boolean dumpStacktraceOnError;
 
     WriteableScope polymorphicSignatureScope;
 
@@ -135,7 +138,7 @@ public class Resolve {
         moduleFinder = ModuleFinder.instance(context);
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
-        Preview preview = Preview.instance(context);
+        preview = Preview.instance(context);
         Source source = Source.instance(context);
         Options options = Options.instance(context);
         compactMethodDiags = options.isSet(Option.XDIAGS, "compact") ||
@@ -148,6 +151,7 @@ public class Resolve {
         allowModules = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
         dumpMethodReferenceSearchResults = options.isSet("debug.dumpMethodReferenceSearchResults");
+        dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
     }
 
     /** error symbols, which are returned when resolution fails
@@ -583,7 +587,7 @@ public class Resolve {
             ForAll pmt = (ForAll) mt;
             if (typeargtypes.length() != pmt.tvars.length())
                  // not enough args
-                throw new InapplicableMethodException(diags.fragment(Fragments.WrongNumberTypeArgs(Integer.toString(pmt.tvars.length()))));
+                throw new InapplicableMethodException(diags.fragment(Fragments.WrongNumberTypeArgs(Integer.toString(pmt.tvars.length()))), dumpStacktraceOnError);
             // Check type arguments are within bounds
             List<Type> formals = pmt.tvars;
             List<Type> actuals = typeargtypes;
@@ -592,7 +596,7 @@ public class Resolve {
                                                 pmt.tvars, typeargtypes);
                 for (; bounds.nonEmpty(); bounds = bounds.tail) {
                     if (!types.isSubtypeUnchecked(actuals.head, bounds.head, warn)) {
-                        throw new InapplicableMethodException(diags.fragment(Fragments.ExplicitParamDoNotConformToBounds(actuals.head, bounds)));
+                        throw new InapplicableMethodException(diags.fragment(Fragments.ExplicitParamDoNotConformToBounds(actuals.head, bounds)), dumpStacktraceOnError);
                     }
                 }
                 formals = formals.tail;
@@ -829,7 +833,7 @@ public class Resolve {
             String key = inferDiag ? diag.inferKey : diag.basicKey;
             throw inferDiag ?
                 infer.error(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args)) :
-                methodCheckFailure.setMessage(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args));
+                getMethodCheckFailure().setMessage(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args));
         }
 
         /**
@@ -841,7 +845,7 @@ public class Resolve {
             private static final long serialVersionUID = 0;
 
             SharedInapplicableMethodException() {
-                super(null);
+                super(null, Resolve.this.dumpStacktraceOnError);
             }
 
             SharedInapplicableMethodException setMessage(JCDiagnostic details) {
@@ -850,12 +854,15 @@ public class Resolve {
             }
         }
 
-        SharedInapplicableMethodException methodCheckFailure = new SharedInapplicableMethodException();
+        private SharedInapplicableMethodException methodCheckFailure;
 
         public MethodCheck mostSpecificCheck(List<Type> actuals) {
             return nilMethodCheck;
         }
 
+        private SharedInapplicableMethodException getMethodCheckFailure() {
+            return methodCheckFailure == null ? methodCheckFailure = new SharedInapplicableMethodException() : methodCheckFailure;
+        }
     }
 
     /**
@@ -1035,7 +1042,7 @@ public class Resolve {
         }
 
         public void report(DiagnosticPosition pos, JCDiagnostic details) {
-            throw new InapplicableMethodException(details);
+            throw new InapplicableMethodException(details, Resolve.this.dumpStacktraceOnError);
         }
 
         public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
@@ -1212,9 +1219,17 @@ public class Resolve {
 
             /** Parameters {@code t} and {@code s} are unrelated functional interface types. */
             private boolean functionalInterfaceMostSpecific(Type t, Type s, JCTree tree) {
-                Type tDesc = types.findDescriptorType(types.capture(t));
-                Type tDescNoCapture = types.findDescriptorType(t);
-                Type sDesc = types.findDescriptorType(s);
+                Type tDesc;
+                Type tDescNoCapture;
+                Type sDesc;
+                try {
+                    tDesc = types.findDescriptorType(types.capture(t));
+                    tDescNoCapture = types.findDescriptorType(t);
+                    sDesc = types.findDescriptorType(s);
+                } catch (Types.FunctionDescriptorLookupError ex) {
+                    // don't report, a more meaningful error should be reported upstream
+                    return false;
+                }
                 final List<Type> tTypeParams = tDesc.getTypeArguments();
                 final List<Type> tTypeParamsNoCapture = tDescNoCapture.getTypeArguments();
                 final List<Type> sTypeParams = sDesc.getTypeArguments();
@@ -1391,23 +1406,18 @@ public class Resolve {
         }
     }
 
-    public static class InapplicableMethodException extends RuntimeException {
+    public static class InapplicableMethodException extends CompilerInternalException {
         private static final long serialVersionUID = 0;
 
         transient JCDiagnostic diagnostic;
 
-        InapplicableMethodException(JCDiagnostic diag) {
+        InapplicableMethodException(JCDiagnostic diag, boolean dumpStackTraceOnError) {
+            super(dumpStackTraceOnError);
             this.diagnostic = diag;
         }
 
         public JCDiagnostic getDiagnostic() {
             return diagnostic;
-        }
-
-        @Override
-        public Throwable fillInStackTrace() {
-            // This is an internal exception; the stack trace is irrelevant.
-            return this;
         }
     }
 
@@ -1480,10 +1490,11 @@ public class Resolve {
 
     /** Find unqualified variable or field with given name.
      *  Synthetic fields always skipped.
+     *  @param pos       The position to use for error reporting.
      *  @param env     The current environment.
      *  @param name    The name of the variable or field.
      */
-    Symbol findVar(Env<AttrContext> env, Name name) {
+    Symbol findVar(DiagnosticPosition pos, Env<AttrContext> env, Name name) {
         Symbol bestSoFar = varNotFound;
         Env<AttrContext> env1 = env;
         boolean staticOnly = false;
@@ -1508,7 +1519,7 @@ public class Resolve {
                         (sym.flags() & STATIC) == 0) {
                     if (staticOnly)
                         return new StaticError(sym);
-                    if (env1.info.ctorPrologue && !isAllowedEarlyReference(env1, (VarSymbol)sym))
+                    if (env1.info.ctorPrologue && !isAllowedEarlyReference(pos, env1, (VarSymbol)sym))
                         return new RefBeforeCtorCalledError(sym);
                 }
                 return sym;
@@ -2421,15 +2432,22 @@ public class Resolve {
      *                   (a subset of VAL, TYP, PCK).
      */
     Symbol findIdent(DiagnosticPosition pos, Env<AttrContext> env, Name name, KindSelector kind) {
-        return checkNonExistentType(checkRestrictedType(pos, findIdentInternal(env, name, kind), name));
+        try {
+            return checkNonExistentType(checkRestrictedType(pos, findIdentInternal(pos, env, name, kind), name));
+        } catch (ClassFinder.BadClassFile err) {
+            return new BadClassFileError(err);
+        } catch (CompletionFailure cf) {
+            chk.completionError(pos, cf);
+            return typeNotFound;
+        }
     }
 
-    Symbol findIdentInternal(Env<AttrContext> env, Name name, KindSelector kind) {
+    Symbol findIdentInternal(DiagnosticPosition pos, Env<AttrContext> env, Name name, KindSelector kind) {
         Symbol bestSoFar = typeNotFound;
         Symbol sym;
 
         if (kind.contains(KindSelector.VAL)) {
-            sym = findVar(env, name);
+            sym = findVar(pos, env, name);
             if (sym.exists()) return sym;
             else bestSoFar = bestOf(bestSoFar, sym);
         }
@@ -2493,7 +2511,14 @@ public class Resolve {
     Symbol findIdentInType(DiagnosticPosition pos,
                            Env<AttrContext> env, Type site,
                            Name name, KindSelector kind) {
-        return checkNonExistentType(checkRestrictedType(pos, findIdentInTypeInternal(env, site, name, kind), name));
+        try {
+            return checkNonExistentType(checkRestrictedType(pos, findIdentInTypeInternal(env, site, name, kind), name));
+        } catch (ClassFinder.BadClassFile err) {
+            return new BadClassFileError(err);
+        } catch (CompletionFailure cf) {
+            chk.completionError(pos, cf);
+            return typeNotFound;
+        }
     }
 
     private Symbol checkNonExistentType(Symbol symbol) {
@@ -3776,7 +3801,7 @@ public class Resolve {
                 if (sym != null) {
                     if (staticOnly)
                         sym = new StaticError(sym);
-                    else if (env1.info.ctorPrologue && !isAllowedEarlyReference(env1, (VarSymbol)sym))
+                    else if (env1.info.ctorPrologue && !isAllowedEarlyReference(pos, env1, (VarSymbol)sym))
                         sym = new RefBeforeCtorCalledError(sym);
                     return accessBase(sym, pos, env.enclClass.sym.type,
                                   name, true);
@@ -3845,7 +3870,7 @@ public class Resolve {
      * We also don't verify that the field has no initializer, which is required.
      * To catch those cases, we rely on similar logic in Attr.checkAssignable().
      */
-    private boolean isAllowedEarlyReference(Env<AttrContext> env, VarSymbol v) {
+    private boolean isAllowedEarlyReference(DiagnosticPosition pos, Env<AttrContext> env, VarSymbol v) {
 
         // Check assumptions
         Assert.check(env.info.ctorPrologue);
@@ -3861,11 +3886,27 @@ public class Resolve {
 
         // Get the symbol's qualifier, if any
         JCExpression lhs = TreeInfo.skipParens(assign.lhs);
-        JCExpression base = lhs instanceof JCFieldAccess select ? select.selected : null;
+        JCExpression base;
+        switch (lhs.getTag()) {
+        case IDENT:
+            base = null;
+            break;
+        case SELECT:
+            JCFieldAccess select = (JCFieldAccess)lhs;
+            base = select.selected;
+            if (!TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base))
+                return false;
+            break;
+        default:
+            return false;
+        }
 
         // If an early reference, the field must not be declared in a superclass
         if (isEarlyReference(env, base, v) && v.owner != env.enclClass.sym)
             return false;
+
+        // The flexible constructors feature must be enabled
+        preview.checkSourceLevel(pos, Feature.FLEXIBLE_CONSTRUCTORS);
 
         // OK
         return true;

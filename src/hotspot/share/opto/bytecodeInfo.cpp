@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,10 +86,10 @@ static bool is_init_with_ea(ciMethod* callee_method,
   if (!C->do_escape_analysis() || !EliminateAllocations) {
     return false; // EA is off
   }
-  if (callee_method->is_initializer()) {
+  if (callee_method->is_object_initializer()) {
     return true; // constructor
   }
-  if (caller_method->is_initializer() &&
+  if (caller_method->is_object_initializer() &&
       caller_method != C->method() &&
       caller_method->holder()->is_subclass_of(callee_method->holder())) {
     return true; // super constructor is called from inlined constructor
@@ -315,7 +315,9 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
       int invoke_count     = caller_method->interpreter_invocation_count();
       assert(invoke_count != 0, "require invocation count greater than zero");
       double freq = (double)call_site_count / (double)invoke_count;
-      double min_freq = MAX2(MinInlineFrequencyRatio, 1.0 / CompilationPolicy::min_invocations());
+      // avoid division by 0, set divisor to at least 1
+      int cp_min_inv = MAX2(1, CompilationPolicy::min_invocations());
+      double min_freq = MAX2(MinInlineFrequencyRatio, 1.0 / cp_min_inv);
 
       if (freq < min_freq) {
         set_msg("low call site frequency");

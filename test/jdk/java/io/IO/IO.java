@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,6 +35,10 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
+import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -48,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @library /test/lib
  * @run junit IO
  */
+@ExtendWith(IO.TimingExtension.class)
 public class IO {
 
     @Nested
@@ -62,6 +68,11 @@ public class IO {
             if (!Files.exists(expect) || !Files.isExecutable(expect)) {
                 Assumptions.abort("'" + expect + "' not found");
             }
+            try {
+                var outputAnalyzer = ProcessTools.executeProcess(
+                        expect.toAbsolutePath().toString(), "-version");
+                outputAnalyzer.reportDiagnosticSummary();
+            } catch (Exception _) { }
         }
 
         /*
@@ -173,5 +184,42 @@ public class IO {
         output.reportDiagnosticSummary();
         assertEquals(1, output.getExitValue());
         output.shouldContain("Exception in thread \"main\" java.io.IOError");
+    }
+
+
+    // adapted from https://junit.org/junit5/docs/current/user-guide/#extensions-lifecycle-callbacks-timing-extension
+    // remove after CODETOOLS-7903752 propagates to jtreg that this test is routinely run by
+
+    public static class TimingExtension implements BeforeTestExecutionCallback,
+            AfterTestExecutionCallback {
+
+        private static final System.Logger logger = System.getLogger(
+                TimingExtension.class.getName());
+
+        private static final String START_TIME = "start time";
+
+        @Override
+        public void beforeTestExecution(ExtensionContext context) {
+            getStore(context).put(START_TIME, time());
+        }
+
+        @Override
+        public void afterTestExecution(ExtensionContext context) {
+            Method testMethod = context.getRequiredTestMethod();
+            long startTime = getStore(context).remove(START_TIME, long.class);
+            long duration = time() - startTime;
+
+            logger.log(System.Logger.Level.INFO, () ->
+                    String.format("Method [%s] took %s ms.", testMethod.getName(), duration));
+        }
+
+        private ExtensionContext.Store getStore(ExtensionContext context) {
+            return context.getStore(ExtensionContext.Namespace.create(getClass(),
+                    context.getRequiredTestMethod()));
+        }
+
+        private long time() {
+            return System.nanoTime() / 1_000_000;
+        }
     }
 }

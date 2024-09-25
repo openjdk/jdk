@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,14 +103,14 @@
 #define ZFILENAME_HEAP                   "java_heap"
 
 // Preferred tmpfs mount points, ordered by priority
-static const char* z_preferred_tmpfs_mountpoints[] = {
+static const char* ZPreferredTmpfsMountpoints[] = {
   "/dev/shm",
   "/run/shm",
   nullptr
 };
 
 // Preferred hugetlbfs mount points, ordered by priority
-static const char* z_preferred_hugetlbfs_mountpoints[] = {
+static const char* ZPreferredHugetlbfsMountpoints[] = {
   "/dev/hugepages",
   "/hugepages",
   nullptr
@@ -226,8 +226,8 @@ int ZPhysicalMemoryBacking::create_file_fd(const char* name) const {
                                  ? ZFILESYSTEM_HUGETLBFS
                                  : ZFILESYSTEM_TMPFS;
   const char** const preferred_mountpoints = ZLargePages::is_explicit()
-                                             ? z_preferred_hugetlbfs_mountpoints
-                                             : z_preferred_tmpfs_mountpoints;
+                                             ? ZPreferredHugetlbfsMountpoints
+                                             : ZPreferredTmpfsMountpoints;
 
   // Find mountpoint
   ZMountPoint mountpoint(filesystem, preferred_mountpoints);
@@ -391,7 +391,7 @@ ZErrno ZPhysicalMemoryBacking::fallocate_compat_mmap_hugetlbfs(zoffset offset, s
   // On hugetlbfs, mapping a file segment will fail immediately, without
   // the need to touch the mapped pages first, if there aren't enough huge
   // pages available to back the mapping.
-  void* const addr = mmap(0, length, PROT_READ|PROT_WRITE, MAP_SHARED, _fd, untype(offset));
+  void* const addr = mmap(nullptr, length, PROT_READ|PROT_WRITE, MAP_SHARED, _fd, untype(offset));
   if (addr == MAP_FAILED) {
     // Failed
     return errno;
@@ -441,7 +441,7 @@ static bool safe_touch_mapping(void* addr, size_t length, size_t page_size) {
 ZErrno ZPhysicalMemoryBacking::fallocate_compat_mmap_tmpfs(zoffset offset, size_t length) const {
   // On tmpfs, we need to touch the mapped pages to figure out
   // if there are enough pages available to back the mapping.
-  void* const addr = mmap(0, length, PROT_READ|PROT_WRITE, MAP_SHARED, _fd, untype(offset));
+  void* const addr = mmap(nullptr, length, PROT_READ|PROT_WRITE, MAP_SHARED, _fd, untype(offset));
   if (addr == MAP_FAILED) {
     // Failed
     return errno;
