@@ -213,6 +213,7 @@ public:
   // Debugging and logging support.
   const char* name() const;
   void print_on(outputStream* st) const PRODUCT_RETURN;
+  bool print_containing(const oop* addr, outputStream* st);
 
   // Provides access to storage internals, for unit testing.
   // Declare, but not define, the public class OopStorage::TestAccess.

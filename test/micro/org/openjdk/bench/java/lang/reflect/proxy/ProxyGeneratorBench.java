@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ import java.util.List;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
-import org.openjdk.jmh.annotations.CompilerControl;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -36,37 +35,29 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import org.openjdk.jmh.infra.Blackhole;
-
 import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Benchmark measuring java.lang.reflect.ProxyGenerator.generateProxyClass.
  * It bypasses the cache of proxies to measure the time to construct a proxy.
  */
-@Warmup(iterations = 5)
-@Measurement(iterations = 10)
-@Fork(value = 1)
+@Warmup(iterations = 5, time = 2)
+@Measurement(iterations = 5, time = 2)
+@Fork(value = 1, jvmArgsPrepend = "--add-opens=java.base/java.lang.reflect=ALL-UNNAMED")
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-public class ProxyPerf {
+public class ProxyGeneratorBench {
 
     /**
      * Sample results from a Dell T7610.
      * Benchmark                        Mode  Cnt      Score      Error  Units
      *      ProxyPerf.genIntf_1              avgt   10  35325.428 +/-  780.459  ns/op
-     *      ProxyPerf.genIntf_1_V49          avgt   10  34309.423 +/-  727.188  ns/op
      *      ProxyPerf.genStringsIntf_3       avgt   10  46600.366 +/-  663.812  ns/op
-     *      ProxyPerf.genStringsIntf_3_V49   avgt   10  45911.817 +/- 1598.536  ns/op
      *      ProxyPerf.genZeroParams          avgt   10  33245.048 +/-  437.988  ns/op
-     *      ProxyPerf.genZeroParams_V49      avgt   10  32954.254 +/- 1041.932  ns/op
-     *      ProxyPerf.getPrimsIntf_2         avgt   10  43987.819 +/-  837.443  ns/op
-     *      ProxyPerf.getPrimsIntf_2_V49     avgt   10  42863.462 +/- 1193.480  ns/op
+     *      ProxyPerf.genPrimsIntf_2         avgt   10  43987.819 +/-  837.443  ns/op
      */
 
     public interface Intf_1 {
@@ -84,7 +75,6 @@ public class ProxyPerf {
         public String m2String(String s1, String s2);
     }
 
-    private InvocationHandler handler;
     private ClassLoader classloader;
     private Method proxyGen;
     private Method proxyGenV49;
@@ -92,19 +82,11 @@ public class ProxyPerf {
     @Setup
     public void setup() {
         try {
-            handler = (Object proxy, Method method, Object[] args) -> null;
             classloader = ClassLoader.getSystemClassLoader();
             Class<?> proxyGenClass = Class.forName("java.lang.reflect.ProxyGenerator");
             proxyGen = proxyGenClass.getDeclaredMethod("generateProxyClass",
                     ClassLoader.class, String.class, java.util.List.class, int.class);
             proxyGen.setAccessible(true);
-
-            // Init access to the old Proxy generator
-            Class<?> proxyGenClassV49 = Class.forName("java.lang.reflect.ProxyGenerator_v49");
-            proxyGenV49 = proxyGenClassV49.getDeclaredMethod("generateProxyClass",
-                    String.class, java.util.List.class, int.class);
-            proxyGenV49.setAccessible(true);
-
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new RuntimeException("ProxyClass setup fails", ex);
@@ -112,51 +94,35 @@ public class ProxyPerf {
     }
 
     @Benchmark
-    public void genZeroParams(Blackhole bh) throws Exception {
+    public Object genZeroParams() throws Exception {
         List<Class<?>> interfaces = List.of(Runnable.class);
-        bh.consume(proxyGen.invoke(null, classloader, "ProxyImpl", interfaces, 1));
+        return proxyGen.invoke(null, classloader, "ProxyImpl", interfaces, 1);
     }
 
     @Benchmark
-    public void genIntf_1(Blackhole bh) throws Exception {
+    public Object genIntf_1() throws Exception {
         List<Class<?>> interfaces = List.of(Intf_1.class);
-        bh.consume(proxyGen.invoke(null, classloader, "ProxyImpl", interfaces, 1));
+        return proxyGen.invoke(null, classloader, "ProxyImpl", interfaces, 1);
     }
 
     @Benchmark
-    public void getPrimsIntf_2(Blackhole bh) throws Exception {
+    public Object genPrimsIntf_2() throws Exception {
         List<Class<?>> interfaces = List.of(Intf_2.class);
-        bh.consume(proxyGen.invoke(null, classloader, "ProxyImpl", interfaces, 1));
+        return proxyGen.invoke(null, classloader, "ProxyImpl", interfaces, 1);
     }
+
     @Benchmark
-    public void genStringsIntf_3(Blackhole bh) throws Exception {
+    public Object genStringsIntf_3() throws Exception {
         List<Class<?>> interfaces = List.of(Intf_3.class);
-        bh.consume(proxyGen.invoke(null, classloader, "ProxyImpl", interfaces, 1));
+        return proxyGen.invoke(null, classloader, "ProxyImpl", interfaces, 1);
     }
 
-    // Generate using the V49inal generator for comparison
-
-    @Benchmark
-    public void genZeroParams_V49(Blackhole bh) throws Exception {
-        List<Class<?>> interfaces = List.of(Runnable.class);
-        bh.consume(proxyGenV49.invoke(null, "ProxyImpl", interfaces, 1));
+    public static void main(String... args) throws Exception {
+        var benchmark = new ProxyGeneratorBench();
+        benchmark.setup();
+        benchmark.genZeroParams();
+        benchmark.genIntf_1();
+        benchmark.genPrimsIntf_2();
+        benchmark.genStringsIntf_3();
     }
-
-    @Benchmark
-    public void genIntf_1_V49(Blackhole bh) throws Exception {
-        List<Class<?>> interfaces = List.of(Intf_1.class);
-        bh.consume(proxyGenV49.invoke(null, "ProxyImpl", interfaces, 1));
-    }
-
-    @Benchmark
-    public void getPrimsIntf_2_V49(Blackhole bh) throws Exception {
-        List<Class<?>> interfaces = List.of(Intf_2.class);
-        bh.consume(proxyGenV49.invoke(null, "ProxyImpl", interfaces, 1));
-    }
-    @Benchmark
-    public void genStringsIntf_3_V49(Blackhole bh) throws Exception {
-        List<Class<?>> interfaces = List.of(Intf_3.class);
-        bh.consume(proxyGenV49.invoke(null, "ProxyImpl", interfaces, 1));
-    }
-
 }
