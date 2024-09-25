@@ -414,7 +414,7 @@ void ShenandoahBarrierC2Support::verify(RootNode* root) {
         "cipherBlockChaining_decryptAESCrypt",
         { { TypeFunc::Parms, ShenandoahLoad },   { TypeFunc::Parms+1, ShenandoahStore },  { TypeFunc::Parms+2, ShenandoahLoad },
           { TypeFunc::Parms+3, ShenandoahLoad },  { -1,  ShenandoahNone},                 { -1,  ShenandoahNone} },
-        "shenandoah_clone_barrier",
+        "shenandoah_clone",
         { { TypeFunc::Parms, ShenandoahLoad },   { -1,  ShenandoahNone},                  { -1,  ShenandoahNone},
           { -1,  ShenandoahNone},                 { -1,  ShenandoahNone},                 { -1,  ShenandoahNone} },
         "ghash_processBlocks",
