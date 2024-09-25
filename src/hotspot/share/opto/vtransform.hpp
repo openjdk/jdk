@@ -605,11 +605,11 @@ private:
   // TODO goal to eventually remove: tricky is the memory graph though...
   // also some types need to condition on the first elements type,
   // and so we'd have to split those node types earlier
-  GrowableArray<Node*> _nodes;
+  GrowableArray<Node*> _xnodes;
 public:
   VTransformVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const uint req) :
     VTransformNode(vtransform, prototype, req),
-    _nodes(vtransform.arena(),
+    _xnodes(vtransform.arena(),
            vector_length(),
            vector_length(),
 	   nullptr) {}
@@ -617,18 +617,18 @@ public:
   void set_nodes(const Node_List* pack) {
     assert(pack->size() == vector_length(), "must have same length");
     for (uint k = 0; k < pack->size(); k++) {
-      _nodes.at_put(k, pack->at(k));
+      _xnodes.at_put(k, pack->at(k));
     }
   }
 
   void set_nodes(const GrowableArray<Node*>& nodes) {
     assert((uint)nodes.length() == vector_length(), "must have same length");
     for (int k = 0; k < nodes.length(); k++) {
-      _nodes.at_put(k, nodes.at(k));
+      _xnodes.at_put(k, nodes.at(k));
     }
   }
 
-  const GrowableArray<Node*>& nodes() const { return _nodes; }
+  const GrowableArray<Node*>& xnodes() const { return _xnodes; }
   virtual VTransformVectorNode* isa_Vector() override { return this; }
   NOT_PRODUCT(virtual void print_spec() const override;)
 };

@@ -2455,9 +2455,10 @@ bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
 }
 
 LoadNode::ControlDependency VTransformLoadVectorNode::control_dependency() const {
+  // TODO do we really still need this?
   LoadNode::ControlDependency dep = LoadNode::DependsOnlyOnTest;
-  for (int i = 0; i < nodes().length(); i++) {
-    Node* n = nodes().at(i);
+  for (int i = 0; i < xnodes().length(); i++) {
+    Node* n = xnodes().at(i);
     assert(n->is_Load(), "only meaningful for loads");
     if (!n->depends_only_on_test()) {
       if (n->as_Load()->has_unknown_control_dependency() &&
@@ -2488,10 +2489,11 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
   for (int i = 0; i < vtnodes.length(); i++) {
     VTransformVectorNode* vtn = vtnodes.at(i)->isa_Vector();
     if (vtn == nullptr) { continue; }
-    MemNode* p0 = vtn->nodes().at(0)->isa_Mem();
+    // TODO replace with different check
+    MemNode* p0 = vtn->xnodes().at(0)->isa_Mem();
     if (p0 == nullptr) { continue; }
 
-    int vw = p0->memory_size() * vtn->nodes().length();
+    int vw = p0->memory_size() * vtn->xnodes().length();
     if (vw > max_aw) {
       max_aw = vw;
       mem_ref = p0;
