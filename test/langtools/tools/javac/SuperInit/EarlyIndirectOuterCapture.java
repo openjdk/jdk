@@ -18,9 +18,11 @@ public class EarlyIndirectOuterCapture {
     static class InnerOuter extends EarlyIndirectOuterCapture {     // accessible
         class InnerInnerOuter extends EarlyIndirectOuterCapture {   // not accessible
             InnerInnerOuter() {
-                super(/* which enclosing instance here ? */new InnerSuperclass() {
-                    // and which enclosing instance for the super call here?
-                });
+                super(/* which enclosing instance here ? */new InnerSuperclass() { });
+            }
+
+            InnerInnerOuter(boolean b) {
+                super(InnerOuter.this.new InnerSuperclass() { }); // ok, explicit
             }
         }
     }
