@@ -35,8 +35,8 @@ const char* VMATree::statetype_strings[3] = {
 };
 
 VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
-                                               const RegionData& metadata, bool copy_flag) {
-  assert(!copy_flag || metadata.flag == mtNone,
+                                               const RegionData& metadata, bool use_flag_inplace) {
+  assert(!use_flag_inplace || metadata.flag == mtNone,
          "If copying flag then supplied flag should be mtNone, was instead: %s", NMTUtil::flag_to_name(metadata.flag));
   if (A == B) {
     // A 0-sized mapping isn't worth recording.
@@ -58,8 +58,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   AddressState LEQ_A;
   TreapNode* leqA_n = _tree.closest_leq(A);
   if (leqA_n == nullptr) {
-    assert(!copy_flag, "Cannot copy the flag if no pre-existing flag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
-    if (copy_flag) {
+    assert(!use_flag_inplace, "Cannot copy the flag if no pre-existing flag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
+    if (use_flag_inplace) {
       log_debug(nmt)("Cannot copy the flag if no pre-existing flag exists. From: " PTR_FORMAT " To: " PTR_FORMAT, A, B);
     }
     // No match. We add the A node directly, unless it would have no effect.
@@ -73,7 +73,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     StateType new_state = stA.out.type();
     // If we specify copy_flag then the new region takes over the current flag instead of the flag in metadata.
     // This is important because the VirtualMemoryTracker API doesn't require supplying the flag for some operations.
-    if (copy_flag) {
+    if (use_flag_inplace) {
       assert(leqA_n->val().out.type() != StateType::Released, "Should not copy flag of a released region");
       MEMFLAGS flag = leqA_n->val().out.flag();
       stA.out.set_flag(flag);

@@ -172,19 +172,19 @@ public:
   };
 
  private:
-  SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool copy_flag = false);
+  SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool use_flag_inplace = false);
 
  public:
   SummaryDiff reserve_mapping(position from, position sz, const RegionData& metadata) {
     return register_mapping(from, from + sz, StateType::Reserved, metadata, false);
   }
 
-  SummaryDiff commit_mapping(position from, position sz, const RegionData& metadata, bool copy_flag = false) {
-    return register_mapping(from, from + sz, StateType::Committed, metadata, copy_flag);
+  SummaryDiff commit_mapping(position from, position sz, const RegionData& metadata, bool use_flag_inplace = false) {
+    return register_mapping(from, from + sz, StateType::Committed, metadata, use_flag_inplace);
   }
 
   SummaryDiff uncommit_mapping(position from, position sz, const RegionData& metadata) {
-    return register_mapping(from, from + sz, StateType::Committed, metadata, true);
+    return register_mapping(from, from + sz, StateType::Reserved, metadata, true);
   }
 
   SummaryDiff release_mapping(position from, position sz) {

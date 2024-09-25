@@ -180,7 +180,7 @@ TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
   EXPECT_EQ(2, count_nodes(tree));
 }
 
-TEST_VM_F(NMTVMATreeTest, CopyFlag) {
+TEST_VM_F(NMTVMATreeTest, UseFlagInplace) {
   Tree tree;
   VMATree::RegionData rd1(si[0], mtTest);
   VMATree::RegionData rd2(si[1], mtNone);
@@ -190,6 +190,9 @@ TEST_VM_F(NMTVMATreeTest, CopyFlag) {
   tree.visit_in_order([&](Node* node) {
     if (node->key() != 100) {
       EXPECT_EQ(mtTest, node->val().out.flag()) << "failed at: " << node->key();
+      if (node->key() != 20 && node->key() != 40) {
+        EXPECT_EQ(VMATree::StateType::Reserved, node->val().out.type());
+      }
     }
   });
 }
