@@ -175,14 +175,16 @@ public final class DirectClassBuilder
         // BSM writers until everything else is written.
 
         // Do this early because it might trigger CP activity
+        var constantPool = this.constantPool;
         ClassEntry superclass = superclassEntry;
         if (superclass != null)
             superclass = AbstractPoolEntry.maybeClone(constantPool, superclass);
         else if ((flags & ClassFile.ACC_MODULE) == 0 && !"java/lang/Object".equals(thisClassEntry.asInternalName()))
             superclass = constantPool.classEntry(ConstantDescs.CD_Object);
-        List<ClassEntry> ies = new ArrayList<>(interfaceEntries.size());
-        for (ClassEntry ce : interfaceEntries)
-            ies.add(AbstractPoolEntry.maybeClone(constantPool, ce));
+        int interfaceEntriesSize = interfaceEntries.size();
+        List<ClassEntry> ies = new ArrayList<>(interfaceEntriesSize);
+        for (int i = 0; i < interfaceEntriesSize; i++)
+            ies.add(AbstractPoolEntry.maybeClone(constantPool, interfaceEntries.get(i)));
 
         // We maintain two writers, and then we join them at the end
         int size = sizeHint == 0 ? 256 : sizeHint;
@@ -197,16 +199,15 @@ public final class DirectClassBuilder
         attributes.writeTo(tail);
 
         // Now we have to append the BSM, if there is one
-        boolean written = constantPool.writeBootstrapMethods(tail);
-        if (written) {
+        if (constantPool.writeBootstrapMethods(tail)) {
             // Update attributes count
             tail.patchU2(attributesOffset, attributes.size() + 1);
         }
 
         // Now we can make the head
-        head.writeInt(ClassFile.MAGIC_NUMBER);
-        head.writeU2(minorVersion);
-        head.writeU2(majorVersion);
+        head.writeLong((((long) ClassFile.MAGIC_NUMBER) << 32)
+                | ((minorVersion & 0xFFFFL) << 16)
+                | (majorVersion & 0xFFFFL));
         constantPool.writeTo(head);
         head.writeU2(flags);
         head.writeIndex(thisClassEntry);
@@ -214,9 +215,6 @@ public final class DirectClassBuilder
         Util.writeListIndices(head, ies);
 
         // Join head and tail into an exact-size buffer
-        byte[] result = new byte[head.size() + tail.size()];
-        head.copyTo(result, 0);
-        tail.copyTo(result, head.size());
-        return result;
+        return BufWriterImpl.join(head, tail);
     }
 }
