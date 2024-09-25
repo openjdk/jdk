@@ -175,15 +175,11 @@ private:
   void collect_nodes_without_req_or_dependency(GrowableArray<VTransformNode*>& stack) const;
   int count_alive_vtnodes() const;
 
-  template<typename Callback>
-  void for_each_memop_in_schedule(Callback callback) const;
-
   void mark_vtnodes_in_loop(VectorSet& in_loop) const;
 
 #ifndef PRODUCT
   void print_vtnodes() const;
   void print_schedule() const;
-  void print_memops_schedule() const;
   void trace_schedule_cycle(const GrowableArray<VTransformNode*>& stack,
                             const VectorSet& pre_visited,
                             const VectorSet& post_visited) const;
@@ -708,30 +704,5 @@ public:
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
 };
-
-// Invoke callback on all memops, in the order of the schedule.
-template<typename Callback>
-void VTransformGraph::for_each_memop_in_schedule(Callback callback) const {
-  assert(is_scheduled(), "schedule was computed");
-
-  for (int i = 0; i < _schedule.length(); i++) {
-    VTransformNode* vtn = _schedule.at(i);
-
-    // We can ignore input nodes, they are outside the loop.
-    if (vtn->isa_InputScalar() != nullptr) { continue; }
-
-    VTransformScalarNode* scalar = vtn->isa_Scalar();
-    if (scalar != nullptr && scalar->node()->is_Mem()) {
-      callback(scalar->node()->as_Mem());
-    }
-
-    VTransformVectorNode* vector = vtn->isa_Vector();
-    if (vector != nullptr && vector->nodes().at(0)->is_Mem()) {
-      for (int j = 0; j < vector->nodes().length(); j++) {
-        callback(vector->nodes().at(j)->as_Mem());
-      }
-    }
-  }
-}
 
 #endif // SHARE_OPTO_VTRANSFORM_HPP

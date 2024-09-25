@@ -618,7 +618,6 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   VTransformReductionVectorNode* current_red = last_red;
   while (true) {
     if (current_red == nullptr ||
-        // TODO refactor with eq over prototype?
         current_red->vector_reduction_opcode() != ropc ||
         current_red->element_basic_type() != bt ||
         current_red->vector_length() != vlen) {
@@ -828,16 +827,6 @@ void VTransformGraph::print_schedule() const {
       vtn->print();
     }
   }
-}
-
-void VTransformGraph::print_memops_schedule() const {
-  tty->print_cr("\nVTransformGraph::print_memops_schedule:");
-  int i = 0;
-  // TODO last use - remove? anything else from apply mem schedule?
-  for_each_memop_in_schedule([&] (MemNode* mem) {
-    tty->print(" %3d: ", i++);
-    mem->dump();
-  });
 }
 
 void VTransformNode::print() const {
