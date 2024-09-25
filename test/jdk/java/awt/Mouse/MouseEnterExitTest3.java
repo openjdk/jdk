@@ -40,9 +40,9 @@ import javax.swing.JButton;
  */
 
 public class MouseEnterExitTest3 {
-     final static Button button = new Button("Button");
-     final static JButton jbutton = new JButton("JButton");
-     final static Frame frame = new Frame("Mouse Enter/Exit Test");
+    static final Button button = new Button("Button");
+    static final JButton jbutton = new JButton("JButton");
+    static final Frame frame = new Frame("Mouse Enter/Exit Test");
 
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
@@ -81,4 +81,4 @@ public class MouseEnterExitTest3 {
         frame.pack();
         return frame;
     }
- }
+}

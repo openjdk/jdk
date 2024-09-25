@@ -108,48 +108,48 @@ class MouseFrame extends Frame {
 
 
 public class MouseEnterExitTest {
-    static MouseFrame TestFrame;
+    static MouseFrame testFrame;
 
     public static void main(String[] args) throws Exception {
         Robot robot = new Robot();
 
         robot.setAutoDelay(100);
         try {
-            EventQueue.invokeAndWait(() -> TestFrame = new MouseFrame());
-            if (TestFrame.lw.getBackground() != Color.red) {
+            EventQueue.invokeAndWait(() -> testFrame = new MouseFrame());
+            if (testFrame.lw.getBackground() != Color.red) {
                 throw new RuntimeException("Initial Background color not matching");
             }
-            robot.delay(100);
             robot.waitForIdle();
+            robot.delay(100);
             EventQueue.invokeAndWait(() -> robot.mouseMove(
-                    TestFrame.getLocationOnScreen().x + TestFrame.getSize().width / 2,
-                    TestFrame.getLocationOnScreen().y + TestFrame.getSize().height / 2));
-            robot.delay(100);
+                    testFrame.getLocationOnScreen().x + testFrame.getSize().width / 2,
+                    testFrame.getLocationOnScreen().y + testFrame.getSize().height / 2));
             robot.waitForIdle();
+            robot.delay(100);
 
-            if (TestFrame.lw.getBackground() != Color.green) {
+            if (testFrame.lw.getBackground() != Color.green) {
                 throw new RuntimeException("Initial Background color not matching");
             }
             EventQueue.invokeAndWait(() -> robot.mouseMove(
-                    TestFrame.getLocationOnScreen().x + TestFrame.getSize().width * 2,
-                    TestFrame.getLocationOnScreen().y + TestFrame.getSize().height / 2));
-            robot.delay(100);
+                    testFrame.getLocationOnScreen().x + testFrame.getSize().width * 2,
+                    testFrame.getLocationOnScreen().y + testFrame.getSize().height / 2));
             robot.waitForIdle();
+            robot.delay(100);
 
-            if (TestFrame.lw.getBackground() != Color.red) {
+            if (testFrame.lw.getBackground() != Color.red) {
                 throw new RuntimeException("Initial Background color not matching");
             }
         } finally {
             EventQueue.invokeAndWait(() -> {
-                if (TestFrame != null) {
-                    TestFrame.dispose();
+                if (testFrame != null) {
+                    testFrame.dispose();
                 }
             });
         }
     }
 
     public static Frame getFrame() {
-        return TestFrame;
+        return testFrame;
     }
 }
 
