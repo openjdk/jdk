@@ -217,9 +217,18 @@ public class NamedEdDSA {
         var s2 = Signature.getInstance("EdDSA", p3);
         var f1 = KeyFactory.getInstance("EdDSA", p2);
         var f2 = KeyFactory.getInstance("EdDSA", p3);
-        s1.initSign((PrivateKey) f1.translateKey(kp.getPrivate()));
-        var sig = s1.sign();
-        s2.initVerify((PublicKey) f2.translateKey(kp.getPublic()));
-        Asserts.assertTrue(s2.verify(sig));
+        var sk = (PrivateKey) f1.translateKey(kp.getPrivate());
+        var pk = (PublicKey) f2.translateKey(kp.getPublic());
+        // sign and verify twice to make sure the key is intact
+        s1.initSign(sk);
+        var sig1 = s1.sign();
+        s1.initSign(sk);
+        var sig2 = s1.sign();
+        // EdDSA signing is deterministic
+        Asserts.assertEqualsByteArray(sig1, sig2);
+        s2.initVerify(pk);
+        Asserts.assertTrue(s2.verify(sig1));
+        s2.initVerify(pk);
+        Asserts.assertTrue(s2.verify(sig2));
     }
 }
