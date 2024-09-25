@@ -32,6 +32,10 @@
 #define JNIIMPORT __declspec(dllimport)
 #define JNICALL __stdcall
 
+#ifndef ATTRIBUTE_NO_UBSAN
+#define ATTRIBUTE_NO_UBSAN
+#endif
+
 typedef int jint;
 typedef long long jlong;
 typedef signed char jbyte;

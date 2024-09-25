@@ -54,6 +54,15 @@
 
 #define JNICALL
 
+/* macro/attribute to disable undefined behaviour sanitizer checking */
+#ifndef ATTRIBUTE_NO_UBSAN
+#if defined(__clang__) || defined(__GNUC__)
+#define ATTRIBUTE_NO_UBSAN __attribute__((no_sanitize("undefined")))
+#else
+#define ATTRIBUTE_NO_UBSAN
+#endif
+#endif
+
 typedef int jint;
 #ifdef _LP64
 typedef long jlong;
