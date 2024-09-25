@@ -1455,6 +1455,7 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
 }
 
 
+#ifdef COMPILER2
 // This improvement (vectorization) is based on java.base/share/native/libzip/zlib/zcrc32.c.
 // To make it, following steps are taken:
 //  1. in zcrc32.c, modify N to 16 and related code,
@@ -1550,6 +1551,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
       addi(buf, buf, N*4);
     }
 }
+#endif // COMPILER2
 
 /**
  * @param crc   register containing existing CRC (32-bit)
@@ -1576,11 +1578,13 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   add(table2, table0, 2*single_table_size*sizeof(juint), tmp1);
   add(table3, table2, 1*single_table_size*sizeof(juint), tmp1);
 
+#ifdef COMPILER2
   if (UseRVV) {
     const int64_t tmp_limit = MaxVectorSize >= 32 ? unroll_words*3 : unroll_words*5;
     mv(tmp1, tmp_limit);
     bge(len, tmp1, L_vector_entry);
   }
+#endif // COMPILER2
   subw(len, len, unroll_words);
   bge(len, zr, L_unroll_loop_entry);
 
@@ -1643,6 +1647,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
 
+#ifdef COMPILER2
   // put vector code here, otherwise "offset is too large" error occurs.
   if (UseRVV) {
     j(L_exit); // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
@@ -1655,6 +1660,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     addiw(len, len, 4);
     bgt(len, zr, L_by1_loop);
   }
+#endif // COMPILER2
 
   bind(L_exit);
     andn(crc, tmp5, crc);
@@ -2085,23 +2091,11 @@ void MacroAssembler::addw(Register Rd, Register Rn, int32_t increment, Register 
 }
 
 void MacroAssembler::sub(Register Rd, Register Rn, int64_t decrement, Register temp) {
-  if (is_simm12(-decrement)) {
-    addi(Rd, Rn, -decrement);
-  } else {
-    assert_different_registers(Rn, temp);
-    li(temp, decrement);
-    sub(Rd, Rn, temp);
-  }
+  add(Rd, Rn, -decrement, temp);
 }
 
 void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register temp) {
-  if (is_simm12(-decrement)) {
-    addiw(Rd, Rn, -decrement);
-  } else {
-    assert_different_registers(Rn, temp);
-    li(temp, decrement);
-    subw(Rd, Rn, temp);
-  }
+  addw(Rd, Rn, -decrement, temp);
 }
 
 void MacroAssembler::andrw(Register Rd, Register Rs1, Register Rs2) {
@@ -3168,6 +3162,13 @@ void MacroAssembler::membar(uint32_t order_constraint) {
 
     membar_mask_to_pred_succ(order_constraint, predecessor, successor);
     fence(predecessor, successor);
+  }
+}
+
+void MacroAssembler::cmodx_fence() {
+  BLOCK_COMMENT("cmodx fence");
+  if (VM_Version::supports_fencei_barrier()) {
+    Assembler::fencei();
   }
 }
 
