@@ -58,13 +58,26 @@ public class JSONObject extends LinkedHashMap<String, JSONElement> implements JS
         }
     }
 
+    public static int getObjectFieldInt(JSONObject json, String name) {
+        return (int) getObjectFieldLong(json, name);
+    }
+
     public static long getObjectFieldLong(JSONObject json, String name) {
         JSONElement e = json.get(name);
         if (e == null) {
             return -1;
         }
         if (e instanceof JSONPrimitive) {
-            return (Long) ((JSONPrimitive)e).getValue();
+            Object o = ((JSONPrimitive) e).getValue();
+            if (o instanceof String) {
+                try {
+                    return Long.parseLong((String) o);
+                } catch (NumberFormatException nfe) {
+                    return -1;
+                }
+            } else {
+                return (Long) o;
+            }
         } else {
             return -1;
         }

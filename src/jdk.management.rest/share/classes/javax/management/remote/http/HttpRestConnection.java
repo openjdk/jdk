@@ -1,4 +1,5 @@
-/* * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +61,7 @@ import jdk.internal.management.remote.rest.json.JSONElement;
 import jdk.internal.management.remote.rest.json.JSONObject;
 import jdk.internal.management.remote.rest.json.JSONPrimitive;
 import jdk.internal.management.remote.rest.json.parser.JSONParser;
+import jdk.internal.management.remote.rest.json.parser.ParseException;
 
 import jdk.internal.management.remote.rest.mapper.JSONDataException;
 import jdk.internal.management.remote.rest.mapper.JSONMapper;
@@ -75,12 +77,15 @@ public class HttpRestConnection implements MBeanServerConnection {
 
     protected String defaultDomain;
     protected String[] domains;
+    protected int mBeanCount;
 
     protected HashMap<ObjectName,String> objectMap;
     protected HashMap<ObjectName,String> objectInfoMap;
 
     private static final String CHARSET = "UTF-8";
-    
+
+    /**
+     */    
     public HttpRestConnection(String baseURL, Map<String,?> env) {
         this.env = env;
         // URL should end /jmx/servers/servername/ e.g. /jmx/servers/platform/
@@ -89,31 +94,28 @@ public class HttpRestConnection implements MBeanServerConnection {
     }
 
     public void setup() throws IOException { 
-        // Fetch /jmx/servers/platform and populate basic info.
-        String str = executeHttpGetRequest(url(baseURL));
+        // Fetch /jmx/servers/platform, populate basic info and MBeans.
     
+        JSONObject jo = (JSONObject) getJSONForURL(url(baseURL));
+
         try {
-        JSONParser parser = new JSONParser(str);
-        JSONElement json = parser.parse();
-        JSONObject jo = (JSONObject) json;
-        JSONElement value = jo.get("defaultDomain");
         // System.err.println("defaultDomain json value = " + value);
-        defaultDomain = (String) ((JSONPrimitive) value).getValue();
+        defaultDomain = JSONObject.getObjectFieldString(jo, "defaultDomain");
 
         // domains:  "[JMImplementation, java.util.logging, jdk.management.jfr, java.lang, com.sun.management, java.nio]"
         // populated in MBeanServerResource with Arrays.toString(mbeanServer.getDomains())
-        value = jo.get("domains");
+        JSONArray domainsArray = JSONObject.getObjectFieldArray(jo, "domains");
 
-        if (value instanceof JSONArray) {
+        if (domainsArray != null) {
             // JSONArray extends ArrayList<JSONElement>. 
             ArrayList<String> a = new ArrayList<>();
-            for (JSONElement e : (JSONArray) value) {
+            for (JSONElement e : domainsArray) {
                 String d = (String) ((JSONPrimitive) e).getValue();
                 a.add(d);
             }
             domains = a.toArray(new String[0]);
         } else {
-            throw new RuntimeException("JSONArray expected, got: " + value.getClass());
+            System.err.println("XXXX no domains");
         }
         readMBeans();
 
@@ -123,36 +125,33 @@ public class HttpRestConnection implements MBeanServerConnection {
     }
 
     protected void readMBeans() throws IOException {
-        // Fetch jmx/servers/platform/mbeans/ and populate map:
+        // Fetch jmx/servers/platform/mbeans
+        // { "mbeans": [ { name, interfaceClassName, className, desription, attributeCout, operationCount, href, info }, ...
+        // and populate map:
         objectMap = new HashMap<ObjectName,String>();
         objectInfoMap = new HashMap<ObjectName,String>();
-        // { "mbeans": [ { name, interfaceClassName, className, desription, attributeCout, operationCount, href, info }, ...
-        String str = executeHttpGetRequest(url(baseURL, "mbeans"));
+
+        JSONObject jo = (JSONObject) getJSONForURL(url(baseURL, "mbeans"));
+        mBeanCount = JSONObject.getObjectFieldInt(jo, "mbeanCount");
+        System.err.println("XXX readMBeans: mBeanCount = " + mBeanCount + " from: " + jo.toJsonString());
 
         try {
-        JSONParser parser = new JSONParser(str);
-        JSONObject jo = (JSONObject) parser.parse();
-        JSONElement count = jo.get("mbeanCount");
-
-        JSONElement mbeans = jo.get("mbeans");
-        if (mbeans instanceof JSONArray) {
-            for (JSONElement b : (JSONArray) mbeans) {
-//                System.err.println("XXX MBEAN: " + b );
+        JSONArray mbeans = JSONObject.getObjectFieldArray(jo, "mbeans");
+        if (mbeans != null) {
+            for (JSONElement b : mbeans) {
                 JSONObject bean = (JSONObject) b;
                 // Extract info to populate objectMap...
-                JSONElement value = bean.get("name");
-                String name = (String) ((JSONPrimitive) value).getValue();
-   //             System.err.println("XXX name = " + name);
-                value = bean.get("href");
-                String href = (String) ((JSONPrimitive) value).getValue();
-//                System.err.println("XXX href = " + href);
+                String name = JSONObject.getObjectFieldString(bean, "name");
+                String href = JSONObject.getObjectFieldString(bean, "href");
+   //             System.err.println("XXX readMBeans: name = " + name + " href = " + href);
                 if (name != null) {
                     objectMap.put(new ObjectName(name), href);
                     objectInfoMap.put(new ObjectName(name), href + "/info");
                 }
             }
         } else {
-            throw new RuntimeException("JSONArray expected, got: " + mbeans.getClass());
+            System.err.println("XXX readMBeans: no mbeans");
+   //         throw new RuntimeException("no mbeans");
         }
 
         } catch (Exception e) {
@@ -322,34 +321,10 @@ public class HttpRestConnection implements MBeanServerConnection {
 
 
     public Integer getMBeanCount() throws IOException {
-        // /jmx/servers/platform/mbeans/
-        // { "mbeanCount": "27", ...
         // RMI uses com/sun/jmx/mbeanserver/Repository.java which holds a count.
-        String str = executeHttpGetRequest(url(baseURL, "mbeans/"));
-        // System.err.println("getMBeanCount: raw = " + str);
-        JSONParser parser = new JSONParser(str);
-        try {
-            JSONElement json = parser.parse();
-//            System.err.println("getMBeanCount: JSONElement " + json);
-//            System.err.println("json class = " + json.getClass());
-            JSONObject jo = (JSONObject) json;
-//            System.err.println("json Object = " + jo);
 
-//            jo.keySet().forEach((s) -> { System.out.println("XX = '" + s + "'"); });
-            JSONElement value = jo.get("mbeanCount");
-//            System.err.println("json value = " + value);
-            if (value == null) {
-                throw new IOException("no field");
-            }
-            String v = (String) ((JSONPrimitive) value).getValue();
-            try {
-                return Integer.parseInt(v);
-            } catch (NumberFormatException nfe) {
-                throw new IOException("bad field");
-            }
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
+        // Consider refresh
+        return mBeanCount;
     }
 
     public Object getAttribute(ObjectName name, String attribute)
@@ -370,7 +345,7 @@ public class HttpRestConnection implements MBeanServerConnection {
         }
 //        System.err.println("XXX getAttribute gets " + o);
         // Get attribute.
-        JSONObject attributes = (JSONObject) o.get("attributes");
+        JSONObject attributes = JSONObject.getObjectFieldObject(o, "attributes");
         if (attributes == null) {
             throw new AttributeNotFoundException("no Attributes in '" + name + "' (internal error)");
         }
@@ -385,11 +360,10 @@ public class HttpRestConnection implements MBeanServerConnection {
 //        return ((JSONPrimitive)a).getValue();
 
         // Attribute info from .../info
-        JSONArray attributeInfo = (JSONArray) oi.get("attributeInfo");
+        JSONArray attributeInfo = JSONObject.getObjectFieldArray(oi, "attributeInfo");
         if (attributeInfo == null) {
             throw new AttributeNotFoundException("no attribute '" + attribute + "' in object '" + name + "'");
         }
-        // That is a JSONArray
         JSONObject thisAttrInfo = null;
         for (JSONElement ai : attributeInfo) {
             JSONElement n = ((JSONObject) ai).get("name");
@@ -405,22 +379,20 @@ public class HttpRestConnection implements MBeanServerConnection {
             throw new AttributeNotFoundException("no attribute info for '" + attribute + "' in object '" + name + "'");
         }
 
-        // We can get a simple typename line "long" or "[J", or we can get a longer opentype name
+        // We can get a simple typename like "long" or "[J", or we can get a longer opentype name
         // like ""javax.management.openmbean.SimpleType(name=java.lang.Integer)" or
         // "javax.management.openmbean.ArrayType(name=[J,dimension=1,elementType=javax.management.openmbean.SimpleType(name=java.lang.Long),primitiveArray=true)"
 
-        JSONElement type = thisAttrInfo.get("type");
-        String typeName = (String) ((JSONPrimitive) type).getValue();
+        String typeName = JSONObject.getObjectFieldString(thisAttrInfo, "type");
         // System.err.println("getAttr TYPE 1a: '" + typeName + "'");
         JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(typeName);
         // System.err.println("getAttr TYPE 1b: mapper = " + typeMapper);
 
         if (typeMapper == null) {
-            JSONObject dd = (JSONObject) thisAttrInfo.get("descriptor");
+            JSONObject dd = JSONObject.getObjectFieldObject(thisAttrInfo, "descriptor");
             //System.err.println("TYPE 2: " + dd.toJsonString());
-            JSONElement openType = dd.get("openType");
             //System.err.println("TYPE 3: " + openType);
-            String ot = (String) ((JSONPrimitive)openType).getValue();
+            String ot = JSONObject.getObjectFieldString(dd, "openType");
 //            System.err.println("TYPE 4: " + ot);
             typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(ot);
 
@@ -452,7 +424,16 @@ public class HttpRestConnection implements MBeanServerConnection {
             throws InstanceNotFoundException, ReflectionException,
                    IOException {
 
-        return null;
+        AttributeList results = new AttributeList(attributes.length);
+        for (String a : attributes) {
+            try {
+                Object value = getAttribute(name, a);
+                results.add(new Attribute(a, value));  
+            } catch (Exception e) {
+                // omit from results
+            }
+        }
+        return results;
     }
 
     public void setAttribute(ObjectName name, Attribute attribute)
@@ -474,7 +455,7 @@ public class HttpRestConnection implements MBeanServerConnection {
     /**
       * Generic helper
       */
-    public static List<JSONElement> getFromJSONArrayByFieldValue(JSONArray a, String fieldName, String fieldValue) {
+    protected static List<JSONElement> getFromJSONArrayByFieldValue(JSONArray a, String fieldName, String fieldValue) {
         List<JSONElement> results = new ArrayList<>();
 
     for (JSONElement e : a) {
@@ -503,14 +484,14 @@ public class HttpRestConnection implements MBeanServerConnection {
     /**
      * Helper method for locating an operation.
      */
-    public static JSONElement findMBeanNamedOperationWithSignature(JSONArray a, String fieldName, String fieldValue, String [] signature) {
+    protected static JSONElement findMBeanNamedOperationWithSignature(JSONArray a, String fieldName, String fieldValue, String [] signature) {
         // May be multiple operations of the same name.
         List<JSONElement> ops =  getFromJSONArrayByFieldValue(a, fieldName, fieldValue);
         for (JSONElement e : ops) {
             JSONObject o = (JSONObject) e;
             // Attempt to match signature.
             // "arguments" is an array of objects containing name and type.
-            JSONArray array = (JSONArray) o.get("arguments");
+            JSONArray array = JSONObject.getObjectFieldArray(o, "arguments");
             if (array == null) {
                 // Need to match a no-arg operation?
                 // System.err.println("ZZZ fmnows: null argumnets in op, signature = " + signature.length);
@@ -538,7 +519,7 @@ public class HttpRestConnection implements MBeanServerConnection {
         return null;
     }
 
-    public static JSONElement findMBeanInfoNamedOperationWithSignature(JSONArray a, String fieldName, String fieldValue, String [] signature) {
+    protected static JSONElement findMBeanInfoNamedOperationWithSignature(JSONArray a, String fieldName, String fieldValue, String [] signature) {
         // May be multiple operations of the same name.
         // Here in Mbean/info, the operationInfo array is of objects with
         // name/signature/returnType/descriptor (which contains openType, originalType).
@@ -547,7 +528,7 @@ public class HttpRestConnection implements MBeanServerConnection {
             JSONObject o = (JSONObject) e;
             // Attempt to match signature.
             // "signature" is an array of objects containing name and type.
-            JSONArray array = (JSONArray) o.get("signature");
+            JSONArray array = JSONObject.getObjectFieldArray(o, "signature");
             if (array == null) {
                 // Need to match a no-arg operation?
                 if (signature.length == 0) {
@@ -577,20 +558,19 @@ public class HttpRestConnection implements MBeanServerConnection {
         return null;
     }
 
-    public String buildJSONForParams(JSONObject op, Object params[], String signature[]) throws JSONMappingException {
+    protected String buildJSONForParams(JSONObject op, Object params[], String signature[]) throws JSONMappingException {
         // Create a JSONObject with name:value entries.
         JSONObject o = new JSONObject();
         for (int i = 0; i < params.length; i++) {
             JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(params[i]);
             JSONElement je = typeMapper.toJsonValue(params[i]);
 //            System.err.println("p" + i + " = " + params[i] + " aka " + signature[i] + " = " + je);
-            // XXXXXXX
             o.put("p" + i, je);
         }
         return o.toJsonString();
     }
 
-    public static Object getObjectForType(String originalType, String openType, JSONElement json) {
+    protected static Object getObjectForType(String originalType, String openType, JSONElement json) {
     /*
      * Figure out a Java Object for type information and some JSON.
      * May use JSONMapper for a named object type, possibly a CompositeType description.
@@ -604,14 +584,11 @@ public class HttpRestConnection implements MBeanServerConnection {
         // Can we create the wanted class directly from JSON:
         try {
             Class<?> c = Class.forName("jdk.internal.management.remote.rest.json." + originalType);
-//            System.err.println("ZZZZZZZZZZZZZZZZZ c = " + c);
             // e.g. jdk.internal.management.remote.rest.json.java.lang.management.ThreadInfo
             Method m = c.getMethod("from", JSONObject.class);
             Object o = m.invoke(null, (JSONObject) json);
-//            System.err.println("ZZZZZZZZZZZZZZZZZ o = " + o);
             return o;
         } catch (Exception e) {
-//            System.err.println("zzz: " + e);
             e.printStackTrace(System.err);
         }
 
@@ -650,34 +627,34 @@ public class HttpRestConnection implements MBeanServerConnection {
         // But return types are terse.
         // The MBean/info object contains "operationInfo" array 
 
-        JSONElement operations = o.get("operations");
+        JSONArray operations = JSONObject.getObjectFieldArray(o, "operations");
         if (operations == null) {
             throw new IOException("no operations in '" + name + "' (internal error)");
         }
-        JSONElement operationInfo = oi.get("operationInfo");
+        JSONArray operationInfo = JSONObject.getObjectFieldArray(oi, "operationInfo");
         if (operationInfo == null) {
             throw new IOException("no operationInfo in '" + name + "/info' (internal error)");
         }
         // Find the named operation, which matches the signature.
         //JSONElement a = getFromJSONArrayByFieldValue((JSONArray) operations, "name", operationName);
-        JSONElement a  = findMBeanNamedOperationWithSignature((JSONArray) operations, "name", operationName, signature);
+        JSONElement a  = findMBeanNamedOperationWithSignature(operations, "name", operationName, signature);
         if (a == null) {
             throw new InstanceNotFoundException("no operation '" + operationName + "' in object '" + name + "'");
         }
-        JSONElement opInfo  = findMBeanInfoNamedOperationWithSignature((JSONArray) operationInfo, "name", operationName, signature);
+        JSONElement opInfo  = findMBeanInfoNamedOperationWithSignature(operationInfo, "name", operationName, signature);
         if (opInfo == null) {
             throw new InstanceNotFoundException("no operation '" + operationName + "' in object '" + name + "'");
         }
         JSONObject op = (JSONObject) a;
 //        System.err.println("XXX invoke -> found 1 operation: " + a);
 //        System.err.println("XXX invoke -> found 2 operation: " + opInfo);
-        JSONElement descriptor = ((JSONObject) opInfo).get("descriptor"); // contains "openType", "originalType"
+        JSONObject descriptor = JSONObject.getObjectFieldObject((JSONObject) opInfo, "descriptor"); // contains "openType", "originalType"
 //        System.err.println("XXX invoke -> found 2 descriptor: " + descriptor.toJsonString());
         
         // From the HTTP/REST request, with given params.
-        String href = (String) ((JSONPrimitive) op.get("href")).getValue(); // includes base and operation name
-        String method = (String) ((JSONPrimitive) op.get("method")).getValue();
-        String returnType = (String) ((JSONPrimitive) op.get("returnType")).getValue();
+        String href = JSONObject.getObjectFieldString(op, "href"); // includes base and operation name
+        String method = JSONObject.getObjectFieldString(op, "method");
+        String returnType = JSONObject.getObjectFieldString(op, "returnType");
 //        System.err.println("XX invoke href " + href + " " + method + " ret: " + returnType);
 
         // Need a JSON object of the params to send: { "p0": param1value }
@@ -697,8 +674,8 @@ public class HttpRestConnection implements MBeanServerConnection {
         // Return type.
         // descriptor has members openType, originalType.
         // e.g. originalType java.lang.management.ThreadInfo, returnType javax.management.openmbean.CompositeData
-        String originalType = (String) ((JSONPrimitive) ((JSONObject) descriptor).get("originalType")).getValue();
-        String openType     = (String) ((JSONPrimitive) ((JSONObject) descriptor).get("openType")).getValue();
+        String originalType = JSONObject.getObjectFieldString(descriptor, "originalType");
+        String openType     = JSONObject.getObjectFieldString(descriptor, "openType");
 //        System.err.println("RETTYPE openType = " + openType + "\nRETTYPE originalType " + originalType + "\nRETTYPE returnType " + returnType ); 
 
         result = getObjectForType(originalType, openType, json);
@@ -826,9 +803,10 @@ public class HttpRestConnection implements MBeanServerConnection {
         // jmx/servers/platform/mbeans/NAME/info
         try {
             String ref = objectInfoMap.get(name);
-            String text = executeHttpGetRequest(url(ref));
-            JSONParser parser = new JSONParser(text);
-            JSONElement json = parser.parse();
+//            String text = executeHttpGetRequest(url(ref));
+//            JSONParser parser = new JSONParser(text);
+//            JSONElement json = parser.parse();
+            JSONElement json = getJSONForURL(url(ref));
             return (JSONObject) json;
         } catch (Exception e) {
             return null;
@@ -840,14 +818,28 @@ public class HttpRestConnection implements MBeanServerConnection {
         // jmx/servers/platform/mbeans/
         try {
             String ref = objectMap.get(name);
-            String text = executeHttpGetRequest(url(ref));
-            JSONParser parser = new JSONParser(text);
-            JSONElement json = parser.parse();
+//            String text = executeHttpGetRequest(url(ref));
+//            JSONParser parser = new JSONParser(text);
+//            JSONElement json = parser.parse();
+            JSONElement json = getJSONForURL(url(ref));
             return (JSONObject) json;
         } catch (Exception e) {
             return null;
         }
     }
+
+    protected static JSONElement getJSONForURL(URL url) throws IOException {
+        // Utility to fetch from a URL, parse and return the JSONElement.
+        String str = executeHttpGetRequest(url);
+        JSONParser parser = new JSONParser(str);
+        try {
+            JSONElement json = parser.parse();
+            return json;
+        } catch (ParseException pe) {
+            throw new IOException("Failed to parse JSON", pe);
+        }
+    }
+
 
     protected static String executeHttpGetRequest(URL url) throws MalformedURLException, IOException {
             // HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
