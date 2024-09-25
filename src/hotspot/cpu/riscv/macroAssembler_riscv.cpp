@@ -3159,6 +3159,13 @@ void MacroAssembler::membar(uint32_t order_constraint) {
   }
 }
 
+void MacroAssembler::cmodx_fence() {
+  BLOCK_COMMENT("cmodx fence");
+  if (VM_Version::supports_fencei_barrier()) {
+    Assembler::fencei();
+  }
+}
+
 // Form an address from base + offset in Rd. Rd my or may not
 // actually be used: you must use the Address that is returned. It
 // is up to you to ensure that the shift provided matches the size
