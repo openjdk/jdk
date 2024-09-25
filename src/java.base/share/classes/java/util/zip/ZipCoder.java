@@ -56,7 +56,7 @@ class ZipCoder {
     }
 
     /**
-     * These values represents the three possible return values for
+     * Constants representing the three possible return values for
      * {@link #compare(String, byte[], int, int, boolean)} when
      * this method compares a lookup name to a string encoded in the
      * CEN byte array.
