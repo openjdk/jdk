@@ -1820,6 +1820,15 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
+#ifndef _LP64
+  if (LockingMode != LM_LIGHTWEIGHT) {
+    FLAG_SET_CMDLINE(LockingMode, LM_LIGHTWEIGHT);
+    // Self-forwarding in bit 3 of the mark-word conflicts
+    // with 4-byte-aligned stack-locks.
+    warning("Legacy locking not supported on this platform");
+  }
+#endif
+
   if (UseObjectMonitorTable && LockingMode != LM_LIGHTWEIGHT) {
     // ObjectMonitorTable requires lightweight locking.
     FLAG_SET_CMDLINE(UseObjectMonitorTable, false);
