@@ -96,7 +96,7 @@ final class ProxyGenerator {
 
     private static final String NAME_LOOKUP_ACCESSOR = "proxyClassLookup";
 
-    private static final boolean LEGACY = ReflectionFactory.useLegacyProxyImpl();
+    private static final boolean LEGACY = ReflectionFactory.usesLegacyProxy();
 
     private static final DynamicConstantDesc<?> METHOD_LIST_CLASS_DATA = LEGACY ? null :
             DynamicConstantDesc.ofNamed(BSM_CLASS_DATA, DEFAULT_NAME, CD_List);

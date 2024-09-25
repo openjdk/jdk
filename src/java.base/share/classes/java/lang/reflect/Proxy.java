@@ -546,7 +546,7 @@ public class Proxy implements java.io.Serializable {
 
             var cd = ProxyGenerator.generateProxyClass(loader, proxyName, interfaces, access);
             try {
-                if (ReflectionFactory.useLegacyProxyImpl()) {
+                if (ReflectionFactory.usesLegacyProxy()) {
                     pc = JLA.defineClass(loader, proxyName, cd.bytecode(), null, "__dynamic_proxy__");
                 } else {
                     pc = JLA.defineClass(loader,
