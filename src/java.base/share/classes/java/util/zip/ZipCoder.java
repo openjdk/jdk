@@ -66,17 +66,17 @@ class ZipCoder {
          * The lookup string is exactly equal
          * to the encoded string.
          */
-        EXACT_MATCH = 1,
+        EXACT_MATCH = 0,
         /*
          * The lookup string and the encoded string differs only
          * by the encoded string having a trailing '/' character.
          */
-        DIRECTORY_MATCH = 2,
+        DIRECTORY_MATCH = 1,
         /*
          * The lookup string and the encoded string do not match.
          * (They are neither an exact match or a directory match.)
          */
-        NO_MATCH = 3;
+        NO_MATCH = 2;
 
     String toString(byte[] ba, int off, int length) {
         try {
