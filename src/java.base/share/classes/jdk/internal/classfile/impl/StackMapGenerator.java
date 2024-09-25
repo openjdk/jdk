@@ -400,6 +400,8 @@ public final class StackMapGenerator {
     }
 
     private void processMethod() {
+        var frames = this.frames;
+        var currentFrame = this.currentFrame;
         currentFrame.setLocalsFromArg(methodName, methodDesc, isStatic, thisType);
         currentFrame.stackSize = 0;
         currentFrame.flags = 0;
@@ -415,10 +417,10 @@ public final class StackMapGenerator {
                     throw generatorError("Expecting a stack map frame");
                 }
                 if (thisOffset == bcs.bci()) {
-                    if (!ncf) {
-                        currentFrame.checkAssignableTo(frames.get(stackmapIndex));
-                    }
                     Frame nextFrame = frames.get(stackmapIndex++);
+                    if (!ncf) {
+                        currentFrame.checkAssignableTo(nextFrame);
+                    }
                     while (!nextFrame.dirty) { //skip unmatched frames
                         if (stackmapIndex == frames.size()) return; //skip the rest of this round
                         nextFrame = frames.get(stackmapIndex++);
@@ -429,7 +431,7 @@ public final class StackMapGenerator {
                     currentFrame.copyFrom(nextFrame);
                     nextFrame.dirty = false;
                 } else if (thisOffset < bcs.bci()) {
-                    throw new ClassFormatError(String.format("Bad stack map offset %d", thisOffset));
+                    throw generatorError("Bad stack map offset");
                 }
             } else if (ncf) {
                 throw generatorError("Expecting a stack map frame");
