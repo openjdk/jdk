@@ -829,7 +829,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             onReadError(t);
         } finally {
             if (nonBlocking) {
-                if (Log.quicRetransmit() || Log.quicTimer()) {
+                if ((Log.quicRetransmit() && Log.channel()) || Log.quicTimer()) {
                     Log.logQuic(name() + ": channelReadLoop totalpkt:" + totalpkt);
                 } else if (debug.on()) {
                     debug.log("channelReadLoop totalpkt:" + totalpkt);
