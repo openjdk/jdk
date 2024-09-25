@@ -325,7 +325,7 @@ public final class PassFailJFrame {
      * the constructor on the main thread.
      * <p>
      * After you create a test UI window, register the window using
-     * {@link #addTestWindow(Window) addTestWindow} for disposing of, and
+     * {@link #addTestWindow(Window) addTestWindow} for disposal, and
      * position it close to the instruction frame using
      * {@link #positionTestWindow(Window, Position) positionTestWindow}.
      * As the last step, make your test UI window visible.
