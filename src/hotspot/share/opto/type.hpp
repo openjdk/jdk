@@ -188,9 +188,6 @@ protected:
     return dual()->meet_helper(t->dual(), include_speculative)->dual();
   }
 
-  virtual ~Type() {
-  }
-
   void assert_type_verify_empty() const NOT_DEBUG_RETURN;
 
 public:

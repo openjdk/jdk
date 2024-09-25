@@ -26,7 +26,6 @@
 #define SHARE_UTILITIES_GROWABLEARRAY_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/arena.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -796,9 +795,6 @@ public:
   ~GrowableArray() {
     if (on_C_heap()) {
       this->clear_and_deallocate();
-    }
-    if (on_arena()) {
-      _metadata.arena()->Afree(this->_data, this->_capacity * sizeof(E));
     }
   }
 };
