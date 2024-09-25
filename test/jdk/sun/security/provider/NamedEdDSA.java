@@ -51,35 +51,35 @@ public class NamedEdDSA {
     public static class ProviderImpl extends Provider {
         public ProviderImpl() {
             super("Named", "0", "");
-            put("KeyPairGenerator.EdDSA", KPG.class.getName());
-            put("KeyPairGenerator.Ed25519", KPG.S2.class.getName());
-            put("KeyPairGenerator.Ed448", KPG.S4.class.getName());
-            put("KeyFactory.EdDSA", KF.class.getName());
-            put("KeyFactory.Ed25519", KF.S2.class.getName());
-            put("KeyFactory.Ed448", KF.S4.class.getName());
-            put("Signature.EdDSA", SIG.class.getName());
-            put("Signature.Ed25519", SIG.S2.class.getName());
-            put("Signature.Ed448", SIG.S4.class.getName());
+            put("KeyPairGenerator.EdDSA", EdDSAKeyPairGenerator.class.getName());
+            put("KeyPairGenerator.Ed25519", EdDSAKeyPairGenerator.Ed25519.class.getName());
+            put("KeyPairGenerator.Ed448", EdDSAKeyPairGenerator.Ed448.class.getName());
+            put("KeyFactory.EdDSA", EdDSAKeyFactory.class.getName());
+            put("KeyFactory.Ed25519", EdDSAKeyFactory.Ed25519.class.getName());
+            put("KeyFactory.Ed448", EdDSAKeyFactory.Ed448.class.getName());
+            put("Signature.EdDSA", EdDSASignature.class.getName());
+            put("Signature.Ed25519", EdDSASignature.Ed25519.class.getName());
+            put("Signature.Ed448", EdDSASignature.Ed448.class.getName());
         }
     }
 
-    public static class SIG extends NamedSignature {
-        public SIG() {
+    public static class EdDSASignature extends NamedSignature {
+        public EdDSASignature() {
             super("EdDSA", "Ed25519", "Ed448");
         }
 
-        protected SIG(String pname) {
+        protected EdDSASignature(String pname) {
             super("EdDSA", pname);
         }
 
-        public static class S2 extends SIG {
-            public S2() {
+        public static class Ed25519 extends EdDSASignature {
+            public Ed25519() {
                 super("Ed25519");
             }
         }
 
-        public static class S4 extends SIG {
-            public S4() {
+        public static class Ed448 extends EdDSASignature {
+            public Ed448() {
                 super("Ed448");
             }
         }
@@ -100,45 +100,45 @@ public class NamedEdDSA {
         }
     }
 
-    public static class KF extends NamedKeyFactory {
-        public KF() {
+    public static class EdDSAKeyFactory extends NamedKeyFactory {
+        public EdDSAKeyFactory() {
             super("EdDSA", "Ed25519", "Ed448");
         }
 
-        protected KF(String pname) {
+        protected EdDSAKeyFactory(String pname) {
             super("EdDSA", pname);
         }
 
-        public static class S2 extends KF {
-            public S2() {
+        public static class Ed25519 extends EdDSAKeyFactory {
+            public Ed25519() {
                 super("Ed25519");
             }
         }
 
-        public static class S4 extends KF {
-            public S4() {
+        public static class Ed448 extends EdDSAKeyFactory {
+            public Ed448() {
                 super("Ed448");
             }
         }
     }
 
-    public static class KPG extends NamedKeyPairGenerator {
-        public KPG() {
+    public static class EdDSAKeyPairGenerator extends NamedKeyPairGenerator {
+        public EdDSAKeyPairGenerator() {
             super("EdDSA", "Ed25519", "Ed448");
         }
 
-        protected KPG(String pname) {
+        protected EdDSAKeyPairGenerator(String pname) {
             super("EdDSA", pname);
         }
 
-        public static class S2 extends KPG {
-            public S2() {
+        public static class Ed25519 extends EdDSAKeyPairGenerator {
+            public Ed25519() {
                 super("Ed25519");
             }
         }
 
-        public static class S4 extends KPG {
-            public S4() {
+        public static class Ed448 extends EdDSAKeyPairGenerator {
+            public Ed448() {
                 super("Ed448");
             }
         }
