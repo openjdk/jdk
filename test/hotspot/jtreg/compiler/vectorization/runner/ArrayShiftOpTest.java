@@ -47,6 +47,8 @@ import compiler.lib.ir_framework.*;
 
 import java.util.Random;
 
+// TODO ROTATE needs result verification!!!
+
 public class ArrayShiftOpTest extends VectorizationTestRunner {
 
     private static final int SIZE = 543;

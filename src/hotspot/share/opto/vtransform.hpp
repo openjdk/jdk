@@ -552,6 +552,7 @@ public:
   NOT_PRODUCT(virtual const char* name() const override { return "LoopPhi"; };)
 };
 
+// TODO can we port this to XYZVector?
 // Transform produces a ReplicateNode, replicating the input to all vector lanes.
 class VTransformReplicateNode : public VTransformNode {
 public:
