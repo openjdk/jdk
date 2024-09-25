@@ -5435,7 +5435,6 @@ class StubGenerator: public StubCodeGenerator {
       __ addv(vmul0, load_arrangement, vmul0, vdata0);
       break;
     case Assembler::T8B:
-    case Assembler::T4H:
     case Assembler::T8H:
       assert(is_subword_type(eltype), "subword type expected");
       if (is_signed_subword_type(eltype)) {
@@ -5548,7 +5547,6 @@ class StubGenerator: public StubCodeGenerator {
       __ addv(vmul0, load_arrangement, vmul0, vdata0);
       break;
     case Assembler::T8B:
-    case Assembler::T4H:
     case Assembler::T8H:
       assert(is_subword_type(eltype), "subword type expected");
       if (is_signed_subword_type(eltype)) {
