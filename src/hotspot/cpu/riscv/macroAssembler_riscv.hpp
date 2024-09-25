@@ -1321,11 +1321,12 @@ public:
         Register table0, Register table1, Register table2, Register table3,
         bool upper);
   void update_byte_crc32(Register crc, Register val, Register table);
+
+#ifdef COMPILER2
   void vector_update_crc32(Register crc, Register buf, Register len,
                            Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
                            Register table0, Register table3);
 
-#ifdef COMPILER2
   void mul_add(Register out, Register in, Register offset,
                Register len, Register k, Register tmp);
   void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m);
@@ -1355,7 +1356,7 @@ public:
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4,
                        Register tmp5, Register tmp6, Register product_hi);
 
-#endif
+#endif // COMPILER2
 
   void inflate_lo32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
   void inflate_hi32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);

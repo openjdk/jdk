@@ -1455,6 +1455,7 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
 }
 
 
+#ifdef COMPILER2
 // This improvement (vectorization) is based on java.base/share/native/libzip/zlib/zcrc32.c.
 // To make it, following steps are taken:
 //  1. in zcrc32.c, modify N to 16 and related code,
@@ -1550,6 +1551,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
       addi(buf, buf, N*4);
     }
 }
+#endif // COMPILER2
 
 /**
  * @param crc   register containing existing CRC (32-bit)
@@ -1576,11 +1578,13 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   add(table2, table0, 2*single_table_size*sizeof(juint), tmp1);
   add(table3, table2, 1*single_table_size*sizeof(juint), tmp1);
 
+#ifdef COMPILER2
   if (UseRVV) {
     const int64_t tmp_limit = MaxVectorSize >= 32 ? unroll_words*3 : unroll_words*5;
     mv(tmp1, tmp_limit);
     bge(len, tmp1, L_vector_entry);
   }
+#endif // COMPILER2
   subw(len, len, unroll_words);
   bge(len, zr, L_unroll_loop_entry);
 
@@ -1643,6 +1647,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
 
+#ifdef COMPILER2
   // put vector code here, otherwise "offset is too large" error occurs.
   if (UseRVV) {
     j(L_exit); // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
@@ -1655,6 +1660,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     addiw(len, len, 4);
     bgt(len, zr, L_by1_loop);
   }
+#endif // COMPILER2
 
   bind(L_exit);
     andn(crc, tmp5, crc);
