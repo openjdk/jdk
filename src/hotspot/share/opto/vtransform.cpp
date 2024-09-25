@@ -462,7 +462,7 @@ VTransformApplyResult VTransformPopulateIndexNode::apply(VTransformApplyState& a
 }
 
 float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  Node* first  = xnodes().at(0);
+  Node* first  = xnodes().at(0); // TODO first in element wise
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
@@ -490,7 +490,7 @@ float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer)
 }
 
 VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyState& apply_state) const {
-  Node* first = xnodes().at(0);
+  Node* first = xnodes().at(0); // TODO first in element wise
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
   BasicType bt = element_basic_type();
@@ -560,7 +560,7 @@ VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& appl
 
   // Cmp + Bool -> VectorMaskCmp
   VTransformElementWiseVectorNode* vtn_cmp = in(1)->isa_ElementWiseVector();
-  // TODO rm xnodes
+  // TODO rm xnodes -> first in element wise
   assert(vtn_cmp != nullptr && vtn_cmp->xnodes().at(0)->is_Cmp(),
          "bool vtn expects cmp vtn as input");
 
@@ -689,7 +689,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, current_red->prototype(), 3);
     vector_accumulator->init_req(1, current_vector_accumulator);
     vector_accumulator->init_req(2, vector_input);
-    vector_accumulator->set_nodes(current_red->xnodes());
+    vector_accumulator->set_nodes(current_red->xnodes()); // TODO del
     TRACE_OPTIMIZE(
       tty->print("  replace    ");
       current_red->print();
@@ -760,7 +760,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   // TODO: can we move this to optimize or out of SuperWord? Would require some refactor of VPointer!
   while (mem->is_StoreVector()) {
     VPointer p_store(mem->as_Mem(), apply_state.vloop());
-    if (p_store.overlap_possible_with_any_in(xnodes())) {
+    if (p_store.overlap_possible_with_any_in(xnodes())) { // TODO move to LoadVector
       break;
     } else {
       mem = mem->in(MemNode::Memory);
@@ -875,7 +875,7 @@ void VTransformPopulateIndexNode::print_spec() const {
 }
 
 void VTransformVectorNode::print_spec() const {
-  tty->print("%d-pack[", _xnodes.length());
+  tty->print("%d-pack[", _xnodes.length()); // TODO del / replace
   for (int i = 0; i < _xnodes.length(); i++) {
     Node* n = _xnodes.at(i);
     if (i > 0) {
