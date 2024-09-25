@@ -181,7 +181,9 @@ public class CheckSegmentedCodeCache {
                                                               "-XX:ReservedCodeCacheSize=10M",
                                                               "-XX:NonNMethodCodeHeapSize=5M",
                                                               "-XX:ProfiledCodeHeapSize=5M",
-                                                              "-XX:NonProfiledCodeHeapSize=5M",
+                                                              // After fixing a round_down issue with large page sizes (JDK-8334564),
+                                                              // 5M is a bit too small for NonProfiledCodeHeap
+                                                              "-XX:NonProfiledCodeHeapSize=6M",
                                                               "-version");
         failsWith(pb, "Invalid code heap sizes");
 
