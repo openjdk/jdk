@@ -94,7 +94,11 @@ public final class StreamFrame extends QuicFrame {
      */
     // It would be interesting to have a version of this constructor that can take
     // a list of ByteBuffer.
-    public StreamFrame(long streamID, long offset, int length, boolean fin, ByteBuffer streamData)
+    public StreamFrame(long streamID, long offset, int length, boolean fin, ByteBuffer streamData) {
+        this(streamID, offset, length, fin, streamData, true);
+    }
+
+    private StreamFrame(long streamID, long offset, int length, boolean fin, ByteBuffer streamData, boolean slice)
     {
         super(STREAM);
         this.streamID = requireVLRange(streamID, "streamID");
@@ -107,7 +111,9 @@ public final class StreamFrame extends QuicFrame {
         this.length = length;
         this.dataLength = length == -1 ? streamData.remaining() : length;
         this.fin = fin;
-        this.streamData = streamData.slice(streamData.position(), dataLength);
+        this.streamData = slice || dataLength != streamData.remaining()
+                ? streamData.slice(streamData.position(), dataLength)
+                : streamData;
     }
 
     /**
@@ -131,7 +137,7 @@ public final class StreamFrame extends QuicFrame {
         // We are trusting the server now, since handshake succeeded
         //   Utils.sliceOrCopy(streamData, newpos, length);
         ByteBuffer slice = streamData.slice(newpos, length);
-        return new StreamFrame(streamID, offset, length, fin, slice);
+        return new StreamFrame(streamID, offset, length, fin, slice, false);
     }
 
     /**

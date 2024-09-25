@@ -66,14 +66,20 @@ public final class CryptoFrame extends QuicFrame {
     /**
      * Creates CryptoFrame
      */
-    public CryptoFrame(long offset, int length, ByteBuffer cryptoData)
+    public CryptoFrame(long offset, int length, ByteBuffer cryptoData) {
+        this(offset, length, cryptoData, true);
+    }
+
+    private CryptoFrame(long offset, int length, ByteBuffer cryptoData, boolean slice)
     {
         super(CRYPTO);
         this.offset = requireVLRange(offset, "offset");
         if (length != cryptoData.remaining())
             throw new IllegalArgumentException("bad length: " + length);
         this.length = length;
-        this.cryptoData = cryptoData.slice(cryptoData.position(), length);
+        this.cryptoData = slice
+                ? cryptoData.slice(cryptoData.position(), length)
+                : cryptoData;
     }
 
     /**
@@ -92,7 +98,7 @@ public final class CryptoFrame extends QuicFrame {
         // safe cast to int since offsetdiff < length
         int newpos = Math.addExact(pos, (int)offsetdiff);
         ByteBuffer slice = Utils.sliceOrCopy(cryptoData, newpos, length);
-        return new CryptoFrame(offset, length, slice);
+        return new CryptoFrame(offset, length, slice, false);
     }
 
     @Override
