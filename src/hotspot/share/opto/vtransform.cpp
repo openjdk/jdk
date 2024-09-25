@@ -749,8 +749,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   BasicType bt = element_basic_type();
   const TypePtr* load_adr_type = adr_type();
 
-  LoadNode* first = nodes().at(0)->as_Load();
-  Node* ctrl = first->in(MemNode::Control);
+  Node* ctrl = apply_state.vloop().cl();
   Node* mem  = apply_state.memory_state(load_adr_type);
   Node* adr  = apply_state.transformed_node(in(MemNode::Address));
 
@@ -786,8 +785,7 @@ VTransformApplyResult VTransformStoreVectorNode::apply(VTransformApplyState& app
   BasicType bt = element_basic_type();
   const TypePtr* store_adr_type = adr_type();
 
-  StoreNode* first = nodes().at(0)->as_Store();
-  Node* ctrl = first->in(MemNode::Control);
+  Node* ctrl = apply_state.vloop().cl();
   Node* mem  = apply_state.memory_state(store_adr_type);
   Node* adr  = apply_state.transformed_node(in(MemNode::Address));
 
