@@ -3931,10 +3931,11 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 //      a = init2 + (phi - init) * (stride_con2 / stride_con)
 //    }
 //
-// so that the loop can be eliminated given that `stride_con2 / stride_con` is
-// exact (i.e., no remainder). Checks are in place to only perform this
-// optimization if such a division is exact. The example will be transformed
-// into its semantic equivalence:
+// Such transformation introduces more optimization opportunities. In this 
+// particular example, the loop can be eliminated entirely given that 
+// `stride_con2 / stride_con` is exact  (i.e., no remainder). Checks are 
+// in place to only perform this optimization if such a division is exact. 
+// This example will be transformed into its semantic equivalence:
 //
 //     int a = (phi * stride_con2 / stride_con) + (init2 - (init * stride_con2 / stride_con))
 //
@@ -3999,9 +4000,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // The ratio of the two strides cannot be represented as an int
     // if stride_con2 is min_jint (or min_jlong, respectively) and
     // stride_con is -1.
-    if (((stride_con2_bt == T_INT && stride_con2 == min_jint) ||
-        (stride_con2_bt == T_LONG && stride_con2 == min_jlong)) &&
-        stride_con == -1) {
+    if (stride_con2 == min_signed_integer(stride_con2_bt) && stride_con == -1) {
       continue;
     }
 
