@@ -40,7 +40,6 @@ import java.awt.event.MouseEvent;
  */
 
 public class PopupMenuWithMenuBar {
-
     public static void main(String[] args) throws Exception {
         PopupMenuWithMenuBar obj = new PopupMenuWithMenuBar();
         String INSTRUCTIONS = """
