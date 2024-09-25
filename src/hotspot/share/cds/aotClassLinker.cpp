@@ -94,7 +94,10 @@ void AOTClassLinker::add_vm_class(InstanceKlass* ik) {
   bool created;
   _vm_classes->put_if_absent(ik, &created);
   if (created) {
-    add_candidate(ik);
+    if (CDSConfig::is_dumping_aot_linked_classes()) {
+      bool v = try_add_candidate(ik);
+      assert(v, "must succeed for VM class");
+    }
     InstanceKlass* super = ik->java_super();
     if (super != nullptr) {
       add_vm_class(super);
@@ -113,6 +116,11 @@ bool AOTClassLinker::is_candidate(InstanceKlass* ik) {
 void AOTClassLinker::add_candidate(InstanceKlass* ik) {
   _candidates->put_when_absent(ik, true);
   _sorted_candidates->append(ik);
+
+  if (log_is_enabled(Info, cds, aot, link)) {
+    ResourceMark rm;
+    log_info(cds, aot, link)("%s %s %p", class_category_name(ik), ik->external_name(), ik);
+  }
 }
 
 bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
@@ -160,11 +168,6 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
   }
 
   add_candidate(ik);
-
-  if (log_is_enabled(Info, cds, aot, link)) {
-    ResourceMark rm;
-    log_info(cds, aot, link)("%s %s", class_category_name(ik), ik->external_name());
-  }
 
   return true;
 }

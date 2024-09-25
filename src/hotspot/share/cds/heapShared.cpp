@@ -439,6 +439,13 @@ void HeapShared::copy_aot_initialized_mirror(Klass* orig_k, oop orig_mirror, oop
     return;
   }
   InstanceKlass* ik = InstanceKlass::cast(orig_k);
+
+  if (HeapShared::is_archivable_hidden_klass(ik)) {
+    // We can't rerun the <clinit> method of hidden classes as we don't save
+    // the classData, so we must archive its mirror in initialized state.
+    assert(ik->is_initialized(), "must be");
+  }
+
   if (!ik->is_initialized() || !AOTClassInitializer::can_archive_initialized_mirror(ik)) {
     return;
   }
