@@ -2085,23 +2085,11 @@ void MacroAssembler::addw(Register Rd, Register Rn, int32_t increment, Register 
 }
 
 void MacroAssembler::sub(Register Rd, Register Rn, int64_t decrement, Register temp) {
-  if (is_simm12(-decrement)) {
-    addi(Rd, Rn, -decrement);
-  } else {
-    assert_different_registers(Rn, temp);
-    li(temp, decrement);
-    sub(Rd, Rn, temp);
-  }
+  add(Rd, Rn, -decrement, temp);
 }
 
 void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register temp) {
-  if (is_simm12(-decrement)) {
-    addiw(Rd, Rn, -decrement);
-  } else {
-    assert_different_registers(Rn, temp);
-    li(temp, decrement);
-    subw(Rd, Rn, temp);
-  }
+  addw(Rd, Rn, -decrement, temp);
 }
 
 void MacroAssembler::andrw(Register Rd, Register Rs1, Register Rs2) {
