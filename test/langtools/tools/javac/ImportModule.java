@@ -797,4 +797,54 @@ public class ImportModule extends TestRunner {
 
         }
     }
+
+    @Test
+    public void testImportModuleNoModules(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          import module java.base;
+                          public class Test {
+                              public static void main(String... args) {
+                                  List<String> l = new ArrayList<>();
+                                  System.out.println(l.getClass().getName());
+                              }
+                          }
+                          """);
+
+        Files.createDirectories(classes);
+
+        List<String> actualErrors = new JavacTask(tb)
+            .options("--release", "8",
+                     "-XDshould-stop.at=FLOW",
+                     "-XDdev",
+                     "-XDrawDiagnostics")
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run(Task.Expect.FAIL)
+            .writeAll()
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expectedErrors = List.of(
+                "- compiler.warn.option.obsolete.source: 8",
+                "- compiler.warn.option.obsolete.target: 8",
+                "- compiler.warn.option.obsolete.suppression",
+                "Test.java:2:8: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.module.imports)",
+                "Test.java:2:1: compiler.err.import.module.not.found: java.base",
+                "Test.java:5:9: compiler.err.cant.resolve.location: kindname.class, List, , , (compiler.misc.location: kindname.class, test.Test, null)",
+                "Test.java:5:30: compiler.err.cant.resolve.location: kindname.class, ArrayList, , , (compiler.misc.location: kindname.class, test.Test, null)",
+                "4 errors",
+                "3 warnings"
+        );
+
+        if (!Objects.equals(expectedErrors, actualErrors)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
+                                      ", actual: " + out);
+
+        }
+    }
+
 }
