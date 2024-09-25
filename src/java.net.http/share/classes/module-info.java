@@ -88,6 +88,7 @@
  *   <li>ssl</li>
  *   <li>trace</li>
  *   <li>channel</li>
+ *   <li>http3</li>
  *   <li>quic</li>
  * </ul><br>
  * You can append the frames item with a colon-separated list of any of the following items:
@@ -97,15 +98,22 @@
  *   <li>window</li>
  *   <li>all</li>
  * </ul><br>
- * You can append the quic item with a colon-separated list of any of the following items:
+ * You can append the quic item with a colon-separated list of any of the following items;
+ * packets are logged in an abridged form that only shows frames offset and length,
+ * but not content:
  * <ul>
- *   <li>control</li>
- *   <li>processed</li>
- *   <li>retransmit</li>
- *   <li>data</li>
- *   <li>crypto</li>
- *   <li>ack</li>
- *   <li>ping</li>
+ *   <li>ack: packets containing ack frames will be logged</li>
+ *   <li>cc: information on congestion control will be logged</li>
+ *   <li>control: packets containing quic controls (such as frames affecting
+ *                flow control, or frames opening or closing streams)
+ *                will be logged</li>
+ *   <li>crypto: packets containing crypto frames will be logged</li>
+ *   <li>data: packets containing stream frames will be logged</li>
+ *   <li>dbb: information on direct byte buffer usage will be logged</li>
+ *   <li>ping: packets containing ping frames will be logged</li>
+ *   <li>processed: information on flow control (processed bytes) will be logged</li>
+ *   <li>retransmit: information on packet loss and recovery will be logged</li>
+ *   <li>timer: information on send task scheduling will be logged</li>
  *   <li>all</li>
  * </ul><br>
  * Specifying an item adds it to the HTTP client's log. For example, if you specify the
@@ -113,6 +121,8 @@
  * "errors,requests,headers,frames:control:data:window,ssl,trace,channel"<br>
  * Note that you can replace control:data:window with all. The name of the logger is
  * "jdk.httpclient.HttpClient", and all logging is at level INFO.
+ * To debug issues with the quic protocol a good starting point is to specify
+ * {@code quic:control:retransmit}.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout}</b> (default: 30)<br>
  * The number of seconds to keep idle HTTP connections alive in the keep alive cache. This
