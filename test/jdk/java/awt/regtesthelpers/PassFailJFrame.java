@@ -82,7 +82,7 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * A framework for manual tests to display test instructions and
  * <i>Pass</i> / <i>Fail</i> buttons. The framework automatically
  * creates a frame to display the instructions, provides buttons
- * to select the test result, handles test timeout.
+ * to select the test result, and handles test timeout.
  *
  * <p id="timeOutTimer">
  * The instruction UI frame displays a timer at the top which indicates
