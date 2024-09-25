@@ -445,31 +445,30 @@ void CompilationPolicy::initialize() {
     c2_size = C2Compiler::initial_code_buffer_size();
 #endif
 
-  // Check that compilers fit in code cache
-  size_t max_code_cache_size = ReservedCodeCacheSize - CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
-  size_t compiler_buffer_size = c1_size;
+    // Check that compilers fit in code cache
+    size_t max_code_cache_size = ReservedCodeCacheSize - CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
+    size_t compiler_buffer_size = c1_size;
 #ifdef COMPILER1
-  if (compiler_buffer_size > max_code_cache_size) {
-    compiler_buffer_size -= c1_size;
-    set_c1_count(0);
-    c2_only = true;
-  }
+    if (compiler_buffer_size > max_code_cache_size) {
+      compiler_buffer_size -= c1_size;
+      set_c1_count(0);
+      c2_only = true;
+    }
 #endif
 #ifdef COMPILER2
-  compiler_buffer_size += c2_size;
-  if (compiler_buffer_size > max_code_cache_size) {
-    compiler_buffer_size -= c2_size;
-    set_c2_count(0);
+    compiler_buffer_size += c2_size;
+    if (compiler_buffer_size > max_code_cache_size) {
+      compiler_buffer_size -= c2_size;
+      set_c2_count(0);
 #ifdef COMPILER1
-    if (c1_count() == 0) {
-      CompileBroker::disable_compilation_forever();
-      return;
+      if (c1_count() == 0) {
+        CompileBroker::disable_compilation_forever();
+        return;
+      }
+      c1_only = true;
+#endif
     }
-    c1_only = true;
 #endif
-  }
-#endif
-assert(c1_count() != 0 || c2_count() != 0, "No compiler available");
 
 #ifdef _LP64
     // Turn on ergonomic compiler count selection
