@@ -28,7 +28,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run main/othervm -Xbatch -XX:CompileCommand=quiet -XX:TypeProfileLevel=222
- *      -XX:+IgnoreUnrecognizedVMOptions  -XX:+AlwaysIncrementalInline
+ *      -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *      -XX:CompileCommand=compileonly,compiler.parsing.TestUnsafeArrayAccessWithNullBase::test*
  *      -XX:-TieredCompilation compiler.parsing.TestUnsafeArrayAccessWithNullBase
  * @run main/othervm compiler.parsing.TestUnsafeArrayAccessWithNullBase
