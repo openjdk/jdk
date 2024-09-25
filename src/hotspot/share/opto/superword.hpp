@@ -410,9 +410,9 @@ class SuperWord : public ResourceObj {
   PairSet _pairset;
   PackSet _packset;
 
-  // Memory reference, and the alignment width (aw) for which we align the main-loop,
+  // VPointer, and the alignment width (aw) for which we align the main-loop,
   // by adjusting the pre-loop limit.
-  MemNode const* _mem_ref_for_main_loop_alignment;
+  VPointer const* _vpointer_for_main_loop_alignment;
   int _aw_for_main_loop_alignment;
 
  public:

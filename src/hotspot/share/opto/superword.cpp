@@ -40,7 +40,7 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
            NOT_PRODUCT(COMMA is_trace_superword_packset())
            NOT_PRODUCT(COMMA is_trace_superword_rejections())
            ),
-  _mem_ref_for_main_loop_alignment(nullptr),
+  _vpointer_for_main_loop_alignment(nullptr),
   _aw_for_main_loop_alignment(0),
   _do_vector_loop(phase()->C->do_vector_loop())             // whether to do vectorization/simd style
 {
@@ -1489,7 +1489,7 @@ void SuperWord::filter_packs_for_alignment() {
     MemNode const* mem = current->as_constrained()->mem_ref();
     Node_List* pack = get_pack(mem);
     assert(pack != nullptr, "memop of final solution must still be packed");
-    _mem_ref_for_main_loop_alignment = mem;
+    _vpointer_for_main_loop_alignment = &vpointer(mem);
     _aw_for_main_loop_alignment = pack->size() * mem->memory_size();
   }
 }
@@ -1809,7 +1809,7 @@ bool SuperWord::schedule_and_apply() const {
                         is_trace_superword_info());
 #endif
   VTransform vtransform(_vloop_analyzer,
-                        _mem_ref_for_main_loop_alignment,
+                        _vpointer_for_main_loop_alignment,
                         _aw_for_main_loop_alignment
                         NOT_PRODUCT(COMMA trace)
                         );
@@ -2477,12 +2477,12 @@ LoadNode::ControlDependency VTransformLoadVectorNode::control_dependency() const
 // Find the memop pack with the maximum vector width, unless they were already
 // determined (e.g. by SuperWord::filter_packs_for_alignment()).
 void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
-  if (_mem_ref_for_main_loop_alignment != nullptr) {
+  if (_vpointer_for_main_loop_alignment != nullptr) {
     assert(VLoop::vectors_should_be_aligned(), "mem_ref only set if filtered for alignment");
     return;
   }
 
-  MemNode const* mem_ref = nullptr;
+  VPointer const* vpointer = nullptr;
   int max_aw = 0;
 
   const GrowableArray<VTransformNode*>& vtnodes = _graph.vtnodes();
@@ -2501,11 +2501,11 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
     int vw = element_size_in_bytes * vtn->vector_length();
     if (vw > max_aw) {
       max_aw = vw;
-      mem_ref = p0;
+      vpointer = vtn->vpointer();
     }
   }
-  assert(mem_ref != nullptr && max_aw > 0, "found mem_ref and aw");
-  _mem_ref_for_main_loop_alignment = mem_ref;
+  assert(vpointer != nullptr && max_aw > 0, "found vpointer and aw");
+  _vpointer_for_main_loop_alignment = vpointer;
   _aw_for_main_loop_alignment = max_aw;
 }
 
@@ -2519,14 +2519,14 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
 }                                       \
 
 // Ensure that the main loop vectors are aligned by adjusting the pre loop limit. We memory-align
-// the address of "_mem_ref_for_main_loop_alignment" to "_aw_for_main_loop_alignment", which is a
+// the address of "_vpointer_for_main_loop_alignment" to "_aw_for_main_loop_alignment", which is a
 // sufficiently large alignment width. We adjust the pre-loop iteration count by adjusting the
 // pre-loop limit.
 void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   determine_mem_ref_and_aw_for_main_loop_alignment();
-  const MemNode* align_to_ref = _mem_ref_for_main_loop_alignment;
-  const int aw                = _aw_for_main_loop_alignment;
-  assert(align_to_ref != nullptr && aw > 0, "must have alignment reference and aw");
+  const VPointer* align_to_vpointer_p = _vpointer_for_main_loop_alignment;
+  const int aw                      = _aw_for_main_loop_alignment;
+  assert(align_to_vpointer_p != nullptr && aw > 0, "must have alignment reference and aw");
   assert(cl()->is_main_loop(), "can only do alignment for main loop");
 
   // The opaque node for the limit, where we adjust the input
@@ -2542,10 +2542,10 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   Node* orig_limit = pre_opaq->original_loop_limit();
   assert(orig_limit != nullptr && igvn().type(orig_limit) != Type::TOP, "");
 
-  const VPointer& align_to_ref_p = vpointer(align_to_ref);
-  assert(align_to_ref_p.valid(), "sanity");
+  const VPointer& align_to_vpointer = *align_to_vpointer_p;
+  assert(align_to_vpointer.valid(), "sanity");
 
-  // For the main-loop, we want the address of align_to_ref to be memory aligned
+  // For the main-loop, we want the address of align_to_vpointer to be memory aligned
   // with some alignment width (aw, a power of 2). When we enter the main-loop,
   // we know that iv is equal to the pre-loop limit. If we adjust the pre-loop
   // limit by executing adjust_pre_iter many extra iterations, we can change the
@@ -2673,16 +2673,16 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //                   = MAX(new_limit,                   orig_limit)         (15a, stride < 0)
   //
   const int stride   = iv_stride();
-  const int scale    = align_to_ref_p.scale_in_bytes();
-  const int offset   = align_to_ref_p.offset_in_bytes();
-  Node* base         = align_to_ref_p.adr();
-  Node* invar        = align_to_ref_p.invar();
+  const int scale    = align_to_vpointer.scale_in_bytes();
+  const int offset   = align_to_vpointer.offset_in_bytes();
+  Node* base         = align_to_vpointer.adr();
+  Node* invar        = align_to_vpointer.invar();
 
 #ifdef ASSERT
   if (_trace._align_vector) {
     tty->print_cr("\nVTransform::adjust_pre_loop_limit_to_align_main_loop_vectors:");
-    tty->print("  align_to_ref:");
-    align_to_ref->dump();
+    tty->print("  align_to_vpointer:");
+    align_to_vpointer.print();
     tty->print_cr("  aw:       %d", aw);
     tty->print_cr("  stride:   %d", stride);
     tty->print_cr("  scale:    %d", scale);
@@ -2756,7 +2756,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   }
 
   // 1.3: base (unless base is guaranteed aw aligned)
-  if (aw > ObjectAlignmentInBytes || align_to_ref_p.base()->is_top()) {
+  if (aw > ObjectAlignmentInBytes || align_to_vpointer.base()->is_top()) {
     // The base is only aligned with ObjectAlignmentInBytes with arrays.
     // When the base() is top, we have no alignment guarantee at all.
     // Hence, we must now take the base into account for the calculation.
