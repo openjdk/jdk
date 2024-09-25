@@ -2590,7 +2590,7 @@ public class Attr extends JCTree.Visitor {
                     } else if (methName == names._super) {
                         // qualifier omitted; check for existence
                         // of an appropriate implicit qualifier.
-                        checkNewInnerClass(tree.meth.pos(), localEnv, site);
+                        checkNewInnerClass(tree.meth.pos(), localEnv.outer, site);
                     }
                 } else if (tree.meth.hasTag(SELECT)) {
                     log.error(tree.meth.pos(),
