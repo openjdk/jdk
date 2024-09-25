@@ -1149,10 +1149,12 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   Symbol* class_name = ik->name();
 
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
+    ik->set_shared_loading_failed();
     return nullptr;
   }
 
   if (!check_shared_class_super_types(ik, class_loader, protection_domain, THREAD)) {
+    ik->set_shared_loading_failed();
     return nullptr;
   }
 

@@ -190,6 +190,13 @@ public final class DirectCodeBuilder
         int pos = buf.size();
         int handlersSize = handlers.size();
         buf.writeU2(handlersSize);
+        if (handlersSize > 0) {
+            writeExceptionHandlers(buf, pos);
+        }
+    }
+
+    private void writeExceptionHandlers(BufWriterImpl buf, int pos) {
+        int handlersSize = handlers.size();
         for (AbstractPseudoInstruction.ExceptionCatchImpl h : handlers) {
             int startPc = labelToBci(h.tryStart());
             int endPc = labelToBci(h.tryEnd());
