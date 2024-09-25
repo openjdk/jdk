@@ -3260,24 +3260,38 @@ void TypeRawPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
 // Convenience common pre-built type.
 const TypeOopPtr *TypeOopPtr::BOTTOM;
 
-TypeInterfaces::TypeInterfaces()
-        : Type(Interfaces), _list(Compile::current()->type_arena(), 0, 0, nullptr),
+TypeInterfaces::TypeInterfaces(const GrowableArray<ciInstanceKlass*>* interfaces)
+        : Type(Interfaces), _interfaces(interfaces),
           _hash(0), _exact_klass(nullptr) {
-  DEBUG_ONLY(_initialized = true);
-}
-
-TypeInterfaces::TypeInterfaces(GrowableArray<ciInstanceKlass*>* interfaces)
-        : Type(Interfaces), _list(Compile::current()->type_arena(), interfaces->length(), 0, nullptr),
-          _hash(0), _exact_klass(nullptr) {
-  for (int i = 0; i < interfaces->length(); i++) {
-    add(interfaces->at(i));
-  }
+  assert(_interfaces != nullptr, "no interfaces should be passed as empty list");
   initialize();
 }
 
-const TypeInterfaces* TypeInterfaces::make(GrowableArray<ciInstanceKlass*>* interfaces) {
-  TypeInterfaces* result = (interfaces == nullptr) ? new TypeInterfaces() : new TypeInterfaces(interfaces);
-  return (const TypeInterfaces*)result->hashcons();
+const TypeInterfaces* TypeInterfaces::make(const GrowableArray<ciInstanceKlass*>* interfaces) {
+  // To make sure all memory for the newly created TypeInterfaces can be freed if an identical one exists, we initially
+  // create the array of interfaces in the current thread's resource area and have the new TypeInterfaces refer to it.
+  // If hashcons() returns an already existing TypeInterfaces, then the just allocated TypeInterfaces was destroyed
+  // (it's the last thing allocated in the type arena) and the memory for array of interfaces is reclaimed when this
+  // method returns. If hashcons() returns the newly allocated TypeInterfaces, a new array of interfaces is allocated in
+  // the type arena and populated with the content of the one in the resource area. The TypeInterfaces object is made to
+  // refer to the one in the type area.
+  ResourceMark rm;
+  GrowableArray<ciInstanceKlass*> temp_interfaces;
+  if (interfaces != nullptr) {
+    for (int i = 0; i < interfaces->length(); ++i) {
+      temp_interfaces.insert_sorted<compare>(interfaces->at(i));
+    }
+  }
+  TypeInterfaces* result = new TypeInterfaces(&temp_interfaces);
+  const Type* unique = result->hashcons();
+  if (unique == result) {
+    GrowableArray<ciInstanceKlass*>* permanent_interfaces = new(Compile::current()->type_arena()) GrowableArray< ciInstanceKlass*>(Compile::current()->type_arena(), temp_interfaces.length(), 0, nullptr);
+    for (int i = 0; i < temp_interfaces.length(); ++i) {
+      permanent_interfaces->push(temp_interfaces.at(i));
+    }
+    result->_interfaces = permanent_interfaces;
+  }
+  return (const TypeInterfaces*)unique;
 }
 
 void TypeInterfaces::initialize() {
@@ -3295,20 +3309,14 @@ int TypeInterfaces::compare(ciInstanceKlass* const& k1, ciInstanceKlass* const& 
   return 0;
 }
 
-void TypeInterfaces::add(ciInstanceKlass* interface) {
-  assert(interface->is_interface(), "for interfaces only");
-  _list.insert_sorted<compare>(interface);
-  verify();
-}
-
 bool TypeInterfaces::eq(const Type* t) const {
   const TypeInterfaces* other = (const TypeInterfaces*)t;
-  if (_list.length() != other->_list.length()) {
+  if (_interfaces->length() != other->_interfaces->length()) {
     return false;
   }
-  for (int i = 0; i < _list.length(); i++) {
-    ciKlass* k1 = _list.at(i);
-    ciKlass* k2 = other->_list.at(i);
+  for (int i = 0; i < _interfaces->length(); i++) {
+    ciKlass* k1 = _interfaces->at(i);
+    ciKlass* k2 = other->_interfaces->at(i);
     if (!k1->equals(k2)) {
       return false;
     }
@@ -3319,12 +3327,12 @@ bool TypeInterfaces::eq(const Type* t) const {
 bool TypeInterfaces::eq(ciInstanceKlass* k) const {
   assert(k->is_loaded(), "should be loaded");
   GrowableArray<ciInstanceKlass *>* interfaces = k->transitive_interfaces();
-  if (_list.length() != interfaces->length()) {
+  if (_interfaces->length() != interfaces->length()) {
     return false;
   }
   for (int i = 0; i < interfaces->length(); i++) {
     bool found = false;
-    _list.find_sorted<ciInstanceKlass*, compare>(interfaces->at(i), found);
+    _interfaces->find_sorted<ciInstanceKlass*, compare>(interfaces->at(i), found);
     if (!found) {
       return false;
     }
@@ -3344,8 +3352,8 @@ const Type* TypeInterfaces::xdual() const {
 
 void TypeInterfaces::compute_hash() {
   uint hash = 0;
-  for (int i = 0; i < _list.length(); i++) {
-    ciKlass* k = _list.at(i);
+  for (int i = 0; i < _interfaces->length(); i++) {
+    ciKlass* k = _interfaces->at(i);
     hash += k->hash();
   }
   _hash = hash;
@@ -3356,13 +3364,13 @@ static int compare_interfaces(ciInstanceKlass** k1, ciInstanceKlass** k2) {
 }
 
 void TypeInterfaces::dump(outputStream* st) const {
-  if (_list.length() == 0) {
+  if (empty()) {
     return;
   }
   ResourceMark rm;
   st->print(" (");
   GrowableArray<ciInstanceKlass*> interfaces;
-  interfaces.appendAll(&_list);
+  interfaces.appendAll(_interfaces);
   // Sort the interfaces so they are listed in the same order from one run to the other of the same compilation
   interfaces.sort(compare_interfaces);
   for (int i = 0; i < interfaces.length(); i++) {
@@ -3377,9 +3385,9 @@ void TypeInterfaces::dump(outputStream* st) const {
 
 #ifdef ASSERT
 void TypeInterfaces::verify() const {
-  for (int i = 1; i < _list.length(); i++) {
-    ciInstanceKlass* k1 = _list.at(i-1);
-    ciInstanceKlass* k2 = _list.at(i);
+  for (int i = 1; i < _interfaces->length(); i++) {
+    ciInstanceKlass* k1 = _interfaces->at(i-1);
+    ciInstanceKlass* k2 = _interfaces->at(i);
     assert(compare(k2, k1) > 0, "should be ordered");
     assert(k1 != k2, "no duplicate");
   }
@@ -3390,23 +3398,23 @@ const TypeInterfaces* TypeInterfaces::union_with(const TypeInterfaces* other) co
   GrowableArray<ciInstanceKlass*> result_list;
   int i = 0;
   int j = 0;
-  while (i < _list.length() || j < other->_list.length()) {
-    while (i < _list.length() &&
-           (j >= other->_list.length() ||
-            compare(_list.at(i), other->_list.at(j)) < 0)) {
-      result_list.push(_list.at(i));
+  while (i < _interfaces->length() || j < other->_interfaces->length()) {
+    while (i < _interfaces->length() &&
+           (j >= other->_interfaces->length() ||
+            compare(_interfaces->at(i), other->_interfaces->at(j)) < 0)) {
+      result_list.push(_interfaces->at(i));
       i++;
     }
-    while (j < other->_list.length() &&
-           (i >= _list.length() ||
-            compare(other->_list.at(j), _list.at(i)) < 0)) {
-      result_list.push(other->_list.at(j));
+    while (j < other->_interfaces->length() &&
+           (i >= _interfaces->length() ||
+            compare(other->_interfaces->at(j), _interfaces->at(i)) < 0)) {
+      result_list.push(other->_interfaces->at(j));
       j++;
     }
-    if (i < _list.length() &&
-        j < other->_list.length() &&
-        _list.at(i) == other->_list.at(j)) {
-      result_list.push(_list.at(i));
+    if (i < _interfaces->length() &&
+        j < other->_interfaces->length() &&
+        _interfaces->at(i) == other->_interfaces->at(j)) {
+      result_list.push(_interfaces->at(i));
       i++;
       j++;
     }
@@ -3414,14 +3422,14 @@ const TypeInterfaces* TypeInterfaces::union_with(const TypeInterfaces* other) co
   const TypeInterfaces* result = TypeInterfaces::make(&result_list);
 #ifdef ASSERT
   result->verify();
-  for (int i = 0; i < _list.length(); i++) {
-    assert(result->_list.contains(_list.at(i)), "missing");
+  for (int i = 0; i < _interfaces->length(); i++) {
+    assert(result->_interfaces->contains(_interfaces->at(i)), "missing");
   }
-  for (int i = 0; i < other->_list.length(); i++) {
-    assert(result->_list.contains(other->_list.at(i)), "missing");
+  for (int i = 0; i < other->_interfaces->length(); i++) {
+    assert(result->_interfaces->contains(other->_interfaces->at(i)), "missing");
   }
-  for (int i = 0; i < result->_list.length(); i++) {
-    assert(_list.contains(result->_list.at(i)) || other->_list.contains(result->_list.at(i)), "missing");
+  for (int i = 0; i < result->_interfaces->length(); i++) {
+    assert(_interfaces->contains(result->_interfaces->at(i)) || other->_interfaces->contains(result->_interfaces->at(i)), "missing");
   }
 #endif
   return result;
@@ -3431,21 +3439,21 @@ const TypeInterfaces* TypeInterfaces::intersection_with(const TypeInterfaces* ot
   GrowableArray<ciInstanceKlass*> result_list;
   int i = 0;
   int j = 0;
-  while (i < _list.length() || j < other->_list.length()) {
-    while (i < _list.length() &&
-           (j >= other->_list.length() ||
-            compare(_list.at(i), other->_list.at(j)) < 0)) {
+  while (i < _interfaces->length() || j < other->_interfaces->length()) {
+    while (i < _interfaces->length() &&
+           (j >= other->_interfaces->length() ||
+            compare(_interfaces->at(i), other->_interfaces->at(j)) < 0)) {
       i++;
     }
-    while (j < other->_list.length() &&
-           (i >= _list.length() ||
-            compare(other->_list.at(j), _list.at(i)) < 0)) {
+    while (j < other->_interfaces->length() &&
+           (i >= _interfaces->length() ||
+            compare(other->_interfaces->at(j), _interfaces->at(i)) < 0)) {
       j++;
     }
-    if (i < _list.length() &&
-        j < other->_list.length() &&
-        _list.at(i) == other->_list.at(j)) {
-      result_list.push(_list.at(i));
+    if (i < _interfaces->length() &&
+        j < other->_interfaces->length() &&
+        _interfaces->at(i) == other->_interfaces->at(j)) {
+      result_list.push(_interfaces->at(i));
       i++;
       j++;
     }
@@ -3453,14 +3461,14 @@ const TypeInterfaces* TypeInterfaces::intersection_with(const TypeInterfaces* ot
   const TypeInterfaces* result = TypeInterfaces::make(&result_list);
 #ifdef ASSERT
   result->verify();
-  for (int i = 0; i < _list.length(); i++) {
-    assert(!other->_list.contains(_list.at(i)) || result->_list.contains(_list.at(i)), "missing");
+  for (int i = 0; i < _interfaces->length(); i++) {
+    assert(!other->_interfaces->contains(_interfaces->at(i)) || result->_interfaces->contains(_interfaces->at(i)), "missing");
   }
-  for (int i = 0; i < other->_list.length(); i++) {
-    assert(!_list.contains(other->_list.at(i)) || result->_list.contains(other->_list.at(i)), "missing");
+  for (int i = 0; i < other->_interfaces->length(); i++) {
+    assert(!_interfaces->contains(other->_interfaces->at(i)) || result->_interfaces->contains(other->_interfaces->at(i)), "missing");
   }
-  for (int i = 0; i < result->_list.length(); i++) {
-    assert(_list.contains(result->_list.at(i)) && other->_list.contains(result->_list.at(i)), "missing");
+  for (int i = 0; i < result->_interfaces->length(); i++) {
+    assert(_interfaces->contains(result->_interfaces->at(i)) && other->_interfaces->contains(result->_interfaces->at(i)), "missing");
   }
 #endif
   return result;
@@ -3473,13 +3481,13 @@ ciInstanceKlass* TypeInterfaces::exact_klass() const {
 }
 
 void TypeInterfaces::compute_exact_klass() {
-  if (_list.length() == 0) {
+  if (empty()) {
     _exact_klass = nullptr;
     return;
   }
   ciInstanceKlass* res = nullptr;
-  for (int i = 0; i < _list.length(); i++) {
-    ciInstanceKlass* interface = _list.at(i);
+  for (int i = 0; i < _interfaces->length(); i++) {
+    ciInstanceKlass* interface = _interfaces->at(i);
     if (eq(interface)) {
       assert(res == nullptr, "");
       res = interface;
@@ -3490,8 +3498,8 @@ void TypeInterfaces::compute_exact_klass() {
 
 #ifdef ASSERT
 void TypeInterfaces::verify_is_loaded() const {
-  for (int i = 0; i < _list.length(); i++) {
-    ciKlass* interface = _list.at(i);
+  for (int i = 0; i < _interfaces->length(); i++) {
+    ciKlass* interface = _interfaces->at(i);
     assert(interface->is_loaded(), "Interface not loaded");
   }
 }
