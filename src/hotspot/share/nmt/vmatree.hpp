@@ -138,6 +138,14 @@ public:
 private:
   VMATreap _tree;
 
+  IntervalState& in_state(TreapNode* node) {
+    return node->val().in;
+  }
+
+  IntervalState& out_state(TreapNode* node) {
+    return node->val().out;
+  }
+
   // AddressState saves the necessary information for performing online summary accounting.
   struct AddressState {
     position address;

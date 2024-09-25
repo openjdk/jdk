@@ -64,12 +64,12 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
     LEQ_A = AddressState{leqA_n->key(), leqA_n->val()};
     // Unless we know better, let B's outgoing state be the outgoing state of the node at or preceding A.
     // Consider the case where the found node is the start of a region enclosing [A,B)
-    stB.out = leqA_n->val().out;
+    stB.out = out_state(leqA_n);
 
     // Direct address match.
     if (leqA_n->key() == A) {
       // Take over in state from old address.
-      stA.in = leqA_n->val().in;
+      stA.in = in_state(leqA_n);
 
       // We may now be able to merge two regions:
       // If the node's old state matches the new, it becomes a noop. That happens, for example,
@@ -95,7 +95,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       // We add a new node, but only if there would be a state change. If there would not be a
       // state change, we just omit the node.
       // That happens, for example, when reserving within an already reserved region with identical metadata.
-      stA.in = leqA_n->val().out; // .. and the region's prior state is the incoming state
+      stA.in = out_state(leqA_n); // .. and the region's prior state is the incoming state
       if (stA.is_noop()) {
         // Nothing to do.
       } else {
@@ -116,7 +116,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   // outgoing state.
   _tree.visit_range_in_order(A + 1, B + 1, [&](TreapNode* head) {
     int cmp_B = PositionComparator::cmp(head->key(), B);
-    stB.out = head->val().out;
+    stB.out = out_state(head);
     if (cmp_B < 0) {
       // Record all nodes preceding B.
       to_be_deleted_inbetween_a_b.push({head->key(), head->val()});
@@ -201,8 +201,8 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
 #ifdef ASSERT
 void VMATree::print_on(outputStream* out) {
   visit_in_order([&](TreapNode* current) {
-    out->print(SIZE_FORMAT " (%s) - %s - ", current->key(), NMTUtil::tag_to_name(current->val().out.mem_tag()),
-               statetype_to_string(current->val().out.type()));
+    out->print(SIZE_FORMAT " (%s) - %s - ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
+               statetype_to_string(out_state(current).type()));
   });
   out->cr();
 }
@@ -212,8 +212,8 @@ VMATree::SummaryDiff VMATree::set_tag(position from, size size, MemTag tag) {
   VMATreap::Range range = _tree.find_enclosing_range(from);
   assert(range.start != nullptr && range.end != nullptr,
          "Setting a memory tag must be done within existing range");
-  StateType type = range.start->val().out.type();
-  RegionData new_data = RegionData(range.start->val().out.stack(), tag);
+  StateType type = out_state(range.start).type();
+  RegionData new_data = RegionData(out_state(range.start).stack(), tag);
 
   position end = MIN2(from + size, range.end->key());
   SummaryDiff diff = register_mapping(from, end, type, new_data);
@@ -229,8 +229,8 @@ VMATree::SummaryDiff VMATree::set_tag(position from, size size, MemTag tag) {
       break;
     }
     end = MIN2(from + size, range.end->key());
-    StateType type = range.start->val().out.type();
-    RegionData new_data = RegionData(range.start->val().out.stack(), tag);
+    StateType type = out_state(range.start).type();
+    RegionData new_data = RegionData(out_state(range.start).stack(), tag);
     SummaryDiff result = register_mapping(from, end, type, new_data);
     diff.add(result);
     size = size - (end - from);
