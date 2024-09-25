@@ -1966,14 +1966,16 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
 
   // Check if C2_MacroAssembler::fast_unlock() or
   // C2_MacroAssembler::fast_unlock_lightweight() unlocked an inflated
-  // monitor before going slow path.
+  // monitor before going slow path.  Since there is no safepoint
+  // polling when calling into the VM, we can be sure that the monitor
+  // hasn't been deallocated.
   ObjectMonitor* m = current->unlocked_inflated_monitor();
   if (m != nullptr) {
     assert(m->owner_raw() != current, "must be");
     current->clear_unlocked_inflated_monitor();
 
     // We need to reacquire the lock before we can call ObjectSynchronizer::exit().
-    if (!m->try_enter(current, false)) {
+    if (!m->try_enter(current, /*check_for_recursion*/ false)) {
       // Some other thread acquired the lock (or the monitor was
       // deflated). Either way we are done.
       current->dec_held_monitor_count();

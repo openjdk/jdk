@@ -470,7 +470,8 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 
   bind(LNotRecursive);
 
-  // Release lock.
+  // Set owner to null.
+  // Release to satisfy the JMM
   movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
   // We need a full fence after clearing owner to avoid stranding.
   // StoreLoad achieves this.
@@ -494,8 +495,6 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
 #else // _LP64
   movptr(Address(r15_thread, JavaThread::unlocked_inflated_monitor_offset()), tmpReg);
 #endif
-
-  // Intentional fall-through into slow path
 
   orl   (boxReg, 1);                      // set ICC.ZF=0 to indicate failure
   jmpb  (DONE_LABEL);
@@ -800,7 +799,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     cmpptr(recursions_address, 0);
     jccb(Assembler::notZero, recursive);
 
-    // Release lock.
+    // Set owner to null.
+    // Release to satisfy the JMM
     movptr(owner_address, NULL_WORD);
     // We need a full fence after clearing owner to avoid stranding.
     // StoreLoad achieves this.

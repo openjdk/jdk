@@ -227,6 +227,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
   la(owner_addr, Address(tmp, ObjectMonitor::owner_offset()));
 
   // Set owner to null.
+  // Release to satisfy the JMM
   membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   sd(zr, Address(owner_addr));
   // We need a full fence after clearing owner to avoid stranding.
@@ -558,6 +559,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box,
     la(tmp2_owner_addr, Address(tmp1_monitor, ObjectMonitor::owner_offset()));
 
     // Set owner to null.
+    // Release to satisfy the JMM
     membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
     sd(zr, Address(tmp2_owner_addr));
     // We need a full fence after clearing owner to avoid stranding.

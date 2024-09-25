@@ -2717,6 +2717,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   bind(notRecursive);
 
   // Set owner to null.
+  // Release to satisfy the JMM
   release();
   li(temp, 0);
   std(temp, in_bytes(ObjectMonitor::owner_offset()), current_header);
@@ -3052,6 +3053,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     const Register t2 = tmp2;
 
     // Set owner to null.
+    // Release to satisfy the JMM
     release();
     li(t, 0);
     std(t, in_bytes(ObjectMonitor::owner_offset()), monitor);

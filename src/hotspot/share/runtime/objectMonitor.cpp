@@ -326,12 +326,15 @@ bool ObjectMonitor::TryLockWithContentionMark(JavaThread* locking_thread, Object
     // Racing with deflation.
     prev_owner = try_set_owner_from(DEFLATER_MARKER, locking_thread);
     if (prev_owner == DEFLATER_MARKER) {
-      // We successfully cancelled the in-progress async deflation.
-      // By extending the lifetime of the contention_mark, we
-      // prevent the destructor from decrementing the contentions
-      // counter when the contention_mark goes out of scope. Instead
-      // ObjectMonitor::deflate_monitor() will decrement contentions
-      // after it recognizes that the async deflation was cancelled.
+      // We successfully cancelled the in-progress async deflation by
+      // changing owner from DEFLATER_MARKER to current.  We now extend
+      // the lifetime of the contention_mark (e.g. contentions++) here
+      // to prevent the deflater thread from winning the last part of
+      // the 2-part async deflation protocol after the regular
+      // decrement occurs when the contention_mark goes out of
+      // scope. ObjectMonitor::deflate_monitor() which is called by
+      // the deflater thread who will decrement contentions after it
+      // recognizes that the async deflation was cancelled.
       contention_mark.extend();
       success = true;
     } else if (prev_owner == nullptr) {
@@ -382,7 +385,7 @@ bool ObjectMonitor::enter_for(JavaThread* locking_thread) {
   return true;
 }
 
-bool ObjectMonitor::try_enter(JavaThread* current, bool check_owner) {
+bool ObjectMonitor::try_enter(JavaThread* current, bool check_for_recursion) {
   // TryLock avoids the CAS and handles deflation.
   TryLockResult r = TryLock(current);
   if (r == TryLockResult::Success) {
@@ -390,22 +393,23 @@ bool ObjectMonitor::try_enter(JavaThread* current, bool check_owner) {
     return true;
   }
 
-  // Set check_owner to false (it's default value is true) if you want
-  // to use ObjectMonitor::try_enter() as a public way of doing TryLock().
-  // Used this way in SharedRuntime::monitor_exit_helper().
-  if (check_owner) {
-    if (r == TryLockResult::HasOwner && owner() == current) {
-      _recursions++;
-      return true;
-    }
+  // If called from SharedRuntime::monitor_exit_helper(), we know that
+  // this thread doesn't already own the lock.
+  if (!check_for_recursion) {
+    return false;
+  }
 
-    void* cur = owner_raw();
-    if (LockingMode == LM_LEGACY && current->is_lock_owned((address)cur)) {
-      assert(_recursions == 0, "internal state error");
-      _recursions = 1;
-      set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
-      return true;
-    }
+  if (r == TryLockResult::HasOwner && owner() == current) {
+    _recursions++;
+    return true;
+  }
+
+  void* cur = owner_raw();
+  if (LockingMode == LM_LEGACY && current->is_lock_owned((address)cur)) {
+    assert(_recursions == 0, "internal state error");
+    _recursions = 1;
+    set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
+    return true;
   }
   return false;
 }
