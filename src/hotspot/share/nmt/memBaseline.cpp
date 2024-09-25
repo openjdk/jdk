@@ -61,11 +61,11 @@ int compare_malloc_site(const MallocSite& s1, const MallocSite& s2) {
   return s1.call_stack()->compare(*s2.call_stack());
 }
 
-// Sort into allocation site addresses and memory type order for baseline comparison
+// Sort into allocation site addresses and memory tag order for baseline comparison
 int compare_malloc_site_and_type(const MallocSite& s1, const MallocSite& s2) {
   int res = compare_malloc_site(s1, s2);
   if (res == 0) {
-    res = (int)(NMTUtil::flag_to_index(s1.flag()) - NMTUtil::flag_to_index(s2.flag()));
+    res = (int)(NMTUtil::tag_to_index(s1.mem_tag()) - NMTUtil::tag_to_index(s2.mem_tag()));
   }
 
   return res;
@@ -207,7 +207,7 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
   const ReservedMemoryRegion* rgn;
   VirtualMemoryAllocationSite* site;
   while ((rgn = itr.next()) != nullptr) {
-    VirtualMemoryAllocationSite tmp(*rgn->call_stack(), rgn->flag());
+    VirtualMemoryAllocationSite tmp(*rgn->call_stack(), rgn->mem_tag());
     site = allocation_sites.find(tmp);
     if (site == nullptr) {
       LinkedListNode<VirtualMemoryAllocationSite>* node =

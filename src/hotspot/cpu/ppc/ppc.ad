@@ -12106,10 +12106,10 @@ instruct cmpFastUnlock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp
   ins_pipe(pipe_class_compare);
 %}
 
-instruct cmpFastLockLightweight(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
+instruct cmpFastLockLightweight(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, flagsRegCR1 cr1) %{
   predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set crx (FastLock oop box));
-  effect(TEMP tmp1, TEMP tmp2);
+  effect(TEMP tmp1, TEMP tmp2, KILL cr1);
 
   format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
