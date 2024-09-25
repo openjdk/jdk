@@ -68,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.quic.QuicStandaloneServer
  *          jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
- * @run junit StatelessResetReceiptTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true StatelessResetReceiptTest
  */
 public class StatelessResetReceiptTest {
 
