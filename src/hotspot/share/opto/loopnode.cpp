@@ -3951,8 +3951,8 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 //      a = init2 + (phi - init) * (stride_con2 / stride_con)
 //    }
 //
-// Such transformation introduces more optimization opportunities. In this 
-// particular example, the loop can be eliminated entirely given that 
+// Such transformation introduces more optimization opportunities. In this
+// particular example, the loop can be eliminated entirely given that
 // `stride_con2 / stride_con` is exact  (i.e., no remainder). Checks are in
 // place to only perform this optimization if such a division is exact. This
 // example will be transformed into its semantic equivalence:
