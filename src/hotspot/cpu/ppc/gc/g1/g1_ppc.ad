@@ -107,9 +107,6 @@ instruct g1StoreN(indirect mem, iRegNsrc src, iRegPdst tmp1, iRegPdst tmp2, flag
   ins_cost(2 * MEMORY_REF_COST);
   format %{ "stw    $mem, $src\t# ptr" %}
   ins_encode %{
-    assert(!in(operand_index(2))->is_Mach() ||
-           (in(operand_index(2))->as_Mach()->ideal_Opcode() != Op_EncodeP),
-           "EncodeP src nodes should be matched with their corresponding StoreN nodes");
     pre_write_barrier(masm, this,
                       $mem$$Register,
                       $tmp1$$Register,
