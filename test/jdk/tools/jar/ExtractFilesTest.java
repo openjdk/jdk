@@ -29,15 +29,15 @@
  * @modules jdk.jartool
  * @build jdk.test.lib.Platform
  *        jdk.test.lib.util.FileUtils
- * @run testng ExtractFilesTest
+ * @run junit ExtractFilesTest
  */
 
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -53,7 +53,8 @@ import java.util.zip.ZipException;
 
 import jdk.test.lib.util.FileUtils;
 
-public class ExtractFilesTest {
+ @TestInstance(Lifecycle.PER_CLASS)
+ public class ExtractFilesTest {
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
         .orElseThrow(() ->
             new RuntimeException("jar tool not found")
@@ -62,9 +63,8 @@ public class ExtractFilesTest {
     private final String nl = System.lineSeparator();
     private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     private final PrintStream out = new PrintStream(baos);
-    private Runnable onCompletion;
 
-    @BeforeClass
+    @BeforeAll
     public void setupJar() throws IOException {
         mkdir("test1 test2");
         echo("testfile1", "test1/testfile1");
@@ -73,23 +73,14 @@ public class ExtractFilesTest {
         rm("test1 test2");
     }
 
-    @AfterClass
+    @AfterAll
     public void cleanup() {
         rm("test.jar");
     }
 
-    @BeforeMethod
-    public void reset() {
-        onCompletion = null;
-    }
-
-    @AfterMethod
-    public void run() {
-        if (onCompletion != null) {
-            onCompletion.run();
-        }
-    }
-
+    /**
+     * Regular clean extract with expected output.
+     */
     @Test
     public void testExtract() throws IOException {
         jar("xvf test.jar");
@@ -99,9 +90,12 @@ public class ExtractFilesTest {
                 " inflated: testfile1" + nl +
                 " inflated: testfile2" + nl;
         rm("META-INF testfile1 testfile2");
-        Assert.assertEquals(baos.toByteArray(), output.getBytes());
+        Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
     }
 
+    /**
+     * Extract should overwrite existing file as default behavior.
+     */
     @Test
     public void testOverwrite() throws IOException {
         touch("testfile1");
@@ -111,11 +105,14 @@ public class ExtractFilesTest {
                 " inflated: META-INF/MANIFEST.MF" + nl +
                 " inflated: testfile1" + nl +
                 " inflated: testfile2" + nl;
-        Assert.assertEquals("testfile1", cat("testfile1"));
+        Assertions.assertEquals("testfile1", cat("testfile1"));
         rm("META-INF testfile1 testfile2");
-        Assert.assertEquals(baos.toByteArray(), output.getBytes());
+        Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
     }
 
+    /**
+     * Extract with legacy style option `k` should preserve existing files.
+     */
     @Test
     public void testKeptOldFile() throws IOException {
         touch("testfile1");
@@ -125,12 +122,15 @@ public class ExtractFilesTest {
                 " inflated: META-INF/MANIFEST.MF" + nl +
                 "  skipped: testfile1" + nl +
                 " inflated: testfile2" + nl;
-        Assert.assertEquals("", cat("testfile1"));
-        Assert.assertEquals("testfile2", cat("testfile2"));
+        Assertions.assertEquals("", cat("testfile1"));
+        Assertions.assertEquals("testfile2", cat("testfile2"));
         rm("META-INF testfile1 testfile2");
-        Assert.assertEquals(baos.toByteArray(), output.getBytes());
+        Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
     }
 
+    /**
+     * Extract with gnu style -k should preserve existing files.
+     */
     @Test
     public void testGnuOptionsKeptOldFile() throws IOException {
         touch("testfile1 testfile2");
@@ -140,12 +140,15 @@ public class ExtractFilesTest {
                 " inflated: META-INF/MANIFEST.MF" + nl +
                 "  skipped: testfile1" + nl +
                 "  skipped: testfile2" + nl;
-        Assert.assertEquals("", cat("testfile1"));
-        Assert.assertEquals("", cat("testfile2"));
+        Assertions.assertEquals("", cat("testfile1"));
+        Assertions.assertEquals("", cat("testfile2"));
         rm("META-INF testfile1 testfile2");
-        Assert.assertEquals(baos.toByteArray(), output.getBytes());
+        Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
     }
 
+    /**
+     * Extract with gnu style long option --keep-old-files should preserve existing files.
+     */
     @Test
     public void testGnuLongOptionsKeptOldFile() throws IOException {
         touch("testfile2");
@@ -155,10 +158,10 @@ public class ExtractFilesTest {
                 " inflated: META-INF/MANIFEST.MF" + nl +
                 " inflated: testfile1" + nl +
                 "  skipped: testfile2" + nl;
-        Assert.assertEquals("testfile1", cat("testfile1"));
-        Assert.assertEquals("", cat("testfile2"));
+        Assertions.assertEquals("testfile1", cat("testfile1"));
+        Assertions.assertEquals("", cat("testfile2"));
         rm("META-INF testfile1 testfile2");
-        Assert.assertEquals(baos.toByteArray(), output.getBytes());
+        Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
     }
 
     private Stream<Path> mkpath(String... args) {
