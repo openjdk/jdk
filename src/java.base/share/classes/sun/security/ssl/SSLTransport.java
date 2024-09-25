@@ -128,7 +128,7 @@ interface SSLTransport {
             // and tries to close the connection by sending an alert message.
             if (srcsLength == 1 && !context.sslConfig.isClientMode && !context.isNegotiated &&
                     context.handshakeContext != null &&
-                    ProtocolVersion.TLS13.equals(context.handshakeContext.negotiatedProtocol)) {
+                    context.handshakeContext.negotiatedProtocol.useTLS13PlusSpec()) {
                 ByteBuffer packet = srcs[srcsOffset].duplicate();
                 packet.position(0);
                 byte contentType = (byte) Record.getInt8(packet);                   // pos: 0
