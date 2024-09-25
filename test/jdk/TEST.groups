@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -645,6 +645,7 @@ jdk_security_manual_no_input = \
 
 jdk_core_manual_interactive = \
     com/sun/jndi/dns/Test6991580.java \
+    java/util/TimeZone/DefaultTimeZoneTest.java \
     java/nio/MappedByteBuffer/PmemTest.java \
     java/rmi/registry/nonLocalRegistry/NonLocalRegistryTest.java \
     java/rmi/registry/nonLocalRegistry/NonLocalSkeletonTest.java
