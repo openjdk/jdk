@@ -1618,19 +1618,19 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     blt(buf, loop_buf_end, L_by4_loop);
 
   bind(L_by1_loop);
-    blez(len, L_exit);
+    beqz(len, L_exit);
 
     subw(len, len, 1);
     lwu(tmp1, Address(buf));
     andi(tmp2, tmp1, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
-    blez(len, L_exit);
+    beqz(len, L_exit);
 
     subw(len, len, 1);
     srli(tmp2, tmp1, 8);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
-    blez(len, L_exit);
+    beqz(len, L_exit);
 
     subw(len, len, 1);
     srli(tmp2, tmp1, 16);
