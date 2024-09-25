@@ -48,8 +48,6 @@
 # define MB (1024UL * KB)
 # define GB (1024UL * MB)
 
-#define CURRENT_DATA_MODEL (CHAR_BIT * sizeof(void*))
-
 /*
  * Older versions of java launcher used to support JRE version selection - specifically,
  * the java launcher in JDK 1.8 can be used to launch a java application using a different
@@ -103,16 +101,11 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argc */
 jboolean
 LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn);
 
-void
-GetXUsagePath(char *buf, jint bufsize);
-
 jboolean
 GetApplicationHome(char *buf, jint bufsize);
 
 jboolean
 GetApplicationHomeFromDll(char *buf, jint bufsize);
-
-#define GetArch() GetArchPath(CURRENT_DATA_MODEL)
 
 /*
  * Different platforms will implement this, here
@@ -149,7 +142,6 @@ void JLI_ShowMessage(const char * message, ...);
  */
 JNIEXPORT void JNICALL
 JLI_ReportExceptionDescription(JNIEnv * env);
-void PrintMachineDependentOptions();
 
 /*
  * Block current thread and continue execution in new thread.
