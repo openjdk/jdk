@@ -3933,17 +3933,17 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 //
 // Such transformation introduces more optimization opportunities. In this 
 // particular example, the loop can be eliminated entirely given that 
-// `stride_con2 / stride_con` is exact  (i.e., no remainder). Checks are 
-// in place to only perform this optimization if such a division is exact. 
-// This example will be transformed into its semantic equivalence:
+// `stride_con2 / stride_con` is exact  (i.e., no remainder). Checks are in
+// place to only perform this optimization if such a division is exact. This
+// example will be transformed into its semantic equivalence:
 //
 //     int a = (phi * stride_con2 / stride_con) + (init2 - (init * stride_con2 / stride_con))
 //
 // which corresponds to the structure of transformed subgraph.
 //
 // However, if there is a mismatch between types of the loop and the parallel
-// induction variable (e.g., a long-typed IV in an int-typed loop), type conversions
-// are required:
+// induction variable (e.g., a long-typed IV in an int-typed loop), type
+// conversions are required:
 //
 //     long a = ((long) phi * stride_con2 / stride_con) + (init2 - ((long) init * stride_con2 / stride_con))
 //
