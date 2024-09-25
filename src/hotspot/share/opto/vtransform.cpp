@@ -496,11 +496,8 @@ float VTransformElementWiseVectorNode::cost(const VLoopAnalyzer& vloop_analyzer)
   if (first->is_Cmp()) {
     return 0; // empty
   } else if (first->is_CMove()) {
+    assert(false, "TODO rm");
     return vloop_analyzer.cost_for_vector(Op_VectorBlend, vlen, bt);;
-  } else if (VectorNode::is_convert_opcode(sopc)) {
-    BasicType def_bt = in(1)->element_basic_type();
-    int vopc = VectorCastNode::opcode(sopc, def_bt);
-    return vloop_analyzer.cost_for_vector(vopc, vlen, bt);
   } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     int vopc = VectorNode::opcode(Op_RShiftI, bt);
     return vloop_analyzer.cost_for_vector(vopc, vlen, bt);;
@@ -533,13 +530,7 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
   Node* in2 = (req() >= 3) ? apply_state.transformed_node(in(2)) : nullptr;
   Node* in3 = (req() >= 4) ? apply_state.transformed_node(in(3)) : nullptr;
 
-  if (VectorNode::is_convert_opcode(sopc)) {
-    assert(first->req() == 2 && req() == 2, "only one input expected");
-    BasicType def_bt = in(1)->element_basic_type();
-    assert(def_bt = in1->bottom_type()->is_vect()->element_basic_type(), "must be consistent");
-    int vopc = VectorCastNode::opcode(sopc, def_bt);
-    vn = VectorCastNode::make(vopc, in1, bt, vlen);
-  } else if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
+  if (VectorNode::can_use_RShiftI_instead_of_URShiftI(first, bt)) {
     sopc = Op_RShiftI;
     vn = VectorNode::make(sopc, in1, in2, vlen, bt);
   } else if (VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(sopc)) {

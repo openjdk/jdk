@@ -1687,7 +1687,7 @@ class VectorCastNode : public VectorNode {
   VectorCastNode(Node* in, const TypeVect* vt) : VectorNode(in, vt) {}
   virtual int Opcode() const;
 
-  static VectorCastNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
+  static VectorNode* make(int vopc, Node* n1, BasicType bt, uint vlen);
   static int  opcode(int opc, BasicType bt, bool is_signed = true);
   static bool implemented(int opc, uint vlen, BasicType src_type, BasicType dst_type);
 

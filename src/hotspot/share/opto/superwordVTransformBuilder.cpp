@@ -100,7 +100,6 @@ void SuperWordVTransformBuilder::build_inputs_for_vector_vtnodes(VectorSet& vtn_
           vtn->swap_req(1, 2);
         }
       } else {
-        assert(false, "TODO not yet expected");
         init_all_req_with_vectors(pack, vtn, vtn_dependencies);
       }
     } else {
@@ -208,6 +207,10 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
     //   v = MulAddS2I(a, b) = a0 * b0 + a1 + b1
     assert(p0->req() == 5, "MulAddS2I should have 4 operands");
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, prototype, 3);
+  } else if (VectorNode::is_convert_opcode(opc)) {
+    BasicType def_bt = _vloop_analyzer.types().velt_basic_type(p0->in(1));
+    int vopc = VectorCastNode::opcode(opc, def_bt);
+    vtn = new (_vtransform.arena()) VTransformXYZVectorNode(_vtransform, prototype, p0->req(), vopc);
   } else {
     assert(p0->req() == 3 ||
            VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(opc) ||
