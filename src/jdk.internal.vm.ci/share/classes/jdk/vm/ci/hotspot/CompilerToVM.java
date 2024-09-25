@@ -1521,5 +1521,5 @@ final class CompilerToVM {
      *
      * @returns false if no change was made, otherwise true
      */
-    native boolean changeCompilerThreadCanCallJava(boolean newState);
+    native boolean updateCompilerThreadCanCallJava(boolean newState);
 }

@@ -58,7 +58,7 @@ public class CompilerThreadCanCallJavaScope implements AutoCloseable {
         this.state = newState;
         this.thread = Thread.currentThread();
         CompilerToVM vm = HotSpotJVMCIRuntime.runtime().getCompilerToVM();
-        if (vm.changeCompilerThreadCanCallJava(newState)) {
+        if (vm.updateCompilerThreadCanCallJava(newState)) {
             this.vm = vm;
         } else {
             this.vm = null;
@@ -78,7 +78,7 @@ public class CompilerThreadCanCallJavaScope implements AutoCloseable {
         }
 
         if (vm != null) {
-            vm.changeCompilerThreadCanCallJava(!state);
+            vm.updateCompilerThreadCanCallJava(!state);
         }
     }
 }
