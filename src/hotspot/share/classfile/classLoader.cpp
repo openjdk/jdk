@@ -1231,49 +1231,44 @@ static const char* skip_uri_protocol(const char* source) {
 }
 
 static char decode_percent_encoded(const char *str, size_t& index) {
-    if (str[index] == '%'
-            && isxdigit(str[index + 1])
-            && isxdigit(str[index + 2])) {
-        char hex[3];
-        hex[0] = str[index + 1];
-        hex[1] = str[index + 2];
-        hex[2] = '\0';
-        index += 2;
-        return (char) strtol(hex, NULL, 16);
-    }
-    return str[index];
+  if (str[index] == '%'
+      && isxdigit(str[index + 1])
+      && isxdigit(str[index + 2])) {
+    char hex[3];
+    hex[0] = str[index + 1];
+    hex[1] = str[index + 2];
+    hex[2] = '\0';
+    index += 2;
+    return (char) strtol(hex, NULL, 16);
+  }
+  return str[index];
 }
 
 char* ClassLoader::uri_to_path(const char* uri) {
-    const size_t len = strlen(uri) + 1;
-    char* path = NEW_RESOURCE_ARRAY(char, len);
+  const size_t len = strlen(uri) + 1;
+  char* path = NEW_RESOURCE_ARRAY(char, len);
 
-    uri = skip_uri_protocol(uri);
+  uri = skip_uri_protocol(uri);
 
-    if (strncmp(uri, "//", 2) == 0) {
-        // Skip the empty "authority" part
-        uri += 2;
-    }
+  if (strncmp(uri, "//", 2) == 0) {
+    // Skip the empty "authority" part
+    uri += 2;
+  }
 
 #ifdef _WINDOWS
-    if (uri[0] == '/') {
-        // Absolute path name on Windows does not begin with a slash
-        uri += 1;
-    }
+  if (uri[0] == '/') {
+    // Absolute path name on Windows does not begin with a slash
+    uri += 1;
+  }
 #endif
 
-    size_t path_index = 0;
-    for (size_t i = 0; i < strlen(uri); ++i) {
-        char decoded = decode_percent_encoded(uri, i);
-#ifdef _WINDOWS
-        if (decoded == '/') {
-            decoded = '\\';
-        }
-#endif
-        path[path_index++] = decoded;
-    }
-    path[path_index] = '\0';
-    return path;
+  size_t path_index = 0;
+  for (size_t i = 0; i < strlen(uri); ++i) {
+    char decoded = decode_percent_encoded(uri, i);
+    path[path_index++] = decoded;
+  }
+  path[path_index] = '\0';
+  return path;
 }
 
 // Record the shared classpath index and loader type for classes loaded
