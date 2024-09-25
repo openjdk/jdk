@@ -348,7 +348,7 @@ public final class PassFailJFrame {
      * <p>
      * If you enable screenshots by setting the {@code screenCapture}
      * parameter to {@code true}, a <i>Screenshot</i> button is added.
-     * Clicking the <i>Screenshot</i> button, takes screenshot of
+     * Clicking the <i>Screenshot</i> button takes screenshots of
      * all the monitors or all the windows registered with
      * {@code PassFailJFrame}.
      *
