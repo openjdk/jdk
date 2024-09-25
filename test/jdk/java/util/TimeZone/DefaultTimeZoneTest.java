@@ -61,27 +61,25 @@ public class DefaultTimeZoneTest  {
             some time zone IDs have their aliases that may be displayed.
             For example, "US/Pacific" is an alias of "America/Los_Angeles".
             If this platform is Windows, proceed to Part II. Otherwise, press
-            the Pass button to finish this applet.
+            the Pass button to complete this test.
 
             Part II:
             Note that Part II may require the Administrator privilege to change
             Windows setting.
 
-              1. Open the Date and Time control panel.
+              1. Open the Settings app and navigate to Time & Language > Date & Time
               2. Select any time zone where daylight saving time is *currently*
                  in effect, such as "(GMT-08:00) Pacific Time (US & Canada);
                  Tijuana", "(GMT+10:00) Canberra, Melbourne, Sydney", and Apply.
-              3. Observe the local time on the control panel (Date&Time pane) and
-                 the applet local time should be the same (daylight time).
-              4. Clear "Automatically adjust clock for daylight saving changes"
-                 and Apply.
+              3. After pressing "Update Time Zone" button, observe that the local
+                 time on the Settings app and the test local time are the same (daylight time).
+              4. Turn off "Adjust for daylight saving time automatically"
               5. Observe the two local times should be the same (standard time).
-              6. Select "Automatically adjust clock for daylight saving changes"
-                 and Apply.
+              6. Turn on "Adjust for daylight saving time automatically"
 
-            If the local time in the control panel and applet are always the same,
+            If the local time in the control panel and test window are always the same,
             then this test passes. Press the Pass or Fail button based on the Part II
-            result and finish this applet.
+            result and complete the test.
            """;
 
     public static void main(String[] args)
