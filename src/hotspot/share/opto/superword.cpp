@@ -2487,7 +2487,7 @@ void VTransform::determine_mem_ref_and_aw_for_main_loop_alignment() {
 
   const GrowableArray<VTransformNode*>& vtnodes = _graph.vtnodes();
   for (int i = 0; i < vtnodes.length(); i++) {
-    VTransformVectorNode* vtn = vtnodes.at(i)->isa_Vector();
+    VTransformMemVectorNode* vtn = vtnodes.at(i)->isa_MemVector();
     if (vtn == nullptr) { continue; }
     // TODO replace with different check - well but we also need the mem_ref... yikes
     // We currently are passing along the mem_ref so we can get its VPointer... but that

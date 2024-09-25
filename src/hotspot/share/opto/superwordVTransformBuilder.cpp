@@ -180,9 +180,11 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   const VTransformNodePrototype prototype = VTransformNodePrototype::make_from_pack(pack, _vloop_analyzer);
 
   if (p0->is_Load()) {
-    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, prototype);
+    const VPointer* vpointer = &_vloop_analyzer.vpointers().vpointer(p0->as_Load());
+    vtn = new (_vtransform.arena()) VTransformLoadVectorNode(_vtransform, prototype, vpointer);
   } else if (p0->is_Store()) {
-    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, prototype);
+    const VPointer* vpointer = &_vloop_analyzer.vpointers().vpointer(p0->as_Store());
+    vtn = new (_vtransform.arena()) VTransformStoreVectorNode(_vtransform, prototype, vpointer);
   } else if (p0->is_Bool()) {
     VTransformBoolTest kind = _packset.get_bool_test(pack);
     vtn = new (_vtransform.arena()) VTransformBoolVectorNode(_vtransform, prototype, kind);
