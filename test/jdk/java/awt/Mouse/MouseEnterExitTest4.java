@@ -23,21 +23,21 @@
 
 import java.awt.Button;
 import java.awt.Color;
+import java.awt.EventQueue;
 import java.awt.Frame;
+import java.awt.Robot;
 import java.awt.Window;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.util.List;
 
 /*
  * @test
  * @bug 4431868
+ * @key headful
  * @summary Tests that window totally obscured by its child doesn't receive
  *          enter/exit events when located over another frame
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual MouseEnterExitTest4
+ * @run main MouseEnterExitTest4
  */
 
 public class MouseEnterExitTest4 {
@@ -46,41 +46,51 @@ public class MouseEnterExitTest4 {
     static Window window = new Window(frame);
     static MouseListener listener = new MouseAdapter() {
         public void mouseEntered(MouseEvent e) {
-            PassFailJFrame.log(e.toString());
+            throw new RuntimeException("Test failed due to Mouse Enter event");
         }
 
         public void mouseExited(MouseEvent e) {
-            PassFailJFrame.log(e.toString());
+            throw new RuntimeException("Test failed due to Mouse Exit event");
         }
     };
 
     public static void main(String[] args) throws Exception {
-        String INSTRUCTIONS = """
-                1. You should see a frame titled "Mouse Enter/Exit test" and a window
-                   with a red button located over the frame
-                2. Rapidly move the mouse to enter/exit the button
-                3. Verify that the window doesn't receive enter/exit events
-                4. Enter/exit events are dumped to the area below
-                5. If you see enter/exit events dumped the test fails
-                   """;
+        Robot robot = new Robot();
 
-        PassFailJFrame.builder()
-                .title("Test Instructions")
-                .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
-                .columns(35)
-                .testUI(initialize())
-                .logArea(4)
-                .build()
-                .awaitAndCheck();
-    }
+        robot.setAutoDelay(100);
+        try {
+            EventQueue.invokeAndWait(() -> {
+                button.setBackground(Color.red);
+                window.add(button);
+                frame.setBounds(100, 100, 300, 300);
+                window.setBounds(200, 200, 100, 100);
+                window.addMouseListener(listener);
+                window.setVisible(true);
+                frame.setVisible(true);
+            });
+            robot.waitForIdle();
+            robot.delay(200);
+            EventQueue.invokeAndWait(() -> robot.mouseMove(
+                    frame.getLocationOnScreen().x + frame.getSize().width / 2,
+                    frame.getLocationOnScreen().y + frame.getSize().height / 2));
+            robot.waitForIdle();
+            robot.delay(200);
+            EventQueue.invokeAndWait(() -> robot.mouseMove(
+                    window.getLocationOnScreen().x + window.getSize().width * 2,
+                    window.getLocationOnScreen().y + window.getSize().height / 2));
+            robot.waitForIdle();
+            robot.delay(500);
+            System.out.println("Test Passed");
 
-    public static List<Window> initialize() {
-        button.setBackground(Color.red);
-        window.add(button);
-        frame.setBounds(100, 100, 300, 300);
-        window.setBounds(200, 200, 100, 100);
-        window.addMouseListener(listener);
-        return List.of(frame, window);
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+               if (frame != null) {
+                   frame.dispose();
+               }
+               if (window != null) {
+                   window.dispose();
+               }
+            });
+        }
     }
 }
