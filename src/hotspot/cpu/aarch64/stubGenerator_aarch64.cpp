@@ -5472,6 +5472,8 @@ class StubGenerator: public StubCodeGenerator {
     // TAIL
     __ bind(TAIL);
 
+    // The andr performs cnt % vf. The subtract shifted by 3 offsets past vf - 1 - (cnt % vf) pairs
+    // of load + madd insns i.e. it only executes cnt % vf load + madd pairs.
     assert(is_power_of_2(vf), "can't use this value to calculate the jump target PC");
     __ andr(rscratch2, cnt, vf - 1);
     __ bind(TAIL_SHORTCUT);
