@@ -968,7 +968,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      lightweight_lock(object, header, tmp, slow_case);
+      lightweight_lock(monitor, object, header, tmp, slow_case);
       b(count_locking);
     } else if (LockingMode == LM_LEGACY) {
       // Load markWord from object into header.
