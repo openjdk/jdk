@@ -1095,11 +1095,15 @@ public final class StackMapGenerator {
         }
 
         void checkAssignableTo(Frame target) {
+            int localsSize = this.localsSize;
+            int stackSize = this.stackSize;
             if (target.flags == -1) {
-                target.locals = locals == null ? null : Arrays.copyOf(locals, localsSize);
+                target.locals = locals == null ? null : locals.clone();
                 target.localsSize = localsSize;
-                target.stack = stack == null ? null : Arrays.copyOf(stack, stackSize);
-                target.stackSize = stackSize;
+                if (stackSize > 0) {
+                    target.stack = stack.clone();
+                    target.stackSize = stackSize;
+                }
                 target.flags = flags;
                 target.dirty = true;
             } else {
