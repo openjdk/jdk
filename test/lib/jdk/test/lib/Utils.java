@@ -23,11 +23,6 @@
 
 package jdk.test.lib;
 
-import static jdk.test.lib.Asserts.assertTrue;
-
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -43,7 +38,6 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
@@ -53,6 +47,7 @@ import java.nio.file.attribute.AclEntry;
 import java.nio.file.attribute.AclEntryType;
 import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.FileAttribute;
+import java.nio.channels.SocketChannel;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -60,21 +55,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static jdk.test.lib.Asserts.assertTrue;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 
 /**
  * Common library for various test helper functions.
@@ -1050,28 +1049,5 @@ public final class Utils {
      */
     public static void fullAccess(Path file) throws IOException {
         grantFileAccess(file, false);
-    }
-
-    public static void inspectTlsFlight(ByteBuffer flight) throws IOException {
-        ByteBuffer packet = flight.slice();
-
-        System.err.println("---TLS Flight Inspection---");
-
-        if (packet.position() < packet.limit()) {
-            byte contentType = packet.get();                   // pos: 0
-            byte majorVersion = packet.get();                  // pos: 1
-            byte minorVersion = packet.get();                  // pos: 2
-            int contentLen = getInt16(packet);                 // pos: 3, 4
-
-            System.err.println("\tcontentType: " + (int) contentType);
-            System.err.println("\tmajorVersion: " + (int) majorVersion);
-            System.err.println("\tminorVersion: " + (int) minorVersion);
-            System.err.println("\tcontentLen: " + contentLen);
-        }
-    }
-
-    public static int getInt16(ByteBuffer m) throws IOException {
-        return ((m.get() & 0xFF) << 8) |
-                (m.get() & 0xFF);
     }
 }

@@ -36,7 +36,7 @@
 
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
-import static jdk.test.lib.Utils.inspectTlsFlight;
+import static jdk.test.lib.security.SecurityUtils.inspectTlsFlight;
 
 import java.nio.ByteBuffer;
 
