@@ -616,6 +616,9 @@ void HeapShared::set_has_native_pointers(oop src_obj) {
 }
 
 void HeapShared::start_finding_archivable_hidden_classes() {
+  if (!CDSConfig::is_dumping_invokedynamic()) {
+    return;
+  }
   NoSafepointVerifier nsv;
 
   init_seen_objects_table();
@@ -627,6 +630,9 @@ void HeapShared::start_finding_archivable_hidden_classes() {
 }
 
 void HeapShared::end_finding_archivable_hidden_classes() {
+  if (!CDSConfig::is_dumping_invokedynamic()) {
+    return;
+  }
   NoSafepointVerifier nsv;
 
   delete_seen_objects_table();
@@ -880,7 +886,7 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
 
 void KlassSubGraphInfo::check_allowed_klass(InstanceKlass* ik) {
   if (CDSConfig::is_dumping_invokedynamic()) {
-    // FIXME -- this allows LambdaProxy classes
+    // We allow LambdaProxy classes in platform and app loaders as well.
     return;
   }
   if (ik->module()->name() == vmSymbols::java_base()) {

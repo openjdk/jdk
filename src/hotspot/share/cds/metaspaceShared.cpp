@@ -563,9 +563,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   // Block concurrent class unloading from changing the _dumptime_table
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
 
-  HeapShared::start_finding_archivable_hidden_classes();
-  SystemDictionaryShared::check_excluded_classes();
-  HeapShared::end_finding_archivable_hidden_classes();
+  SystemDictionaryShared::find_all_archivable_classes();
 
   _builder.gather_source_objs();
   _builder.reserve_buffer();

@@ -527,22 +527,6 @@ void ConstantPoolCache::remove_resolved_indy_entries_if_non_deterministic() {
   }
 }
 
-bool ConstantPoolCache::can_archive_invokehandle(ResolvedMethodEntry* rme) {
-  ConstantPool* cp = constant_pool();
-  assert(rme->is_resolved(Bytecodes::_invokehandle), "sanity");
-
-  int cp_index = rme->constant_pool_index();
-  int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
-  Klass* resolved_klass = cp->resolved_klass_at(klass_cp_index);
-  if (!resolved_klass->is_instance_klass()) {
-    // FIXME: can this ever happen?
-    return false;
-  }
-  // FIXME -- any class referenced by the archived CP entries should be added to ArchiveBuilder::classes, or should be
-  // filtered out.
-  return true;
-}
-
 bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, ResolvedMethodEntry* method_entry) {
   InstanceKlass* pool_holder = constant_pool()->pool_holder();
   if (!(pool_holder->is_shared_boot_class() || pool_holder->is_shared_platform_class() ||
@@ -579,7 +563,7 @@ bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, Resolv
       method_entry->is_resolved(Bytecodes::_invokespecial)) {
     return true;
   } else if (method_entry->is_resolved(Bytecodes::_invokehandle)) {
-    if (CDSConfig::is_dumping_invokedynamic() && can_archive_invokehandle(method_entry)) {
+    if (CDSConfig::is_dumping_invokedynamic()) {
       // invokehandle depends on archived MethodType and LambdaForms.
       return true;
     } else {
