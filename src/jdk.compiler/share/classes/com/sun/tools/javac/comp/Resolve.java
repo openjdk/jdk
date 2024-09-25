@@ -3788,9 +3788,10 @@ public class Resolve {
     Symbol findSelfContaining(DiagnosticPosition pos,
                     Env<AttrContext> env,
                     TypeSymbol c,
-                    Name name) {
+                    Name name,
+                    boolean isSuper) {
         Assert.check(name == names._this);
-        Env<AttrContext> env1 = env;
+        Env<AttrContext> env1 = isSuper ? env.outer : env;
         boolean staticOnly = false;
         while (env1.outer != null) {
             if (isStatic(env1)) staticOnly = true;

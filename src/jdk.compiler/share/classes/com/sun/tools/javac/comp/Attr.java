@@ -2590,7 +2590,7 @@ public class Attr extends JCTree.Visitor {
                     } else if (methName == names._super) {
                         // qualifier omitted; check for existence
                         // of an appropriate implicit qualifier.
-                        checkNewInnerClass(tree.meth.pos(), localEnv.outer, site);
+                        checkNewInnerClass(tree.meth.pos(), localEnv, site, true);
                     }
                 } else if (tree.meth.hasTag(SELECT)) {
                     log.error(tree.meth.pos(),
@@ -2799,7 +2799,7 @@ public class Attr extends JCTree.Visitor {
             }
         } else {
             // Check for the existence of an apropos outer instance
-            checkNewInnerClass(tree.pos(), env, clazztype);
+            checkNewInnerClass(tree.pos(), env, clazztype, false);
         }
 
         // Attribute constructor arguments.
@@ -3064,16 +3064,17 @@ public class Attr extends JCTree.Visitor {
             };
         }
 
-        void checkNewInnerClass(DiagnosticPosition pos, Env<AttrContext> env, Type type) {
+        void checkNewInnerClass(DiagnosticPosition pos, Env<AttrContext> env, Type type, boolean isSuper) {
             boolean isLocal = type.tsym.owner.kind == MTH;
             if ((type.tsym.flags() & (INTERFACE | ENUM | RECORD)) != 0 ||
-                    (!isLocal && !type.tsym.isInner())) {
+                    (!isLocal && !type.tsym.isInner()) ||
+                    (isSuper && env.enclClass.sym.isAnonymous())) {
                 // nothing to check
                 return;
             }
             Symbol res = isLocal ?
                     rs.findLocalClassOwner(env, type.tsym) :
-                    rs.findSelfContaining(pos, env, type.getEnclosingType().tsym, names._this);
+                    rs.findSelfContaining(pos, env, type.getEnclosingType().tsym, names._this, isSuper);
             if (res.exists()) {
                 rs.accessBase(res, pos, env.enclClass.sym.type, names._this, true);
             } else {
@@ -3739,7 +3740,7 @@ public class Attr extends JCTree.Visitor {
             }
 
             if (!env.info.attributionMode.isSpeculative && that.getMode() == JCMemberReference.ReferenceMode.NEW) {
-                checkNewInnerClass(that.pos(), env, exprType);
+                checkNewInnerClass(that.pos(), env, exprType, false);
             }
 
             if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
