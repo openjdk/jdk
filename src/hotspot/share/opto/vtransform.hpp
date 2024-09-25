@@ -697,10 +697,13 @@ public:
 };
 
 class VTransformLoadVectorNode : public VTransformMemVectorNode {
+private:
+  const LoadNode::ControlDependency _control_dependency;
 public:
   // req = 3 -> [ctrl, mem, adr]
-  VTransformLoadVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const VPointer* vpointer) :
-    VTransformMemVectorNode(vtransform, prototype, 3, vpointer) {}
+  VTransformLoadVectorNode(VTransform& vtransform, VTransformNodePrototype prototype, const VPointer* vpointer, const LoadNode::ControlDependency control_dependency) :
+    VTransformMemVectorNode(vtransform, prototype, 3, vpointer),
+    _control_dependency(control_dependency) {}
   LoadNode::ControlDependency control_dependency() const;
   virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;

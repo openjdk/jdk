@@ -83,6 +83,7 @@ private:
   void init_all_req_with_scalars(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
   void init_all_req_with_vectors(const Node_List* pack, VTransformNode* vtn, VectorSet& vtn_dependencies);
   void add_dependencies_of_node_to_vtnode(Node* n, VTransformNode* vtn, VectorSet& vtn_dependencies);
+  LoadNode::ControlDependency load_control_dependency(const Node_List* pack) const;
 };
 
 #endif // SHARE_OPTO_SUPERWORD_VTRANSFORM_BUILDER_HPP

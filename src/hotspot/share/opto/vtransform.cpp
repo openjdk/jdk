@@ -768,7 +768,7 @@ VTransformApplyResult VTransformLoadVectorNode::apply(VTransformApplyState& appl
   }
 
   LoadVectorNode* vn = LoadVectorNode::make(sopc, ctrl, mem, adr, load_adr_type, vlen, bt,
-                                            control_dependency());
+                                            _control_dependency);
   DEBUG_ONLY( if (VerifyAlignVector) { vn->set_must_verify_alignment(); } )
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn, vlen, vn->memory_size());
