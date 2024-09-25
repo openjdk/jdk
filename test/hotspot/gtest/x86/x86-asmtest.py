@@ -259,10 +259,10 @@ def is_64_reg(reg):
 def print_instruction(instr, lp64_flag, print_lp64_flag):
     cstr = instr.cstr()
     astr = instr.astr()
-    print("    %-50s //\t%s" % (cstr, astr))
+    print("    %-50s //    %s" % (cstr, astr))
     ifdef_flags.append(lp64_flag or not print_lp64_flag)
     instrs.append(cstr)
-    outfile.write(f"\t{astr}\n")
+    outfile.write(f"    {astr}\n")
 
 def handle_lp64_flag(i, lp64_flag, print_lp64_flag):
     if is_64_reg(test_regs[i]) and not lp64_flag and print_lp64_flag:
