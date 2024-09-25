@@ -111,6 +111,16 @@ Path where generated output file is placed
 Defaults to the current working directory.
 .RE
 .TP
+\f[V]--resource-dir\f[R] \f[I]path\f[R]
+Path to override jpackage resources
+.RS
+.PP
+(absolute path or relative to the current directory)
+.PP
+Icons, template files, and other resources of jpackage can be
+over-ridden by adding replacement resources to this directory.
+.RE
+.TP
 \f[V]--temp\f[R] \f[I]directory\f[R]
 Path of a new or empty directory used to create temporary files
 .RS
@@ -207,9 +217,9 @@ of key, value pairs
 .PP
 The keys \[dq]module\[dq], \[dq]main-jar\[dq], \[dq]main-class\[dq],
 \[dq]description\[dq], \[dq]arguments\[dq], \[dq]java-options\[dq],
-\[dq]app-version\[dq], \[dq]icon\[dq], \[dq]launcher-as-service\[dq],
-\[dq]win-console\[dq], \[dq]win-shortcut\[dq], \[dq]win-menu\[dq],
-\[dq]linux-app-category\[dq], and \[dq]linux-shortcut\[dq] can be used.
+\[dq]icon\[dq], \[dq]launcher-as-service\[dq], \[dq]win-console\[dq],
+\[dq]win-shortcut\[dq], \[dq]win-menu\[dq], and \[dq]linux-shortcut\[dq]
+can be used.
 .PP
 These options are added to, or used to overwrite, the original command
 line options to build an additional alternative launcher.
@@ -260,7 +270,7 @@ When this option is specified, the main module will be linked in the
 Java runtime image.
 Either --module or --main-jar option can be specified but not both.
 .RE
-.SS Platform dependent option for creating the application launcher:
+.SS Platform dependent options for creating the application launcher:
 .SS Windows platform options (available only when running on Windows):
 .TP
 \f[V]--win-console\f[R]
@@ -355,16 +365,6 @@ Path to the license file
 .RS
 .PP
 (absolute path or relative to the current directory)
-.RE
-.TP
-\f[V]--resource-dir\f[R] \f[I]path\f[R]
-Path to override jpackage resources
-.RS
-.PP
-(absolute path or relative to the current directory)
-.PP
-Icons, template files, and other resources of jpackage can be
-over-ridden by adding replacement resources to this directory.
 .RE
 .TP
 \f[V]--runtime-image\f[R] \f[I]path\f[R]

@@ -73,7 +73,7 @@ void ZForwarding::in_place_relocation_finish() {
   if (_from_age == ZPageAge::old || _to_age != ZPageAge::old) {
     // Only do this for non-promoted pages, that still need to reset live map.
     // Done with iterating over the "from-page" view, so can now drop the _livemap.
-    _page->finalize_reset_for_in_place_relocation();
+    _page->reset_livemap();
   }
 
   // Disable relaxed ZHeap::is_in checks

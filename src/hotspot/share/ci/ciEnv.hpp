@@ -94,10 +94,6 @@ private:
   static ciInstanceKlass* _unloaded_ciinstance_klass;
   static ciObjArrayKlass* _unloaded_ciobjarrayklass;
 
-  static jobject _ArrayIndexOutOfBoundsException_handle;
-  static jobject _ArrayStoreException_handle;
-  static jobject _ClassCastException_handle;
-
   ciInstance* _NullPointerException_instance;
   ciInstance* _ArithmeticException_instance;
   ciInstance* _ArrayIndexOutOfBoundsException_instance;
@@ -229,8 +225,6 @@ private:
   }
 
   ciMethod* get_method_from_handle(Method* method);
-
-  ciInstance* get_or_create_exception(jobject& handle, Symbol* name);
 
   // Get a ciMethod representing either an unfound method or
   // a method with an unloaded holder.  Ensures uniqueness of
@@ -402,11 +396,18 @@ public:
     assert(_ArithmeticException_instance != nullptr, "initialization problem");
     return _ArithmeticException_instance;
   }
-
-  // Lazy constructors:
-  ciInstance* ArrayIndexOutOfBoundsException_instance();
-  ciInstance* ArrayStoreException_instance();
-  ciInstance* ClassCastException_instance();
+  ciInstance* ArrayIndexOutOfBoundsException_instance() {
+    assert(_ArrayIndexOutOfBoundsException_instance != nullptr, "initialization problem");
+    return _ArrayIndexOutOfBoundsException_instance;
+  }
+  ciInstance* ArrayStoreException_instance() {
+    assert(_ArrayStoreException_instance != nullptr, "initialization problem");
+    return _ArrayStoreException_instance;
+  }
+  ciInstance* ClassCastException_instance() {
+    assert(_ClassCastException_instance != nullptr, "initialization problem");
+    return _ClassCastException_instance;
+  }
 
   ciInstance* the_null_string();
   ciInstance* the_min_jint_string();

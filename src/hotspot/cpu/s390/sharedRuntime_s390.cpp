@@ -43,6 +43,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
@@ -1713,7 +1714,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // Try fastpath for locking.
     if (LockingMode == LM_LIGHTWEIGHT) {
       // Fast_lock kills r_temp_1, r_temp_2.
-      __ compiler_fast_lock_lightweight_object(r_oop, r_tmp1, r_tmp2);
+      __ compiler_fast_lock_lightweight_object(r_oop, r_box, r_tmp1, r_tmp2);
     } else {
       // Fast_lock kills r_temp_1, r_temp_2.
       __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
@@ -1917,7 +1918,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // Try fastpath for unlocking.
     if (LockingMode == LM_LIGHTWEIGHT) {
       // Fast_unlock kills r_tmp1, r_tmp2.
-      __ compiler_fast_unlock_lightweight_object(r_oop, r_tmp1, r_tmp2);
+      __ compiler_fast_unlock_lightweight_object(r_oop, r_box, r_tmp1, r_tmp2);
     } else {
       // Fast_unlock kills r_tmp1, r_tmp2.
       __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
