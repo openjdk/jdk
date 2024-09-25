@@ -148,7 +148,8 @@ public:
   // See description in field declaration
   void set_expected_humongous_region_promotions(size_t region_count) { _promotable_humongous_regions = region_count; }
   void set_expected_regular_region_promotions(size_t region_count) { _promotable_regular_regions = region_count; }
-  bool has_in_place_promotions() const { return (_promotable_humongous_regions + _promotable_regular_regions) > 0; }
+  size_t get_expected_in_place_promotions() const { return _promotable_humongous_regions + _promotable_regular_regions; }
+  bool has_in_place_promotions() const { return get_expected_in_place_promotions() > 0; }
 
   // Class unloading may render the card table offsets unusable, if they refer to unmarked objects
   bool is_parsable() const   { return _is_parsable; }

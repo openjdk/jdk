@@ -251,9 +251,13 @@ void ShenandoahDegenGC::op_degenerated() {
           op_degenerated_fail();
           return;
         }
+      } else if (has_in_place_promotions(heap)) {
+        // We have nothing to evacuate, but there are still regions to promote in place.
+        ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_promote_regions);
+        ShenandoahGenerationalHeap::heap()->promote_regions_in_place(false /* concurrent*/);
       }
 
-      // Update collector state regardless of whether or not there are forwarded objects
+      // Update collector state regardless of whether there are forwarded objects
       heap->set_evacuation_in_progress(false);
       heap->set_concurrent_weak_root_in_progress(false);
       heap->set_concurrent_strong_root_in_progress(false);
@@ -349,19 +353,20 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
     heap->tlabs_retire(false);
   }
 
-  if (!heap->collection_set()->is_empty() || has_in_place_promotions(heap)) {
-    // Even if the collection set is empty, we need to do evacuation if there are regions to be promoted in place.
-    // Degenerated evacuation takes responsibility for registering objects and setting the remembered set cards to dirty.
-
+  if (!heap->collection_set()->is_empty()) {
     if (ShenandoahVerify) {
       heap->verifier()->verify_before_evacuation();
     }
 
     heap->set_evacuation_in_progress(true);
-    heap->set_has_forwarded_objects(!heap->collection_set()->is_empty());
+    heap->set_has_forwarded_objects(true);
   } else {
     if (ShenandoahVerify) {
-      heap->verifier()->verify_after_concmark();
+      if (has_in_place_promotions(heap)) {
+        heap->verifier()->verify_after_concmark_with_promotions();
+      } else {
+        heap->verifier()->verify_after_concmark();
+      }
     }
 
     if (VerifyAfterGC) {

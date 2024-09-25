@@ -1072,15 +1072,29 @@ void ShenandoahVerifier::verify_before_concmark() {
 void ShenandoahVerifier::verify_after_concmark() {
   verify_at_safepoint(
           "After Mark",
-          _verify_remembered_disable,  // do not verify remembered set
-          _verify_forwarded_none,      // no forwarded references
-          _verify_marked_complete_satb_empty,
-                                       // bitmaps as precise as we can get, except dangling j.l.r.Refs
-          _verify_cset_none,           // no references to cset anymore
-          _verify_liveness_complete,   // liveness data must be complete here
-          _verify_regions_disable,     // trash regions not yet recycled
-          _verify_size_exact,          // expect generation and heap sizes to match exactly
-          _verify_gcstate_stable_weakroots  // heap is still stable, weakroots are in progress
+          _verify_remembered_disable,         // do not verify remembered set
+          _verify_forwarded_none,             // no forwarded references
+          _verify_marked_complete_satb_empty, // bitmaps as precise as we can get, except dangling j.l.r.Refs
+          _verify_cset_none,                  // no references to cset anymore
+          _verify_liveness_complete,          // liveness data must be complete here
+          _verify_regions_disable,            // trash regions not yet recycled
+          _verify_size_exact,                 // expect generation and heap sizes to match exactly
+          _verify_gcstate_stable_weakroots    // heap is still stable, weakroots are in progress
+  );
+}
+
+void ShenandoahVerifier::verify_after_concmark_with_promotions() {
+  verify_at_safepoint(
+          "After Mark",
+          _verify_remembered_disable,         // do not verify remembered set
+          _verify_forwarded_none,             // no forwarded references
+          _verify_marked_complete_satb_empty, // bitmaps as precise as we can get, except dangling j.l.r.Refs
+          _verify_cset_none,                  // no references to cset anymore
+          _verify_liveness_complete,          // liveness data must be complete here
+          _verify_regions_disable,            // trash regions not yet recycled
+          _verify_size_adjusted_for_padding,  // expect generation and heap sizes to match after adjustments
+                                              // for promote in place padding
+          _verify_gcstate_stable_weakroots    // heap is still stable, weakroots are in progress
   );
 }
 

@@ -1210,14 +1210,8 @@ private:
 };
 
 void ShenandoahHeap::evacuate_collection_set(bool concurrent) {
-  if (mode()->is_generational()) {
-    ShenandoahRegionIterator regions;
-    ShenandoahGenerationalEvacuationTask task(ShenandoahGenerationalHeap::heap(), &regions, concurrent);
-    workers()->run_task(&task);
-  } else {
-    ShenandoahEvacuationTask task(this, _collection_set, concurrent);
-    workers()->run_task(&task);
-  }
+  ShenandoahEvacuationTask task(this, _collection_set, concurrent);
+  workers()->run_task(&task);
 }
 
 oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {

@@ -107,6 +107,9 @@ private:
 
   void entry_cleanup_complete();
 
+  // Called when the collection set is empty, but the generational mode has regions to promote in place
+  void entry_promote_in_place();
+
   // Actual work for the phases
   void op_reset();
   void op_init_mark();
