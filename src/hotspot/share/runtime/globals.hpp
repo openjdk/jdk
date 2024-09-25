@@ -2000,7 +2000,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseThreadsLockThrottleLock, true, DIAGNOSTIC,               \
           "Use an extra lock during Thread start and exit to alleviate"     \
-          "contention on threads lock.")                                    \
+          "contention on Threads_lock.")                                    \
 
 // end of RUNTIME_FLAGS
 
