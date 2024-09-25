@@ -124,7 +124,8 @@ public class MinMaxLoopBench
     public int intReductionMin() {
         int result = 0;
         for (int i = 0; i < size; i++) {
-            result = Math.min(result, minIntA[i]);
+            final int v = 11 * minIntA[i];
+            result = Math.min(result, v);
         }
         return result;
     }
@@ -133,7 +134,8 @@ public class MinMaxLoopBench
     public int intReductionMax() {
         int result = 0;
         for (int i = 0; i < size; i++) {
-            result = Math.max(result, maxIntA[i]);
+            final int v = 11 * maxIntA[i];
+            result = Math.max(result, v);
         }
         return result;
     }
@@ -160,7 +162,8 @@ public class MinMaxLoopBench
     public long longReductionMin() {
         long result = 0;
         for (int i = 0; i < size; i++) {
-            result = Math.min(result, minLongA[i]);
+            final long v = 11 * minLongA[i];
+            result = Math.min(result, v);
         }
         return result;
     }
@@ -169,7 +172,8 @@ public class MinMaxLoopBench
     public long longReductionMax() {
         long result = 0;
         for (int i = 0; i < size; i++) {
-            result = Math.max(result, maxLongA[i]);
+            final long v = 11 * maxLongA[i];
+            result = Math.max(result, v);
         }
         return result;
     }
