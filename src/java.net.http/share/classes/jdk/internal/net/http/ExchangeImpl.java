@@ -58,6 +58,8 @@ abstract class ExchangeImpl<T> {
 
     final Exchange<T> exchange;
 
+    private volatile boolean expectTimeoutRaised;
+
     // this will be set to true only when the peer explicitly states (through a GOAWAY frame or
     // a relevant error code in reset frame) that the corresponding stream (id) wasn't processed
     private volatile boolean unprocessedByPeer;
@@ -69,6 +71,14 @@ abstract class ExchangeImpl<T> {
 
     final Exchange<T> getExchange() {
         return exchange;
+    }
+
+    final void setExpectTimeoutRaised() {
+        expectTimeoutRaised = true;
+    }
+
+    final boolean expectTimeoutRaised() {
+        return expectTimeoutRaised;
     }
 
     HttpClientImpl client() {

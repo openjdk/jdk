@@ -29,7 +29,7 @@
 
 class ZDirector : public ZThread {
 private:
-  static const uint64_t decision_hz = 100;
+  static const uint64_t DecisionHz = 100;
   static ZDirector* _director;
 
   ZConditionLock _monitor;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ class WindowsLinkSupport {
             x.rethrowAsIOException(path);
         }
         try {
-            return readLinkImpl(handle);
+            return readLinkImpl(path, handle);
         } finally {
             CloseHandle(handle);
         }
@@ -297,16 +297,18 @@ class WindowsLinkSupport {
      * Returns target of a symbolic link given the handle of an open file
      * (that should be a link).
      */
-    private static String readLinkImpl(long handle) throws IOException {
+    private static String readLinkImpl(WindowsPath path, long handle)
+        throws IOException
+    {
         int size = MAXIMUM_REPARSE_DATA_BUFFER_SIZE;
         try (NativeBuffer buffer = NativeBuffers.getNativeBuffer(size)) {
             try {
                 DeviceIoControlGetReparsePoint(handle, buffer.address(), size);
             } catch (WindowsException x) {
-                // FIXME: exception doesn't have file name
+                String pathname = path.getPathForExceptionMessage();
                 if (x.lastError() == ERROR_NOT_A_REPARSE_POINT)
-                    throw new NotLinkException(null, null, x.errorString());
-                x.rethrowAsIOException((String)null);
+                    throw new NotLinkException(pathname, null, x.errorString());
+                x.rethrowAsIOException(pathname + ": " + x.errorString());
             }
 
             /*
@@ -342,8 +344,8 @@ class WindowsLinkSupport {
 
             int tag = (int)unsafe.getLong(buffer.address() + OFFSETOF_REPARSETAG);
             if (tag != IO_REPARSE_TAG_SYMLINK) {
-                // FIXME: exception doesn't have file name
-                throw new NotLinkException(null, null, "Reparse point is not a symbolic link");
+                String pathname = path.getPathForExceptionMessage();
+                throw new NotLinkException(pathname, null, "Reparse point is not a symbolic link");
             }
 
             // get offset and length of target
