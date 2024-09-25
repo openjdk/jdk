@@ -2329,14 +2329,14 @@ public class MethodHandles {
          * Returns a ClassDefiner that creates a {@code Class} object of a normal class
          * from the given bytes.  No package name check on the given bytes.
          *
-         * @param name    internal name
+         * @param internalName internal name
          * @param bytes   class bytes
          * @param dumper  dumper to write the given bytes to the dumper's output directory
          * @return ClassDefiner that defines a normal class of the given bytes.
          */
-        ClassDefiner makeClassDefiner(String name, byte[] bytes, ClassFileDumper dumper) {
+        ClassDefiner makeClassDefiner(String internalName, byte[] bytes, ClassFileDumper dumper) {
             // skip package name validation
-            return new ClassDefiner(this, name, bytes, STRONG_LOADER_LINK, dumper);
+            return new ClassDefiner(this, internalName, bytes, STRONG_LOADER_LINK, dumper);
         }
 
         /**
@@ -2385,31 +2385,31 @@ public class MethodHandles {
          * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
          * from the given bytes and the given options.  No package name check on the given bytes.
          *
-         * @param name    internal name that specifies the prefix of the hidden class
+         * @param internalName internal name that specifies the prefix of the hidden class
          * @param bytes   class bytes
          * @param dumper  dumper to write the given bytes to the dumper's output directory
          * @return ClassDefiner that defines a hidden class of the given bytes and options.
          */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, ClassFileDumper dumper) {
+        ClassDefiner makeHiddenClassDefiner(String internalName, byte[] bytes, ClassFileDumper dumper) {
             Objects.requireNonNull(dumper);
             // skip name and access flags validation
-            return makeHiddenClassDefiner(name, bytes, false, dumper, 0);
+            return makeHiddenClassDefiner(internalName, bytes, false, dumper, 0);
         }
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
          * from the given bytes and the given options.  No package name check on the given bytes.
          *
-         * @param name    internal name that specifies the prefix of the hidden class
+         * @param internalName internal name that specifies the prefix of the hidden class
          * @param bytes   class bytes
          * @param flags   class options flag mask
          * @param dumper  dumper to write the given bytes to the dumper's output directory
          * @return ClassDefiner that defines a hidden class of the given bytes and options.
          */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, ClassFileDumper dumper, int flags) {
+        ClassDefiner makeHiddenClassDefiner(String internalName, byte[] bytes, ClassFileDumper dumper, int flags) {
             Objects.requireNonNull(dumper);
             // skip name and access flags validation
-            return makeHiddenClassDefiner(name, bytes, false, dumper, flags);
+            return makeHiddenClassDefiner(internalName, bytes, false, dumper, flags);
         }
 
         /**
@@ -2437,13 +2437,9 @@ public class MethodHandles {
             return new ClassDefiner(this, internalName, bytes, flags, dumper);
         }
 
-        record ClassDefiner(Lookup lookup, String name, byte[] bytes, int classFlags, ClassFileDumper dumper) {
+        record ClassDefiner(Lookup lookup, String internalName, byte[] bytes, int classFlags, ClassFileDumper dumper) {
             ClassDefiner {
                 assert ((classFlags & HIDDEN_CLASS) != 0 || (classFlags & STRONG_LOADER_LINK) == STRONG_LOADER_LINK);
-            }
-
-            String internalName() {
-                return name;
             }
 
             Class<?> defineClass(boolean initialize) {
@@ -2472,7 +2468,7 @@ public class MethodHandles {
                 Class<?> c = null;
                 try {
                     c = SharedSecrets.getJavaLangAccess()
-                            .defineClass(loader, lookupClass, name, bytes, pd, initialize, classFlags, classData);
+                            .defineClass(loader, lookupClass, internalName, bytes, pd, initialize, classFlags, classData);
                     assert !isNestmate() || c.getNestHost() == lookupClass.getNestHost();
                     return c;
                 } finally {
