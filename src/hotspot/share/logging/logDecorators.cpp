@@ -27,10 +27,8 @@
 #include "logDecorators.hpp"
 
 const LogLevelType AnyLevel = LogLevelType::NotMentioned;
-const LogTagType AnyTag     = LogTagType::__NO_TAG;
 #define DEFAULT_DECORATORS \
-  DEFAULT_VALUE(mask_from_decorators(NoDecorators), AnyLevel, LOG_TAGS(jit, inlining)) \
-  DEFAULT_VALUE(mask_from_decorators(uptime_decorator, level_decorator, tags_decorator), AnyLevel, AnyTag)
+  DEFAULT_VALUE(AnyLevel, LOG_TAGS(jit, inlining))
 
 template <LogDecorators::Decorator d>
 struct AllBitmask {
@@ -53,7 +51,7 @@ const char* LogDecorators::_name[][2] = {
 };
 
 const LogDecorators::DefaultDecorator LogDecorators::default_decorators[] = {
-#define DEFAULT_VALUE(mask, level, ...) LogDecorators::DefaultDecorator(level, mask, __VA_ARGS__),
+#define DEFAULT_VALUE(level, ...) LogDecorators::DefaultDecorator(level, __VA_ARGS__),
   DEFAULT_DECORATORS
 #undef DEFAULT_VALUE
 };
@@ -108,24 +106,15 @@ bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
   return result;
 }
 
-void LogDecorators::get_default_decorators(const LogSelection& selection, uint* mask, const DefaultDecorator* defaults, size_t defaults_count) {
-  size_t max_specificity = 0;
-  uint tmp_mask = 0;
+bool LogDecorators::has_disabled_decorators(const LogSelection& selection, const DefaultDecorator* defaults, size_t defaults_count) {
   for (size_t i = 0; i < defaults_count; ++i) {
     auto current_default = defaults[i];
     const bool ignore_level = current_default.selection().level() == AnyLevel;
     const bool level_matches = ignore_level || selection.level() == current_default.selection().level();
     if (!level_matches) continue;
-    if (!selection.superset_of(current_default.selection())) {
-      continue;
-    }
-    size_t specificity = current_default.selection().ntags();
-    if (specificity > max_specificity) {
-      tmp_mask = current_default.mask();
-      max_specificity = specificity;
-    } else if (specificity == max_specificity) {
-      tmp_mask |= current_default.mask();
+    if (selection.superset_of(current_default.selection())) {
+      return true;
     }
   }
-  *mask |= tmp_mask;
+  return false;
 }

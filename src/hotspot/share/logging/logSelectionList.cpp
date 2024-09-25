@@ -53,12 +53,13 @@ bool LogSelectionList::verify_selections(outputStream* out) const {
   return valid;
 }
 
-uint LogSelectionList::get_defaults_mask() const {
-  uint mask = 0;
+LogDecorators LogSelectionList::get_default_decorators() const {
   for (size_t i = 0; i < _nselections; ++i) {
-    LogDecorators::get_default_decorators(_selections[i], &mask);
+    if (!LogDecorators::has_disabled_decorators(_selections[i])) {
+      return LogDecorators();
+    }
   }
-  return mask;
+  return LogDecorators(0);
 }
 
 bool LogSelectionList::parse(const char* str, outputStream* errstream) {
