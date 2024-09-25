@@ -53,11 +53,12 @@ public:
 
 ShenandoahGenerationalEvacuationTask::ShenandoahGenerationalEvacuationTask(ShenandoahGenerationalHeap* heap,
                                                                            ShenandoahRegionIterator* iterator,
-                                                                           bool concurrent) :
+                                                                           bool concurrent, bool only_promote_regions) :
   WorkerTask("Shenandoah Evacuation"),
   _heap(heap),
   _regions(iterator),
   _concurrent(concurrent),
+  _only_promote_regions(only_promote_regions),
   _tenuring_threshold(0)
 {
   shenandoah_assert_generational();
@@ -68,25 +69,61 @@ void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
   if (_concurrent) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahSuspendibleThreadSetJoiner stsj;
-    ShenandoahEvacOOMScope oom_evac_scope;
     do_work();
   } else {
     ShenandoahParallelWorkerSession worker_session(worker_id);
-    ShenandoahEvacOOMScope oom_evac_scope;
     do_work();
   }
 }
 
 void ShenandoahGenerationalEvacuationTask::do_work() {
+  if (_only_promote_regions) {
+    // No allocations will be made, do not enter oom-during-evac protocol.
+    assert(ShenandoahHeap::heap()->collection_set()->is_empty(), "Should not have a collection set here");
+    promote_regions();
+  } else {
+    assert(!ShenandoahHeap::heap()->collection_set()->is_empty(), "Should have a collection set here");
+    ShenandoahEvacOOMScope oom_evac_scope;
+    evacuate_and_promote_regions();
+  }
+}
+
+void log_region(const ShenandoahHeapRegion* r, LogStream* ls) {
+  ls->print_cr("GenerationalEvacuationTask, looking at %s region " SIZE_FORMAT ", (age: %d) [%s, %s, %s]",
+              r->is_old()? "old": r->is_young()? "young": "free", r->index(), r->age(),
+              r->is_active()? "active": "inactive",
+              r->is_humongous()? (r->is_humongous_start()? "humongous_start": "humongous_continuation"): "regular",
+              r->is_cset()? "cset": "not-cset");
+}
+
+void ShenandoahGenerationalEvacuationTask::promote_regions() {
+  ShenandoahHeapRegion* r;
+  LogTarget(Debug, gc) lt;
+
+  while ((r = _regions->next()) != nullptr) {
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      log_region(r, &ls);
+    }
+
+    maybe_promote_region(r);
+
+    if (_heap->check_cancelled_gc_and_yield(_concurrent)) {
+      break;
+    }
+  }
+}
+
+void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
+  LogTarget(Debug, gc) lt;
   ShenandoahConcurrentEvacuator cl(_heap);
   ShenandoahHeapRegion* r;
 
   while ((r = _regions->next()) != nullptr) {
-    log_debug(gc)("GenerationalEvacuationTask do_work(), looking at %s region " SIZE_FORMAT ", (age: %d) [%s, %s, %s]",
-            r->is_old()? "old": r->is_young()? "young": "free", r->index(), r->age(),
-            r->is_active()? "active": "inactive",
-            r->is_humongous()? (r->is_humongous_start()? "humongous_start": "humongous_continuation"): "regular",
-            r->is_cset()? "cset": "not-cset");
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      log_region(r, &ls);
+    }
 
     if (r->is_cset()) {
       assert(r->has_live(), "Region " SIZE_FORMAT " should have been reclaimed early", r->index());
@@ -94,29 +131,36 @@ void ShenandoahGenerationalEvacuationTask::do_work() {
       if (ShenandoahPacing) {
         _heap->pacer()->report_evac(r->used() >> LogHeapWordSize);
       }
-    } else if (r->is_young() && r->is_active() && (r->age() >= _tenuring_threshold)) {
-      if (r->is_humongous_start()) {
-        // We promote humongous_start regions along with their affiliated continuations during evacuation rather than
-        // doing this work during a safepoint.  We cannot put humongous regions into the collection set because that
-        // triggers the load-reference barrier (LRB) to copy on reference fetch.
-        promote_humongous(r);
-      } else if (r->is_regular() && (r->get_top_before_promote() != nullptr)) {
-        // Likewise, we cannot put promote-in-place regions into the collection set because that would also trigger
-        // the LRB to copy on reference fetch.
-        promote_in_place(r);
-      }
+    } else {
+      maybe_promote_region(r);
+    }
+
+    if (_heap->check_cancelled_gc_and_yield(_concurrent)) {
+      break;
+    }
+  }
+}
+
+
+void ShenandoahGenerationalEvacuationTask::maybe_promote_region(ShenandoahHeapRegion* r) {
+  if (r->is_young() && r->is_active() && (r->age() >= _tenuring_threshold)) {
+    if (r->is_humongous_start()) {
+      // We promote humongous_start regions along with their affiliated continuations during evacuation rather than
+      // doing this work during a safepoint.  We cannot put humongous regions into the collection set because that
+      // triggers the load-reference barrier (LRB) to copy on reference fetch.
+      //
       // Aged humongous continuation regions are handled with their start region.  If an aged regular region has
       // more garbage than ShenandoahOldGarbageThreshold, we'll promote by evacuation.  If there is room for evacuation
       // in this cycle, the region will be in the collection set.  If there is not room, the region will be promoted
       // by evacuation in some future GC cycle.
-
+      promote_humongous(r);
+    } else if (r->is_regular() && (r->get_top_before_promote() != nullptr)) {
+      // Likewise, we cannot put promote-in-place regions into the collection set because that would also trigger
+      // the LRB to copy on reference fetch.
+      //
       // If an aged regular region has received allocations during the current cycle, we do not promote because the
       // newly allocated objects do not have appropriate age; this region's age will be reset to zero at end of cycle.
-    }
-    // else, region is free, or OLD, or not in collection set, or humongous_continuation,
-    // or is young humongous_start that is too young to be promoted
-    if (_heap->check_cancelled_gc_and_yield(_concurrent)) {
-      break;
+      promote_in_place(r);
     }
   }
 }
@@ -279,3 +323,4 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
     scanner->mark_range_as_dirty(humongous_bottom, obj->size());
   }
 }
+

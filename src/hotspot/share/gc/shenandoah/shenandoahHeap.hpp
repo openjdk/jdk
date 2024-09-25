@@ -469,7 +469,7 @@ protected:
 private:
   // GC support
   // Evacuation
-  void evacuate_collection_set(bool concurrent);
+  virtual void evacuate_collection_set(bool concurrent);
   // Concurrent root processing
   void prepare_concurrent_roots();
   void finish_concurrent_roots();

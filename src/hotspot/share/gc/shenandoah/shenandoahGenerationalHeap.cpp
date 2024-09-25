@@ -170,6 +170,18 @@ void ShenandoahGenerationalHeap::stop() {
   ShenandoahHeap::stop();
 }
 
+void ShenandoahGenerationalHeap::evacuate_collection_set(bool concurrent) {
+  ShenandoahRegionIterator regions;
+  ShenandoahGenerationalEvacuationTask task(this, &regions, concurrent, false /* only promote regions */);
+  workers()->run_task(&task);
+}
+
+void ShenandoahGenerationalHeap::promote_regions_in_place(bool concurrent) {
+  ShenandoahRegionIterator regions;
+  ShenandoahGenerationalEvacuationTask task(this, &regions, concurrent, true /* only promote regions */);
+  workers()->run_task(&task);
+}
+
 oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
   assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
   if (ShenandoahThreadLocalData::is_oom_during_evac(thread)) {

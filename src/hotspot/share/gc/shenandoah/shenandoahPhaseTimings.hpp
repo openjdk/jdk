@@ -104,7 +104,7 @@ class outputStream;
   f(conc_strong_roots,                              "Concurrent Strong Roots")         \
   SHENANDOAH_PAR_PHASE_DO(conc_strong_roots_,       "  CSR: ", f)                      \
   f(conc_evac,                                      "Concurrent Evacuation")           \
-                                                                                       \
+  f(promote_in_place,                               "Concurrent Promote Regions")      \
   f(final_roots_gross,                              "Pause Final Roots (G)")           \
   f(final_roots,                                    "Pause Final Roots (N)")           \
                                                                                        \
@@ -154,6 +154,7 @@ class outputStream;
   f(degen_gc_update_roots,                          "  Degen Update Roots")            \
   SHENANDOAH_PAR_PHASE_DO(degen_gc_update_,         "    DU: ", f)                     \
   f(degen_gc_cleanup_complete,                      "  Cleanup")                       \
+  f(degen_gc_promote_regions,                       "  Degen Promote Regions")         \
   f(degen_gc_coalesce_and_fill,                     "  Degen Coalesce and Fill")       \
   SHENANDOAH_PAR_PHASE_DO(degen_coalesce_,          "    DC&F", f)                     \
                                                                                        \

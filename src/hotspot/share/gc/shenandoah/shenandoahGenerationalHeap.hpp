@@ -83,6 +83,8 @@ public:
 
   oop evacuate_object(oop p, Thread* thread) override;
   oop try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
+  void evacuate_collection_set(bool concurrent) override;
+  void promote_regions_in_place(bool concurrent);
 
   size_t plab_min_size() const { return _min_plab_size; }
   size_t plab_max_size() const { return _max_plab_size; }
