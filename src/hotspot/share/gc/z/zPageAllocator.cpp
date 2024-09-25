@@ -488,6 +488,9 @@ ZPage* ZPageAllocator::defragment_page(ZPage* page) {
   ZPage* new_page = new ZPage(ZPageType::small, vmem, pmem);
   map_page(new_page);
 
+  // Update statistics
+  ZStatInc(ZCounterDefragment);
+
   return new_page;
 }
 
@@ -834,7 +837,6 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
 
     // Check if page needs to be remapped to avoid fragmentation
     if (should_defragment(page)) {
-      ZStatInc(ZCounterDefragment);
       to_recycle.push(defragment_page(_safe_recycle.register_and_clone_if_activated(page)));
     } else {
       to_recycle.push(_safe_recycle.register_and_clone_if_activated(page));
