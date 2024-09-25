@@ -1063,10 +1063,9 @@ public interface Map<K, V> {
         Objects.requireNonNull(mappingFunction);
         V v;
         if ((v = get(key)) == null) {
-            V newValue;
-            if ((newValue = mappingFunction.apply(key)) != null) {
-                put(key, newValue);
-                return newValue;
+            if ((v = mappingFunction.apply(key)) != null) {
+                put(key, v);
+                return v;
             }
         }
 
