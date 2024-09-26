@@ -28,7 +28,7 @@
  *      8223499 8225392 8232019 8234245 8233223 8225068 8225069 8243321 8243320
  *      8243559 8225072 8258630 8259312 8256421 8225081 8225082 8225083 8245654
  *      8305975 8304760 8307134 8295894 8314960 8317373 8317374 8318759 8319187
- *      8321408 8316138 8329202
+ *      8321408 8316138 8341057
  * @summary Check root CA entries in cacerts file
  */
 import java.io.ByteArrayInputStream;
@@ -47,12 +47,12 @@ public class VerifyCACerts {
             + File.separator + "security" + File.separator + "cacerts";
 
     // The numbers of certs now.
-    private static final int COUNT = 114;
+    private static final int COUNT = 112;
 
     // SHA-256 of cacerts, can be generated with
     // shasum -a 256 cacerts | sed -e 's/../&:/g' | tr '[:lower:]' '[:upper:]' | cut -c1-95
     private static final String CHECKSUM
-            = "D6:C5:15:01:66:87:4F:8E:18:E8:23:98:60:35:4C:48:20:87:A5:83:7F:B6:BE:AB:4D:4F:75:EF:B5:09:9D:23";
+            = "21:68:E7:16:5B:94:23:D2:60:5C:BB:F2:AF:C1:66:5C:EC:36:BC:20:FF:5C:54:AF:91:D1:2C:38:AE:55:D3:27";
 
     // Hex formatter to upper case with ":" delimiter
     private static final HexFormat HEX = HexFormat.ofDelimiter(":").withUpperCase();
@@ -281,10 +281,6 @@ public class VerifyCACerts {
                     "4F:A3:12:6D:8D:3A:11:D1:C4:85:5A:4F:80:7C:BA:D6:CF:91:9D:3A:5A:88:B0:3B:EA:2C:63:72:D9:3C:40:C9");
             put("globalsigne46 [jdk]",
                     "CB:B9:C4:4D:84:B8:04:3E:10:50:EA:31:A6:9F:51:49:55:D7:BF:D2:E2:C6:B4:93:01:01:9A:D6:1D:9F:50:58");
-            put("sslcsrootecc2022 [jdk]",
-                    "E1:7D:B3:96:AF:C1:36:FF:1D:6D:CD:A4:BB:44:3D:A2:D8:17:13:18:55:BE:1C:4B:6F:EC:EA:22:10:36:72:2A");
-            put("sslcsrootrsa2022 [jdk]",
-                    "25:3E:3C:A3:6E:37:E8:67:EE:68:86:7B:99:7B:9E:C7:24:DC:C3:16:10:63:AB:03:93:B5:4F:2B:B7:B6:C3:15");
             put("ssltlsrootecc2022 [jdk]",
                     "C3:2F:FD:9F:46:F9:36:D1:6C:36:73:99:09:59:43:4B:9A:D6:0A:AF:BB:9E:7C:F3:36:54:F1:44:CC:1B:A1:43");
             put("ssltlsrootrsa2022 [jdk]",

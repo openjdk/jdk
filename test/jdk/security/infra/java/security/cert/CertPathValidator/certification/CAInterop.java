@@ -537,7 +537,7 @@
 
 /*
  * @test id=ssltlsrootecc2022
- * @bug 8329202
+ * @bug 8341057
  * @summary Interoperability tests with SSL TLS 2022 root CAs
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
@@ -548,7 +548,7 @@
 
 /*
  * @test id=ssltlsrootrsa2022
- * @bug 8329202
+ * @bug 8341057
  * @summary Interoperability tests with SSL TLS 2022 root CAs
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
