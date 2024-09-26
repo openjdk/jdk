@@ -5320,14 +5320,13 @@ class StubGenerator: public StubCodeGenerator {
   address generate_large_arrays_hashcode(BasicType eltype) {
     const Register result = r0, ary = r1, cnt = r2;
     const FloatRegister vdata0 = v3, vdata1 = v2, vdata2 = v1, vdata3 = v0;
-    const FloatRegister vhalf0 = v13, vhalf1 = v12, vhalf2 = v11, vhalf3 = v10;
     const FloatRegister vmul0 = v4, vmul1 = v5, vmul2 = v6, vmul3 = v7;
     const FloatRegister vpow = v8;  // powers of 31: <31^3, ..., 31^0>
     const FloatRegister vpowm = v9;
 
     assert_different_registers(ary, cnt, result);
-    assert_different_registers(vdata0, vdata1, vdata2, vdata3, vhalf0, vhalf1, vhalf2, vhalf3,
-                               vmul0, vmul1, vmul2, vmul3, vpow, vpowm);
+    assert_different_registers(vdata0, vdata1, vdata2, vdata3, vmul0, vmul1, vmul2, vmul3, vpow,
+                               vpowm);
 
     Label SMALL_LOOP, LARGE_LOOP_PREHEADER, LARGE_LOOP, TAIL, TAIL_SHORTCUT, BR_BASE;
 
@@ -5438,11 +5437,10 @@ class StubGenerator: public StubCodeGenerator {
     case Assembler::T8H:
       assert(is_subword_type(eltype), "subword type expected");
       if (is_signed_subword_type(eltype)) {
-        __ sxtl(vhalf0, Assembler::T4S, vdata0, Assembler::T4H);
+	__ saddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
       } else {
-        __ uxtl(vhalf0, Assembler::T4S, vdata0, Assembler::T4H);
+	__ uaddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
       }
-      __ addv(vmul0, Assembler::T4S, vmul0, vhalf0);
       break;
     default:
       __ should_not_reach_here();
@@ -5452,11 +5450,10 @@ class StubGenerator: public StubCodeGenerator {
     if (load_arrangement == Assembler::T8B || load_arrangement == Assembler::T8H) {
       __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 0);
       if (is_signed_subword_type(eltype)) {
-        __ sshll2(vhalf0, Assembler::T4S, vdata0, Assembler::T8H, 0);
+	__ saddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
       } else {
-        __ ushll2(vhalf0, Assembler::T4S, vdata0, Assembler::T8H, 0);
+	__ uaddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
       }
-      __ addv(vmul0, Assembler::T4S, vmul0, vhalf0);
     }
 
     __ br(Assembler::HI, SMALL_LOOP);
@@ -5552,20 +5549,16 @@ class StubGenerator: public StubCodeGenerator {
     case Assembler::T8H:
       assert(is_subword_type(eltype), "subword type expected");
       if (is_signed_subword_type(eltype)) {
-        __ sxtl(vhalf3, Assembler::T4S, vdata3, Assembler::T4H);
-        __ sxtl(vhalf2, Assembler::T4S, vdata2, Assembler::T4H);
-        __ sxtl(vhalf1, Assembler::T4S, vdata1, Assembler::T4H);
-        __ sxtl(vhalf0, Assembler::T4S, vdata0, Assembler::T4H);
+	__ saddwv(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T4H);
+	__ saddwv(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T4H);
+	__ saddwv(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T4H);
+	__ saddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
       } else {
-        __ uxtl(vhalf3, Assembler::T4S, vdata3, Assembler::T4H);
-        __ uxtl(vhalf2, Assembler::T4S, vdata2, Assembler::T4H);
-        __ uxtl(vhalf1, Assembler::T4S, vdata1, Assembler::T4H);
-        __ uxtl(vhalf0, Assembler::T4S, vdata0, Assembler::T4H);
+	__ uaddwv(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T4H);
+	__ uaddwv(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T4H);
+	__ uaddwv(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T4H);
+	__ uaddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
       }
-      __ addv(vmul3, Assembler::T4S, vmul3, vhalf3);
-      __ addv(vmul2, Assembler::T4S, vmul2, vhalf2);
-      __ addv(vmul1, Assembler::T4S, vmul1, vhalf1);
-      __ addv(vmul0, Assembler::T4S, vmul0, vhalf0);
       break;
     default:
       __ should_not_reach_here();
@@ -5578,20 +5571,16 @@ class StubGenerator: public StubCodeGenerator {
       __ mulvs(vmul1, Assembler::T4S, vmul1, vpowm, 1);
       __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 1);
       if (is_signed_subword_type(eltype)) {
-        __ sshll2(vhalf3, Assembler::T4S, vdata3, Assembler::T8H, 0);
-        __ sshll2(vhalf2, Assembler::T4S, vdata2, Assembler::T8H, 0);
-        __ sshll2(vhalf1, Assembler::T4S, vdata1, Assembler::T8H, 0);
-        __ sshll2(vhalf0, Assembler::T4S, vdata0, Assembler::T8H, 0);
+	__ saddwv2(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T8H);
+	__ saddwv2(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T8H);
+	__ saddwv2(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T8H);
+	__ saddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
       } else {
-        __ ushll2(vhalf3, Assembler::T4S, vdata3, Assembler::T8H, 0);
-        __ ushll2(vhalf2, Assembler::T4S, vdata2, Assembler::T8H, 0);
-        __ ushll2(vhalf1, Assembler::T4S, vdata1, Assembler::T8H, 0);
-        __ ushll2(vhalf0, Assembler::T4S, vdata0, Assembler::T8H, 0);
+	__ uaddwv2(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T8H);
+	__ uaddwv2(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T8H);
+	__ uaddwv2(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T8H);
+	__ uaddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
       }
-      __ addv(vmul3, Assembler::T4S, vmul3, vhalf3);
-      __ addv(vmul2, Assembler::T4S, vmul2, vhalf2);
-      __ addv(vmul1, Assembler::T4S, vmul1, vhalf1);
-      __ addv(vmul0, Assembler::T4S, vmul0, vhalf0);
     }
 
     __ subsw(rscratch2, rscratch2, 1);

@@ -3062,6 +3062,40 @@ public:
     umov(Xd, Vn, T, index);
   }
 
+ protected:
+  void _xaddwv(bool is_unsigned, FloatRegister Vd, FloatRegister Vn, SIMD_Arrangement Ta,
+               FloatRegister Vm, SIMD_Arrangement Tb) {
+    starti;
+    assert((Tb >> 1) + 1 == (Ta >> 1), "Incompatible arrangement");
+    f(0, 31), f((int)Tb & 1, 30), f(is_unsigned ? 1 : 0, 29), f(0b01110, 28, 24);
+    f((int)(Ta >> 1) - 1, 23, 22), f(1, 21), rf(Vm, 16), f(0b000100, 15, 10), rf(Vn, 5), rf(Vd, 0);
+  }
+
+ public:
+  void uaddwv(FloatRegister Vd, FloatRegister Vn, SIMD_Arrangement Ta, FloatRegister Vm,
+              SIMD_Arrangement Tb) {
+    assert(Tb == T8B || Tb == T4H || Tb == T2S, "invalid arrangement");
+    _xaddwv(/* is_unsigned */ true, Vd, Vn, Ta, Vm, Tb);
+  }
+
+  void uaddwv2(FloatRegister Vd, FloatRegister Vn, SIMD_Arrangement Ta, FloatRegister Vm,
+               SIMD_Arrangement Tb) {
+    assert(Tb == T16B || Tb == T8H || Tb == T4S, "invalid arrangement");
+    _xaddwv(/* is_unsigned */ true, Vd, Vn, Ta, Vm, Tb);
+  }
+
+  void saddwv(FloatRegister Vd, FloatRegister Vn, SIMD_Arrangement Ta, FloatRegister Vm,
+              SIMD_Arrangement Tb) {
+    assert(Tb == T8B || Tb == T4H || Tb == T2S, "invalid arrangement");
+    _xaddwv(/* is_unsigned */ false, Vd, Vn, Ta, Vm, Tb);
+  }
+
+  void saddwv2(FloatRegister Vd, FloatRegister Vn, SIMD_Arrangement Ta, FloatRegister Vm,
+               SIMD_Arrangement Tb) {
+    assert(Tb == T16B || Tb == T8H || Tb == T4S, "invalid arrangement");
+    _xaddwv(/* is_unsigned */ false, Vd, Vn, Ta, Vm, Tb);
+  }
+
 private:
   void _pmull(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, FloatRegister Vm, SIMD_Arrangement Tb) {
     starti;

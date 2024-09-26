@@ -1323,6 +1323,41 @@ class VectorScalarNEONInstruction(Instruction):
     def aname(self):
         return self._name
 
+class WideningNEONInstruction(Instruction):
+    def __init__(self, args):
+        self._name, self.insname, self.widerArrangement, self.narrowerArrangement = args
+
+    def generate(self):
+        self._firstSIMDreg = FloatRegister().generate()
+        return self
+
+    def cstr(self):
+        buf = Instruction.cstr(self) + str(self._firstSIMDreg)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numWiderRegs):
+            buf = '%s, %s' % (buf, current.nextReg())
+            current = current.nextReg()
+        buf = '%s, __ T%s' % (buf, self.widerArrangement)
+        for cnt in range(0, self.numNarrowerRegs):
+            buf = '%s, %s' % (buf, current.nextReg())
+            current = current.nextReg()
+        buf = '%s, __ T%s' % (buf, self.narrowerArrangement)
+        return '%s);' % (buf)
+
+    def astr(self):
+        buf = '%s\t%s.%s' % (self.insname, self._firstSIMDreg, self.widerArrangement)
+        current = self._firstSIMDreg
+        for cnt in range(1, self.numWiderRegs):
+            buf = '%s, %s.%s' % (buf, current.nextReg(), self.widerArrangement)
+            current = current.nextReg()
+        for cnt in range(0, self.numNarrowerRegs):
+            buf = '%s, %s.%s' % (buf, current.nextReg(), self.narrowerArrangement)
+            current = current.nextReg()
+        return buf
+
+    def aname(self):
+        return self._name
+
 class SHA512SIMDOp(Instruction):
 
     def generate(self):
@@ -1441,6 +1476,10 @@ class TwoRegNEONOp(CommonNEONInstruction):
 
 class ThreeRegNEONOp(TwoRegNEONOp):
     numRegs = 3
+
+class AddWideNEONOp(WideningNEONInstruction):
+    numWiderRegs = 2
+    numNarrowerRegs = 1
 
 class NEONFloatCompareWithZero(TwoRegNEONOp):
     def __init__(self, args):
@@ -2143,6 +2182,15 @@ generate(SVEVectorOp, [["add", "ZZZ"],
 
 generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["sminv", 0],
                           ["fminv", 2], ["fmaxv", 2], ["fadda", 2], ["uaddv", 0]])
+
+generate(AddWideNEONOp,
+         [["saddwv", "saddw", "8H", "8B"], ["saddwv", "saddw2", "8H", "16B"],
+          ["saddwv", "saddw", "4S", "4H"], ["saddwv", "saddw2", "4S", "8H"],
+          ["saddwv", "saddw", "2D", "2S"], ["saddwv", "saddw2", "2D", "4S"],
+          ["uaddwv", "uaddw", "8H", "8B"], ["uaddwv", "uaddw2", "8H", "16B"],
+          ["uaddwv", "uaddw", "4S", "4H"], ["uaddwv", "uaddw2", "4S", "8H"],
+          ["uaddwv", "uaddw", "2D", "2S"], ["uaddwv", "uaddw2", "2D", "4S"],
+          ])
 
 print "\n    __ bind(forth);"
 outfile.write("forth:\n")
