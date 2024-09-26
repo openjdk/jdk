@@ -220,6 +220,28 @@ bool CollectedHeap::supports_concurrent_gc_breakpoints() const {
   return false;
 }
 
+bool klass_is_sane(oop object) {
+  Klass* klass;
+  if (UseCompactObjectHeaders) {
+    // With compact headers, we can't safely access the Klass* when
+    // the object has been forwarded, because non-full-GC-forwarding
+    // temporarily overwrites the mark-word, and thus the Klass*, with
+    // the forwarding pointer, and here we have no way to make a
+    // distinction between Full-GC and regular GC forwarding.
+    markWord mark = object->mark();
+    if (!mark.is_forwarded()) {
+      klass = mark.klass_without_asserts();
+    } else {
+      // We can't access the Klass*. We optimistically assume that
+      // it is ok. This happens very rarely.
+      klass = nullptr;
+    }
+  } else {
+    klass = object->klass_without_asserts();
+  }
+  return klass == nullptr || Metaspace::contains(klass);
+}
+
 bool CollectedHeap::is_oop(oop object) const {
   if (!is_object_aligned(object)) {
     return false;
@@ -229,20 +251,7 @@ bool CollectedHeap::is_oop(oop object) const {
     return false;
   }
 
-  if (UseCompactObjectHeaders) {
-    // With compact headers, we can't safely access the Klass* when
-    // the object has been forwarded, because non-full-GC-forwarding
-    // temporarily overwrites the mark-word, and thus the Klass*, with
-    // the forwarding pointer, and here we have no way to make a
-    // distinction between Full-GC and regular GC forwarding.
-    markWord mark = object->mark();
-    if (!mark.is_forwarded()) {
-      Klass* klass = mark.klass();
-      if (!Metaspace::contains(mark.klass_without_asserts())) {
-        return false;
-      }
-    }
-  } else if (!Metaspace::contains(object->klass_without_asserts())) {
+  if (!klass_is_sane(object)) {
     return false;
   }
 
