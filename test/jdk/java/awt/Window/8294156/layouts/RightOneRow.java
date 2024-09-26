@@ -23,7 +23,7 @@ public class RightOneRow {
             the right of the instruction frame in one row.
             The top of the test windows is aligned to
             that of the instruction frame.
-            
+
             Layout: WindowLayouts::rightOneColumn
             """;
 }
