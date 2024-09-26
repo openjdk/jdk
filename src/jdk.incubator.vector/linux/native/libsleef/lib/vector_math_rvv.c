@@ -48,7 +48,7 @@
 // of RNE. But we still think it's safer to make sure that after calling into sleef
 // the dynamic rounding mode is always RNE.
 
-#ifdef ASSERT
+#ifdef DEBUG
 #define CHECK_FRM   __asm__ __volatile__ (     \
     "    frrm   t0              \n\t"          \
     "    beqz   t0, 2f          \n\t"          \
