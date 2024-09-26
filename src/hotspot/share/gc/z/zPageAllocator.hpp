@@ -106,7 +106,6 @@ private:
 
   bool should_defragment(const ZPage* page) const;
   ZPage* defragment_page(ZPage* page);
-  ZPage* maybe_defragment(ZPage* page, bool allow_defragment);
 
   bool is_alloc_allowed(size_t size) const;
 

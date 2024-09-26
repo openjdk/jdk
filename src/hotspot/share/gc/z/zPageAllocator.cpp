@@ -494,14 +494,6 @@ ZPage* ZPageAllocator::defragment_page(ZPage* page) {
   return new_page;
 }
 
-ZPage* ZPageAllocator::maybe_defragment(ZPage* page, bool allow_defragment) {
-  if (allow_defragment && should_defragment(page)) {
-    return defragment_page(page);
-  }
-
-  return page;
-}
-
 bool ZPageAllocator::is_alloc_allowed(size_t size) const {
   const size_t available = _current_max_capacity - _used - _claimed;
   return available >= size;
@@ -798,9 +790,15 @@ void ZPageAllocator::satisfy_stalled() {
 }
 
 ZPage* ZPageAllocator::prepare_to_recycle(ZPage* page, bool allow_defragment) {
-  ZPage* const maybe_cloned_page = _safe_recycle.register_and_clone_if_activated(page);
+  // Make sure we have a page that is safe to recycle
+  ZPage* const to_recycle = _safe_recycle.register_and_clone_if_activated(page);
 
-  return maybe_defragment(maybe_cloned_page, allow_defragment);
+  // Defragment the page before recycle if allowed and needed
+  if (allow_defragment && should_defragment(to_recycle)) {
+    return defragment_page(to_recycle);
+  }
+
+  return to_recycle;
 }
 
 void ZPageAllocator::recycle_page(ZPage* page) {
@@ -832,7 +830,7 @@ void ZPageAllocator::free_page(ZPage* page, bool allow_defragment) {
 }
 
 void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
-  ZArray<ZPage*> to_recycle;
+  ZArray<ZPage*> to_recycle_pages;
 
   size_t young_size = 0;
   size_t old_size = 0;
@@ -847,10 +845,10 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
     }
 
     // Prepare to recycle
-    ZPage* const prepared = prepare_to_recycle(page, true /* allow_defragment */);
+    ZPage* const to_recycle = prepare_to_recycle(page, true /* allow_defragment */);
 
     // Register for recycling
-    to_recycle.push(prepared);
+    to_recycle_pages.push(to_recycle);
   }
 
   ZLocker<ZLock> locker(&_lock);
@@ -861,7 +859,7 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
   decrease_used_generation(ZGenerationId::old, old_size);
 
   // Free pages
-  ZArrayIterator<ZPage*> iter(&to_recycle);
+  ZArrayIterator<ZPage*> iter(&to_recycle_pages);
   for (ZPage* page; iter.next(&page);) {
     recycle_page(page);
   }
@@ -871,11 +869,16 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
 }
 
 void ZPageAllocator::free_pages_alloc_failed(ZPageAllocation* allocation) {
-  ZArray<ZPage*> to_recycle;
+  ZArray<ZPage*> to_recycle_pages;
 
+  // Prepare pages for recycling before taking the lock
   ZListRemoveIterator<ZPage> allocation_pages_iter(allocation->pages());
   for (ZPage* page; allocation_pages_iter.next(&page);) {
-    to_recycle.push(_safe_recycle.register_and_clone_if_activated(page));
+    // Prepare to recycle
+    ZPage* const to_recycle = prepare_to_recycle(page, false /* allow_defragment */);
+
+    // Register for recycling
+    to_recycle_pages.push(to_recycle);
   }
 
   ZLocker<ZLock> locker(&_lock);
@@ -887,7 +890,7 @@ void ZPageAllocator::free_pages_alloc_failed(ZPageAllocation* allocation) {
   size_t freed = 0;
 
   // Free any allocated/flushed pages
-  ZArrayIterator<ZPage*> iter(&to_recycle);
+  ZArrayIterator<ZPage*> iter(&to_recycle_pages);
   for (ZPage* page; iter.next(&page);) {
     freed += page->size();
     recycle_page(page);
