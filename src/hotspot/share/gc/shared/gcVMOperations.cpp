@@ -202,7 +202,7 @@ WaitBarrierDefault* VM_CollectForAllocation::_collect_for_allocation_barrier = n
 
 bool VM_CollectForAllocation::try_set_collect_for_allocation_started() {
   assert(Thread::current()->is_Java_thread(), "must be");
-  bool success = Atomic::cmpxchg(&_collect_for_allocation_started, false, true) == false;
+  bool success = Atomic::cmpxchg(&_collect_for_allocation_started, false, true, memory_order_relaxed) == false;
   if (success) {
     _collect_for_allocation_barrier->arm(1);
   }
@@ -211,8 +211,9 @@ bool VM_CollectForAllocation::try_set_collect_for_allocation_started() {
 
 void VM_CollectForAllocation::unset_collect_for_allocation_started() {
   assert(Atomic::load(&_collect_for_allocation_started), "Must be");
-  Atomic::store(&_collect_for_allocation_started, false);
   _collect_for_allocation_barrier->disarm();
+  OrderAccess::fence();
+  Atomic::store(&_collect_for_allocation_started, false);
 }
 
 bool VM_CollectForAllocation::is_collect_for_allocation_started() {
