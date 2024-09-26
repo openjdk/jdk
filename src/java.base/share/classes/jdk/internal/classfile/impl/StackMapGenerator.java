@@ -923,8 +923,8 @@ public final class StackMapGenerator {
                 break;
             }
         }
-        if (i >= frames.length) {
-            int newCapacity = i + 8;
+        if (framesCount >= frames.length) {
+            int newCapacity = framesCount + 8;
             this.frames = frames = framesCount == 0 ? new Frame[newCapacity] : Arrays.copyOf(frames, newCapacity);
         }
         if (i != framesCount) {
