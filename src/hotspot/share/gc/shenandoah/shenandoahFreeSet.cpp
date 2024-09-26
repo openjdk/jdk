@@ -918,18 +918,67 @@ void ShenandoahFreeSet::recycle_trash() {
       _trash_regions[count++] = r;
     }
   }
+#undef KELVIN_INSTRUMENTATION
+#ifdef KELVIN_INSTRUMENTATION
+  size_t max_batch_delay = 0;
+  size_t min_batch_delay = 0;
+  size_t total_batch_delay = 0;
+  size_t interruptions = 0;
+#endif
 
   // Relinquish the lock after this much time passed.
+  jlong batch_start_time = 0;
+  jlong batch_end_time = 0;;
   static constexpr jlong deadline_ns = 30000; // 30 us
   size_t idx = 0;
   while (idx < count) {
-    os::naked_yield(); // Yield to allow allocators to take the lock
-    ShenandoahHeapLocker locker(_heap->lock());
-    const jlong deadline = os::javaTimeNanos() + deadline_ns;
-    while (idx < count && os::javaTimeNanos() < deadline) {
-      try_recycle_trashed(_trash_regions[idx++]);
+    if (idx > 0) {
+      os::naked_yield(); // Yield to allow allocators to take the lock, except on the first iteration
     }
+    ShenandoahHeapLocker locker(_heap->lock());
+#ifdef KELVIN_INSTRUMENTATION
+    interruptions++;
+    const size_t batch_start_idx = idx;
+    batch_end_time = 0;         // force update of batch_start_time for better instrumentation precision
+#endif
+    // Avoid another call to javaTimeNanos() if we already know time at which last batch ended
+    batch_start_time = (batch_end_time == 0)? os::javaTimeNanos(): batch_end_time;
+    const jlong deadline = batch_start_time + deadline_ns;
+    do {
+      // Measurements suggest it takes about 3.5 us to recycle_trash() for each region.  Processing 16 regions
+      // per batch reduces the overhead of invoking os::javaTimeNanos().  In the typical case, we process one
+      // batch of 16 regions each time we acquire the heap lock.  The effort of processing the batch includes
+      // one call to os::javaTimeNanos() and one call to os::naked_yield().  If all regions are recycled,
+      // processing 16 regions exceeds the 30 us deadline.  But we always process one batch before we check deadline.
+      const size_t REGION_STRIDE = 16;
+      size_t max_idx = MIN2(count, idx + REGION_STRIDE);
+      while (idx < max_idx) {
+        try_recycle_trashed(_trash_regions[idx++]);
+      }
+      batch_end_time = os::javaTimeNanos();
+#ifdef KELVIN_INSTRUMENTATION
+      total_batch_delay += (size_t) (batch_end_time - batch_start_time);
+      if (max_batch_delay < ((size_t) (batch_end_time - batch_start_time))) {
+        max_batch_delay = (size_t) (batch_end_time - batch_start_time);
+        if (min_batch_delay == 0) {
+          min_batch_delay = max_batch_delay;
+        }
+      }
+      if (min_batch_delay > ((size_t) (batch_end_time - batch_start_time))) {
+        min_batch_delay = (size_t) (batch_end_time - batch_start_time);
+      }
+#endif
+    } while ((idx < count) && (batch_end_time < deadline));
   }
+#ifdef KELVIN_INSTRUMENTATION
+  log_info(gc)("recycle_trash(regions: " SIZE_FORMAT ", batches: " SIZE_FORMAT ") max batch: " SIZE_FORMAT
+               " ns, min batch: " SIZE_FORMAT " ns",
+               count, interruptions, max_batch_delay, min_batch_delay);
+  if (count > 0) {
+    log_info(gc)(" total batch delay: " SIZE_FORMAT ", representing per region average of " SIZE_FORMAT " ns",
+                 total_batch_delay, total_batch_delay / count);
+  }
+#endif
 }
 
 void ShenandoahFreeSet::flip_to_gc(ShenandoahHeapRegion* r) {
