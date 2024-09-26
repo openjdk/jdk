@@ -283,7 +283,7 @@ class VM_Version : public Abstract_VM_Version {
   union SefCpuid7SubLeaf1Eax {
     uint32_t value;
     struct {
-      uint32_t    sha_512  : 1,
+      uint32_t    sha512   : 1,
                            : 22,
                   avx_ifma : 1,
                            : 8;
