@@ -44,10 +44,9 @@ public class TestInvalidInputs extends JavacTestingAbstractProcessor {
 
     // Reference types are ArrayType, DeclaredType, ErrorType, NullType, and TypeVariable
 
-    private TypeMirror       objectType;
-    private TypeMirror       stringType;
+    private TypeMirror       objectType; // Notable DeclaredType
+    private TypeMirror       stringType; // Another notable DeclaredType
     private ArrayType        arrayType;
-    private DeclaredType     declaredType;
     // private ErrorType        errorType; // skip for now
     private ExecutableType   executableType;
     private IntersectionType intersectionType;
@@ -80,7 +79,6 @@ public class TestInvalidInputs extends JavacTestingAbstractProcessor {
         stringType = elements.getTypeElement("java.lang.String").asType();
 
         arrayType = types.getArrayType(objectType); // Object[]
-        declaredType = (DeclaredType)objectType;
         executableType = extractExecutableType();
         intersectionType = extractIntersectionType();
 
@@ -134,7 +132,7 @@ public class TestInvalidInputs extends JavacTestingAbstractProcessor {
      *         {@linkplain ReferenceType reference types}
      */
     void testUnboxedType() {
-        // Only DeclaredType's for wrapper classes should have unboxing converions defined.
+        // Only DeclaredType's for wrapper classes should have unboxing conversions defined.
 
         // Reference types are ArrayType, DeclaredType, ErrorType, NullType, TypeVariable
         // non-reference: ExecutableType, IntersectionType, NoType, PrimitiveType, UnionType, WildcardType
@@ -146,6 +144,7 @@ public class TestInvalidInputs extends JavacTestingAbstractProcessor {
         for (TypeMirror tm : invalidInputs) {
             try {
                 PrimitiveType pt = types.unboxedType(tm);
+                throw new RuntimeException("Should not reach" + tm);
             } catch(IllegalArgumentException iae) {
                 ; // Expected
             }
@@ -161,20 +160,21 @@ public class TestInvalidInputs extends JavacTestingAbstractProcessor {
     void testGetWildcardType() {
         // Reference types are ArrayType, DeclaredType, ErrorType, NullType, TypeVariable
         // non-reference: ExecutableType, IntersectionType, NoType, PrimitiveType, UnionType, WildcardType
-        var invalidInputs = List.of( arrayType,
-                                    executableType, intersectionType,
+        var invalidInputs = List.of(executableType, intersectionType,
                                     noTypeVoid, noTypeNone, noTypePackage, noTypeModule, nullType,
                                     primitiveType, /*unionType, */ wildcardType);
 
         for (TypeMirror tm : invalidInputs) {
             try {
                 WildcardType wc1 = types.getWildcardType(tm,   null);
+                throw new RuntimeException("Should not reach " + tm);
             } catch(IllegalArgumentException iae) {
                 ; // Expected
             }
 
             try {
                 WildcardType wc2 = types.getWildcardType(null, tm);
+                throw new RuntimeException("Should not reach" + tm);
             } catch(IllegalArgumentException iae) {
                 ; // Expected
             }

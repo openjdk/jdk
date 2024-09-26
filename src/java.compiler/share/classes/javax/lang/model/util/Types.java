@@ -53,7 +53,7 @@ import javax.lang.model.type.*;
  * @apiNote
  * In the reference implementation, handling {@linkplain ErrorType
  * error types} generally does not cause an {@code
- * UnsupportedOperationException} from the methods in this interface.
+ * IllegalArgumentException} from the methods in this interface.
  *
  * @see javax.annotation.processing.ProcessingEnvironment#getTypeUtils
  * @since 1.6
