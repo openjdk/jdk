@@ -638,6 +638,7 @@ class PredicateIterator : public StackObj {
 // PredicateVisitor by calling the unified method. These visit methods are marked final such that they cannot be
 // overridden by implementors of this class.
 class UnifiedPredicateVisitor : public PredicateVisitor {
+ public:
   virtual void visit(const TemplateAssertionPredicate& template_assertion_predicate) override final {
     visit_predicate(template_assertion_predicate);
   }
