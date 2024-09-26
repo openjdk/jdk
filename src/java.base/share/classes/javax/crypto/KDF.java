@@ -588,6 +588,13 @@ public final class KDF {
                         return result;
                     } catch (Exception e) {
                         if (!skipDebug && pdebug != null) {
+                            pdebug.println("A " + this.getAlgorithm()
+                                           + " derivation cannot be performed "
+                                           + "using the supplied derivation "
+                                           + "inputs, using "
+                                           + currOne.provider().getName()
+                                           + ". Another Provider will be "
+                                           + "attempted.");
                             e.printStackTrace(pdebug.getPrintStream());
                         }
                         if (lastException == null) {
@@ -602,6 +609,15 @@ public final class KDF {
                 throw e; // getNext reached end and have seen IAPE
             } catch (NoSuchAlgorithmException e) {
                 if (!skipDebug && pdebug != null) {
+                    pdebug.println(
+                            "All available Providers have been examined "
+                            + "without a match for performing the "
+                            + this.getAlgorithm()
+                            + " derivation using the supplied derivation "
+                            + "inputs. Therefore, the caught "
+                            + "NoSuchAlgorithmException will be logged, and "
+                            + "an InvalidAlgorithmParameterException will "
+                            + "then be thrown with the last known Exception.");
                     e.printStackTrace(pdebug.getPrintStream());
                 }
                 // getNext reached end without finding an implementation
@@ -637,6 +653,10 @@ public final class KDF {
             } catch (NoSuchAlgorithmException nsae) {
                 // continue to the next provider
                 if (!skipDebug && pdebug != null) {
+                    pdebug.println("A derivation cannot be performed "
+                                   + "using the supplied KDFParameters, using "
+                                   + prov.getName()
+                                   + ". Another Provider will be attempted.");
                     nsae.printStackTrace(pdebug.getPrintStream());
                 }
             }
