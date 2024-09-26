@@ -494,6 +494,14 @@ ZPage* ZPageAllocator::defragment_page(ZPage* page) {
   return new_page;
 }
 
+ZPage* ZPageAllocator::maybe_defragment(ZPage* page, bool allow_defragment) {
+  if (allow_defragment && should_defragment(page)) {
+    return defragment_page(page);
+  }
+
+  return page;
+}
+
 bool ZPageAllocator::is_alloc_allowed(size_t size) const {
   const size_t available = _current_max_capacity - _used - _claimed;
   return available >= size;
@@ -789,6 +797,12 @@ void ZPageAllocator::satisfy_stalled() {
   }
 }
 
+ZPage* ZPageAllocator::prepare_to_recycle(ZPage* page, bool allow_defragment) {
+  ZPage* const maybe_cloned_page = _safe_recycle.register_and_clone_if_activated(page);
+
+  return maybe_defragment(maybe_cloned_page, allow_defragment);
+}
+
 void ZPageAllocator::recycle_page(ZPage* page) {
   // Set time when last used
   page->set_last_used();
@@ -800,12 +814,8 @@ void ZPageAllocator::recycle_page(ZPage* page) {
 void ZPageAllocator::free_page(ZPage* page, bool allow_defragment) {
   const ZGenerationId generation_id = page->generation_id();
 
-  ZPage* to_recycle;
-  if (allow_defragment && should_defragment(page)) {
-    to_recycle = defragment_page(_safe_recycle.register_and_clone_if_activated(page));
-  } else {
-    to_recycle = _safe_recycle.register_and_clone_if_activated(page);
-  }
+  // Prepare page for recycling before taking the lock
+  ZPage* const to_recycle = prepare_to_recycle(page, allow_defragment);
 
   ZLocker<ZLock> locker(&_lock);
 
@@ -827,6 +837,7 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
   size_t young_size = 0;
   size_t old_size = 0;
 
+  // Prepare pages for recycling before taking the lock
   ZArrayIterator<ZPage*> pages_iter(pages);
   for (ZPage* page; pages_iter.next(&page);) {
     if (page->is_young()) {
@@ -835,12 +846,11 @@ void ZPageAllocator::free_pages(const ZArray<ZPage*>* pages) {
       old_size += page->size();
     }
 
-    // Check if page needs to be remapped to avoid fragmentation
-    if (should_defragment(page)) {
-      to_recycle.push(defragment_page(_safe_recycle.register_and_clone_if_activated(page)));
-    } else {
-      to_recycle.push(_safe_recycle.register_and_clone_if_activated(page));
-    }
+    // Prepare to recycle
+    ZPage* const prepared = prepare_to_recycle(page, true /* allow_defragment */);
+
+    // Register for recycling
+    to_recycle.push(prepared);
   }
 
   ZLocker<ZLock> locker(&_lock);

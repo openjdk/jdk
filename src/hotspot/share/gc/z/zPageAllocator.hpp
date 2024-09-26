@@ -106,6 +106,7 @@ private:
 
   bool should_defragment(const ZPage* page) const;
   ZPage* defragment_page(ZPage* page);
+  ZPage* maybe_defragment(ZPage* page, bool allow_defragment);
 
   bool is_alloc_allowed(size_t size) const;
 
@@ -151,6 +152,7 @@ public:
   void reset_statistics(ZGenerationId id);
 
   ZPage* alloc_page(ZPageType type, size_t size, ZAllocationFlags flags, ZPageAge age);
+  ZPage* prepare_to_recycle(ZPage* page, bool allow_defragment);
   void recycle_page(ZPage* page);
   void safe_destroy_page(ZPage* page);
   void free_page(ZPage* page, bool allow_defragment);
