@@ -318,7 +318,7 @@ public class TestParallelIvInIntCountedLoop {
     private static void testCorrectness() {
         Random rng = new Random();
 
-        int[] iterations = {0, 1, 2, 42, 100, rng.nextInt(0, Integer.MAX_VALUE)};
+        int[] iterations = {0, 1, 2, 42, 100, rng.nextInt(0, Integer.MAX_VALUE - stride)};
 
         for (int i : iterations) {
             Asserts.assertEQ(i, testIntCountedLoopWithIntIV(i));
@@ -345,11 +345,12 @@ public class TestParallelIvInIntCountedLoop {
 
             // also test with random init and init2
             int init1 = rng.nextInt();
-            int init2 = rng.nextInt(Integer.MIN_VALUE, i);
+            int init2 = rng.nextInt(Integer.MIN_VALUE + i + 1, i);
+            long init1L = rng.nextLong(Long.MIN_VALUE + i + 1, i);
+
             Asserts.assertEQ(Math.ceilDiv((i - init2), stride) * stride2 + init1,
                     testIntCountedLoopWithIntIVWithRandomStridesAndInits(init1, init2, i));
 
-            long init1L = rng.nextLong(Long.MIN_VALUE, i);
             Asserts.assertEQ(Math.ceilDiv(((long) i - init2), (long) stride) * (long) stride2 + init1L,
                     testIntCountedLoopWithLongIVWithRandomStridesAndInits(init1L, init2, i));
         }
