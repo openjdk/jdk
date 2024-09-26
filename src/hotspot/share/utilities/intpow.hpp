@@ -29,6 +29,7 @@
 #include <limits>
 #include <type_traits>
 
+// Raise v to the power p mod 2**N, where N is the width of the type T.
 template <typename T, ENABLE_IF(std::is_integral<T>::value && std::is_unsigned<T>::value)>
 static constexpr T intpow(T v, unsigned p) {
   if (p == 0) {
