@@ -213,90 +213,172 @@ public final class PassFailJFrame {
 
     public enum Position {HORIZONTAL, VERTICAL, TOP_LEFT_CORNER}
 
-    public PassFailJFrame(String instructions) throws InterruptedException,
-            InvocationTargetException {
+    /**
+     * Constructs a frame which displays test instructions and
+     * the <i>Pass</i> / <i>Fail</i> buttons with the given instructions, and
+     * the default timeout of {@value #TEST_TIMEOUT} minutes,
+     * the default title of {@value #TITLE} and
+     * the default values of {@value #ROWS} and {@value #COLUMNS}
+     * for rows and columns.
+     * <p>
+     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * more details.
+     *
+     * @param instructions the instructions for the tester
+     *
+     * @throws InterruptedException if the current thread is interrupted
+     *              while waiting for EDT to finish creating UI components
+     * @throws InvocationTargetException if an exception is thrown while
+     *              creating UI components on EDT
+     */
+    public PassFailJFrame(String instructions)
+            throws InterruptedException, InvocationTargetException {
         this(instructions, TEST_TIMEOUT);
     }
 
-    public PassFailJFrame(String instructions, long testTimeOut) throws
-            InterruptedException, InvocationTargetException {
+    /**
+     * Constructs a frame which displays test instructions and
+     * the <i>Pass</i> / <i>Fail</i> buttons
+     * with the given instructions and timeout as well as
+     * the default title of {@value #TITLE}
+     * and the default values of {@value #ROWS} and {@value #COLUMNS}
+     * for rows and columns.
+     * <p>
+     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * more details.
+     *
+     * @param instructions the instructions for the tester
+     * @param testTimeOut  the test timeout in minutes
+     *
+     * @throws InterruptedException if the current thread is interrupted
+     *              while waiting for EDT to finish creating UI components
+     * @throws InvocationTargetException if an exception is thrown while
+     *              creating UI components on EDT
+     */
+    public PassFailJFrame(String instructions, long testTimeOut)
+            throws InterruptedException, InvocationTargetException {
         this(TITLE, instructions, testTimeOut);
     }
 
+    /**
+     * Constructs a frame which displays test instructions and
+     * the <i>Pass</i> / <i>Fail</i> buttons
+     * with the given title, instructions and timeout as well as
+     * the default values of {@value #ROWS} and {@value #COLUMNS}
+     * for rows and columns.
+     * The screenshot feature is not enabled, if you use this constructor.
+     * <p>
+     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * more details.
+     *
+     * @param title        the title of the instruction frame
+     * @param instructions the instructions for the tester
+     * @param testTimeOut  the test timeout in minutes
+     *
+     * @throws InterruptedException if the current thread is interrupted
+     *              while waiting for EDT to finish creating UI components
+     * @throws InvocationTargetException if an exception is thrown while
+     *              creating UI components on EDT
+     */
     public PassFailJFrame(String title, String instructions,
-                          long testTimeOut) throws InterruptedException,
-            InvocationTargetException {
+                          long testTimeOut)
+            throws InterruptedException, InvocationTargetException {
         this(title, instructions, testTimeOut, ROWS, COLUMNS);
     }
 
     /**
-     * Constructs a JFrame with a given title & serves as test instructional
-     * frame where the user follows the specified test instruction in order
-     * to test the test case & mark the test pass or fail. If the expected
-     * result is seen then the user click on the 'Pass' button else click
-     * on the 'Fail' button and the reason for the failure should be
-     * specified in the JDialog JTextArea.
+     * Constructs a frame which displays test instructions and
+     * the <i>Pass</i> / <i>Fail</i> buttons
+     * with the given title, instructions, timeout, number of rows and columns.
+     * The screenshot feature is not enabled, if you use this constructor.
+     * <p>
+     * See {@link #PassFailJFrame(String,String,long,int,int,boolean)} for
+     * more details.
      *
-     * @param title        title of the Frame.
-     * @param instructions the instruction for the tester on how to test
-     *                     and what is expected (pass) and what is not
-     *                     expected (fail).
-     * @param testTimeOut  test timeout where time is specified in minutes.
-     * @param rows         number of visible rows of the JTextArea where the
-     *                     instruction is show.
-     * @param columns      Number of columns of the instructional
-     *                     JTextArea
-     * @throws InterruptedException      exception thrown when thread is
-     *                                   interrupted
+     * @param title        the title of the instruction frame
+     * @param instructions the instructions for the tester
+     * @param testTimeOut  the test timeout in minutes
+     * @param rows         the number of rows for the text component
+     *                     which displays test instructions
+     * @param columns      the number of columns for the text component
+     *                     which displays test instructions
+     *
+     * @throws InterruptedException if the current thread is interrupted
+     *              while waiting for EDT to finish creating UI components
      * @throws InvocationTargetException if an exception is thrown while
-     *                                   creating the test instruction frame on
-     *                                   EDT
+     *              creating UI components on EDT
      */
-    public PassFailJFrame(String title, String instructions, long testTimeOut,
-                          int rows, int columns) throws InterruptedException,
-            InvocationTargetException {
+    public PassFailJFrame(String title, String instructions,
+                          long testTimeOut,
+                          int rows, int columns)
+            throws InterruptedException, InvocationTargetException {
         this(title, instructions, testTimeOut, rows, columns, false);
     }
 
     /**
-     * Constructs a JFrame with a given title & serves as test instructional
-     * frame where the user follows the specified test instruction in order
-     * to test the test case & mark the test pass or fail. If the expected
-     * result is seen then the user click on the 'Pass' button else click
-     * on the 'Fail' button and the reason for the failure should be
-     * specified in the JDialog JTextArea.
+     * Constructs a frame which displays test instructions and
+     * the <i>Pass</i> / <i>Fail</i> buttons
+     * as well as supporting UI components with the given title, instructions,
+     * timeout, number of rows and columns,
+     * and screen capture functionality.
+     * All the UI components are created on the EDT, so it is safe to call
+     * the constructor on the main thread.
      * <p>
-     * The test instruction frame also provides a way for the tester to take
-     * a screenshot (full screen or individual frame) if this feature
-     * is enabled by passing {@code true} as {@code  enableScreenCapture}
-     * parameter.
+     * After you create a test UI window, register the window using
+     * {@link #addTestWindow(Window) addTestWindow} for disposal, and
+     * position it close to the instruction frame using
+     * {@link #positionTestWindow(Window, Position) positionTestWindow}.
+     * As the last step, make your test UI window visible.
+     * <p>
+     * Call the {@link #awaitAndCheck() awaitAndCheck} method on the instance
+     * of {@code PassFailJFrame} when you set up the testing environment.
+     * <p>
+     * If the tester clicks the <i>Fail</i> button, a dialog prompting for
+     * a description of the problem is displayed, and then an exception
+     * is thrown which fails the test.
+     * If the tester clicks the <i>Pass</i> button, the test completes
+     * successfully.
+     * If the timeout occurs or the instruction frame is closed,
+     * the test fails.
+     * <p>
+     * The {@code rows} and {@code columns} parameters control
+     * the size of a text component which displays the instructions.
+     * The preferred size of the instructions is calculated by
+     * creating {@code new JTextArea(rows, columns)}.
+     * <p>
+     * If you enable screenshots by setting the {@code screenCapture}
+     * parameter to {@code true}, a <i>Screenshot</i> button is added.
+     * Clicking the <i>Screenshot</i> button takes screenshots of
+     * all the monitors or all the windows registered with
+     * {@code PassFailJFrame}.
      *
-     * @param title        title of the Frame.
-     * @param instructions the instruction for the tester on how to test
-     *                     and what is expected (pass) and what is not
-     *                     expected (fail).
-     * @param testTimeOut  test timeout where time is specified in minutes.
-     * @param rows         number of visible rows of the JTextArea where the
-     *                     instruction is show.
-     * @param columns      Number of columns of the instructional
-     *                     JTextArea
-     * @param enableScreenCapture if set to true, 'Capture Screen' button & its
-     *                            associated UIs are added to test instruction
-     *                            frame
-     * @throws InterruptedException      exception thrown when thread is
-     *                                   interrupted
+     * @param title        the title of the instruction frame
+     * @param instructions the instructions for the tester
+     * @param testTimeOut  the test timeout in minutes
+     * @param rows         the number of rows for the text component
+     *                     which displays test instructions
+     * @param columns      the number of columns for the text component
+     *                     which displays test instructions
+     * @param screenCapture if set to {@code true}, enables screen capture
+     *                      functionality
+     *
+     * @throws InterruptedException if the current thread is interrupted
+     *              while waiting for EDT to finish creating UI components
      * @throws InvocationTargetException if an exception is thrown while
-     *                                   creating the test instruction frame on
-     *                                   EDT
+     *              creating UI components on EDT
+     *
+     * @see JTextArea#JTextArea(int,int) JTextArea(int rows, int columns)
+     * @see Builder Builder
      */
-    public PassFailJFrame(String title, String instructions, long testTimeOut,
+    public PassFailJFrame(String title, String instructions,
+                          long testTimeOut,
                           int rows, int columns,
-                          boolean enableScreenCapture)
+                          boolean screenCapture)
             throws InterruptedException, InvocationTargetException {
         invokeOnEDT(() -> createUI(title, instructions,
                                    testTimeOut,
                                    rows, columns,
-                                   enableScreenCapture));
+                                   screenCapture));
     }
 
     /**
