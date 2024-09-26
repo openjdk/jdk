@@ -161,6 +161,7 @@ public final class StackMapGenerator {
     private static final int FLAG_THIS_UNINIT = 0x01;
     private static final int FRAME_DEFAULT_CAPACITY = 10;
     private static final int T_BOOLEAN = 4, T_LONG = 11;
+    private static final Frame[] EMPTY_FRAME_ARRAY = new Frame[0];
 
     private static final int ITEM_TOP = 0,
             ITEM_INTEGER = 1,
@@ -196,7 +197,8 @@ public final class StackMapGenerator {
     private final ClassHierarchyImpl classHierarchy;
     private final boolean patchDeadCode;
     private final boolean filterDeadLabels;
-    private List<Frame> frames;
+    private Frame[] frames = EMPTY_FRAME_ARRAY;
+    private int framesCount = 0;
     private final Frame currentFrame;
     private int maxStack, maxLocals;
 
@@ -260,10 +262,10 @@ public final class StackMapGenerator {
     private Frame getFrame(int offset) {
         //binary search over frames ordered by offset
         int low = 0;
-        int high = frames.size() - 1;
+        int high = framesCount - 1;
         while (low <= high) {
             int mid = (low + high) >>> 1;
-            var f = frames.get(mid);
+            var f = frames[mid];
             if (f.offset < offset)
                 low = mid + 1;
             else if (f.offset > offset)
@@ -281,8 +283,8 @@ public final class StackMapGenerator {
     private int exMin, exMax;
 
     private boolean isAnyFrameDirty() {
-        for (int i = 0; i < frames.size(); i++) {
-            if (frames.get(i).dirty) return true;
+        for (int i = 0; i < framesCount; i++) {
+            if (frames[i].dirty) return true;
         }
         return false;
     }
@@ -293,8 +295,7 @@ public final class StackMapGenerator {
         if (!handlers.isEmpty()) {
             generateHandlers();
         }
-        List<Frame> frames = detectFrames();
-        this.frames = frames;
+        detectFrames();
         do {
             processMethod();
         } while (isAnyFrameDirty());
@@ -302,10 +303,10 @@ public final class StackMapGenerator {
         maxStack = currentFrame.frameMaxStack;
 
         //dead code patching
-        for (int i = 0, framesCount = frames.size(); i < framesCount; i++) {
-            var frame = frames.get(i);
+        for (int i = 0; i < framesCount; i++) {
+            var frame = frames[i];
             if (frame.flags == -1) {
-                deadCodePatching(frame, framesCount, i);
+                deadCodePatching(frame, i);
             }
         }
     }
@@ -328,12 +329,12 @@ public final class StackMapGenerator {
         }
     }
 
-    private void deadCodePatching(Frame frame, int framesCount, int i) {
+    private void deadCodePatching(Frame frame, int i) {
         if (!patchDeadCode) throw generatorError("Unable to generate stack map frame for dead code", frame.offset);
         //patch frame
         frame.pushStack(Type.THROWABLE_TYPE);
         if (maxStack < 1) maxStack = 1;
-        int end = (i < framesCount - 1 ? frames.get(i + 1).offset : bytecode.length()) - 1;
+        int end = (i < framesCount - 1 ? frames[i + 1].offset : bytecode.length()) - 1;
         //patch bytecode
         var arr = bytecode.array();
         Arrays.fill(arr, frame.offset, end, (byte) NOP);
@@ -384,14 +385,15 @@ public final class StackMapGenerator {
      * @return <code>StackMapTableAttribute</code> or null if stack map is empty
      */
     public Attribute<? extends StackMapTableAttribute> stackMapTableAttribute() {
-        return frames.isEmpty() ? null : new UnboundAttribute.AdHocAttribute<>(Attributes.stackMapTable()) {
+        return framesCount == 0 ? null : new UnboundAttribute.AdHocAttribute<>(Attributes.stackMapTable()) {
             @Override
             public void writeBody(BufWriterImpl b) {
-                b.writeU2(frames.size());
+                b.writeU2(framesCount);
                 Frame prevFrame =  new Frame(classHierarchy);
                 prevFrame.setLocalsFromArg(methodName, methodDesc, isStatic, thisType);
                 prevFrame.trimAndCompress();
-                for (var fr : frames) {
+                for (int i = 0; i < framesCount; i++) {
+                    var fr = frames[i];
                     fr.trimAndCompress();
                     fr.writeTo(b, prevFrame, cp);
                     prevFrame = fr;
@@ -416,19 +418,19 @@ public final class StackMapGenerator {
         boolean ncf = false;
         while (bcs.next()) {
             currentFrame.offset = bcs.bci();
-            if (stackmapIndex < frames.size()) {
-                int thisOffset = frames.get(stackmapIndex).offset;
+            if (stackmapIndex < framesCount) {
+                int thisOffset = frames[stackmapIndex].offset;
                 if (ncf && thisOffset > bcs.bci()) {
                     throw generatorError("Expecting a stack map frame");
                 }
                 if (thisOffset == bcs.bci()) {
-                    Frame nextFrame = frames.get(stackmapIndex++);
+                    Frame nextFrame = frames[stackmapIndex++];
                     if (!ncf) {
                         currentFrame.checkAssignableTo(nextFrame);
                     }
                     while (!nextFrame.dirty) { //skip unmatched frames
-                        if (stackmapIndex == frames.size()) return; //skip the rest of this round
-                        nextFrame = frames.get(stackmapIndex++);
+                        if (stackmapIndex == framesCount) return; //skip the rest of this round
+                        nextFrame = frames[stackmapIndex++];
                     }
                     bcs.reset(nextFrame.offset); //skip code up-to the next frame
                     bcs.next();
@@ -848,8 +850,7 @@ public final class StackMapGenerator {
      * Performs detection of mandatory stack map frames in a single bytecode traversing pass
      * @return detected frames
      */
-    private List<Frame> detectFrames() {
-        List<Frame> frames = new ArrayList<>();
+    private void detectFrames() {
         var bcs = bytecode.start();
         boolean no_control_flow = false;
         int opcode, bci = 0;
@@ -857,22 +858,22 @@ public final class StackMapGenerator {
             opcode = bcs.opcode();
             bci = bcs.bci();
             if (no_control_flow) {
-                addFrame(frames, bci);
+                addFrame(bci);
             }
             no_control_flow = switch (opcode) {
                 case GOTO -> {
-                            addFrame(frames, bcs.dest());
+                            addFrame(bcs.dest());
                             yield true;
                         }
                 case GOTO_W -> {
-                            addFrame(frames, bcs.destW());
+                            addFrame(bcs.destW());
                             yield true;
                         }
                 case IF_ICMPEQ, IF_ICMPNE, IF_ICMPLT, IF_ICMPGE,
                      IF_ICMPGT, IF_ICMPLE, IFEQ, IFNE,
                      IFLT, IFGE, IFGT, IFLE, IF_ACMPEQ,
                      IF_ACMPNE , IFNULL , IFNONNULL -> {
-                            addFrame(frames, bcs.dest());
+                            addFrame(bcs.dest());
                             yield false;
                         }
                 case TABLESWITCH, LOOKUPSWITCH -> {
@@ -888,9 +889,9 @@ public final class StackMapGenerator {
                                 keys = bcs.getIntUnchecked(aligned_bci + 4);
                                 delta = 2;
                             }
-                            addFrame(frames, bci + default_ofset);
+                            addFrame(bci + default_ofset);
                             for (int i = 0; i < keys; i++) {
-                                addFrame(frames, bci + bcs.getIntUnchecked(aligned_bci + (3 + i * delta) * 4));
+                                addFrame(bci + bcs.getIntUnchecked(aligned_bci + (3 + i * delta) * 4));
                             }
                             yield true;
                         }
@@ -902,19 +903,19 @@ public final class StackMapGenerator {
             throw generatorError("Detected branch target out of bytecode range", bci);
         }
         for (int i = 0; i < rawHandlers.size(); i++) try {
-            addFrame(frames, rawHandlers.get(i).handler());
+            addFrame(rawHandlers.get(i).handler());
         } catch (IllegalArgumentException iae) {
             if (!filterDeadLabels)
                 throw generatorError("Detected exception handler out of bytecode range");
         }
-        return frames;
     }
 
-    private void addFrame(List<Frame> frames, int offset) {
+    private void addFrame(int offset) {
         Preconditions.checkIndex(offset, bytecode.length(), RawBytecodeHelper.IAE_FORMATTER);
-        int i = 0;
-        for (; i < frames.size(); i++) {
-            Frame frame = frames.get(i);
+        var frames = this.frames;
+        int i = 0, framesCount = this.framesCount;
+        for (; i < framesCount; i++) {
+            var frame = frames[i];
             if (frame.offset == offset) {
                 return;
             }
@@ -922,7 +923,15 @@ public final class StackMapGenerator {
                 break;
             }
         }
-        frames.add(i, new Frame(offset, classHierarchy));
+        if (i >= frames.length) {
+            int newCapacity = i + 8;
+            this.frames = frames = framesCount == 0 ? new Frame[newCapacity] : Arrays.copyOf(frames, newCapacity);
+        }
+        if (i != framesCount) {
+            System.arraycopy(frames, i, frames, i + 1, framesCount - i);
+        }
+        frames[i] = new Frame(offset, classHierarchy);
+        this.framesCount = framesCount + 1;
     }
 
     private final class Frame {
