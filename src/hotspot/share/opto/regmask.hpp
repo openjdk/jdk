@@ -84,9 +84,13 @@ class RegMask {
         ) + 31) >> 5; // Number of bits -> number of 32-bit words
   static const unsigned int _RM_SIZE_MAX =
       LP64_ONLY(((RM_SIZE_MAX + 1) & ~1) >> 1) NOT_LP64(RM_SIZE_MAX);
-  // The maximum OptoReg size is SHRT_MAX. Ensure that register masks cannot
-  // grow beyond that.
-  STATIC_ASSERT((RM_SIZE_MAX << 5) < SHRT_MAX);
+
+  // Sanity check
+  STATIC_ASSERT(RM_SIZE <= RM_SIZE_MAX);
+
+  // Ensure that register masks cannot grow beyond the point at which
+  // OptoRegPair can no longer index the whole mask.
+  STATIC_ASSERT(OptoRegPair::can_fit((RM_SIZE_MAX << 5) - 1));
 
   union {
     // Array of Register Mask bits.  This array is large enough to cover all
@@ -268,6 +272,25 @@ class RegMask {
     }
 
     assert(valid_watermarks(), "post-condition");
+  }
+
+  void _trim_watermarks() {
+    if (_hwm < _lwm) {
+      return;
+    }
+    int count = 0;
+    while ((_hwm > _lwm) && _rm_up(_hwm) == 0) {
+      _hwm--;
+      ++count;
+    }
+    while ((_lwm < _hwm) && _rm_up(_lwm) == 0) {
+      _lwm++;
+      ++count;
+    }
+    if ((_lwm == _hwm) && _rm_up(_lwm) == 0) {
+      _lwm = _rm_max();
+      _hwm = 0;
+    }
   }
 
   // Set a span of words in the register mask to a given value.
@@ -672,6 +695,7 @@ public:
       _hwm = rm._rm_max();
     }
     set_AllStack(is_AllStack() && !rm.is_AllStack());
+    _trim_watermarks();
     assert(valid_watermarks(), "sanity");
   }
 
@@ -694,6 +718,7 @@ public:
       assert(i + rm_index_diff >= 0, "sanity");
       _rm_up(i) &= ~rm._rm_up(i + rm_index_diff);
     }
+    _trim_watermarks();
     assert(valid_watermarks(), "sanity");
   }
 
@@ -701,9 +726,9 @@ public:
   // slots for the register allocator. Return if the rollover succeeded or not.
   bool rollover() {
     assert(is_AllStack_only(), "rolling over non-empty mask");
-    if ((_rm_size + _offset + _rm_size) * BitsPerWord > SHRT_MAX) {
-      // The maximum OptoReg size is SHRT_MAX. Register masks
-      // cannot represent anything beyond that.
+    if (!OptoRegPair::can_fit((_rm_size + _offset + _rm_size) * BitsPerWord - 1)) {
+      // Ensure that register masks cannot roll over beyond the point at which
+      // OptoRegPair can no longer index the whole mask.
       return false;
     }
     _offset += _rm_size;

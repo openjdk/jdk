@@ -1620,7 +1620,9 @@ uint PhaseChaitin::Select( ) {
       // Bump register mask up to next stack chunk
       bool success = lrg->rollover();
       if (!success) {
-        // We very rarely, if ever, reach this bailout in practice.
+        // We should never get here in practice. Bail out in product,
+        // assert in debug.
+        assert(false, "should not happen");
         C->record_method_not_compilable(
             "chunk-rollover outside of OptoReg range");
         return -1;

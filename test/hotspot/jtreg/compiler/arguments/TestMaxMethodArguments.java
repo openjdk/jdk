@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8325467
+ * @requires vm.opt.DeoptimizeALot == null | vm.opt.DeoptimizeALot == false
  * @summary Ensure C2 can compile methods with the maximum number of parameters
  *          (according to the JVM spec).
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.arguments.TestMaxMethodArguments::test
