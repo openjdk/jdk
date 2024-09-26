@@ -134,16 +134,18 @@ bool frame::safe_for_sender(JavaThread *thread) {
       return false;
     }
 
+    intptr_t* unextended_sender_sp = is_interpreted_frame() ? interpreter_frame_sender_sp() : sender_sp;
+
     // If the sender is a deoptimized nmethod we need to check if the original pc is valid.
     nmethod* sender_nm = sender_blob->as_nmethod_or_null();
     if (sender_nm != nullptr && sender_nm->is_deopt_pc(sender_pc)) {
-      address orig_pc = *(address*)((address)sender_sp + sender_nm->orig_pc_offset());
+      address orig_pc = *(address*)((address)unextended_sender_sp + sender_nm->orig_pc_offset());
       if (!sender_nm->insts_contains_inclusive(orig_pc)) return false;
     }
 
     // It should be safe to construct the sender though it might not be valid.
 
-    frame sender(sender_sp, sender_pc, nullptr /* unextended_sp */, nullptr /* fp */, sender_blob);
+    frame sender(sender_sp, sender_pc, unextended_sender_sp, nullptr /* fp */, sender_blob);
 
     // Do we have a valid fp?
     address sender_fp = (address) sender.fp();
