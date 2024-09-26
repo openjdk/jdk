@@ -12,14 +12,14 @@ public class RightOneRow {
                       .instructions(INSTRUCTIONS)
                       .rows(15)
                       .columns(30)
-                      .testUI(() -> WindowCreator.createTestWindows(3))
+                      .testUI(() -> WindowCreator.createTestWindows(2))
                       .positionTestUIRightRow()
                       .build()
                       .awaitAndCheck();
     }
 
     private static final String INSTRUCTIONS = """
-            A simple demo with 3 test windows positioned to
+            A simple demo with 2 test windows positioned to
             the right of the instruction frame in one row.
             The top of the test windows is aligned to
             that of the instruction frame.

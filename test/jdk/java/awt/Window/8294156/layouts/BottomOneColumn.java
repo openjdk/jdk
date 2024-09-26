@@ -23,7 +23,7 @@ public class BottomOneColumn {
             the bottom of the instruction frame in one column.
             The test windows are aligned to the left of the
             instruction frame.
-            
+
             Layout: WindowLayouts::bottomOneColumn
             """;
 }

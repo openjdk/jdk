@@ -22,7 +22,7 @@ public class BottomOneRowCentered {
             A simple demo with 4 test windows positioned to
             the bottom of the instruction frame in one row.
             The row of the test windows is centered on the screen.
-            
+
             Layout: WindowLayouts::bottomOneRowCentered
             """;
 }

@@ -23,7 +23,7 @@ public class BottomOneRow {
             the bottom of the instruction frame in one row.
             The left of the first test window is aligned to
             that of the instruction frame.
-            
+
             Layout: WindowLayouts::bottomOneRow
             """;
 }

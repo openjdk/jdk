@@ -23,7 +23,7 @@ public class RightOneColumnCentered {
             the right of the instruction frame in one column.
             The column of the windows is centered vertically
             on the screen.
-            
+
             Layout: WindowLayouts::rightOneColumnCentered
             """;
 }
