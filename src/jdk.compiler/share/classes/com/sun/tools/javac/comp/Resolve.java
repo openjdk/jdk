@@ -3780,10 +3780,9 @@ public class Resolve {
     }
 
     /**
-     * Find a suitable reference to an enclosing 'A.this' such that A is a subclass of the provided class symbol.
-     * Note that this method can match multiple times during the traversal, as multiple enclosing classes can
-     * be a subclasses of the provided class. Therefore, if this method finds a matching 'A.this' that cannot be accessed
-     * (e.g. because the corresponding env is in the pre-construction context for 'A') it will keep searching.
+     * Find a "valid" reference to an enclosing 'A.this' such that A is a subclass of the provided class symbol.
+     * A reference to an enclosing 'A.this' is "valid" if (a) we're not in the early-construction context for A
+     * and (b) if the current class is not an inner class of A.
      */
     Symbol findSelfContaining(DiagnosticPosition pos,
                     Env<AttrContext> env,
@@ -3799,7 +3798,7 @@ public class Resolve {
                 Symbol sym = env1.info.scope.findFirst(name);
                 if (sym != null) {
                     if (staticOnly) {
-                        // static error, stop search
+                        // current class is not an inner class, stop search
                         return new StaticError(sym);
                     } else if (env1.info.ctorPrologue && !isAllowedEarlyReference(pos, env1, (VarSymbol)sym)) {
                         // early construction context, stop search
