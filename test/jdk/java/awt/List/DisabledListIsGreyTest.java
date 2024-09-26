@@ -60,7 +60,7 @@ public class DisabledListIsGreyTest {
 
         List list1 = new List(3);
         List list2 = new List(3);
-        for(int i = 0; i < 5; i++) {
+        for (int i = 0; i < 5; i++) {
             list1.addItem("Item " + i);
             list2.addItem("Item " + i);
         }

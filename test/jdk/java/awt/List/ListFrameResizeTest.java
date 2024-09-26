@@ -64,7 +64,7 @@ public class ListFrameResizeTest {
 
     private static Frame createTestUI() {
         wintest client = new wintest("ListFrameResizeTest Frame");
-        client.resize(500,300);
+        client.resize(500, 300);
         client.setBackground(Color.blue);
         return client;
     }
