@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 template<
     typename K, typename V,
     AnyObj::allocation_type ALLOC_TYPE,
-    MEMFLAGS MEM_TYPE>
+    MemTag MEM_TAG>
 class ResizeableResourceHashtableStorage : public AnyObj {
   using Node = ResourceHashtableNode<K, V>;
 
@@ -52,7 +52,7 @@ protected:
   Node** alloc_table(unsigned table_size) {
     Node** table;
     if (ALLOC_TYPE == C_HEAP) {
-      table = NEW_C_HEAP_ARRAY(Node*, table_size, MEM_TYPE);
+      table = NEW_C_HEAP_ARRAY(Node*, table_size, MEM_TAG);
     } else {
       table = NEW_RESOURCE_ARRAY(Node*, table_size);
     }
@@ -72,17 +72,17 @@ protected:
 template<
     typename K, typename V,
     AnyObj::allocation_type ALLOC_TYPE = AnyObj::RESOURCE_AREA,
-    MEMFLAGS MEM_TYPE = mtInternal,
+    MemTag MEM_TAG = mtInternal,
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
     bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>
     >
 class ResizeableResourceHashtable : public ResourceHashtableBase<
-    ResizeableResourceHashtableStorage<K, V, ALLOC_TYPE, MEM_TYPE>,
-    K, V, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS> {
+    ResizeableResourceHashtableStorage<K, V, ALLOC_TYPE, MEM_TAG>,
+    K, V, ALLOC_TYPE, MEM_TAG, HASH, EQUALS> {
   unsigned _max_size;
 
-  using BASE = ResourceHashtableBase<ResizeableResourceHashtableStorage<K, V, ALLOC_TYPE, MEM_TYPE>,
-                                     K, V, ALLOC_TYPE, MEM_TYPE, HASH, EQUALS>;
+  using BASE = ResourceHashtableBase<ResizeableResourceHashtableStorage<K, V, ALLOC_TYPE, MEM_TAG>,
+                                     K, V, ALLOC_TYPE, MEM_TAG, HASH, EQUALS>;
   using Node = ResourceHashtableNode<K, V>;
   NONCOPYABLE(ResizeableResourceHashtable);
 
