@@ -78,7 +78,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
     /**
      * Approximately 128 years, in milliseconds (ignoring leap years etc).
      *
-     * This establish an approximate high-bound value for DOS times in
+     * This establishes an approximate high-bound value for DOS times in
      * milliseconds since epoch, used to enable an efficient but
      * sufficient bounds check to avoid generating extended last modified
      * time entries.

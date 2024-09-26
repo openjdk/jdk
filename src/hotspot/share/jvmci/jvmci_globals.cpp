@@ -80,6 +80,15 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
   CHECK_NOT_SET(LibJVMCICompilerThreadHidden, UseJVMCICompiler)
 
   if (UseJVMCICompiler) {
+    if (!FLAG_IS_DEFAULT(EnableJVMCI) && !EnableJVMCI) {
+      jio_fprintf(defaultStream::error_stream(),
+          "Improperly specified VM option UseJVMCICompiler: EnableJVMCI cannot be disabled\n");
+      return false;
+    }
+    FLAG_SET_DEFAULT(EnableJVMCI, true);
+  }
+
+  if (EnableJVMCI) {
     if (FLAG_IS_DEFAULT(UseJVMCINativeLibrary) && !UseJVMCINativeLibrary) {
       char path[JVM_MAXPATHLEN];
       if (os::dll_locate_lib(path, sizeof(path), Arguments::get_dll_dir(), JVMCI_SHARED_LIBRARY_NAME)) {
@@ -88,12 +97,9 @@ bool JVMCIGlobals::check_jvmci_flags_are_consistent() {
         FLAG_SET_DEFAULT(UseJVMCINativeLibrary, true);
       }
     }
-    if (!FLAG_IS_DEFAULT(EnableJVMCI) && !EnableJVMCI) {
-      jio_fprintf(defaultStream::error_stream(),
-          "Improperly specified VM option UseJVMCICompiler: EnableJVMCI cannot be disabled\n");
-      return false;
-    }
-    FLAG_SET_DEFAULT(EnableJVMCI, true);
+  }
+
+  if (UseJVMCICompiler) {
     if (BootstrapJVMCI && UseJVMCINativeLibrary) {
       jio_fprintf(defaultStream::error_stream(), "-XX:+BootstrapJVMCI is not compatible with -XX:+UseJVMCINativeLibrary\n");
       return false;

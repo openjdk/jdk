@@ -74,6 +74,7 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 
 import static java.util.Collections.unmodifiableList;
+import static javax.swing.BorderFactory.createEmptyBorder;
 import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.isEventDispatchThread;
 
@@ -158,7 +159,7 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *     <li>the title of the instruction UI,</li>
  *     <li>the timeout of the test,</li>
  *     <li>the size of the instruction UI via rows and columns, and</li>
- *     <li>to add a log area</li>,
+ *     <li>to add a log area,</li>
  *     <li>to enable screenshots.</li>
  * </ul>
  */
@@ -348,11 +349,9 @@ public final class PassFailJFrame {
                         builder.positionWindows
                                .positionTestWindows(unmodifiableList(builder.testWindows),
                                                     builder.instructionUIHandler));
-            } else if (builder.testWindows.size() == 1) {
+            } else {
                 Window window = builder.testWindows.get(0);
                 positionTestWindow(window, builder.position);
-            } else {
-                positionTestWindow(null, builder.position);
             }
         }
         showAllWindows();
@@ -501,6 +500,7 @@ public final class PassFailJFrame {
         JTextArea text = new JTextArea(instructions, rows, columns);
         text.setLineWrap(true);
         text.setWrapStyleWord(true);
+        text.setBorder(createEmptyBorder(4, 4, 4, 4));
         return text;
     }
 
@@ -1111,9 +1111,10 @@ public final class PassFailJFrame {
 
     /**
      * Adds a {@code message} to the log area, if enabled by
-     * {@link Builder#logArea()} or {@link Builder#logArea(int)}.
+     * {@link Builder#logArea() logArea()} or
+     * {@link Builder#logArea(int) logArea(int)}.
      *
-     * @param message to log
+     * @param message the message to log
      */
     public static void log(String message) {
         System.out.println("PassFailJFrame: " + message);
@@ -1122,7 +1123,8 @@ public final class PassFailJFrame {
 
     /**
      * Clears the log area, if enabled by
-     * {@link Builder#logArea()} or {@link Builder#logArea(int)}.
+     * {@link Builder#logArea() logArea()} or
+     * {@link Builder#logArea(int) logArea(int)}.
      */
     public static void logClear() {
         System.out.println("\nPassFailJFrame: log cleared\n");
@@ -1131,7 +1133,9 @@ public final class PassFailJFrame {
 
     /**
      * Replaces the log area content with provided {@code text}, if enabled by
-     * {@link Builder#logArea()} or {@link Builder#logArea(int)}.
+     * {@link Builder#logArea() logArea()} or
+     * {@link Builder#logArea(int) logArea(int)}.
+     *
      * @param text new text for the log area
      */
     public static void logSet(String text) {
@@ -1182,11 +1186,45 @@ public final class PassFailJFrame {
             return this;
         }
 
+        /**
+         * Sets the number of rows for displaying the instruction text.
+         * The default value is the number of lines in the text plus 1:
+         * {@code ((int) instructions.lines().count() + 1)}.
+         *
+         * @param rows the number of rows for instruction text
+         * @return this builder
+         */
         public Builder rows(int rows) {
             this.rows = rows;
             return this;
         }
 
+        private int getDefaultRows() {
+            return (int) instructions.lines().count() + 1;
+        }
+
+        /**
+         * Adds a certain number of rows for displaying the instruction text.
+         *
+         * @param rowsAdd the number of rows to add to the number of rows
+         * @return this builder
+         * @see #rows
+         */
+        public Builder rowsAdd(int rowsAdd) {
+            if (rows == 0) {
+                rows = getDefaultRows();
+            }
+            rows += rowsAdd;
+
+            return this;
+        }
+
+        /**
+         * Sets the number of columns for displaying the instruction text.
+         *
+         * @param columns the number of columns for instruction text
+         * @return this builder
+         */
         public Builder columns(int columns) {
             this.columns = columns;
             return this;
@@ -1481,7 +1519,7 @@ public final class PassFailJFrame {
             }
 
             if (rows == 0) {
-                rows = ROWS;
+                rows = getDefaultRows();
             }
 
             if (columns == 0) {
