@@ -63,6 +63,7 @@ requires.properties= \
     vm.gc.Z \
     vm.gc.ZGenerational \
     vm.gc.ZSinglegen \
+    vm.unlockExperimentalOptions \
     vm.jvmci \
     vm.jvmci.enabled \
     vm.emulatedClient \
