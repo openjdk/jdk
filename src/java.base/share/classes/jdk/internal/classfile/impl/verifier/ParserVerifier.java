@@ -78,31 +78,63 @@ public record ParserVerifier(ClassModel classModel) {
                     case MethodHandleEntry mhe -> mhe.asSymbol();
                     case MethodTypeEntry mte -> mte.asSymbol();
                     case FieldRefEntry fre -> {
-                        fre.owner().asSymbol();
-                        fre.typeSymbol();
+                        try {
+                            fre.owner().asSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        try {
+                            fre.typeSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
                         verifyFieldName(fre.name().stringValue());
                     }
                     case InterfaceMethodRefEntry imre -> {
-                        imre.owner().asSymbol();
-                        imre.typeSymbol();
+                        try {
+                            imre.owner().asSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        try {
+                            imre.typeSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
                         verifyMethodName(imre.name().stringValue());
                     }
                     case MethodRefEntry mre -> {
-                        mre.owner().asSymbol();
-                        mre.typeSymbol();
+                        try {
+                            mre.owner().asSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
+                        try {
+                            mre.typeSymbol();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
                         verifyMethodName(mre.name().stringValue());
                     }
                     case ModuleEntry me -> me.asSymbol();
                     case NameAndTypeEntry nate -> {
-                        nate.name().stringValue();
+                        try {
+                            nate.name().stringValue();
+                        } catch (VerifyError|Exception e) {
+                            errors.add(cpeVerifyError(cpe, e));
+                        }
                         nate.type().stringValue();
                     }
                     case PackageEntry pe -> pe.asSymbol();
                 }
             } catch (VerifyError|Exception e) {
-                errors.add(new VerifyError("%s at constant pool index %d in %s".formatted(e.getMessage(), cpe.index(), toString(classModel))));
+                errors.add(cpeVerifyError(cpe, e));
             }
         }
+    }
+
+    private VerifyError cpeVerifyError(final PoolEntry cpe, final Throwable e) {
+        return new VerifyError("%s at constant pool index %d in %s".formatted(e.getMessage(), cpe.index(), toString(classModel)));
     }
 
     private void verifyFieldName(String name) {
