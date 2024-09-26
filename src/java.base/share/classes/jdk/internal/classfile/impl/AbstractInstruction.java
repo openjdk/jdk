@@ -24,11 +24,11 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.constant.ConstantDesc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.lang.classfile.ClassFile;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.instruction.SwitchCase;
@@ -421,7 +421,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public boolean isInterface() {
-            return method().tag() == ClassFile.TAG_INTERFACEMETHODREF;
+            return method().tag() == PoolEntry.TAG_INTERFACE_METHODREF;
         }
 
         @Override
