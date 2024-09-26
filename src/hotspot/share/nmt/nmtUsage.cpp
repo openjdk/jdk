@@ -28,7 +28,7 @@
 #include "nmt/nmtUsage.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
-#include "runtime/mutexLocker.hpp"
+#include "runtime/threadCritical.hpp"
 
 // Enabled all options for snapshot.
 const NMTUsageOptions NMTUsage::OptionsAll = { true, true, true };
@@ -53,7 +53,7 @@ void NMTUsage::walk_thread_stacks() {
 void NMTUsage::update_malloc_usage() {
   // Thread critical needed keep values in sync, total area size
   // is deducted from mtChunk in the end to give correct values.
-  NMTMutexLocker ml;
+  ThreadCritical tc;
   const MallocMemorySnapshot* ms = MallocMemorySummary::as_snapshot();
 
   size_t total_arena_size = 0;

@@ -29,7 +29,6 @@
 #include "nmt/memBaseline.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
 /*
@@ -142,7 +141,7 @@ void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
   {
-    NMTMutexLocker ml;
+    NmtVirtualMemoryLocker ml;
     MemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
   }
 

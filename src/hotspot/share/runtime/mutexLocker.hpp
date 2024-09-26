@@ -116,7 +116,7 @@ extern Mutex*   SharedDecoder_lock;              // serializes access to the dec
 extern Mutex*   DCmdFactory_lock;                // serialize access to DCmdFactory information
 extern Mutex*   NMTQuery_lock;                   // serialize NMT Dcmd queries
 extern Mutex*   NMTCompilationCostHistory_lock;  // guards NMT compilation cost history
-extern Mutex*   NMT_lock;                        // guards NMT allocation updates
+extern Mutex*   NmtVirtualMemory_lock;           // guards NMT virtual memory updates
 #if INCLUDE_CDS
 #if INCLUDE_JVMTI
 extern Mutex*   CDSClassFileStream_lock;         // FileMapInfo::open_stream_for_jvmti
@@ -254,15 +254,6 @@ class ConditionalMutexLocker: public MutexLockerImpl {
      MutexLockerImpl(thread, condition ? mutex : nullptr, flag) {
      assert(!condition || mutex != nullptr, "null mutex not allowed when locking");
    }
-};
-
-// Same as MutexLocker but can be used during VM init.
-// Performs no action if given a null mutex or with detached threads.
-class NMTMutexLocker: public ConditionalMutexLocker {
-public:
-    NMTMutexLocker() :
-            ConditionalMutexLocker(NMT_lock, Thread::current_or_null_safe() != nullptr, Mutex::_no_safepoint_check_flag) {
-    }
 };
 
 // A MonitorLocker is like a MutexLocker above, except it allows
