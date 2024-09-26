@@ -1230,7 +1230,7 @@ public class ZipFile implements ZipConstants, Closeable {
             int nlen = CENNAM(cen, pos);
 
             // Validate and return the full header size (a value between CENHDR and 0xFFFF, inclusive)
-            int headerSize = validateCENEntryHeader(state, nlen);
+            int headerSize = checkCENHeader(state, nlen);
 
             addEntry(state, nlen);
 
@@ -1244,7 +1244,7 @@ public class ZipFile implements ZipConstants, Closeable {
             return true;
         }
 
-        private int validateCENEntryHeader(CENState state, int nlen) throws ZipException {
+        private int checkCENHeader(CENState state, int nlen) throws ZipException {
             int index = state.idx;
             if (index >= entries.length) {
                 zerror(INDEX_OVERFLOW);
@@ -1275,6 +1275,8 @@ public class ZipFile implements ZipConstants, Closeable {
                 zerror("invalid CEN header (bad header size)");
             }
 
+            // Validate extra fields if they exists, otherwise validate that related
+            // fields in the CEN header are properly set
             if (elen > 0 && !DISABLE_ZIP64_EXTRA_VALIDATION) {
                 checkExtraFields(pos, pos + CENHDR + nlen, elen);
             } else if (elen == 0 && (CENSIZ(cen, pos) == ZIP64_MAGICVAL
@@ -1284,10 +1286,8 @@ public class ZipFile implements ZipConstants, Closeable {
                 zerror("Invalid CEN header (invalid zip64 extra len size)");
             }
 
+            // Validate comment if it exists.
             if (clen > 0) {
-                // Validate comment if it exists.
-                // If the bytes representing the comment cannot be converted to
-                // a String via zcp.toString, an Exception will be thrown
                 checkComment(pos, headerSize, clen);
             }
             return headerSize;
@@ -1310,6 +1310,8 @@ public class ZipFile implements ZipConstants, Closeable {
             }
         }
 
+        // If the bytes representing the comment cannot be converted to
+        // a String via zcp.toString, an Exception will be thrown
         private void checkComment(int pos, int headerSize, int clen) throws ZipException {
             try {
                 zipCoderForPos(pos).toString(cen, pos + headerSize - clen, clen);
