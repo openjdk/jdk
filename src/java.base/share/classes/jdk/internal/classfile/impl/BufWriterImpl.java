@@ -36,6 +36,7 @@ import java.lang.classfile.constantpool.PoolEntry;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.ForceInline;
 
 public final class BufWriterImpl implements BufWriter {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
@@ -99,6 +100,7 @@ public final class BufWriterImpl implements BufWriter {
         elems[offset++] = (byte) x;
     }
 
+    @ForceInline
     @Override
     public void writeU2(int x) {
         reserveSpace(2);
@@ -283,12 +285,17 @@ public final class BufWriterImpl implements BufWriter {
     // writeIndex methods ensure that any CP info written
     // is relative to the correct constant pool
 
+    @ForceInline
     @Override
     public void writeIndex(PoolEntry entry) {
         int idx = AbstractPoolEntry.maybeClone(constantPool, entry).index();
         if (idx < 1 || idx > Character.MAX_VALUE)
-            throw new IllegalArgumentException(idx + " is not a valid index. Entry: " + entry);
+            throw invalidIndex(idx, entry);
         writeU2(idx);
+    }
+
+    static IllegalArgumentException invalidIndex(int idx, PoolEntry entry) {
+        return new IllegalArgumentException(idx + " is not a valid index. Entry: " + entry);
     }
 
     @Override
@@ -297,5 +304,15 @@ public final class BufWriterImpl implements BufWriter {
             writeU2(0);
         else
             writeIndex(entry);
+    }
+
+    /**
+     * Join head and tail into an exact-size buffer
+     */
+    static byte[] join(BufWriterImpl head, BufWriterImpl tail) {
+        byte[] result = new byte[head.size() + tail.size()];
+        head.copyTo(result, 0);
+        tail.copyTo(result, head.size());
+        return result;
     }
 }

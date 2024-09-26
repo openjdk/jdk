@@ -90,7 +90,7 @@ import java.util.zip.ZipFile;
  * <p> If the {@code verify} flag is on when opening a signed jar file, the content
  * of the jar entry is verified against the signature embedded inside the manifest
  * that is associated with its {@link JarEntry#getRealName() path name}. For a
- * multi-release jar file, the content of a versioned entry is verfieid against
+ * multi-release jar file, the content of a versioned entry is verified against
  * its own signature and {@link JarEntry#getCodeSigners()} returns its own signers.
  *
  * Please note that the verification process does not include validating the
