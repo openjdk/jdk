@@ -286,6 +286,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
 
   uint loop_count = 0;
   uint gc_count = total_collections();
+  uint full_gc_count = 0;
   uint gclocker_stalled_count = 0;
 
   while (result == nullptr) {
@@ -308,11 +309,14 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
     }
 
     // If certain conditions hold, try allocating from the old gen.
-    if (!is_tlab) {
+    if (!is_tlab &&
+        (!should_alloc_in_eden(size) || GCLocker::is_active_and_needs_gc()) && // Size is too big for eden, or gc is locked out.
+        (full_gc_count == 0 || full_gc_count != total_full_collections())) {
       {
         // Take Heap_lock when allocate on old gen, since it is not thread-safe.
         MutexLocker ml(Heap_lock);
         result = mem_allocate_old_gen(size);
+        full_gc_count = total_full_collections();
       }
       if (result != nullptr) {
         return result;
@@ -421,12 +425,7 @@ HeapWord* ParallelScavengeHeap::allocate_old_gen_and_record(size_t size) {
 }
 
 HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
-  if (!should_alloc_in_eden(size) || GCLocker::is_active_and_needs_gc()) {
-    // Size is too big for eden, or gc is locked out.
-    return allocate_old_gen_and_record(size);
-  }
-
-  return nullptr;
+  return allocate_old_gen_and_record(size);;
 }
 
 void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
