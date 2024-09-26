@@ -29,7 +29,7 @@ import java.awt.Frame;
  * @bug 4964237
  * @requires (os.family == "windows")
  * @summary Win: Changing theme changes java dialogs title icon
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library jdk/java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual DefaultIconTest
  */

@@ -32,7 +32,7 @@ import java.awt.event.ComponentListener;
  * @bug 4912551
  * @summary Checks that with resizable set to false before show()
  *          dialog can not be resized.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library jdk/java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual DialogInitialResizability
  */
