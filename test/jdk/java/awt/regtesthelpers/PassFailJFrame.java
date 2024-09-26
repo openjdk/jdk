@@ -1018,7 +1018,7 @@ public final class PassFailJFrame {
                 break;
 
             case VERTICAL:
-                int newY = ((screenSize.height + WINDOW_GAP / 2) - frame.getHeight());
+                int newY = (((screenSize.height + WINDOW_GAP) / 2) - frame.getHeight());
                 frame.setLocation((frame.getX() + screenInsets.left),
                                   (newY + screenInsets.top));
                 break;
