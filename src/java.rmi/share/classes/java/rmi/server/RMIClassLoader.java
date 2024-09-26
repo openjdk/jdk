@@ -435,11 +435,11 @@ public class RMIClassLoader {
      * (see {@link Thread#getContextClassLoader()}), which is also
      * considered to be the codebase loader, irrespective of any
      * value passed as the <code>codebase</code> argument.
-     * 
+     *
      * <p>The <b>{@link RMIClassLoaderSpi#getClassLoader(String)
      * getClassLoader}</b> method returns the current thread's
      * context class loader.
-     * 
+     *
      * <p>The <b>{@link
      * RMIClassLoaderSpi#loadClass(String,String,ClassLoader)
      * loadClass}</b> method attempts to load the class with the
@@ -464,7 +464,7 @@ public class RMIClassLoader {
      * <p>Next, the <code>loadClass</code> method attempts to load the
      * class with the specified <code>name</code> using the current
      * thread's context class loader.
-     * 
+     *
      * </blockquote>
      *
      * <p>The <b>{@link
