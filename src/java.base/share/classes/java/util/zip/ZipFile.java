@@ -1225,13 +1225,35 @@ public class ZipFile implements ZipConstants, Closeable {
             if (pos > state.limit) {
                 return false;
             }
+            byte[] cen = this.cen;
+            // The entry length, from pos + CENHDR
+            int nlen = CENNAM(cen, pos);
+
+            // Validate and return the full header size (a value between CENHDR and 0xFFFF, inclusive)
+            int headerSize = validateCENEntryHeader(state, nlen);
+
+            addEntry(state, nlen);
+
+            // Adds name to metanames.
+            if (isMetaName(pos, nlen)) {
+                checkAndAddMetaEntry(state, nlen);
+            }
+
+            state.pos += headerSize;
+            state.idx += 3;
+            return true;
+        }
+
+        private int validateCENEntryHeader(CENState state, int nlen) throws ZipException {
             int index = state.idx;
-            int[] entries = this.entries;
             if (index >= entries.length) {
                 zerror(INDEX_OVERFLOW);
             }
 
             byte[] cen = this.cen;
+            int pos = state.pos;
+            int elen = CENEXT(cen, pos);
+            int clen = CENCOM(cen, pos);
             if (CENSIG(cen, pos) != CENSIG) {
                 zerror("invalid CEN header (bad signature)");
             }
@@ -1243,9 +1265,6 @@ public class ZipFile implements ZipConstants, Closeable {
             if (method != STORED && method != DEFLATED) {
                 zerror("invalid CEN header (bad compression method: " + method + ")");
             }
-            int nlen = CENNAM(cen, pos);
-            int elen = CENEXT(cen, pos);
-            int clen = CENCOM(cen, pos);
             int headerSize = CENHDR + nlen + clen + elen;
             // CEN header size + name length + comment length + extra length
             // should not exceed 65,535 bytes per the PKWare APP.NOTE
@@ -1265,56 +1284,65 @@ public class ZipFile implements ZipConstants, Closeable {
                 zerror("Invalid CEN header (invalid zip64 extra len size)");
             }
 
-            try {
-                ZipCoder zcp = zipCoderForPos(pos);
-                int hash = zcp.checkedHash(cen, pos + CENHDR, nlen);
-                int hsh = (hash & 0x7fffffff) % tablelen;
-                int[] table = this.table;
-                int next = table[hsh];
-                // Record the CEN offset and the name hash in our hash cell.
-                entries[index++] = hash;
-                table[hsh] = index; // Store state.idx + 1, reserving 0 for end-of-chain
-                entries[index++] = next;
-                entries[index] = pos;
+            if (clen > 0) {
                 // Validate comment if it exists.
                 // If the bytes representing the comment cannot be converted to
                 // a String via zcp.toString, an Exception will be thrown
-                if (clen > 0) {
-                    zcp.toString(cen, pos + headerSize - clen, clen);
-                }
+                checkComment(pos, headerSize, clen);
+            }
+            return headerSize;
+        }
+
+        private void addEntry(CENState state, int nlen) throws ZipException {
+            try {
+                int pos = state.pos;
+                int hash = zipCoderForPos(pos).checkedHash(cen, pos + CENHDR, nlen);
+                int hsh = (hash & 0x7fffffff) % tablelen;
+                int next = table[hsh];
+                int index = state.idx;
+                table[hsh] = index + 1; // Store state.idx + 1, reserving 0 for end-of-chain
+                // Record the CEN offset and the name hash in our hash cell.
+                entries[index] = hash;
+                entries[index + 1] = next;
+                entries[index + 2] = pos;
             } catch (Exception e) {
                 zerror("invalid CEN header (bad entry name or comment)");
             }
+        }
 
-            // Adds name to metanames.
-            if (isMetaName(cen, pos, nlen)) {
-                // nlen is at least META_INF_LENGTH
-                if (isManifestName(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN)) {
-                    manifestPos = pos;
-                    manifestNum++;
-                } else {
-                    if (isSignatureRelated(pos + CENHDR, nlen)) {
-                        if (state.signatureNames == null) {
-                            state.signatureNames = new ArrayList<>(4);
-                        }
-                        state.signatureNames.add(pos);
-                    }
+        private void checkComment(int pos, int headerSize, int clen) throws ZipException {
+            try {
+                zipCoderForPos(pos).toString(cen, pos + headerSize - clen, clen);
+            } catch (Exception e) {
+                zerror("invalid CEN header (bad entry name or comment)");
+            }
+        }
 
-                    // If this is a versioned entry, parse the version
-                    // and store it for later. This optimizes lookup
-                    // performance in multi-release jar files
-                    int version = getMetaVersion(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN);
-                    if (version > 0) {
-                        if (state.metaVersionsSet == null) {
-                            state.metaVersionsSet = new TreeSet<>();
-                        }
-                        state.metaVersionsSet.add(version);
+        private void checkAndAddMetaEntry(CENState state, int nlen) {
+            // nlen is at least META_INF_LENGTH
+            int pos = state.pos;
+            if (isManifestName(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN)) {
+                manifestPos = pos;
+                manifestNum++;
+            } else {
+                if (isSignatureRelated(pos + CENHDR, nlen)) {
+                    if (state.signatureNames == null) {
+                        state.signatureNames = new ArrayList<>(4);
                     }
+                    state.signatureNames.add(pos);
+                }
+
+                // If this is a versioned entry, parse the version
+                // and store it for later. This optimizes lookup
+                // performance in multi-release jar files
+                int version = getMetaVersion(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN);
+                if (version > 0) {
+                    if (state.metaVersionsSet == null) {
+                        state.metaVersionsSet = new TreeSet<>();
+                    }
+                    state.metaVersionsSet.add(version);
                 }
             }
-            state.pos += headerSize;
-            state.idx += 3;
-            return true;
         }
 
         /**
@@ -1916,10 +1944,11 @@ public class ZipFile implements ZipConstants, Closeable {
          * Returns true if the bytes represent a non-directory name
          * beginning with "META-INF/", disregarding ASCII case.
          */
-        private static boolean isMetaName(byte[] name, int off, int len) {
+        private boolean isMetaName(int off, int len) {
             // Use the "oldest ASCII trick in the book":
             // ch | 0x20 == Character.toLowerCase(ch)
             off += CENHDR;
+            byte[] name = cen;
             return len > META_INF_LEN       // "META-INF/".length()
                 && name[off + len - 1] != '/'  // non-directory
                 && (name[off++] | 0x20) == 'm'
