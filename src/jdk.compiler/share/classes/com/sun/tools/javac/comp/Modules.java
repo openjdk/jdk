@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,8 +64,11 @@ import com.sun.tools.javac.code.Directive.RequiresFlag;
 import com.sun.tools.javac.code.Directive.UsesDirective;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Flags.Flag;
+import com.sun.tools.javac.code.Kinds;
+import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.ModuleFinder;
+import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol;
@@ -74,6 +77,7 @@ import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleFlags;
+import com.sun.tools.javac.code.Symbol.ModuleResolutionFlags;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symtab;
@@ -99,6 +103,7 @@ import com.sun.tools.javac.tree.JCTree.Tag;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -112,14 +117,9 @@ import static com.sun.tools.javac.code.Flags.ENUM;
 import static com.sun.tools.javac.code.Flags.PUBLIC;
 import static com.sun.tools.javac.code.Flags.UNATTRIBUTED;
 
-import com.sun.tools.javac.code.Kinds;
-
 import static com.sun.tools.javac.code.Kinds.Kind.ERR;
 import static com.sun.tools.javac.code.Kinds.Kind.MDL;
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
-import com.sun.tools.javac.code.Lint;
-
-import com.sun.tools.javac.code.Symbol.ModuleResolutionFlags;
 
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 
@@ -150,6 +150,7 @@ public class Modules extends JCTree.Visitor {
     private final Target target;
     private final boolean allowModules;
     private final boolean allowAccessIntoSystem;
+    private final boolean allowRequiresTransitiveJavaBase;
 
     public final boolean multiModuleMode;
 
@@ -203,6 +204,11 @@ public class Modules extends JCTree.Visitor {
         Options options = Options.instance(context);
 
         allowAccessIntoSystem = options.isUnset(Option.RELEASE);
+
+        Preview preview = Preview.instance(context);
+
+        allowRequiresTransitiveJavaBase =
+                (Feature.JAVA_BASE_TRANSITIVE.allowedInSource(source) && (!preview.isPreview(Feature.JAVA_BASE_TRANSITIVE) || preview.isEnabled()));
         lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
 
         multiModuleMode = fileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH);
@@ -807,11 +813,14 @@ public class Modules extends JCTree.Visitor {
                 allRequires.add(msym);
                 Set<RequiresFlag> flags = EnumSet.noneOf(RequiresFlag.class);
                 if (tree.isTransitive) {
-                    if (msym == syms.java_base && source.compareTo(Source.JDK10) >= 0) {
-                        log.error(tree.pos(), Errors.ModifierNotAllowedHere(names.transitive));
-                    } else {
-                        flags.add(RequiresFlag.TRANSITIVE);
+                    if (msym == syms.java_base && !allowRequiresTransitiveJavaBase) {
+                        if (source.compareTo(Source.JDK10) >= 0) {
+                            log.error(DiagnosticFlag.SOURCE_LEVEL,
+                                      tree.pos(),
+                                      Feature.JAVA_BASE_TRANSITIVE.error(source.name));
+                        }
                     }
+                    flags.add(RequiresFlag.TRANSITIVE);
                 }
                 if (tree.isStaticPhase) {
                     if (msym == syms.java_base && source.compareTo(Source.JDK10) >= 0) {

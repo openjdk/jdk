@@ -119,6 +119,10 @@ public class ClassReader {
      */
     boolean allowRecords;
 
+    /** Switch: allow requires transitive java.base
+     */
+    boolean allowRequiresTransitiveJavaBase;
+
    /** Lint option: warn about classfile issues
      */
     boolean lintClassfile;
@@ -292,6 +296,8 @@ public class ClassReader {
         preview = Preview.instance(context);
         allowModules     = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
+        allowRequiresTransitiveJavaBase =
+                (Feature.JAVA_BASE_TRANSITIVE.allowedInSource(source) && (!preview.isPreview(Feature.JAVA_BASE_TRANSITIVE) || preview.isEnabled()));
         allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
         warnOnIllegalUtf8 = Feature.WARN_ON_ILLEGAL_UTF8.allowedInSource(source);
 
@@ -1200,7 +1206,7 @@ public class ClassReader {
                             ModuleSymbol rsym = poolReader.getModule(nextChar());
                             Set<RequiresFlag> flags = readRequiresFlags(nextChar());
                             if (rsym == syms.java_base && majorVersion >= V54.major) {
-                                if (flags.contains(RequiresFlag.TRANSITIVE)) {
+                                if (flags.contains(RequiresFlag.TRANSITIVE) && !allowRequiresTransitiveJavaBase) {
                                     throw badClassFile("bad.requires.flag", RequiresFlag.TRANSITIVE);
                                 }
                                 if (flags.contains(RequiresFlag.STATIC_PHASE)) {

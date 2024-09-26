@@ -21,7 +21,8 @@
  * questions.
  */
 
-// key: compiler.err.modifier.not.allowed.here
+// key: compiler.err.feature.not.supported.in.source.plural
+// key: compiler.misc.feature.java.base.transitive
 
 module m {
      requires transitive java.base;
