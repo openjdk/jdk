@@ -128,7 +128,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.graal.enabled", this::isGraalEnabled);
         // jdk.hasLibgraal is true if the libgraal shared library file is present
         map.put("jdk.hasLibgraal", this::hasLibgraal);
-        map.put("vm.libgraal.jit", this::isLibgraalJit);
+        map.put("vm.libgraal.jit", this::isLibgraalJIT);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
         map.put("vm.compiler2.enabled", this::isCompiler2Enabled);
         map.put("docker.support", this::dockerSupport);
@@ -559,8 +559,8 @@ public class VMProps implements Callable<Map<String, String>> {
      *
      * @return true if libgraal is used as JIT compiler.
      */
-    protected String isLibgraalJit() {
-        return "" + Compiler.isLibgraalEnabled();
+    protected String isLibgraalJIT() {
+        return "" + Compiler.isLibgraalJIT();
     }
 
     /**
