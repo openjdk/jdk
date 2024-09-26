@@ -306,7 +306,11 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
 
     // If certain conditions hold, try allocating from the old gen.
     if (!is_tlab) {
-      result = mem_allocate_old_gen(size); // TODO make mem_allocate_old_gen thread-safe
+      {
+        // Take Heap_lock when allocate on old gen, since it is not thread-safe.
+        MutexLocker ml(Heap_lock);
+        result = mem_allocate_old_gen(size);
+      }
       if (result != nullptr) {
         return result;
       }
