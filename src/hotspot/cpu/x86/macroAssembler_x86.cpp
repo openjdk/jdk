@@ -5689,7 +5689,6 @@ void MacroAssembler::load_nklass_compact(Register dst, Register src) {
 #endif
 
 void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
-  BLOCK_COMMENT("load_klass");
   assert_different_registers(src, tmp);
   assert_different_registers(dst, tmp);
 #ifdef _LP64
@@ -5720,9 +5719,10 @@ void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
 }
 
 void MacroAssembler::cmp_klass(Register klass, Register obj, Register tmp) {
-  BLOCK_COMMENT("cmp_klass 1");
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
+    assert(tmp != noreg, "need tmp");
+    assert_different_registers(klass, obj, tmp);
     load_nklass_compact(tmp, obj);
     cmpl(klass, tmp);
   } else if (UseCompressedClassPointers) {
@@ -5734,23 +5734,22 @@ void MacroAssembler::cmp_klass(Register klass, Register obj, Register tmp) {
   }
 }
 
-void MacroAssembler::cmp_klass(Register src, Register dst, Register tmp1, Register tmp2) {
-  BLOCK_COMMENT("cmp_klass 2");
+void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2) {
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
     assert(tmp2 != noreg, "need tmp2");
-    assert_different_registers(src, dst, tmp1, tmp2);
-    load_nklass_compact(tmp1, src);
-    load_nklass_compact(tmp2, dst);
+    assert_different_registers(obj1, obj2, tmp1, tmp2);
+    load_nklass_compact(tmp1, obj1);
+    load_nklass_compact(tmp2, obj2);
     cmpl(tmp1, tmp2);
   } else if (UseCompressedClassPointers) {
-    movl(tmp1, Address(src, oopDesc::klass_offset_in_bytes()));
-    cmpl(tmp1, Address(dst, oopDesc::klass_offset_in_bytes()));
+    movl(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
+    cmpl(tmp1, Address(obj2, oopDesc::klass_offset_in_bytes()));
   } else
 #endif
   {
-    movptr(tmp1, Address(src, oopDesc::klass_offset_in_bytes()));
-    cmpptr(tmp1, Address(dst, oopDesc::klass_offset_in_bytes()));
+    movptr(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
+    cmpptr(tmp1, Address(obj2, oopDesc::klass_offset_in_bytes()));
   }
 }
 

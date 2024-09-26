@@ -4913,42 +4913,42 @@ void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, R
   resolve_oop_handle(dst, tmp1, tmp2);
 }
 
-void MacroAssembler::cmp_klass(Register oop, Register trial_klass, Register tmp) {
-  assert_different_registers(oop, trial_klass, tmp);
+void MacroAssembler::cmp_klass(Register obj, Register klass, Register tmp) {
+  assert_different_registers(obj, klass, tmp);
   if (UseCompressedClassPointers) {
     if (UseCompactObjectHeaders) {
-      load_nklass_compact(tmp, oop);
+      load_nklass_compact(tmp, obj);
     } else {
-      ldrw(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
+      ldrw(tmp, Address(obj, oopDesc::klass_offset_in_bytes()));
     }
     if (CompressedKlassPointers::base() == nullptr) {
-      cmp(trial_klass, tmp, LSL, CompressedKlassPointers::shift());
+      cmp(klass, tmp, LSL, CompressedKlassPointers::shift());
       return;
     } else if (((uint64_t)CompressedKlassPointers::base() & 0xffffffff) == 0
                && CompressedKlassPointers::shift() == 0) {
       // Only the bottom 32 bits matter
-      cmpw(trial_klass, tmp);
+      cmpw(klass, tmp);
       return;
     }
     decode_klass_not_null(tmp);
   } else {
-    ldr(tmp, Address(oop, oopDesc::klass_offset_in_bytes()));
+    ldr(tmp, Address(obj, oopDesc::klass_offset_in_bytes()));
   }
-  cmp(trial_klass, tmp);
+  cmp(klass, tmp);
 }
 
-void MacroAssembler::cmp_klass(Register src, Register dst, Register tmp1, Register tmp2) {
+void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2) {
   if (UseCompactObjectHeaders) {
-    load_nklass_compact(tmp1, src);
-    load_nklass_compact(tmp2, dst);
+    load_nklass_compact(tmp1, obj1);
+    load_nklass_compact(tmp2,  obj2);
     cmpw(tmp1, tmp2);
   } else if (UseCompressedClassPointers) {
-    ldrw(tmp1, Address(src, oopDesc::klass_offset_in_bytes()));
-    ldrw(tmp2, Address(dst, oopDesc::klass_offset_in_bytes()));
+    ldrw(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
+    ldrw(tmp2, Address(obj2, oopDesc::klass_offset_in_bytes()));
     cmpw(tmp1, tmp2);
   } else {
-    ldr(tmp1, Address(src, oopDesc::klass_offset_in_bytes()));
-    ldr(tmp2, Address(dst, oopDesc::klass_offset_in_bytes()));
+    ldr(tmp1, Address(obj1, oopDesc::klass_offset_in_bytes()));
+    ldr(tmp2, Address(obj2, oopDesc::klass_offset_in_bytes()));
     cmp(tmp1, tmp2);
   }
 }

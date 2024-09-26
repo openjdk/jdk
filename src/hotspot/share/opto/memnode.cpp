@@ -1969,13 +1969,8 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 const Type*
 LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
                                  ciKlass* klass) const {
-  if (UseCompactObjectHeaders) {
-    if (tkls->offset() == in_bytes(Klass::prototype_header_offset())) {
-      // The field is Klass::_prototype_header.  Return its (constant) value.
-      assert(this->Opcode() == Op_LoadX, "must load a proper type from _prototype_header");
-      return TypeX::make(klass->prototype_header());
-    }
-  }
+  assert(!UseCompactObjectHeaders || tkls->offset() != in_bytes(Klass::prototype_header_offset()),
+         "must not happen");
   if (tkls->offset() == in_bytes(Klass::modifier_flags_offset())) {
     // The field is Klass::_modifier_flags.  Return its (constant) value.
     // (Folds up the 2nd indirection in aClassConstant.getModifiers().)
@@ -2250,9 +2245,11 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     }
   }
 
-  Node* alloc = is_new_object_mark_load();
-  if (!UseCompactObjectHeaders && alloc != nullptr) {
-    return TypeX::make(markWord::prototype().value());
+  if (!UseCompactObjectHeaders) {
+    Node* alloc = is_new_object_mark_load();
+    if (alloc != nullptr) {
+      return TypeX::make(markWord::prototype().value());
+    }
   }
 
   return _type;
