@@ -395,6 +395,18 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
 }
 
 
+// Relax certain access checks to enable some broken 1.1 apps to run on 1.2. (this comment means what???)
+// Really? -Xverify:none doesn't do access checks? VerifyRemote doesn't access check trusted class loaders?
+static bool relax_access_for(oop loader) {
+  bool trusted = java_lang_ClassLoader::is_trusted_loader(loader);
+  bool need_verify =
+    // verifyAll
+    (BytecodeVerificationLocal && BytecodeVerificationRemote) ||
+    // verifyRemote
+    (!BytecodeVerificationLocal && BytecodeVerificationRemote && !trusted);
+  return !need_verify;
+}
+
 static bool can_relax_access_check_for(const Klass* accessor,
                                        const Klass* accessee,
                                        bool classloader_only) {
@@ -406,7 +418,7 @@ static bool can_relax_access_check_for(const Klass* accessor,
     accessor_ik->major_version() < Verifier::NO_RELAX_ACCESS_CTRL_CHECK_VERSION &&
     accessee_ik->major_version() < Verifier::NO_RELAX_ACCESS_CTRL_CHECK_VERSION) {
     return classloader_only &&
-      Verifier::relax_access_for(accessor_ik->class_loader()) &&
+      relax_access_for(accessor_ik->class_loader()) &&
       accessor_ik->protection_domain() == accessee_ik->protection_domain() &&
       accessor_ik->class_loader() == accessee_ik->class_loader();
   }
