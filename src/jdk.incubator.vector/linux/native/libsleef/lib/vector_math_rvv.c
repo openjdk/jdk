@@ -42,16 +42,37 @@
 
 #include <jni.h>
 
+// We maintain an invariant in java world that default dynamic rounding mode is RNE,
+// please check JDK-8330094, JDK-8330266 for more details.
+// Currently, sleef source on riscv does not change rounding mode to others except
+// of RNE. But we still think it's safer to make sure that after calling into sleef
+// the dynamic rounding mode is always RNE.
+
+#ifdef ASSERT
+#define CHECK_FRM   __asm__ __volatile__ (     \
+    "    frrm   t0              \n\t"          \
+    "    beqz   t0, 2f          \n\t"          \
+    "    csrrw  x0, cycle, x0   \n\t"          \
+    "2:                         \n\t"          \
+    : : : "memory" );
+#else
+#define CHECK_FRM
+#endif
+
 #define DEFINE_VECTOR_MATH_UNARY_RVV(op, type) \
 JNIEXPORT                                      \
 type op##rvv(type input) {                     \
-  return Sleef_##op##rvvm1(input);             \
+  type res = Sleef_##op##rvvm1(input);         \
+  CHECK_FRM                                    \
+  return res;                                  \
 }
 
 #define DEFINE_VECTOR_MATH_BINARY_RVV(op, type) \
 JNIEXPORT                                       \
 type op##rvv(type input1, type input2) {        \
-  return Sleef_##op##rvvm1(input1, input2);     \
+  type res = Sleef_##op##rvvm1(input1, input2); \
+  CHECK_FRM                                     \
+  return res;                                   \
 }
 
 DEFINE_VECTOR_MATH_UNARY_RVV(tanfx_u10,   vfloat_rvvm1_sleef)
