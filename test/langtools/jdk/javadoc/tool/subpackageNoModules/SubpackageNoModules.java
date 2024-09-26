@@ -64,12 +64,11 @@ public class SubpackageNoModules extends TestRunner {
                 .outdir(outDir)
                 .sourcepath(base)
                 .options("-source", "8",
-                        "-subpackages", "pkg")
+                         "-subpackages", "pkg")
                 .run(Expect.SUCCESS);
         // Check for presence of generated docs
         if (!Files.isRegularFile(outDir.resolve("pkg/A.html"))) {
             error("File not found: " + outDir.resolve("pkg/A.html"));
         }
-
     }
 }
