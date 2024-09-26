@@ -278,14 +278,11 @@ class RegMask {
     if (_hwm < _lwm) {
       return;
     }
-    int count = 0;
     while ((_hwm > _lwm) && _rm_up(_hwm) == 0) {
       _hwm--;
-      ++count;
     }
     while ((_lwm < _hwm) && _rm_up(_lwm) == 0) {
       _lwm++;
-      ++count;
     }
     if ((_lwm == _hwm) && _rm_up(_lwm) == 0) {
       _lwm = _rm_max();
