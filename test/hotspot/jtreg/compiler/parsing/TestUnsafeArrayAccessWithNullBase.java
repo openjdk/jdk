@@ -31,7 +31,7 @@
  *      -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline
  *      -XX:CompileCommand=compileonly,compiler.parsing.TestUnsafeArrayAccessWithNullBase::test*
  *      -XX:-TieredCompilation compiler.parsing.TestUnsafeArrayAccessWithNullBase
- * @run main/othervm compiler.parsing.TestUnsafeArrayAccessWithNullBase
+ * @run main compiler.parsing.TestUnsafeArrayAccessWithNullBase
  */
 
 package compiler.parsing;
