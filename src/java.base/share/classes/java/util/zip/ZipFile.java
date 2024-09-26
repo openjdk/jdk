@@ -498,8 +498,7 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * Returns the path name of the ZIP file.
-     * @return the path name of the ZIP file
+     * {@return the path name of the ZIP file}
      */
     public String getName() {
         return filePath;
@@ -560,8 +559,7 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * Returns an enumeration of the ZIP file entries.
-     * @return an enumeration of the ZIP file entries
+     * {@return an enumeration of the ZIP file entries}
      * @throws IllegalStateException if the ZIP file has been closed
      */
     public Enumeration<? extends ZipEntry> entries() {
@@ -1871,15 +1869,15 @@ public class ZipFile implements ZipConstants, Closeable {
 
                     // Compare the lookup name with the name encoded in the CEN
                     switch (zc.compare(name, cen, noff, nlen, addSlash)) {
-                        case EXACT_MATCH:
+                        case ZipCoder.EXACT_MATCH:
                             // We found an exact match for "name"
                             return new EntryPos(name, pos);
-                        case DIRECTORY_MATCH:
+                        case ZipCoder.DIRECTORY_MATCH:
                             // We found the directory "name/"
                             // Track its position, then continue the search for "name"
                             dirPos = pos;
                             break;
-                        case NO_MATCH:
+                        case ZipCoder.NO_MATCH:
                             // Hash collision, continue searching
                     }
                 }

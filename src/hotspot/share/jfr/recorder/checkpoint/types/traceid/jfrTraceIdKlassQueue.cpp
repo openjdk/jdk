@@ -75,7 +75,7 @@ static size_t element_size(bool compressed) {
 }
 
 static bool can_compress_element(const Klass* klass) {
-  return CompressedKlassPointers::is_in_encoding_range(klass) &&
+  return CompressedKlassPointers::is_encodable(klass) &&
          JfrTraceId::load_raw(klass) < uncompressed_threshold;
 }
 

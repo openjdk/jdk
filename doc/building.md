@@ -422,13 +422,9 @@ To use clang instead of gcc on Linux, use `--with-toolchain-type=clang`.
 
 The oldest supported version of Xcode is 13.0.
 
-You will need the Xcode command line developer tools to be able to build the
-JDK. (Actually, *only* the command line tools are needed, not the IDE.) The
-simplest way to install these is to run:
-
-```
-xcode-select --install
-```
+You will need to download Xcode either from the App Store or specific versions
+can be easily located via the [Xcode Releases](https://xcodereleases.com)
+website.
 
 When updating Xcode, it is advisable to keep an older version for building the
 JDK. To use a specific version of Xcode you have multiple options:
