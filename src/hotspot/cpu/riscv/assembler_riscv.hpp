@@ -705,6 +705,16 @@ public:
     emit(insn);
   }
 
+  void fencei() {
+    unsigned insn = 0;
+    patch((address)&insn,  6,  0, 0b0001111);      // opcode
+    patch((address)&insn, 11,  7, 0b00000);        // rd
+    patch((address)&insn, 14, 12, 0b001);          // func
+    patch((address)&insn, 19, 15, 0b00000);        // rs1
+    patch((address)&insn, 31, 20, 0b000000000000); // fm
+    emit(insn);
+  }
+
 #define INSN(NAME, op, funct3, funct7)                      \
   void NAME() {                                             \
     unsigned insn = 0;                                      \
@@ -1267,6 +1277,7 @@ enum VectorMask {
   INSN(viota_m,   0b1010111, 0b010, 0b10000, 0b010100);
 
   // Vector Single-Width Floating-Point/Integer Type-Convert Instructions
+  INSN(vfcvt_x_f_v,      0b1010111, 0b001, 0b00001, 0b010010);
   INSN(vfcvt_f_x_v,      0b1010111, 0b001, 0b00011, 0b010010);
   INSN(vfcvt_rtz_x_f_v,  0b1010111, 0b001, 0b00111, 0b010010);
 
