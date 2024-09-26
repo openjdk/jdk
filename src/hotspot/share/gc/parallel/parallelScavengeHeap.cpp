@@ -299,9 +299,12 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       VM_CollectForAllocation::wait_at_collect_for_allocation_barrier();
     }
 
-    result = young_gen()->allocate(size);
-    if (result != nullptr) {
-      return result;
+    if (gc_count != total_collections()) {
+      result = young_gen()->allocate(size);
+      gc_count = total_collections();
+      if (result != nullptr) {
+        return result;
+      }
     }
 
     // If certain conditions hold, try allocating from the old gen.
