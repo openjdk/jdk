@@ -286,7 +286,6 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
 
   uint loop_count = 0;
   uint gc_count = total_collections();
-  uint full_gc_count = 0;
   uint gclocker_stalled_count = 0;
 
   while (result == nullptr) {
@@ -301,6 +300,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
     }
 
     if (gc_count != total_collections()) {
+      MutexLocker ml(Heap_lock);
       result = young_gen()->allocate(size);
       gc_count = total_collections();
       if (result != nullptr) {
@@ -310,13 +310,11 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
 
     // If certain conditions hold, try allocating from the old gen.
     if (!is_tlab &&
-        (!should_alloc_in_eden(size) || GCLocker::is_active_and_needs_gc()) && // Size is too big for eden, or gc is locked out.
-        (full_gc_count == 0 || full_gc_count != total_full_collections())) {
+        (!should_alloc_in_eden(size) || GCLocker::is_active_and_needs_gc())) {
       {
         // Take Heap_lock when allocate on old gen, since it is not thread-safe.
         MutexLocker ml(Heap_lock);
         result = mem_allocate_old_gen(size);
-        full_gc_count = total_full_collections();
       }
       if (result != nullptr) {
         return result;
@@ -358,8 +356,6 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       // Generate a VM operation
       VM_ParallelCollectForAllocation op(size, is_tlab, total_collections());
       VMThread::execute(&op);
-      VM_CollectForAllocation::unset_collect_for_allocation_started();
-
 
       // Did the VM operation execute? If so, return the result directly.
       // This prevents us from looping until time out on requests that can
@@ -400,6 +396,8 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
 
         return op.result();
       }
+      // if the VM operation did not execute, need to make sure unset_collect_for_allocation_started is invoked.
+      VM_CollectForAllocation::unset_collect_for_allocation_started();
     }
 
     // The policy object will prevent us from looping forever. If the

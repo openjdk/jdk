@@ -48,6 +48,7 @@ void VM_ParallelCollectForAllocation::doit() {
   if (_result == nullptr && GCLocker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
+  unset_collect_for_allocation_started();
 }
 
 static bool is_cause_full(GCCause::Cause cause) {

@@ -201,7 +201,7 @@ volatile bool VM_CollectForAllocation::_collect_for_allocation_started = false;
 WaitBarrierDefault* VM_CollectForAllocation::_collect_for_allocation_barrier = new WaitBarrierDefault();
 
 bool VM_CollectForAllocation::try_set_collect_for_allocation_started() {
-  assert(Thread::current()->is_Java_thread(), "must be");
+  assert(Thread::current()->is_Java_thread(), "Must be");
   bool success = Atomic::cmpxchg(&_collect_for_allocation_started, false, true, memory_order_relaxed) == false;
   if (success) {
     _collect_for_allocation_barrier->arm(1);
@@ -221,7 +221,7 @@ bool VM_CollectForAllocation::is_collect_for_allocation_started() {
 }
 
 void VM_CollectForAllocation::wait_at_collect_for_allocation_barrier() {
-  assert(Thread::current()->is_Java_thread(), "must be");
+  assert(Thread::current()->is_Java_thread(), "Must be");
   ThreadBlockInVM tbivm(JavaThread::current());
   _collect_for_allocation_barrier->wait(1);
 }
