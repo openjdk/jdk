@@ -34,8 +34,8 @@ import com.sun.source.doctree.SystemPropertyTree;
 
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.Content;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlTree;
 
 /**
  * A taglet that represents the {@code @systemProperty} tag.

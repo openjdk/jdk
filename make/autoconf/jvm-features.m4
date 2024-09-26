@@ -23,7 +23,7 @@
 # questions.
 #
 
-###############################################################################
+################################################################################
 # Terminology used in this file:
 #
 # Valid features      == All possible features that the JVM knows about.
@@ -36,7 +36,7 @@
 #
 # All valid features are considered available, unless listed as unavailable.
 # All available features will be turned on as default, unless listed in a filter.
-###############################################################################
+################################################################################
 
 # We need these as m4 defines to be able to loop over them using m4 later on.
 
@@ -78,7 +78,7 @@ m4_define(jvm_feature_desc_vm_structs, [export JVM structures to the Serviceabli
 m4_define(jvm_feature_desc_zero, [support building variant 'zero'])
 m4_define(jvm_feature_desc_zgc, [include the Z garbage collector])
 
-###############################################################################
+################################################################################
 # Parse command line options for JVM feature selection. After this function
 # has run $JVM_FEATURES_ENABLED, $JVM_FEATURES_DISABLED and $JVM_FEATURES_VALID
 # can be used.
@@ -199,7 +199,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_PARSE_OPTIONS],
   AC_SUBST(VALID_JVM_FEATURES)
 ])
 
-###############################################################################
+################################################################################
 # Helper function for the JVM_FEATURES_CHECK_* suite.
 # The code in the code block should assign 'false' to the variable AVAILABLE
 # if the feature is not available, and this function will handle everything
@@ -225,7 +225,7 @@ AC_DEFUN([JVM_FEATURES_CHECK_AVAILABILITY],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Check if the feature 'cds' is available on this platform.
 #
 AC_DEFUN_ONCE([JVM_FEATURES_CHECK_CDS],
@@ -241,7 +241,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_CDS],
   ])
 ])
 
-###############################################################################
+################################################################################
 # Check if the feature 'dtrace' is available on this platform.
 #
 AC_DEFUN_ONCE([JVM_FEATURES_CHECK_DTRACE],
@@ -270,7 +270,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_DTRACE],
   ])
 ])
 
-###############################################################################
+################################################################################
 # Check if the feature 'jvmci' is available on this platform.
 #
 AC_DEFUN_ONCE([JVM_FEATURES_CHECK_JVMCI],
@@ -290,7 +290,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_JVMCI],
   ])
 ])
 
-###############################################################################
+################################################################################
 # Check if the feature 'shenandoahgc' is available on this platform.
 #
 AC_DEFUN_ONCE([JVM_FEATURES_CHECK_SHENANDOAHGC],
@@ -309,7 +309,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_SHENANDOAHGC],
   ])
 ])
 
-###############################################################################
+################################################################################
 # Check if the feature 'zgc' is available on this platform.
 #
 AC_DEFUN_ONCE([JVM_FEATURES_CHECK_ZGC],
@@ -365,7 +365,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_ZGC],
   ])
 ])
 
-###############################################################################
+################################################################################
 # Setup JVM_FEATURES_PLATFORM_UNAVAILABLE and JVM_FEATURES_PLATFORM_FILTER
 # to contain those features that are unavailable, or should be off by default,
 # for this platform, regardless of JVM variant.
@@ -383,7 +383,7 @@ AC_DEFUN_ONCE([JVM_FEATURES_PREPARE_PLATFORM],
 
 ])
 
-###############################################################################
+################################################################################
 # Setup JVM_FEATURES_VARIANT_UNAVAILABLE and JVM_FEATURES_VARIANT_FILTER
 # to contain those features that are unavailable, or should be off by default,
 # for this particular JVM variant.
@@ -431,7 +431,7 @@ AC_DEFUN([JVM_FEATURES_PREPARE_VARIANT],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Calculate the actual set of active JVM features for this JVM variant. Store
 # the result in JVM_FEATURES_ACTIVE.
 #
@@ -479,7 +479,7 @@ AC_DEFUN([JVM_FEATURES_CALCULATE_ACTIVE],
       $JVM_FEATURES_ENABLED, $JVM_FEATURES_DISABLED)
 ])
 
-###############################################################################
+################################################################################
 # Helper function for JVM_FEATURES_VERIFY. Check if the specified JVM
 # feature is active. To be used in shell if constructs, like this:
 # 'if JVM_FEATURES_IS_ACTIVE(jvmti); then'
@@ -489,7 +489,7 @@ AC_DEFUN([JVM_FEATURES_CALCULATE_ACTIVE],
 AC_DEFUN([JVM_FEATURES_IS_ACTIVE],
 [ [ [[ " $JVM_FEATURES_ACTIVE " =~ ' '$1' ' ]] ] ])
 
-###############################################################################
+################################################################################
 # Verify that the resulting set of features is consistent and legal.
 #
 # arg 1: JVM variant
@@ -527,7 +527,7 @@ AC_DEFUN([JVM_FEATURES_VERIFY],
   fi
 ])
 
-###############################################################################
+################################################################################
 # Set up all JVM features for each enabled JVM variant. Requires that
 # JVM_FEATURES_PARSE_OPTIONS has been called.
 #

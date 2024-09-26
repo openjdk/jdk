@@ -1631,7 +1631,16 @@ public final class LocalTime
      */
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder(18);
+        var buf = new StringBuilder(18);
+        formatTo(buf);
+        return buf.toString();
+    }
+
+    /**
+     * Prints the toString result to the given buf, avoiding extra string allocations.
+     * Requires extra capacity of 18 to avoid StringBuilder reallocation.
+     */
+    void formatTo(StringBuilder buf) {
         int hourValue = hour;
         int minuteValue = minute;
         int secondValue = second;
@@ -1657,7 +1666,6 @@ public final class LocalTime
                 buf.append(digits);
             }
         }
-        return buf.toString();
     }
 
     //-----------------------------------------------------------------------

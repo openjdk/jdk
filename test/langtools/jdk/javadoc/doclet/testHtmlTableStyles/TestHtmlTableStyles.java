@@ -50,7 +50,7 @@ public class TestHtmlTableStyles extends JavadocTester {
         checkOutput(Output.OUT, true,
                 "attribute not supported in HTML5: summary",
                 """
-                    attribute "border" for table only accepts "" or "1": BORDER""",
+                    attribute "border" for table only accepts "" or "1": border""",
                 "attribute not supported in HTML5: cellpadding",
                 "attribute not supported in HTML5: cellspacing",
                 "attribute not supported in HTML5: align");

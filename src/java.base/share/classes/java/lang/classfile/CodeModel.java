@@ -43,17 +43,7 @@ import jdk.internal.javac.PreviewFeature;
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeModel
         extends CompoundElement<CodeElement>, AttributedElement, MethodElement
-        permits CodeAttribute, BufferedCodeBuilder.Model, CodeImpl {
-
-    /**
-     * {@return the maximum size of the local variable table}
-     */
-    int maxLocals();
-
-    /**
-     * {@return the maximum size of the operand stack}
-     */
-    int maxStack();
+        permits CodeAttribute, BufferedCodeBuilder.Model {
 
     /**
      * {@return the enclosing method, if known}

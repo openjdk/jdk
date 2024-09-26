@@ -40,7 +40,8 @@ public final class OutputAnalyzer {
 
     private static final String jvmwarningmsg = ".* VM warning:.*";
 
-    private static final String deprecatedmsg = ".* VM warning:.* deprecated.*";
+    private static final String VM_DEPRECATED_MSG = ".* VM warning:.* deprecated.*";
+    private static final String OTHER_DEPRECATED_MSG = "^WARNING: .* is deprecated.*";
 
     private static final String FATAL_ERROR_PAT = "# A fatal error has been detected.*";
 
@@ -182,7 +183,7 @@ public final class OutputAnalyzer {
      *             If stderr was not empty
      */
     public OutputAnalyzer stderrShouldBeEmptyIgnoreDeprecatedWarnings() {
-        if (!getStderr().replaceAll(deprecatedmsg + "\\R", "").isEmpty()) {
+        if (!getStderrNoDeprecatedWarnings().isEmpty()) {
             reportDiagnosticSummary();
             throw new RuntimeException("stderr was not empty");
         }
@@ -604,6 +605,15 @@ public final class OutputAnalyzer {
     }
 
     /**
+     * Get the contents of the stderr buffer, with known deprecation warning patterns removed
+     *
+     * @return stderr buffer, with known deprecation warnings removed
+     */
+    public String getStderrNoDeprecatedWarnings() {
+        return getStderr().replaceAll(VM_DEPRECATED_MSG + "\\R", "").replaceAll(OTHER_DEPRECATED_MSG + "\\R", "");
+    }
+
+    /**
      * Get the process exit value
      *
      * @return Process exit value
@@ -689,7 +699,7 @@ public final class OutputAnalyzer {
      * @throws RuntimeException If the pattern was not found
      */
     public OutputAnalyzer stderrShouldMatchIgnoreDeprecatedWarnings(String pattern) {
-        String stderr = getStderr().replaceAll(deprecatedmsg + "\\R", "");
+        String stderr = getStderrNoDeprecatedWarnings();
         Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
         if (!matcher.find()) {
             reportDiagnosticSummary();

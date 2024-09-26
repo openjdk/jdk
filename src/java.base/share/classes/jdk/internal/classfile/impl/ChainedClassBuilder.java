@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.constant.MethodTypeDesc;
 import java.util.function.Consumer;
 
 import java.lang.classfile.*;

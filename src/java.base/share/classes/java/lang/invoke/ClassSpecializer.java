@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.lang.classfile.attribute.SourceFileAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.LambdaForm.BasicType;
-import java.lang.invoke.InnerClassLambdaMetafactory.MethodBody;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -68,8 +67,6 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
     private static final ClassDesc CD_LambdaForm = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/LambdaForm;");
     private static final ClassDesc CD_BoundMethodHandle = ReferenceClassDescImpl.ofValidated("Ljava/lang/invoke/BoundMethodHandle;");
-    private static final Consumer<FieldBuilder> STATIC_FIELD_FLAGS = new InnerClassLambdaMetafactory.FieldFlags(ACC_STATIC);
-    private static final Consumer<FieldBuilder> FINAL_FIELD_FLAGS = new InnerClassLambdaMetafactory.FieldFlags(ACC_FINAL);
 
     private final Class<T> topClass;
     private final Class<K> keyType;
@@ -625,7 +622,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                        .with(SourceFileAttribute.of(classDesc.displayName()))
 
                     // emit static types and BMH_SPECIES fields
-                       .withField(sdFieldName, CD_SPECIES_DATA, STATIC_FIELD_FLAGS);
+                       .withField(sdFieldName, CD_SPECIES_DATA, ACC_STATIC);
 
                     // handy holder for dealing with groups of typed values (ctor arguments and fields)
                     class Var {
@@ -709,26 +706,26 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
                     // emit bound argument fields
                     for (Var field : fields) {
-                        clb.withField(field.name, field.desc, FINAL_FIELD_FLAGS);
+                        clb.withField(field.name, field.desc, ACC_FINAL);
                     }
 
                     // emit implementation of speciesData()
-                    clb.withMethod(SPECIES_DATA_NAME, MTD_SPECIES_DATA, (SPECIES_DATA_MODS & ACC_PPP) | ACC_FINAL,
-                            new MethodBody(new Consumer<CodeBuilder>() {
+                    clb.withMethodBody(SPECIES_DATA_NAME, MTD_SPECIES_DATA, (SPECIES_DATA_MODS & ACC_PPP) | ACC_FINAL,
+                            new Consumer<>() {
                                 @Override
                                 public void accept(CodeBuilder cob) {
                                     cob.getstatic(classDesc, sdFieldName, CD_SPECIES_DATA)
                                             .areturn();
                                 }
-                            }));
+                            });
 
                     // figure out the constructor arguments
                     MethodType superCtorType = ClassSpecializer.this.baseConstructorType();
                     MethodType thisCtorType = superCtorType.appendParameterTypes(fieldTypes);
 
                     // emit constructor
-                    clb.withMethod(INIT_NAME, methodDesc(thisCtorType), ACC_PRIVATE,
-                            new MethodBody(new Consumer<CodeBuilder>() {
+                    clb.withMethodBody(INIT_NAME, methodDesc(thisCtorType), ACC_PRIVATE,
+                            new Consumer<>() {
                                 @Override
                                 public void accept(CodeBuilder cob) {
                                     cob.aload(0); // this
@@ -753,12 +750,12 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
 
                                     cob.return_();
                                 }
-                            }));
+                            });
 
                     // emit make()  ...factory method wrapping constructor
                     MethodType ftryType = thisCtorType.changeReturnType(topClass());
-                    clb.withMethod("make", methodDesc(ftryType), ACC_STATIC,
-                            new MethodBody(new Consumer<CodeBuilder>() {
+                    clb.withMethodBody("make", methodDesc(ftryType), ACC_STATIC,
+                            new Consumer<>() {
                                 @Override
                                 public void accept(CodeBuilder cob) {
                                     // make instance
@@ -773,7 +770,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                                     cob.invokespecial(classDesc, INIT_NAME, methodDesc(thisCtorType))
                                             .areturn();
                                 }
-                            }));
+                            });
 
                     // For each transform, emit the customized override of the transform method.
                     // This method mixes together some incoming arguments (from the transform's

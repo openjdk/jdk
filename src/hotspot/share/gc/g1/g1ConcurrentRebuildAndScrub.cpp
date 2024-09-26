@@ -87,8 +87,9 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       _processed_words += processed;
     }
 
-    // Yield if enough has been processed; returns if the concurrent marking cycle
-    // has been aborted for any reason.
+    // Yield if enough has been processed. Return whether we should stop
+    // processing this region because either the concurrent marking cycle has been
+    // aborted or the region has been reclaimed.
     bool yield_if_necessary(G1HeapRegion* hr) {
       if (_processed_words >= ProcessingYieldLimitInWords) {
         reset_processed_words();
@@ -98,7 +99,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
           return true;
         }
       }
-      return _cm->has_aborted();
+      return _cm->has_aborted() || !should_rebuild_or_scrub(hr);
     }
 
     // Returns whether the top at rebuild start value for the given region indicates

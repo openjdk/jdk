@@ -68,6 +68,7 @@ address CompilerToVM::Data::SharedRuntime_deopt_blob_unpack;
 address CompilerToVM::Data::SharedRuntime_deopt_blob_unpack_with_exception_in_tls;
 address CompilerToVM::Data::SharedRuntime_deopt_blob_uncommon_trap;
 address CompilerToVM::Data::SharedRuntime_polling_page_return_handler;
+address CompilerToVM::Data::SharedRuntime_throw_delayed_StackOverflowError_entry;
 
 address CompilerToVM::Data::nmethod_entry_barrier;
 int CompilerToVM::Data::thread_disarmed_guard_value_offset;
@@ -134,6 +135,7 @@ int CompilerToVM::Data::sizeof_ZStoreBarrierEntry = sizeof(ZStoreBarrierEntry);
 address CompilerToVM::Data::dsin;
 address CompilerToVM::Data::dcos;
 address CompilerToVM::Data::dtan;
+address CompilerToVM::Data::dtanh;
 address CompilerToVM::Data::dexp;
 address CompilerToVM::Data::dlog;
 address CompilerToVM::Data::dlog10;
@@ -158,6 +160,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   SharedRuntime_deopt_blob_unpack_with_exception_in_tls = SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   SharedRuntime_deopt_blob_uncommon_trap = SharedRuntime::deopt_blob()->uncommon_trap();
   SharedRuntime_polling_page_return_handler = SharedRuntime::polling_page_return_handler_blob()->entry_point();
+  SharedRuntime_throw_delayed_StackOverflowError_entry = SharedRuntime::throw_delayed_StackOverflowError_entry();
 
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   if (bs_nm != nullptr) {
@@ -240,7 +243,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     cardtable_shift = CardTable::card_shift();
   } else {
     // No card mark barriers
-    cardtable_start_address = 0;
+    cardtable_start_address = nullptr;
     cardtable_shift = 0;
   }
 
@@ -266,6 +269,19 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   SET_TRIGFUNC(dpow);
 
 #undef SET_TRIGFUNC
+
+#define SET_TRIGFUNC_OR_NULL(name)                              \
+  if (StubRoutines::name() != nullptr) {                        \
+    name = StubRoutines::name();                                \
+  } else {                                                      \
+    name = nullptr;                                             \
+  }
+
+  SET_TRIGFUNC_OR_NULL(dtanh);
+
+#undef SET_TRIGFUNC_OR_NULL
+
+
 }
 
 static jboolean is_c1_supported(vmIntrinsics::ID id){
