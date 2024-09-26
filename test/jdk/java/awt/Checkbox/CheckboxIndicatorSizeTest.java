@@ -163,7 +163,6 @@ public class CheckboxIndicatorSizeTest implements ActionListener {
         Font oldFont = testPanel.getFont();
         Font newFont = new Font(oldFont.getName(), oldFont.getStyle(), size);
         testPanel.setFont(newFont);
-        frame.validate();
         frame.pack();
         frame.setVisible(true);
     }
