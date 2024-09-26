@@ -933,6 +933,8 @@ void FileMapInfo::extract_module_paths(const char* runtime_path, GrowableArray<c
     const char* name = path_array->at(i);
     ClassLoaderExt::extract_jar_files_from_path(name, module_paths);
   }
+  // module paths are stored in sorted order in the CDS archive.
+  module_paths->sort(ClassLoaderExt::compare_module_path_by_name);
 }
 
 bool FileMapInfo::check_module_paths() {
@@ -952,8 +954,6 @@ bool FileMapInfo::check_module_paths() {
   if (num_paths != archived_num_module_paths) {
     return false;
   }
-  // module paths are stored in sorted order in the CDS archive.
-  module_paths->sort(ClassLoaderExt::compare_module_path_by_name);
   return check_paths(header()->app_module_paths_start_index(), num_paths, module_paths, 0, 0);
 }
 

@@ -875,11 +875,12 @@ void HeapShared::initialize_from_archived_subgraph(JavaThread* current, Klass* k
     return; // nothing to do
   }
 
-  ResourceMark rm(THREAD);
-  if ((strcmp(k->name()->as_C_string(), "jdk/internal/module/ArchivedModuleGraph") == 0) &&
+  if (k->name()->equals("jdk/internal/module/ArchivedModuleGraph") &&
       !CDSConfig::is_using_optimized_module_handling() &&
       // archive was created with --module-path
       ClassLoaderExt::num_module_paths() > 0) {
+    // ArchivedModuleGraph was created with a --module-path that's different than the runtime --module-path.
+    // Thus, it might contain references to modules that do not exist in runtime. We cannot use it.
     log_info(cds, heap)("Skip initializing ArchivedModuleGraph subgraph: is_using_optimized_module_handling=%s num_module_paths=%d",
                         BOOL_TO_STR(CDSConfig::is_using_optimized_module_handling()), ClassLoaderExt::num_module_paths());
     return;

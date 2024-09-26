@@ -1089,6 +1089,8 @@ public class BuiltinClassLoader
     // Called during -Xshare:dump from AppClassLoader.resetArchivedStates().
     void resetArchivedStatesForAppClassLoader() {
         setClassPath(null);
-        if (!moduleToReader.isEmpty()) moduleToReader.clear();
+        if (!moduleToReader.isEmpty()) {
+            moduleToReader.clear();
+        }
     }
 }

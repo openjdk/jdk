@@ -151,18 +151,20 @@ void ClassLoaderExt::extract_jar_files_from_path(const char* path, GrowableArray
   if (dirp == nullptr && errno == ENOTDIR && has_jar_suffix(path)) {
     module_paths->append(path);
   } else {
-    struct dirent* dentry;
-    while ((dentry = os::readdir(dirp)) != nullptr) {
-      const char* file_name = dentry->d_name;
-      if (has_jar_suffix(file_name)) {
-        size_t full_name_len = strlen(path) + strlen(file_name) + strlen(os::file_separator()) + 1;
-        char* full_name = NEW_RESOURCE_ARRAY(char, full_name_len);
-        int n = os::snprintf(full_name, full_name_len, "%s%s%s", path, os::file_separator(), file_name);
-        assert((size_t)n == full_name_len - 1, "Unexpected number of characters in string");
-        module_paths->append(full_name);
+    if (dirp != nullptr) {
+      struct dirent* dentry;
+      while ((dentry = os::readdir(dirp)) != nullptr) {
+        const char* file_name = dentry->d_name;
+        if (has_jar_suffix(file_name)) {
+          size_t full_name_len = strlen(path) + strlen(file_name) + strlen(os::file_separator()) + 1;
+          char* full_name = NEW_RESOURCE_ARRAY(char, full_name_len);
+          int n = os::snprintf(full_name, full_name_len, "%s%s%s", path, os::file_separator(), file_name);
+          assert((size_t)n == full_name_len - 1, "Unexpected number of characters in string");
+          module_paths->append(full_name);
+        }
       }
+      os::closedir(dirp);
     }
-    os::closedir(dirp);
   }
 }
 
