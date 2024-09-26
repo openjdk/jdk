@@ -65,19 +65,13 @@
 
   // Use conditional move (CMOVL)
   static int long_cmove_cost() {
-    if (VM_Version::get_model_index() >= 5 /* z196/z11 or later hardware support conditional moves */) {
-      return 0;
-    } else {
-      return ConditionalMoveLimit;
-    }
+    // z196/z11 or later hardware support conditional moves
+    return VM_Version::get_model_index() >= 5 ? 0 : ConditionalMoveLimit;
   }
 
   static int float_cmove_cost() {
-    if (VM_Version::get_model_index() >= 5 /* z196/z11 or later hardware support conditional moves */) {
-      return 0;
-    } else {
-      return ConditionalMoveLimit;
-    }
+    // z196/z11 or later hardware support conditional moves
+    return VM_Version::get_model_index() >= 5 ? 0 : ConditionalMoveLimit;
   }
 
   // Set this as clone_shift_expressions.

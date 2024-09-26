@@ -653,7 +653,7 @@ public:
   //       3   -  386
   //       4   -  486
   //       5   -  Pentium
-  //       6   -  PentiumPro, Pentium II, Celeron, Xeon, Pentium III, Athlon,
+  //       6   -  PentiumPro, Pentium II, Celer;on, Xeon, Pentium III, Athlon,
   //              Pentium M, Core Solo, Core Duo, Core2 Duo
   //    family 6 model:   9,        13,       14,        15
   //    0x0f   -  Pentium 4, Opteron
