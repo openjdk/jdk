@@ -155,17 +155,19 @@ public class MBeanResource implements RestResource {
         }
     }
 
-    /*
-    HTTP POST for this MBean's URL allows setting of attributes and execution of operations.
-    POST request body can follow one of the below formats
-    1. { name : value}
-    Set a single attribute
-    2. { name1 : value1, name2 : value2 }
-    Sets multiple attributes
-    3. {attributes : {read : [name]} , {write : {name : value}}, operations : {op_name : {param_name:name, param_value:value}}}
-    This bulk operation request sets multiple attributes and executes multiple
-    operations on the MBean.
- */
+    /**
+     *
+     * HTTP POST for this MBean's URL allows setting of attributes and execution of operations.
+     *
+     * POST request body can follow one of the below formats
+     * 1. { name : value}
+     *  Set a single attribute
+     * 2. { name1 : value1, name2 : value2 }
+     * Sets multiple attributes
+     * 3. {attributes : {read : [name]} , {write : {name : value}}, operations : {op_name : {param_name:name, param_value:value}}}
+     * This bulk operation request sets multiple attributes and executes multiple
+     * operations on the MBean.
+     */
     @Override
     public HttpResponse doPost(HttpExchange exchange) {
         String path = exchange.getRequestURI().getPath();

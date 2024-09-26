@@ -116,7 +116,7 @@ public class JSONObject extends LinkedHashMap<String, JSONElement> implements JS
     @Override
     public String toJsonString() {
         if (isEmpty()) {
-            return null;
+            return null; // return "{}"; // An empty object, not null.
         }
 
         StringBuilder sbuild = new StringBuilder();
