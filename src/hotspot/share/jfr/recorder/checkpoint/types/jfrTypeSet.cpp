@@ -484,7 +484,7 @@ static void do_primitives() {
 static void do_unloading_klass(Klass* klass) {
   assert(klass != nullptr, "invariant");
   assert(_subsystem_callback != nullptr, "invariant");
-  if(klass->is_instance_klass() && InstanceKlass::cast(klass)->is_scratch_class()) {
+  if (klass->is_instance_klass() && InstanceKlass::cast(klass)->is_scratch_class()) {
     return;
   }
   if (JfrKlassUnloading::on_unload(klass)) {
