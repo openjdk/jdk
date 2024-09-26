@@ -587,7 +587,7 @@ public final class PassFailJFrame {
          * @param testWindows the list of test windows
          * @param instructionUI information about the instruction frame
          */
-        void positionTestWindows(List<? extends Window> testWindows,
+        void positionTestWindows(List<Window> testWindows,
                                  InstructionUI instructionUI);
     }
 
