@@ -45,8 +45,9 @@ import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
 
 /**
- * The {@code Integer} class wraps a value of the primitive type
- * {@code int} in an object. An object of type {@code Integer}
+ * The {@code Integer} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code int}. An object of type {@code Integer}
  * contains a single field whose type is {@code int}.
  *
  * <p>In addition, this class provides several methods for converting
