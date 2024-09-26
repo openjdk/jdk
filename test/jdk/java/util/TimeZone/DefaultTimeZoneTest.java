@@ -77,7 +77,7 @@ public class DefaultTimeZoneTest  {
               5. Observe the two local times should be the same (standard time).
               6. Turn on "Adjust for daylight saving time automatically"
 
-            If the local time in the control panel and test window are always the same,
+            If the local time in the Settings app and test window are always the same,
             then this test passes. Press the Pass or Fail button based on the Part II
             result and complete the test.
            """;
