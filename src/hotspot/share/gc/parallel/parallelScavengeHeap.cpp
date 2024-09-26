@@ -351,7 +351,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       // Generate a VM operation
       VM_ParallelCollectForAllocation op(size, is_tlab, total_collections());
       VMThread::execute(&op);
-      VM_CollectForAllocation::is_collect_for_allocation_started();
+      VM_CollectForAllocation::unset_collect_for_allocation_started();
 
 
       // Did the VM operation execute? If so, return the result directly.
