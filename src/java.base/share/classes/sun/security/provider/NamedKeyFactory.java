@@ -26,6 +26,7 @@
 package sun.security.provider;
 
 import sun.security.pkcs.NamedPKCS8Key;
+import sun.security.util.RawKeySpec;
 import sun.security.x509.NamedX509Key;
 
 import java.security.AsymmetricKey;
@@ -47,7 +48,10 @@ import java.util.Objects;
 ///
 /// Bonus: This factory can read from a RAW key using `translateKey`
 /// if `key.getFormat` is "RAW", and write to a RAW `EncodedKeySpec`
-/// using `getKeySpec(key, EncodedKeySpec.class)`.
+/// using `getKeySpec(key, EncodedKeySpec.class)`. The algorithm of
+/// this `EncodedKeySpec` is intentionally left unspecified, since
+/// family name does not include enough information, and we don't use
+/// parameter set names as key algorithm names.
 ///
 /// @see NamedKeyPairGenerator
 public class NamedKeyFactory extends KeyFactorySpi {
@@ -148,6 +152,8 @@ public class NamedKeyFactory extends KeyFactorySpi {
                 if (keySpec == PKCS8EncodedKeySpec.class) {
                     return keySpec.cast(
                             new PKCS8EncodedKeySpec(bytes = key.getEncoded()));
+                } else if (keySpec == RawKeySpec.class) {
+                    return keySpec.cast(new RawKeySpec(bytes = nk.getRawBytes()));
                 } else if (keySpec.isAssignableFrom(EncodedKeySpec.class)) {
                     return keySpec.cast(
                             new RawEncodedKeySpec(bytes = nk.getRawBytes()));
@@ -161,11 +167,13 @@ public class NamedKeyFactory extends KeyFactorySpi {
             if (keySpec == X509EncodedKeySpec.class
                     && key.getFormat().equalsIgnoreCase("X.509")) {
                 return keySpec.cast(new X509EncodedKeySpec(key.getEncoded()));
+            } else if (keySpec == RawKeySpec.class) {
+                return keySpec.cast(new RawKeySpec(nk.getRawBytes()));
             } else if (keySpec.isAssignableFrom(EncodedKeySpec.class)) {
                 return keySpec.cast(new RawEncodedKeySpec(nk.getRawBytes()));
             }
         }
-        throw new AssertionError("Unknown key: " + key.getClass());
+        throw new AssertionError("No " + keySpec.getName() + " for " + key.getClass());
     }
 
     @Override

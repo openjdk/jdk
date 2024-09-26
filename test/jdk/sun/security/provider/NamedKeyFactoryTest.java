@@ -26,16 +26,19 @@
  * @bug 8340327
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.provider
+ *          java.base/sun.security.util
  * @library /test/lib
  */
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import sun.security.provider.NamedKeyFactory;
 import sun.security.provider.NamedKeyPairGenerator;
+import sun.security.util.RawKeySpec;
 import sun.security.x509.NamedX509Key;
 
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.EncodedKeySpec;
 import java.security.spec.NamedParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
 
@@ -52,6 +55,13 @@ public class NamedKeyFactoryTest {
 
         var spec = kf.getKeySpec(k, X509EncodedKeySpec.class);
         Asserts.assertEquals(kf.generatePublic(spec).getAlgorithm(), "SHA");
+
+        // The private RawKeySpec and unnamed RAW EncodedKeySpec
+        var rk = kf.getKeySpec(k, RawKeySpec.class);
+        Asserts.assertEquals(2, rk.getKeyArr().length);
+        var rk2 = kf.getKeySpec(k, EncodedKeySpec.class);
+        Asserts.assertEquals("RAW", rk2.getFormat());
+        Asserts.assertEqualsByteArray(rk.getKeyArr(), rk2.getEncoded());
 
         var kf2 = KeyFactory.getInstance("Sha-256");
         var kf5 = KeyFactory.getInstance("Sha-512");
