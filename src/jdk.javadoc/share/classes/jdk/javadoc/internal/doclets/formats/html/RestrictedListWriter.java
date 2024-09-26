@@ -31,6 +31,7 @@ import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.RestrictedAPIListBuilder;
+import jdk.javadoc.internal.html.Content;
 
 /**
  * Generate File to list all the restricted methods with the

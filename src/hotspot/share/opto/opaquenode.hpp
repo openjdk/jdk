@@ -140,7 +140,7 @@ class ProfileBooleanNode : public Node {
   virtual uint hash() const ;                  // { return NO_HASH; }
   virtual bool cmp( const Node &n ) const;
   public:
-  ProfileBooleanNode(Node *n, uint false_cnt, uint true_cnt) : Node(0, n),
+  ProfileBooleanNode(Node *n, uint false_cnt, uint true_cnt) : Node(nullptr, n),
           _false_cnt(false_cnt), _true_cnt(true_cnt), _consumed(false), _delay_removal(true) {}
 
   uint false_count() const { return _false_cnt; }

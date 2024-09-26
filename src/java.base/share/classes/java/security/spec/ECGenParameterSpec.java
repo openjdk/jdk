@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,9 +45,9 @@ public class ECGenParameterSpec extends NamedParameterSpec {
      * of the provider whose implementation will be used.
      *
      * @param stdName the standard name of the to-be-generated EC
-     *        domain parameters. See the ParameterSpec Names section in the
+     *        domain parameters. See the ECGenParameterSpec section in the
      *        <a href=
-     *        "{@docRoot}/../specs/security/standard-names.html#parameterspec-names">
+     *        "{@docRoot}/../specs/security/standard-names.html#ecgenparameterspec">
      *        Java Security Standard Algorithm Names Specification</a> for
      *        information about standard names.
      * @throws NullPointerException if {@code stdName} is null.

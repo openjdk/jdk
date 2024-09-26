@@ -115,7 +115,6 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
           "Highest supported AVX instructions set on x86/x64")              \
           range(0, 3)                                                       \
                                                                             \
-                                                                            \
   product(bool, UseAPX, false, EXPERIMENTAL,                                \
           "Use Intel Advanced Performance Extensions")                      \
                                                                             \
@@ -192,7 +191,6 @@ define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);
   product(bool, IntelJccErratumMitigation, true, DIAGNOSTIC,                \
              "Turn off JVM mitigations related to Intel micro code "        \
              "mitigations for the Intel JCC erratum")                       \
-                                                                            \
 // end of ARCH_FLAGS
 
 #endif // CPU_X86_GLOBALS_X86_HPP

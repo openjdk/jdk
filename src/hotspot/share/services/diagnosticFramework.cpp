@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -400,7 +400,15 @@ void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
       break;
     }
     if (line.is_executable()) {
+      // Allow for "<cmd> -h|-help|--help" to enable the help diagnostic command.
+      // Ignores any additional arguments.
       ResourceMark rm;
+      stringStream updated_line;
+      if (reorder_help_cmd(line, updated_line)) {
+        CmdLine updated_cmd(updated_line.base(), updated_line.size(), false);
+        line = updated_cmd;
+      }
+
       DCmd* command = DCmdFactory::create_local_DCmd(source, line, out, CHECK);
       assert(command != nullptr, "command error must be handled before this line");
       DCmdMark mark(command);
@@ -409,6 +417,25 @@ void DCmd::parse_and_execute(DCmdSource source, outputStream* out,
     }
     count++;
   }
+}
+
+bool DCmd::reorder_help_cmd(CmdLine line, stringStream &updated_line) {
+  stringStream args;
+  args.print("%s", line.args_addr());
+  char* rest = args.as_string();
+  char* token = strtok_r(rest, " ", &rest);
+  while (token != NULL) {
+    if (strcmp(token, "-h") == 0 || strcmp(token, "--help") == 0 ||
+        strcmp(token, "-help") == 0) {
+      updated_line.print("%s", "help ");
+      updated_line.write(line.cmd_addr(), line.cmd_len());
+      updated_line.write("\0", 1);
+      return true;
+    }
+    token = strtok_r(rest, " ", &rest);
+  }
+
+  return false;
 }
 
 void DCmdWithParser::parse(CmdLine* line, char delim, TRAPS) {

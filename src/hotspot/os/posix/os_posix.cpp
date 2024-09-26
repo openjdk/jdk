@@ -93,6 +93,9 @@
   #define MAP_ANONYMOUS MAP_ANON
 #endif
 
+/* Input/Output types for mincore(2) */
+typedef LINUX_ONLY(unsigned) char mincore_vec_t;
+
 static jlong initial_time_count = 0;
 
 static int clock_tics_per_sec = 100;
@@ -144,6 +147,94 @@ void os::check_dump_limit(char* buffer, size_t bufferSize) {
   }
 
   VMError::record_coredump_status(buffer, success);
+}
+
+bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
+
+#ifdef _AIX
+  committed_start = start;
+  committed_size = size;
+  return true;
+#else
+
+  int mincore_return_value;
+  constexpr size_t stripe = 1024;  // query this many pages each time
+  mincore_vec_t vec [stripe + 1];
+
+  // set a guard
+  DEBUG_ONLY(vec[stripe] = 'X');
+
+  size_t page_sz = os::vm_page_size();
+  uintx pages = size / page_sz;
+
+  assert(is_aligned(start, page_sz), "Start address must be page aligned");
+  assert(is_aligned(size, page_sz), "Size must be page aligned");
+
+  committed_start = nullptr;
+
+  int loops = checked_cast<int>((pages + stripe - 1) / stripe);
+  int committed_pages = 0;
+  address loop_base = start;
+  bool found_range = false;
+
+  for (int index = 0; index < loops && !found_range; index ++) {
+    assert(pages > 0, "Nothing to do");
+    uintx pages_to_query = (pages >= stripe) ? stripe : pages;
+    pages -= pages_to_query;
+
+    // Get stable read
+    int fail_count = 0;
+    while ((mincore_return_value = mincore(loop_base, pages_to_query * page_sz, vec)) == -1 && errno == EAGAIN){
+      if (++fail_count == 1000){
+        return false;
+      }
+    }
+
+    // During shutdown, some memory goes away without properly notifying NMT,
+    // E.g. ConcurrentGCThread/WatcherThread can exit without deleting thread object.
+    // Bailout and return as not committed for now.
+    if (mincore_return_value == -1 && errno == ENOMEM) {
+      return false;
+    }
+
+    // If mincore is not supported.
+    if (mincore_return_value == -1 && errno == ENOSYS) {
+      return false;
+    }
+
+    assert(vec[stripe] == 'X', "overflow guard");
+    assert(mincore_return_value == 0, "Range must be valid");
+    // Process this stripe
+    for (uintx vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
+      if ((vec[vecIdx] & 0x01) == 0) { // not committed
+        // End of current contiguous region
+        if (committed_start != nullptr) {
+          found_range = true;
+          break;
+        }
+      } else { // committed
+        // Start of region
+        if (committed_start == nullptr) {
+          committed_start = loop_base + page_sz * vecIdx;
+        }
+        committed_pages ++;
+      }
+    }
+
+    loop_base += pages_to_query * page_sz;
+  }
+
+  if (committed_start != nullptr) {
+    assert(committed_pages > 0, "Must have committed region");
+    assert(committed_pages <= int(size / page_sz), "Can not commit more than it has");
+    assert(committed_start >= start && committed_start < start + size, "Out of range");
+    committed_size = page_sz * committed_pages;
+    return true;
+  } else {
+    assert(committed_pages == 0, "Should not have committed region");
+    return false;
+  }
+#endif
 }
 
 int os::get_native_stack(address* stack, int frames, int toSkip) {
@@ -276,7 +367,7 @@ bool os::dir_is_empty(const char* path) {
   return result;
 }
 
-static char* reserve_mmapped_memory(size_t bytes, char* requested_addr, MEMFLAGS flag) {
+static char* reserve_mmapped_memory(size_t bytes, char* requested_addr, MemTag mem_tag) {
   char * addr;
   int flags = MAP_PRIVATE NOT_AIX( | MAP_NORESERVE ) | MAP_ANONYMOUS;
   if (requested_addr != nullptr) {
@@ -291,7 +382,7 @@ static char* reserve_mmapped_memory(size_t bytes, char* requested_addr, MEMFLAGS
                        flags, -1, 0);
 
   if (addr != MAP_FAILED) {
-    MemTracker::record_virtual_memory_reserve((address)addr, bytes, CALLER_PC, flag);
+    MemTracker::record_virtual_memory_reserve((address)addr, bytes, CALLER_PC, mem_tag);
     return addr;
   }
   return nullptr;
@@ -404,7 +495,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   return chop_extra_memory(size, alignment, extra_base, extra_size);
 }
 
-char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_desc, MEMFLAGS flag) {
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag) {
   size_t extra_size = calculate_aligned_extra_size(size, alignment);
   // For file mapping, we do not call os:map_memory_to_file(size,fd) since:
   // - we later chop away parts of the mapping using os::release_memory and that could fail if the
@@ -412,7 +503,7 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   // - The memory API os::reserve_memory uses is an implementation detail. It may (and usually is)
   //   mmap but it also may System V shared memory which cannot be uncommitted as a whole, so
   //   chopping off and unmapping excess bits back and front (see below) would not work.
-  char* extra_base = reserve_mmapped_memory(extra_size, nullptr, flag);
+  char* extra_base = reserve_mmapped_memory(extra_size, nullptr, mem_tag);
   if (extra_base == nullptr) {
     return nullptr;
   }

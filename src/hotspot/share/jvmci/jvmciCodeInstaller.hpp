@@ -176,6 +176,23 @@ private:
     VERIFY_OOP_BITS,
     VERIFY_OOP_MASK,
     VERIFY_OOP_COUNT_ADDRESS,
+
+#ifdef X86
+    Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_SHL,
+    Z_BARRIER_RELOCATION_FORMAT_LOAD_BAD_AFTER_TEST,
+    Z_BARRIER_RELOCATION_FORMAT_MARK_BAD_AFTER_TEST,
+    Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_CMP,
+    Z_BARRIER_RELOCATION_FORMAT_STORE_BAD_AFTER_TEST,
+    Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_OR,
+    Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_MOV,
+#endif
+#ifdef AARCH64
+    Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_TB_X,
+    Z_BARRIER_RELOCATION_FORMAT_MARK_BAD_BEFORE_MOV,
+    Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_BEFORE_MOV,
+    Z_BARRIER_RELOCATION_FORMAT_STORE_BAD_BEFORE_MOV,
+#endif
+
     INVOKE_INVALID = -1
   };
 
@@ -312,7 +329,7 @@ private:
   void pd_patch_DataSectionReference(int pc_offset, int data_offset, JVMCI_TRAPS);
   void pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination, JVMCI_TRAPS);
   void pd_relocate_JavaMethod(CodeBuffer &cbuf, methodHandle& method, jint pc_offset, JVMCI_TRAPS);
-  void pd_relocate_poll(address pc, jint mark, JVMCI_TRAPS);
+  bool pd_relocate(address pc, jint mark);
 
 public:
 

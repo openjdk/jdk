@@ -156,9 +156,11 @@ class LibraryCallKit : public GraphKit {
                                          region, null_path,
                                          offset);
   }
-  Node* generate_access_flags_guard(Node* kls,
-                                    int modifier_mask, int modifier_bits,
-                                    RegionNode* region);
+  Node* generate_klass_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region,
+                                   ByteSize offset, const Type* type, BasicType bt);
+  Node* generate_misc_flags_guard(Node* kls,
+                                  int modifier_mask, int modifier_bits,
+                                  RegionNode* region);
   Node* generate_interface_guard(Node* kls, RegionNode* region);
   Node* generate_hidden_class_guard(Node* kls, RegionNode* region);
   Node* generate_array_guard(Node* kls, RegionNode* region) {
@@ -241,6 +243,7 @@ class LibraryCallKit : public GraphKit {
   const Type* scopedValueCache_type();
   Node* scopedValueCache_helper();
   bool inline_native_setScopedValueCache();
+  bool inline_native_Continuation_pinning(bool unpin);
 
   bool inline_native_time_funcs(address method, const char* funcName);
 #if INCLUDE_JVMTI
@@ -279,6 +282,7 @@ class LibraryCallKit : public GraphKit {
   JVMState* arraycopy_restore_alloc_state(AllocateArrayNode* alloc, int& saved_reexecute_sp);
   void arraycopy_move_allocation_here(AllocateArrayNode* alloc, Node* dest, JVMState* saved_jvms_before_guards, int saved_reexecute_sp,
                                       uint new_idx);
+  bool check_array_sort_arguments(Node* elementType, Node* obj, BasicType& bt);
   bool inline_array_sort();
   bool inline_array_partition();
   typedef enum { LS_get_add, LS_get_set, LS_cmp_swap, LS_cmp_swap_weak, LS_cmp_exchange } LoadStoreKind;

@@ -372,9 +372,7 @@ address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type
   switch (type) {
   case T_BOOLEAN:
     // convert !=0 to 1
-    __ neg(R0, R3_RET);
-    __ orr(R0, R3_RET, R0);
-    __ srwi(R3_RET, R0, 31);
+    __ normalize_bool(R3_RET);
     break;
   case T_BYTE:
      // sign extend 8 bits
@@ -785,8 +783,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rmem_f
   __ bgt(CCR0/*is_stack_overflow*/, done);
 
   // The stack overflows. Load target address of the runtime stub and call it.
-  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "generated in wrong order");
-  __ load_const_optimized(Rscratch1, (StubRoutines::throw_StackOverflowError_entry()), R0);
+  assert(SharedRuntime::throw_StackOverflowError_entry() != nullptr, "generated in wrong order");
+  __ load_const_optimized(Rscratch1, (SharedRuntime::throw_StackOverflowError_entry()), R0);
   __ mtctr(Rscratch1);
   // Restore caller_sp (c2i adapter may exist, but no shrinking of interpreted caller frame).
 #ifdef ASSERT
@@ -1080,6 +1078,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     case Interpreter::java_lang_math_sin  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsin);   break;
     case Interpreter::java_lang_math_cos  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dcos);   break;
     case Interpreter::java_lang_math_tan  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dtan);   break;
+    case Interpreter::java_lang_math_tanh : /* run interpreted */ break;
     case Interpreter::java_lang_math_abs  : /* run interpreted */ break;
     case Interpreter::java_lang_math_sqrt : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dsqrt);  break;
     case Interpreter::java_lang_math_log  : runtime_entry = CAST_FROM_FN_PTR(address, SharedRuntime::dlog);   break;
@@ -1466,13 +1465,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // native result across the call. No oop is present.
 
   __ mr(R3_ARG1, R16_thread);
-#if defined(ABI_ELFv2)
-  __ call_c(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans),
-            relocInfo::none);
-#else
-  __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, JavaThread::check_special_condition_for_native_trans),
-            relocInfo::none);
-#endif
+  __ call_c(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
 
   __ bind(sync_check_done);
 

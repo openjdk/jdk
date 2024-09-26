@@ -43,6 +43,7 @@
   flags(SW_INFO,              "Trace SuperWord info (equivalent to TraceSuperWord)") \
   flags(SW_VERBOSE,           "Trace SuperWord verbose (all SW tags enabled)") \
   flags(ALIGN_VECTOR,         "Trace AlignVector") \
+  flags(VTRANSFORM,           "Trace VTransform Graph") \
   flags(ALL,                  "Trace everything (very verbose)")
 
 #define table_entry(name, description) name,

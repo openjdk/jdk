@@ -285,7 +285,7 @@ public class MethodHandleProxies {
         byte[] template = createTemplate(loader, binaryNameToDesc(className),
                 referenceClassDesc(intfc), uniqueName, methods);
         // define the dynamic module to the class loader of the interface
-        var definer = new Lookup(intfc).makeHiddenClassDefiner(className, template, Set.of(), DUMPER);
+        var definer = new Lookup(intfc).makeHiddenClassDefiner(className, template, DUMPER);
 
         @SuppressWarnings("removal")
         var sm = System.getSecurityManager();

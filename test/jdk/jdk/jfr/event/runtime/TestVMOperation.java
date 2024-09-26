@@ -43,7 +43,7 @@ import jdk.test.lib.jfr.Events;
 public class TestVMOperation {
 
     private static final String EVENT_NAME = EventNames.ExecuteVMOperation;
-    private static final String VM_OPERATION = "ParallelGCSystemGC";
+    private static final String VM_OPERATION = "ParallelGCCollect";
 
     public static void main(String[] args) throws Throwable {
         Recording recording = new Recording();

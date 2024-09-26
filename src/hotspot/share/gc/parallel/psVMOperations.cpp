@@ -31,19 +31,19 @@
 #include "utilities/dtrace.hpp"
 
 // The following methods are used by the parallel scavenge collector
-VM_ParallelGCFailedAllocation::VM_ParallelGCFailedAllocation(size_t word_size,
-                                                             uint gc_count) :
-    VM_CollectForAllocation(word_size, gc_count, GCCause::_allocation_failure) {
+VM_ParallelCollectForAllocation::VM_ParallelCollectForAllocation(size_t word_size,
+                                                                 bool is_tlab,
+                                                                 uint gc_count) :
+  VM_CollectForAllocation(word_size, gc_count, GCCause::_allocation_failure),
+  _is_tlab(is_tlab) {
   assert(word_size != 0, "An allocation should always be requested with this operation.");
 }
 
-void VM_ParallelGCFailedAllocation::doit() {
-  SvcGCMarker sgcm(SvcGCMarker::MINOR);
-
+void VM_ParallelCollectForAllocation::doit() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCCauseSetter gccs(heap, _gc_cause);
-  _result = heap->failed_mem_allocate(_word_size);
+  _result = heap->satisfy_failed_allocation(_word_size, _is_tlab);
 
   if (_result == nullptr && GCLocker::is_active_and_needs_gc()) {
     set_gc_locked();
@@ -56,24 +56,14 @@ static bool is_cause_full(GCCause::Cause cause) {
 }
 
 // Only used for System.gc() calls
-VM_ParallelGCSystemGC::VM_ParallelGCSystemGC(uint gc_count,
+VM_ParallelGCCollect::VM_ParallelGCCollect(uint gc_count,
                                              uint full_gc_count,
                                              GCCause::Cause gc_cause) :
-  VM_GC_Operation(gc_count, gc_cause, full_gc_count, is_cause_full(gc_cause)),
-  _full_gc_succeeded(false)
-{
-}
+  VM_GC_Operation(gc_count, gc_cause, full_gc_count, is_cause_full(gc_cause)) {}
 
-void VM_ParallelGCSystemGC::doit() {
-  SvcGCMarker sgcm(SvcGCMarker::FULL);
-
+void VM_ParallelGCCollect::doit() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCCauseSetter gccs(heap, _gc_cause);
-  if (!_full) {
-    // If (and only if) the scavenge fails, this will invoke a full gc.
-    _full_gc_succeeded = heap->invoke_scavenge();
-  } else {
-    _full_gc_succeeded = PSParallelCompact::invoke(false);
-  }
+  heap->try_collect_at_safepoint(_full);
 }

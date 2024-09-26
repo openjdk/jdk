@@ -253,6 +253,7 @@ inline bool G1CollectedHeap::is_obj_filler(const oop obj) {
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const G1HeapRegion* hr) const {
+  assert(!hr->is_free(), "looking up obj " PTR_FORMAT " in Free region %u", p2i(obj), hr->hrm_index());
   if (hr->is_in_parsable_area(obj)) {
     // This object is in the parsable part of the heap, live unless scrubbed.
     return is_obj_filler(obj);

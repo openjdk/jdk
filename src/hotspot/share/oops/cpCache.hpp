@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,12 +224,13 @@ class ConstantPoolCache: public MetaspaceObj {
 
 #if INCLUDE_CDS
   void remove_resolved_field_entries_if_non_deterministic();
+  void remove_resolved_method_entries_if_non_deterministic();
+  bool can_archive_resolved_method(ResolvedMethodEntry* method_entry);
 #endif
 
   // RedefineClasses support
   DEBUG_ONLY(bool on_stack() { return false; })
   void deallocate_contents(ClassLoaderData* data);
-  bool is_klass() const { return false; }
   void record_gc_epoch();
   uint64_t gc_epoch() { return _gc_epoch; }
 

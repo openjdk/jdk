@@ -26,7 +26,8 @@
  * @test
  * @bug 8267574
  * @summary check stylesheet names against HtmlStyle
- * @modules jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup
+ * @modules jdk.javadoc/jdk.javadoc.internal.html
+ *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.markup
  *          jdk.javadoc/jdk.javadoc.internal.doclets.formats.html.resources:open
  */
 
@@ -44,10 +45,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 
 /**
- * This test compares the set of CSS class names defined in HtmlStyle
+ * This test compares the set of CSS class names defined in HtmlStyles
  * and other files (such as search.js) against the set of CSS class names
  * defined in the main stylesheet.css provided by the doclet.
  *
@@ -185,7 +187,7 @@ public class CheckStylesheetClasses {
     }
 
     Set<String> getHtmlStyleNames() {
-        return Arrays.stream(HtmlStyle.values())
+        return Arrays.stream(HtmlStyles.values())
                 .map(HtmlStyle::cssName)
                 .collect(Collectors.toCollection(TreeSet::new));
     }
@@ -193,7 +195,7 @@ public class CheckStylesheetClasses {
     Set<String> getStylesheetNames() throws IOException {
         Set<String> names = new TreeSet<>();
         String stylesheet = "/jdk/javadoc/internal/doclets/formats/html/resources/stylesheet.css";
-        URL url = HtmlStyle.class.getResource(stylesheet);
+        URL url = HtmlStyles.class.getResource(stylesheet);
         readStylesheet(url, names);
         return names;
     }

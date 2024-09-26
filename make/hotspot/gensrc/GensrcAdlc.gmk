@@ -204,11 +204,11 @@ ifeq ($(call check-jvm-feature, compiler2), true)
 
   INSERT_FILENAME_AWK_SCRIPT := \
       '{ \
-         if (CUR_FN != FILENAME) { CUR_FN=FILENAME; NR_BASE=NR-1; need_lineno=1 } \
-         if (need_lineno && $$0 !~ /\/\//) \
-           { print "\n\n\#line " (NR-NR_BASE) " \"" FILENAME "\""; need_lineno=0 }; \
-         print \
-       }'
+        if (CUR_FN != FILENAME) { CUR_FN=FILENAME; NR_BASE=NR-1; need_lineno=1 } \
+        if (need_lineno && $$0 !~ /\/\//) \
+          { print "\n\n\#line " (NR-NR_BASE) " \"" FILENAME "\""; need_lineno=0 }; \
+        print \
+      }'
 
   $(SINGLE_AD_SRCFILE): $(AD_SRC_FILES)
 	$(call LogInfo, Preprocessing adlc files $(^F))

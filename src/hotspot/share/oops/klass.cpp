@@ -65,7 +65,7 @@ void Klass::set_java_mirror(Handle m) {
 }
 
 bool Klass::is_cloneable() const {
-  return _access_flags.is_cloneable_fast() ||
+  return _misc_flags.is_cloneable_fast() ||
          is_subtype_of(vmClasses::Cloneable_klass());
 }
 
@@ -76,7 +76,7 @@ void Klass::set_is_cloneable() {
   } else if (is_instance_klass() && InstanceKlass::cast(this)->reference_type() != REF_NONE) {
     // Reference cloning should not be intrinsified and always happen in JVM_Clone.
   } else {
-    _access_flags.set_is_cloneable_fast();
+    _misc_flags.set_is_cloneable_fast(true);
   }
 }
 
@@ -247,10 +247,6 @@ Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signatur
   return nullptr;
 }
 
-void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
-  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
-}
-
 Klass::Klass() : _kind(UnknownKlassKind) {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for cds");
 }
@@ -306,6 +302,7 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries, uintx bitmap) {
   if (UseSecondarySupersTable && secondaries != nullptr) {
     uintx real_bitmap = compute_secondary_supers_bitmap(secondaries);
     assert(bitmap == real_bitmap, "must be");
+    assert(secondaries->length() >= (int)population_count(bitmap), "must be");
   }
 #endif
   _bitmap = bitmap;
@@ -344,11 +341,12 @@ uintx Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
     return uintx(1) << hash_slot;
   }
 
-  // For performance reasons we don't use a hashed table unless there
-  // are at least two empty slots in it. If there were only one empty
-  // slot it'd take a long time to create the table and the resulting
-  // search would be no faster than linear probing.
-  if (length > SECONDARY_SUPERS_TABLE_SIZE - 2) {
+  // Invariant: _secondary_supers.length >= population_count(_secondary_supers_bitmap)
+
+  // Don't attempt to hash a table that's completely full, because in
+  // the case of an absent interface linear probing would not
+  // terminate.
+  if (length >= SECONDARY_SUPERS_TABLE_SIZE) {
     return SECONDARY_SUPERS_BITMAP_FULL;
   }
 
@@ -788,6 +786,7 @@ void Klass::remove_java_mirror() {
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   assert(is_klass(), "ensure C++ vtable is restored");
   assert(is_shared(), "must be set");
+  assert(secondary_supers()->length() >= (int)population_count(_bitmap), "must be");
   JFR_ONLY(RESTORE_ID(this);)
   if (log_is_enabled(Trace, cds, unshareable)) {
     ResourceMark rm(THREAD);
@@ -972,6 +971,7 @@ void Klass::oop_print_on(oop obj, outputStream* st) {
   // print class
   st->print(BULLET"klass: ");
   obj->klass()->print_value_on(st);
+  st->print(BULLET"flags: "); _misc_flags.print_on(st); st->cr();
   st->cr();
 }
 

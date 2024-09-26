@@ -43,19 +43,21 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
+
 import jdk.internal.access.SharedSecrets;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
 import java.lang.classfile.instruction.SwitchCase;
 
 import jdk.internal.constant.ConstantUtils;
+import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import static java.util.Objects.requireNonNull;
@@ -80,34 +82,36 @@ public class SwitchBootstraps {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final boolean previewEnabled = PreviewFeatures.isEnabled();
 
+    private static final ClassDesc CD_BiPredicate = ReferenceClassDescImpl.ofValidated("Ljava/util/function/BiPredicate;");
+    private static final ClassDesc CD_Objects = ReferenceClassDescImpl.ofValidated("Ljava/util/Objects;");
 
-    private static final MethodType TYPES_SWITCH_TYPE = MethodType.methodType(int.class,
+    private static final MethodTypeDesc CHECK_INDEX_DESCRIPTOR =
+            MethodTypeDescImpl.ofValidated(ConstantDescs.CD_int, ConstantDescs.CD_int, ConstantDescs.CD_int);
+    private static final MethodTypeDesc MTD_TYPE_SWITCH = MethodTypeDescImpl.ofValidated(ConstantDescs.CD_int,
+            ConstantDescs.CD_Object,
+            ConstantDescs.CD_int);
+    private static final MethodTypeDesc MTD_TYPE_SWITCH_EXTRA = MethodTypeDescImpl.ofValidated(ConstantDescs.CD_int,
+            ConstantDescs.CD_Object,
+            ConstantDescs.CD_int,
+            CD_BiPredicate,
+            ConstantDescs.CD_List);
+    private static final MethodType MT_TYPE_SWITCH_EXTRA = MethodType.methodType(int.class,
             Object.class,
             int.class,
             BiPredicate.class,
             List.class);
-
-    private static final MethodTypeDesc TYPES_SWITCH_DESCRIPTOR =
-            MethodTypeDesc.ofDescriptor("(Ljava/lang/Object;ILjava/util/function/BiPredicate;Ljava/util/List;)I");
-    private static final MethodTypeDesc CHECK_INDEX_DESCRIPTOR =
-            MethodTypeDesc.ofDescriptor("(II)I");
-
-    private static final ClassDesc CD_Objects = ReferenceClassDescImpl.ofValidated("Ljava/util/Objects;");
+    private static final MethodType MT_TYPE_SWITCH = MethodType.methodType(int.class,
+            Object.class,
+            int.class);
 
     private static class StaticHolders {
-        private static final MethodHandle NULL_CHECK;
-        private static final MethodHandle IS_ZERO;
-        private static final MethodHandle MAPPED_ENUM_LOOKUP;
+        private static final MethodHandle MAPPED_ENUM_SWITCH;
 
         static {
             try {
-                NULL_CHECK = LOOKUP.findStatic(Objects.class, "isNull",
-                                               MethodType.methodType(boolean.class, Object.class));
-                IS_ZERO = LOOKUP.findStatic(SwitchBootstraps.class, "isZero",
-                                               MethodType.methodType(boolean.class, int.class));
-                MAPPED_ENUM_LOOKUP = LOOKUP.findStatic(SwitchBootstraps.class, "mappedEnumLookup",
-                                                       MethodType.methodType(int.class, Enum.class, MethodHandles.Lookup.class,
-                                                                             Class.class, EnumDesc[].class, EnumMap.class));
+                MAPPED_ENUM_SWITCH = LOOKUP.findStatic(SwitchBootstraps.class, "mappedEnumSwitch",
+                                                       MethodType.methodType(int.class, Enum.class, int.class, MethodHandles.Lookup.class,
+                                                                             Class.class, EnumDesc[].class, MappedEnumCache.class));
             }
             catch (ReflectiveOperationException e) {
                 throw new ExceptionInInitializerError(e);
@@ -185,7 +189,7 @@ public class SwitchBootstraps {
         }
 
         MethodHandle target = generateTypeSwitch(lookup, selectorType, labels);
-
+        target = target.asType(invocationType);
         return new ConstantCallSite(target);
     }
 
@@ -209,10 +213,6 @@ public class SwitchBootstraps {
             labelClass != EnumDesc.class) {
             throw new IllegalArgumentException("label with illegal type found: " + label.getClass());
         }
-    }
-
-    private static boolean isZero(int value) {
-        return value == 0;
     }
 
     /**
@@ -281,32 +281,34 @@ public class SwitchBootstraps {
             || !invocationType.parameterType(0).isEnum()
             || !invocationType.parameterType(1).equals(int.class))
             throw new IllegalArgumentException("Illegal invocation type " + invocationType);
-        requireNonNull(labels);
 
-        labels = labels.clone();
+        labels = labels.clone(); // implicit null check
 
         Class<?> enumClass = invocationType.parameterType(0);
-        labels = Stream.of(labels).map(l -> convertEnumConstants(lookup, enumClass, l)).toArray();
+        boolean constantsOnly = true;
+        int len = labels.length;
+
+        for (int i = 0; i < len; i++) {
+            Object convertedLabel =
+                    convertEnumConstants(lookup, enumClass, labels[i]);
+            labels[i] = convertedLabel;
+            if (constantsOnly)
+                constantsOnly = convertedLabel instanceof EnumDesc;
+        }
 
         MethodHandle target;
-        boolean constantsOnly = Stream.of(labels).allMatch(l -> enumClass.isAssignableFrom(EnumDesc.class));
 
         if (labels.length > 0 && constantsOnly) {
             //If all labels are enum constants, construct an optimized handle for repeat index 0:
             //if (selector == null) return -1
             //else if (idx == 0) return mappingArray[selector.ordinal()]; //mapping array created lazily
             //else return "typeSwitch(labels)"
-            MethodHandle body =
-                    MethodHandles.guardWithTest(MethodHandles.dropArguments(StaticHolders.NULL_CHECK, 0, int.class),
-                                                MethodHandles.dropArguments(MethodHandles.constant(int.class, -1), 0, int.class, Object.class),
-                                                MethodHandles.guardWithTest(MethodHandles.dropArguments(StaticHolders.IS_ZERO, 1, Object.class),
-                                                                            generateTypeSwitch(lookup, invocationType.parameterType(0), labels),
-                                                                            MethodHandles.insertArguments(StaticHolders.MAPPED_ENUM_LOOKUP, 1, lookup, enumClass, labels, new EnumMap())));
-            target = MethodHandles.permuteArguments(body, MethodType.methodType(int.class, Object.class, int.class), 1, 0);
+            EnumDesc<?>[] enumDescLabels =
+                    Arrays.copyOf(labels, labels.length, EnumDesc[].class);
+            target = MethodHandles.insertArguments(StaticHolders.MAPPED_ENUM_SWITCH, 2, lookup, enumClass, enumDescLabels, new MappedEnumCache());
         } else {
             target = generateTypeSwitch(lookup, invocationType.parameterType(0), labels);
         }
-
         target = target.asType(invocationType);
 
         return new ConstantCallSite(target);
@@ -331,26 +333,63 @@ public class SwitchBootstraps {
         }
     }
 
-    private static <T extends Enum<T>> int mappedEnumLookup(T value, MethodHandles.Lookup lookup, Class<T> enumClass, EnumDesc<?>[] labels, EnumMap enumMap) {
-        if (enumMap.map == null) {
-            T[] constants = SharedSecrets.getJavaLangAccess().getEnumConstantsShared(enumClass);
-            int[] map = new int[constants.length];
-            int ordinal = 0;
+    private static <T extends Enum<T>> int mappedEnumSwitch(T value, int restartIndex, MethodHandles.Lookup lookup, Class<T> enumClass, EnumDesc<?>[] labels, MappedEnumCache enumCache) throws Throwable {
+        if (value == null) {
+            return -1;
+        }
 
-            for (T constant : constants) {
-                map[ordinal] = labels.length;
+        if (restartIndex != 0) {
+            MethodHandle generatedSwitch = enumCache.generatedSwitch;
+            if (generatedSwitch == null) {
+                synchronized (enumCache) {
+                    generatedSwitch = enumCache.generatedSwitch;
 
-                for (int i = 0; i < labels.length; i++) {
-                    if (Objects.equals(labels[i].constantName(), constant.name())) {
-                        map[ordinal] = i;
-                        break;
+                    if (generatedSwitch == null) {
+                        generatedSwitch =
+                                generateTypeSwitch(lookup, enumClass, labels)
+                                        .asType(MethodType.methodType(int.class,
+                                                                      Enum.class,
+                                                                      int.class));
+                        enumCache.generatedSwitch = generatedSwitch;
                     }
                 }
+            }
 
-                ordinal++;
+            return (int) generatedSwitch.invokeExact(value, restartIndex);
+        }
+
+        int[] constantsMap = enumCache.constantsMap;
+
+        if (constantsMap == null) {
+            synchronized (enumCache) {
+                constantsMap = enumCache.constantsMap;
+
+                if (constantsMap == null) {
+                    T[] constants = SharedSecrets.getJavaLangAccess()
+                                                 .getEnumConstantsShared(enumClass);
+                    constantsMap = new int[constants.length];
+                    int ordinal = 0;
+
+                    for (T constant : constants) {
+                        constantsMap[ordinal] = labels.length;
+
+                        for (int i = 0; i < labels.length; i++) {
+                            if (Objects.equals(labels[i].constantName(),
+                                               constant.name())) {
+                                constantsMap[ordinal] = i;
+                                break;
+                            }
+                        }
+
+                        ordinal++;
+                    }
+
+                    enumCache.constantsMap = constantsMap;
+                }
             }
         }
-        return enumMap.map[value.ordinal()];
+
+        return constantsMap[value.ordinal()];
     }
 
     private static final class ResolvedEnumLabels implements BiPredicate<Integer, Object> {
@@ -358,7 +397,7 @@ public class SwitchBootstraps {
         private final MethodHandles.Lookup lookup;
         private final EnumDesc<?>[] enumDescs;
         @Stable
-        private Object[] resolvedEnum;
+        private final Object[] resolvedEnum;
 
         public ResolvedEnumLabels(MethodHandles.Lookup lookup, EnumDesc<?>[] enumDescs) {
             this.lookup = lookup;
@@ -395,11 +434,40 @@ public class SwitchBootstraps {
         }
     }
 
-    private static final class EnumMap {
+    private static final class MappedEnumCache {
         @Stable
-        public int[] map;
+        public int[] constantsMap;
+        @Stable
+        public MethodHandle generatedSwitch;
     }
 
+    /**
+     * Check if the labelConstants can be converted statically to bytecode, or
+     * whether we'll need to compute and pass in extra information at the call site.
+     */
+    private static boolean needsExtraInfo(Class<?> selectorType, Object[] labelConstants) {
+        for (int idx = labelConstants.length - 1; idx >= 0; idx--) {
+            Object currentLabel = labelConstants[idx];
+            if (currentLabel instanceof Class<?> classLabel) {
+                // No extra info needed for exact matches or primitives
+                if (unconditionalExactnessCheck(selectorType, classLabel) || classLabel.isPrimitive()) {
+                    continue;
+                }
+                // Hidden classes - or arrays thereof - can't be nominally
+                // represented. Passed in as arguments.
+                while (classLabel.isArray()) {
+                    classLabel = classLabel.getComponentType();
+                }
+                if (classLabel.isHidden()) {
+                    return true;
+                }
+            } else if (currentLabel instanceof EnumDesc<?>) {
+                // EnumDescs labels needs late binding
+                return true;
+            }
+        }
+        return false;
+    }
     /*
      * Construct test chains for labels inside switch, to handle switch repeats:
      * switch (idx) {
@@ -422,7 +490,7 @@ public class SwitchBootstraps {
             cb.pop();
             cb.aload(SELECTOR_OBJ);
             Label nonNullLabel = cb.newLabel();
-            cb.if_nonnull(nonNullLabel);
+            cb.ifnonnull(nonNullLabel);
             cb.iconst_m1();
             cb.ireturn();
             cb.labelBinding(nonNullLabel);
@@ -433,9 +501,10 @@ public class SwitchBootstraps {
             }
             cb.iload(RESTART_IDX);
             Label dflt = cb.newLabel();
-            record Element(Label target, Label next, Object caseLabel) { }
-            List<Element> cases = new ArrayList<>();
-            List<SwitchCase> switchCases = new ArrayList<>();
+            Label[] caseTargets = new Label[labelConstants.length];
+            Label[] caseNext = new Label[labelConstants.length];
+            Object[] caseLabels = new Object[labelConstants.length];
+            SwitchCase[] switchCases = new SwitchCase[labelConstants.length];
             Object lastLabel = null;
             for (int idx = labelConstants.length - 1; idx >= 0; idx--) {
                 Object currentLabel = labelConstants[idx];
@@ -444,22 +513,22 @@ public class SwitchBootstraps {
                 if (lastLabel == null) {
                     next = dflt;
                 } else if (lastLabel.equals(currentLabel)) {
-                    next = cases.getLast().next();
+                    next = caseNext[idx + 1];
                 } else {
-                    next = cases.getLast().target();
+                    next = caseTargets[idx + 1];
                 }
                 lastLabel = currentLabel;
-                cases.add(new Element(target, next, currentLabel));
-                switchCases.add(SwitchCase.of(idx, target));
+                caseTargets[idx] = target;
+                caseNext[idx] = next;
+                caseLabels[idx] = currentLabel;
+                switchCases[idx] = SwitchCase.of(idx, target);
             }
-            cases = cases.reversed();
-            switchCases = switchCases.reversed();
-            cb.tableswitch(0, labelConstants.length - 1, dflt, switchCases);
-            for (int idx = 0; idx < cases.size(); idx++) {
-                Element element = cases.get(idx);
-                Label next = element.next();
-                cb.labelBinding(element.target());
-                if (element.caseLabel() instanceof Class<?> classLabel) {
+            cb.tableswitch(0, labelConstants.length - 1, dflt, Arrays.asList(switchCases));
+            for (int idx = 0; idx < labelConstants.length; idx++) {
+                Label next = caseNext[idx];
+                Object caseLabel = caseLabels[idx];
+                cb.labelBinding(caseTargets[idx]);
+                if (caseLabel instanceof Class<?> classLabel) {
                     if (unconditionalExactnessCheck(selectorType, classLabel)) {
                         //nothing - unconditionally use this case
                     } else if (classLabel.isPrimitive()) {
@@ -543,7 +612,7 @@ public class SwitchBootstraps {
                             extraClassLabels.add(classLabel);
                         }
                     }
-                } else if (element.caseLabel() instanceof EnumDesc<?> enumLabel) {
+                } else if (caseLabel instanceof EnumDesc<?> enumLabel) {
                     int enumIdx = enumDescs.size();
                     enumDescs.add(enumLabel);
                     cb.aload(ENUM_CACHE);
@@ -553,13 +622,13 @@ public class SwitchBootstraps {
                             MethodTypeDesc.of(ConstantDescs.CD_Integer,
                                     ConstantDescs.CD_int));
                     cb.aload(SELECTOR_OBJ);
-                    cb.invokeinterface(referenceClassDesc(BiPredicate.class),
+                    cb.invokeinterface(CD_BiPredicate,
                             "test",
                             MethodTypeDesc.of(ConstantDescs.CD_boolean,
                                     ConstantDescs.CD_Object,
                                     ConstantDescs.CD_Object));
                     cb.ifeq(next);
-                } else if (element.caseLabel() instanceof String stringLabel) {
+                } else if (caseLabel instanceof String stringLabel) {
                     cb.ldc(stringLabel);
                     cb.aload(SELECTOR_OBJ);
                     cb.invokevirtual(ConstantDescs.CD_Object,
@@ -567,7 +636,7 @@ public class SwitchBootstraps {
                             MethodTypeDesc.of(ConstantDescs.CD_boolean,
                                     ConstantDescs.CD_Object));
                     cb.ifeq(next);
-                } else if (element.caseLabel() instanceof Integer integerLabel) {
+                } else if (caseLabel instanceof Integer integerLabel) {
                     Label compare = cb.newLabel();
                     Label notNumber = cb.newLabel();
                     cb.aload(SELECTOR_OBJ);
@@ -592,16 +661,16 @@ public class SwitchBootstraps {
 
                     cb.ldc(integerLabel);
                     cb.if_icmpne(next);
-                } else if ((element.caseLabel() instanceof Long ||
-                        element.caseLabel() instanceof Float ||
-                        element.caseLabel() instanceof Double ||
-                        element.caseLabel() instanceof Boolean)) {
-                    if (element.caseLabel() instanceof Boolean c) {
+                } else if ((caseLabel instanceof Long ||
+                        caseLabel instanceof Float ||
+                        caseLabel instanceof Double ||
+                        caseLabel instanceof Boolean)) {
+                    if (caseLabel instanceof Boolean c) {
                         cb.loadConstant(c ? 1 : 0);
                     } else {
-                        cb.loadConstant((ConstantDesc) element.caseLabel());
+                        cb.loadConstant((ConstantDesc) caseLabel);
                     }
-                    var caseLabelWrapper = Wrapper.forWrapperType(element.caseLabel().getClass());
+                    var caseLabelWrapper = Wrapper.forWrapperType(caseLabel.getClass());
                     cb.invokestatic(caseLabelWrapper.wrapperClassDescriptor(),
                             "valueOf",
                             MethodTypeDesc.of(caseLabelWrapper.wrapperClassDescriptor(),
@@ -614,13 +683,13 @@ public class SwitchBootstraps {
                     cb.ifeq(next);
                 } else {
                     throw new InternalError("Unsupported label type: " +
-                            element.caseLabel().getClass());
+                            caseLabel.getClass());
                 }
                 cb.loadConstant(idx);
                 cb.ireturn();
             }
             cb.labelBinding(dflt);
-            cb.loadConstant(cases.size());
+            cb.loadConstant(labelConstants.length);
             cb.ireturn();
         };
     }
@@ -629,14 +698,15 @@ public class SwitchBootstraps {
      * Construct the method handle that represents the method int typeSwitch(Object, int, BiPredicate, List)
      */
     private static MethodHandle generateTypeSwitch(MethodHandles.Lookup caller, Class<?> selectorType, Object[] labelConstants) {
-        List<EnumDesc<?>> enumDescs = new ArrayList<>();
-        List<Class<?>> extraClassLabels = new ArrayList<>();
+        boolean addExtraInfo = needsExtraInfo(selectorType, labelConstants);
+        List<EnumDesc<?>> enumDescs = addExtraInfo ? new ArrayList<>() : null;
+        List<Class<?>> extraClassLabels = addExtraInfo ? new ArrayList<>() : null;
 
         byte[] classBytes = ClassFile.of().build(ConstantUtils.binaryNameToDesc(typeSwitchClassName(caller.lookupClass())),
                 clb -> {
                     clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
                        .withMethodBody("typeSwitch",
-                                       TYPES_SWITCH_DESCRIPTOR,
+                                       addExtraInfo ? MTD_TYPE_SWITCH_EXTRA : MTD_TYPE_SWITCH,
                                        ClassFile.ACC_FINAL | ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
                                        generateTypeSwitchSkeleton(selectorType, labelConstants, enumDescs, extraClassLabels));
         });
@@ -647,13 +717,11 @@ public class SwitchBootstraps {
             lookup = caller.defineHiddenClass(classBytes, true, NESTMATE, STRONG);
             MethodHandle typeSwitch = lookup.findStatic(lookup.lookupClass(),
                                                         "typeSwitch",
-                                                        TYPES_SWITCH_TYPE);
-            typeSwitch = MethodHandles.insertArguments(typeSwitch, 2, new ResolvedEnumLabels(caller, enumDescs.toArray(new EnumDesc<?>[0])),
-                                                       List.copyOf(extraClassLabels));
-            typeSwitch = MethodHandles.explicitCastArguments(typeSwitch,
-                                                             MethodType.methodType(int.class,
-                                                                                   selectorType,
-                                                                                   int.class));
+                                                        addExtraInfo ? MT_TYPE_SWITCH_EXTRA : MT_TYPE_SWITCH);
+            if (addExtraInfo) {
+                typeSwitch = MethodHandles.insertArguments(typeSwitch, 2, new ResolvedEnumLabels(caller, enumDescs.toArray(new EnumDesc<?>[0])),
+                        List.copyOf(extraClassLabels));
+            }
             return typeSwitch;
         } catch (Throwable t) {
             throw new IllegalArgumentException(t);
