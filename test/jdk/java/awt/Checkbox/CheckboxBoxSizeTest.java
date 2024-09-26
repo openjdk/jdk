@@ -39,8 +39,10 @@ import java.awt.Panel;
 
 public class CheckboxBoxSizeTest {
     private static final String INSTRUCTIONS = """
-            This test must be run at UI Scale of 100% OR 150% or greater.
+            This test must be run at UI Scale of 100% AND
+            150% or greater.
             Compare the size of box to any of native apps on Windows
+            (Eg. Font Dialog Settings on Word).
             They should be the same.
 
             If the sizes are same Press PASS, else Press FAIL.

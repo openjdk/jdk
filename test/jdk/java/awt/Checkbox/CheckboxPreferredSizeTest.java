@@ -55,20 +55,13 @@ public class CheckboxPreferredSizeTest {
     }
 
      private static Frame createAndShowUI() {
-         StrangeCheckbox cbox = new StrangeCheckbox();
-         cbox.pack();
-         return cbox;
+         Frame frame = new Frame("Checkbox Preferred Size Test");
+         frame.setBackground(Color.BLUE);
+         Checkbox box = new Checkbox("Checkbox_With_Some_Size");
+         box.setFont(new Font("Helvetica", Font.PLAIN, 36));
+         box.setBackground(Color.RED);
+         frame.add(box);
+         frame.pack();
+         return frame;
      }
-
-    private static class StrangeCheckbox extends Frame {
-
-         StrangeCheckbox() {
-            setTitle("Checkbox Preferred Size Test");
-            setBackground(Color.BLUE);
-            Checkbox box = new Checkbox("Checkbox_With_Some_Size");
-            box.setFont(new Font("Helvetica", Font.PLAIN, 36));
-            box.setBackground(Color.RED);
-            add(box);
-        }
-    }
 }

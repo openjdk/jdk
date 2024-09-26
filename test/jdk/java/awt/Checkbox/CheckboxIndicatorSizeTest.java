@@ -51,8 +51,8 @@ public class CheckboxIndicatorSizeTest implements ActionListener {
 
             In the frame you can see a group of checkboxes
             and radio buttons.
-            Verify that all checkboxes has indicator of the same
-            size and all radio buttons has indicator of the same size.
+            Verify that all checkboxes have indicator of the same
+            size and all radio buttons have indicator of the same size.
             You can use menu to change the font size.
 
             If the bug is present, the checkbox/radiobutton with dingbats label
@@ -60,8 +60,8 @@ public class CheckboxIndicatorSizeTest implements ActionListener {
 
             TEST DIRECTIONS.
             You can use 'FontSize' menu to change font size.
-            Verify that all indicators of checkboxes has the same size.
-            Verify that all indicators of radio buttons has the same size.
+            Verify that all indicators of checkboxes have the same size.
+            Verify that all indicators of radio buttons have the same size.
             Press PASS if the above conditions are true else Press FAIL.
             """;
     private static Frame frame;
@@ -163,7 +163,6 @@ public class CheckboxIndicatorSizeTest implements ActionListener {
         Font oldFont = testPanel.getFont();
         Font newFont = new Font(oldFont.getName(), oldFont.getStyle(), size);
         testPanel.setFont(newFont);
-        frame.invalidate();
         frame.validate();
         frame.pack();
         frame.setVisible(true);
