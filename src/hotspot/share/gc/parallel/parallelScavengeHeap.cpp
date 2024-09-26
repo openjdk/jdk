@@ -285,70 +285,70 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
   HeapWord* result = young_gen()->allocate(size);
 
   uint loop_count = 0;
-  uint gc_count = 0;
+  uint gc_count = total_collections();
   uint gclocker_stalled_count = 0;
 
   while (result == nullptr) {
     // We don't want to have multiple collections for a single filled generation.
-    // To prevent this, each thread tracks the total_collections() value, and if
-    // the count has changed, does not do a new collection.
-    //
-    // The collection count must be read only while holding the heap lock. VM
-    // operations also hold the heap lock during collections. There is a lock
-    // contention case where thread A blocks waiting on the Heap_lock, while
-    // thread B is holding it doing a collection. When thread A gets the lock,
-    // the collection count has already changed. To prevent duplicate collections,
-    // The policy MUST attempt allocations during the same period it reads the
-    // total_collections() value!
-    {
-      MutexLocker ml(Heap_lock);
-      gc_count = total_collections();
+    // To prevent this, each thread has to try to exchange VM_CollectForAllocation::_collect_for_allocation_started
+    // from false to true atomically,
+    // if it fails the thread should check the status of _collect_for_allocation_started
+    // and block itsef at VM_CollectForAllocation::VM_CollectForAllocation::_collect_for_allocation_barrier,
+    // if it succeeds, it needs to arm the barrier and proceed with collection.
+    if (VM_CollectForAllocation::is_collect_for_allocation_started()) {
+      VM_CollectForAllocation::wait_at_collect_for_allocation_barrier();
+    }
 
-      result = young_gen()->allocate(size);
+    result = young_gen()->allocate(size);
+    if (result != nullptr) {
+      return result;
+    }
+
+    // If certain conditions hold, try allocating from the old gen.
+    if (!is_tlab) {
+      result = mem_allocate_old_gen(size); // TODO make mem_allocate_old_gen thread-safe
       if (result != nullptr) {
         return result;
       }
+    }
 
-      // If certain conditions hold, try allocating from the old gen.
-      if (!is_tlab) {
-        result = mem_allocate_old_gen(size);
-        if (result != nullptr) {
-          return result;
+    if (gclocker_stalled_count > GCLockerRetryAllocationCount) {
+      return nullptr;
+    }
+
+    // Failed to allocate without a gc.
+    if (GCLocker::is_active_and_needs_gc()) {
+      // If this thread is not in a jni critical section, we stall
+      // the requestor until the critical section has cleared and
+      // GC allowed. When the critical section clears, a GC is
+      // initiated by the last thread exiting the critical section; so
+      // we retry the allocation sequence from the beginning of the loop,
+      // rather than causing more, now probably unnecessary, GC attempts.
+      JavaThread* jthr = JavaThread::current();
+      if (!jthr->in_critical()) {
+        GCLocker::stall_until_clear();
+        gclocker_stalled_count += 1;
+        continue;
+      } else {
+        if (CheckJNICalls) {
+          fatal("Possible deadlock due to allocating while"
+                " in jni critical section");
         }
-      }
-
-      if (gclocker_stalled_count > GCLockerRetryAllocationCount) {
         return nullptr;
-      }
-
-      // Failed to allocate without a gc.
-      if (GCLocker::is_active_and_needs_gc()) {
-        // If this thread is not in a jni critical section, we stall
-        // the requestor until the critical section has cleared and
-        // GC allowed. When the critical section clears, a GC is
-        // initiated by the last thread exiting the critical section; so
-        // we retry the allocation sequence from the beginning of the loop,
-        // rather than causing more, now probably unnecessary, GC attempts.
-        JavaThread* jthr = JavaThread::current();
-        if (!jthr->in_critical()) {
-          MutexUnlocker mul(Heap_lock);
-          GCLocker::stall_until_clear();
-          gclocker_stalled_count += 1;
-          continue;
-        } else {
-          if (CheckJNICalls) {
-            fatal("Possible deadlock due to allocating while"
-                  " in jni critical section");
-          }
-          return nullptr;
-        }
       }
     }
 
     if (result == nullptr) {
+      if (!VM_CollectForAllocation::try_set_collect_for_allocation_started()) {
+        // Other thread should have set the status, continue and it will be blocked at barrier in next interation.
+        continue;
+      }
+
       // Generate a VM operation
-      VM_ParallelCollectForAllocation op(size, is_tlab, gc_count);
+      VM_ParallelCollectForAllocation op(size, is_tlab, total_collections());
       VMThread::execute(&op);
+      VM_CollectForAllocation::is_collect_for_allocation_started();
+
 
       // Did the VM operation execute? If so, return the result directly.
       // This prevents us from looping until time out on requests that can

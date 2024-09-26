@@ -193,11 +193,8 @@ class VM_CollectForAllocation : public VM_GC_Operation {
   }
 
   static bool try_set_collect_for_allocation_started();
-
- static bool is_collect_for_allocation_started() {
-   return Atomic::load(&_collect_for_allocation_started);
-  }
-
+  static void unset_collect_for_allocation_started();
+  static bool is_collect_for_allocation_started();
   static void wait_at_collect_for_allocation_barrier();
 };
 

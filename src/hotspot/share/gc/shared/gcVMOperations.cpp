@@ -209,6 +209,16 @@ bool VM_CollectForAllocation::try_set_collect_for_allocation_started() {
   return success;
 }
 
+void VM_CollectForAllocation::unset_collect_for_allocation_started() {
+  assert(Atomic::load(&_collect_for_allocation_started), "Must be");
+  Atomic::store(&_collect_for_allocation_started, false);
+  _collect_for_allocation_barrier->disarm();
+}
+
+bool VM_CollectForAllocation::is_collect_for_allocation_started() {
+  return Atomic::load(&_collect_for_allocation_started);
+}
+
 void VM_CollectForAllocation::wait_at_collect_for_allocation_barrier() {
   assert(Thread::current()->is_Java_thread(), "must be");
   ThreadBlockInVM tbivm(JavaThread::current());
