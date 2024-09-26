@@ -29,6 +29,9 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+
+#include <runtime/interfaceSupport.inline.hpp>
+
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/softRefPolicy.hpp"
 #include "interpreter/oopMapCache.hpp"
@@ -193,6 +196,25 @@ void VM_GC_HeapInspection::doit() {
     inspect.heap_inspection(_out, nullptr);
   }
 }
+
+volatile bool VM_CollectForAllocation::_collect_for_allocation_started = false;
+WaitBarrierDefault* VM_CollectForAllocation::_collect_for_allocation_barrier = new WaitBarrierDefault();
+
+bool VM_CollectForAllocation::try_set_collect_for_allocation_started() {
+  assert(Thread::current()->is_Java_thread(), "must be");
+  bool success = Atomic::cmpxchg(&_collect_for_allocation_started, false, true) == false;
+  if (success) {
+    _collect_for_allocation_barrier->arm(1);
+  }
+  return success;
+}
+
+void VM_CollectForAllocation::wait_at_collect_for_allocation_barrier() {
+  assert(Thread::current()->is_Java_thread(), "must be");
+  ThreadBlockInVM tbivm(JavaThread::current());
+  _collect_for_allocation_barrier->wait(1);
+}
+
 
 VM_CollectForMetadataAllocation::VM_CollectForMetadataAllocation(ClassLoaderData* loader_data,
                                                                  size_t size,
