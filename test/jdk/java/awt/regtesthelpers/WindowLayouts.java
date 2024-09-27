@@ -130,12 +130,12 @@ public final class WindowLayouts {
      */
     public static void bottomOneRowCentered(final List<Window> windows,
                                             final PassFailJFrame.InstructionUI instructionUI) {
-        layoutColumn(getScreenCenter().x
-                     - getWindowListWidth(windows) / 2,
-                     instructionUI.getLocation().y
-                     + instructionUI.getSize().height
-                     + WINDOW_GAP,
-                     windows);
+        layoutRow(getScreenCenter().x
+                  - getWindowListWidth(windows) / 2,
+                  instructionUI.getLocation().y
+                  + instructionUI.getSize().height
+                  + WINDOW_GAP,
+                  windows);
     }
 
     /**
@@ -172,7 +172,6 @@ public final class WindowLayouts {
             w.setLocation(x, y);
             x += w.getWidth() + WINDOW_GAP;
         }
-
     }
 
     /**
