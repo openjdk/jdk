@@ -192,8 +192,8 @@ class MainFrame extends Frame {
         menu3.setFont(new Font("Monospaced", Font.ITALIC, 18));
         menu3.setEnabled(false);
         menu4.setEnabled(false);
-        MenuItem itemPrinter  = new MenuItem("Print to Printer...");
-        MenuItem itemScreen  = new MenuItem("Print to Screen...");
+        MenuItem itemPrinter = new MenuItem("Print to Printer...");
+        MenuItem itemScreen = new MenuItem("Print to Screen...");
         menu.add(itemPrinter);
         menu.add(itemScreen);
         MenuBar menuBar = new MenuBar();
@@ -211,7 +211,7 @@ class MainFrame extends Frame {
     static void printProps(Properties props)
     {
         Enumeration propNames = props.propertyNames();
-        while(propNames.hasMoreElements()) {
+        while (propNames.hasMoreElements()) {
             String propName = (String)propNames.nextElement();
             PassFailJFrame.log( propName + " = " + props.getProperty(propName));
         }
@@ -226,7 +226,7 @@ class MainFrame extends Frame {
             printProps(props);
             PrintJob pj = getToolkit().getPrintJob(
                 MainFrame.this, "Print test!", props);
-            if( pj == null ) {
+            if (pj == null) {
                 return;
             }
             Dimension d = pj.getPageDimension();
@@ -271,7 +271,7 @@ class MainFrame extends Frame {
 
     class ActionPrintToScreen implements ActionListener {
         public void actionPerformed(ActionEvent ev) {
-            PrintFrame  printFrame = new PrintFrame( MainFrame.this );
+            PrintFrame printFrame = new PrintFrame(MainFrame.this);
             printFrame.show();
             Graphics g = printFrame.getGraphics();
             g.setColor(Color.red);
@@ -308,8 +308,8 @@ class MainFrame extends Frame {
 
     class LWButton extends Component {
         String label;
-        int     width = 100;
-        int     height = 30;
+        int width = 100;
+        int height = 30;
 
         public LWButton(String label) {
             super();
@@ -329,7 +329,7 @@ class MainFrame extends Frame {
 
         public Dimension getPreferredSize()
         {
-            return new Dimension(width,height);
+            return new Dimension(width, height);
         }
     }
 
@@ -361,7 +361,7 @@ class MainFrame extends Frame {
 
         public Dimension getPreferredSize()
         {
-            return new Dimension(width,height);
+            return new Dimension(width, height);
         }
     }
 
@@ -413,7 +413,7 @@ class MainFrame extends Frame {
             // now make things really interesting with a lightweight
             // component at the top of the z-order, that should print
             // _below_ the native guys to match the screen...
-            add(new LWButton("LWButton"),0);
+            add(new LWButton("LWButton"), 0);
         }
 
         public Dimension preferredSize()
