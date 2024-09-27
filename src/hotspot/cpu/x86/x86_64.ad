@@ -6407,17 +6407,11 @@ instruct cmovL_reg(cmpOp cop, rFlagsReg cr, rRegL dst, rRegL src)
   match(Set dst (CMoveL (Binary cop cr) (Binary dst src)));
 
   ins_cost(200); // XXX
-  format %{ "jn$cop     skip\t# signed cmove long\n\t"
-            "movl       $dst, $src\n"
-    "skip:" %}
+  format %{ "cmovq$cop $dst, $src\t# signed, long" %}
   ins_encode %{
-    Label Lskip;
-    // Invert sense of branch from sense of CMOV
-    __ jccb((Assembler::Condition)($cop$$cmpcode^1), Lskip);
-    __ movl($dst$$Register, $src$$Register);
-    __ bind(Lskip);
+    __ cmovq((Assembler::Condition)($cop$$cmpcode), $dst$$Register, $src$$Register);
   %}
-  ins_pipe(pipe_slow);
+  ins_pipe(pipe_cmov_reg);  // XXX
 %}
 
 instruct cmovL_mem(cmpOp cop, rFlagsReg cr, rRegL dst, memory src)
