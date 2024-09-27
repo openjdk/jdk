@@ -318,6 +318,7 @@ public class TestParallelIvInIntCountedLoop {
     private static void testCorrectness() {
         Random rng = new Random();
 
+        // Since we can't easily determined expected values if loop varibles overflow, we make sure i is less than (MAX_VALUE - stride).
         int[] iterations = {0, 1, 2, 42, 100, rng.nextInt(0, Integer.MAX_VALUE - stride)};
 
         for (int i : iterations) {
@@ -345,8 +346,8 @@ public class TestParallelIvInIntCountedLoop {
 
             // also test with random init and init2
             int init1 = rng.nextInt();
-            int init2 = rng.nextInt(Integer.MIN_VALUE + i + 1, i);
-            long init1L = rng.nextLong(Long.MIN_VALUE + i + 1, i);
+            int init2 = rng.nextInt(Integer.MIN_VALUE + i + 1, i); // Similarly, avoid (i - init2) from overflowing.
+            long init1L = rng.nextLong();
 
             Asserts.assertEQ(Math.ceilDiv((i - init2), stride) * stride2 + init1,
                     testIntCountedLoopWithIntIVWithRandomStridesAndInits(init1, init2, i));
