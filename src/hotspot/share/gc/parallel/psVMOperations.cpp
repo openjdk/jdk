@@ -40,6 +40,11 @@ VM_ParallelCollectForAllocation::VM_ParallelCollectForAllocation(size_t word_siz
 }
 
 void VM_ParallelCollectForAllocation::doit() {
+  // At Safepoint, collection already started, unset collection status.
+  // _collect_for_allocation_barrier will be disarmed,
+  // all the JavaThreads blocked on it will be rolled over to SP wait barrier.
+  unset_collect_for_allocation_started();
+
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCCauseSetter gccs(heap, _gc_cause);
@@ -48,7 +53,6 @@ void VM_ParallelCollectForAllocation::doit() {
   if (_result == nullptr && GCLocker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
-  unset_collect_for_allocation_started();
 }
 
 static bool is_cause_full(GCCause::Cause cause) {
