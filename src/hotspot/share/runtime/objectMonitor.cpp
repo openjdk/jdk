@@ -307,9 +307,6 @@ bool ObjectMonitor::enter_is_async_deflating() {
 }
 
 bool ObjectMonitor::TryLockWithContentionMark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark) {
-  // The monitor is private to or already owned by locking_thread which must be suspended.
-  // So this code may only contend with deflation.
-  assert(locking_thread == Thread::current() || locking_thread->is_obj_deopt_suspend(), "must be");
   assert(contention_mark._monitor == this, "must be");
   assert(!is_being_async_deflated(), "must be");
 
@@ -333,7 +330,7 @@ bool ObjectMonitor::TryLockWithContentionMark(JavaThread* locking_thread, Object
       // the 2-part async deflation protocol after the regular
       // decrement occurs when the contention_mark goes out of
       // scope. ObjectMonitor::deflate_monitor() which is called by
-      // the deflater thread who will decrement contentions after it
+      // the deflater thread will decrement contentions after it
       // recognizes that the async deflation was cancelled.
       contention_mark.extend();
       success = true;
@@ -358,6 +355,9 @@ bool ObjectMonitor::TryLockWithContentionMark(JavaThread* locking_thread, Object
 
 void ObjectMonitor::enter_for_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark) {
   // Used by LightweightSynchronizer::inflate_and_enter in deoptimization path to enter for another thread.
+  // The monitor is private to or already owned by locking_thread which must be suspended.
+  // So this code may only contend with deflation.
+  assert(locking_thread == Thread::current() || locking_thread->is_obj_deopt_suspend(), "must be");
   bool success = TryLockWithContentionMark(locking_thread, contention_mark);
 
   assert(success, "Failed to enter_for: locking_thread=" INTPTR_FORMAT
@@ -367,6 +367,9 @@ void ObjectMonitor::enter_for_with_contention_mark(JavaThread* locking_thread, O
 
 bool ObjectMonitor::enter_for(JavaThread* locking_thread) {
   // Used by ObjectSynchronizer::enter_for() to enter for another thread.
+  // The monitor is private to or already owned by locking_thread which must be suspended.
+  // So this code may only contend with deflation.
+  assert(locking_thread == Thread::current() || locking_thread->is_obj_deopt_suspend(), "must be");
 
   // Block out deflation as soon as possible.
   ObjectMonitorContentionMark contention_mark(this);
