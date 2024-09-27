@@ -150,12 +150,12 @@ import sun.reflect.misc.ReflectUtil;
  * <p> Some methods of class {@code Class} expose whether the declaration of
  * a class or interface in Java source code was <em>enclosed</em> within
  * another declaration. Other methods describe how a class or interface
- * is situated in a <em>nest</em>. A <a id="nest">nest</a> is a set of
+ * is situated in a <dfn>{@index "nest"}</dfn>. A <a id="nest">nest</a> is a set of
  * classes and interfaces, in the same run-time package, that
  * allow mutual access to their {@code private} members.
- * The classes and interfaces are known as <em>nestmates</em>.
+ * The classes and interfaces are known as <dfn>{@index "nestmates"}</dfn>.
  * One nestmate acts as the
- * <em>nest host</em>, and enumerates the other nestmates which
+ * <dfn>nest host</dfn>, and enumerates the other nestmates which
  * belong to the nest; each of them in turn records it as the nest host.
  * The classes and interfaces which belong to a nest, including its host, are
  * determined when
@@ -167,7 +167,7 @@ import sun.reflect.misc.ReflectUtil;
  * <h2><a id=hiddenClasses>Hidden Classes</a></h2>
  * A class or interface created by the invocation of
  * {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
- * Lookup::defineHiddenClass} is a {@linkplain Class#isHidden() <em>hidden</em>}
+ * Lookup::defineHiddenClass} is a {@linkplain Class#isHidden() <dfn>hidden</dfn>}
  * class or interface.
  * All kinds of class, including enum classes and record classes, may be
  * hidden classes; all kinds of interface, including annotation interfaces,
