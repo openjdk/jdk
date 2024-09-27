@@ -300,7 +300,6 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
     }
 
     if (gc_count != total_collections()) {
-      MutexLocker ml(Heap_lock);
       result = young_gen()->allocate(size);
       gc_count = total_collections();
       if (result != nullptr) {
