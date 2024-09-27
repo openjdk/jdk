@@ -1521,34 +1521,27 @@ class LoadedClassDumper : public LockedClassesDo {
   u4 _class_serial_num;
   AbstractDumpWriter* writer() const { return _writer; }
   void add_class_serial_number(Klass* k, int serial_num) {
-      _klass_map->at_put_grow(serial_num, k);
+    _klass_map->at_put_grow(serial_num, k);
   }
  public:
   LoadedClassDumper(AbstractDumpWriter* writer, GrowableArray<Klass*>* klass_map)
     : _writer(writer), _klass_map(klass_map), _class_serial_num(0) {}
-  void do_klass(Klass* k);
-};
 
-void LoadedClassDumper::do_klass(Klass* k) {
-  // len of HPROF_LOAD_CLASS record
-  u4 remaining = 2 * oopSize + 2 * sizeof(u4);
-
-  DumperSupport::write_header(writer(), HPROF_LOAD_CLASS, remaining);
-
-  // class serial number is just a number
-  writer()->write_u4(++_class_serial_num);
-
-  // class ID
-  writer()->write_classID(k);
-
-  // add the Klass* and class serial number pair
-  add_class_serial_number(k, _class_serial_num);
-
-  writer()->write_u4(STACK_TRACE_ID);
-
-  // class name ID
-  Symbol* name = k->name();
-  writer()->write_symbolID(name);
+  void do_klass(Klass* k) {
+    // len of HPROF_LOAD_CLASS record
+    u4 remaining = 2 * oopSize + 2 * sizeof(u4);
+    DumperSupport::write_header(writer(), HPROF_LOAD_CLASS, remaining);
+    // class serial number is just a number
+    writer()->write_u4(++_class_serial_num);
+    // class ID
+    writer()->write_classID(k);
+    // add the Klass* and class serial number pair
+    add_class_serial_number(k, _class_serial_num);
+    writer()->write_u4(STACK_TRACE_ID);
+    // class name ID
+    Symbol* name = k->name();
+    writer()->write_symbolID(name);
+  }
 };
 
 // Support class used to generate HPROF_GC_ROOT_JNI_LOCAL records
