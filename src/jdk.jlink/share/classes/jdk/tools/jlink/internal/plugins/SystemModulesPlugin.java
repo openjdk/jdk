@@ -666,7 +666,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 clb.withMethodBody(
                         CLASS_INIT_NAME,
                         MTD_void,
-                        ACC_PUBLIC | ACC_STATIC,
+                        ACC_STATIC,
                         cob -> {
                             cinitSnippets.forEach(snippet -> snippet.accept(cob));
                             cob.return_();
@@ -1081,7 +1081,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             static final MethodTypeDesc MTD_ModuleDescriptor_int = MethodTypeDesc.of(CD_MODULE_DESCRIPTOR, CD_int);
             static final MethodTypeDesc MTD_List_ObjectArray = MethodTypeDesc.of(CD_List, CD_Object.arrayType());
 
-            static final int SET_SIZE_THRESHOLD = 512;
+            static final int SET_SIZE_THRESHOLD = 512; // An arbitrary number as this likely generate minimum ~4K code
 
             final CodeBuilder cob;
             final ModuleDescriptor md;
@@ -1245,7 +1245,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     addModuleHelpers(clb -> clb.withMethodBody(
                             methodName,
                             MethodTypeDesc.of(CD_EXPORTS.arrayType()),
-                            ACC_PRIVATE | ACC_FINAL | ACC_STATIC,
+                            ACC_STATIC,
                             mcob -> {
                                 genExportSet(mcob, exports);
                                 mcob.areturn();
@@ -1424,15 +1424,15 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 if (packages.size() > SET_SIZE_THRESHOLD) {
                     var methodName = "module" + index + "Packages";
                     addModuleHelpers(clb -> {
-                    clb.withMethodBody(
-                        methodName,
-                        MethodTypeDesc.of(CD_Set),
-                        ACC_PRIVATE | ACC_FINAL | ACC_STATIC,
-                        cob -> {
-                            genImmutableSet(cob, packages);
-                            cob.areturn();
-                        });
-                    });
+                            clb.withMethodBody(
+                                methodName,
+                                MethodTypeDesc.of(CD_Set),
+                                ACC_STATIC,
+                                cob -> {
+                                    genImmutableSet(cob, packages);
+                                    cob.areturn();
+                                });
+                            });
                     cob.invokestatic(classDesc, methodName, MethodTypeDesc.of(CD_Set));
                 } else {
                     genImmutableSet(cob, packages);
@@ -1594,8 +1594,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
             private static final String VALUES_ARRAY = "dedupSetValues";
 
+            final ClassDesc owner;
             int counterStoredValues = 0;
-            ClassDesc owner;
 
             DedupSetBuilder(ClassDesc owner) {
                 this.owner = owner;
@@ -1801,7 +1801,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         }
 
         static <T extends Enum<T>> BiConsumer<CodeBuilder, T> getEnumLoader(ClassDesc enumClassDesc) {
-            return (cob, element) -> cob.getstatic(enumClassDesc, element.toString(), enumClassDesc);
+            return (cob, element) -> cob.getstatic(enumClassDesc, element.name(), enumClassDesc);
         }
 
         static <T extends Comparable<T>> void loadImmutableSet(CodeBuilder cob,
@@ -1814,18 +1814,15 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 }
                 var mtdArgs = new ClassDesc[elements.size()];
                 Arrays.fill(mtdArgs, CD_Object);
-                cob.invokestatic(CD_Set,
-                                    "of",
-                                    MethodTypeDesc.of(CD_Set, mtdArgs),
-                                    true);
+                cob.invokestatic(CD_Set, "of", MethodTypeDesc.of(CD_Set, mtdArgs), true);
             } else {
                 // call Set.of(E... elements)
                 cob.loadConstant(elements.size())
-                    .anewarray(CD_String);
+                   .anewarray(CD_String);
                 int arrayIndex = 0;
                 for (T t : sorted(elements)) {
                     cob.dup()    // arrayref
-                        .loadConstant(arrayIndex);
+                       .loadConstant(arrayIndex);
                     elementLoader.accept(cob, t);  // value
                     cob.aastore();
                     arrayIndex++;
@@ -1841,7 +1838,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             clb.withMethodBody(
                 methodName,
                 MethodTypeDesc.of(CD_Set),
-                ACC_PRIVATE | ACC_FINAL | ACC_STATIC,
+                ACC_STATIC,
                 cob -> {
                     loadImmutableSet(cob, elements, elementLoader);
                     cob.areturn();
