@@ -22,6 +22,7 @@
  */
 
 import jdk.test.lib.RandomFactory;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -60,10 +61,63 @@ public class MutableBigIntegerShiftTests {
         for (int i = 0; i < 100; i++) {
             MutableBigIntegerBox x = fetchNumber(order);
             int n = random.nextInt(200);
-
-            assertEquals(x.multiply(new MutableBigIntegerBox(BigInteger.TWO.pow(n))), x.shiftLeft(n));
-            assertEquals(x, x.shiftLeft(n).shiftRight(n));
+            leftShiftAssertions(x, n);
         }
+    }
+
+    @Test
+    public void pathTargetedTests() {
+        Object[][] cases = {
+                // intLen == 0
+                { MutableBigIntegerBox.ZERO,
+                        random.nextInt(33) },
+                // intLen != 0 && n <= leadingZeros
+                { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 16) }),
+                        random.nextInt(1, 17) },
+                // intLen != 0 && n > leadingZeros && nBits <= leadingZeros && value.length < newLen && nBits == 0
+                { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 32) }),
+                        32 },
+                // intLen != 0 && n > leadingZeros && nBits <= leadingZeros && value.length < newLen && nBits != 0
+                { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 16) }),
+                        32 + random.nextInt(1, 17) },
+                // intLen != 0 && n > leadingZeros && nBits <= leadingZeros && value.length >= newLen && nBits == 0
+                // && newOffset != offset
+                { new MutableBigIntegerBox(new int[] { random.nextInt(), (int) random.nextLong(1L, 1L << 32) }, 1, 1),
+                        32 },
+                // intLen != 0 && n > leadingZeros && nBits <= leadingZeros && value.length >= newLen && nBits == 0
+                // && newOffset == offset
+                { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 32), random.nextInt() }, 0, 1),
+                        32 },
+                // intLen != 0 && n > leadingZeros && nBits <= leadingZeros && value.length >= newLen && nBits != 0
+                // && newOffset != offset
+                { new MutableBigIntegerBox(new int[] { random.nextInt(), (int) random.nextLong(1L, 1L << 16) }, 1, 1),
+                        32 + random.nextInt(1, 17) },
+                // intLen != 0 && n > leadingZeros && nBits <= leadingZeros && value.length >= newLen && nBits != 0
+                // && newOffset == offset
+                { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 16), random.nextInt() }, 0, 1),
+                        32 + random.nextInt(1, 17) },
+                // intLen != 0 && n > leadingZeros && nBits > leadingZeros && value.length < newLen
+                { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L << 15, 1L << 32) }),
+                        random.nextInt(16, 33) },
+                // intLen != 0 && n > leadingZeros && nBits > leadingZeros && value.length >= newLen && newOffset != offset
+                { new MutableBigIntegerBox(new int[] { random.nextInt(), (int) random.nextLong(1L << 15, 1L << 32) }, 1, 1),
+                        random.nextInt(16, 33) },
+                // intLen != 0 && n > leadingZeros && nBits > leadingZeros && value.length >= newLen && newOffset == offset
+                { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L << 15, 1L << 32), random.nextInt() }, 0, 1),
+                        random.nextInt(16, 33) },
+        };
+
+        for (int i = 0; i < cases.length; i++) {
+            MutableBigIntegerBox x = (MutableBigIntegerBox) cases[i][0];
+            int n = (int) cases[i][1];
+            leftShiftAssertions(x, n);
+        }
+    }
+
+    private static void leftShiftAssertions(MutableBigIntegerBox x, int n) {
+        MutableBigIntegerBox xShifted = x.shiftLeft(n);
+        assertEquals(x.multiply(new MutableBigIntegerBox(BigInteger.TWO.pow(n))), xShifted);
+        assertEquals(x, xShifted.shiftRight(n));
     }
 
     /*
