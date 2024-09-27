@@ -47,7 +47,7 @@ public class GetLocationTest_1 {
                 1. Click in in the blue square and the yellow window should come
                    up with the top left by the cursor
                 2. If you see this correct behavior press PASS. If you see that
-                   the yellow window is offset by an inset (5, 24) press FAIL
+                   the yellow window location is offset by an some inset, press FAIL
                    """;
         PassFailJFrame.builder()
                 .title("Test Instructions")

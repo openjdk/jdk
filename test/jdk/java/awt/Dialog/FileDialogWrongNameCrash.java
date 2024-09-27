@@ -55,7 +55,7 @@ public class FileDialogWrongNameCrash {
     }
 
     private static Frame initialize() {
-        Frame frame = new Frame("Frame");
+        Frame frame = new Frame("File Dialog Wrong Name Crash Test");
         Button fileButton = new Button("Load");
         fileButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent e) {

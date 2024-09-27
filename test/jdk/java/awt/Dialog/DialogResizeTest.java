@@ -62,6 +62,7 @@ public class DialogResizeTest {
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
                 .testUI(initialize())
+                .logArea(8)
                 .build()
                 .awaitAndCheck();
     }
@@ -106,7 +107,7 @@ class MyDialog extends Dialog implements ItemListener, ComponentListener {
         setResizable(evt.getStateChange() == ItemEvent.SELECTED);
 
         boolean bResizeState = isResizable();
-        System.out.println("isResizable is set to: " + bResizeState);
+        PassFailJFrame.log("isResizable is set to: " + bResizeState);
 
         if (isResizable()) {
             ta.setText("dialog is resizable (isResizable = " + bResizeState + ")");
