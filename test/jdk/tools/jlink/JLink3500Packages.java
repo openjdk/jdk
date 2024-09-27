@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,9 @@ import tests.JImageGenerator;
 
 /*
  * @test
- * @summary Make sure that 4000 packages in a uber jar can be linked using jlink.
+ * @summary Make sure that ~3500 packages in a uber jar can be linked using jlink. Depends on the
+ *          packages, this is almost hit the 64K limitation as each plain export could take
+ *          ~17 bytecodes.
  * @bug 8321413
  * @library ../lib
  * @enablePreview
