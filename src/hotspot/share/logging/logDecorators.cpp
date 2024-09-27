@@ -50,12 +50,12 @@ const char* LogDecorators::_name[][2] = {
 #undef DECORATOR
 };
 
-const LogDecorators::UndecoratedSelection LogDecorators::default_decorators[] = {
-#define UNDECORATED_DEFAULT(level, ...) LogDecorators::UndecoratedSelection(level, __VA_ARGS__),
+const LogDecorators::DefaultUndecoratedSelection LogDecorators::default_decorators[] = {
+#define UNDECORATED_DEFAULT(level, ...) LogDecorators::DefaultUndecoratedSelection(level, __VA_ARGS__),
   UNDECORATED_DEFAULTS
 #undef UNDECORATED_TAGSET
 };
-const size_t LogDecorators::number_of_default_decorators = sizeof(default_decorators) / sizeof(LogDecorators::UndecoratedTagset);
+const size_t LogDecorators::number_of_default_decorators = sizeof(default_decorators) / sizeof(LogDecorators::DefaultUndecoratedSelection);
 
 LogDecorators::Decorator LogDecorators::from_string(const char* str) {
   for (size_t i = 0; i < Count; i++) {
@@ -106,7 +106,7 @@ bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
   return result;
 }
 
-bool LogDecorators::has_disabled_decorators(const LogSelection& selection, const UndecoratedSelection* defaults, size_t defaults_count) {
+bool LogDecorators::has_disabled_default_decorators(const LogSelection& selection, const DefaultUndecoratedSelection* defaults, size_t defaults_count) {
   for (size_t i = 0; i < defaults_count; ++i) {
     auto current_default = defaults[i];
     const bool ignore_level = current_default.selection().level() == AnyLevel;

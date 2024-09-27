@@ -55,7 +55,7 @@ bool LogSelectionList::verify_selections(outputStream* out) const {
 
 LogDecorators LogSelectionList::get_default_decorators() const {
   for (size_t i = 0; i < _nselections; ++i) {
-    if (!LogDecorators::has_disabled_decorators(_selections[i])) {
+    if (!LogDecorators::has_disabled_default_decorators(_selections[i])) {
       return LogDecorators();
     }
   }
