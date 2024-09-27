@@ -105,9 +105,9 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
     ModulePathsGatherer(JavaThread* current, GrowableArray<const char*>* module_paths) :
       _current(current), _module_paths(module_paths) {}
     void do_module(ModuleEntry* m) {
-      char* path = m->location()->as_C_string();
+      char* uri = m->location()->as_C_string();
       if (strncmp(path, "file:", 5) == 0) {
-        path = ClassLoader::skip_uri_protocol(path);
+        char* path = ClassLoader::uri_to_path(uri);
         extract_jar_files_from_path(path, _module_paths);
       }
     }

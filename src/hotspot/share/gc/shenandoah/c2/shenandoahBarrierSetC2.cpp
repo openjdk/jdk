@@ -271,6 +271,11 @@ bool ShenandoahBarrierSetC2::is_shenandoah_wb_pre_call(Node* call) {
          call->as_CallLeaf()->entry_point() == CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre_entry);
 }
 
+bool ShenandoahBarrierSetC2::is_shenandoah_clone_call(Node* call) {
+  return call->is_CallLeaf() &&
+         call->as_CallLeaf()->entry_point() == CAST_FROM_FN_PTR(address, ShenandoahRuntime::shenandoah_clone_barrier);
+}
+
 bool ShenandoahBarrierSetC2::is_shenandoah_lrb_call(Node* call) {
   if (!call->is_CallLeaf()) {
     return false;
@@ -675,20 +680,10 @@ bool ShenandoahBarrierSetC2::is_gc_pre_barrier_node(Node* node) const {
   return is_shenandoah_wb_pre_call(node);
 }
 
-// Support for GC barriers emitted during parsing
 bool ShenandoahBarrierSetC2::is_gc_barrier_node(Node* node) const {
-  if (node->Opcode() == Op_ShenandoahLoadReferenceBarrier) return true;
-  if (node->Opcode() != Op_CallLeaf && node->Opcode() != Op_CallLeafNoFP) {
-    return false;
-  }
-  CallLeafNode *call = node->as_CallLeaf();
-  if (call->_name == nullptr) {
-    return false;
-  }
-
-  return strcmp(call->_name, "shenandoah_clone_barrier") == 0 ||
-         strcmp(call->_name, "shenandoah_cas_obj") == 0 ||
-         strcmp(call->_name, "shenandoah_wb_pre") == 0;
+  return is_shenandoah_lrb_call(node) ||
+         is_shenandoah_wb_pre_call(node) ||
+         is_shenandoah_clone_call(node);
 }
 
 Node* ShenandoahBarrierSetC2::step_over_gc_barrier(Node* c) const {
