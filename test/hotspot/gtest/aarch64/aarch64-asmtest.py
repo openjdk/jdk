@@ -2184,12 +2184,12 @@ generate(SVEReductionOp, [["andv", 0], ["orv", 0], ["eorv", 0], ["smaxv", 0], ["
                           ["fminv", 2], ["fmaxv", 2], ["fadda", 2], ["uaddv", 0]])
 
 generate(AddWideNEONOp,
-         [["saddwv", "saddw", "8H", "8B"], ["saddwv", "saddw2", "8H", "16B"],
-          ["saddwv", "saddw", "4S", "4H"], ["saddwv", "saddw2", "4S", "8H"],
-          ["saddwv", "saddw", "2D", "2S"], ["saddwv", "saddw2", "2D", "4S"],
-          ["uaddwv", "uaddw", "8H", "8B"], ["uaddwv", "uaddw2", "8H", "16B"],
-          ["uaddwv", "uaddw", "4S", "4H"], ["uaddwv", "uaddw2", "4S", "8H"],
-          ["uaddwv", "uaddw", "2D", "2S"], ["uaddwv", "uaddw2", "2D", "4S"],
+         [["saddwv", "saddw", "8H", "8B"], ["saddwv2", "saddw2", "8H", "16B"],
+          ["saddwv", "saddw", "4S", "4H"], ["saddwv2", "saddw2", "4S", "8H"],
+          ["saddwv", "saddw", "2D", "2S"], ["saddwv2", "saddw2", "2D", "4S"],
+          ["uaddwv", "uaddw", "8H", "8B"], ["uaddwv2", "uaddw2", "8H", "16B"],
+          ["uaddwv", "uaddw", "4S", "4H"], ["uaddwv2", "uaddw2", "4S", "8H"],
+          ["uaddwv", "uaddw", "2D", "2S"], ["uaddwv2", "uaddw2", "2D", "4S"],
           ])
 
 print "\n    __ bind(forth);"

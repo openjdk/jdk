@@ -1298,17 +1298,17 @@
 
 // AddWideNEONOp
     __ saddwv(v12, v13, __ T8H, v14, __ T8B);          //       saddw   v12.8H, v13.8H, v14.8B
-    __ saddwv(v30, v31, __ T8H, v0, __ T16B);          //       saddw2  v30.8H, v31.8H, v0.16B
+    __ saddwv2(v30, v31, __ T8H, v0, __ T16B);         //       saddw2  v30.8H, v31.8H, v0.16B
     __ saddwv(v13, v14, __ T4S, v15, __ T4H);          //       saddw   v13.4S, v14.4S, v15.4H
-    __ saddwv(v8, v9, __ T4S, v10, __ T8H);            //       saddw2  v8.4S, v9.4S, v10.8H
+    __ saddwv2(v8, v9, __ T4S, v10, __ T8H);           //       saddw2  v8.4S, v9.4S, v10.8H
     __ saddwv(v25, v26, __ T2D, v27, __ T2S);          //       saddw   v25.2D, v26.2D, v27.2S
-    __ saddwv(v29, v30, __ T2D, v31, __ T4S);          //       saddw2  v29.2D, v30.2D, v31.4S
+    __ saddwv2(v29, v30, __ T2D, v31, __ T4S);         //       saddw2  v29.2D, v30.2D, v31.4S
     __ uaddwv(v1, v2, __ T8H, v3, __ T8B);             //       uaddw   v1.8H, v2.8H, v3.8B
-    __ uaddwv(v31, v0, __ T8H, v1, __ T16B);           //       uaddw2  v31.8H, v0.8H, v1.16B
+    __ uaddwv2(v31, v0, __ T8H, v1, __ T16B);          //       uaddw2  v31.8H, v0.8H, v1.16B
     __ uaddwv(v23, v24, __ T4S, v25, __ T4H);          //       uaddw   v23.4S, v24.4S, v25.4H
-    __ uaddwv(v31, v0, __ T4S, v1, __ T8H);            //       uaddw2  v31.4S, v0.4S, v1.8H
+    __ uaddwv2(v31, v0, __ T4S, v1, __ T8H);           //       uaddw2  v31.4S, v0.4S, v1.8H
     __ uaddwv(v20, v21, __ T2D, v22, __ T2S);          //       uaddw   v20.2D, v21.2D, v22.2S
-    __ uaddwv(v0, v1, __ T2D, v2, __ T4S);             //       uaddw2  v0.2D, v1.2D, v2.4S
+    __ uaddwv2(v0, v1, __ T2D, v2, __ T4S);            //       uaddw2  v0.2D, v1.2D, v2.4S
 
     __ bind(forth);
 
