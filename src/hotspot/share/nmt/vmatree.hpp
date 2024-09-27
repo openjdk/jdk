@@ -184,7 +184,7 @@ public:
     void print_self() {
       for (int i = 0; i < mt_number_of_types; i++) {
         if (flag[i].reserve == 0 && flag[i].commit == 0) { continue; }
-        tty->print_cr("Flag %s R: %lld C: %lld", NMTUtil::flag_to_enum_name((MEMFLAGS)i), flag[i].reserve, flag[i].commit);
+        tty->print_cr("Flag %s R: " INT64_FORMAT " C: " INT64_FORMAT, NMTUtil::flag_to_enum_name((MEMFLAGS)i), flag[i].reserve, flag[i].commit);
       }
     }
   };
