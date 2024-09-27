@@ -39,16 +39,9 @@ import java.awt.dnd.InvalidDnDOperationException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
-/*
- *  AWT Button is a DragSource and also a transferable object
- */
 
 class DnDSource extends Button implements Transferable,
                                           DragGestureListener,
@@ -78,7 +71,6 @@ class DnDSource extends Button implements Transferable,
         dragSource.addDragSourceListener(this);
 
         String dir = System.getProperty("test.src");
-        String sep = System.getProperty("file.separator");
         if (dir == null) {
             dir = ".";
         }
@@ -100,10 +92,6 @@ class DnDSource extends Button implements Transferable,
         }
     }
 
-    /**
-     * a Drag gesture has been recognized
-     */
-
     public void dragGestureRecognized(DragGestureEvent dge) {
         System.err.println("starting Drag");
         try {
@@ -113,17 +101,9 @@ class DnDSource extends Button implements Transferable,
         }
     }
 
-    /**
-     * as the hotspot enters a platform dependent drop site
-     */
-
     public void dragEnter(DragSourceDragEvent dsde) {
         System.err.println("[Source] dragEnter");
     }
-
-    /**
-     * as the hotspot moves over a platform dependent drop site
-     */
 
     public void dragOver(DragSourceDragEvent dsde) {
         System.err.println("[Source] dragOver");
@@ -131,27 +111,9 @@ class DnDSource extends Button implements Transferable,
         System.out.println("m_dropAction = " + m_dropAction);
     }
 
-    /**
-     * as the operation changes
-     */
-
-    public void dragGestureChanged(DragSourceDragEvent dsde) {
-        System.err.println("[Source] dragGestureChanged");
-        m_dropAction = dsde.getDropAction();
-        System.out.println("m_dropAction = " + m_dropAction);
-    }
-
-    /**
-     * as the hotspot exits a platform dependent drop site
-     */
-
     public void dragExit(DragSourceEvent dsde) {
         System.err.println("[Source] dragExit");
     }
-
-    /**
-     * as the operation completes
-     */
 
     public void dragDropEnd(DragSourceDropEvent dsde) {
         System.err.println("[Source] dragDropEnd");
