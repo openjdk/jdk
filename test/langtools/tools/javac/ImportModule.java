@@ -808,10 +808,7 @@ public class ImportModule extends TestRunner {
                           package test;
                           import module java.base;
                           public class Test {
-                              public static void main(String... args) {
-                                  List<String> l = new ArrayList<>();
-                                  System.out.println(l.getClass().getName());
-                              }
+                              List<String> l;
                           }
                           """);
 
@@ -834,9 +831,8 @@ public class ImportModule extends TestRunner {
                 "- compiler.warn.option.obsolete.suppression",
                 "Test.java:2:8: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.module.imports)",
                 "Test.java:2:1: compiler.err.import.module.not.found: java.base",
-                "Test.java:5:9: compiler.err.cant.resolve.location: kindname.class, List, , , (compiler.misc.location: kindname.class, test.Test, null)",
-                "Test.java:5:30: compiler.err.cant.resolve.location: kindname.class, ArrayList, , , (compiler.misc.location: kindname.class, test.Test, null)",
-                "4 errors",
+                "Test.java:4:5: compiler.err.cant.resolve.location: kindname.class, List, , , (compiler.misc.location: kindname.class, test.Test, null)",
+                "3 errors",
                 "3 warnings"
         );
 
