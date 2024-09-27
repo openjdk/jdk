@@ -70,10 +70,7 @@ class DnDSource extends Button implements Transferable,
         );
         dragSource.addDragSourceListener(this);
 
-        String dir = System.getProperty("test.src");
-        if (dir == null) {
-            dir = ".";
-        }
+        String dir = System.getProperty("test.src", ".");
 
         try {
             m_data = new ByteArrayInputStream(Files.readAllBytes(
