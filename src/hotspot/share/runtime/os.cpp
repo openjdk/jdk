@@ -1936,7 +1936,7 @@ static void hemi_split(T* arr, unsigned num) {
 
 // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
 // If randomize is true, the location will be randomized.
-char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize) {
+char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize, MemTag mem_tag) {
 
   // Please keep the following constants in sync with the companion gtests:
 
@@ -2094,7 +2094,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     assert(is_aligned(result, alignment), "alignment invalid (" ERRFMT ")", ERRFMTARGS);
     log_trace(os, map)(ERRFMT, ERRFMTARGS);
     log_debug(os, map)("successfully attached at " PTR_FORMAT, p2i(result));
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, mem_tag);
   } else {
     log_debug(os, map)("failed to attach anywhere in [" PTR_FORMAT "-" PTR_FORMAT ")", p2i(min), p2i(max));
   }
@@ -2245,7 +2245,7 @@ char* os::map_memory_to_file(size_t bytes, int file_desc, MemTag mem_tag) {
   // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
   // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
   // On all current implementations null is interpreted as any available address.
-  char* result = os::map_memory_to_file(nullptr /* addr */, bytes, file_desc);
+  char* result = os::map_memory_to_file(nullptr /* addr */, bytes, file_desc, mem_tag);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC, mem_tag);
   }

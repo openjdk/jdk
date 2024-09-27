@@ -239,7 +239,6 @@ class os: AllStatic {
   static size_t pd_pretouch_memory(void* first, void* last, size_t page_size);
 
   static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
-
                                           char* addr, bool executable);
   static bool   pd_release_memory_special(char* addr, size_t bytes);
 
@@ -453,7 +452,8 @@ class os: AllStatic {
   static char*  reserve_memory(size_t bytes, bool executable = false, MemTag mem_tag = mtNone);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
-  static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
+  static char*  reserve_memory_aligned(size_t size, size_t alignment,
+                                       bool executable = false, MemTag mem_tag = mtNone);
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
@@ -461,7 +461,8 @@ class os: AllStatic {
 
   // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
   // If randomize is true, the location will be randomized.
-  static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize);
+  static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment,
+                                              bool randomize, MemTag mem_tag = mtNone);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -511,10 +512,11 @@ class os: AllStatic {
   // and is added to be used for implementation of -XX:AllocateHeapAt
   static char* map_memory_to_file(size_t size, int fd, MemTag mem_tag = mtNone);
   static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag = mtNone);
-  static char* map_memory_to_file(char* base, size_t size, int fd);
+  static char* map_memory_to_file(char* base, size_t size, int fd, MemTag mem_tag = mtNone);
   static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd, MemTag mem_tag = mtNone);
+
   // Replace existing reserved memory with file mapping
-  static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
+  static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd, MemTag mem_tag = mtNone);
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
