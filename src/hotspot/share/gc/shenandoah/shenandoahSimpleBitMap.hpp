@@ -80,6 +80,10 @@ private:
   bool is_forward_consecutive_ones(idx_t start_idx, idx_t count) const;
   bool is_backward_consecutive_ones(idx_t last_idx, idx_t count) const;
 
+  template<typename T>
+  static T get_right_n_bits(T n) {
+    return nth_bit(n) - T(1);
+  }
 public:
 
   inline idx_t aligned_index(idx_t idx) const {
