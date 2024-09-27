@@ -3072,29 +3072,22 @@ public:
   }
 
  public:
-  void uaddwv(FloatRegister Vd, FloatRegister Vn, SIMD_Arrangement Ta, FloatRegister Vm,
-              SIMD_Arrangement Tb) {
-    assert(Tb == T8B || Tb == T4H || Tb == T2S, "invalid arrangement");
-    _xaddwv(/* is_unsigned */ true, Vd, Vn, Ta, Vm, Tb);
+#define INSN(NAME, assertion, is_unsigned)                              \
+  void NAME(FloatRegister Vd, FloatRegister Vn, SIMD_Arrangement Ta, FloatRegister Vm, \
+              SIMD_Arrangement Tb) {                                    \
+    assert((assertion), "invalid arrangement");                         \
+    _xaddwv(is_unsigned, Vd, Vn, Ta, Vm, Tb);                           \
   }
 
-  void uaddwv2(FloatRegister Vd, FloatRegister Vn, SIMD_Arrangement Ta, FloatRegister Vm,
-               SIMD_Arrangement Tb) {
-    assert(Tb == T16B || Tb == T8H || Tb == T4S, "invalid arrangement");
-    _xaddwv(/* is_unsigned */ true, Vd, Vn, Ta, Vm, Tb);
-  }
+public:
 
-  void saddwv(FloatRegister Vd, FloatRegister Vn, SIMD_Arrangement Ta, FloatRegister Vm,
-              SIMD_Arrangement Tb) {
-    assert(Tb == T8B || Tb == T4H || Tb == T2S, "invalid arrangement");
-    _xaddwv(/* is_unsigned */ false, Vd, Vn, Ta, Vm, Tb);
-  }
+  INSN(uaddwv,  Tb == T8B || Tb == T4H || Tb == T2S,  /*is_unsigned*/true)
+  INSN(uaddwv2, Tb == T16B || Tb == T8H || Tb == T4S, /*is_unsigned*/true)
+  INSN(saddwv,  Tb == T8B || Tb == T4H || Tb == T2S,  /*is_unsigned*/false)
+  INSN(saddwv2, Tb == T16B || Tb == T8H || Tb == T4S, /*is_unsigned*/false)
 
-  void saddwv2(FloatRegister Vd, FloatRegister Vn, SIMD_Arrangement Ta, FloatRegister Vm,
-               SIMD_Arrangement Tb) {
-    assert(Tb == T16B || Tb == T8H || Tb == T4S, "invalid arrangement");
-    _xaddwv(/* is_unsigned */ false, Vd, Vn, Ta, Vm, Tb);
-  }
+#undef INSN
+
 
 private:
   void _pmull(FloatRegister Vd, SIMD_Arrangement Ta, FloatRegister Vn, FloatRegister Vm, SIMD_Arrangement Tb) {
