@@ -971,6 +971,9 @@ public class Font implements java.io.Serializable
             }
             return createFont0(fontFormat, fontStream, true, tracker);
         } catch (InterruptedException e) {
+            if (e.getCause().getMessage().contains("java.home property not set")) {
+                throw new IOException("Problem reading font data. java.home property not set.");
+            }
             throw new IOException("Problem reading font data.");
         } finally {
             if (acquired) {
