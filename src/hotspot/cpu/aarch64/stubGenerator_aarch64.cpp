@@ -5437,9 +5437,9 @@ class StubGenerator: public StubCodeGenerator {
     case Assembler::T8H:
       assert(is_subword_type(eltype), "subword type expected");
       if (is_signed_subword_type(eltype)) {
-	__ saddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
+        __ saddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
       } else {
-	__ uaddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
+        __ uaddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
       }
       break;
     default:
@@ -5450,9 +5450,9 @@ class StubGenerator: public StubCodeGenerator {
     if (load_arrangement == Assembler::T8B || load_arrangement == Assembler::T8H) {
       __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 0);
       if (is_signed_subword_type(eltype)) {
-	__ saddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
+        __ saddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
       } else {
-	__ uaddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
+        __ uaddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
       }
     }
 
@@ -5549,15 +5549,15 @@ class StubGenerator: public StubCodeGenerator {
     case Assembler::T8H:
       assert(is_subword_type(eltype), "subword type expected");
       if (is_signed_subword_type(eltype)) {
-	__ saddwv(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T4H);
-	__ saddwv(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T4H);
-	__ saddwv(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T4H);
-	__ saddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
+        __ saddwv(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T4H);
+        __ saddwv(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T4H);
+        __ saddwv(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T4H);
+        __ saddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
       } else {
-	__ uaddwv(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T4H);
-	__ uaddwv(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T4H);
-	__ uaddwv(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T4H);
-	__ uaddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
+        __ uaddwv(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T4H);
+        __ uaddwv(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T4H);
+        __ uaddwv(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T4H);
+        __ uaddwv(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T4H);
       }
       break;
     default:
@@ -5571,15 +5571,15 @@ class StubGenerator: public StubCodeGenerator {
       __ mulvs(vmul1, Assembler::T4S, vmul1, vpowm, 1);
       __ mulvs(vmul0, Assembler::T4S, vmul0, vpowm, 1);
       if (is_signed_subword_type(eltype)) {
-	__ saddwv2(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T8H);
-	__ saddwv2(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T8H);
-	__ saddwv2(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T8H);
-	__ saddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
+        __ saddwv2(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T8H);
+        __ saddwv2(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T8H);
+        __ saddwv2(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T8H);
+        __ saddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
       } else {
-	__ uaddwv2(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T8H);
-	__ uaddwv2(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T8H);
-	__ uaddwv2(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T8H);
-	__ uaddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
+        __ uaddwv2(vmul3, vmul3, Assembler::T4S, vdata3, Assembler::T8H);
+        __ uaddwv2(vmul2, vmul2, Assembler::T4S, vdata2, Assembler::T8H);
+        __ uaddwv2(vmul1, vmul1, Assembler::T4S, vdata1, Assembler::T8H);
+        __ uaddwv2(vmul0, vmul0, Assembler::T4S, vdata0, Assembler::T8H);
       }
     }
 
