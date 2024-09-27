@@ -25,86 +25,185 @@
  * @test
  * @bug 8340327
  * @modules java.base/sun.security.x509
+ *          java.base/sun.security.pkcs
  *          java.base/sun.security.provider
  *          java.base/sun.security.util
  * @library /test/lib
  */
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
+import jdk.test.lib.security.SeededSecureRandom;
+import sun.security.pkcs.NamedPKCS8Key;
 import sun.security.provider.NamedKeyFactory;
 import sun.security.provider.NamedKeyPairGenerator;
 import sun.security.util.RawKeySpec;
 import sun.security.x509.NamedX509Key;
 
 import java.security.*;
-import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.EncodedKeySpec;
-import java.security.spec.NamedParameterSpec;
-import java.security.spec.X509EncodedKeySpec;
+import java.security.spec.*;
 
 public class NamedKeyFactoryTest {
+
+    private static final SeededSecureRandom RAND = SeededSecureRandom.one();
+
     public static void main(String[] args) throws Exception {
         Security.addProvider(new ProviderImpl());
 
-        var k = new NamedX509Key("sHa", "SHA-256", new byte[2]);
+        var g = KeyPairGenerator.getInstance("sHA");
+        var g2 = KeyPairGenerator.getInstance("ShA-256");
+        var g5 = KeyPairGenerator.getInstance("SHa-512");
         var kf = KeyFactory.getInstance("ShA");
-
-        Asserts.assertTrue(k.getAlgorithm().equalsIgnoreCase("SHA"));
-        Asserts.assertEquals(k.getFormat(), "X.509");
-        Asserts.assertEquals(k.getParams().getName(), "SHA-256");
-
-        var spec = kf.getKeySpec(k, X509EncodedKeySpec.class);
-        Asserts.assertEquals(kf.generatePublic(spec).getAlgorithm(), "SHA");
-
-        // The private RawKeySpec and unnamed RAW EncodedKeySpec
-        var rk = kf.getKeySpec(k, RawKeySpec.class);
-        Asserts.assertEquals(2, rk.getKeyArr().length);
-        var rk2 = kf.getKeySpec(k, EncodedKeySpec.class);
-        Asserts.assertEquals("RAW", rk2.getFormat());
-        Asserts.assertEqualsByteArray(rk.getKeyArr(), rk2.getEncoded());
-
         var kf2 = KeyFactory.getInstance("Sha-256");
         var kf5 = KeyFactory.getInstance("Sha-512");
+
+        checkKeyPair(g.generateKeyPair(), "SHA", "SHA-256");
+        checkKeyPair(g2.generateKeyPair(), "SHA", "SHA-256");
+        checkKeyPair(g5.generateKeyPair(), "SHA", "SHA-512");
+
+        checkKeyPair(g.generateKeyPair(), "SHA", "SHA-256");
+        checkKeyPair(g2.generateKeyPair(), "SHA", "SHA-256");
+        checkKeyPair(g5.generateKeyPair(), "SHA", "SHA-512");
+
+        Utils.runAndCheckException(() -> g.initialize(NamedParameterSpec.ED448),
+                InvalidAlgorithmParameterException.class); // wrong pname
+        Utils.runAndCheckException(() -> g.initialize(new NamedParameterSpec("SHA-384")),
+                InvalidAlgorithmParameterException.class); // wrong pname
+
+        Utils.runAndCheckException(() -> g5.initialize(new NamedParameterSpec("SHA-256")),
+                InvalidAlgorithmParameterException.class); // diff pname
+        g5.initialize(new NamedParameterSpec("SHA-512"));
+
+        g.initialize(new NamedParameterSpec("sHA-512"));
+        checkKeyPair(g.generateKeyPair(), "SHA", "SHA-512");
+        g.initialize(new NamedParameterSpec("ShA-256"));
+        checkKeyPair(g.generateKeyPair(), "SHA", "SHA-256");
+
+        var pk = new NamedX509Key("sHa", "ShA-256", RAND.nBytes(2));
+        var sk = new NamedPKCS8Key("sHa", "SHa-256", RAND.nBytes(2));
+        checkKey(pk, "sHa", "ShA-256");
+        checkKey(sk, "sHa", "SHa-256");
+
+        Asserts.assertEquals("X.509", pk.getFormat());
+        Asserts.assertEquals("PKCS#8", sk.getFormat());
+
+        var pkSpec = kf.getKeySpec(pk, X509EncodedKeySpec.class);
+        var skSpec = kf.getKeySpec(sk, PKCS8EncodedKeySpec.class);
+
+        kf2.getKeySpec(pk, X509EncodedKeySpec.class);
+        kf2.getKeySpec(sk, PKCS8EncodedKeySpec.class);
+        Utils.runAndCheckException(() -> kf5.getKeySpec(pk, X509EncodedKeySpec.class),
+                InvalidKeySpecException.class); // wrong KF
+        Utils.runAndCheckException(() -> kf5.getKeySpec(sk, PKCS8EncodedKeySpec.class),
+                InvalidKeySpecException.class);
+        Utils.runAndCheckException(() -> kf.getKeySpec(pk, PKCS8EncodedKeySpec.class),
+                InvalidKeySpecException.class); // wrong KeySpec
+        Utils.runAndCheckException(() -> kf.getKeySpec(sk, X509EncodedKeySpec.class),
+                InvalidKeySpecException.class);
+
+        checkKey(kf.generatePublic(pkSpec), "SHA", "SHA-256");
+        Utils.runAndCheckException(() -> kf.generatePrivate(pkSpec),
+                InvalidKeySpecException.class);
+
+        checkKey(kf.generatePrivate(skSpec), "SHA", "SHA-256");
+        Utils.runAndCheckException(() -> kf.generatePublic(skSpec),
+                InvalidKeySpecException.class);
+
+        checkKey(kf2.generatePrivate(skSpec), "SHA", "SHA-256");
+        checkKey(kf2.generatePublic(pkSpec), "SHA", "SHA-256");
+
+        Utils.runAndCheckException(() -> kf5.generatePublic(pkSpec),
+                InvalidKeySpecException.class); // wrong KF
+        Utils.runAndCheckException(() -> kf5.generatePublic(skSpec),
+                InvalidKeySpecException.class);
+
+        // The private RawKeySpec and unnamed RAW EncodedKeySpec
+        var prk = kf.getKeySpec(pk, RawKeySpec.class);
+        Asserts.assertEqualsByteArray(prk.getKeyArr(), pk.getRawBytes());
+        var prk2 = kf.getKeySpec(pk, EncodedKeySpec.class);
+        Asserts.assertEquals("RAW", prk2.getFormat());
+        Asserts.assertEqualsByteArray(prk.getKeyArr(), prk2.getEncoded());
+
+        Asserts.assertEqualsByteArray(kf2.generatePublic(prk).getEncoded(), pk.getEncoded());
+        Utils.runAndCheckException(() -> kf.generatePublic(prk), InvalidKeySpecException.class); // no pname
+        Asserts.assertEqualsByteArray(kf2.generatePublic(prk2).getEncoded(), pk.getEncoded());
+        Utils.runAndCheckException(() -> kf.generatePublic(prk2), InvalidKeySpecException.class); // no pname
+
+        var srk = kf.getKeySpec(sk, RawKeySpec.class);
+        Asserts.assertEqualsByteArray(srk.getKeyArr(), sk.getRawBytes());
+        var srk2 = kf.getKeySpec(sk, EncodedKeySpec.class);
+        Asserts.assertEquals("RAW", srk2.getFormat());
+        Asserts.assertEqualsByteArray(srk2.getEncoded(), sk.getRawBytes());
+
+        Asserts.assertEqualsByteArray(kf2.generatePrivate(srk).getEncoded(), sk.getEncoded());
+        Utils.runAndCheckException(() -> kf.generatePrivate(srk), InvalidKeySpecException.class); // no pname
+        Asserts.assertEqualsByteArray(kf2.generatePrivate(srk2).getEncoded(), sk.getEncoded());
+        Utils.runAndCheckException(() -> kf.generatePrivate(srk2), InvalidKeySpecException.class); // no pname
 
         var pk1 = new PublicKey() {
             public String getAlgorithm() { return "SHA"; }
             public String getFormat() { return "RAW"; }
-            public byte[] getEncoded() { return new byte[2]; }
+            public byte[] getEncoded() { return RAND.nBytes(2); }
         };
         var pk2 = new PublicKey() {
             public String getAlgorithm() { return "sHA-256"; }
             public String getFormat() { return "RAW"; }
-            public byte[] getEncoded() { return new byte[2]; }
+            public byte[] getEncoded() { return RAND.nBytes(2); }
         };
         var pk3 = new PublicKey() {
             public String getAlgorithm() { return "SHA"; }
             public String getFormat() { return "RAW"; }
-            public byte[] getEncoded() { return new byte[2]; }
+            public byte[] getEncoded() { return RAND.nBytes(2); }
             public AlgorithmParameterSpec getParams() { return new NamedParameterSpec("sHA-256"); }
         };
 
-        Asserts.assertTrue(kf2.translateKey(pk1).toString().contains("SHA-256"));
-        Asserts.assertTrue(kf.translateKey(pk2).toString().contains("SHA-256"));
-        Asserts.assertTrue(kf.translateKey(pk3).toString().contains("SHA-256"));
+        checkKey(kf2.translateKey(pk1), "SHA", "SHA-256");
+        checkKey(kf.translateKey(pk2), "SHA", "SHA-256");
+        checkKey(kf.translateKey(pk3), "SHA", "SHA-256");
 
         Utils.runAndCheckException(() -> kf.translateKey(pk1), InvalidKeyException.class);
         Utils.runAndCheckException(() -> kf5.translateKey(pk2), InvalidKeyException.class);
         Utils.runAndCheckException(() -> kf5.translateKey(pk3), InvalidKeyException.class);
 
-        var kpg = KeyPairGenerator.getInstance("SHA");
-        Asserts.assertTrue(kpg.generateKeyPair().getPublic().toString().contains("SHA-256"));
+        var sk1 = new PrivateKey() {
+            public String getAlgorithm() { return "SHA"; }
+            public String getFormat() { return "RAW"; }
+            public byte[] getEncoded() { return RAND.nBytes(2); }
+        };
+        var sk2 = new PrivateKey() {
+            public String getAlgorithm() { return "sHA-256"; }
+            public String getFormat() { return "RAW"; }
+            public byte[] getEncoded() { return RAND.nBytes(2); }
+        };
+        var sk3 = new PrivateKey() {
+            public String getAlgorithm() { return "SHA"; }
+            public String getFormat() { return "RAW"; }
+            public byte[] getEncoded() { return RAND.nBytes(2); }
+            public AlgorithmParameterSpec getParams() { return new NamedParameterSpec("sHA-256"); }
+        };
 
-        kpg.initialize(new NamedParameterSpec("ShA-256"));
-        Asserts.assertTrue(kpg.generateKeyPair().getPublic().toString().contains("SHA-256"));
-        kpg.initialize(new NamedParameterSpec("SHa-512"));
-        Asserts.assertTrue(kpg.generateKeyPair().getPublic().toString().contains("SHA-512"));
+        checkKey(kf2.translateKey(sk1), "SHA", "SHA-256");
+        checkKey(kf.translateKey(sk2), "SHA", "SHA-256");
+        checkKey(kf.translateKey(sk3), "SHA", "SHA-256");
 
-        var kpg1 = KeyPairGenerator.getInstance("ShA-256");
-        Asserts.assertTrue(kpg1.generateKeyPair().getPublic().toString().contains("SHA-256"));
-
-        var kpg2 = KeyPairGenerator.getInstance("sHA-512");
-        Asserts.assertTrue(kpg2.generateKeyPair().getPublic().toString().contains("SHA-512"));
+        Utils.runAndCheckException(() -> kf.translateKey(sk1), InvalidKeyException.class);
+        Utils.runAndCheckException(() -> kf5.translateKey(sk2), InvalidKeyException.class);
+        Utils.runAndCheckException(() -> kf5.translateKey(sk3), InvalidKeyException.class);
     }
+
+    static void checkKeyPair(KeyPair kp, String algName, String toString) {
+        checkKey(kp.getPrivate(), algName, toString);
+        checkKey(kp.getPublic(), algName, toString);
+    }
+
+    static void checkKey(Key k, String algName, String pname) {
+        Asserts.assertEquals(algName, k.getAlgorithm());
+        Asserts.assertTrue(k.toString().contains(pname));
+        if (k instanceof AsymmetricKey ak && ak.getParams() instanceof NamedParameterSpec nps) {
+            Asserts.assertEquals(pname, nps.getName());
+        }
+    }
+
+    // Provider
 
     public static class ProviderImpl extends Provider {
         public ProviderImpl() {
@@ -144,8 +243,8 @@ public class NamedKeyFactoryTest {
         @Override
         public byte[][] implGenerateKeyPair(String name, SecureRandom sr) {
             var out = new byte[2][];
-            out[0] = new byte[name.endsWith("256") ? 2 : 4];
-            out[1] = new byte[name.endsWith("256") ? 2 : 4];
+            out[0] = RAND.nBytes(name.endsWith("256") ? 2 : 4);
+            out[1] = RAND.nBytes(name.endsWith("256") ? 2 : 4);
             return out;
         }
     }

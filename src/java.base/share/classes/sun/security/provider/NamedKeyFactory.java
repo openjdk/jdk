@@ -46,12 +46,16 @@ import java.util.Objects;
 
 /// An implementation extends this class to create its own `KeyFactory`.
 ///
-/// Bonus: This factory can read from a RAW key using `translateKey`
-/// if `key.getFormat` is "RAW", and write to a RAW `EncodedKeySpec`
-/// using `getKeySpec(key, EncodedKeySpec.class)`. The algorithm of
-/// this `EncodedKeySpec` is intentionally left unspecified, since
-/// family name does not include enough information, and we don't use
-/// parameter set names as key algorithm names.
+/// Bonus: This factory supports reading and writing to RAW formats:
+///
+/// 1. It reads from a RAW key using `translateKey` if `key.getFormat` is "RAW".
+/// 2. It writes to a RAW [EncodedKeySpec] if `getKeySpec(key, EncodedKeySpec.class)`
+///    is called. The format of the output is "RAW" and the algorithm is
+///    intentionally left unspecified.
+/// 3. It reads from and writes to the internal type [RawKeySpec].
+///
+/// When reading from a RAW format, it needs enough info to derive the
+/// parameter set name.
 ///
 /// @see NamedKeyPairGenerator
 public class NamedKeyFactory extends KeyFactorySpi {
@@ -90,6 +94,19 @@ public class NamedKeyFactory extends KeyFactorySpi {
             } catch (InvalidKeyException e) {
                 throw new InvalidKeySpecException(e);
             }
+        } else if (keySpec instanceof RawKeySpec rks) {
+            if (pnames.length == 1) {
+                return new NamedX509Key(fname, pnames[0], rks.getKeyArr());
+            } else {
+                throw new InvalidKeySpecException("Parameter set name unavailable");
+            }
+        } else if (keySpec instanceof EncodedKeySpec espec
+                && espec.getFormat().equalsIgnoreCase("RAW")) {
+            if (pnames.length == 1) {
+                return new NamedX509Key(fname, pnames[0], espec.getEncoded());
+            } else {
+                throw new InvalidKeySpecException("Parameter set name unavailable");
+            }
         } else {
             throw new InvalidKeySpecException("Unsupported keyspec: " + keySpec);
         }
@@ -105,7 +122,30 @@ public class NamedKeyFactory extends KeyFactorySpi {
             } catch (InvalidKeyException e) {
                 throw new InvalidKeySpecException(e);
             } finally {
-                Arrays.fill(bytes, (byte)0);
+                Arrays.fill(bytes, (byte) 0);
+            }
+        } else if (keySpec instanceof RawKeySpec rks) {
+            if (pnames.length == 1) {
+                var bytes = rks.getKeyArr();
+                try {
+                    return new NamedPKCS8Key(fname, pnames[0], bytes);
+                } finally {
+                    Arrays.fill(bytes, (byte) 0);
+                }
+            } else {
+                throw new InvalidKeySpecException("Parameter set name unavailable");
+            }
+        } else if (keySpec instanceof EncodedKeySpec espec
+                && espec.getFormat().equalsIgnoreCase("RAW")) {
+            if (pnames.length == 1) {
+                var bytes = espec.getEncoded();
+                try {
+                    return new NamedPKCS8Key(fname, pnames[0], bytes);
+                } finally {
+                    Arrays.fill(bytes, (byte) 0);
+                }
+            } else {
+                throw new InvalidKeySpecException("Parameter set name unavailable");
             }
         } else {
             throw new InvalidKeySpecException("Unsupported keyspec: " + keySpec);
@@ -153,10 +193,12 @@ public class NamedKeyFactory extends KeyFactorySpi {
                     return keySpec.cast(
                             new PKCS8EncodedKeySpec(bytes = key.getEncoded()));
                 } else if (keySpec == RawKeySpec.class) {
-                    return keySpec.cast(new RawKeySpec(bytes = nk.getRawBytes()));
+                    return keySpec.cast(new RawKeySpec(nk.getRawBytes()));
                 } else if (keySpec.isAssignableFrom(EncodedKeySpec.class)) {
                     return keySpec.cast(
-                            new RawEncodedKeySpec(bytes = nk.getRawBytes()));
+                            new RawEncodedKeySpec(nk.getRawBytes()));
+                } else {
+                    throw new InvalidKeySpecException("Unsupported type: " + keySpec);
                 }
             } finally {
                 if (bytes != null) {
@@ -171,6 +213,8 @@ public class NamedKeyFactory extends KeyFactorySpi {
                 return keySpec.cast(new RawKeySpec(nk.getRawBytes()));
             } else if (keySpec.isAssignableFrom(EncodedKeySpec.class)) {
                 return keySpec.cast(new RawEncodedKeySpec(nk.getRawBytes()));
+            } else {
+                throw new InvalidKeySpecException("Unsupported type: " + keySpec);
             }
         }
         throw new AssertionError("No " + keySpec.getName() + " for " + key.getClass());
