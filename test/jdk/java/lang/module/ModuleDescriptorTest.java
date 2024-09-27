@@ -61,6 +61,8 @@ import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 import jdk.internal.access.JavaLangModuleAccess;
 import jdk.internal.access.SharedSecrets;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassFileVersion;
+import java.lang.classfile.ClassTransform;
 import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.constant.PackageDesc;
 import java.lang.constant.ModuleDesc;
@@ -1522,4 +1524,62 @@ public class ModuleDescriptorTest {
         assertTrue(s.contains("p1"));
     }
 
+    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
+    public void testRequiresTransitiveJavaBaseNotPermitted1() throws Exception {
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
+                .requires(Set.of(Modifier.TRANSITIVE), "java.base")
+                .build();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ModuleInfoWriter.write(descriptor, baos);
+        ByteBuffer bb = ByteBuffer.wrap(baos.toByteArray());
+
+        ModuleDescriptor.read(bb, () -> Set.of("p", "q"));
+    }
+
+    @Test(expectedExceptions = InvalidModuleDescriptorException.class)
+    public void testRequiresTransitiveJavaBaseNotPermitted2() throws Exception {
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
+                .requires(Set.of(Modifier.TRANSITIVE), "java.base")
+                .build();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ModuleInfoWriter.write(descriptor, baos);
+        byte[] bytecode = baos.toByteArray();
+        bytecode = setClassFileVersion(ClassFile.JAVA_21_VERSION, -1, bytecode);
+        ByteBuffer bb = ByteBuffer.wrap(bytecode);
+
+        ModuleDescriptor.read(bb, () -> Set.of("p", "q"));
+    }
+
+    public void testRequiresTransitiveJavaBasePermitted() throws Exception {
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule("foo")
+                .requires(Set.of(Modifier.TRANSITIVE), "java.base")
+                .build();
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ModuleInfoWriter.write(descriptor, baos);
+        byte[] bytecode = baos.toByteArray();
+        bytecode = setClassFileVersion(-1, ClassFile.PREVIEW_MINOR_VERSION, bytecode);
+        ByteBuffer bb = ByteBuffer.wrap(bytecode);
+
+        descriptor = ModuleDescriptor.read(bb, () -> Set.of("p", "q"));
+
+        assertEquals(descriptor.requires().size(), 1);
+        Requires javaBase = descriptor.requires().iterator().next();
+        assertEquals(javaBase.name(), "java.base");
+        assertEquals(javaBase.modifiers(), Set.of(Modifier.TRANSITIVE));
+    }
+
+    private byte[] setClassFileVersion(int major, int minor, byte[] bytecode) {
+        ClassFile cf = ClassFile.of();
+        return cf.transformClass(cf.parse(bytecode),
+                                 (builder, element) -> {
+                                     switch (element) {
+                                         case ClassFileVersion cfv -> builder.withVersion(major != (-1) ? major : cfv.majorVersion(),
+                                                                                          minor != (-1) ? minor : cfv.minorVersion());
+                                         default -> builder.with(element);
+                                     }
+                                 });
+    }
 }

@@ -49,6 +49,7 @@ import java.lang.classfile.attribute.*;
 
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.platform.JDKPlatformProvider;
+import java.util.function.Supplier;
 
 import toolbox.JavacTask;
 import toolbox.Task;
@@ -213,6 +214,16 @@ public class JavaBaseTest {
 
         createClass(base, mods, options);
 
+        List<String> testOptions = new ArrayList<>();
+
+        testOptions.add("-XDrawDiagnostics");
+        testOptions.add("--module-path"); testOptions.add(base.resolve("test-modules").toString());
+
+        if (options.contains("--enable-preview")) {
+            testOptions.add("--enable-preview");
+            testOptions.add("--source"); testOptions.add(CURRENT_VERSION);
+        }
+
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
                 "module mx { requires m; }");
@@ -220,8 +231,7 @@ public class JavaBaseTest {
 
         String log = new JavacTask(tb)
                 .outdir(modules)
-                .options("-XDrawDiagnostics",
-                        "--module-path", base.resolve("test-modules").toString())
+                .options(testOptions)
                 .files(tb.findJavaFiles(src))
                 .run(expectOK ? Task.Expect.SUCCESS : Task.Expect.FAIL)
                 .writeAll()
@@ -282,6 +292,8 @@ public class JavaBaseTest {
             requires.set(i, e2);
         }
 
+        boolean preview = options.contains("--enable-preview");
+
         ModuleAttribute modAttr2 = ModuleAttribute.of(
                 modAttr1.moduleName(),
                 modAttr1.moduleFlagsMask(),
@@ -293,8 +305,14 @@ public class JavaBaseTest {
                 modAttr1.provides());
         Path modInfo = base.resolve("test-modules").resolve("module-info.class");
         Files.createDirectories(modInfo.getParent());
-        byte[] newBytes = ClassFile.of().transformClass(cm1, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
-                andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(modAttr2))));
+        ClassTransform replace = (builder, element) -> {
+            switch (element) {
+                case ClassFileVersion cfv when preview -> builder.withVersion(cfv.majorVersion(), 0xFFFF);
+                case ModuleAttribute _ -> builder.with(modAttr2);
+                default -> builder.with(element);
+            }
+        };
+        byte[] newBytes = ClassFile.of().transformClass(cm1, replace);
         try (OutputStream out = Files.newOutputStream(modInfo)) {
             out.write(newBytes);
         }

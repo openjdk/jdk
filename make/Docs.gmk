@@ -108,6 +108,7 @@ JAVADOC_OPTIONS := -use -keywords -notimestamp \
     -encoding ISO-8859-1 -docencoding UTF-8 -breakiterator \
     -splitIndex --system none -javafx --expand-requires transitive \
     --override-methods=summary \
+    --enable-preview --source $(JDK_SOURCE_TARGET_VERSION) \
     --no-external-specs-page
 
 # The reference options must stay stable to allow for comparisons across the

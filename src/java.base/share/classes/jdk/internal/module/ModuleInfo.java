@@ -31,6 +31,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.classfile.ClassFile;
 import java.lang.module.InvalidModuleDescriptorException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Builder;
@@ -189,6 +190,7 @@ public final class ModuleInfo {
 
         int minor_version = in.readUnsignedShort();
         int major_version = in.readUnsignedShort();
+        boolean previewClassfile = minor_version == ClassFile.PREVIEW_MINOR_VERSION;
         if (!VM.isSupportedModuleDescriptorVersion(major_version, minor_version)) {
             throw invalidModuleDescriptor("Unsupported major.minor version "
                                           + major_version + "." + minor_version);
@@ -248,7 +250,7 @@ public final class ModuleInfo {
 
             switch (attribute_name) {
                 case MODULE :
-                    builder = readModuleAttribute(in, cpool, major_version);
+                    builder = readModuleAttribute(in, cpool, major_version, previewClassfile);
                     break;
 
                 case MODULE_PACKAGES :
@@ -344,7 +346,8 @@ public final class ModuleInfo {
      * Reads the Module attribute, returning the ModuleDescriptor.Builder to
      * build the corresponding ModuleDescriptor.
      */
-    private Builder readModuleAttribute(DataInput in, ConstantPool cpool, int major)
+    private Builder readModuleAttribute(DataInput in, ConstantPool cpool, int major,
+                                        boolean previewClassfile)
         throws IOException
     {
         // module_name
@@ -406,10 +409,10 @@ public final class ModuleInfo {
                                                   + " has ACC_SYNTHETIC set");
                 }
                 if (major >= 54
-                    && (mods.contains(Requires.Modifier.TRANSITIVE)
+                    && ((mods.contains(Requires.Modifier.TRANSITIVE) && !previewClassfile)
                         || mods.contains(Requires.Modifier.STATIC))) {
                     String flagName;
-                    if (mods.contains(Requires.Modifier.TRANSITIVE)) {
+                    if (mods.contains(Requires.Modifier.TRANSITIVE) && !previewClassfile) {
                         flagName = "ACC_TRANSITIVE";
                     } else {
                         flagName = "ACC_STATIC_PHASE";
