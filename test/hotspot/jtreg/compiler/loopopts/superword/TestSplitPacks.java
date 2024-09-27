@@ -684,7 +684,7 @@ public class TestSplitPacks {
                   IRNode.ADD_VS,        IRNode.VECTOR_SIZE_8, "> 0",
                   IRNode.ADD_VS,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false", "UseCompactObjectHeaders", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Split pack into power-of-2 sizes
