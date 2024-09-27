@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4957669 5017871 8340326
+ * @bug 4957669 5017871
  * @summary cannot load class names containing some JSR 202 characters;
  *          plugin does not escape unicode character in http request
  * @modules java.base/sun.net.www

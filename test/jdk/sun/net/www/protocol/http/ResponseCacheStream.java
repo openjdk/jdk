@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6262486 8340326
+ * @bug 6262486
  * @library /test/lib
  * @run main/othervm -Dhttp.keepAlive=false ResponseCacheStream
  * @summary Ensure HttpInputStream resets properly when cache is in use

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4296930 5033603 7092679 8340326
+ * @bug 4296930 5033603 7092679
  * @summary Ensure that Java detects the platform time zone correctly, even
  * if changed during runtime. Also ensure that the system time zone detection code
  * detects the "Automatically adjust clock for daylight saving changes" setting

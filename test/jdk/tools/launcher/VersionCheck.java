@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6545058 6611182 8016209 8139986 8162746 8278967 8340326
+ * @bug 6545058 6611182 8016209 8139986 8162746 8278967
  * @summary validate and test -version, -fullversion, and internal, as well as
  *          sanity checks if a tool can be launched.
  * @modules jdk.compiler

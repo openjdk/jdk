@@ -23,7 +23,7 @@
 
 /* @test
  * @summary Ensure ParseUtil.toURI does not fail when port number is -1
- * @bug 6380332 8340326
+ * @bug 6380332
  * @modules java.base/sun.net.www
  */
 

@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4183204 8340326
+ * @bug 4183204
  * @summary The RMI runtime should fail to export a remote object on a TCP
  * port for an application that does not have permission to listen
  * on that port, rather than engage in the deprecated "multiplexing protocol".

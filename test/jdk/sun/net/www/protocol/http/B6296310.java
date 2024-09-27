@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6296310 8340326
+ * @bug 6296310
  * @library /test/lib
  * @run main/othervm B6296310
  * @run main/othervm -Djava.net.preferIPv6Addresses=true B6296310

@@ -27,7 +27,7 @@ import sun.awt.SunToolkit;
 
 /**
  * @test
- * @bug 8026404 8340326
+ * @bug 8026404
  * @summary checks that calling getLogger() from a Thread whose ThreadGroup is
  *          a child of the main root group doesn't throw an exception.
  * @modules java.desktop/sun.awt

@@ -24,7 +24,6 @@
 
 /**
  * @test
- * @bug 8340326
  * @summary Validate and test -?, -h and --help flags. All tools in the jdk
  *          should take the same flags to display the help message. These
  *          flags should be documented in the printed help message. The
