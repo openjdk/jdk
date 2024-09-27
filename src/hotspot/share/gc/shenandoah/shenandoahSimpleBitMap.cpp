@@ -54,7 +54,7 @@ size_t ShenandoahSimpleBitMap::count_leading_ones(idx_t start_idx) const {
     // Strength reduction:                array_idx = (start_idx >> LogBitsPerWord)
     array_idx++;
     element_bits = _bitmap[array_idx];
-    // Constant folding:                  bit_number = start_idx & _right_n_bits(LogBitsPerWord);
+    // Constant folding:                  bit_number = start_idx & right_n_bits(LogBitsPerWord);
     bit_number = 0;
     // Constant folding:                  mask = ~right_n_bits(bit_number);
     mask = ~0;
@@ -81,9 +81,9 @@ size_t ShenandoahSimpleBitMap::count_trailing_ones(idx_t last_idx) const {
     // Dead code: do not need to compute: last_idx -= found_ones;
     array_idx--;
     element_bits = _bitmap[array_idx];
-    // Constant folding:                  bit_number = last_idx & _right_n_bits(LogBitsPerWord);
+    // Constant folding:                  bit_number = last_idx & right_n_bits(LogBitsPerWord);
     bit_number = BitsPerWord - 1;
-    // Constant folding:                  mask = _right_n_bits(bit_number + 1);
+    // Constant folding:                  mask = right_n_bits(bit_number + 1);
     mask = ~0;
   }
 
