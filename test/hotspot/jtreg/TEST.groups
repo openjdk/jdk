@@ -435,6 +435,7 @@ hotspot_cds_only = \
 hotspot_appcds_dynamic = \
   runtime/cds/appcds/ \
  -runtime/cds/appcds/cacheObject \
+ -runtime/cds/appcds/complexURI \
  -runtime/cds/appcds/customLoader \
  -runtime/cds/appcds/dynamicArchive \
  -runtime/cds/appcds/loaderConstraints/DynamicLoaderConstraintsTest.java \
