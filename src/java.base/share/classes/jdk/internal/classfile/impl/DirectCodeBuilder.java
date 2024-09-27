@@ -25,6 +25,8 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
@@ -54,6 +56,7 @@ import java.lang.classfile.instruction.LocalVariableType;
 import java.lang.classfile.instruction.SwitchCase;
 import java.lang.constant.ConstantDesc;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -69,10 +72,18 @@ import static jdk.internal.classfile.impl.BytecodeHelpers.*;
 public final class DirectCodeBuilder
         extends AbstractDirectBuilder<CodeModel>
         implements TerminalCodeBuilder {
+    private static final DeferredLabel[] EMPTY_LABEL_ARRAY = new DeferredLabel[0];
+    private static final LocalVariable[] EMPTY_LOCAL_VARIABLE_ARRAY = new LocalVariable[0];
+    private static final LocalVariableType[] EMPTY_LOCAL_VARIABLE_TYPE_ARRAY = new LocalVariableType[0];
+    private static final AbstractPseudoInstruction.ExceptionCatchImpl[] EMPTY_HANDLER_ARRAY = new AbstractPseudoInstruction.ExceptionCatchImpl[0];
+
     private final List<CharacterRange> characterRanges = new ArrayList<>();
-    final List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers = new ArrayList<>();
-    private final List<LocalVariable> localVariables = new ArrayList<>();
-    private final List<LocalVariableType> localVariableTypes = new ArrayList<>();
+    AbstractPseudoInstruction.ExceptionCatchImpl[] handlers = EMPTY_HANDLER_ARRAY;
+    int handlersCount = 0;
+    private LocalVariable[] localVariables = EMPTY_LOCAL_VARIABLE_ARRAY;
+    private LocalVariableType[] localVariableTypes = EMPTY_LOCAL_VARIABLE_TYPE_ARRAY;
+    private int localVariablesCount = 0;
+    private int localVariableTypesCount = 0;
     private final boolean transformFwdJumps, transformBackJumps;
     private final Label startLabel, endLabel;
     final MethodInfo methodInfo;
@@ -83,7 +94,8 @@ public final class DirectCodeBuilder
     private DedupLineNumberTableAttribute lineNumberWriter;
     private int topLocal;
 
-    List<DeferredLabel> deferredLabels;
+    private DeferredLabel[] deferredLabels = EMPTY_LABEL_ARRAY;
+    private int deferredLabelsCount = 0;
 
     /* Locals management
        lazily computed maxLocal = -1
@@ -188,7 +200,7 @@ public final class DirectCodeBuilder
 
     private void writeExceptionHandlers(BufWriterImpl buf) {
         int pos = buf.size();
-        int handlersSize = handlers.size();
+        int handlersSize = this.handlersCount;
         buf.writeU2(handlersSize);
         if (handlersSize > 0) {
             writeExceptionHandlers(buf, pos);
@@ -196,8 +208,9 @@ public final class DirectCodeBuilder
     }
 
     private void writeExceptionHandlers(BufWriterImpl buf, int pos) {
-        int handlersSize = handlers.size();
-        for (AbstractPseudoInstruction.ExceptionCatchImpl h : handlers) {
+        int handlersSize = handlersCount;
+        for (int i = 0; i < handlersCount; i++) {
+            var h = handlers[i];
             int startPc = labelToBci(h.tryStart());
             int endPc = labelToBci(h.tryEnd());
             int handlerPc = labelToBci(h.handler());
@@ -215,7 +228,7 @@ public final class DirectCodeBuilder
                 handlersSize++;
             }
         }
-        if (handlersSize < handlers.size())
+        if (handlersSize < handlersCount)
             buf.patchU2(pos, handlersSize);
     }
 
@@ -259,14 +272,15 @@ public final class DirectCodeBuilder
                 attributes.withAttribute(a);
             }
 
-            if (!localVariables.isEmpty()) {
+            if (localVariablesCount > 0) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTable()) {
                     @Override
                     public void writeBody(BufWriterImpl b) {
                         int pos = b.size();
-                        int lvSize = localVariables.size();
+                        int lvSize = localVariablesCount;
                         b.writeU2(lvSize);
-                        for (LocalVariable l : localVariables) {
+                        for (int i = 0; i < localVariablesCount; i++) {
+                            var l = localVariables[i];
                             if (!Util.writeLocalVariable(b, l)) {
                                 if (context.dropDeadLabels()) {
                                     lvSize--;
@@ -275,21 +289,22 @@ public final class DirectCodeBuilder
                                 }
                             }
                         }
-                        if (lvSize < localVariables.size())
+                        if (lvSize < localVariablesCount)
                             b.patchU2(pos, lvSize);
                     }
                 };
                 attributes.withAttribute(a);
             }
 
-            if (!localVariableTypes.isEmpty()) {
+            if (localVariableTypesCount > 0) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTypeTable()) {
                     @Override
                     public void writeBody(BufWriterImpl b) {
                         int pos = b.size();
-                        int lvtSize = localVariableTypes.size();
-                        b.writeU2(localVariableTypes.size());
-                        for (LocalVariableType l : localVariableTypes) {
+                        int lvtSize = localVariableTypesCount;
+                        b.writeU2(localVariableTypesCount);
+                        for (int i = 0; i < localVariableTypesCount; i++) {
+                            var l = localVariableTypes[i];
                             if (!Util.writeLocalVariable(b, l)) {
                                 if (context.dropDeadLabels()) {
                                     lvtSize--;
@@ -298,7 +313,7 @@ public final class DirectCodeBuilder
                                 }
                             }
                         }
-                        if (lvtSize < localVariableTypes.size())
+                        if (lvtSize < localVariableTypesCount)
                             b.patchU2(pos, lvtSize);
                     }
                 };
@@ -460,9 +475,11 @@ public final class DirectCodeBuilder
         int targetBci = labelToBci(label);
         if (targetBci == -1) {
             int pc = bytecodesBufWriter.skip(nBytes);
-            if (deferredLabels == null)
-                deferredLabels = new ArrayList<>();
-            deferredLabels.add(new DeferredLabel(pc, nBytes, instructionPc, label));
+            if (deferredLabelsCount >= deferredLabels.length) {
+                int newCapacity = deferredLabelsCount + 8;
+                this.deferredLabels = deferredLabelsCount == 0 ? new DeferredLabel[newCapacity] : Arrays.copyOf(deferredLabels, newCapacity);
+            }
+            deferredLabels[deferredLabelsCount++] = new DeferredLabel(pc, nBytes, instructionPc, label);
         }
         else {
             int branchOffset = targetBci - instructionPc;
@@ -472,16 +489,15 @@ public final class DirectCodeBuilder
     }
 
     private void processDeferredLabels() {
-        if (deferredLabels != null) {
-            for (DeferredLabel dl : deferredLabels) {
-                int branchOffset = labelToBci(dl.label) - dl.instructionPc;
-                if (dl.size == 2) {
-                    if ((short)branchOffset != branchOffset) throw new LabelOverflowException();
-                    bytecodesBufWriter.patchU2(dl.labelPc, branchOffset);
-                } else {
-                    assert dl.size == 4;
-                    bytecodesBufWriter.patchInt(dl.labelPc, branchOffset);
-                }
+        for (int i = 0; i < deferredLabelsCount; i++) {
+            var dl = deferredLabels[i];
+            int branchOffset = labelToBci(dl.label) - dl.instructionPc;
+            if (dl.size == 2) {
+                if ((short)branchOffset != branchOffset) throw new LabelOverflowException();
+                bytecodesBufWriter.patchU2(dl.labelPc, branchOffset);
+            } else {
+                assert dl.size == 4;
+                bytecodesBufWriter.patchInt(dl.labelPc, branchOffset);
             }
         }
     }
@@ -505,16 +521,14 @@ public final class DirectCodeBuilder
     }
 
     public void writeIncrement(int slot, int val) {
-        Opcode opcode = (slot < 256 && val < 128 && val > -127)
-                        ? IINC
-                        : IINC_W;
-        writeBytecode(opcode);
-        if (opcode.isWide()) {
-            bytecodesBufWriter.writeU2(slot);
-            bytecodesBufWriter.writeU2(val);
-        } else {
+        if ((slot < 256 && val < 128 && val > -127)) {
+            bytecodesBufWriter.writeU1(IINC.bytecode());
             bytecodesBufWriter.writeU1(slot);
             bytecodesBufWriter.writeU1(val);
+        } else {
+            bytecodesBufWriter.writeU2(IINC_W.bytecode());
+            bytecodesBufWriter.writeU2(slot);
+            bytecodesBufWriter.writeU2(val);
         }
     }
 
@@ -757,15 +771,28 @@ public final class DirectCodeBuilder
         ClassEntry type = el.catchTypeEntry();
         if (type != null && !constantPool.canWriteDirect(type.constantPool()))
             el = new AbstractPseudoInstruction.ExceptionCatchImpl(element.handler(), element.tryStart(), element.tryEnd(), AbstractPoolEntry.maybeClone(constantPool, type));
-        handlers.add(el);
+
+        if (handlersCount >= handlers.length) {
+            int newCapacity = handlersCount + 8;
+            this.handlers = handlersCount == 0 ? new AbstractPseudoInstruction.ExceptionCatchImpl[newCapacity] : Arrays.copyOf(handlers, newCapacity);
+        }
+        handlers[handlersCount++] = el;
     }
 
     public void addLocalVariable(LocalVariable element) {
-        localVariables.add(element);
+        if (localVariablesCount >= localVariables.length) {
+            int newCapacity = localVariablesCount + 8;
+            this.localVariables = localVariablesCount == 0 ? new LocalVariable[newCapacity] : Arrays.copyOf(localVariables, newCapacity);
+        }
+        localVariables[localVariablesCount++] = element;
     }
 
     public void addLocalVariableType(LocalVariableType element) {
-        localVariableTypes.add(element);
+        if (localVariableTypesCount >= localVariableTypes.length) {
+            int newCapacity = localVariableTypesCount + 8;
+            this.localVariableTypes = localVariableTypesCount == 0 ? new LocalVariableType[newCapacity] : Arrays.copyOf(localVariableTypes, newCapacity);
+        }
+        localVariableTypes[localVariableTypesCount++] = element;
     }
 
     @Override
@@ -1172,7 +1199,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder iconst_1() {
-        writeBytecode(ICONST_1);
+        bytecodesBufWriter.writeU1(ClassFile.ICONST_1);
         return this;
     }
 
@@ -1220,13 +1247,21 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder iload(int slot) {
-        writeLocalVar(BytecodeHelpers.iload(slot), slot);
+       if (slot >= 0 && slot <= 3) {
+            bytecodesBufWriter.writeU1(ClassFile.ILOAD_0 + slot);
+        } else if (slot < 256) {
+            bytecodesBufWriter.writeU1(ClassFile.ILOAD);
+            bytecodesBufWriter.writeU1(slot);
+        } else {
+            bytecodesBufWriter.writeU2(ClassFile.ILOAD);
+            bytecodesBufWriter.writeU2(slot);
+        }
         return this;
     }
 
     @Override
     public CodeBuilder imul() {
-        writeBytecode(IMUL);
+        bytecodesBufWriter.writeU1(ClassFile.IMUL);
         return this;
     }
 
@@ -1310,7 +1345,15 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder istore(int slot) {
-        writeLocalVar(BytecodeHelpers.istore(slot), slot);
+        if (slot >= 0 && slot <= 3) {
+            bytecodesBufWriter.writeU1(ClassFile.ISTORE_0 + slot);
+        } else if (slot < 256) {
+            bytecodesBufWriter.writeU1(ClassFile.ISTORE);
+            bytecodesBufWriter.writeU1(slot);
+        } else {
+            bytecodesBufWriter.writeU2(ClassFile.ISTORE);
+            bytecodesBufWriter.writeU2(slot);
+        }
         return this;
     }
 
@@ -1525,6 +1568,67 @@ public final class DirectCodeBuilder
     @Override
     public CodeBuilder tableswitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
         writeTableSwitch(low, high, defaultTarget, cases);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_icmpge(Label target) {
+        int instructionPc = curPc();
+        int targetBci = labelToBci(target);
+        //transform short-opcode forward jumps if enforced, and backward jumps if enabled and overflowing
+        bytecodesBufWriter.writeU1(Opcode.IF_ICMPGE.bytecode());
+        writeLabelOffset(2, instructionPc, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder labelBinding(Label label) {
+        ((LabelImpl) label).writeTo(this);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder fieldAccess(Opcode opcode, ClassDesc owner, String name, ClassDesc type) {
+        bytecodesBufWriter.writeU1(opcode.bytecode());
+        bytecodesBufWriter.writeIndex(constantPool().fieldRefEntry(owner, name, type));
+        return this;
+    }
+
+    @Override
+    public CodeBuilder getstatic(ClassDesc owner, String name, ClassDesc type) {
+        bytecodesBufWriter.writeU1(Opcode.GETSTATIC.bytecode());
+        bytecodesBufWriter.writeIndex(constantPool().fieldRefEntry(owner, name, type));
+        return this;
+    }
+
+    @Override
+    public CodeBuilder invokevirtual(ClassDesc owner, String name, MethodTypeDesc type) {
+        bytecodesBufWriter.writeU1(Opcode.INVOKEVIRTUAL.bytecode());
+        bytecodesBufWriter.writeIndex(constantPool().methodRefEntry(owner, name, type));
+        return this;
+    }
+
+    @Override
+    public CodeBuilder goto_(Label target) {
+        int instructionPc = curPc();
+        int targetBci = labelToBci(target);
+        //transform short-opcode forward jumps if enforced, and backward jumps if enabled and overflowing
+        if ((targetBci == -1
+                ? transformFwdJumps
+                : (transformBackJumps
+                && targetBci - instructionPc < Short.MIN_VALUE))) {
+            bytecodesBufWriter.writeU2(GOTO_W.bytecode());
+            writeLabelOffset(4, instructionPc, target);
+        } else {
+            bytecodesBufWriter.writeU1(GOTO.bytecode());
+            writeLabelOffset(2, instructionPc, target);
+        }
+        return this;
+    }
+
+    @Override
+    public CodeBuilder return_() {
+        bytecodesBufWriter.writeU1(Opcode.RETURN.bytecode());
         return this;
     }
 }

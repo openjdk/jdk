@@ -56,7 +56,8 @@ public final class StackCounter {
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
                 dcb.bytecodesBufWriter.bytecodeView(),
                 dcb.constantPool,
-                dcb.handlers);
+                dcb.handlers,
+                dcb.handlersCount);
     }
 
     private int stack, maxStack, maxLocals, rets;
@@ -106,7 +107,8 @@ public final class StackCounter {
                      boolean isStatic,
                      RawBytecodeHelper.CodeRange bytecode,
                      SplitConstantPool cp,
-                     List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {
+                     AbstractPseudoInstruction.ExceptionCatchImpl[] handlers,
+                     int handlerCount) {
         this.thisClass = thisClass;
         this.methodName = methodName;
         this.methodDesc = methodDesc;
@@ -114,8 +116,9 @@ public final class StackCounter {
         this.cp = cp;
         targets = new ArrayDeque<>();
         stack = rets = 0;
-        maxStack = handlers.isEmpty() ? 0 : 1;
-        for (var h : handlers) targets.add(new Target(labelContext.labelToBci(h.handler), 1));
+        maxStack = handlerCount == 0 ? 0 : 1;
+        for (int i = 0; i < handlerCount; i++)
+            targets.add(new Target(labelContext.labelToBci(handlers[i].handler), 1));
         if (smta != null) {
             for (var smfi : smta.entries()) {
                 int frameStack = smfi.stack().size();

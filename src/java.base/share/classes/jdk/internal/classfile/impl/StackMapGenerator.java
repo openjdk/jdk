@@ -155,7 +155,8 @@ public final class StackMapGenerator {
                 dcb.bytecodesBufWriter.bytecodeView(),
                 dcb.constantPool,
                 dcb.context,
-                dcb.handlers);
+                dcb.handlers,
+                dcb.handlersCount);
     }
 
     private static final String OBJECT_INITIALIZER_NAME = "<init>";
@@ -163,6 +164,7 @@ public final class StackMapGenerator {
     private static final int FRAME_DEFAULT_CAPACITY = 10;
     private static final int T_BOOLEAN = 4, T_LONG = 11;
     private static final Frame[] EMPTY_FRAME_ARRAY = new Frame[0];
+    private static final RawExceptionCatch[] EMPTY_RAWHANDLER_ARRAY = new RawExceptionCatch[0];
 
     private static final int ITEM_TOP = 0,
             ITEM_INTEGER = 1,
@@ -193,8 +195,10 @@ public final class StackMapGenerator {
     private final SplitConstantPool cp;
     private final boolean isStatic;
     private final LabelContext labelContext;
-    private final List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers;
-    private final List<RawExceptionCatch> rawHandlers;
+    private AbstractPseudoInstruction.ExceptionCatchImpl[] handlers;
+    private int handlersCount;
+    private RawExceptionCatch[] rawHandlers = EMPTY_RAWHANDLER_ARRAY;
+    private int rawHandlersCount = 0;
     private final ClassHierarchyImpl classHierarchy;
     private final boolean patchDeadCode;
     private final boolean filterDeadLabels;
@@ -227,7 +231,8 @@ public final class StackMapGenerator {
                      RawBytecodeHelper.CodeRange bytecode,
                      SplitConstantPool cp,
                      ClassFileImpl context,
-                     List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers) {
+                     AbstractPseudoInstruction.ExceptionCatchImpl[] handlers,
+                     int handlersCount) {
         this.thisType = Type.referenceType(thisClass);
         this.methodName = methodName;
         this.methodDesc = methodDesc;
@@ -236,7 +241,7 @@ public final class StackMapGenerator {
         this.cp = cp;
         this.labelContext = labelContext;
         this.handlers = handlers;
-        this.rawHandlers = new ArrayList<>(handlers.size());
+        this.handlersCount = handlersCount;
         this.classHierarchy = new ClassHierarchyImpl(context.classHierarchyResolver());
         this.patchDeadCode = context.patchDeadCode();
         this.filterDeadLabels = context.dropDeadLabels();
@@ -293,7 +298,7 @@ public final class StackMapGenerator {
     private void generate() {
         exMin = bytecode.length();
         exMax = -1;
-        if (!handlers.isEmpty()) {
+        if (handlersCount > 0) {
             generateHandlers();
         }
         detectFrames();
@@ -314,8 +319,9 @@ public final class StackMapGenerator {
 
     private void generateHandlers() {
         var labelContext = this.labelContext;
-        for (int i = 0; i < handlers.size(); i++) {
-            var exhandler = handlers.get(i);
+        rawHandlers = new RawExceptionCatch[handlersCount];
+        for (int i = 0; i < handlersCount; i++) {
+            var exhandler = handlers[i];
             int start_pc = labelContext.labelToBci(exhandler.tryStart());
             int end_pc = labelContext.labelToBci(exhandler.tryEnd());
             int handler_pc = labelContext.labelToBci(exhandler.handler());
@@ -323,9 +329,9 @@ public final class StackMapGenerator {
                 if (start_pc < exMin) exMin = start_pc;
                 if (end_pc > exMax) exMax = end_pc;
                 var catchType = exhandler.catchType();
-                rawHandlers.add(new RawExceptionCatch(start_pc, end_pc, handler_pc,
+                rawHandlers[rawHandlersCount++] = new RawExceptionCatch(start_pc, end_pc, handler_pc,
                         catchType.isPresent() ? cpIndexToType(catchType.get().index(), cp)
-                                : Type.THROWABLE_TYPE));
+                                : Type.THROWABLE_TYPE);
             }
         }
     }
@@ -345,9 +351,9 @@ public final class StackMapGenerator {
     }
 
     private void removeRangeFromExcTable(int rangeStart, int rangeEnd) {
-        var it = handlers.listIterator();
-        while (it.hasNext()) {
-            var e = it.next();
+        var handlers = this.handlers;
+        for (int i = 0; i < handlersCount; i++) {
+            var e = handlers[i];
             int handlerStart = labelContext.labelToBci(e.tryStart());
             int handlerEnd = labelContext.labelToBci(e.tryEnd());
             if (rangeStart >= handlerEnd || rangeEnd <= handlerStart) {
@@ -357,26 +363,39 @@ public final class StackMapGenerator {
             if (rangeStart <= handlerStart) {
               if (rangeEnd >= handlerEnd) {
                   //complete removal
-                  it.remove();
+                  handlers[i] = null;
+                  //Object src,  int  srcPos, Object dest, int destPos, int length);
+//                  it.remove();
+                  handlersCount--;
+                  System.arraycopy(handlers, i + 1, handlers, i, handlersCount - i);
               } else {
                   //cut from left
                   Label newStart = labelContext.newLabel();
                   labelContext.setLabelTarget(newStart, rangeEnd);
-                  it.set(new AbstractPseudoInstruction.ExceptionCatchImpl(e.handler(), newStart, e.tryEnd(), e.catchType()));
+                  handlers[i] = new AbstractPseudoInstruction.ExceptionCatchImpl(e.handler(), newStart, e.tryEnd(), e.catchType());
               }
             } else if (rangeEnd >= handlerEnd) {
                 //cut from right
                 Label newEnd = labelContext.newLabel();
                 labelContext.setLabelTarget(newEnd, rangeStart);
-                it.set(new AbstractPseudoInstruction.ExceptionCatchImpl(e.handler(), e.tryStart(), newEnd, e.catchType()));
+                handlers[i] = new AbstractPseudoInstruction.ExceptionCatchImpl(e.handler(), e.tryStart(), newEnd, e.catchType());
             } else {
                 //split
                 Label newStart = labelContext.newLabel();
                 labelContext.setLabelTarget(newStart, rangeEnd);
                 Label newEnd = labelContext.newLabel();
                 labelContext.setLabelTarget(newEnd, rangeStart);
-                it.set(new AbstractPseudoInstruction.ExceptionCatchImpl(e.handler(), e.tryStart(), newEnd, e.catchType()));
-                it.add(new AbstractPseudoInstruction.ExceptionCatchImpl(e.handler(), newStart, e.tryEnd(), e.catchType()));
+                handlers[i] = new AbstractPseudoInstruction.ExceptionCatchImpl(e.handler(), e.tryStart(), newEnd, e.catchType());
+
+                //
+                if (handlersCount >= handlers.length) {
+                    int newCapacity = handlersCount + 8;
+                    this.handlers = handlers = Arrays.copyOf(handlers, newCapacity);
+                }
+                if (i != handlersCount) {
+                    System.arraycopy(handlers, i, handlers, i + 1, handlersCount - i);
+                }
+                handlers[handlersCount++] = new AbstractPseudoInstruction.ExceptionCatchImpl(e.handler(), newStart, e.tryEnd(), e.catchType());
             }
         }
     }
@@ -677,7 +696,8 @@ public final class StackMapGenerator {
     }
 
     private void processExceptionHandlerTargets(int bci, boolean this_uninit) {
-        for (var ex : rawHandlers) {
+        for (int i = 0; i < rawHandlersCount; i++) {
+            var ex = rawHandlers[i];
             if (bci == ex.start || (currentFrame.localsChanged && bci > ex.start && bci < ex.end)) {
                 int flags = currentFrame.flags;
                 if (this_uninit) flags |= FLAG_THIS_UNINIT;
@@ -903,8 +923,8 @@ public final class StackMapGenerator {
         } catch (IllegalArgumentException iae) {
             throw generatorError("Detected branch target out of bytecode range", bci);
         }
-        for (int i = 0; i < rawHandlers.size(); i++) try {
-            addFrame(rawHandlers.get(i).handler());
+        for (int i = 0; i < rawHandlersCount; i++) try {
+            addFrame(rawHandlers[i].handler());
         } catch (IllegalArgumentException iae) {
             if (!filterDeadLabels)
                 throw generatorError("Detected exception handler out of bytecode range");
@@ -1206,7 +1226,10 @@ public final class StackMapGenerator {
             int compressed = 0;
             for (int i = 0; i < count; i++) {
                 if (!types[i].isCategory2_2nd()) {
-                    types[compressed++] = types[i];
+                    if (compressed != i) {
+                        types[compressed] = types[i];
+                    }
+                    compressed++;
                 }
             }
             return compressed;

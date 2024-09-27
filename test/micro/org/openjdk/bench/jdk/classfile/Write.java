@@ -141,7 +141,7 @@ public class Write {
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod(INIT_NAME, MTD_void, 0, mb -> mb
-                      .withCode(codeb -> codeb.loadLocal(REFERENCE, 0)
+                      .withCode(codeb -> codeb.aload(0)
                                               .invoke(INVOKESPECIAL, CD_Object, INIT_NAME, MTD_void, false)
                                               .return_(VOID)
                       )
@@ -189,7 +189,7 @@ public class Write {
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod(INIT_NAME, MTD_void, 0,
-                          mb -> mb.withCode(codeb -> codeb.loadLocal(REFERENCE, 0)
+                          mb -> mb.withCode(codeb -> codeb.aload(0)
                                                           .invokespecial(CD_Object, INIT_NAME, MTD_void, false)
                                                           .return_()
                           )
