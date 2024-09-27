@@ -57,19 +57,6 @@ class DnDSource extends Button implements Transferable,
     private transient int m_dropAction;
     private ByteArrayInputStream m_data = null;
 
-    static byte[] getContent(InputStream is) {
-        ByteArrayOutputStream tmp = new ByteArrayOutputStream();
-        try {
-            int read;
-            while (-1 != (read = is.read())){
-                tmp.write(read);
-            }
-        } catch(IOException e) {
-            e.printStackTrace();
-        }
-        return tmp.toByteArray();
-    }
-
     DnDSource(String label) {
         super(label);
         setBackground(Color.yellow);
