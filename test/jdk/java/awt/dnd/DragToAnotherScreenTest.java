@@ -102,13 +102,11 @@ public class DragToAnotherScreenTest {
         PassFailJFrame.log("Test logs:\n");
         Frame frame0 = new Frame("Drag Source", gd[0].getDefaultConfiguration());
         frame0.setSize(300, 300);
-        frame0.setLocation(200, 300);
         label0 = new Label("Drag me");
         frame0.add(label0);
 
         Frame frame1 = new Frame("Drop Target", gd[(gd.length > 1 ? 1 : 0)].getDefaultConfiguration());
         frame1.setSize(300, 300);
-        frame1.setLocation(500 + HGAP, 300);
         label1 = new Label("Drop on me");
         frame1.add(label1);
 
