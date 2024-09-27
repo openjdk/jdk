@@ -52,6 +52,8 @@ public final class DirectClassBuilder
         extends AbstractDirectBuilder<ClassModel>
         implements ClassBuilder {
 
+    /** The value of default class access flags */
+    static final int DEFAULT_CLASS_FLAGS = ClassFile.ACC_PUBLIC;
     final ClassEntry thisClassEntry;
     private final List<Util.Writable> fields = new ArrayList<>();
     private final List<Util.Writable> methods = new ArrayList<>();
@@ -67,7 +69,7 @@ public final class DirectClassBuilder
                               ClassEntry thisClass) {
         super(constantPool, context);
         this.thisClassEntry = AbstractPoolEntry.maybeClone(constantPool, thisClass);
-        this.flags = ClassFile.DEFAULT_CLASS_FLAGS;
+        this.flags = DEFAULT_CLASS_FLAGS;
         this.superclassEntry = null;
         this.interfaceEntries = Collections.emptyList();
         this.majorVersion = ClassFile.latestMajorVersion();

@@ -45,7 +45,7 @@ class fileStream;
                     constraint)                                             \
                                                                             \
   product(bool, EnableJVMCI, false, EXPERIMENTAL,                           \
-          "Enable JVMCI")                                                   \
+          "Enable JVMCI. Defaults to true if UseJVMCICompiler is true.")    \
                                                                             \
   product(bool, UseGraalJIT, false, EXPERIMENTAL,                           \
           "Select the Graal JVMCI compiler. This is an alias for: "         \
@@ -140,8 +140,8 @@ class fileStream;
   product(bool, UseJVMCINativeLibrary, false, EXPERIMENTAL,                 \
           "Execute JVMCI Java code from a shared library (\"libjvmci\") "   \
           "instead of loading it from class files and executing it "        \
-          "on the HotSpot heap. Defaults to true if EnableJVMCI is "        \
-          "true and a JVMCI native library is available.")                  \
+          "on the HotSpot heap. Defaults to true if UseJVMCICompiler or "   \
+          "EnableJVMCI is true and a JVMCI native library is available.")   \
                                                                             \
   product(double, JVMCINativeLibraryThreadFraction, 0.33, EXPERIMENTAL,     \
           "The fraction of compiler threads used by libjvmci. "             \
