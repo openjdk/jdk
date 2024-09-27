@@ -48,9 +48,6 @@ inline oop CompressedOops::decode_raw_not_null(narrowOop v) {
 }
 
 inline oop CompressedOops::decode_raw(narrowOop v) {
-  // Assume a null base casts to zero.  Otherwise we need more complexity that
-  // we can't test, since this is true for all currently supported platforms.
-  assert(0 == reinterpret_cast<uintptr_t>(nullptr), "null pointer value not zero?");
   return cast_to_oop((uintptr_t)base() + ((uintptr_t)v << shift()));
 }
 
@@ -70,9 +67,6 @@ inline narrowOop CompressedOops::encode_not_null(oop v) {
   assert(!is_null(v), "oop value can never be zero");
   assert(is_object_aligned(v), "address not aligned: " PTR_FORMAT, p2i(v));
   assert(is_in(v), "address not in heap range: " PTR_FORMAT, p2i(v));
-  // Assume a null base casts to zero.  Otherwise we need more complexity that
-  // we can't test, since this is true for all currently supported platforms.
-  assert(0 == reinterpret_cast<uintptr_t>(nullptr), "null pointer value not zero?");
   uint64_t  pd = (uint64_t)(pointer_delta((void*)v, (void*)base(), 1));
   assert(OopEncodingHeapMax > pd, "change encoding max if new encoding");
   narrowOop result = narrow_oop_cast(pd >> shift());
