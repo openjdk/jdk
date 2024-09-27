@@ -235,7 +235,7 @@ public:
   VMATreap* tree() { return &_tree; }
   void print_self() {
     visit_in_order([&](TreapNode* current) {
-      tty->print("%lu (%s) - %s - ", current->key(), NMTUtil::flag_to_name(current->val().out.flag()), statetype_to_string(current->val().out.type()));
+      tty->print("(%s) - %s - ", NMTUtil::flag_to_name(current->val().out.flag()), statetype_to_string(current->val().out.type()));
       return true;
     });
     tty->cr();
