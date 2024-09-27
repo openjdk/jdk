@@ -172,7 +172,6 @@ public final class WindowLayouts {
             w.setLocation(x, y);
             x += w.getWidth() + WINDOW_GAP;
         }
-
     }
 
     /**
