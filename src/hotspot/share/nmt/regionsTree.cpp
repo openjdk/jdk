@@ -26,10 +26,9 @@
 
 ReservedMemoryRegion RegionsTree::find_reserved_region(address addr, bool with_trace) {
     ReservedMemoryRegion rmr;
-    bool dump = with_trace;
     auto contain_region = [&](ReservedMemoryRegion& region_in_tree) {
-      if (dump) {
-        tty->print_cr("trc base: " INTPTR_FORMAT " , trc end: " INTPTR_FORMAT,
+      if (with_trace) {
+        log_debug(nmt)("trc base: " INTPTR_FORMAT " , trc end: " INTPTR_FORMAT,
                       p2i(region_in_tree.base()), p2i(region_in_tree.end()));
       }
       if (region_in_tree.contain_address(addr)) {
@@ -45,24 +44,12 @@ ReservedMemoryRegion RegionsTree::find_reserved_region(address addr, bool with_t
 VMATree::SummaryDiff RegionsTree::commit_region(address addr, size_t size, const NativeCallStack& stack) {
   //TODO: This part should be removed after 8335091
   ReservedMemoryRegion rgn = find_reserved_region(addr);
-  if (rgn.base() == (address)1) {
-    tty->print_cr("commit region not-found " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(addr), p2i(addr + size));
-    print_on(tty);
-    rgn = find_reserved_region(addr, true);
-    ShouldNotReachHere();
-  }
   return commit_mapping((VMATree::position)addr, size, make_region_data(stack, rgn.flag()));
 }
 
 VMATree::SummaryDiff RegionsTree::uncommit_region(address addr, size_t size) {
   //TODO: This part will be removed when 8335091 merged.
   ReservedMemoryRegion rgn = find_reserved_region(addr);
-  if (rgn.base() == (address)1) {
-    tty->print_cr("uncommit region not-found " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(addr), p2i(addr + size));
-    print_on(tty);
-    rgn = find_reserved_region(addr, true);
-    ShouldNotReachHere();
-  }
   return reserve_mapping((VMATree::position)addr, size, make_region_data(NativeCallStack::empty_stack(), rgn.flag()));
 }
 

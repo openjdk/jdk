@@ -24,6 +24,7 @@
 #ifndef NMT_REGIONSTREE_HPP
 #define NMT_REGIONSTREE_HPP
 
+#include "logging/log.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/virtualMemoryTrackerCommon.hpp"
 #include "nmt/vmatree.hpp"
@@ -135,7 +136,7 @@ class RegionsTree : public VMATree {
         auto st = stack(curr);
         size_t r_size = curr.distance_from(begin_node);
         if (r_size != rgn_size) {
-          tty->print_cr("----------------- size differ, distance: " SIZE_FORMAT " size: " SIZE_FORMAT, r_size, rgn_size);
+          log_debug(nmt)("----------------- size differ, distance: " SIZE_FORMAT " size: " SIZE_FORMAT, r_size, rgn_size);
         }
         if (rgn_size == 0) {
           prev.clear_node();
