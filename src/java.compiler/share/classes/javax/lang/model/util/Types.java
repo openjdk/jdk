@@ -276,9 +276,9 @@ public interface Types {
      * @param extendsBound  the extends (upper) bound, or {@code null} if none
      * @param superBound    the super (lower) bound, or {@code null} if none
      *
-     * @throws IllegalArgumentException if bounds are not valid,
-     * including for types that are <em>not</em> {@linkplain ReferenceType
-     * reference types}
+     * @throws IllegalArgumentException if bounds are not valid. Invalid bounds
+     * include all types that are not {@linkplain ReferenceType
+     * reference types}.
      * @jls 4.5.1 Type Arguments of Parameterized Types
      */
     WildcardType getWildcardType(TypeMirror extendsBound,

@@ -144,7 +144,7 @@ public class TestInvalidInputs extends JavacTestingAbstractProcessor {
         for (TypeMirror tm : invalidInputs) {
             try {
                 PrimitiveType pt = types.unboxedType(tm);
-                throw new RuntimeException("Should not reach" + tm);
+                throw new RuntimeException("Should not reach " + tm);
             } catch(IllegalArgumentException iae) {
                 ; // Expected
             }
@@ -174,7 +174,7 @@ public class TestInvalidInputs extends JavacTestingAbstractProcessor {
 
             try {
                 WildcardType wc2 = types.getWildcardType(null, tm);
-                throw new RuntimeException("Should not reach" + tm);
+                throw new RuntimeException("Should not reach " + tm);
             } catch(IllegalArgumentException iae) {
                 ; // Expected
             }
