@@ -43,9 +43,9 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/formatBuffer.hpp"
 
-ZErrorMessage* ZInitialize::_error_message = nullptr;
-bool           ZInitialize::_had_error     = false;
-bool           ZInitialize::_finished      = false;
+char ZInitialize::_error_message[ErrorMessageLength] = {};
+bool ZInitialize::_had_error                         = false;
+bool ZInitialize::_finished                          = false;
 
 ZInitializer::ZInitializer(ZBarrierSet* barrier_set) {
   ZInitialize::initialize(barrier_set);
@@ -74,22 +74,12 @@ void ZInitialize::initialize(ZBarrierSet* barrier_set) {
   pd_initialize();
 }
 
-class ZErrorMessage : public CHeapObj<MemTag::mtGC> {
- private:
-  err_msg _error_message;
-
- public:
-  ZErrorMessage(const char* error) : _error_message("%s", error) {}
-
-  operator const char *() const { return _error_message; }
-};
-
 void ZInitialize::register_error(bool debug, const char *error) {
   guarantee(!_finished, "Only register errors during initialization");
-  _had_error = true;
 
-  if (_error_message == nullptr) {
-    _error_message = new (std::nothrow) ZErrorMessage(error);
+  if (!_had_error) {
+    strncpy(_error_message, error, ErrorMessageLength - 1);
+    _had_error = true;
   }
 
   if (debug) {
@@ -102,7 +92,7 @@ void ZInitialize::register_error(bool debug, const char *error) {
 void ZInitialize::error(const char* msg_format, ...) {
   va_list argp;
   va_start(argp, msg_format);
-  const err_msg error(FormatBufferDummy(), msg_format, argp);
+  const FormatBuffer<ErrorMessageLength> error(FormatBufferDummy(), msg_format, argp);
   va_end(argp);
   register_error(false /* debug */, error);
 }
@@ -110,7 +100,7 @@ void ZInitialize::error(const char* msg_format, ...) {
 void ZInitialize::error_d(const char* msg_format, ...) {
   va_list argp;
   va_start(argp, msg_format);
-  const err_msg error(FormatBufferDummy(), msg_format, argp);
+  const FormatBuffer<ErrorMessageLength> error(FormatBufferDummy(), msg_format, argp);
   va_end(argp);
   register_error(true /* debug */, error);
 }
@@ -121,10 +111,10 @@ bool ZInitialize::had_error() {
 
 const char* ZInitialize::error_message() {
   assert(had_error(), "Should have registered an error");
-  if (_error_message == nullptr) {
+  if (!had_error()) {
     return "Unknown error, check error GC logs";
   }
-  return *_error_message;
+  return _error_message;
 }
 
 void ZInitialize::finish() {
