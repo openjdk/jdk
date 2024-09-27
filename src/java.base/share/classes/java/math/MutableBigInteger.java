@@ -717,18 +717,18 @@ class MutableBigInteger {
      * The result can be the value array of this MutableBigInteger,
      * but for speed the copy is not performed safely, so, in that case
      * the caller has to make sure that
-     * {@code (resPos <= offset || resPos >= offset + intLen)}.
+     * {@code (resFrom <= offset || resFrom >= offset + intLen)}.
      */
-    private void primitiveRightShift(int n, int[] result, int resPos) {
+    private void primitiveRightShift(int n, int[] result, int resFrom) {
         int[] val = value;
         int n2 = 32 - n;
 
         int b = val[offset];
-        result[resPos] = b >>> n;
+        result[resFrom] = b >>> n;
         for (int i = 1; i < intLen; i++) {
             int c = b;
             b = val[offset + i];
-            result[resPos + i] = (c << n2) | (b >>> n);
+            result[resFrom + i] = (c << n2) | (b >>> n);
         }
     }
 
