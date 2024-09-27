@@ -27,8 +27,8 @@
 #include "logDecorators.hpp"
 
 const LogLevelType AnyLevel = LogLevelType::NotMentioned;
-#define DEFAULT_DECORATORS \
-  DEFAULT_VALUE(AnyLevel, LOG_TAGS(jit, inlining))
+#define UNDECORATED_DEFAULTS \
+  UNDECORATED_DEFAULT(AnyLevel, LOG_TAGS(jit, inlining))
 
 template <LogDecorators::Decorator d>
 struct AllBitmask {
@@ -50,12 +50,12 @@ const char* LogDecorators::_name[][2] = {
 #undef DECORATOR
 };
 
-const LogDecorators::DefaultDecorator LogDecorators::default_decorators[] = {
-#define DEFAULT_VALUE(level, ...) LogDecorators::DefaultDecorator(level, __VA_ARGS__),
-  DEFAULT_DECORATORS
-#undef DEFAULT_VALUE
+const LogDecorators::UndecoratedSelection LogDecorators::default_decorators[] = {
+#define UNDECORATED_DEFAULT(level, ...) LogDecorators::UndecoratedSelection(level, __VA_ARGS__),
+  UNDECORATED_DEFAULTS
+#undef UNDECORATED_TAGSET
 };
-const size_t LogDecorators::number_of_default_decorators = sizeof(default_decorators) / sizeof(LogDecorators::DefaultDecorator);
+const size_t LogDecorators::number_of_default_decorators = sizeof(default_decorators) / sizeof(LogDecorators::UndecoratedTagset);
 
 LogDecorators::Decorator LogDecorators::from_string(const char* str) {
   for (size_t i = 0; i < Count; i++) {
@@ -106,7 +106,7 @@ bool LogDecorators::parse(const char* decorator_args, outputStream* errstream) {
   return result;
 }
 
-bool LogDecorators::has_disabled_decorators(const LogSelection& selection, const DefaultDecorator* defaults, size_t defaults_count) {
+bool LogDecorators::has_disabled_decorators(const LogSelection& selection, const UndecoratedSelection* defaults, size_t defaults_count) {
   for (size_t i = 0; i < defaults_count; ++i) {
     auto current_default = defaults[i];
     const bool ignore_level = current_default.selection().level() == AnyLevel;

@@ -71,15 +71,15 @@ class LogDecorators {
     NoDecorators
   };
 
-  class DefaultDecorator {
+  class UndecoratedSelection {
     friend class TestLogDecorators;
     LogSelection _selection;
 
-    DefaultDecorator() : _selection(LogSelection::Invalid) {}
+    UndecoratedSelection() : _selection(LogSelection::Invalid) {}
 
   public:
     template<typename... Tags>
-    DefaultDecorator(LogLevelType level, LogTagType first, Tags... rest) : _selection(LogSelection::Invalid) {
+    UndecoratedSelection(LogLevelType level, LogTagType first, Tags... rest) : _selection(LogSelection::Invalid) {
       static_assert(1 + sizeof...(rest) <= LogTag::MaxTags + 1,
                     "Too many tags specified!");
 
@@ -100,7 +100,7 @@ class LogDecorators {
   uint _decorators;
   static const char* _name[][2];
   static const uint defaultsMask = (1 << uptime_decorator) | (1 << level_decorator) | (1 << tags_decorator);
-  static const LogDecorators::DefaultDecorator default_decorators[];
+  static const LogDecorators::UndecoratedSelection default_decorators[];
   static const size_t number_of_default_decorators;
 
   static uint mask(LogDecorators::Decorator decorator) {
@@ -141,7 +141,7 @@ class LogDecorators {
 
   // Check if we have some default decorators for a given LogSelection. If that is the case,
   // the output parameter mask will contain the defaults-specified decorators mask
-  static bool has_disabled_decorators(const LogSelection& selection, const DefaultDecorator* defaults = default_decorators, size_t defaults_count = number_of_default_decorators);
+  static bool has_disabled_decorators(const LogSelection& selection, const UndecoratedSelection* defaults = default_decorators, size_t defaults_count = number_of_default_decorators);
 
   static LogDecorators::Decorator from_string(const char* str);
 
