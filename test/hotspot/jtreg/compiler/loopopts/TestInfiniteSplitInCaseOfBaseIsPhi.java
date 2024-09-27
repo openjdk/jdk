@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8340602
- * @requires vm.compiler2.enabled
+ * @requires vm.compiler2.enabled & vm.gc.Parallel
  * @summary C2: LoadNode::split_through_phi might exhaust nodes in case of base_is_phi
  * @run main/othervm -Xbatch -XX:+UseParallelGC
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure
@@ -37,47 +37,46 @@ import java.util.Random;
 
 public class TestInfiniteSplitInCaseOfBaseIsPhi {
 
-  static class Obj {
-    final Integer[] array;
-    final int start;
-    final int end;
+    static class Obj {
+        final Integer[] array;
+        final int start;
+        final int end;
 
-    Integer max = Integer.MIN_VALUE;
+        Integer max = Integer.MIN_VALUE;
 
-    Obj(Integer[] array, int start, int end) {
-      this.array = array;
-      this.start = start;
-      this.end = end;
+        Obj(Integer[] array, int start, int end) {
+            this.array = array;
+            this.start = start;
+            this.end = end;
+        }
+
+        Integer cmp(Integer i, Integer j) {
+            return i > j ? i : j;
+        }
+
+        void calc() {
+            int i = start;
+            do {
+                max = cmp(max, array[i]);
+                i++;
+            } while (i < end);
+        }
     }
 
-    Integer cmp(Integer i, Integer j) {
-      return i > j ? i : j;
+    static final int LEN = 2000;
+    static final Integer[] a = new Integer[LEN];
+    static {
+        Random r = new Random();
+        for (int i = 0; i < LEN; i++) {
+            a[i] = Integer.valueOf(r.nextInt());
+        }
     }
 
-    void calc() {
-      int i = start;
-      do {
-        max = cmp(max, array[i]);
-        i++;
-      } while (i < end);
+    public static void main (String[] args) {
+        Obj o = new Obj(a, 0, LEN);
+        for (int i = 0; i < 1000; i++) {
+            o.calc();
+        }
+        System.out.println(o.max);
     }
-  }
-
-  static final int LEN = 2000;
-  static final Integer[] a = new Integer[LEN];
-  static {
-    Random r = new Random();
-    for (int i = 0; i < LEN; i++) {
-      a[i] = Integer.valueOf(r.nextInt());
-    }
-  }
-
-  public static void main (String[] args) {
-    Obj o = new Obj(a, 0, LEN);
-    for (int i = 0; i < 1000; i++) {
-      o.calc();
-    }
-    System.out.println(o.max);
-  }
 }
-

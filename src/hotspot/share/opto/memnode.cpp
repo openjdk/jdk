@@ -1254,10 +1254,10 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
 
 //----------------------is_instance_field_load_with_local_phi------------------
 bool LoadNode::is_instance_field_load_with_local_phi() {
-  if( in(Memory)->is_Phi() && in(Address)->is_AddP() ) {
+  if (in(Memory)->is_Phi() && in(Address)->is_AddP()) {
     const TypeOopPtr* t_oop = in(Address)->bottom_type()->isa_oopptr();
     // Only instances and boxed values.
-    if( t_oop != nullptr &&
+    if (t_oop != nullptr &&
         t_oop->is_known_instance_field() &&
         t_oop->offset() != Type::OffsetBot &&
         t_oop->offset() != Type::OffsetTop) {
@@ -1270,9 +1270,9 @@ bool LoadNode::is_instance_field_load_with_local_phi() {
 bool LoadNode::is_boxed_value_load_with_local_phi(PhaseGVN* phase) {
   Compile* C = phase->C;
   Node* address = in(Address);
-  const TypeOopPtr *t_oop = address->bottom_type()->isa_oopptr();
+  const TypeOopPtr* t_oop = address->bottom_type()->isa_oopptr();
   intptr_t ignore = 0;
-  Node*    base = AddPNode::Ideal_base_and_offset(address, phase, ignore);
+  Node* base = AddPNode::Ideal_base_and_offset(address, phase, ignore);
   bool base_is_phi = (base != NULL) && base->is_Phi();
   bool load_boxed_value = t_oop != NULL && t_oop->is_ptr_to_boxed_value()
                           && C->aggressive_unboxing() && (base != NULL) && (base == address->in(AddPNode::Base))
@@ -1282,11 +1282,11 @@ bool LoadNode::is_boxed_value_load_with_local_phi(PhaseGVN* phase) {
 
 Node* LoadNode::phi_or_self(PhaseGVN* phase) {
   Node* mem = in(Memory);
-  const TypeOopPtr *t_oop = in(Address)->bottom_type()->isa_oopptr();
+  const TypeOopPtr* t_oop = in(Address)->bottom_type()->isa_oopptr();
   const Type* this_type = bottom_type();
 
   if (is_instance_field_load_with_local_phi()) {
-    Node *region = mem->in(0);
+    Node* region = mem->in(0);
 
     int this_index  = phase->C->get_alias_index(t_oop);
     int this_offset = t_oop->offset();
@@ -1302,8 +1302,8 @@ Node* LoadNode::phi_or_self(PhaseGVN* phase) {
 
   if (is_boxed_value_load_with_local_phi(phase)) {
     intptr_t ignore = 0;
-    Node * base = AddPNode::Ideal_base_and_offset(in(Address), phase, ignore);
-    Node * region = base->in(0);
+    Node* base = AddPNode::Ideal_base_and_offset(in(Address), phase, ignore);
+    Node* region = base->in(0);
 
     int this_index  = phase->C->get_alias_index(t_oop);
     int this_offset = t_oop->offset();
@@ -1327,7 +1327,7 @@ Node* LoadNode::Identity(PhaseGVN* phase) {
   // to the same address, then we are equal to the value stored.
   Node* mem = in(Memory);
   Node* value = can_see_stored_value(mem, phase);
-  if( value ) {
+  if (value) {
     // byte, short & char stores truncate naturally.
     // A load has to load the truncated value which requires
     // some sort of masking operation and that requires an
