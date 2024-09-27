@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -135,15 +135,7 @@ void InterpreterMacroAssembler::check_and_handle_popframe(Register scratch_reg) 
     // Call the Interpreter::remove_activation_preserving_args_entry()
     // func to get the address of the same-named entrypoint in the
     // generated interpreter code.
-#if defined(ABI_ELFv2)
-    call_c(CAST_FROM_FN_PTR(address,
-                            Interpreter::remove_activation_preserving_args_entry),
-           relocInfo::none);
-#else
-    call_c(CAST_FROM_FN_PTR(FunctionDescriptor*,
-                            Interpreter::remove_activation_preserving_args_entry),
-           relocInfo::none);
-#endif
+    call_c(CAST_FROM_FN_PTR(address, Interpreter::remove_activation_preserving_args_entry));
 
     // Jump to Interpreter::_remove_activation_preserving_args_entry.
     mtctr(R3_RET);
@@ -970,13 +962,13 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp, object);
-      lwz(tmp, in_bytes(Klass::access_flags_offset()), tmp);
-      testbitdi(CCR0, R0, tmp, exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
+      lbz(tmp, in_bytes(Klass::misc_flags_offset()), tmp);
+      testbitdi(CCR0, R0, tmp, exact_log2(KlassFlags::_misc_is_value_based_class));
       bne(CCR0, slow_case);
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      lightweight_lock(object, header, tmp, slow_case);
+      lightweight_lock(monitor, object, header, tmp, slow_case);
       b(count_locking);
     } else if (LockingMode == LM_LEGACY) {
       // Load markWord from object into header.

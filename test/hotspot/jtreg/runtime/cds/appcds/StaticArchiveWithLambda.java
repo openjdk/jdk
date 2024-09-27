@@ -52,7 +52,8 @@ public class StaticArchiveWithLambda {
                        "-cp", appJar,
                        "-Xlog:class+load,cds")
             .setArchiveName(archiveName);
-        CDSTestUtils.createArchiveAndCheck(opts);
+        CDSTestUtils.createArchiveAndCheck(opts)
+                    .shouldContain("Skipping java/lang/invoke/BoundMethodHandle$Species_LLLL because it is dynamically generated");
 
         // run with archive
         CDSOptions runOpts = (new CDSOptions())
