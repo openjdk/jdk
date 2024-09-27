@@ -39,7 +39,7 @@ import java.util.jar.Manifest;
 public class RemovedFiles {
 
     private static final String NONEXISTENT_ENTRIES_FOUND
-            = "Nonexistent signed entries detected. See details in -verbose output.";
+            = "This jar contains signed entries for files that do not exist. See the -verbose output for more details.";
 
     public static void main(String[] args) throws Exception {
         JarUtils.createJarFile(

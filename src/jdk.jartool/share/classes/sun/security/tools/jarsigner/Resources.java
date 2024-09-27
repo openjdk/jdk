@@ -179,7 +179,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"key.bit.disabled", "%d-bit key (disabled)"},
         {"key.bit.eccurve.disabled", "%1$d-bit %2$s key (disabled)"},
         {"unknown.size", "unknown size"},
-        {"nonexistent.entries.found", "Nonexistent signed entries detected. See details in -verbose output."},
+        {"nonexistent.entries.found", "This jar contains signed entries for files that do not exist. See the -verbose output for more details."},
         {"external.file.attributes.detected", "POSIX file permission and/or symlink attributes detected. These attributes are ignored when signing and are not protected by the signature."},
 
         {"jarsigner.", "jarsigner: "},
