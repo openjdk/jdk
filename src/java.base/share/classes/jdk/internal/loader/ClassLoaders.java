@@ -215,7 +215,7 @@ public class ClassLoaders {
          * Called by the VM, during -Xshare:dump
          */
         private void resetArchivedStates() {
-            resetArchivedStatesForAppClassLoader();
+            super.resetArchivedStates(true);
         }
     }
 
