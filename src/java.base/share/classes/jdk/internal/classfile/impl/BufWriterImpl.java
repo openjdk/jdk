@@ -111,6 +111,47 @@ public final class BufWriterImpl implements BufWriter {
         this.offset = offset + 2;
     }
 
+    @ForceInline
+    public void writeU2(int x1, int x2) {
+        reserveSpace(2);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) x1;
+        elems[offset + 1] = (byte) x2;
+        this.offset = offset + 2;
+    }
+
+    public void writeU3(int u1, int u2) {
+        reserveSpace(3);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) u1;
+        elems[offset + 1] = (byte) (u2 >> 8);
+        elems[offset + 2] = (byte) u2;
+        this.offset = offset + 3;
+    }
+
+    public void writeU3(int x1, int x2, int x3) {
+        reserveSpace(3);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) x1;
+        elems[offset + 1] = (byte) x2;
+        elems[offset + 2] = (byte) x3;
+        this.offset = offset + 3;
+    }
+
+    public void writeU4(int x1, int x2) {
+        reserveSpace(4);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) (x1 >> 8);
+        elems[offset + 1] = (byte) x1;
+        elems[offset + 2] = (byte) (x2 >> 8);
+        elems[offset + 3] = (byte) x2;
+        this.offset = offset + 4;
+    }
+
     @Override
     public void writeInt(int x) {
         reserveSpace(4);
@@ -293,6 +334,14 @@ public final class BufWriterImpl implements BufWriter {
             throw invalidIndex(idx, entry);
         writeU2(idx);
     }
+
+    public void writeIndex(int bytecode, PoolEntry entry) {
+        int idx = AbstractPoolEntry.maybeClone(constantPool, entry).index();
+        if (idx < 1 || idx > Character.MAX_VALUE)
+            throw invalidIndex(idx, entry);
+        writeU3(bytecode, idx);
+    }
+
 
     static IllegalArgumentException invalidIndex(int idx, PoolEntry entry) {
         return new IllegalArgumentException(idx + " is not a valid index. Entry: " + entry);

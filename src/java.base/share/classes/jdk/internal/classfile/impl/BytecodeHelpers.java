@@ -195,6 +195,17 @@ public class BytecodeHelpers {
         };
     }
 
+    public static int returnBytecode(TypeKind tk) {
+        return switch (tk) {
+            case BYTE, SHORT, INT, CHAR, BOOLEAN -> IRETURN;
+            case FLOAT -> FRETURN;
+            case LONG -> LRETURN;
+            case DOUBLE -> DRETURN;
+            case REFERENCE -> ARETURN;
+            case VOID -> RETURN;
+        };
+    }
+
     public static Opcode arrayLoadOpcode(TypeKind tk) {
         return switch (tk) {
             case BYTE, BOOLEAN -> Opcode.BALOAD;
@@ -209,6 +220,20 @@ public class BytecodeHelpers {
         };
     }
 
+    public static int arrayLoadBytecode(TypeKind tk) {
+        return switch (tk) {
+            case BYTE, BOOLEAN -> BALOAD;
+            case SHORT -> SALOAD;
+            case INT -> IALOAD;
+            case FLOAT -> FALOAD;
+            case LONG -> LALOAD;
+            case DOUBLE -> DALOAD;
+            case REFERENCE -> AALOAD;
+            case CHAR -> CALOAD;
+            case VOID -> throw new IllegalArgumentException("void not an allowable array type");
+        };
+    }
+
     public static Opcode arrayStoreOpcode(TypeKind tk) {
         return switch (tk) {
             case BYTE, BOOLEAN -> Opcode.BASTORE;
@@ -219,6 +244,20 @@ public class BytecodeHelpers {
             case DOUBLE -> Opcode.DASTORE;
             case REFERENCE -> Opcode.AASTORE;
             case CHAR -> Opcode.CASTORE;
+            case VOID -> throw new IllegalArgumentException("void not an allowable array type");
+        };
+    }
+
+    public static int arrayStoreBytecode(TypeKind tk) {
+        return switch (tk) {
+            case BYTE, BOOLEAN -> BASTORE;
+            case SHORT -> SASTORE;
+            case INT -> IASTORE;
+            case FLOAT -> FASTORE;
+            case LONG -> LASTORE;
+            case DOUBLE -> DASTORE;
+            case REFERENCE -> AASTORE;
+            case CHAR -> CASTORE;
             case VOID -> throw new IllegalArgumentException("void not an allowable array type");
         };
     }

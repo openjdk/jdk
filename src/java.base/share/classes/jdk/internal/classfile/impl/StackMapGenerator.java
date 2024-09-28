@@ -1199,7 +1199,9 @@ public final class StackMapGenerator {
             return Arrays.equals(l1, 0, commonSize, l2, 0, commonSize);
         }
 
-        void writeTo(BufWriter out, Frame prevFrame, ConstantPoolBuilder cp) {
+        void writeTo(BufWriterImpl out, Frame prevFrame, ConstantPoolBuilder cp) {
+            int localsSize = this.localsSize;
+            int stackSize = this.stackSize;
             int offsetDelta = offset - prevFrame.offset - 1;
             if (stackSize == 0) {
                 int commonLocalsSize = localsSize > prevFrame.localsSize ? prevFrame.localsSize : localsSize;
@@ -1208,8 +1210,7 @@ public final class StackMapGenerator {
                     if (diffLocalsSize == 0 && offsetDelta < 64) { //same frame
                         out.writeU1(offsetDelta);
                     } else {   //chop, same extended or append frame
-                        out.writeU1(251 + diffLocalsSize);
-                        out.writeU2(offsetDelta);
+                        out.writeU3(251 + diffLocalsSize, offsetDelta);
                         for (int i=commonLocalsSize; i<localsSize; i++) locals[i].writeTo(out, cp);
                     }
                     return;
@@ -1218,15 +1219,13 @@ public final class StackMapGenerator {
                 if (offsetDelta < 64) {  //same locals 1 stack item frame
                     out.writeU1(64 + offsetDelta);
                 } else {  //same locals 1 stack item extended frame
-                    out.writeU1(247);
-                    out.writeU2(offsetDelta);
+                    out.writeU3(247, offsetDelta);
                 }
                 stack[0].writeTo(out, cp);
                 return;
             }
             //full frame
-            out.writeU1(255);
-            out.writeU2(offsetDelta);
+            out.writeU3(255, offsetDelta);
             out.writeU2(localsSize);
             for (int i=0; i<localsSize; i++) locals[i].writeTo(out, cp);
             out.writeU2(stackSize);

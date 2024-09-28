@@ -55,16 +55,19 @@ public class AttributeHolder {
 
     @SuppressWarnings("unchecked")
     <A extends Attribute<A>> A get(AttributeMapper<A> am) {
-        for (Attribute<?> a : attributes)
+        for (int i = 0; i < attributes.size(); i++) {
+            Attribute<?> a = attributes.get(i);
             if (a.attributeMapper() == am)
-                return (A)a;
+                return (A) a;
+        }
         return null;
     }
 
     boolean isPresent(AttributeMapper<?> am) {
-        for (Attribute<?> a : attributes)
-            if (a.attributeMapper() == am)
+        for (int i = 0; i < attributes.size(); i++) {
+            if (attributes.get(i).attributeMapper() == am)
                 return true;
+        }
         return false;
     }
 
