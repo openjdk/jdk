@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -576,7 +576,7 @@ public class Font implements java.io.Serializable
      * family name, and may represent either a logical font or a physical
      * font found in this {@code GraphicsEnvironment}.
      * The family names for logical fonts are: Dialog, DialogInput,
-     * Monospaced, Serif, or SansSerif. Pre-defined String constants exist
+     * Monospaced, Serif, or SansSerif. Pre-defined StriFonts.javang constants exist
      * for all of these names, for example, {@code DIALOG}. If {@code name} is
      * {@code null}, the <em>logical font name</em> of the new
      * {@code Font} as returned by {@code getName()} is set to
