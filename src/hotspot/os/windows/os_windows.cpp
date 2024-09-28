@@ -3391,7 +3391,7 @@ int os::create_file_for_heap(const char* dir) {
 }
 
 // If 'base' is not null, function will return null if it cannot get 'base'
-char* os::map_memory_to_file(char* base, size_t size, int fd, MemTag flag) {
+char* os::map_memory_to_file(char* base, size_t size, int fd, MemTag mem_tag) {
   assert(fd != -1, "File descriptor is not valid");
 
   HANDLE fh = (HANDLE)_get_osfhandle(fd);
