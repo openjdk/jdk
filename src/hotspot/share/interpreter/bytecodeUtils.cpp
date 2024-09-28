@@ -643,7 +643,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
         }
       }
 
-      constantTag tag = cp->tag_at(cp_index);
+      constantTag tag = cp->constant_tag_at(cp_index);
       if (tag.is_klass()  || tag.is_unresolved_klass() ||
           tag.is_method() || tag.is_interface_method() ||
           tag.is_field()  || tag.is_string()) {

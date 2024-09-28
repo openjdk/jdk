@@ -101,8 +101,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     /**
      * Creates a random access file stream to read from, and optionally
-     * to write to, a file with the specified pathname. A new
-     * {@link FileDescriptor} object is created to represent the
+     * to write to, a file with the specified pathname. If the file exists
+     * it is opened; if it does not exist and write mode is specified, a
+     * new file is created.
+     * {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * A new {@link FileDescriptor} object is created to represent the
      * connection to the file.
      *
      * <p> The {@code mode} argument specifies the access mode with which the
@@ -146,9 +150,14 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     }
 
     /**
-     * Creates a random access file stream to read from, and optionally to
-     * write to, the file specified by the {@link File} argument.  A new {@link
-     * FileDescriptor} object is created to represent this file connection.
+     * Creates a random access file stream to read from, and optionally
+     * to write to, the file specified by the {@link File} argument. If
+     * the file exists it is opened; if it does not exist and write mode
+     * is specified, a new file is created.
+     * {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * A new {@link FileDescriptor} object is created to represent the
+     * connection to the file.
      *
      * <p>The <a id="mode">{@code mode}</a> argument specifies the access mode
      * in which the file is to be opened.  The permitted values and their

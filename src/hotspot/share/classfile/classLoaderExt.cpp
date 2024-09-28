@@ -100,12 +100,10 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
     ModulePathsGatherer(JavaThread* current, GrowableArray<char*>* module_paths) :
       _current(current), _module_paths(module_paths) {}
     void do_module(ModuleEntry* m) {
-      char* path = m->location()->as_C_string();
-      if (strncmp(path, "file:", 5) == 0) {
-        path = ClassLoader::skip_uri_protocol(path);
-        char* path_copy = NEW_RESOURCE_ARRAY(char, strlen(path) + 1);
-        strcpy(path_copy, path);
-        _module_paths->append(path_copy);
+      char* uri = m->location()->as_C_string();
+      if (strncmp(uri, "file:", 5) == 0) {
+        char* path = ClassLoader::uri_to_path(uri);
+        _module_paths->append(path);
       }
     }
   };
@@ -213,6 +211,15 @@ void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
     char sep = os::file_separator()[0];
     const char* dir_name = entry->name();
     const char* dir_tail = strrchr(dir_name, sep);
+#ifdef _WINDOWS
+    // On Windows, we also support forward slash as the file separator when locating entries in the classpath entry.
+    const char* dir_tail2 = strrchr(dir_name, '/');
+    if (dir_tail == nullptr) {
+      dir_tail = dir_tail2;
+    } else if (dir_tail2 != nullptr && dir_tail2 > dir_tail) {
+      dir_tail = dir_tail2;
+    }
+#endif
     int dir_len;
     if (dir_tail == nullptr) {
       dir_len = 0;

@@ -430,4 +430,12 @@ public final class Utils {
         // but only if it is safe and there is a mechanism to register event
         // classes in other modules besides jdk.jfr and java.base.
     }
+
+    public static long multiplyOverflow(long a, long b, long defaultValue) {
+        try {
+            return Math.multiplyExact(a, b);
+        } catch (ArithmeticException ae) {
+            return defaultValue;
+        }
+    }
 }

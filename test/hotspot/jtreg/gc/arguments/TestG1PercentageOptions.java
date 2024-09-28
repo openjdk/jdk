@@ -51,14 +51,14 @@ public class TestG1PercentageOptions {
         }
     }
 
-    private static final String[] defaultValid = new String[] {
-        "0", "1", "50", "95", "100" };
-    private static final String[] defaultInvalid = new String[] {
-        "-10", "110", "bad" };
+    private static final String[] rangeOneToHundredValid = new String[] {
+        "1", "50", "95", "100" };
+    private static final String[] rangeOneToHundredInvalid = new String[] {
+        "0", "-10", "110", "bad" };
 
     // All of the G1 product arguments that are percentages.
     private static final OptionDescription[] percentOptions = new OptionDescription[] {
-        new OptionDescription("G1ConfidencePercent", defaultValid, defaultInvalid)
+        new OptionDescription("G1ConfidencePercent", rangeOneToHundredValid, rangeOneToHundredInvalid)
         // Other percentage options are not yet validated by argument processing.
     };
 
