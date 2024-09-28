@@ -485,41 +485,77 @@ public final class JSONMappingFactory {
             if (!(jsonValue instanceof JSONArray)) {
                 throw new JSONDataException("TabularData not in array");
             } 
-
-            CompositeType rowType = type.getRowType();
-//            System.err.println("Tabular rowType: " + rowType);
             TabularDataSupport tds = new TabularDataSupport(type);
 
+            CompositeType rowType = type.getRowType();
+            JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(rowType);
+            System.err.println("XXX Tabular rowType: " + rowType + " mapper: " + typeMapper);
+//            OpenTypeParser parser = new OpenTypeParser(rowType.toString());
+//            OpenType<?> ot = parser.parseSimpleType();
+
             // Convert JSON array elements into tabular rows:
+            if (!(jsonValue instanceof JSONArray)) {
+                throw new JSONDataException("JSON not a JSONArray when creating TabularData");
+            }
             JSONArray array = (JSONArray) jsonValue;
 
-            for (int i=0; i<array.size(); i++) {
+            // Tabular JSON is an array of key, value.
+            for (int i = 0; i < array.size(); i++) {
                 JSONElement e = array.get(i);
                 JSONObject o = (JSONObject) e;
                 JSONPrimitive key = (JSONPrimitive) o.get("key");
-//                System.err.println(key.getValue());
-                JSONPrimitive value = (JSONPrimitive) o.get("value");
-//                System.err.println(value.getValue() + " == class " + value.getValue().getClass());
+                Object openKey = (String) key.getValue();
+                Object openValue = getOpenValue(rowType, typeMapper, o);
+
+                // put: value needs to be CompositeData...
+                // Use hints in DefaultMXBeanMappingFactory.TabularMapping.toNonNullOpenValue()
                 try {
-                    OpenTypeParser parser = new OpenTypeParser(value.getValue().getClass().getName());
-                    OpenType<?> ot = parser.parseSimpleType();
-                    //System.err.println("opentype = " + ot);
-                    Object openKey = (String) key.getValue();
-                    Object openValue = (String) value.getValue();
-
-                    // put: value needs to be CompositeData...
-                    // Use hints in DefaultMXBeanMappingFactory.TabularMapping.toNonNullOpenValue()
                     CompositeDataSupport row = new CompositeDataSupport(rowType, keyValueArray,
-                        new Object[] { openKey, openValue });
+                                                   new Object[] { openKey, openValue });
                     tds.put(row);
-
-                } catch (Exception ex) {
-                    ex.printStackTrace(System.err);
-                    break;
+                } catch (OpenDataException ode) {
+                    ode.printStackTrace(System.err);
                 }
             }
 //            System.err.println("ZZZZ tds = " + tds);
             return tds;
+        }
+
+        protected Object getOpenValue(CompositeType rowType, JSONMapper typeMapper, JSONObject o) {
+            // Return the "value" from the JSONObject defining one row of TabularData.
+
+            JSONElement value = o.get("value");
+            try {
+            if (value instanceof JSONPrimitive) {
+                JSONPrimitive p = (JSONPrimitive) value;
+//                OpenTypeParser parser = new OpenTypeParser(p.getValue().getClass().getName());
+//                OpenType<?> ot = parser.parseSimpleType();
+                return (String) p.getValue();
+
+            } else {
+                // Construct a CompositeDataSupport from the JSON for itemNames, itemValues...
+                System.err.println("XXXX tabular.getOpenValue: " + o.toJsonString());
+
+                
+                Object r = typeMapper.toJavaObject(o);
+                System.err.println("XXXX ROW MAPPED = " + r);
+                return o;
+
+            // KJW XXXXX JSONPrimitive value = (JSONPrimitive) o.get("value");
+//            System.err.println(value.getValue() + " == class " + value.getValue().getClass());
+                //OpenTypeParser parser = new OpenTypeParser(value.getValue().getClass().getName());
+
+//                OpenTypeParser parser = new OpenTypeParser(value.getClass().getName());
+//                OpenType<?> ot = parser.parse();
+                // System.err.println("opentype = " + ot);
+
+//                return value.toString();
+
+            }
+            } catch (Exception ex) {
+                ex.printStackTrace(System.err);
+            }
+            return null;
         }
 
         @Override

@@ -104,6 +104,16 @@ public final class OpenTypeParser {
         return s;
     }
 
+    public char peek() {
+        return s.charAt(0);
+    }
+
+    public char getChar() {
+        char c = s.charAt(0);
+        consume(1);
+        return c;
+    }
+
     public OpenType<?> parse() throws ParseException {
         // ArrayType, CompositeType, SimpleType, TabularType
         OpenType<?> type = null;
@@ -398,6 +408,7 @@ public final class OpenTypeParser {
     }
 
     protected String parseTypeName() throws ParseException {
+//        System.err.println("XXX parseTypeName '" + s + "'");
         // tabular:
         // name=java.util.Map<java.lang.String, java.lang.String>,
         // composite:
@@ -405,10 +416,27 @@ public final class OpenTypeParser {
         if (consume("java.util.Map<java.lang.String, java.lang.String>")) {
             return "java.util.Map<java.lang.String, java.lang.String>";
         }
-        String n = consumeTo(',');
-        if (n != null) {
-            return n;
+        // Simple case:
+        if (!s.contains("<")) {
+            return consumeTo(',');
         }
-        return null;
+        // Parse to , but don't count commas inside < > for a Map type.
+        StringBuilder name = new StringBuilder();
+        int brackets = 0;
+        while (s.length() > 0) {
+            char c = peek();
+            if (c == ',' && brackets == 0) {
+                break;
+            }
+            c = getChar();
+            if (c == '<') {
+                brackets++;
+            } else if (c == '>') {
+                brackets--;
+            }
+            name.append(c);
+        }
+//        System.err.println("XXX typeName = '" + name.toString() + "'");
+        return name.toString();
     }
 }
