@@ -145,7 +145,6 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
         tb.writeJavaFiles(root,
             """
             import S;
-            
             class T extends T.A {
                 private static final class A extends T {}
             }
