@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,19 @@
  *
  */
 
-#ifndef NMT_VIRTUALMEMORYTRACKERCOMMON_HPP
-#define NMT_VIRTUALMEMORYTRACKERCOMMON_HPP
+#ifndef SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
+#define SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
 
+#include "memory/allocation.hpp"
+#include "memory/metaspace.hpp" // For MetadataType
+#include "memory/metaspaceStats.hpp"
 #include "nmt/allocationSite.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/nativeCallStack.hpp"
 #include "utilities/linkedlist.hpp"
+#include "utilities/ostream.hpp"
+
 
 
 
@@ -303,6 +310,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
   MEMFLAGS         _flag;
 
  public:
+  bool is_valid() { return base() != (address)1 && size() != 1;}
   ReservedMemoryRegion() :
     VirtualMemoryRegion((address)1, 1), _stack(NativeCallStack::empty_stack()), _flag(mtNone) { }
 
@@ -339,10 +347,6 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
   // the new region
   void    move_committed_regions(address addr, ReservedMemoryRegion& rgn);
 
-  CommittedRegionIterator iterate_committed_regions() const {
-    return CommittedRegionIterator(_committed_regions.head());
-  }
-
   ReservedMemoryRegion& operator= (const ReservedMemoryRegion& other) {
     set_base(other.base());
     set_size(other.size());
@@ -350,13 +354,6 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     _stack =         *other.call_stack();
     _flag  =         other.flag();
     _committed_regions.clear();
-
-    CommittedRegionIterator itr = other.iterate_committed_regions();
-    const CommittedMemoryRegion* rgn = itr.next();
-    while (rgn != nullptr) {
-      _committed_regions.add(*rgn);
-      rgn = itr.next();
-    }
 
     return *this;
   }
@@ -383,4 +380,5 @@ class VirtualMemoryWalker : public StackObj {
    virtual bool do_allocation_site(const ReservedMemoryRegion* rgn) { return false; }
 };
 
-#endif //  NMT_VIRTUALMEMORYTRACKERCOMMON_HPP
+#endif // SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
+

@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "nmt/nmtTreap.hpp"
-#include "nmt/virtualMemoryTrackerCommon.hpp"
+#include "nmt/vmtCommon.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 

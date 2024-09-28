@@ -30,7 +30,7 @@
 #include "nmt/memoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
-#include "nmt/virtualMemoryTrackerWithTree.hpp"
+#include "nmt/vmtCommon.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/threadCritical.hpp"
 #include "utilities/debug.hpp"
@@ -52,27 +52,13 @@ class MemTracker : AllStatic {
   }
 
  public:
-  enum VMT_Version { OLD, NEW, BOTH };
-
-  static bool is_using_tree() { return _version ==  VMT_Version::NEW; }
-  static bool is_using_sorted_link_list() { return _version ==  VMT_Version::OLD; }
-  static bool is_using_both() { return _version == VMT_Version::BOTH; }
-  static void set_version(VMT_Version v) { _version = v; }
 
   static void snapshot_thread_stacks() {
-    if (is_using_sorted_link_list())
-      VirtualMemoryTracker::snapshot_thread_stacks();
-    if (is_using_tree())
-      VirtualMemoryTrackerWithTree::Instance::snapshot_thread_stacks();
+    VirtualMemoryTracker::Instance::snapshot_thread_stacks();
   }
 
   static bool walk_virtual_memory(VirtualMemoryWalker* walker) {
-    if (is_using_sorted_link_list())
-      return VirtualMemoryTracker::walk_virtual_memory(walker);
-    if (is_using_tree()) {
-      return VirtualMemoryTrackerWithTree::Instance::walk_virtual_memory(walker);
-    }
-    return false;
+    return VirtualMemoryTracker::Instance::walk_virtual_memory(walker);
   }
 
   // Initializes NMT to whatever -XX:NativeMemoryTracking says.
@@ -149,10 +135,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      if (is_using_sorted_link_list())
-        VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
-      if (is_using_tree())
-        VirtualMemoryTrackerWithTree::Instance::add_reserved_region((address)addr, size, stack, flag);
+      VirtualMemoryTracker::Instance::add_reserved_region((address)addr, size, stack, flag);
     }
   }
 
@@ -160,10 +143,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      if (is_using_sorted_link_list())
-        VirtualMemoryTracker::remove_released_region((address)addr, size);
-      if (is_using_tree())
-        VirtualMemoryTrackerWithTree::Instance::remove_released_region((address)addr, size);
+      VirtualMemoryTracker::Instance::remove_released_region((address)addr, size);
     }
   }
 
@@ -171,10 +151,7 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
-      if (is_using_sorted_link_list())
-        VirtualMemoryTracker::remove_uncommitted_region((address)addr, size);
-      if (is_using_tree())
-        VirtualMemoryTrackerWithTree::Instance::remove_uncommitted_region((address)addr, size);
+      VirtualMemoryTracker::Instance::remove_uncommitted_region((address)addr, size);
     }
   }
 
@@ -184,15 +161,8 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      if (is_using_sorted_link_list()) {
-        VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
-        VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
-      }
-      if (is_using_tree()) {
-        VirtualMemoryTrackerWithTree::Instance::add_reserved_region((address)addr, size, stack, flag);
-        VirtualMemoryTrackerWithTree::Instance::add_committed_region((address)addr, size, stack);
-      }
-
+      VirtualMemoryTracker::Instance::add_reserved_region((address)addr, size, stack, flag);
+      VirtualMemoryTracker::Instance::add_committed_region((address)addr, size, stack);
     }
   }
 
@@ -202,10 +172,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      if (is_using_sorted_link_list())
-        VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
-      if (is_using_tree())
-        VirtualMemoryTrackerWithTree::Instance::add_committed_region((address)addr, size, stack);
+      VirtualMemoryTracker::Instance::add_committed_region((address)addr, size, stack);
     }
   }
 
@@ -253,10 +220,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      if (is_using_sorted_link_list())
-        VirtualMemoryTracker::split_reserved_region((address)addr, size, split, flag, split_flag);
-      if (is_using_tree())
-        VirtualMemoryTrackerWithTree::Instance::split_reserved_region((address)addr, size, split, flag, split_flag);
+      VirtualMemoryTracker::Instance::split_reserved_region((address)addr, size, split, flag, split_flag);
     }
   }
 
@@ -265,10 +229,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      if (is_using_sorted_link_list())
-        VirtualMemoryTracker::set_reserved_region_type((address)addr, size, flag);
-      if (is_using_tree())
-        VirtualMemoryTrackerWithTree::Instance::set_reserved_region_type((address)addr, size, flag);
+      VirtualMemoryTracker::Instance::set_reserved_region_type((address)addr, size, flag);
     }
   }
 
@@ -327,8 +288,6 @@ class MemTracker : AllStatic {
   static MemBaseline      _baseline;
   // Query lock
   static Mutex*           _query_lock;
-
-  static VMT_Version _version;
 
 };
 

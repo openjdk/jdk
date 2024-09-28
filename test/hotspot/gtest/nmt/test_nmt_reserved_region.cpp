@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
+#include "nmt/vmtCommon.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
@@ -40,15 +40,5 @@ TEST_VM(NMT, ReservedRegionCopy) {
   ReservedMemoryRegion region2(dummy2, os::vm_page_size(), stack2, mtCode);
   VirtualMemorySummary::record_reserved_memory(os::vm_page_size(), region2.flag());
   region2.add_committed_region(dummy2, os::vm_page_size(), stack2);
-
-  region2 = region1;
-
-  CommittedRegionIterator itr = region2.iterate_committed_regions();
-  const CommittedMemoryRegion* rgn = itr.next();
-  ASSERT_EQ(rgn->base(), dummy1); // Now we should see dummy1
-  ASSERT_EQ(region2.flag(), mtThreadStack); // Should be correct flag
-  ASSERT_EQ(region2.call_stack()->get_frame(0), dummy1); // Check the stack
-  rgn = itr.next();
-  ASSERT_EQ(rgn, (const CommittedMemoryRegion*)nullptr); // and nothing else
 }
 

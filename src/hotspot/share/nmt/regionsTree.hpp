@@ -26,8 +26,8 @@
 
 #include "logging/log.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "nmt/virtualMemoryTrackerCommon.hpp"
 #include "nmt/vmatree.hpp"
+#include "nmt/vmtCommon.hpp"
 
 class RegionsTree : public VMATree {
  private:
