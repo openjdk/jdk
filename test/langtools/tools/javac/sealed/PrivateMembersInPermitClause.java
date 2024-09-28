@@ -53,7 +53,7 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
     }
 
     @Test
-    public void testPrivateMembersInPermitClause() throws Exception {
+    public void givenPrivateClassInPermitsClause_whenCompiling_thenShouldCompile() throws Exception {
         var root = Path.of("src");
         tb.writeJavaFiles(root,
             """
@@ -66,5 +66,94 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
         new toolbox.JavacTask(tb)
             .files(root.resolve("S.java"))
             .run(toolbox.Task.Expect.SUCCESS);
+    }
+
+    @Test
+    public void givenPrivateClassOfOtherTopLevelClassInPermitsClause_whenCompiling_thenShouldFail() throws Exception {
+        var root = Path.of("src");
+        tb.writeJavaFiles(root,
+            """
+            public class S {
+                private static final class A extends S {}
+            }
+            """
+        );
+
+        tb.writeJavaFiles(root,
+            """
+            public sealed class T permits S.A {
+                private static final class A extends T {}
+            }
+            """
+        );
+
+        new toolbox.JavacTask(tb)
+            .files(root.resolve("S.java"), root.resolve("T.java"))
+            .run(toolbox.Task.Expect.FAIL);
+    }
+
+    @Test
+    public void givenPrivateClassInPermitsClauseOfInnerClass_whenCompiling_thenShouldCompile() throws Exception {
+        var root = Path.of("src");
+        tb.writeJavaFiles(root,
+            """
+            public class S  permits S.T.A {
+                static class T {
+                    private static final class A extends T {}
+                }
+            }
+            """
+        );
+
+        new toolbox.JavacTask(tb)
+            .files(root.resolve("S.java"))
+            .run(toolbox.Task.Expect.SUCCESS);
+    }
+
+    @Test
+    public void givenPrivateClassInPermitsClauseContainedInSiblingPrivateInnerClass_whenCompiling_thenShouldCompile() throws Exception {
+        var root = Path.of("src");
+        tb.writeJavaFiles(root,
+            """
+            public class S {
+                private static class A {
+                    private static class B extends C.D {}
+                }
+                private static class C {
+                    private static class D {}
+                }
+            }
+            """
+        );
+
+        new toolbox.JavacTask(tb)
+            .files(root.resolve("S.java"))
+            .run(toolbox.Task.Expect.SUCCESS);
+    }
+
+    @Test
+    public void givenPrivateClassInPermitsClause_whenThanCompilingClassThatReferencesPrivateClassInExtendsClause_thenShouldFail() throws Exception {
+        var root = Path.of("src");
+        tb.writeJavaFiles(root,
+            """
+            sealed class S permits S.A {
+                private static final class A extends S {}
+            }
+            """
+        );
+
+        tb.writeJavaFiles(root,
+            """
+            import S;
+            
+            class T extends T.A {
+                private static final class A extends T {}
+            }
+            """
+        );
+
+        new toolbox.JavacTask(tb)
+            .files(root.resolve("S.java"), root.resolve("T.java"))
+            .run(toolbox.Task.Expect.FAIL);
     }
 }
