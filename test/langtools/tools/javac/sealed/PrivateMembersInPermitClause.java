@@ -97,9 +97,9 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
         var root = Path.of("src");
         tb.writeJavaFiles(root,
             """
-            public class S  permits S.T.A {
+            public sealed class S permits S.T.A {
                 static class T {
-                    private static final class A extends T {}
+                    private static final class A extends S {}
                 }
             }
             """
