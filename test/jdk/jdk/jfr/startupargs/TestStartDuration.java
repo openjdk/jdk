@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import jdk.test.lib.process.ProcessTools;
  * @summary Start a recording with duration. Verify recording stops.
  * @key jfr
  * @requires vm.hasJFR
+ * @requires vm.flagless
  * @library /test/lib /test/jdk
  * @run main jdk.jfr.startupargs.TestStartDuration
  */
