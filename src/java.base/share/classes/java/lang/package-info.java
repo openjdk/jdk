@@ -43,7 +43,7 @@
  * number of methods for converting among primitive values, as well as
  * methods supporting such standard functionality as {@code equals}
  * and {@code hashCode}.  The {@link Void} class is a non-instantiable
- * class that holds a reference to a {@link Class} object representing
+ * class that holds a reference to a {@code Class} object representing
  * the type {@code void}.
  *
  * <p>The class {@link Math} provides commonly used mathematical
