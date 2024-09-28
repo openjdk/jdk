@@ -140,11 +140,12 @@ import sun.reflect.misc.ReflectUtil;
  * }}
  *
  * It is also possible to get the {@code Class} object for a named
- * class or interface (or for {@code void}) using a <i>class literal</i>.
+ * class or interface (or for {@code void}) using a <dfn>class literal</dfn>
+ * (JLS  {@jls 15.8.2}).
  * For example:
  *
  * {@snippet lang="java" :
- * System.out.println("The name of class Foo is: "+Foo.class.getName());
+ * System.out.println("The name of class Foo is: " + Foo.class.getName()); // @highlight substring="Foo.class"
  * }
  *
  * <p> Some methods of class {@code Class} expose whether the declaration of
@@ -153,9 +154,10 @@ import sun.reflect.misc.ReflectUtil;
  * is situated in a <dfn>{@index "nest"}</dfn>. A <a id="nest">nest</a> is a set of
  * classes and interfaces, in the same run-time package, that
  * allow mutual access to their {@code private} members.
- * The classes and interfaces are known as <dfn>{@index "nestmates"}</dfn>.
+ * The classes and interfaces are known as <dfn>{@index "nestmates"}</dfn>
+ * (JVMS {@jvms 4.7.29}).
  * One nestmate acts as the
- * <dfn>nest host</dfn>, and enumerates the other nestmates which
+ * <dfn>nest host</dfn> (JVMS {@jvms 4.7.28}), and enumerates the other nestmates which
  * belong to the nest; each of them in turn records it as the nest host.
  * The classes and interfaces which belong to a nest, including its host, are
  * determined when
@@ -216,7 +218,6 @@ import sun.reflect.misc.ReflectUtil;
  *
  * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
  * @since   1.0
- * @jls 15.8.2 Class Literals
  */
 public final class Class<T> implements java.io.Serializable,
                               GenericDeclaration,
