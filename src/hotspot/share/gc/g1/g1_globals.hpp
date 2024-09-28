@@ -87,22 +87,6 @@
                                        range,                               \
                                        constraint)
 #endif
-
-// Temporary flags to support the migration from early to late barrier expansion
-// (see JEP 475) for all platforms. These flags are not intended to be
-// integrated in the main JDK repository.
-#if G1_LATE_BARRIER_MIGRATION_SUPPORT
-#define G1_LATE_BARRIER_MIGRATION_SUPPORT_FLAGS(product)                    \
-                                                                            \
-  product(bool, G1UseLateBarrierExpansion, true,                            \
-          "Expand G1 barriers late during C2 compilation")                  \
-                                                                            \
-  product(bool, G1StressBarriers, false,                                    \
-          "Configure G1 to exercise cold barrier paths")
-#else
-#define G1_LATE_BARRIER_MIGRATION_SUPPORT_FLAGS(product)
-#endif
-
 //
 // Defines all globals flags used by the garbage-first compiler.
 //
@@ -355,9 +339,7 @@
                     product,                                                \
                     product_pd,                                             \
                     range,                                                  \
-                    constraint)                                             \
-                                                                            \
-  G1_LATE_BARRIER_MIGRATION_SUPPORT_FLAGS(product)
+                    constraint)
 
 // end of GC_G1_FLAGS
 
