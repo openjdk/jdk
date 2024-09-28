@@ -98,13 +98,13 @@ public class MutableBigIntegerShiftTests {
                         32 + random.nextInt(1, 17) },
                 // intLen != 0 && n > leadingZeros && nBits > leadingZeros && value.length < newLen
                 { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L << 15, 1L << 32) }),
-                        random.nextInt(16, 33) },
+                        random.nextInt(17, 32) },
                 // intLen != 0 && n > leadingZeros && nBits > leadingZeros && value.length >= newLen && newOffset != offset
                 { new MutableBigIntegerBox(new int[] { random.nextInt(), (int) random.nextLong(1L << 15, 1L << 32) }, 1, 1),
-                        random.nextInt(16, 33) },
+                        random.nextInt(17, 32) },
                 // intLen != 0 && n > leadingZeros && nBits > leadingZeros && value.length >= newLen && newOffset == offset
                 { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L << 15, 1L << 32), random.nextInt() }, 0, 1),
-                        random.nextInt(16, 33) },
+                        random.nextInt(17, 32) },
         };
 
         for (int i = 0; i < cases.length; i++) {
