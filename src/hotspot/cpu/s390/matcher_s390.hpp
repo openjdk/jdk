@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -141,6 +141,11 @@
 
   // Does the CPU supports vector unsigned comparison instructions?
   static constexpr bool supports_vector_comparison_unsigned(int vlen, BasicType bt) {
+    return false;
+  }
+
+  // Does the CPU supports doubleword multiplication with quadword saturation.
+  static constexpr bool supports_double_word_mult_with_quadword_staturation(void) {
     return false;
   }
 

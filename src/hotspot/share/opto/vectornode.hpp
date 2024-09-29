@@ -398,9 +398,21 @@ class MulVINode : public VectorNode {
 //------------------------------MulVLNode--------------------------------------
 // Vector multiply long
 class MulVLNode : public VectorNode {
+  // Only multiply lower doubleword with quadword saturation.
+  const bool _mult_lower_double_word;
+
 public:
-  MulVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  MulVLNode(Node* in1, Node* in2, const TypeVect* vt, bool mult_lower_double_word = false)
+    : VectorNode(in1, in2, vt), _mult_lower_double_word(mult_lower_double_word) {
+    init_class_id(Class_MulVL);
+  }
+
   virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+
+  bool is_mult_lower_double_word() { return _mult_lower_double_word; }
+  virtual uint size_of() const { return sizeof(*this); }
+  virtual uint hash() const { return Node::hash() + _mult_lower_double_word; }
 };
 
 //------------------------------MulVFNode--------------------------------------
