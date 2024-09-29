@@ -77,6 +77,7 @@ public final class DirectCodeBuilder
     private static final LocalVariable[] EMPTY_LOCAL_VARIABLE_ARRAY = new LocalVariable[0];
     private static final LocalVariableType[] EMPTY_LOCAL_VARIABLE_TYPE_ARRAY = new LocalVariableType[0];
     private static final AbstractPseudoInstruction.ExceptionCatchImpl[] EMPTY_HANDLER_ARRAY = new AbstractPseudoInstruction.ExceptionCatchImpl[0];
+    private static final DeferredLabel[] EMPTY_DEFERRED_LABEL_ARRAY = new DeferredLabel[0];
 
     final List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers = new ArrayList<>();
     private CharacterRange[] characterRanges = EMPTY_CHARACTER_RANGE;
@@ -95,7 +96,8 @@ public final class DirectCodeBuilder
     private DedupLineNumberTableAttribute lineNumberWriter;
     private int topLocal;
 
-    List<DeferredLabel> deferredLabels;
+    private DeferredLabel[] deferredLabels = EMPTY_DEFERRED_LABEL_ARRAY;
+    private int deferredLabelsCount = 0;
 
     /* Locals management
        lazily computed maxLocal = -1
@@ -469,9 +471,7 @@ public final class DirectCodeBuilder
         int targetBci = labelToBci(label);
         if (targetBci == -1) {
             int pc = bytecodesBufWriter.skip(nBytes);
-            if (deferredLabels == null)
-                deferredLabels = new ArrayList<>();
-            deferredLabels.add(new DeferredLabel(pc, nBytes, instructionPc, label));
+            addLabel(new DeferredLabel(pc, nBytes, instructionPc, label));
         }
         else {
             int branchOffset = targetBci - instructionPc;
@@ -483,9 +483,7 @@ public final class DirectCodeBuilder
     private void writeLabelOffset(int nBytes, int instructionPc, Label label, int targetBci) {
         if (targetBci == -1) {
             int pc = bytecodesBufWriter.skip(nBytes);
-            if (deferredLabels == null)
-                deferredLabels = new ArrayList<>();
-            deferredLabels.add(new DeferredLabel(pc, nBytes, instructionPc, label));
+            addLabel(new DeferredLabel(pc, nBytes, instructionPc, label));
         }
         else {
             int branchOffset = targetBci - instructionPc;
@@ -495,16 +493,15 @@ public final class DirectCodeBuilder
     }
 
     private void processDeferredLabels() {
-        if (deferredLabels != null) {
-            for (DeferredLabel dl : deferredLabels) {
-                int branchOffset = labelToBci(dl.label) - dl.instructionPc;
-                if (dl.size == 2) {
-                    if ((short)branchOffset != branchOffset) throw new LabelOverflowException();
-                    bytecodesBufWriter.patchU2(dl.labelPc, branchOffset);
-                } else {
-                    assert dl.size == 4;
-                    bytecodesBufWriter.patchInt(dl.labelPc, branchOffset);
-                }
+        for (int i = 0; i < deferredLabelsCount; i++) {
+            DeferredLabel dl = deferredLabels[i];
+            int branchOffset = labelToBci(dl.label) - dl.instructionPc;
+            if (dl.size == 2) {
+                if ((short) branchOffset != branchOffset) throw new LabelOverflowException();
+                bytecodesBufWriter.patchU2(dl.labelPc, branchOffset);
+            } else {
+                assert dl.size == 4;
+                bytecodesBufWriter.patchInt(dl.labelPc, branchOffset);
             }
         }
     }
@@ -755,6 +752,14 @@ public final class DirectCodeBuilder
             this.characterRanges = Arrays.copyOf(characterRanges, newCapacity);
         }
         characterRanges[characterRangesCount++] = element;
+    }
+
+    public void addLabel(DeferredLabel label) {
+        if (deferredLabelsCount >= deferredLabels.length) {
+            int newCapacity = deferredLabelsCount + 8;
+            this.deferredLabels = Arrays.copyOf(deferredLabels, newCapacity);
+        }
+        deferredLabels[deferredLabelsCount++] = label;
     }
 
     public void addHandler(ExceptionCatch element) {
