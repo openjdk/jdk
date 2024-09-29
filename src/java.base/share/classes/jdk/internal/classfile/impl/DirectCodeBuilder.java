@@ -56,6 +56,7 @@ import java.lang.classfile.instruction.LocalVariableType;
 import java.lang.classfile.instruction.SwitchCase;
 import java.lang.constant.ConstantDesc;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
@@ -71,10 +72,19 @@ import static jdk.internal.classfile.impl.BytecodeHelpers.*;
 public final class DirectCodeBuilder
         extends AbstractDirectBuilder<CodeModel>
         implements TerminalCodeBuilder {
-    private final List<CharacterRange> characterRanges = new ArrayList<>();
+    private static final CharacterRange[] EMPTY_CHARACTER_RANGE = new CharacterRange[0];
+    private static final DeferredLabel[] EMPTY_LABEL_ARRAY = new DeferredLabel[0];
+    private static final LocalVariable[] EMPTY_LOCAL_VARIABLE_ARRAY = new LocalVariable[0];
+    private static final LocalVariableType[] EMPTY_LOCAL_VARIABLE_TYPE_ARRAY = new LocalVariableType[0];
+    private static final AbstractPseudoInstruction.ExceptionCatchImpl[] EMPTY_HANDLER_ARRAY = new AbstractPseudoInstruction.ExceptionCatchImpl[0];
+
     final List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers = new ArrayList<>();
-    private final List<LocalVariable> localVariables = new ArrayList<>();
-    private final List<LocalVariableType> localVariableTypes = new ArrayList<>();
+    private CharacterRange[] characterRanges = EMPTY_CHARACTER_RANGE;
+    private LocalVariable[] localVariables = EMPTY_LOCAL_VARIABLE_ARRAY;
+    private LocalVariableType[] localVariableTypes = EMPTY_LOCAL_VARIABLE_TYPE_ARRAY;
+    private int characterRangesCount = 0;
+    private int localVariablesCount = 0;
+    private int localVariableTypesCount = 0;
     private final boolean transformFwdJumps, transformBackJumps;
     private final Label startLabel, endLabel;
     final MethodInfo methodInfo;
@@ -228,15 +238,16 @@ public final class DirectCodeBuilder
         processDeferredLabels();
 
         if (context.passDebugElements()) {
-            if (!characterRanges.isEmpty()) {
+            if (characterRangesCount > 0) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.characterRangeTable()) {
 
                     @Override
                     public void writeBody(BufWriterImpl b) {
                         int pos = b.size();
-                        int crSize = characterRanges.size();
+                        int crSize = characterRangesCount;
                         b.writeU2(crSize);
-                        for (CharacterRange cr : characterRanges) {
+                        for (int i = 0; i < characterRangesCount; i++) {
+                            CharacterRange cr = characterRanges[i];
                             var start = labelToBci(cr.startScope());
                             var end = labelToBci(cr.endScope());
                             if (start == -1 || end == -1) {
@@ -252,21 +263,22 @@ public final class DirectCodeBuilder
                                 b.writeU2(cr.flags());
                             }
                         }
-                        if (crSize < characterRanges.size())
+                        if (crSize < characterRangesCount)
                             b.patchU2(pos, crSize);
                     }
                 };
                 attributes.withAttribute(a);
             }
 
-            if (!localVariables.isEmpty()) {
+            if (localVariablesCount > 0) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTable()) {
                     @Override
                     public void writeBody(BufWriterImpl b) {
                         int pos = b.size();
-                        int lvSize = localVariables.size();
+                        int lvSize = localVariablesCount;
                         b.writeU2(lvSize);
-                        for (LocalVariable l : localVariables) {
+                        for (int i = 0; i < localVariablesCount; i++) {
+                            LocalVariable l = localVariables[i];
                             if (!Util.writeLocalVariable(b, l)) {
                                 if (context.dropDeadLabels()) {
                                     lvSize--;
@@ -275,21 +287,22 @@ public final class DirectCodeBuilder
                                 }
                             }
                         }
-                        if (lvSize < localVariables.size())
+                        if (lvSize < localVariablesCount)
                             b.patchU2(pos, lvSize);
                     }
                 };
                 attributes.withAttribute(a);
             }
 
-            if (!localVariableTypes.isEmpty()) {
+            if (localVariableTypesCount > 0) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTypeTable()) {
                     @Override
                     public void writeBody(BufWriterImpl b) {
                         int pos = b.size();
-                        int lvtSize = localVariableTypes.size();
-                        b.writeU2(localVariableTypes.size());
-                        for (LocalVariableType l : localVariableTypes) {
+                        int lvtSize = localVariableTypesCount;
+                        b.writeU2(lvtSize);
+                        for (int i = 0; i < localVariableTypesCount; i++) {
+                            LocalVariableType l = localVariableTypes[i];
                             if (!Util.writeLocalVariable(b, l)) {
                                 if (context.dropDeadLabels()) {
                                     lvtSize--;
@@ -298,7 +311,7 @@ public final class DirectCodeBuilder
                                 }
                             }
                         }
-                        if (lvtSize < localVariableTypes.size())
+                        if (lvtSize < localVariableTypesCount)
                             b.patchU2(pos, lvtSize);
                     }
                 };
@@ -737,7 +750,11 @@ public final class DirectCodeBuilder
     }
 
     public void addCharacterRange(CharacterRange element) {
-        characterRanges.add(element);
+        if (characterRangesCount >= characterRanges.length) {
+            int newCapacity = characterRangesCount + 8;
+            this.characterRanges = Arrays.copyOf(characterRanges, newCapacity);
+        }
+        characterRanges[characterRangesCount++] = element;
     }
 
     public void addHandler(ExceptionCatch element) {
@@ -749,11 +766,19 @@ public final class DirectCodeBuilder
     }
 
     public void addLocalVariable(LocalVariable element) {
-        localVariables.add(element);
+        if (localVariablesCount >= localVariables.length) {
+            int newCapacity = localVariablesCount + 8;
+            this.localVariables = Arrays.copyOf(localVariables, newCapacity);
+        }
+        localVariables[localVariablesCount++] = element;
     }
 
     public void addLocalVariableType(LocalVariableType element) {
-        localVariableTypes.add(element);
+        if (localVariableTypesCount >= localVariableTypes.length) {
+            int newCapacity = localVariableTypesCount + 8;
+            this.localVariableTypes = Arrays.copyOf(localVariableTypes, newCapacity);
+        }
+        localVariableTypes[localVariableTypesCount++] = element;
     }
 
     @Override
