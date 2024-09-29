@@ -50,7 +50,7 @@ public class JComboBoxScrollFocusTest {
             """;
 
     public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+        UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
         PassFailJFrame
                 .builder()
                 .title("JComboBoxScrollFocusTest Test Instructions")

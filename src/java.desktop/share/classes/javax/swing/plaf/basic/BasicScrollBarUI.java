@@ -1220,7 +1220,7 @@ public class BasicScrollBarUI
     /**
      * A listener to listen for keyboard focus changes.
      */
-    protected class KeyboardFocusListener implements PropertyChangeListener {
+    protected class KeyboardFocusListener extends MouseAdapter implements PropertyChangeListener {
         /**
          * Constructs a {@code KeyboardFocusListener}.
          */
@@ -1229,18 +1229,41 @@ public class BasicScrollBarUI
         @Override
         public void propertyChange(PropertyChangeEvent e) {
             String propertyName = e.getPropertyName();
+//            System.out.println("PROPERTYNAME: " + propertyName);
 
             if ("focusOwner" == propertyName) {
+                System.out.println("FOCUSOWNER: " + e);
                 // Stop scrolling if no longer focus owner
-                if (e.getNewValue() == null && scrollTimer.isRunning()) {
-                    scrollTimer.stop();
-                    if (buttonListener.handledEvent) {
-                        buttonListener.handledEvent = false;
-                    }
-                    scrollbar.setValueIsAdjusting(false);
+//                if (e.getNewValue() == null && scrollTimer.isRunning()) {
+//                    scrollTimer.stop();
+//                    if (buttonListener.handledEvent) {
+//                        buttonListener.handledEvent = false;
+//                    }
+//                    scrollbar.setValueIsAdjusting(false);
+
+//                    scrollTimer.stop();
+                if (scrollTimer != null) {
+//                    System.out.println("SCROLLTIMER: " + scrollTimer.isRunning());
                 }
+//                    buttonListener.handledEvent = false;
+//                    System.out.println("HANDLEDEVENT: " + buttonListener.handledEvent);
+//                    scrollbar.setValueIsAdjusting(false);
+//                    System.out.println("ADJUSTING: " + scrollbar.getValueIsAdjusting());
+//                }
+            } else if ("permanentFocusOwner" == propertyName) {
+                System.out.println("PERMANENTFOCUSOWNER: " + e);
             }
         }
+
+//        public void mousePressed(MouseEvent e) {
+//
+//        }
+//
+//        public void mouseReleased(MouseEvent e) {
+//            scrollTimer.stop();
+//            buttonListener.handledEvent = false;
+//            scrollbar.setValueIsAdjusting(false);
+//        }
     }
 
     /**
@@ -1585,6 +1608,7 @@ public class BasicScrollBarUI
         protected ArrowButtonListener() {}
 
         public void mousePressed(MouseEvent e)          {
+            System.out.println("MOUSEPRESSED: " + e);
             if(!scrollbar.isEnabled()) { return; }
             // not an unmodified left mouse button
             //if(e.getModifiers() != InputEvent.BUTTON1_MASK) {return; }
