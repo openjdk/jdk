@@ -25,7 +25,7 @@
  * @test
  * @bug 8326949
  * @run main/othervm UserAuthWithAuthenticator
- * @summary Authorization header is removed when a proxy Authenticator is set on HttpClient
+ * @summary Authorization header is removed when a proxy Authenticator is set 
  */
 
 import java.io.*;
@@ -74,59 +74,64 @@ public class UserAuthWithAuthenticator {
     static void testServerWithProxy() throws IOException, InterruptedException {
         Mocker proxyMock = new Mocker(proxyResponses);
         proxyMock.start();
+        try {
 
-        var client = HttpClient.newBuilder()
-            .version(java.net.http.HttpClient.Version.HTTP_1_1)
-            .proxy(new ProxySel(proxyMock.getPort()))
-            .authenticator(new Auth())
-            .build();
+            var client = HttpClient.newBuilder()
+                .version(java.net.http.HttpClient.Version.HTTP_1_1)
+                .proxy(new ProxySel(proxyMock.getPort()))
+                .authenticator(new Auth())
+                .build();
 
-        var plainCreds = "user:pwd";
-        var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
-        var request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1/some_url"))
-            .setHeader("User-Agent", "myUserAgent")
-            .setHeader("Authorization", "Basic " + encoded)
-            .build();
+            var plainCreds = "user:pwd";
+            var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
+            var request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1/some_url"))
+                .setHeader("User-Agent", "myUserAgent")
+                .setHeader("Authorization", "Basic " + encoded)
+                .build();
 
-        var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        assertEquals(200, response.statusCode());
-        assertEquals(data, response.body());
-        var proxyStr = proxyMock.getRequest(1);
+            assertEquals(200, response.statusCode());
+            assertEquals(data, response.body());
+            var proxyStr = proxyMock.getRequest(1);
 
-        assertContains(proxyStr, "/some_url");
-        assertPattern("Proxy-Authorization:.*Basic", proxyStr);
-        assertPattern("User-Agent:.*myUserAgent", proxyStr);
-        assertPattern("Authorization:.*Basic", proxyStr);
-        proxyMock.stopMocker();
-        System.out.println("testServerWithProxy: OK");
+            assertContains(proxyStr, "/some_url");
+            assertPattern(".*^Proxy-Authorization:.*Basic.*", proxyStr);
+            assertPattern(".*^User-Agent:.*myUserAgent.*", proxyStr);
+            assertPattern(".*^Authorization:.*Basic.*", proxyStr);
+            System.out.println("testServerWithProxy: OK");
+        } finally {
+            proxyMock.stopMocker();
+        }
     }
 
     static void testServerOnly() throws IOException, InterruptedException {
         Mocker serverMock = new Mocker(serverResponses);
         serverMock.start();
+        try {
+            var client = HttpClient.newBuilder()
+                .version(java.net.http.HttpClient.Version.HTTP_1_1)
+                .build();
 
-        var client = HttpClient.newBuilder()
-            .version(java.net.http.HttpClient.Version.HTTP_1_1)
-            .build();
+            var plainCreds = "user:pwd";
+            var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
+            var request = HttpRequest.newBuilder().uri(URI.create(serverMock.baseURL() + "/some_serv_url"))
+                .setHeader("User-Agent", "myUserAgent")
+                .setHeader("Authorization", "Basic " + encoded)
+                .build();
 
-        var plainCreds = "user:pwd";
-        var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
-        var request = HttpRequest.newBuilder().uri(URI.create(serverMock.baseURL() + "/some_serv_url"))
-            .setHeader("User-Agent", "myUserAgent")
-            .setHeader("Authorization", "Basic " + encoded)
-            .build();
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, response.statusCode());
+            assertEquals(data1, response.body());
 
-        var response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        assertEquals(200, response.statusCode());
-        assertEquals(data1, response.body());
-
-        var serverStr = serverMock.getRequest(0);
-        assertContains(serverStr, "/some_serv_url");
-        assertPattern("User-Agent:.*myUserAgent", serverStr);
-        assertPattern("Authorization:.*Basic", serverStr);
-        serverMock.stopMocker();
-        System.out.println("testServerOnly: OK");
+            var serverStr = serverMock.getRequest(0);
+            assertContains(serverStr, "/some_serv_url");
+            assertPattern(".*^User-Agent:.*myUserAgent.*", serverStr);
+            assertPattern(".*^Authorization:.*Basic.*", serverStr);
+            System.out.println("testServerOnly: OK");
+        } finally {
+            serverMock.stopMocker();
+        }
     }
 
     static void close(Closeable... clarray) {
@@ -249,9 +254,15 @@ public class UserAuthWithAuthenticator {
     }
 
     static void assertPattern(String pattern, String candidate) {
-        pattern = ".*" + pattern + ".*";
-        Pattern pat = Pattern.compile(pattern, Pattern.DOTALL);
+        System.out.println("----------------------------------------");
+        System.out.println(pattern);
+        System.out.println("----------------------------------------");
+        System.out.println(candidate);
+
+        //pattern = ".*" + pattern + ".*";
+        Pattern pat = Pattern.compile(pattern, Pattern.DOTALL | Pattern.MULTILINE);
         Matcher matcher = pat.matcher(candidate);
+        System.out.println(matcher.matches() + " ----------------------------------------");
         if (!matcher.matches()) {
             String msg = String.format("Error: expected %s Got %s", pattern, candidate);
             throw new RuntimeException(msg);
