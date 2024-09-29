@@ -1219,6 +1219,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         private static final long PHASE;
         private static final long BASE;
         private static final long TOP;
+        private static final long SOURCE;
         private static final long ARRAY;
 
         final void updateBase(int v) {
@@ -1226,6 +1227,9 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
         final void updateTop(int v) {
             U.putIntOpaque(this, TOP, v);
+        }
+        final void setSource(int v) {
+            U.getAndSetInt(this, SOURCE, v);
         }
         final void updateArray(ForkJoinTask<?>[] a) {
             U.getAndSetReference(this, ARRAY, a);
@@ -1593,6 +1597,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             PHASE = U.objectFieldOffset(klass, "phase");
             BASE = U.objectFieldOffset(klass, "base");
             TOP = U.objectFieldOffset(klass, "top");
+            SOURCE = U.objectFieldOffset(klass, "source");
             ARRAY = U.objectFieldOffset(klass, "array");
         }
     }
@@ -1879,6 +1884,8 @@ public class ForkJoinPool extends AbstractExecutorService {
         int pc = parallelism;
         for (long c = ctl;;) {
             WorkQueue[] qs = queues;
+            if (k >= 0 && a != null && a.length > k && a[k] == null)
+                break;
             long ac = (c + RC_UNIT) & RC_MASK, nc;
             int sp = (int)c, i = sp & SMASK;
             if ((short)(c >>> RC_SHIFT) >= pc)
@@ -1907,8 +1914,6 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
                 break;
             }
-            if (k >= 0 && a != null && a.length > k && a[k] == null)
-                break;
         }
     }
 
@@ -1999,7 +2004,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                         (a = q.array) != null && (cap = a.length) > 0) {
                         for (int pb = -1, b; ; pb = b) {  // track progress
                             ForkJoinTask<?> t;
-                            int nb = (b = q.base) + 1, k, nk; long kp;
+                            int nb = (b = q.base) + 1, k; long kp;
                             t = (ForkJoinTask<?>)U.getReferenceAcquire(
                                 a, kp = slotOffset(k = (cap - 1) & b));
                             if (q.base != b)              // inconsistent
@@ -2015,12 +2020,11 @@ public class ForkJoinPool extends AbstractExecutorService {
                             else if (U.compareAndSetReference(a, kp, t, null)) {
                                 q.base = nb;
                                 w.nsteals = ++nsteals;
-                                w.source = j;             // volatile write
+                                w.setSource(j);           // fully fenced
                                 rescan = true;
                                 if (propagated != phase) {
                                     propagated = phase;
-                                    if (a[nk = nb & (cap - 1)] != null)
-                                        signalWork(a, nk);
+                                    signalWork(a, nb & (cap - 1));
                                 }
                                 w.topLevelExec(t, cfg);
                             }
@@ -2053,17 +2057,17 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (((runState & SHUTDOWN) != 0L && quiescent() > 0) ||
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                     // terminating
-        for (int steps = (n << 1) + SPIN_WAITS + 1, i = 0; ; ++i) {
-            WorkQueue q;                    // interleave spins and rechecks
+        for (int steps = Math.max(n << 2, SPIN_WAITS), i = 0; ; ++i) {
+            WorkQueue q;                     // interleave spins and rechecks
             if (w.phase == activePhase)
                 return activePhase;
             else if (i >= steps)
                 return awaitWork(w, p);      // block, drop, or exit
-            else if (i >= n || (i & 1) != 0)
+            else if ((i & 3) != 0)
                 Thread.onSpinWait();         // reduce flailing
-            else if ((q = qs[i]) != null &&  // help signal
+            else if ((q = qs[i & (n - 1)]) != null &&
                      ((q.phase & IDLE) == 0 || q.top - q.base > 0))
-                signalWork(null, -1);
+                signalWork(null, -1);        // help signal
         }
     }
 
