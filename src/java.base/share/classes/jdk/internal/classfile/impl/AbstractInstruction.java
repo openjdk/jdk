@@ -803,11 +803,11 @@ public abstract sealed class AbstractInstruction
         public void writeTo(DirectCodeBuilder writer) {
             int slot = this.slot;
             switch (op) {
-                case ALOAD -> writer.aload(slot);
-                case ILOAD -> writer.iload(slot);
-                case LLOAD -> writer.lload(slot);
-                case FLOAD -> writer.fload(slot);
-                case DLOAD -> writer.dload(slot);
+                case ALOAD_0, ALOAD_1, ALOAD_2, ALOAD_3, ALOAD, ALOAD_W -> writer.aload(slot);
+                case ILOAD_0, ILOAD_1, ILOAD_2, ILOAD_3, ILOAD, ILOAD_W -> writer.iload(slot);
+                case LLOAD_0, LLOAD_1, LLOAD_2, LLOAD_3, LLOAD, LLOAD_W -> writer.lload(slot);
+                case FLOAD_0, FLOAD_1, FLOAD_2, FLOAD_3, FLOAD, FLOAD_W -> writer.fload(slot);
+                case DLOAD_0, DLOAD_1, DLOAD_2, DLOAD_3, DLOAD, DLOAD_W -> writer.dload(slot);
                 default    -> throw new AssertionError();
             }
         }
@@ -842,11 +842,11 @@ public abstract sealed class AbstractInstruction
         public void writeTo(DirectCodeBuilder writer) {
             int slot = this.slot;
             switch (op) {
-                case ASTORE -> writer.astore(slot);
-                case ISTORE -> writer.istore(slot);
-                case LSTORE -> writer.lstore(slot);
-                case FSTORE -> writer.fstore(slot);
-                case DSTORE -> writer.dstore(slot);
+                case ASTORE_0, ASTORE_1, ASTORE_2, ASTORE_3, ASTORE, ASTORE_W -> writer.astore(slot);
+                case ISTORE_0, ISTORE_1, ISTORE_2, ISTORE_3, ISTORE, ISTORE_W -> writer.istore(slot);
+                case LSTORE_0, LSTORE_1, LSTORE_2, LSTORE_3, LSTORE, LSTORE_W -> writer.lstore(slot);
+                case FSTORE_0, FSTORE_1, FSTORE_2, FSTORE_3, FSTORE, FSTORE_W -> writer.fstore(slot);
+                case DSTORE_0, DSTORE_1, DSTORE_2, DSTORE_3, DSTORE, DSTORE_W -> writer.dstore(slot);
                 default    -> throw new AssertionError();
             }
         }
