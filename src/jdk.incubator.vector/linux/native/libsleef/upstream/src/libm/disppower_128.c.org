@@ -1,0 +1,30 @@
+//   Copyright Naoki Shibata and contributors 2010 - 2021.
+// Distributed under the Boost Software License, Version 1.0.
+//    (See accompanying file LICENSE.txt or copy at
+//          http://www.boost.org/LICENSE_1_0.txt)
+
+#include <stdint.h>
+#include <assert.h>
+#include <signal.h>
+#include <setjmp.h>
+
+#include "misc.h"
+
+#define SLEEF_IMPORT_IS_EXPORT
+#include "sleef.h"
+
+#include "dispatcher.h"
+
+typedef __vector double vector_double;
+typedef __vector float  vector_float;
+
+#ifdef ENABLE_VSX3
+void sleef_tryVSX3();
+#define SUBST_IF_EXT1(funcvsx3) if (cpuSupportsExt(sleef_tryVSX3)) p = funcvsx3;
+#else
+#define SUBST_IF_EXT1(funcvsx3)
+#endif
+
+#define SUBST_IF_EXT2(funcExt2)
+
+//

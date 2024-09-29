@@ -77,7 +77,7 @@ public class AnnotationDefaultTest extends TestResult {
                 String methodName = method.methodName().stringValue();
                 printf("Testing method : %s\n", methodName);
                 AnnotationDefaultAttribute attr =
-                        method.findAttribute(Attributes.ANNOTATION_DEFAULT).orElse(null);
+                        method.findAttribute(Attributes.annotationDefault()).orElse(null);
 
                 if (hasDefault && !checkNotNull(attr, "Attribute is not null")
                         || !hasDefault && checkNull(attr, "Attribute is null")) {

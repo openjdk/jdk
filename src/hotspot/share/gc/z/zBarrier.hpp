@@ -151,6 +151,8 @@ public:
   static zaddress load_barrier_on_oop_field(volatile zpointer* p);
   static zaddress load_barrier_on_oop_field_preloaded(volatile zpointer* p, zpointer o);
 
+  static void load_barrier_on_oop_array(volatile zpointer* p, size_t length);
+
   static zaddress keep_alive_load_barrier_on_oop_field_preloaded(volatile zpointer* p, zpointer o);
 
   // Load barriers on non-strong oop refs

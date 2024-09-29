@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,8 @@ public class CompareDottedVersionTest {
 
         data.addAll(List.of(new Object[][] {
             { false, "", "1", -1 },
+            { false, "", "0", 0 },
+            { false, "0", "", 0 },
             { false, "1.2.4-R4", "1.2.4-R5", 0 },
             { false, "1.2.4.-R4", "1.2.4.R5", 0 },
             { false, "7+1", "7+4", 0 },
@@ -89,7 +91,7 @@ public class CompareDottedVersionTest {
     }
 
     private int compare(String x, String y) {
-        int result = createTestee.apply(x).compareTo(y);
+        int result = DottedVersion.compareComponents(createTestee.apply(x), createTestee.apply(y));
 
         if (result < 0) {
             return -1;

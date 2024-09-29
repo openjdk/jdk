@@ -75,7 +75,6 @@ public class ThreadCpuTimeArray {
         // threads block after doing some computation
         waitUntilThreadBlocked();
 
-
         long times[] = mbean.getThreadCpuTime(ids);
         long userTimes[] = mbean.getThreadUserTime(ids);
 
@@ -222,6 +221,8 @@ public class ThreadCpuTimeArray {
                 }
             }
         }
+        // Account for threads using CPU for a few millis after their WAITING state is visible:
+        goSleep(500);
     }
 
     public static void doit() {

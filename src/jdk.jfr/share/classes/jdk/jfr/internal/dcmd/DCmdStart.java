@@ -80,7 +80,7 @@ final class DCmdStart extends AbstractDCmd {
         Long delay = parser.getOption("delay");
         Long duration = parser.getOption("duration");
         Boolean disk = parser.getOption("disk");
-        String path = expandFilename(parser.getOption("filename"));
+        String path = parser.getOption("filename");
         Long maxAge = parser.getOption("maxage");
         Long maxSize = parser.getOption("maxsize");
         Long flush = parser.getOption("flush-interval");
@@ -318,9 +318,10 @@ final class DCmdStart extends AbstractDCmd {
         return false;
     }
 
-    public String[] printStartupHelp() {
+    public String[] getStartupHelp() {
         Map<String, String> parameters = Map.of(
             "$SYNTAX", "-XX:StartFlightRecording:[options]",
+            "$SOURCE_NO_ARGUMENTS", "-XX:StartFlightRecording",
             "$SOURCE", "-XX:StartFlightRecording:",
             "$DELIMITER", ",",
             "$DELIMITER_NAME", "comma",
@@ -331,9 +332,10 @@ final class DCmdStart extends AbstractDCmd {
     }
 
     @Override
-    public String[] printHelp() {
+    public String[] getHelp() {
         Map<String, String> parameters = Map.of(
            "$SYNTAX", "JFR.start [options]",
+           "$SOURCE_NO_ARGUMENTS", "$ jcmd <pid> JFR.start",
            "$SOURCE", "$ jcmd <pid> JFR.start ",
            "$DELIMITER", " ",
            "$DELIMITER_NAME", "whitespace",
@@ -351,7 +353,7 @@ final class DCmdStart extends AbstractDCmd {
                Options:
 
                  delay            (Optional) Length of time to wait before starting to record
-                                  (INTEGER followed by 's' for seconds 'm' for minutes or h' for
+                                  (INT followed by 's' for seconds 'm' for minutes or h' for
                                   hours, 0s)
 
                  disk             (Optional) Flag for also writing the data to disk while recording
@@ -366,7 +368,7 @@ final class DCmdStart extends AbstractDCmd {
                                   id-1-2021_09_14_09_00.jfr) (BOOLEAN, false)
 
                  duration         (Optional) Length of time to record. Note that 0s means forever
-                                  (INTEGER followed by 's' for seconds 'm' for minutes or 'h' for
+                                  (INT followed by 's' for seconds 'm' for minutes or 'h' for
                                   hours, 0s)
 
                  filename         (Optional) Name of the file to which the flight recording data is
@@ -375,7 +377,7 @@ final class DCmdStart extends AbstractDCmd {
                                   placed in the directory where the process was started. The
                                   filename may also be a directory in which case, the filename is
                                   generated from the PID and the current date in the specified
-                                  directory. (STRING, no default value)
+                                  directory. (FILE, no default value)
 
                                   Note: If a filename is given, '%p' in the filename will be
                                   replaced by the PID, and '%t' will be replaced by the time in
@@ -383,7 +385,7 @@ final class DCmdStart extends AbstractDCmd {
 
                  maxage           (Optional) Maximum time to keep the recorded data on disk. This
                                   parameter is valid only when the disk parameter is set to true.
-                                  Note 0s means forever. (INTEGER followed by 's' for seconds 'm'
+                                  Note 0s means forever. (INT followed by 's' for seconds 'm'
                                   for minutes or 'h' for hours, 0s)
 
                  maxsize          (Optional) Maximum size of the data to keep on disk in bytes if
@@ -440,7 +442,7 @@ final class DCmdStart extends AbstractDCmd {
 
                Example usage:
 
-                $SOURCE
+                $SOURCE_NO_ARGUMENTS
                 $SOURCEfilename=dump.jfr
                 $SOURCEfilename=$DIRECTORY
                 $SOURCEdumponexit=true
@@ -499,7 +501,7 @@ final class DCmdStart extends AbstractDCmd {
                 "BOOLEAN", false, true, "true", false),
             new Argument("filename",
                 "Resulting recording filename, e.g. \\\"" + exampleFilename() +  "\\\"",
-                "STRING", false, true, "hotspot-pid-xxxxx-id-y-YYYY_MM_dd_HH_mm_ss.jfr", false),
+                "FILE", false, true, "hotspot-pid-xxxxx-id-y-YYYY_MM_dd_HH_mm_ss.jfr", false),
             new Argument("maxage",
                 "Maximum time to keep recorded data (on disk) in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 60m, or 0 for no limit",
                 "NANOTIME", false, true, "0", false),

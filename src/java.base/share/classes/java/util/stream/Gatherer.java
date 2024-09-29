@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,7 +293,7 @@ public interface Gatherer<T, A, R> {
      *
      * @implSpec This method always returns the same instance.
      *
-     * @see Gatherer#finisher()
+     * @see Gatherer#combiner()
      * @return the instance of the default combiner
      * @param <A> the type of the state of the returned combiner
      */

@@ -28,6 +28,7 @@ package java.io;
 import java.nio.channels.FileChannel;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
+import jdk.internal.event.FileWriteEvent;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -69,6 +70,12 @@ public class FileOutputStream extends OutputStream
         SharedSecrets.getJavaIOFileDescriptorAccess();
 
     /**
+     * Flag set by jdk.internal.event.JFRTracing to indicate if
+     * file writes should be traced by JFR.
+     */
+    private static boolean jfrTracing;
+
+    /**
      * The system dependent file descriptor.
      */
     private final FileDescriptor fd;
@@ -90,7 +97,10 @@ public class FileOutputStream extends OutputStream
 
     /**
      * Creates a file output stream to write to the file with the
-     * specified name. A new {@code FileDescriptor} object is
+     * specified name. If the file exists, it is truncated, otherwise a
+     * new file is created. {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * A new {@code FileDescriptor} object is
      * created to represent this file connection.
      * <p>
      * First, if there is a security manager, its {@code checkWrite}
@@ -119,8 +129,11 @@ public class FileOutputStream extends OutputStream
 
     /**
      * Creates a file output stream to write to the file with the specified
-     * name.  If the second argument is {@code true}, then
-     * bytes will be written to the end of the file rather than the beginning.
+     * name. If the file exists, it is truncated unless the second
+     * argument is {@code true}, in which case bytes will be written to the
+     * end of the file rather than the beginning. If the file does not exist,
+     * it is created. {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
      * A new {@code FileDescriptor} object is created to represent this
      * file connection.
      * <p>
@@ -151,9 +164,12 @@ public class FileOutputStream extends OutputStream
 
     /**
      * Creates a file output stream to write to the file represented by
-     * the specified {@code File} object. A new
-     * {@code FileDescriptor} object is created to represent this
-     * file connection.
+     * the specified {@code File} object.
+     * If the file exists, it is truncated, otherwise a
+     * new file is created. {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * A new {@code FileDescriptor} object is
+     * created to represent this file connection.
      * <p>
      * First, if there is a security manager, its {@code checkWrite}
      * method is called with the path represented by the {@code file}
@@ -180,10 +196,14 @@ public class FileOutputStream extends OutputStream
 
     /**
      * Creates a file output stream to write to the file represented by
-     * the specified {@code File} object. If the second argument is
-     * {@code true}, then bytes will be written to the end of the file
-     * rather than the beginning. A new {@code FileDescriptor} object is
-     * created to represent this file connection.
+     * the specified {@code File} object.
+     * If the file exists, it is truncated unless the second
+     * argument is {@code true}, in which case bytes will be written to the
+     * end of the file rather than the beginning. If the file does not exist,
+     * it is created. {@linkplain java.nio.file##links Symbolic links}
+     * are automatically redirected to the <i>target</i> of the link.
+     * A new {@code FileDescriptor} object is created to represent this
+     * file connection.
      * <p>
      * First, if there is a security manager, its {@code checkWrite}
      * method is called with the path represented by the {@code file}
@@ -297,6 +317,21 @@ public class FileOutputStream extends OutputStream
      */
     private native void write(int b, boolean append) throws IOException;
 
+    private void traceWrite(int b, boolean append) throws IOException {
+        long bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            write(b, append);
+            bytesWritten = 1;
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                FileWriteEvent.commit(start, duration, path, bytesWritten);
+            }
+        }
+    }
+
     /**
      * Writes the specified byte to this file output stream. Implements
      * the {@code write} method of {@code OutputStream}.
@@ -307,6 +342,10 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(int b) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
+        if (jfrTracing && FileWriteEvent.enabled()) {
+            traceWrite(b, append);
+            return;
+        }
         write(b, append);
     }
 
@@ -322,6 +361,21 @@ public class FileOutputStream extends OutputStream
     private native void writeBytes(byte[] b, int off, int len, boolean append)
         throws IOException;
 
+    private void traceWriteBytes(byte b[], int off, int len, boolean append) throws IOException {
+        long bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            writeBytes(b, off, len, append);
+            bytesWritten = len;
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                FileWriteEvent.commit(start, duration, path, bytesWritten);
+            }
+        }
+    }
+
     /**
      * Writes {@code b.length} bytes from the specified byte array
      * to this file output stream.
@@ -332,6 +386,10 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(byte[] b) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
+        if (jfrTracing && FileWriteEvent.enabled()) {
+            traceWriteBytes(b, 0, b.length, append);
+            return;
+        }
         writeBytes(b, 0, b.length, append);
     }
 
@@ -348,6 +406,10 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
+        if (jfrTracing && FileWriteEvent.enabled()) {
+            traceWriteBytes(b, off, len, append);
+            return;
+        }
         writeBytes(b, off, len, append);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  *
  */
 package com.sun.hotspot.igv.data;
+
+import java.util.Objects;
 
 /**
  *
@@ -49,17 +51,21 @@ public class InputNode extends Properties.Entity {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (!(o instanceof InputNode)) {
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
             return false;
         }
-        InputNode n = (InputNode) o;
-        return n.id == id;
+        InputNode other = (InputNode) obj;
+        return id == other.id &&
+                Objects.equals(getProperties(), other.getProperties());
     }
 
     @Override
     public int hashCode() {
-        return id * 13;
+        return Objects.hash(id, getProperties());
     }
 
     @Override

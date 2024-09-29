@@ -38,7 +38,6 @@ import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.StringJoiner;
-import java.util.concurrent.ConcurrentHashMap;
 
 public final class BaseLocale {
 
@@ -90,10 +89,6 @@ public final class BaseLocale {
             constantBaseLocales = baseLocales;
         }
     }
-
-    // Interned BaseLocale cache
-    private static final ReferencedKeySet<BaseLocale> CACHE =
-            ReferencedKeySet.create(true, ConcurrentHashMap::new);
 
     public static final String SEP = "_";
 
@@ -163,12 +158,15 @@ public final class BaseLocale {
         // Obtain the "interned" BaseLocale from the cache. The returned
         // "interned" instance can subsequently be used by the Locale
         // instance which guarantees the locale components are properly cased/interned.
-        return CACHE.intern(new BaseLocale(language, script, region, variant),
-            (b) -> new BaseLocale(
-                LocaleUtils.toLowerString(b.language).intern(),
-                LocaleUtils.toTitleString(b.script).intern(),
-                LocaleUtils.toUpperString(b.region).intern(),
-                b.variant.intern()));
+        class InterningCache { // TODO: StableValue
+            private static final ReferencedKeySet<BaseLocale> CACHE =
+                    ReferencedKeySet.create(true, ReferencedKeySet.concurrentHashMapSupplier());
+        }
+        return InterningCache.CACHE.intern(new BaseLocale(
+                language.intern(), // guaranteed to be lower-case
+                LocaleUtils.toTitleString(script).intern(),
+                region.intern(), // guaranteed to be upper-case
+                variant.intern()));
     }
 
     public static String convertOldISOCodes(String language) {

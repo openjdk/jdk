@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
-#include "oops/compressedKlass.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
@@ -34,7 +34,8 @@
 
 address CompressedKlassPointers::_base = nullptr;
 int CompressedKlassPointers::_shift = 0;
-size_t CompressedKlassPointers::_range = 0;
+address CompressedKlassPointers::_klass_range_start = nullptr;
+address CompressedKlassPointers::_klass_range_end = nullptr;
 
 #ifdef _LP64
 
@@ -60,16 +61,19 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
   assert(requested_base == addr, "Invalid requested base");
   assert(encoding_range_end >= end, "Encoding does not cover the full Klass range");
 
+  // Remember Klass range:
+  _klass_range_start = addr;
+  _klass_range_end = addr + len;
+
   _base = requested_base;
   _shift = requested_shift;
-  _range = encoding_range_size;
 
   DEBUG_ONLY(assert_is_valid_encoding(addr, len, _base, _shift);)
 }
 
 char* CompressedKlassPointers::reserve_address_space_X(uintptr_t from, uintptr_t to, size_t size, size_t alignment, bool aslr) {
   alignment = MAX2(Metaspace::reserve_alignment(), alignment);
-  return os::attempt_reserve_memory_between((char*)from, (char*)to, size, alignment, aslr, mtMetaspace);
+  return os::attempt_reserve_memory_between((char*)from, (char*)to, size, alignment, aslr);
 }
 
 char* CompressedKlassPointers::reserve_address_space_for_unscaled_encoding(size_t size, bool aslr) {
@@ -87,6 +91,11 @@ char* CompressedKlassPointers::reserve_address_space_for_16bit_move(size_t size,
 #if !defined(AARCH64) || defined(ZERO)
 // On aarch64 we have an own version; all other platforms use the default version
 void CompressedKlassPointers::initialize(address addr, size_t len) {
+
+  // Remember the Klass range:
+  _klass_range_start = addr;
+  _klass_range_end = addr + len;
+
   // The default version of this code tries, in order of preference:
   // -unscaled    (base=0 shift=0)
   // -zero-based  (base=0 shift>0)
@@ -111,16 +120,20 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
       _shift = 0;
     }
   }
-  _range = end - _base;
 
   DEBUG_ONLY(assert_is_valid_encoding(addr, len, _base, _shift);)
 }
 #endif // !AARCH64 || ZERO
 
 void CompressedKlassPointers::print_mode(outputStream* st) {
-  st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d, "
-               "Narrow klass range: " SIZE_FORMAT_X, p2i(base()), shift(),
-               range());
+  if (UseCompressedClassPointers) {
+    st->print_cr("Narrow klass base: " PTR_FORMAT ", Narrow klass shift: %d",
+                  p2i(base()), shift());
+    st->print_cr("Encoding Range: " RANGE2FMT, RANGE2FMTARGS(_base, encoding_range_end()));
+    st->print_cr("Klass Range:    " RANGE2FMT, RANGE2FMTARGS(_klass_range_start, _klass_range_end));
+  } else {
+    st->print_cr("UseCompressedClassPointers off");
+  }
 }
 
 #endif // _LP64

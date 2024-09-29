@@ -37,7 +37,6 @@ import java.nio.ByteOrder;
  * @bug 8326139
  * @summary Test splitting packs in SuperWord
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @run driver compiler.loopopts.superword.TestSplitPacks
  */
 
@@ -71,7 +70,7 @@ public class TestSplitPacks {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:LoopUnrollLimit=1000");
+        TestFramework.runWithFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:LoopUnrollLimit=1000");
     }
 
     public TestSplitPacks() {
@@ -390,9 +389,9 @@ public class TestSplitPacks {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
-                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "= 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
-                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "= 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIf = {"MaxVectorSize", ">=32"},
         applyIfPlatform = {"64-bit", "true"},
@@ -405,8 +404,6 @@ public class TestSplitPacks {
     //  | |    \ \ \ \
     //  0 1 - - 4 5 6 7
     //
-    // The 4-pack does not vectorize. This is a technical limitation that
-    // we can hopefully soon remove. Load and store offsets are different.
     static Object[] test2a(int[] a, int[] b, int mask) {
         for (int i = 0; i < RANGE; i+=8) {
             int b0 = a[i+0] & mask;
@@ -428,9 +425,9 @@ public class TestSplitPacks {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
-                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "= 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIf = {"MaxVectorSize", ">=32"},
@@ -444,8 +441,6 @@ public class TestSplitPacks {
     //  | | | |    \ \
     //  0 1 2 3 -- 6 7
     //
-    // The 2-pack does not vectorize. This is a technical limitation that
-    // we can hopefully soon remove. Load and store offsets are different.
     static Object[] test2b(int[] a, int[] b, int mask) {
         for (int i = 0; i < RANGE; i+=8) {
             int b0 = a[i+0] & mask;
@@ -468,9 +463,9 @@ public class TestSplitPacks {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
-                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "= 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
-                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "= 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIf = {"MaxVectorSize", ">=32"},
         applyIfPlatform = {"64-bit", "true"},
@@ -483,8 +478,6 @@ public class TestSplitPacks {
     //  | |  / / / /
     //  0 1 2 3 4 5 - -
     //
-    // The 4-pack does not vectorize. This is a technical limitation that
-    // we can hopefully soon remove. Load and store offsets are different.
     static Object[] test2c(int[] a, int[] b, int mask) {
         for (int i = 0; i < RANGE; i+=8) {
             int b0 = a[i+0] & mask;
@@ -506,9 +499,9 @@ public class TestSplitPacks {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "= 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
-                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "= 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIf = {"MaxVectorSize", ">=32"},
@@ -522,8 +515,6 @@ public class TestSplitPacks {
     //  | | | |  / /
     //  0 1 2 3 4 5 - -
     //
-    // The 2-pack does not vectorize. This is a technical limitation that
-    // we can hopefully soon remove. Load and store offsets are different.
     static Object[] test2d(int[] a, int[] b, int mask) {
         for (int i = 0; i < RANGE; i+=8) {
             int b0 = a[i+0] & mask;

@@ -36,10 +36,6 @@
                             static_field)                                                                   \
   nonstatic_field(Generation,                        _reserved,              MemRegion)                     \
   nonstatic_field(Generation,                        _virtual_space,         VirtualSpace)                  \
-  nonstatic_field(Generation,                        _stat_record,           Generation::StatRecord)        \
-                                                                                                            \
-  nonstatic_field(Generation::StatRecord,            invocations,            int)                           \
-  nonstatic_field(Generation::StatRecord,            accumulated_time,       elapsedTimer)                  \
                                                                                                             \
   nonstatic_field(TenuredGeneration,                 _rs,                    CardTableRS*)                  \
   nonstatic_field(TenuredGeneration,                 _bts,                   SerialBlockOffsetTable*)       \
@@ -67,7 +63,6 @@
                           declare_toplevel_type,                              \
                           declare_integer_type)                               \
   declare_toplevel_type(Generation)                                           \
-  declare_toplevel_type(Generation::StatRecord)                               \
   declare_type(SerialHeap,                   CollectedHeap)                   \
   declare_type(TenuredGeneration,            Generation)                      \
                                                                               \

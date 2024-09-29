@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,16 @@
  * questions.
  */
 
-import com.sun.tools.classfile.*;
-import static com.sun.tools.classfile.ConstantPool.*;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.constantpool.MethodRefEntry;
+import java.lang.classfile.instruction.InvokeInstruction;
 import java.net.URI;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -47,7 +51,7 @@ import java.util.stream.Stream;
  * @bug 8010117
  * @summary Verify if CallerSensitive methods are annotated with
  *          CallerSensitive annotation
- * @modules jdk.jdeps/com.sun.tools.classfile jdk.jdeps/com.sun.tools.jdeps
+ * @enablePreview
  * @build CallerSensitiveFinder
  * @run main/othervm/timeout=900 CallerSensitiveFinder
  */
@@ -87,58 +91,71 @@ public class CallerSensitiveFinder {
     }
 
     private final List<String> csMethodsMissingAnnotation = new CopyOnWriteArrayList<>();
-    private final ReferenceFinder finder;
     public CallerSensitiveFinder() {
-        this.finder = new ReferenceFinder(getFilter(), getVisitor());
         pool = Executors.newFixedThreadPool(numThreads);
 
     }
 
-    private ReferenceFinder.Filter getFilter() {
-        final String classname = "jdk/internal/reflect/Reflection";
-        final String method = "getCallerClass";
-        return new ReferenceFinder.Filter() {
-            public boolean accept(ConstantPool cpool, CPRefInfo cpref) {
-                try {
-                    CONSTANT_NameAndType_info nat = cpref.getNameAndTypeInfo();
-                    return cpref.getClassName().equals(classname) && nat.getName().equals(method);
-                } catch (ConstantPoolException ex) {
-                    throw new RuntimeException(ex);
+    private void check(ClassModel clazz) {
+        final String className = "jdk/internal/reflect/Reflection";
+        final String methodName = "getCallerClass";
+        boolean checkMethods = false;
+        for (var pe : clazz.constantPool()) {
+            if (pe instanceof MethodRefEntry ref
+                    && ref.owner().name().equalsString(className)
+                    && ref.name().equalsString(methodName)) {
+                checkMethods = true;
+            }
+        }
+
+        if (!checkMethods)
+            return;
+
+        for (var method : clazz.methods()) {
+            var code = method.code().orElse(null);
+            if (code == null)
+                continue;
+
+            boolean needsCsm = false;
+            for (var element : code) {
+                if (element instanceof InvokeInstruction invoke
+                        && invoke.opcode() == Opcode.INVOKESTATIC
+                        && invoke.method() instanceof MethodRefEntry ref
+                        && ref.owner().name().equalsString(className)
+                        && ref.name().equalsString(methodName)) {
+                    needsCsm = true;
+                    break;
                 }
             }
-        };
+
+            if (needsCsm) {
+                process(clazz, method);
+            }
+        }
     }
 
-    private ReferenceFinder.Visitor getVisitor() {
-        return new ReferenceFinder.Visitor() {
-            public void visit(ClassFile cf, Method m,  List<CPRefInfo> refs) {
-                try {
-                    // ignore jdk.unsupported/sun.reflect.Reflection.getCallerClass
-                    // which is a "special" delegate to the internal getCallerClass
-                    if (cf.getName().equals("sun/reflect/Reflection") &&
-                        m.getName(cf.constant_pool).equals("getCallerClass"))
-                        return;
+    private void process(ClassModel cf, MethodModel m) {
+        // ignore jdk.unsupported/sun.reflect.Reflection.getCallerClass
+        // which is a "special" delegate to the internal getCallerClass
+        if (cf.thisClass().name().equalsString("sun/reflect/Reflection") &&
+                m.methodName().equalsString("getCallerClass"))
+            return;
 
-                    String name = String.format("%s#%s %s", cf.getName(),
-                                                m.getName(cf.constant_pool),
-                                                m.descriptor.getValue(cf.constant_pool));
-                    if (!CallerSensitiveFinder.isCallerSensitive(m, cf.constant_pool)) {
-                        csMethodsMissingAnnotation.add(name);
-                        System.err.println("Missing @CallerSensitive: " + name);
-                    } else {
-                        if (verbose) {
-                            System.out.format("@CS  %s%n", name);
-                        }
-                    }
-                } catch (ConstantPoolException ex) {
-                    throw new RuntimeException(ex);
-                }
+        String name = cf.thisClass().asInternalName() + '#'
+                + m.methodName().stringValue() + ' '
+                + m.methodType().stringValue();
+        if (!CallerSensitiveFinder.isCallerSensitive(m)) {
+            csMethodsMissingAnnotation.add(name);
+            System.err.println("Missing @CallerSensitive: " + name);
+        } else {
+            if (verbose) {
+                System.out.format("@CS  %s%n", name);
             }
-        };
+        }
     }
 
     public List<String> run(Stream<Path> classes)throws IOException, InterruptedException,
-            ExecutionException, ConstantPoolException
+            ExecutionException, IllegalArgumentException
     {
         classes.forEach(p -> pool.submit(getTask(p)));
         waitForCompletion();
@@ -146,16 +163,11 @@ public class CallerSensitiveFinder {
     }
 
     private static final String CALLER_SENSITIVE_ANNOTATION = "Ljdk/internal/reflect/CallerSensitive;";
-    private static boolean isCallerSensitive(Method m, ConstantPool cp)
-            throws ConstantPoolException
-    {
-        RuntimeAnnotations_attribute attr =
-            (RuntimeAnnotations_attribute)m.attributes.get(Attribute.RuntimeVisibleAnnotations);
+    private static boolean isCallerSensitive(MethodModel m) {
+        var attr = m.findAttribute(Attributes.runtimeVisibleAnnotations()).orElse(null);
         if (attr != null) {
-            for (int i = 0; i < attr.annotations.length; i++) {
-                Annotation ann = attr.annotations[i];
-                String annType = cp.getUTF8Value(ann.type_index);
-                if (CALLER_SENSITIVE_ANNOTATION.equals(annType)) {
+            for (var ann : attr.annotations()) {
+                if (ann.className().equalsString(CALLER_SENSITIVE_ANNOTATION)) {
                     return true;
                 }
             }
@@ -174,12 +186,11 @@ public class CallerSensitiveFinder {
     private FutureTask<Void> getTask(Path p) {
         FutureTask<Void> task = new FutureTask<>(new Callable<>() {
             public Void call() throws Exception {
-                try (InputStream is = Files.newInputStream(p)) {
-                    finder.parse(ClassFile.read(is));
+                try {
+                    var clz = ClassFile.of().parse(p); // propagate IllegalArgumentException
+                    check(clz);
                 } catch (IOException x) {
                     throw new UncheckedIOException(x);
-                } catch (ConstantPoolException x) {
-                    throw new RuntimeException(x);
                 }
                 return null;
             }

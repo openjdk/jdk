@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,16 @@
  */
 package javax.swing.text.html;
 
-import javax.swing.text.*;
 import java.io.Serializable;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import javax.swing.text.AttributeSet;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.SimpleAttributeSet;
 
 /**
  * An implementation of <code>AttributeSet</code> that can multiplex
@@ -196,15 +203,24 @@ class MuxingAttributeSet implements AttributeSet, Serializable {
      * @see AttributeSet#getAttribute
      */
     public Object getAttribute(Object key) {
-        AttributeSet[] as = getAttributes();
-        int n = as.length;
-        for (int i = 0; i < n; i++) {
-            Object o = as[i].getAttribute(key);
-            if (o != null) {
-                return o;
+        final AttributeSet[] as = getAttributes();
+        final int n = as.length;
+        if (key != CSS.Attribute.TEXT_DECORATION) {
+            for (int i = 0; i < n; i++) {
+                Object o = as[i].getAttribute(key);
+                if (o != null) {
+                    return o;
+                }
             }
+            return null;
         }
-        return null;
+
+        String values = Arrays.stream(as)
+                              .map(a -> a.getAttribute(key))
+                              .filter(Objects::nonNull)
+                              .map(Object::toString)
+                              .collect(Collectors.joining(","));
+        return CSS.mergeTextDecoration(values);
     }
 
     /**

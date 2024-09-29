@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +32,7 @@
 
 package compiler.print;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -68,17 +70,27 @@ public class CompileCommandPrintMemStat {
                 .replace("$", "\\$");
 
         // Should see trace output when methods are compiled
-        oa.shouldHaveExitValue(0)
-          .shouldMatch(".*" + expectedNameIncl + ".*")
-          .shouldNotMatch(".*" + expectedNameExcl + ".*");
+        oa.shouldHaveExitValue(0).
+                shouldMatch("Arena usage.*" + expectedNameIncl + ".*").
+                shouldNotMatch("Arena usage.*" + expectedNameExcl + ".*");
+
 
         // Should see final report
         // Looks like this:
-        // total     NA        RA        result  #nodes  time    type  #rc thread              method
-        // 211488    66440     77624     ok      13      0.057   c2    2   0x00007fb49428db70  compiler/print/CompileCommandPrintMemStat$TestMain::method1(()V)
+        // total     Others    RA        HA        NA        result  #nodes  limit   time    type  #rc thread             method
+        // 523648    32728     490920    0         0         ok      -       -       0.250   c1    1   0x00007f4ec00d4ac0 java/lang/Class::descriptorString(()Ljava/lang/String;)
+        // or
+        // 1898600   853176    750872    0         294552    ok      934     -       1.501   c2    1   0x00007f4ec00d3330 java/lang/String::replace((CC)Ljava/lang/String;)
         oa.shouldMatch("total.*method");
-        oa.shouldMatch("\\d+ +\\d+ +\\d+ +\\S+ +\\d+.*" + expectedNameIncl + ".*");
-        oa.shouldNotMatch("\\d+ +\\d+ +\\d+ +\\S+ +\\d+.*" + expectedNameExcl + ".*");
+        oa.shouldMatch("\\d+ +(\\d+ +){4}ok +(\\d+|-) +.*" + expectedNameIncl + ".*");
+
+        // In debug builds, we have a default memory limit enabled. That implies MemStat. Therefore we
+        // expect to see all methods, not just the one we specified on the command line.
+        if (Platform.isDebugBuild()) {
+            oa.shouldMatch("\\d+ +(\\d+ +){4}ok +(\\d+|-) +.*" + expectedNameExcl + ".*");
+        } else {
+            oa.shouldNotMatch(".*" + expectedNameExcl + ".*");
+        }
     }
 
     // Test class that is invoked by the sub process

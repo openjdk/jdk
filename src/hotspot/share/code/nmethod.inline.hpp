@@ -37,7 +37,7 @@ inline bool nmethod::is_deopt_pc(address pc) { return is_deopt_entry(pc) || is_d
 inline bool nmethod::is_deopt_entry(address pc) {
   return pc == deopt_handler_begin()
 #if INCLUDE_JVMCI
-    || (is_compiled_by_jvmci() && pc == (deopt_handler_begin() + NativeCall::instruction_size))
+    || (is_compiled_by_jvmci() && pc == (deopt_handler_begin() + NativeCall::byte_size()))
 #endif
     ;
 }
@@ -45,7 +45,7 @@ inline bool nmethod::is_deopt_entry(address pc) {
 inline bool nmethod::is_deopt_mh_entry(address pc) {
   return pc == deopt_mh_handler_begin()
 #if INCLUDE_JVMCI
-    || (is_compiled_by_jvmci() && pc == (deopt_mh_handler_begin() + NativeCall::instruction_size))
+    || (is_compiled_by_jvmci() && pc == (deopt_mh_handler_begin() + NativeCall::byte_size()))
 #endif
     ;
 }

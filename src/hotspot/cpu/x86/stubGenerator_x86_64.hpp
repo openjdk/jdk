@@ -483,6 +483,9 @@ class StubGenerator: public StubCodeGenerator {
                                const XMMRegister P2L, const XMMRegister P2H,
                                const XMMRegister YTMP1, const Register rscratch);
 
+  address generate_intpoly_montgomeryMult_P256();
+  address generate_intpoly_assign();
+
   // BASE64 stubs
 
   address base64_shuffle_addr();
@@ -543,6 +546,7 @@ class StubGenerator: public StubCodeGenerator {
   address generate_libmSin();
   address generate_libmCos();
   address generate_libmTan();
+  address generate_libmTanh();
   address generate_libmExp();
   address generate_libmPow();
   address generate_libmLog();
@@ -572,6 +576,9 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_libm_stubs();
 
+#ifdef COMPILER2
+  void generate_string_indexof(address *fnptrs);
+#endif
 
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind);
   address generate_cont_thaw();
@@ -579,16 +586,6 @@ class StubGenerator: public StubCodeGenerator {
   // TODO: will probably need multiple return barriers depending on return type
   address generate_cont_returnBarrier();
   address generate_cont_returnBarrier_exception();
-
-#if INCLUDE_JFR
-  void generate_jfr_stubs();
-  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
-  // It returns a jobject handle to the event writer.
-  // The handle is dereferenced and the return value is the event writer oop.
-  RuntimeStub* generate_jfr_write_checkpoint();
-  // For c2: call to runtime to return a buffer lease.
-  RuntimeStub* generate_jfr_return_lease();
-#endif // INCLUDE_JFR
 
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception

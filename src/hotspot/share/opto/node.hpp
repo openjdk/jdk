@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +139,7 @@ class Opaque1Node;
 class OpaqueLoopInitNode;
 class OpaqueLoopStrideNode;
 class Opaque4Node;
+class OpaqueInitializedAssertionPredicateNode;
 class OuterStripMinedLoopNode;
 class OuterStripMinedLoopEndNode;
 class Node;
@@ -174,14 +176,15 @@ class SubTypeCheckNode;
 class Type;
 class TypeNode;
 class UnlockNode;
-class UnorderedReductionNode;
 class VectorNode;
 class LoadVectorNode;
 class LoadVectorMaskedNode;
 class StoreVectorMaskedNode;
 class LoadVectorGatherNode;
+class LoadVectorGatherMaskedNode;
 class StoreVectorNode;
 class StoreVectorScatterNode;
+class StoreVectorScatterMaskedNode;
 class VerifyVectorAlignmentNode;
 class VectorMaskCmpNode;
 class VectorUnboxNode;
@@ -736,7 +739,6 @@ public:
         DEFINE_CLASS_ID(ExpandV, Vector, 5)
         DEFINE_CLASS_ID(CompressM, Vector, 6)
         DEFINE_CLASS_ID(Reduction, Vector, 7)
-          DEFINE_CLASS_ID(UnorderedReduction, Reduction, 0)
         DEFINE_CLASS_ID(NegV, Vector, 8)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
@@ -795,9 +797,10 @@ public:
       DEFINE_CLASS_ID(OpaqueLoopInit, Opaque1, 0)
       DEFINE_CLASS_ID(OpaqueLoopStride, Opaque1, 1)
     DEFINE_CLASS_ID(Opaque4,  Node, 17)
-    DEFINE_CLASS_ID(Move,     Node, 18)
-    DEFINE_CLASS_ID(LShift,   Node, 19)
-    DEFINE_CLASS_ID(Neg,      Node, 20)
+    DEFINE_CLASS_ID(OpaqueInitializedAssertionPredicate,  Node, 18)
+    DEFINE_CLASS_ID(Move,     Node, 19)
+    DEFINE_CLASS_ID(LShift,   Node, 20)
+    DEFINE_CLASS_ID(Neg,      Node, 21)
 
     _max_classes  = ClassMask_Neg
   };
@@ -832,7 +835,9 @@ private:
   juint _class_id;
   juint _flags;
 
+#ifdef ASSERT
   static juint max_flags();
+#endif
 
 protected:
   // These methods should be called from constructors only.
@@ -966,6 +971,7 @@ public:
   DEFINE_CLASS_QUERY(NeverBranch)
   DEFINE_CLASS_QUERY(Opaque1)
   DEFINE_CLASS_QUERY(Opaque4)
+  DEFINE_CLASS_QUERY(OpaqueInitializedAssertionPredicate)
   DEFINE_CLASS_QUERY(OpaqueLoopInit)
   DEFINE_CLASS_QUERY(OpaqueLoopStride)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
@@ -986,7 +992,6 @@ public:
   DEFINE_CLASS_QUERY(Sub)
   DEFINE_CLASS_QUERY(SubTypeCheck)
   DEFINE_CLASS_QUERY(Type)
-  DEFINE_CLASS_QUERY(UnorderedReduction)
   DEFINE_CLASS_QUERY(Vector)
   DEFINE_CLASS_QUERY(VectorMaskCmp)
   DEFINE_CLASS_QUERY(VectorUnbox)
@@ -996,8 +1001,12 @@ public:
   DEFINE_CLASS_QUERY(CompressM)
   DEFINE_CLASS_QUERY(LoadVector)
   DEFINE_CLASS_QUERY(LoadVectorGather)
+  DEFINE_CLASS_QUERY(LoadVectorMasked)
+  DEFINE_CLASS_QUERY(LoadVectorGatherMasked)
   DEFINE_CLASS_QUERY(StoreVector)
   DEFINE_CLASS_QUERY(StoreVectorScatter)
+  DEFINE_CLASS_QUERY(StoreVectorMasked)
+  DEFINE_CLASS_QUERY(StoreVectorScatterMasked)
   DEFINE_CLASS_QUERY(ShiftV)
   DEFINE_CLASS_QUERY(Unlock)
 
@@ -1099,8 +1108,14 @@ public:
   // Skip Proj and CatchProj nodes chains. Check for Null and Top.
   Node* find_exact_control(Node* ctrl);
 
+  // Results of the dominance analysis.
+  enum class DomResult {
+    NotDominate,         // 'this' node does not dominate 'sub'.
+    Dominate,            // 'this' node dominates or is equal to 'sub'.
+    EncounteredDeadCode  // Result is undefined due to encountering dead code.
+  };
   // Check if 'this' node dominates or equal to 'sub'.
-  bool dominates(Node* sub, Node_List &nlist);
+  DomResult dominates(Node* sub, Node_List &nlist);
 
 protected:
   bool remove_dead_region(PhaseGVN *phase, bool can_reshape);
@@ -1569,8 +1584,8 @@ Node* Node::last_out(DUIterator_Last& i) const {
 class SimpleDUIterator : public StackObj {
  private:
   Node* node;
-  DUIterator_Fast i;
   DUIterator_Fast imax;
+  DUIterator_Fast i;
  public:
   SimpleDUIterator(Node* n): node(n), i(n->fast_outs(imax)) {}
   bool has_next() { return i < imax; }
@@ -1590,6 +1605,8 @@ protected:
   Arena* _a;                    // Arena to allocate in
   uint   _max;
   Node** _nodes;
+  ReallocMark _nesting;         // Safety checks for arena reallocation
+
   void   grow( uint i );        // Grow array node to fit
 public:
   Node_Array(Arena* a, uint max = OptoNodeListSize) : _a(a), _max(max) {
@@ -1608,7 +1625,7 @@ public:
   Node* at(uint i) const { assert(i<_max,"oob"); return _nodes[i]; }
   Node** adr() { return _nodes; }
   // Extend the mapping: index i maps to Node *n.
-  void map( uint i, Node *n ) { if( i>=_max ) grow(i); _nodes[i] = n; }
+  void map( uint i, Node *n ) { grow(i); _nodes[i] = n; }
   void insert( uint i, Node *n );
   void remove( uint i );        // Remove, preserving order
   // Clear all entries in _nodes to null but keep storage
@@ -1838,6 +1855,7 @@ protected:
   INode *_inode_max; // End of _inodes == _inodes + _max
   INode *_inodes;    // Array storage for the stack
   Arena *_a;         // Arena to allocate in
+  ReallocMark _nesting; // Safety checks for arena reallocation
   void grow();
 public:
   Node_Stack(int size) {
@@ -1861,7 +1879,7 @@ public:
   }
   void push(Node *n, uint i) {
     ++_inode_top;
-    if (_inode_top >= _inode_max) grow();
+    grow();
     INode *top = _inode_top; // optimization
     top->node = n;
     top->indx = i;
@@ -2046,6 +2064,38 @@ inline int Op_Cast(BasicType bt) {
     return Op_CastII;
   }
   return Op_CastLL;
+}
+
+inline int Op_DivIL(BasicType bt, bool is_unsigned) {
+  assert(bt == T_INT || bt == T_LONG, "only for int or longs");
+  if (bt == T_INT) {
+    if (is_unsigned) {
+      return Op_UDivI;
+    } else {
+      return Op_DivI;
+    }
+  }
+  if (is_unsigned) {
+    return Op_UDivL;
+  } else {
+    return Op_DivL;
+  }
+}
+
+inline int Op_DivModIL(BasicType bt, bool is_unsigned) {
+  assert(bt == T_INT || bt == T_LONG, "only for int or longs");
+  if (bt == T_INT) {
+    if (is_unsigned) {
+      return Op_UDivModI;
+    } else {
+      return Op_DivModI;
+    }
+  }
+  if (is_unsigned) {
+    return Op_UDivModL;
+  } else {
+    return Op_DivModL;
+  }
 }
 
 #endif // SHARE_OPTO_NODE_HPP

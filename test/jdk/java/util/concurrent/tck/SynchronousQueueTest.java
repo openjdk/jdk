@@ -652,5 +652,4 @@ public class SynchronousQueueTest extends JSR166TestCase {
         assertFalse(q.contains(null));
         assertFalse(q.remove(null));
     }
-
 }

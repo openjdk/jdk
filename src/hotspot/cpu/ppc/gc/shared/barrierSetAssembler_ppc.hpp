@@ -98,7 +98,6 @@ public:
 class SaveLiveRegisters {
   MacroAssembler* _masm;
   RegMask _reg_mask;
-  Register _result_reg;
   int _frame_size;
 
  public:

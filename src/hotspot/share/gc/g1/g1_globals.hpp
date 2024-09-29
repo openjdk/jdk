@@ -112,7 +112,7 @@
                                                                             \
   product(uint, G1ConfidencePercent, 50,                                    \
           "Confidence level for MMU/pause predictions")                     \
-          range(0, 100)                                                     \
+          range(1, 100)                                                     \
                                                                             \
   product(uintx, G1SummarizeRSetStatsPeriod, 0, DIAGNOSTIC,                 \
           "The period (in number of GCs) at which we will generate "        \
@@ -149,12 +149,11 @@
           "Number of completed buffers that triggers log processing.")      \
           range(0, max_jint)                                                \
                                                                             \
-  product(uint, G1SATBBufferEnqueueingThresholdPercent, 60,                \
+  product(uint, G1SATBBufferEnqueueingThresholdPercent, 60,                 \
           "Before enqueueing them, each mutator thread tries to do some "   \
           "filtering on the SATB buffers it generates. If post-filtering "  \
           "the percentage of retained entries is over this threshold "      \
-          "the buffer will be enqueued for processing. A value of 0 "       \
-          "specifies that mutator threads should not do such filtering.")   \
+          "the buffer will be enqueued for processing.")                    \
           range(0, 100)                                                     \
                                                                             \
   product(uint, G1ExpandByPercentOfAvailable, 20, EXPERIMENTAL,             \

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -724,7 +724,14 @@ inline void Assembler::z_bcr( branch_condition m1, Register r2) { emit_16( BCR_Z
 inline void Assembler::z_brc( branch_condition i1, int64_t i2)  { emit_32( BRC_ZOPC   | uimm4(i1, 8, 32) | simm16(i2, 16, 32)); }
 inline void Assembler::z_brc( branch_condition i1, address a)   { emit_32( BRC_ZOPC   | uimm4(i1, 8, 32) | simm16(RelAddr::pcrel_off16(a, pc()), 16, 32)); }
 inline void Assembler::z_brcl(branch_condition i1, address a)   { emit_48( BRCL_ZOPC  | uimm4(i1, 8, 48) | simm32(RelAddr::pcrel_off32(a, pc()), 16, 48)); }
-inline void Assembler::z_bctgr(Register r1, Register r2)        { emit_32( BCTGR_ZOPC | reg( r1, 24, 32) | reg( r2, 28, 32)); };
+
+// branch on count
+inline void Assembler::z_bct(  Register r1, const Address &a)                     { z_bct(   r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_bct(  Register r1, int64_t d2, Register x2, Register b2) { emit_32( BCT_ZOPC  | reg(r1, 8, 32) | rxmask_32(d2, x2, b2)); }
+inline void Assembler::z_bctr (Register r1, Register r2)                          { emit_16( BCTR_ZOPC  | reg( r1,  8, 16) | reg( r2, 12, 16)); };
+inline void Assembler::z_bctgr(Register r1, Register r2)                          { emit_32( BCTGR_ZOPC | reg( r1, 24, 32) | reg( r2, 28, 32)); };
+inline void Assembler::z_bctg( Register r1, const Address &a)                     { z_bctg(  r1, a.disp(), a.indexOrR0(), a.baseOrR0()); }
+inline void Assembler::z_bctg( Register r1, int64_t d2, Register x2, Register b2) { emit_48( BCTG_ZOPC | reg(r1, 8, 48) | rxymask_48(d2, x2, b2)); }
 
 inline void Assembler::z_basr( Register r1, Register r2) { emit_16( BASR_ZOPC  | regt(r1, 8, 16) | reg(r2, 12, 16)); }
 inline void Assembler::z_brasl(Register r1, address a)   { emit_48( BRASL_ZOPC | regt(r1, 8, 48) | simm32(RelAddr::pcrel_off32(a, pc()), 16, 48)); }
@@ -741,7 +748,7 @@ inline void Assembler::z_brxhg(Register r1, Register r3, Label& L) {z_brxhg(r1, 
 inline void Assembler::z_brxlg(Register r1, Register r3, Label& L) {z_brxlg(r1, r3, target(L)); }
 
 inline void Assembler::z_flogr( Register r1, Register r2)              { emit_32( FLOGR_ZOPC  | reg(r1, 24, 32) | reg(r2, 28, 32)); }
-inline void Assembler::z_popcnt(Register r1, Register r2)              { emit_32( POPCNT_ZOPC | reg(r1, 24, 32) | reg(r2, 28, 32)); }
+inline void Assembler::z_popcnt(Register r1, Register r2, int64_t  m3) { emit_32( POPCNT_ZOPC | reg(r1, 24, 32) | reg(r2, 28, 32) | uimm4(m3, 16, 32)); }
 inline void Assembler::z_ahhhr( Register r1, Register r2, Register r3) { emit_32( AHHHR_ZOPC  | reg(r3, 16, 32) | reg(r1, 24, 32) | reg(r2, 28, 32)); }
 inline void Assembler::z_ahhlr( Register r1, Register r2, Register r3) { emit_32( AHHLR_ZOPC  | reg(r3, 16, 32) | reg(r1, 24, 32) | reg(r2, 28, 32)); }
 
@@ -1396,6 +1403,8 @@ inline void Assembler::z_brno(  Label& L) { z_brc(bcondNotOrdered, target(L)); }
 inline void Assembler::z_brc( branch_condition m, Label& L) { z_brc(m, target(L)); }
 inline void Assembler::z_brcl(branch_condition m, Label& L) { z_brcl(m, target(L)); }
 
+inline void Assembler::z_bct( Register r1, int64_t d2, Register b2) { z_bct( r1, d2, Z_R0, b2);}
+inline void Assembler::z_bctg(Register r1, int64_t d2, Register b2) { z_bctg(r1, d2, Z_R0, b2);}
 
 // Instruction len bits must be stored right-justified in argument.
 inline unsigned int Assembler::instr_len(unsigned char len_bits) {

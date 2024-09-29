@@ -56,6 +56,7 @@ public:
     _DEGENERATED_LIMIT
   };
 
+  // Returns false if the collection was cancelled, true otherwise.
   virtual bool collect(GCCause::Cause cause) = 0;
   static const char* degen_point_to_string(ShenandoahDegenPoint point);
 

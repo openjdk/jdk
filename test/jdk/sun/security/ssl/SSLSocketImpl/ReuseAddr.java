@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,11 @@
  */
 
 import java.net.ServerSocket;
+import java.net.BindException;
 
 public class ReuseAddr extends SSLSocketTemplate {
+
+    private static final int MAX_ATTEMPTS = 3;
 
     @Override
     protected void doServerSide() throws Exception {
@@ -50,6 +53,21 @@ public class ReuseAddr extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
-        new ReuseAddr().run();
+        for (int i=1 ; i <= MAX_ATTEMPTS; i++) {
+            try {
+                new ReuseAddr().run();
+                System.out.println("Test succeeded at attempt " + i);
+                break;
+            } catch (BindException x) {
+                System.out.println("attempt " + i + " failed: " + x);
+                if (i == MAX_ATTEMPTS) {
+                    String msg = "Could not succeed after " + i + " attempts";
+                    System.err.println(msg);
+                    throw new AssertionError("Failed to reuse address: " + msg, x);
+                } else {
+                    System.out.println("Retrying...");
+                }
+            }
+        }
     }
 }

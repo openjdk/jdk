@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @test
  * @key randomness
  * @summary test archive lambda invoker species type in dynamic dump
- * @bug 8280767
+ * @bug 8280767 8327499
  * @requires vm.cds
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive
  * @compile CDSLambdaInvoker.java
@@ -59,6 +59,7 @@ public class TestLambdaInvokers extends DynamicArchiveTestBase {
              "-Xlog:cds",
              "-Xlog:cds+dynamic=debug",
              "-Xlog:class+load",
+             "-Djava.lang.invoke.MethodHandle.TRACE_RESOLVE=true",
              "-cp",
              jarFile,
              mainClass)
@@ -69,6 +70,10 @@ public class TestLambdaInvokers extends DynamicArchiveTestBase {
                  // java.lang.invoke.BoundMethodHandle$Species_JL is generated from CDSLambdaInvoker and
                  // stored in the dynamic archive
                  output.shouldContain("java.lang.invoke.BoundMethodHandle$Species_JL source: shared objects file (top)");
+
+                 // java.lang.invoke.Invokers$Holder has invoker(Object,Object,Object,int)Object available
+                 // from the archives
+                 output.shouldContain("[LF_RESOLVE] java.lang.invoke.Invokers$Holder invoker L3I_L (success)");
              });
     }
 

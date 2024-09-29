@@ -222,7 +222,7 @@ import java.util.stream.Stream;
  * <pre>
  * MemoryLayout.structLayout(
  *     ValueLayout.JAVA_INT.withName("x"),
- *     MemoryLayout.paddingLayout(32),
+ *     MemoryLayout.paddingLayout(4),
  *     ValueLayout.JAVA_LONG.withName("y")
  * );
  * </pre>
@@ -613,7 +613,7 @@ public sealed interface Linker permits AbstractLinker {
      *         {@code address.equals(MemorySegment.NULL)}
      * @throws IllegalArgumentException if an invalid combination of linker options
      *         is given
-     * @throws IllegalCallerException If the caller is in a module that does not have
+     * @throws IllegalCallerException if the caller is in a module that does not have
      *         native access enabled
      *
      * @see SymbolLookup
@@ -684,7 +684,7 @@ public sealed interface Linker permits AbstractLinker {
      *         supported by this linker
      * @throws IllegalArgumentException if an invalid combination of linker options
      *         is given
-     * @throws IllegalCallerException If the caller is in a module that does not have
+     * @throws IllegalCallerException if the caller is in a module that does not have
      *         native access enabled
      */
     @CallerSensitive
@@ -733,7 +733,7 @@ public sealed interface Linker permits AbstractLinker {
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws WrongThreadException if {@code arena} is a confined arena, and this method
      *         is called from a thread {@code T}, other than the arena's owner thread
-     * @throws IllegalCallerException If the caller is in a module that does not have
+     * @throws IllegalCallerException if the caller is in a module that does not have
      *         native access enabled
      */
     @CallerSensitive

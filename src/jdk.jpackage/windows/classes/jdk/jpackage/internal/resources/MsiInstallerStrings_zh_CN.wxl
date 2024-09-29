@@ -1,6 +1,5 @@
 <?xml version = '1.0' encoding = 'utf-8'?>
 <WixLocalization Culture="zh-cn" xmlns="http://schemas.microsoft.com/wix/2006/localization" Codepage="936">
-  <String Id="message.install.dir.exist">文件夹 [INSTALLDIR] 已存在。是否仍要安装到该文件夹？</String>
   <String Id="MainFeatureTitle">主要功能</String>
   <String Id="DowngradeErrorMessage">已安装更高版本的 [ProductName]。降级已禁用。现在将退出安装。</String>
   <String Id="DisallowUpgradeErrorMessage">已安装更低版本的 [ProductName]。升级已禁用。现在将退出安装。</String>
@@ -11,6 +10,9 @@
   <String Id="ShortcutPromptDlgDescription">选择要创建的快捷方式。</String>
   <String Id="ShortcutPromptDlgDesktopShortcutControlLabel">创建桌面快捷方式</String>
   <String Id="ShortcutPromptDlgStartMenuShortcutControlLabel">创建开始菜单快捷方式</String>
+
   <String Id="InstallDirNotEmptyDlg_Title">[ProductName] 安装程序</String>
+  <String Id="InstallDirNotEmptyDlgInstallDirExistMessage">文件夹 [INSTALLDIR] 已存在。是否仍要安装到该文件夹？</String>
+
   <String Id="ContextMenuCommandLabel">使用 [ProductName] 打开</String>
 </WixLocalization>

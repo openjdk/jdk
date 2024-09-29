@@ -68,7 +68,7 @@ public class NoLocalsMustBeReservedForDCEedVarsTest {
         ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         for (MethodModel method: classFile.methods()) {
             if (method.methodName().stringValue().equals("foo")) {
-                CodeAttribute codeAttr = method.findAttribute(Attributes.CODE).orElse(null);
+                CodeAttribute codeAttr = method.findAttribute(Attributes.code()).orElse(null);
                 assert codeAttr != null;
                 Assert.check(codeAttr.maxLocals() == 0, "max locals found " + codeAttr.maxLocals());
             }

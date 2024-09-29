@@ -629,15 +629,27 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
     case ZBarrierRelocationFormatMarkBadMask:
     case ZBarrierRelocationFormatStoreGoodBits:
     case ZBarrierRelocationFormatStoreBadMask:
-      assert(NativeInstruction::is_li16u_at(addr), "invalide zgc barrier");
+      assert(MacroAssembler::is_li16u_at(addr), "invalide zgc barrier");
       bytes = MacroAssembler::pd_patch_instruction_size(addr, (address)(uintptr_t)value);
       break;
     default:
       ShouldNotReachHere();
   }
 
-  // A full fence is generated before icache_flush by default in invalidate_word
-  ICache::invalidate_range(addr, bytes);
+  // If we are using UseCtxFencei no ICache invalidation is needed here.
+  // Instead every hart will preform an fence.i either by a Java thread
+  // (due to patching epoch will take it to slow path),
+  // or by the kernel when a Java thread is moved to a hart.
+  // The instruction streams changes must only happen before the disarm of
+  // the nmethod barrier. Where the disarm have a leading full two way fence.
+  // If this is performed during a safepoint, all Java threads will emit a fence.i
+  // before transitioning to 'Java', e.g. leaving native or the safepoint wait barrier.
+  if (!UseCtxFencei) {
+    // ICache invalidation is a serialization point.
+    // The above patching of instructions happens before the invalidation.
+    // Hence it have a leading full two way fence (wr, wr).
+    ICache::invalidate_range(addr, bytes);
+  }
 }
 
 #ifdef COMPILER2

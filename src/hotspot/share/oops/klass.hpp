@@ -27,6 +27,7 @@
 
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
+#include "oops/klassFlags.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
@@ -159,19 +160,20 @@ class Klass : public Metadata {
   // Provide access the corresponding instance java.lang.ClassLoader.
   ClassLoaderData* _class_loader_data;
 
-  // Bitmap and hash code used by hashed secondary supers.
-  uintx    _bitmap;
-  uint8_t  _hash_slot;
-
-  static uint8_t compute_hash_slot(Symbol* s);
 
   int _vtable_len;              // vtable length. This field may be read very often when we
                                 // have lots of itable dispatches (e.g., lambdas and streams).
                                 // Keep it away from the beginning of a Klass to avoid cacheline
                                 // contention that may happen when a nearby object is modified.
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
+                                // Some flags created by the JVM, not in the class file itself,
+                                // are in _misc_flags below.
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
+
+  // Bitmap and hash code used by hashed secondary supers.
+  uintx    _bitmap;
+  uint8_t  _hash_slot;
 
 private:
   // This is an index into FileMapHeader::_shared_path_table[], to
@@ -195,14 +197,14 @@ private:
   };
 #endif
 
+  KlassFlags  _misc_flags;
+
   CDS_JAVA_HEAP_ONLY(int _archived_mirror_index;)
 
 protected:
 
   Klass(KlassKind kind);
   Klass();
-
-  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
 
  public:
   int kind() { return _kind; }
@@ -392,6 +394,7 @@ protected:
   void     set_next_sibling(Klass* s);
 
  private:
+  static uint8_t compute_hash_slot(Symbol* s);
   static void  hash_insert(Klass* klass, GrowableArray<Klass*>* secondaries, uintx& bitmap);
   static uintx hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite);
 
@@ -428,6 +431,7 @@ protected:
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
 #endif
   static ByteSize bitmap_offset()                { return byte_offset_of(Klass, _bitmap); }
+  static ByteSize misc_flags_offset()            { return byte_offset_of(Klass, _misc_flags._flags); }
 
   // Unpacking layout_helper:
   static const int _lh_neutral_value           = 0;  // neutral non-array non-instance value
@@ -692,12 +696,14 @@ protected:
   bool is_super() const                 { return _access_flags.is_super(); }
   bool is_synthetic() const             { return _access_flags.is_synthetic(); }
   void set_is_synthetic()               { _access_flags.set_is_synthetic(); }
-  bool has_finalizer() const            { return _access_flags.has_finalizer(); }
-  void set_has_finalizer()              { _access_flags.set_has_finalizer(); }
-  bool is_hidden() const                { return access_flags().is_hidden_class(); }
-  void set_is_hidden()                  { _access_flags.set_is_hidden_class(); }
-  bool is_value_based()                 { return _access_flags.is_value_based_class(); }
-  void set_is_value_based()             { _access_flags.set_is_value_based_class(); }
+  bool has_finalizer() const            { return _misc_flags.has_finalizer(); }
+  void set_has_finalizer()              { _misc_flags.set_has_finalizer(true); }
+  bool is_hidden() const                { return _misc_flags.is_hidden_class(); }
+  void set_is_hidden()                  { _misc_flags.set_is_hidden_class(true); }
+  bool is_value_based() const           { return _misc_flags.is_value_based_class(); }
+  void set_is_value_based()             { _misc_flags.set_is_value_based_class(true); }
+
+  klass_flags_t misc_flags() const      { return _misc_flags.value(); }
 
   inline bool is_non_strong_hidden() const;
 

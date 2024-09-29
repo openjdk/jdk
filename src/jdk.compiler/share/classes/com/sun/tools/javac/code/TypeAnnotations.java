@@ -55,6 +55,7 @@ import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCAnnotatedType;
 import com.sun.tools.javac.tree.JCTree.JCAnnotation;
@@ -79,6 +80,7 @@ import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
@@ -495,22 +497,20 @@ public class TypeAnnotations {
                  */
                 if (enclTy != null &&
                         enclTy.hasTag(TypeTag.NONE)) {
-                    switch (onlyTypeAnnotations.size()) {
-                        case 0:
-                            // Don't issue an error if all type annotations are
-                            // also declaration annotations.
-                            // If the annotations are also declaration annotations, they are
-                            // illegal as type annotations but might be legal as declaration annotations.
-                            // The normal declaration annotation checks make sure that the use is valid.
-                            break;
-                        case 1:
-                            log.error(typetree.pos(),
-                                      Errors.CantTypeAnnotateScoping1(onlyTypeAnnotations.head));
-                            break;
-                        default:
-                            log.error(typetree.pos(),
-                                      Errors.CantTypeAnnotateScoping(onlyTypeAnnotations));
+                    if (onlyTypeAnnotations.isEmpty()) {
+                        // Don't issue an error if all type annotations are
+                        // also declaration annotations.
+                        // If the annotations are also declaration annotations, they are
+                        // illegal as type annotations but might be legal as declaration annotations.
+                        // The normal declaration annotation checks make sure that the use is valid.
+                        return type;
                     }
+                    Type annotated = typeWithAnnotations(type.stripMetadata(), enclTy, annotations);
+                    JCDiagnostic.Fragment annotationFragment = onlyTypeAnnotations.size() == 1 ?
+                            Fragments.TypeAnnotation1(onlyTypeAnnotations.head) :
+                            Fragments.TypeAnnotation(onlyTypeAnnotations);
+                    log.error(typetree.pos(), Errors.TypeAnnotationInadmissible(
+                            annotationFragment, annotated.tsym.owner, new JCDiagnostic.AnnotatedType(annotated)));
                     return type;
                 }
 

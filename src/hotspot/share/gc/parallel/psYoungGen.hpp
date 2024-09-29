@@ -152,8 +152,6 @@ class PSYoungGen : public CHeapObj<mtGC> {
                         MemRegion s1MR,
                         MutableSpace* s2,
                         MemRegion s2MR) PRODUCT_RETURN;
-
-  void record_spaces_top() PRODUCT_RETURN;
 };
 
 #endif // SHARE_GC_PARALLEL_PSYOUNGGEN_HPP

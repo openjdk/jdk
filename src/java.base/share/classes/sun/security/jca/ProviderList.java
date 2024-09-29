@@ -369,17 +369,19 @@ public final class ProviderList {
         int i;
 
         // Preferred provider list
-        if (preferredPropList != null &&
-                (pList = preferredPropList.getAll(type, name)) != null) {
+        if (preferredPropList != null) {
+            pList = preferredPropList.getAll(type, name);
             for (i = 0; i < pList.size(); i++) {
                 Provider p = getProvider(pList.get(i).provider);
+                if (p == null) {
+                    continue;
+                }
                 Service s = p.getService(type, name);
                 if (s != null) {
                     return s;
                 }
             }
         }
-
         for (i = 0; i < configs.length; i++) {
             Provider p = getProvider(i);
             Service s = p.getService(type, name);

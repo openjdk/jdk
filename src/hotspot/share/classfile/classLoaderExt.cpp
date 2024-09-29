@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ bool ClassLoaderExt::_has_platform_classes = false;
 bool ClassLoaderExt::_has_non_jar_in_classpath = false;
 
 void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     warning("Sharing is only supported for boot loader classes because bootstrap classpath has been appended");
     FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
     if (DynamicArchive::is_mapped()) {
@@ -100,12 +100,10 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
     ModulePathsGatherer(JavaThread* current, GrowableArray<char*>* module_paths) :
       _current(current), _module_paths(module_paths) {}
     void do_module(ModuleEntry* m) {
-      char* path = m->location()->as_C_string();
-      if (strncmp(path, "file:", 5) == 0) {
-        path = ClassLoader::skip_uri_protocol(path);
-        char* path_copy = NEW_RESOURCE_ARRAY(char, strlen(path) + 1);
-        strcpy(path_copy, path);
-        _module_paths->append(path_copy);
+      char* uri = m->location()->as_C_string();
+      if (strncmp(uri, "file:", 5) == 0) {
+        char* path = ClassLoader::uri_to_path(uri);
+        _module_paths->append(path);
       }
     }
   };
@@ -213,6 +211,15 @@ void ClassLoaderExt::process_jar_manifest(JavaThread* current, ClassPathEntry* e
     char sep = os::file_separator()[0];
     const char* dir_name = entry->name();
     const char* dir_tail = strrchr(dir_name, sep);
+#ifdef _WINDOWS
+    // On Windows, we also support forward slash as the file separator when locating entries in the classpath entry.
+    const char* dir_tail2 = strrchr(dir_name, '/');
+    if (dir_tail == nullptr) {
+      dir_tail = dir_tail2;
+    } else if (dir_tail2 != nullptr && dir_tail2 > dir_tail) {
+      dir_tail = dir_tail2;
+    }
+#endif
     int dir_len;
     if (dir_tail == nullptr) {
       dir_len = 0;

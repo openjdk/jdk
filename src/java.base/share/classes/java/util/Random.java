@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.util.random.RandomGenerator;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
-
-import jdk.internal.util.random.RandomSupport.*;
 
 import static jdk.internal.util.random.RandomSupport.*;
 
@@ -77,11 +75,6 @@ import jdk.internal.misc.Unsafe;
  * @author  Frank Yellin
  * @since   1.0
  */
-@RandomGeneratorProperties(
-        name = "Random",
-        i = 48, j = 0, k = 0,
-        equidistribution = 0
-)
 public class Random implements RandomGenerator, java.io.Serializable {
 
     /**

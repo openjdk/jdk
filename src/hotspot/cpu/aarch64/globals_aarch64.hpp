@@ -124,6 +124,8 @@ define_pd_global(intx, InlineSmallCode,          1000);
           range(1, 99)                                                  \
   product(ccstr, UseBranchProtection, "none",                           \
           "Branch Protection to use: none, standard, pac-ret")          \
+  product(bool, AlwaysMergeDMB, true, DIAGNOSTIC,                       \
+          "Always merge DMB instructions in code emission")             \
 
 // end of ARCH_FLAGS
 

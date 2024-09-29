@@ -26,7 +26,6 @@
 package sun.nio.ch;
 
 import java.io.IOException;
-import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
@@ -95,11 +94,6 @@ class KQueueSelectorImpl extends SelectorImpl {
 
         // register one end of the socket pair for wakeups
         KQueue.register(kqfd, fd0, EVFILT_READ, EV_ADD);
-    }
-
-    private void ensureOpen() {
-        if (!isOpen())
-            throw new ClosedSelectorException();
     }
 
     @Override
@@ -285,7 +279,6 @@ class KQueueSelectorImpl extends SelectorImpl {
 
     @Override
     public void setEventOps(SelectionKeyImpl ski) {
-        ensureOpen();
         synchronized (updateLock) {
             updateKeys.addLast(ski);
         }

@@ -956,7 +956,8 @@ public interface RMIConnection extends Closeable, Remote {
      * @param filters an array of marshalled representations of the
      * <code>NotificationFilters</code>.  Elements of this array can
      * be null.
-     * @param delegationSubjects must be {@code null}.
+     * @param delegationSubjects must be {@code null}, or an array
+     * which does not contain any non-null entries.
      *
      * @return an array of <code>listenerIDs</code> identifying the
      * local listeners.  This array has the same number of elements as
@@ -964,8 +965,7 @@ public interface RMIConnection extends Closeable, Remote {
      *
      * @throws IllegalArgumentException if <code>names</code> or
      * <code>filters</code> is null, or if <code>names</code> contains
-     * a null element, or if the three arrays do not all have the same
-     * size.
+     * a null element, or if these two arrays do not have the same size.
      * @throws ClassCastException if one of the elements of
      * <code>filters</code> unmarshalls as a non-null object that is
      * not a <code>NotificationFilter</code>.
@@ -974,7 +974,8 @@ public interface RMIConnection extends Closeable, Remote {
      * @throws SecurityException if, for one of the MBeans, the
      * client does not have permission to add a listener.
      * @throws IOException if a general communication exception occurred.
-     * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
+     * @throws UnsupportedOperationException if {@code delegationSubjects}
+     * is non-null and contains any non-null entries.
      */
     public Integer[] addNotificationListeners(ObjectName[] names,
                     MarshalledObject[] filters,

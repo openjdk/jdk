@@ -55,15 +55,15 @@ size_t MmapArrayAllocator<E>::size_for(size_t length) {
 }
 
 template <class E>
-E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MEMFLAGS flags) {
+E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MemTag mem_tag) {
   size_t size = size_for(length);
 
-  char* addr = os::reserve_memory(size, !ExecMem, flags);
+  char* addr = os::reserve_memory(size, !ExecMem, mem_tag);
   if (addr == nullptr) {
     return nullptr;
   }
 
-  if (os::commit_memory(addr, size, !ExecMem, flags)) {
+  if (os::commit_memory(addr, size, !ExecMem)) {
     return (E*)addr;
   } else {
     os::release_memory(addr, size);
@@ -72,15 +72,15 @@ E* MmapArrayAllocator<E>::allocate_or_null(size_t length, MEMFLAGS flags) {
 }
 
 template <class E>
-E* MmapArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
+E* MmapArrayAllocator<E>::allocate(size_t length, MemTag mem_tag) {
   size_t size = size_for(length);
 
-  char* addr = os::reserve_memory(size, !ExecMem, flags);
+  char* addr = os::reserve_memory(size, !ExecMem, mem_tag);
   if (addr == nullptr) {
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Allocator (reserve)");
   }
 
-  os::commit_memory_or_exit(addr, size, !ExecMem, flags, "Allocator (commit)");
+  os::commit_memory_or_exit(addr, size, !ExecMem, "Allocator (commit)");
 
   return (E*)addr;
 }
@@ -97,13 +97,13 @@ size_t MallocArrayAllocator<E>::size_for(size_t length) {
 }
 
 template <class E>
-E* MallocArrayAllocator<E>::allocate(size_t length, MEMFLAGS flags) {
-  return (E*)AllocateHeap(size_for(length), flags);
+E* MallocArrayAllocator<E>::allocate(size_t length, MemTag mem_tag) {
+  return (E*)AllocateHeap(size_for(length), mem_tag);
 }
 
 template <class E>
-E* MallocArrayAllocator<E>::reallocate(E* addr, size_t new_length, MEMFLAGS flags) {
-  return (E*)ReallocateHeap((char*)addr, size_for(new_length), flags);
+E* MallocArrayAllocator<E>::reallocate(E* addr, size_t new_length, MemTag mem_tag) {
+  return (E*)ReallocateHeap((char*)addr, size_for(new_length), mem_tag);
 }
 
 template <class E>

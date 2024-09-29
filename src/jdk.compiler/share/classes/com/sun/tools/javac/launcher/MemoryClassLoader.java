@@ -193,6 +193,20 @@ final class MemoryClassLoader extends ClassLoader {
         return foundOrCompiledClass;
     }
 
+    @Override
+    protected Class<?> findClass(String moduleName, String name) {
+        try {
+            if (moduleName == null) {
+                return findClass(name);
+            }
+            if (moduleDescriptor != null && moduleDescriptor.name().equals(moduleName)) {
+                return findClass(name);
+            }
+            return super.findClass(moduleName, name);
+        } catch (ClassNotFoundException ignore) { }
+        return null;
+    }
+
     private Class<?> findOrCompileClass(String name) {
         byte[] bytes = sourceFileClasses.get(name);
         if (bytes == null) {

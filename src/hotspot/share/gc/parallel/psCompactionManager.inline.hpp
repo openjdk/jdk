@@ -41,29 +41,10 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class PCMarkAndPushClosure: public OopClosure {
-private:
-  ParCompactionManager* _compaction_manager;
-public:
-  PCMarkAndPushClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
-
-  template <typename T> void do_oop_work(T* p)      { _compaction_manager->mark_and_push(p); }
-  virtual void do_oop(oop* p)                     { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p)               { do_oop_work(p); }
-};
-
-class PCIterateMarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
-private:
-  ParCompactionManager* _compaction_manager;
-public:
-  PCIterateMarkAndPushClosure(ParCompactionManager* cm, ReferenceProcessor* rp) :
-    ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_stw_fullgc_mark, rp),
-    _compaction_manager(cm) { }
-
-  template <typename T> void do_oop_work(T* p)      { _compaction_manager->mark_and_push(p); }
-  virtual void do_oop(oop* p)                     { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p)               { do_oop_work(p); }
-};
+template <typename T>
+inline void PCMarkAndPushClosure::do_oop_work(T* p) {
+  _compaction_manager->mark_and_push(p);
+}
 
 inline bool ParCompactionManager::steal(int queue_num, oop& t) {
   return oop_task_queues()->steal(queue_num, t);
@@ -106,16 +87,18 @@ inline void ParCompactionManager::mark_and_push(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(ParallelScavengeHeap::heap()->is_in(obj), "should be in heap");
 
-    if (mark_bitmap()->is_unmarked(obj) && PSParallelCompact::mark_obj(obj)) {
-      assert(_marking_stats_cache != nullptr, "inv");
-      _marking_stats_cache->push(obj, obj->size());
-      push(obj);
-
+    if (mark_bitmap()->mark_obj(obj)) {
       if (StringDedup::is_enabled() &&
           java_lang_String::is_instance(obj) &&
           psStringDedup::is_candidate_from_mark(obj)) {
         _string_dedup_requests.add(obj);
       }
+
+      ContinuationGCSupport::transform_stack_chunk(obj);
+
+      assert(_marking_stats_cache != nullptr, "inv");
+      _marking_stats_cache->push(obj, obj->size());
+      push(obj);
     }
   }
 }
@@ -157,22 +140,14 @@ inline void ParCompactionManager::follow_array(objArrayOop obj, int index) {
   }
 }
 
-inline void ParCompactionManager::update_contents(oop obj) {
-  if (!obj->klass()->is_typeArray_klass()) {
-    PCAdjustPointerClosure apc(this);
-    obj->oop_iterate(&apc);
-  }
-}
-
 inline void ParCompactionManager::follow_contents(oop obj) {
   assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
-  PCIterateMarkAndPushClosure cl(this, PSParallelCompact::ref_processor());
 
   if (obj->is_objArray()) {
-    cl.do_klass(obj->klass());
+    _mark_and_push_closure.do_klass(obj->klass());
     follow_array(objArrayOop(obj), 0);
   } else {
-    obj->oop_iterate(&cl);
+    obj->oop_iterate(&_mark_and_push_closure);
   }
 }
 

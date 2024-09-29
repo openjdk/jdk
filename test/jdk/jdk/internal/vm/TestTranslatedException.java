@@ -40,6 +40,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.TranslatedException;
 import jdk.internal.vm.VMSupport;
 
 public class TestTranslatedException {
@@ -100,6 +101,15 @@ public class TestTranslatedException {
         try {
             VMSupport.decodeAndThrowThrowable(4, 0L, true, false);
             throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
+        } catch (TranslatedException decoded) {
+            Assert.assertEquals(decoded.getCause().getClass(), OutOfMemoryError.class);
+        } catch (Throwable decoded) {
+            throw new AssertionError("unexpected exception: " + decoded);
+        }
+
+        try {
+            VMSupport.decodeAndThrowThrowable(5, 0L, true, false);
+            throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
         } catch (InternalError decoded) {
             // Expected
         } catch (Throwable decoded) {
@@ -142,7 +152,7 @@ public class TestTranslatedException {
                         VMSupport.decodeAndThrowThrowable(format, buffer, true, false);
                         throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
                     } catch (Throwable decoded) {
-                        assertThrowableEquals(throwable, decoded);
+                        assertThrowableEquals(throwable, decoded.getCause());
                     }
                     return;
                 }
@@ -152,13 +162,15 @@ public class TestTranslatedException {
         }
     }
 
-    private static void assertThrowableEquals(Throwable original, Throwable decoded) {
+    private static void assertThrowableEquals(Throwable originalIn, Throwable decodedIn) {
+        Throwable original = originalIn;
+        Throwable decoded = decodedIn;
         try {
             Assert.assertEquals(original == null, decoded == null);
             while (original != null) {
                 if (Untranslatable.class.equals(original.getClass())) {
-                    Assert.assertEquals(decoded.getClass().getName(), "jdk.internal.vm.TranslatedException");
-                    Assert.assertEquals(decoded.toString(), "jdk.internal.vm.TranslatedException[jdk.internal.vm.test.TestTranslatedException$Untranslatable]: test exception");
+                    Assert.assertEquals(decoded.getClass().getName(), "java.lang.InternalError");
+                    Assert.assertEquals(decoded.toString(), "java.lang.InternalError: test exception [jdk.internal.vm.test.TestTranslatedException$Untranslatable]");
                     Assert.assertEquals(original.getMessage(), "test exception");
                 } else {
                     Assert.assertEquals(decoded.getClass().getName(), original.getClass().getName());
@@ -182,10 +194,10 @@ public class TestTranslatedException {
             }
         } catch (AssertionError e) {
             System.err.println("original:[");
-            original.printStackTrace(System.err);
+            originalIn.printStackTrace(System.err);
             System.err.println("]");
             System.err.println("decoded:[");
-            original.printStackTrace(System.err);
+            decodedIn.printStackTrace(System.err);
             System.err.println("]");
             throw e;
         }

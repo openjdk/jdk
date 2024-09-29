@@ -95,11 +95,11 @@ public class SerialHeap extends CollectedHeap {
   public void printOn(PrintStream tty) {
     tty.println("SerialHeap:");
 
-    tty.println("Young Generation - Invocations: " + youngGen().invocations());
+    tty.println("Young Generation: ");
     youngGen().printOn(tty);
     tty.println();
 
-    tty.println("Old Generation - Invocations: " + oldGen().invocations());
+    tty.println("Old Generation: ");
     oldGen().printOn(tty);
     tty.println();
   }

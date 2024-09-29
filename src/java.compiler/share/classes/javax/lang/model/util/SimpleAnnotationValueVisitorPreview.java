@@ -29,7 +29,6 @@ import jdk.internal.javac.PreviewFeature;
 
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
 
 /**
@@ -59,7 +58,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleAnnotationValueVisitor14
  * @since 23
  */
-@SupportedSourceVersion(RELEASE_23)
+@SupportedSourceVersion(RELEASE_24)
 @PreviewFeature(feature=PreviewFeature.Feature.LANGUAGE_MODEL, reflective=true)
 public class SimpleAnnotationValueVisitorPreview<R, P> extends SimpleAnnotationValueVisitor14<R, P> {
     /**

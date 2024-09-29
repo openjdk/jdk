@@ -68,7 +68,7 @@ public class DoubleCastTest {
     static void check(MethodModel m) throws Exception {
         boolean last_is_cast = false;
         ClassEntry last_ref = null;
-        CodeAttribute ea = m.findAttribute(Attributes.CODE).orElseThrow();
+        CodeAttribute ea = m.findAttribute(Attributes.code()).orElseThrow();
         for (int i = 0; i < ea.elementList().size(); ++i) {
             CodeElement ce = ea.elementList().get(i);
             if (ce instanceof TypeCheckInstruction ins && ins.opcode() == Opcode.CHECKCAST) {

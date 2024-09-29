@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.regex.MatchResult;
@@ -365,7 +366,7 @@ First line // @highlight :
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
                         %s
-                        </div>""".formatted(index, getSnippetHtmlRepresentation("A.html", t.expectedOutput()));
+                        </div>""".formatted(index, getSnippetHtmlRepresentation("A.html", t.expectedOutput(), Optional.of("java"), Optional.of("snippet-case" + index + "()2")));
             checkOutput("A.html", true, html);
         });
     }

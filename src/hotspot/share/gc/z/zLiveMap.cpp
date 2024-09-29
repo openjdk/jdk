@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@
 static const ZStatCounter ZCounterMarkSeqNumResetContention("Contention", "Mark SeqNum Reset Contention", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterMarkSegmentResetContention("Contention", "Mark Segment Reset Contention", ZStatUnitOpsPerSecond);
 
-static size_t bitmap_size(uint32_t size, size_t nsegments) {
+static size_t bitmap_size(uint32_t size, size_t NumSegments) {
   // We need at least one bit per segment
-  return MAX2<size_t>(size, nsegments) * 2;
+  return MAX2<size_t>(size, NumSegments) * 2;
 }
 
 ZLiveMap::ZLiveMap(uint32_t size)
@@ -46,8 +46,8 @@ ZLiveMap::ZLiveMap(uint32_t size)
     _live_bytes(0),
     _segment_live_bits(0),
     _segment_claim_bits(0),
-    _bitmap(bitmap_size(size, nsegments)),
-    _segment_shift(exact_log2(segment_size())) {}
+    _bitmap(bitmap_size(size, NumSegments)),
+    _segment_shift(log2i_exact(segment_size())) {}
 
 void ZLiveMap::reset(ZGenerationId id) {
   ZGeneration* const generation = ZGeneration::generation(id);
@@ -127,9 +127,9 @@ void ZLiveMap::reset_segment(BitMap::idx_t segment) {
 }
 
 void ZLiveMap::resize(uint32_t size) {
-  const size_t new_bitmap_size = bitmap_size(size, nsegments);
+  const size_t new_bitmap_size = bitmap_size(size, NumSegments);
   if (_bitmap.size() != new_bitmap_size) {
     _bitmap.reinitialize(new_bitmap_size, false /* clear */);
-    _segment_shift = exact_log2(segment_size());
+    _segment_shift = log2i_exact(segment_size());
   }
 }

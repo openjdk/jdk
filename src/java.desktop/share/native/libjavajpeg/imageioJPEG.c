@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -666,8 +666,6 @@ static void imageio_reset(JNIEnv *env,
 static void imageio_dispose(j_common_ptr info) {
 
     if (info != NULL) {
-        free(info->err);
-        info->err = NULL;
         if (info->is_decompressor) {
             j_decompress_ptr dinfo = (j_decompress_ptr) info;
             free(dinfo->src);
@@ -678,6 +676,8 @@ static void imageio_dispose(j_common_ptr info) {
             cinfo->dest = NULL;
         }
         jpeg_destroy(info);
+        free(info->err);
+        info->err = NULL;
         free(info);
     }
 }

@@ -80,8 +80,8 @@ public:
 
   void verify_card_table_cleanup() PRODUCT_RETURN;
 
-  void verify_not_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
-  void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
+  void verify_not_dirty_region(G1HeapRegion* hr) PRODUCT_RETURN;
+  void verify_dirty_region(G1HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_young_regions() PRODUCT_RETURN;
 };
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,6 +246,11 @@ class StreamSpliterators {
             if ((c & Spliterator.SIZED) != 0) {
                 c &= ~(Spliterator.SIZED | Spliterator.SUBSIZED);
                 c |= (spliterator.characteristics() & (Spliterator.SIZED | Spliterator.SUBSIZED));
+            }
+
+            // It's not allowed for a Spliterator to report SORTED if not also ORDERED
+            if ((c & Spliterator.SORTED) != 0 && (c & Spliterator.ORDERED) == 0) {
+                c &= ~(Spliterator.SORTED);
             }
 
             return c;

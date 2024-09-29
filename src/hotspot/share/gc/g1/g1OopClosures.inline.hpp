@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ inline void G1ScanEvacuatedObjClosure::do_oop_work(T* p) {
   const G1HeapRegionAttr region_attr = _g1h->region_attr(obj);
   if (region_attr.is_in_cset()) {
     prefetch_and_push(p, obj);
-  } else if (!HeapRegion::is_in_same_region(p, obj)) {
+  } else if (!G1HeapRegion::is_in_same_region(p, obj)) {
     handle_non_cset_obj_common(region_attr, p, obj);
     assert(_skip_card_enqueue != Uninitialized, "Scan location has not been initialized.");
     if (_skip_card_enqueue == True) {
@@ -135,7 +135,7 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
 
   check_obj_during_refinement(p, obj);
 
-  if (HeapRegion::is_in_same_region(p, obj)) {
+  if (G1HeapRegion::is_in_same_region(p, obj)) {
     // Normally this closure should only be called with cross-region references.
     // But since Java threads are manipulating the references concurrently and we
     // reload the values things may have changed.
@@ -146,7 +146,7 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
     return;
   }
 
-  HeapRegionRemSet* to_rem_set = _g1h->heap_region_containing(obj)->rem_set();
+  G1HeapRegionRemSet* to_rem_set = _g1h->heap_region_containing(obj)->rem_set();
 
   assert(to_rem_set != nullptr, "Need per-region 'into' remsets.");
   if (to_rem_set->is_tracked()) {
@@ -174,7 +174,7 @@ inline void G1ScanCardClosure::do_oop_work(T* p) {
     // that this is a cross-region reference too.
     prefetch_and_push(p, obj);
     _heap_roots_found++;
-  } else if (!HeapRegion::is_in_same_region(p, obj)) {
+  } else if (!G1HeapRegion::is_in_same_region(p, obj)) {
     handle_non_cset_obj_common(region_attr, p, obj);
     _par_scan_state->enqueue_card_if_tracked(region_attr, p, obj);
   }
@@ -261,12 +261,12 @@ template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
     return;
   }
 
-  if (HeapRegion::is_in_same_region(p, obj)) {
+  if (G1HeapRegion::is_in_same_region(p, obj)) {
     return;
   }
 
-  HeapRegion* to = _g1h->heap_region_containing(obj);
-  HeapRegionRemSet* rem_set = to->rem_set();
+  G1HeapRegion* to = _g1h->heap_region_containing(obj);
+  G1HeapRegionRemSet* rem_set = to->rem_set();
   if (rem_set->is_tracked()) {
     rem_set->add_reference(p, _worker_id);
   }
