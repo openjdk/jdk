@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @bug 8087112
+ * @bug 8326949
  * @run main/othervm UserAuthWithAuthenticator
- * @summary Basic
+ * @summary Authorization header is removed when a proxy Authenticator is set on HttpClient
  */
 
 import java.io.*;
