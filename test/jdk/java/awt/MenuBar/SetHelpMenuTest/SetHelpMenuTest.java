@@ -40,8 +40,8 @@ public class SetHelpMenuTest {
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
                 An empty frame should be visible. When focused, the MenuBar
-                should have 5 menus (\"one\", \"two\", \"three\", \"Help 2\",
-                \"four\"). If so, then the test passed. Otherwise, the test
+                should have 5 menus ("one", "two", "three", "Help 2",
+                "four"). If so, then the test passed. Otherwise, the test
                 failed.
                 """;
 
