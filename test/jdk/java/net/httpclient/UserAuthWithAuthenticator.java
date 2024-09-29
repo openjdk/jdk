@@ -254,15 +254,8 @@ public class UserAuthWithAuthenticator {
     }
 
     static void assertPattern(String pattern, String candidate) {
-        System.out.println("----------------------------------------");
-        System.out.println(pattern);
-        System.out.println("----------------------------------------");
-        System.out.println(candidate);
-
-        //pattern = ".*" + pattern + ".*";
         Pattern pat = Pattern.compile(pattern, Pattern.DOTALL | Pattern.MULTILINE);
         Matcher matcher = pat.matcher(candidate);
-        System.out.println(matcher.matches() + " ----------------------------------------");
         if (!matcher.matches()) {
             String msg = String.format("Error: expected %s Got %s", pattern, candidate);
             throw new RuntimeException(msg);
