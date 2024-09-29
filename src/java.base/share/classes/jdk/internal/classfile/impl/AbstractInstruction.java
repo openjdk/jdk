@@ -801,7 +801,15 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeLocalVar(op, slot);
+            int slot = this.slot;
+            switch (op) {
+                case ALOAD -> writer.aload(slot);
+                case ILOAD -> writer.iload(slot);
+                case LLOAD -> writer.lload(slot);
+                case FLOAD -> writer.fload(slot);
+                case DLOAD -> writer.dload(slot);
+                default    -> throw new AssertionError();
+            }
         }
 
         @Override
@@ -832,7 +840,15 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeLocalVar(op, slot);
+            int slot = this.slot;
+            switch (op) {
+                case ASTORE -> writer.astore(slot);
+                case ISTORE -> writer.istore(slot);
+                case LSTORE -> writer.lstore(slot);
+                case FSTORE -> writer.fstore(slot);
+                case DSTORE -> writer.dstore(slot);
+                default    -> throw new AssertionError();
+            }
         }
 
         @Override
@@ -1430,7 +1446,11 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeLocalVar(op, slot);
+            switch (op) {
+                case RET   -> writer.ret(slot);
+                case RET_W -> writer.retW(slot);
+                default    -> throw new AssertionError();
+            }
         }
 
         @Override

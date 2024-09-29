@@ -504,16 +504,6 @@ public final class DirectCodeBuilder
         bytecodesBufWriter.writeU1(opcode.bytecode() & 0xFF);
     }
 
-    public void writeLocalVar(Opcode opcode, int localVar) {
-        writeBytecode(opcode);
-        switch (opcode.sizeIfFixed()) {
-            case 1 -> { }
-            case 2 -> bytecodesBufWriter.writeU1(localVar);
-            case 4 -> bytecodesBufWriter.writeU2(localVar);
-            default -> throw new IllegalArgumentException("Unexpected instruction size: " + opcode);
-        }
-    }
-
     public void writeIncrement(int slot, int val) {
         if ((slot < 256 && val < 128 && val > -127)) {
             bytecodesBufWriter.writeU3(IINC, slot, val);
@@ -793,6 +783,18 @@ public final class DirectCodeBuilder
     @Override
     public CodeBuilder return_(TypeKind tk) {
         bytecodesBufWriter.writeU1(returnBytecode(tk));
+        return this;
+    }
+
+    public CodeBuilder ret(int slot) {
+        bytecodesBufWriter.writeU1(RET);
+        bytecodesBufWriter.writeU1(slot);
+        return this;
+    }
+
+    public CodeBuilder retW(int slot) {
+        bytecodesBufWriter.writeU2(WIDE, RET);
+        bytecodesBufWriter.writeU2(slot);
         return this;
     }
 
