@@ -220,17 +220,28 @@ public final class Utils {
     public static final BiPredicate<String, String> CONTEXT_RESTRICTED(
         HttpClient client, HttpRequestImpl req)
     {
-        return (k, v) -> {
-            if (client.authenticator().isEmpty())
-                return true;
-            boolean authKey = k.equalsIgnoreCase("Authorization");
-            boolean proxyAuthKey = k.equalsIgnoreCase("Proxy-Authorization");
-            if (!authKey && !proxyAuthKey)
-                return true;
-            // flag is true for first attempt, and will be false
+/*
+        return (k, v) -> client.authenticator().isEmpty()
+            || (!k.equalsIgnoreCase("Authorization")
+                && !k.equalsIgnoreCase("Proxy-Authorization"))
+
+            // flag may be true for first attempt, and will be false
             // for subsequent attempts if the first attempt failed
             // due to 401/407
-            return req.tryUserSetAuthorization();
+
+            || req.tryUserSetAuthorization();
+*/
+        return (k, v) -> {
+            boolean r = client.authenticator().isEmpty()
+            || (!k.equalsIgnoreCase("Authorization")
+                && !k.equalsIgnoreCase("Proxy-Authorization"))
+
+            // flag may be true for first attempt, and will be false
+            // for subsequent attempts if the first attempt failed
+            // due to 401/407
+
+            || req.tryUserSetAuthorization();
+            return r;
         };
     }
 

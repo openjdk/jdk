@@ -247,6 +247,10 @@ class AuthenticationFilter implements HeaderFilter {
             exchange.client().authenticator().isPresent();
         boolean userSetAuth = req.tryUserSetAuthorization();
 
+        if (userSetAuth && status != PROXY_UNAUTHORIZED && status != UNAUTHORIZED) {
+            return null;
+        }
+
         if (authenticatorPresent && userSetAuth &&
             (status == PROXY_UNAUTHORIZED || status == UNAUTHORIZED))
         {
