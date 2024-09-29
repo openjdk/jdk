@@ -25,7 +25,7 @@
  * @test
  * @bug 8326949
  * @run main/othervm UserAuthWithAuthenticator
- * @summary Authorization header is removed when a proxy Authenticator is set 
+ * @summary Authorization header is removed when a proxy Authenticator is set
  */
 
 import java.io.*;
@@ -66,9 +66,20 @@ public class UserAuthWithAuthenticator {
         "Content-Length: " + data1.length() + "\r\n\r\n" + data1
     };
 
+    static final String[] authenticatorResponses = {
+        "HTTP/1.1 401 Authentication Required\r\n"+
+        "WWW-Authenticate: Basic realm=\"Access to the server\"\r\n\r\n"
+        ,
+        "HTTP/1.1 200 OK\r\n"+
+        "Date: Mon, 15 Jan 2001 12:18:21 GMT\r\n" +
+        "Server: Apache/1.3.14 (Unix)\r\n" +
+        "Content-Length: " + data1.length() + "\r\n\r\n" + data1
+    };
+
     public static void main(String[] args) throws Exception {
         testServerOnly();
         testServerWithProxy();
+        testServerOnlyAuthenticator();
     }
 
     static void testServerWithProxy() throws IOException, InterruptedException {
@@ -79,11 +90,13 @@ public class UserAuthWithAuthenticator {
             var client = HttpClient.newBuilder()
                 .version(java.net.http.HttpClient.Version.HTTP_1_1)
                 .proxy(new ProxySel(proxyMock.getPort()))
-                .authenticator(new Auth())
+                .authenticator(new ProxyAuth())
                 .build();
 
             var plainCreds = "user:pwd";
             var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
+            var badCreds = "user:wrong";
+            var encoded1 = java.util.Base64.getEncoder().encodeToString(badCreds.getBytes(US_ASCII));
             var request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1/some_url"))
                 .setHeader("User-Agent", "myUserAgent")
                 .setHeader("Authorization", "Basic " + encoded)
@@ -96,7 +109,7 @@ public class UserAuthWithAuthenticator {
             var proxyStr = proxyMock.getRequest(1);
 
             assertContains(proxyStr, "/some_url");
-            assertPattern(".*^Proxy-Authorization:.*Basic.*", proxyStr);
+            assertPattern(".*^Proxy-Authorization:.*Basic " + encoded + ".*", proxyStr);
             assertPattern(".*^User-Agent:.*myUserAgent.*", proxyStr);
             assertPattern(".*^Authorization:.*Basic.*", proxyStr);
             System.out.println("testServerWithProxy: OK");
@@ -127,8 +140,39 @@ public class UserAuthWithAuthenticator {
             var serverStr = serverMock.getRequest(0);
             assertContains(serverStr, "/some_serv_url");
             assertPattern(".*^User-Agent:.*myUserAgent.*", serverStr);
-            assertPattern(".*^Authorization:.*Basic.*", serverStr);
+            assertPattern(".*^Authorization:.*Basic " + encoded + ".*", serverStr);
             System.out.println("testServerOnly: OK");
+        } finally {
+            serverMock.stopMocker();
+        }
+    }
+
+    // This is effectively a regression test for existing behavior
+    static void testServerOnlyAuthenticator() throws IOException, InterruptedException {
+        Mocker serverMock = new Mocker(authenticatorResponses);
+        serverMock.start();
+        try {
+            var client = HttpClient.newBuilder()
+                .version(java.net.http.HttpClient.Version.HTTP_1_1)
+                .authenticator(new ServerAuth())
+                .build();
+
+            // credentials set in the server authenticator
+            var plainCreds = "serverUser:serverPwd";
+            var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
+            var request = HttpRequest.newBuilder().uri(URI.create(serverMock.baseURL() + "/some_serv_url"))
+                .setHeader("User-Agent", "myUserAgent")
+                .build();
+
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, response.statusCode());
+            assertEquals(data1, response.body());
+
+            var serverStr = serverMock.getRequest(1);
+            assertContains(serverStr, "/some_serv_url");
+            assertPattern(".*^User-Agent:.*myUserAgent.*", serverStr);
+            assertPattern(".*^Authorization:.*Basic " + encoded + ".*", serverStr);
+            System.out.println("testServerOnlyAuthenticator: OK");
         } finally {
             serverMock.stopMocker();
         }
@@ -220,15 +264,25 @@ public class UserAuthWithAuthenticator {
 
     }
 
-    static class Auth extends Authenticator {
+    static class ProxyAuth extends Authenticator {
         @Override
         protected PasswordAuthentication getPasswordAuthentication() {
-            System.out.println("AUTH called");
             if (getRequestorType() != RequestorType.PROXY) {
                 // We only want to handle proxy authentication here
                 return null;
             }
             return new PasswordAuthentication("proxyUser", "proxyPwd".toCharArray());
+        }
+    }
+
+    static class ServerAuth extends Authenticator {
+        @Override
+        protected PasswordAuthentication getPasswordAuthentication() {
+            if (getRequestorType() != RequestorType.SERVER) {
+                // We only want to handle proxy authentication here
+                return null;
+            }
+            return new PasswordAuthentication("serverUser", "serverPwd".toCharArray());
         }
     }
 
