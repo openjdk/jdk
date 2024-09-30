@@ -37,8 +37,10 @@ import java.awt.List;
 public class MultiSelectionListHorizScrollbar {
 
     private static final String INSTRUCTIONS = """
-         Resize the frame so that the lists are not wide enough to fully display the lines of text they contain.
-         Once the lists are in this state, press pass if both lists display an horizontal scrollbar. Otherwise press fail.""";
+         Resize the frame so that the lists are not wide enough
+         to fully display the lines of text they contain.
+         Once the lists are in this state, press pass
+         if both lists display an horizontal scrollbar. Otherwise press fail.""";
 
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()

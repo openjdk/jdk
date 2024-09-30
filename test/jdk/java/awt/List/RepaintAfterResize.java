@@ -60,8 +60,8 @@ public class RepaintAfterResize {
 
         frame.setLayout (new FlowLayout ());
         list.setBounds(100, 100, 100, 100);
-        for(int i=0 ; i < 7 ; i++){
-            list.add(" "+i);
+        for (int i = 0 ; i < 7 ; i++) {
+            list.add(" " + i);
         }
         frame.add(list);
         list.select(3);
