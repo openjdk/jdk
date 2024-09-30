@@ -72,7 +72,7 @@ class MemTracker : AllStatic {
 
   // Per-malloc overhead incurred by NMT, depending on the current NMT level
   static size_t overhead_per_malloc() {
-    return enabled() ? MallocTracker::overhead_per_malloc : 0;
+    return enabled() ? MallocTracker::overhead_per_malloc() : 0;
   }
 
   static inline void* record_malloc(void* mem_base, size_t size, MemTag mem_tag,
