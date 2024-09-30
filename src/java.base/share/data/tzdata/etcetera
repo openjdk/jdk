@@ -28,7 +28,7 @@
 
 # These entries are for uses not otherwise covered by the tz database.
 # Their main practical use is for platforms like Android that lack
-# support for POSIX.1-2017-style TZ strings.  On such platforms these entries
+# support for POSIX proleptic TZ strings.  On such platforms these entries
 # can be useful if the timezone database is wrong or if a ship or
 # aircraft at sea is not in a timezone.
 
@@ -74,29 +74,29 @@ Link	Etc/GMT				GMT
 # so we moved the names into the Etc subdirectory.
 # Also, the time zone abbreviations are now compatible with %z.
 
-Zone	Etc/GMT-14	14	-	+14
-Zone	Etc/GMT-13	13	-	+13
-Zone	Etc/GMT-12	12	-	+12
-Zone	Etc/GMT-11	11	-	+11
-Zone	Etc/GMT-10	10	-	+10
-Zone	Etc/GMT-9	9	-	+09
-Zone	Etc/GMT-8	8	-	+08
-Zone	Etc/GMT-7	7	-	+07
-Zone	Etc/GMT-6	6	-	+06
-Zone	Etc/GMT-5	5	-	+05
-Zone	Etc/GMT-4	4	-	+04
-Zone	Etc/GMT-3	3	-	+03
-Zone	Etc/GMT-2	2	-	+02
-Zone	Etc/GMT-1	1	-	+01
-Zone	Etc/GMT+1	-1	-	-01
-Zone	Etc/GMT+2	-2	-	-02
-Zone	Etc/GMT+3	-3	-	-03
-Zone	Etc/GMT+4	-4	-	-04
-Zone	Etc/GMT+5	-5	-	-05
-Zone	Etc/GMT+6	-6	-	-06
-Zone	Etc/GMT+7	-7	-	-07
-Zone	Etc/GMT+8	-8	-	-08
-Zone	Etc/GMT+9	-9	-	-09
-Zone	Etc/GMT+10	-10	-	-10
-Zone	Etc/GMT+11	-11	-	-11
-Zone	Etc/GMT+12	-12	-	-12
+Zone	Etc/GMT-14	14	-	%z
+Zone	Etc/GMT-13	13	-	%z
+Zone	Etc/GMT-12	12	-	%z
+Zone	Etc/GMT-11	11	-	%z
+Zone	Etc/GMT-10	10	-	%z
+Zone	Etc/GMT-9	9	-	%z
+Zone	Etc/GMT-8	8	-	%z
+Zone	Etc/GMT-7	7	-	%z
+Zone	Etc/GMT-6	6	-	%z
+Zone	Etc/GMT-5	5	-	%z
+Zone	Etc/GMT-4	4	-	%z
+Zone	Etc/GMT-3	3	-	%z
+Zone	Etc/GMT-2	2	-	%z
+Zone	Etc/GMT-1	1	-	%z
+Zone	Etc/GMT+1	-1	-	%z
+Zone	Etc/GMT+2	-2	-	%z
+Zone	Etc/GMT+3	-3	-	%z
+Zone	Etc/GMT+4	-4	-	%z
+Zone	Etc/GMT+5	-5	-	%z
+Zone	Etc/GMT+6	-6	-	%z
+Zone	Etc/GMT+7	-7	-	%z
+Zone	Etc/GMT+8	-8	-	%z
+Zone	Etc/GMT+9	-9	-	%z
+Zone	Etc/GMT+10	-10	-	%z
+Zone	Etc/GMT+11	-11	-	%z
+Zone	Etc/GMT+12	-12	-	%z

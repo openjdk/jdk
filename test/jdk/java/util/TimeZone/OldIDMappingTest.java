@@ -55,7 +55,6 @@ public class OldIDMappingTest {
         // Add known new mappings
         newmap.put("EST", "EST");
         newmap.put("MST", "MST");
-        newmap.put("HST", "HST");
     }
 
     public static void main(String[] args) {

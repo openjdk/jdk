@@ -15,6 +15,8 @@ Link	America/Rio_Branco	Brazil/Acre	#= America/Porto_Acre
 Link	America/Noronha		Brazil/DeNoronha
 Link	America/Sao_Paulo	Brazil/East
 Link	America/Manaus		Brazil/West
+Link	Europe/Brussels		CET
+Link	America/Chicago		CST6CDT
 Link	America/Halifax		Canada/Atlantic
 Link	America/Winnipeg	Canada/Central
 Link	America/Toronto		Canada/Eastern
@@ -26,6 +28,9 @@ Link	America/Whitehorse	Canada/Yukon
 Link	America/Santiago	Chile/Continental
 Link	Pacific/Easter		Chile/EasterIsland
 Link	America/Havana		Cuba
+Link	Europe/Athens		EET
+Link	America/Panama		EST
+Link	America/New_York	EST5EDT
 Link	Africa/Cairo		Egypt
 Link	Europe/Dublin		Eire
 Link	Etc/GMT			Etc/GMT+0
@@ -49,6 +54,9 @@ Link	America/Jamaica		Jamaica
 Link	Asia/Tokyo		Japan
 Link	Pacific/Kwajalein	Kwajalein
 Link	Africa/Tripoli		Libya
+Link	Europe/Brussels		MET
+Link	America/Phoenix		MST
+Link	America/Denver		MST7MDT
 Link	America/Tijuana		Mexico/BajaNorte
 Link	America/Mazatlan	Mexico/BajaSur
 Link	America/Mexico_City	Mexico/General
@@ -212,6 +220,7 @@ Link	America/Denver		America/Shiprock
 Link	America/Toronto		America/Thunder_Bay
 Link	America/Edmonton	America/Yellowknife
 Link	Pacific/Auckland	Antarctica/South_Pole
+Link	Asia/Ulaanbaatar	Asia/Choibalsan
 Link	Asia/Shanghai		Asia/Chongqing
 Link	Asia/Shanghai		Asia/Harbin
 Link	Asia/Urumqi		Asia/Kashgar
@@ -226,6 +235,7 @@ Link	Europe/Kyiv		Europe/Zaporozhye
 Link	Pacific/Kanton		Pacific/Enderbury
 Link	Pacific/Honolulu	Pacific/Johnston
 Link	Pacific/Port_Moresby	Pacific/Yap
+Link	Europe/Lisbon		WET
 Link	Africa/Nairobi		Africa/Asmera	#= Africa/Asmara
 Link	America/Nuuk		America/Godthab
 Link	Asia/Ashgabat		Asia/Ashkhabad
@@ -243,5 +253,7 @@ Link	Asia/Ulaanbaatar	Asia/Ulan_Bator
 Link	Atlantic/Faroe		Atlantic/Faeroe
 Link	Europe/Kyiv		Europe/Kiev
 Link	Asia/Nicosia		Europe/Nicosia
+Link	Pacific/Honolulu	HST
+Link	America/Los_Angeles	PST8PDT
 Link	Pacific/Guadalcanal	Pacific/Ponape	#= Pacific/Pohnpei
 Link	Pacific/Port_Moresby	Pacific/Truk	#= Pacific/Chuuk

@@ -160,10 +160,12 @@ public class TestZoneInfo310 {
         System.out.printf("NEW.TotalTZ()=%d (ms)%n", t1 - t0);
 
         if (!Arrays.equals(zids_old, zids_new)) {
+            diff(zids_old, zids_new);
             throw new RuntimeException("  FAILED:  availableIds don't match");
         }
 
         if (!Arrays.equals(alias_old, alias_new)) {
+            diff(alias_old, alias_new);
             throw new RuntimeException("  FAILED:  aliases don't match");
         }
 
@@ -280,5 +282,19 @@ public class TestZoneInfo310 {
                                willGMTOffsetChange.getBoolean(tz));
     }
 
+    private static void diff (String[] o, String[] n) {
+        var l1 = Arrays.asList(o);
+        var l2 = Arrays.asList(n);
 
+        if (l1.equals(l2)) {
+            System.out.println("no diff");
+        } else {
+            var al1 = new ArrayList<>(l1);
+            var al2 = new ArrayList<>(l2);
+            al1.removeAll(l2);
+            al2.removeAll(l1);
+            System.out.println("extra in old: "+al1);
+            System.out.println("extra in new: "+al2);
+        }
+    }
 }

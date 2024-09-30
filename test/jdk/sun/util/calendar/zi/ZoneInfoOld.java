@@ -93,9 +93,9 @@ public class ZoneInfoOld extends TimeZone {
     }
 
     // IDs having conflicting data between Olson and JDK 1.1
-    static final String[] conflictingIDs = {
-        "EST", "MST", "HST"
-    };
+    static final Map<String, String> conflictingIDs = Map.of(
+        "EST", "America/Panama",
+        "MST", "America/Phoenix");
 
     private static final CalendarSystem gcal = CalendarSystem.getGregorianCalendar();
 
@@ -843,10 +843,8 @@ public class ZoneInfoOld extends TimeZone {
              aliases = ZoneInfoFile.getZoneAliases();
              if (aliases != null) {
                  if (!USE_OLDMAPPING) {
-                     // Remove the conflicting IDs from the alias table.
-                     for (String key : conflictingIDs) {
-                         aliases.remove(key);
-                     }
+                     // Replace old mappings from `jdk11_backward`
+                     aliases.putAll(conflictingIDs);
                  }
                  aliasTable = new SoftReference<Map<String, String>>(aliases);
              }
