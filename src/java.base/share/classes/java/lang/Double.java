@@ -36,10 +36,10 @@ import jdk.internal.math.DoubleToDecimal;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
- * The {@code Double} class wraps a value of the primitive type
- * {@code double} in an object. An object of type
- * {@code Double} contains a single field whose type is
- * {@code double}.
+ * The {@code Double} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code double}. An object of type {@code Double} contains a
+ * single field whose type is {@code double}.
  *
  * <p>In addition, this class provides several methods for converting a
  * {@code double} to a {@code String} and a
