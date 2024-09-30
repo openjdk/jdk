@@ -478,7 +478,7 @@ public sealed interface ConstantPoolBuilder
      * Integer, Long, Float, Double, or String constant}
      *
      * @param c the constant
-     * @see java.lang.classfile.Attributes#constantValue()
+     * @see ConstantValueEntry#constantValue()
      */
     default ConstantValueEntry constantValueEntry(ConstantDesc c) {
         if (c instanceof Integer i) return intEntry(i);
