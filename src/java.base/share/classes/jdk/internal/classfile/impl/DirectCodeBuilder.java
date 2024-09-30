@@ -542,28 +542,32 @@ public final class DirectCodeBuilder
     public void writeBranch(Opcode op, Label target) {
         int instructionPc = curPc();
         int targetBci = labelToBci(target);
+        boolean sizeFixed3 = op.sizeIfFixed() == 3;
         //transform short-opcode forward jumps if enforced, and backward jumps if enabled and overflowing
-        if (op.sizeIfFixed() == 3 && (targetBci == -1
-                                      ? transformFwdJumps
-                                      : (transformBackJumps
-                                         && targetBci - instructionPc < Short.MIN_VALUE))) {
-            if (op == Opcode.GOTO) {
-                bytecodesBufWriter.writeU1(GOTO_W);
-                writeLabelOffset(4, instructionPc, target);
-            } else if (op == Opcode.JSR) {
-                bytecodesBufWriter.writeU1(JSR_W);
-                writeLabelOffset(4, instructionPc, target);
-            } else {
-                writeBytecode(BytecodeHelpers.reverseBranchOpcode(op));
-                Label bypassJump = newLabel();
-                writeLabelOffset(2, instructionPc, bypassJump);
-                bytecodesBufWriter.writeU1(GOTO_W);
-                writeLabelOffset(4, instructionPc + 3, target);
-                labelBinding(bypassJump);
-            }
+        if (sizeFixed3 && (targetBci == -1
+                ? transformFwdJumps
+                : (transformBackJumps && targetBci - instructionPc < Short.MIN_VALUE))) {
+            writeBranchTransform(op, target, instructionPc, targetBci);
         } else {
             writeBytecode(op);
-            writeLabelOffset(op.sizeIfFixed() == 3 ? 2 : 4, instructionPc, target);
+            writeLabelOffset(sizeFixed3 ? 2 : 4, instructionPc, target, targetBci);
+        }
+    }
+
+    private void writeBranchTransform(Opcode op, Label target, int instructionPc, int targetBci) {
+        if (op == Opcode.GOTO) {
+            bytecodesBufWriter.writeU1(GOTO_W);
+            writeLabelOffset(4, instructionPc, target, targetBci);
+        } else if (op == Opcode.JSR) {
+            bytecodesBufWriter.writeU1(JSR_W);
+            writeLabelOffset(4, instructionPc, target, targetBci);
+        } else {
+            writeBytecode(BytecodeHelpers.reverseBranchOpcode(op));
+            Label bypassJump = newLabel();
+            writeLabelOffset(2, instructionPc, bypassJump);
+            bytecodesBufWriter.writeU1(GOTO_W);
+            writeLabelOffset(4, instructionPc + 3, target);
+            labelBinding(bypassJump);
         }
     }
 
