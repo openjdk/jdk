@@ -47,20 +47,31 @@ public class JarUtilsTest {
                 Files.writeString(Path.of("b1"), ""),
                 Files.writeString(Path.of("b2"), ""),
                 Files.writeString(Path.of("bx/x"), ""),
-                Files.writeString(Path.of("c"), ""));
-        Asserts.assertEquals(Set.of("a", "b1", "b2", "bx/x", "c"), content("a.jar"));
+                Files.writeString(Path.of("c"), ""),
+                Files.writeString(Path.of("e1"), ""),
+                Files.writeString(Path.of("e2"), ""));
+        checkContent("a", "b1", "b2", "bx/x", "c", "e1", "e2");
 
         JarUtils.deleteEntries(Path.of("a.jar"), "a");
-        Asserts.assertEquals(Set.of("b1", "b2", "bx/x", "c"), content("a.jar"));
+        checkContent("b1", "b2", "bx/x", "c", "e1", "e2");
 
         // Note: b* covers everything starting with b, even bx/x
         JarUtils.deleteEntries(Path.of("a.jar"), "b*");
-        Asserts.assertEquals(Set.of("c"), content("a.jar"));
+        checkContent("c", "e1", "e2");
+
+        // d* does not match
+        JarUtils.deleteEntries(Path.of("a.jar"), "d*");
+        checkContent("c", "e1", "e2");
+
+        // multiple patterns
+        JarUtils.deleteEntries(Path.of("a.jar"), "d*", "e*");
+        checkContent("c");
     }
 
-    static Set<String> content(String name) throws IOException {
-        try (var jf = new JarFile(name)) {
-            return jf.stream().map(JarEntry::getName).collect(Collectors.toSet());
+    static void checkContent(String... expected) throws IOException {
+        try (var jf = new JarFile("a.jar")) {
+            Asserts.assertEquals(Set.of(expected),
+                    jf.stream().map(JarEntry::getName).collect(Collectors.toSet()));
         }
     }
 }
