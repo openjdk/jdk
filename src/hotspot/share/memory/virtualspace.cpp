@@ -653,7 +653,7 @@ ReservedHeapSpace::ReservedHeapSpace(size_t size, size_t alignment, size_t page_
          "area must be distinguishable from marks for mark-sweep");
 
   if (base() != nullptr) {
-    MemTracker::record_virtual_memory_type((address)base(), mtJavaHeap);
+    MemTracker::record_virtual_memory_tag((address)base(), mtJavaHeap);
   }
 
   if (_fd_for_heap != -1) {
@@ -671,7 +671,7 @@ ReservedCodeSpace::ReservedCodeSpace(size_t r_size,
                                      size_t rs_align,
                                      size_t rs_page_size) : ReservedSpace() {
   initialize(r_size, rs_align, rs_page_size, /*requested address*/ nullptr, /*executable*/ true);
-  MemTracker::record_virtual_memory_type((address)base(), mtCode);
+  MemTracker::record_virtual_memory_tag((address)base(), mtCode);
 }
 
 // VirtualSpace

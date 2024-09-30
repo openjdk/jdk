@@ -207,15 +207,6 @@ public final class SegmentBulkOperations {
             }
         }
         int remaining = length - offset;
-        // 0...XXX000
-        for (; remaining >= 8; remaining -= 8) {
-            final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, !Architecture.isLittleEndian());
-            final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, !Architecture.isLittleEndian());
-            if (s != d) {
-                return start + offset + mismatch(s, d);
-            }
-            offset += 8;
-        }
 
         // 0...0X00
         if (remaining >= 4) {

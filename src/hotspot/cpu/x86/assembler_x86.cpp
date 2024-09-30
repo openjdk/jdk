@@ -8048,6 +8048,14 @@ void Assembler::andpd(XMMRegister dst, XMMRegister src) {
   emit_int16(0x54, (0xC0 | encode));
 }
 
+void Assembler::andnpd(XMMRegister dst, XMMRegister src) {
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  InstructionAttr attributes(AVX_128bit, /* rex_w */ !_legacy_mode_dq, /* legacy_mode */ _legacy_mode_dq, /* no_mask_reg */ true, /* uses_vl */ true);
+  attributes.set_rex_vex_w_reverted();
+  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int16(0x55, (0xC0 | encode));
+}
+
 void Assembler::andps(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ _legacy_mode_dq, /* no_mask_reg */ true, /* uses_vl */ true);
@@ -16038,6 +16046,15 @@ void Assembler::xorq(Address dst, Register src) {
   InstructionMark im(this);
   emit_prefix_and_int8(get_prefixq(dst, src), 0x31);
   emit_operand(src, dst, 0);
+}
+
+void Assembler::esetzucc(Condition cc, Register dst) {
+  assert(VM_Version::supports_apx_f(), "");
+  assert(0 <= cc && cc < 16, "illegal cc");
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  // Encoding Format : eevex_prefix (4 bytes) | opcode_cc | modrm
+  int encode =  evex_prefix_and_encode_ndd(0, 0, dst->encoding(), VEX_SIMD_F2, /* MAP4 */VEX_OPCODE_0F_3C, &attributes);
+  emit_opcode_prefix_and_encoding((0x40 | cc), 0xC0, encode);
 }
 
 void Assembler::exorq(Register dst, Address src1, Register src2, bool no_flags) {

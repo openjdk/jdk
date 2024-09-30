@@ -2399,7 +2399,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // Try fastpath for locking.
     if (LockingMode == LM_LIGHTWEIGHT) {
       // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
-      __ compiler_fast_lock_lightweight_object(CCR0, r_oop, r_temp_1, r_temp_2, r_temp_3);
+      __ compiler_fast_lock_lightweight_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
     } else {
       // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
       __ compiler_fast_lock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
@@ -2605,7 +2605,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     // Try fastpath for unlocking.
     if (LockingMode == LM_LIGHTWEIGHT) {
-      __ compiler_fast_unlock_lightweight_object(CCR0, r_oop, r_temp_1, r_temp_2, r_temp_3);
+      __ compiler_fast_unlock_lightweight_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
     } else {
       __ compiler_fast_unlock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
     }

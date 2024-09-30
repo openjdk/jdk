@@ -140,7 +140,7 @@ class fileStream;
   product(bool, UseJVMCINativeLibrary, false, EXPERIMENTAL,                 \
           "Execute JVMCI Java code from a shared library (\"libjvmci\") "   \
           "instead of loading it from class files and executing it "        \
-          "on the HotSpot heap. Defaults to true if EnableJVMCIProduct is " \
+          "on the HotSpot heap. Defaults to true if EnableJVMCI is "        \
           "true and a JVMCI native library is available.")                  \
                                                                             \
   product(double, JVMCINativeLibraryThreadFraction, 0.33, EXPERIMENTAL,     \
