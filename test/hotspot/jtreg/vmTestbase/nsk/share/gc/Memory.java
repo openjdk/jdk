@@ -163,7 +163,7 @@ public final class Memory {
          *  @return size of array
          */
         public static long getArraySize(int length, long objectSize) {
-                return getObjectExtraSize() + length * objectSize;
+                return getArrayExtraSize() + length * objectSize;
         }
 
         /**
