@@ -54,7 +54,6 @@ import java.lang.classfile.instruction.ExceptionCatch;
 import java.lang.classfile.instruction.LocalVariable;
 import java.lang.classfile.instruction.LocalVariableType;
 import java.lang.classfile.instruction.SwitchCase;
-import java.lang.constant.ConstantDesc;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -65,9 +64,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static java.lang.classfile.ClassFile.*;
-
 import static jdk.internal.classfile.impl.BytecodeHelpers.*;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 public final class DirectCodeBuilder
         extends AbstractDirectBuilder<CodeModel>
@@ -509,10 +507,26 @@ public final class DirectCodeBuilder
     // Instruction writing
 
     public void writeBytecode(Opcode opcode) {
+        assert !opcode.isWide();
+        bytecodesBufWriter.writeU1(opcode.bytecode());
+    }
+
+    // Instruction version, refer to opcode
+    public void writeLocalVar(Opcode opcode, int slot) {
         if (opcode.isWide()) {
-            bytecodesBufWriter.writeU2(opcode.bytecode());
+            bytecodesBufWriter.writeU2U2(opcode.bytecode(), slot);
         } else {
-            bytecodesBufWriter.writeU1(opcode.bytecode());
+            bytecodesBufWriter.writeU1U1(opcode.bytecode(), slot);
+        }
+    }
+
+    // Shortcut version, refer to and validate slot
+    private void writeLocalVar(int bytecode, int slot) {
+        // TODO validation like (slot & 0xFFFF) == slot
+        if (slot < 256) {
+            bytecodesBufWriter.writeU1U1(bytecode, slot);
+        } else {
+            bytecodesBufWriter.writeU1U1U2(WIDE, bytecode, slot);
         }
     }
 
@@ -634,11 +648,10 @@ public final class DirectCodeBuilder
     }
 
     public void writeArgumentConstant(Opcode opcode, int value) {
-        writeBytecode(opcode);
         if (opcode.sizeIfFixed() == 3) {
-            bytecodesBufWriter.writeU2(value);
+            bytecodesBufWriter.writeU1U2(opcode.bytecode(), value);
         } else {
-            bytecodesBufWriter.writeU1(value);
+            bytecodesBufWriter.writeU1U1(opcode.bytecode(), value);
         }
     }
 
@@ -818,18 +831,6 @@ public final class DirectCodeBuilder
         return this;
     }
 
-    public CodeBuilder ret(int slot) {
-        bytecodesBufWriter.writeU1(RET);
-        bytecodesBufWriter.writeU1(slot);
-        return this;
-    }
-
-    public CodeBuilder retW(int slot) {
-        bytecodesBufWriter.writeU1U1(WIDE, RET);
-        bytecodesBufWriter.writeU2(slot);
-        return this;
-    }
-
     @Override
     public CodeBuilder storeLocal(TypeKind tk, int slot) {
         return switch (tk) {
@@ -841,14 +842,6 @@ public final class DirectCodeBuilder
             case REFERENCE -> astore(slot);
             case VOID      -> throw new IllegalArgumentException("void");
         };
-    }
-
-    private void withLocal(int bytecode, int slot) {
-        if (slot < 256) {
-            bytecodesBufWriter.writeU1U1(bytecode, slot);
-        } else {
-            bytecodesBufWriter.writeU2U2((WIDE << 8) | bytecode, slot);
-        }
     }
 
     @Override
@@ -946,7 +939,7 @@ public final class DirectCodeBuilder
         if (slot >= 0 && slot <= 3) {
             bytecodesBufWriter.writeU1(ALOAD_0 + slot);
         } else {
-            withLocal(ALOAD, slot);
+            writeLocalVar(ALOAD, slot);
         }
         return this;
     }
@@ -974,7 +967,7 @@ public final class DirectCodeBuilder
         if (slot >= 0 && slot <= 3) {
             bytecodesBufWriter.writeU1(ASTORE_0 + slot);
         } else {
-            withLocal(ASTORE, slot);
+            writeLocalVar(ASTORE, slot);
         }
         return this;
     }
@@ -1057,7 +1050,7 @@ public final class DirectCodeBuilder
         if (slot >= 0 && slot <= 3) {
             bytecodesBufWriter.writeU1(DLOAD_0 + slot);
         } else {
-            withLocal(DLOAD, slot);
+            writeLocalVar(DLOAD, slot);
         }
         return this;
     }
@@ -1091,7 +1084,7 @@ public final class DirectCodeBuilder
         if (slot >= 0 && slot <= 3) {
             bytecodesBufWriter.writeU1(DSTORE_0 + slot);
         } else {
-            withLocal(DSTORE, slot);
+            writeLocalVar(DSTORE, slot);
         }
         return this;
     }
@@ -1203,7 +1196,7 @@ public final class DirectCodeBuilder
         if (slot >= 0 && slot <= 3) {
             bytecodesBufWriter.writeU1(FLOAD_0 + slot);
         } else {
-            withLocal(FLOAD, slot);
+            writeLocalVar(FLOAD, slot);
         }
         return this;
     }
@@ -1237,7 +1230,7 @@ public final class DirectCodeBuilder
         if (slot >= 0 && slot <= 3) {
             bytecodesBufWriter.writeU1(FSTORE_0 + slot);
         } else {
-            withLocal(FSTORE, slot);
+            writeLocalVar(FSTORE, slot);
         }
         return this;
     }
@@ -1379,7 +1372,7 @@ public final class DirectCodeBuilder
         if (slot >= 0 && slot <= 3) {
             bytecodesBufWriter.writeU1(ILOAD_0 + slot);
         } else {
-            withLocal(ILOAD, slot);
+            writeLocalVar(ILOAD, slot);
         }
         return this;
     }
@@ -1479,7 +1472,7 @@ public final class DirectCodeBuilder
         if (slot >= 0 && slot <= 3) {
             bytecodesBufWriter.writeU1(ISTORE_0 + slot);
         } else {
-            withLocal(ISTORE, slot);
+            writeLocalVar(ISTORE, slot);
         }
         return this;
     }
@@ -1573,7 +1566,7 @@ public final class DirectCodeBuilder
         if (slot >= 0 && slot <= 3) {
             bytecodesBufWriter.writeU1(LLOAD_0 + slot);
         } else {
-            withLocal(LLOAD, slot);
+            writeLocalVar(LLOAD, slot);
         }
         return this;
     }
@@ -1625,7 +1618,7 @@ public final class DirectCodeBuilder
         if (slot >= 0 && slot <= 3) {
             bytecodesBufWriter.writeU1(LSTORE_0 + slot);
         } else {
-            withLocal(LSTORE, slot);
+            writeLocalVar(LSTORE, slot);
         }
         return this;
     }

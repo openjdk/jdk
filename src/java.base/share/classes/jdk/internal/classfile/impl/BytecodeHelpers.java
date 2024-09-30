@@ -196,14 +196,8 @@ public class BytecodeHelpers {
     }
 
     public static int returnBytecode(TypeKind tk) {
-        return switch (tk) {
-            case BYTE, SHORT, INT, CHAR, BOOLEAN -> IRETURN;
-            case FLOAT -> FRETURN;
-            case LONG -> LRETURN;
-            case DOUBLE -> DRETURN;
-            case REFERENCE -> ARETURN;
-            case VOID -> RETURN;
-        };
+        int kind = Math.max(0, tk.ordinal() - 4); // BYTE, SHORT, CHAR, BOOLEAN becomes INT
+        return IRETURN + kind;
     }
 
     public static Opcode arrayLoadOpcode(TypeKind tk) {

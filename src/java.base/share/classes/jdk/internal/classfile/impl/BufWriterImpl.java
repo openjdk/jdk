@@ -141,6 +141,17 @@ public final class BufWriterImpl implements BufWriter {
         this.offset = offset + 3;
     }
 
+    public void writeU1U1U2(int x1, int x2, int x3) {
+        reserveSpace(4);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) x1;
+        elems[offset + 1] = (byte) x2;
+        elems[offset + 2] = (byte) (x3 >> 8);
+        elems[offset + 3] = (byte) x3;
+        this.offset = offset + 4;
+    }
+
     public void writeU2U2(int x1, int x2) {
         reserveSpace(4);
         byte[] elems = this.elems;
@@ -326,22 +337,22 @@ public final class BufWriterImpl implements BufWriter {
     // writeIndex methods ensure that any CP info written
     // is relative to the correct constant pool
 
+    public int cpIndex(PoolEntry entry) {
+        int idx = AbstractPoolEntry.maybeClone(constantPool, entry).index();
+        if (idx < 1 || idx > Character.MAX_VALUE)
+            throw invalidIndex(idx, entry);
+        return idx;
+    }
+
     @ForceInline
     @Override
     public void writeIndex(PoolEntry entry) {
-        int idx = AbstractPoolEntry.maybeClone(constantPool, entry).index();
-        if (idx < 1 || idx > Character.MAX_VALUE)
-            throw invalidIndex(idx, entry);
-        writeU2(idx);
+        writeU2(cpIndex(entry));
     }
 
     public void writeIndex(int bytecode, PoolEntry entry) {
-        int idx = AbstractPoolEntry.maybeClone(constantPool, entry).index();
-        if (idx < 1 || idx > Character.MAX_VALUE)
-            throw invalidIndex(idx, entry);
-        writeU1U2(bytecode, idx);
+        writeU1U2(bytecode, cpIndex(entry));
     }
-
 
     static IllegalArgumentException invalidIndex(int idx, PoolEntry entry) {
         return new IllegalArgumentException(idx + " is not a valid index. Entry: " + entry);
