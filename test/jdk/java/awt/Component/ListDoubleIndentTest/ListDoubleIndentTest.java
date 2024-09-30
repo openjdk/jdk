@@ -61,9 +61,10 @@ public class ListDoubleIndentTest {
         String sReturn;
         String sExpTrim;
         Button b1, b2, b3, b4, b5;
+        Frame f = null;
 
         try {
-            Frame f = new Frame("ListDoubleIndentTest");
+            f = new Frame("ListDoubleIndentTest");
 
             f.add(b1 = new Button("North"), BorderLayout.NORTH, 0);
             f.add(b2 = new Button("South"), BorderLayout.SOUTH, 1);
@@ -131,6 +132,10 @@ public class ListDoubleIndentTest {
             bReturn = false;
             System.out.println ("Unexpected Exception thrown: " + e.getMessage());
             e.printStackTrace();
+        } finally {
+            if (f != null) {
+                f.dispose();
+            }
         }
 
         if (bReturn) {

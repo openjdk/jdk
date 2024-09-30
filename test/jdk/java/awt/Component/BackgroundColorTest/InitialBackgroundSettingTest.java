@@ -42,23 +42,33 @@ import java.awt.Scrollbar;
 import java.lang.reflect.InvocationTargetException;
 
 public class InitialBackgroundSettingTest {
-    Frame frame = new Frame("InitialBackgroundSettingTest frame");
-    TextField tf = new TextField("I am the TextField");
-    TextArea ta = new TextArea("I am the TextArea");
-    Choice choice = new Choice();
-    List list = new List();
-    Scrollbar bar = new Scrollbar(Scrollbar.HORIZONTAL);
-    Button button = new Button("I am the button");
+    Frame frame;
+    TextField tf;
+    TextArea ta;
+    Choice choice;
+    List list;
+    Scrollbar bar;
+    Button button;
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
         InitialBackgroundSettingTest test= new InitialBackgroundSettingTest();
-        EventQueue.invokeAndWait(test::setupGUI);
-        EventQueue.invokeAndWait(test::test);
-        EventQueue.invokeAndWait(test::dispose);
+        try {
+            EventQueue.invokeAndWait(test::setupGUI);
+            EventQueue.invokeAndWait(test::test);
+        } finally {
+            EventQueue.invokeAndWait(test::dispose);
+        }
     }
 
     public void setupGUI () {
+        frame = new Frame("InitialBackgroundSettingTest frame");
+        tf = new TextField("I am the TextField");
+        ta = new TextArea("I am the TextArea");
+        choice = new Choice();
+        list = new List();
+        bar = new Scrollbar(Scrollbar.HORIZONTAL);
+        button = new Button("I am the button");
         frame.setBackground(Color.red);
         frame.setLayout(new GridLayout(7, 1));
         frame.add(button);
