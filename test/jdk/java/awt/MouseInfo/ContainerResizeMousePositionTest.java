@@ -92,10 +92,13 @@ public class ContainerResizeMousePositionTest {
         robot.delay(500);
 
         if (!eventCaught.await(2, TimeUnit.SECONDS)) {
-            if (!testSucceeded) {
-                throw new RuntimeException("Test failed: Container.getMousePosition(boolean)"
-                                           + " returned incorrect result while Container resized");
-            }
+            throw new RuntimeException("componentResized Event isn't"
+                                       + " received within a timeout");
+        }
+
+        if (!testSucceeded) {
+            throw new RuntimeException("Container.getMousePosition(boolean)"
+                                       + " returned incorrect result while Container resized");
         }
     }
 
