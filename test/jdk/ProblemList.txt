@@ -563,14 +563,19 @@ java/net/Socket/asyncClose/Race.java                            8317801 aix-ppc6
 
 # jdk_nio
 
+java/nio/Buffer/LimitDirectMemory.java                          8340728 generic-all
+
 java/nio/channels/AsynchronousSocketChannel/StressLoopback.java 8211851 aix-ppc64
 
 java/nio/channels/Channels/SocketChannelStreams.java            8317838 aix-ppc64
 
-java/nio/channels/DatagramChannel/AdaptorMulticasting.java      8308807 aix-ppc64
+java/nio/channels/DatagramChannel/AdaptorMulticasting.java      8308807,8144003 aix-ppc64,macosx-all
 java/nio/channels/DatagramChannel/AfterDisconnect.java          8308807 aix-ppc64
 java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
 java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
+java/nio/channels/DatagramChannel/BasicMulticastTests.java      8144003 macosx-all
+java/nio/channels/DatagramChannel/MulticastSendReceiveTests.java 8144003 macosx-all
+java/nio/channels/DatagramChannel/Promiscuous.java              8144003 macosx-all
 
 ############################################################################
 
@@ -791,3 +796,4 @@ java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
 java/awt/Frame/SizeMinimizedTest.java 8305915 linux-x64
 java/awt/PopupMenu/PopupHangTest.java 8340022 windows-all
 java/awt/Focus/MinimizeNonfocusableWindowTest.java 8024487 windows-all
+java/awt/Focus/InactiveFocusRace.java 8023263 linux-all

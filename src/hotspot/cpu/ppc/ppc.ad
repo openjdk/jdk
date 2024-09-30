@@ -6598,7 +6598,7 @@ instruct encodeP_not_null_Ex(iRegNdst dst, iRegPsrc src) %{
 instruct encodeP_not_null_base_null(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodeP src));
   predicate(CompressedOops::shift() != 0 &&
-            CompressedOops::base() ==0);
+            CompressedOops::base() == nullptr);
 
   format %{ "SRDI    $dst, $src, #3 \t// encodeP, $src != nullptr" %}
   size(4);
@@ -6695,7 +6695,7 @@ instruct decodeN_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
   predicate((n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
              n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant) &&
             CompressedOops::shift() != 0 &&
-            CompressedOops::base() != 0);
+            CompressedOops::base() != nullptr);
   ins_cost(4 * DEFAULT_COST); // Should be more expensive than decodeN_Disjoint_isel_Ex.
   effect(TEMP crx);
 
@@ -6707,7 +6707,7 @@ instruct decodeN_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
 instruct decodeN_nullBase(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeN src));
   predicate(CompressedOops::shift() != 0 &&
-            CompressedOops::base() == 0);
+            CompressedOops::base() == nullptr);
 
   format %{ "SLDI    $dst, $src, #3 \t// DecodeN (zerobased)" %}
   size(4);
@@ -6825,7 +6825,7 @@ instruct decodeN_notNull_addBase_Ex(iRegPdst dst, iRegNsrc src) %{
   predicate((n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
              n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
             CompressedOops::shift() != 0 &&
-            CompressedOops::base() != 0);
+            CompressedOops::base() != nullptr);
   ins_cost(2 * DEFAULT_COST);
 
   format %{ "DecodeN $dst, $src \t// $src != nullptr, postalloc expanded" %}

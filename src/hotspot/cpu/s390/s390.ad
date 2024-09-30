@@ -4628,7 +4628,7 @@ instruct encodeP(iRegN dst, iRegP src, flagsReg cr) %{
   match(Set dst (EncodeP src));
   effect(KILL cr);
   predicate((n->bottom_type()->make_ptr()->ptr() != TypePtr::NotNull) &&
-            (CompressedOops::base() == 0 ||
+            (CompressedOops::base() == nullptr ||
              CompressedOops::base_disjoint() ||
              !ExpandLoadingBaseEncode));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
@@ -4651,7 +4651,7 @@ instruct encodeP_NN(iRegN dst, iRegP src, flagsReg cr) %{
   match(Set dst (EncodeP src));
   effect(KILL cr);
   predicate((n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull) &&
-            (CompressedOops::base() == 0 ||
+            (CompressedOops::base() == nullptr ||
              CompressedOops::base_disjoint() ||
              !ExpandLoadingBaseEncode_NN));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
