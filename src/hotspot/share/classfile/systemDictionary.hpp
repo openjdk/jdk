@@ -296,12 +296,6 @@ public:
 
   static void add_to_initiating_loader(JavaThread* current, InstanceKlass* k,
                                        ClassLoaderData* loader_data) NOT_CDS_RETURN;
-protected:
-  static InstanceKlass* _well_known_klasses[];
-
-private:
-  // table of box klasses (int_klass, etc.)
-  static InstanceKlass* _box_klasses[T_VOID+1];
 
   static OopHandle  _java_system_loader;
   static OopHandle  _java_platform_loader;

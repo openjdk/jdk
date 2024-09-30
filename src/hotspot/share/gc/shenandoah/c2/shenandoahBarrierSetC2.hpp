@@ -85,6 +85,7 @@ public:
   static ShenandoahBarrierSetC2* bsc2();
 
   static bool is_shenandoah_wb_pre_call(Node* call);
+  static bool is_shenandoah_clone_call(Node* call);
   static bool is_shenandoah_lrb_call(Node* call);
   static bool is_shenandoah_marking_if(PhaseValues* phase, Node* n);
   static bool is_shenandoah_state_load(Node* n);

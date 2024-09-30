@@ -225,8 +225,7 @@ void ShenandoahConcurrentMark::finish_mark() {
   assert(Thread::current()->is_VM_thread(), "Must by VM Thread");
   finish_mark_work();
   assert(task_queues()->is_empty(), "Should be empty");
-  TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());
-  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
+  TASKQUEUE_STATS_ONLY(task_queues()->print_and_reset_taskqueue_stats(""));
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   heap->set_concurrent_mark_in_progress(false);
