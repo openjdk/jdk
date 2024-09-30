@@ -3273,7 +3273,10 @@ const TypeInterfaces* TypeInterfaces::make(GrowableArray<ciInstanceKlass*>* inte
 
   void* allocated_mem = operator new(total_size);
   ciInstanceKlass** interfaces_base = (ciInstanceKlass**)((char*)allocated_mem + sizeof(TypeInterfaces));
-  TypeInterfaces* result = ::new (allocated_mem) TypeInterfaces(interfaces_base, interfaces->length());
+  for (int i = 0; i < nb_interfaces; ++i) {
+    interfaces_base[i] = interfaces->at(i);
+  }
+  TypeInterfaces* result = ::new (allocated_mem) TypeInterfaces(interfaces_base, nb_interfaces);
   return (const TypeInterfaces*)result->hashcons();
 }
 
