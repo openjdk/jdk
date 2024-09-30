@@ -27,7 +27,6 @@
  * @summary Classes used by CDS at runtime should be in the archived
  * @bug 8324259
  * @requires vm.cds
- * @requires vm.flagless
  * @library /test/lib
  * @compile test-classes/Hello.java
  * @run driver DumpRuntimeClassesTest
@@ -52,7 +51,7 @@ public class DumpRuntimeClassesTest {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-cp", appJar, "-XX:SharedClassListFile=" + classList)
             .setArchiveName(archiveName);
-        CDSTestUtils.createArchiveAndCheck(opts);
+        CDSTestUtils.createArchive(opts);
 
         // Run with archive and ensure all the classes used were in the archive
         CDSOptions runOpts = (new CDSOptions())

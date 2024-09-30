@@ -797,7 +797,7 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
 
   // Dummy call to load classes used at CDS runtime
   JavaValue result(T_OBJECT);
-  Handle path_string = java_lang_String::create_from_str("", CHECK);
+  Handle path_string = java_lang_String::create_from_str("dummy.jar", CHECK);
   JavaCalls::call_static(&result,
                          vmClasses::jdk_internal_loader_ClassLoaders_klass(),
                          vmSymbols::toFileURL_name(),
