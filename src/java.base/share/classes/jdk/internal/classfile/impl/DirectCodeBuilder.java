@@ -863,7 +863,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder labelBinding(Label label) {
-        ((LabelImpl) label).writeTo(this);
+        setLabelTarget(label, curPc());
         return this;
     }
 
