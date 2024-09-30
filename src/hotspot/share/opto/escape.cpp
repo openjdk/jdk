@@ -602,7 +602,7 @@ bool ConnectionGraph::can_reduce_check_users(Node* n, uint phi_nest_level) const
           if (!can_reduce) {
 #ifndef PRODUCT
             if (TraceReduceAllocationMerges) {
-                tty->print_cr("Cannot reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);
+              tty->print_cr("Cannot reduce Phi %d on invocation %d. CastPP %d doesn't have simple control.", n->_idx, _invocation, use->_idx);
               n->dump(5);
             }
 #endif

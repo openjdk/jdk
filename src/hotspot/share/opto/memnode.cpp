@@ -1571,7 +1571,7 @@ Node* LoadNode::get_region_of_split_through_base_phi(PhaseGVN* phase, Node *base
   Node* mem        = in(Memory);
   Node* address    = in(Address);
   bool base_is_phi = (base != nullptr) && base->is_Phi();
-  Node* region = nullptr;  
+  Node* region = nullptr;
   DomResult dom_result = DomResult::Dominate;
   if (!base_is_phi) {
     assert(mem->is_Phi(), "memory node should be a Phi");
@@ -1669,7 +1669,7 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase, bool nested) {
 }
 
 //------------------------------get_memory_node_for_nestedphi_after_split------------------------------
-// Given a nestedphi node and its parentphi node, this function pretends that a split has occurred on a load field 
+// Given a nestedphi node and its parentphi node, this function pretends that a split has occurred on a load field
 // and returns the memory node of the new load field node that is attached to the parentphi node.
 // Note that this function doesn't actually perform the split.
 // If a split is impossible, it returns nullptr.
@@ -1679,7 +1679,7 @@ Node* LoadNode::get_memory_node_for_nestedphi_after_split(PhaseGVN* phase, Node 
   if (region == nullptr) {
     return nullptr;
   }
-  
+
   Node* in = region->in(parent_idx);
   if (region->is_CountedLoop() && region->as_Loop()->is_strip_mined() && parent_idx == LoopNode::EntryControl &&
     in != nullptr && in->is_OuterStripMinedLoop()) {
@@ -1687,7 +1687,7 @@ Node* LoadNode::get_memory_node_for_nestedphi_after_split(PhaseGVN* phase, Node 
     in = in->in(LoopNode::EntryControl);
   }
   if (in == nullptr || in == phase->C->top()) {
-    // Dead path?  Use a dead data op    
+    // Dead path?  Use a dead data op
     return phase->C->top()->in(Memory);
   } else if (mem->is_Phi() && (mem->in(0) == region)) {
     return mem->in(parent_idx);

@@ -110,7 +110,7 @@ public class AllocationMergesNestedPhiTests {
         int w = random.nextInt();
         int x = random.nextInt();
         int y = random.nextInt();
-        int z = random.nextInt(); 
+        int z = random.nextInt();
         try {
             Asserts.assertEQ(testRematerialize_SingleObj_Interp(cond1, x, y),       testRematerialize_SingleObj_C2(cond1, x, y));
         } catch (Exception e) {}
@@ -128,7 +128,7 @@ public class AllocationMergesNestedPhiTests {
         Asserts.assertEQ(testNestedPhiPolymorphic_Interp(cond1, cond2, x, y),       testNestedPhiPolymorphic_C2(cond1, cond2, x, y));
         Asserts.assertEQ(testNestedPhiWithTrap_Interp(cond1, cond2, x, y),          testNestedPhiWithTrap_C2(cond1, cond2, x, y));
         Asserts.assertEQ(testNestedPhiWithLambda_Interp(cond1, cond2, x, y),        testNestedPhiWithLambda_C2(cond1, cond2, x, y));
-        Asserts.assertEQ(testMultiParentPhi_Interp(cond1, cond2, x, y),             testMultiParentPhi_C2(cond1, cond2, x, y));
+        Asserts.assertEQ(testMultiParentPhi_Interp(cond1, x, y),             testMultiParentPhi_C2(cond1, x, y));
     }
 
     // -------------------------------------------------------------------------
@@ -515,7 +515,7 @@ public class AllocationMergesNestedPhiTests {
     @DontCompile
     int testMultiParentPhi_Interp(boolean cond1, int x, int y) { return testMultiParentPhi(cond1, x, y); }
 
-    @Test    
+    @Test
     int testMultiParentPhi_C2(boolean cond1, int x, int y) { return testMultiParentPhi(cond1, x, y); }
 
     @ForceInline
