@@ -1591,8 +1591,7 @@ void os::jvm_path(char *buf, jint buflen) {
 ////////////////////////////////////////////////////////////////////////////////
 // Virtual Memory
 
-static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
-                                    int err) {
+static void warn_fail_commit_memory(char* addr, size_t size, bool exec, int err) {
   warning("INFO: os::commit_memory(" INTPTR_FORMAT ", " SIZE_FORMAT
           ", %d) failed; error='%s' (errno=%d)", (intptr_t)addr, size, exec,
            os::errno_name(err), err);
@@ -1602,7 +1601,9 @@ static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
 //       All it does is to check if there are enough free pages
 //       left at the time of mmap(). This could be a potential
 //       problem.
-bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
+// Alignment_hint is ignored on this OS.
+bool os::pd_commit_memory(char* addr, size_t size, bool exec,
+                          size_t alignment_hint) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
 #if defined(__OpenBSD__)
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
@@ -1658,27 +1659,14 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   return false;
 }
 
-bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
-                          bool exec) {
-  // alignment_hint is ignored on this OS
-  return pd_commit_memory(addr, size, exec);
-}
-
 void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
-                                  const char* mesg) {
+                                  const char* mesg, size_t alignment_hint) {
   assert(mesg != nullptr, "mesg must be specified");
-  if (!pd_commit_memory(addr, size, exec)) {
+  if (!pd_commit_memory(addr, size, exec, alignment_hint)) {
     // add extra info in product mode for vm_exit_out_of_memory():
     PRODUCT_ONLY(warn_fail_commit_memory(addr, size, exec, errno);)
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
-}
-
-void os::pd_commit_memory_or_exit(char* addr, size_t size,
-                                  size_t alignment_hint, bool exec,
-                                  const char* mesg) {
-  // alignment_hint is ignored on this OS
-  pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {

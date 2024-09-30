@@ -3716,26 +3716,13 @@ bool os::pd_commit_memory(char* addr, size_t bytes, bool exec) {
   return true;
 }
 
-bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
-                          bool exec) {
-  // alignment_hint is ignored on this OS
-  return pd_commit_memory(addr, size, exec);
-}
-
 void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
-                                  const char* mesg) {
+                                  const char* mesg, size_t alignment_hint) {
   assert(mesg != nullptr, "mesg must be specified");
-  if (!pd_commit_memory(addr, size, exec)) {
+  if (!pd_commit_memory(addr, size, exec, alignment_hint)) {
     warn_fail_commit_memory(addr, size, exec);
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
-}
-
-void os::pd_commit_memory_or_exit(char* addr, size_t size,
-                                  size_t alignment_hint, bool exec,
-                                  const char* mesg) {
-  // alignment_hint is ignored on this OS
-  pd_commit_memory_or_exit(addr, size, exec, mesg);
 }
 
 bool os::pd_uncommit_memory(char* addr, size_t bytes, bool exec) {

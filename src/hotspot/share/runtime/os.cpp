@@ -2122,23 +2122,10 @@ julong os::used_memory() {
   return os::physical_memory() - os::available_memory();
 }
 
-
-bool os::commit_memory(char* addr, size_t bytes, bool executable) {
-  assert_nonempty_range(addr, bytes);
-  bool res = pd_commit_memory(addr, bytes, executable);
-  if (res) {
-    MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
-    log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, bytes));
-  } else {
-    log_info(os, map)("Failed to commit " RANGEFMT, RANGEFMTARGS(addr, bytes));
-  }
-  return res;
-}
-
-bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
-                              bool executable) {
+bool os::commit_memory(char* addr, size_t size, bool executable,
+                       size_t alignment_hint) {
   assert_nonempty_range(addr, size);
-  bool res = os::pd_commit_memory(addr, size, alignment_hint, executable);
+  bool res = os::pd_commit_memory(addr, size, executable, alignment_hint);
   if (res) {
     MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
     log_debug(os, map)("Committed " RANGEFMT, RANGEFMTARGS(addr, size));
@@ -2148,17 +2135,10 @@ bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
   return res;
 }
 
-void os::commit_memory_or_exit(char* addr, size_t bytes, bool executable,
-                               const char* mesg) {
-  assert_nonempty_range(addr, bytes);
-  pd_commit_memory_or_exit(addr, bytes, executable, mesg);
-  MemTracker::record_virtual_memory_commit((address)addr, bytes, CALLER_PC);
-}
-
-void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
-                               bool executable, const char* mesg) {
+void os::commit_memory_or_exit(char* addr, size_t size, bool executable,
+                               const char* mesg, size_t alignment_hint) {
   assert_nonempty_range(addr, size);
-  os::pd_commit_memory_or_exit(addr, size, alignment_hint, executable, mesg);
+  os::pd_commit_memory_or_exit(addr, size, executable, mesg, alignment_hint);
   MemTracker::record_virtual_memory_commit((address)addr, size, CALLER_PC);
 }
 

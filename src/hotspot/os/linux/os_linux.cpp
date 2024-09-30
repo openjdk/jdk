@@ -2896,15 +2896,7 @@ static bool recoverable_mmap_error(int err) {
 }
 
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
-                                    int err) {
-  warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
-          ", %d) failed; error='%s' (errno=%d)", p2i(addr), size, exec,
-          os::strerror(err), err);
-}
-
-static void warn_fail_commit_memory(char* addr, size_t size,
-                                    size_t alignment_hint, bool exec,
-                                    int err) {
+                                    int err, size_t alignment_hint) {
   warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
           ", " SIZE_FORMAT ", %d) failed; error='%s' (errno=%d)", p2i(addr), size,
           alignment_hint, exec, os::strerror(err), err);
@@ -2914,47 +2906,46 @@ static void warn_fail_commit_memory(char* addr, size_t size,
 //       All it does is to check if there are enough free pages
 //       left at the time of mmap(). This could be a potential
 //       problem.
-int os::Linux::commit_memory_impl(char* addr, size_t size, bool exec) {
+bool os::pd_commit_memory(char* addr, size_t size, bool exec,
+                          size_t alignment_hint) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
   uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
                                      MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
+  int err = errno;  // save errno from mmap() call above
   if (res != (uintptr_t) MAP_FAILED) {
     if (UseNUMAInterleaving) {
       numa_make_global(addr, size);
     }
-    return 0;
+    realign_memory(addr, size, alignment_hint);
+    return true;
   } else {
     ErrnoPreserver ep;
     log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
                        RANGEFMTARGS(addr, size),
                        os::strerror(ep.saved_errno()));
   }
-
-  int err = errno;  // save errno from mmap() call above
-
   if (!recoverable_mmap_error(err)) {
     ErrnoPreserver ep;
     log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
                        RANGEFMTARGS(addr, size),
                        os::strerror(ep.saved_errno()));
-    warn_fail_commit_memory(addr, size, exec, err);
+    warn_fail_commit_memory(addr, size, exec, err, alignment_hint);
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "committing reserved memory.");
+  } else {
+    realign_memory(addr, size, alignment_hint);
+    return (err==0);
   }
-
-  return err;
-}
-
-bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
-  return os::Linux::commit_memory_impl(addr, size, exec) == 0;
+  ShouldNotReachHere();
+  return true;
 }
 
 void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
-                                  const char* mesg) {
+                                  const char* mesg, size_t alignment_hint) {
   assert(mesg != nullptr, "mesg must be specified");
-  int err = os::Linux::commit_memory_impl(addr, size, exec);
+  int err = os::Linux::commit_memory_impl(addr, size, exec, alignment_hint);
   if (err != 0) {
     // the caller wants all commit errors to exit with the specified mesg:
-    warn_fail_commit_memory(addr, size, exec, err);
+    warn_fail_commit_memory(addr, size, exec, err, alignment_hint);
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
@@ -2996,32 +2987,6 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   // Sanity-check our assumed default value if we build with a new enough libc.
   STATIC_ASSERT(MAP_FIXED_NOREPLACE == MAP_FIXED_NOREPLACE_value);
 #endif
-
-int os::Linux::commit_memory_impl(char* addr, size_t size,
-                                  size_t alignment_hint, bool exec) {
-  int err = os::Linux::commit_memory_impl(addr, size, exec);
-  if (err == 0) {
-    realign_memory(addr, size, alignment_hint);
-  }
-  return err;
-}
-
-bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
-                          bool exec) {
-  return os::Linux::commit_memory_impl(addr, size, alignment_hint, exec) == 0;
-}
-
-void os::pd_commit_memory_or_exit(char* addr, size_t size,
-                                  size_t alignment_hint, bool exec,
-                                  const char* mesg) {
-  assert(mesg != nullptr, "mesg must be specified");
-  int err = os::Linux::commit_memory_impl(addr, size, alignment_hint, exec);
-  if (err != 0) {
-    // the caller wants all commit errors to exit with the specified mesg:
-    warn_fail_commit_memory(addr, size, alignment_hint, exec, err);
-    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
-  }
-}
 
 void os::Linux::madvise_transparent_huge_pages(void* addr, size_t bytes) {
   // We don't check the return value: madvise(MADV_HUGEPAGE) may not

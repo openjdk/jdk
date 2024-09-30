@@ -212,16 +212,13 @@ class os: AllStatic {
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
 
-  static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
-  static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
-                                 bool executable);
+  static bool   pd_commit_memory(char* addr, size_t size, bool executable,
+                                 size_t alignment_hint = 0);
   // Same as pd_commit_memory() that either succeeds or calls
   // vm_exit_out_of_memory() with the specified mesg.
-  static void   pd_commit_memory_or_exit(char* addr, size_t bytes,
-                                         bool executable, const char* mesg);
-  static void   pd_commit_memory_or_exit(char* addr, size_t size,
-                                         size_t alignment_hint,
-                                         bool executable, const char* mesg);
+  static void   pd_commit_memory_or_exit(char* addr, size_t bytes, bool executable,
+                                         const char* mesg, size_t alignment_hint = 0);
+
   static bool   pd_uncommit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_release_memory(char* addr, size_t bytes);
 
@@ -464,16 +461,13 @@ class os: AllStatic {
   static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment,
                                               bool randomize, MemTag mem_tag = mtNone);
 
-  static bool   commit_memory(char* addr, size_t bytes, bool executable);
-  static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
-                              bool executable);
+  static bool   commit_memory(char* addr, size_t size, bool executable,
+                              size_t alignment_hint = 0);
   // Same as commit_memory() that either succeeds or calls
   // vm_exit_out_of_memory() with the specified mesg.
-  static void   commit_memory_or_exit(char* addr, size_t bytes,
-                                      bool executable, const char* mesg);
-  static void   commit_memory_or_exit(char* addr, size_t size,
-                                      size_t alignment_hint,
-                                      bool executable, const char* mesg);
+  static void   commit_memory_or_exit(char* addr, size_t size, bool executable,
+                                      const char* mesg, size_t alignment_hint = 0);
+
   static bool   uncommit_memory(char* addr, size_t bytes, bool executable = false);
   static bool   release_memory(char* addr, size_t bytes);
 
