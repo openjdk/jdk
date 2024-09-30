@@ -406,145 +406,140 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
 
 // Convert a + a + ... + a into a*n
 Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, BasicType bt) {
-  if (is_optimized_multiplication()) {
+  if (find_optimized_multiplication(bt, nullptr) != nullptr) {
     return nullptr;
   }
 
-  Node* in1 = in(1);
-  Node* in2 = in(2);
-  int in1_op = in1->Opcode();
-
-  bool matched = false;
   jlong multiplier;
-
-  // Convert (a + a) + a to 3 * a
-  // Look for LHS pattern: AddNode(a, a)
-  if (in1_op == Op_Add(bt) && in1->in(1) == in1->in(2)) {
-    if (in1->in(1) != in2) {
-      return nullptr;
-    }
-
-    multiplier = 2;
-    matched = true;
+  if (match_simple_addition_pattern(bt, &multiplier)
+      || match_simple_lshift_pattern(bt, &multiplier)
+      || match_simple_multiplication_pattern(bt, &multiplier)
+      || match_power_of_two_addition_pattern(bt, &multiplier)
+      || match_power_of_two_subtraction_pattern(bt, &multiplier)) {
+    Node* con = (bt == T_INT)
+                ? (Node*) phase->intcon((jint) multiplier) // intentional type narrowing to allow overflow at max_jint
+                : (Node*) phase->longcon(multiplier);
+    return MulNode::make(con, in(2), bt);
   }
 
-  // Convert (a << CON) + a to a * ((1 << CON) + 1))
+  return nullptr;
+}
+
+// Match (a + a) + a for conversion to 3 * a
+bool AddNode::match_simple_addition_pattern(BasicType bt, jlong* multiplier) {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+
+  // Look for LHS pattern: AddNode(a, a)
+  if (in1->Opcode() == Op_Add(bt) && in1->in(1) == in1->in(2) && in1->in(1) == in2) {
+    *multiplier = 3;
+    return true;
+  }
+
+  return false;
+}
+
+// Match (a << CON) + a for conversion ((1 << CON) + 1)) * a
+bool AddNode::match_simple_lshift_pattern(BasicType bt, jlong* multiplier) {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+
   // Look for LHS pattern: LShiftNode(a, CON)
   // Note that power-of-2 multiplication optimization could potentially convert a MulNode to this pattern
-  if (in1_op == Op_LShift(bt) && in1->in(2)->is_Con()) {
+  if (in1->Opcode() == Op_LShift(bt) && in1->in(2)->is_Con()) {
     Node* base = in1->in(1);
     if (base != in2) {
-      return nullptr;
+      return false;
     }
 
     Node* con = in1->in(2);
     if (con->is_top()) {
-      return nullptr;
+      return false;
     }
 
-    BasicType con_bt = phase->type(con)->basic_type();
-    multiplier = (jlong) 1 << con->get_integer_as_long(con_bt);
-    matched = true;
+    *multiplier = ((jlong) 1 << con->get_int()) + 1;
+    return true;
   }
 
-  // Convert (CON * a) + a to (CON + 1) * a
+  return false;
+}
+
+// Match (CON * a) + a for conversion to (CON + 1) * a
+bool AddNode::match_simple_multiplication_pattern(BasicType bt, jlong* multiplier) {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+
   // Look for LHS patterns:
   //     - MulNode(CON, a)
   //     - MulNode(a, CON)
   // This optimization technically only produces MulNode(CON, a), but we might as well transform (a * CON) + a, too.
-  if (in1_op == Op_Mul(bt) && (in1->in(1)->is_Con() || in1->in(2)->is_Con())) {
-    Node* base = in1->in(1)->is_Con() ? in1->in(2) : in1->in(1);
-    if (base != in2) {
-      return nullptr;
+  if (in1->Opcode() == Op_Mul(bt) && (in1->in(1)->is_Con() || in1->in(2)->is_Con())) {
+    Node* con = in1->in(1);
+    Node* base = in1->in(2);
+
+    // swap ConNode to lhs for easier matching
+    if (!con->is_Con()) {
+      swap(con, base);
     }
 
-    Node* con = in1->in(1)->is_Con() ? in1->in(1) : in1->in(2);
     if (con->is_top()) {
-      return nullptr;
+      return false;
     }
 
-    BasicType con_bt = phase->type(con)->basic_type();
-    multiplier = con->get_integer_as_long(con_bt);
-    matched = true;
+    if (base != in2) {
+      return false;
+    }
+
+    *multiplier = con->get_integer_as_long(bt) + 1;
+    return true;
   }
 
-  // Due to potential power-of-2 multiplication optimization, e.g., ((a << CON1) + (a << CON2)) + a,
-  // we also look for LHS patterns:
-  //     - AddNode(LShiftNode(a, CON)/a, LShiftNode(a, CON))
-  if (in1_op == Op_Add(bt) && in1->isa_Add()->is_optimized_multiplication()) {
-    Node* lhs = in1->in(1);
-    Node* rhs = in1->in(2);
+  return false;
+}
 
-    Node* lhs_base = lhs->is_LShift() ? lhs->in(1) : lhs;
-    Node* rhs_base = rhs->is_LShift() ? rhs->in(1) : rhs;
+// Match ((a << CON1) + (a << CON2)) + a for conversion to ((1 << CON1) + (1 << CON2) + 1) * a
+bool AddNode::match_power_of_two_addition_pattern(BasicType bt, jlong* multiplier) {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
 
-//    Node* nodes[] = {lhs, rhs};
-//    Node* bases[] = {lhs_base, rhs_base};
-//    jlong multipliers[] = {1, 1};
-    jlong lhs_multiplier = 1;
-    jlong rhs_multiplier = 1;
-
-    // AddNode(LShiftNode(a, CON1), LShiftNode(a, CON2)/a)
-    if (lhs->is_LShift()) {
-      Node* con = lhs->in(2);
-      if (lhs_base != in2 || lhs_base != rhs_base || !con->is_Con() || con->is_top()) {
-        return nullptr;
-      }
-
-      BasicType con_bt = phase->type(con)->basic_type();
-      lhs_multiplier = ((jlong) 1 << con->get_integer_as_long(con_bt));
-    }
-
-    // AddNode(LShiftNode(a, CON1)/a, LShiftNode(a, CON2))
-    if (rhs->is_LShift()) {
-      Node* con = rhs->in(2);
-      if (rhs_base != in2 || lhs_base != rhs_base || !con->is_Con() || con->is_top()) {
-        return nullptr;
-      }
-
-      BasicType con_bt = phase->type(con)->basic_type();
-      rhs_multiplier = ((jlong) 1 << con->get_integer_as_long(con_bt));
-    }
-
-    multiplier = lhs_multiplier + rhs_multiplier;
-    matched = true;
+  jlong lhs_multiplier = 0;
+  if (in1->Opcode() == Op_Add(bt) && in1->isa_Add()->find_optimized_multiplication(bt, &lhs_multiplier) == in2) {
+    *multiplier = lhs_multiplier + 1;
+    return true;
   }
 
-  // Due to potential power-of-2 multiplication optimization, e.g., ((a << CON) - a) + a,
-  //     - SubNode(LShiftNode(a, CON), a)
-  if (in1_op == Op_Sub(bt) && in1->in(1)->is_LShift() && in1->in(1)->in(2)->is_Con()) {
+  return false;
+}
+
+// Match ((a << CON) - a) + a for conversion to (1 << CON) * a
+bool AddNode::match_power_of_two_subtraction_pattern(BasicType bt, jlong* multiplier) {
+  Node* in1 = in(1);
+  Node* in2 = in(2);
+
+  if (in1->Opcode() == Op_Sub(bt) && in1->in(1)->is_LShift() && in1->in(1)->in(2)->is_Con()) {
     Node* lshift = in1->in(1);
     Node* base = in1->in(2);
 
     Node* lshift_base = lshift->in(1);
     if (lshift_base != base || lshift_base != in2) {
-      return nullptr;
+      return false;
     }
 
     Node* con = lshift->in(2);
     if (con->is_top()) {
-      return nullptr;
+      return false;
     }
 
-    BasicType con_bt = phase->type(con)->basic_type();
     // We can't simply return the lshift node even if ((a << CON) - a) + a cancels out. Ideal() must return a new node.
-    multiplier = ((jlong) 1 << con->get_integer_as_long(con_bt)) - 1;
-    matched = true;
+    *multiplier = ((jlong) 1 << con->get_int());
+    return true;
   }
 
-  if (!matched) {
-    return nullptr;
-  }
-
-  multiplier++; // + 1 for current addition
-  Node* con = (bt == T_INT)
-              ? (Node*) phase->intcon((jint) multiplier) // intentional type narrowing to allow overflow at max_jint
-              : (Node*) phase->longcon(multiplier);
-  return MulNode::make(con, in2, bt);
+  return false;
 }
 
 // MulINode::Ideal() optimizes a multiplication to an addition of at most two terms if possible.
-bool AddNode::is_optimized_multiplication() {
+Node* AddNode::find_optimized_multiplication(BasicType bt, jlong* multiplier) {
   Node* lhs = in(1);
   Node* rhs = in(2);
 
@@ -553,7 +548,7 @@ bool AddNode::is_optimized_multiplication() {
   //     - AddNode(LShiftNode(a, CON)/a, LShiftNode(a, CON))
   // given that lhs is different from rhs
   if (lhs == rhs) {
-    return false;
+    return nullptr;
   }
 
   // swap LShiftNode to lhs for easier matching
@@ -563,20 +558,43 @@ bool AddNode::is_optimized_multiplication() {
 
   // AddNode(LShiftNode(a, CON), *)?
   if (!lhs->is_LShift() || !lhs->in(2)->is_Con()) {
-    return false;
+    return nullptr;
+  }
+
+  jlong lhs_multiplier = 0;
+  if (multiplier != nullptr) {
+    Node* con = lhs->in(2);
+    if (con->is_top()) {
+      return nullptr;
+    }
+
+    lhs_multiplier = (jlong) 1 << con->get_int();
   }
 
   // AddNode(LShiftNode(a, CON), a)?
   if (lhs->in(1) == rhs) {
-    return true;
+    if (multiplier != nullptr) {
+      *multiplier = lhs_multiplier + 1;
+    }
+
+    return rhs;
   }
 
   // AddNode(LShiftNode(a, CON), LShiftNode(a, CON2))?
   if (rhs->is_LShift() && lhs->in(1) == rhs->in(1) && rhs->in(2)->is_Con()) {
-    return true;
+    if (multiplier != nullptr) {
+      Node* con = rhs->in(2);
+      if (con->is_top()) {
+        return nullptr;
+      }
+
+      *multiplier = lhs_multiplier + ((jlong) 1 << con->get_int());
+    }
+
+    return lhs->in(1);
   }
 
-  return false;
+  return nullptr;
 }
 
 Node* AddINode::Ideal(PhaseGVN* phase, bool can_reshape) {
