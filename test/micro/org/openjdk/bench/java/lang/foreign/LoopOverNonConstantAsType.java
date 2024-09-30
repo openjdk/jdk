@@ -41,6 +41,9 @@ import sun.misc.Unsafe;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Proxy;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
@@ -51,7 +54,7 @@ import static java.lang.foreign.ValueLayout.*;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgsAppend = { "-XX:-TieredCompilation" })
+@Fork(3)
 public class LoopOverNonConstantAsType extends JavaLayouts {
 
     static final Unsafe unsafe = Utils.unsafe;
@@ -83,18 +86,29 @@ public class LoopOverNonConstantAsType extends JavaLayouts {
         }
     }
 
+    public interface T { }
+
+    static final int TYPE_SIZE = 100;
+    static final Class<?>[] types;
+
+    static {
+        types = new Class<?>[TYPE_SIZE];
+        ClassLoader customLoader = new URLClassLoader(new URL[0], LoopOverNonConstantAsType.class.getClassLoader());
+        for (int i = 0 ; i < TYPE_SIZE ; i++) {
+            types[i] = Proxy.newProxyInstance(customLoader,
+                    new Class<?>[] { T.class }, (_, _, _) -> null).getClass();
+        }
+    }
+
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     void compileAsType() {
-        Class<?>[] types = new Class<?>[] { byte.class, short.class, int.class, long.class };
-        for (int i = 0 ; i < 40 ; i++) {
-            for (Class<?> type : types) {
-                MethodHandle handle = MethodHandles.zero(Object.class);
-                Class<?>[] args = new Class<?>[127];
-                Arrays.fill(args, long.class);
-                handle = MethodHandles.dropArguments(handle, 0, args);
-                for (int j = 0; j < args.length ; j++) {
-                    handle = handle.asType(handle.type().changeParameterType(j, type));
-                }
+        for (Class<?> type : types) {
+            MethodHandle handle = MethodHandles.zero(Object.class);
+            Class<?>[] args = new Class<?>[254];
+            Arrays.fill(args, Object.class);
+            handle = MethodHandles.dropArguments(handle, 0, args);
+            for (int j = 0; j < args.length ; j++) {
+                handle = handle.asType(handle.type().changeParameterType(j, type));
             }
         }
     }
