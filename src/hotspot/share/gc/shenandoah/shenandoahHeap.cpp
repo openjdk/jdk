@@ -693,7 +693,7 @@ void ShenandoahHeap::notify_mutator_alloc_words(size_t words, bool waste) {
   if (ShenandoahPacing) {
     control_thread()->pacing_notify_alloc(words);
     if (waste) {
-      pacer()->claim_for_alloc(words, true);
+      pacer()->claim_for_alloc<true>(words);
     }
   }
 }
