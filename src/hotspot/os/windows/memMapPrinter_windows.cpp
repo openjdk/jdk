@@ -24,9 +24,9 @@
  */
 
 #include "precompiled.hpp"
-
 #include "nmt/memMapPrinter.hpp"
-#include "runtime/os.hpp"
+#include "os_windows.hpp"
+#include "runtime/vm_version.hpp"
 
 #include <limits.h>
 #include <winnt.h>
