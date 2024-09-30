@@ -63,6 +63,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.access.JavaUtilZipFileAccess;
 import jdk.internal.access.JavaUtilJarAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.OperatingSystem;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.ref.CleanerFactory;
@@ -1181,7 +1182,7 @@ public class ZipFile implements ZipConstants, Closeable {
         private static final int META_INF_LEN = 9;
         private static final int[] EMPTY_META_VERSIONS = new int[0];
         // CEN size is limited to the maximum array size in the JDK
-        private static final int MAX_CEN_SIZE = Integer.MAX_VALUE - 2;
+        private static final int MAX_CEN_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
         private final Key key;               // the key in files
         private final @Stable ZipCoder zc;   // ZIP coder used to decode/encode

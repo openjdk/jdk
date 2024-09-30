@@ -23,10 +23,12 @@
 
 /* @test
  * @bug 8272746
+ * @modules java.base/jdk.internal.util
  * @summary Verify that ZipFile rejects a ZIP with a CEN size which does not fit in a Java byte array
  * @run junit CenSizeTooLarge
  */
 
+import jdk.internal.util.ArraysSupport;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class CenSizeTooLarge {
     // Maximum allowed CEN size allowed by the ZipFile implementation
-    static final int MAX_CEN_SIZE = Integer.MAX_VALUE - ZipFile.ENDHDR - 1;
+    static final int MAX_CEN_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
     /**
      * From the APPNOTE.txt specification:
