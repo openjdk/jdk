@@ -406,8 +406,12 @@ public abstract sealed class Reference<T>
         clearImpl();
     }
 
-    /* Implementation of clear(), overridden for phantom references.
-     * This method exists only to avoid making clear0() virtual. Making
+    /* Implementation of clear(). A simple assignment of the referent field
+     * won't do for some garbage collectors. There is the override for phantom
+     * references, which requires different semantics. This method is also
+     * used by enqueue().
+     *
+     * <p>This method exists only to avoid making clear0() virtual. Making
      * clear0() virtual has the undesirable effect of C2 often preferring
      * to call the native implementation over the intrinsic.
      */
@@ -415,10 +419,6 @@ public abstract sealed class Reference<T>
         clear0();
     }
 
-    /* Implementation of clear(), also used by enqueue().  A simple
-     * assignment of the referent field won't do for some garbage
-     * collectors.
-     */
     @IntrinsicCandidate
     private native void clear0();
 
