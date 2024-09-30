@@ -30,21 +30,21 @@
  * Class}, instances of which represent classes at run time.
  *
  * <p>Frequently it is necessary to represent a value of primitive
- * type as if it were an object.<a id="wrapperClasses"></a> The
- * <dfn>{@index "wrapper classes"}</dfn> {@link Boolean}, {@link
- * Byte}, {@link Character}, {@link Short}, {@link Integer}, {@link
- * Long}, {@link Float}, and {@link Double} serve this purpose.  An
- * object of type {@code Double}, for example, contains a field whose
- * type is {@code double}, representing that value in such a way that
- * a reference to it can be stored in a variable of reference type.
- * As discussed in <cite>The Java Language Specification</cite>, the
- * wrapper classes are involved in boxing (JLS {@jls 5.1.7}) and
- * unboxing (JLS {@jls 5.1.8}) conversions.  These classes provide a
- * number of methods for converting among primitive values, as well as
- * methods supporting such standard functionality as {@code equals}
- * and {@code hashCode}.  The {@link Void} class is a non-instantiable
- * class that holds a reference to a {@code Class} object representing
- * the type {@code void}.
+ * type as if it were an object.The <dfn id=wrapperClasses>{@index
+ * "wrapper classes"}</dfn> {@link Boolean}, {@link Byte}, {@link
+ * Character}, {@link Short}, {@link Integer}, {@link Long}, {@link
+ * Float}, and {@link Double} serve this purpose.  An object of type
+ * {@code Double}, for example, contains a field whose type is {@code
+ * double}, representing that value in such a way that a reference to
+ * it can be stored in a variable of reference type. As discussed in
+ * <cite>The Java Language Specification</cite>, the wrapper classes
+ * are involved in boxing (JLS {@jls 5.1.7}) and unboxing (JLS {@jls
+ * 5.1.8}) conversions. These classes provide a number of methods for
+ * converting among primitive values, as well as methods supporting
+ * such standard functionality as {@code equals} and {@code hashCode}.
+ * The {@link Void} class is a non-instantiable class that holds a
+ * reference to a {@code Class} object representing the type {@code
+ * void}.
  *
  * <p>The class {@link Math} provides commonly used mathematical
  * functions such as {@linkplain Math#sin(double) sine}, {@linkplain
