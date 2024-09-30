@@ -745,14 +745,18 @@ public final class DirectCodeBuilder
     @Override
     public void setLabelTarget(Label label, int bci) {
         LabelImpl lab = (LabelImpl) label;
-        LabelContext context = lab.labelContext();
-
-        if (context == this) {
+        if (lab.labelContext() == this) {
             if (lab.getBCI() != -1)
                 throw new IllegalArgumentException("Setting label target for already-set label");
             lab.setBCI(bci);
+        } else {
+            setLabelTarget(lab, bci);
         }
-        else if (context == mruParent) {
+    }
+
+    private void setLabelTarget(LabelImpl lab, int bci) {
+        LabelContext context = lab.labelContext();
+        if (context == mruParent) {
             mruParentTable[lab.getBCI()] = bci + 1;
         }
         else if (context instanceof CodeAttribute parent) {
@@ -767,7 +771,7 @@ public final class DirectCodeBuilder
 
             mruParent = parent;
             mruParentTable = table;
-            mruParentTable[lab.getBCI()] = bci + 1;
+            table[lab.getBCI()] = bci + 1;
         }
         else if (context instanceof BufferedCodeBuilder) {
             // Hijack the label
