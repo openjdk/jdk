@@ -2715,13 +2715,34 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   b(success);
 
   bind(notRecursive);
+
+  // Set owner to null.
+  // Release to satisfy the JMM
+  release();
+  li(temp, 0);
+  std(temp, in_bytes(ObjectMonitor::owner_offset()), current_header);
+  // We need a full fence after clearing owner to avoid stranding.
+  // StoreLoad achieves this.
+  membar(StoreLoad);
+
+  // Check if the entry lists are empty.
   ld(temp,             in_bytes(ObjectMonitor::EntryList_offset()), current_header);
   ld(displaced_header, in_bytes(ObjectMonitor::cxq_offset()), current_header);
   orr(temp, temp, displaced_header); // Will be 0 if both are 0.
   cmpdi(flag, temp, 0);
-  bne(flag, failure);
-  release();
-  std(temp, in_bytes(ObjectMonitor::owner_offset()), current_header);
+  beq(flag, success);  // If so we are done.
+
+  // Check if there is a successor.
+  ld(temp, in_bytes(ObjectMonitor::succ_offset()), current_header);
+  cmpdi(flag, temp, 0);
+  bne(flag, success);  // If so we are done.
+
+  // Save the monitor pointer in the current thread, so we can try
+  // to reacquire the lock in SharedRuntime::monitor_exit_helper().
+  std(current_header, in_bytes(JavaThread::unlocked_inflated_monitor_offset()), R16_thread);
+
+  crxor(flag, Assembler::equal, flag, Assembler::equal); // Set flag = NE => slow path
+  b(failure);
 
   // flag == EQ indicates success, decrement held monitor count
   // flag == NE indicates failure
@@ -3028,27 +3049,39 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
 
     bind(not_recursive);
 
-    Label release_;
+    Label set_eq_unlocked;
     const Register t2 = tmp2;
+
+    // Set owner to null.
+    // Release to satisfy the JMM
+    release();
+    li(t, 0);
+    std(t, in_bytes(ObjectMonitor::owner_offset()), monitor);
+    // We need a full fence after clearing owner to avoid stranding.
+    // StoreLoad achieves this.
+    membar(StoreLoad);
 
     // Check if the entry lists are empty.
     ld(t, in_bytes(ObjectMonitor::EntryList_offset()), monitor);
     ld(t2, in_bytes(ObjectMonitor::cxq_offset()), monitor);
     orr(t, t, t2);
     cmpdi(CCR0, t, 0);
-    beq(CCR0, release_);
+    beq(CCR0, unlocked); // If so we are done.
 
-    // The owner may be anonymous and we removed the last obj entry in
-    // the lock-stack. This loses the information about the owner.
-    // Write the thread to the owner field so the runtime knows the owner.
-    std(R16_thread, in_bytes(ObjectMonitor::owner_offset()), monitor);
+    // Check if there is a successor.
+    ld(t, in_bytes(ObjectMonitor::succ_offset()), monitor);
+    cmpdi(CCR0, t, 0);
+    bne(CCR0, set_eq_unlocked); // If so we are done.
+
+    // Save the monitor pointer in the current thread, so we can try
+    // to reacquire the lock in SharedRuntime::monitor_exit_helper().
+    std(monitor, in_bytes(JavaThread::unlocked_inflated_monitor_offset()), R16_thread);
+
+    crxor(CCR0, Assembler::equal, CCR0, Assembler::equal); // Set flag = NE => slow path
     b(slow_path);
 
-    bind(release_);
-    // Set owner to null.
-    release();
-    // t contains 0
-    std(t, in_bytes(ObjectMonitor::owner_offset()), monitor);
+    bind(set_eq_unlocked);
+    crorc(CCR0, Assembler::equal, CCR0, Assembler::equal); // Set flag = EQ => fast path
   }
 
   bind(unlocked);
