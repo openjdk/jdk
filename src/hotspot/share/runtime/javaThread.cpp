@@ -409,8 +409,8 @@ void JavaThread::check_for_valid_safepoint_state() {
 
 // A JavaThread is a normal Java thread
 
-JavaThread::JavaThread(MEMFLAGS flags) :
-  Thread(flags),
+JavaThread::JavaThread(MemTag mem_tag) :
+  Thread(mem_tag),
   // Initialize fields
   _on_thread_list(false),
   DEBUG_ONLY(_java_call_counter(0) COMMA)
@@ -470,8 +470,8 @@ JavaThread::JavaThread(MEMFLAGS flags) :
 #endif // INCLUDE_JVMCI
 
   _exception_oop(oop()),
-  _exception_pc(0),
-  _exception_handler_pc(0),
+  _exception_pc(nullptr),
+  _exception_handler_pc(nullptr),
   _is_method_handle_return(0),
 
   _jni_active_critical(0),
@@ -483,10 +483,11 @@ JavaThread::JavaThread(MEMFLAGS flags) :
   _frames_to_pop_failed_realloc(0),
 
   _cont_entry(nullptr),
-  _cont_fastpath(0),
+  _cont_fastpath(nullptr),
   _cont_fastpath_thread_state(1),
   _held_monitor_count(0),
   _jni_monitor_count(0),
+  _unlocked_inflated_monitor(nullptr),
 
   _handshake(this),
 
@@ -504,7 +505,8 @@ JavaThread::JavaThread(MEMFLAGS flags) :
 
   _SleepEvent(ParkEvent::Allocate(this)),
 
-  _lock_stack(this) {
+  _lock_stack(this),
+  _om_cache(this) {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
@@ -633,7 +635,7 @@ void JavaThread::block_if_vm_exited() {
   }
 }
 
-JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz, MEMFLAGS flags) : JavaThread(flags) {
+JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz, MemTag mem_tag) : JavaThread(mem_tag) {
   set_entry_point(entry_point);
   // Create the native thread itself.
   // %note runtime_23
@@ -802,6 +804,8 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   elapsedTimer _timer_exit_phase2;
   elapsedTimer _timer_exit_phase3;
   elapsedTimer _timer_exit_phase4;
+
+  om_clear_monitor_cache();
 
   if (log_is_enabled(Debug, os, thread, timer)) {
     _timer_exit_phase1.start();
@@ -1903,7 +1907,7 @@ void JavaThread::trace_frames() {
   int frame_no = 1;
   for (StackFrameStream fst(this, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
     tty->print("  %d. ", frame_no++);
-    fst.current()->print_value_on(tty, this);
+    fst.current()->print_value_on(tty);
     tty->cr();
   }
 }

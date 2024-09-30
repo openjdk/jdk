@@ -121,7 +121,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
 
   if (is_reference_type(type)) {
 
-    if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahIUBarrier || ShenandoahLoadRefBarrier) {
+    if ((ShenandoahSATBBarrier && !dest_uninitialized) || ShenandoahLoadRefBarrier) {
 #ifdef _LP64
       Register thread = r15_thread;
 #else
@@ -163,12 +163,12 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, Dec
       assert(dst == rsi, "expected");
       assert(count == rdx, "expected");
       if (UseCompressedOops) {
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_narrow_oop_entry),
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_narrow_oop),
                         src, dst, count);
       } else
 #endif
       {
-        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_oop_entry),
+        __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_oop),
                         src, dst, count);
       }
 
@@ -296,9 +296,9 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_pre(MacroAssembler* masm,
     __ push(thread);
     __ push(pre_val);
 #endif
-    __ MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre_entry), 2);
+    __ MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), 2);
   } else {
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre_entry), LP64_ONLY(c_rarg0) NOT_LP64(pre_val), thread);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), LP64_ONLY(c_rarg0) NOT_LP64(pre_val), thread);
   }
 
   NOT_LP64( __ pop(thread); )
@@ -472,40 +472,6 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 #endif
 }
 
-void ShenandoahBarrierSetAssembler::iu_barrier(MacroAssembler* masm, Register dst, Register tmp) {
-  if (ShenandoahIUBarrier) {
-    iu_barrier_impl(masm, dst, tmp);
-  }
-}
-
-void ShenandoahBarrierSetAssembler::iu_barrier_impl(MacroAssembler* masm, Register dst, Register tmp) {
-  assert(ShenandoahIUBarrier, "should be enabled");
-
-  if (dst == noreg) return;
-
-  if (ShenandoahIUBarrier) {
-    save_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ true);
-
-#ifdef _LP64
-    Register thread = r15_thread;
-#else
-    Register thread = rcx;
-    if (thread == dst || thread == tmp) {
-      thread = rdi;
-    }
-    if (thread == dst || thread == tmp) {
-      thread = rbx;
-    }
-    __ get_thread(thread);
-#endif
-    assert_different_registers(dst, tmp, thread);
-
-    satb_write_barrier_pre(masm, noreg, dst, thread, tmp, true, false);
-
-    restore_machine_state(masm, /* handle_gpr = */ true, /* handle_fp = */ true);
-  }
-}
-
 //
 // Arguments:
 //
@@ -626,12 +592,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
                                    val != noreg /* tosca_live */,
                                    false /* expand_call */);
     }
-    if (val == noreg) {
-      BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg, noreg);
-    } else {
-      iu_barrier(masm, val, tmp3);
-      BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg, noreg);
-    }
+    BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp1, 0), val, noreg, noreg, noreg);
     NOT_LP64(imasm->restore_bcp());
   } else {
     BarrierSetAssembler::store_at(masm, decorators, type, dst, val, tmp1, tmp2, tmp3);
@@ -964,7 +925,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
 
   // load the pre-value
   __ load_parameter(0, rcx);
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre_entry), rcx, thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), rcx, thread);
 
   __ restore_live_registers(true);
 

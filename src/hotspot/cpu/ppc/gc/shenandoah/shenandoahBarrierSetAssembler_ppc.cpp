@@ -61,20 +61,6 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier(MacroAssembler *masm,
   }
 }
 
-void ShenandoahBarrierSetAssembler::iu_barrier(MacroAssembler *masm,
-                                               Register val,
-                                               Register tmp1, Register tmp2,
-                                               MacroAssembler::PreservationLevel preservation_level,
-                                               DecoratorSet decorators) {
-  // IU barriers are also employed to avoid resurrection of weak references,
-  // even if Shenandoah does not operate in incremental update mode.
-  if (ShenandoahIUBarrier || ShenandoahSATBBarrier) {
-    __ block_comment("iu_barrier (shenandoahgc) {");
-    satb_write_barrier_impl(masm, decorators, noreg, noreg, val, tmp1, tmp2, preservation_level);
-    __ block_comment("} iu_barrier (shenandoahgc)");
-  }
-}
-
 void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler *masm, DecoratorSet decorators,
                                                            Register base, RegisterOrConstant ind_or_offs,
                                                            Register dst,
@@ -110,7 +96,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler *masm, Dec
 
   // Fast path: No barrier required if for every barrier type, it is either disabled or would not store
   // any useful information.
-  if ((!ShenandoahSATBBarrier || dest_uninitialized) && !ShenandoahIUBarrier && !ShenandoahLoadRefBarrier) {
+  if ((!ShenandoahSATBBarrier || dest_uninitialized) && !ShenandoahLoadRefBarrier) {
     return;
   }
 
@@ -158,9 +144,9 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler *masm, Dec
   // Invoke runtime.
   address jrt_address = nullptr;
   if (UseCompressedOops) {
-    jrt_address = CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_narrow_oop_entry);
+    jrt_address = CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_narrow_oop);
   } else {
-    jrt_address = CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_oop_entry);
+    jrt_address = CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_oop);
   }
   assert(jrt_address != nullptr, "jrt routine cannot be found");
 
@@ -316,7 +302,7 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_impl(MacroAssembler *masm
   }
 
   // Invoke runtime.
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre_entry), pre_val, R16_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), pre_val, R16_thread);
 
   // Restore to-be-preserved registers.
   if (!preserve_gp_registers && preloaded_mode && pre_val->is_volatile()) {
@@ -582,7 +568,11 @@ void ShenandoahBarrierSetAssembler::load_at(
 
   /* ==== Apply keep-alive barrier, if required (e.g., to inhibit weak reference resurrection) ==== */
   if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
-    iu_barrier(masm, dst, tmp1, tmp2, preservation_level);
+    if (ShenandoahSATBBarrier) {
+      __ block_comment("keep_alive_barrier (shenandoahgc) {");
+      satb_write_barrier_impl(masm, 0, noreg, noreg, dst, tmp1, tmp2, preservation_level);
+      __ block_comment("} keep_alive_barrier (shenandoahgc)");
+    }
   }
 }
 
@@ -596,10 +586,6 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler *masm, DecoratorSet 
   if (is_reference_type(type)) {
     if (ShenandoahSATBBarrier) {
       satb_write_barrier(masm, base, ind_or_offs, tmp1, tmp2, tmp3, preservation_level);
-    }
-
-    if (ShenandoahIUBarrier && val != noreg) {
-      iu_barrier(masm, val, tmp1, tmp2, preservation_level, decorators);
     }
   }
 
@@ -683,7 +669,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler *masm, Register b
   // no special processing is required.
   if (UseCompressedOops) {
     __ cmpxchgw(CCR0, current_value, expected, new_val, base_addr, MacroAssembler::MemBarNone,
-                false, success_flag, true);
+                false, success_flag, nullptr, true);
   } else {
     __ cmpxchgd(CCR0, current_value, expected, new_val, base_addr, MacroAssembler::MemBarNone,
                 false, success_flag, nullptr, true);
@@ -920,7 +906,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   __ push_frame_reg_args(nbytes_save, R11_tmp1);
 
   // Invoke runtime.
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre_entry), R0_pre_val, R16_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, ShenandoahRuntime::write_ref_field_pre), R0_pre_val, R16_thread);
 
   // Restore to-be-preserved registers.
   __ pop_frame();

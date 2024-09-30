@@ -68,10 +68,23 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
 
     private static final int Max = 256;  // juts so we can do N/Max
 
-    // for floating point reduction ops that may introduce rounding errors
-    private static final double RELATIVE_ROUNDING_ERROR = (double)0.000001;
+    // for floating point addition reduction ops that may introduce rounding errors
+    private static final double RELATIVE_ROUNDING_ERROR_FACTOR_ADD = (double)10.0;
+
+    // for floating point multiplication reduction ops that may introduce rounding errors
+    private static final double RELATIVE_ROUNDING_ERROR_FACTOR_MUL = (double)50.0;
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / Max);
+
+    static void assertArraysStrictlyEquals(double[] r, double[] a) {
+        for (int i = 0; i < a.length; i++) {
+            long ir = Double.doubleToRawLongBits(r[i]);
+            long ia = Double.doubleToRawLongBits(a[i]);
+            if (ir != ia) {
+                Assert.fail(String.format("at index #%d, expected = %016X, actual = %016X", i, ia, ir));
+            }
+        }
+    }
 
     interface FUnOp {
         double apply(double a);
@@ -134,16 +147,16 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
 
     static void assertReductionArraysEquals(double[] r, double rc, double[] a,
                                             FReductionOp f, FReductionAllOp fa,
-                                            double relativeError) {
+                                            double relativeErrorFactor) {
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError));
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor);
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError));
+                Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError), "at index #" + i);
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor, "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor, "at index #" + i);
         }
     }
 
@@ -247,25 +260,6 @@ relativeError));
             }
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], f.apply(a, i), "at index #" + i);
-        }
-    }
-
-    static void assertInsertArraysEquals(double[] r, double[] a, double element, int index, int start, int end) {
-        int i = start;
-        try {
-            for (; i < end; i += 1) {
-                if(i%SPECIES.length() == index) {
-                    Assert.assertEquals(r[i], element);
-                } else {
-                    Assert.assertEquals(r[i], a[i]);
-                }
-            }
-        } catch (AssertionError e) {
-            if (i%SPECIES.length() == index) {
-                Assert.assertEquals(r[i], element, "at index #" + i);
-            } else {
-                Assert.assertEquals(r[i], a[i], "at index #" + i);
-            }
         }
     }
 
@@ -794,21 +788,6 @@ relativeError));
                              b[(i / SPECIES.length()) * SPECIES.length()] + ", actual = " + r[i] +
                              ", expected (within 1 ulp) = " + strictmathf.apply(a[i],
                              b[(i / SPECIES.length()) * SPECIES.length()]));
-        }
-    }
-
-    interface FBinArrayOp {
-        double apply(double[] a, int b);
-    }
-
-    static void assertArraysEquals(double[] r, double[] a, FBinArrayOp f) {
-        int i = 0;
-        try {
-            for (; i < a.length; i++) {
-                Assert.assertEquals(r[i], f.apply(a, i));
-            }
-        } catch (AssertionError e) {
-            Assert.assertEquals(r[i], f.apply(a,i), "at index #" + i);
         }
     }
 
@@ -1358,26 +1337,16 @@ relativeError));
     }
 
     static double cornerCaseValue(int i) {
-        switch(i % 7) {
-            case 0:
-                return Double.MAX_VALUE;
-            case 1:
-                return Double.MIN_VALUE;
-            case 2:
-                return Double.NEGATIVE_INFINITY;
-            case 3:
-                return Double.POSITIVE_INFINITY;
-            case 4:
-                return Double.NaN;
-            case 5:
-                return (double)0.0;
-            default:
-                return (double)-0.0;
-        }
-    }
-
-    static double get(double[] a, int i) {
-        return (double) a[i];
+        return switch(i % 8) {
+            case 0  -> Double.MAX_VALUE;
+            case 1  -> Double.MIN_VALUE;
+            case 2  -> Double.NEGATIVE_INFINITY;
+            case 3  -> Double.POSITIVE_INFINITY;
+            case 4  -> Double.NaN;
+            case 5  -> Double.longBitsToDouble(0x7FF123456789ABCDL);
+            case 6  -> (double)0.0;
+            default -> (double)-0.0;
+        };
     }
 
     static final IntFunction<double[]> fr = (vl) -> {
@@ -2199,7 +2168,7 @@ relativeError));
         }
 
         assertReductionArraysEquals(r, ra, a,
-                DoubleMaxVectorTests::ADDReduce, DoubleMaxVectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR);
+                DoubleMaxVectorTests::ADDReduce, DoubleMaxVectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
     }
 
     static double ADDReduceMasked(double[] a, int idx, boolean[] mask) {
@@ -2245,7 +2214,7 @@ relativeError));
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                DoubleMaxVectorTests::ADDReduceMasked, DoubleMaxVectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR);
+                DoubleMaxVectorTests::ADDReduceMasked, DoubleMaxVectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
     }
 
     static double MULReduce(double[] a, int idx) {
@@ -2288,7 +2257,7 @@ relativeError));
         }
 
         assertReductionArraysEquals(r, ra, a,
-                DoubleMaxVectorTests::MULReduce, DoubleMaxVectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR);
+                DoubleMaxVectorTests::MULReduce, DoubleMaxVectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
     }
 
     static double MULReduceMasked(double[] a, int idx, boolean[] mask) {
@@ -2334,7 +2303,7 @@ relativeError));
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                DoubleMaxVectorTests::MULReduceMasked, DoubleMaxVectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR);
+                DoubleMaxVectorTests::MULReduceMasked, DoubleMaxVectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
     }
 
     static double MINReduce(double[] a, int idx) {
@@ -2604,22 +2573,23 @@ relativeError));
                 DoubleMaxVectorTests::FIRST_NONZEROReduceMasked, DoubleMaxVectorTests::FIRST_NONZEROReduceAllMasked);
     }
 
-    @Test(dataProvider = "doubleUnaryOpProvider")
-    static void withDoubleMaxVectorTests(IntFunction<double []> fa) {
+    @Test(dataProvider = "doubleBinaryOpProvider")
+    static void withDoubleMaxVectorTests(IntFunction<double []> fa, IntFunction<double []> fb) {
         double[] a = fa.apply(SPECIES.length());
+        double[] b = fb.apply(SPECIES.length());
         double[] r = fr.apply(SPECIES.length());
 
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                av.withLane((j++ & (SPECIES.length()-1)), (double)(65535+i)).intoArray(r, i);
+                av.withLane(j, b[i + j]).intoArray(r, i);
+                a[i + j] = b[i + j];
+                j = (j + 1) & (SPECIES.length() - 1);
             }
         }
 
 
-        for (int i = 0, j = 0; i < a.length; i += SPECIES.length()) {
-            assertInsertArraysEquals(r, a, (double)(65535+i), (j++ & (SPECIES.length()-1)), i , i + SPECIES.length());
-        }
+        assertArraysStrictlyEquals(r, a);
     }
 
     static boolean testIS_DEFAULT(double a) {
@@ -3509,7 +3479,7 @@ relativeError));
             }
         }
 
-        assertArraysEquals(r, a, DoubleMaxVectorTests::get);
+        assertArraysStrictlyEquals(r, a);
     }
 
     @Test(dataProvider = "doubleUnaryOpProvider")

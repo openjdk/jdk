@@ -53,7 +53,7 @@ public class WinChildProcessTest {
 
     @Test
     public static void test() throws Throwable {
-        long calcPid = 0;
+        long childPid = 0;
         try {
             JPackageCommand cmd = JPackageCommand
                     .helloAppImage(TEST_APP_JAVA + "*Hello");
@@ -68,21 +68,20 @@ public class WinChildProcessTest {
                     .execute(0).getOutput();
             String pidStr = output.get(0);
 
-            // parse calculator PID
-            calcPid = Long.parseLong(pidStr.split("=", 2)[1]);
+            // parse child PID
+            childPid = Long.parseLong(pidStr.split("=", 2)[1]);
 
             // Check whether the termination of third party application launcher
             // also terminating the launched third party application
             // If third party application is not terminated the test is
             // successful else failure
-            Optional<ProcessHandle> processHandle = ProcessHandle.of(calcPid);
+            Optional<ProcessHandle> processHandle = ProcessHandle.of(childPid);
             boolean isAlive = processHandle.isPresent()
                     && processHandle.get().isAlive();
-            System.out.println("Is Alive " + isAlive);
-            TKit.assertTrue(isAlive, "Check is calculator process is alive");
+            TKit.assertTrue(isAlive, "Check is child process is alive");
         } finally {
-            // Kill only a specific calculator instance
-            Runtime.getRuntime().exec("taskkill /F /PID " + calcPid);
+            // Kill only a specific child instance
+            Runtime.getRuntime().exec("taskkill /F /PID " + childPid);
         }
     }
 }
