@@ -2035,9 +2035,11 @@ static address get_vector_math_address(int vop, int bits, BasicType bt, char* na
       }
       break;
     default:
-      snprintf(name_ptr, name_len, "invalid");
-      addr = nullptr;
-      Unimplemented();
+      if (!Matcher::supports_scalable_vector() || !Matcher::vector_size_supported(bt, bits/type2aelembytes(bt)) ) {
+        snprintf(name_ptr, name_len, "invalid");
+        addr = nullptr;
+        Unimplemented();
+      }
       break;
   }
 
