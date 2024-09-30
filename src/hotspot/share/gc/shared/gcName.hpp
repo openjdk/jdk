@@ -39,6 +39,8 @@ enum GCName {
   ZMajor,
   Z, // Support for the legacy, single-gen mode
   Shenandoah,
+  ShenandoahYoung,
+  ShenandoahOld,
   NA,
   GCNameEndSentinel
 };
@@ -58,6 +60,8 @@ class GCNameHelper {
       case ZMajor: return "ZGC Major";
       case Z: return "Z";
       case Shenandoah: return "Shenandoah";
+      case ShenandoahYoung: return "Shenandoah Young";
+      case ShenandoahOld: return "Shenandoah Old";
       case NA: return "N/A";
       default: ShouldNotReachHere(); return nullptr;
     }

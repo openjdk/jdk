@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2013, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +26,46 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMEMORYPOOL_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMEMORYPOOL_HPP
 
-#ifndef SERIALGC
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryUsage.hpp"
-#endif
 
 class ShenandoahMemoryPool : public CollectedMemoryPool {
-private:
+protected:
    ShenandoahHeap* _heap;
 
 public:
-  ShenandoahMemoryPool(ShenandoahHeap* pool);
-  MemoryUsage get_memory_usage();
-  size_t used_in_bytes()              { return _heap->used(); }
-  size_t max_size() const             { return _heap->max_capacity(); }
+  explicit ShenandoahMemoryPool(ShenandoahHeap* heap,
+                       const char* name = "Shenandoah");
+  MemoryUsage get_memory_usage() override;
+  size_t used_in_bytes() override;
+  size_t max_size() const override;
+
+protected:
+  ShenandoahMemoryPool(ShenandoahHeap* heap,
+                       const char* name,
+                       size_t initial_capacity,
+                       size_t max_capacity);
+};
+
+class ShenandoahGenerationalMemoryPool: public ShenandoahMemoryPool {
+private:
+  ShenandoahGeneration* _generation;
+public:
+  explicit ShenandoahGenerationalMemoryPool(ShenandoahHeap* heap, const char* name, ShenandoahGeneration* generation);
+  MemoryUsage get_memory_usage() override;
+  size_t used_in_bytes() override;
+  size_t max_size() const override;
+};
+
+class ShenandoahYoungGenMemoryPool : public ShenandoahGenerationalMemoryPool {
+public:
+  explicit ShenandoahYoungGenMemoryPool(ShenandoahHeap* heap);
+};
+
+class ShenandoahOldGenMemoryPool : public ShenandoahGenerationalMemoryPool {
+public:
+  explicit ShenandoahOldGenMemoryPool(ShenandoahHeap* heap);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMEMORYPOOL_HPP

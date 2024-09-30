@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +42,8 @@ public:
 class ShenandoahRootVerifier : public AllStatic {
 public:
   // Used to seed ShenandoahVerifier, do not honor root type filter
-  static void roots_do(OopClosure* cl);
-  static void strong_roots_do(OopClosure* cl);
+  static void roots_do(OopIterateClosure* cl);
+  static void strong_roots_do(OopIterateClosure* cl);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHROOTVERIFIER_HPP

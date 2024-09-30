@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +24,21 @@
  */
 
 /**
- * @test
+ * @test id=default
  * @summary Test JMX memory pools
  * @requires vm.gc.Shenandoah
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g TestMemoryPools
+ */
+
+/**
+ * @test id=generational
+ * @summary Test JMX memory pools
+ * @requires vm.gc.Shenandoah
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xmx1g -Xms1g TestMemoryPools
  */
 
 import java.lang.management.*;

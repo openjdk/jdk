@@ -121,14 +121,15 @@ typedef struct ShenandoahSharedBitmap {
     ShenandoahSharedValue mask_val = (ShenandoahSharedValue) mask;
     while (true) {
       ShenandoahSharedValue ov = Atomic::load_acquire(&value);
-      if ((ov & mask_val) != 0) {
+      // We require all bits of mask_val to be set
+      if ((ov & mask_val) == mask_val) {
         // already set
         return;
       }
 
       ShenandoahSharedValue nv = ov | mask_val;
       if (Atomic::cmpxchg(&value, ov, nv) == ov) {
-        // successfully set
+        // successfully set: if value returned from cmpxchg equals ov, then nv has overwritten value.
         return;
       }
     }
@@ -156,10 +157,19 @@ typedef struct ShenandoahSharedBitmap {
     Atomic::release_store_fence(&value, (ShenandoahSharedValue)0);
   }
 
+  // Returns true iff any bit set in mask is set in this.value.
   bool is_set(uint mask) const {
     return !is_unset(mask);
   }
 
+  // Returns true iff all bits set in mask are set in this.value.
+  bool is_set_exactly(uint mask) const {
+    assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
+    uint uvalue = Atomic::load_acquire(&value);
+    return (uvalue & mask) == mask;
+  }
+
+  // Returns true iff all bits set in mask are unset in this.value.
   bool is_unset(uint mask) const {
     assert (mask < (sizeof(ShenandoahSharedValue) * CHAR_MAX), "sanity");
     return (Atomic::load_acquire(&value) & (ShenandoahSharedValue) mask) == 0;
