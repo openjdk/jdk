@@ -465,28 +465,25 @@ public final class DirectCodeBuilder
 
     private record DeferredLabel(int labelPc, int size, int instructionPc, Label label) { }
 
-    private void writeLabelOffset(int nBytes, int instructionPc, Label label) {
-        int targetBci = labelToBci(label);
+    private void writeLabelOffset4(int instructionPc, Label label, int targetBci) {
         if (targetBci == -1) {
-            int pc = bytecodesBufWriter.skip(nBytes);
-            addLabel(new DeferredLabel(pc, nBytes, instructionPc, label));
+            int pc = bytecodesBufWriter.skip(4);
+            addLabel(new DeferredLabel(pc, 4, instructionPc, label));
         }
         else {
-            int branchOffset = targetBci - instructionPc;
-            if (nBytes == 2 && (short)branchOffset != branchOffset) throw new LabelOverflowException();
-            bytecodesBufWriter.writeIntBytes(nBytes, branchOffset);
+            bytecodesBufWriter.writeInt(targetBci - instructionPc);
         }
     }
 
-    private void writeLabelOffset(int nBytes, int instructionPc, Label label, int targetBci) {
+    private void writeLabelOffset2(int instructionPc, Label label, int targetBci) {
         if (targetBci == -1) {
-            int pc = bytecodesBufWriter.skip(nBytes);
-            addLabel(new DeferredLabel(pc, nBytes, instructionPc, label));
+            int pc = bytecodesBufWriter.skip(2);
+            addLabel(new DeferredLabel(pc, 2, instructionPc, label));
         }
         else {
             int branchOffset = targetBci - instructionPc;
-            if (nBytes == 2 && (short)branchOffset != branchOffset) throw new LabelOverflowException();
-            bytecodesBufWriter.writeIntBytes(nBytes, branchOffset);
+            if ((short)branchOffset != branchOffset) throw new LabelOverflowException();
+            bytecodesBufWriter.writeU2(branchOffset);
         }
     }
 
@@ -557,29 +554,29 @@ public final class DirectCodeBuilder
             writeBranchTransform(bytecode, target, instructionPc, targetBci);
         } else {
             bytecodesBufWriter.writeU1(bytecode);
-            writeLabelOffset(2, instructionPc, target, targetBci);
+            writeLabelOffset2(instructionPc, target, targetBci);
         }
     }
 
     private void writeBranchW(Opcode op, Label target) {
         int instructionPc = curPc();
         writeBytecode(op);
-        writeLabelOffset(4, instructionPc, target, labelToBci(target));
+        writeLabelOffset4(instructionPc, target, labelToBci(target));
     }
 
     private void writeBranchTransform(int bytecode, Label target, int instructionPc, int targetBci) {
         if (bytecode == GOTO) {
             bytecodesBufWriter.writeU1(GOTO_W);
-            writeLabelOffset(4, instructionPc, target, targetBci);
+            writeLabelOffset4(instructionPc, target, targetBci);
         } else if (bytecode == JSR) {
             bytecodesBufWriter.writeU1(JSR_W);
-            writeLabelOffset(4, instructionPc, target, targetBci);
+            writeLabelOffset4(instructionPc, target, targetBci);
         } else {
             bytecodesBufWriter.writeU1(BytecodeHelpers.reverseBranchOpcode(bytecode));
             Label bypassJump = newLabel();
-            writeLabelOffset(2, instructionPc, bypassJump);
+            writeLabelOffset2(instructionPc, bypassJump, labelToBci(bypassJump));
             bytecodesBufWriter.writeU1(GOTO_W);
-            writeLabelOffset(4, instructionPc + 3, target);
+            writeLabelOffset4(instructionPc + 3, target, labelToBci(target));
             labelBinding(bypassJump);
         }
     }
@@ -590,7 +587,7 @@ public final class DirectCodeBuilder
         int pad = 4 - (curPc() % 4);
         if (pad != 4)
             bytecodesBufWriter.skip(pad); // padding content can be anything
-        writeLabelOffset(4, instructionPc, defaultTarget);
+        writeLabelOffset4(instructionPc, defaultTarget, labelToBci(defaultTarget));
         bytecodesBufWriter.writeInt(cases.size());
         cases = new ArrayList<>(cases);
         cases.sort(new Comparator<>() {
@@ -601,7 +598,8 @@ public final class DirectCodeBuilder
         });
         for (var c : cases) {
             bytecodesBufWriter.writeInt(c.caseValue());
-            writeLabelOffset(4, instructionPc, c.target());
+            var target = c.target();
+            writeLabelOffset4(instructionPc, target, labelToBci(target));
         }
     }
 
@@ -611,7 +609,7 @@ public final class DirectCodeBuilder
         int pad = 4 - (curPc() % 4);
         if (pad != 4)
             bytecodesBufWriter.skip(pad); // padding content can be anything
-        writeLabelOffset(4, instructionPc, defaultTarget);
+        writeLabelOffset4(instructionPc, defaultTarget, labelToBci(defaultTarget));
         bytecodesBufWriter.writeInt(low);
         bytecodesBufWriter.writeInt(high);
         var caseMap = new HashMap<Integer, Label>(cases.size());
@@ -619,7 +617,9 @@ public final class DirectCodeBuilder
             caseMap.put(c.caseValue(), c.target());
         }
         for (long l = low; l<=high; l++) {
-            writeLabelOffset(4, instructionPc, caseMap.getOrDefault((int)l, defaultTarget));
+            // writeLabelOffset(4, instructionPc, caseMap.getOrDefault((int)l, defaultTarget));
+            var target = caseMap.getOrDefault((int)l, defaultTarget);
+            writeLabelOffset4(instructionPc, target, labelToBci(target));
         }
     }
 
