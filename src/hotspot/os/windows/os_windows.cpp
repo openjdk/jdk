@@ -1303,21 +1303,27 @@ void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool che
 #endif
 
     if (success) {
-      const char* cwd = get_current_directory(nullptr, 0);
-      int pid = current_process_id();
-      if (cwd != nullptr) {
-        jio_snprintf(buffer, bufferSize, "%s\\hs_err_pid%u.mdmp", cwd, pid);
-      } else {
-        jio_snprintf(buffer, bufferSize, ".\\hs_err_pid%u.mdmp", pid);
-      }
+      if (!check_only) {
+        const char* cwd = get_current_directory(nullptr, 0);
+        int pid = current_process_id();
+        if (cwd != nullptr) {
+          jio_snprintf(buffer, bufferSize, "%s\\hs_err_pid%u.mdmp", cwd, pid);
+        } else {
+          jio_snprintf(buffer, bufferSize, ".\\hs_err_pid%u.mdmp", pid);
+        }
 
-      if (!check_only && dumpFile == nullptr &&
-          (dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr))
-          == INVALID_HANDLE_VALUE) {
-        jio_snprintf(buffer, bufferSize, "Failed to create minidump file (0x%x).", GetLastError());
-        success = false;
+        if (dumpFile == nullptr &&
+            (dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr))
+            == INVALID_HANDLE_VALUE) {
+          jio_snprintf(buffer, bufferSize, "Failed to create minidump file (0x%x).", GetLastError());
+          success = false;
+        }
+      } else {
+        // For now on Windows, there is no more checks that we can do
+        warn = false;
       }
     }
+
     if (!check_only) {
       VMError::record_coredump_status(buffer, success);
     } else if (warn) {
