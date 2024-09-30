@@ -39,6 +39,7 @@ class ZInitializer {
 class ZInitialize : public AllStatic {
 private:
   static constexpr size_t ErrorMessageLength = 256;
+
   static char _error_message[ErrorMessageLength];
   static bool _had_error;
   static bool _finished;
