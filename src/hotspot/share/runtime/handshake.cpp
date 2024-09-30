@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,8 +251,13 @@ class VM_HandshakeAllThreads: public VM_Operation {
       thr->handshake_state()->add_operation(_op);
       number_of_threads_issued++;
     }
+
+    // Separate the arming of the poll in add_operation() above from
+    // the read of JavaThread state in the try_process() call below.
     if (UseSystemMemoryBarrier) {
       SystemMemoryBarrier::emit();
+    } else {
+      OrderAccess::fence(); // storestore|storeload, global state -> local state
     }
 
     if (number_of_threads_issued < 1) {
@@ -380,6 +385,8 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThr
   // the read of JavaThread state in the try_process() call below.
   if (UseSystemMemoryBarrier) {
     SystemMemoryBarrier::emit();
+  } else {
+    OrderAccess::fence(); // storestore|storeload, global state -> local state
   }
 
   // Keeps count on how many of own emitted handshakes
