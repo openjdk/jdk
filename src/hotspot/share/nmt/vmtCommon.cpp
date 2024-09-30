@@ -121,7 +121,7 @@ bool ReservedMemoryRegion::add_committed_region(address addr, size_t size, const
 
   // At this point the previous overlapping regions have been
   // cleared, and the full region is guaranteed to be inserted.
-  VirtualMemorySummary::record_committed_memory(size, flag());
+  VirtualMemorySummary::record_committed_memory(size, mem_tag());
 
   // Try to merge with prev and possibly next.
   if (try_merge_with(prev, addr, size, stack)) {
@@ -191,14 +191,14 @@ bool ReservedMemoryRegion::remove_uncommitted_region(address addr, size_t sz) {
     crgn = head->data();
 
     if (crgn->same_region(addr, sz)) {
-      VirtualMemorySummary::record_uncommitted_memory(crgn->size(), flag());
+      VirtualMemorySummary::record_uncommitted_memory(crgn->size(), mem_tag());
       _committed_regions.remove_after(prev);
       return true;
     }
 
     // del_rgn contains crgn
     if (del_rgn.contain_region(crgn->base(), crgn->size())) {
-      VirtualMemorySummary::record_uncommitted_memory(crgn->size(), flag());
+      VirtualMemorySummary::record_uncommitted_memory(crgn->size(), mem_tag());
       head = head->next();
       _committed_regions.remove_after(prev);
       continue;  // don't update head or prev
@@ -209,20 +209,20 @@ bool ReservedMemoryRegion::remove_uncommitted_region(address addr, size_t sz) {
 
       // (1) Found addr+size in current crgn as well. (del_rgn is contained in crgn)
       if (crgn->contain_address(end - 1)) {
-        VirtualMemorySummary::record_uncommitted_memory(sz, flag());
+        VirtualMemorySummary::record_uncommitted_memory(sz, mem_tag());
         return remove_uncommitted_region(head, addr, sz); // done!
       } else {
         // (2) Did not find del_rgn's end in crgn.
         size_t size = crgn->end() - del_rgn.base();
         crgn->exclude_region(addr, size);
-        VirtualMemorySummary::record_uncommitted_memory(size, flag());
+        VirtualMemorySummary::record_uncommitted_memory(size, mem_tag());
       }
 
     } else if (crgn->contain_address(end - 1)) {
       // Found del_rgn's end, but not its base addr.
       size_t size = del_rgn.end() - crgn->base();
       crgn->exclude_region(crgn->base(), size);
-      VirtualMemorySummary::record_uncommitted_memory(size, flag());
+      VirtualMemorySummary::record_uncommitted_memory(size, mem_tag());
       return true;  // should be done if the list is sorted properly!
     }
 
@@ -270,14 +270,14 @@ size_t ReservedMemoryRegion::committed_size() const {
   return result;
 }
 
-void ReservedMemoryRegion::set_flag(MEMFLAGS f) {
-  assert((flag() == mtNone || flag() == f),
-         "Overwrite memory type for region [" INTPTR_FORMAT "-" INTPTR_FORMAT "), %u->%u.",
-         p2i(base()), p2i(end()), (unsigned)flag(), (unsigned)f);
-  if (flag() != f) {
-    VirtualMemorySummary::move_reserved_memory(flag(), f, size());
-    VirtualMemorySummary::move_committed_memory(flag(), f, committed_size());
-    _flag = f;
+void ReservedMemoryRegion::set_tag(MemTag mt) {
+  assert((mem_tag() == mtNone || mem_tag() == mt),
+         "Overwrite memory tag for region [" INTPTR_FORMAT "-" INTPTR_FORMAT "), %u->%u.",
+         p2i(base()), p2i(end()), (unsigned)mem_tag(), (unsigned)mt);
+  if (mem_tag() != mt) {
+    VirtualMemorySummary::move_reserved_memory(mem_tag(), mt, size());
+    VirtualMemorySummary::move_committed_memory(mem_tag(), mt, committed_size());
+    _mem_tag = mt;
   }
 }
 
@@ -339,7 +339,7 @@ public:
   SnapshotThreadStackWalker() {}
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
-    if (rgn->flag() == mtThreadStack) {
+    if (rgn->mem_tag() == mtThreadStack) {
       address stack_bottom = rgn->thread_stack_uncommitted_bottom();
       address committed_start;
       size_t  committed_size;
@@ -383,7 +383,7 @@ public:
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
     if (rgn->contain_address(_p)) {
       _st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "], tag %s",
-        p2i(_p), p2i(rgn->base()), p2i(rgn->base() + rgn->size()), NMTUtil::flag_to_enum_name(rgn->flag()));
+        p2i(_p), p2i(rgn->base()), p2i(rgn->base() + rgn->size()), NMTUtil::tag_to_enum_name(rgn->mem_tag()));
       if (MemTracker::tracking_level() == NMT_detail) {
         _stackprinter.print_stack(rgn->call_stack());
         _st->cr();

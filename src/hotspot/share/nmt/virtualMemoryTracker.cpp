@@ -61,13 +61,13 @@ bool VirtualMemoryTracker::Instance::initialize(NMT_TrackingLevel level) {
 
 
 bool VirtualMemoryTracker::Instance::add_reserved_region(address base_addr, size_t size,
-  const NativeCallStack& stack, MEMFLAGS flag) {
+  const NativeCallStack& stack, MemTag flag) {
     assert(_tracker != nullptr, "Sanity check");
     return _tracker->add_reserved_region(base_addr, size, stack, flag);
 }
 
 bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
-  const NativeCallStack& stack, MEMFLAGS flag) {
+  const NativeCallStack& stack, MemTag flag) {
   if (flag == mtTest) {
     log_debug(nmt)("add reserve rgn, base: " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(base_addr), p2i(base_addr + size));
   }
@@ -77,14 +77,14 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
 
 }
 
-void VirtualMemoryTracker::Instance::set_reserved_region_type(address addr, size_t size, MEMFLAGS flag) {
+void VirtualMemoryTracker::Instance::set_reserved_region_tag(address addr, size_t size, MemTag mem_tag) {
   assert(_tracker != nullptr, "Sanity check");
-  _tracker->set_reserved_region_type(addr, size, flag);
+  _tracker->set_reserved_region_tag(addr, size, mem_tag);
 }
 
-void VirtualMemoryTracker::set_reserved_region_type(address addr, size_t size, MEMFLAGS flag) {
-    VMATree::RegionData rd(NativeCallStackStorage::StackIndex(), flag);
-    VMATree::SummaryDiff diff = tree()->set_flag((VMATree::position) addr, size, flag);
+void VirtualMemoryTracker::set_reserved_region_tag(address addr, size_t size, MemTag mem_tag) {
+    VMATree::RegionData rd(NativeCallStackStorage::StackIndex(), mem_tag);
+    VMATree::SummaryDiff diff = tree()->set_tag((VMATree::position) addr, size, mem_tag);
     apply_summary_diff(diff);
 
 }
@@ -97,21 +97,21 @@ void VirtualMemoryTracker::Instance::apply_summary_diff(VMATree::SummaryDiff dif
 void VirtualMemoryTracker::apply_summary_diff(VMATree::SummaryDiff diff) {
   VMATree::SingleDiff::delta reserve_delta, commit_delta;
   size_t reserved, committed;
-  MEMFLAGS flag = mtNone;
+  MemTag flag = mtNone;
   auto print_err = [&](const char* str) {
     log_debug(nmt)("summary mismatch, at %s, for %s,"
                     " diff-reserved: " SSIZE_FORMAT
                     " diff-committed: " SSIZE_FORMAT
                     " vms-reserved: "  SIZE_FORMAT
                     " vms-committed: " SIZE_FORMAT,
-                    str, NMTUtil::flag_to_name(flag), (ssize_t)reserve_delta, (ssize_t)commit_delta, reserved, committed);
+                    str, NMTUtil::tag_to_name(flag), (ssize_t)reserve_delta, (ssize_t)commit_delta, reserved, committed);
   };
-  for (int i = 0; i < mt_number_of_types; i++) {
-    reserve_delta = diff.flag[i].reserve;
-    commit_delta = diff.flag[i].commit;
-    flag = NMTUtil::index_to_flag(i);
-    reserved = VirtualMemorySummary::as_snapshot()->by_type(flag)->reserved();
-    committed = VirtualMemorySummary::as_snapshot()->by_type(flag)->committed();
+  for (int i = 0; i < mt_number_of_tags; i++) {
+    reserve_delta = diff.tag[i].reserve;
+    commit_delta = diff.tag[i].commit;
+    flag = NMTUtil::index_to_tag(i);
+    reserved = VirtualMemorySummary::as_snapshot()->by_tag(flag)->reserved();
+    committed = VirtualMemorySummary::as_snapshot()->by_tag(flag)->committed();
     if (reserve_delta != 0) {
       if (reserve_delta > 0)
         VirtualMemorySummary::record_reserved_memory(reserve_delta, flag);
@@ -176,12 +176,12 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
 
 }
 
-bool VirtualMemoryTracker::Instance::split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag) {
+bool VirtualMemoryTracker::Instance::split_reserved_region(address addr, size_t size, size_t split, MemTag flag, MemTag split_flag) {
   assert(_tracker != nullptr, "Sanity check");
   return _tracker->split_reserved_region(addr, size, split, flag, split_flag);
 }
 
-bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag) {
+bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split, MemTag flag, MemTag split_flag) {
   add_reserved_region(addr, split, NativeCallStack::empty_stack(), flag);
   add_reserved_region(addr + split, size - split, NativeCallStack::empty_stack(), split_flag);
   return true;
@@ -198,7 +198,7 @@ bool VirtualMemoryTracker::print_containing_region(const void* p, outputStream* 
   if (!rmr.contain_address((address)p))
     return false;
   st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "], tag %s",
-               p2i(p), p2i(rmr.base()), p2i(rmr.end()), NMTUtil::flag_to_enum_name(rmr.flag()));
+               p2i(p), p2i(rmr.base()), p2i(rmr.end()), NMTUtil::tag_to_enum_name(rmr.mem_tag()));
   if (MemTracker::tracking_level() == NMT_detail) {
     rmr.call_stack()->print_on(st);
   }
@@ -214,7 +214,7 @@ bool VirtualMemoryTracker::Instance::walk_virtual_memory(VirtualMemoryWalker* wa
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   ThreadCritical tc;
   tree()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
-    log_info(nmt)("region in walker vmem, base: " INTPTR_FORMAT " size: " SIZE_FORMAT " , %s", p2i(rgn.base()), rgn.size(), rgn.flag_name());
+    log_info(nmt)("region in walker vmem, base: " INTPTR_FORMAT " size: " SIZE_FORMAT " , %s", p2i(rgn.base()), rgn.size(), rgn.tag_name());
     if (!walker->do_allocation_site(&rgn))
       return false;
     return true;

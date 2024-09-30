@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/regionsTree.hpp"
 #include "nmt/vmatree.hpp"

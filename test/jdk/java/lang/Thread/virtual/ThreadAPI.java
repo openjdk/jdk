@@ -25,7 +25,7 @@
  * @test id=default
  * @bug 8284161 8286788 8321270
  * @summary Test Thread API with virtual threads
- * @modules java.base/java.lang:+open
+ * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @run junit/othervm --enable-native-access=ALL-UNNAMED ThreadAPI
  */
@@ -33,7 +33,7 @@
 /*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
- * @modules java.base/java.lang:+open
+ * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *     --enable-native-access=ALL-UNNAMED ThreadAPI
@@ -62,7 +62,7 @@ import java.util.stream.Stream;
 import java.nio.channels.Selector;
 
 import jdk.test.lib.thread.VThreadPinner;
-import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.management
 import jdk.test.lib.thread.VThreadScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;

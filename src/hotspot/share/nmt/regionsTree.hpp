@@ -59,10 +59,10 @@ class RegionsTree : public VMATree {
       inline VMATree::StateType out_state() { return _node->val().out.type(); }
       inline size_t distance_from(NodeHelper& other) { return position() - other.position(); }
       inline NativeCallStackStorage::StackIndex out_stack_index() { return _node->val().out.stack(); }
-      inline MEMFLAGS in_flag() { return _node->val().in.flag(); }
-      inline MEMFLAGS out_flag() { return _node->val().out.flag(); }
-      inline void set_in_flag(MEMFLAGS flag) { _node->val().in.set_flag(flag); }
-      inline void set_out_flag(MEMFLAGS flag) { _node->val().out.set_flag(flag); }
+      inline MemTag in_flag() { return _node->val().in.mem_tag(); }
+      inline MemTag out_flag() { return _node->val().out.mem_tag(); }
+      inline void set_in_flag(MemTag flag) { _node->val().in.set_flag(flag); }
+      inline void set_out_flag(MemTag flag) { _node->val().out.set_flag(flag); }
       inline void print_on(outputStream* st) {
         auto st_str = [&](int s){
           return s == (int)VMATree::StateType::Released ? "Rl" :
@@ -72,9 +72,9 @@ class RegionsTree : public VMATree {
                      "%s, %s <|> %s, %s",
                      p2i((address)position()),
                      st_str((int)in_state()),
-                     NMTUtil::flag_to_name(in_flag()),
+                     NMTUtil::tag_to_name(in_flag()),
                      st_str((int)out_state()),
-                     NMTUtil::flag_to_name(out_flag())
+                     NMTUtil::tag_to_name(out_flag())
                      );
       }
     };
@@ -122,7 +122,7 @@ class RegionsTree : public VMATree {
     size_t rgn_size = 0;
     size_t comm_size = 0;
     size_t base = 0;
-    MEMFLAGS flag = mtNone;
+    MemTag flag = mtNone;
     visit_in_order([&](Node* node) {
       NodeHelper curr(node);
       if (prev.is_valid()) {
@@ -158,7 +158,7 @@ class RegionsTree : public VMATree {
     });
   }
 
-  inline RegionData make_region_data(const NativeCallStack& ncs, MEMFLAGS flag) {
+  inline RegionData make_region_data(const NativeCallStack& ncs, MemTag flag) {
     return RegionData(_ncs_storage.push(ncs), flag);
   }
 
