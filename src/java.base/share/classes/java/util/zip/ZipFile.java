@@ -1820,7 +1820,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     zerror("invalid END header (central directory size too large)");
                 }
                 cenLen = (int)longCenLen;
-                cen = this.cen = new byte[len];
+                cen = this.cen = new byte[cenLen];
                 if (readFullyAt(cen, 0, cenLen, cenpos) != cenLen) {
                     zerror("read CEN tables failed");
                 }
