@@ -1189,6 +1189,8 @@ void ZBarrierSetAssembler::generate_c2_store_barrier_stub(MacroAssembler* masm, 
       __ lea(rscratch1, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr()));
     } else if (stub->is_atomic()) {
       __ lea(rscratch1, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_with_healing_addr()));
+    } else if (stub->is_nokeepalive()) {
+      __ lea(rscratch1, RuntimeAddress(ZBarrierSetRuntime::no_keepalive_store_barrier_on_oop_field_without_healing_addr()));
     } else {
       __ lea(rscratch1, RuntimeAddress(ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr()));
     }
@@ -1307,11 +1309,11 @@ Label* ZLoadBarrierStubC2Aarch64::entry() {
   return ZBarrierStubC2::entry();
 }
 
-ZStoreBarrierStubC2Aarch64::ZStoreBarrierStubC2Aarch64(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic)
-  : ZStoreBarrierStubC2(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic), _deferred_emit(false) {}
+ZStoreBarrierStubC2Aarch64::ZStoreBarrierStubC2Aarch64(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic, bool is_nokeepalive)
+  : ZStoreBarrierStubC2(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic, is_nokeepalive), _deferred_emit(false) {}
 
-ZStoreBarrierStubC2Aarch64* ZStoreBarrierStubC2Aarch64::create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic) {
-  ZStoreBarrierStubC2Aarch64* const stub = new (Compile::current()->comp_arena()) ZStoreBarrierStubC2Aarch64(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic);
+ZStoreBarrierStubC2Aarch64* ZStoreBarrierStubC2Aarch64::create(const MachNode* node, Address ref_addr, Register new_zaddress, Register new_zpointer, bool is_native, bool is_atomic, bool is_nokeepalive) {
+  ZStoreBarrierStubC2Aarch64* const stub = new (Compile::current()->comp_arena()) ZStoreBarrierStubC2Aarch64(node, ref_addr, new_zaddress, new_zpointer, is_native, is_atomic, is_nokeepalive);
   register_stub(stub);
   return stub;
 }
