@@ -4931,60 +4931,6 @@ operand vRegD_V7()
   interface(REG_INTER);
 %}
 
-operand vRegD_V12()
-%{
-  constraint(ALLOC_IN_RC(v12_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V13()
-%{
-  constraint(ALLOC_IN_RC(v13_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V14()
-%{
-  constraint(ALLOC_IN_RC(v14_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V15()
-%{
-  constraint(ALLOC_IN_RC(v15_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V16()
-%{
-  constraint(ALLOC_IN_RC(v16_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V17()
-%{
-  constraint(ALLOC_IN_RC(v17_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 operand pReg()
 %{
   constraint(ALLOC_IN_RC(pr_reg));
@@ -16597,30 +16543,6 @@ instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
     address tpc = __ arrays_equals($ary1$$Register, $ary2$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    $result$$Register, $tmp$$Register, 2);
-    if (tpc == nullptr) {
-      ciEnv::current()->record_failure("CodeCache is full");
-      return;
-    }
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct arrays_hashcode(iRegP_R1 ary, iRegI_R2 cnt, iRegI_R0 result, immI basic_type,
-                         vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2, vRegD_V3 vtmp3,
-                         vRegD_V4 vtmp4, vRegD_V5 vtmp5, vRegD_V6 vtmp6, vRegD_V7 vtmp7,
-                         vRegD_V12 vtmp8, vRegD_V13 vtmp9, vRegD_V14 vtmp10,
-                         vRegD_V15 vtmp11, vRegD_V16 vtmp12, vRegD_V17 vtmp13,
-                         rFlagsReg cr)
-%{
-  match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
-  effect(TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5, TEMP vtmp6,
-         TEMP vtmp7, TEMP vtmp8, TEMP vtmp9, TEMP vtmp10, TEMP vtmp11, TEMP vtmp12, TEMP vtmp13,
-         USE_KILL ary, USE_KILL cnt, USE basic_type, KILL cr);
-
-  format %{ "Array HashCode array[] $ary,$cnt,$result,$basic_type -> $result   // KILL all" %}
-  ins_encode %{
-    address tpc = __ arrays_hashcode($ary$$Register, $cnt$$Register, $result$$Register,
-                                     (BasicType)$basic_type$$constant);
     if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
