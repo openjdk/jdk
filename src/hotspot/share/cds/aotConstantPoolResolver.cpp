@@ -110,7 +110,9 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
     }
 
     if (CDSConfig::is_dumping_aot_linked_classes()) {
-      if (AOTClassLinker::is_candidate(ik)) {
+      // Need to call try_add_candidate instead of is_candidate, as this may be called
+      // before AOTClassLinker::add_candidates().
+      if (AOTClassLinker::try_add_candidate(ik)) {
         return true;
       } else {
         return false;

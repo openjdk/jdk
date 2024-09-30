@@ -188,6 +188,7 @@ private:
   static DumpTimeClassInfo* get_info(InstanceKlass* k);
   static DumpTimeClassInfo* get_info_locked(InstanceKlass* k);
 
+  static void find_all_archivable_classes_impl();
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static void write_lambda_proxy_class_dictionary(LambdaProxyClassDictionary* dictionary);
@@ -290,7 +291,7 @@ public:
   }
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
 
-  static void check_excluded_classes();
+  static void find_all_archivable_classes();
   static bool check_for_exclusion(Klass* k);
   static bool check_for_exclusion(InstanceKlass* k, DumpTimeClassInfo* info);
   static void validate_before_archiving(InstanceKlass* k);
