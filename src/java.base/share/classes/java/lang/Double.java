@@ -148,7 +148,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * relations that can be defined over floating-point values:
  *
  * <dl>
- * <dt><a id=fpNumericalEq><i>numerical equality</i></a> ({@code ==}
+ * <dt><a id=fpNumericalEq></a><dfn>{@index "numerical equality"}</dfn> ({@code ==}
  * operator): (<em>Not</em> an equivalence relation)</dt>
  * <dd>Two floating-point values represent the same extended real
  * number. The extended real numbers are the real numbers augmented
@@ -158,7 +158,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * number and is not equal to any value, including itself.
  * </dd>
  *
- * <dt><i>bit-wise equivalence</i>:</dt>
+ * <dt><dfn>{@index "bit-wise equivalence"}</dfn>:</dt>
  * <dd>The bits of the two floating-point values are the same. This
  * equivalence relation for {@code double} values {@code a} and {@code
  * b} is implemented by the expression
@@ -168,7 +168,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * is distinguished from every other bit pattern encoding a NaN.
  * </dd>
  *
- * <dt><i><a id=repEquivalence>representation equivalence</a></i>:</dt>
+ * <dt><dfn><a id=repEquivalence></a>{@index "representation equivalence"}</dfn>:</dt>
  * <dd>The two floating-point values represent the same IEEE 754
  * <i>datum</i>. In particular, for {@linkplain #isFinite(double)
  * finite} values, the sign, {@linkplain Math#getExponent(double)
