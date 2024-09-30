@@ -28,7 +28,6 @@ package jdk.internal.classfile.impl;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.BufWriter;
-import java.lang.classfile.ClassFile;
 import java.lang.classfile.Label;
 import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
@@ -48,7 +47,9 @@ import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.util.Preconditions;
 
 import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.lang.constant.ConstantDescs.*;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 /**
  * StackMapGenerator is responsible for stack map frames generation.
@@ -400,6 +401,8 @@ public final class StackMapGenerator {
     }
 
     private void processMethod() {
+        var frames = this.frames;
+        var currentFrame = this.currentFrame;
         currentFrame.setLocalsFromArg(methodName, methodDesc, isStatic, thisType);
         currentFrame.stackSize = 0;
         currentFrame.flags = 0;
@@ -415,10 +418,10 @@ public final class StackMapGenerator {
                     throw generatorError("Expecting a stack map frame");
                 }
                 if (thisOffset == bcs.bci()) {
-                    if (!ncf) {
-                        currentFrame.checkAssignableTo(frames.get(stackmapIndex));
-                    }
                     Frame nextFrame = frames.get(stackmapIndex++);
+                    if (!ncf) {
+                        currentFrame.checkAssignableTo(nextFrame);
+                    }
                     while (!nextFrame.dirty) { //skip unmatched frames
                         if (stackmapIndex == frames.size()) return; //skip the rest of this round
                         nextFrame = frames.get(stackmapIndex++);
@@ -429,7 +432,7 @@ public final class StackMapGenerator {
                     currentFrame.copyFrom(nextFrame);
                     nextFrame.dirty = false;
                 } else if (thisOffset < bcs.bci()) {
-                    throw new ClassFormatError(String.format("Bad stack map offset %d", thisOffset));
+                    throw generatorError("Bad stack map offset");
                 }
             } else if (ncf) {
                 throw generatorError("Expecting a stack map frame");
@@ -694,11 +697,11 @@ public final class StackMapGenerator {
                 currentFrame.pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case TAG_LONG ->
                 currentFrame.pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-            case TAG_METHODHANDLE ->
+            case TAG_METHOD_HANDLE ->
                 currentFrame.pushStack(Type.METHOD_HANDLE_TYPE);
-            case TAG_METHODTYPE ->
+            case TAG_METHOD_TYPE ->
                 currentFrame.pushStack(Type.METHOD_TYPE);
-            case TAG_CONSTANTDYNAMIC ->
+            case TAG_DYNAMIC ->
                 currentFrame.pushStack(cp.entryByIndex(index, ConstantDynamicEntry.class).asSymbol().constantType());
             default ->
                 throw generatorError("CP entry #%d %s is not loadable constant".formatted(index, cp.entryByIndex(index).tag()));
@@ -1093,11 +1096,15 @@ public final class StackMapGenerator {
         }
 
         void checkAssignableTo(Frame target) {
+            int localsSize = this.localsSize;
+            int stackSize = this.stackSize;
             if (target.flags == -1) {
-                target.locals = locals == null ? null : Arrays.copyOf(locals, localsSize);
+                target.locals = locals == null ? null : locals.clone();
                 target.localsSize = localsSize;
-                target.stack = stack == null ? null : Arrays.copyOf(stack, stackSize);
-                target.stackSize = stackSize;
+                if (stackSize > 0) {
+                    target.stack = stack.clone();
+                    target.stackSize = stackSize;
+                }
                 target.flags = flags;
                 target.dirty = true;
             } else {

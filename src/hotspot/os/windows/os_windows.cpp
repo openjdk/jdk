@@ -4093,6 +4093,39 @@ int    os::win32::_build_minor               = 0;
 bool   os::win32::_processor_group_warning_displayed = false;
 bool   os::win32::_job_object_processor_group_warning_displayed = false;
 
+void getWindowsInstallationType(char* buffer, int bufferSize) {
+  HKEY hKey;
+  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+  const char* valueName = "InstallationType";
+
+  DWORD valueLength = bufferSize;
+
+  // Initialize buffer with empty string
+  buffer[0] = '\0';
+
+  // Open the registry key
+  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
+    // Return empty buffer if key cannot be opened
+    return;
+  }
+
+  // Query the value
+  if (RegQueryValueExA(hKey, valueName, NULL, NULL, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
+    RegCloseKey(hKey);
+    buffer[0] = '\0';
+    return;
+  }
+
+  RegCloseKey(hKey);
+}
+
+bool isNanoServer() {
+  const int BUFFER_SIZE = 256;
+  char installationType[BUFFER_SIZE];
+  getWindowsInstallationType(installationType, BUFFER_SIZE);
+  return (strcmp(installationType, "Nano Server") == 0);
+}
+
 void os::win32::initialize_windows_version() {
   assert(_major_version == 0, "windows version already initialized.");
 
@@ -4110,7 +4143,13 @@ void os::win32::initialize_windows_version() {
     warning("Attempt to determine system directory failed: %s", buf_len != 0 ? error_msg_buffer : "<unknown error>");
     return;
   }
-  strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
+
+  if (isNanoServer()) {
+    // On Windows Nanoserver the kernel32.dll is located in the forwarders subdirectory
+    strncat(kernel32_path, "\\forwarders\\kernel32.dll", MAX_PATH - ret);
+  } else {
+    strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
+  }
 
   DWORD version_size = GetFileVersionInfoSize(kernel32_path, nullptr);
   if (version_size == 0) {
