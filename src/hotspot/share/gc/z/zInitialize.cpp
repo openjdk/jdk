@@ -111,10 +111,10 @@ bool ZInitialize::had_error() {
 
 const char* ZInitialize::error_message() {
   assert(had_error(), "Should have registered an error");
-  if (!had_error()) {
-    return "Unknown error, check error GC logs";
+  if (had_error()) {
+    return _error_message;
   }
-  return _error_message;
+  return "Unknown error, check error GC logs";
 }
 
 void ZInitialize::finish() {
