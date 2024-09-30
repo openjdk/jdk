@@ -222,7 +222,7 @@ public final class DirectCodeBuilder
                     throw new IllegalArgumentException("Unbound label in exception handler");
                 }
             } else {
-                buf.writeU4(startPc, endPc);
+                buf.writeU2U2(startPc, endPc);
                 buf.writeU2(handlerPc);
                 buf.writeIndexOrZero(h.catchTypeEntry());
                 handlersSize++;
@@ -259,7 +259,7 @@ public final class DirectCodeBuilder
                                     throw new IllegalArgumentException("Unbound label in character range");
                                 }
                             } else {
-                                b.writeU4(start, end - 1);
+                                b.writeU2U2(start, end - 1);
                                 b.writeInt(cr.characterRangeStart());
                                 b.writeInt(cr.characterRangeEnd());
                                 b.writeU2(cr.flags());
@@ -330,10 +330,10 @@ public final class DirectCodeBuilder
             private void writeCounters(boolean codeMatch, BufWriterImpl buf) {
                 if (codeMatch) {
                     var originalAttribute = (CodeImpl) original;
-                    buf.writeU4(originalAttribute.maxStack(), originalAttribute.maxLocals());
+                    buf.writeU2U2(originalAttribute.maxStack(), originalAttribute.maxLocals());
                 } else {
                     StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
-                    buf.writeU4(cntr.maxStack(), cntr.maxLocals());
+                    buf.writeU2U2(cntr.maxStack(), cntr.maxLocals());
                 }
             }
 
@@ -342,7 +342,7 @@ public final class DirectCodeBuilder
                 // patches dead bytecode blocks and removes them from exception table
                 StackMapGenerator gen = StackMapGenerator.of(DirectCodeBuilder.this, buf);
                 attributes.withAttribute(gen.stackMapTableAttribute());
-                buf.writeU4(gen.maxStack(), gen.maxLocals());
+                buf.writeU2U2(gen.maxStack(), gen.maxLocals());
             }
 
             private void tryGenerateStackMaps(boolean codeMatch, BufWriterImpl buf) {
@@ -417,7 +417,7 @@ public final class DirectCodeBuilder
         private void push() {
             //subsequent identical line numbers are skipped
             if (lastPc >= 0 && lastLine != writtenLine) {
-                buf.writeU4(lastPc, lastLine);
+                buf.writeU2U2(lastPc, lastLine);
                 writtenLine = lastLine;
             }
         }
@@ -516,10 +516,10 @@ public final class DirectCodeBuilder
 
     public void writeIncrement(int slot, int val) {
         if ((slot < 256 && val < 128 && val > -127)) {
-            bytecodesBufWriter.writeU3(IINC, slot, val);
+            bytecodesBufWriter.writeU1U1U1(IINC, slot, val);
         } else {
-            bytecodesBufWriter.writeU2(WIDE, IINC);
-            bytecodesBufWriter.writeU4(slot, val);
+            bytecodesBufWriter.writeU1U1(WIDE, IINC);
+            bytecodesBufWriter.writeU2U2(slot, val);
         }
     }
 
@@ -602,7 +602,7 @@ public final class DirectCodeBuilder
                                      InterfaceMethodRefEntry ref,
                                      int count) {
         bytecodesBufWriter.writeIndex(opcode.bytecode(), ref);
-        bytecodesBufWriter.writeU2(count << 8);
+        bytecodesBufWriter.writeU1U1(count, 0);
     }
 
     public void writeInvokeDynamic(InvokeDynamicEntry ref) {
@@ -615,7 +615,7 @@ public final class DirectCodeBuilder
     }
 
     public void writeNewPrimitiveArray(int newArrayCode) {
-        bytecodesBufWriter.writeU2(NEWARRAY, newArrayCode);
+        bytecodesBufWriter.writeU1U1(NEWARRAY, newArrayCode);
     }
 
     public void writeNewReferenceArray(ClassEntry type) {
@@ -823,7 +823,7 @@ public final class DirectCodeBuilder
     }
 
     public CodeBuilder retW(int slot) {
-        bytecodesBufWriter.writeU2(WIDE, RET);
+        bytecodesBufWriter.writeU1U1(WIDE, RET);
         bytecodesBufWriter.writeU2(slot);
         return this;
     }
@@ -843,9 +843,9 @@ public final class DirectCodeBuilder
 
     private void withLocal(int bytecode, int slot) {
         if (slot < 256) {
-            bytecodesBufWriter.writeU2(bytecode, slot);
+            bytecodesBufWriter.writeU1U1(bytecode, slot);
         } else {
-            bytecodesBufWriter.writeU4((WIDE << 8) | bytecode, slot);
+            bytecodesBufWriter.writeU2U2((WIDE << 8) | bytecode, slot);
         }
     }
 
@@ -986,7 +986,7 @@ public final class DirectCodeBuilder
     @Override
     public CodeBuilder bipush(int b) {
         BytecodeHelpers.validateBipush(b);
-        bytecodesBufWriter.writeU2(BIPUSH, b);
+        bytecodesBufWriter.writeU1U1(BIPUSH, b);
         return this;
     }
 
@@ -1694,7 +1694,7 @@ public final class DirectCodeBuilder
     @Override
     public CodeBuilder sipush(int s) {
         BytecodeHelpers.validateSipush(s);
-        bytecodesBufWriter.writeU3(SIPUSH, s);
+        bytecodesBufWriter.writeU1U2(SIPUSH, s);
         return this;
     }
 
