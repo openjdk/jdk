@@ -338,8 +338,9 @@ public final class DirectCodeBuilder
             private void generateStackMaps(BufWriterImpl buf) throws IllegalArgumentException {
                 //new instance of generator immediately calculates maxStack, maxLocals, all frames,
                 // patches dead bytecode blocks and removes them from exception table
-                StackMapGenerator gen = StackMapGenerator.of(DirectCodeBuilder.this, buf);
-                attributes.withAttribute(gen.stackMapTableAttribute());
+                var dcb = DirectCodeBuilder.this;
+                StackMapGenerator gen = StackMapGenerator.of(dcb, buf);
+                dcb.attributes.withAttribute(gen.stackMapTableAttribute());
                 buf.writeU2U2(gen.maxStack(), gen.maxLocals());
             }
 
@@ -362,20 +363,22 @@ public final class DirectCodeBuilder
 
             @Override
             public void writeBody(BufWriterImpl buf) {
-                buf.setLabelContext(DirectCodeBuilder.this);
+                DirectCodeBuilder dcb = DirectCodeBuilder.this;
+                buf.setLabelContext(dcb);
 
                 int codeLength = curPc();
                 if (codeLength == 0 || codeLength >= 65536) {
                     throw new IllegalArgumentException(String.format(
                             "Code length %d is outside the allowed range in %s%s",
                             codeLength,
-                            methodInfo.methodName().stringValue(),
-                            methodInfo.methodTypeSymbol().displayDescriptor()));
+                            dcb.methodInfo.methodName().stringValue(),
+                            dcb.methodInfo.methodTypeSymbol().displayDescriptor()));
                 }
 
-                if (codeAndExceptionsMatch(codeLength)) {
+                var context = dcb.context;
+                if (dcb.original != null && codeAndExceptionsMatch(codeLength)) {
                     if (context.stackMapsWhenRequired()) {
-                        attributes.withAttribute(original.findAttribute(Attributes.stackMapTable()).orElse(null));
+                        dcb.attributes.withAttribute(dcb.original.findAttribute(Attributes.stackMapTable()).orElse(null));
                         writeCounters(true, buf);
                     } else if (context.generateStackMaps()) {
                         generateStackMaps(buf);
@@ -393,9 +396,9 @@ public final class DirectCodeBuilder
                 }
 
                 buf.writeInt(codeLength);
-                buf.writeBytes(bytecodesBufWriter);
-                writeExceptionHandlers(buf);
-                attributes.writeTo(buf);
+                buf.writeBytes(dcb.bytecodesBufWriter);
+                dcb.writeExceptionHandlers(buf);
+                dcb.attributes.writeTo(buf);
                 buf.setLabelContext(null);
             }
         };
