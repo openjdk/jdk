@@ -398,8 +398,12 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
         cipher.updateAAD(packet);
         packet.limit(originalLimit);
         try {
+            assert packet.remaining() == 16;
+            int outBufLength = cipher.getOutputSize(packet.remaining());
             // No data to decrypt, just checking the tag.
-            cipher.doFinal(packet, ByteBuffer.allocate(0));
+            ByteBuffer outBuffer = ByteBuffer.allocate(outBufLength);
+            cipher.doFinal(packet, outBuffer);
+            assert outBuffer.position() == 0;
         } catch (AEADBadTagException e) {
             throw e;
         } catch (IllegalBlockSizeException | BadPaddingException |
