@@ -200,8 +200,8 @@ public final class SegmentBulkOperations {
         int offset = 0;
         final int limit = length & (NATIVE_THRESHOLD_MISMATCH - 8);
         for (; offset < limit; offset += 8) {
-            final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, !Architecture.isLittleEndian());
-            final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, !Architecture.isLittleEndian());
+            final long s = SCOPED_MEMORY_ACCESS.getLongUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
+            final long d = SCOPED_MEMORY_ACCESS.getLongUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
             if (s != d) {
                 return start + offset + mismatch(s, d);
             }
@@ -210,8 +210,8 @@ public final class SegmentBulkOperations {
 
         // 0...0X00
         if (remaining >= 4) {
-            final int s = SCOPED_MEMORY_ACCESS.getIntUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, !Architecture.isLittleEndian());
-            final int d = SCOPED_MEMORY_ACCESS.getIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, !Architecture.isLittleEndian());
+            final int s = SCOPED_MEMORY_ACCESS.getIntUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
+            final int d = SCOPED_MEMORY_ACCESS.getIntUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
             if (s != d) {
                 return start + offset + mismatch(s, d);
             }
@@ -220,8 +220,8 @@ public final class SegmentBulkOperations {
         }
         // 0...00X0
         if (remaining >= 2) {
-            final short s = SCOPED_MEMORY_ACCESS.getShortUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, !Architecture.isLittleEndian());
-            final short d = SCOPED_MEMORY_ACCESS.getShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, !Architecture.isLittleEndian());
+            final short s = SCOPED_MEMORY_ACCESS.getShortUnaligned(src.sessionImpl(), src.unsafeGetBase(), src.unsafeGetOffset() + srcFromOffset + offset, false);
+            final short d = SCOPED_MEMORY_ACCESS.getShortUnaligned(dst.sessionImpl(), dst.unsafeGetBase(), dst.unsafeGetOffset() + dstFromOffset + offset, false);
             if (s != d) {
                 return start + offset + mismatch(s, d);
             }
