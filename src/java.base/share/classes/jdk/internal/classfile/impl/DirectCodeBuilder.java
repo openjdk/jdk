@@ -84,7 +84,7 @@ public final class DirectCodeBuilder
     private int characterRangesCount = 0;
     private int localVariablesCount = 0;
     private int localVariableTypesCount = 0;
-    private final boolean transformFwdJumps, transformBackJumps;
+    private final boolean transformDeferredJumps, transformKnownJumps;
     private final Label startLabel, endLabel;
     final MethodInfo methodInfo;
     final BufWriterImpl bytecodesBufWriter;
@@ -129,12 +129,12 @@ public final class DirectCodeBuilder
                               SplitConstantPool constantPool,
                               ClassFileImpl context,
                               CodeModel original,
-                              boolean transformFwdJumps) {
+                              boolean transformDeferredJumps) {
         super(constantPool, context);
         setOriginal(original);
         this.methodInfo = methodInfo;
-        this.transformFwdJumps = transformFwdJumps;
-        this.transformBackJumps = context.fixShortJumps();
+        this.transformDeferredJumps = transformDeferredJumps;
+        this.transformKnownJumps = context.fixShortJumps();
         bytecodesBufWriter = (original instanceof CodeImpl cai) ? new BufWriterImpl(constantPool, context, cai.codeLength())
                 : new BufWriterImpl(constantPool, context);
         this.startLabel = new LabelImpl(this, 0);
@@ -468,28 +468,6 @@ public final class DirectCodeBuilder
 
     private record DeferredLabel(int labelPc, int size, int instructionPc, Label label) { }
 
-    private void writeLabelOffset4(int instructionPc, Label label, int targetBci) {
-        if (targetBci == -1) {
-            int pc = bytecodesBufWriter.skip(4);
-            addLabel(new DeferredLabel(pc, 4, instructionPc, label));
-        }
-        else {
-            bytecodesBufWriter.writeInt(targetBci - instructionPc);
-        }
-    }
-
-    private void writeLabelOffset2(int instructionPc, Label label, int targetBci) {
-        if (targetBci == -1) {
-            int pc = bytecodesBufWriter.skip(2);
-            addLabel(new DeferredLabel(pc, 2, instructionPc, label));
-        }
-        else {
-            int branchOffset = targetBci - instructionPc;
-            if ((short)branchOffset != branchOffset) throw new LabelOverflowException();
-            bytecodesBufWriter.writeU2(branchOffset);
-        }
-    }
-
     private void processDeferredLabels() {
         for (int i = 0; i < deferredLabelsCount; i++) {
             DeferredLabel dl = deferredLabels[i];
@@ -541,46 +519,97 @@ public final class DirectCodeBuilder
 
     public void writeBranch(Opcode op, Label target) {
         if (op.sizeIfFixed() == 3) {
-            writeBranchSizeFixed3(op.bytecode(), target);
+            writeShortJump(op.bytecode(), target);
         } else {
-            writeBranchW(op, target);
+            writeLongJump(op.bytecode(), target);
         }
     }
 
-    private void writeBranchSizeFixed3(int bytecode, Label target) {
+    private void writeLongLabelOffset(int instructionPc, Label label) {
+        int targetBci = labelToBci(label);
+
+        // algebraic union of jump | (instructionPc, target), distinguished by null == target.
+        int jumpOrInstructionPc;
+        Label nullOrTarget;
+        if (targetBci == -1) {
+            jumpOrInstructionPc = instructionPc;
+            nullOrTarget = label;
+        } else {
+            jumpOrInstructionPc = targetBci - instructionPc;
+            nullOrTarget = null;
+        }
+
+        writeParsedLongLabel(jumpOrInstructionPc, nullOrTarget);
+    }
+
+    private void writeShortJump(int bytecode, Label target) {
         int instructionPc = curPc();
         int targetBci = labelToBci(target);
+
+        // algebraic union of jump | (instructionPc, target), distinguished by null == target.
+        int jumpOrInstructionPc;
+        Label nullOrTarget;
+        if (targetBci == -1) {
+            jumpOrInstructionPc = instructionPc;
+            nullOrTarget = target;
+        } else {
+            jumpOrInstructionPc = targetBci - instructionPc;
+            nullOrTarget = null;
+        }
+
         //transform short-opcode forward jumps if enforced, and backward jumps if enabled and overflowing
-        if (targetBci == -1
-                ? transformFwdJumps
-                : (transformBackJumps && targetBci - instructionPc < Short.MIN_VALUE)) {
-            writeBranchTransform(bytecode, target, instructionPc, targetBci);
+        if (transformDeferredJumps || transformKnownJumps && nullOrTarget == null && jumpOrInstructionPc < Short.MIN_VALUE) {
+            fixShortJump(bytecode, jumpOrInstructionPc, nullOrTarget);
         } else {
             bytecodesBufWriter.writeU1(bytecode);
-            writeLabelOffset2(instructionPc, target, targetBci);
+            writeParsedShortLabel(jumpOrInstructionPc, nullOrTarget);
         }
     }
 
-    private void writeBranchW(Opcode op, Label target) {
+    private void writeLongJump(int bytecode, Label target) {
         int instructionPc = curPc();
-        writeBytecode(op);
-        writeLabelOffset4(instructionPc, target, labelToBci(target));
+        bytecodesBufWriter.writeU1(bytecode);
+        writeLongLabelOffset(instructionPc, target);
     }
 
-    private void writeBranchTransform(int bytecode, Label target, int instructionPc, int targetBci) {
+    private void fixShortJump(int bytecode, int jumpOrInstructionPc, Label nullOrTarget) {
         if (bytecode == GOTO) {
             bytecodesBufWriter.writeU1(GOTO_W);
-            writeLabelOffset4(instructionPc, target, targetBci);
+            writeParsedLongLabel(jumpOrInstructionPc, nullOrTarget);
         } else if (bytecode == JSR) {
             bytecodesBufWriter.writeU1(JSR_W);
-            writeLabelOffset4(instructionPc, target, targetBci);
+            writeParsedLongLabel(jumpOrInstructionPc, nullOrTarget);
         } else {
-            bytecodesBufWriter.writeU1(BytecodeHelpers.reverseBranchOpcode(bytecode));
-            Label bypassJump = newLabel();
-            writeLabelOffset2(instructionPc, bypassJump, labelToBci(bypassJump));
-            bytecodesBufWriter.writeU1(GOTO_W);
-            writeLabelOffset4(instructionPc + 3, target, labelToBci(target));
-            labelBinding(bypassJump);
+            bytecodesBufWriter.writeU1U2(
+                    BytecodeHelpers.reverseBranchOpcode(bytecode),   // u1
+                    8); // u1 + s2 + u1 + s4                         // s2
+            bytecodesBufWriter.writeU1(GOTO_W);                      // u1
+            if (nullOrTarget == null) {
+                jumpOrInstructionPc -= 3; // jump -= 3;
+            } else {
+                jumpOrInstructionPc += 3; // instructionPc += 3;
+            }
+            writeParsedLongLabel(jumpOrInstructionPc, nullOrTarget); // s4
+        }
+    }
+
+    private void writeParsedShortLabel(int jumpOrInstructionPc, Label nullOrTarget) {
+        if (nullOrTarget == null) {
+            if ((short) jumpOrInstructionPc != jumpOrInstructionPc)
+                throw new LabelOverflowException();
+            bytecodesBufWriter.writeU2(jumpOrInstructionPc);
+        } else {
+            int pc = bytecodesBufWriter.skip(2);
+            addLabel(new DeferredLabel(pc, 2, jumpOrInstructionPc, nullOrTarget));
+        }
+    }
+
+    private void writeParsedLongLabel(int jumpOrInstructionPc, Label nullOrTarget) {
+        if (nullOrTarget == null) {
+            bytecodesBufWriter.writeInt(jumpOrInstructionPc);
+        } else {
+            int pc = bytecodesBufWriter.skip(4);
+            addLabel(new DeferredLabel(pc, 4, jumpOrInstructionPc, nullOrTarget));
         }
     }
 
@@ -590,7 +619,7 @@ public final class DirectCodeBuilder
         int pad = 4 - (curPc() % 4);
         if (pad != 4)
             bytecodesBufWriter.skip(pad); // padding content can be anything
-        writeLabelOffset4(instructionPc, defaultTarget, labelToBci(defaultTarget));
+        writeLongLabelOffset(instructionPc, defaultTarget);
         bytecodesBufWriter.writeInt(cases.size());
         cases = new ArrayList<>(cases);
         cases.sort(new Comparator<>() {
@@ -602,7 +631,7 @@ public final class DirectCodeBuilder
         for (var c : cases) {
             bytecodesBufWriter.writeInt(c.caseValue());
             var target = c.target();
-            writeLabelOffset4(instructionPc, target, labelToBci(target));
+            writeLongLabelOffset(instructionPc, target);
         }
     }
 
@@ -612,7 +641,7 @@ public final class DirectCodeBuilder
         int pad = 4 - (curPc() % 4);
         if (pad != 4)
             bytecodesBufWriter.skip(pad); // padding content can be anything
-        writeLabelOffset4(instructionPc, defaultTarget, labelToBci(defaultTarget));
+        writeLongLabelOffset(instructionPc, defaultTarget);
         bytecodesBufWriter.writeInt(low);
         bytecodesBufWriter.writeInt(high);
         var caseMap = new HashMap<Integer, Label>(cases.size());
@@ -620,9 +649,8 @@ public final class DirectCodeBuilder
             caseMap.put(c.caseValue(), c.target());
         }
         for (long l = low; l<=high; l++) {
-            // writeLabelOffset(4, instructionPc, caseMap.getOrDefault((int)l, defaultTarget));
             var target = caseMap.getOrDefault((int)l, defaultTarget);
-            writeLabelOffset4(instructionPc, target, labelToBci(target));
+            writeLongLabelOffset(instructionPc, target);
         }
     }
 
@@ -1273,7 +1301,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder goto_(Label target) {
-        writeBranchSizeFixed3(GOTO, target);
+        writeShortJump(GOTO, target);
         return this;
     }
 
@@ -1375,97 +1403,97 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder if_acmpeq(Label target) {
-        writeBranchSizeFixed3(IF_ACMPEQ, target);
+        writeShortJump(IF_ACMPEQ, target);
         return this;
     }
 
     @Override
     public CodeBuilder if_acmpne(Label target) {
-        writeBranchSizeFixed3(IF_ACMPNE, target);
+        writeShortJump(IF_ACMPNE, target);
         return this;
     }
 
     @Override
     public CodeBuilder if_icmpeq(Label target) {
-        writeBranchSizeFixed3(IF_ICMPEQ, target);
+        writeShortJump(IF_ICMPEQ, target);
         return this;
     }
 
     @Override
     public CodeBuilder if_icmpge(Label target) {
-        writeBranchSizeFixed3(IF_ICMPGE, target);
+        writeShortJump(IF_ICMPGE, target);
         return this;
     }
 
     @Override
     public CodeBuilder if_icmpgt(Label target) {
-        writeBranchSizeFixed3(IF_ICMPGT, target);
+        writeShortJump(IF_ICMPGT, target);
         return this;
     }
 
     @Override
     public CodeBuilder if_icmple(Label target) {
-        writeBranchSizeFixed3(IF_ICMPLE, target);
+        writeShortJump(IF_ICMPLE, target);
         return this;
     }
 
     @Override
     public CodeBuilder if_icmplt(Label target) {
-        writeBranchSizeFixed3(IF_ICMPLT, target);
+        writeShortJump(IF_ICMPLT, target);
         return this;
     }
 
     @Override
     public CodeBuilder if_icmpne(Label target) {
-        writeBranchSizeFixed3(IF_ICMPNE, target);
+        writeShortJump(IF_ICMPNE, target);
         return this;
     }
 
     @Override
     public CodeBuilder ifnonnull(Label target) {
-        writeBranchSizeFixed3(IFNONNULL, target);
+        writeShortJump(IFNONNULL, target);
         return this;
     }
 
     @Override
     public CodeBuilder ifnull(Label target) {
-        writeBranchSizeFixed3(IFNULL, target);
+        writeShortJump(IFNULL, target);
         return this;
     }
 
     @Override
     public CodeBuilder ifeq(Label target) {
-        writeBranchSizeFixed3(IFEQ, target);
+        writeShortJump(IFEQ, target);
         return this;
     }
 
     @Override
     public CodeBuilder ifge(Label target) {
-        writeBranchSizeFixed3(IFGE, target);
+        writeShortJump(IFGE, target);
         return this;
     }
 
     @Override
     public CodeBuilder ifgt(Label target) {
-        writeBranchSizeFixed3(IFGT, target);
+        writeShortJump(IFGT, target);
         return this;
     }
 
     @Override
     public CodeBuilder ifle(Label target) {
-        writeBranchSizeFixed3(IFLE, target);
+        writeShortJump(IFLE, target);
         return this;
     }
 
     @Override
     public CodeBuilder iflt(Label target) {
-        writeBranchSizeFixed3(IFLT, target);
+        writeShortJump(IFLT, target);
         return this;
     }
 
     @Override
     public CodeBuilder ifne(Label target) {
-        writeBranchSizeFixed3(IFNE, target);
+        writeShortJump(IFNE, target);
         return this;
     }
 
