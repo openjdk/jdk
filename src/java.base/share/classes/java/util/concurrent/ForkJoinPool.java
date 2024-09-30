@@ -1219,7 +1219,6 @@ public class ForkJoinPool extends AbstractExecutorService {
         private static final long PHASE;
         private static final long BASE;
         private static final long TOP;
-        private static final long SOURCE;
         private static final long ARRAY;
 
         final void updateBase(int v) {
@@ -1227,9 +1226,6 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
         final void updateTop(int v) {
             U.putIntOpaque(this, TOP, v);
-        }
-        final void setSource(int v) {
-            U.getAndSetInt(this, SOURCE, v);
         }
         final void updateArray(ForkJoinTask<?>[] a) {
             U.getAndSetReference(this, ARRAY, a);
@@ -1597,7 +1593,6 @@ public class ForkJoinPool extends AbstractExecutorService {
             PHASE = U.objectFieldOffset(klass, "phase");
             BASE = U.objectFieldOffset(klass, "base");
             TOP = U.objectFieldOffset(klass, "top");
-            SOURCE = U.objectFieldOffset(klass, "source");
             ARRAY = U.objectFieldOffset(klass, "array");
         }
     }
@@ -1884,8 +1879,6 @@ public class ForkJoinPool extends AbstractExecutorService {
         int pc = parallelism;
         for (long c = ctl;;) {
             WorkQueue[] qs = queues;
-            if (k >= 0 && a != null && a.length > k && a[k] == null)
-                break;
             long ac = (c + RC_UNIT) & RC_MASK, nc;
             int sp = (int)c, i = sp & SMASK;
             if ((short)(c >>> RC_SHIFT) >= pc)
@@ -1914,6 +1907,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
                 break;
             }
+            if (k >= 0 && a != null && a.length > k && a[k] == null)
+                break;
         }
     }
 
@@ -1990,7 +1985,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     final void runWorker(WorkQueue w) {
         if (w != null) {
             int phase = w.phase, r = w.stackPred;     // seed from registerWorker
-            int cfg = w.config, nsteals = 0, propagated = 0;
+            int cfg = w.config, nsteals = 0, src = -1, propagated = 0;
             for (;;) {
                 WorkQueue[] qs;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
@@ -2004,7 +1999,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                         (a = q.array) != null && (cap = a.length) > 0) {
                         for (int pb = -1, b; ; pb = b) {  // track progress
                             ForkJoinTask<?> t;
-                            int nb = (b = q.base) + 1, k; long kp;
+                            int nb = (b = q.base) + 1, k, nk, ns; long kp;
                             t = (ForkJoinTask<?>)U.getReferenceAcquire(
                                 a, kp = slotOffset(k = (cap - 1) & b));
                             if (q.base != b)              // inconsistent
@@ -2018,21 +2013,29 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 }
                             }
                             else if (U.compareAndSetReference(a, kp, t, null)) {
-                                q.base = nb;
-                                w.nsteals = ++nsteals;
-                                w.setSource(j);           // fully fenced
+                                q.updateBase(nb);
                                 rescan = true;
-                                if (propagated != phase) {
-                                    propagated = phase;
-                                    signalWork(a, nb & (cap - 1));
+                                ++nsteals;
+                                if (src != j || propagated != phase) {
+                                    w.source = src = j;
+                                    if (a[nk = nb & (cap - 1)] != null) {
+                                        propagated = phase;
+                                        signalWork(a, nk);
+                                    }
                                 }
                                 w.topLevelExec(t, cfg);
                             }
                         }
                     }
                 }
-                if (!rescan && ((phase = deactivate(w, phase)) & IDLE) != 0)
-                    break;
+                if (!rescan) {
+                    if (nsteals != 0) {
+                        w.nsteals += nsteals;
+                        nsteals = 0;
+                    }
+                    else if (((phase = deactivate(w, phase)) & IDLE) != 0)
+                        break;
+                }
             }
         }
     }
@@ -2293,7 +2296,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                     break;
                                 }
                                 if (U.compareAndSetReference(a, kp, t, null)) {
-                                    q.base = nb;
+                                    q.updateBase(nb);
                                     w.source = j;
                                     t.doExec();
                                     w.source = wsrc;
@@ -2449,7 +2452,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 break;
                             }
                             if (U.compareAndSetReference(a, kp, t, null)) {
-                                q.base = nb;
+                                q.updateBase(nb);
                                 w.source = j;
                                 t.doExec();
                                 w.source = wsrc;
