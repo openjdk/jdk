@@ -34,7 +34,6 @@ import java.lang.classfile.ClassReader;
 import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.*;
-import java.util.Objects;
 
 import jdk.internal.constant.ConstantUtils;
 
@@ -100,7 +99,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public <T extends PoolEntry> T entryByIndex(int index, Class<T> cls) {
-        Objects.requireNonNull(cls);
         return ClassReaderImpl.checkType(entryByIndex(index), index, cls);
     }
 
