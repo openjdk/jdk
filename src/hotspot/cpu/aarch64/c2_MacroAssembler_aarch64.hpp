@@ -35,6 +35,9 @@
                                   enum shift_kind kind = Assembler::LSL, unsigned shift = 0);
 
  public:
+  // jdk.internal.util.ArraysSupport.vectorizedHashCode
+  address arrays_hashcode(Register ary, Register cnt, Register result, BasicType eltype);
+
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   void fast_lock(Register object, Register box, Register tmp, Register tmp2, Register tmp3);
   void fast_unlock(Register object, Register box, Register tmp, Register tmp2);
