@@ -534,7 +534,7 @@ public class MBeanResource implements RestResource {
                 result.put(attr, "< Error: No such attribute >");
             } catch (RuntimeException ex) {
                 if (ex.getCause() instanceof UnsupportedOperationException) {
-                    result.put(attr, "< Attribute not supported >");
+                    result.put(attr, "< Attribute not supported: " + ex.getCause().getMessage() + " >");
                 } else if (ex.getCause() instanceof IllegalArgumentException) {
                     result.put(attr, "< Invalid attributes >");
                 }
