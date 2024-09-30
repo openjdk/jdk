@@ -3419,15 +3419,15 @@ class StubGenerator: public StubCodeGenerator {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
 
-    __ andw(rscratch3, r2, r4);
-    __ bicw(rscratch4, r3, r4);
     reg_cache.extract_u32(rscratch1, k);
     __ movw(rscratch2, t);
-    __ orrw(rscratch3, rscratch3, rscratch4);
     __ addw(rscratch4, r1, rscratch2);
     __ addw(rscratch4, rscratch4, rscratch1);
-    __ addw(rscratch3, rscratch3, rscratch4);
-    __ rorw(rscratch2, rscratch3, 32 - s);
+    __ bicw(rscratch2, r3, r4);
+    __ andw(rscratch3, r2, r4);
+    __ addw(rscratch2, rscratch2, rscratch4);
+    __ addw(rscratch2, rscratch2, rscratch3);
+    __ rorw(rscratch2, rscratch2, 32 - s);
     __ addw(r1, rscratch2, r2);
   }
 
