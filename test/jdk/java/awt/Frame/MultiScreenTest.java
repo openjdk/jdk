@@ -59,6 +59,7 @@ import jtreg.SkippedException;
 /*
  * @test
  * @bug 4312921
+ * @key multimon
  * @library /java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame
  * @summary Tests that no garbage is painted on primary screen with DGA
