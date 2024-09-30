@@ -1,4 +1,4 @@
-.\" Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,10 @@ jhsdb - attach to a Java process or launch a postmortem debugger to
 analyze the content of a core dump from a crashed Java Virtual Machine
 (JVM)
 .SH SYNOPSIS
+.PP
+\f[B]WARNING:\f[R] The \f[V]debugd\f[R] subcommand and
+\f[V]--connect\f[R] options are deprecated.
+They will be removed in a future release.
 .PP
 \f[V]jhsdb\f[R] \f[V]clhsdb\f[R] [\f[V]--pid\f[R] \f[I]pid\f[R] |
 \f[V]--exe\f[R] \f[I]executable\f[R] \f[V]--core\f[R]
