@@ -39,7 +39,7 @@ import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.instruction.*;
 
-import static java.lang.classfile.ClassFile.*;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 public final class CodeImpl
         extends BoundAttribute.BoundCodeAttribute

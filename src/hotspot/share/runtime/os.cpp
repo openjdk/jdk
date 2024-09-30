@@ -32,6 +32,7 @@
 #include "code/codeCache.hpp"
 #include "code/vtableStubs.hpp"
 #include "gc/shared/gcVMOperations.hpp"
+#include "gc/shared/oopStorageSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
@@ -1316,6 +1317,11 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     }
   }
 #endif
+
+  // Ask if any OopStorage knows about this address.
+  if (OopStorageSet::print_containing(addr, st)) {
+    return;
+  }
 
   // Still nothing? If NMT is enabled, we can ask what it thinks...
   if (MemTracker::print_containing_region(addr, st)) {

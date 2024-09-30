@@ -143,8 +143,7 @@ void ShenandoahSTWMark::mark() {
   ShenandoahCodeRoots::disarm_nmethods();
 
   assert(task_queues()->is_empty(), "Should be empty");
-  TASKQUEUE_STATS_ONLY(task_queues()->print_taskqueue_stats());
-  TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
+  TASKQUEUE_STATS_ONLY(task_queues()->print_and_reset_taskqueue_stats(""));
 }
 
 void ShenandoahSTWMark::mark_roots(uint worker_id) {

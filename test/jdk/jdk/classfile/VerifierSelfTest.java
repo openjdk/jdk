@@ -29,6 +29,7 @@
  * @run junit VerifierSelfTest
  */
 import java.io.IOException;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.invoke.MethodHandleInfo;
@@ -116,7 +117,7 @@ class VerifierSelfTest {
     void testInvalidClassNameEntry() {
         var cc = ClassFile.of();
         var bytes = cc.parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE,
-            0, 0, 0, 0, 0, 2, ClassFile.TAG_INTEGER, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
+            0, 0, 0, 0, 0, 2, PoolEntry.TAG_INTEGER, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
         assertTrue(cc.verify(bytes).stream().anyMatch(e -> e.getMessage().contains("expected ClassEntry")));
     }
 
