@@ -438,11 +438,11 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, Basic
     }
 
     Node* con = in1->in(2);
-    BasicType con_bt = phase->type(con)->basic_type();
-    if (con_bt == T_VOID) { // const could potentially be void type
+    if (con->is_top()) {
       return nullptr;
     }
 
+    BasicType con_bt = phase->type(con)->basic_type();
     multiplier = (jlong) 1 << con->get_integer_as_long(con_bt);
     matched = true;
   }
@@ -459,11 +459,11 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, Basic
     }
 
     Node* con = in1->in(1)->is_Con() ? in1->in(1) : in1->in(2);
-    BasicType con_bt = phase->type(con)->basic_type();
-    if (con_bt == T_VOID) { // const could potentially be void type
+    if (con->is_top()) {
       return nullptr;
     }
 
+    BasicType con_bt = phase->type(con)->basic_type();
     multiplier = con->get_integer_as_long(con_bt);
     matched = true;
   }
@@ -478,29 +478,35 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, Basic
     Node* lhs_base = lhs->is_LShift() ? lhs->in(1) : lhs;
     Node* rhs_base = rhs->is_LShift() ? rhs->in(1) : rhs;
 
-    Node* nodes[] = {lhs, rhs};
-    Node* bases[] = {lhs_base, rhs_base};
-    jlong multipliers[] = {1, 1};
+//    Node* nodes[] = {lhs, rhs};
+//    Node* bases[] = {lhs_base, rhs_base};
+//    jlong multipliers[] = {1, 1};
+    jlong lhs_multiplier = 1;
+    jlong rhs_multiplier = 1;
 
     // AddNode(LShiftNode(a, CON1), LShiftNode(a, CON2)/a)
-    // AddNode(LShiftNode(a, CON1)/a, LShiftNode(a, CON2))
-    for (int i = 0; i < 2; i++) {
-      if (nodes[i]->is_LShift()) {
-        Node* con = nodes[i]->in(2);
-        if (bases[i] != in2 || bases[0] != bases[1] || !con->is_Con()) {
-          return nullptr;
-        }
-
-        BasicType con_bt = phase->type(con)->basic_type();
-        if (con_bt == T_VOID) {
-          return nullptr;
-        }
-
-        multipliers[i] = ((jlong) 1 << con->get_integer_as_long(con_bt));
+    if (lhs->is_LShift()) {
+      Node* con = lhs->in(2);
+      if (lhs_base != in2 || lhs_base != rhs_base || !con->is_Con() || con->is_top()) {
+        return nullptr;
       }
+
+      BasicType con_bt = phase->type(con)->basic_type();
+      lhs_multiplier = ((jlong) 1 << con->get_integer_as_long(con_bt));
     }
 
-    multiplier = multipliers[0] + multipliers[1];
+    // AddNode(LShiftNode(a, CON1)/a, LShiftNode(a, CON2))
+    if (rhs->is_LShift()) {
+      Node* con = rhs->in(2);
+      if (rhs_base != in2 || lhs_base != rhs_base || !con->is_Con() || con->is_top()) {
+        return nullptr;
+      }
+
+      BasicType con_bt = phase->type(con)->basic_type();
+      rhs_multiplier = ((jlong) 1 << con->get_integer_as_long(con_bt));
+    }
+
+    multiplier = lhs_multiplier + rhs_multiplier;
     matched = true;
   }
 
@@ -516,11 +522,11 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, Basic
     }
 
     Node* con = lshift->in(2);
-    BasicType con_bt = phase->type(con)->basic_type();
-    if (con_bt == T_VOID) { // const could potentially be void type
+    if (con->is_top()) {
       return nullptr;
     }
 
+    BasicType con_bt = phase->type(con)->basic_type();
     // We can't simply return the lshift node even if ((a << CON) - a) + a cancels out. Ideal() must return a new node.
     multiplier = ((jlong) 1 << con->get_integer_as_long(con_bt)) - 1;
     matched = true;
@@ -534,14 +540,7 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, Basic
   Node* con = (bt == T_INT)
               ? (Node*) phase->intcon((jint) multiplier) // intentional type narrowing to allow overflow at max_jint
               : (Node*) phase->longcon(multiplier);
-  Node* mul = MulNode::make(con, in2, bt);
-
-  PhaseIterGVN* igvn = phase->is_IterGVN();
-  if (igvn != nullptr) {
-    mul = igvn->register_new_node_with_optimizer(mul);
-  }
-
-  return mul;
+  return MulNode::make(con, in2, bt);
 }
 
 // MulINode::Ideal() optimizes a multiplication to an addition of at most two terms if possible.
@@ -559,9 +558,7 @@ bool AddNode::is_optimized_multiplication() {
 
   // swap LShiftNode to lhs for easier matching
   if (!lhs->is_LShift()) {
-    Node* tmp = lhs;
-    lhs = rhs;
-    rhs = tmp;
+    swap(lhs, rhs);
   }
 
   // AddNode(LShiftNode(a, CON), *)?
