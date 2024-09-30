@@ -25,7 +25,7 @@ import java.io.*;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.*;
-import java.time.*;
+import java.time.ZonedDateTime;
 import java.util.*;
 import javax.net.ssl.*;
 import sun.security.validator.Validator;
@@ -34,95 +34,80 @@ import sun.security.validator.ValidatorException;
 import jdk.test.lib.security.SecurityUtils;
 
 /**
- * @test
- * @bug 8337664
- * @summary Check that TLS Server certificates chaining back to distrusted
- *          Entrust roots are invalid
- * @library /test/lib
- * @modules java.base/sun.security.validator
- * @run main/othervm Distrust after policyOn invalid
- * @run main/othervm Distrust after policyOff valid
- * @run main/othervm Distrust before policyOn valid
- * @run main/othervm Distrust before policyOff valid
+ * Helper class that provides methods to facilitate testing of distrusted roots.
  */
-
-public class Distrust {
+public final class Distrust {
 
     private static final String TEST_SRC = System.getProperty("test.src", ".");
     private static CertificateFactory cf;
 
-    // Each of the roots have a test certificate chain stored in a file
-    // named "<root>-chain.pem".
-    private static String[] rootsToTest = new String[] {
-        "entrustevca", "entrustrootcaec1", "entrustrootcag2", "entrustrootcag4",
-        "entrust2048ca", "affirmtrustcommercialca", "affirmtrustnetworkingca",
-        "affirmtrustpremiumca", "affirmtrustpremiumeccca" };
+    private final boolean before;
+    private final boolean policyOn;
+    private final boolean isValid;
 
-    // A date that is after the restrictions take effect
-    private static final Date NOVEMBER_1_2024 =
-        Date.from(LocalDate.of(2024, 11, 1)
-                           .atStartOfDay(ZoneOffset.UTC)
-                           .toInstant());
-
-    // A date that is a second before the restrictions take effect
-    private static final Date BEFORE_NOVEMBER_1_2024 =
-        Date.from(LocalDate.of(2024, 11, 1)
-                           .atStartOfDay(ZoneOffset.UTC)
-                           .minusSeconds(1)
-                           .toInstant());
-
-    public static void main(String[] args) throws Exception {
-
-        cf = CertificateFactory.getInstance("X.509");
-
-        boolean before = args[0].equals("before");
-        boolean policyOn = args[1].equals("policyOn");
-        boolean isValid = args[2].equals("valid");
+    public Distrust(String[] args) {
+        before = args[0].equals("before");
+        policyOn = args[1].equals("policyOn");
+        isValid = args[2].equals("valid");
 
         if (!policyOn) {
             // disable policy (default is on)
             Security.setProperty("jdk.security.caDistrustPolicies", "");
         }
+    }
 
-        Date notBefore = before ? BEFORE_NOVEMBER_1_2024 : NOVEMBER_1_2024;
+    public Date getNotBefore(ZonedDateTime distrustDate) {
+        ZonedDateTime notBefore = before ? distrustDate.minusSeconds(1) : distrustDate;
+        return Date.from(notBefore.toInstant());
+    }
 
-        X509TrustManager pkixTM = getTMF("PKIX", null);
-        X509TrustManager sunX509TM = getTMF("SunX509", null);
-        for (String test : rootsToTest) {
+    public void testCodeSigningChain(String certPath, String name, Date validationDate)
+            throws Exception {
+        System.err.println("Testing " + name + " code-signing chain");
+        Validator v = Validator.getInstance(Validator.TYPE_PKIX,
+                Validator.VAR_CODE_SIGNING,
+                getParams());
+        // set validation date so this will still pass when cert expires
+        v.setValidationDate(validationDate);
+        v.validate(loadCertificateChain(certPath, name));
+    }
+
+    public void testCertificateChain(String certPath, Date notBefore, X509TrustManager[] tms,
+                                     String... tests) throws Exception {
+        for (String test : tests) {
             System.err.println("Testing " + test);
-            X509Certificate[] chain = loadCertificateChain(test);
+            X509Certificate[] chain = loadCertificateChain(certPath, test);
 
-            testTM(sunX509TM, chain, notBefore, isValid);
-            testTM(pkixTM, chain, notBefore, isValid);
+            for (X509TrustManager tm : tms) {
+                testTM(tm, chain, notBefore, isValid);
+            }
         }
     }
 
-    private static X509TrustManager getTMF(String type,
-            PKIXBuilderParameters params) throws Exception {
+    public X509TrustManager getTMF(String type, PKIXBuilderParameters params) throws Exception {
         TrustManagerFactory tmf = TrustManagerFactory.getInstance(type);
         if (params == null) {
-            tmf.init((KeyStore)null);
+            tmf.init((KeyStore) null);
         } else {
             tmf.init(new CertPathTrustManagerParameters(params));
         }
         TrustManager[] tms = tmf.getTrustManagers();
         for (TrustManager tm : tms) {
-            X509TrustManager xtm = (X509TrustManager)tm;
-            return xtm;
+            return (X509TrustManager) tm;
         }
-        throw new Exception("No TrustManager for " + type);
+        throw new RuntimeException("No TrustManager for " + type);
     }
 
-    private static PKIXBuilderParameters getParams() throws Exception {
+    public PKIXBuilderParameters getParams() throws Exception {
         PKIXBuilderParameters pbp =
-            new PKIXBuilderParameters(SecurityUtils.getCacertsKeyStore(),
-                                      new X509CertSelector());
+                new PKIXBuilderParameters(SecurityUtils.getCacertsKeyStore(),
+                        new X509CertSelector());
         pbp.setRevocationEnabled(false);
         return pbp;
     }
 
-    private static void testTM(X509TrustManager xtm, X509Certificate[] chain,
-                               Date notBefore, boolean valid) throws Exception {
+    public void testTM(X509TrustManager xtm, X509Certificate[] chain,
+                              Date notBefore, boolean valid) {
         // Check if TLS Server certificate (the first element of the chain)
         // is issued after the specified notBefore date (should be rejected
         // unless distrust property is false). To do this, we need to
@@ -130,67 +115,54 @@ public class Distrust {
         // after then.
         chain[0] = new DistrustedTLSServerCert(chain[0], notBefore);
 
+        // Wrap the intermediate and root CA certs in NonExpiringTLSServerCert
+        // so it will never throw a CertificateExpiredException
+        for (int i = 1; i < chain.length; i++) {
+            chain[i] = new NonExpiringTLSServerCert(chain[i]);
+        }
+
         try {
             xtm.checkServerTrusted(chain, "ECDHE_RSA");
             if (!valid) {
-                throw new Exception("chain should be invalid");
+                throw new RuntimeException("chain should be invalid");
             }
         } catch (CertificateException ce) {
-            // expired TLS certificates should not be treated as failure
-            if (expired(ce)) {
-                System.err.println("Test is N/A, chain is expired");
-                return;
-            }
             if (valid) {
-                throw new Exception("Unexpected exception, chain " +
-                                    "should be valid", ce);
+                throw new RuntimeException("Unexpected exception, chain " +
+                        "should be valid", ce);
             }
             if (ce instanceof ValidatorException) {
-                ValidatorException ve = (ValidatorException)ce;
+                ValidatorException ve = (ValidatorException) ce;
                 if (ve.getErrorType() != ValidatorException.T_UNTRUSTED_CERT) {
                     ce.printStackTrace(System.err);
-                    throw new Exception("Unexpected exception: " + ce);
+                    throw new RuntimeException("Unexpected exception: " + ce);
                 }
             } else {
-                throw new Exception("Unexpected exception: " + ce);
+                throw new RuntimeException(ce);
             }
         }
     }
 
-    // check if a cause of exception is an expired cert
-    private static boolean expired(CertificateException ce) {
-        if (ce instanceof CertificateExpiredException) {
-            return true;
-        }
-        Throwable t = ce.getCause();
-        while (t != null) {
-            if (t instanceof CertificateExpiredException) {
-                return true;
-            }
-            t = t.getCause();
-        }
-        return false;
-    }
-
-    private static X509Certificate[] loadCertificateChain(String name)
+    private X509Certificate[] loadCertificateChain(String certPath, String name)
             throws Exception {
-        try (InputStream in = new FileInputStream(TEST_SRC + File.separator +
-                                                  name + "-chain.pem")) {
+        if (cf == null) {
+            cf = CertificateFactory.getInstance("X.509");
+        }
+        try (InputStream in = new FileInputStream(TEST_SRC + File.separator + certPath +
+                File.separator + name + "-chain.pem")) {
             Collection<X509Certificate> certs =
-                (Collection<X509Certificate>)cf.generateCertificates(in);
+                    (Collection<X509Certificate>) cf.generateCertificates(in);
             return certs.toArray(new X509Certificate[0]);
         }
     }
 
-    private static class DistrustedTLSServerCert extends X509Certificate {
+    private static class NonExpiringTLSServerCert extends X509Certificate {
         private final X509Certificate cert;
-        private final Date notBefore;
-        DistrustedTLSServerCert(X509Certificate cert, Date notBefore) {
+        NonExpiringTLSServerCert(X509Certificate cert) {
             this.cert = cert;
-            this.notBefore = notBefore;
         }
         public Set<String> getCriticalExtensionOIDs() {
-           return cert.getCriticalExtensionOIDs();
+            return cert.getCriticalExtensionOIDs();
         }
         public byte[] getExtensionValue(String oid) {
             return cert.getExtensionValue(oid);
@@ -201,19 +173,17 @@ public class Distrust {
         public boolean hasUnsupportedCriticalExtension() {
             return cert.hasUnsupportedCriticalExtension();
         }
-        public void checkValidity() throws CertificateExpiredException,
-            CertificateNotYetValidException {
+        public void checkValidity() {
             // always pass
         }
-        public void checkValidity(Date date) throws CertificateExpiredException,
-            CertificateNotYetValidException {
+        public void checkValidity(Date date) {
             // always pass
         }
         public int getVersion() { return cert.getVersion(); }
         public BigInteger getSerialNumber() { return cert.getSerialNumber(); }
         public Principal getIssuerDN() { return cert.getIssuerDN(); }
         public Principal getSubjectDN() { return cert.getSubjectDN(); }
-        public Date getNotBefore() { return notBefore; }
+        public Date getNotBefore() { return cert.getNotBefore(); }
         public Date getNotAfter() { return cert.getNotAfter(); }
         public byte[] getTBSCertificate() throws CertificateEncodingException {
             return cert.getTBSCertificate();
@@ -234,16 +204,25 @@ public class Distrust {
             return cert.getEncoded();
         }
         public void verify(PublicKey key) throws CertificateException,
-            InvalidKeyException, NoSuchAlgorithmException,
-            NoSuchProviderException, SignatureException {
+                InvalidKeyException, NoSuchAlgorithmException,
+                NoSuchProviderException, SignatureException {
             cert.verify(key);
         }
         public void verify(PublicKey key, String sigProvider) throws
-            CertificateException, InvalidKeyException, NoSuchAlgorithmException,
-            NoSuchProviderException, SignatureException {
+                CertificateException, InvalidKeyException, NoSuchAlgorithmException,
+                NoSuchProviderException, SignatureException {
             cert.verify(key, sigProvider);
         }
         public PublicKey getPublicKey() { return cert.getPublicKey(); }
         public String toString() { return cert.toString(); }
+    }
+
+    private static class DistrustedTLSServerCert extends NonExpiringTLSServerCert {
+        private final Date notBefore;
+        DistrustedTLSServerCert(X509Certificate cert, Date notBefore) {
+            super(cert);
+            this.notBefore = notBefore;
+        }
+        public Date getNotBefore() { return notBefore; }
     }
 }

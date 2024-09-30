@@ -58,9 +58,9 @@ import java.lang.classfile.attribute.StackMapFrameInfo.*;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.*;
 
-import static java.lang.classfile.ClassFile.*;
 import java.lang.classfile.CompoundElement;
 import java.lang.classfile.FieldModel;
+import static java.lang.classfile.constantpool.PoolEntry.*;
 import static jdk.internal.classfile.impl.ClassPrinterImpl.Style.*;
 
 public final class ClassPrinterImpl {
@@ -536,21 +536,21 @@ public final class ClassPrinterImpl {
             switch (vti) {
                 case SimpleVerificationTypeInfo s -> {
                     switch (s) {
-                        case ITEM_DOUBLE -> {
+                        case DOUBLE -> {
                             ret.accept("double");
                             ret.accept("double2");
                         }
-                        case ITEM_FLOAT ->
+                        case FLOAT ->
                             ret.accept("float");
-                        case ITEM_INTEGER ->
+                        case INTEGER ->
                             ret.accept("int");
-                        case ITEM_LONG ->  {
+                        case LONG ->  {
                             ret.accept("long");
                             ret.accept("long2");
                         }
-                        case ITEM_NULL -> ret.accept("null");
-                        case ITEM_TOP -> ret.accept("?");
-                        case ITEM_UNINITIALIZED_THIS -> ret.accept("THIS");
+                        case NULL -> ret.accept("null");
+                        case TOP -> ret.accept("?");
+                        case UNINITIALIZED_THIS -> ret.accept("THIS");
                     }
                 }
                 case ObjectVerificationTypeInfo o ->
@@ -603,12 +603,12 @@ public final class ClassPrinterImpl {
                             case TAG_STRING -> "String";
                             case TAG_FIELDREF -> "Fieldref";
                             case TAG_METHODREF -> "Methodref";
-                            case TAG_INTERFACEMETHODREF -> "InterfaceMethodref";
-                            case TAG_NAMEANDTYPE -> "NameAndType";
-                            case TAG_METHODHANDLE -> "MethodHandle";
-                            case TAG_METHODTYPE -> "MethodType";
-                            case TAG_CONSTANTDYNAMIC -> "Dynamic";
-                            case TAG_INVOKEDYNAMIC -> "InvokeDynamic";
+                            case TAG_INTERFACE_METHODREF -> "InterfaceMethodref";
+                            case TAG_NAME_AND_TYPE -> "NameAndType";
+                            case TAG_METHOD_HANDLE -> "MethodHandle";
+                            case TAG_METHOD_TYPE -> "MethodType";
+                            case TAG_DYNAMIC -> "Dynamic";
+                            case TAG_INVOKE_DYNAMIC -> "InvokeDynamic";
                             case TAG_MODULE -> "Module";
                             case TAG_PACKAGE -> "Package";
                             default -> throw new AssertionError("Unknown CP tag: " + e.tag());
