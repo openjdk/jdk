@@ -45,12 +45,11 @@ class AddNode : public Node {
 
 private:
   Node* convert_serial_additions(PhaseGVN* phase, bool can_reshape, BasicType bt);
-  Node* find_optimized_multiplication(BasicType bt, jlong* multiplier);
-  bool match_simple_addition_pattern(BasicType bt, jlong* multiplier);
-  bool match_simple_lshift_pattern(BasicType bt, jlong* multiplier);
-  bool match_simple_multiplication_pattern(BasicType bt, jlong* multiplier);
-  bool match_power_of_two_addition_pattern(BasicType bt, jlong* multiplier);
-  bool match_power_of_two_subtraction_pattern(BasicType bt, jlong* multiplier);
+  static Node* find_simple_addition_pattern(Node* n, BasicType bt, jlong* multiplier);
+  static Node* find_simple_lshift_pattern(Node* n, BasicType bt, jlong* multiplier);
+  static Node* find_simple_multiplication_pattern(Node* n, BasicType bt, jlong* multiplier);
+  static Node* find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* multiplier);
+  static Node* find_power_of_two_subtraction_pattern(Node* n, BasicType bt, jlong* multiplier);
 
 public:
   AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
