@@ -877,19 +877,18 @@ public:
 // Set of implemented interfaces. Referenced from TypeOopPtr and TypeKlassPtr.
 class TypeInterfaces : public Type {
 private:
-  GrowableArray<ciInstanceKlass*> _list;
+  GrowableArrayFromArray<ciInstanceKlass*> _list;
   uint _hash;
   ciInstanceKlass* _exact_klass;
   DEBUG_ONLY(bool _initialized;)
 
   void initialize();
 
-  void add(ciInstanceKlass* interface);
   void verify() const NOT_DEBUG_RETURN;
   void compute_hash();
   void compute_exact_klass();
-  TypeInterfaces();
-  TypeInterfaces(GrowableArray<ciInstanceKlass*>* interfaces);
+
+  TypeInterfaces(ciInstanceKlass** interfaces_base, int nb_interfaces);
 
   NONCOPYABLE(TypeInterfaces);
 public:
@@ -910,6 +909,7 @@ public:
   void verify_is_loaded() const NOT_DEBUG_RETURN;
 
   static int compare(ciInstanceKlass* const& k1, ciInstanceKlass* const& k2);
+  static int compare(ciInstanceKlass** k1, ciInstanceKlass** k2);
 
   const Type* xmeet(const Type* t) const;
 
