@@ -183,6 +183,7 @@ static jfieldID attrs_st_birthtime_sec;
 #endif
 #if defined(__linux__) // Linux has nsec granularity if supported
 static jfieldID attrs_st_birthtime_nsec;
+static jfieldID attrs_birthtime_invalid;
 #endif
 
 static jfieldID attrs_f_frsize;
@@ -331,6 +332,9 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 #if defined (__linux__) // Linux has nsec granularity
     attrs_st_birthtime_nsec = (*env)->GetFieldID(env, clazz, "st_birthtime_nsec", "J");
     CHECK_NULL_RETURN(attrs_st_birthtime_nsec, 0);
+
+    attrs_birthtime_invalid = (*env)->GetFieldID(env, clazz, "birthtime_invalid", "Z");
+    CHECK_NULL_RETURN(attrs_birthtime_invalid, 0);
 #endif
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixFileStoreAttributes");
@@ -620,19 +624,17 @@ static void copy_statx_attributes(JNIEnv* env, struct my_statx* buf, jobject att
     (*env)->SetLongField(env, attrs, attrs_st_atime_sec, (jlong)buf->stx_atime.tv_sec);
     (*env)->SetLongField(env, attrs, attrs_st_mtime_sec, (jlong)buf->stx_mtime.tv_sec);
     (*env)->SetLongField(env, attrs, attrs_st_ctime_sec, (jlong)buf->stx_ctime.tv_sec);
-    if ((buf->stx_mask & STATX_BTIME) != 0) {
-        //  Birth time was filled in so use it
-        (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec,
-                             (jlong)buf->stx_btime.tv_sec);
-        (*env)->SetLongField(env, attrs, attrs_st_birthtime_nsec,
-                             (jlong)buf->stx_btime.tv_nsec);
-    } else {
-        //  Birth time was not filled in: fall back to last modification time
-        (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec,
-                             (jlong)buf->stx_mtime.tv_sec);
-        (*env)->SetLongField(env, attrs, attrs_st_birthtime_nsec,
-                             (jlong)buf->stx_mtime.tv_nsec);
-    }
+    (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec,
+                         (jlong)buf->stx_btime.tv_sec);
+    (*env)->SetLongField(env, attrs, attrs_st_birthtime_nsec,
+                         (jlong)buf->stx_btime.tv_nsec);
+
+    // Check mask for birth time and set flag accordingly
+    jboolean birthtime_invalid = (buf->stx_mask & STATX_BTIME) != 0 ?
+        JNI_FALSE : JNI_TRUE;
+    (*env)->SetBooleanField(env, attrs, attrs_birthtime_invalid,
+                            birthtime_invalid);
+
     (*env)->SetLongField(env, attrs, attrs_st_atime_nsec, (jlong)buf->stx_atime.tv_nsec);
     (*env)->SetLongField(env, attrs, attrs_st_mtime_nsec, (jlong)buf->stx_mtime.tv_nsec);
     (*env)->SetLongField(env, attrs, attrs_st_ctime_nsec, (jlong)buf->stx_ctime.tv_nsec);
