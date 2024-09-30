@@ -141,9 +141,9 @@ public class Write {
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod(INIT_NAME, MTD_void, 0, mb -> mb
-                      .withCode(codeb -> codeb.loadLocal(REFERENCE, 0)
-                                              .invoke(INVOKESPECIAL, CD_Object, INIT_NAME, MTD_void, false)
-                                              .return_(VOID)
+                      .withCode(codeb -> codeb.aload(0)
+                                              .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                                              .return_()
                       )
               );
             for (int xi = 0; xi < 40; ++xi) {
@@ -172,54 +172,6 @@ public class Write {
                                     .getstatic(CD_System, "out", CD_PrintStream) // 13
                                     .iload(vFac)
                                     .invokevirtual(CD_PrintStream, "println", MTD_void_int) // 15
-                                    .return_();
-                        }));
-            }
-        });
-        if (writeClassBc) writeClass(bytes, checkFileBc);
-        return bytes;
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    public byte[] jdkTreePrimitive() {
-
-        byte[] bytes = ClassFile.of().build(CD_MyClass, cb -> {
-            cb.withFlags(AccessFlag.PUBLIC);
-            cb.withVersion(52, 0);
-            cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
-              .withMethod(INIT_NAME, MTD_void, 0,
-                          mb -> mb.withCode(codeb -> codeb.loadLocal(REFERENCE, 0)
-                                                          .invokespecial(CD_Object, INIT_NAME, MTD_void, false)
-                                                          .return_()
-                          )
-              );
-            for (int xi = 0; xi < 40; ++xi) {
-                cb.withMethod("main" + ((xi == 0) ? "" : "" + xi), MTD_void_StringArray,
-                              ACC_PUBLIC | ACC_STATIC,
-                              mb -> mb.withCode(c0 -> {
-                                  java.lang.classfile.Label loopTop = c0.newLabel();
-                                  java.lang.classfile.Label loopEnd = c0.newLabel();
-                                  int vFac = 1;
-                                  int vI = 2;
-                                  c0.iconst_1()         // 0
-                                    .istore(1)          // 1
-                                    .iconst_1()         // 2
-                                    .istore(2)          // 3
-                                    .labelBinding(loopTop)
-                                    .iload(2)           // 4
-                                    .bipush(10)         // 5
-                                    .if_icmpge(loopEnd) // 6
-                                    .iload(1)           // 7
-                                    .iload(2)           // 8
-                                    .imul()             // 9
-                                    .istore(1)          // 10
-                                    .iinc(2, 1)         // 11
-                                    .goto_(loopTop)     // 12
-                                    .labelBinding(loopEnd)
-                                    .getstatic(CD_System, "out", CD_PrintStream)  // 13
-                                    .iload(1)
-                                    .invokevirtual(CD_PrintStream, "println", MTD_void_int)  // 15
                                     .return_();
                         }));
             }
