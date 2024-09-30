@@ -42,7 +42,11 @@ public class NonUniqueAliases {
             runTest();
         } catch (IOException ex) {
             // It uses certutil.exe that isn't guaranteed to be installed
-            throw new SkippedException("certutil is not installed");
+            String certutilMsg = "Cannot run program \"certutil\"";
+            if (ex.getMessage().contains(certutilMsg)) {
+                throw new SkippedException("certutil is not installed");
+            }
+            throw ex;
         }
     }
 
