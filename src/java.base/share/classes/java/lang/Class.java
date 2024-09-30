@@ -141,7 +141,7 @@ import sun.reflect.misc.ReflectUtil;
  *
  * It is also possible to get the {@code Class} object for a named
  * class or interface (or for {@code void}) using a <dfn>class literal</dfn>
- * (JLS  {@jls 15.8.2}).
+ * (JLS {@jls 15.8.2}).
  * For example:
  *
  * {@snippet lang="java" :
