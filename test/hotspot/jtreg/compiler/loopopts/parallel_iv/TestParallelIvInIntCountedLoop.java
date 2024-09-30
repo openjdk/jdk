@@ -346,7 +346,7 @@ public class TestParallelIvInIntCountedLoop {
 
             // also test with random init and init2
             int init1 = rng.nextInt();
-            int init2 = rng.nextInt(Integer.MIN_VALUE + i + 1, i); // Similarly, avoid (i - init2) from overflowing.
+            int init2 = rng.nextInt(Integer.MIN_VALUE + i + 1, i); // Limit bounds to avoid loop variables from overflowing.
             long init1L = rng.nextLong();
 
             Asserts.assertEQ(Math.ceilDiv((i - init2), stride) * stride2 + init1,
