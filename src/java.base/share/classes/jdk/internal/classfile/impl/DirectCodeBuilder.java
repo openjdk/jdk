@@ -540,29 +540,42 @@ public final class DirectCodeBuilder
     }
 
     public void writeBranch(Opcode op, Label target) {
-        int instructionPc = curPc();
-        int targetBci = labelToBci(target);
-        boolean sizeFixed3 = op.sizeIfFixed() == 3;
-        //transform short-opcode forward jumps if enforced, and backward jumps if enabled and overflowing
-        if (sizeFixed3 && (targetBci == -1
-                ? transformFwdJumps
-                : (transformBackJumps && targetBci - instructionPc < Short.MIN_VALUE))) {
-            writeBranchTransform(op, target, instructionPc, targetBci);
+        if (op.sizeIfFixed() == 3) {
+            writeBranchSizeFixed3(op.bytecode(), target);
         } else {
-            writeBytecode(op);
-            writeLabelOffset(sizeFixed3 ? 2 : 4, instructionPc, target, targetBci);
+            writeBranchW(op, target);
         }
     }
 
-    private void writeBranchTransform(Opcode op, Label target, int instructionPc, int targetBci) {
-        if (op == Opcode.GOTO) {
+    private void writeBranchSizeFixed3(int bytecode, Label target) {
+        int instructionPc = curPc();
+        int targetBci = labelToBci(target);
+        //transform short-opcode forward jumps if enforced, and backward jumps if enabled and overflowing
+        if (targetBci == -1
+                ? transformFwdJumps
+                : (transformBackJumps && targetBci - instructionPc < Short.MIN_VALUE)) {
+            writeBranchTransform(bytecode, target, instructionPc, targetBci);
+        } else {
+            bytecodesBufWriter.writeU1(bytecode);
+            writeLabelOffset(2, instructionPc, target, targetBci);
+        }
+    }
+
+    private void writeBranchW(Opcode op, Label target) {
+        int instructionPc = curPc();
+        writeBytecode(op);
+        writeLabelOffset(4, instructionPc, target, labelToBci(target));
+    }
+
+    private void writeBranchTransform(int bytecode, Label target, int instructionPc, int targetBci) {
+        if (bytecode == GOTO) {
             bytecodesBufWriter.writeU1(GOTO_W);
             writeLabelOffset(4, instructionPc, target, targetBci);
-        } else if (op == Opcode.JSR) {
+        } else if (bytecode == JSR) {
             bytecodesBufWriter.writeU1(JSR_W);
             writeLabelOffset(4, instructionPc, target, targetBci);
         } else {
-            writeBytecode(BytecodeHelpers.reverseBranchOpcode(op));
+            bytecodesBufWriter.writeU1(BytecodeHelpers.reverseBranchOpcode(bytecode));
             Label bypassJump = newLabel();
             writeLabelOffset(2, instructionPc, bypassJump);
             bytecodesBufWriter.writeU1(GOTO_W);
@@ -1253,19 +1266,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder goto_(Label target) {
-        int instructionPc = curPc();
-        int targetBci = labelToBci(target);
-        //transform short-opcode forward jumps if enforced, and backward jumps if enabled and overflowing
-        if ((targetBci == -1
-                ? transformFwdJumps
-                : (transformBackJumps
-                && targetBci - instructionPc < Short.MIN_VALUE))) {
-            bytecodesBufWriter.writeU2(GOTO_W);
-            writeLabelOffset(4, instructionPc, target, targetBci);
-        } else {
-            bytecodesBufWriter.writeU1(GOTO);
-            writeLabelOffset(2, instructionPc, target, targetBci);
-        }
+        writeBranchSizeFixed3(GOTO, target);
         return this;
     }
 
@@ -1362,6 +1363,102 @@ public final class DirectCodeBuilder
     @Override
     public CodeBuilder idiv() {
         bytecodesBufWriter.writeU1(IDIV);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_acmpeq(Label target) {
+        writeBranchSizeFixed3(IF_ACMPEQ, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_acmpne(Label target) {
+        writeBranchSizeFixed3(IF_ACMPNE, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_icmpeq(Label target) {
+        writeBranchSizeFixed3(IF_ICMPEQ, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_icmpge(Label target) {
+        writeBranchSizeFixed3(IF_ICMPGE, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_icmpgt(Label target) {
+        writeBranchSizeFixed3(IF_ICMPGT, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_icmple(Label target) {
+        writeBranchSizeFixed3(IF_ICMPLE, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_icmplt(Label target) {
+        writeBranchSizeFixed3(IF_ICMPLT, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder if_icmpne(Label target) {
+        writeBranchSizeFixed3(IF_ICMPNE, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ifnonnull(Label target) {
+        writeBranchSizeFixed3(IFNONNULL, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ifnull(Label target) {
+        writeBranchSizeFixed3(IFNULL, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ifeq(Label target) {
+        writeBranchSizeFixed3(IFEQ, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ifge(Label target) {
+        writeBranchSizeFixed3(IFGE, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ifgt(Label target) {
+        writeBranchSizeFixed3(IFGT, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ifle(Label target) {
+        writeBranchSizeFixed3(IFLE, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder iflt(Label target) {
+        writeBranchSizeFixed3(IFLT, target);
+        return this;
+    }
+
+    @Override
+    public CodeBuilder ifne(Label target) {
+        writeBranchSizeFixed3(IFNE, target);
         return this;
     }
 

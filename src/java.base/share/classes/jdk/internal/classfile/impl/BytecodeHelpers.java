@@ -278,6 +278,29 @@ public class BytecodeHelpers {
         };
     }
 
+    public static int reverseBranchOpcode(int bytecode) {
+        return switch (bytecode) {
+            case IFEQ -> IFNE;
+            case IFNE -> IFEQ;
+            case IFLT -> IFGE;
+            case IFGE -> IFLT;
+            case IFGT -> IFLE;
+            case IFLE -> IFGT;
+            case IF_ICMPEQ -> IF_ICMPNE;
+            case IF_ICMPNE -> IF_ICMPEQ;
+            case IF_ICMPLT -> IF_ICMPGE;
+            case IF_ICMPGE -> IF_ICMPLT;
+            case IF_ICMPGT -> IF_ICMPLE;
+            case IF_ICMPLE -> IF_ICMPGT;
+            case IF_ACMPEQ -> IF_ACMPNE;
+            case IF_ACMPNE -> IF_ACMPEQ;
+            case IFNULL -> IFNONNULL;
+            case IFNONNULL -> IFNULL;
+            default -> throw new IllegalArgumentException(
+                    String.format("Wrong opcode kind specified; found %d, expected %s", bytecode, Opcode.Kind.BRANCH));
+        };
+    }
+
     public static Opcode convertOpcode(TypeKind from, TypeKind to) {
         return switch (from) {
             case INT ->
