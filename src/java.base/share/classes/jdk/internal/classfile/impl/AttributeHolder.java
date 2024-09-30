@@ -40,18 +40,22 @@ public class AttributeHolder {
 
         @SuppressWarnings("unchecked")
         AttributeMapper<A> am = (AttributeMapper<A>) a.attributeMapper();
-        if (!am.allowMultiple() && isPresent(am)) {
-            remove(am);
+        int attributesCount = this.attributesCount;
+        var attributes = this.attributes;
+        if (!am.allowMultiple()) {
+            // remove if
+            for (int i = attributesCount - 1; i >= 0; i--) {
+                if (attributes[i].attributeMapper() == am) {
+                    attributesCount--;
+                    System.arraycopy(attributes, i + 1, attributes, i, attributesCount - i);
+                }
+            }
         }
 
-        addAttribute(a);
-    }
-
-    private void addAttribute(Attribute<?> a) {
-        int attributesCount = this.attributesCount;
+        // add attribute
         if (attributesCount >= attributes.length) {
-            int newCapacity = attributesCount + 8;
-            this.attributes = Arrays.copyOf(attributes, newCapacity);
+            int newCapacity = attributesCount + 4;
+            this.attributes = attributes = Arrays.copyOf(attributes, newCapacity);
         }
         attributes[attributesCount] = a;
         this.attributesCount = attributesCount + 1;
@@ -85,16 +89,5 @@ public class AttributeHolder {
                 return true;
         }
         return false;
-    }
-
-    private void remove(AttributeMapper<?> am) {
-        for (int i = 0; i < attributesCount; i++) {
-            Attribute<?> a = attributes[i];
-            if (a.attributeMapper() == am) {
-                attributesCount--;
-                System.arraycopy(attributes, i + 1, attributes, i, attributesCount - i);
-                i--;
-            }
-        }
     }
 }
