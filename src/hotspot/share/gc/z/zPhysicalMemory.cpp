@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,20 +46,19 @@ ZPhysicalMemory::ZPhysicalMemory()
 
 ZPhysicalMemory::ZPhysicalMemory(const ZPhysicalMemorySegment& segment)
   : _segments() {
-  add_segment(segment);
+  _segments.append(segment);
 }
 
 ZPhysicalMemory::ZPhysicalMemory(const ZPhysicalMemory& pmem)
-  : _segments() {
-  add_segments(pmem);
+  : _segments(pmem.nsegments()) {
+  _segments.appendAll(&pmem._segments);
 }
 
 const ZPhysicalMemory& ZPhysicalMemory::operator=(const ZPhysicalMemory& pmem) {
-  // Free segments
+  // Free and copy segments
   _segments.clear_and_deallocate();
-
-  // Copy segments
-  add_segments(pmem);
+  _segments.reserve(pmem.nsegments());
+  _segments.appendAll(&pmem._segments);
 
   return *this;
 }
