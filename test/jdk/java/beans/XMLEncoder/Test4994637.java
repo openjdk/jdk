@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4994637
  * @summary Tests custom map encoding
- * @run main/othervm -Djava.security.manager=allow Test4994637
+ * @run main/othervm Test4994637
  * @author Sergey Malenkov
  */
 
@@ -33,7 +33,7 @@ import java.util.HashMap;
 
 public final class Test4994637 extends AbstractTest<HashMap> {
     public static void main(String[] args) {
-        new Test4994637().test(true);
+        new Test4994637().test();
     }
 
     @Override

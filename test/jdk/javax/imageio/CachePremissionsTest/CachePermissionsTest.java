@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,40 +26,15 @@
  * @bug     6684104
  * @summary Test verifies that ImageIO checks all permissions required for
  *           the file cache usage:
- *
  *          no policy file: No security restrictions.
  *             Expected result: ImageIO creates file-cached stream.
- *
- *          w.policy: the case when we have read and write permissions
- *              for java.io.temp directory but have only write permission
- *              for a temp file.
- *             Expected result: ImageIO create a memory-cached stream
- *              image output stream.
- *
- *          rw.policy: the case when we  have read and write permissions
- *              for java.io.temp directory but have only read and write
- *              permission for a temp cache file.
- *             Expected result: ImageIO creates a memory-cached stream
- *              because temporary cache file can not be deleted.
- *
- *          rwd.policy: the case when we  have read and write permissions
- *              for java.io.temp directory and have all required permissions
- *             (read, write, and delete) for a temporary cache file.
- *             Expected result: ImageIO creates file-cached stream.
- *
- *           -Djava.security.debug=access can be used to verify file permissions.
- *
  * @run     main CachePermissionsTest true
- * @run     main/othervm -Djava.security.manager=allow CachePermissionsTest false w.policy
- * @run     main/othervm -Djava.security.manager=allow CachePermissionsTest false rw.policy
- * @run     main/othervm -Djava.security.manager=allow CachePermissionsTest true rwd.policy
  */
 
-import java.io.File;
+
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 import javax.imageio.stream.ImageOutputStream;
-
 import javax.imageio.ImageIO;
 
 
@@ -72,17 +47,6 @@ public class CachePermissionsTest {
         ImageIO.setUseCache(true);
 
         System.out.println("java.io.tmpdir is " + System.getProperty("java.io.tmpdir"));
-
-        if (args.length > 1) {
-            String testsrc = System.getProperty("test.src", ".");
-            String policy = testsrc + File.separator + args[1];
-
-            System.out.println("Policy file: " + policy);
-            System.setProperty("java.security.policy", policy);
-
-            System.out.println("Install security manager...");
-            System.setSecurityManager(new SecurityManager());
-        }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -118,7 +82,7 @@ public class CachePermissionsTest {
              * Something went wrong?
              */
             throw new RuntimeException("Test FAILED.", e);
-        } catch (SecurityException e) {
+        } catch (Exception e) {
             /*
              * We do not expect security execptions here:
              * we there are any security restrition, ImageIO

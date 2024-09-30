@@ -35,7 +35,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @summary Verify that ScriptEngineManager can load BadFactory without throwing NPE
  * @build BadFactory BadFactoryTest
  * @run junit/othervm BadFactoryTest
- * @run junit/othervm -Djava.security.manager=allow BadFactoryTest
  */
 public class BadFactoryTest {
 

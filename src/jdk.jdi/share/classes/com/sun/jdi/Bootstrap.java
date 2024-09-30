@@ -50,11 +50,6 @@ public class Bootstrap extends Object {
      * <p> May throw an unspecified error if initialization of the
      * {@link VirtualMachineManager} fails or if the virtual machine manager
      * is unable to locate or create any {@link Connector Connectors}.
-     *
-     * @throws java.lang.SecurityException if a security manager has been
-     * installed and it denies {@link JDIPermission}
-     * ("{@code virtualMachineManager}") or other unspecified
-     * permissions required by the implementation.
      */
     public static synchronized VirtualMachineManager virtualMachineManager() {
         return VirtualMachineManagerImpl.virtualMachineManager();

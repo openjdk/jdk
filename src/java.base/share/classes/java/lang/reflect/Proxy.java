@@ -354,21 +354,6 @@ public class Proxy implements java.io.Serializable {
      *          and that implements the specified interfaces
      * @throws  IllegalArgumentException if any of the <a href="#restrictions">
      *          restrictions</a> on the parameters are violated
-     * @throws  SecurityException if a security manager, <em>s</em>, is present
-     *          and any of the following conditions is met:
-     *          <ul>
-     *             <li> the given {@code loader} is {@code null} and
-     *             the caller's class loader is not {@code null} and the
-     *             invocation of {@link SecurityManager#checkPermission
-     *             s.checkPermission} with
-     *             {@code RuntimePermission("getClassLoader")} permission
-     *             denies access.</li>
-     *             <li> for each proxy interface, {@code intf},
-     *             the caller's class loader is not the same as or an
-     *             ancestor of the class loader for {@code intf} and
-     *             invocation of {@link SecurityManager#checkPackageAccess
-     *             s.checkPackageAccess()} denies access to {@code intf}.</li>
-     *          </ul>
      * @throws  NullPointerException if the {@code interfaces} array
      *          argument or any of its elements are {@code null}
      *
@@ -989,27 +974,6 @@ public class Proxy implements java.io.Serializable {
      *          and that implements the specified interfaces
      * @throws  IllegalArgumentException if any of the <a href="#restrictions">
      *          restrictions</a> on the parameters are violated
-     * @throws  SecurityException if a security manager, <em>s</em>, is present
-     *          and any of the following conditions is met:
-     *          <ul>
-     *          <li> the given {@code loader} is {@code null} and
-     *               the caller's class loader is not {@code null} and the
-     *               invocation of {@link SecurityManager#checkPermission
-     *               s.checkPermission} with
-     *               {@code RuntimePermission("getClassLoader")} permission
-     *               denies access;</li>
-     *          <li> for each proxy interface, {@code intf},
-     *               the caller's class loader is not the same as or an
-     *               ancestor of the class loader for {@code intf} and
-     *               invocation of {@link SecurityManager#checkPackageAccess
-     *               s.checkPackageAccess()} denies access to {@code intf};</li>
-     *          <li> any of the given proxy interfaces is non-public and the
-     *               caller class is not in the same {@linkplain Package runtime package}
-     *               as the non-public interface and the invocation of
-     *               {@link SecurityManager#checkPermission s.checkPermission} with
-     *               {@code ReflectPermission("newProxyInPackage.{package name}")}
-     *               permission denies access.</li>
-     *          </ul>
      * @throws  NullPointerException if the {@code interfaces} array
      *          argument or any of its elements are {@code null}, or
      *          if the invocation handler, {@code h}, is
@@ -1112,12 +1076,6 @@ public class Proxy implements java.io.Serializable {
      * @return  the invocation handler for the proxy instance
      * @throws  IllegalArgumentException if the argument is not a
      *          proxy instance
-     * @throws  SecurityException if a security manager, <em>s</em>, is present
-     *          and the caller's class loader is not the same as or an
-     *          ancestor of the class loader for the invocation handler
-     *          and invocation of {@link SecurityManager#checkPackageAccess
-     *          s.checkPackageAccess()} denies access to the invocation
-     *          handler's class.
      */
     @SuppressWarnings("removal")
     @CallerSensitive

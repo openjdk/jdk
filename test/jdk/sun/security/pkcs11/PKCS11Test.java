@@ -782,7 +782,8 @@ public abstract class PKCS11Test {
                         + "\nPlease make sure the artifact is available.", e);
             }
         }
-        Policy.setPolicy(null); // Clear the policy created by JIB if any
+        // Does JIB really create any policy?
+        //Policy.setPolicy(null); // Clear the policy created by JIB if any
         return path;
     }
 

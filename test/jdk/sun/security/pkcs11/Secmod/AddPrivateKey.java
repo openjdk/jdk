@@ -29,7 +29,6 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm AddPrivateKey
- * @run main/othervm -Djava.security.manager=allow AddPrivateKey sm policy
  */
 
 import java.io.File;

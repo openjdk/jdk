@@ -70,9 +70,6 @@ public abstract class CookieHandler {
      *
      * @return the system-wide cookie handler; A null return means
      *        there is no system-wide cookie handler currently set.
-     * @throws SecurityException
-     *       If a security manager has been installed and it denies
-     * {@link NetPermission}{@code ("getCookieHandler")}
      * @see #setDefault(CookieHandler)
      */
     public static synchronized CookieHandler getDefault() {
@@ -91,9 +88,6 @@ public abstract class CookieHandler {
      *
      * @param cHandler The HTTP cookie handler, or
      *       {@code null} to unset.
-     * @throws SecurityException
-     *       If a security manager has been installed and it denies
-     * {@link NetPermission}{@code ("setCookieHandler")}
      * @see #getDefault()
      */
     public static synchronized void setDefault(CookieHandler cHandler) {

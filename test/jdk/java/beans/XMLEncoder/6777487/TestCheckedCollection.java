@@ -25,8 +25,7 @@
  * @test
  * @bug 6777487
  * @summary Tests private field access for CheckedCollection
- * @run main/othervm -Djava.security.manager=allow TestCheckedCollection
- * @author Sergey Malenkov
+ * @run main TestCheckedCollection
  */
 
 import java.util.ArrayList;

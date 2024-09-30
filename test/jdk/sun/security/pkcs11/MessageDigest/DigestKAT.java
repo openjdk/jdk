@@ -29,7 +29,6 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm DigestKAT
- * @run main/othervm -Djava.security.manager=allow DigestKAT sm
  */
 
 import java.io.ByteArrayOutputStream;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6505888
  * @summary Tests SynchronizedSortedMap encoding
- * @run main/othervm -Djava.security.manager=allow java_util_Collections_SynchronizedSortedMap
+ * @run main/othervm java_util_Collections_SynchronizedSortedMap
  * @author Sergey Malenkov
  */
 
@@ -35,7 +35,7 @@ import java.util.TreeMap;
 
 public final class java_util_Collections_SynchronizedSortedMap extends AbstractTest<SortedMap<String, String>> {
     public static void main(String[] args) {
-        new java_util_Collections_SynchronizedSortedMap().test(true);
+        new java_util_Collections_SynchronizedSortedMap().test();
     }
 
     protected SortedMap<String, String> getObject() {

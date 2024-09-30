@@ -347,68 +347,6 @@ void Dictionary::check_package_access(InstanceKlass* klass,
 
   assert(class_loader() != nullptr, "Should not call this");
   assert(protection_domain() != nullptr, "Should not call this");
-
-  if (!java_lang_System::allow_security_manager()) {
-    // No need for any further checking. Package access always allowed.
-    return;
-  }
-
-  if (is_in_package_access_cache(THREAD, klass->name(), protection_domain)) {
-    // No need to check again.
-    return;
-  }
-
-  // We only have to call checkPackageAccess if there's a security manager installed.
-  if (java_lang_System::has_security_manager()) {
-
-    // This handle and the class_loader handle passed in keeps this class from
-    // being unloaded through several GC points.
-    // The class_loader handle passed in is the initiating loader.
-    Handle mirror(THREAD, klass->java_mirror());
-
-    // Now we have to call back to java to check if the initating class has access
-    InstanceKlass* system_loader = vmClasses::ClassLoader_klass();
-    JavaValue result(T_VOID);
-    JavaCalls::call_special(&result,
-                           class_loader,
-                           system_loader,
-                           vmSymbols::checkPackageAccess_name(),
-                           vmSymbols::class_protectiondomain_signature(),
-                           mirror,
-                           protection_domain,
-                           THREAD);
-
-    LogTarget(Debug, protectiondomain) lt;
-    if (lt.is_enabled()) {
-      ResourceMark rm(THREAD);
-      // Print out trace information
-      LogStream ls(lt);
-      ls.print_cr("Checking package access");
-      ls.print("class loader: ");
-      class_loader()->print_value_on(&ls);
-      ls.print(" protection domain: ");
-      protection_domain()->print_value_on(&ls);
-      ls.print(" loading: "); klass->print_value_on(&ls);
-      if (HAS_PENDING_EXCEPTION) {
-        ls.print_cr(" DENIED !!!!!!!!!!!!!!!!!!!!!");
-      } else {
-        ls.print_cr(" granted");
-      }
-    }
-
-    if (HAS_PENDING_EXCEPTION) return;
-  }
-
-  // If no exception has been thrown, we have checked that the protection_domain can access
-  // this klass. Always add it to the cache (even if no SecurityManager is installed yet).
-  //
-  // This ensures that subsequent calls to Dictionary::find(THREAD, klass->name(), protection_domain)
-  // will always succeed. I.e., a new SecurityManager installed in the future cannot retroactively
-  // revoke the granted access.
-  {
-    MutexLocker mu(THREAD, SystemDictionary_lock);
-    add_to_package_access_cache(THREAD, klass, protection_domain);
-  }
 }
 
 // During class loading we may have cached a protection domain that has

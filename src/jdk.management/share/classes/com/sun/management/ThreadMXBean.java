@@ -278,10 +278,6 @@ public interface ThreadMXBean extends java.lang.management.ThreadMXBean {
      * @throws UnsupportedOperationException if the Java virtual
      *         machine does not support thread memory allocation measurement.
      *
-     * @throws SecurityException if a security manager
-     *         exists and the caller does not have
-     *         ManagementPermission("control").
-     *
      * @see #isThreadAllocatedMemorySupported
      */
     public void setThreadAllocatedMemoryEnabled(boolean enable);

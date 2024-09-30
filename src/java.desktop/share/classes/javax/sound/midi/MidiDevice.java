@@ -117,8 +117,6 @@ public interface MidiDevice extends AutoCloseable {
      *
      * @throws MidiUnavailableException thrown if the device cannot be opened
      *         due to resource restrictions
-     * @throws SecurityException thrown if the device cannot be opened due to
-     *         security restrictions
      * @see #close
      * @see #isOpen
      */

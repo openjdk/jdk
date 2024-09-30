@@ -112,10 +112,6 @@ public interface EventStream extends AutoCloseable {
      *
      * @throws IOException if a stream can't be opened, or an I/O error occurs
      *         when trying to access the repository
-     *
-     * @throws SecurityException if a security manager exists and the caller
-     *         does not have
-     *         {@code FlightRecorderPermission("accessFlightRecorder")}
      */
     @SuppressWarnings("removal")
     public static EventStream openRepository() throws IOException {
@@ -144,10 +140,6 @@ public interface EventStream extends AutoCloseable {
      *
      * @throws IOException if a stream can't be opened, or an I/O error occurs
      *         when trying to access the repository
-     *
-     * @throws SecurityException if a security manager exists and its
-     *         {@code checkRead} method denies read access to the directory, or
-     *         files in the directory.
      */
     public static EventStream openRepository(Path directory) throws IOException {
         Objects.requireNonNull(directory, "directory");
@@ -176,9 +168,6 @@ public interface EventStream extends AutoCloseable {
      *
      * @throws IOException if the file can't be opened, or an I/O error occurs
      *         during reading
-     *
-     * @throws SecurityException if a security manager exists and its
-     *         {@code checkRead} method denies read access to the file
      */
     @SuppressWarnings("removal")
     static EventStream openFile(Path file) throws IOException {

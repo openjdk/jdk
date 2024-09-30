@@ -280,18 +280,6 @@ public class Main {
         in = p2.Main.getResourceAsStreamInClassLoader("p2/resources/" + NAME);
         assertNull(in);
 
-
-        // SecurityManager case
-        System.setSecurityManager(new SecurityManager());
-
-        assertNull(Main.class.getClassLoader().getResource("/" + NAME));
-        assertNull(p1.Main.getResourceInClassLoader("/" + NAME));
-        assertNull(p2.Main.getResourceInClassLoader("/" + NAME));
-
-        assertNull(Main.class.getClassLoader().getResourceAsStream("/" + NAME));
-        assertNull(p1.Main.getResourceAsStreamInClassLoader("/" + NAME));
-        assertNull(p2.Main.getResourceAsStreamInClassLoader("/" + NAME));
-
         System.out.println("Success!");
     }
 

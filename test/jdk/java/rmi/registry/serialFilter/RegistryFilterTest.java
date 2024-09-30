@@ -53,7 +53,7 @@ import org.testng.annotations.Test;
  *        -Dsun.rmi.registry.registryFilter=!java.lang.Long;!RegistryFilterTest$RejectableClass;maxdepth=19
  *        -Dtest.maxdepth=19
  *        RegistryFilterTest
- * @run testng/othervm/policy=security.policy
+ * @run testng/othervm
  *        -Djava.security.properties=${test.src}/java.security-extra1
  *        RegistryFilterTest
  */

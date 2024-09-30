@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ import javax.xml.xpath.XPathVariableResolver;
 
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -56,12 +55,10 @@ import org.xml.sax.InputSource;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow test.astro.XPathAPITest
  * @run testng/othervm test.astro.XPathAPITest
  * @summary test XPath API
  */
 @Test(singleThreaded = true)
-@Listeners({jaxp.library.FilePolicy.class})
 public class XPathAPITest {
     private static final String STARDB_STAR_3_CONSTELLATION = "//astro:stardb/astro:star[3]/astro:constellation";
     private static final String STARDB_STAR = "//astro:stardb/astro:star";

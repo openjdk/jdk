@@ -28,7 +28,6 @@
  * @summary Verify equals()/hashCode() contract honored
  * @modules java.base/sun.security.util
  *          java.base/sun.security.x509
- * @run main/othervm/policy=Allow.policy AVAEqualsHashCode
  */
 
 import java.io.*;

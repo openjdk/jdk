@@ -166,8 +166,6 @@ public class Statement {
      * @throws NullPointerException if the value of the {@code target} or
      *                              {@code methodName} property is {@code null}
      * @throws NoSuchMethodException if a matching method is not found
-     * @throws SecurityException if a security manager exists and
-     *                           it denies the method invocation
      * @throws Exception that is thrown by the invoked method
      *
      * @see java.lang.reflect.Method

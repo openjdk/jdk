@@ -62,8 +62,6 @@ public class FileImageInputStream extends ImageInputStreamImpl {
      *
      * @throws IllegalArgumentException if {@code f} is
      * {@code null}.
-     * @throws SecurityException if a security manager exists
-     * and does not allow read access to the file.
      * @throws FileNotFoundException if {@code f} is a
      * directory or cannot be opened for reading for any other reason.
      * @throws IOException if an I/O error occurs.

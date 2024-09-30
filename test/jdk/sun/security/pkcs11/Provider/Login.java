@@ -25,7 +25,7 @@
  * @bug 4850423
  * @summary login facilities for hardware tokens
  * @library /test/lib ..
- * @run testng/othervm -Djava.security.manager=allow Login
+ * @run testng/othervm Login
  */
 
 import jtreg.SkippedException;
@@ -56,9 +56,8 @@ public class Login extends PKCS11Test {
 
     @Test
     public void testLogin() throws Exception {
-        String[] args = new String[]{ "sm", "Login.policy"};
         try {
-            main(new Login(), args);
+            main(new Login(), new String[0]);
         } catch (SkippedException se) {
             throw new SkipException("One or more tests are skipped");
         }

@@ -58,10 +58,6 @@ import sun.awt.AppContext;
  * <p>
  * This check is made on a per lookup service basis to allow flexibility in the
  * policy to reflect the needs of different lookup services.
- * <p>
- * Services which are registered by {@link #registerService(PrintService)} will
- * not be included in lookup results if a security manager is installed and its
- * {@code checkPrintJobAccess()} method denies access.
  */
 public abstract class PrintServiceLookup {
 

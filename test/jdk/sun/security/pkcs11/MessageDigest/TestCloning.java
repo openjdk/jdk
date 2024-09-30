@@ -30,7 +30,6 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestCloning
- * @run main/othervm -Djava.security.manager=allow TestCloning sm
  */
 
 import java.security.MessageDigest;

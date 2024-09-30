@@ -34,7 +34,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary ServiceConfiguration
- * @run main/othervm/policy=security.policy InvalidProperty
+ * @run main/othervm InvalidProperty
  */
 
 import java.rmi.server.RMIClassLoader;
@@ -49,8 +49,6 @@ public class InvalidProperty {
             "java.rmi.server.RMIClassLoaderSpi", "NonexistentProvider");
 
         String classname = "Foo";
-
-        TestLibrary.suggestSecurityManager(null);
 
         try {
             System.err.println("first attempt:");

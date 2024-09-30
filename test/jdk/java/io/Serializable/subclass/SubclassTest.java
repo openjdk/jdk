@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@
  * @compile XObjectInputStream.java XObjectOutputStream.java
  * @compile SubclassTest.java
  * @run main SubclassTest
- * @run main/othervm/policy=Allow.policy SubclassTest -expectSecurityException
  */
 
 import java.io.ByteArrayInputStream;
@@ -132,24 +131,9 @@ public class SubclassTest {
     {
         boolean expectSecurityException = false;
 
-        if (argv.length > 0 &&
-            argv[0].compareTo("-expectSecurityException") == 0)
-            expectSecurityException = true;
-
         ByteArrayOutputStream baos = new ByteArrayOutputStream(20);
         XObjectOutputStream os = null;
-        try {
-            os = new XObjectOutputStream(baos);
-            if (expectSecurityException)
-                throw new Error("Assertion failure. " +
-                                "Expected a security exception on previous line.");
-        } catch (SecurityException e) {
-            if (expectSecurityException) {
-                System.err.println("Caught expected security exception.");
-                return;
-            }
-            throw e;
-        }
+        os = new XObjectOutputStream(baos);
         os.writeObject(new A());
         os.close();
         if (B.numWriteObjectCalled != 3)

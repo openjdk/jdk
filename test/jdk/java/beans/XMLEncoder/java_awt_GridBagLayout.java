@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,21 @@
  * @bug 8007458
  * @summary Tests GridBagLayout encoding
  * @modules java.desktop/java.awt:open
- * @run main/othervm -Djava.security.manager=allow java_awt_GridBagLayout
+ * @run main/othervm java_awt_GridBagLayout
  * @author Sergey Malenkov
  */
 
-import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.lang.reflect.Field;
 import java.util.Hashtable;
-import java.util.Map;
 import javax.swing.JLabel;
 
 public final class java_awt_GridBagLayout extends AbstractTest<GridBagLayout> {
     private static final Field HASHTABLE = getField("java.awt.GridBagLayout.comptable");
 
     public static void main(String[] args) {
-        new java_awt_GridBagLayout().test(true);
+        new java_awt_GridBagLayout().test();
     }
 
     @Override

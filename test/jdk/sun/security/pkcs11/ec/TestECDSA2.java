@@ -32,7 +32,6 @@
  *          jdk.crypto.cryptoki
  * @compile -XDignore.symbol.file TestECDSA2.java
  * @run main/othervm TestECDSA2
- * @run main/othervm -Djava.security.manager=allow TestECDSA2 sm
  */
 
 import java.math.BigInteger;

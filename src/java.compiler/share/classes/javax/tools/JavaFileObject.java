@@ -33,9 +33,6 @@ import java.util.Objects;
  * File abstraction for tools operating on Java programming language
  * source and class files.
  *
- * <p>All methods in this interface might throw a SecurityException if
- * a security exception occurs.
- *
  * <p>Unless explicitly allowed, all methods in this interface might
  * throw a NullPointerException if given a {@code null} argument.
  *

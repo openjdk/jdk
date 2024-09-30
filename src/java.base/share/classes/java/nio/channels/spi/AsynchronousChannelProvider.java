@@ -51,24 +51,11 @@ import java.security.PrivilegedAction;
  */
 
 public abstract class AsynchronousChannelProvider {
-    private static Void checkPermission() {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null)
-            sm.checkPermission(new RuntimePermission("asynchronousChannelProvider"));
-        return null;
-    }
-    private AsynchronousChannelProvider(Void ignore) { }
 
     /**
      * Initializes a new instance of this class.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("asynchronousChannelProvider")}
      */
     protected AsynchronousChannelProvider() {
-        this(checkPermission());
     }
 
     // lazy initialization of default provider

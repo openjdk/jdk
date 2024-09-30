@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,12 @@ import javax.swing.plaf.ComponentUI;
  * @test
  * @bug 8131754
  * @summary Tests JComponent encoding
- * @run main/othervm -Djava.security.manager=allow javax_swing_JComponent
+ * @run main/othervm javax_swing_JComponent
  */
 public final class javax_swing_JComponent extends AbstractTest<JComponent> {
 
     public static void main(final String[] args) {
-        new javax_swing_JComponent().test(true);
+        new javax_swing_JComponent().test();
     }
 
     protected JComponent getObject() {

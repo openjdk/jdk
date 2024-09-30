@@ -96,6 +96,10 @@ import java.util.concurrent.ConcurrentHashMap;
  *     ServicePermission("host/foo.example.com@EXAMPLE.COM", "accept");
  * </pre>
  *
+ * @apiNote
+ * This permission cannot be used for controlling access to resources anymore
+ * as the Security Manager is no longer supported.
+ *
  * @since 1.4
  */
 

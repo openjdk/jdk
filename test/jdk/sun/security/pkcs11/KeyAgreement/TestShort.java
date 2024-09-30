@@ -29,7 +29,6 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestShort
- * @run main/othervm -Djava.security.manager=allow TestShort sm
  */
 
 import java.math.BigInteger;

@@ -335,14 +335,7 @@ public class Introspector {
      *          this method is undefined if parameter path
      *          is null.
      *
-     * <p>First, if there is a security manager, its {@code checkPropertiesAccess}
-     * method is called. This could result in a SecurityException.
-     *
      * @param path  Array of package names.
-     * @throws  SecurityException  if a security manager exists and its
-     *             {@code checkPropertiesAccess} method doesn't allow setting
-     *              of system properties.
-     * @see SecurityManager#checkPropertiesAccess
      */
 
     public static void setBeanInfoSearchPath(String[] path) {

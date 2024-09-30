@@ -81,15 +81,7 @@ public abstract class RemoteServer extends RemoteObject
      * Log RMI calls to the output stream <code>out</code>. If
      * <code>out</code> is <code>null</code>, call logging is turned off.
      *
-     * <p>If there is a security manager, its
-     * <code>checkPermission</code> method will be invoked with a
-     * <code>java.util.logging.LoggingPermission("control")</code>
-     * permission; this could result in a <code>SecurityException</code>.
-     *
      * @param   out the output stream to which RMI calls should be logged
-     * @throws  SecurityException  if there is a security manager and
-     *          the invocation of its <code>checkPermission</code> method
-     *          fails
      * @see #getLog
      * @since 1.1
      */

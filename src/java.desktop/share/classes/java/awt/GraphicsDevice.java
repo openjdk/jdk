@@ -208,14 +208,8 @@ public abstract class GraphicsDevice {
     /**
      * Returns {@code true} if this {@code GraphicsDevice}
      * supports full-screen exclusive mode.
-     * If a SecurityManager is installed, its
-     * {@code checkPermission} method will be called
-     * with {@code AWTPermission("fullScreenExclusive")}.
-     * {@code isFullScreenSupported} returns true only if
-     * that permission is granted.
      * @return whether full-screen exclusive mode is available for
      * this graphics device
-     * @see java.awt.AWTPermission
      * @since 1.4
      */
     public boolean isFullScreenSupported() {

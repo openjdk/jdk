@@ -50,7 +50,6 @@ import org.testng.TestNG;
  * @summary Basic test for the unsupported ReflectionFactory
  * @modules jdk.unsupported
  * @run testng ReflectionFactoryTest
- * @run testng/othervm/policy=security.policy ReflectionFactoryTest
  */
 
 public class ReflectionFactoryTest {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4652928
  * @summary Tests encoding of collections
- * @run main/othervm -Djava.security.manager=allow Test4652928
+ * @run main/othervm Test4652928
  * @author Sergey Malenkov, Mark Davidson
  */
 
@@ -40,7 +40,7 @@ import javax.swing.JLabel;
 
 public class Test4652928 extends AbstractTest<List> {
     public static void main(String[] args) {
-        new Test4652928().test(true);
+        new Test4652928().test();
     }
 
     protected List getObject() {

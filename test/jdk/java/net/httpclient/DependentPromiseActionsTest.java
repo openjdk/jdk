@@ -30,8 +30,6 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        DependentPromiseActionsTest
  * @run testng/othervm -Djdk.internal.httpclient.debug=true DependentPromiseActionsTest
- * @run testng/othervm/java.security.policy=dependent.policy
-  *           -Djdk.internal.httpclient.debug=true DependentPromiseActionsTest
  */
 
 import java.io.BufferedReader;
@@ -502,16 +500,8 @@ public class DependentPromiseActionsTest implements HttpServerAdapters {
                 failed.set(new RuntimeException("Dependant action has unexpected frame in " +
                         Thread.currentThread() + ": " + httpStack.get(0)));
 
-            }            return;
-        } else if (System.getSecurityManager() != null) {
-            Optional<StackFrame> sf = WALKER.walk(s -> findFrame(s, "PrivilegedRunnable"));
-            if (!sf.isPresent()) {
-                failed.set(new RuntimeException("Dependant action does not have expected frame in "
-                        + Thread.currentThread()));
-                return;
-            } else {
-                System.out.println("Found expected frame: " + sf.get());
             }
+            return;
         } else {
             List<StackFrame> httpStack = WALKER.walk(s -> s.filter(f -> f.getDeclaringClass()
                     .getModule().equals(HttpClient.class.getModule()))

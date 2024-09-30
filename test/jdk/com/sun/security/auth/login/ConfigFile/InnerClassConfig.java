@@ -25,7 +25,7 @@
  * @test
  * @bug 4397774
  * @summary ConfigFile does not support nested static classes as Module names
- * @run main/othervm/policy=InnerClassConfig.policy -Djava.security.auth.login.config==file:${test.src}/InnerClassConfig.config InnerClassConfig
+ * @run main/othervm -Djava.security.auth.login.config==file:${test.src}/InnerClassConfig.config InnerClassConfig
  */
 
 import com.sun.security.auth.login.*;

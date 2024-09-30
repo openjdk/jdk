@@ -1354,20 +1354,10 @@ throws SQLException;
      * {@code abort} method returns, the connection will have been marked as
      * closed and the {@code Executor} that was passed as a parameter to abort
      * may still be executing tasks to release resources.
-     * <p>
-     * This method checks to see that there is an {@code SQLPermission}
-     * object before allowing the method to proceed.  If a
-     * {@code SecurityManager} exists and its
-     * {@code checkPermission} method denies calling {@code abort},
-     * this method throws a
-     * {@code java.lang.SecurityException}.
      * @param executor  The {@code Executor}  implementation which will
      * be used by {@code abort}.
      * @throws java.sql.SQLException if a database access error occurs or
-     * the {@code executor} is {@code null},
-     * @throws java.lang.SecurityException if a security manager exists and its
-     *    {@code checkPermission} method denies calling {@code abort}
-     * @see SecurityManager#checkPermission
+     * the {@code executor} is {@code null}
      * @see Executor
      * @since 1.7
      */
@@ -1429,14 +1419,6 @@ throws SQLException;
      * When the driver determines that the {@code setNetworkTimeout} timeout
      * value has expired, the JDBC driver marks the connection
      * closed and releases any resources held by the connection.
-     * <p>
-     *
-     * This method checks to see that there is an {@code SQLPermission}
-     * object before allowing the method to proceed.  If a
-     * {@code SecurityManager} exists and its
-     * {@code checkPermission} method denies calling
-     * {@code setNetworkTimeout}, this method throws a
-     * {@code java.lang.SecurityException}.
      *
      * @param executor  The {@code Executor}  implementation which will
      * be used by {@code setNetworkTimeout}.
@@ -1451,12 +1433,8 @@ throws SQLException;
      * method is called on a closed connection,
      * the {@code executor} is {@code null},
      * or the value specified for {@code seconds} is less than 0.
-     * @throws java.lang.SecurityException if a security manager exists and its
-     *    {@code checkPermission} method denies calling
-     * {@code setNetworkTimeout}.
      * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
-     * @see SecurityManager#checkPermission
      * @see Statement#setQueryTimeout
      * @see #getNetworkTimeout
      * @see #abort

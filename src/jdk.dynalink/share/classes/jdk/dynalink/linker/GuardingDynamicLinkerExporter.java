@@ -39,11 +39,7 @@ import jdk.dynalink.DynamicLinkerFactory;
  * subclass in
  * {@code /META-INF/services/jdk.dynalink.linker.GuardingDynamicLinkerExporter}
  * resource of their distribution (typically, JAR file) so that dynamic linker
- * factories can discover them using the {@link ServiceLoader} mechanism. Note
- * that instantiating this class is tied to a security check for the
- * {@code RuntimePermission("dynalink.exportLinkersAutomatically")} when a
- * security manager is present, to ensure that only trusted runtimes can
- * automatically export their linkers into other runtimes.
+ * factories can discover them using the {@link ServiceLoader} mechanism.
  * @see DynamicLinkerFactory#setClassLoader(ClassLoader)
  * @since 9
  */
@@ -58,13 +54,7 @@ public abstract class GuardingDynamicLinkerExporter implements Supplier<List<Gua
     private static final Permission AUTOLOAD_PERMISSION = new RuntimePermission(AUTOLOAD_PERMISSION_NAME);
 
     /**
-     * Creates a new linker exporter. If there is a security manager installed
-     * checks for the
-     * {@code RuntimePermission("dynalink.exportLinkersAutomatically")} runtime
-     * permission. This ensures only language runtimes granted this permission
-     * will be allowed to export their linkers for automatic loading.
-     * @throws SecurityException if the necessary runtime permission is not
-     * granted.
+     * Creates a new linker exporter.
      */
     protected GuardingDynamicLinkerExporter() {
         @SuppressWarnings("removal")

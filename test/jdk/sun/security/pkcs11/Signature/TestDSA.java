@@ -30,7 +30,6 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestDSA
- * @run main/othervm -Djava.security.manager=allow TestDSA sm
  */
 
 import java.io.ByteArrayOutputStream;

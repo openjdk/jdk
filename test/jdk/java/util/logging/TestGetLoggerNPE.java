@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,6 @@
  * questions.
  */
 import java.io.PrintStream;
-import java.security.Permission;
-import java.security.Policy;
-import java.security.ProtectionDomain;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import jdk.internal.access.JavaAWTAccess;
@@ -38,8 +35,8 @@ import jdk.internal.access.SharedSecrets;
  * @modules java.base/jdk.internal.access
  *          java.logging
  * @build TestGetLoggerNPE
- * @run main/othervm -Djava.security.manager=allow TestGetLoggerNPE getLogger
- * @run main/othervm -Djava.security.manager=allow TestGetLoggerNPE getLogManager
+ * @run main/othervm TestGetLoggerNPE getLogger
+ * @run main/othervm TestGetLoggerNPE getLogManager
  */
 public class TestGetLoggerNPE {
     static volatile Throwable thrown = null;
@@ -71,13 +68,6 @@ public class TestGetLoggerNPE {
                 }
             }
         };
-        Policy.setPolicy(new Policy() {
-             public boolean implies(ProtectionDomain domain,
-                                    Permission permission) {
-                 return true; // all permissions
-             }
-        });
-        System.setSecurityManager(new SecurityManager());
         t.start();
         t.join();
         if (thrown == null) {

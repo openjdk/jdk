@@ -215,10 +215,6 @@ public abstract class LocaleServiceProvider {
 
     /**
      * Initializes a new locale service provider.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission RuntimePermission("localeServiceProvider")}
      */
     protected LocaleServiceProvider() {
         this(checkPermission());

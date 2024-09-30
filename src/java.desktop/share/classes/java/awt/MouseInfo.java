@@ -56,18 +56,8 @@ public class MouseInfo {
      * of the {@code GraphicsDevice}. See {@link GraphicsConfiguration}
      * for more information about the virtual screen devices.
      * On systems without a mouse, returns {@code null}.
-     * <p>
-     * If there is a security manager, its {@code checkPermission} method
-     * is called with an {@code AWTPermission("watchMousePointer")}
-     * permission before creating and returning a {@code PointerInfo}
-     * object. This may result in a {@code SecurityException}.
      *
      * @throws HeadlessException if GraphicsEnvironment.isHeadless() returns true
-     * @throws SecurityException if a security manager exists and its
-     *            {@code checkPermission} method doesn't allow the operation
-     * @see       GraphicsConfiguration
-     * @see       SecurityManager#checkPermission
-     * @see       java.awt.AWTPermission
      * @return    location of the mouse pointer
      * @since     1.5
      */

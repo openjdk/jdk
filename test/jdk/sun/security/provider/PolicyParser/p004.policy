@@ -1,3 +1,0 @@
-grant Codebase "http://java.sun.com/bogussb1.jar" SignedBy "gfe,,garysign" {
-      permission java.security.SecurityPermission "bogusPolicyParser";
-};

@@ -25,9 +25,12 @@
 package java.lang;
 
 /**
- * Thrown by the security manager to indicate a security violation.
+ * Thrown to indicate a security violation.
  *
- * @see     java.lang.SecurityManager
+ * <p> This exception was originally specified for use with a SecurityManager when
+ * an operation was denied. This feature no longer exists. This exception may be
+ * deprecated in a future release.
+ *
  * @since   1.0
  */
 public class SecurityException extends RuntimeException {

@@ -25,7 +25,6 @@
  * @test
  * @summary Test behavior related to finalize
  * @run main/othervm  SSLSessionFinalizeTest
- * @run main/othervm/policy=security.policy  SSLSessionFinalizeTest
  */
 
 import java.io.InputStream;

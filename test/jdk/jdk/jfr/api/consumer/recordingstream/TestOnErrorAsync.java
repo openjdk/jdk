@@ -27,9 +27,9 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import jdk.jfr.Event;
 import jdk.jfr.api.consumer.recordingstream.TestUtils.TestError;
 import jdk.jfr.api.consumer.recordingstream.TestUtils.TestException;
-import jdk.jfr.api.consumer.security.TestStreamingRemote.TestEvent;
 import jdk.jfr.consumer.RecordingStream;
 
 /**
@@ -42,6 +42,8 @@ import jdk.jfr.consumer.RecordingStream;
  * @run main/othervm jdk.jfr.api.consumer.recordingstream.TestOnErrorAsync
  */
 public class TestOnErrorAsync {
+    private static class TestEvent extends Event {
+    }
     public static void main(String... args) throws Exception {
         testDefaultError();
         testCustomError();

@@ -60,10 +60,6 @@ public abstract class LdapDnsProvider {
 
     /**
      * Creates a new instance of {@code LdapDnsProvider}.
-     *
-     * @throws SecurityException if a security manager is present and its
-     *                           {@code checkPermission} method doesn't allow
-     *                           the {@code RuntimePermission("ldapDnsProvider")}.
      */
     protected LdapDnsProvider() {
         this(checkPermission());

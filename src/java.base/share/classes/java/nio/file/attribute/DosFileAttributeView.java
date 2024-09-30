@@ -97,7 +97,6 @@ public interface DosFileAttributeView
 
     /**
      * @throws  IOException                             {@inheritDoc}
-     * @throws  SecurityException                       {@inheritDoc}
      */
     @Override
     DosFileAttributes readAttributes() throws IOException;
@@ -115,10 +114,6 @@ public interface DosFileAttributeView
      *
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default, and a security manager is installed,
-     *          its  {@link SecurityManager#checkWrite(String) checkWrite} method
-     *          is invoked to check write access to the file
      */
     void setReadOnly(boolean value) throws IOException;
 
@@ -135,10 +130,6 @@ public interface DosFileAttributeView
      *
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default, and a security manager is installed,
-     *          its  {@link SecurityManager#checkWrite(String) checkWrite} method
-     *          is invoked to check write access to the file
      */
     void setHidden(boolean value) throws IOException;
 
@@ -155,10 +146,6 @@ public interface DosFileAttributeView
      *
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default, and a security manager is installed,
-     *          its  {@link SecurityManager#checkWrite(String) checkWrite} method
-     *          is invoked to check write access to the file
      */
     void setSystem(boolean value) throws IOException;
 
@@ -175,10 +162,6 @@ public interface DosFileAttributeView
      *
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default, and a security manager is installed,
-     *          its  {@link SecurityManager#checkWrite(String) checkWrite} method
-     *          is invoked to check write access to the file
      */
     void setArchive(boolean value) throws IOException;
 }

@@ -228,17 +228,6 @@ public class Main {
             assertTrue(false);
         } catch (NullPointerException expected) { }
 
-        // SecurityManager case
-        System.setSecurityManager(new SecurityManager());
-
-        assertNull(Main.class.getResource("/" + NAME));
-        assertNull(p1.Main.getResource("/" + NAME));
-        assertNull(p2.Main.getResource("/" + NAME));
-
-        assertNull(Main.class.getResourceAsStream("/" + NAME));
-        assertNull(p1.Main.getResourceAsStream("/" + NAME));
-        assertNull(p2.Main.getResourceAsStream("/" + NAME));
-
         System.out.println("Success!");
     }
 

@@ -27,7 +27,7 @@
  * @author Ann Wollrath
  *
  * @build ToStub ToStub_Stub
- * @run main/othervm/policy=security.policy/timeout=240 ToStub
+ * @run main/othervm/timeout=240 ToStub
  */
 
 import java.io.IOException;
@@ -56,10 +56,6 @@ public class ToStub implements RemoteInterface {
 
         try {
             System.setProperty("java.rmi.server.ignoreStubClasses", "true");
-
-            if (System.getSecurityManager() == null) {
-                System.setSecurityManager(new SecurityManager());
-            }
 
             System.err.println("export objects");
             server1 = new ToStub();

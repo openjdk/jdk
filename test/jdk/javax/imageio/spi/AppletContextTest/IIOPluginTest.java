@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import javax.imageio.ImageIO;
+import java.util.ServiceConfigurationError;
 
 public class IIOPluginTest {
 
@@ -29,15 +30,16 @@ public class IIOPluginTest {
     public static String[] dummymimeType = {"image/test_5076692"};
 
     public static void main(String[] args) {
-        SecurityManager sm = System.getSecurityManager();
-        System.out.println("Sm is " + sm);
-
-        String formatNames[] = ImageIO.getReaderFormatNames();
-        String readerMimeTypes[] = ImageIO.getReaderMIMETypes();
-
-        if (!isPresent(dummyformatNames, formatNames) ||
-            !isPresent(dummymimeType, readerMimeTypes)) {
-            throw new RuntimeException("No test plugin available!");
+        try {
+            String formatNames[] = ImageIO.getReaderFormatNames();
+            String readerMimeTypes[] = ImageIO.getReaderMIMETypes();
+            if (!isPresent(dummyformatNames, formatNames) ||
+                !isPresent(dummymimeType, readerMimeTypes)) {
+                throw new RuntimeException("No test plugin available!");
+            }
+        } catch (ServiceConfigurationError sce) {
+            System.out.println("Expected ServiceConfigurationError \n" + sce);
+            System.out.println("Test Passed");
         }
     }
 

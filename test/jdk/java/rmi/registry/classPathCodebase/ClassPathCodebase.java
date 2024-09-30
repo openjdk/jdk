@@ -35,7 +35,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary Dummy RegistryVM RMIRegistryRunner
- * @run main/othervm/policy=security.policy
+ * @run main/othervm
  *     -Djava.rmi.server.useCodebaseOnly=false ClassPathCodebase
  */
 
@@ -85,7 +85,7 @@ public class ClassPathCodebase {
             File rmiregistryDir =
                   new File(System.getProperty("user.dir", "."), importCodebase);
             rmiregistry = RegistryVM.createRegistryVMWithRunner("RMIRegistryRunner",
-                            " -Denv.class.path=. -Djava.security.manager=allow"
+                            " -Denv.class.path=."
                             + " -Djava.rmi.server.codebase=" + exportCodebaseURL
                             + " -Duser.dir=" + rmiregistryDir.getAbsolutePath());
             rmiregistry.start();

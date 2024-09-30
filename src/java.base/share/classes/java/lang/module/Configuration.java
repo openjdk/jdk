@@ -244,8 +244,6 @@ public final class Configuration {
      * @throws ResolutionException
      *         If resolution fails any of the consistency checks specified by
      *         the static {@code resolve} method
-     * @throws SecurityException
-     *         If locating a module is denied by the security manager
      */
     public Configuration resolve(ModuleFinder before,
                                  ModuleFinder after,
@@ -287,8 +285,6 @@ public final class Configuration {
      * @throws ResolutionException
      *         If resolution fails any of the consistency checks specified by
      *         the static {@code resolve} method
-     * @throws SecurityException
-     *         If locating a module is denied by the security manager
      */
     public Configuration resolveAndBind(ModuleFinder before,
                                         ModuleFinder after,
@@ -399,9 +395,6 @@ public final class Configuration {
      *         If the list of parents is empty, or the list has two or more
      *         parents with modules for different target operating systems,
      *         architectures, or versions
-     *
-     * @throws SecurityException
-     *         If locating a module is denied by the security manager
      */
     public static Configuration resolve(ModuleFinder before,
                                         List<Configuration> parents,
@@ -471,8 +464,6 @@ public final class Configuration {
      *         If the list of parents is empty, or the list has two or more
      *         parents with modules for different target operating systems,
      *         architectures, or versions
-     * @throws SecurityException
-     *         If locating a module is denied by the security manager
      */
     public static Configuration resolveAndBind(ModuleFinder before,
                                                List<Configuration> parents,

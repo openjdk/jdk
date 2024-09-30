@@ -30,7 +30,6 @@
  * @modules java.base/sun.security.internal.spec
  *          jdk.crypto.cryptoki
  * @run main/othervm TestPremaster
- * @run main/othervm -Djava.security.manager=allow TestPremaster sm policy
  */
 
 import java.security.Provider;

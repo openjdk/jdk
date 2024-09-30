@@ -513,9 +513,6 @@ public class JDialog extends Dialog implements WindowConstants,
      *     if the {@code owner}'s {@code GraphicsConfiguration} is not from a screen device
      * @throws HeadlessException
      *     when {@code GraphicsEnvironment.isHeadless()} returns {@code true}
-     * @throws SecurityException
-     *     if the calling thread does not have permission to create modal dialogs
-     *     with the given {@code modalityType}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog#setModal
@@ -580,9 +577,6 @@ public class JDialog extends Dialog implements WindowConstants,
      *     if the {@code owner}'s {@code GraphicsConfiguration} is not from a screen device
      * @throws HeadlessException
      *     when {@code GraphicsEnvironment.isHeadless()} returns {@code true}
-     * @throws SecurityException
-     *     if the calling thread does not have permission to create modal dialogs
-     *     with the given {@code modalityType}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog#setModal
@@ -625,9 +619,6 @@ public class JDialog extends Dialog implements WindowConstants,
      *     if the {@code owner}'s {@code GraphicsConfiguration} is not from a screen device
      * @throws HeadlessException
      *     when {@code GraphicsEnvironment.isHeadless()} returns {@code true}
-     * @throws SecurityException
-     *     if the calling thread does not have permission to create modal dialogs
-     *     with the given {@code modalityType}
      *
      * @see java.awt.Dialog.ModalityType
      * @see java.awt.Dialog#setModal

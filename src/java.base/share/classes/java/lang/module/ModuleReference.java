@@ -95,8 +95,6 @@ public abstract class ModuleReference {
      *
      * @throws IOException
      *         If an I/O error occurs
-     * @throws SecurityException
-     *         If denied by the security manager
      */
     public abstract ModuleReader open() throws IOException;
 }

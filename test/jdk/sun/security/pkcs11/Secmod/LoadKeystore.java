@@ -28,7 +28,6 @@
  * @library /test/lib ../
  * @modules jdk.crypto.cryptoki
  * @run main/othervm LoadKeystore
- * @run main/othervm -Djava.security.manager=allow LoadKeystore sm policy
  */
 
 import java.io.File;

@@ -259,9 +259,6 @@ public class Modules {
             layer = parents.isEmpty() ? null : parents.get(0);
         }
 
-        // update security manager before making types visible
-        JLA.addNonExportedPackages(newLayer);
-
         // update the built-in class loaders to make the types visible
         for (ResolvedModule resolvedModule : cf.modules()) {
             ModuleReference mref = resolvedModule.reference();

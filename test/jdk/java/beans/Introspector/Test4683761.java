@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
  * @test
  * @bug 4683761
  * @summary Tests that all public methods in a public class
- * @run main/othervm -Djava.security.manager=allow Test4683761
- * @author Sergey Malenkov
+ * @run main Test4683761
  */
 
 import java.beans.PropertyDescriptor;
@@ -35,7 +34,6 @@ import java.util.Map;
 
 public class Test4683761 {
     public static void main(String[] args) throws Exception {
-        System.setSecurityManager(new SecurityManager());
         Map<String, String> map = new HashMap<String, String>();
         map.put("key", "value");
         Map.Entry<String, String> entry = map.entrySet().iterator().next();

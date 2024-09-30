@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package parsers;
 import javax.xml.validation.SchemaFactory;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
@@ -36,11 +35,9 @@ import org.xml.sax.helpers.DefaultHandler;
  * @test
  * @bug 5010072
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow parsers.Bug5010072
  * @run testng/othervm parsers.Bug5010072
  * @summary Test SchemaFactory throws SAXException if xpath is "@".
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class Bug5010072 {
 
     protected static class ErrorHandler extends DefaultHandler {

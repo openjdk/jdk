@@ -110,9 +110,6 @@ public abstract class InetAddressResolverProvider {
     /**
      * Creates a new instance of {@code InetAddressResolverProvider}.
      *
-     * @throws SecurityException if a security manager is present and its
-     *                           {@code checkPermission} method doesn't allow the
-     *                           {@code RuntimePermission("inetAddressResolverProvider")}.
      * @implNote It is recommended that an {@code InetAddressResolverProvider} service
      * implementation initialization should be as simple as possible, in order to avoid
      * possible risks of deadlock or class loading cycles during the instantiation of the

@@ -134,8 +134,5 @@ TEST_ARGS="${TESTVMOPTS} -classpath ${TESTCLASSPATH} \
 # run test without security manager
 ${TESTJAVA}${FS}bin${FS}java ${TEST_ARGS} MultipleLogins || exit 10
 
-# run test with security manager
-${TESTJAVA}${FS}bin${FS}java ${TEST_ARGS} -Djava.security.manager=allow MultipleLogins useSimplePolicy || exit 11
-
 echo Done
 exit 0

@@ -82,10 +82,6 @@ public abstract class HttpServerProvider {
 
     /**
      * Initializes a new instance of this class.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("httpServerProvider")}
      */
     protected HttpServerProvider() {
         @SuppressWarnings("removal")

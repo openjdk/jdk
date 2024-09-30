@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Basic security checks for WebSocket URI from the Builder
  * @compile ../DummyWebSocketServer.java ../../ProxyServer.java
- * @run testng/othervm/java.security.policy=httpclient.policy WSURLPermissionTest
+ * @run testng/othervm WSURLPermissionTest
  */
 
 import java.io.IOException;
@@ -36,15 +36,8 @@ import java.net.ProxySelector;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URLPermission;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.Permission;
-import java.security.Permissions;
-import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.security.ProtectionDomain;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import org.testng.annotations.AfterTest;
@@ -54,19 +47,6 @@ import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
 public class WSURLPermissionTest {
-
-    static AccessControlContext withPermissions(Permission... perms) {
-        Permissions p = new Permissions();
-        for (Permission perm : perms) {
-            p.add(perm);
-        }
-        ProtectionDomain pd = new ProtectionDomain(null, p);
-        return new AccessControlContext(new ProtectionDomain[]{ pd });
-    }
-
-    static AccessControlContext noPermissions() {
-        return withPermissions(/*empty*/);
-    }
 
     URI wsURI;
     DummyWebSocketServer webSocketServer;
@@ -359,190 +339,7 @@ public class WSURLPermissionTest {
                                           String dataProviderId)
         throws Exception
     {
-        // sanity ( no security manager )
-        System.setSecurityManager(null);
-        try {
-            AccessController.doPrivileged(action);
-        } finally {
-            System.setSecurityManager(new SecurityManager());
-        }
-    }
-
-    @Test(dataProvider = "passingScenarios")
-    public void testWithAllPermissions(PrivilegedExceptionAction<?> action,
-                                       URLPermission[] unused,
-                                       String dataProviderId)
-        throws Exception
-    {
-        // Run with all permissions, i.e. no further restrictions than test's AllPermission
-        assert System.getSecurityManager() != null;
-        AccessController.doPrivileged(action);
-    }
-
-    @Test(dataProvider = "passingScenarios")
-    public void testWithMinimalPermissions(PrivilegedExceptionAction<?> action,
-                                           URLPermission[] perms,
-                                           String dataProviderId)
-        throws Exception
-    {
-        // Run with minimal permissions, i.e. just what is required
-        assert System.getSecurityManager() != null;
-        AccessControlContext minimalACC = withPermissions(perms);
-        AccessController.doPrivileged(action, minimalACC);
-    }
-
-    @Test(dataProvider = "passingScenarios")
-    public void testWithNoPermissions(PrivilegedExceptionAction<?> action,
-                                      URLPermission[] unused,
-                                      String dataProviderId)
-        throws Exception
-    {
-        // Run with NO permissions, i.e. expect SecurityException
-        assert System.getSecurityManager() != null;
-        try {
-            AccessController.doPrivileged(action, noPermissions());
-            fail("EXPECTED SecurityException");
-        } catch (PrivilegedActionException expected) {
-            Throwable t = expected.getCause();
-            if (t instanceof ExecutionException)
-                t = t.getCause();
-
-            if (t instanceof SecurityException)
-                System.out.println("Caught expected SE:" + expected);
-            else
-                fail("Expected SecurityException, but got: " + t);
-        }
-    }
-
-    // --- Negative tests ---
-
-    @DataProvider(name = "failingScenarios")
-    public Object[][] failingScenarios() {
-        HttpClient noProxyClient = HttpClient.newHttpClient();
-        return new Object[][]{
-            { (PrivilegedExceptionAction<?>) () -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null;
-              },
-              new URLPermission[]{ /* no permissions */ },
-              "50"  /* for log file identification */},
-
-            { (PrivilegedExceptionAction<?>) () -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null;
-              },                                        // wrong scheme
-              new URLPermission[]{ new URLPermission("http://*") },
-              "51" },
-
-            { (PrivilegedExceptionAction<?>) () -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null;
-              },                                        // wrong scheme
-              new URLPermission[]{ new URLPermission("socket://*") },
-              "52" },
-
-            { (PrivilegedExceptionAction<?>) () -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null;
-              },                                        // wrong host
-              new URLPermission[]{ new URLPermission("ws://foo.com/") },
-              "53" },
-
-            { (PrivilegedExceptionAction<?>) () -> {
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(wsURI, noOpListener).get().abort();
-                 return null;
-              },                                        // wrong port
-              new URLPermission[]{ new URLPermission("ws://"+ wsURI.getHost()+":5") },
-              "54" },
-
-            { (PrivilegedExceptionAction<?>) () -> {
-                  noProxyClient.newWebSocketBuilder()
-                               .header("A-Header", "A-Value")
-                               .buildAsync(wsURI, noOpListener).get().abort();
-                  return null;
-              },                                                    // only perm to set B not A
-              new URLPermission[] { new URLPermission(wsURI.toString(), "*:B-Header") },
-              "55" },
-
-            { (PrivilegedExceptionAction<?>) () -> {
-                  noProxyClient.newWebSocketBuilder()
-                               .header("A-Header", "A-Value")
-                               .header("B-Header", "B-Value")
-                               .buildAsync(wsURI, noOpListener).get().abort();
-                  return null;
-              },                                                    // only perm to set B not A
-              new URLPermission[] { new URLPermission(wsURI.toString(), "*:B-Header") },
-              "56" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                URI uriWithPath = wsURI.resolve("/path/x");
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(uriWithPath, noOpListener).get().abort();
-                 return null; },                                    // wrong path
-              new URLPermission[] { new URLPermission(wsURI.resolve("/aDiffPath/").toString()) },
-              "57" },
-
-            { (PrivilegedExceptionAction<?>)() -> {
-                URI uriWithPath = wsURI.resolve("/path/x");
-                 noProxyClient.newWebSocketBuilder()
-                              .buildAsync(uriWithPath, noOpListener).get().abort();
-                 return null; },                                    // more specific path
-              new URLPermission[] { new URLPermission(wsURI.resolve("/path/x/y").toString()) },
-              "58" },
-
-            // client with a HTTP/HTTPS proxy
-            { (PrivilegedExceptionAction<?>)() -> {
-                 assert proxyAddress != null;
-                 ProxySelector ps = ProxySelector.of(proxyAddress);
-                 HttpClient client = HttpClient.newBuilder().proxy(ps).build();
-                 client.newWebSocketBuilder()
-                       .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },                                    // missing proxy perm
-              new URLPermission[] { new URLPermission(wsURI.toString()) },
-              "100" },
-
-            // client with a HTTP/HTTPS proxy
-            { (PrivilegedExceptionAction<?>)() -> {
-                 assert proxyAddress != null;
-                 ProxySelector ps = ProxySelector.of(proxyAddress);
-                 HttpClient client = HttpClient.newBuilder().proxy(ps).build();
-                 client.newWebSocketBuilder()
-                       .buildAsync(wsURI, noOpListener).get().abort();
-                 return null; },
-              new URLPermission[] {
-                    new URLPermission(wsURI.toString()),            // missing proxy CONNECT
-                    new URLPermission("socket://*", "GET") },
-              "101" },
-        };
-    }
-
-    @Test(dataProvider = "failingScenarios")
-    public void testWithoutEnoughPermissions(PrivilegedExceptionAction<?> action,
-                                             URLPermission[] perms,
-                                             String dataProviderId)
-        throws Exception
-    {
-        // Run without Enough permissions, i.e. expect SecurityException
-        assert System.getSecurityManager() != null;
-        AccessControlContext notEnoughPermsACC = withPermissions(perms);
-        try {
-            AccessController.doPrivileged(action, notEnoughPermsACC);
-            fail("EXPECTED SecurityException");
-        } catch (PrivilegedActionException expected) {
-            Throwable t = expected.getCause();
-            if (t instanceof ExecutionException)
-                t = t.getCause();
-
-            if (t instanceof SecurityException)
-                System.out.println("Caught expected SE:" + expected);
-            else
-                fail("Expected SecurityException, but got: " + t);
-        }
+        action.run();
     }
 
     /**

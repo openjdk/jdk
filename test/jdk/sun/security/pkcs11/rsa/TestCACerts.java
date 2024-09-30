@@ -30,7 +30,6 @@
  * @library ../../../../java/security/testlibrary
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestCACerts
- * @run main/othervm -Djava.security.manager=allow TestCACerts sm TestCACerts.policy
  */
 
 // this test serves as our known answer test

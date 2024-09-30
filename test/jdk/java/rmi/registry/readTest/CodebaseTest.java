@@ -57,7 +57,7 @@ public class CodebaseTest {
             rmiregistryDir.mkdirs();
             rmiregistry = RegistryVM.createRegistryVMWithRunner(
                     "RMIRegistryRunner",
-                    " -Djava.rmi.server.useCodebaseOnly=false -Djava.security.manager=allow"
+                    " -Djava.rmi.server.useCodebaseOnly=false"
                     + " -Duser.dir=" + rmiregistryDir.getAbsolutePath());
             rmiregistry.start();
             int port = rmiregistry.getPort();

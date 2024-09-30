@@ -46,13 +46,11 @@ import javax.management.*;
 import javax.management.remote.JMXServerErrorException;
 import javax.management.remote.NotificationResult;
 import javax.security.auth.Subject;
-import jdk.internal.access.SharedSecrets;
 import sun.reflect.misc.ReflectUtil;
 
 import static javax.management.remote.rmi.RMIConnector.Util.cast;
 import com.sun.jmx.remote.internal.ServerCommunicatorAdmin;
 import com.sun.jmx.remote.internal.ServerNotifForwarder;
-import com.sun.jmx.remote.security.JMXSubjectDomainCombiner;
 import com.sun.jmx.remote.util.ClassLoaderWithRepository;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
@@ -110,19 +108,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         this.connectionId = connectionId;
         this.defaultClassLoader = defaultClassLoader;
         this.subject = subject;
-
-        if (subject == null) {
-            this.acc = null;
-        } else {
-            // An authenticated Subject was provided.
-            // Subject Delegation has been removed.
-            if (SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
-                // SM is allowed.  Will use ACC created with Subject:
-                this.acc = JMXSubjectDomainCombiner.getContext(subject);
-            } else {
-                this.acc = null;
-            }
-        }
         this.mbeanServer = rmiServer.getMBeanServer();
 
         final ClassLoader dcl = defaultClassLoader;
@@ -1298,20 +1283,10 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                         return getServerNotifFwd().fetchNotifs(csn, t, mn);
                     }
             };
-            if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
-                // Modern case
-                if (subject == null) {
-                    return action.run();
-                } else {
-                    return Subject.doAs(subject, action);
-                }
+            if (subject == null) {
+                return action.run();
             } else {
-                // SM permitted
-                if (acc == null) {
-                    return action.run(); // No Subject or ACC
-                } else {
-                    return AccessController.doPrivileged(action, acc);
-                }
+                return Subject.doAs(subject, action);
             }
         } finally {
             serverCommunicatorAdmin.rspOutgoing();
@@ -1428,36 +1403,18 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         serverCommunicatorAdmin.reqIncoming();
         try {
             PrivilegedOperation op = new PrivilegedOperation(operation, params);
-            if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
-                // Modern case
-                if (subject == null) {
-                    try {
-                        return op.run();
-                    } catch (Exception e) {
-                        if (e instanceof RuntimeException) {
-                            throw (RuntimeException) e;
-                        } else {
-                            throw new PrivilegedActionException(e);
-                        }
+            if (subject == null) {
+                try {
+                    return op.run();
+                } catch (Exception e) {
+                    if (e instanceof RuntimeException) {
+                        throw (RuntimeException) e;
+                    } else {
+                        throw new PrivilegedActionException(e);
                     }
-                } else {
-                    return Subject.doAs(subject, op);
                 }
             } else {
-                // SM permitted
-                if (acc == null) {
-                    try {
-                        return op.run();
-                    } catch (Exception e) {
-                        if (e instanceof RuntimeException) {
-                            throw (RuntimeException) e;
-                        } else {
-                            throw new PrivilegedActionException(e);
-                        }
-                    }
-                } else {
-                    return AccessController.doPrivileged(op, acc);
-                }
+                return Subject.doAs(subject, op);
             }
         } catch (Error e) {
             throw new JMXServerErrorException(e.toString(),e);
@@ -1623,22 +1580,10 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         try {
             final ClassLoader old = AccessController.doPrivileged(new SetCcl(cl));
             try {
-                if (!SharedSecrets.getJavaLangAccess().allowSecurityManager()) {
-                    // Modern case
-                    if (subject != null) {
-                        return Subject.doAs(subject, (PrivilegedExceptionAction<T>) () -> wrappedClass.cast(mo.get()));
-                    } else {
-                        return wrappedClass.cast(mo.get());
-                    }
+                if (subject != null) {
+                    return Subject.doAs(subject, (PrivilegedExceptionAction<T>) () -> wrappedClass.cast(mo.get()));
                 } else {
-                    // SM permitted
-                    if (acc != null) {
-                        return AccessController.doPrivileged(
-                                (PrivilegedExceptionAction<T>) () ->
-                                        wrappedClass.cast(mo.get()), acc);
-                    } else {
-                        return wrappedClass.cast(mo.get());
-                    }
+                    return wrappedClass.cast(mo.get());
                 }
             } finally {
                 AccessController.doPrivileged(new SetCcl(old));
@@ -1754,9 +1699,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
     //------------------------------------------------------------------------
 
     private final Subject subject;
-
-    @SuppressWarnings("removal")
-    private final AccessControlContext acc;
 
     private final RMIServerImpl rmiServer;
 

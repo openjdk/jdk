@@ -30,7 +30,6 @@
  * @modules java.base/sun.security.internal.spec
  *          jdk.crypto.cryptoki
  * @run main/othervm TestKeyMaterial
- * @run main/othervm -Djava.security.manager=allow TestKeyMaterial sm policy
  */
 
 import java.io.BufferedReader;

@@ -26,7 +26,6 @@
  * @bug 4532506 4999599
  * @summary Serializing KeyPair on one VM (Sun),
  *      and Deserializing on another (IBM) fails
- * @run main/othervm/java.security.policy=Serial.policy Serial
  */
 
 import java.io.*;

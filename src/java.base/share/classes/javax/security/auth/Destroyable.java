@@ -46,9 +46,6 @@ public interface Destroyable {
      * The default implementation throws {@code DestroyFailedException}.
      *
      * @exception DestroyFailedException if the destroy operation fails.
-     *
-     * @exception SecurityException if the caller does not have permission
-     *          to destroy this {@code Object}.
      */
     default void destroy() throws DestroyFailedException {
         throw new DestroyFailedException();

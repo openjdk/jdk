@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.util.logging.Logger;
  * @bug 8005899
  * @build TestLogger testlogger.MyResource
  * @run main/othervm TestLogger
- * @run main/othervm -Djava.security.manager=allow -Dsecurity=on TestLogger
  **/
 public class TestLogger {
 
@@ -41,11 +40,6 @@ public class TestLogger {
     public static final String GEE_GEE_LOGGER = GEE_LOGGER+".Gee";
 
     public static void main(String[] args) {
-        final String security = System.getProperty("security", "off");
-        System.out.println("Security is " + security);
-        if ("on".equals(security)) {
-           System.setSecurityManager(new SecurityManager());
-        }
 
         newLogger(FOO_LOGGER, RESOURCE_BUNDLE);
         newLogger(FOO_LOGGER);

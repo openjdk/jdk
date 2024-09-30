@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,6 @@ public class TestPermission {
     public void runTest() throws Exception {
         int exitValue = executeTestJava("--module-path", MODS_DIR.toString(),
                                         "--add-modules", "m1",
-                                        "-Djava.security.manager=allow",
                                         "-m", "test/jdk.test.Main")
                             .outputTo(System.out)
                             .errorTo(System.out)

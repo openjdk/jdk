@@ -36,8 +36,6 @@
  * @modules jdk.crypto.cryptoki
  * @run main/othervm -Djdk.tls.namedGroups="secp256r1,sect193r1"
  *      ClientJSSEServerJSSE
- * @run main/othervm -Djdk.tls.namedGroups="secp256r1,sect193r1"
- *      -Djava.security.manager=allow ClientJSSEServerJSSE sm policy
  */
 
 import java.security.Provider;

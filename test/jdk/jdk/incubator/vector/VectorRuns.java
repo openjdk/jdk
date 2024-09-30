@@ -30,7 +30,6 @@ import java.util.stream.IntStream;
  * @bug 8309727
  * @modules jdk.incubator.vector
  * @run main VectorRuns
- * @run main/othervm/java.security.policy=empty_security.policy VectorRuns
  */
 
 public class VectorRuns {

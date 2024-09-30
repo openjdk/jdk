@@ -182,10 +182,6 @@ public interface MulticastChannel
      *          If this channel is closed
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          If a security manager is set, and its
-     *          {@link SecurityManager#checkMulticast(InetAddress) checkMulticast}
-     *          method denies access to the multicast group
      */
     MembershipKey join(InetAddress group, NetworkInterface interf)
         throws IOException;
@@ -231,10 +227,6 @@ public interface MulticastChannel
      *          If this channel is closed
      * @throws  IOException
      *          If an I/O error occurs
-     * @throws  SecurityException
-     *          If a security manager is set, and its
-     *          {@link SecurityManager#checkMulticast(InetAddress) checkMulticast}
-     *          method denies access to the multicast group
      */
     MembershipKey join(InetAddress group, NetworkInterface interf, InetAddress source)
         throws IOException;

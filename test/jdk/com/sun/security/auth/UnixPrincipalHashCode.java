@@ -25,7 +25,7 @@
  * @test
  * @bug 8198352
  * @requires os.family != "windows"
- * @run main/othervm/policy=uphc.policy
+ * @run main/othervm
  *      -Djava.security.auth.login.config=uphc.conf
  *      UnixPrincipalHashCode
  * @summary java.util.MissingResourceException: sun.security.util.AuthResources

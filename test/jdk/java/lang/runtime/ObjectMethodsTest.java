@@ -26,7 +26,6 @@
  * @bug 8246774
  * @summary Basic tests for ObjectMethods
  * @run testng ObjectMethodsTest
- * @run testng/othervm/java.security.policy=empty.policy ObjectMethodsTest
  */
 
 import java.util.List;

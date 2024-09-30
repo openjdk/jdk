@@ -56,14 +56,6 @@ import sun.security.krb5.RealmException;
  * unknown principal, which means, its {@link #isBound()} returns true and
  * {@link #getPrincipal()} returns null.
  * <p>
- * It might be necessary for the application to be granted a
- * {@link javax.security.auth.PrivateCredentialPermission
- * PrivateCredentialPermission} if it needs to access the {@code KeyTab}
- * instance from a {@code Subject}. This permission is not needed when the
- * application depends on the default JGSS Kerberos mechanism to access the
- * {@code KeyTab}. In that case, however, the application will need an appropriate
- * {@link javax.security.auth.kerberos.ServicePermission ServicePermission}.
- * <p>
  * The keytab file format is described at
  * <a href="http://www.ioplex.com/utilities/keytab.txt">
  * http://www.ioplex.com/utilities/keytab.txt</a>.
@@ -272,8 +264,6 @@ public final class KeyTab {
      * @return the keys (never null, may be empty)
      * @throws NullPointerException if the {@code principal}
      * argument is null
-     * @throws SecurityException if a security manager exists and the read
-     * access to the keytab file is not permitted
      */
     public KerberosKey[] getKeys(KerberosPrincipal principal) {
         try {
@@ -308,8 +298,6 @@ public final class KeyTab {
      * keytab file.
      *
      * @return true if the keytab file exists; false otherwise.
-     * @throws SecurityException if a security manager exists and the read
-     * access to the keytab file is not permitted
      */
     public boolean exists() {
         return !takeSnapshot().isMissing();

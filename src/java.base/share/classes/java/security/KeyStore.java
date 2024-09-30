@@ -1694,9 +1694,6 @@ public class KeyStore {
      * @throws IllegalArgumentException if file does not exist or does not
      *             refer to a normal file.
      * @throws NullPointerException if file is {@code null}.
-     * @throws SecurityException if a security manager exists and its
-     *             {@link java.lang.SecurityManager#checkRead} method denies
-     *             read access to the specified file.
      *
      * @see Provider
      *
@@ -1751,9 +1748,6 @@ public class KeyStore {
      * @throws IllegalArgumentException if file does not exist or does not
      *             refer to a normal file, or if param is not recognized.
      * @throws NullPointerException if file is {@code null}.
-     * @throws SecurityException if a security manager exists and its
-     *             {@link java.lang.SecurityManager#checkRead} method denies
-     *             read access to the specified file.
      *
      * @see Provider
      *

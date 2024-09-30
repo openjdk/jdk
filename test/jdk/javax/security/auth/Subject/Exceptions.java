@@ -26,7 +26,7 @@
  * @bug 8267108
  * @library /test/lib
  * @summary Check that callAs and doAs throw the specified exceptions
- * @run main/othervm -Djava.security.manager=allow Exceptions
+ * @run main/othervm Exceptions
  */
 import jdk.test.lib.Asserts;
 

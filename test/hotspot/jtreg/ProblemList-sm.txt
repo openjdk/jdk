@@ -1,0 +1,14 @@
+# :hotspot_compiler_all_gcs
+compiler/exceptions/ExceptionInInit.java 0000000 generic-all
+
+# :hotspot_runtime
+runtime/Nestmates/protectionDomain/TestDifferentProtectionDomains.java 0000000 generic-all
+
+# :tier1_runtime
+runtime/Dictionary/CleanProtectionDomain.java 0000000 generic-all
+runtime/Dictionary/ProtectionDomainCacheTest.java 0000000 generic-all
+runtime/logging/ProtectionDomainVerificationTest.java 0000000 generic-all
+
+# tier5
+vmTestbase/nsk/jvmti/AttachOnDemand/attach004/TestDescription.java 0000000 generic-all
+

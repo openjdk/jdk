@@ -30,7 +30,6 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm ReinitMac
- * @run main/othervm -Djava.security.manager=allow ReinitMac sm
  */
 
 import java.security.Provider;

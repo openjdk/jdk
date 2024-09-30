@@ -58,8 +58,6 @@ public class HelloImpl
         Hello hello = null;
         Registry registry = null;
 
-        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
-
         try {
             String protocol = "";
             if (args.length >= 1)

@@ -148,19 +148,9 @@ class IdentityScope extends Identity {
     /**
      * Sets the system's identity scope.
      *
-     * <p>First, if there is a security manager, its
-     * {@code checkSecurityAccess}
-     * method is called with {@code "setSystemScope"}
-     * as its argument to see if it's ok to set the identity scope.
-     *
      * @param scope the scope to set.
      *
-     * @throws     SecurityException  if a security manager exists and its
-     * {@code checkSecurityAccess} method doesn't allow
-     * setting the identity scope.
-     *
      * @see #getSystemScope
-     * @see SecurityManager#checkSecurityAccess
      */
     protected static void setSystemScope(IdentityScope scope) {
         check("setSystemScope");

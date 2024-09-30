@@ -29,7 +29,6 @@
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestKeyFactory
- * @run main/othervm -Djava.security.manager=allow TestKeyFactory sm rsakeys.ks.policy
  */
 
 import java.io.*;

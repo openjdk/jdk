@@ -29,14 +29,10 @@
  * The principal can set using the system property sun.security.krb5.principal.
  * This property is checked during login. If this property is not set,
  * then the principal name from the configuration is used.
- * @run main/othervm/java.security.policy=principalSystemPropTest.policy
- * PrincipalSystemPropTest
+ * @run main/othervm PrincipalSystemPropTest
  */
 
-import java.io.File;
 import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.login.LoginContext;

@@ -324,14 +324,6 @@ public class RMIClassLoader {
      * {@link RMIClassLoaderSpi#getClassLoader(String)} method
      * of the provider instance, passing <code>codebase</code> as the argument.
      *
-     * <p>If there is a security manager, its <code>checkPermission</code>
-     * method will be invoked with a
-     * <code>RuntimePermission("getClassLoader")</code> permission;
-     * this could result in a <code>SecurityException</code>.
-     * The provider implementation of this method may also perform further
-     * security checks to verify that the calling context has permission to
-     * connect to all of the URLs in the codebase URL path.
-     *
      * @param   codebase the list of URLs (space-separated) from which
      * the returned class loader will load classes from, or <code>null</code>
      *
@@ -343,15 +335,10 @@ public class RMIClassLoader {
      * if <code>codebase</code> is <code>null</code> and a provider-specific
      * URL used to identify the class loader is invalid
      *
-     * @throws  SecurityException if there is a security manager and the
-     * invocation of its <code>checkPermission</code> method fails, or
-     * if the caller does not have permission to connect to all of the
-     * URLs in the codebase URL path
-     *
      * @since   1.3
      */
     public static ClassLoader getClassLoader(String codebase)
-        throws MalformedURLException, SecurityException
+        throws MalformedURLException
     {
         return provider.getClassLoader(codebase);
     }
@@ -403,11 +390,6 @@ public class RMIClassLoader {
      * will use the canonical instance of the default provider
      * as the service provider instance.
      *
-     * <p>If there is a security manager, its
-     * <code>checkPermission</code> method will be invoked with a
-     * <code>RuntimePermission("setFactory")</code> permission; this
-     * could result in a <code>SecurityException</code>.
-     *
      * <p>The default service provider instance implements
      * {@link RMIClassLoaderSpi} as follows:
      *
@@ -437,21 +419,7 @@ public class RMIClassLoader {
      * <li><p>Otherwise, if the class loader is an instance of
      * <code>URLClassLoader</code>, then the returned string is a
      * space-separated list of the external forms of the URLs returned
-     * by invoking the <code>getURLs</code> methods of the loader.  If
-     * the <code>URLClassLoader</code> was created by this provider to
-     * service an invocation of its <code>loadClass</code> or
-     * <code>loadProxyClass</code> methods, then no permissions are
-     * required to get the associated codebase string.  If it is an
-     * arbitrary other <code>URLClassLoader</code> instance, then if
-     * there is a security manager, its <code>checkPermission</code>
-     * method will be invoked once for each URL returned by the
-     * <code>getURLs</code> method, with the permission returned by
-     * invoking <code>openConnection().getPermission()</code> on each
-     * URL; if any of those invocations throws a
-     * <code>SecurityException</code> or an <code>IOException</code>,
-     * then the value of the <code>java.rmi.server.codebase</code>
-     * property (or possibly an earlier cached value) is returned, or
-     * <code>null</code> is returned if that property is not set.
+     * by invoking the <code>getURLs</code> methods of the loader.
      *
      * <li><p>Finally, if the class loader is not an instance of
      * <code>URLClassLoader</code>, then the value of the
@@ -461,13 +429,13 @@ public class RMIClassLoader {
      *
      * </ul>
      *
-     * <p>For the implementations of the methods described below,
+     * <p>FIXME: For the implementations of the methods described below,
      * which all take a <code>String</code> parameter named
      * <code>codebase</code> that is a space-separated list of URLs,
      * each invocation has an associated <i>codebase loader</i> that
      * is identified using the <code>codebase</code> argument in
      * conjunction with the current thread's context class loader (see
-     * {@link Thread#getContextClassLoader()}).  When there is a
+     * {@link Thread#getContextClassLoader()}). When there is a
      * security manager, this provider maintains an internal table of
      * class loader instances (which are at least instances of {@link
      * java.net.URLClassLoader}) keyed by the pair of their parent
@@ -492,10 +460,7 @@ public class RMIClassLoader {
      *
      * <p>The <b>{@link RMIClassLoaderSpi#getClassLoader(String)
      * getClassLoader}</b> method returns the codebase loader for the
-     * specified codebase URL path.  If there is a security manager,
-     * then if the calling context does not have permission to connect
-     * to all of the URLs in the codebase URL path, a
-     * <code>SecurityException</code> will be thrown.
+     * specified codebase URL path.
      *
      * <p>The <b>{@link
      * RMIClassLoaderSpi#loadClass(String,String,ClassLoader)
@@ -521,10 +486,6 @@ public class RMIClassLoader {
      * <p>Next, the <code>loadClass</code> method attempts to load the
      * class with the specified <code>name</code> using the codebase
      * loader for the specified codebase URL path.
-     * If there is a security manager, then the calling context
-     * must have permission to connect to all of the URLs in the
-     * codebase URL path; otherwise, the current thread's context
-     * class loader will be used instead of the codebase loader.
      *
      * </blockquote>
      *
@@ -595,9 +556,6 @@ public class RMIClassLoader {
      * </blockquote>
      *
      * @return  the canonical instance of the default service provider
-     *
-     * @throws  SecurityException if there is a security manager and the
-     * invocation of its <code>checkPermission</code> method fails
      *
      * @since   1.4
      */

@@ -123,9 +123,6 @@ public class SSLContext {
      *
      * @param context the SSLContext
      * @throws  NullPointerException if context is null
-     * @throws  SecurityException if a security manager exists and its
-     *          {@code checkPermission} method does not allow
-     *          {@code SSLPermission("setDefaultSSLContext")}
      * @since 1.6
      */
     public static void setDefault(SSLContext context) {

@@ -60,10 +60,6 @@ public abstract class URLStreamHandlerProvider
 
     /**
      * Initializes a new URL stream handler provider.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link RuntimePermission}{@code ("setFactory")}.
      */
     protected URLStreamHandlerProvider() {
         this(checkPermission());

@@ -151,12 +151,9 @@ public class SocketHandler extends StreamHandler {
 
     /**
      * Close this output stream.
-     *
-     * @throws  SecurityException  if a security manager exists and if
-     *             the caller does not have {@code LoggingPermission("control")}.
      */
     @Override
-    public void close() throws SecurityException {
+    public void close() {
         if (tryUseLock()) {
             try {
                 close0();

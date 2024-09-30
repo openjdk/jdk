@@ -417,9 +417,6 @@ public final class DynamicLinkerFactory {
      * specific service configuration issues, as well as some Dynalink-specific
      * errors when an exporter that the factory tried to automatically load:
      * <ul>
-     * <li>did not have the runtime permission named
-     * {@link GuardingDynamicLinkerExporter#AUTOLOAD_PERMISSION_NAME} in a
-     * system with a security manager, or</li>
      * <li>returned null from {@link GuardingDynamicLinkerExporter#get()}, or</li>
      * <li>the list returned from {@link GuardingDynamicLinkerExporter#get()}
      * had a null element.</li>

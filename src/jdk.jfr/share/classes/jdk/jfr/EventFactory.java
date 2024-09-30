@@ -92,9 +92,6 @@ public final class EventFactory {
      *         the Java language or an annotation element references a type that
      *         can't be found.
      *
-     * @throws SecurityException if a security manager exists and the caller does
-     *         not have {@code FlightRecorderPermission("registerEvent")}
-     *
      * @see Event#set(int, Object)
      */
     public static EventFactory create(List<AnnotationElement> annotationElements, List<ValueDescriptor> fields) {
@@ -200,8 +197,6 @@ public final class EventFactory {
      * If the event class associated with this event factory is already registered,
      * the call to this method is ignored.
      *
-     * @throws SecurityException if a security manager exists and the caller
-     *         does not have {@code FlightRecorderPermission("registerEvent")}
      * @see Registered
      * @see FlightRecorder#register(Class)
      */
@@ -219,8 +214,6 @@ public final class EventFactory {
      * If the event class associated with this event factory is not already
      * registered, the call to this method is ignored.
      *
-     * @throws SecurityException if a security manager exists and the caller does
-     *         not have {@code FlightRecorderPermission("registerEvent")}
      * @see Registered
      * @see FlightRecorder#unregister(Class)
      */

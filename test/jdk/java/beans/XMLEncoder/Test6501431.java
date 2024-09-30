@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6501431
  * @summary Tests encoding of JMenuItem with accelerator property
- * @run main/othervm -Djava.security.manager=allow Test6501431
+ * @run main/othervm Test6501431
  * @author Sergey Malenkov
  */
 
@@ -34,7 +34,7 @@ import javax.swing.KeyStroke;
 
 public final class Test6501431 extends AbstractTest<JMenuItem> {
     public static void main(String[] args) {
-        new Test6501431().test(true);
+        new Test6501431().test();
     }
 
     protected JMenuItem getObject() {

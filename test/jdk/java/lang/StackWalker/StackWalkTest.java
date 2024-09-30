@@ -41,9 +41,7 @@ import jdk.test.lib.RandomFactory;
  * @build jdk.test.lib.RandomFactory
  * @compile StackRecorderUtil.java
  * @run main/othervm StackWalkTest
- * @run main/othervm/java.security.policy=stackwalktest.policy StackWalkTest
  * @run main/othervm StackWalkTest -random:50
- * @run main/othervm/java.security.policy=stackwalktest.policy StackWalkTest -random:50
  * @author danielfuchs, bchristi
  * @key randomness
  */

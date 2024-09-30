@@ -31,7 +31,6 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm TestECDSA
- * @run main/othervm -Djava.security.manager=allow TestECDSA sm policy
  */
 
 import java.security.KeyFactory;

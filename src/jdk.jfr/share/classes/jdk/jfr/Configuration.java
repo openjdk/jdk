@@ -136,11 +136,8 @@ public final class Configuration {
      * @return the read {@link Configuration}, not {@code null}
      * @throws ParseException if the file can't be parsed
      * @throws IOException if the file can't be read
-     * @throws SecurityException if a security manager exists and its
-     *         {@code checkRead} method denies read access to the file.
      *
      * @see java.io.File#getPath()
-     * @see java.lang.SecurityManager#checkRead(java.lang.String)
      */
     public static Configuration create(Path path) throws IOException, ParseException {
         Objects.requireNonNull(path, "path");

@@ -121,10 +121,6 @@ public interface BasicFileAttributeView
      *
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, a security manager is
-     *          installed, its {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file
      */
     BasicFileAttributes readAttributes() throws IOException;
 
@@ -169,10 +165,6 @@ public interface BasicFileAttributeView
      *
      * @throws  IOException
      *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, a security manager is
-     *          installed, its  {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to the file
      *
      * @see java.nio.file.Files#setLastModifiedTime
      */

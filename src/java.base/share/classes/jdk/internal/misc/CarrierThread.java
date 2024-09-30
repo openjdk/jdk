@@ -25,10 +25,8 @@
 
 package jdk.internal.misc;
 
-import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
 import jdk.internal.access.JavaLangAccess;
@@ -44,12 +42,9 @@ public class CarrierThread extends ForkJoinWorkerThread {
     private static final Unsafe U = Unsafe.getUnsafe();
 
     private static final ThreadGroup CARRIER_THREADGROUP = carrierThreadGroup();
-    @SuppressWarnings("removal")
-    private static final AccessControlContext INNOCUOUS_ACC = innocuousACC();
 
     private static final long CONTEXTCLASSLOADER;
     private static final long INHERITABLETHREADLOCALS;
-    private static final long INHERITEDACCESSCONTROLCONTEXT;
 
     // compensating state
     private static final int NOT_COMPENSATING = 0;
@@ -65,7 +60,6 @@ public class CarrierThread extends ForkJoinWorkerThread {
         super(CARRIER_THREADGROUP, pool, true);
         U.putReference(this, CONTEXTCLASSLOADER, ClassLoader.getSystemClassLoader());
         U.putReference(this, INHERITABLETHREADLOCALS, null);
-        U.putReferenceRelease(this, INHERITEDACCESSCONTROLCONTEXT, INNOCUOUS_ACC);
     }
 
     /**
@@ -134,16 +128,6 @@ public class CarrierThread extends ForkJoinWorkerThread {
     }
 
     /**
-     * Return an AccessControlContext that doesn't support any permissions.
-     */
-    @SuppressWarnings("removal")
-    private static AccessControlContext innocuousACC() {
-        return new AccessControlContext(new ProtectionDomain[] {
-                new ProtectionDomain(null, null)
-        });
-    }
-
-    /**
      * Defines static methods to invoke non-public ForkJoinPool methods via the
      * shared secret support.
      */
@@ -163,7 +147,5 @@ public class CarrierThread extends ForkJoinWorkerThread {
                 "contextClassLoader");
         INHERITABLETHREADLOCALS = U.objectFieldOffset(Thread.class,
                 "inheritableThreadLocals");
-        INHERITEDACCESSCONTROLCONTEXT = U.objectFieldOffset(Thread.class,
-                "inheritedAccessControlContext");
     }
 }

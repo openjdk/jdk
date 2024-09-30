@@ -87,8 +87,6 @@ public interface TargetDataLine extends DataLine {
      *         integral number of sample frames, or if {@code format} is not
      *         fully specified or invalid
      * @throws IllegalStateException if the line is already open
-     * @throws SecurityException if the line cannot be opened due to security
-     *         restrictions
      * @see #open(AudioFormat)
      * @see Line#open
      * @see Line#close
@@ -122,8 +120,6 @@ public interface TargetDataLine extends DataLine {
      * @throws IllegalArgumentException if {@code format} is not fully specified
      *         or invalid
      * @throws IllegalStateException if the line is already open
-     * @throws SecurityException if the line cannot be opened due to security
-     *         restrictions
      * @see #open(AudioFormat, int)
      * @see Line#open
      * @see Line#close

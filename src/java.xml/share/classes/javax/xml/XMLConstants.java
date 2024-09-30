@@ -232,10 +232,6 @@ public final class XMLConstants {
          *     ignoring security issues such as limits on XML constructs to avoid conditions such as denial of service attacks.
          *   </li>
          * </ul>
-         *
-         * @implNote
-         * when the Java Security Manager is present, the JDK sets the value of
-         * this feature to true and does not allow it to be turned off.
          */
         public static final String FEATURE_SECURE_PROCESSING = "http://javax.xml.XMLConstants/feature/secure-processing";
 

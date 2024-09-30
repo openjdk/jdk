@@ -86,8 +86,6 @@ public interface Clip extends DataLine {
      *         integral number of sample frames, or if {@code format} is not
      *         fully specified or invalid
      * @throws IllegalStateException if the line is already open
-     * @throws SecurityException if the line cannot be opened due to security
-     *         restrictions
      * @see #close
      * @see #isOpen
      * @see LineListener
@@ -118,8 +116,6 @@ public interface Clip extends DataLine {
      * @throws IllegalArgumentException if the stream's audio format is not
      *         fully specified or invalid
      * @throws IllegalStateException if the line is already open
-     * @throws SecurityException if the line cannot be opened due to security
-     *         restrictions
      * @see #close
      * @see #isOpen
      * @see LineListener

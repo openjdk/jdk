@@ -33,10 +33,7 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.AccessControlContext;
 import java.security.CodeSource;
-import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
@@ -67,7 +64,6 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.StaticProperty;
-import sun.reflect.misc.ReflectUtil;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -92,9 +88,6 @@ import sun.security.util.SecurityConstants;
  * <p> Applications implement subclasses of {@code ClassLoader} in order to
  * extend the manner in which the Java virtual machine dynamically loads
  * classes.
- *
- * <p> Class loaders may typically be used by security managers to indicate
- * security domains.
  *
  * <p> In addition to loading classes, a class loader is also responsible for
  * locating resources. A resource is some data (a "{@code .class}" file,
@@ -424,11 +417,6 @@ public abstract class ClassLoader {
      *
      * @throws IllegalArgumentException if the given name is empty.
      *
-     * @throws SecurityException
-     *         If a security manager exists and its
-     *         {@link SecurityManager#checkCreateClassLoader()}
-     *         method doesn't allow creation of a new class loader.
-     *
      * @since  9
      */
     @SuppressWarnings("this-escape")
@@ -440,21 +428,12 @@ public abstract class ClassLoader {
      * Creates a new class loader using the specified parent class loader for
      * delegation.
      *
-     * <p> If there is a security manager, its {@link
-     * SecurityManager#checkCreateClassLoader() checkCreateClassLoader} method
-     * is invoked.  This may result in a security exception.  </p>
-     *
      * @apiNote If the parent is specified as {@code null} (for the
      * bootstrap class loader) then there is no guarantee that all platform
      * classes are visible.
      *
      * @param  parent
      *         The parent class loader
-     *
-     * @throws SecurityException
-     *         If a security manager exists and its
-     *         {@code checkCreateClassLoader} method doesn't allow creation
-     *         of a new class loader.
      *
      * @since  1.2
      */
@@ -467,16 +446,6 @@ public abstract class ClassLoader {
      * Creates a new class loader using the {@code ClassLoader} returned by
      * the method {@link #getSystemClassLoader()
      * getSystemClassLoader()} as the parent class loader.
-     *
-     * <p> If there is a security manager, its {@link
-     * SecurityManager#checkCreateClassLoader()
-     * checkCreateClassLoader} method is invoked.  This may result in
-     * a security exception.  </p>
-     *
-     * @throws  SecurityException
-     *          If a security manager exists and its
-     *          {@code checkCreateClassLoader} method doesn't allow creation
-     *          of a new class loader.
      */
     @SuppressWarnings("this-escape")
     protected ClassLoader() {
@@ -686,30 +655,6 @@ public abstract class ClassLoader {
             }
         }
         return lock;
-    }
-
-    // Invoked by the VM after loading class with this loader.
-    @SuppressWarnings("removal")
-    private void checkPackageAccess(Class<?> cls, ProtectionDomain pd) {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            if (ReflectUtil.isNonPublicProxyClass(cls)) {
-                for (Class<?> intf: cls.getInterfaces()) {
-                    checkPackageAccess(intf, pd);
-                }
-                return;
-            }
-
-            final String packageName = cls.getPackageName();
-            if (!packageName.isEmpty()) {
-                AccessController.doPrivileged(new PrivilegedAction<>() {
-                    public Void run() {
-                        sm.checkPackageAccess(packageName);
-                        return null;
-                    }
-                }, new AccessControlContext(new ProtectionDomain[] {pd}));
-            }
-        }
     }
 
     /**
@@ -1342,8 +1287,7 @@ public abstract class ClassLoader {
      *         The resource name
      *
      * @return A URL to the resource; {@code null} if the resource could not be
-     *         found, a URL could not be constructed to locate the resource,
-     *         access to the resource is denied by the security manager, or
+     *         found, a URL could not be constructed to locate the resource, or
      *         there isn't a module of the given name defined to the class
      *         loader.
      *
@@ -1395,9 +1339,8 @@ public abstract class ClassLoader {
      *
      * @return  {@code URL} object for reading the resource; {@code null} if
      *          the resource could not be found, a {@code URL} could not be
-     *          constructed to locate the resource, the resource is in a package
-     *          that is not opened unconditionally, or access to the resource is
-     *          denied by the security manager.
+     *          constructed to locate the resource, or the resource is in a package
+     *          that is not opened unconditionally.
      *
      * @throws  NullPointerException If {@code name} is {@code null}
      *
@@ -1457,9 +1400,8 @@ public abstract class ClassLoader {
      * @return  An enumeration of {@link java.net.URL URL} objects for the
      *          resource. If no resources could be found, the enumeration will
      *          be empty. Resources for which a {@code URL} cannot be
-     *          constructed, are in a package that is not opened
-     *          unconditionally, or access to the resource is denied by the
-     *          security manager, are not returned in the enumeration.
+     *          constructed, or are in a package that is not opened
+     *          unconditionally, are not returned in the enumeration.
      *
      * @throws  IOException
      *          If I/O errors occur
@@ -1518,9 +1460,8 @@ public abstract class ClassLoader {
      *
      * @return  A stream of resource {@link java.net.URL URL} objects. If no
      *          resources could  be found, the stream will be empty. Resources
-     *          for which a {@code URL} cannot be constructed, are in a package
-     *          that is not opened unconditionally, or access to the resource
-     *          is denied by the security manager, will not be in the stream.
+     *          for which a {@code URL} cannot be constructed, or are in a package
+     *          that is not opened unconditionally, will not be in the stream.
      *
      * @throws  NullPointerException If {@code name} is {@code null}
      *
@@ -1558,9 +1499,8 @@ public abstract class ClassLoader {
      *
      * @return  {@code URL} object for reading the resource; {@code null} if
      *          the resource could not be found, a {@code URL} could not be
-     *          constructed to locate the resource, the resource is in a package
-     *          that is not opened unconditionally, or access to the resource is
-     *          denied by the security manager.
+     *          constructed to locate the resource, or the resource is in a package
+     *          that is not opened unconditionally.
      *
      * @since  1.2
      */
@@ -1589,8 +1529,7 @@ public abstract class ClassLoader {
      * @return  An enumeration of {@link java.net.URL URL} objects for
      *          the resource. If no resources could  be found, the enumeration
      *          will be empty. Resources for which a {@code URL} cannot be
-     *          constructed, are in a package that is not opened unconditionally,
-     *          or access to the resource is denied by the security manager,
+     *          constructed, or are in a package that is not opened unconditionally,
      *          are not returned in the enumeration.
      *
      * @throws  IOException
@@ -1676,9 +1615,8 @@ public abstract class ClassLoader {
      *
      * @return  A {@link java.net.URL URL} to the resource; {@code
      *          null} if the resource could not be found, a URL could not be
-     *          constructed to locate the resource, the resource is in a package
-     *          that is not opened unconditionally or access to the resource is
-     *          denied by the security manager.
+     *          constructed to locate the resource, or the resource is in a package
+     *          that is not opened unconditionally.
      *
      * @since  1.1
      */
@@ -1708,8 +1646,7 @@ public abstract class ClassLoader {
      * @return  An enumeration of {@link java.net.URL URL} objects for
      *          the resource. If no resources could  be found, the enumeration
      *          will be empty. Resources for which a {@code URL} cannot be
-     *          constructed, are in a package that is not opened unconditionally,
-     *          or access to the resource is denied by the security manager,
+     *          constructed, or are in a package that is not opened unconditionally,
      *          are not returned in the enumeration.
      *
      * @throws  IOException
@@ -1740,9 +1677,8 @@ public abstract class ClassLoader {
      *         The resource name
      *
      * @return  An input stream for reading the resource; {@code null} if the
-     *          resource could not be found, the resource is in a package that
-     *          is not opened unconditionally, or access to the resource is
-     *          denied by the security manager.
+     *          resource could not be found, or the resource is in a package that
+     *          is not opened unconditionally.
      *
      * @throws  NullPointerException If {@code name} is {@code null}
      *
@@ -1774,9 +1710,8 @@ public abstract class ClassLoader {
      *         The resource name
      *
      * @return  An input stream for reading the resource; {@code null} if the
-     *          resource could not be found, the resource is in a package that
-     *          is not opened unconditionally, or access to the resource is
-     *          denied by the security manager.
+     *          resource could not be found, or the resource is in a package that
+     *          is not opened unconditionally.
      *
      * @since  1.1
      */
@@ -1799,12 +1734,6 @@ public abstract class ClassLoader {
      * parent is the bootstrap class loader.
      *
      * @return  The parent {@code ClassLoader}
-     *
-     * @throws  SecurityException
-     *          If a security manager is present, and the caller's class loader
-     *          is not {@code null} and is not an ancestor of this class loader,
-     *          and the caller does not have the
-     *          {@link RuntimePermission}{@code ("getClassLoader")}
      *
      * @since  1.2
      */
@@ -1844,13 +1773,6 @@ public abstract class ClassLoader {
      * {@code "platform"}.
      *
      * @return  The platform {@code ClassLoader}.
-     *
-     * @throws  SecurityException
-     *          If a security manager is present, and the caller's class loader is
-     *          not {@code null}, and the caller's class loader is not the same
-     *          as or an ancestor of the platform class loader,
-     *          and the caller does not have the
-     *          {@link RuntimePermission}{@code ("getClassLoader")}
      *
      * @since 9
      */
@@ -1919,12 +1841,6 @@ public abstract class ClassLoader {
      * property is set to {@code true}.
      *
      * @return  The system {@code ClassLoader}
-     *
-     * @throws  SecurityException
-     *          If a security manager is present, and the caller's class loader
-     *          is not {@code null} and is not the same as or an ancestor of the
-     *          system class loader, and the caller does not have the
-     *          {@link RuntimePermission}{@code ("getClassLoader")}
      *
      * @throws  IllegalStateException
      *          If invoked recursively during the construction of the class

@@ -33,53 +33,37 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.PrintStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class SecurityManagerWarnings {
 
     public static void main(String args[]) throws Exception {
         if (args.length == 0) {
-            Files.writeString(Path.of("policy"), """
-                    grant {
-                        permission java.lang.RuntimePermission "setIO";
-                        permission java.lang.RuntimePermission "createSecurityManager";
-                        permission java.lang.RuntimePermission "setSecurityManager";
-                    };
-                    """);
 
             System.setProperty("test.noclasspath", "true");
             String testClasses = System.getProperty("test.classes");
 
-            disallowTest(null, testClasses);
-            allowTest("allow", testClasses);
-            disallowTest("disallow", testClasses);
-            enableTest("", testClasses);
-            enableTest("default", testClasses);
-            enableTest("java.lang.SecurityManager", testClasses);
+            failLateTest(null, testClasses);
+            failLateTest("disallow", testClasses);
+            failEarlyTest("allow", testClasses);
+            failEarlyTest("", testClasses);
+            failEarlyTest("default", testClasses);
+            failEarlyTest("java.lang.SecurityManager", testClasses);
 
             JarUtils.createJarFile(Path.of("a.jar"),
                     Path.of(testClasses),
                     Path.of("SecurityManagerWarnings.class"),
-                    Path.of("A.class"),
-                    Path.of("B.class"));
+                    Path.of("A.class"));
 
-            disallowTest(null, "a.jar");
+            failLateTest(null, "a.jar");
         } else {
-            System.out.println("SM is enabled: " + (System.getSecurityManager() != null));
             PrintStream oldErr = System.err;
             // Modify System.err, thus make sure warnings are always printed
             // to the original System.err and will not be swallowed.
             System.setErr(new PrintStream(new ByteArrayOutputStream()));
             try {
-                // Run A.run() twice will show only one warning
-                // (setSecurityManager(null) to ensure the next set is permitted)
-                // Run B.run() and a new warning will appear
                 A.run();    // System.setSecurityManager(null);
-                A.run();    // System.setSecurityManager(null);
-                B.run();    // System.setSecurityManager(new SecurityManager());
             } catch (Exception e) {
                 // Exception messages must show in original stderr
                 e.printStackTrace(oldErr);
@@ -88,44 +72,23 @@ public class SecurityManagerWarnings {
         }
     }
 
-    // When SM is allowed, no startup warning, has setSM warning
-    static void allowTest(String prop, String cp) throws Exception {
-        checkInstallMessage(run(prop, cp), cp)
-                .shouldHaveExitValue(0)
-                .stdoutShouldContain("SM is enabled: false")
-                .shouldNotContain("A command line option");
-    }
-
-    // When SM is disallowed, no startup warning, setSM fails
-    static void disallowTest(String prop, String cp) throws Exception {
+    // When -Djava.security.manager is not set, or set to "allow",
+    // or "disallow", JVM starts but setSecurityManager will fail.
+    static void failLateTest(String prop, String cp) throws Exception {
         run(prop, cp)
                 .shouldNotHaveExitValue(0)
-                .stdoutShouldContain("SM is enabled: false")
-                .shouldNotContain("A command line option")
-                .shouldNotContain("A terminally deprecated method")
-                .stderrShouldContain("UnsupportedOperationException: The Security Manager is deprecated and will be removed in a future release");
+                .stderrShouldContain("at SecurityManagerWarnings.main")
+                .stderrShouldContain("UnsupportedOperationException: Setting a Security Manager is not supported");
     }
 
-    // When SM is allowed, has startup warning, has setSM warning
-    static void enableTest(String prop, String cp) throws Exception {
-        checkInstallMessage(run(prop, cp), cp)
-                .shouldHaveExitValue(0)
-                .stdoutShouldContain("SM is enabled: true")
-                .stderrShouldContain("WARNING: A command line option has enabled the Security Manager")
-                .stderrShouldContain("WARNING: The Security Manager is deprecated and will be removed in a future release");
-    }
-
-    // Check the setSM warning
-    static OutputAnalyzer checkInstallMessage(OutputAnalyzer oa, String cp) {
-        String uri = new File(cp).toURI().toString();
-        return oa
-                .stderrShouldContain("WARNING: A terminally deprecated method in java.lang.System has been called")
-                .stderrShouldContain("WARNING: System::setSecurityManager has been called by A (" + uri + ")")
-                .stderrShouldContain("WARNING: System::setSecurityManager has been called by B (" + uri + ")")
-                .stderrShouldContain("WARNING: Please consider reporting this to the maintainers of A")
-                .stderrShouldContain("WARNING: Please consider reporting this to the maintainers of B")
-                .stderrShouldContain("WARNING: System::setSecurityManager will be removed in a future release")
-                .stderrShouldNotMatch("(?s)by A.*by A");    // "by A" appears only once
+    // When -Djava.security.manager is set to any other values,
+    // JVM will not start.
+    static void failEarlyTest(String prop, String cp) throws Exception {
+        run(prop, cp)
+                .shouldNotHaveExitValue(0)
+                .shouldNotContain("SecurityManagerWarnings.main")
+                .shouldContain("at java.lang.System.initPhase3")
+                .shouldContain("Error: A command line option has attempted to allow or enable the Security Manager.");
     }
 
     static OutputAnalyzer run(String prop, String cp) throws Exception {
@@ -138,7 +101,6 @@ public class SecurityManagerWarnings {
             pb = ProcessTools.createTestJavaProcessBuilder(
                     "-cp", cp,
                     "-Djava.security.manager=" + prop,
-                    "-Djava.security.policy=policy",
                     "SecurityManagerWarnings", "run");
         }
         return ProcessTools.executeProcess(pb)
@@ -149,11 +111,5 @@ public class SecurityManagerWarnings {
 class A {
     static void run() {
         System.setSecurityManager(null);
-    }
-}
-
-class B {
-    static void run() {
-        System.setSecurityManager(new SecurityManager());
     }
 }

@@ -149,24 +149,15 @@ public class SystemTray {
      * supported.  You may use the {@link #isSupported} method to
      * check if the system tray is supported.
      *
-     * <p>If a SecurityManager is installed, the AWTPermission
-     * {@code accessSystemTray} must be granted in order to get the
-     * {@code SystemTray} instance. Otherwise this method will throw a
-     * SecurityException.
-     *
      * @return the {@code SystemTray} instance that represents
      * the desktop's tray area
      * @throws UnsupportedOperationException if the system tray isn't
      * supported by the current platform
      * @throws HeadlessException if
      * {@code GraphicsEnvironment.isHeadless()} returns {@code true}
-     * @throws SecurityException if {@code accessSystemTray} permission
-     * is not granted
      * @see #add(TrayIcon)
      * @see TrayIcon
      * @see #isSupported
-     * @see SecurityManager#checkPermission
-     * @see AWTPermission
      */
     public static SystemTray getSystemTray() {
         checkSystemTrayAllowed();

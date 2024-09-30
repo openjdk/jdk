@@ -30,7 +30,6 @@
  * @build java.base/java.util.CSM csm/*
  * @run main/othervm csm/jdk.test.CallerSensitiveTest
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames csm/jdk.test.CallerSensitiveTest
- * @run main/othervm -Djava.security.manager=allow csm/jdk.test.CallerSensitiveTest sm
  */
 public class Main {
 }

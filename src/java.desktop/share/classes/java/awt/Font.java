@@ -1235,8 +1235,6 @@ public class Font implements java.io.Serializable
      * @throws IOException if the {@code fontFile} cannot be read.
      * @throws FontFormatException if {@code fontFile} does
      *     not contain the required font tables for the specified format.
-     * @throws SecurityException if the executing code does not have
-     * permission to read from the file.
      * @see GraphicsEnvironment#registerFont(Font)
      * @since 1.5
      */

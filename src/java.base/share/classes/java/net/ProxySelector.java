@@ -89,9 +89,6 @@ public abstract class ProxySelector {
     /**
      * Gets the system-wide proxy selector.
      *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link NetPermission}{@code ("getProxySelector")}
      * @see     #setDefault(ProxySelector)
      * @return  the system-wide {@code ProxySelector}
      * @since   1.5
@@ -112,10 +109,6 @@ public abstract class ProxySelector {
      *
      * @param ps The HTTP proxy selector, or
      *          {@code null} to unset the proxy selector.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     *          {@link NetPermission}{@code ("setProxySelector")}
      *
      * @see #getDefault()
      * @since 1.5

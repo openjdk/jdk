@@ -65,7 +65,6 @@ public final class CatalogManager {
      * @throws IllegalArgumentException if either the URIs are not absolute
      * or do not have a URL protocol handler for the URI scheme
      * @throws CatalogException If an error occurs while parsing the catalog
-     * @throws SecurityException if access to the resource is denied by the security manager
      */
     public static Catalog catalog(CatalogFeatures features, URI... uris) {
         Util.validateUrisSyntax(uris);
@@ -141,7 +140,6 @@ public final class CatalogManager {
      * @throws IllegalArgumentException if either the URIs are not absolute
      * or do not have a URL protocol handler for the URI scheme
      * @throws CatalogException If an error occurs while parsing the catalog
-     * @throws SecurityException if access to the resource is denied by the security manager
      */
     public static CatalogResolver catalogResolver(CatalogFeatures features, URI... uris) {
         Catalog catalog = catalog(features, uris);

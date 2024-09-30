@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ import static org.testng.Assert.assertEquals;
 import static org.w3c.dom.ptests.DOMTestUtil.createDOM;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -35,13 +34,11 @@ import org.w3c.dom.NodeList;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow org.w3c.dom.ptests.NodeListTest
  * @run testng/othervm org.w3c.dom.ptests.NodeListTest
  * @summary Verifies a bug found in jaxp1.0.1 and 1.1FCS. After going out of
  * bound, the last element of a NodeList returns null. The bug has been fixed
  * in jaxp 1.1.1 build.
  */
-@Listeners({jaxp.library.FilePolicy.class})
 public class NodeListTest {
 
     @DataProvider(name = "xml")

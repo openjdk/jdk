@@ -84,8 +84,6 @@ import static sun.security.util.SecurityProviderConstants.getAliases;
  *   in RFC 5280. The ValidationAlgorithm attribute notes the
  *   specification that this provider implements.
  *
- * - JavaPolicy is the default file-based Policy type.
- *
  * - JavaLoginConfig is the default file-based LoginModule Configuration type.
  */
 
@@ -280,11 +278,6 @@ public final class SunEntries {
         add(p, "CertStore", "com.sun.security.IndexedCollection",
                 "sun.security.provider.certpath.IndexedCollectionCertStore",
                 attrs);
-
-        /*
-         * Policy
-         */
-        add(p, "Policy", "JavaPolicy", "sun.security.provider.PolicySpiFile");
 
         /*
          * Configuration

@@ -36,7 +36,7 @@
  *          java.rmi/sun.rmi.transport
  *          java.rmi/sun.rmi.transport.tcp
  * @build TestLibrary Ping UseCustomRef_Stub UseCustomRef_Skel
- * @run main/othervm/policy=security.policy/secure=java.rmi.RMISecurityManager/timeout=120 UseCustomRef
+ * @run main/othervm/timeout=120 UseCustomRef
  *
  * This test was failing to run because the synthetic access
  * control context used by the application class loader to find and define
@@ -82,7 +82,6 @@ public class UseCustomRef
             /*
              * create registry
              */
-            TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
 
             System.err.println("creating Registry...");
 

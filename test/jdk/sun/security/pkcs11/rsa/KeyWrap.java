@@ -30,7 +30,6 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki
  * @run main/othervm KeyWrap
- * @run main/othervm -Djava.security.manager=allow KeyWrap sm
  */
 
 import java.security.GeneralSecurityException;

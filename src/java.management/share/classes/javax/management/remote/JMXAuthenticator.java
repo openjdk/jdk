@@ -62,9 +62,6 @@ public interface JMXAuthenticator {
      * the connector.
      *
      * @return the authenticated subject containing its associated principals.
-     *
-     * @exception SecurityException if the server cannot authenticate the user
-     * with the provided credentials.
      */
     public Subject authenticate(Object credentials);
 }

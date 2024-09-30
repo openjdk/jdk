@@ -109,9 +109,6 @@ public interface PlatformLoggingMXBean extends PlatformManagedObject {
      * @throws IllegalArgumentException if the specified logger
      * does not exist, or {@code levelName} is not a valid level name.
      *
-     * @throws SecurityException if a security manager exists and if
-     * the caller does not have LoggingPermission("control").
-     *
      * @see java.logging/java.util.logging.Logger#setLevel
      */
     void setLoggerLevel(String loggerName, String levelName);

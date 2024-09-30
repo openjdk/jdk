@@ -89,15 +89,9 @@ public class NamingManager {
      * setObjectFactoryBuilder() overrides this default policy by installing
      * an ObjectFactoryBuilder. Subsequent object factories will
      * be loaded and created using the installed builder.
-     *<p>
-     * The builder can only be installed if the executing thread is allowed
-     * (by the security manager's checkSetFactory() method) to do so.
-     * Once installed, the builder cannot be replaced.
      *
      * @param builder The factory builder to install. If null, no builder
      *                  is installed.
-     * @throws SecurityException builder cannot be installed
-     *         for security reasons.
      * @throws NamingException builder cannot be installed for
      *         a non-security-related reason.
      * @throws IllegalStateException If a factory has already been installed.
@@ -561,14 +555,8 @@ public class NamingManager {
     /**
      * Sets the InitialContextFactory builder to be builder.
      *
-     *<p>
-     * The builder can only be installed if the executing thread is allowed by
-     * the security manager to do so. Once installed, the builder cannot
-     * be replaced.
      * @param builder The initial context factory builder to install. If null,
      *                no builder is set.
-     * @throws SecurityException builder cannot be installed for security
-     *         reasons.
      * @throws NamingException builder cannot be installed for
      *         a non-security-related reason.
      * @throws IllegalStateException If a builder was previous installed.

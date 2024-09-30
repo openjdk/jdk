@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ import java.awt.font.TextAttribute;
 /**
  * @test
  * @bug 8060027
- * @run main/othervm -Djava.security.manager=allow ReferenceToNonStaticField
+ * @run main/othervm ReferenceToNonStaticField
  */
 public final class ReferenceToNonStaticField
         extends AbstractTest<ReferenceToNonStaticField.TestValue> {
@@ -82,7 +82,7 @@ public final class ReferenceToNonStaticField
     }
 
     public static void main(final String[] args) {
-        new ReferenceToNonStaticField().test(true);
+        new ReferenceToNonStaticField().test();
     }
 
     protected TestValue getObject() {

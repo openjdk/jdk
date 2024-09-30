@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,19 +21,26 @@
  * questions.
  */
 
+
+import java.awt.Dimension;
+import java.awt.Insets;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import javax.swing.JFrame;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
+
 /*
  * @test
  * @key headful
  * @bug 6694823
  * @summary Checks that popup menu cannot be partially hidden
- * by the task bar in applets.
- * @author Mikhail Lapshin
- * @run main/othervm -Djava.security.manager=allow bug6694823
+ *          by the task bar.
+ * @run main bug6694823
  */
-
-import javax.swing.*;
-import java.awt.*;
-import java.security.Permission;
 
 public class bug6694823 {
     private static JFrame frame;
@@ -45,11 +52,7 @@ public class bug6694823 {
     public static void main(String[] args) throws Exception {
         robot = new Robot();
         toolkit = Toolkit.getDefaultToolkit();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                createGui();
-            }
-        });
+        SwingUtilities.invokeAndWait(() -> createGui());
 
         robot.waitForIdle();
 
@@ -59,17 +62,6 @@ public class bug6694823 {
             // This test is only for configurations with taskbar on the bottom
             return;
         }
-
-        System.setSecurityManager(new SecurityManager(){
-
-            @Override
-            public void checkPermission(Permission perm) {
-                if (perm.getName().equals("setWindowAlwaysOnTop") ) {
-                    throw new SecurityException();
-                }
-            }
-
-        });
 
         // Show popup as if from an applet
         // The popup shouldn't overlap the task bar. It should be shifted up.
@@ -94,42 +86,35 @@ public class bug6694823 {
     }
 
     private static void checkPopup() throws Exception {
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                // Place frame just above the task bar
-                Dimension screenSize = toolkit.getScreenSize();
-                frame.setLocation(screenSize.width / 2,
-                        screenSize.height - frame.getHeight() - screenInsets.bottom);
-                frame.setVisible(true);
-            }
+        SwingUtilities.invokeAndWait(() -> {
+            // Place frame just above the task bar
+            Dimension screenSize = toolkit.getScreenSize();
+            frame.setLocation(screenSize.width / 2,
+                    screenSize.height - frame.getHeight() - screenInsets.bottom);
+            frame.setVisible(true);
         });
 
         // Ensure frame is visible
         robot.waitForIdle();
 
         final Point point = new Point();
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
-                // Place popup over the task bar
-                point.x = 0;
-                point.y = frame.getHeight() - popup.getPreferredSize().height + screenInsets.bottom;
-                popup.show(frame, point.x, point.y);
-            }
+        SwingUtilities.invokeAndWait(() -> {
+            // Place popup over the task bar
+            point.x = 0;
+            point.y = frame.getHeight() - popup.getPreferredSize().height + screenInsets.bottom;
+            popup.show(frame, point.x, point.y);
         });
 
         // Ensure popup is visible
         robot.waitForIdle();
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-
-            public void run() {
-                Point frameLoc = frame.getLocationOnScreen();
-                if (popup.getLocationOnScreen().equals(new Point(frameLoc.x, frameLoc.y + point.y))) {
-                    throw new RuntimeException("Popup is not shifted");
-                }
-                popup.setVisible(false);
-                frame.dispose();
+        SwingUtilities.invokeAndWait(() -> {
+            Point frameLoc = frame.getLocationOnScreen();
+            if (popup.getLocationOnScreen().equals(new Point(frameLoc.x, frameLoc.y + point.y))) {
+                throw new RuntimeException("Popup is not shifted");
             }
+            popup.setVisible(false);
+            frame.dispose();
         });
     }
 }

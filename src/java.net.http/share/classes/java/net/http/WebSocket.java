@@ -194,12 +194,6 @@ public interface WebSocket {
          *          the timeout
          * <li> {@link InterruptedException} -
          *          if the operation is interrupted
-         * <li> {@link SecurityException} -
-         *          if a security manager has been installed and it denies
-         *          {@link java.net.URLPermission access} to {@code uri}.
-         *          <a href="HttpClient.html#securitychecks">Security checks</a>
-         *          contains more information relating to the security context
-         *          in which the listener is invoked.
          * <li> {@link IllegalArgumentException} -
          *          if any of the arguments of this builder's methods are
          *          illegal

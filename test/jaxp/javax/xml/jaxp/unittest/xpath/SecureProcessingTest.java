@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import javax.xml.xpath.XPathFunctionException;
 import javax.xml.xpath.XPathFunctionResolver;
 
 import org.testng.Assert;
-import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -51,12 +50,10 @@ import org.xml.sax.SAXException;
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -DrunSecMngr=true -Djava.security.manager=allow xpath.SecureProcessingTest
  * @run testng/othervm xpath.SecureProcessingTest
  * @summary Test when FEATURE_SECURE_PROCESSING is true, calling an external function will cause XPathFunctionException.
  */
 @Test
-@Listeners({jaxp.library.FilePolicy.class})
 public class SecureProcessingTest {
     public final void testSecureProcessing() {
         boolean _isSecureMode = System.getSecurityManager() != null;

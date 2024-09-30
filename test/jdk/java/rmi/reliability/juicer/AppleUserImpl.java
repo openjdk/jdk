@@ -64,7 +64,7 @@
  *     Orange OrangeEcho OrangeEchoImpl OrangeImpl
  *     ApplicationServer
  *
- * @run main/othervm/policy=security.policy AppleUserImpl -seconds 30
+ * @run main/othervm AppleUserImpl -seconds 30
  *
  * @author Peter Jones, Nigel Daley
  */

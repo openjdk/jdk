@@ -362,10 +362,6 @@ public class JFrame  extends Frame implements WindowConstants,
      * @see #addWindowListener
      * @see #getDefaultCloseOperation
      * @see WindowConstants
-     * @throws  SecurityException
-     *        if <code>EXIT_ON_CLOSE</code> has been specified and the
-     *        <code>SecurityManager</code> will
-     *        not allow the caller to invoke <code>System.exit</code>
      * @see        java.lang.Runtime#exit(int)
      */
     @BeanProperty(preferred = true, enumerationValues = {

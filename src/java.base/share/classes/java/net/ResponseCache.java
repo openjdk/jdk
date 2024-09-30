@@ -79,10 +79,6 @@ public abstract class ResponseCache {
     /**
      * Gets the system-wide response cache.
      *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     * {@link NetPermission}{@code ("getResponseCache")}
-     *
      * @see #setDefault(ResponseCache)
      * @return the system-wide {@code ResponseCache}
      * @since 1.5
@@ -103,10 +99,6 @@ public abstract class ResponseCache {
      *
      * @param responseCache The response cache, or
      *          {@code null} to unset the cache.
-     *
-     * @throws  SecurityException
-     *          If a security manager has been installed and it denies
-     * {@link NetPermission}{@code ("setResponseCache")}
      *
      * @see #getDefault()
      * @since 1.5

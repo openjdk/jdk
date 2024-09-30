@@ -31,7 +31,6 @@
  * @key randomness
  * @modules jdk.crypto.cryptoki java.base/sun.security.ec
  * @run main/othervm ReadPKCS12
- * @run main/othervm -Djava.security.manager=allow ReadPKCS12 sm policy
  */
 
 import java.io.BufferedReader;

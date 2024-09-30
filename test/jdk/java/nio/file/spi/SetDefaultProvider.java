@@ -116,22 +116,6 @@ public class SetDefaultProvider {
 
     /**
      * Test override of default FileSystemProvider with the main application
-     * on the class path and a SecurityManager enabled.
-     */
-    public void testClassPathWithSecurityManager() throws Exception {
-        String moduleClasses = moduleClasses();
-        String testClasses = System.getProperty("test.classes");
-        String classpath = moduleClasses + File.pathSeparator + testClasses;
-        String policyFile = System.getProperty("test.src", ".")
-            + File.separator + "fs.policy";
-        int exitValue = exec(SET_DEFAULT_FSP, "-cp", classpath,
-            "-Dtest.classes=" + testClasses, "-Djava.security.manager",
-            "-Djava.security.policy==" + policyFile, "p.Main");
-        assertEquals(exitValue, 0);
-    }
-
-    /**
-     * Test override of default FileSystemProvider with the main application
      * on the module path as an exploded module.
      */
     public void testExplodedModule() throws Exception {

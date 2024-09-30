@@ -1,0 +1,5 @@
+# :tier1
+tools/doclint/tool/RunTest.java 0000000 generic-all
+tools/javac/api/ToolProvider/ToolProviderTest.java 0000000 generic-all
+tools/javac/launcher/SourceLauncherTest.java 0000000 generic-all
+tools/javac/processing/6348193/T6348193.java 0000000 generic-all
