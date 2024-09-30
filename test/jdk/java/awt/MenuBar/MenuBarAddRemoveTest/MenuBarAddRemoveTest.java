@@ -24,8 +24,7 @@
 /*
  * @test
  * @bug 4028130 4112308
- * @summary Disabling a frame does not disable the menus on the frame, on
- *      solaris/linux
+ * @summary Test for location of Frame/MenuBar when MenuBar is re-added
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual MenuBarAddRemoveTest

@@ -60,7 +60,7 @@ public class MenuBarVisuals {
     }
 
     private static Frame createUI() {
-        Frame f = new Frame("Test frame");
+        Frame f = new Frame("MenuBar Visuals Test");
         MenuBar mb = new MenuBar();
         Menu menu1 = new Menu("Menu 1");
         Menu submenu11 = new Menu("Submenu 1.1");
