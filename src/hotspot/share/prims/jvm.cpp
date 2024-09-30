@@ -2915,6 +2915,7 @@ static void thread_entry(JavaThread* thread, TRAPS) {
                           THREAD);
 }
 
+
 JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
 #if INCLUDE_CDS
   if (CDSConfig::is_dumping_static_archive()) {
@@ -2946,10 +2947,10 @@ JVM_ENTRY(void, JVM_StartThread(JNIEnv* env, jobject jthread))
   // We must release the Threads_lock before we can post a jvmti event
   // in Thread::start.
   {
-    ConditionalMutexLocker ml1(ThreadsLockThrottle_lock, UseThreadsLockThrottleLock);
+    ConditionalMutexLocker throttle_ml(ThreadsLockThrottle_lock, UseThreadsLockThrottleLock);
     // Ensure that the C++ Thread and OSThread structures aren't freed before
     // we operate.
-    MutexLocker ml2(Threads_lock);
+    MutexLocker ml(Threads_lock);
 
     // Since JDK 5 the java.lang.Thread threadStatus is used to prevent
     // re-starting an already started thread, so we should usually find
