@@ -673,9 +673,11 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     }
   }
 
-  if (AOTMode != nullptr && strcmp(AOTMode, "create") == 0) {
-    // We can't return to the JLI launcher, as it will try to run the main class, but
-    // the main class is not specified when -XX:AOTMode=create is used.
+  if (!CDSConfig::old_cds_flags_used()) {
+    // The JLI launcher only recognizes the "old" -Xshare:dump flag.
+    // When the new -XX:AOTMode=create flag is used, we can't return
+    // to the JLI launcher, as the launcher will fail when trying to
+    // run the main class, which is not what we want.
     tty->print_cr("AOTCache creation is complete: %s", AOTCache);
     vm_exit(0);
   }
