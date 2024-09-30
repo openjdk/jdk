@@ -113,12 +113,12 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @DontInline
     private synchronized T computeIfUnsetSlowPath(Supplier<? extends T> supplier) {
         final Object t = wrappedValue;
-        if (t != null) {
-            return unwrap(t);
+        if (t == null) {
+            final T newValue = supplier.get();
+            // The mutex is reentrant so we need to check if the value was actually set.
+            return wrapAndCas(newValue) ? newValue : orElseThrow();
         }
-        final T newValue = supplier.get();
-        // The mutex is reentrant so we need to check if the value was actually set.
-        return wrapAndCas(newValue) ? newValue : orElseThrow();
+        return unwrap(t);
     }
 
     // The methods equals() and hashCode() should be based on identity (defaults from Object)

@@ -57,11 +57,11 @@ public class CachingIntFunctionBenchmark {
     private static final int SIZE = 100;
     private static final IntFunction<Integer> IDENTITY = i -> i;
 
-    private static final List<Integer> STABLE = StableValue.lazyList(SIZE, IDENTITY);
-    private static final IntFunction<Integer> INT_FUNCTION = StableValue.newCachingIntFunction(SIZE, IDENTITY);
+    private static final List<Integer> STABLE = StableValue.ofList(SIZE, IDENTITY);
+    private static final IntFunction<Integer> INT_FUNCTION = StableValue.ofIntFunction(SIZE, IDENTITY);
 
-    private final List<Integer> stable = StableValue.lazyList(SIZE, IDENTITY);
-    private final IntFunction<Integer> intFunction = StableValue.newCachingIntFunction(SIZE, IDENTITY);
+    private final List<Integer> stable = StableValue.ofList(SIZE, IDENTITY);
+    private final IntFunction<Integer> intFunction = StableValue.ofIntFunction(SIZE, IDENTITY);
 
     @Benchmark
     public int stable() {

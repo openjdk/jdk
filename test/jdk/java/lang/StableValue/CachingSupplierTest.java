@@ -29,10 +29,7 @@
 
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,7 +40,7 @@ final class CachingSupplierTest {
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> StableValue.newCachingSupplier(null));
+        assertThrows(NullPointerException.class, () -> StableValue.ofSupplier(null));
     }
 
     @Test
@@ -54,7 +51,7 @@ final class CachingSupplierTest {
 
     void basic(Supplier<Integer> supplier) {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(supplier);
-        var cached = StableValue.newCachingSupplier(cs);
+        var cached = StableValue.ofSupplier(cs);
         assertEquals("CachingSupplier[value=.unset, original=" + cs + "]", cached.toString());
         assertEquals(supplier.get(), cached.get());
         assertEquals(1, cs.cnt());
@@ -68,7 +65,7 @@ final class CachingSupplierTest {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> {
             throw new UnsupportedOperationException();
         });
-        var cached = StableValue.newCachingSupplier(cs);
+        var cached = StableValue.ofSupplier(cs);
         assertThrows(UnsupportedOperationException.class, cached::get);
         assertEquals(1, cs.cnt());
         assertThrows(UnsupportedOperationException.class, cached::get);
@@ -79,7 +76,7 @@ final class CachingSupplierTest {
     @Test
     void circular() {
         final AtomicReference<Supplier<?>> ref = new AtomicReference<>();
-        Supplier<Supplier<?>> cached = StableValue.newCachingSupplier(ref::get);
+        Supplier<Supplier<?>> cached = StableValue.ofSupplier(ref::get);
         ref.set(cached);
         cached.get();
         String toString = cached.toString();
@@ -89,15 +86,15 @@ final class CachingSupplierTest {
 
     @Test
     void equality() {
-        Supplier<Integer> f0 = StableValue.newCachingSupplier(SUPPLIER);
-        Supplier<Integer> f1 = StableValue.newCachingSupplier(SUPPLIER);
+        Supplier<Integer> f0 = StableValue.ofSupplier(SUPPLIER);
+        Supplier<Integer> f1 = StableValue.ofSupplier(SUPPLIER);
         // No function is equal to another function
         assertNotEquals(f0, f1);
     }
 
     @Test
     void hashCodeStable() {
-        Supplier<Integer> f0 = StableValue.newCachingSupplier(SUPPLIER);
+        Supplier<Integer> f0 = StableValue.ofSupplier(SUPPLIER);
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         f0.get();
         assertEquals(System.identityHashCode(f0), f0.hashCode());

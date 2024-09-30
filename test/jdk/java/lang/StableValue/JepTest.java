@@ -34,7 +34,6 @@ import java.lang.invoke.VarHandle;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.AbstractList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,7 +45,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 final class JepTest {
@@ -134,7 +132,7 @@ final class JepTest {
 
     class Foo {
         // 1. Declare a Stable field
-        private static final StableValue<Logger> LOGGER = StableValue.newInstance();
+        private static final StableValue<Logger> LOGGER = StableValue.of();
 
         static Logger logger() {
 
@@ -152,7 +150,7 @@ final class JepTest {
 
         // 1. Centrally declare a caching supplier and define how it should be computed
         private static final Supplier<Logger> LOGGER =
-                StableValue.newCachingSupplier( () -> Logger.getLogger("com.company.Foo") );
+                StableValue.ofSupplier( () -> Logger.getLogger("com.company.Foo") );
 
 
         static Logger logger() {
@@ -167,7 +165,7 @@ final class JepTest {
         // 1. Declare a lazy stable map of loggers with two allowable keys:
         //    "com.company.Bar" and "com.company.Baz"
         static final Map<String, Logger> LOGGERS =
-                StableValue.lazyMap(Set.of("com.company.Foo", "com.company.Bar"), Logger::getLogger);
+                StableValue.ofMap(Set.of("com.company.Foo", "com.company.Bar"), Logger::getLogger);
 
         // 2. Access the lazy map with as-declared-final performance
         //    (evaluation made before the first access)
@@ -180,7 +178,7 @@ final class JepTest {
     class CachedNum {
         // 1. Centrally declare a cached IntFunction backed by a list of StableValue elements
         private static final IntFunction<Logger> LOGGERS =
-                StableValue.newCachingIntFunction(2, CachedNum::fromNumber);
+                StableValue.ofIntFunction(2, CachedNum::fromNumber);
 
         // 2. Define a function that is to be called the first
         //    time a particular message number is referenced
@@ -202,7 +200,7 @@ final class JepTest {
 
         // 1. Centrally declare a cached function backed by a map of stable values
         private static final Function<String, Logger> LOGGERS =
-                StableValue.newCachingFunction(Set.of("com.company.Foo", "com.company.Bar"),
+                StableValue.ofFunction(Set.of("com.company.Foo", "com.company.Bar"),
                 Logger::getLogger);
 
         private static final String NAME = "com.company.Foo";
@@ -220,7 +218,7 @@ final class JepTest {
 
             // 1. Centrally declare a cached IntFunction backed by a list of StableValue elements
             private static final IntFunction<String> ERROR_FUNCTION =
-                    StableValue.newCachingIntFunction(SIZE, ErrorMessages::readFromFile);
+                    StableValue.ofIntFunction(SIZE, ErrorMessages::readFromFile);
 
             // 2. Define a function that is to be called the first
             //    time a particular message number is referenced
@@ -243,7 +241,7 @@ final class JepTest {
 
         public CachingPredicate(Set<? extends T> inputs, Predicate<T> original) {
             this(inputs.stream()
-                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.newInstance())),
+                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.of())),
                     original::test
             );
         }
@@ -262,7 +260,7 @@ final class JepTest {
     record CachingPredicate2<T>(Map<? extends T, Boolean> delegate) implements Predicate<T> {
 
         public CachingPredicate2(Set<? extends T> inputs, Predicate<T> original) {
-            this(StableValue.lazyMap(inputs, original::test));
+            this(StableValue.ofMap(inputs, original::test));
         }
 
         @Override
@@ -273,7 +271,7 @@ final class JepTest {
 
     public static void main(String[] args) {
         Predicate<Integer> even = i -> i % 2 == 0;
-        Predicate<Integer> cachingPredicate = StableValue.lazyMap(Set.of(1, 2), even::test)::get;
+        Predicate<Integer> cachingPredicate = StableValue.ofMap(Set.of(1, 2), even::test)::get;
     }
 
     record Pair<L, R>(L left, R right){}
@@ -294,7 +292,7 @@ final class JepTest {
         static <T, U, R> CachingBiFunction<T, U, R> of(Set<Pair<T, U>> inputs, BiFunction<T, U, R> original) {
 
             Map<Pair<T, U>, StableValue<R>> map = inputs.stream()
-                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.newInstance()));
+                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.of()));
 
             return new CachingBiFunction<>(map, pair -> original.apply(pair.left(), pair.right()));
         }
@@ -317,7 +315,7 @@ final class JepTest {
         static <T, U, R> BiFunction<T, U, R> of(Set<Pair<T, U>> inputs, BiFunction<T, U, R> original) {
 
             Map<Pair<T, U>, StableValue<R>> map = inputs.stream()
-                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.newInstance()));
+                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.of()));
 
             return new CachingBiFunction2<>(map, original);
         }
@@ -326,7 +324,7 @@ final class JepTest {
 
     static
     class Application {
-        private final StableValue<Logger> LOGGER = StableValue.newInstance();
+        private final StableValue<Logger> LOGGER = StableValue.of();
 
         public Logger getLogger() {
             return LOGGER.computeIfUnset(() -> Logger.getLogger("com.company.Foo"));
@@ -337,7 +335,7 @@ final class JepTest {
                                IntPredicate resultFunction) implements IntPredicate {
 
         CachingIntPredicate(int size, IntPredicate resultFunction) {
-            this(Stream.generate(StableValue::<Boolean>newInstance).limit(size).toList(), resultFunction);
+            this(Stream.generate(StableValue::<Boolean>of).limit(size).toList(), resultFunction);
         }
 
         @Override
@@ -353,7 +351,7 @@ final class JepTest {
         private final StableValue<E>[] elements;
 
         FixedStableList(int size) {
-            this.elements = Stream.generate(StableValue::<E>newInstance)
+            this.elements = Stream.generate(StableValue::<E>of)
                     .limit(size)
                     .toArray(StableValue[]::new);
         }

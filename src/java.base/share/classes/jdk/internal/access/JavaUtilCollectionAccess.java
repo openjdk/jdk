@@ -34,6 +34,6 @@ import java.util.function.IntFunction;
 public interface JavaUtilCollectionAccess {
     <E> List<E> listFromTrustedArray(Object[] array);
     <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array);
-    <E> List<E> lazyList(int size, IntFunction<? extends E> mapper);
-    <K, V> Map<K, V> lazyMap(Set<K> keys, Function<? super K, ? extends V> mapper);
+    <E> List<E> stableList(int size, IntFunction<? extends E> mapper);
+    <K, V> Map<K, V> stableMap(Set<K> keys, Function<? super K, ? extends V> mapper);
 }

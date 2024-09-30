@@ -4,7 +4,6 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ThreadFactory;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -15,21 +14,21 @@ public final class StableValueFactories {
 
     // Factories
 
-    public static <T> StableValueImpl<T> newInstance() {
+    public static <T> StableValueImpl<T> of() {
         return StableValueImpl.newInstance();
     }
 
-    public static <T> Supplier<T> newCachingSupplier(Supplier<? extends T> original) {
+    public static <T> Supplier<T> ofSupplier(Supplier<? extends T> original) {
         return CachingSupplier.of(original);
     }
 
-    public static <R> IntFunction<R> newCachingIntFunction(int size,
-                                                           IntFunction<? extends R> original) {
+    public static <R> IntFunction<R> ofIntFunction(int size,
+                                                   IntFunction<? extends R> original) {
         return CachingIntFunction.of(size, original);
     }
 
-    public static <T, R> Function<T, R> newCachingFunction(Set<? extends T> inputs,
-                                                           Function<? super T, ? extends R> original) {
+    public static <T, R> Function<T, R> ofFunction(Set<? extends T> inputs,
+                                                   Function<? super T, ? extends R> original) {
         if (inputs.isEmpty()) {
             return EmptyCachingFunction.of(original);
         }

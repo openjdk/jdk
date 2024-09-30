@@ -95,7 +95,7 @@ public class CustomCachingPredicateBenchmark {
 
         public CachingPredicate(Set<? extends T> inputs, Predicate<T> original) {
             this(inputs.stream()
-                            .collect(Collectors.toUnmodifiableMap(Function.identity(), _ -> StableValue.newInstance())),
+                            .collect(Collectors.toUnmodifiableMap(Function.identity(), _ -> StableValue.of())),
                     original
             );
         }

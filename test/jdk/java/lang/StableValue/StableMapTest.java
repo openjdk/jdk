@@ -24,8 +24,8 @@
 /* @test
  * @summary Basic tests for LazyMap methods
  * @modules java.base/jdk.internal.lang.stable
- * @compile --enable-preview -source ${jdk.version} LazyMapTest.java
- * @run junit/othervm --enable-preview LazyMapTest
+ * @compile --enable-preview -source ${jdk.version} StableMapTest.java
+ * @run junit/othervm --enable-preview StableMapTest
  */
 
 import jdk.internal.lang.stable.StableValueImpl;
@@ -47,7 +47,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class LazyMapTest {
+final class StableMapTest {
 
     private static final int NOT_PRESENT = 147;
     private static final int KEY = 7;
@@ -57,8 +57,8 @@ final class LazyMapTest {
 
     @Test
     void factoryInvariants() {
-        assertThrows(NullPointerException.class, () -> StableValue.lazyMap(KEYS, null));
-        assertThrows(NullPointerException.class, () -> StableValue.lazyMap(null, IDENTITY));
+        assertThrows(NullPointerException.class, () -> StableValue.ofMap(KEYS, null));
+        assertThrows(NullPointerException.class, () -> StableValue.ofMap(null, IDENTITY));
     }
 
     @Test
@@ -76,7 +76,7 @@ final class LazyMapTest {
     @Test
     void get() {
         StableTestUtil.CountingFunction<Integer, Integer> cf = new StableTestUtil.CountingFunction<>(IDENTITY);
-        var lazy = StableValue.lazyMap(KEYS, cf);
+        var lazy = StableValue.ofMap(KEYS, cf);
         int cnt = 1;
         for (int i : KEYS) {
             assertEquals(i, lazy.get(i));
@@ -92,7 +92,7 @@ final class LazyMapTest {
         StableTestUtil.CountingFunction<Integer, Integer> cf = new StableTestUtil.CountingFunction<>(_ -> {
             throw new UnsupportedOperationException();
         });
-        var lazy = StableValue.lazyMap(KEYS, cf);
+        var lazy = StableValue.ofMap(KEYS, cf);
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(KEY));
         assertEquals(1, cf.cnt());
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(KEY));
@@ -131,7 +131,7 @@ final class LazyMapTest {
     @Test
     void toStringTest() {
         assertEquals("{}", newEmptyMap().toString());
-        assertEquals("{" + KEY + "=" + KEY + "}", StableValue.lazyMap(Set.of(KEY), IDENTITY).toString());
+        assertEquals("{" + KEY + "=" + KEY + "}", StableValue.ofMap(Set.of(KEY), IDENTITY).toString());
         String actual = newMap().toString();
         assertTrue(actual.startsWith("{"));
         for (int key:KEYS) {
@@ -252,11 +252,11 @@ final class LazyMapTest {
     }
 
     static Map<Integer, Integer> newMap() {
-        return StableValue.lazyMap(KEYS, IDENTITY);
+        return StableValue.ofMap(KEYS, IDENTITY);
     }
 
     static Map<Integer, Integer> newEmptyMap() {
-        return StableValue.lazyMap(EMPTY, IDENTITY);
+        return StableValue.ofMap(EMPTY, IDENTITY);
     }
 
     static Map<Integer, Integer> newRegularMap() {

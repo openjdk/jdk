@@ -72,8 +72,8 @@ final class CachingFunctionTest {
     @ParameterizedTest
     @MethodSource("allSets")
     void factoryInvariants(Set<Value> inputs) {
-        assertThrows(NullPointerException.class, () -> StableValue.newCachingFunction(null, MAPPER));
-        assertThrows(NullPointerException.class, () -> StableValue.newCachingFunction(inputs, null));
+        assertThrows(NullPointerException.class, () -> StableValue.ofFunction(null, MAPPER));
+        assertThrows(NullPointerException.class, () -> StableValue.ofFunction(inputs, null));
     }
 
     @ParameterizedTest
@@ -85,7 +85,7 @@ final class CachingFunctionTest {
 
     void basic(Set<Value> inputs, Function<Value, Integer> mapper) {
         StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(mapper);
-        var cached = StableValue.newCachingFunction(inputs, cif);
+        var cached = StableValue.ofFunction(inputs, cif);
         assertEquals(mapper.apply(Value.FORTY_TWO), cached.apply(Value.FORTY_TWO));
         assertEquals(1, cif.cnt());
         assertEquals(mapper.apply(Value.FORTY_TWO), cached.apply(Value.FORTY_TWO));
@@ -104,7 +104,7 @@ final class CachingFunctionTest {
     @ParameterizedTest
     @MethodSource("emptySets")
     void empty(Set<Value> inputs) {
-        Function<Value, Integer> f0 = StableValue.newCachingFunction(inputs, Value::asInt);
+        Function<Value, Integer> f0 = StableValue.ofFunction(inputs, Value::asInt);
         assertTrue(f0.toString().contains("{}"));
     }
 
@@ -114,7 +114,7 @@ final class CachingFunctionTest {
         StableTestUtil.CountingFunction<Value, Integer> cif = new StableTestUtil.CountingFunction<>(_ -> {
             throw new UnsupportedOperationException();
         });
-        var cached = StableValue.newCachingFunction(inputs, cif);
+        var cached = StableValue.ofFunction(inputs, cif);
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(Value.FORTY_TWO));
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(Value.FORTY_TWO));
@@ -130,7 +130,7 @@ final class CachingFunctionTest {
     @MethodSource("nonEmptySets")
     void circular(Set<Value> inputs) {
         final AtomicReference<Function<?, ?>> ref = new AtomicReference<>();
-        Function<Value, Function<?, ?>> cached = StableValue.newCachingFunction(inputs, _ -> ref.get());
+        Function<Value, Function<?, ?>> cached = StableValue.ofFunction(inputs, _ -> ref.get());
         ref.set(cached);
         cached.apply(Value.FORTY_TWO);
         String toString = cached.toString();
@@ -143,8 +143,8 @@ final class CachingFunctionTest {
     @MethodSource("allSets")
     void equality(Set<Value> inputs) {
         Function<Value, Integer> mapper = Value::asInt;
-        Function<Value, Integer> f0 = StableValue.newCachingFunction(inputs, mapper);
-        Function<Value, Integer> f1 = StableValue.newCachingFunction(inputs, mapper);
+        Function<Value, Integer> f0 = StableValue.ofFunction(inputs, mapper);
+        Function<Value, Integer> f1 = StableValue.ofFunction(inputs, mapper);
         // No function is equal to another function
         assertNotEquals(f0, f1);
     }
@@ -152,7 +152,7 @@ final class CachingFunctionTest {
     @ParameterizedTest
     @MethodSource("allSets")
     void hashCodeStable(Set<Value> inputs) {
-        Function<Value, Integer> f0 = StableValue.newCachingFunction(inputs, Value::asInt);
+        Function<Value, Integer> f0 = StableValue.ofFunction(inputs, Value::asInt);
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         if (!inputs.isEmpty()) {
             f0.apply(Value.FORTY_TWO);
@@ -162,9 +162,9 @@ final class CachingFunctionTest {
 
     @Test
     void usesOptimizedVersion() {
-        Function<Value, Integer> enumFunction = StableValue.newCachingFunction(EnumSet.of(Value.FORTY_TWO), Value::asInt);
+        Function<Value, Integer> enumFunction = StableValue.ofFunction(EnumSet.of(Value.FORTY_TWO), Value::asInt);
         assertEquals("jdk.internal.lang.stable.CachingEnumFunction", enumFunction.getClass().getName());
-        Function<Value, Integer> emptyFunction = StableValue.newCachingFunction(Set.of(), Value::asInt);
+        Function<Value, Integer> emptyFunction = StableValue.ofFunction(Set.of(), Value::asInt);
         assertEquals("jdk.internal.lang.stable.EmptyCachingFunction", emptyFunction.getClass().getName());
     }
 

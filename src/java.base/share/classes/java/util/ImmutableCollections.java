@@ -134,11 +134,11 @@ class ImmutableCollections {
                 public <E> List<E> listFromTrustedArrayNullsAllowed(Object[] array) {
                     return ImmutableCollections.listFromTrustedArrayNullsAllowed(array);
                 }
-                public <E> List<E> lazyList(int size, IntFunction<? extends E> mapper) {
-                    return ImmutableCollections.lazyList(size, mapper);
+                public <E> List<E> stableList(int size, IntFunction<? extends E> mapper) {
+                    return ImmutableCollections.stableList(size, mapper);
                 }
-                public <K, V> Map<K, V> lazyMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
-                    return new LazyMap<>(keys, mapper);
+                public <K, V> Map<K, V> stableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+                    return new StableMap<>(keys, mapper);
                 }
             });
         }
@@ -262,9 +262,9 @@ class ImmutableCollections {
         }
     }
 
-    static <E> List<E> lazyList(int size, IntFunction<? extends E> mapper) {
+    static <E> List<E> stableList(int size, IntFunction<? extends E> mapper) {
         // A lazy list is not Serializable so, we cannot return `List.of()` if size == 0
-        return new LazyList<>(size, mapper);
+        return new StableList<>(size, mapper);
     }
 
     // ---------- List Implementations ----------
@@ -465,7 +465,7 @@ class ImmutableCollections {
         private final int size;
 
         private SubList(AbstractImmutableList<E> root, int offset, int size) {
-            assert root instanceof List12 || root instanceof ListN || root instanceof LazyList;
+            assert root instanceof List12 || root instanceof ListN || root instanceof StableList;
             this.root = root;
             this.offset = offset;
             this.size = size;
@@ -517,7 +517,7 @@ class ImmutableCollections {
 
         private boolean allowNulls() {
             return root instanceof ListN<?> listN && listN.allowNulls
-                    || root instanceof LazyList<E>;
+                    || root instanceof StableList<E>;
         }
 
         @Override
@@ -769,14 +769,14 @@ class ImmutableCollections {
     }
 
     @jdk.internal.ValueBased
-    static final class LazyList<E> extends AbstractImmutableList<E> {
+    static final class StableList<E> extends AbstractImmutableList<E> {
 
         @Stable
         private final IntFunction<? extends E> mapper;
         @Stable
         private final StableValueImpl<E>[] backing;
 
-        LazyList(int size, IntFunction<? extends E> mapper) {
+        StableList(int size, IntFunction<? extends E> mapper) {
             this.mapper = mapper;
             this.backing = StableValueFactories.ofArray(size);
         }
@@ -1458,7 +1458,7 @@ class ImmutableCollections {
         }
     }
 
-    static final class LazyMap<K, V>
+    static final class StableMap<K, V>
             extends AbstractImmutableMap<K, V> {
 
         @Stable
@@ -1466,14 +1466,14 @@ class ImmutableCollections {
         @Stable
         private final Map<K, StableValueImpl<V>> delegate;
 
-        LazyMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+        StableMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
             this.mapper = mapper;
             this.delegate = StableValueFactories.ofMap(keys);
         }
 
         @Override public boolean              containsKey(Object o) { return delegate.containsKey(o); }
         @Override public int                  size() { return delegate.size(); }
-        @Override public Set<Map.Entry<K, V>> entrySet() { return new LazyMapEntrySet(); }
+        @Override public Set<Map.Entry<K, V>> entrySet() { return new StableMapEntrySet(); }
 
         @ForceInline
         @Override
@@ -1489,18 +1489,18 @@ class ImmutableCollections {
         }
 
         @jdk.internal.ValueBased
-        final class LazyMapEntrySet extends AbstractImmutableSet<Map.Entry<K, V>> {
+        final class StableMapEntrySet extends AbstractImmutableSet<Map.Entry<K, V>> {
 
             @Stable
             private final Set<Map.Entry<K, StableValueImpl<V>>> delegateEntrySet;
 
-            LazyMapEntrySet() {
+            StableMapEntrySet() {
                 this.delegateEntrySet = delegate.entrySet();
             }
 
             @Override public Iterator<Map.Entry<K, V>> iterator() { return new LazyMapIterator(); }
             @Override public int                       size() { return delegateEntrySet.size(); }
-            @Override public int                       hashCode() { return LazyMap.this.hashCode(); }
+            @Override public int                       hashCode() { return StableMap.this.hashCode(); }
 
             @jdk.internal.ValueBased
             final class LazyMapIterator implements Iterator<Map.Entry<K, V>> {

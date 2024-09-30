@@ -41,12 +41,12 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A thin, atomic, thread-safe, set-at-most-once, stable value holder eligible for
- * certain JVM optimizations if set to a value.
+ * A thin, atomic, thread-safe, set-at-most-once, stable holder capable of holding
+ * underlying data, eligible for certain JVM optimizations if set to a value.
  * <p>
  * A stable value is said to be monotonic because the state of a stable value can only go
- * from <em>unset</em> to <em>set</em> and consequently, a value can only be set
- * at most once.
+ * from <em>unset</em> to <em>set</em> and consequently, the underlying data can only be
+ * set at most once.
  * <p>
  * StableValue is mainly intended to be a member of a holding class and is usually neither
  * exposed directly via accessors nor passed as a method parameter.
@@ -55,55 +55,55 @@ import java.util.function.Supplier;
  * <h2 id="factories">Factories</h2>
  * <p>
  * To create a new fresh (unset) StableValue, use the
- * {@linkplain StableValue#newInstance() StableValue::newInstance} factory.
+ * {@linkplain StableValue#of() StableValue::of} factory.
  * <p>
  * This class also contains a number of convenience methods for creating constructs
  * involving stable values:
  * <ul>
  *     <li>
- * A <em>caching</em> (also called "memoized") Supplier, where a given {@code original}
+ * A stable (also called "cached" or "memoized") Supplier, where a given {@code original}
  * Supplier is guaranteed to be successfully invoked at most once even in a multithreaded
  * environment, can be created like this:
- * {@snippet lang = java :
- *     Supplier<T> cache = StableValue.newCachingSupplier(original);
- * }
- *     </li>
- *
- *     <li>
- * A caching (also called "memoized") IntFunction, for the allowed given {@code size}
- * input values {@code [0, size)} and where the given {@code original} IntFunction is
- * guaranteed to be successfully invoked at most once per inout index even in a
- * multithreaded environment, can be created like this:
  * {@snippet lang = java:
- *     IntFunction<R> cache = StableValue.newCachingIntFunction(size, original);
+ *     Supplier<T> stable = StableValue.ofSupplier(original);
  *}
  *     </li>
  *
  *     <li>
- * A caching (also called "memoized") Function, for the given set of allowed {@code inputs}
- * and where the given {@code original} function is guaranteed to be successfully invoked
- * at most once per input value even in a multithreaded environment, can be created like
- * this:
+ * A stable (also called "cached" or "memoized") IntFunction, for the allowed given
+ * {@code size} input values {@code [0, size)} and where the given {@code original}
+ * IntFunction is guaranteed to be successfully invoked at most once per inout index even
+ * in a multithreaded environment, can be created like this:
+ * {@snippet lang = java:
+ *     IntFunction<R> stable = StableValue.ofIntFunction(size, original);
+ *}
+ *     </li>
+ *
+ *     <li>
+ * A stable (also called "cached" or "memoized") Function, for the given set of allowed
+ * {@code inputs} and where the given {@code original} function is guaranteed to be
+ * successfully invoked at most once per input value even in a multithreaded environment,
+ * can be created like this:
  * {@snippet lang = java :
- *    Function<T, R> cache = StableValue.newCachingFunction(inputs, original);
+ *    Function<T, R> stable = StableValue.stableFunction(inputs, original);
  * }
  *     </li>
  *
  *     <li>
- * A lazy List of stable elements with a given {@code size} and given {@code mapper} can
+ * A stable List of stable elements with a given {@code size} and given {@code mapper} can
  * be created the following way:
- * {@snippet lang = java :
- *     List<E> lazyList = StableValue.lazyList(size, mapper);
- * }
+ * {@snippet lang = java:
+ *     List<E> stableList = StableValue.ofList(size, mapper);
+ *}
  * The list can be used to model stable one-dimensional arrays. If two- or more
  * dimensional arrays are to be modeled, a List of List of ... of E can be used.
  *     </li>
  *
  *     <li>
- * A lazy Map with a given set of {@code keys} and given {@code mapper} associated with
+ * A stable Map with a given set of {@code keys} and given {@code mapper} associated with
  * stable values can be created like this:
  * {@snippet lang = java :
- *     Map<K, V> lazyMap = StableValue.lazyMap(keys, mapper);
+ *     Map<K, V> stableMap = StableValue.stableMap(keys, mapper);
  * }
  *     </li>
  *
@@ -113,20 +113,21 @@ import java.util.function.Supplier;
  * instances.
  *
  * <h2 id="memory-consistency">Memory Consistency Properties</h2>
- * Actions on a presumptive holder value in a thread prior to calling a method that <i>sets</i>
- * the holder value are seen by any other thread that <i>observes</i> a set holder value.
+ * Actions on a presumptive underlying data in a thread prior to calling a method that
+ * <i>sets</i> the underlying data are seen by any other thread that <i>observes</i> a
+ * set underlying data.
  *
  * More generally, the action of attempting to interact (i.e. via load or store operations)
  * with a StableValue's holder value (e.g. via {@link StableValue#trySet} or
  * {@link StableValue#orElseThrow()}) forms a
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
- * relation between any other attempt to interact with the StableValue's holder value.
+ * relation between any other attempt to interact with the StableValue's underlying data.
  *
  * <h2 id="nullability">Nullability</h2>
- * Except for a StableValue's holder value itself, all method parameters must be
+ * Except for a StableValue's underlying data itself, all method parameters must be
  * <em>non-null</em> or a {@link NullPointerException} will be thrown.
  *
- * @implNote Implementing classes are free to synchronize on {@code this} and consequently,
+ * @implSpec Implementing classes are free to synchronize on {@code this} and consequently,
  *           care should be taken whenever (directly or indirectly) synchronizing on
  *           a StableValue. Failure to do this may lead to deadlock.
  *
@@ -148,57 +149,57 @@ public sealed interface StableValue<T>
     // Principal methods
 
     /**
-     * {@return {@code true} if the holder value was set to the provided {@code value},
+     * {@return {@code true} if the underlying data was set to the provided {@code value},
      * otherwise returns {@code false}}
      * <p>
-     * When this method returns, a holder value is always set.
+     * When this method returns, the underlying data is always set.
      *
      * @param value to set (nullable)
      */
     boolean trySet(T value);
 
     /**
-     * {@return the set holder value (nullable) if set, otherwise return the
+     * {@return the set underlying data (nullable) if set, otherwise return the
      * {@code other} value}
      *
-     * @param other to return if the stable holder value is not set
+     * @param other to return if the underlying data is not set
      */
     T orElse(T other);
 
     /**
-     * {@return the set holder value if set, otherwise throws {@code NoSuchElementException}}
+     * {@return the underlying data if set, otherwise throws {@code NoSuchElementException}}
      *
-     * @throws NoSuchElementException if no value is set
+     * @throws NoSuchElementException if no underlying data is set
      */
     T orElseThrow();
 
     /**
-     * {@return {@code true} if a holder value is set, {@code false} otherwise}
+     * {@return {@code true} if the underlying data is set, {@code false} otherwise}
      */
     boolean isSet();
 
     // Convenience methods
 
     /**
-     * Sets the holder value to the provided {@code value}, or, if already set,
+     * Sets the underlying data to the provided {@code value}, or, if already set,
      * throws {@link IllegalStateException}}
      * <p>
-     * When this method returns (or throws an Exception), a holder value is always set.
+     * When this method returns (or throws an Exception), the underlying data is always set.
      *
      * @param value to set (nullable)
      * @throws IllegalStateException if a holder value is already set
      */
     default void setOrThrow(T value) {
         if (!trySet(value)) {
-            throw new IllegalStateException("Cannot set the holder value to " + value +
-                    " because a holder value is alredy set: " + this);
+            throw new IllegalStateException("Cannot set the underlying data to " + value +
+                    " because the underlying data is alredy set: " + this);
         }
     }
 
     /**
-     * {@return the set holder value if set, otherwise attempts to compute and set a
-     * new (nullable) value using the provided {@code supplier}, returning the
-     * (pre-existing or newly set) value}
+     * {@return the underlying data if set, otherwise attempts to compute and set a
+     * new (nullable) underlying data using the provided {@code supplier}, returning the
+     * (pre-existing or newly set) underlying data}
      * <p>
      * The provided {@code supplier} is guaranteed to be invoked at most once if it
      * completes without throwing an exception.
@@ -228,7 +229,7 @@ public sealed interface StableValue<T>
      * will only be invoked once even if invoked from several threads unless the
      * {@code supplier} throws an exception.
      *
-     * @param  supplier to be used for computing a value
+     * @param  supplier to be used for computing the underlying data
      * @throws StackOverflowError if the provided {@code supplier} recursively
      *         invokes the provided {@code supplier} upon being invoked.
      */
@@ -237,16 +238,16 @@ public sealed interface StableValue<T>
     // Factories
 
     /**
-     * {@return a fresh stable value with an unset holder value}
+     * {@return a fresh stable value with no underlying data set}
      *
      * @param <T> type of the holder value
      */
-    static <T> StableValue<T> newInstance() {
-        return StableValueFactories.newInstance();
+    static <T> StableValue<T> of() {
+        return StableValueFactories.of();
     }
 
     /**
-     * {@return a new caching, thread-safe, stable, lazily computed
+     * {@return a new stable, thread-safe, caching, lazily computed
      * {@linkplain Supplier supplier} that records the value of the provided
      * {@code original} supplier upon being first accessed via
      * {@linkplain Supplier#get() Supplier::get}}
@@ -267,13 +268,13 @@ public sealed interface StableValue<T>
      * @param original supplier used to compute a memoized value
      * @param <T>      the type of results supplied by the returned supplier
      */
-    static <T> Supplier<T> newCachingSupplier(Supplier<? extends T> original) {
+    static <T> Supplier<T> ofSupplier(Supplier<? extends T> original) {
         Objects.requireNonNull(original);
-        return StableValueFactories.newCachingSupplier(original);
+        return StableValueFactories.ofSupplier(original);
     }
 
     /**
-     * {@return a new caching, thread-safe, stable, lazily computed
+     * {@return a new stable, thread-safe, caching, lazily computed
      * {@link IntFunction } that, for each allowed input, records the values of the
      * provided {@code original} IntFunction upon being first accessed via
      * {@linkplain IntFunction#apply(int) IntFunction::apply}}
@@ -296,17 +297,17 @@ public sealed interface StableValue<T>
      * @param original IntFunction used to compute a memoized value
      * @param <R>      the type of results delivered by the returned IntFunction
      */
-    static <R> IntFunction<R> newCachingIntFunction(int size,
-                                                    IntFunction<? extends R> original) {
+    static <R> IntFunction<R> ofIntFunction(int size,
+                                            IntFunction<? extends R> original) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
         Objects.requireNonNull(original);
-        return StableValueFactories.newCachingIntFunction(size, original);
+        return StableValueFactories.ofIntFunction(size, original);
     }
 
     /**
-     * {@return a new caching, thread-safe, stable, lazily computed {@link Function}
+     * {@return a new stable, thread-safe, caching, lazily computed {@link Function}
      * that, for each allowed input in the given set of {@code inputs}, records the
      * values of the provided {@code original} Function upon being first accessed via
      * {@linkplain Function#apply(Object) Function::apply}, or optionally via background
@@ -335,15 +336,15 @@ public sealed interface StableValue<T>
      * @param <T>      the type of the input to the returned Function
      * @param <R>      the type of results delivered by the returned Function
      */
-    static <T, R> Function<T, R> newCachingFunction(Set<? extends T> inputs,
-                                                    Function<? super T, ? extends R> original) {
+    static <T, R> Function<T, R> ofFunction(Set<? extends T> inputs,
+                                            Function<? super T, ? extends R> original) {
         Objects.requireNonNull(inputs);
         Objects.requireNonNull(original);
-        return StableValueFactories.newCachingFunction(inputs, original);
+        return StableValueFactories.ofFunction(inputs, original);
     }
 
     /**
-     * {@return a lazy, shallowly immutable, stable List of the provided {@code size}
+     * {@return a shallowly immutable, lazy, stable List of the provided {@code size}
      * where the individual elements of the list are lazily computed via the provided
      * {@code mapper} whenever an element is first accessed (directly or indirectly),
      * for example via {@linkplain List#get(int) List::get}}
@@ -366,16 +367,16 @@ public sealed interface StableValue<T>
      * @param mapper to invoke whenever an element is first accessed (may return null)
      * @param <T>    the {@code StableValue}s' element type
      */
-    static <T> List<T> lazyList(int size, IntFunction<? extends T> mapper) {
+    static <T> List<T> ofList(int size, IntFunction<? extends T> mapper) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
         Objects.requireNonNull(mapper);
-        return SharedSecrets.getJavaUtilCollectionAccess().lazyList(size, mapper);
+        return SharedSecrets.getJavaUtilCollectionAccess().stableList(size, mapper);
     }
 
     /**
-     * {@return a lazy, shallowly immutable, stable Map of the provided {@code keys}
+     * {@return a shallowly immutable, lazy, stable Map of the provided {@code keys}
      * where the associated values of the maps are lazily computed vio the provided
      * {@code mapper} whenever a value is first accessed (directly or indirectly), for
      * example via {@linkplain Map#get(Object) Map::get}}
@@ -400,10 +401,10 @@ public sealed interface StableValue<T>
      * @param <K>    the type of keys maintained by the returned map
      * @param <V>    the type of mapped values
      */
-    static <K, V> Map<K, V> lazyMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
+    static <K, V> Map<K, V> ofMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
         Objects.requireNonNull(keys);
         Objects.requireNonNull(mapper);
-        return SharedSecrets.getJavaUtilCollectionAccess().lazyMap(keys, mapper);
+        return SharedSecrets.getJavaUtilCollectionAccess().stableMap(keys, mapper);
     }
 
 }

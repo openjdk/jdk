@@ -52,7 +52,7 @@ final class StableValuesSafePublicationTest {
         @SuppressWarnings("unchecked")
         StableValue<Holder>[] stables = (StableValue<Holder>[]) new StableValue[SIZE];
         for (int i = 0; i < SIZE; i++) {
-            stables[i] = StableValue.newInstance();
+            stables[i] = StableValue.of();
         }
         return stables;
     }

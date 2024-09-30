@@ -90,8 +90,8 @@ public class CustomCachingBiFunctionBenchmark {
     private static final BiFunction<Integer, Integer, Integer> function = cachingBiFunction(SET, ORIGINAL);;
     private static final BiFunction<Integer, Integer, Integer> function2 = cachingBiFunction(SET, ORIGINAL);;
 
-    private static final StableValue<Integer> STABLE_VALUE = StableValue.newInstance();
-    private static final StableValue<Integer> STABLE_VALUE2 = StableValue.newInstance();
+    private static final StableValue<Integer> STABLE_VALUE = StableValue.of();
+    private static final StableValue<Integer> STABLE_VALUE2 = StableValue.of();
 
     static {
         STABLE_VALUE.trySet(ORIGINAL.apply(VALUE, VALUE2));
@@ -121,7 +121,7 @@ public class CustomCachingBiFunctionBenchmark {
 
     // Pair seams to not work that well...
     static <T, U, R> BiFunction<T, U, R> cachingBiFunction2(Set<Pair<T, U>> inputs, BiFunction<T, U, R> original) {
-        final Function<Pair<T, U>, R> delegate = StableValue.newCachingFunction(inputs, p -> original.apply(p.left(), p.right()));
+        final Function<Pair<T, U>, R> delegate = StableValue.ofFunction(inputs, p -> original.apply(p.left(), p.right()));
         return (T t, U u) -> delegate.apply(new Pair<>(t, u));
     }
 
@@ -132,7 +132,7 @@ public class CustomCachingBiFunctionBenchmark {
     record CachingBiFunction2<T, U, R>(Function<Pair<? extends T, ? extends U>, R> delegate) implements BiFunction<T, U, R> {
 
         public CachingBiFunction2(Set<Pair<? extends T, ? extends U>> inputs, BiFunction<T, U, R> original) {
-            this(StableValue.newCachingFunction(inputs, (Pair<? extends T, ? extends U> p) -> original.apply(p.left(), p.right())));
+            this(StableValue.ofFunction(inputs, (Pair<? extends T, ? extends U> p) -> original.apply(p.left(), p.right())));
         }
 
         @Override
@@ -153,7 +153,7 @@ public class CustomCachingBiFunctionBenchmark {
 
         public CachingBiFunction(Set<Pair<? extends T, ? extends U>> inputs, BiFunction<T, U, R> original) {
             this(Map.copyOf(inputs.stream()
-                            .collect(Collectors.toMap(Function.identity(), _ -> StableValue.newInstance()))),
+                            .collect(Collectors.toMap(Function.identity(), _ -> StableValue.of()))),
                     original
             );
         }
@@ -196,8 +196,8 @@ public class CustomCachingBiFunctionBenchmark {
             Map<T, Map<U, StableValue<R>>> map = inputs.stream()
                     .collect(Collectors.groupingBy(Pair::left,
                             Collectors.groupingBy(Pair::right,
-                                    Collectors.mapping((Function<? super Pair<? extends T, ? extends U>, ? extends StableValue<R>>) _ -> StableValue.newInstance(),
-                                            Collectors.reducing(StableValue.newInstance(), _ -> StableValue.newInstance(), (StableValue<R> a, StableValue<R> b) -> a)))));
+                                    Collectors.mapping((Function<? super Pair<? extends T, ? extends U>, ? extends StableValue<R>>) _ -> StableValue.of(),
+                                            Collectors.reducing(StableValue.of(), _ -> StableValue.of(), (StableValue<R> a, StableValue<R> b) -> a)))));
 
             @SuppressWarnings("unchecked")
             Map<T, Map<U, StableValue<R>>> copy = Map.ofEntries(map.entrySet().stream()
@@ -248,12 +248,12 @@ public class CustomCachingBiFunctionBenchmark {
             Map<T, Map<U, StableValue<R>>> map = inputs.stream()
                     .collect(Collectors.groupingBy(Pair::left,
                             Collectors.groupingBy(Pair::right,
-                                    Collectors.mapping((Function<? super Pair<? extends T, ? extends U>, ? extends StableValue<R>>) _ -> StableValue.newInstance(),
-                                            Collectors.reducing(StableValue.newInstance(), _ -> StableValue.newInstance(), (StableValue<R> a, StableValue<R> b) -> b)))));
+                                    Collectors.mapping((Function<? super Pair<? extends T, ? extends U>, ? extends StableValue<R>>) _ -> StableValue.of(),
+                                            Collectors.reducing(StableValue.of(), _ -> StableValue.of(), (StableValue<R> a, StableValue<R> b) -> b)))));
 
             @SuppressWarnings("unchecked")
             Map<T, Function<U, R>> copy = Map.ofEntries(map.entrySet().stream()
-                    .map(e -> Map.entry(e.getKey(), StableValue.newCachingFunction( e.getValue().keySet(), (U u) -> original.apply(e.getKey(), u))))
+                    .map(e -> Map.entry(e.getKey(), StableValue.ofFunction( e.getValue().keySet(), (U u) -> original.apply(e.getKey(), u))))
                     .toArray(Map.Entry[]::new));
 
             return copy;

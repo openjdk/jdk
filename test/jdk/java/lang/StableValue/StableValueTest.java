@@ -36,8 +36,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiPredicate;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,7 +53,7 @@ final class StableValueTest {
     }
 
     void trySet(Integer initial) {
-        StableValue<Integer> stable = StableValue.newInstance();
+        StableValue<Integer> stable = StableValue.of();
         assertTrue(stable.trySet(initial));
         assertFalse(stable.trySet(null));
         assertFalse(stable.trySet(VALUE));
@@ -65,7 +63,7 @@ final class StableValueTest {
 
     @Test
     void orElse() {
-        StableValue<Integer> stable = StableValue.newInstance();
+        StableValue<Integer> stable = StableValue.of();
         assertEquals(VALUE, stable.orElse(VALUE));
         stable.trySet(VALUE);
         assertEquals(VALUE, stable.orElse(VALUE2));
@@ -73,9 +71,9 @@ final class StableValueTest {
 
     @Test
     void orElseThrow() {
-        StableValue<Integer> stable = StableValue.newInstance();
+        StableValue<Integer> stable = StableValue.of();
         var e = assertThrows(NoSuchElementException.class, stable::orElseThrow);
-        assertEquals("No holder value set", e.getMessage());
+        assertEquals("No data set", e.getMessage());
         stable.trySet(VALUE);
         assertEquals(VALUE, stable.orElseThrow());
     }
@@ -87,7 +85,7 @@ final class StableValueTest {
    }
 
     void isSet(Integer initial) {
-        StableValue<Integer> stable = StableValue.newInstance();
+        StableValue<Integer> stable = StableValue.of();
         assertFalse(stable.isSet());
         stable.trySet(initial);
         assertTrue(stable.isSet());
@@ -96,7 +94,7 @@ final class StableValueTest {
    @Test
    void testComputeIfUnsetSupplier() {
        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> VALUE);
-       StableValue<Integer> stable = StableValue.newInstance();
+       StableValue<Integer> stable = StableValue.of();
        assertEquals(VALUE, stable.computeIfUnset(cs));
        assertEquals(1, cs.cnt());
        assertEquals(VALUE, stable.computeIfUnset(cs));
@@ -105,22 +103,22 @@ final class StableValueTest {
 
     @Test
     void testHashCode() {
-        StableValue<Integer> stableValue = StableValue.newInstance();
+        StableValue<Integer> stableValue = StableValue.of();
         // Should be Object::hashCode
         assertEquals(System.identityHashCode(stableValue), stableValue.hashCode());
     }
 
     @Test
     void testEquals() {
-        StableValue<Integer> s0 = StableValue.newInstance();
-        StableValue<Integer> s1 = StableValue.newInstance();
+        StableValue<Integer> s0 = StableValue.of();
+        StableValue<Integer> s1 = StableValue.of();
         assertNotEquals(s0, s1); // Identity based
         s0.setOrThrow(42);
         s1.setOrThrow(42);
         assertNotEquals(s0, s1);
         assertNotEquals(s0, "a");
-        StableValue<Integer> null0 = StableValue.newInstance();
-        StableValue<Integer> null1 = StableValue.newInstance();
+        StableValue<Integer> null0 = StableValue.of();
+        StableValue<Integer> null1 = StableValue.of();
         null0.setOrThrow(null);
         null1.setOrThrow(null);
         assertNotEquals(null0, null1);
@@ -128,27 +126,27 @@ final class StableValueTest {
 
     @Test
     void toStringUnset() {
-        StableValue<Integer> stable = StableValue.newInstance();
+        StableValue<Integer> stable = StableValue.of();
         assertEquals("StableValue.unset", stable.toString());
     }
 
     @Test
     void toStringNull() {
-        StableValue<Integer> stable = StableValue.newInstance();
+        StableValue<Integer> stable = StableValue.of();
         assertTrue(stable.trySet(null));
         assertEquals("StableValue[null]", stable.toString());
     }
 
     @Test
     void toStringNonNull() {
-        StableValue<Integer> stable = StableValue.newInstance();
+        StableValue<Integer> stable = StableValue.of();
         assertTrue(stable.trySet(VALUE));
         assertEquals("StableValue[" + VALUE + "]", stable.toString());
     }
 
     @Test
     void toStringCircular() {
-        StableValue<StableValue<?>> stable = StableValue.newInstance();
+        StableValue<StableValue<?>> stable = StableValue.of();
         stable.trySet(stable);
         String toString = stable.toString();
         assertEquals(toString, "(this StableValue)");
@@ -189,7 +187,7 @@ final class StableValueTest {
     void race(BiPredicate<StableValue<Integer>, Integer> winnerPredicate) {
         int noThreads = 10;
         CountDownLatch starter = new CountDownLatch(1);
-        StableValue<Integer> stable = StableValue.newInstance();
+        StableValue<Integer> stable = StableValue.of();
         BitSet winner = new BitSet(noThreads);
         List<Thread> threads = IntStream.range(0, noThreads).mapToObj(i -> new Thread(() -> {
                     try {
