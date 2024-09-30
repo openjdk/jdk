@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 
 import jdk.internal.loader.ClassLoaders;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.constant.ClassDesc;
@@ -867,7 +868,7 @@ public abstract sealed class MethodHandle implements Constable
         if (at != null) {
             return at;
         }
-        return setAsTypeCache(asTypeUncached(newType));
+        return setAsTypeCache(newType);
     }
 
     private MethodHandle asTypeCached(MethodType newType) {
@@ -885,7 +886,9 @@ public abstract sealed class MethodHandle implements Constable
         return null;
     }
 
-    private MethodHandle setAsTypeCache(MethodHandle at) {
+    @DontInline
+    private MethodHandle setAsTypeCache(MethodType newType) {
+        MethodHandle at = asTypeUncached(newType);
         // Don't introduce a strong reference in the cache if newType depends on any class loader other than
         // current method handle already does to avoid class loader leaks.
         if (isSafeToCache(at.type)) {
