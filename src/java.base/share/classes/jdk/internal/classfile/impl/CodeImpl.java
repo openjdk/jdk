@@ -55,13 +55,13 @@ public final class CodeImpl
                     case ARRAY_STORE -> ArrayStoreInstruction.of(o);
                     case CONSTANT -> ConstantInstruction.ofIntrinsic(o);
                     case CONVERT -> ConvertInstruction.of(o);
-                    case LOAD -> LoadInstruction.of(o, BytecodeHelpers.intrinsicLoadSlot(o));
+                    case LOAD -> new AbstractInstruction.UnboundLoadInstruction(o, BytecodeHelpers.intrinsicLoadSlot(o));
                     case MONITOR -> MonitorInstruction.of(o);
                     case NOP -> NopInstruction.of();
                     case OPERATOR -> OperatorInstruction.of(o);
                     case RETURN -> ReturnInstruction.of(o);
                     case STACK -> StackInstruction.of(o);
-                    case STORE -> StoreInstruction.of(o, BytecodeHelpers.intrinsicStoreSlot(o));
+                    case STORE -> new AbstractInstruction.UnboundStoreInstruction(o, BytecodeHelpers.intrinsicStoreSlot(o));
                     case THROW_EXCEPTION -> ThrowInstruction.of();
                     default -> throw new AssertionError("invalid opcode: " + o);
                 };
