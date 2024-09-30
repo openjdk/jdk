@@ -32,7 +32,7 @@
 class ZBarrierSet;
 
 class ZInitializer {
- public:
+public:
   ZInitializer(ZBarrierSet* barrier_set);
 };
 
