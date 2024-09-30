@@ -22,10 +22,10 @@
  */
 
 import java.awt.Color;
-        import java.awt.Frame;
-        import java.awt.Toolkit;
-        import java.beans.PropertyChangeEvent;
-        import java.beans.PropertyChangeListener;
+import java.awt.Frame;
+import java.awt.Toolkit;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 /*
  * @test
