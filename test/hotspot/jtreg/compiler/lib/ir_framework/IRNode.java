@@ -514,9 +514,24 @@ public class IRNode {
         trapNodes(DIV_BY_ZERO_TRAP, "div0_check");
     }
 
+    public static final String DIV_I = PREFIX + "DIV_I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(DIV_I, "DivI");
+    }
+
     public static final String DIV_L = PREFIX + "DIV_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(DIV_L, "DivL");
+    }
+
+    public static final String DIV_MOD_I = PREFIX + "DIV_MOD_I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(DIV_MOD_I, "DivModI");
+    }
+
+    public static final String DIV_MOD_L = PREFIX + "DIV_MOD_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(DIV_MOD_L, "DivModL");
     }
 
     public static final String DIV_VF = VECTOR_PREFIX + "DIV_VF" + POSTFIX;
@@ -995,6 +1010,16 @@ public class IRNode {
     public static final String MIN_VL = VECTOR_PREFIX + "MIN_VL" + POSTFIX;
     static {
         vectorNode(MIN_VL, "MinV", TYPE_LONG);
+    }
+
+    public static final String MOD_I = PREFIX + "MOD_I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOD_I, "ModI");
+    }
+
+    public static final String MOD_L = PREFIX + "MOD_L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MOD_L, "ModL");
     }
 
     public static final String MUL = PREFIX + "MUL" + POSTFIX;

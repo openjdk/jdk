@@ -79,6 +79,10 @@ import jdk.internal.util.StaticProperty;
  * {@code user.dir}, and is typically the directory in which the Java
  * virtual machine was invoked.
  *
+ * <p> Unless otherwise noted, {@linkplain java.nio.file##links symbolic links}
+ * are automatically redirected to the <i>target</i> of the link, whether they
+ * are provided by a pathname string or via a {@code File} object.
+ *
  * <p> The <em>parent</em> of an abstract pathname may be obtained by invoking
  * the {@link #getParent} method of this class and consists of the pathname's
  * prefix and each name in the pathname's name sequence except for the last.
@@ -904,8 +908,16 @@ public class File
      * Tests whether the file named by this abstract pathname is a hidden
      * file.  The exact definition of <em>hidden</em> is system-dependent.  On
      * UNIX systems, a file is considered to be hidden if its name begins with
-     * a period character ({@code '.'}).  On Microsoft Windows systems, a file is
-     * considered to be hidden if it has been marked as such in the filesystem.
+     * a period character ({@code '.'}).  On Microsoft Windows systems, a file
+     * is considered to be hidden if it has been marked as such in the
+     * filesystem.
+     *
+     *
+     * @implNote
+     * If the file is a symbolic link, then on UNIX system it is considered to
+     * be hidden if the name of the link itself, not that of its target, begins
+     * with a period character.  On Windows systems, a symbolic link is
+     * considered hidden if its target is so marked in the filesystem.
      *
      * @return  {@code true} if and only if the file denoted by this
      *          abstract pathname is hidden according to the conventions of the
@@ -1048,7 +1060,8 @@ public class File
     /**
      * Deletes the file or directory denoted by this abstract pathname.  If
      * this pathname denotes a directory, then the directory must be empty in
-     * order to be deleted.
+     * order to be deleted.  If this pathname denotes a symbolic link, then the
+     * link itself, not its target, will be deleted.
      *
      * <p> Note that the {@link java.nio.file.Files} class defines the {@link
      * java.nio.file.Files#delete(Path) delete} method to throw an {@link IOException}
@@ -1078,6 +1091,8 @@ public class File
     /**
      * Requests that the file or directory denoted by this abstract
      * pathname be deleted when the virtual machine terminates.
+     * If this pathname denotes a symbolic link, then the
+     * link itself, not its target, will be deleted.
      * Files (or directories) are deleted in the reverse order that
      * they are registered. Invoking this method to delete a file or
      * directory that is already registered for deletion has no effect.
@@ -1421,7 +1436,9 @@ public class File
     }
 
     /**
-     * Renames the file denoted by this abstract pathname.
+     * Renames the file denoted by this abstract pathname.  If this pathname
+     * denotes a symbolic link, then the link itself, not its target, will be
+     * renamed.
      *
      * <p> Many aspects of the behavior of this method are inherently
      * platform-dependent: The rename operation might not be able to move a
