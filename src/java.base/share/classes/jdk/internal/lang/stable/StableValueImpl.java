@@ -26,6 +26,7 @@
 package jdk.internal.lang.stable;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -83,20 +84,17 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @Override
     public T orElseThrow() {
         final Object t = wrappedValue;
-        if (t != null) {
-            return unwrap(t);
+        if (t == null) {
+            throw new NoSuchElementException("No data set");
         }
-        throw new NoSuchElementException("No holder value set");
+        return unwrap(t);
     }
 
     @ForceInline
     @Override
     public T orElse(T other) {
         final Object t = wrappedValue;
-        if (t != null) {
-            return unwrap(t);
-        }
-        return other;
+        return (t == null) ? other : unwrap(t);
     }
 
     @ForceInline
@@ -105,24 +103,22 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return wrappedValue != null;
     }
 
-
-    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T computeIfUnset(Supplier<? extends T> supplier) {
-        Object t = wrappedValue;
+        final Object t = wrappedValue;
+        return (t == null) ? computeIfUnsetSlowPath(supplier) : unwrap(t);
+    }
+
+    @DontInline
+    private synchronized T computeIfUnsetSlowPath(Supplier<? extends T> supplier) {
+        final Object t = wrappedValue;
         if (t != null) {
             return unwrap(t);
         }
-        synchronized (this) {
-            t = wrappedValue;
-            if (t != null) {
-                return unwrap(t);
-            }
-            final T newValue = supplier.get();
-            // The mutex is reentrant so we need to check if the value was actually set.
-            return wrapAndCas(newValue) ? newValue : orElseThrow();
-        }
+        final T newValue = supplier.get();
+        // The mutex is reentrant so we need to check if the value was actually set.
+        return wrapAndCas(newValue) ? newValue : orElseThrow();
     }
 
     // The methods equals() and hashCode() should be based on identity (defaults from Object)
