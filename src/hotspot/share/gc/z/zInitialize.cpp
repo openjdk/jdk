@@ -74,35 +74,35 @@ void ZInitialize::initialize(ZBarrierSet* barrier_set) {
   pd_initialize();
 }
 
-void ZInitialize::register_error(bool debug, const char *error) {
+void ZInitialize::register_error(bool debug, const char *error_msg) {
   guarantee(!_finished, "Only register errors during initialization");
 
   if (!_had_error) {
-    strncpy(_error_message, error, ErrorMessageLength - 1);
+    strncpy(_error_message, error_msg, ErrorMessageLength - 1);
     _had_error = true;
   }
 
   if (debug) {
-    log_error_pd(gc)("%s", error);
+    log_error_pd(gc)("%s", error_msg);
   } else {
-    log_error_p(gc)("%s", error);
+    log_error_p(gc)("%s", error_msg);
   }
 }
 
 void ZInitialize::error(const char* msg_format, ...) {
   va_list argp;
   va_start(argp, msg_format);
-  const FormatBuffer<ErrorMessageLength> error(FormatBufferDummy(), msg_format, argp);
+  const FormatBuffer<ErrorMessageLength> error_msg(FormatBufferDummy(), msg_format, argp);
   va_end(argp);
-  register_error(false /* debug */, error);
+  register_error(false /* debug */, error_msg);
 }
 
 void ZInitialize::error_d(const char* msg_format, ...) {
   va_list argp;
   va_start(argp, msg_format);
-  const FormatBuffer<ErrorMessageLength> error(FormatBufferDummy(), msg_format, argp);
+  const FormatBuffer<ErrorMessageLength> error_msg(FormatBufferDummy(), msg_format, argp);
   va_end(argp);
-  register_error(true /* debug */, error);
+  register_error(true /* debug */, error_msg);
 }
 
 bool ZInitialize::had_error() {

@@ -44,7 +44,7 @@ private:
   static bool _had_error;
   static bool _finished;
 
-  static void register_error(bool debug, const char *error);
+  static void register_error(bool debug, const char *error_msg);
 
   static void pd_initialize();
 
