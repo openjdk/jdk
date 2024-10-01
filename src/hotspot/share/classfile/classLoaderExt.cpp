@@ -139,6 +139,8 @@ void ClassLoaderExt::setup_module_paths(JavaThread* current) {
 }
 
 bool ClassLoaderExt::has_jar_suffix(const char* filename) {
+  // In jdk.internal.module.ModulePath.readModule(), it checks for the ".jar" suffix.
+  // Performing the same check here.
   const char* dot = strrchr(filename, '.');
   if (dot != nullptr && strcmp(dot + 1, "jar") == 0) {
     return true;

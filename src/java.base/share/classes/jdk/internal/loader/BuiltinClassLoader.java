@@ -1082,18 +1082,10 @@ public class BuiltinClassLoader
 
     // Called from VM only, during -Xshare:dump
     private void resetArchivedStates() {
-        resetArchivedStates(false);
-    }
-
-    // Called from BuiltinClassLoaders.resetArchivedStates() and ClassLoaders.AppClassLoader.resetArchivedStates().
-    void resetArchivedStates(boolean all) {
         ucp = null;
         resourceCache = null;
-        if (all) {
-            setClassPath(null);
-            if (!moduleToReader.isEmpty()) {
-                moduleToReader.clear();
-            }
+        if (!moduleToReader.isEmpty()) {
+            moduleToReader.clear();
         }
     }
 }

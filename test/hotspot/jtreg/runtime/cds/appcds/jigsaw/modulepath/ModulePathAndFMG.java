@@ -40,8 +40,10 @@ import java.nio.file.StandardCopyOption;
 
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class ModulePathAndFMG {
+    private static final String JAVA_HOME = System.getProperty("java.home");
 
     private static final Path USER_DIR = Paths.get(CDSTestUtils.getOutputDir());
 
@@ -49,6 +51,7 @@ public class ModulePathAndFMG {
 
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MODS_DIR = Paths.get("mody");
+    private static final Path JMOD_DIR = Paths.get("jmod_dir");
 
     // the module name of the test module
     private static final String MAIN_MODULE = "com.bars";
@@ -63,12 +66,16 @@ public class ModulePathAndFMG {
     private static String DUP_LIBS = "duplibs";
     private static Path libsDir = null;
     private static Path dupDir = null;
+    private static Path jmodDir = null;
     private static Path mainJar = null;
     private static Path testJar = null;
     private static Path dupJar = null;
+    private static Path badJar = null;
 
     private static String CLASS_FOUND_MESSAGE = "com.foos.Test found";
     private static String CLASS_NOT_FOUND_MESSAGE = "java.lang.ClassNotFoundException: com.foos.Test";
+    private static String FIND_EXCEPTION_MESSAGE = "java.lang.module.FindException: Module com.foos not found, required by com.bars";
+    private static String MODULE_NOT_RECOGNIZED = "Module format not recognized:.*modylibs.*com.bars.JAR";
     private static String OPTIMIZE_ENABLED = "] optimized module handling: enabled";
     private static String OPTIMIZE_DISABLED = "] optimized module handling: disabled";
     private static String FMG_ENABLED = "] full module graph: enabled";
@@ -111,11 +118,27 @@ public class ModulePathAndFMG {
         dupDir = Files.createTempDirectory(USER_DIR, DUP_LIBS);
         dupJar = dupDir.resolve(DUP_MODULE + ".jar");
         Files.copy(testJar, dupJar, StandardCopyOption.REPLACE_EXISTING);
+
+        badJar = libsDir.resolve(MAIN_MODULE + ".JAR");
+        Files.copy(mainJar, badJar, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    public static void buildJmod() throws Exception {
+        Path jmod = Paths.get(JAVA_HOME, "bin", "jmod");
+        jmodDir = Files.createDirectory(Paths.get(USER_DIR.toString() + File.separator + JMOD_DIR.toString()));
+        OutputAnalyzer output = ProcessTools.executeProcess(jmod.toString(),
+                       "create",
+                       "--class-path", Paths.get(USER_DIR.toString(), MODS_DIR.toString(), TEST_MODULE).toString(),
+                       "--module-version", "1.0",
+                       "--main-class", TEST_CLASS,
+                       jmodDir.toString() + File.separator + TEST_MODULE + ".jmod");
+        output.shouldHaveExitValue(0);
     }
 
     public static void main(String... args) throws Exception {
         runWithModulePath();
         runWithExplodedModule();
+        runWithJmodAndBadJar();
     }
 
     private static void tty(String... args) {
@@ -125,7 +148,7 @@ public class ModulePathAndFMG {
         System.out.print("\n");
     }
 
-    public static void runWithModulePath(String... extraRuntimeArgs) throws Exception {
+    public static void runWithModulePath() throws Exception {
         // compile the modules and create the modular jar files
         buildTestModule();
         // create an archive with the classes in the modules built in the
@@ -281,7 +304,7 @@ public class ModulePathAndFMG {
             });
     }
 
-    public static void runWithExplodedModule(String... extraRuntimeArgs) throws Exception {
+    public static void runWithExplodedModule() throws Exception {
         // create an archive with an exploded module in the module path.
         OutputAnalyzer output = TestCommon.createArchive(
                                         null, appClasses,
@@ -299,6 +322,64 @@ public class ModulePathAndFMG {
                 out.shouldContain(FMG_DISABLED)
                    .shouldMatch(MAIN_FROM_MODULE) // Main class loaded from the exploded module
                    .shouldContain(CLASS_FOUND_MESSAGE);
+            });
+    }
+
+    public static void runWithJmodAndBadJar() throws Exception {
+        buildJmod();
+
+        final String modularJarPath = mainJar.toString() + PATH_SEPARATOR + testJar.toString();
+        // create an archive with --module-path com.bars.jar:com.foos.jar
+        OutputAnalyzer output = TestCommon.createArchive(
+                                    null, appClasses,
+                                    "--module-path",
+                                    modularJarPath,
+                                    "-m", MAIN_MODULE);
+        TestCommon.checkDump(output);
+
+        String runModulePath = mainJar.toString() + PATH_SEPARATOR +
+            jmodDir.toString() + TEST_MODULE + ".jmod"; 
+        tty("11. run with CDS on, with module path com.bars.jar:com.foos.jmod");
+        TestCommon.runWithModules(prefix,
+                                 null,               // --upgrade-module-path
+                                 runModulePath, // --module-path
+                                 MAIN_MODULE)        // -m
+            .assertAbnormalExit(out -> {
+                out.shouldContain(OPTIMIZE_DISABLED)
+                   .shouldNotContain(OPTIMIZE_ENABLED)
+                   .shouldContain(FMG_DISABLED)
+                   .shouldNotContain(FMG_ENABLED)
+                   .shouldContain(FIND_EXCEPTION_MESSAGE);
+            });
+
+        runModulePath += PATH_SEPARATOR + testJar.toString();
+        tty("12. run with CDS on, with module path com.bars.jar:com.foos.jmod:com.foos.jar");
+        TestCommon.runWithModules(prefix,
+                                 null,               // --upgrade-module-path
+                                 runModulePath, // --module-path
+                                 MAIN_MODULE)        // -m
+            .assertNormalExit(out -> {
+                out.shouldNotContain(OPTIMIZE_DISABLED)
+                   .shouldContain(OPTIMIZE_ENABLED)
+                   .shouldNotContain(FMG_DISABLED)
+                   .shouldContain(FMG_ENABLED)
+                   .shouldMatch(TEST_FROM_CDS)
+                   .shouldMatch(MAIN_FROM_CDS)
+                   .shouldContain(CLASS_FOUND_MESSAGE);
+            });
+
+        runModulePath = badJar.toString() + PATH_SEPARATOR + testJar.toString();
+        tty("13. run with CDS on, with module path com.bars.JAR:com.foos.jar");
+        TestCommon.runWithModules(prefix,
+                                 null,               // --upgrade-module-path
+                                 runModulePath, // --module-path
+                                 TEST_MODULE)        // -m
+            .assertAbnormalExit(out -> {
+                out.shouldContain(OPTIMIZE_DISABLED)
+                   .shouldNotContain(OPTIMIZE_ENABLED)
+                   .shouldContain(FMG_DISABLED)
+                   .shouldNotContain(FMG_ENABLED)
+                   .shouldMatch(MODULE_NOT_RECOGNIZED);
             });
     }
 }

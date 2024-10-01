@@ -338,13 +338,7 @@ bool Arguments::is_internal_module_property(const char* property) {
 
 // Return true if the key matches the --module-path property name ("jdk.module.path").
 bool Arguments::is_module_path_property(const char* key) {
-  if (strncmp(key, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
-    const char* property_suffix = key + MODULE_PROPERTY_PREFIX_LEN;
-    if (matches_property_suffix(property_suffix, PATH, PATH_LEN)) {
-      return true;
-    }
-  }
-  return false;
+  return (strcmp(key, MODULE_PROPERTY_PREFIX PATH) == 0);
 }
 
 // Process java launcher properties.
