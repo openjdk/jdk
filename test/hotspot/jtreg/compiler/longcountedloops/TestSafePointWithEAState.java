@@ -31,29 +31,33 @@
  */
 
 public class TestSafePointWithEAState {
-  int[] b = new int[400];
+    int[] b = new int[400];
 
-  void c() {
-    int e;
-    float f;
-    for (long d = 0; d < 5000; d++) {
-      e = 1;
-      while ((e += 3) < 200)
-        if (d < b.length)
-          for (int g = 0; g < 10000; ++g) ;
-      synchronized (TestSafePointWithEAState.class) {
-        f = new h(e).n;
-      }
+    void c() {
+        int e;
+        float f;
+        for (long d = 0; d < 5000; d++) {
+            e = 1;
+            while ((e += 3) < 200) {
+                if (d < b.length) {
+                    for (int g = 0; g < 10000; ++g) ;
+                }
+            }
+            synchronized (TestSafePointWithEAState.class) {
+                f = new h(e).n;
+            }
+        }
     }
-  }
 
-  public static void main(String[] m) {
-    TestSafePointWithEAState o = new TestSafePointWithEAState();
-    o.c();
-  }
+    public static void main(String[] m) {
+        TestSafePointWithEAState o = new TestSafePointWithEAState();
+        o.c();
+    }
 }
 
 class h {
-  float n;
-  h(float n) { this.n = n; }
+    float n;
+    h(float n) {
+        this.n = n;
+    }
 }
