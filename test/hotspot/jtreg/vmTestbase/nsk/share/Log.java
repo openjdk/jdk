@@ -37,7 +37,7 @@ import java.util.Vector;
 
 
 /**
- * This class helps to print test-execution trace messages
+ * This class helps to print test-execution trace messages.
  * <p>
  * <code>Log</code> provides with two main methods to print messages:
  * <ul>
@@ -338,8 +338,6 @@ public class Log {
 
     /**
      * Redirect log to the given <code>stream</code>.
-     * Prints errors summary to current stream, cancel current stream
-     * and switches to new stream.
      *
      * @deprecated  This method is obsolete.
      */
