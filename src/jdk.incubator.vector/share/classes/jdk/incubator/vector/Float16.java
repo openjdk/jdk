@@ -26,6 +26,7 @@
 package jdk.incubator.vector;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 // import jdk.internal.math.*;
 // import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -34,7 +35,7 @@ import static java.lang.Float.float16ToFloat;
 import static java.lang.Float.floatToFloat16;
 
 /**
- * The {@code Float16} is a primitive value class holding 16-bit data
+ * The {@code Float16} is a class holding 16-bit data
  * in IEEE 754 binary16 format.
  *
  * <p>Binary16 Format:<br>
@@ -43,12 +44,15 @@ import static java.lang.Float.floatToFloat16;
  *   Exponent    - 5 bits<br>
  *   Significand - 10 bits (does not include the <i>implicit bit</i> inferred from the exponent, see {@link #PRECISION})<br>
  *
- * <p>This is a <a href="https://openjdk.org/jeps/401">primitive value class</a> and its objects are
- * identity-less non-nullable value objects.
- *
  * <p>Unless otherwise specified, the methods in this class use a
  * <em>rounding policy</em> (JLS {@jls 15.4}) of {@linkplain
  * java.math.RoundingMode#HALF_EVEN round to nearest}.
+ *
+ * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
+ * class; programmers should treat instances that are
+ * {@linkplain #equals(Object) equal} as interchangeable and should not
+ * use instances for synchronization, or unpredictable behavior may
+ * occur. For example, in a future release, synchronization may fail.
  *
  * @apiNote
  * The methods in this class generally have analogous methods in
@@ -409,20 +413,134 @@ public final class Float16
         return valueOf(Double.parseDouble(s));
     }
 
-//     /**
-//      * {@return a {@link Float16} value rounded from the {@link BigDecimal}
-//      * argument using the round to nearest rounding policy}
-//      *
-//      * @apiNote
-//      * This method corresponds to the convertFormat operation defined
-//      * in IEEE 754.
-//      *
-//      * @param  v a {@link BigDecimal}
-//      * @see BigDecimal#float16Value()
-//      */
-//     public static Float16 valueOf(BigDecimal v) {
-//         return v.float16Value();
-//     }
+    /**
+     * {@return a {@link Float16} value rounded from the {@link BigDecimal}
+     * argument using the round to nearest rounding policy}
+     *
+     * @apiNote
+     * This method corresponds to the convertFormat operation defined
+     * in IEEE 754.
+     *
+     * @param  v a {@link BigDecimal}
+     */
+    public static Float16 valueOf(BigDecimal v) {
+        return BigDecimalConversion.float16Value(v);
+    }
+
+    private class BigDecimalConversion {
+        /*
+         * Let l = log_2(10).
+         * Then, L < l < L + ulp(L) / 2, that is, L = roundTiesToEven(l).
+         */
+        private static final double L = 3.321928094887362;
+
+        private static final int P_F16 = PRECISION;  // 11
+        private static final int Q_MIN_F16 = MIN_EXPONENT - (P_F16 - 1);  // -24
+        private static final int Q_MAX_F16 = MAX_EXPONENT - (P_F16 - 1);  // 5
+
+        /**
+         * Powers of 10 which can be represented exactly in {@code
+         * Float16}.
+         */
+        private static final Float16[] FLOAT16_10_POW = {
+            Float16.valueOf(1), Float16.valueOf(10), Float16.valueOf(100),
+            Float16.valueOf(1_000), Float16.valueOf(10_000)
+        };
+
+        public static Float16 float16Value(BigDecimal bd) {
+//             int scale = bd.scale();
+//             BigInteger unscaledValue = bd.unscaledValue();
+
+//              if (unscaledValue.abs().compareTo(BigInteger.valueOf(Long.MAX_VALUE)) <= 0) {
+//                 long intCompact = bd.longValue();
+//                 Float16 v = Float16.valueOf(intCompact);
+//                 if (scale == 0) {
+//                     return v;
+//                 }
+//                 /*
+//                  * The discussion for the double case also applies here. That is,
+//                  * the following test is precise for all long values, but here
+//                  * Long.MAX_VALUE is not an issue.
+//                  */
+//                 if (v.longValue() == intCompact) {
+//                     if (0 < scale && scale < FLOAT16_10_POW.length) {
+//                         return Float16.divide(v, FLOAT16_10_POW[scale]);
+//                     }
+//                     if (0 > scale && scale > -FLOAT16_10_POW.length) {
+//                         return Float16.multiply(v, FLOAT16_10_POW[-scale]);
+//                     }
+//                 }
+//             }
+            return fullFloat16Value(bd);
+        }
+
+        private static BigInteger bigTenToThe(int scale) {
+            return BigInteger.TEN.pow(scale);
+        }
+
+        private static Float16 fullFloat16Value(BigDecimal bd) {
+            if (BigDecimal.ZERO.compareTo(bd) == 0) {
+                return Float16.valueOf(0);
+            }
+            BigInteger w = bd.unscaledValue().abs();
+            int scale = bd.scale();
+            long qb = w.bitLength() - (long) Math.ceil(scale * L);
+            Float16 signum = Float16.valueOf(bd.signum());
+            if (qb < Q_MIN_F16 - 2) {  // qb < -26
+                return Float16.multiply(signum, Float16.valueOf(0));
+            }
+            if (qb > Q_MAX_F16 + P_F16 + 1) {  // qb > 17
+                return Float16.multiply(signum, Float16.POSITIVE_INFINITY);
+            }
+            if (scale < 0) {
+                return Float16.multiply(signum, valueOf(w.multiply(bigTenToThe(-scale))));
+            }
+            if (scale == 0) {
+                return Float16.multiply(signum, valueOf(w));
+            }
+            int ql = (int) qb - (P_F16 + 3);
+            BigInteger pow10 =  bigTenToThe(scale);
+            BigInteger m, n;
+            if (ql <= 0) {
+                m = w.shiftLeft(-ql);
+                n = pow10;
+            } else {
+                m = w;
+                n = pow10.shiftLeft(ql);
+            }
+            BigInteger[] qr = m.divideAndRemainder(n);
+            /*
+             * We have
+             *      2^12 = 2^{P+1} <= i < 2^{P+5} = 2^16
+             * Contrary to the double and float cases, where we use long and int, resp.,
+             * here we cannot simply declare i as short, because P + 5 < Short.SIZE
+             * fails to hold.
+             * Using int is safe, though.
+             *
+             * Further, as Math.scalb(Float16) does not exists, we fall back to
+             * Math.scalb(double).
+             */
+            int i = qr[0].intValue();
+            int sb = qr[1].signum();
+            int dq = (Integer.SIZE - (P_F16 + 2)) - Integer.numberOfLeadingZeros(i);
+            int eq = (Q_MIN_F16 - 2) - ql;
+            if (dq >= eq) {
+                return Float16.valueOf(bd.signum() * Math.scalb((double) (i | sb), ql));
+            }
+            int mask = (1 << eq) - 1;
+            int j = i >> eq | (Integer.signum(i & mask)) | sb;
+            return Float16.valueOf(bd.signum() * Math.scalb((double) j, Q_MIN_F16 - 2));
+        }
+
+        public static Float16 valueOf(BigInteger bi) {
+            int signum = bi.signum();
+            return (signum == 0 || bi.bitLength() <= 31)
+                ? Float16.valueOf(bi.longValue())  // might return infinities
+                : signum > 0
+                ? Float16.POSITIVE_INFINITY
+                : Float16.NEGATIVE_INFINITY;
+        }
+    }
 
     /**
      * Returns {@code true} if the specified number is a
