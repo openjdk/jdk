@@ -40,7 +40,7 @@ import java.awt.event.ActionListener;
 
 public class PathChoiceDisposeTest {
     public static void main(String[] args) throws Exception {
-        System.setProperty("sun.awt.disableGtkFileDialogs","true");
+        System.setProperty("sun.awt.disableGtkFileDialogs", "true");
         String INSTRUCTIONS = """
                 1) Click on 'Show File Dialog' button to bring up the FileDialog window.
                 2) Open the directory selection choice by clicking button next to

@@ -28,8 +28,6 @@ import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import java.awt.Component;
-
 /*
  * @test
  * @bug 6260650
@@ -71,12 +69,6 @@ public class SavedDirInitTest {
                 } else {
                     PassFailJFrame.log("TEST FAILED. dir = " + fd.getDirectory()
                             + " , file = " + fd.getFile());
-                }
-                System.out.println("fd components count: "+fd.getComponentCount());
-                System.out.println("fd components: "+fd.getComponents());
-
-                for (Component c : fd.getComponents()) {
-                    System.out.println("1. fd components: "+fd.getComponents());
                 }
             }
         });
