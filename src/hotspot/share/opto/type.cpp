@@ -3268,6 +3268,11 @@ TypeInterfaces::TypeInterfaces(ciInstanceKlass** interfaces_base, int nb_interfa
 }
 
 const TypeInterfaces* TypeInterfaces::make(GrowableArray<ciInstanceKlass*>* interfaces) {
+  // hashcons() can only delete the last thing that was allocated: to
+  // make sure all memory for the newly created TypeInterfaces can be
+  // freed if an identical one exists, allocate space for the array of
+  // interfaces right after the TypeInterfaces object so that they
+  // form a contiguous piece of memory.
   int nb_interfaces = interfaces == nullptr ? 0 : interfaces->length();
   size_t total_size = sizeof(TypeInterfaces) + nb_interfaces * sizeof(ciInstanceKlass*);
 
