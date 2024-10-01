@@ -406,6 +406,9 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
 
 // Convert a + a + ... + a into a*n
 Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, BasicType bt) {
+  // We need to make sure that the current AddNode is not part of a MulNode that has already been optimized to a
+  // power-of-2 addition (e.g., 3 * a => (a << 2) + a). Without this check, GVN would keep trying to optimize the same
+  // node and can't progress. For example, 3 * a => (a << 2) + a => 3 * a => (a << 2) + a => ...
   if (find_power_of_two_addition_pattern(this, bt, nullptr) != nullptr) {
     return nullptr;
   }
@@ -484,7 +487,7 @@ Node* AddNode::find_simple_multiplication_pattern(Node* n, BasicType bt, jlong* 
 }
 
 // Match `(a << CON1) + (a << CON2)`, extract `a` and `(1 << CON1) + (1 << CON2)`
-// Note that one of the term could simply be `a`
+// Note that one of the term of the addition could simply be `a` (i.e., a << 0)
 Node* AddNode::find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* multiplier) {
   // Look for patterns:
   //     - AddNode(LShiftNode(a, CON), LShiftNode(a, CON)/a)
@@ -495,12 +498,12 @@ Node* AddNode::find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* 
     Node* rhs = n->in(2);
 
     // swap LShiftNode to lhs for easier matching
-    if (!lhs->is_LShift()) {
+    if (lhs->Opcode() != Op_LShift(bt)) {
       swap(lhs, rhs);
     }
 
     // AddNode(LShiftNode(a, CON), *)?
-    if (!lhs->is_LShift() || !lhs->in(2)->is_Con()) {
+    if (lhs->Opcode() != Op_LShift(bt) || !lhs->in(2)->is_Con()) {
       return nullptr;
     }
 
@@ -524,7 +527,7 @@ Node* AddNode::find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* 
     }
 
     // AddNode(LShiftNode(a, CON), LShiftNode(a, CON2))?
-    if (rhs->is_LShift() && lhs->in(1) == rhs->in(1) && rhs->in(2)->is_Con()) {
+    if (rhs->Opcode() == Op_LShift(bt) && lhs->in(1) == rhs->in(1) && rhs->in(2)->is_Con()) {
       if (multiplier != nullptr) {
         Node* con = rhs->in(2);
         if (con->is_top()) {
@@ -546,7 +549,7 @@ Node* AddNode::find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* 
 // Match `(a << CON) - a`, extract `a` and `(1 << CON) - 1`
 Node* AddNode::find_power_of_two_subtraction_pattern(Node* n, BasicType bt, jlong* multiplier) {
   // Look for pattern: SubNode(LShiftNode(a, CON), a)
-  if (n->Opcode() == Op_Sub(bt) && n->in(1)->is_LShift() && n->in(1)->in(2)->is_Con()) {
+  if (n->Opcode() == Op_Sub(bt) && n->in(1)->Opcode() == Op_LShift(bt) && n->in(1)->in(2)->is_Con()) {
     Node* lshift = n->in(1);
     Node* base = n->in(2);
 
