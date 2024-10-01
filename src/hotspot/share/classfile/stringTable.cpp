@@ -99,9 +99,9 @@ inline oop StringTable::read_string_from_compact_hashtable(address base_address,
 }
 
 typedef CompactHashtable<
-  const jchar*, oop,
+  StringTable::StringWrapper, oop,
   StringTable::read_string_from_compact_hashtable,
-  java_lang_String::equals> SharedStringTable;
+  StringTable::wrapped_string_equals> SharedStringTable;
 
 static SharedStringTable _shared_table;
 #endif
@@ -127,6 +127,34 @@ static unsigned int hash_string(const jchar* s, int len, bool useAlt) {
   return  useAlt ?
     AltHashing::halfsiphash_32(_alt_hash_seed, s, len) :
     java_lang_String::hash_code(s, len);
+}
+
+unsigned int StringTable::hash_wrapped_string(StringWrapper wrapped_str, int len) {
+  switch (wrapped_str.type) {
+  case obj_str:
+    return java_lang_String::hash_code(wrapped_str.obj_str());
+  case unicode_str:
+    return java_lang_String::hash_code(wrapped_str.unicode_str, len);
+  case symbol_str:
+    return java_lang_String::hash_code(wrapped_str.symbol_str->get_utf8(), len);
+  case utf8_str:
+    return java_lang_String::hash_code(wrapped_str.utf8_str, len);
+  }
+  return 0;
+}
+
+bool StringTable::wrapped_string_equals(oop java_string, StringWrapper wrapped_str, int len) {
+  switch (wrapped_str.type) {
+  case StringType::obj_str:
+    return java_lang_String::equals(java_string, wrapped_str.obj_str());
+  case StringType::unicode_str:
+    return java_lang_String::equals(java_string, wrapped_str.unicode_str, len);
+  case StringType::symbol_str:
+    return java_lang_String::equals(java_string, wrapped_str.symbol_str->get_utf8(), len);
+  case StringType::utf8_str:
+    return java_lang_String::equals(java_string, wrapped_str.utf8_str, len);
+  }
+  return false;
 }
 
 class StringTableConfig : public StackObj {
@@ -163,22 +191,34 @@ class StringTableConfig : public StackObj {
   }
 };
 
-class StringTableLookupJchar : StackObj {
- private:
-  Thread* _thread;
+class StringTableLookup : StackObj {
   uintx _hash;
-  int _len;
-  const jchar* _str;
+
+protected:
+  Thread* _thread;
   Handle _found;
 
- public:
+public:
+  StringTableLookup(Thread* thread, uintx hash)
+      : _hash(hash), _thread(thread) {}
+  uintx get_hash() const { return _hash; }
+  bool is_dead(WeakHandle* value) {
+    oop val_oop = value->peek();
+    return val_oop == nullptr;
+  }
+  virtual bool equals(WeakHandle* value) = 0;
+};
+
+class StringTableLookupJchar : public StringTableLookup {
+private:
+  const jchar* _str;
+  int _len;
+
+public:
   StringTableLookupJchar(Thread* thread, uintx hash, const jchar* key, int len)
-    : _thread(thread), _hash(hash), _len(len), _str(key) {
-  }
-  uintx get_hash() const {
-    return _hash;
-  }
-  bool equals(WeakHandle* value) {
+      : StringTableLookup(thread, hash), _str(key), _len(len) {}
+
+  bool equals(WeakHandle* value) override {
     oop val_oop = value->peek();
     if (val_oop == nullptr) {
       return false;
@@ -188,31 +228,44 @@ class StringTableLookupJchar : StackObj {
       return false;
     }
     // Need to resolve weak handle and Handleize through possible safepoint.
-     _found = Handle(_thread, value->resolve());
+    _found = Handle(_thread, value->resolve());
     return true;
-  }
-  bool is_dead(WeakHandle* value) {
-    oop val_oop = value->peek();
-    return val_oop == nullptr;
   }
 };
 
-class StringTableLookupOop : public StackObj {
- private:
-  Thread* _thread;
-  uintx _hash;
-  Handle _find;
-  Handle _found;  // Might be a different oop with the same value that's already
-                  // in the table, which is the point.
- public:
-  StringTableLookupOop(Thread* thread, uintx hash, Handle handle)
-    : _thread(thread), _hash(hash), _find(handle) { }
+class StringTableLookupChar : public StringTableLookup {
+private:
+  const char* _str;
+  int _len;
 
-  uintx get_hash() const {
-    return _hash;
+public:
+  StringTableLookupChar(Thread* thread, uintx hash, const char* key, int len)
+      : StringTableLookup(thread, hash), _str(key), _len(len) {}
+
+  bool equals(WeakHandle* value) override {
+    oop val_oop = value->peek();
+    if (val_oop == nullptr) {
+      return false;
+    }
+    bool equals = java_lang_String::equals(val_oop, _str, _len);
+    if (!equals) {
+      return false;
+    }
+    // Need to resolve weak handle and Handleize through possible safepoint.
+    _found = Handle(_thread, value->resolve());
+    return true;
   }
+};
 
-  bool equals(WeakHandle* value) {
+class StringTableLookupOop : public StringTableLookup {
+private:
+  Handle _find;
+
+public:
+  StringTableLookupOop(Thread* thread, uintx hash, Handle handle)
+      : StringTableLookup(thread, hash), _find(handle) {}
+
+  bool equals(WeakHandle* value) override {
     oop val_oop = value->peek();
     if (val_oop == nullptr) {
       return false;
@@ -224,11 +277,6 @@ class StringTableLookupOop : public StackObj {
     // Need to resolve weak handle and Handleize through possible safepoint.
     _found = Handle(_thread, value->resolve());
     return true;
-  }
-
-  bool is_dead(WeakHandle* value) {
-    oop val_oop = value->peek();
-    return val_oop == nullptr;
   }
 };
 
@@ -291,14 +339,15 @@ oop StringTable::lookup(Symbol* symbol) {
 
 oop StringTable::lookup(const jchar* name, int len) {
   unsigned int hash = java_lang_String::hash_code(name, len);
-  oop string = lookup_shared(name, len, hash);
+  StringWrapper wrapped_name(name);
+  oop string = lookup_shared(wrapped_name, len, hash);
   if (string != nullptr) {
     return string;
   }
   if (_alt_hash) {
     hash = hash_string(name, len, true);
   }
-  return do_lookup(name, len, hash);
+  return do_lookup(wrapped_name, len, hash);
 }
 
 class StringTableGet : public StackObj {
@@ -323,78 +372,125 @@ void StringTable::update_needs_rehash(bool rehash) {
   }
 }
 
-oop StringTable::do_lookup(const jchar* name, int len, uintx hash) {
+oop StringTable::do_lookup(StringWrapper name, int len, uintx hash) {
   Thread* thread = Thread::current();
-  StringTableLookupJchar lookup(thread, hash, name, len);
   StringTableGet stg(thread);
   bool rehash_warning;
-  _local_table->get(thread, lookup, stg, &rehash_warning);
+
+  switch (name.type) {
+  case StringType::obj_str: {
+    StringTableLookupOop lookup(thread, hash, name.obj_str);
+    _local_table->get(thread, lookup, stg, &rehash_warning);
+    break;
+  }
+  case StringType::unicode_str: {
+    StringTableLookupJchar lookup(thread, hash, name.unicode_str, len);
+    _local_table->get(thread, lookup, stg, &rehash_warning);
+    break;
+  }
+  case StringType::symbol_str: {
+    StringTableLookupChar lookup(thread, hash, name.symbol_str->get_utf8(), len);
+    _local_table->get(thread, lookup, stg, &rehash_warning);
+    break;
+  }
+  case StringType::utf8_str: {
+    StringTableLookupChar lookup(thread, hash, name.utf8_str, len);
+    _local_table->get(thread, lookup, stg, &rehash_warning);
+    break;
+  }
+  }
+
   update_needs_rehash(rehash_warning);
   return stg.get_res_oop();
+}
+
+const jchar *StringTable::to_unicode(StringWrapper wrapped_str, int len, TRAPS) {
+  switch (wrapped_str.type) {
+  case StringType::unicode_str:
+    return wrapped_str.unicode_str;
+  case StringType::obj_str:
+    return java_lang_String::as_unicode_string(wrapped_str.obj_str(), len, CHECK_NULL);
+  case StringType::symbol_str: {
+    jchar *chars = NEW_RESOURCE_ARRAY(jchar, len);
+    UTF8::convert_to_unicode(wrapped_str.symbol_str->get_utf8(), chars, len);
+    return chars;
+  }
+  case StringType::utf8_str: {
+    jchar *chars = NEW_RESOURCE_ARRAY(jchar, len);
+    UTF8::convert_to_unicode(wrapped_str.utf8_str, chars, len);
+    return chars;
+  }
+  }
+  return nullptr;
+}
+
+Handle StringTable::to_handle(StringWrapper wrapped_str, int len, TRAPS) {
+  switch (wrapped_str.type) {
+  case StringType::obj_str:
+    return wrapped_str.obj_str;
+  case StringType::unicode_str:
+    return java_lang_String::create_from_unicode(wrapped_str.unicode_str, len, THREAD);
+  case StringType::symbol_str:
+    return java_lang_String::create_from_symbol(wrapped_str.symbol_str, THREAD);
+  case StringType::utf8_str:
+    return java_lang_String::create_from_str(wrapped_str.utf8_str, THREAD);
+  }
+  return Handle();
 }
 
 // Interning
 oop StringTable::intern(Symbol* symbol, TRAPS) {
   if (symbol == nullptr) return nullptr;
-  ResourceMark rm(THREAD);
-  int length;
-  jchar* chars = symbol->as_unicode(length);
-  Handle string;
-  oop result = intern(string, chars, length, CHECK_NULL);
+  int length = UTF8::unicode_length(symbol->get_utf8(), symbol->utf8_length());
+  StringWrapper name(symbol);
+  oop result = intern(name, length, CHECK_NULL);
   return result;
 }
 
 oop StringTable::intern(oop string, TRAPS) {
   if (string == nullptr) return nullptr;
-  ResourceMark rm(THREAD);
-  int length;
+  int length = java_lang_String::length(string);
   Handle h_string (THREAD, string);
-  jchar* chars = java_lang_String::as_unicode_string(string, length,
-                                                     CHECK_NULL);
-  oop result = intern(h_string, chars, length, CHECK_NULL);
+  StringWrapper name(h_string);
+  oop result = intern(name, length, CHECK_NULL);
   return result;
 }
 
 oop StringTable::intern(const char* utf8_string, TRAPS) {
   if (utf8_string == nullptr) return nullptr;
-  ResourceMark rm(THREAD);
   int length = UTF8::unicode_length(utf8_string);
-  jchar* chars = NEW_RESOURCE_ARRAY(jchar, length);
-  UTF8::convert_to_unicode(utf8_string, chars, length);
-  Handle string;
-  oop result = intern(string, chars, length, CHECK_NULL);
+  StringWrapper name(utf8_string);
+  oop result = intern(name, length, CHECK_NULL);
   return result;
 }
 
-oop StringTable::intern(Handle string_or_null_h, const jchar* name, int len, TRAPS) {
+oop StringTable::intern(StringWrapper name, int len, TRAPS) {
   // shared table always uses java_lang_String::hash_code
-  unsigned int hash = java_lang_String::hash_code(name, len);
+  unsigned int hash = hash_wrapped_string(name, len);
   oop found_string = lookup_shared(name, len, hash);
   if (found_string != nullptr) {
     return found_string;
   }
+
   if (_alt_hash) {
-    hash = hash_string(name, len, true);
+    ResourceMark rm(THREAD);
+    // Convert to unicode for alt hashing
+    const jchar *chars = to_unicode(name, len, CHECK_NULL);
+    hash = hash_string(chars, len, true);
   }
+
   found_string = do_lookup(name, len, hash);
   if (found_string != nullptr) {
     return found_string;
   }
-  return do_intern(string_or_null_h, name, len, hash, THREAD);
+  return do_intern(name, len, hash, THREAD);
 }
 
-oop StringTable::do_intern(Handle string_or_null_h, const jchar* name,
-                           int len, uintx hash, TRAPS) {
+oop StringTable::do_intern(StringWrapper name, int len, uintx hash, TRAPS) {
   HandleMark hm(THREAD);  // cleanup strings created
-  Handle string_h;
+  Handle string_h = to_handle(name, len, CHECK_NULL);
 
-  if (!string_or_null_h.is_null()) {
-    string_h = string_or_null_h;
-  } else {
-    string_h = java_lang_String::create_from_unicode(name, len, CHECK_NULL);
-  }
-
-  assert(java_lang_String::equals(string_h(), name, len),
+  assert(StringTable::wrapped_string_equals(string_h(), name, len),
          "string must be properly initialized");
   assert(len == java_lang_String::length(string_h()), "Must be same length");
 
@@ -410,7 +506,7 @@ oop StringTable::do_intern(Handle string_or_null_h, const jchar* name,
 
   bool rehash_warning;
   do {
-    // Callers have already looked up the String using the jchar* name, so just go to add.
+    // Callers have already looked up the String, so just go to add.
     WeakHandle wh(_oop_storage, string_h);
     // The hash table takes ownership of the WeakHandle, even if it's not inserted.
     if (_local_table->insert(THREAD, lookup, wh, &rehash_warning)) {
@@ -775,14 +871,15 @@ size_t StringTable::shared_entry_count() {
   return _shared_table.entry_count();
 }
 
-oop StringTable::lookup_shared(const jchar* name, int len, unsigned int hash) {
-  assert(hash == java_lang_String::hash_code(name, len),
+oop StringTable::lookup_shared(StringWrapper name, int len, unsigned int hash) {
+  assert(hash == hash_wrapped_string(name, len),
          "hash must be computed using java_lang_String::hash_code");
   return _shared_table.lookup(name, hash, len);
 }
 
 oop StringTable::lookup_shared(const jchar* name, int len) {
-  return _shared_table.lookup(name, java_lang_String::hash_code(name, len), len);
+  StringWrapper wrapped_name(name);
+  return _shared_table.lookup(wrapped_name, java_lang_String::hash_code(name, len), len);
 }
 
 // This is called BEFORE we enter the CDS safepoint. We can allocate heap objects.
