@@ -46,7 +46,6 @@
 class CompilerThread;
 class HandleArea;
 class HandleMark;
-class ICRefillVerifier;
 class JvmtiRawMonitor;
 class NMethodClosure;
 class Metadata;
@@ -242,20 +241,6 @@ class Thread: public ThreadShadow {
  public:
   void set_last_handle_mark(HandleMark* mark)   { _last_handle_mark = mark; }
   HandleMark* last_handle_mark() const          { return _last_handle_mark; }
- private:
-
-#ifdef ASSERT
-  ICRefillVerifier* _missed_ic_stub_refill_verifier;
-
- public:
-  ICRefillVerifier* missed_ic_stub_refill_verifier() {
-    return _missed_ic_stub_refill_verifier;
-  }
-
-  void set_missed_ic_stub_refill_verifier(ICRefillVerifier* verifier) {
-    _missed_ic_stub_refill_verifier = verifier;
-  }
-#endif // ASSERT
 
  private:
   // Used by SkipGCALot class.

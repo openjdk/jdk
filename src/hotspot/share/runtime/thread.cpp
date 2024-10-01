@@ -83,7 +83,6 @@ Thread::Thread(MemTag mem_tag) {
   set_handle_area(new (mem_tag) HandleArea(mem_tag, nullptr));
   set_metadata_handles(new (mtClass) GrowableArray<Metadata*>(30, mtClass));
   set_last_handle_mark(nullptr);
-  DEBUG_ONLY(_missed_ic_stub_refill_verifier = nullptr);
 
   // Initial value of zero ==> never claimed.
   _threads_do_token = 0;
