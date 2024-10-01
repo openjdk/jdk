@@ -5321,8 +5321,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register result = r0, ary = r1, cnt = r2;
     const FloatRegister vdata0 = v3, vdata1 = v2, vdata2 = v1, vdata3 = v0;
     const FloatRegister vmul0 = v4, vmul1 = v5, vmul2 = v6, vmul3 = v7;
-    const FloatRegister vpow = v8;  // powers of 31: <31^3, ..., 31^0>
-    const FloatRegister vpowm = v9;
+    const FloatRegister vpow = v12;  // powers of 31: <31^3, ..., 31^0>
+    const FloatRegister vpowm = v13;
 
     assert_different_registers(ary, cnt, result);
     assert_different_registers(vdata0, vdata1, vdata2, vdata3, vmul0, vmul1, vmul2, vmul3, vpow,
