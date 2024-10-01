@@ -88,11 +88,6 @@ CreateHkTargets = \
 
 -include Java.gmk
 
-ifeq ($(TARGET_RELEASE), )
-  # If unspecified, default to the new jdk we're building
-  TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK)
-endif
-
 ################################################################################
 # Setup the main compilation
 
@@ -113,12 +108,11 @@ $(eval $(call SetupJavaCompilation, $(MODULE), \
     EXCLUDE_FILES := $(EXCLUDE_FILES), \
     KEEP_ALL_TRANSLATIONS := $(KEEP_ALL_TRANSLATIONS), \
     JAVAC_FLAGS := \
-        $(DOCLINT) -doe \
+        $(DOCLINT) \
         $(JAVAC_FLAGS) \
         --module-source-path $(MODULESOURCEPATH) \
         --module-path $(MODULEPATH) \
         --system none, \
-    TARGET_RELEASE=$(TARGET_RELEASE) \
 ))
 
 TARGETS += $($(MODULE))

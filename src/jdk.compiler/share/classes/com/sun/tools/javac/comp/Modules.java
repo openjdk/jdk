@@ -151,6 +151,7 @@ public class Modules extends JCTree.Visitor {
     private final boolean allowModules;
     private final boolean allowAccessIntoSystem;
     private final boolean allowRequiresTransitiveJavaBase;
+    private final boolean previewEnabled;
 
     public final boolean multiModuleMode;
 
@@ -209,6 +210,7 @@ public class Modules extends JCTree.Visitor {
 
         allowRequiresTransitiveJavaBase =
                 (Feature.JAVA_BASE_TRANSITIVE.allowedInSource(source) && (!preview.isPreview(Feature.JAVA_BASE_TRANSITIVE) || preview.isEnabled()));
+        previewEnabled = preview.isEnabled();
         lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
 
         multiModuleMode = fileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH);
@@ -1506,6 +1508,14 @@ public class Modules extends JCTree.Visitor {
         initAddReads();
 
         msym.requires = msym.requires.appendList(List.from(addReads.getOrDefault(msym, Collections.emptySet())));
+        
+        if (previewEnabled && msym.name == names.java_se) {
+            msym.requires.forEach(rd -> {
+                if (rd.module == syms.java_base) {
+                    rd.flags.add(RequiresFlag.TRANSITIVE);
+                }
+            });
+        }
 
         List<RequiresDirective> requires = msym.requires;
 

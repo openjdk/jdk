@@ -39,7 +39,6 @@
  * @since 9
  */
 module java.se {
-    requires transitive java.base;
     requires transitive java.compiler;
     requires transitive java.datatransfer;
     requires transitive java.desktop;

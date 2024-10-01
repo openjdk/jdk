@@ -73,7 +73,6 @@ public class JavadocElementList {
         List<String> options = List.of("-source", Source.DEFAULT.name,
                                        "-target", Target.DEFAULT.name,
                                        "-proc:only",
-                                       "--enable-preview",
                                        "--system", "none",
                                        "--module-source-path", args[1],
                                        "--add-modules", Arrays.stream(args)
