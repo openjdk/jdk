@@ -321,8 +321,6 @@ public class ServerSocket implements java.io.Closeable {
      *                          incoming connections.
      * @throws  IOException if the bind operation fails, the socket
      *                      is already bound or the socket is closed.
-     * @throws  SecurityException       if a {@code SecurityManager} is present and
-     * its {@code checkListen} method doesn't allow the operation.
      * @throws  IllegalArgumentException if endpoint is a
      *          SocketAddress subclass not supported by this socket
      * @since 1.4
@@ -455,8 +453,6 @@ public class ServerSocket implements java.io.Closeable {
      *
      * @throws     IOException  if an I/O error occurs when waiting for a
      *               connection, the socket is not bound or the socket is closed.
-     * @throws     SecurityException  if a security manager exists and its
-     *             {@code checkAccept} method doesn't allow the operation.
      * @throws     SocketTimeoutException if a timeout was previously set with setSoTimeout and
      *             the timeout has been reached.
      * @throws     java.nio.channels.IllegalBlockingModeException
