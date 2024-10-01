@@ -97,12 +97,9 @@ public class MutableBigIntegerBox {
      * @param n the shift
      */
     public MutableBigIntegerBox shiftLeft(int n) {
-        MutableBigInteger res = new MutableBigInteger(val.value.clone());
-        res.offset = val.offset;
-        res.intLen = val.intLen;
-
-        res.safeLeftShift(n);
-        return new MutableBigIntegerBox(res);
+        MutableBigIntegerBox res = new MutableBigIntegerBox(val.value.clone(), val.offset, val.intLen);
+        res.val.safeLeftShift(n);
+        return res;
     }
 
     /**
