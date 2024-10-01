@@ -1873,7 +1873,7 @@ public class ZipFile implements ZipConstants, Closeable {
             } else {
                 metaVersions = EMPTY_META_VERSIONS;
             }
-            if (state.pos != cenLen) {
+            if (state.pos != cen.length) {
                 zerror("invalid CEN header (bad header size)");
             }
         }
