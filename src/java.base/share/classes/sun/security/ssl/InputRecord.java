@@ -155,6 +155,11 @@ abstract class InputRecord implements Record, Closeable {
         throw new UnsupportedOperationException();
     }
 
+    // apply to SSLSocket only
+    ByteBuffer getCurrentFlight() {
+        throw new UnsupportedOperationException();
+    }
+
     // apply to DTLS SSLEngine only
     Plaintext acquirePlaintext()
             throws IOException {

@@ -203,6 +203,17 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
         this.os = outputStream;
     }
 
+    @Override
+    ByteBuffer getCurrentFlight() {
+        int contentLen = ((header[3] & 0xFF) << 8) + (header[4] & 0xFF);
+        ByteBuffer currentFlight = ByteBuffer.allocate(headerSize + contentLen);
+        currentFlight.put(header);
+        recordBody.position(recordBody.limit() - contentLen);
+        currentFlight.put(recordBody);
+        currentFlight.flip();
+        return currentFlight;
+    }
+
     private Plaintext[] decodeInputRecord() throws IOException, BadPaddingException {
         byte contentType = header[0];                   // pos: 0
         byte majorVersion = header[1];                  // pos: 1
