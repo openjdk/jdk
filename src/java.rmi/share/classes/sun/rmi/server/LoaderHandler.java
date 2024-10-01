@@ -214,6 +214,13 @@ public final class LoaderHandler {
     public static ClassLoader getClassLoader(String codebase)
         throws MalformedURLException
     {
+        URL[] urls; // ignored, used only for URL syntax checking
+        if (codebase != null) {
+            urls = pathToURLs(codebase);
+        } else {
+            urls = getDefaultCodebaseURLs();
+        }
+
         return Thread.currentThread().getContextClassLoader();
     }
 
