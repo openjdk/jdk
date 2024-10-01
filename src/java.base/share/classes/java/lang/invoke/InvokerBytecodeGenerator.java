@@ -1645,7 +1645,7 @@ class InvokerBytecodeGenerator {
             clb.withMethodBody("dummy", MTD_void, ACC_STATIC, new Consumer<>() {
                 @Override
                 public void accept(CodeBuilder cob) {
-                    cob.loadConstant(os.toString());
+                    cob.ldc(os.toString());
                     cob.pop();
                     cob.return_();
                 }

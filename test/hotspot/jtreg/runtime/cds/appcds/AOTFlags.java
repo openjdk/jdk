@@ -106,6 +106,19 @@ public class AOTFlags {
         out.shouldContain("Opened archive hello.aot.");
         out.shouldContain("Hello World");
         out.shouldHaveExitValue(0);
+
+        // (5) AOTMode=on
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-XX:AOTCache=" + aotCacheFile,
+            "--show-version",
+            "-Xlog:cds",
+            "-XX:AOTMode=on",
+            "-cp", appJar, helloClass);
+        out = CDSTestUtils.executeAndLog(pb, "prod");
+        out.shouldContain(", sharing");
+        out.shouldContain("Opened archive hello.aot.");
+        out.shouldContain("Hello World");
+        out.shouldHaveExitValue(0);
     }
 
     static void negativeTests() throws Exception {

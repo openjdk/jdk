@@ -37,7 +37,7 @@ JVMFlag::Error AOTModeConstraintFunc(ccstr value, bool verbose) {
       strcmp(value, "record") != 0 &&
       strcmp(value, "create") != 0 &&
       strcmp(value, "auto") != 0 &&
-      strcmp(value, "on")) {
+      strcmp(value, "on") != 0) {
     JVMFlag::printError(verbose,
                         "Unrecognized value %s for AOTMode. Must be one of the following: "
                         "off, record, create, auto, on\n",
