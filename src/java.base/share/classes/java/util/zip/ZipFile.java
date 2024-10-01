@@ -547,8 +547,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                // each "entry" has 3 ints in table entries
-                int pos = res.zsrc.getEntryPos(i++ * 3);
+                int pos = res.zsrc.getEntryPos(i++);
                 return (T)getZipEntry(getEntryName(pos), pos);
             }
         }
@@ -598,7 +597,7 @@ public class ZipFile implements ZipConstants, Closeable {
             if (index >= 0 && index < fence) {
                 synchronized (ZipFile.this) {
                     ensureOpen();
-                    action.accept(gen.apply(res.zsrc.getEntryPos(index++ * 3)));
+                    action.accept(gen.apply(res.zsrc.getEntryPos(index++)));
                 }
                 return true;
             }
@@ -1516,7 +1515,11 @@ public class ZipFile implements ZipConstants, Closeable {
 
         }
 
-        private int getEntryPos(int index)  { return entries[index + 2]; }
+        /**
+         * @param index of entry, in the range from 0 (inclusive) to total (exclusive)
+         * @return offset into the CEN of the given entry
+         */
+        private int getEntryPos(int index)  { return entries[index * 3 + 2]; }
         private int total;                   // total number of entries
         private int[] table;                 // Hash chain heads: indexes into entries
 
@@ -1823,17 +1826,16 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (readFullyAt(cen, 0, cenLen, cenpos) != cenLen) {
                     zerror("read CEN tables failed");
                 }
-                this.total = end.centot;
+                total = end.centot;
             } else {
                 cen = this.cen;
-                this.total = knownTotal;
+                total = knownTotal;
             }
             // hash table for entries
-            int entriesLength = this.total * 3;
-            entries = new int[entriesLength];
+            entries = new int[this.total * 3];
 
             int tablelen = ((total/2) | 1); // Odd -> fewer collisions
-            this.table = new int[tablelen];
+            table = new int[tablelen];
 
             // Iterate through the entries in the central directory
             var state = new CENState(); // state holder
@@ -1854,7 +1856,7 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             // Adjust the total entries
-            this.total = state.idx / 3;
+            total = state.idx / 3;
 
             if (state.signatureNames != null) {
                 int signatures = state.signatureNames.size();
@@ -1900,16 +1902,13 @@ public class ZipFile implements ZipConstants, Closeable {
             // Search down the target hash chain for a entry whose
             // 32 bit hash matches the hashed name.
             int[] entries = this.entries;
+            byte[] cen = this.cen;
             while (idx != 0) {
                 if (entries[idx - 1] == hsh) {
-                    int pos = getEntryPos(idx - 1);
-                    int noff = pos + CENHDR;
-                    int nlen = CENNAM(cen, pos);
-
+                    int pos = entries[idx + 1];
                     ZipCoder zc = zipCoderForPos(pos);
-
                     // Compare the lookup name with the name encoded in the CEN
-                    switch (zc.compare(name, cen, noff, nlen, addSlash)) {
+                    switch (zc.compare(name, cen, pos + CENHDR, CENNAM(cen, pos), addSlash)) {
                         case ZipCoder.EXACT_MATCH:
                             // We found an exact match for "name"
                             return new EntryPos(name, pos);
