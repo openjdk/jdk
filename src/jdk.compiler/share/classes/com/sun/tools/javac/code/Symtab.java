@@ -51,7 +51,6 @@ import com.sun.tools.javac.code.Type.ErrorType;
 import com.sun.tools.javac.code.Type.JCPrimitiveType;
 import com.sun.tools.javac.code.Type.JCVoidType;
 import com.sun.tools.javac.code.Type.MethodType;
-import com.sun.tools.javac.code.Type.UnknownType;
 import com.sun.tools.javac.code.Types.UniqueType;
 import com.sun.tools.javac.comp.Modules;
 import com.sun.tools.javac.jvm.Target;
@@ -473,7 +472,7 @@ public class Symtab {
 
         unknownSymbol = new ClassSymbol(PUBLIC|STATIC|ACYCLIC, names.fromString("<any?>"), null, rootPackage);
         // Create the unknown type
-        unknownType = new UnknownType(unknownSymbol);
+        unknownType = new ErrorType(unknownSymbol, Type.noType);
 
         // initialize builtin types
         initType(byteType, "byte", "Byte");

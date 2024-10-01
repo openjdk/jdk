@@ -2408,25 +2408,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror, PoolCons
         }
     }
 
-    public static class UnknownType extends ErrorType {
-
-        public UnknownType(ClassSymbol unknownSymbol) {
-            // Unknown is a synthesized internal type, so it cannot be
-            // annotated.
-            super(unknownSymbol, noType);
-        }
-
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        public <R, P> R accept(TypeVisitor<R, P> v, P p) {
-            return v.visitUnknown(this, p);
-        }
-
-        @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        public TypeKind getKind() {
-            return TypeKind.OTHER;
-        }
-    }
-
     /**
      * A visitor for types.  A visitor is used to implement operations
      * (or relations) on types.  Most common operations on types are
