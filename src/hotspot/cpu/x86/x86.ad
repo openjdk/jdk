@@ -10487,7 +10487,6 @@ instruct DoubleClassCheck_reg_reg_vfpclass(rRegI dst, regD src, kReg ktmp, rFlag
 instruct vector_selectfrom_twovectors_reg_evex(vec index, vec src1, vec src2)
 %{
   match(Set index (SelectFromTwoVector (Binary index src1) src2));
-  effect(TEMP index);
   format %{ "select_from_two_vector $index, $src1, $src2 \t!" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);

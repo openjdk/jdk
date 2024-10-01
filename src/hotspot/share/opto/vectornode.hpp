@@ -1623,7 +1623,6 @@ public:
              "indexes must be an integral vector");
   }
 
-  Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual int Opcode() const;
 };
 
