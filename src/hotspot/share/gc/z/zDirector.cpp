@@ -839,7 +839,7 @@ void ZDirector::evaluate_rules() {
 }
 
 bool ZDirector::wait_for_tick() {
-  const uint64_t interval_ms = MILLIUNITS / decision_hz;
+  const uint64_t interval_ms = MILLIUNITS / DecisionHz;
 
   ZLocker<ZConditionLock> locker(&_monitor);
 

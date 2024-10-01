@@ -25,7 +25,7 @@
 
 #include "precompiled.hpp"
 
-#ifdef LINUX
+#if defined(LINUX) || defined(_WIN64)
 
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/logAsyncWriter.hpp"
