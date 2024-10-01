@@ -34,6 +34,8 @@
 #include "ByteGray.h"
 #include "Index12Gray.h"
 
+#include "sanitizers/ub.h"
+
 /*
  * This file declares, registers, and defines the various graphics
  * primitive loops to manipulate surfaces of type "IntRgb".

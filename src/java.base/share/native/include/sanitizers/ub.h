@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,19 +20,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#ifndef _JAVASOFT_JNI_MD_H_
-#define _JAVASOFT_JNI_MD_H_
+#ifndef _SANITIZERS_UB_H_
+#define _SANITIZERS_UB_H_
 
-#ifndef JNIEXPORT
-  #define JNIEXPORT __declspec(dllexport)
+/* ATTRIBUTE_NO_UBSAN - Function attribute which informs the compiler to disable UBSan checks in the
+ * following function or method.
+ */
+#ifdef UNDEFINED_BEHAVIOR_SANITIZER
+#if defined(__clang__) || defined(__GNUC__)
+#define ATTRIBUTE_NO_UBSAN __attribute__((no_sanitize("undefined")))
 #endif
-#define JNIIMPORT __declspec(dllimport)
-#define JNICALL __stdcall
+#endif
 
-typedef int jint;
-typedef long long jlong;
-typedef signed char jbyte;
+#ifndef ATTRIBUTE_NO_UBSAN
+#define ATTRIBUTE_NO_UBSAN
+#endif
 
-#endif /* !_JAVASOFT_JNI_MD_H_ */
+#endif
