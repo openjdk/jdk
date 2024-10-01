@@ -551,6 +551,8 @@
   nonstatic_field(nmethod,                     _osr_entry_point,                              address)                               \
   nonstatic_field(nmethod,                     _immutable_data,                               address)                               \
   nonstatic_field(nmethod,                     _immutable_data_size,                          int)                                   \
+  nonstatic_field(nmethod,                     _mutable_data,                                 address)                               \
+  nonstatic_field(nmethod,                     _mutable_data_size,                            int)                                   \
   nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
   nonstatic_field(nmethod,                     _comp_level,                                   CompLevel)                             \
   volatile_nonstatic_field(nmethod,            _exception_cache,                              ExceptionCache*)                       \

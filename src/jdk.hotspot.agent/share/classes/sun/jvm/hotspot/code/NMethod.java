@@ -44,6 +44,9 @@ public class NMethod extends CodeBlob {
   private static AddressField  osrLinkField;
   private static AddressField  immutableDataField;
   private static CIntegerField immutableDataSizeField;
+  private static AddressField  mutableDataField;
+  private static CIntegerField mutableDataSizeField;
+  private static CIntegerField relocationSizeField;
 
   /** Offsets for different nmethod parts */
   private static CIntegerField exceptionOffsetField;
@@ -85,6 +88,9 @@ public class NMethod extends CodeBlob {
     osrLinkField                = type.getAddressField("_osr_link");
     immutableDataField          = type.getAddressField("_immutable_data");
     immutableDataSizeField      = type.getCIntegerField("_immutable_data_size");
+    mutableDataField            = type.getAddressField("_mutable_data");
+    mutableDataSizeField        = type.getCIntegerField("_mutable_data_size");
+    relocationSizeField         = type.getCIntegerField("_relocation_size");
 
     exceptionOffsetField        = type.getCIntegerField("_exception_offset");
     deoptHandlerOffsetField     = type.getCIntegerField("_deopt_handler_offset");
@@ -131,10 +137,6 @@ public class NMethod extends CodeBlob {
   public Address deoptMhHandlerBegin()  { return headerBegin().addOffsetTo(getDeoptMhHandlerOffset()); }
   public Address stubBegin()            { return headerBegin().addOffsetTo(getStubOffset());         }
   public Address stubEnd()              { return dataBegin();                                        }
-  public Address oopsBegin()            { return dataBegin();                                        }
-  public Address oopsEnd()              { return dataBegin().addOffsetTo(getMetadataOffset());       }
-  public Address metadataBegin()        { return dataBegin().addOffsetTo(getMetadataOffset());       }
-  public Address metadataEnd()          { return dataEnd();                                          }
 
   public Address immutableDataBegin()   { return immutableDataField.getValue(addr);                         }
   public Address immutableDataEnd()     { return immutableDataBegin().addOffsetTo(getImmutableDataSize());  }
@@ -149,7 +151,17 @@ public class NMethod extends CodeBlob {
   public Address scopesPCsBegin()       { return immutableDataBegin().addOffsetTo(getScopesPCsOffset());    }
   public Address scopesPCsEnd()         { return immutableDataEnd();                                        }
 
+  public Address mutableDataBegin()     { return mutableDataField.getValue(addr);                       }
+  public Address mutableDataEnd()       { return mutableDataBegin().addOffsetTo(getMutableDataSize());  }
+
+  public Address oopsBegin()            { return mutableDataBegin().addOffsetTo(getRelocationSize());   }
+  public Address oopsEnd()              { return mutableDataBegin().addOffsetTo(getMetadataOffset());   }
+  public Address metadataBegin()        { return mutableDataBegin().addOffsetTo(getMetadataOffset());   }
+  public Address metadataEnd()          { return mutableDataEnd();                                      }
+
   public int getImmutableDataSize()     { return (int) immutableDataSizeField.getValue(addr);        }
+  public int getMutableDataSize()       { return (int) mutableDataSizeField.getValue(addr);          }
+  public int getRelocationSize()        { return (int) relocationSizeField.getValue(addr);           }
   public int constantsSize()            { return (int) constantsEnd()   .minus(constantsBegin());    }
   public int instsSize()                { return (int) instsEnd()       .minus(instsBegin());        }
   public int stubSize()                 { return (int) stubEnd()        .minus(stubBegin());         }

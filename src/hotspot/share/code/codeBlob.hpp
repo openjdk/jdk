@@ -125,6 +125,9 @@ protected:
 
   bool _caller_must_gc_arguments;
 
+  address _mutable_data;
+  int     _mutable_data_size;
+
 #ifndef PRODUCT
   AsmRemarks _asm_remarks;
   DbgStrings _dbg_strings;
@@ -142,7 +145,8 @@ protected:
   const Vptr* vptr() const;
 
   CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
-           int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments);
+           int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
+           bool external_mutable_data = false);
 
   // Simple CodeBlob used for simple BufferBlob.
   CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size);
@@ -156,7 +160,7 @@ public:
   }
 
   // Returns the space needed for CodeBlob
-  static unsigned int allocation_size(CodeBuffer* cb, int header_size);
+  static unsigned int allocation_size(CodeBuffer* cb, int header_size, bool external_mutable_data = false);
   static unsigned int align_code_offset(int offset);
 
   // Deletion
@@ -187,18 +191,31 @@ public:
   UpcallStub* as_upcall_stub() const          { assert(is_upcall_stub(), "must be upcall stub"); return (UpcallStub*) this; }
   RuntimeStub* as_runtime_stub() const        { assert(is_runtime_stub(), "must be runtime blob"); return (RuntimeStub*) this; }
 
+  address mutable_data_begin() const          { return _mutable_data; }
+  address mutable_data_end() const            { return _mutable_data + _mutable_data_size; }
+  int mutable_data_size() const               { return _mutable_data_size; }
+  bool relocInfo_in_mutable_data() const      { return _mutable_data != nullptr; }
+
   // Boundaries
   address    header_begin() const             { return (address)    this; }
   address    header_end() const               { return ((address)   this) + _header_size; }
-  relocInfo* relocation_begin() const         { return (relocInfo*) header_end(); }
-  relocInfo* relocation_end() const           { return (relocInfo*)(header_end()   + _relocation_size); }
+  relocInfo* relocation_begin() const         { return relocInfo_in_mutable_data() ?
+                                                       (relocInfo*)_mutable_data : (relocInfo*) header_end(); }
+  relocInfo* relocation_end() const           { return (relocInfo*)((address)relocation_begin() + _relocation_size); }
   address    content_begin() const            { return (address)    header_begin() + _content_offset; }
   address    content_end() const              { return (address)    header_begin() + _data_offset; }
   address    code_begin() const               { return (address)    header_begin() + _code_offset; }
   // code_end == content_end is true for all types of blobs for now, it is also checked in the constructor
   address    code_end() const                 { return (address)    header_begin() + _data_offset; }
-  address    data_begin() const               { return (address)    header_begin() + _data_offset; }
-  address    data_end() const                 { return (address)    header_begin() + _size; }
+  address    data_begin() const               { return (address) header_begin() + _data_offset; }
+  address    data_end() const                 { return (address) header_begin() + _size; }
+  address    blob_end() const                 { return data_end(); }
+
+  // [relocations, oops, metatada, jvmci_data] stays in _mutable_data or in nmethod with _data_offset
+  address    mdata_begin() const              { return (_mutable_data != nullptr) ? _mutable_data :
+                                                                                   (address) header_begin() + _data_offset; }
+  address    mdata_end() const                { return (_mutable_data != nullptr) ? _mutable_data + _mutable_data_size:
+                                                                                   (address) header_begin() + _size; }
 
   // Offsets
   int content_offset() const                  { return _content_offset; }
@@ -225,7 +242,7 @@ public:
   }
 
   // Containment
-  bool blob_contains(address addr) const         { return header_begin()       <= addr && addr < data_end();       }
+  bool blob_contains(address addr) const         { return header_begin()       <= addr && addr < blob_end();       }
   bool code_contains(address addr) const         { return code_begin()         <= addr && addr < code_end();       }
   bool contains(address addr) const              { return content_begin()      <= addr && addr < content_end();    }
   bool is_frame_complete_at(address addr) const  { return _frame_complete_offset != CodeOffsets::frame_never_safe &&
