@@ -115,7 +115,7 @@ public class FileInputStream extends InputStream
 
     /**
      * Creates a {@code FileInputStream} to read from an existing file
-     * named by the {@code File} object {@code file}.
+     * reoresented by the {@code File} object {@code file}.
      * {@linkplain java.nio.file##links Symbolic links}
      * are automatically redirected to the <i>target</i> of the link.
      * A new {@code FileDescriptor} object
@@ -162,8 +162,9 @@ public class FileInputStream extends InputStream
     }
 
     /**
-     * Creates a {@code FileInputStream} to read from an existing file
-     * represented by the {@code FileDescriptor} object {@code fdObj}.
+     * Creates a {@code FileInputStream} by using the file descriptor
+     * {@code fdObj}, which represents an existing connection to an
+     * actual file in the file system.
      * <p>
      * If there is a security manager, its {@code checkRead} method is
      * called with the file descriptor {@code fdObj} as its argument to
