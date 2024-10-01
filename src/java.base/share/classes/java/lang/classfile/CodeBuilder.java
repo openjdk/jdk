@@ -615,34 +615,75 @@ public sealed interface CodeBuilder
         if (value == null || value == ConstantDescs.NULL)
             return aconst_null();
         if (value instanceof Number) {
-            if (value instanceof Integer iVal)
-                return switch (iVal) {
-                    case -1 -> iconst_m1();
-                    case 0 -> iconst_0();
-                    case 1 -> iconst_1();
-                    case 2 -> iconst_2();
-                    case 3 -> iconst_3();
-                    case 4 -> iconst_4();
-                    case 5 -> iconst_5();
-                    default -> (iVal >= Byte.MIN_VALUE && iVal <= Byte.MAX_VALUE) ? bipush(iVal)
-                            : (iVal >= Short.MIN_VALUE && iVal <= Short.MAX_VALUE) ? sipush(iVal)
-                            : ldc(constantPool().intEntry(iVal));
-                };
-            if (value instanceof Long lVal)
-                return lVal == 0L ? lconst_0()
-                        : lVal == 1L ? lconst_1()
-                        : ldc(constantPool().longEntry(lVal));
-            if (value instanceof Float fVal)
-                return Float.floatToRawIntBits(fVal) == 0 ? fconst_0()
-                        : fVal == 1.0f ? fconst_1()
-                        : fVal == 2.0f ? fconst_2()
-                        : ldc(constantPool().floatEntry(fVal));
-            if (value instanceof Double dVal)
-                return Double.doubleToRawLongBits(dVal) == 0L ? dconst_0()
-                        : dVal == 1.0d ? dconst_1()
-                        : ldc(constantPool().doubleEntry(dVal));
+            if (value instanceof Integer) return loadConstant((int)    value);
+            if (value instanceof Long   ) return loadConstant((long)   value);
+            if (value instanceof Float  ) return loadConstant((float)  value);
+            if (value instanceof Double ) return loadConstant((double) value);
         }
         return ldc(value);
+    }
+
+
+    /**
+     * Generate an instruction pushing a constant int value onto the operand stack.
+     * This is identical to {@link #loadConstant(ConstantDesc) loadConstant(Integer.valueOf(value))}.
+     * @param value the int value
+     * @return this builder
+     * @since 24
+     */
+    default CodeBuilder loadConstant(int value) {
+        return switch (value) {
+            case -1 -> iconst_m1();
+            case  0 -> iconst_0();
+            case  1 -> iconst_1();
+            case  2 -> iconst_2();
+            case  3 -> iconst_3();
+            case  4 -> iconst_4();
+            case  5 -> iconst_5();
+            default -> (value >= Byte.MIN_VALUE  && value <= Byte.MAX_VALUE ) ? bipush(value)
+                     : (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) ? sipush(value)
+                     : ldc(constantPool().intEntry(value));
+        };
+    }
+
+    /**
+     * Generate an instruction pushing a constant long value onto the operand stack.
+     * This is identical to {@link #loadConstant(ConstantDesc) loadConstant(Long.valueOf(value))}.
+     * @param value the long value
+     * @return this builder
+     * @since 24
+     */
+    default CodeBuilder loadConstant(long value) {
+        return value == 0l ? lconst_0()
+             : value == 1l ? lconst_1()
+             : ldc(constantPool().longEntry(value));
+    }
+
+    /**
+     * Generate an instruction pushing a constant float value onto the operand stack.
+     * This is identical to {@link #loadConstant(ConstantDesc) loadConstant(Float.valueOf(value))}.
+     * @param value the float value
+     * @return this builder
+     * @since 24
+     */
+    default CodeBuilder loadConstant(float value) {
+        return Float.floatToRawIntBits(value) == 0 ? fconst_0()
+             : value == 1.0f                       ? fconst_1()
+             : value == 2.0f                       ? fconst_2()
+             : ldc(constantPool().floatEntry(value));
+    }
+
+    /**
+     * Generate an instruction pushing a constant double value onto the operand stack.
+     * This is identical to {@link #loadConstant(ConstantDesc) loadConstant(Double.valueOf(value))}.
+     * @param value the double value
+     * @return this builder
+     * @since 24
+     */
+    default CodeBuilder loadConstant(double value) {
+        return Double.doubleToRawLongBits(value) == 0l ? dconst_0()
+             : value == 1.0d                           ? dconst_1()
+             : ldc(constantPool().doubleEntry(value));
     }
 
     /**
