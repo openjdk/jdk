@@ -261,7 +261,7 @@ public class Log {
     }
 
     /**
-     * Print <code>message</code> to the assigned output stream,
+     * Print <code>message</code> to the assigned output stream.
      */
     public synchronized void display(Object message) {
         doPrint(message.toString());
@@ -337,7 +337,7 @@ public class Log {
     /////////////////////////////////////////////////////////////////
 
     /**
-     * Redirect log to the given <code>stream</code>
+     * Redirect log to the given <code>stream</code>.
      * Prints errors summary to current stream, cancel current stream
      * and switches to new stream.
      *
