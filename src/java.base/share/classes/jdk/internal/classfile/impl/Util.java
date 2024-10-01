@@ -260,11 +260,10 @@ public class Util {
     }
 
     @ForceInline
-    static void writeList(BufWriterImpl buf, List<Writable> list) {
-        int size = list.size();
+    static void writeList(BufWriterImpl buf, Writable[] array, int size) {
         buf.writeU2(size);
         for (int i = 0; i < size; i++) {
-            list.get(i).writeTo(buf);
+            array[i].writeTo(buf);
         }
     }
 
