@@ -24,6 +24,7 @@
 import jdk.test.lib.RandomFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.Arguments;
 
 import java.math.BigInteger;
 import java.math.MutableBigIntegerBox;
@@ -58,57 +59,55 @@ public class MutableBigIntegerShiftTests {
     @MethodSource("orders")
     public void shift(int order) {
         for (int i = 0; i < 100; i++) {
-            test(new Object[] { fetchNumber(order), random.nextInt(200) });
+            test(fetchNumber(order), random.nextInt(200));
         }
     }
 
     @ParameterizedTest
     @MethodSource("pathTargetedCases")
-    public void test(Object[] testCase) {
-        MutableBigIntegerBox x = (MutableBigIntegerBox) testCase[0];
-        int n = (int) testCase[1];
+    public void test(MutableBigIntegerBox x, int n) {
         leftShiftAssertions(x, n);
     }
 
-    private static Object[][] pathTargetedCases() {
-        return new Object[][] {
+    private static Arguments[] pathTargetedCases() {
+        return new Arguments[] {
                 // intLen == 0
-                { MutableBigIntegerBox.ZERO,
-                        random.nextInt(33) },
+                Arguments.of(MutableBigIntegerBox.ZERO,
+                        random.nextInt(33)),
                 // intLen != 0 && n <= leadingZeros
-                { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 16) }),
-                        random.nextInt(1, 17) },
+                Arguments.of(new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 16) }),
+                        random.nextInt(1, 17)),
                 // intLen != 0 && n > leadingZeros && nBits <= leadingZeros && value.length < newLen && nBits == 0
-                { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 32) }),
-                        32 },
+                Arguments.of(new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 32) }),
+                        32),
                 // intLen != 0 && n > leadingZeros && nBits <= leadingZeros && value.length < newLen && nBits != 0
-                { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 16) }),
-                        32 + random.nextInt(1, 17) },
+                Arguments.of(new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 16) }),
+                        32 + random.nextInt(1, 17)),
                 // intLen != 0 && n > leadingZeros && nBits <= leadingZeros && value.length >= newLen && nBits == 0
                 // && newOffset != offset
-                { new MutableBigIntegerBox(new int[] { random.nextInt(), (int) random.nextLong(1L, 1L << 32) }, 1, 1),
-                        32 },
+                Arguments.of(new MutableBigIntegerBox(new int[] { random.nextInt(), (int) random.nextLong(1L, 1L << 32) }, 1, 1),
+                        32),
                 // intLen != 0 && n > leadingZeros && nBits <= leadingZeros && value.length >= newLen && nBits == 0
                 // && newOffset == offset
-                { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 32), random.nextInt() }, 0, 1),
-                        32 },
+                Arguments.of(new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 32), random.nextInt() }, 0, 1),
+                        32),
                 // intLen != 0 && n > leadingZeros && nBits <= leadingZeros && value.length >= newLen && nBits != 0
                 // && newOffset != offset
-                { new MutableBigIntegerBox(new int[] { random.nextInt(), (int) random.nextLong(1L, 1L << 16) }, 1, 1),
-                        32 + random.nextInt(1, 17) },
+                Arguments.of(new MutableBigIntegerBox(new int[] { random.nextInt(), (int) random.nextLong(1L, 1L << 16) }, 1, 1),
+                        32 + random.nextInt(1, 17)),
                 // intLen != 0 && n > leadingZeros && nBits <= leadingZeros && value.length >= newLen && nBits != 0
                 // && newOffset == offset
-                { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 16), random.nextInt() }, 0, 1),
-                        32 + random.nextInt(1, 17) },
+                Arguments.of(new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L, 1L << 16), random.nextInt() }, 0, 1),
+                        32 + random.nextInt(1, 17)),
                 // intLen != 0 && n > leadingZeros && nBits > leadingZeros && value.length < newLen
-                { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L << 15, 1L << 32) }),
-                        random.nextInt(17, 32) },
+                Arguments.of(new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L << 15, 1L << 32) }),
+                        random.nextInt(17, 32)),
                 // intLen != 0 && n > leadingZeros && nBits > leadingZeros && value.length >= newLen && newOffset != offset
-                { new MutableBigIntegerBox(new int[] { random.nextInt(), (int) random.nextLong(1L << 15, 1L << 32) }, 1, 1),
-                        random.nextInt(17, 32) },
+                Arguments.of(new MutableBigIntegerBox(new int[] { random.nextInt(), (int) random.nextLong(1L << 15, 1L << 32) }, 1, 1),
+                        random.nextInt(17, 32)),
                 // intLen != 0 && n > leadingZeros && nBits > leadingZeros && value.length >= newLen && newOffset == offset
-                { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L << 15, 1L << 32), random.nextInt() }, 0, 1),
-                        random.nextInt(17, 32) },
+                Arguments.of(new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L << 15, 1L << 32), random.nextInt() }, 0, 1),
+                        random.nextInt(17, 32)),
         };
     }
 
