@@ -301,6 +301,9 @@ public class TestJcmdWithSideCar {
             int retryCount = 3;
 
             do {
+                // Kill the process, so as to speed up overall time of the
+                // test
+                p.destroy();
                 waitFor(timeout);
                 try {
                     exitValue = p.exitValue();
@@ -310,9 +313,6 @@ public class TestJcmdWithSideCar {
                 }
             } while (exitValue == -1 && retryCount > 0);
 
-            if (exitValue != 0) {
-                throw new RuntimeException("DockerThread stopped unexpectedly, non-zero exit value is " + exitValue);
-            }
         }
 
     }
