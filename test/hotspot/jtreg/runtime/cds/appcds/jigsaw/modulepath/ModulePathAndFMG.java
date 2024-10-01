@@ -338,7 +338,7 @@ public class ModulePathAndFMG {
         TestCommon.checkDump(output);
 
         String runModulePath = mainJar.toString() + PATH_SEPARATOR +
-            jmodDir.toString() + TEST_MODULE + ".jmod"; 
+            jmodDir.toString() + TEST_MODULE + ".jmod";
         tty("11. run with CDS on, with module path com.bars.jar:com.foos.jmod");
         TestCommon.runWithModules(prefix,
                                  null,               // --upgrade-module-path
