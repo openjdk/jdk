@@ -46,9 +46,7 @@ public class HugeCapacity {
 
     private static void testHugeInitialString() {
         try {
-            // Maximum array length supported by the JVM implementation
-            int maxArrayLength = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
-            String str = "Z".repeat(maxArrayLength);
+            String str = "Z".repeat(ArraysSupport.SOFT_MAX_ARRAY_LENGTH);
             StringBuffer sb = new StringBuffer(str);
         } catch (OutOfMemoryError ignore) {
         } catch (Throwable unexpected) {
