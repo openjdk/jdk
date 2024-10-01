@@ -128,7 +128,6 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
     ADD_EXCL("java/lang/invoke/MethodHandles",            "IMPL_NAMES");           // D
     ADD_EXCL("java/lang/invoke/MemberName$Factory",       "INSTANCE");             // D
     ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator", "MEMBERNAME_FACTORY");   // D
-    ADD_EXCL("java/lang/invoke/SimpleMethodHandle",       "BMH_SPECIES");          // D
 
     // These are always the same as Boolean$AOTHolder::{TRUE,FALSE}
     ADD_EXCL("java/lang/Boolean",                         "TRUE",                  // E

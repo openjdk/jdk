@@ -29,9 +29,53 @@
 #include "cds/heapShared.hpp"
 #include "oops/instanceKlass.inline.hpp"
 
+class AOTClassInitializer::AllowedSpec {
+  const char* _class_name;
+  bool _is_prefix;
+  int _len;
+public:
+  AllowedSpec(const char* class_name, bool is_prefix = false)
+    : _class_name(class_name), _is_prefix(is_prefix)
+  {
+    _len = (class_name == nullptr) ? 0 : (int)strlen(class_name);
+  }
+  const char* class_name() { return _class_name; }
+
+  bool matches(Symbol* name, int len) {
+    if (_is_prefix) {
+      return len >= _len && name->starts_with(_class_name);
+    } else {
+      return len == _len && name->equals(_class_name);
+    }
+  }
+};
+
+
+bool AOTClassInitializer::is_allowed(AllowedSpec* specs, InstanceKlass* ik) {
+  Symbol* name = ik->name();
+  int len = name->utf8_length();
+  for (AllowedSpec* s = specs; s->class_name() != nullptr; s++) {
+    if (s->matches(name, len)) {
+      if (ik->java_super() != nullptr) {
+        DEBUG_ONLY(ResourceMark rm);
+        assert(AOTClassInitializer::can_archive_initialized_mirror(ik->java_super()),
+               "super type %s of %s must be initialized", ik->java_super()->external_name(),
+               ik->external_name());
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+
 bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   assert(!ArchiveBuilder::current()->is_in_buffer_space(ik), "must be source klass");
   if (!CDSConfig::is_initing_classes_at_dump_time()) {
+    return false;
+  }
+
+  if (!ik->is_initialized()) {
     return false;
   }
 
@@ -39,16 +83,25 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     return HeapShared::is_archivable_hidden_klass(ik);
   }
 
-  if (ik->is_initialized() && ik->java_super() == vmClasses::Enum_klass()) {
+  if (ik->java_super() == vmClasses::Enum_klass()) {
     return true;
   }
 
-  Symbol* name = ik->name();
-  if (name->equals("jdk/internal/constant/PrimitiveClassDescImpl") ||
-      name->equals("jdk/internal/constant/ReferenceClassDescImpl") ||
-      name->equals("java/lang/constant/ConstantDescs")) {
-    assert(ik->is_initialized(), "must be");
-    // The above 3 classes are special cases needed to support the aot-caching of
+  const bool IS_PREFIX = true;
+
+  {
+    // FIXME -- add super interfaces
+    static AllowedSpec specs[] = {
+      {"java/lang/Object"},
+      {nullptr}
+    };
+    if (is_allowed(specs, ik)) {
+      return true;
+    }
+  }
+
+  {
+    // These classes are special cases needed to support the aot-caching of
     // java.lang.invoke.MethodType instances:
     // - MethodType points to sun.invoke.util.Wrapper enums
     // - The Wrapper enums point to static final fields in the above 3 classes.
@@ -60,30 +113,41 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     //   test the equality of ClassDesc, etc).
     // Therefore, we must preserve the static fields of these 3 classes from
     // the assembly phase.
-    return true;
+    static AllowedSpec specs[] = {
+      {"java/lang/constant/DynamicConstantDesc"},
+      {"jdk/internal/constant/PrimitiveClassDescImpl"},
+      {"jdk/internal/constant/ReferenceClassDescImpl"},
+      {"java/lang/constant/ConstantDescs"},
+      {nullptr}
+    };
+    if (is_allowed(specs, ik)) {
+      return true;
+    }
   }
+
   if (CDSConfig::is_dumping_invokedynamic()) {
-    if (name->equals("java/lang/Boolean$AOTHolder") ||
-        name->equals("java/lang/Character$CharacterCache") ||
-        name->equals("java/lang/invoke/BoundMethodHandle$AOTHolder") ||
-        name->equals("java/lang/invoke/BoundMethodHandle$Specializer") ||
-        name->equals("java/lang/invoke/ClassSpecializer") ||
-        name->equals("java/lang/invoke/DelegatingMethodHandle") ||
-        name->equals("java/lang/invoke/DelegatingMethodHandle$Holder") ||
-        name->equals("java/lang/invoke/DirectMethodHandle") ||
-        name->equals("java/lang/invoke/DirectMethodHandle$AOTHolder") ||
-        name->equals("java/lang/invoke/DirectMethodHandle$Holder") ||
-        name->equals("java/lang/invoke/Invokers") ||
-        name->equals("java/lang/invoke/Invokers$Holder") ||
-        name->equals("java/lang/invoke/LambdaForm") ||
-        name->equals("java/lang/invoke/LambdaForm$NamedFunction") ||
-        name->equals("java/lang/invoke/LambdaForm$NamedFunction$AOTHolder") ||
-        name->equals("java/lang/invoke/MethodHandle") ||
-        name->equals("java/lang/invoke/MethodHandles$Lookup") ||
-        name->equals("java/lang/invoke/MethodType$AOTHolder") ||
-        name->starts_with("java/lang/invoke/BoundMethodHandle$Species_") ||
-        name->starts_with("java/lang/invoke/ClassSpecializer$")) {
-      assert(ik->is_initialized(), "must be");
+    static AllowedSpec specs[] = {
+      {"java/lang/Boolean$AOTHolder"},
+      {"java/lang/Character$CharacterCache"},
+      {"java/lang/invoke/BoundMethodHandle"},
+      {"java/lang/invoke/BoundMethodHandle$AOTHolder"},
+      {"java/lang/invoke/BoundMethodHandle$Specializer"},
+      {"java/lang/invoke/BoundMethodHandle$Species_", IS_PREFIX},
+      {"java/lang/invoke/ClassSpecializer"},
+      {"java/lang/invoke/ClassSpecializer$", IS_PREFIX},
+      {"java/lang/invoke/DelegatingMethodHandle"},
+      {"java/lang/invoke/DelegatingMethodHandle$Holder"},
+      {"java/lang/invoke/DirectMethodHandle"},
+      {"java/lang/invoke/DirectMethodHandle$AOTHolder"},
+      {"java/lang/invoke/DirectMethodHandle$Holder"},
+      {"java/lang/invoke/LambdaForm"},
+      {"java/lang/invoke/LambdaForm$NamedFunction$AOTHolder"},
+      {"java/lang/invoke/MethodHandle"},
+      {"java/lang/invoke/MethodType$AOTHolder"},
+      {"java/lang/invoke/SimpleMethodHandle"},
+      {nullptr}
+    };
+    if (is_allowed(specs, ik)) {
       return true;
     }
   }

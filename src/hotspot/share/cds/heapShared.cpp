@@ -854,6 +854,9 @@ void KlassSubGraphInfo::add_subgraph_object_klass(Klass* orig_k) {
       // to the sub-graph object class list.
       return;
     }
+    if (AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass::cast(orig_k))) {
+      return;
+    }
     check_allowed_klass(InstanceKlass::cast(orig_k));
   } else if (buffered_k->is_objArray_klass()) {
     Klass* abk = ObjArrayKlass::cast(buffered_k)->bottom_klass();

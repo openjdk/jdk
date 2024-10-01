@@ -154,6 +154,7 @@ abstract public class CDSAppTester {
         if (checkExitValue) {
             output.shouldHaveExitValue(0);
         }
+        output.shouldNotContain(CDSTestUtils.MSG_STATIC_FIELD_MAY_BE_REINITIALIZED);
         CDSTestUtils.checkCommonExecExceptions(output);
         checkExecution(output, runMode);
         return output;

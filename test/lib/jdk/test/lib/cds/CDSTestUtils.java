@@ -51,6 +51,8 @@ public class CDSTestUtils {
         "Unable to allocate region, java heap range is already in use.";
     public static final String MSG_DYNAMIC_NOT_SUPPORTED =
         "-XX:ArchiveClassesAtExit is unsupported when base CDS archive is not loaded";
+    public static final String MSG_STATIC_FIELD_MAY_BE_REINITIALIZED =
+        "an object points to a static field that may be reinitialized at runtime";
     public static final boolean DYNAMIC_DUMP = Boolean.getBoolean("test.dynamic.cds.archive");
 
     public interface Checker {
@@ -284,6 +286,7 @@ public class CDSTestUtils {
             output.shouldContain("Written dynamic archive 0x");
         }
         output.shouldHaveExitValue(0);
+        output.shouldNotContain(MSG_STATIC_FIELD_MAY_BE_REINITIALIZED);
 
         for (String match : extraMatches) {
             output.shouldContain(match);
@@ -296,6 +299,7 @@ public class CDSTestUtils {
     public static OutputAnalyzer checkBaseDump(OutputAnalyzer output) throws Exception {
         output.shouldContain("Loading classes to share");
         output.shouldHaveExitValue(0);
+        output.shouldNotContain(MSG_STATIC_FIELD_MAY_BE_REINITIALIZED);
         return output;
     }
 
