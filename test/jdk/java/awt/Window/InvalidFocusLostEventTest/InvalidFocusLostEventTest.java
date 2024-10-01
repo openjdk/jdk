@@ -64,7 +64,7 @@ public class InvalidFocusLostEventTest implements ActionListener {
     private void createUI() {
         f = new Frame("InvalidFocusLostEventTest");
         b = new Button("Press me");
-        fm  = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        fm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         b.addActionListener(this);
         f.add(b);
         f.pack();
