@@ -205,8 +205,9 @@ public interface Types {
      * @return the type of an unboxed value of type {@code t}
      *
      * @throws IllegalArgumentException if the given type has no
-     *         unboxing conversion. Only types for the wrapper classes
-     *         have an unboxing conversion.
+     *         unboxing conversion. Only types for the {@linkplain
+     *         java.lang##wrapperClasses wrapper classes} have an
+     *         unboxing conversion.
      * @jls 5.1.8 Unboxing Conversion
      */
     PrimitiveType unboxedType(TypeMirror t);

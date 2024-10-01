@@ -38,12 +38,19 @@
  * @build EventGeneratorLoop
  * @run driver TestJcmdWithSideCar
  */
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import jdk.test.lib.Container;
 import jdk.test.lib.Utils;
@@ -60,6 +67,31 @@ public class TestJcmdWithSideCar {
     private static final long TIME_TO_WAIT_FOR_MAIN_METHOD_START = 50 * 1000; // milliseconds
     private static final String MAIN_CONTAINER_NAME = "test-container-main";
 
+    private static final String UID = "uid";
+    private static final String GID = "gid";
+
+    private static final Pattern ID_PATTERN = Pattern.compile("uid=(?<" + UID + ">\\d+)\\([^\\)]+\\)\\s+gid=(?<" + GID + ">\\d+).*");
+
+    private static final Optional<String> USER = ProcessHandle.current().info().user().map(
+            user -> {
+                try (var br = new BufferedReader(new InputStreamReader(new ProcessBuilder("id", user).start().getInputStream()))) {
+                    for (final var line : br.lines().toList()) {
+                        final var m = ID_PATTERN.matcher(line);
+
+                        if (m.matches()) {
+                            return "--user=" + m.group(UID) + ":" + m.group(GID);
+                        }
+                    }
+                } catch (IOException e) {
+                    // do nothing...
+                }
+
+                return null;
+            }
+    );
+
+    private static final String NET_BIND_SERVICE = "--cap-add=NET_BIND_SERVICE";
+
     public static void main(String[] args) throws Exception {
         if (!DockerTestUtils.canTestDocker()) {
             return;
@@ -68,24 +100,28 @@ public class TestJcmdWithSideCar {
         DockerTestUtils.buildJdkContainerImage(IMAGE_NAME);
 
         try {
-            // Start the loop process in the "main" container, then run test cases
-            // using a sidecar container.
-            MainContainer mainContainer = new MainContainer();
-            mainContainer.start();
-            mainContainer.waitForMainMethodStart(TIME_TO_WAIT_FOR_MAIN_METHOD_START);
+            for (final boolean elevated : USER.isPresent() ? new Boolean[] { false, true } : new Boolean[] { false }) {
+                // Start the loop process in the "main" container, then run test cases
+                // using a sidecar container.
+                MainContainer mainContainer = new MainContainer();
+                mainContainer.start(elevated);
+                mainContainer.waitForMainMethodStart(TIME_TO_WAIT_FOR_MAIN_METHOD_START);
 
-            long mainProcPid = testCase01();
+                for (AttachStrategy attachStrategy : EnumSet.allOf(AttachStrategy.class)) {
+                    long mainProcPid = testCase01(attachStrategy, elevated);
 
-            // Excluding the test case below until JDK-8228850 is fixed
-            // JDK-8228850: jhsdb jinfo fails with ClassCastException:
-            // s.j.h.oops.TypeArray cannot be cast to s.j.h.oops.Instance
-            // mainContainer.assertIsAlive();
-            // testCase02(mainProcPid);
+                    // Excluding the test case below until JDK-8228850 is fixed
+                    // JDK-8228850: jhsdb jinfo fails with ClassCastException:
+                    // s.j.h.oops.TypeArray cannot be cast to s.j.h.oops.Instance
+                    // mainContainer.assertIsAlive();
+                    // testCase02(mainProcPid, attachStrategy, elevated);
 
-            mainContainer.assertIsAlive();
-            testCase03(mainProcPid);
+                    mainContainer.assertIsAlive();
+                    testCase03(mainProcPid, attachStrategy, elevated);
+                }
 
-            mainContainer.waitForAndCheck(TIME_TO_RUN_MAIN_PROCESS * 1000);
+                mainContainer.waitForAndCheck(TIME_TO_RUN_MAIN_PROCESS * 1000);
+            }
         } finally {
             DockerTestUtils.removeDockerImage(IMAGE_NAME);
         }
@@ -93,21 +129,21 @@ public class TestJcmdWithSideCar {
 
 
     // Run "jcmd -l" in a sidecar container, find a target process.
-    private static long testCase01() throws Exception {
-        OutputAnalyzer out = runSideCar(MAIN_CONTAINER_NAME, "/jdk/bin/jcmd", "-l")
+    private static long testCase01(AttachStrategy attachStrategy, boolean elevated) throws Exception {
+        OutputAnalyzer out = runSideCar(MAIN_CONTAINER_NAME, attachStrategy, elevated, "/jdk/bin/jcmd", "-l")
             .shouldHaveExitValue(0)
             .shouldContain("sun.tools.jcmd.JCmd");
         long pid = findProcess(out, "EventGeneratorLoop");
         if (pid == -1) {
-            throw new RuntimeException("Could not find specified process");
+            throw new RuntimeException(attachStrategy + ": Could not find specified process");
         }
 
         return pid;
     }
 
     // run jhsdb jinfo <PID> (jhsdb uses PTRACE)
-    private static void testCase02(long pid) throws Exception {
-        runSideCar(MAIN_CONTAINER_NAME, "/jdk/bin/jhsdb", "jinfo", "--pid", "" + pid)
+    private static void testCase02(long pid, AttachStrategy attachStrategy, boolean elevated) throws Exception {
+        runSideCar(MAIN_CONTAINER_NAME, attachStrategy, elevated, "/jdk/bin/jhsdb", "jinfo", "--pid", "" + pid)
             .shouldHaveExitValue(0)
             .shouldContain("Java System Properties")
             .shouldContain("VM Flags");
@@ -115,11 +151,11 @@ public class TestJcmdWithSideCar {
 
     // test jcmd with some commands (help, start JFR recording)
     // JCMD will use signal mechanism and Unix Socket
-    private static void testCase03(long pid) throws Exception {
-        runSideCar(MAIN_CONTAINER_NAME, "/jdk/bin/jcmd", "" + pid, "help")
+    private static void testCase03(long pid, AttachStrategy attachStrategy, boolean elevated) throws Exception {
+        runSideCar(MAIN_CONTAINER_NAME, attachStrategy, elevated, "/jdk/bin/jcmd", "" + pid, "help")
             .shouldHaveExitValue(0)
             .shouldContain("VM.version");
-        runSideCar(MAIN_CONTAINER_NAME, "/jdk/bin/jcmd", "" + pid, "JFR.start")
+        runSideCar(MAIN_CONTAINER_NAME, attachStrategy, elevated, "/jdk/bin/jcmd", "" + pid, "JFR.start")
             .shouldHaveExitValue(0)
             .shouldContain("Started recording");
     }
@@ -127,21 +163,36 @@ public class TestJcmdWithSideCar {
 
     // JCMD relies on the attach mechanism (com.sun.tools.attach),
     // which in turn relies on JVMSTAT mechanism, which puts its mapped
-    // buffers in /tmp directory (hsperfdata_<user>). Thus, in sidecar
-    // we mount /tmp via --volumes-from from the main container.
-    private static OutputAnalyzer runSideCar(String mainContainerName, String whatToRun,
-                                             String... args) throws Exception {
-        List<String> cmd = new ArrayList<>();
-        String[] command = new String[] {
+    // buffers in /tmp directory (hsperfdata_<user>). Thus, in the sidecar
+    // we have two options:
+    // 1. mount /tmp from the main container using --volumes-from.
+    // 2. access /tmp from the main container via /proc/<pid>/root/tmp.
+    private static OutputAnalyzer runSideCar(String mainContainerName, AttachStrategy attachStrategy, boolean elevated,  String whatToRun, String... args) throws Exception {
+        System.out.println("Attach strategy " + attachStrategy);
+
+        List<String> initialCommands = List.of(
             Container.ENGINE_COMMAND, "run",
             "--tty=true", "--rm",
             "--cap-add=SYS_PTRACE", "--sig-proxy=true",
-            "--pid=container:" + mainContainerName,
-            "--volumes-from", mainContainerName,
-            IMAGE_NAME, whatToRun
+            "--pid=container:" + mainContainerName
+        );
+
+        List<String> attachStrategyCommands = switch (attachStrategy) {
+            case TMP_MOUNTED_INTO_SIDECAR -> List.of("--volumes-from", mainContainerName);
+            case ACCESS_TMP_VIA_PROC_ROOT -> List.of();
         };
 
-        cmd.addAll(Arrays.asList(command));
+        List<String> elevatedOpts = elevated && USER.isPresent() ? List.of(NET_BIND_SERVICE, USER.get()) : Collections.emptyList();
+
+        List<String> imageAndCommand = List.of(
+            IMAGE_NAME, whatToRun
+        );
+
+        List<String> cmd = new ArrayList<>();
+        cmd.addAll(initialCommands);
+        cmd.addAll(elevatedOpts);
+        cmd.addAll(attachStrategyCommands);
+        cmd.addAll(imageAndCommand);
         cmd.addAll(Arrays.asList(args));
         return DockerTestUtils.execute(cmd);
     }
@@ -188,9 +239,15 @@ public class TestJcmdWithSideCar {
             }
         };
 
-        public Process start() throws Exception {
+        public Process start(final boolean elevated) throws Exception {
             // start "main" container (the observee)
             DockerRunOptions opts = commonDockerOpts("EventGeneratorLoop");
+
+            if (elevated && USER.isPresent()) {
+                opts.addDockerOpts(USER.get());
+                opts.addDockerOpts(NET_BIND_SERVICE);
+            }
+
             opts.addDockerOpts("--cap-add=SYS_PTRACE")
                 .addDockerOpts("--name", MAIN_CONTAINER_NAME)
                 .addDockerOpts("--volume", "/tmp")
@@ -241,7 +298,7 @@ public class TestJcmdWithSideCar {
                 try {
                     exitValue = p.exitValue();
                 } catch(IllegalThreadStateException ex) {
-                    System.out.println("IllegalThreadStateException occured when calling exitValue()");
+                    System.out.println("IllegalThreadStateException occurred when calling exitValue()");
                     retryCount--;
                 }
             } while (exitValue == -1 && retryCount > 0);
@@ -253,4 +310,8 @@ public class TestJcmdWithSideCar {
 
     }
 
+    private enum AttachStrategy {
+        TMP_MOUNTED_INTO_SIDECAR,
+        ACCESS_TMP_VIA_PROC_ROOT
+    }
 }

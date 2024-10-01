@@ -532,7 +532,7 @@ protected:
 
  public:
   // Stack overflow support
-  address stack_base() const           { assert(_stack_base != nullptr,"Sanity check"); return _stack_base; }
+  address stack_base() const DEBUG_ONLY(;) NOT_DEBUG({ return _stack_base; })
   void    set_stack_base(address base) { _stack_base = base; }
   size_t  stack_size() const           { return _stack_size; }
   void    set_stack_size(size_t size)  { _stack_size = size; }
