@@ -886,6 +886,13 @@ public abstract sealed class MethodHandle implements Constable
         return null;
     }
 
+    /*
+     * We disable inlining here to prevent complex code in the slow path
+     * of MethodHandle::asType from being inlined into that method.
+     * Excessive inlining into MethodHandle::asType can cause that method
+     * to become too big, which will then cause performance issues during
+     * var handle and method handle calls.
+     */
     @DontInline
     private MethodHandle setAsTypeCache(MethodType newType) {
         MethodHandle at = asTypeUncached(newType);

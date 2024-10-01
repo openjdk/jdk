@@ -100,7 +100,6 @@ public class LoopOverNonConstantAsType extends JavaLayouts {
         }
     }
 
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     void compileAsType() {
         for (Class<?> type : types) {
             MethodHandle handle = MethodHandles.zero(Object.class);
