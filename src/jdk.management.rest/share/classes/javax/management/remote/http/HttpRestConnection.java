@@ -801,7 +801,34 @@ public class HttpRestConnection implements MBeanServerConnection {
                                         Object handback)
             throws InstanceNotFoundException, IOException {
 
-//        throw new UnsupportedOperationException("addNotificationListener not supported");
+        // addNotification... methods are void, but the HTTP request can check response and throw if appropriate.
+        // Throwing where not implemented causes a problem some apps, e.g. JMC.
+
+        JSONObject o = objectInfoForName(name);
+        if (o == null) {
+            throw new InstanceNotFoundException("Not known: " + name);
+        }
+
+        // Server will need to do its own addNotificationListener, with a proxy listener.
+        JSONObject body = new JSONObject();
+        body.put("addNotificationListener", "123");
+        body.put("name", name.toString());
+        // body.add("filter", xxxx);
+
+        String href = objectRefMap.get(name);
+        href += "/addNotificationListener";
+        String s = executeHttpPostRequest(url(href), body.toJsonString());
+        System.err.println("XXXX http client: addNotificationListener gets: " + s);
+        try {
+            JSONParser parser = new JSONParser(s);
+            JSONObject json = (JSONObject) parser.parse();
+            // Repsonse should contain where to poll for Notifications.
+            // handback is sent to the poller for later us.
+            System.err.println("XXXX http client addNotifListener: " + json.toJsonString());
+            String ref = JSONObject.getObjectFieldString(json, "ref");
+        } catch (ParseException pe) {
+            pe.printStackTrace(System.err);
+        }
     }
 
     public void addNotificationListener(ObjectName name,
@@ -810,7 +837,18 @@ public class HttpRestConnection implements MBeanServerConnection {
                                         Object handback)
             throws InstanceNotFoundException, IOException {
 
-//
+        // XXXX
+
+        // listener is the name of another object which will listen?
+
+        JSONObject o = objectInfoForName(name);
+        if (o == null) {
+            throw new InstanceNotFoundException("Not known: " + name);
+        }
+        JSONObject l = objectInfoForName(listener);
+        if (l == null) {
+            throw new InstanceNotFoundException("Not known: " + listener);
+        }
     }
 
     public void removeNotificationListener(ObjectName name,
@@ -818,7 +856,11 @@ public class HttpRestConnection implements MBeanServerConnection {
         throws InstanceNotFoundException, ListenerNotFoundException,
                IOException {
 
-//        throw new UnsupportedOperationException("removeNotificationListener not supported");
+        // XXXX
+        JSONObject o = objectInfoForName(name);
+        if (o == null) {
+            throw new InstanceNotFoundException("Not known: " + name);
+        }
     }
 
     public void removeNotificationListener(ObjectName name,

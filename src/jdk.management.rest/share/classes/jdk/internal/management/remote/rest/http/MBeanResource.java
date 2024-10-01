@@ -49,6 +49,7 @@ import java.net.HttpURLConnection;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -200,7 +201,27 @@ public class MBeanResource implements RestResource {
                         return new HttpResponse(HttpResponse.SERVER_ERROR, "Unable to find JSON Mapper");
                     }
                 }
-            } else if (path.matches(pathPrefix + "/[^/]+/?$")) {  // POST to MBeanOperation
+            } else if (path.matches(pathPrefix + "/addNotificationListener$")) {
+                // POST to addNotificationListner,
+                // e.g.  /jmx/servers/platform/mbeans/java.lang:name=G1 Old Gen,type=MemoryPool/addNotificationListener
+                System.err.println("XXXXX MBeanResource.doPost: " + path);
+                Matcher matcher = Pattern.compile(pathPrefix + "/").matcher(path);
+
+                reqBody = HttpUtil.readRequestBody(exchange);
+                JSONParser parser = new JSONParser(reqBody);
+                JSONElement jsonElement = parser.parse();
+                System.err.println("XXXXX MBeanResource.doPost: " + jsonElement);
+
+                    if (!(jsonElement instanceof JSONObject)) {
+                        return new HttpResponse(HttpResponse.BAD_REQUEST,
+                                "Invalid parameters : [" + reqBody + "] for addNotificationListener");
+                    }
+                    JSONElement result = doAddNotificationListener((JSONObject) jsonElement);
+                    return new HttpResponse(HttpURLConnection.HTTP_OK, result.toJsonString());
+
+            } else if (path.matches(pathPrefix + "/[^/]+/?$")) {
+                // POST to MBeanOperation
+                // e.g. /jmx/servers/platform/mbeans/java.lang:type=Threading/getThreadInfo
                 Matcher matcher = Pattern.compile(pathPrefix + "/").matcher(path);
                 String operation;
                 if (matcher.find()) {
@@ -229,12 +250,16 @@ public class MBeanResource implements RestResource {
         } catch (InstanceNotFoundException e) {
             // Should never happen
         } catch (JSONDataException | ParseException | TokenMgrError e) {
+            e.printStackTrace(System.err);
             return new HttpResponse(HttpURLConnection.HTTP_BAD_REQUEST, "Invalid JSON : " + reqBody, e.getMessage());
         } catch (IntrospectionException | JSONMappingException | MBeanException | ReflectionException | IOException e) {
+            e.printStackTrace(System.err);
             return HttpResponse.SERVER_ERROR;
         } catch (IllegalArgumentException e) {
+            e.printStackTrace(System.err);
             return new HttpResponse(HttpResponse.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
+            e.printStackTrace(System.err);
             return HttpResponse.SERVER_ERROR;
         }
         return HttpResponse.REQUEST_NOT_FOUND;
@@ -360,11 +385,11 @@ public class MBeanResource implements RestResource {
         return result;
     }
 
-    JSONObject getMBeanInfo(MBeanServer mbeanServer, ObjectName mbean)
+    JSONObject getMBeanInfo(MBeanServer mbs, ObjectName mbean)
             throws InstanceNotFoundException, IntrospectionException, ReflectionException {
 
         JSONObject jobj = new JSONObject();
-        MBeanInfo mBeanInfo = mbeanServer.getMBeanInfo(mbean);
+        MBeanInfo mBeanInfo = mbs.getMBeanInfo(mbean);
         if (mBeanInfo == null) {
             return jobj;
         }
@@ -712,6 +737,49 @@ public class MBeanResource implements RestResource {
             }
         } catch (JSONMappingException e) {
             return new JSONPrimitive("<Unable to map result to JSON>");
+        }
+    }
+
+    private JSONElement doAddNotificationListener(JSONObject j) {
+        System.err.println("XXXX MBeanResource addNotifListener: " + j.toJsonString());
+
+        // Create a NotificationListener here on the server, which will queue
+        // its invocations.
+        // Provide an href where a client can poll for its results.
+        // Could check incoming name equals this.objectName
+
+        JSONObject jobj = new JSONObject();
+        jobj.put("blah", "12345");
+
+        List<Notification> list = new LinkedList<>();
+//        SecureRandom sr = new SecureRandom();
+        long h = notifHash.incrementAndGet();
+        String ref = Long.toString(h);
+        notifLists.put(ref, list);
+        jobj.put("ref", ref);
+        NotificationListener listener = new NotificationListenerQ(list);
+        // NotificationFilterSupport filter = new NotificationFilterSupport();
+        try {
+            mBeanServer.addNotificationListener(objectName, listener, null /* filter */, null /* handback */);
+        } catch (InstanceNotFoundException infe) {
+            infe.printStackTrace(System.err);
+        }
+        return jobj;
+    }
+
+    private static AtomicLong notifHash = new AtomicLong(0);
+    private Map<String, List<Notification>> notifLists = new HashMap<>();
+
+    public class NotificationListenerQ implements NotificationListener {
+
+        protected List<Notification> list;
+
+        public NotificationListenerQ(List<Notification> list) {
+            this.list = list;
+        }
+
+        public void handleNotification(Notification notification, Object handback) {
+            list.add(notification);
         }
     }
 

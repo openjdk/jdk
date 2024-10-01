@@ -39,6 +39,7 @@ import javax.management.modelmbean.DescriptorSupport;
 
 import jdk.internal.management.remote.rest.json.JSONArray;
 import jdk.internal.management.remote.rest.json.JSONObject;
+import jdk.internal.management.remote.rest.json.JSONPrimitive;
 
 /**
  */
@@ -124,27 +125,44 @@ public class MBeanInfo extends javax.management.MBeanInfo {
         MBeanOperationInfo[] operations = null;
         JSONArray oi = JSONObject.getObjectFieldArray(json, "operationInfo");
         if (oi != null && oi.size() > 0) {
-        operations = new MBeanOperationInfo[oi.size()];
-        for (int i = 0; i < oi.size(); i++) {
-            JSONObject j = (JSONObject) oi.get(i);
-            String oName = JSONObject.getObjectFieldString(j, "name");
-            String oDescription = JSONObject.getObjectFieldString(j, "description");
-            MBeanParameterInfo[] oSignature = createOperationSignature(JSONObject.getObjectFieldArray(j, "signature"));
-            String oType = JSONObject.getObjectFieldString(j, "returnType");
-            int oImpact = parseImpact(JSONObject.getObjectFieldString(j, "impact"));
-            JSONObject oDescriptorJSON = JSONObject.getObjectFieldObject(j, "descriptor");
-            Descriptor oDescriptor = null;
-            if (oDescriptorJSON != null) {
-                oDescriptor = createDescriptor(oDescriptorJSON);
-            }
-
-            operations[i] = new MBeanOperationInfo(oName, oDescription, oSignature, oType, oImpact, oDescriptor);
+            operations = new MBeanOperationInfo[oi.size()];
+            for (int i = 0; i < oi.size(); i++) {
+                JSONObject j = (JSONObject) oi.get(i);
+                String oName = JSONObject.getObjectFieldString(j, "name");
+                String oDescription = JSONObject.getObjectFieldString(j, "description");
+                MBeanParameterInfo[] oSignature = createOperationSignature(JSONObject.getObjectFieldArray(j, "signature"));
+                String oType = JSONObject.getObjectFieldString(j, "returnType");
+                int oImpact = parseImpact(JSONObject.getObjectFieldString(j, "impact"));
+                        JSONObject oDescriptorJSON = JSONObject.getObjectFieldObject(j, "descriptor");
+                Descriptor oDescriptor = null;
+                if (oDescriptorJSON != null) {
+                    oDescriptor = createDescriptor(oDescriptorJSON);
+                }
+                operations[i] = new MBeanOperationInfo(oName, oDescription, oSignature, oType, oImpact, oDescriptor);
 //            System.err.println("XXXX MBOI " + i + " = " + operations[i]);
-        }
+            }
         }
 
         MBeanNotificationInfo[] notifications = null;
-
+        JSONArray ni = JSONObject.getObjectFieldArray(json, "operationInfo");
+        if (ni != null && ni.size() > 0) {
+            notifications = new MBeanNotificationInfo[ni.size()];
+            for (int i = 0; i < ni.size(); i++) {
+                JSONObject j = (JSONObject) ni.get(i);
+                String nName = JSONObject.getObjectFieldString(j, "name");
+                String [] nNotifTypes = null;
+                JSONArray n = JSONObject.getObjectFieldArray(j, "notifTypes");
+                if (n != null && n.size() > 0) {
+                    nNotifTypes = new String[n.size()];
+                    for (int k = 0; k < n.size(); k++) {
+                        nNotifTypes[k] = (String) ((JSONPrimitive) n.get(k)).getValue();
+                    }
+                }
+                String nDescription = JSONObject.getObjectFieldString(j, "description");
+                String nDescriptor = JSONObject.getObjectFieldString(j, "descriptor");
+                notifications[i] = new MBeanNotificationInfo(nNotifTypes, nName, nDescription); // XXXX , nDescriptor);
+            }
+        }
         return new MBeanInfo(className, description, attributes, constructors, operations, notifications);
     }
 
