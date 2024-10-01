@@ -58,7 +58,7 @@ class UnixFileAttributes
     private long    st_ctime_nsec;
     private long    st_birthtime_sec;
     private long    st_birthtime_nsec;
-    private boolean birthtime_invalid;
+    private boolean birthtime_available = true;
 
     // created lazily
     private volatile UserPrincipal owner;
@@ -164,10 +164,10 @@ class UnixFileAttributes
 
     @Override
     public FileTime creationTime() {
-        if (UnixNativeDispatcher.birthtimeSupported() && !birthtime_invalid) {
+        if (UnixNativeDispatcher.birthtimeSupported() && birthtime_available) {
             return toFileTime(st_birthtime_sec, st_birthtime_nsec);
         } else {
-            // return last modified when birth time not supported
+            // return last modified when birth time unsupported or unavailable
             return lastModifiedTime();
         }
     }
