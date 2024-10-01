@@ -1226,10 +1226,10 @@ public class ZipFile implements ZipConstants, Closeable {
             throws IOException
         {
             int pos = state.pos;
-            if (pos > state.limit) {
+            byte[] cen = this.cen;
+            if (pos > cen.length - CENHDR) {
                 return false;
             }
-            byte[] cen = this.cen;
             // The entry length, from pos + CENHDR
             int nlen = CENNAM(cen, pos);
 
@@ -1301,11 +1301,13 @@ public class ZipFile implements ZipConstants, Closeable {
             try {
                 int pos = state.pos;
                 int hash = zipCoderForPos(pos).checkedHash(cen, pos + CENHDR, nlen);
-                int hsh = (hash & 0x7fffffff) % tablelen;
+                int[] table = this.table;
+                int hsh = (hash & 0x7fffffff) % table.length;
                 int next = table[hsh];
                 int index = state.idx;
                 table[hsh] = index + 1; // Store state.idx + 1, reserving 0 for end-of-chain
                 // Record the CEN offset and the name hash in our hash cell.
+                int[] entries = this.entries;
                 entries[index] = hash;
                 entries[index + 1] = next;
                 entries[index + 2] = pos;
@@ -1517,7 +1519,6 @@ public class ZipFile implements ZipConstants, Closeable {
         private int getEntryPos(int index)  { return entries[index + 2]; }
         private int total;                   // total number of entries
         private int[] table;                 // Hash chain heads: indexes into entries
-        private int tablelen;                // number of hash heads
 
         /**
          * A class representing a key to a ZIP file. A key is based
@@ -1785,17 +1786,15 @@ public class ZipFile implements ZipConstants, Closeable {
         private static class CENState {
             int pos;
             int idx;
-            final int limit;
             List<Integer> signatureNames;
             Set<Integer> metaVersionsSet;
-            CENState(int limit) { this.limit = limit; }
+            CENState() {}
         }
 
         // Reads ZIP file central directory.
         private void initCEN(int knownTotal) throws IOException {
             // Prefer locals for better performance during startup
             byte[] cen;
-            int cenLen;
             if (knownTotal == -1) {
                 End end = findEND();
                 if (end.endpos == 0) {
@@ -1819,7 +1818,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (longCenLen >= MAX_CEN_SIZE) {
                     zerror("invalid END header (central directory size too large)");
                 }
-                cenLen = (int)longCenLen;
+                int cenLen = (int)longCenLen;
                 cen = this.cen = new byte[cenLen];
                 if (readFullyAt(cen, 0, cenLen, cenpos) != cenLen) {
                     zerror("read CEN tables failed");
@@ -1827,7 +1826,6 @@ public class ZipFile implements ZipConstants, Closeable {
                 this.total = end.centot;
             } else {
                 cen = this.cen;
-                cenLen = cen.length;
                 this.total = knownTotal;
             }
             // hash table for entries
@@ -1835,13 +1833,10 @@ public class ZipFile implements ZipConstants, Closeable {
             entries = new int[entriesLength];
 
             int tablelen = ((total/2) | 1); // Odd -> fewer collisions
-            this.tablelen = tablelen;
-
-            int[] table = new int[tablelen];
-            this.table = table;
+            this.table = new int[tablelen];
 
             // Iterate through the entries in the central directory
-            var state = new CENState(cenLen - CENHDR); // state holder
+            var state = new CENState(); // state holder
             try {
                 // Checks the entry and adds values to entries[idx ... idx+2], state.pos will contain position of next entry
                 while (processNextCENEntry(state)) {}
@@ -1852,7 +1847,7 @@ public class ZipFile implements ZipConstants, Closeable {
                     // 65535 entries.
                     manifestNum = 0;
                     manifestPos = -1;
-                    initCEN(countCENHeaders(cen, cenLen));
+                    initCEN(countCENHeaders(cen, cen.length));
                     return;
                 }
                 throw ze;
@@ -1897,7 +1892,8 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             int hsh = ZipCoder.hash(name);
-            int idx = table[(hsh & 0x7fffffff) % tablelen];
+            int[] table = this.table;
+            int idx = table[(hsh & 0x7fffffff) % table.length];
 
             int dirPos = -1; // Position of secondary match "name/"
 
