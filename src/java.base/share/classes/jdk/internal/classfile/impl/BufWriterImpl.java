@@ -163,6 +163,19 @@ public final class BufWriterImpl implements BufWriter {
         this.offset = offset + 4;
     }
 
+    public void writeU2U2U2(int x1, int x2, int x3) {
+        reserveSpace(6);
+        byte[] elems = this.elems;
+        int offset = this.offset;
+        elems[offset    ] = (byte) (x1 >> 8);
+        elems[offset + 1] = (byte) x1;
+        elems[offset + 2] = (byte) (x2 >> 8);
+        elems[offset + 3] = (byte) x2;
+        elems[offset + 4] = (byte) (x3 >> 8);
+        elems[offset + 5] = (byte) x3;
+        this.offset = offset + 6;
+    }
+
     @Override
     public void writeInt(int x) {
         reserveSpace(4);

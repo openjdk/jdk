@@ -220,8 +220,7 @@ public final class DirectCodeBuilder
                     throw new IllegalArgumentException("Unbound label in exception handler");
                 }
             } else {
-                buf.writeU2U2(startPc, endPc);
-                buf.writeU2(handlerPc);
+                buf.writeU2U2U2(startPc, endPc, handlerPc);
                 buf.writeIndexOrZero(h.catchTypeEntry());
                 handlersSize++;
             }
@@ -512,8 +511,7 @@ public final class DirectCodeBuilder
         if ((slot < 256 && val < 128 && val > -127)) {
             bytecodesBufWriter.writeU1U1U1(IINC, slot, val);
         } else {
-            bytecodesBufWriter.writeU1U1(WIDE, IINC);
-            bytecodesBufWriter.writeU2U2(slot, val);
+            bytecodesBufWriter.writeU2U2U2((WIDE << 8) | IINC, slot, val);
         }
     }
 
