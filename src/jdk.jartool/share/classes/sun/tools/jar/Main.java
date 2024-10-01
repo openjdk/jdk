@@ -616,6 +616,9 @@ public class Main {
             usageError(getMsg("error.bad.option"));
             return false;
         }
+        if (kflag && !xflag) {
+            warn(formatMsg("warn.option.is.ignored", "--keep-old-files/-k/k"));
+        }
 
         /* parse file arguments */
         int n = args.length - count;

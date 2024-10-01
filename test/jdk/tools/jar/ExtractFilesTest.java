@@ -29,7 +29,7 @@
  * @modules jdk.jartool
  * @build jdk.test.lib.Platform
  *        jdk.test.lib.util.FileUtils
- * @run junit ExtractFilesTest
+ * @run junit/othervm ExtractFilesTest
  */
 
 import org.junit.jupiter.api.AfterAll;
@@ -45,11 +45,9 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
-import java.util.zip.ZipException;
 
 import jdk.test.lib.util.FileUtils;
 
@@ -120,7 +118,7 @@ import jdk.test.lib.util.FileUtils;
         println();
         String output = "  created: META-INF/" + nl +
                 " inflated: META-INF/MANIFEST.MF" + nl +
-                "  skipped: testfile1" + nl +
+                "  skipped: testfile1 exists" + nl +
                 " inflated: testfile2" + nl;
         Assertions.assertEquals("", cat("testfile1"));
         Assertions.assertEquals("testfile2", cat("testfile2"));
@@ -138,8 +136,8 @@ import jdk.test.lib.util.FileUtils;
         println();
         String output = "  created: META-INF/" + nl +
                 " inflated: META-INF/MANIFEST.MF" + nl +
-                "  skipped: testfile1" + nl +
-                "  skipped: testfile2" + nl;
+                "  skipped: testfile1 exists" + nl +
+                "  skipped: testfile2 exists" + nl;
         Assertions.assertEquals("", cat("testfile1"));
         Assertions.assertEquals("", cat("testfile2"));
         rm("META-INF testfile1 testfile2");
@@ -157,15 +155,32 @@ import jdk.test.lib.util.FileUtils;
         String output = "  created: META-INF/" + nl +
                 " inflated: META-INF/MANIFEST.MF" + nl +
                 " inflated: testfile1" + nl +
-                "  skipped: testfile2" + nl;
+                "  skipped: testfile2 exists" + nl;
         Assertions.assertEquals("testfile1", cat("testfile1"));
         Assertions.assertEquals("", cat("testfile2"));
         rm("META-INF testfile1 testfile2");
         Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
     }
 
+    /**
+     * Test jar will issue warning when use keep option in non-extraction mode.
+     */
+    @Test
+    public void testWarningOnInvalidKeepOption() throws IOException {
+        var err = jar("tkf test.jar");
+        println();
+
+        String output = "META-INF/" + nl +
+                "META-INF/MANIFEST.MF" + nl +
+                "testfile1" + nl +
+                "testfile2" + nl;
+
+        Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
+        Assertions.assertEquals("Warning: The --keep-old-files/-k/k option is not valid with current usage, will be ignored." + nl, err);
+    }
+
     private Stream<Path> mkpath(String... args) {
-        return Arrays.stream(args).map(d -> Paths.get(".", d.split("/")));
+        return Arrays.stream(args).map(d -> Path.of(".", d.split("/")));
     }
 
     private void mkdir(String cmdline) {
@@ -193,7 +208,7 @@ import jdk.test.lib.util.FileUtils;
     private void echo(String text, String path) {
         System.out.println("echo '" + text + "' > " + path);
         try {
-            var p = Paths.get(".", path.split("/"));
+            var p = Path.of(".", path.split("/"));
             Files.writeString(p, text);
         } catch (IOException x) {
             throw new UncheckedIOException(x);
@@ -203,8 +218,7 @@ import jdk.test.lib.util.FileUtils;
     private String cat(String path) {
         System.out.println("cat " + path);
         try {
-            var p = Paths.get(".", path.split("/"));
-            return String.join(nl, Files.readAllLines(p));
+            return Files.readString(Path.of(path));
         } catch (IOException x) {
             throw new UncheckedIOException(x);
         }
@@ -225,7 +239,7 @@ import jdk.test.lib.util.FileUtils;
         });
     }
 
-    private void jar(String cmdline) throws IOException {
+    private String jar(String cmdline) throws IOException {
         System.out.println("jar " + cmdline);
         baos.reset();
 
@@ -234,15 +248,15 @@ import jdk.test.lib.util.FileUtils;
         PrintStream err = new PrintStream(baes);
         PrintStream saveErr = System.err;
         System.setErr(err);
-        int rc = JAR_TOOL.run(out, err, cmdline.split(" +"));
-        System.setErr(saveErr);
-        if (rc != 0) {
-            String s = baes.toString();
-            if (s.startsWith("java.util.zip.ZipException: duplicate entry: ")) {
-                throw new ZipException(s);
+        try {
+            int rc = JAR_TOOL.run(out, err, cmdline.split(" +"));
+            if (rc != 0) {
+                throw new IOException(baes.toString());
             }
-            throw new IOException(s);
+        } finally {
+            System.setErr(saveErr);
         }
+        return baes.toString();
     }
 
     private void println() throws IOException {

@@ -29,7 +29,7 @@
  * @modules jdk.jartool
  * @build jdk.test.lib.Platform
  *        jdk.test.lib.util.FileUtils
- * @run junit MultipleManifestTest
+ * @run junit/othervm MultipleManifestTest
  */
 
 import java.io.ByteArrayOutputStream;
@@ -38,11 +38,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer.MethodName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -50,7 +48,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -58,13 +55,11 @@ import java.util.jar.Manifest;
 import java.util.spi.ToolProvider;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
 import jdk.test.lib.util.FileUtils;
 
 @TestInstance(Lifecycle.PER_CLASS)
-@TestMethodOrder(MethodName.class)
 class MultipleManifestTest {
     private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
         .orElseThrow(() ->
@@ -171,15 +166,15 @@ class MultipleManifestTest {
         println();
         Assertions.assertEquals("1.0", getManifestVersion());
         String output = " inflated: META-INF/MANIFEST.MF" + nl +
-                "  skipped: META-INF/MANIFEST.MF" + nl +
+                "  skipped: META-INF/MANIFEST.MF exists" + nl +
                 " inflated: entry1.txt" + nl +
-                "  skipped: META-INF/MANIFEST.MF" + nl +
+                "  skipped: META-INF/MANIFEST.MF exists" + nl +
                 " inflated: entry2.txt" + nl;
         Assertions.assertArrayEquals(baos.toByteArray(), output.getBytes());
     }
 
     private String getManifestVersion() throws IOException {
-        try (var is = Files.newInputStream(Paths.get(JarFile.MANIFEST_NAME))) {
+        try (var is = Files.newInputStream(Path.of(JarFile.MANIFEST_NAME))) {
             var manifest = new Manifest(is);
             return manifest.getMainAttributes().getValue(Attributes.Name.MANIFEST_VERSION);
         }
@@ -194,14 +189,13 @@ class MultipleManifestTest {
         PrintStream err = new PrintStream(baes);
         PrintStream saveErr = System.err;
         System.setErr(err);
-        int rc = JAR_TOOL.run(jarOut, err, cmdline.split(" +"));
-        System.setErr(saveErr);
-        if (rc != 0) {
-            String s = baes.toString();
-            if (s.startsWith("java.util.zip.ZipException: duplicate entry: ")) {
-                throw new ZipException(s);
+        try {
+            int rc = JAR_TOOL.run(jarOut, err, cmdline.split(" +"));
+            if (rc != 0) {
+                throw new IOException(baes.toString());
             }
-            throw new IOException(s);
+        } finally {
+            System.setErr(saveErr);
         }
     }
 
@@ -210,7 +204,7 @@ class MultipleManifestTest {
     }
 
     private Stream<Path> mkpath(String... args) {
-        return Arrays.stream(args).map(d -> Paths.get(".", d.split("/")));
+        return Arrays.stream(args).map(d -> Path.of(".", d.split("/")));
     }
 
     private void rm(String cmdline) {
