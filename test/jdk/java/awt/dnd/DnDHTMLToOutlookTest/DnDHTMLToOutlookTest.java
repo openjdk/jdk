@@ -21,11 +21,12 @@
  * questions.
  */
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Panel;
+
 
 /*
  * @test
@@ -49,7 +50,7 @@ public class DnDHTMLToOutlookTest {
             button. HTML text without tags should appear inside the document.
 
             You should be able to repeat this operation multiple times.
-            Please select Pass just in case of success or Fail for another.
+            If the above is true Press PASS else FAIL.
             """;
 
     public static void main(String[] args) throws Exception {
@@ -68,14 +69,14 @@ public class DnDHTMLToOutlookTest {
         Component dragSource;
 
         mainPanel = new Panel();
-        mainPanel.setLayout(new FlowLayout());
+        mainPanel.setLayout(new BorderLayout());
 
         mainPanel.setBackground(Color.YELLOW);
         dragSource = new DnDSource("Drag ME (HTML)!");
 
-        mainPanel.add(dragSource);
+        mainPanel.add(dragSource, BorderLayout.CENTER);
         frame.add(mainPanel);
-        frame.pack();
+        frame.setSize(200, 200);
         return frame;
     }
 }

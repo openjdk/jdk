@@ -79,7 +79,6 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
     private static final Point testPoint1 = new Point();
     private static final Point testPoint2 = new Point();
     private static volatile Point srcPoint;
-    private static volatile Dimension d;
     private static volatile Point dstOutsidePoint;
     private static volatile Point dstInsidePoint;
 
@@ -137,6 +136,7 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
     }
 
     public static void main(String[] args) throws Exception {
+        final Dimension[] d = new Dimension[1];
         try {
             Robot robot = new Robot();
             robot.setAutoDelay(10);
@@ -148,8 +148,8 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
 
             EventQueue.invokeAndWait(() -> {
                 srcPoint = source.getLocationOnScreen();
-                d = source.getSize();
-                srcPoint.translate(d.width / 2, d.height / 2);
+                d[0] = source.getSize();
+                srcPoint.translate(d[0].width / 2, d[0].height / 2);
             });
             robot.waitForIdle();
 
@@ -159,17 +159,18 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
 
             EventQueue.invokeAndWait(() -> {
                 dstOutsidePoint = frame.getLocationOnScreen();
-                d = frame.getSize();
-                dstOutsidePoint.translate(3 * d.width / 2, d.height / 2);
+                d[0] = frame.getSize();
+                dstOutsidePoint.translate(3 * d[0].width / 2, d[0].height / 2);
+                testPoint1.setLocation(dstOutsidePoint);
              });
-            testPoint1.setLocation(dstOutsidePoint);
+
 
             EventQueue.invokeAndWait(() -> {
                 dstInsidePoint = target.getLocationOnScreen();
-                d = target.getSize();
-                dstInsidePoint.translate(d.width / 2, d.height / 2);
+                d[0] = target.getSize();
+                dstInsidePoint.translate(d[0].width / 2, d[0].height / 2);
+                testPoint2.setLocation(dstInsidePoint);
             });
-            testPoint2.setLocation(dstInsidePoint);
 
             if (!dsmObj.pointInComponent(robot, dstInsidePoint, target)) {
                 throw new RuntimeException("WARNING: Couldn't locate target panel.");
@@ -224,20 +225,18 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
 
     public void eventDispatched(AWTEvent e) {
         if (e.getID() == MouseEvent.MOUSE_RELEASED) {
-            mouseReleaseEvent.countDown();
             clickedComponent = (Component)e.getSource();
+            mouseReleaseEvent.countDown();
         }
     }
 
     boolean pointInComponent(Robot robot, Point p, Component comp) throws Exception {
-        mouseReleaseEvent = new CountDownLatch(1);
         robot.waitForIdle();
         reset();
+        mouseReleaseEvent = new CountDownLatch(1);
         robot.mouseMove(p.x, p.y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-        robot.waitForIdle();
-        robot.delay(500);
         if (!mouseReleaseEvent.await(2, TimeUnit.SECONDS)) {
             throw new RuntimeException("Mouse Release Event not received");
         }

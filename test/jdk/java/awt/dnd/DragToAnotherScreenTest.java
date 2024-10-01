@@ -38,9 +38,12 @@ import java.awt.dnd.DropTargetAdapter;
 import java.awt.dnd.DropTargetDropEvent;
 import java.util.List;
 
+import javax.swing.JOptionPane;
+
 /*
  * @test
  * @bug 6179157
+ * @key multimon
  * @summary Tests dnd to another screen
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
@@ -56,21 +59,27 @@ public class DragToAnotherScreenTest {
                 The following test is applicable for Single as well
                 as Multi-monitor screens.
 
+                It is a semi-automated test, the test will prompt
+                the user whether the drag and drop action was successful or not
+                and automatically PASS/FAIL the test.
+
                 If on multi-monitor screens then please position
                 the drag and drop windows on different screens.
 
                 If you can not move the mouse from the frame "Drag Source"
-                to the frame "Drop Target" press PASS.
+                to the frame "Drop Target" press PASS,
+                else proceed to the next step.
 
-                Otherwise drag the label "Drag me" and
-                drop it on the label "Drop on me".
+                Drag the label "Drag me" and drop it on the
+                label "Drop on me".
 
                 If you can not drag to the second label (for example
                 if you can not drag across screens) press FAIL.
 
-                If the second label changes its text to drag me
-                after the drop and you DO NOT see any error messages
-                in the log area press PASS else FAIL.
+                After the drag and drop action, the test displays
+                Success/Failure msg in JOptionPane.
+                Click on OK button and the test is configured to
+                automatically PASS/FAIL.
                 """;
 
     public static void main(String[] args) throws Exception {
@@ -121,16 +130,27 @@ public class DragToAnotherScreenTest {
                     dtde.acceptDrop(DnDConstants.ACTION_COPY);
                     try {
                         String str = (String) t.getTransferData(DataFlavor.stringFlavor);
-                        PassFailJFrame.log("getTransferData was successful");
                         label1.setText(str);
+                        JOptionPane.showMessageDialog(frame0,
+                                                      "getTransferData was successful",
+                                                      "Test Passed", JOptionPane.PLAIN_MESSAGE);
+                        PassFailJFrame.forcePass();
                     } catch (Exception e) {
-                        PassFailJFrame.log("ERROR !!! Can't getTransferData: " + e);
                         dtde.dropComplete(false);
+                        PassFailJFrame.log("getTransferData() Failed: " + e);
+                        JOptionPane.showMessageDialog(frame0,
+                                                      "getTransferData() Failed",
+                                                      "Test Failed", JOptionPane.ERROR_MESSAGE);
+                        PassFailJFrame.forceFail();
                     }
                     dtde.dropComplete(true);
                 } else {
-                    PassFailJFrame.log("ERROR !!! stringFlavor is not supported by Transferable");
                     dtde.rejectDrop();
+                    PassFailJFrame.log("stringFlavor is not supported by Transferable");
+                    JOptionPane.showMessageDialog(frame0,
+                                                  "stringFlavor is not supported by Transferable",
+                                                  "Test Failed", JOptionPane.ERROR_MESSAGE);
+                    PassFailJFrame.forceFail();
                 }
             }
         };
