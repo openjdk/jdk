@@ -265,7 +265,7 @@ private:
     InstanceKlass* k, int field_offset) PRODUCT_RETURN;
   static void verify_reachable_objects_from(oop obj) PRODUCT_RETURN;
   static void verify_subgraph_from(oop orig_obj) PRODUCT_RETURN;
-  static void check_default_subgraph_classes();
+  static void check_special_subgraph_classes();
 
   static KlassSubGraphInfo* init_subgraph_info(Klass *k, bool is_full_module_graph);
   static KlassSubGraphInfo* get_subgraph_info(Klass *k);
@@ -287,13 +287,14 @@ private:
 
   static SeenObjectsTable *_seen_objects_table;
 
-  // The "default subgraph" is the root of all archived objects that do not belong to any
-  // of the classes defined in the <xxx>_archive_subgraph_entry_fields[] arrays:
+  // The "special subgraph" contains all the all archived objects that are reachable
+  // from the following roots:
   //    - interned strings
-  //    - Klass::java_mirror() -- including initialized mirrors such as those of Enum klasses.
+  //    - Klass::java_mirror() -- including aot-initialized mirrors such as those of Enum klasses.
   //    - ConstantPool::resolved_references()
-  static KlassSubGraphInfo* _default_subgraph_info;
-  static ArchivedKlassSubGraphInfoRecord* _runtime_default_subgraph_info;
+  //    - Universe::<xxx>_exception_instance()
+  static KlassSubGraphInfo* _dumptime_special_subgraph;              // for collecting info during dump time
+  static ArchivedKlassSubGraphInfoRecord* _runtime_special_subgraph; // for initializing classes during run time.
 
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
   static GrowableArrayCHeap<OopHandle, mtClassShared>* _root_segments;
@@ -356,6 +357,7 @@ private:
   static bool has_been_archived(oop orig_obj);
   static void archive_java_mirrors();
   static void archive_strings();
+  static void copy_special_subgraph();
  public:
   static void reset_archived_object_states(TRAPS);
   static void create_archived_object_cache() {
@@ -373,7 +375,6 @@ private:
   static int archive_exception_instance(oop exception);
   static void archive_objects(ArchiveHeapInfo* heap_info);
   static void copy_objects();
-  static void copy_special_objects();
 
   static bool archive_reachable_objects_from(int level,
                                              KlassSubGraphInfo* subgraph_info,
@@ -440,7 +441,7 @@ private:
   static void initialize_test_class_from_archive(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
 #endif
 
-  static void init_classes_reachable_from_archived_mirrors(Handle loader, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_classes_for_special_subgraph(Handle loader, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
 };
 
 #if INCLUDE_CDS_JAVA_HEAP

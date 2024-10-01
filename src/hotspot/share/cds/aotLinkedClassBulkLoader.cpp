@@ -246,14 +246,20 @@ void AOTLinkedClassBulkLoader::init_required_classes_for_loader(Handle class_loa
       InstanceKlass* ik = classes->at(i);
       if (ik->class_loader_data() == nullptr) {
         // This class is not yet loaded. We will initialize it in a later phase.
-        // For example, we have loaded only BOOT classes but k is part of BOOT2.
+        // For example, we have loaded only AOTLinkedClassCategory::BOOT1 classes
+        // but k is part of AOTLinkedClassCategory::BOOT2.
         continue;
       }
       if (ik->has_aot_initialized_mirror()) {
+        // ik's <clinit> will not be executed as its mirror was already initialized
+        // during AOT cache assembly.
+        // Note that we allow the supertypes of ik to be *not* aot-initialized, so
+        // the following call may execute the <clinit> of some supertypes.
+        // TODO -- see if we can require all supertypes of be aot-initialized.
         ik->initialize_from_cds(CHECK);
       }
     }
   }
 
-  HeapShared::init_classes_reachable_from_archived_mirrors(class_loader, CHECK);
+  HeapShared::init_classes_for_special_subgraph(class_loader, CHECK);
 }
