@@ -837,7 +837,7 @@ static void pretouch_expanded_memory(void* start, void* end) {
 }
 
 static bool commit_expanded(char* start, size_t size, size_t alignment, bool pre_touch, bool executable) {
-  if (os::commit_memory(start, size, alignment, executable)) {
+  if (os::commit_memory(start, size, executable, alignment)) {
     if (pre_touch || AlwaysPreTouch) {
       pretouch_expanded_memory(start, start + size);
     }
