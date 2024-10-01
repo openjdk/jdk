@@ -293,8 +293,8 @@ private:
   //    - Klass::java_mirror() -- including aot-initialized mirrors such as those of Enum klasses.
   //    - ConstantPool::resolved_references()
   //    - Universe::<xxx>_exception_instance()
-  static KlassSubGraphInfo* _dumptime_special_subgraph;              // for collecting info during dump time
-  static ArchivedKlassSubGraphInfoRecord* _runtime_special_subgraph; // for initializing classes during run time.
+  static KlassSubGraphInfo* _dump_time_special_subgraph;              // for collecting info during dump time
+  static ArchivedKlassSubGraphInfoRecord* _run_time_special_subgraph; // for initializing classes during run time.
 
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
   static GrowableArrayCHeap<OopHandle, mtClassShared>* _root_segments;
