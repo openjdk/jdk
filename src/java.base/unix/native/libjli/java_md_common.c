@@ -243,13 +243,7 @@ JLI_ReportErrorMessage(const char* fmt, ...) {
 JNIEXPORT void JNICALL
 JLI_ReportErrorMessageSys(const char* fmt, ...) {
     va_list vl;
-    char *emsg;
-
-    /*
-     * TODO: its safer to use strerror_r but is not available on
-     * Solaris 8. Until then....
-     */
-    emsg = strerror(errno);
+    char *emsg = strerror(errno);
     if (emsg != NULL) {
         fprintf(stderr, "%s\n", emsg);
     }

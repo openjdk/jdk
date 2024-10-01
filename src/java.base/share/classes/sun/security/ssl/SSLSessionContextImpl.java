@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ import sun.security.util.Cache;
 
 final class SSLSessionContextImpl implements SSLSessionContext {
     private static final int DEFAULT_MAX_CACHE_SIZE = 20480;
+    private static final int DEFAULT_MAX_QUEUE_SIZE = 10;
     // Default lifetime of a session. 24 hours
     static final int DEFAULT_SESSION_TIMEOUT = 86400;
 
@@ -87,14 +88,17 @@ final class SSLSessionContextImpl implements SSLSessionContext {
         cacheLimit = getDefaults(server);    // default cache size
 
         // use soft reference
-        sessionCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
-        sessionHostPortCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
         if (server) {
+            sessionCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
+            sessionHostPortCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
             keyHashMap = new ConcurrentHashMap<>();
             // Should be "randomly generated" according to RFC 5077,
-            // but doesn't necessarily has to be a true random number.
+            // but doesn't necessarily have to be a true random number.
             currentKeyID = new Random(System.nanoTime()).nextInt();
         } else {
+            sessionCache = Cache.newSoftMemoryCache(cacheLimit, timeout);
+            sessionHostPortCache = Cache.newSoftMemoryQueue(cacheLimit, timeout,
+                DEFAULT_MAX_QUEUE_SIZE);
             keyHashMap = Map.of();
         }
     }
@@ -277,12 +281,22 @@ final class SSLSessionContextImpl implements SSLSessionContext {
     // time it created, which is a little longer than the expected. So
     // please do check isTimedout() while getting entry from the cache.
     void put(SSLSessionImpl s) {
+        put(s, false);
+    }
+
+    /**
+     * Put an entry in the cache
+     * @param s SSLSessionImpl entry to be stored
+     * @param canQueue True if multiple entries may exist under one
+     *                 session entry.
+     */
+    void put(SSLSessionImpl s, boolean canQueue) {
         sessionCache.put(s.getSessionId(), s);
 
         // If no hostname/port info is available, don't add this one.
         if ((s.getPeerHost() != null) && (s.getPeerPort() != -1)) {
             sessionHostPortCache.put(
-                getKey(s.getPeerHost(), s.getPeerPort()), s);
+                getKey(s.getPeerHost(), s.getPeerPort()), s, canQueue);
         }
 
         s.setContext(this);
@@ -290,11 +304,17 @@ final class SSLSessionContextImpl implements SSLSessionContext {
 
     // package-private method, remove a cached SSLSession
     void remove(SessionId key) {
+        remove(key, false);
+    }
+    void remove(SessionId key, boolean isClient) {
         SSLSessionImpl s = sessionCache.get(key);
         if (s != null) {
             sessionCache.remove(key);
-            sessionHostPortCache.remove(
+            // A client keeps the cache entry for queued NST resumption.
+            if (!isClient) {
+                sessionHostPortCache.remove(
                     getKey(s.getPeerHost(), s.getPeerPort()));
+            }
         }
     }
 

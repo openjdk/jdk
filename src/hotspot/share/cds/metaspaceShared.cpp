@@ -1299,7 +1299,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       assert(base_address == nullptr ||
              (address)archive_space_rs.base() == base_address, "Sanity");
       // Register archive space with NMT.
-      MemTracker::record_virtual_memory_type(archive_space_rs.base(), mtClassShared);
+      MemTracker::record_virtual_memory_tag(archive_space_rs.base(), mtClassShared);
       return archive_space_rs.base();
     }
     return nullptr;
@@ -1361,8 +1361,8 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
       return nullptr;
     }
     // NMT: fix up the space tags
-    MemTracker::record_virtual_memory_type(archive_space_rs.base(), mtClassShared);
-    MemTracker::record_virtual_memory_type(class_space_rs.base(), mtClass);
+    MemTracker::record_virtual_memory_tag(archive_space_rs.base(), mtClassShared);
+    MemTracker::record_virtual_memory_tag(class_space_rs.base(), mtClass);
   } else {
     if (use_archive_base_addr && base_address != nullptr) {
       total_space_rs = ReservedSpace(total_range_size, base_address_alignment,

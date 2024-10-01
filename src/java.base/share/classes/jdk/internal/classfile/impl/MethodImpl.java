@@ -41,7 +41,6 @@ public final class MethodImpl
     private final int startPos, endPos, attributesPos;
     private List<Attribute<?>> attributes;
     private int[] parameterSlots;
-    private MethodTypeDesc mDesc;
 
     public MethodImpl(ClassReader reader, int startPos, int endPos, int attrStart) {
         this.reader = reader;
@@ -75,10 +74,7 @@ public final class MethodImpl
 
     @Override
     public MethodTypeDesc methodTypeSymbol() {
-        if (mDesc == null) {
-            mDesc = MethodTypeDesc.ofDescriptor(methodType().stringValue());
-        }
-        return mDesc;
+        return Util.methodTypeSymbol(methodType());
     }
 
     @Override
@@ -136,13 +132,7 @@ public final class MethodImpl
             builder.withMethod(this);
         }
         else {
-            builder.withMethod(methodName(), methodType(), methodFlags(),
-                               new Consumer<>() {
-                @Override
-                public void accept(MethodBuilder mb) {
-                    MethodImpl.this.forEach(mb);
-                }
-            });
+            builder.withMethod(methodName(), methodType(), methodFlags(), Util.writingAll(this));
         }
     }
 

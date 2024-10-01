@@ -135,7 +135,7 @@ class methodHandle;
   do_name(log_name,"log")       do_name(log10_name,"log10")     do_name(pow_name,"pow")                                 \
   do_name(exp_name,"exp")       do_name(min_name,"min")         do_name(max_name,"max")                                 \
   do_name(floor_name, "floor")  do_name(ceil_name, "ceil")      do_name(rint_name, "rint")                              \
-  do_name(round_name, "round")                                                                                          \
+  do_name(round_name, "round")  do_name(tanh_name,"tanh")                                                               \
                                                                                                                         \
   do_name(addExact_name,"addExact")                                                                                     \
   do_name(decrementExact_name,"decrementExact")                                                                         \
@@ -161,6 +161,7 @@ class methodHandle;
   do_intrinsic(_dcos,                     java_lang_Math,         cos_name,   double_double_signature,           F_S)   \
   do_intrinsic(_dtan,                     java_lang_Math,         tan_name,   double_double_signature,           F_S)   \
   do_intrinsic(_datan2,                   java_lang_Math,         atan2_name, double2_double_signature,          F_S)   \
+  do_intrinsic(_dtanh,                    java_lang_Math,         tanh_name,   double_double_signature,          F_S)   \
   do_intrinsic(_dsqrt,                    java_lang_Math,         sqrt_name,  double_double_signature,           F_S)   \
   do_intrinsic(_dlog,                     java_lang_Math,         log_name,   double_double_signature,           F_S)   \
   do_intrinsic(_dlog10,                   java_lang_Math,         log10_name, double_double_signature,           F_S)   \
@@ -600,6 +601,8 @@ class methodHandle;
   do_alias(continuationOnPinned_signature,      int_void_signature)                                                     \
   do_intrinsic(_Continuation_doYield,      jdk_internal_vm_Continuation, doYield_name,      continuationDoYield_signature, F_SN) \
    do_alias(    continuationDoYield_signature,     void_int_signature)                                                  \
+  do_intrinsic(_Continuation_pin,          jdk_internal_vm_Continuation, pin_name, void_method_signature, F_SN)         \
+  do_intrinsic(_Continuation_unpin,        jdk_internal_vm_Continuation, unpin_name, void_method_signature, F_SN)       \
                                                                                                                         \
   /* java/lang/VirtualThread */                                                                                         \
   do_intrinsic(_notifyJvmtiVThreadStart, java_lang_VirtualThread, notifyJvmtiStart_name, void_method_signature, F_RN)   \
