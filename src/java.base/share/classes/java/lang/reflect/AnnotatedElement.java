@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,8 +47,8 @@ import sun.reflect.annotation.AnnotationType;
  *
  * As defined by <cite>The Java Language Specification</cite>
  * section {@jls 9.7.4}, an annotation on an element is a
- * <em>declaration annotation</em> and an annotation on a type is a
- * <em>type annotation</em>.
+ * <dfn>{@index "declaration annotation"}</dfn> and an annotation on a type is a
+ * <dfn>{@index "type annotation"}</dfn>.
  *
  * Note that any annotations returned by methods on the {@link
  * AnnotatedType AnnotatedType} interface and its subinterfaces are
@@ -78,21 +78,21 @@ import sun.reflect.annotation.AnnotationType;
  *
  * <ul>
  *
- * <li> An annotation <i>A</i> is <em>directly present</em> on an
+ * <li> An annotation <i>A</i> is <dfn>{@index "directly present"}</dfn> on an
  * element <i>E</i> if <i>E</i> has a {@code
  * RuntimeVisibleAnnotations} or {@code
  * RuntimeVisibleParameterAnnotations} or {@code
  * RuntimeVisibleTypeAnnotations} attribute, and the attribute
  * contains <i>A</i>.
  *
- * <li>An annotation <i>A</i> is <em>indirectly present</em> on an
+ * <li>An annotation <i>A</i> is <dfn>{@index "indirectly present"}</dfn> on an
  * element <i>E</i> if <i>E</i> has a {@code RuntimeVisibleAnnotations} or
  * {@code RuntimeVisibleParameterAnnotations} or {@code RuntimeVisibleTypeAnnotations}
  * attribute, and <i>A</i> 's type is repeatable, and the attribute contains
  * exactly one annotation whose value element contains <i>A</i> and whose
  * type is the containing annotation type of <i>A</i> 's type.
  *
- * <li>An annotation <i>A</i> is <em>present</em> on an element <i>E</i> if either:
+ * <li>An annotation <i>A</i> is <dfn>{@index "present"}</dfn> on an element <i>E</i> if either:
  *
  * <ul>
  *
@@ -104,7 +104,7 @@ import sun.reflect.annotation.AnnotationType;
  *
  * </ul>
  *
- * <li>An annotation <i>A</i> is <em>associated</em> with an element <i>E</i>
+ * <li>An annotation <i>A</i> is <dfn>{@index "associated"}</dfn> with an element <i>E</i>
  * if either:
  *
  * <ul>
