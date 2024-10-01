@@ -717,6 +717,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_mask_operation();
   case vmIntrinsics::_VectorShuffleToVector:
     return inline_vector_shuffle_to_vector();
+  case vmIntrinsics::_VectorWrapShuffleIndexes:
+    return inline_vector_wrap_shuffle_indexes();
   case vmIntrinsics::_VectorLoadOp:
     return inline_vector_mem_operation(/*is_store=*/false);
   case vmIntrinsics::_VectorLoadMaskedOp:
@@ -737,6 +739,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_blend();
   case vmIntrinsics::_VectorRearrange:
     return inline_vector_rearrange();
+  case vmIntrinsics::_VectorSelectFrom:
+    return inline_vector_select_from();
   case vmIntrinsics::_VectorCompare:
     return inline_vector_compare();
   case vmIntrinsics::_VectorBroadcastInt:
