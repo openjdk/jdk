@@ -45,8 +45,9 @@ import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
 
 /**
- * The {@code Long} class wraps a value of the primitive type {@code
- * long} in an object. An object of type {@code Long} contains a
+ * The {@code Long} class is the {@linkplain
+ * java.lang##wrapperClass wrapper class} for values of the primitive
+ * type {@code long}. An object of type {@code Long} contains a
  * single field whose type is {@code long}.
  *
  * <p> In addition, this class provides several methods for converting

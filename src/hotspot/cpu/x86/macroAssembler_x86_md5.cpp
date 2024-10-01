@@ -81,8 +81,8 @@ void MacroAssembler::fast_md5(Register buf, Address state, Address ofs, Address 
   notl(rsi);                                     \
   andl(rdi, r2);                                 \
   andl(rsi, r3);                                 \
-  orl(rsi, rdi);                                 \
   addl(r1, rsi);                                 \
+  addl(r1, rdi);                                 \
   roll(r1, s);                                   \
   addl(r1, r2);
 
