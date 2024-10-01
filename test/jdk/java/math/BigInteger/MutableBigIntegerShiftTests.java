@@ -22,7 +22,6 @@
  */
 
 import jdk.test.lib.RandomFactory;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -59,15 +58,20 @@ public class MutableBigIntegerShiftTests {
     @MethodSource("orders")
     public void shift(int order) {
         for (int i = 0; i < 100; i++) {
-            MutableBigIntegerBox x = fetchNumber(order);
-            int n = random.nextInt(200);
-            leftShiftAssertions(x, n);
+            test(new Object[] { fetchNumber(order), random.nextInt(200) });
         }
     }
 
-    @Test
-    public void pathTargetedTests() {
-        Object[][] cases = {
+    @ParameterizedTest
+    @MethodSource("pathTargetedCases")
+    public void test(Object[] testCase) {
+        MutableBigIntegerBox x = (MutableBigIntegerBox) testCase[0];
+        int n = (int) testCase[1];
+        leftShiftAssertions(x, n);
+    }
+
+    private static Object[][] pathTargetedCases() {
+        return new Object[][] {
                 // intLen == 0
                 { MutableBigIntegerBox.ZERO,
                         random.nextInt(33) },
@@ -106,12 +110,6 @@ public class MutableBigIntegerShiftTests {
                 { new MutableBigIntegerBox(new int[] { (int) random.nextLong(1L << 15, 1L << 32), random.nextInt() }, 0, 1),
                         random.nextInt(17, 32) },
         };
-
-        for (int i = 0; i < cases.length; i++) {
-            MutableBigIntegerBox x = (MutableBigIntegerBox) cases[i][0];
-            int n = (int) cases[i][1];
-            leftShiftAssertions(x, n);
-        }
     }
 
     private static void leftShiftAssertions(MutableBigIntegerBox x, int n) {
