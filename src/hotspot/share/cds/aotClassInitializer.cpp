@@ -127,21 +127,18 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
 
   if (CDSConfig::is_dumping_invokedynamic()) {
     static AllowedSpec specs[] = {
-      {"java/lang/Boolean$AOTHolder"},
+      {"java/lang/Boolean"},
       {"java/lang/Character$CharacterCache"},
       {"java/lang/invoke/BoundMethodHandle"},
-      {"java/lang/invoke/BoundMethodHandle$AOTHolder"},
       {"java/lang/invoke/BoundMethodHandle$Specializer"},
       {"java/lang/invoke/BoundMethodHandle$Species_", IS_PREFIX},
       {"java/lang/invoke/ClassSpecializer"},
       {"java/lang/invoke/ClassSpecializer$", IS_PREFIX},
       {"java/lang/invoke/DelegatingMethodHandle"},
-      {"java/lang/invoke/DelegatingMethodHandle$Holder"},
       {"java/lang/invoke/DirectMethodHandle"},
-      {"java/lang/invoke/DirectMethodHandle$AOTHolder"},
       {"java/lang/invoke/DirectMethodHandle$Holder"},
       {"java/lang/invoke/LambdaForm"},
-      {"java/lang/invoke/LambdaForm$NamedFunction$AOTHolder"},
+      {"java/lang/invoke/LambdaForm$NamedFunction"},
       {"java/lang/invoke/MethodHandle"},
       {"java/lang/invoke/MethodType$AOTHolder"},
       {"java/lang/invoke/SimpleMethodHandle"},

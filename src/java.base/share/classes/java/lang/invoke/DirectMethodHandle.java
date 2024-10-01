@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -874,36 +874,33 @@ sealed class DirectMethodHandle extends MethodHandle {
         return nf;
     }
 
-    // AOT cache support - there are references to these fields by other cached Java objects. We need
-    // to preserve their identity across AOT cache assembly phase and production runs.
-    static class AOTHolder {
-        private static final MethodType OBJ_OBJ_TYPE = MethodType.methodType(Object.class, Object.class);
-        private static final MethodType LONG_OBJ_TYPE = MethodType.methodType(long.class, Object.class);
-    }
+    private static final MethodType OBJ_OBJ_TYPE = MethodType.methodType(Object.class, Object.class);
+
+    private static final MethodType LONG_OBJ_TYPE = MethodType.methodType(long.class, Object.class);
 
     private static NamedFunction createFunction(byte func) {
         try {
             switch (func) {
                 case NF_internalMemberName:
-                    return getNamedFunction("internalMemberName", AOTHolder.OBJ_OBJ_TYPE);
+                    return getNamedFunction("internalMemberName", OBJ_OBJ_TYPE);
                 case NF_internalMemberNameEnsureInit:
-                    return getNamedFunction("internalMemberNameEnsureInit", AOTHolder.OBJ_OBJ_TYPE);
+                    return getNamedFunction("internalMemberNameEnsureInit", OBJ_OBJ_TYPE);
                 case NF_ensureInitialized:
                     return getNamedFunction("ensureInitialized", MethodType.methodType(void.class, Object.class));
                 case NF_fieldOffset:
-                    return getNamedFunction("fieldOffset", AOTHolder.LONG_OBJ_TYPE);
+                    return getNamedFunction("fieldOffset", LONG_OBJ_TYPE);
                 case NF_checkBase:
-                    return getNamedFunction("checkBase", AOTHolder.OBJ_OBJ_TYPE);
+                    return getNamedFunction("checkBase", OBJ_OBJ_TYPE);
                 case NF_staticBase:
-                    return getNamedFunction("staticBase", AOTHolder.OBJ_OBJ_TYPE);
+                    return getNamedFunction("staticBase", OBJ_OBJ_TYPE);
                 case NF_staticOffset:
-                    return getNamedFunction("staticOffset", AOTHolder.LONG_OBJ_TYPE);
+                    return getNamedFunction("staticOffset", LONG_OBJ_TYPE);
                 case NF_checkCast:
                     return getNamedFunction("checkCast", MethodType.methodType(Object.class, Object.class, Object.class));
                 case NF_allocateInstance:
-                    return getNamedFunction("allocateInstance", AOTHolder.OBJ_OBJ_TYPE);
+                    return getNamedFunction("allocateInstance", OBJ_OBJ_TYPE);
                 case NF_constructorMethod:
-                    return getNamedFunction("constructorMethod", AOTHolder.OBJ_OBJ_TYPE);
+                    return getNamedFunction("constructorMethod", OBJ_OBJ_TYPE);
                 case NF_UNSAFE:
                     MemberName member = new MemberName(MethodHandleStatics.class, "UNSAFE", Unsafe.class, REF_getStatic);
                     return new NamedFunction(
@@ -911,7 +908,7 @@ sealed class DirectMethodHandle extends MethodHandle {
                                                                   DirectMethodHandle.class, LM_TRUSTED,
                                                                   NoSuchFieldException.class));
                 case NF_checkReceiver:
-                    member = new MemberName(DirectMethodHandle.class, "checkReceiver", AOTHolder.OBJ_OBJ_TYPE, REF_invokeVirtual);
+                    member = new MemberName(DirectMethodHandle.class, "checkReceiver", OBJ_OBJ_TYPE, REF_invokeVirtual);
                     return new NamedFunction(
                             MemberName.getFactory().resolveOrFail(REF_invokeVirtual, member,
                                                                   DirectMethodHandle.class, LM_TRUSTED,

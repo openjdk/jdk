@@ -1152,12 +1152,8 @@ class LambdaForm {
             return super.hashCode();
         }
 
-        // AOT cache support - there are references to this field by other cached Java objects. We need
-        // to preserve its identity across AOT cache assembly phase and production runs.
-        static class AOTHolder {
-            static final MethodType INVOKER_METHOD_TYPE =
-                MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
-        }
+        static final MethodType INVOKER_METHOD_TYPE =
+            MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
 
         private static MethodHandle computeInvoker(MethodTypeForm typeForm) {
             typeForm = typeForm.basicType().form();  // normalize to basic type
@@ -1167,7 +1163,7 @@ class LambdaForm {
             mh = DirectMethodHandle.make(invoker);
             MethodHandle mh2 = typeForm.cachedMethodHandle(MethodTypeForm.MH_NF_INV);
             if (mh2 != null)  return mh2;  // benign race
-            if (!mh.type().equals(AOTHolder.INVOKER_METHOD_TYPE))
+            if (!mh.type().equals(INVOKER_METHOD_TYPE))
                 throw newInternalError(mh.debugString());
             return typeForm.setCachedMethodHandle(MethodTypeForm.MH_NF_INV, mh);
         }

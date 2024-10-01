@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -363,17 +363,11 @@ abstract non-sealed class BoundMethodHandle extends MethodHandle {
         }
     }
 
-    static class AOTHolder {
-        static final Specializer SPECIALIZER = new Specializer();
-        static final SpeciesData SimpleMethodHandle_BMH_SPECIES = SPECIALIZER.findSpecies("");
-        static final SpeciesData Species_L_BMH_SPECIES = SPECIALIZER.findSpecies("L");
-    }
-
     /*non-public*/
-    static final Specializer SPECIALIZER = AOTHolder.SPECIALIZER;
+    static final Specializer SPECIALIZER = new Specializer();
     static {
-        SimpleMethodHandle.BMH_SPECIES = AOTHolder.SimpleMethodHandle_BMH_SPECIES;
-        Species_L.BMH_SPECIES = AOTHolder.Species_L_BMH_SPECIES;
+        SimpleMethodHandle.BMH_SPECIES = BoundMethodHandle.SPECIALIZER.findSpecies("");
+        Species_L.BMH_SPECIES = BoundMethodHandle.SPECIALIZER.findSpecies("L");
     }
 
     /*non-public*/

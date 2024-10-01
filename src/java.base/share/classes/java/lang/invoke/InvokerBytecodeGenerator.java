@@ -1564,7 +1564,7 @@ class InvokerBytecodeGenerator {
      * Generate bytecode for a NamedFunction invoker.
      */
     static MemberName generateNamedFunctionInvoker(MethodTypeForm typeForm) {
-        MethodType invokerType = NamedFunction.AOTHolder.INVOKER_METHOD_TYPE;
+        MethodType invokerType = NamedFunction.INVOKER_METHOD_TYPE;
         String invokerName = "invoke_" + shortenSignature(basicTypeSignature(typeForm.erasedType()));
         InvokerBytecodeGenerator g = new InvokerBytecodeGenerator("NFI", invokerName, invokerType);
         return g.loadMethod(g.generateNamedFunctionInvokerImpl(typeForm));
@@ -1645,7 +1645,7 @@ class InvokerBytecodeGenerator {
             clb.withMethodBody("dummy", MTD_void, ACC_STATIC, new Consumer<>() {
                 @Override
                 public void accept(CodeBuilder cob) {
-                    cob.ldc(os.toString());
+                    cob.loadConstant(os.toString());
                     cob.pop();
                     cob.return_();
                 }

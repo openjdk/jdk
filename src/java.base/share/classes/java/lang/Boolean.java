@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,24 +61,17 @@ import static java.lang.constant.ConstantDescs.CD_Boolean;
 public final class Boolean implements java.io.Serializable,
                                       Comparable<Boolean>, Constable
 {
-    // AOT cache support - there are references to these fields by other cached Java objects. We need
-    // to preserve their identity across AOT cache assembly phase and production runs.
-    static class AOTHolder {
-        private static final Boolean TRUE  = new Boolean(true);
-        private static final Boolean FALSE = new Boolean(false);
-    }
-
     /**
      * The {@code Boolean} object corresponding to the primitive
      * value {@code true}.
      */
-    public static final Boolean TRUE = AOTHolder.TRUE;
+    public static final Boolean TRUE = new Boolean(true);
 
     /**
      * The {@code Boolean} object corresponding to the primitive
      * value {@code false}.
      */
-    public static final Boolean FALSE = AOTHolder.FALSE;
+    public static final Boolean FALSE = new Boolean(false);
 
     /**
      * The Class object representing the primitive type boolean.
