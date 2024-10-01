@@ -133,7 +133,6 @@ public class LoopOverNonConstantAsType extends JavaLayouts {
         long sum = 0;
         for (int i = 0; i < ELEM_SIZE; i++) {
             sum += segment.get(JAVA_LONG, i * CARRIER_SIZE);
-
         }
         return sum;
     }
