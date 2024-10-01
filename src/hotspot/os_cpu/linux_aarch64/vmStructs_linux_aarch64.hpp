@@ -35,7 +35,7 @@
   /******************************/                                                                                                   \
   /* Threads (NOTE: incomplete) */                                                                                                   \
   /******************************/                                                                                                   \
-  nonstatic_field(OSThread,                      _thread_id,                                      OSThread::thread_id_t)             \
+  nonstatic_field(OSThread,                      _thread_id,                                      pid_t)                             \
   nonstatic_field(OSThread,                      _pthread_id,                                     pthread_t)
 
 
@@ -45,7 +45,7 @@
   /* Posix Thread IDs   */                                                \
   /**********************/                                                \
                                                                           \
-  declare_integer_type(OSThread::thread_id_t)                             \
+  declare_integer_type(pid_t)                                             \
   declare_unsigned_integer_type(pthread_t)
 
 #define VM_INT_CONSTANTS_OS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant)
