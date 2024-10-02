@@ -257,7 +257,7 @@ final class StatusResponseManager {
                     }
 
                     if (!task.isCancelled()) {
-                        StatusInfo info = null;
+                        StatusInfo info;
                         try {
                             info = task.get();
                         } catch (ExecutionException exc) {
@@ -269,6 +269,7 @@ final class StatusResponseManager {
                                 SSLLogger.fine("Exception during OCSP fetch: " +
                                         cause);
                             }
+                            continue;
                         }
                         if (info != null && info.responseData != null) {
                             responseMap.put(info.cert,
