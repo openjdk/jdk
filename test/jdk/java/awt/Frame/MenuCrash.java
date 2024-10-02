@@ -62,7 +62,7 @@ public class MenuCrash {
                 .instructions(INSTRUCTIONS)
                 .columns(45)
                 .testUI(MenuCrash::createAndShowUI)
-                .positionTestUI(MenuCrash::positionTestWindows)
+                .positionTestUIRightRow()
                 .build()
                 .awaitAndCheck();
     }
@@ -79,16 +79,6 @@ public class MenuCrash {
         frame2.validate();
 
         return List.of(frame1, frame2);
-    }
-
-    private static void positionTestWindows(List<? extends Window> testWindows,
-                                            PassFailJFrame.InstructionUI instructionUI) {
-        int gap = 5;
-        int x = instructionUI.getLocation().x + instructionUI.getSize().width + gap;
-        for (Window w : testWindows) {
-            w.setLocation(x, instructionUI.getLocation().y);
-            x += w.getWidth() + gap;
-        }
     }
 
     static class MenuFrame extends Frame {
