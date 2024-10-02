@@ -34,6 +34,8 @@
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.IntPredicate;
+import java.util.function.LongPredicate;
 import java.util.stream.Stream;
 import java.util.stream.IntStream;
 import javax.management.MBeanServer;
@@ -91,8 +93,8 @@ class VirtualThreadSchedulerMXBeanTest {
             try {
                 // saturate
                 IntStream.range(0, parallelism).forEach(_ -> executor.submit(busyTask));
-                awaitPoolSizeGte(bean, parallelism);
-                awaitMountedVirtualThreadCountGte(bean, parallelism);
+                awaitPoolSize(bean, ps -> ps >= parallelism, ">= " + parallelism);
+                awaitMountedVirtualThreadCount(bean, c -> c >= parallelism, ">= " + parallelism);
 
                 // increase parallelism
                 for (int k = 1; k <= 4; k++) {
@@ -101,8 +103,8 @@ class VirtualThreadSchedulerMXBeanTest {
                     executor.submit(busyTask);
 
                     // pool size and mounted virtual thread should increase
-                    awaitPoolSizeGte(bean, newParallelism);
-                    awaitMountedVirtualThreadCountGte(bean, newParallelism);
+                    awaitPoolSize(bean, ps -> ps >= newParallelism, ">= " + newParallelism);
+                    awaitMountedVirtualThreadCount(bean, c -> c >= newParallelism, ">= " + newParallelism);
                 }
             } finally {
                 done.set(true);
@@ -140,23 +142,27 @@ class VirtualThreadSchedulerMXBeanTest {
 
             try {
                 // increase parallelism + saturate
-                int newParallelism = parallelism + 4;
-                bean.setParallelism(newParallelism);
-                IntStream.range(0, newParallelism).forEach(_ -> executor.submit(busyTask));
-                awaitMountedVirtualThreadCountGte(bean, newParallelism);
+                int highParallelism = parallelism + 4;
+                bean.setParallelism(highParallelism);
+                IntStream.range(0, highParallelism).forEach(_ -> executor.submit(busyTask));
+                awaitMountedVirtualThreadCount(bean, c -> c >= highParallelism, ">= " + highParallelism);
 
                 // reduce parallelism and workload
-                newParallelism = Math.clamp(parallelism / 2, 1, parallelism);
-                bean.setParallelism(newParallelism);
+                int lowParallelism = Math.clamp(parallelism / 2, 1, parallelism);
+                bean.setParallelism(lowParallelism);
                 sleep.set(true);
-                // mounted virtual thread count should reduce
-                awaitMountedVirtualThreadCountLte(bean, newParallelism);
+                for (int i = 0; i < 5; i++) {
+                    Thread.sleep(100);
+                    awaitMountedVirtualThreadCount(bean, c -> c <= lowParallelism, "<= " + lowParallelism);
+                }
 
-                // increase workload, the mounted virtual thread count should not increase
+                // increase workload. The mounted virtual thread count should not exceed
+                // lowParallelism. Use awaitMountedVirtualThreadCount as the count may
+                // need to be sampled several times due to over estimation.
                 sleep.set(false);
                 for (int i = 0; i < 5; i++) {
                     Thread.sleep(100);
-                    assertTrue(bean.getMountedVirtualThreadCount() <= newParallelism);
+                    awaitMountedVirtualThreadCount(bean, c -> c == lowParallelism, "== " + lowParallelism);
                 }
 
             } finally {
@@ -213,7 +219,7 @@ class VirtualThreadSchedulerMXBeanTest {
                 // saturate
                 int parallelism = bean.getParallelism();
                 IntStream.range(0, parallelism).forEach(_ -> executor.submit(busyTask));
-                awaitMountedVirtualThreadCountGte(bean, parallelism);
+                awaitMountedVirtualThreadCount(bean, c -> c >= parallelism, ">= " + parallelism);
 
                 // start 5 virtual threads, their tasks will be queued to execute
                 for (int i = 0; i < 5; i++) {
@@ -227,34 +233,36 @@ class VirtualThreadSchedulerMXBeanTest {
     }
 
     /**
-     * Waits for pool size >= target to be true.
+     * Waits until evaluating the given predicte with the pool size is true.
      */
-    void awaitPoolSizeGte(VirtualThreadSchedulerMXBean bean, int target) throws InterruptedException {
-        System.err.format("await pool size >= %d ...%n", target);
-        while (bean.getPoolSize() < target) {
-            Thread.sleep(10);
+    void awaitPoolSize(VirtualThreadSchedulerMXBean bean,
+                       IntPredicate predicate,
+                       String reason) throws InterruptedException {
+        int poolSize = bean.getPoolSize();
+        if (!predicate.test(poolSize)) {
+            System.err.format("poolSize = %d, await %s ...%n", poolSize, reason);
+            while (!predicate.test(poolSize)) {
+                Thread.sleep(10);
+                poolSize = bean.getPoolSize();
+            }
+            System.err.format("poolSize = %d%n", poolSize);
         }
     }
 
     /**
-     * Waits for the mounted virtual thread count >= target to be true.
+     * Waits until evaluating the given predicte with the mounted thread count is true.
      */
-    void awaitMountedVirtualThreadCountGte(VirtualThreadSchedulerMXBean bean,
-                                           int target) throws InterruptedException {
-        System.err.format("await mounted virtual thread count >= %d ...%n", target);
-        while (bean.getMountedVirtualThreadCount() < target) {
-            Thread.sleep(10);
-        }
-    }
-
-    /**
-     * Waits for the mounted virtual thread count <= target to be true.
-     */
-    void awaitMountedVirtualThreadCountLte(VirtualThreadSchedulerMXBean bean,
-                                           int target) throws InterruptedException {
-        System.err.format("await mounted virtual thread count <= %d ...%n", target);
-        while (bean.getMountedVirtualThreadCount() > target) {
-            Thread.sleep(10);
+    void awaitMountedVirtualThreadCount(VirtualThreadSchedulerMXBean bean,
+                                        LongPredicate predicate,
+                                        String reason) throws InterruptedException {
+        long count = bean.getMountedVirtualThreadCount();
+        if (!predicate.test(count)) {
+            System.err.format("mountedVirtualThreadCount = %d, await %s ...%n", count, reason);
+            while (!predicate.test(count)) {
+                Thread.sleep(10);
+                count = bean.getMountedVirtualThreadCount();
+            }
+            System.err.format("mountedVirtualThreadCount = %d%n", count);
         }
     }
 }
