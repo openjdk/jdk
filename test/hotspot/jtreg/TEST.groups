@@ -454,6 +454,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/DumpClassList.java \
  -runtime/cds/appcds/DumpClassListWithLF.java \
+ -runtime/cds/appcds/DumpRuntimeClassesTest.java \
  -runtime/cds/appcds/DumpingWithNoCoops.java \
  -runtime/cds/appcds/ExtraSymbols.java \
  -runtime/cds/appcds/LambdaContainsOldInf.java \
