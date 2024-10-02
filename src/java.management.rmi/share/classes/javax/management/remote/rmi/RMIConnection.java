@@ -387,7 +387,6 @@ public interface RMIConnection extends Closeable, Remote {
      * @throws RuntimeOperationsException Wraps a
      * <code>java.lang.IllegalArgumentException</code>: The object
      * name in parameter is null.
-     * if any, does not have permission to perform this operation.
      * @throws IOException if a general communication exception occurred.
      * @throws UnsupportedOperationException if {@code delegationSubject} is non-null.
      */
