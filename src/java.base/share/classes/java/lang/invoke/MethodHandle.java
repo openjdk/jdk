@@ -28,6 +28,7 @@ package java.lang.invoke;
 
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.vm.annotation.DontInline;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.lang.constant.ClassDesc;
@@ -857,6 +858,7 @@ public abstract sealed class MethodHandle implements Constable
      * @throws WrongMethodTypeException if the conversion cannot be made
      * @see MethodHandles#explicitCastArguments
      */
+    @ForceInline
     public final MethodHandle asType(MethodType newType) {
         // Fast path alternative to a heavyweight {@code asType} call.
         // Return 'this' if the conversion will be a no-op.
