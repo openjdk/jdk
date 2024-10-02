@@ -51,28 +51,28 @@ public class TestBadMemSliceWithInterfaces {
     }
 
     private static void test1(B b, C c, boolean flag) {
-        A otherA;
+        A a;
         if (flag) {
-           otherA = b;
+           a = b;
         } else {
-            otherA = c;
+            a = c;
         }
         for (int i = 0; i < 1000; i++) {
-            otherA.field = 42;
+            a.field = 42;
         }
     }
 
     private static int test2(B b, C c, boolean flag) {
-        A otherA;
+        A a;
         if (flag) {
-           otherA = b;
+           a = b;
         } else {
-            otherA = c;
+            a = c;
         }
         int v = 0;
         for (int i = 0; i < 2; i++) {
-            v += otherA.field;
-            otherA.field = 42;
+            v += a.field;
+            a.field = 42;
         }
         return v;
     }
