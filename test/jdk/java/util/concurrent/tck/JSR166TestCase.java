@@ -38,7 +38,7 @@
  * @test id=default
  * @summary Conformance testing variant of JSR-166 tck tests.
  * @build *
- * @modules java.management
+ * @modules java.management java.base/jdk.internal.util
  * @run junit/othervm/timeout=1000 JSR166TestCase
  */
 
@@ -47,7 +47,7 @@
  * @summary Test implementation details variant of JSR-166
  *          tck tests with ForkJoinPool common parallelism.
  * @build *
- * @modules java.management
+ * @modules java.management java.base/jdk.internal.util
  * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
@@ -69,7 +69,7 @@
  *          JSR-166 tck tests apart from ForkJoinPool common
  *          parallelism.
  * @build *
- * @modules java.management
+ * @modules java.management java.base/jdk.internal.util
  * @run junit/othervm/timeout=1000
  *      --add-opens java.base/java.util.concurrent=ALL-UNNAMED
  *      --add-opens java.base/java.lang=ALL-UNNAMED
