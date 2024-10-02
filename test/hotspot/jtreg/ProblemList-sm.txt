@@ -9,6 +9,3 @@ runtime/Dictionary/CleanProtectionDomain.java 0000000 generic-all
 runtime/Dictionary/ProtectionDomainCacheTest.java 0000000 generic-all
 runtime/logging/ProtectionDomainVerificationTest.java 0000000 generic-all
 
-# tier5
-vmTestbase/nsk/jvmti/AttachOnDemand/attach004/TestDescription.java 0000000 generic-all
-
