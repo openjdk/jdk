@@ -343,11 +343,11 @@ private:
   // The reciprocal ratio for number of workers per CPU. We are targeting
   // to take 1/4 CPUs to provide decent parallelism without letting workers
   // stumble over each other.
-  static constexpr int cpus_per_worker = 4;
+  static constexpr int CPUS_PER_WORKER = 4;
 
   // Target number of chunks per worker. This should be large enough to even
   // out work imbalance, and small enough to keep bookkeeping overheads low.
-  static constexpr int chunks_per_worker = 4;
+  static constexpr int CHUNKS_PER_WORKER = 4;
 
   ArchiveWorkerShutdownTask _shutdown_task;
   Semaphore _start_semaphore;

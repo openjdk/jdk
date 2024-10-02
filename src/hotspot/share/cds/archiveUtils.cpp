@@ -393,7 +393,7 @@ size_t HeapRootSegments::segment_offset(size_t seg_idx) {
 ArchiveWorkers::ArchiveWorkers() :
         _start_semaphore(0),
         _end_semaphore(0),
-        _num_workers(MAX2(1, os::active_processor_count() / cpus_per_worker - 1)),
+        _num_workers(MAX2(1, os::active_processor_count() / CPUS_PER_WORKER - 1)),
         _started_workers(0),
         _running_workers(0),
         _in_shutdown(false),
@@ -428,7 +428,7 @@ void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
   start_worker_if_needed();
 
   // Configure the execution.
-  task->maybe_override_max_chunks(_num_workers * chunks_per_worker);
+  task->maybe_override_max_chunks(_num_workers * CHUNKS_PER_WORKER);
   Atomic::store(&_running_workers, _num_workers);
 
   // Publish the task and signal workers to pick it up.
