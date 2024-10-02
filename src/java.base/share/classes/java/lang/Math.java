@@ -2737,6 +2737,7 @@ public final class Math {
      * @return  The hyperbolic tangent of {@code x}.
      * @since 1.5
      */
+    @IntrinsicCandidate
     public static double tanh(double x) {
         return StrictMath.tanh(x);
     }
