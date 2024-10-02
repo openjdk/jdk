@@ -278,6 +278,8 @@ static const char* find_any_unsupported_module_option() {
     "--patch-module"
   };
 
+  assert(false, "GHA TEST FAILURE POINT. REMOVE BEFORE FLIGHT"); // Or wait for Friday and integrate for extra fun.
+
   assert(ARRAY_SIZE(unsupported_module_properties) == ARRAY_SIZE(unsupported_module_options), "must be");
   SystemProperty* sp = Arguments::system_properties();
   while (sp != nullptr) {
