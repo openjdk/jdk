@@ -262,7 +262,7 @@ public sealed interface CodeBuilder
      */
     default CodeBuilder ifThen(Opcode opcode,
                                Consumer<BlockCodeBuilder> thenHandler) {
-        if (opcode.kind() != Opcode.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VOID) {
+        if (opcode.kind() != Opcode.Kind.BRANCH || BytecodeHelpers.isUnconditionalBranch(opcode)) {
             throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
         }
 
@@ -312,7 +312,7 @@ public sealed interface CodeBuilder
     default CodeBuilder ifThenElse(Opcode opcode,
                                    Consumer<BlockCodeBuilder> thenHandler,
                                    Consumer<BlockCodeBuilder> elseHandler) {
-        if (opcode.kind() != Opcode.Kind.BRANCH || opcode.primaryTypeKind() == TypeKind.VOID) {
+        if (opcode.kind() != Opcode.Kind.BRANCH || BytecodeHelpers.isUnconditionalBranch(opcode)) {
             throw new IllegalArgumentException("Illegal branch opcode: " + opcode);
         }
 
@@ -429,6 +429,8 @@ public sealed interface CodeBuilder
      * @param tk the load type
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code tk} is {@link TypeKind#VOID void}
+     *         or {@code slot} is out of range
      * @since 23
      */
     default CodeBuilder loadLocal(TypeKind tk, int slot) {
@@ -440,6 +442,8 @@ public sealed interface CodeBuilder
      * @param tk the store type
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code tk} is {@link TypeKind#VOID void}
+     *         or {@code slot} is out of range
      * @since 23
      */
     default CodeBuilder storeLocal(TypeKind tk, int slot) {
@@ -606,23 +610,6 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction pushing a constant onto the operand stack
-     * @see Opcode.Kind#CONSTANT
-     * @param opcode the constant instruction opcode
-     * @param value the constant value
-     * @return this builder
-     * @since 23
-     */
-    default CodeBuilder loadConstant(Opcode opcode, ConstantDesc value) {
-        BytecodeHelpers.validateValue(opcode, value);
-        return with(switch (opcode) {
-            case SIPUSH, BIPUSH -> ConstantInstruction.ofArgument(opcode, ((Number)value).intValue());
-            case LDC, LDC_W, LDC2_W -> ConstantInstruction.ofLoad(opcode, BytecodeHelpers.constantEntry(constantPool(), value));
-            default -> ConstantInstruction.ofIntrinsic(opcode);
-        });
-    }
-
-    /**
-     * Generate an instruction pushing a constant onto the operand stack
      * @param value the constant value
      * @return this builder
      * @since 23
@@ -632,34 +619,75 @@ public sealed interface CodeBuilder
         if (value == null || value == ConstantDescs.NULL)
             return aconst_null();
         if (value instanceof Number) {
-            if (value instanceof Integer iVal)
-                return switch (iVal) {
-                    case -1 -> iconst_m1();
-                    case 0 -> iconst_0();
-                    case 1 -> iconst_1();
-                    case 2 -> iconst_2();
-                    case 3 -> iconst_3();
-                    case 4 -> iconst_4();
-                    case 5 -> iconst_5();
-                    default -> (iVal >= Byte.MIN_VALUE && iVal <= Byte.MAX_VALUE) ? bipush(iVal)
-                            : (iVal >= Short.MIN_VALUE && iVal <= Short.MAX_VALUE) ? sipush(iVal)
-                            : ldc(constantPool().intEntry(iVal));
-                };
-            if (value instanceof Long lVal)
-                return lVal == 0L ? lconst_0()
-                        : lVal == 1L ? lconst_1()
-                        : ldc(constantPool().longEntry(lVal));
-            if (value instanceof Float fVal)
-                return Float.floatToRawIntBits(fVal) == 0 ? fconst_0()
-                        : fVal == 1.0f ? fconst_1()
-                        : fVal == 2.0f ? fconst_2()
-                        : ldc(constantPool().floatEntry(fVal));
-            if (value instanceof Double dVal)
-                return Double.doubleToRawLongBits(dVal) == 0L ? dconst_0()
-                        : dVal == 1.0d ? dconst_1()
-                        : ldc(constantPool().doubleEntry(dVal));
+            if (value instanceof Integer) return loadConstant((int)    value);
+            if (value instanceof Long   ) return loadConstant((long)   value);
+            if (value instanceof Float  ) return loadConstant((float)  value);
+            if (value instanceof Double ) return loadConstant((double) value);
         }
         return ldc(value);
+    }
+
+
+    /**
+     * Generate an instruction pushing a constant int value onto the operand stack.
+     * This is identical to {@link #loadConstant(ConstantDesc) loadConstant(Integer.valueOf(value))}.
+     * @param value the int value
+     * @return this builder
+     * @since 24
+     */
+    default CodeBuilder loadConstant(int value) {
+        return switch (value) {
+            case -1 -> iconst_m1();
+            case  0 -> iconst_0();
+            case  1 -> iconst_1();
+            case  2 -> iconst_2();
+            case  3 -> iconst_3();
+            case  4 -> iconst_4();
+            case  5 -> iconst_5();
+            default -> (value >= Byte.MIN_VALUE  && value <= Byte.MAX_VALUE ) ? bipush(value)
+                     : (value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) ? sipush(value)
+                     : ldc(constantPool().intEntry(value));
+        };
+    }
+
+    /**
+     * Generate an instruction pushing a constant long value onto the operand stack.
+     * This is identical to {@link #loadConstant(ConstantDesc) loadConstant(Long.valueOf(value))}.
+     * @param value the long value
+     * @return this builder
+     * @since 24
+     */
+    default CodeBuilder loadConstant(long value) {
+        return value == 0l ? lconst_0()
+             : value == 1l ? lconst_1()
+             : ldc(constantPool().longEntry(value));
+    }
+
+    /**
+     * Generate an instruction pushing a constant float value onto the operand stack.
+     * This is identical to {@link #loadConstant(ConstantDesc) loadConstant(Float.valueOf(value))}.
+     * @param value the float value
+     * @return this builder
+     * @since 24
+     */
+    default CodeBuilder loadConstant(float value) {
+        return Float.floatToRawIntBits(value) == 0 ? fconst_0()
+             : value == 1.0f                       ? fconst_1()
+             : value == 2.0f                       ? fconst_2()
+             : ldc(constantPool().floatEntry(value));
+    }
+
+    /**
+     * Generate an instruction pushing a constant double value onto the operand stack.
+     * This is identical to {@link #loadConstant(ConstantDesc) loadConstant(Double.valueOf(value))}.
+     * @param value the double value
+     * @return this builder
+     * @since 24
+     */
+    default CodeBuilder loadConstant(double value) {
+        return Double.doubleToRawLongBits(value) == 0l ? dconst_0()
+             : value == 1.0d                           ? dconst_1()
+             : ldc(constantPool().doubleEntry(value));
     }
 
     /**
@@ -769,6 +797,7 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder localVariable(int slot, Utf8Entry nameEntry, Utf8Entry descriptorEntry, Label startScope, Label endScope) {
         return with(LocalVariable.of(slot, nameEntry, descriptorEntry, startScope, endScope));
@@ -782,11 +811,12 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder localVariable(int slot, String name, ClassDesc descriptor, Label startScope, Label endScope) {
         return localVariable(slot,
                              constantPool().utf8Entry(name),
-                             constantPool().utf8Entry(descriptor.descriptorString()),
+                             constantPool().utf8Entry(descriptor),
                              startScope, endScope);
     }
 
@@ -798,6 +828,7 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder localVariableType(int slot, Utf8Entry nameEntry, Utf8Entry signatureEntry, Label startScope, Label endScope) {
         return with(LocalVariableType.of(slot, nameEntry, signatureEntry, startScope, endScope));
@@ -811,6 +842,7 @@ public sealed interface CodeBuilder
      * @param startScope the start scope of the variable
      * @param endScope the end scope of the variable
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder localVariableType(int slot, String name, Signature signature, Label startScope, Label endScope) {
         return localVariableType(slot,
@@ -853,6 +885,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder aload(int slot) {
         return loadLocal(TypeKind.REFERENCE, slot);
@@ -901,6 +934,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder astore(int slot) {
         return storeLocal(TypeKind.REFERENCE, slot);
@@ -931,12 +965,13 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate an instruction pushing a byte onto the operand stack
-     * @param b the byte
+     * Generate an instruction pushing an int in the range of byte onto the operand stack.
+     * @param b the int in the range of byte
      * @return this builder
+     * @throws IllegalArgumentException if {@code b} is out of range of byte
      */
     default CodeBuilder bipush(int b) {
-        return loadConstant(Opcode.BIPUSH, b);
+        return with(ConstantInstruction.ofArgument(Opcode.BIPUSH, b));
     }
 
     /**
@@ -1070,6 +1105,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder dload(int slot) {
         return loadLocal(TypeKind.DOUBLE, slot);
@@ -1115,6 +1151,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder dstore(int slot) {
         return storeLocal(TypeKind.DOUBLE, slot);
@@ -1282,6 +1319,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder fload(int slot) {
         return loadLocal(TypeKind.FLOAT, slot);
@@ -1327,6 +1365,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder fstore(int slot) {
         return storeLocal(TypeKind.FLOAT, slot);
@@ -1702,6 +1741,7 @@ public sealed interface CodeBuilder
      * @param slot the local variable slot
      * @param val the increment value
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} or {@code val} is out of range
      */
     default CodeBuilder iinc(int slot, int val) {
         return with(IncrementInstruction.of(slot, val));
@@ -1715,6 +1755,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder iload(int slot) {
         return loadLocal(TypeKind.INT, slot);
@@ -1973,6 +2014,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder istore(int slot) {
         return storeLocal(TypeKind.INT, slot);
@@ -2135,6 +2177,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder lload(int slot) {
         return loadLocal(TypeKind.LONG, slot);
@@ -2204,6 +2247,7 @@ public sealed interface CodeBuilder
      *
      * @param slot the local variable slot
      * @return this builder
+     * @throws IllegalArgumentException if {@code slot} is out of range
      */
     default CodeBuilder lstore(int slot) {
         return storeLocal(TypeKind.LONG, slot);
@@ -2254,6 +2298,7 @@ public sealed interface CodeBuilder
      * @param array the array type
      * @param dims the number of dimensions
      * @return this builder
+     * @throws IllegalArgumentException if {@code dims} is out of range
      */
     default CodeBuilder multianewarray(ClassEntry array, int dims) {
         return with(NewMultiArrayInstruction.of(array, dims));
@@ -2265,6 +2310,7 @@ public sealed interface CodeBuilder
      * @param dims the number of dimensions
      * @return this builder
      * @throws IllegalArgumentException if {@code array} represents a primitive type
+     * or if {@code dims} is out of range
      */
     default CodeBuilder multianewarray(ClassDesc array, int dims) {
         return multianewarray(constantPool().classEntry(array), dims);
@@ -2303,6 +2349,8 @@ public sealed interface CodeBuilder
      * Generate an instruction to create a new array of a primitive type
      * @param typeKind the primitive array type
      * @return this builder
+     * @throws IllegalArgumentException when the {@code typeKind} is not a legal
+     *         primitive array component type
      */
     default CodeBuilder newarray(TypeKind typeKind) {
         return with(NewPrimitiveArrayInstruction.of(typeKind));
@@ -2396,12 +2444,13 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate an instruction pushing a short onto the operand stack
-     * @param s the short
+     * Generate an instruction pushing an int in the range of short onto the operand stack.
+     * @param s the int in the range of short
      * @return this builder
+     * @throws IllegalArgumentException if {@code s} is out of range of short
      */
     default CodeBuilder sipush(int s) {
-        return loadConstant(Opcode.SIPUSH, s);
+        return with(ConstantInstruction.ofArgument(Opcode.SIPUSH, s));
     }
 
     /**

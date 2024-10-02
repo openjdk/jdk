@@ -69,8 +69,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJDWP, \
     EXTRA_HEADER_DIRS := \
         include \
         libjdwp/export \
-        java.base:libjava \
-        java.base:libjvm, \
+        java.base:libjava, \
+    JDK_LIBS := java.base:libjvm, \
     LIBS_linux := $(LIBDL), \
     LIBS_macosx := -liconv, \
     LIBS_aix := -liconv, \

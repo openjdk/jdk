@@ -35,7 +35,7 @@
 #include "gc/shared/stringdedup/stringDedupTable.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memTag.hpp"
 #include "oops/access.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/cpuTimeCounters.hpp"
