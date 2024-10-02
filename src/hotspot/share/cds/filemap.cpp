@@ -2016,8 +2016,8 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
       SharedDataRelocationTask task(&rw_ptrmap, &ro_ptrmap, &rw_patcher, &ro_patcher);
       _archive_workers.run_task(&task);
     } else {
-      ro_ptrmap.iterate(&ro_patcher);
       rw_ptrmap.iterate(&rw_patcher);
+      ro_ptrmap.iterate(&ro_patcher);
     }
 
     // The MetaspaceShared::bm region will be unmapped in MetaspaceShared::initialize_shared_spaces().
