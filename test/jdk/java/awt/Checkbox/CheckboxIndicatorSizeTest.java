@@ -41,7 +41,7 @@ import java.awt.event.ActionListener;
  * @summary Test for Checkbox indicator size
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual CheckboxIndicatorSizeTest
+ * @run main/manual/othervm -Dsun.java2d.uiScale=3 CheckboxIndicatorSizeTest
  */
 
 public class CheckboxIndicatorSizeTest implements ActionListener {
@@ -51,17 +51,16 @@ public class CheckboxIndicatorSizeTest implements ActionListener {
 
             In the frame you can see a group of checkboxes
             and radio buttons.
-            Verify that all checkboxes have indicator of the same
-            size and all radio buttons have indicator of the same size.
-            You can use menu to change the font size.
+            Verify that all checkboxes and radio buttons have
+            indicators of the same size and proportional to
+            the uiScale and/or font-size.
 
-            If the bug is present, the checkbox/radiobutton with dingbats label
-            will have a smaller indicator.
+            Use menu to change the font size and the indicators
+            should scale proportionally.
 
-            TEST DIRECTIONS.
-            You can use 'FontSize' menu to change font size.
-            Verify that all indicators of checkboxes have the same size.
-            Verify that all indicators of radio buttons have the same size.
+            If there is a bug, the checkbox/radiobutton with
+            dingbats label will have a smaller indicator.
+
             Press PASS if the above conditions are true else Press FAIL.
             """;
     private static Frame frame;
@@ -84,7 +83,7 @@ public class CheckboxIndicatorSizeTest implements ActionListener {
         frame = new Frame("CheckboxIndicatorSizeTest");
 
         testPanel = new Panel(new GridLayout(0, 1));
-        testPanel.setFont(new Font("Helvetica", Font.PLAIN, 12));
+        testPanel.setFont(new Font("Dialog", Font.PLAIN, 12));
         frame.add(testPanel);
 
         MenuBar menuBar = new MenuBar();
