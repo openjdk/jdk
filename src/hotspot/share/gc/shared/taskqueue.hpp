@@ -291,6 +291,7 @@ public:
   TASKQUEUE_STATS_ONLY(void record_steal_attempt(PopResult kind) { stats.record_steal_attempt((uint)kind); })
 
   TASKQUEUE_STATS_ONLY(TaskQueueStats stats;)
+  TASKQUEUE_STATS_ONLY(virtual void reset_stats() { stats.reset(); })
 };
 
 //
@@ -457,6 +458,29 @@ private:
   overflow_t _overflow_stack;
 };
 
+template<class E, MemTag MT, unsigned int N = TASKQUEUE_SIZE>
+class ChunkedArrayTaskQueue: public OverflowTaskQueue<E, MT, N> {
+#if TASKQUEUE_STATS
+  size_t                        _array_chunk_pushes;
+  size_t                        _array_chunk_steals;
+  size_t                        _arrays_chunked;
+  size_t                        _array_chunks_processed;
+public:
+  void reset_stats() override;
+  void print_array_chunk_stats(outputStream* const st, uint i);
+
+  void record_array_chunk_steal()  { ++_array_chunk_steals; }
+  void record_array_chunk_pushes(size_t n) { _array_chunk_pushes += n; }
+  void record_arrays_chunked(size_t n) { _arrays_chunked += n; }
+  void record__array_chunks_processed(size_t) { ++_array_chunks_processed; }
+
+private:
+  void reset_array_stats();
+#endif // TASKQUEUE_STATS
+public:
+  ChunkedArrayTaskQueue();
+};
+
 class TaskQueueSetSuper {
 public:
   // Assert all queues in the set are empty.
@@ -510,11 +534,11 @@ private:
   static void print_taskqueue_stats_hdr(outputStream* const st, const char* label);
 public:
   void print_taskqueue_stats(outputStream* const st, const char* label);
-  void reset_taskqueue_stats();
+  virtual void reset_taskqueue_stats();
 
   // Prints taskqueue set statistics into gc+task+stats=trace and resets
   // its statistics.
-  void print_and_reset_taskqueue_stats(const char* label);
+  virtual void print_and_reset_taskqueue_stats(const char* label);
 #endif // TASKQUEUE_STATS
 };
 
@@ -547,6 +571,19 @@ uint GenericTaskQueueSet<T, MT>::tasks() const {
   }
   return n;
 }
+
+template<class T, MemTag MT>
+class ChunkedArrayTaskQueueSet: public GenericTaskQueueSet<T, MT> {
+  using GenericTaskQueueSet<T, MT>::size;
+  using GenericTaskQueueSet<T, MT>::queue;
+
+#if TASKQUEUE_STATS
+private:
+  static void print_taskqueue_array_stats_hdr(outputStream* const st);
+public:
+  void print_taskqueue_stats(outputStream* const st, const char* label) override;
+#endif // TASKQUEUE_STATS
+};
 
 // When to terminate from the termination protocol.
 class TerminatorTerminator: public CHeapObj<mtInternal> {
