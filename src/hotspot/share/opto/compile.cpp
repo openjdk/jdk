@@ -1465,7 +1465,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     } else {
       ciInstanceKlass *canonical_holder = ik->get_canonical_holder(offset);
       assert(offset < canonical_holder->layout_helper_size_in_bytes(), "");
-      assert(tj->offset() == offset, "not change to offset expected");
+      assert(tj->offset() == offset, "no change to offset expected");
       bool xk = to->klass_is_exact();
       int instance_id = to->instance_id();
 
