@@ -184,7 +184,15 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   JVMCI_VM_ENTRY_MARK;                                     \
   ResourceMark rm;                                         \
   bool __is_hotspot = env == thread->jni_environment();    \
-  CompilerThreadCanCallJava ccj(thread, __is_hotspot);     \
+  bool __block_can_call_java;                              \
+  if (__is_hotspot) {                                      \
+    __block_can_call_java = true;                          \
+  } else if (thread->is_Compiler_thread()) {               \
+    __block_can_call_java = CompilerThread::cast(thread)->can_call_java();  \
+  } else {                                                 \
+    __block_can_call_java = false;                         \
+  }                                                        \
+  CompilerThreadCanCallJava ccj(thread, __block_can_call_java); \
   JVMCIENV_FROM_JNI(JVMCI::compilation_tick(thread), env); \
 
 // Entry to native method implementation that transitions
@@ -401,8 +409,8 @@ C2V_VMENTRY_NULL(jobject, asResolvedJavaMethod, (JNIEnv* env, jobject, jobject e
   return JVMCIENV->get_jobject(result);
 }
 
-C2V_VMENTRY_0(jboolean, updateCompilerThreadCanCallJava, (JNIEnv* env, jobject, jboolean newState))
-  return CompilerThreadCanCallJava::update(THREAD, newState) != nullptr;
+C2V_VMENTRY_PREFIX(jboolean, updateCompilerThreadCanCallJava, (JNIEnv* env, jobject, jboolean newState))
+  return CompilerThreadCanCallJava::update(thread, newState) != nullptr;
 C2V_END
 
 
