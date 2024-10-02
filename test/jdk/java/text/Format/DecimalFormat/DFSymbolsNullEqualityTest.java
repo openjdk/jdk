@@ -82,18 +82,13 @@ public class DFSymbolsNullEqualityTest {
                 "dfs and other should not have compared as equal");
     }
 
-    // All public setter methods that do not throw NPE AND do not take primitives
+    // All public setter methods that do not throw NPE and do not take primitives
     private static Stream<Method> setters() {
         var dfs = new DecimalFormatSymbols();
         return Arrays.stream(DecimalFormatSymbols.class.getDeclaredMethods())
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .filter(m -> m.getName().startsWith("set"))
-                .filter(m -> {
-                    for (Class<?> c : m.getParameterTypes()) {
-                        if (c.isPrimitive()) return false;
-                    }
-                    return true;
-                })
+                .filter(m -> Stream.of(m.getParameterTypes()).noneMatch(Class::isPrimitive))
                 .filter(m -> {
                     try {
                         m.invoke(dfs, (Object) null);
