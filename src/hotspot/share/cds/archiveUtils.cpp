@@ -397,10 +397,7 @@ ArchiveWorkers::ArchiveWorkers() :
         _started_workers(0),
         _running_workers(0),
         _in_shutdown(false),
-        _task(nullptr) {
-  // Kick off pool startup by creating a single worker.
-  start_worker_if_needed();
-}
+        _task(nullptr) {}
 
 void ArchiveWorkers::shutdown() {
   if (Atomic::cmpxchg(&_in_shutdown, false, true) == false) {
@@ -427,26 +424,25 @@ void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
   assert(task == &_shutdown_task || !_in_shutdown, "Should not be shutdown");
   assert(_task == nullptr, "Should not have running tasks");
 
-  // If max chunks is not set, put our guess there.
-  task->maybe_override_max_chunks(_num_workers * chunks_per_worker);
+  // If the pool is idle, kick off its startup by creating a single worker.
+  start_worker_if_needed();
 
-  // Publish the task.
-  Atomic::release_store(&_task, task);
+  // Configure the execution.
+  task->maybe_override_max_chunks(_num_workers * chunks_per_worker);
   Atomic::store(&_running_workers, _num_workers);
 
-  // Signal workers to pick up work.
+  // Publish the task and signal workers to pick it up.
+  Atomic::release_store(&_task, task);
   _start_semaphore.signal(_num_workers);
 
-  // Start executing the task ourselves, waiting for workers to catch up.
+  // Execute the task ourselves, while workers are catching up.
+  // This allows us to hide parts of task handoff latency.
   task->run();
 
-  // Done with our task, wait for workers to complete.
+  // Done executing task locally, wait for any remaining workers to complete,
+  // and then do the final housekeeping.
   _end_semaphore.wait();
-
-  // All done.
   Atomic::store(&_task, (ArchiveWorkerTask*)nullptr);
-
-  // All work done in threads should be visible to caller.
   OrderAccess::fence();
 }
 
