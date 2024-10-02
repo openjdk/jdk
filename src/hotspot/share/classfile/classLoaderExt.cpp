@@ -120,7 +120,7 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
   }
 
   // Sort the module paths before storing into CDS archive for simpler
-  // checking during runtime.
+  // checking at runtime.
   module_paths->sort(compare_module_path_by_name);
 
   for (int i = 0; i < module_paths->length(); i++) {

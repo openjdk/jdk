@@ -971,7 +971,7 @@ bool FileMapInfo::validate_shared_path_table() {
   }
   if (header()->has_full_module_graph() && !matched_module_paths) {
     CDSConfig::stop_using_optimized_module_handling();
-    log_info(cds)("optimized module handling: disabled because mismatched module paths");
+    log_info(cds)("optimized module handling: disabled because of mismatched module paths");
   }
 
   if (CDSConfig::is_dumping_dynamic_archive()) {
