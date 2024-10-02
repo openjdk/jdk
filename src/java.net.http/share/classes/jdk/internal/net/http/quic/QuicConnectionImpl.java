@@ -1735,8 +1735,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     public void internalProcessIncoming(SocketAddress source, ByteBuffer destConnId,
             QuicPacket.HeadersType headersType, ByteBuffer buffer) {
         try {
+            int packetIndex = 0;
             while(buffer.hasRemaining()) {
                 int startPos = buffer.position();
+                packetIndex++;
                 boolean isLongHeader = QuicPacket.peekHeaderType(buffer, startPos) == QuicPacket.HeadersType.LONG;
                 // It's only safe to check version here if versionNegotiated is true.
                 // We might be receiving an INITIAL packet before the version negotiation
@@ -1745,13 +1747,17 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     LongHeader header = QuicPacket.peekLongHeader(buffer);
                     if (header == null) {
                         if (debug.on()) {
-                            debug.log("Dropping packet: too short");
+                            debug.log("Dropping long header packet (%s in datagram): too short", packetIndex);
                         }
                         return;
                     }
                     if (!header.destinationId().matches(destConnId)) {
                         if (debug.on()) {
-                            debug.log("Dropping packet: wrong connection id");
+                            debug.log("Dropping long header packet (%s in datagram):" +
+                                            " wrong connection id (%s vs %s)",
+                                    packetIndex,
+                                    header.destinationId().toHexString(),
+                                    Utils.asHexString(destConnId));
                         }
                         return;
                     }
@@ -1764,7 +1770,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                 processDecrypted(packet);
                             } else {
                                 if (debug.on()) {
-                                    debug.log("Versions packet ignored");
+                                    debug.log("Versions packet (%s in datagram) ignored", packetIndex);
                                 }
                             }
                             return;
@@ -1772,20 +1778,23 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                         QuicVersion packetVersion = QuicVersion.of(peekedVersion).orElse(null);
                         if (packetVersion == null) {
                             if (debug.on()) {
-                                debug.log("Unknown Quic version in packet %s: 0x%x",
-                                        headersType, peekedVersion);
+                                debug.log("Unknown Quic version in long header packet" +
+                                                " (%s in datagram) %s: 0x%x",
+                                        packetIndex, headersType, peekedVersion);
                             }
                             return;
                         } else if (versionNegotiated) {
                             if (debug.on()) {
-                                debug.log("Dropping packet with version %s, already negotiated %s",
-                                        packetVersion, quicVersion);
+                                debug.log("Dropping long header packet (%s in datagram)" +
+                                                " with version %s, already negotiated %s",
+                                        packetIndex, packetVersion, quicVersion);
                             }
                             return;
                         } else if (!quicInstance().isVersionAvailable(packetVersion)) {
                             if (debug.on()) {
-                                debug.log("Dropping packet with disabled version %s",
-                                        packetVersion);
+                                debug.log("Dropping long header packet (%s in datagram)" +
+                                                " with disabled version %s",
+                                        packetIndex, packetVersion);
                             }
                             return;
                         } else {
@@ -1800,14 +1809,16 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     if (stateHandle.established()) {
                         // we are no longer expecting long header packets, just drop them
                         if (debug.on()) {
-                            debug.log("Dropping packet: connection established");
+                            debug.log("Dropping long header packet (%s in datagram): %s",
+                                    packetIndex, "connection established");
                         }
                         decoder.skipPacket(buffer, startPos);
                         continue;
                     } else if (decoder.peekPacketType(buffer) == PacketType.INITIAL &&
                             !quicTLSEngine.keysAvailable(KeySpace.INITIAL)) {
                         if (debug.on()) {
-                            debug.log("Dropping packet: keys discarded");
+                            debug.log("Dropping INITIAL packet (%s in datagram): %s",
+                                    packetIndex, "keys discarded");
                         }
                         decoder.skipPacket(buffer, startPos);
                         continue;
@@ -1816,13 +1827,16 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     var cid = QuicPacket.peekShortConnectionId(buffer, destConnId.remaining());
                     if (cid == null) {
                         if (debug.on()) {
-                            debug.log("Dropping packet: too short");
+                            debug.log("Dropping short header packet (%s in datagram):" +
+                                    " too short", packetIndex);
                         }
                         return;
                     }
                     if (cid.mismatch(destConnId) != -1) {
                         if (debug.on()) {
-                            debug.log("Dropping packet: wrong connection id");
+                            debug.log("Dropping short header packet (%s in datagram):" +
+                                            " wrong connection id (%s vs %s)",
+                                    packetIndex, Utils.asHexString(cid), Utils.asHexString(destConnId));
                         }
                         return;
                     }
@@ -1831,8 +1845,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 ByteBuffer packet = decoder.nextPacketSlice(buffer, buffer.position());
                 PacketType packetType = decoder.peekPacketType(packet);
                 if (debug.on()) {
-                    debug.log("unprotecting packet %s(%s bytes)",
-                            packetType, packet.remaining());
+                    debug.log("unprotecting packet (%s in datagram) %s(%s bytes)",
+                            packetIndex, packetType, packet.remaining());
                 }
                 decrypt(packet);
             }
