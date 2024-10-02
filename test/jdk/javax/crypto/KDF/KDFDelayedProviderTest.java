@@ -26,7 +26,7 @@
  * @bug 8331008
  * @library /test/lib /test/jdk/security/unsignedjce
  * @build java.base/javax.crypto.ProviderVerifier
- * @run main KDFDelayedProviderTest
+ * @run main/othervm KDFDelayedProviderTest
  * @summary delayed provider selection
  * @enablePreview
  */
