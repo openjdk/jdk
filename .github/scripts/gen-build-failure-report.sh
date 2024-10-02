@@ -30,6 +30,10 @@ BUILD_DIR="$(ls -d build/*)"
 # Send signal to the do-build action that we failed
 touch "$BUILD_DIR/build-failure"
 
+# Collect hs_errs for build-time crashes, e.g. javac, jmod, jlink, CDS.
+# These usually land in make/
+hs_err_files=$(ls make/hs_err*.log 2> /dev/null || true)
+
 (
   echo '### :boom: Build failure summary'
   echo ''
@@ -46,25 +50,21 @@ touch "$BUILD_DIR/build-failure"
   echo '</details>'
   echo ''
 
+  for hs_err in $hs_err_files; do
+    echo "<details><summary><b>View HotSpot error log: "$hs_err"</b></summary>"
+    echo ''
+    echo '```'
+    echo "$hs_err:"
+    echo ''
+    cat "$hs_err"
+    echo '```'
+    echo '</details>'
+    echo ''
+  fi
+
   echo ''
   echo ':arrow_right: To see the entire test log, click the job in the list to the left. To download logs, see the `failure-logs` [artifact above](#artifacts).'
 ) >> $GITHUB_STEP_SUMMARY
-
-# Collect hs_errs for build-time crashes, e.g. javac, jmod, jlink, CDS.
-# These usually land in make/
-hs_err_files=$(ls make/hs_err*.log 2> /dev/null || true)
-
-for hs_err in $hs_err_files; do
-  echo "<details><summary><b>View HotSpot error log: "$hs_err"</b></summary>"
-  echo ''
-  echo '```'
-  echo "$hs_err:"
-  echo ''
-  cat "$hs_err"
-  echo '```'
-  echo '</details>'
-  echo ''
-done >> $GITHUB_STEP_SUMMARY
 
 # With large hs_errs, the summary can easily exceed 1024 kB, the limit set by Github
 # Trim it down if so.
@@ -79,5 +79,3 @@ if [[ $summary_size -gt 1000000 ]]; then
     echo ''
   )  >> $GITHUB_STEP_SUMMARY
 fi
-
-echo ':arrow_right: To see the entire build log, click the job in the list to the left.'  >> $GITHUB_STEP_SUMMARY
