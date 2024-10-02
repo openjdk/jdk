@@ -248,11 +248,16 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
   _heap_root_segments = segments;
 }
 
+// The goal is to sort the objects in increasing order of:
+// - objects that have only oop pointers
+// - objects that have both native and oop pointers
+// - objects that have only native pointers
+// - objects that have no pointers
 static int oop_sorting_rank(oop o) {
   bool has_oop_ptr, has_native_ptr;
   HeapShared::get_pointer_info(o, has_oop_ptr, has_native_ptr);
 
-  if (!has_oop_ptr) {
+  if (has_oop_ptr) {
     if (!has_native_ptr) {
       return 0;
     } else {
@@ -267,11 +272,6 @@ static int oop_sorting_rank(oop o) {
   }
 }
 
-// The goal is to sort the objects in increasing order of:
-// - objects that have no pointers
-// - objects that have only native pointers
-// - objects that have both native and oop pointers
-// - objects that have only oop pointers
 int ArchiveHeapWriter::compare_objs_by_oop_fields(HeapObjOrder* a, HeapObjOrder* b) {
   int rank_a = a->_rank;
   int rank_b = b->_rank;
