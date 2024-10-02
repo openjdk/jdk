@@ -299,7 +299,6 @@ public final class RawBytecodeHelper {
     private int nextBci;
     private int bci;
     private int opcode;
-    private boolean isWide;
 
     public static CodeRange of(byte[] array) {
         return new CodeRange(array, array.length);
@@ -341,14 +340,14 @@ public final class RawBytecodeHelper {
      * be valid and can be accessed unchecked.
      */
     public int opcode() {
-        return opcode;
+        return opcode & 0xFF;
     }
 
     /**
      * Returns whether the current functional opcode is in wide.
      */
     public boolean isWide() {
-        return isWide;
+        return (opcode & (WIDE << 8)) != 0;
     }
 
     /**
@@ -411,7 +410,7 @@ public final class RawBytecodeHelper {
 
     // *load, *store, iinc
     public int getIndex() {
-        return isWide ? getU2Unchecked(bci + 2) : getIndexU1();
+        return isWide() ? getU2Unchecked(bci + 2) : getIndexU1();
     }
 
     // ldc
@@ -443,7 +442,6 @@ public final class RawBytecodeHelper {
         int len = LENGTHS[code & 0xFF]; // & 0xFF eliminates bound check
         this.bci = bci;
         opcode = code;
-        isWide = false;
         if (len <= 0) {
             len = checkSpecialInstruction(bci, end, code); // sets opcode
         }
@@ -460,8 +458,7 @@ public final class RawBytecodeHelper {
         int len = -1;
         if (code == WIDE) {
             if (bci + 1 < end) {
-                opcode = code = getIndexU1();
-                isWide = true;
+                opcode = (WIDE << 8) | (code = getIndexU1());
                 // Validated in UtilTest.testOpcodeLengthTable
                 len = LENGTHS[code] * 2;
             }
