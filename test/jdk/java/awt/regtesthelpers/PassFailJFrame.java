@@ -79,15 +79,77 @@ import static javax.swing.SwingUtilities.invokeAndWait;
 import static javax.swing.SwingUtilities.isEventDispatchThread;
 
 /**
- * Provides a framework for manual tests to display test instructions and
- * Pass/Fail buttons.
+ * A framework for manual tests to display test instructions and
+ * <i>Pass</i> / <i>Fail</i> buttons. The framework automatically
+ * creates a frame to display the instructions, provides buttons
+ * to select the test result, and handles test timeout.
+ *
+ * <p id="timeOutTimer">
+ * The instruction UI frame displays a timer at the top which indicates
+ * how much time is left. The timer can be paused using the <i>Pause</i>
+ * button to the right of the time; the title of the button changes to
+ * <i>Resume</i>. To resume the timer, use the <i>Resume</i> button.
+ *
+ * <p id="instructionText">
+ * In the center, the instruction UI frame displays instructions for the
+ * tester. The instructions can be either plain text or HTML. If the
+ * text of the instructions starts with {@code "<html>"}, the
+ * instructions are displayed as HTML, as supported by Swing, which
+ * provides richer formatting options.
  * <p>
- * Instructions for the user can be either plain text or HTML as supported
- * by Swing. If the instructions start with {@code <html>}, the
- * instructions are displayed as HTML.
+ * The instructions are displayed in a text component with word-wrapping
+ * so that there's no horizontal scroll bar. If the text doesn't fit, a
+ * vertical scroll bar is shown. Use {@code rows} and {@code columns}
+ * parameters to change the size of this text component.
+ * If possible, choose the number of rows and columns so that
+ * the instructions fit and no scroll bars are shown.
+ *
+ * <p id="passFailButtons">
+ * At the bottom, the instruction UI frame displays the
+ * <i>Pass</i> and <i>Fail</i> buttons. The tester clicks either <i>Pass</i>
+ * or <i>Fail</i> button to finish the test. When the tester clicks the
+ * <i>Fail</i> button, the framework displays a dialog box prompting for
+ * a reason why the test fails. The tester enters the reason and clicks
+ * <i>OK</i> to close the dialog and fail the test,
+ * or simply closes the dialog to fail the test without providing any reason.
+ *
+ * <p id="screenCapture">
+ * If you enable the screenshot feature, a <i>Screenshot</i> button is
+ * added  to the right of the <i>Fail</i> button. The tester can choose either
+ * <i>Capture Full Screen</i> (default) or <i>Capture Frames</i> and click the
+ * <i>Screenshot</i> button to take a screenshot.
+ * If there are multiple screens, screenshots of each screen are created.
+ * If the tester selects the <i>Capture Frames</i> mode, screenshots of all
+ * the windows or frames registered in the {@code PassFailJFrame} framework
+ * are created.
+ *
+ * <p id="logArea">
+ * If you enable a log area, the instruction UI frame adds a text component
+ * to display log messages below the buttons.
+ * Use {@link #log(String) log}, {@link #logSet(String) logSet}
+ * and {@link #logClear() logClear} static methods of {@code PassFailJFrame}
+ * to add or clear messages from the log area.
+ *
+ * <p id="awaitTestResult">
+ * After you create an instance of {@code PassFailJFrame}, call the
+ * {@link #awaitAndCheck() awaitAndCheck} method to stop the current thread
+ * (usually the main thread) and wait until the tester clicks
+ * either <i>Pass</i> or <i>Fail</i> button,
+ * or until the test times out.
  * <p>
+ * The call to the {@code awaitAndCheck} method is usually the last
+ * statement in the {@code main} method of your test.
+ * If the test fails, an exception is thrown to signal the failure to jtreg.
+ * The test fails if the tester clicks the <i>Fail</i> button,
+ * if the timeout occurs,
+ * or if any window or frame is closed.
+ * <p>
+ * Before returning from {@code awaitAndCheck}, the framework disposes of
+ * all the windows and frames.
+ *
+ * <h2 id="sampleManualTest">Sample Manual Test</h2>
  * A simple test would look like this:
- * <pre>{@code
+ * {@snippet id='sampleManualTestCode' lang='java':
  * public class SampleManualTest {
  *     private static final String INSTRUCTIONS =
  *             "Click Pass, or click Fail if the test failed.";
@@ -95,7 +157,7 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *     public static void main(String[] args) throws Exception {
  *         PassFailJFrame.builder()
  *                       .instructions(INSTRUCTIONS)
- *                       .testUI(() -> createTestUI())
+ *                       .testUI(SampleManualTest::createTestUI)
  *                       .build()
  *                       .awaitAndCheck();
  *     }
@@ -106,39 +168,87 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *         return testUI;
  *     }
  * }
- * }</pre>
+ * }
  * <p>
- * The above example uses the {@link Builder Builder} to set the parameters of
- * the instruction frame. It is the recommended way.
+ * The above example uses the {@link Builder Builder} class to set
+ * the parameters of the instruction frame.
+ * It is <em>the recommended way</em>.
+ *
  * <p>
- * The framework will create instruction UI, it will call
- * the provided {@code createTestUI} on the Event Dispatch Thread (EDT),
- * and it will automatically position the test UI and make it visible.
+ * The framework will create an instruction UI frame, it will call
+ * the provided {@code createTestUI} on the Event Dispatch Thread (<dfn>EDT</dfn>),
+ * and it will automatically position the test UI frame and make it visible.
+ *
+ * <p id="jtregTagsForTest">
+ * Add the following jtreg tags before the test class declaration
+ * {@snippet :
+ * /*
+ *  * @test
+ *  * @summary Sample manual test
+ *  * @library /java/awt/regtesthelpers
+ *  * @build PassFailJFrame
+ *  * @run main/manual SampleManualTest
+ * }
+ * and the closing comment tag <code>*&#47;</code>.
  * <p>
+ * The {@code @library} tag points to the location of the
+ * {@code PassFailJFrame} class in the source code;
+ * the {@code @build} tag makes jtreg compile the {@code PassFailJFrame} class,
+ * and finally the {@code @run} tag specifies it is a manual
+ * test and the class to run.
+ *
+ * <h2 id="usingBuilder">Using {@code Builder}</h2>
+ * Use methods of the {@link Builder Builder} class to set or change
+ * parameters of {@code PassFailJFrame} and its instruction UI:
+ * <ul>
+ *     <li>{@link Builder#title(String) title} sets
+ *         the title of the instruction UI
+ *         (the default is {@value #TITLE});</li>
+ *     <li>{@link Builder#testTimeOut(long) testTimeOut} sets
+ *         the timeout of the test
+ *         (the default is {@value #TEST_TIMEOUT});</li>
+ *     <li>{@link Builder#rows(int) rows} and
+ *         {@link Builder#columns(int) columns} control the size
+ *         the text component which displays the instructions
+ *         (the default number of rows is the number of lines in the text
+ *         of the instructions,
+ *         the default number of columns is {@value #COLUMNS});</li>
+ *     <li>{@link Builder#logArea() logArea} adds a log area;</li>
+ *     <li>{@link Builder#screenCapture() screenCapture}
+ *         enables screenshots.</li>
+ * </ul>
+ *
+ * <h3 id="builderTestUI">Using {@code testUI} and {@code splitUI}</h3>
  * The {@code Builder.testUI} methods accept interfaces which create one window
  * or a list of windows if the test needs multiple windows,
  * or directly a single window, an array of windows or a list of windows.
  * <p>
- * For simple test UI, use {@code Builder.splitUI}, or explicitly
- * {@code Builder.splitUIRight} or {@code Builder.splitUIBottom} with
- * a {@code PanelCreator}. The framework will call the provided
- * {@code createUIPanel} to create the component with test UI and
+ * For simple test UI, use {@link Builder#splitUI(PanelCreator) splitUI},
+ * or explicitly
+ * {@link Builder#splitUIRight(PanelCreator) splitUIRight} or
+ * {@link Builder#splitUIBottom(PanelCreator) splitUIBottom} with
+ * a {@link PanelCreator PanelCreator}.
+ * The framework will call the provided
+ * {@code createUIPanel} method to create the component with test UI and
  * will place it as the right or bottom component in a split pane
  * along with instruction UI.
  * <p>
+ * Note: <em>support for multiple windows is incomplete</em>.
+ *
+ * <h2 id="obsoleteSampleTest">Obsolete Sample Test</h2>
  * Alternatively, use one of the {@code PassFailJFrame} constructors to
  * create an object, then create secondary test UI, register it
  * with {@code PassFailJFrame}, position it and make it visible.
  * The following sample demonstrates it:
- * <pre>{@code
- * public class SampleOldManualTest {
+ * {@snippet id='obsoleteSampleTestCode' lang='java':
+ * public class ObsoleteManualTest {
  *     private static final String INSTRUCTIONS =
  *             "Click Pass, or click Fail if the test failed.";
  *
  *     public static void main(String[] args) throws Exception {
  *         PassFailJFrame passFail = new PassFailJFrame(INSTRUCTIONS);
  *
- *         SwingUtilities.invokeAndWait(() -> createTestUI());
+ *         SwingUtilities.invokeAndWait(ObsoleteManualTest::createTestUI);
  *
  *         passFail.awaitAndCheck();
  *     }
@@ -151,17 +261,29 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *         testUI.setVisible(true);
  *     }
  * }
- * }</pre>
+ * }
  * <p>
- * Use methods of the {@code Builder} class or constructors of the
- * {@code PassFailJFrame} class to control other parameters:
- * <ul>
- *     <li>the title of the instruction UI,</li>
- *     <li>the timeout of the test,</li>
- *     <li>the size of the instruction UI via rows and columns, and</li>
- *     <li>to add a log area,</li>
- *     <li>to enable screenshots.</li>
- * </ul>
+ * This sample uses {@link #PassFailJFrame(String) a constructor} of
+ * {@code PassFailJFrame} to create its instance,
+ * there are several overloads provided which allow changing other parameters.
+ * <p>
+ * When you use the constructors, you have to explicitly create
+ * your test UI window on EDT. After you create the window,
+ * you need to register it with the framework using
+ * {@link #addTestWindow(Window) addTestWindow}
+ * to ensure the window is disposed of when the test completes.
+ * Before showing the window, you have to call
+ * {@link #positionTestWindow(Window, Position) positionTestWindow}
+ * to position the test window near the instruction UI frame provided
+ * by the framework. And finally you have to explicitly show the test UI
+ * window by calling {@code setVisible(true)}.
+ * <p>
+ * To avoid the complexity, use the {@link Builder Builder} class
+ * which provides a streamlined way to configure and create an
+ * instance of {@code PassFailJFrame}.
+ * <p>
+ * Consider updating tests which use {@code PassFailJFrame} constructors to
+ * use the builder pattern.
  */
 public final class PassFailJFrame {
 
@@ -541,7 +663,11 @@ public final class PassFailJFrame {
                               : configurePlainText(instructions, rows, columns);
         text.setEditable(false);
 
-        main.add(new JScrollPane(text), BorderLayout.CENTER);
+        JPanel textPanel = new JPanel(new BorderLayout());
+        textPanel.setBorder(createEmptyBorder(4, 0, 0, 0));
+        textPanel.add(new JScrollPane(text), BorderLayout.CENTER);
+
+        main.add(textPanel, BorderLayout.CENTER);
 
         JButton btnPass = new JButton("Pass");
         btnPass.addActionListener((e) -> {
@@ -822,7 +948,7 @@ public final class PassFailJFrame {
     private static JComponent createCapturePanel() {
         JComboBox<CaptureType> screenShortType = new JComboBox<>(CaptureType.values());
 
-        JButton capture = new JButton("ScreenShot");
+        JButton capture = new JButton("Screenshot");
         capture.addActionListener((e) ->
                 captureScreen((CaptureType) screenShortType.getSelectedItem()));
 
@@ -834,7 +960,7 @@ public final class PassFailJFrame {
 
     private enum CaptureType {
         FULL_SCREEN("Capture Full Screen"),
-        WINDOWS("Capture Individual Frame");
+        WINDOWS("Capture Frames");
 
         private final String type;
         CaptureType(String type) {
