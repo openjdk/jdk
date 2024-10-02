@@ -318,7 +318,7 @@ public class TestParallelIvInIntCountedLoop {
     private static void testCorrectness() {
         Random rng = new Random();
 
-        // Since we can't easily determined expected values if loop varibles overflow, we make sure i is less than (MAX_VALUE - stride).
+        // Since we can't easily determine expected values if loop variables overflow, we make sure i is less than (MAX_VALUE - stride).
         int[] iterations = {0, 1, 2, 42, 100, rng.nextInt(0, Integer.MAX_VALUE - stride)};
 
         for (int i : iterations) {
