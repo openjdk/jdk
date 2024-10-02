@@ -78,15 +78,15 @@ public class ProgressMonitorEscapeKeyPress {
         }
     }
 
-     private static void createTestUI() throws Exception {
+    private static void createTestUI() throws Exception {
         SwingUtilities.invokeAndWait(() -> {
-             frame = new JFrame("Test");
-             frame.setSize(300, 300);
+            frame = new JFrame("Test");
+            frame.setSize(300, 300);
             monitor = new ProgressMonitor(frame, "Progress", "1", 0, 100);
             frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
             frame.setLocationByPlatform(true);
-           });
-     }
+        });
+    }
 
 
      private static void disposeTestUI() throws Exception {
@@ -101,14 +101,17 @@ class TestThread extends Thread {
     @Override
     public void run() {
         System.out.println("TestThread started.........");
-        for (ProgressMonitorEscapeKeyPress.counter = 0; ProgressMonitorEscapeKeyPress.counter <= 100; ProgressMonitorEscapeKeyPress.counter += 1) {
+        for (ProgressMonitorEscapeKeyPress.counter = 0;
+             ProgressMonitorEscapeKeyPress.counter <= 100;
+             ProgressMonitorEscapeKeyPress.counter += 1) {
             ProgressMonitorEscapeKeyPress.robot.delay(100);
             ProgressMonitor monitor = ProgressMonitorEscapeKeyPress.monitor;
             if (!monitor.isCanceled()) {
-                monitor.setNote(""+ProgressMonitorEscapeKeyPress.counter);
+                monitor.setNote("" + ProgressMonitorEscapeKeyPress.counter);
                 monitor.setProgress(ProgressMonitorEscapeKeyPress.counter);
                 ProgressMonitorEscapeKeyPress.progressLatch.countDown();
-                System.out.println("Progress bar is in progress....."+ ProgressMonitorEscapeKeyPress.counter+"%");
+                System.out.println("Progress bar is in progress....."
+                        + ProgressMonitorEscapeKeyPress.counter + "%");
             }
             if (monitor.isCanceled()) {
                 System.out.println("$$$$$$$$$$$$$$$ Monitor canceled");
