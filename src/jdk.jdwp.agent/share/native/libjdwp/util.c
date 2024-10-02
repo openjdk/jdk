@@ -1712,7 +1712,7 @@ translateThreadState(jint flags) {
     char* tstate = (char*)jvmtiAllocate((int)strlen(str) + 1);
     strcpy(tstate, str);
 
-  return tstate;
+    return tstate;
 }
 
 char*
