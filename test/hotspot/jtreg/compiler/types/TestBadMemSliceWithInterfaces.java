@@ -65,7 +65,7 @@ public class TestBadMemSliceWithInterfaces {
     private static int test2(B b, C c, boolean flag) {
         A a;
         if (flag) {
-           a = b;
+            a = b;
         } else {
             a = c;
         }
