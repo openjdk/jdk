@@ -765,10 +765,10 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             minusSign == other.minusSign &&
             minusSignText.equals(other.minusSignText) &&
             patternSeparator == other.patternSeparator &&
-            infinity.equals(other.infinity) &&
-            NaN.equals(other.NaN) &&
-            getCurrencySymbol().equals(other.getCurrencySymbol()) && // possible currency init occurs here
-            intlCurrencySymbol.equals(other.intlCurrencySymbol) &&
+            Objects.equals(infinity, other.infinity) &&
+            Objects.equals(NaN, other.NaN) &&
+            Objects.equals(getCurrencySymbol(), other.getCurrencySymbol()) && // possible currency init occurs here
+            Objects.equals(intlCurrencySymbol, other.intlCurrencySymbol) &&
             currency == other.currency &&
             monetarySeparator == other.monetarySeparator &&
             monetaryGroupingSeparator == other.monetaryGroupingSeparator &&
