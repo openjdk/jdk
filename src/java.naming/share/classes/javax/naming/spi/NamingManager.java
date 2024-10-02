@@ -98,7 +98,6 @@ public class NamingManager {
      * @see #getObjectInstance
      * @see ObjectFactory
      * @see ObjectFactoryBuilder
-     * @see java.lang.SecurityManager#checkSetFactory
      */
     public static void setObjectFactoryBuilder(
             ObjectFactoryBuilder builder) throws NamingException {
@@ -561,7 +560,6 @@ public class NamingManager {
      *         a non-security-related reason.
      * @throws IllegalStateException If a builder was previous installed.
      * @see #hasInitialContextFactoryBuilder
-     * @see java.lang.SecurityManager#checkSetFactory
      */
     public static synchronized void setInitialContextFactoryBuilder(
         InitialContextFactoryBuilder builder)
