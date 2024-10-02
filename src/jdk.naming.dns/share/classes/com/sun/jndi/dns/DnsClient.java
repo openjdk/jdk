@@ -244,6 +244,7 @@ public class DnsClient {
                     if (doNotRetry[i]) {
                         continue;
                     }
+                    // unfulfilledServerTimeout is always >= 0
                     AtomicLong unfulfilledServerTimeout = unfulfilledUdpTimeouts[i];
                     if (isLastRetry && unfulfilledServerTimeout.get() == 0) {
                         continue;
