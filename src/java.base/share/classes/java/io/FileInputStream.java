@@ -115,7 +115,7 @@ public class FileInputStream extends InputStream
 
     /**
      * Creates a {@code FileInputStream} to read from an existing file
-     * reoresented by the {@code File} object {@code file}.
+     * represented by the {@code File} object {@code file}.
      * {@linkplain java.nio.file##links Symbolic links}
      * are automatically redirected to the <i>target</i> of the link.
      * A new {@code FileDescriptor} object
