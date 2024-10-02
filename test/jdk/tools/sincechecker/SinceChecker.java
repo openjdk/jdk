@@ -287,6 +287,12 @@ public class SinceChecker {
         }
     }
 
+    private boolean isExcluded(ModuleElement.ExportsDirective ed ){
+        return EXCLUDE_LIST.stream().anyMatch(excludePackage ->
+            ed.getPackage().toString().equals(excludePackage) ||
+            ed.getPackage().toString().startsWith(excludePackage + "."));
+    }
+
     private void processModuleCheck(ModuleElement moduleElement, JavacTask ct, Path moduleDirectory, EffectiveSourceSinceHelper javadocHelper) {
         if (moduleElement == null) {
             error("Module element: was null because `elements.getModuleElement(moduleName)` returns null." +
@@ -297,7 +303,7 @@ public class SinceChecker {
         for (ModuleElement.ExportsDirective ed : ElementFilter.exportsIn(moduleElement.getDirectives())) {
             if (ed.getTargetModules() == null) {
                 String packageVersion = getPackageVersionFromFile(moduleDirectory, ed);
-                if (packageVersion != null && !EXCLUDE_LIST.contains(ed.getPackage().toString())) {
+                if (packageVersion != null && !isExcluded(ed)) {
                     checkModuleOrPackage(javadocHelper, packageVersion, ed.getPackage(), ct, "Package: ");
                     analyzePackageCheck(ed.getPackage(), ct, javadocHelper);
                 } // Skip the package if packageVersion is null
