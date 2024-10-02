@@ -506,12 +506,12 @@ public final class DirectCodeBuilder
         }
     }
 
-    public void writeIncrement(int slot, int val) {
-        Opcode opcode = (slot < 256 && val < 128 && val > -127)
-                        ? IINC
-                        : IINC_W;
-        writeBytecode(opcode);
-        if (opcode.isWide()) {
+    public void writeIncrement(boolean wide, int slot, int val) {
+        if (wide) {
+            bytecodesBufWriter.writeU1(RawBytecodeHelper.WIDE);
+        }
+        bytecodesBufWriter.writeU1(RawBytecodeHelper.IINC);
+        if (wide) {
             bytecodesBufWriter.writeU2(slot);
             bytecodesBufWriter.writeU2(val);
         } else {
@@ -1216,7 +1216,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder iinc(int slot, int val) {
-        writeIncrement(slot, val);
+        writeIncrement(validateAndIsWideIinc(slot, val), slot, val);
         return this;
     }
 

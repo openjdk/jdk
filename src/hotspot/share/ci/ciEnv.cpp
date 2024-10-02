@@ -1616,7 +1616,10 @@ void ciEnv::dump_replay_data_helper(outputStream* out) {
   for (int i = 0; i < objects->length(); i++) {
     objects->at(i)->dump_replay_data(out);
   }
-  dump_compile_data(out);
+
+  if (this->task() != nullptr) {
+    dump_compile_data(out);
+  }
   out->flush();
 }
 
