@@ -26,10 +26,13 @@
  * @bug 8331008
  * @library /test/lib /test/jdk/security/unsignedjce
  * @build java.base/javax.crypto.ProviderVerifier
- * @run main/othervm -Djava.security.debug=provider,engine=kdf KDFDelayedProviderThreadingTest
+ * @run testng/othervm -Djava.security.debug=provider,engine=kdf KDFDelayedProviderThreadingTest
  * @summary delayed provider selection threading test
  * @enablePreview
  */
+
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import javax.crypto.KDF;
 import javax.crypto.KDFParameters;
@@ -44,9 +47,17 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 
 public class KDFDelayedProviderThreadingTest {
-    public static void main(String[] args) throws Exception {
+
+    KDF k;
+
+    @BeforeClass
+    public void setUp() throws NoSuchAlgorithmException {
         Security.insertProviderAt(new P(), 1);
-        var k = KDF.getInstance("HKDF-SHA256");
+        k = KDF.getInstance("HKDF-SHA256");
+    }
+
+    @Test(threadPoolSize = 50, invocationCount = 1000000, timeOut = 150)
+    public void testThreading() throws Exception {
         var input = HKDFParameterSpec.ofExtract().extractOnly();
         new Thread(() -> {
             try {
@@ -79,8 +90,9 @@ public class KDFDelayedProviderThreadingTest {
         }
 
         @Override
-        protected SecretKey engineDeriveKey(String alg, AlgorithmParameterSpec derivationSpec)
-                throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
+        protected SecretKey engineDeriveKey(String alg,
+                                            AlgorithmParameterSpec derivationSpec)
+                throws InvalidAlgorithmParameterException {
             throw new InvalidAlgorithmParameterException();
         }
 
