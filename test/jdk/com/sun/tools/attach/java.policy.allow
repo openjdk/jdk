@@ -13,8 +13,10 @@ grant {
     permission java.lang.RuntimePermission "loadLibrary.attach";
     permission java.util.PropertyPermission "sun.jvmstat.*", "read";
 
-    /* to read configuration file in META-INF/services, write/delete .attach_pid<pid>, 
-    and read symbolic link of /proc/self/ns/mnt */
+    /* 
+     * To read configuration file in META-INF/services, write/delete .attach_pid<pid>, 
+     * and read symbolic link of /proc/self/ns/mnt.
+     */
     permission java.io.FilePermission "<<ALL FILES>>", "read,write,delete,readlink";
 };
 
