@@ -293,7 +293,6 @@ size_t ReservedMemoryRegion::committed_size() const {
 }
 
 void ReservedMemoryRegion::set_mem_tag(MemTag new_mem_tag) {
-  fprintf(stderr, "ReservedMemoryRegion::set_mem_tag(%s)\n", NMTUtil::tag_to_name(new_mem_tag));
   assert((mem_tag() == mtNone || mem_tag() == new_mem_tag),
          "Overwrite memory tag for region [" INTPTR_FORMAT "-" INTPTR_FORMAT "), %u->%u.",
          p2i(base()), p2i(end()), (unsigned)mem_tag(), (unsigned)new_mem_tag);
