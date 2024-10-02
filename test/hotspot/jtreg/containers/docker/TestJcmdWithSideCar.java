@@ -247,13 +247,6 @@ public class TestJcmdWithSideCar {
         };
 
         public Process start(final boolean elevated) throws Exception {
-            // Be sure no main container with the same name already exists
-            OutputAnalyzer out = DockerTestUtils.execute(Container.ENGINE_COMMAND, "ps")
-                .shouldHaveExitValue(0);
-            if (out.contains(MAIN_CONTAINER_NAME)) {
-                DockerTestUtils.execute(Container.ENGINE_COMMAND, "rm", MAIN_CONTAINER_NAME)
-                   .shouldHaveExitValue(0);
-            }
             // start "main" container (the observee)
             DockerRunOptions opts = commonDockerOpts("EventGeneratorLoop");
 
