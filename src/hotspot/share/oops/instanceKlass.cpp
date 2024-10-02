@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotClassInitializer.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsEnumKlass.hpp"
@@ -785,29 +786,24 @@ void InstanceKlass::initialize(TRAPS) {
   }
 }
 
-static bool are_super_types_initialized(InstanceKlass* ik) {
-  InstanceKlass* s = ik->java_super();
-  if (s != nullptr && !s->is_initialized()) {
-    if (log_is_enabled(Info, cds, init)) {
-      ResourceMark rm;
-      log_info(cds, init)("%s takes slow path because super class %s is not initialized",
-                          ik->external_name(), s->external_name());
-    }
-    return false;
-  }
+static bool check_supertypes_of_aot_inited_class(InstanceKlass* ik) {
+  assert(ik->has_aot_initialized_mirror(), "must be");
+
+  // Sanity check of all superclasses and superinterfaces.
+  AOTClassInitializer::assert_no_clinit_will_run_for_aot_init_class(ik);
 
   if (ik->has_nonstatic_concrete_methods()) {
-    // Only need to recurse if has_nonstatic_concrete_methods which includes declaring and
-    // having a superinterface that declares, non-static, concrete methods
     Array<InstanceKlass*>* interfaces = ik->local_interfaces();
     int len = interfaces->length();
     for (int i = 0; i < len; i++) {
       InstanceKlass* intf = interfaces->at(i);
       if (!intf->is_initialized()) {
+        assert(intf->class_initializer() == nullptr, "should have been asserted");
         if (log_is_enabled(Info, cds, init)) {
           ResourceMark rm;
-          log_info(cds, init)("%s takes slow path because interface %s is not initialized",
-                              ik->external_name(), intf->external_name());
+          log_info(cds, init)("%s takes slow path because interface %s (%s <clinit>) is not yet initialized",
+                              ik->external_name(), intf->external_name(),
+                              (intf->class_initializer() != nullptr) ? "has" : "no");
         }
         return false;
       }
@@ -823,7 +819,7 @@ void InstanceKlass::initialize_from_cds(TRAPS) {
   }
 
   if (has_aot_initialized_mirror() && CDSConfig::is_loading_heap() &&
-      are_super_types_initialized(this)) {
+      check_supertypes_of_aot_inited_class(this)) {
     if (log_is_enabled(Info, cds, init)) {
       ResourceMark rm;
       log_info(cds, init)("%s (quickest)", external_name());

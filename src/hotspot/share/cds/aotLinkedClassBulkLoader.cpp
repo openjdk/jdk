@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLinkedClassTable.hpp"
@@ -246,14 +247,19 @@ void AOTLinkedClassBulkLoader::init_required_classes_for_loader(Handle class_loa
       InstanceKlass* ik = classes->at(i);
       if (ik->class_loader_data() == nullptr) {
         // This class is not yet loaded. We will initialize it in a later phase.
-        // For example, we have loaded only BOOT classes but k is part of BOOT2.
+        // For example, we have loaded only AOTLinkedClassCategory::BOOT1 classes
+        // but k is part of AOTLinkedClassCategory::BOOT2.
         continue;
       }
       if (ik->has_aot_initialized_mirror()) {
+        // No <clinit> of ik or any of its supertypes will be executed.
+        // Their mirrors were already initialized during AOT cache assembly.
+        AOTClassInitializer::assert_no_clinit_will_run_for_aot_init_class(ik);
+
         ik->initialize_from_cds(CHECK);
       }
     }
   }
 
-  HeapShared::init_classes_reachable_from_archived_mirrors(class_loader, CHECK);
+  HeapShared::init_classes_for_special_subgraph(class_loader, CHECK);
 }

@@ -546,6 +546,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/RewriteBytecodesTest.java \
  -runtime/cds/appcds/SpecifySysLoaderProp.java \
  -runtime/cds/appcds/TestSerialGCWithCDS.java \
+ -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/TestWithProfiler.java \
  -runtime/cds/serviceability/ReplaceCriticalClassesForSubgraphs.java \
  -runtime/cds/serviceability/ReplaceCriticalClasses.java \
