@@ -1319,7 +1319,7 @@ void os::check_core_dump_prerequisites(char* buffer, size_t bufferSize, bool che
           success = false;
         }
       } else {
-        // For now on Windows, there is no more checks that we can do
+        // For now on Windows, there are no more checks that we can do
         warn = false;
       }
     }
