@@ -509,9 +509,9 @@ public final class DirectCodeBuilder
 
     public void writeIncrement(boolean wide, int slot, int val) {
         if (wide) {
-            bytecodesBufWriter.writeU2U2U2((WIDE << 8) | IINC, slot, value);
+            bytecodesBufWriter.writeU2U2U2((WIDE << 8) | IINC, slot, val);
         } else {
-            bytecodesBufWriter.writeU1U1U1(IINC, slot, value);
+            bytecodesBufWriter.writeU1U1U1(IINC, slot, val);
         }
     }
 
