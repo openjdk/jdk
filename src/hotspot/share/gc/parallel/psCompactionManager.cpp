@@ -138,7 +138,7 @@ void ParCompactionManager::push_objArray(oop obj) {
                                              array_length,
                                              step._ncreate);
     for (uint i = 0; i < step._ncreate; ++i) {
-      marking_stack()->push(PSMarkTask(state));
+      marking_stack()->push(ScannerTask(state));
     }
     TASKQUEUE_STATS_ONLY(_array_chunk_pushes += step._ncreate);
   }
@@ -168,7 +168,7 @@ void ParCompactionManager::process_array_chunk(PartialArrayState* state) {
 }
 
 void ParCompactionManager::follow_marking_stacks() {
-  PSMarkTask task;
+  ScannerTask task;
   do {
     // First, try to move tasks from the overflow stack into the shared buffer, so
     // that other threads can steal. Otherwise process the overflow stack first.

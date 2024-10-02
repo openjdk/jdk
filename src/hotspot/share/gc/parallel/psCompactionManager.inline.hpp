@@ -48,7 +48,7 @@ inline void PCMarkAndPushClosure::do_oop_work(T* p) {
   _compaction_manager->mark_and_push(p);
 }
 
-inline bool ParCompactionManager::steal(int queue_num, PSMarkTask& t) {
+inline bool ParCompactionManager::steal(int queue_num, ScannerTask& t) {
   return marking_stacks()->steal(queue_num, t);
 }
 
@@ -57,11 +57,11 @@ inline bool ParCompactionManager::steal(int queue_num, size_t& region) {
 }
 
 inline void ParCompactionManager::push(oop obj) {
-  marking_stack()->push(PSMarkTask(obj));
+  marking_stack()->push(ScannerTask(obj));
 }
 
 inline void ParCompactionManager::push(PartialArrayState* stat) {
-  marking_stack()->push(PSMarkTask(stat));
+  marking_stack()->push(ScannerTask(stat));
 }
 
 void ParCompactionManager::push_region(size_t index)
@@ -126,12 +126,12 @@ inline void ParCompactionManager::follow_array(objArrayOop obj, int start, int e
   }
 }
 
-inline void ParCompactionManager::follow_contents(const PSMarkTask& task) {
+inline void ParCompactionManager::follow_contents(const ScannerTask& task) {
   if (task.is_partial_array_state()) {
     assert(PSParallelCompact::mark_bitmap()->is_marked(task.to_partial_array_state()->source()), "should be marked");
     process_array_chunk(task.to_partial_array_state());
   } else {
-    oop obj = task.obj();
+    oop obj = task.to_oop();
     assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
     if (obj->is_objArray()) {
       push_objArray(obj);
@@ -211,7 +211,7 @@ inline void ParCompactionManager::flush_and_destroy_marking_stats_cache() {
 }
 
 #if TASKQUEUE_STATS
-void ParCompactionManager::record_steal(PSMarkTask task) {
+void ParCompactionManager::record_steal(ScannerTask task) {
   if (task.is_partial_array_state()) {
     ++_array_chunk_steals;
   }
