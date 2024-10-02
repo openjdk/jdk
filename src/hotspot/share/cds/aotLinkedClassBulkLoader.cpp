@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotClassInitializer.hpp"
 #include "cds/aotClassLinker.hpp"
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLinkedClassTable.hpp"
@@ -251,11 +252,10 @@ void AOTLinkedClassBulkLoader::init_required_classes_for_loader(Handle class_loa
         continue;
       }
       if (ik->has_aot_initialized_mirror()) {
-        // ik's <clinit> will not be executed as its mirror was already initialized
-        // during AOT cache assembly.
-        // Note that we allow the supertypes of ik to be *not* aot-initialized, so
-        // the following call may execute the <clinit> of some supertypes.
-        // TODO -- see if we can require all supertypes of be aot-initialized.
+        // No <clinit> of ik or any of its supertypes will be executed.
+        // Their mirrors were already initialized during AOT cache assembly.
+        AOTClassInitializer::assert_no_clinit_will_run_for_aot_init_class(ik);
+
         ik->initialize_from_cds(CHECK);
       }
     }

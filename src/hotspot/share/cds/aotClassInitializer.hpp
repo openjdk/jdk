@@ -31,10 +31,15 @@
 class InstanceKlass;
 
 class AOTClassInitializer : AllStatic {
+  class AllowedSpec;
+  static bool is_allowed(AllowedSpec* specs, InstanceKlass* ik);
+
 public:
   // Called by heapShared.cpp to see if src_ik->java_mirror() can be archived in
   // the initialized state.
   static bool can_archive_initialized_mirror(InstanceKlass* src_ik);
+
+  static void assert_no_clinit_will_run_for_aot_init_class(InstanceKlass* ik) NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_CDS_AOTCLASSINITIALIZER_HPP
