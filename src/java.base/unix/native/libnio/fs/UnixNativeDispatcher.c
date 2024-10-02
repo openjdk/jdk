@@ -664,13 +664,10 @@ static void copy_stat_attributes(JNIEnv* env, struct stat* buf, jobject attrs) {
     (*env)->SetLongField(env, attrs, attrs_st_ctime_sec, (jlong)buf->st_ctime);
 
 #ifdef _DARWIN_FEATURE_64_BIT_INODE
+    // birthtime_available defaults to 'false'; on Darwin, it is always true
     (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec, (jlong)buf->st_birthtime);
+    (*env)->SetBooleanField(env, attrs, attrs_birthtime_available, (jboolean)JNI_TRUE);
     // rely on default value of 0 for st_birthtime_nsec field on Darwin
-#endif
-#if defined(__linux__)
-    // stat(2) does not support birthtime so set the availability to false.
-    (*env)->SetBooleanField(env, attrs, attrs_birthtime_available,
-                            (jboolean)JNI_FALSE);
 #endif
 
 #ifndef MACOSX

@@ -58,7 +58,7 @@ class UnixFileAttributes
     private long    st_ctime_nsec;
     private long    st_birthtime_sec;
     private long    st_birthtime_nsec;
-    private boolean birthtime_available = true;
+    private boolean birthtime_available;
 
     // created lazily
     private volatile UserPrincipal owner;
