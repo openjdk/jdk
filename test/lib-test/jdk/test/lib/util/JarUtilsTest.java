@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @bug 8309841
  * @summary Unit Test for a common Test API in jdk.test.lib.util.JarUtils
  * @library /test/lib
  */

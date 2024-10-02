@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8337496
+ * @bug 8309841
  * @summary Jarsigner should print a warning if an entry is removed
  * @library /test/lib
  */
