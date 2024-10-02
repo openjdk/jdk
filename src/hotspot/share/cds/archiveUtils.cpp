@@ -397,7 +397,15 @@ ArchiveWorkers::ArchiveWorkers() :
         _started_workers(0),
         _running_workers(0),
         _in_shutdown(false),
-        _task(nullptr) {}
+        _task(nullptr) {
+  // Kick off pool startup by creating a single worker.
+  start_worker_if_needed();
+}
+
+ArchiveWorkers::~ArchiveWorkers() {
+  // If nothing called shutdown yet, we need to gracefully shutdown now.
+  shutdown();
+}
 
 void ArchiveWorkers::shutdown() {
   if (Atomic::cmpxchg(&_in_shutdown, false, true) == false) {
@@ -423,9 +431,6 @@ void ArchiveWorkers::start_worker_if_needed() {
 void ArchiveWorkers::run_task(ArchiveWorkerTask* task) {
   assert(task == &_shutdown_task || !_in_shutdown, "Should not be shutdown");
   assert(_task == nullptr, "Should not have running tasks");
-
-  // If the pool is idle, kick off its startup by creating a single worker.
-  start_worker_if_needed();
 
   // Configure the execution.
   task->maybe_override_max_chunks(_num_workers * CHUNKS_PER_WORKER);

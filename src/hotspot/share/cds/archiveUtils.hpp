@@ -364,6 +364,7 @@ private:
 
 public:
   ArchiveWorkers();
+  ~ArchiveWorkers();
   void shutdown();
   void run_task(ArchiveWorkerTask* task);
 };
