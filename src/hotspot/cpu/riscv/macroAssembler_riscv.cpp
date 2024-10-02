@@ -1564,7 +1564,10 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
   assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
-  Label L_by16_loop, L_vector_entry, L_unroll_loop, L_unroll_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
+  Label L_vector_entry,
+        L_unroll_loop,
+        L_by4_loop_entry, L_by4_loop,
+        L_by1_loop, L_exit;
 
   const int64_t single_table_size = 256;
   const int64_t unroll = 16;
@@ -1585,21 +1588,17 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     bge(len, tmp1, L_vector_entry);
   }
 #endif // COMPILER2
-  subw(len, len, unroll_words);
-  bge(len, zr, L_unroll_loop_entry);
 
-  addiw(len, len, unroll_words-4);
-  bge(len, zr, L_by4_loop);
-  addiw(len, len, 4);
-  bgt(len, zr, L_by1_loop);
-  j(L_exit);
+  mv(tmp1, unroll_words);
+  blt(len, tmp1, L_by4_loop_entry);
+
+  const Register loop_buf_end = tmp3;
 
   align(CodeEntryAlignment);
-  bind(L_unroll_loop_entry);
-    const Register buf_end = tmp3;
-    add(buf_end, buf, len); // buf_end will be used as endpoint for loop below
+  // Entry for L_unroll_loop
+    add(loop_buf_end, buf, len);    // loop_buf_end will be used as endpoint for loop below
     andi(len, len, unroll_words-1); // len = (len % unroll_words)
-    sub(len, len, unroll_words); // Length after all iterations
+    sub(loop_buf_end, loop_buf_end, len);
   bind(L_unroll_loop);
     for (int i = 0; i < unroll; i++) {
       ld(tmp1, Address(buf, i*wordSize));
@@ -1608,57 +1607,50 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     }
 
     addi(buf, buf, unroll_words);
-    ble(buf, buf_end, L_unroll_loop);
-    addiw(len, len, unroll_words-4);
-    bge(len, zr, L_by4_loop);
-    addiw(len, len, 4);
-    bgt(len, zr, L_by1_loop);
-    j(L_exit);
+    blt(buf, loop_buf_end, L_unroll_loop);
 
+  bind(L_by4_loop_entry);
+    mv(tmp1, 4);
+    blt(len, tmp1, L_by1_loop);
+    add(loop_buf_end, buf, len); // loop_buf_end will be used as endpoint for loop below
+    andi(len, len, 3);
+    sub(loop_buf_end, loop_buf_end, len);
   bind(L_by4_loop);
     lwu(tmp1, Address(buf));
     update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, false);
-    subw(len, len, 4);
     addi(buf, buf, 4);
-    bge(len, zr, L_by4_loop);
-    addiw(len, len, 4);
-    ble(len, zr, L_exit);
+    blt(buf, loop_buf_end, L_by4_loop);
 
   bind(L_by1_loop);
+    beqz(len, L_exit);
+
     subw(len, len, 1);
     lwu(tmp1, Address(buf));
     andi(tmp2, tmp1, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
-    ble(len, zr, L_exit);
+    beqz(len, L_exit);
 
     subw(len, len, 1);
     srli(tmp2, tmp1, 8);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
-    ble(len, zr, L_exit);
+    beqz(len, L_exit);
 
     subw(len, len, 1);
     srli(tmp2, tmp1, 16);
-    andi(tmp2, tmp2, right_8_bits);
-    update_byte_crc32(crc, tmp2, table0);
-    ble(len, zr, L_exit);
-
-    srli(tmp2, tmp1, 24);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
 
 #ifdef COMPILER2
   // put vector code here, otherwise "offset is too large" error occurs.
   if (UseRVV) {
-    j(L_exit); // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
+    // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
+    j(L_exit);
 
     bind(L_vector_entry);
     vector_update_crc32(crc, buf, len, tmp1, tmp2, tmp3, tmp4, tmp6, table0, table3);
 
-    addiw(len, len, -4);
-    bge(len, zr, L_by4_loop);
-    addiw(len, len, 4);
-    bgt(len, zr, L_by1_loop);
+    bgtz(len, L_by4_loop_entry);
   }
 #endif // COMPILER2
 
