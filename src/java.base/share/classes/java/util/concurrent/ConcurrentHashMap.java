@@ -69,6 +69,7 @@ import java.util.function.ToLongBiFunction;
 import java.util.function.ToLongFunction;
 import java.util.stream.Stream;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.ArraysSupport;
 
 /**
  * A hash table supporting full concurrency of retrievals and
@@ -517,7 +518,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * The largest possible (non-power of two) array size.
      * Needed by toArray and related methods.
      */
-    static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+    static final int MAX_ARRAY_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
     /**
      * The default concurrency level for this table. Unused but

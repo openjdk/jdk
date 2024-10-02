@@ -490,7 +490,7 @@ final class Float512Vector extends FloatVector {
                                    VectorMask<Float> m) {
         return (Float512Vector)
             super.selectFromTemplate((Float512Vector) v,
-                                     (Float512Mask) m);  // specialize
+                                     Float512Mask.class, (Float512Mask) m);  // specialize
     }
 
 
@@ -847,6 +847,13 @@ final class Float512Vector extends FloatVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Float512Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Float512Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Float512Shuffle)(((AbstractShuffle<Float>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

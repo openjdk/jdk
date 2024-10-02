@@ -507,11 +507,11 @@ public final class DirectCodeBuilder
         }
     }
 
-    public void writeIncrement(int slot, int val) {
-        if ((slot < 256 && val < 128 && val > -127)) {
-            bytecodesBufWriter.writeU1U1U1(IINC, slot, val);
+    public void writeIncrement(boolean wide, int slot, int val) {
+        if (wide) {
+            bytecodesBufWriter.writeU2U2U2((WIDE << 8) | IINC, slot, value);
         } else {
-            bytecodesBufWriter.writeU2U2U2((WIDE << 8) | IINC, slot, val);
+            bytecodesBufWriter.writeU1U1U1(IINC, slot, value);
         }
     }
 
@@ -1497,7 +1497,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder iinc(int slot, int val) {
-        writeIncrement(slot, val);
+        writeIncrement(validateAndIsWideIinc(slot, val), slot, val);
         return this;
     }
 

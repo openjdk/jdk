@@ -858,9 +858,9 @@ public abstract sealed class AbstractInstruction
         final int constant;
 
         public UnboundIncrementInstruction(int slot, int constant) {
-            super(slot <= 255 && constant < 128 && constant > -127
-                  ? Opcode.IINC
-                  : Opcode.IINC_W);
+            super(BytecodeHelpers.validateAndIsWideIinc(slot, constant)
+                  ? Opcode.IINC_W
+                  : Opcode.IINC);
             this.slot = slot;
             this.constant = constant;
         }
@@ -877,7 +877,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeIncrement(slot, constant);
+            writer.writeIncrement(op == Opcode.IINC_W, slot, constant);
         }
 
         @Override
