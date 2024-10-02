@@ -171,6 +171,7 @@ public class Log {
      * the given <code>argsHandler</code>.
      */
     public Log(PrintStream stream, ArgumentParser argsParser) {
+        this(stream);
         traceLevel = argsParser.getTraceLevel();
     }
 
