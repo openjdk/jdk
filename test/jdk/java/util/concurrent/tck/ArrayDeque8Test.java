@@ -36,6 +36,7 @@ import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Spliterator;
 
+import jdk.internal.util.ArraysSupport;
 import junit.framework.Test;
 
 public class ArrayDeque8Test extends JSR166TestCase {
@@ -86,7 +87,7 @@ public class ArrayDeque8Test extends JSR166TestCase {
             return;
 
         final Item e = fortytwo;
-        final int maxArraySize = Integer.MAX_VALUE - 8;
+        final int maxArraySize = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
         assertThrows(OutOfMemoryError.class,
                      () -> new ArrayDeque<Item>(Integer.MAX_VALUE));
