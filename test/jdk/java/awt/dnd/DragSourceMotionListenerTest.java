@@ -23,6 +23,7 @@
 
 import java.awt.AWTEvent;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Frame;
@@ -31,6 +32,7 @@ import java.awt.Panel;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
@@ -136,7 +138,6 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
     }
 
     public static void main(String[] args) throws Exception {
-        final Dimension[] d = new Dimension[1];
         try {
             Robot robot = new Robot();
             robot.setAutoDelay(10);
@@ -147,30 +148,22 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
             robot.delay(1000);
 
             EventQueue.invokeAndWait(() -> {
-                srcPoint = source.getLocationOnScreen();
-                d[0] = source.getSize();
-                srcPoint.translate(d[0].width / 2, d[0].height / 2);
+                Point p = getPoint(source, 1);
+                srcPoint = p;
+
+                p = getPoint(frame, 3);
+                dstOutsidePoint = p;
+                testPoint1.setLocation(p);
+
+                p = getPoint(target, 1);
+                dstInsidePoint = p;
+                testPoint2.setLocation(p);
             });
             robot.waitForIdle();
 
             if (!dsmObj.pointInComponent(robot, srcPoint, source)) {
                 throw new RuntimeException("WARNING: Couldn't locate source panel.");
             }
-
-            EventQueue.invokeAndWait(() -> {
-                dstOutsidePoint = frame.getLocationOnScreen();
-                d[0] = frame.getSize();
-                dstOutsidePoint.translate(3 * d[0].width / 2, d[0].height / 2);
-                testPoint1.setLocation(dstOutsidePoint);
-             });
-
-
-            EventQueue.invokeAndWait(() -> {
-                dstInsidePoint = target.getLocationOnScreen();
-                d[0] = target.getSize();
-                dstInsidePoint.translate(d[0].width / 2, d[0].height / 2);
-                testPoint2.setLocation(dstInsidePoint);
-            });
 
             if (!dsmObj.pointInComponent(robot, dstInsidePoint, target)) {
                 throw new RuntimeException("WARNING: Couldn't locate target panel.");
@@ -199,13 +192,13 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
             robot.waitForIdle();
             robot.delay(1000);
 
-        if (!passedTest1) {
-            throw new RuntimeException("Failed first test.");
-        }
+            if (!passedTest1) {
+                throw new RuntimeException("Failed first test.");
+            }
 
-        if (!passedTest2) {
-            throw new RuntimeException("Failed second test.");
-        }
+            if (!passedTest2) {
+                throw new RuntimeException("Failed second test.");
+            }
     } finally {
         EventQueue.invokeAndWait(() -> {
             if (frame != null) {
@@ -215,12 +208,15 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
     }
 }
 
-    public static int sign(int n) {
-        return Integer.compare(n, 0);
+    private static Point getPoint(Container container, int multiple) {
+        Point p = container.getLocationOnScreen();
+        Dimension d = container.getSize();
+        p.translate(multiple * d.width / 2, d.height / 2);
+        return p;
     }
 
-    public void reset() {
-        clickedComponent = null;
+    public static int sign(int n) {
+        return Integer.compare(n, 0);
     }
 
     public void eventDispatched(AWTEvent e) {
@@ -232,7 +228,7 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
 
     boolean pointInComponent(Robot robot, Point p, Component comp) throws Exception {
         robot.waitForIdle();
-        reset();
+        clickedComponent = null;
         mouseReleaseEvent = new CountDownLatch(1);
         robot.mouseMove(p.x, p.y);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);

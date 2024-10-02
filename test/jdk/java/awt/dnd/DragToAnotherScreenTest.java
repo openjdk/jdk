@@ -134,14 +134,14 @@ public class DragToAnotherScreenTest {
                         JOptionPane.showMessageDialog(frame0,
                                                       "getTransferData was successful",
                                                       "Test Passed", JOptionPane.PLAIN_MESSAGE);
-                        PassFailJFrame.forcePass();
                     } catch (Exception e) {
                         dtde.dropComplete(false);
-                        PassFailJFrame.log("getTransferData() Failed: " + e);
+                        e.printStackTrace();
+                        PassFailJFrame.log("getTransferData() Failed");
                         JOptionPane.showMessageDialog(frame0,
                                                       "getTransferData() Failed",
                                                       "Test Failed", JOptionPane.ERROR_MESSAGE);
-                        PassFailJFrame.forceFail();
+                        PassFailJFrame.forceFail("getTransferData() Failed");
                     }
                     dtde.dropComplete(true);
                 } else {
@@ -150,7 +150,7 @@ public class DragToAnotherScreenTest {
                     JOptionPane.showMessageDialog(frame0,
                                                   "stringFlavor is not supported by Transferable",
                                                   "Test Failed", JOptionPane.ERROR_MESSAGE);
-                    PassFailJFrame.forceFail();
+                    PassFailJFrame.forceFail("stringFlavor is not supported by Transferable");
                 }
             }
         };
