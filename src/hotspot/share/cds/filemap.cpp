@@ -1949,26 +1949,14 @@ public:
                            _rw_bm(rw_bm), _ro_bm(ro_bm), _rw_reloc(rw_reloc), _ro_reloc(ro_reloc) {}
 
   void work(int chunk, int max_chunks) override {
-    BitMapView* bm;
-    SharedDataRelocator* reloc;
-    int bitmap_chunk;
+    work_on(chunk, max_chunks, _rw_bm, _rw_reloc);
+    work_on(chunk, max_chunks, _ro_bm, _ro_reloc);
+  }
 
-    // Pick up the slice from one of the bitmaps.
-    int chunks_per_bitmap = max_chunks / 2;
-    if (chunk < chunks_per_bitmap) {
-      bm = _rw_bm;
-      reloc = _rw_reloc;
-      bitmap_chunk = chunk;
-    } else {
-      // Processing RO bitmap
-      bm = _ro_bm;
-      reloc = _ro_reloc;
-      bitmap_chunk = chunk - chunks_per_bitmap;
-    }
-
-    // Process the slice.
-    BitMap::idx_t start = MIN2(bm->size(), bm->size() * bitmap_chunk / chunks_per_bitmap);
-    BitMap::idx_t end   = MIN2(bm->size(), bm->size() * (bitmap_chunk + 1) / chunks_per_bitmap);
+  void work_on(int chunk, int max_chunks, BitMapView* bm, SharedDataRelocator* reloc) {
+    BitMap::idx_t size  = bm->size();
+    BitMap::idx_t start = MIN2(size, size * chunk / max_chunks);
+    BitMap::idx_t end   = MIN2(size, size * (chunk + 1) / max_chunks);
     bm->iterate(reloc, start, end);
   }
 };
