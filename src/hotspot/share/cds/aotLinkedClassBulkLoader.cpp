@@ -285,5 +285,5 @@ void AOTLinkedClassBulkLoader::init_required_classes_for_loader(Handle class_loa
     }
   }
 
-  HeapShared::init_classes_reachable_from_archived_mirrors(class_loader, CHECK);
+  HeapShared::init_classes_for_special_subgraph(class_loader, CHECK);
 }
