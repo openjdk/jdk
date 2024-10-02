@@ -34,6 +34,9 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.AccessController;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.Optional;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -59,15 +62,24 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     private static final Optional<Path> SELF_MNT_NS;
 
+    @SuppressWarnings("removal")
+    private static Optional<Path> readSymlinkPrivileged(final Path symlink) throws IOException {
+      try {
+        return AccessController.doPrivileged((PrivilegedExceptionAction<Optional<Path>>) () -> Optional.ofNullable(Files.readSymbolicLink(symlink)));
+      } catch (PrivilegedActionException e) {
+          if (e.getException() instanceof IOException ioe) throw ioe; else return Optional.empty();
+      }
+    }
+
     static {
-        Path nsPath = null;
+        Optional<Path> nsPath = Optional.empty();
 
         try {
-            nsPath = Files.readSymbolicLink(SELF.resolve(NS_MNT));
+            nsPath = readSymlinkPrivileged(SELF.resolve(NS_MNT));
         } catch (IOException _) {
-            // do nothing
+            // do nothing...
         } finally {
-            SELF_MNT_NS = Optional.ofNullable(nsPath);
+            SELF_MNT_NS = nsPath;
         }
     }
 
@@ -277,7 +289,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
             try {
                 // attempt to read the target's mnt ns id
-                targetMountNS = Optional.ofNullable(Files.readSymbolicLink(procPidPath.resolve(NS_MNT)));
+                targetMountNS = readSymlinkPrivileged(procPidPath.resolve(NS_MNT));
             } catch (IOException _) {
                 // if we fail to read the target's mnt ns id then we either don't have access or it no longer exists!
                 if (!Files.exists(procPidPath)) {
@@ -303,7 +315,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
             try {
                 // attempt to read the target's pid ns id
-                curPidNS = Optional.ofNullable(Files.readSymbolicLink(procPidPath.resolve(NS_PID)));
+                curPidNS = readSymlinkPrivileged(procPidPath.resolve(NS_PID));
             } catch (IOException _) {
                 // if we fail to read the target's pid ns id then we either don't have access or it no longer exists!
                 if (!Files.exists(procPidPath)) {
