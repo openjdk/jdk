@@ -140,10 +140,13 @@ public class RejectDragTest {
 
     private static void testDnD() throws Exception {
         EventQueue.invokeAndWait(() -> {
-            startPoint = frame.getLocationOnScreen();
-            endPoint = new Point(startPoint);
-            startPoint.translate(50, 50);
-            endPoint.translate(150, 150);
+            Point start = frame.getLocationOnScreen();
+            start.translate(50, 50);
+            startPoint = start;
+
+            Point end = new Point(start);
+            end.translate(150, 150);
+            endPoint = end;
         });
 
         robot.mouseMove(startPoint.x, startPoint.y);
