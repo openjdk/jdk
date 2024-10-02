@@ -1469,6 +1469,9 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
       bool xk = to->klass_is_exact();
       int instance_id = to->instance_id();
 
+      // If the input type's class is the holder: if exact, the type only includes interfaces implemented by the holder
+      // but if not exact, it may include extra interfaces: build new type from the holder class to make sure only
+      // its interfaces are included.
       if (xk && ik->equals(canonical_holder)) {
         assert(tj == TypeInstPtr::make(to->ptr(), canonical_holder, is_known_inst, nullptr, offset, instance_id), "exact type should be canonical type");
       } else {
