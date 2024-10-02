@@ -60,7 +60,7 @@ hs_err_files=$(ls make/hs_err*.log 2> /dev/null || true)
     echo '```'
     echo '</details>'
     echo ''
-  fi
+  done
 
   echo ''
   echo ':arrow_right: To see the entire test log, click the job in the list to the left. To download logs, see the `failure-logs` [artifact above](#artifacts).'
