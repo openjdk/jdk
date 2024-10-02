@@ -1736,9 +1736,9 @@ public:
 char* FileMapInfo::map_memory(int fd, const char* file_name, size_t file_offset,
                               char *addr, size_t bytes, bool read_only, bool allow_exec) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
-                             false, // Pretouch cannot work with read-only memory.
+                             (ArchivePreTouch || AlwaysPreTouch) ? false : read_only,
                              allow_exec, mtClassShared);
-  if (mem != nullptr) {
+  if (mem != nullptr && (ArchivePreTouch || AlwaysPreTouch)) {
     ArchiveRegionPretouchTask pretouch(mem, bytes);
     _archive_workers.run_task(&pretouch);
   }
@@ -2012,8 +2012,13 @@ bool FileMapInfo::relocate_pointers_in_core_regions(intx addr_delta) {
     SharedDataRelocator ro_patcher((address*)ro_patch_base + header()->ro_ptrmap_start_pos(), (address*)ro_patch_end, valid_old_base, valid_old_end,
                                 valid_new_base, valid_new_end, addr_delta);
 
-    SharedDataRelocationTask task(&rw_ptrmap, &ro_ptrmap, &rw_patcher, &ro_patcher);
-    _archive_workers.run_task(&task);
+    if (ArchiveParallelRelocation) {
+      SharedDataRelocationTask task(&rw_ptrmap, &ro_ptrmap, &rw_patcher, &ro_patcher);
+      _archive_workers.run_task(&task);
+    } else {
+      ro_ptrmap.iterate(&ro_patcher);
+      rw_ptrmap.iterate(&rw_patcher);
+    }
 
     // The MetaspaceShared::bm region will be unmapped in MetaspaceShared::initialize_shared_spaces().
 
