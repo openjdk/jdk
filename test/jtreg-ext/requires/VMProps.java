@@ -104,7 +104,6 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.flightRecorder", this::vmFlightRecorder);
         map.put("vm.simpleArch", this::vmArch);
         map.put("vm.debug", this::vmDebug);
-        map.put("vm.unlockExperimentalOptions", this::vmUnlockExperimentalOptions);
         map.put("vm.jvmci", this::vmJvmci);
         map.put("vm.jvmci.enabled", this::vmJvmciEnabled);
         map.put("vm.emulatedClient", this::vmEmulatedClient);
@@ -254,13 +253,6 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * @return true if VM has experimental options unlocked
-     */
-    protected String vmUnlockExperimentalOptions() {
-        return "" + WB.getBooleanVMFlag("UnlockExperimentalVMOptions");
-    }
-
-    /**
      * @return true if VM supports JVMCI and false otherwise
      */
     protected String vmJvmci() {
@@ -392,6 +384,7 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlag(map, "CriticalJNINatives");
         vmOptFinalFlag(map, "EnableJVMCI");
         vmOptFinalFlag(map, "EliminateAllocations");
+        vmOptFinalFlag(map, "UnlockExperimentalVMOptions");
         vmOptFinalFlag(map, "UseCompressedOops");
         vmOptFinalFlag(map, "UseLargePages");
         vmOptFinalFlag(map, "UseVectorizedMismatchIntrinsic");

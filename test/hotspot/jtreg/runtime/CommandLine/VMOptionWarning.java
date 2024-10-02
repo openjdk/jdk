@@ -26,7 +26,7 @@
  * @bug 8027314
  * @summary Warn if diagnostic or experimental vm option is used and -XX:+UnlockDiagnosticVMOptions or -XX:+UnlockExperimentalVMOptions, respectively, isn't specified. Warn if develop vm option is used with product version of VM.
  * @requires vm.flagless
- * @requires ! vm.unlockExperimentalOptions
+ * @requires ! vm.opt.final.UnlockExperimentalVMOptions
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
