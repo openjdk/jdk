@@ -941,8 +941,8 @@ void ShenandoahFreeSet::recycle_trash() {
       // takes a "long time", we will have less time to process regions, but we will always process at least one batch between
       // yields.  Yielding more frequently when there is heavy contention for the heap lock or for CPU cores is considered the
       // right thing to do.
-      const size_t REGION_STRIDE = 32;
-      size_t max_idx = MIN2(count, idx + REGION_STRIDE);
+      const size_t REGIONS_PER_BATCH = 32;
+      size_t max_idx = MIN2(count, idx + REGIONS_PER_BATCH);
       while (idx < max_idx) {
         try_recycle_trashed(_trash_regions[idx++]);
       }
