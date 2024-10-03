@@ -41,7 +41,7 @@ import java.awt.event.ActionListener;
  * @summary Test for Checkbox indicator size
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual/othervm -Dsun.java2d.uiScale=3 CheckboxIndicatorSizeTest
+ * @run main/manual CheckboxIndicatorSizeTest
  */
 
 public class CheckboxIndicatorSizeTest implements ActionListener {
