@@ -3324,27 +3324,27 @@ size_t os::win32::large_page_init_decide_size() {
     WARN("Large page is not supported by the processor.");
     return 0;
   }
+
 #if defined(IA32)
-    if (size > 4 * M || LargePageSizeInBytes > 4 * M) {
+  if (size > 4 * M || LargePageSizeInBytes > 4 * M) {
     WARN("JVM cannot use large pages bigger than 4mb.");
     return 0;
   }
 #elif defined(AMD64)
-    if (!EnableAllLargePageSizesForWindows) {
-      if (size > 4 * M || LargePageSizeInBytes > 4 * M) {
-        WARN("JVM cannot use large pages bigger than 4mb.");
-        return 0;
-      }
+  if (!EnableAllLargePageSizesForWindows) {
+    if (size > 4 * M || LargePageSizeInBytes > 4 * M) {
+      WARN("JVM cannot use large pages bigger than 4mb.");
+      return 0;
     }
+  }
 #endif
+
   if (LargePageSizeInBytes > 0) {
     if (LargePageSizeInBytes % size == 0) {
       size = LargePageSizeInBytes;
     } else {
       WARN("The specified large page size (%d) is not a multiple of the minimum large page size (%d), defaulting to minimum page size.", LargePageSizeInBytes, size);
     }
-  } else {
-    WARN("The JVM cannot use large pages because the large page size setting is not configured, defaulting to minimum page size (%d).", size);
   }
 
 #undef WARN
