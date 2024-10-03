@@ -954,7 +954,7 @@ void ShenandoahFreeSet::recycle_trash() {
       total_batches++;
       batch_end_time = os::javaTimeNanos();
       // Estimate includes historic combination of yield times and heap lock acquisition times.
-      batch_process_time_estimate = (batch_end_time - recycle_trash_start_time) / total_batches;;
+      batch_process_time_estimate = (batch_end_time - recycle_trash_start_time) / total_batches;
       predicted_next_batch_end_time = batch_end_time + batch_process_time_estimate;
     } while ((idx < count) && (predicted_next_batch_end_time < deadline));
   }
