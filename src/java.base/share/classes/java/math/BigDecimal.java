@@ -5261,7 +5261,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 intVal = qr[0];
                 scale = checkScale(intVal, scale - exp); // could Overflow
                 remainingZeros -= exp;
-    
+
                 i = BigInteger.bitLengthForLong(remainingZeros);
             }
         }
