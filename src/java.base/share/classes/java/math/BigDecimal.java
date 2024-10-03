@@ -2164,11 +2164,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             BigDecimal result;
             if (mc.roundingMode == RoundingMode.UNNECESSARY || mc.precision == 0) { // Exact result requested
                 // To avoid trailing zeros in the result, strip trailing zeros.
-                final BigDecimal stripped = this.stripZerosToEvenScale();
-                final int strippedScale = stripped.scale; // strippedScale is even by construction
+                final BigDecimal stripped = this.stripTrailingZeros();
+                final int strippedScale = stripped.scale;
 
                 // Check for even powers of 10. Numerically sqrt(10^2N) = 10^N
-                if (stripped.isPowerOfTen()) {
+                if (stripped.isPowerOfTen() && (strippedScale & 1) == 0) {
                     result = valueOf(1L, strippedScale >> 1);
                     // Adjust to preferred scale as appropriate.
                     if (result.scale < preferredScale)
@@ -2177,15 +2177,23 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     return result;
                 }
 
-                // After stripTrailingZerosToEvenScale, the representation is normalized as
+                // After stripTrailingZeros, the representation is normalized as
                 //
                 // unscaledValue * 10^(-scale)
                 //
                 // where unscaledValue is an integer with the minimum
-                // precision for the cohort of the numerical value such that scale is even.
+                // precision for the cohort of the numerical value.
+                BigInteger working = stripped.unscaledValue();
+                final int resultScale;
+                if ((strippedScale & 1) == 0) {
+                    resultScale = strippedScale >> 1;
+                } else {
+                    working = working.multiply(10L);
+                    resultScale = (int) ((strippedScale + 1L) >> 1);
+                }
 
-                BigInteger[] sqrtRem = stripped.unscaledValue().sqrtAndRemainder();
-                result = new BigDecimal(sqrtRem[0], strippedScale >> 1);
+                BigInteger[] sqrtRem = working.sqrtAndRemainder();
+                result = new BigDecimal(sqrtRem[0], resultScale);
 
                 // If result*result != this numerically or requires too high precision,
                 // the square root isn't exact
@@ -2272,84 +2280,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             default:
                 throw new AssertionError("Bad value from signum");
             }
-        }
-    }
-
-    /**
-     * Remove or append insignificant trailing zeros from this
-     * {@code BigDecimal} value to reach an even scale, until no
-     * more zeros can be removed.
-     * <p> Assumes {@code this != 0}.
-     *
-     * @return the {@code BigDecimal} numerically equal to this one
-     * that has even scale and unscaled value with minimum magnitude.
-     * @throws ArithmeticException if scale overflows.
-     */
-    private BigDecimal stripZerosToEvenScale() {
-        if (this.intCompact != INFLATED) {
-            long intCompact = this.intCompact;
-            int scale = this.scale;
-
-            // Try to make the scale even if it isn't by stripping a zero
-            boolean even = (scale & 1) == 0;
-            if (!even && intCompact % 10L == 0L) {
-                intCompact /= 10L;
-                scale = checkScale(intCompact, scale - 1L); // could Overflow
-                even = true;
-            }
-
-            if (even) {
-                // Strip remaining zeros while maintaining the scale even
-                while (intCompact % 100L == 0L) { // zero remainder
-                    intCompact /= 100L;
-                    scale = checkScale(intCompact, scale - 2L); // could Overflow
-                }
-
-                return valueOf(intCompact, scale, 0);
-            } else { // No trailing zeros but odd scale
-                final long intValTenfold = intCompact * 10L;
-
-                if (intValTenfold / 10L == intCompact) { // See Math.multiplyExact(long, long)
-                    scale = checkScale(intValTenfold, scale + 1L); // could Overflow
-                    return valueOf(intValTenfold, scale, 0);
-                } else { // intCompact * 10L overflows
-                    BigInteger intValTenfoldBig = BigInteger.valueOf(intCompact).multiply(10L);
-                    scale = checkScale(intValTenfoldBig, scale + 1L); // could Overflow
-                    return valueOf(intValTenfoldBig, scale, 0);
-                }
-            }
-        } else {
-            BigInteger intVal = this.intVal == null ? INFLATED_BIGINT : this.intVal;
-            int scale = this.scale;
-            BigInteger[] qr; // quotient-remainder pair
-
-            // Try to make the scale even if it isn't by stripping a zero
-            boolean even = (scale & 1) == 0;
-            if (!even && !intVal.testBit(0)) { // odd number cannot end in 0
-                qr = intVal.divideAndRemainder(BigInteger.TEN);
-                if (qr[1].signum == 0) { // zero remainder
-                    intVal = qr[0];
-                    scale = checkScale(intVal, scale - 1L); // could Overflow
-                    even = true;
-                }
-            }
-
-            if (even) {
-                // Strip remaining zeros while maintaining the scale even
-                final BigInteger hundred = BigInteger.valueOf(100L);
-                while ((intVal.mag[intVal.mag.length - 1] & 3) == 0) { // non-multiple of 4 cannot end in 00
-                    qr = intVal.divideAndRemainder(hundred);
-                    if (qr[1].signum != 0) // non-0 remainder
-                        break;
-                    intVal = qr[0];
-                    scale = checkScale(intVal, scale - 2L); // could Overflow
-                }
-            } else { // No trailing zeros but odd scale
-                intVal = intVal.multiply(10L);
-                scale = checkScale(intVal, scale + 1L); // could Overflow
-            }
-
-            return valueOf(intVal, scale, 0);
         }
     }
 
