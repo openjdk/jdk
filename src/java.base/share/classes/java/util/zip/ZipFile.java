@@ -1220,28 +1220,29 @@ public class ZipFile implements ZipConstants, Closeable {
         private int[] entries;                  // array of hashed cen entry
 
         // Checks the entry at offset pos in the CEN, calculates the Entry values as per above.
-        // Returns position of next entry
-        private int processNextCENEntry(int pos, CENState state)
+        private void processNextCENEntry(InitCENState state)
             throws IOException
         {
+            int pos = state.pos;
             byte[] cen = this.cen;
             // The entry length, from pos + CENHDR
             int nlen = get16(cen, pos + CENNAM);
 
             // Validate and return the full header size (a value between CENHDR and 0xFFFF, inclusive)
-            int headerSize = checkCENHeader(pos, state, nlen);
+            int headerSize = checkCENHeader(state, nlen);
 
-            addEntry(pos, state, nlen);
+            addEntry(state, nlen);
 
             // Adds name to metanames.
             if (isMetaName(pos, nlen)) {
-                checkAndAddMetaEntry(pos, state, nlen);
+                checkAndAddMetaEntry(state, nlen);
             }
             state.idx += 3;
-            return pos + headerSize;
+            state.pos = pos + headerSize;
         }
 
-        private int checkCENHeader(int pos, CENState state, int nlen) throws ZipException {
+        private int checkCENHeader(InitCENState state, int nlen) throws ZipException {
+            int pos = state.pos;
             int index = state.idx;
             if (index >= entries.length) {
                 zerror(INDEX_OVERFLOW);
@@ -1290,8 +1291,9 @@ public class ZipFile implements ZipConstants, Closeable {
             return headerSize;
         }
 
-        private void addEntry(int pos, CENState state, int nlen) throws ZipException {
+        private void addEntry(InitCENState state, int nlen) throws ZipException {
             try {
+                int pos = state.pos;
                 int hash = zipCoderForPos(pos).checkedHash(cen, pos + CENHDR, nlen);
                 int[] table = this.table;
                 int hsh = (hash & 0x7fffffff) % table.length;
@@ -1318,7 +1320,8 @@ public class ZipFile implements ZipConstants, Closeable {
             }
         }
 
-        private void checkAndAddMetaEntry(int pos, CENState state, int nlen) {
+        private void checkAndAddMetaEntry(InitCENState state, int nlen) {
+            int pos = state.pos;
             // nlen is at least META_INF_LENGTH
             if (isManifestName(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN)) {
                 manifestPos = pos;
@@ -1775,11 +1778,13 @@ public class ZipFile implements ZipConstants, Closeable {
             throw new ZipException("zip END header not found");
         }
 
-        private static class CENState {
+        // Transient holder of state maintained during initCEN, such as current
+        // entry offset into the CEN.
+        private static class InitCENState {
+            int pos;
             int idx;
             List<Integer> signatureNames;
             Set<Integer> metaVersionsSet;
-            CENState() {}
         }
 
         // Reads ZIP file central directory.
@@ -1826,16 +1831,15 @@ public class ZipFile implements ZipConstants, Closeable {
             table = new int[tablelen];
 
             // Iterate through the entries in the central directory
-            var state = new CENState(); // state holder
-            int pos = 0;
+            var state = new InitCENState(); // state holder
             try {
                 int limit = cen.length - CENHDR;
                 // Checks the entry and adds values to entries[idx ... idx+2], state.pos will contain position of next entry
-                while (pos < limit) {
-                    pos = processNextCENEntry(pos, state);
+                while (state.pos < limit) {
+                    processNextCENEntry(state);
                 }
 
-                if (pos != cen.length) {
+                if (state.pos != cen.length) {
                     zerror("invalid CEN header (bad header size)");
                 }
 
