@@ -338,6 +338,7 @@
 #define NOT_PRODUCT_ARG(arg)
 #define PRODUCT_RETURN  {}
 #define PRODUCT_RETURN0 { return 0; }
+#define PRODUCT_RETURN_NULL { return nullptr; }
 #define PRODUCT_RETURN_(code) { code }
 #else // PRODUCT
 #define PRODUCT_ONLY(code)
@@ -345,6 +346,7 @@
 #define NOT_PRODUCT_ARG(arg) arg,
 #define PRODUCT_RETURN  /*next token must be ;*/
 #define PRODUCT_RETURN0 /*next token must be ;*/
+#define PRODUCT_RETURN_NULL /* next token must be ;*/
 #define PRODUCT_RETURN_(code)  /*next token must be ;*/
 #endif // PRODUCT
 

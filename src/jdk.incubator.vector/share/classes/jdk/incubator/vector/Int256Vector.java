@@ -503,7 +503,7 @@ final class Int256Vector extends IntVector {
                                    VectorMask<Integer> m) {
         return (Int256Vector)
             super.selectFromTemplate((Int256Vector) v,
-                                     (Int256Mask) m);  // specialize
+                                     Int256Mask.class, (Int256Mask) m);  // specialize
     }
 
 
@@ -842,6 +842,13 @@ final class Int256Vector extends IntVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Int256Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Int256Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Int256Shuffle)(((AbstractShuffle<Integer>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

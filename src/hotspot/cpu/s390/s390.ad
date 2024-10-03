@@ -1644,6 +1644,10 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
 
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
+  if (is_encode_and_store_pattern(n, m)) {
+    mstack.push(m, Visit);
+    return true;
+  }
   return false;
 }
 
@@ -3913,6 +3917,7 @@ instruct loadL_unaligned(iRegL dst, memory mem) %{
 // Load Pointer
 instruct loadP(iRegP dst, memory mem) %{
   match(Set dst (LoadP mem));
+  predicate(n->as_Load()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
   format %{ "LG      $dst,$mem\t # ptr" %}
@@ -3924,6 +3929,7 @@ instruct loadP(iRegP dst, memory mem) %{
 // LoadP + CastP2L
 instruct castP2X_loadP(iRegL dst, memory mem) %{
   match(Set dst (CastP2X (LoadP mem)));
+  predicate(n->as_Load()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
   format %{ "LG      $dst,$mem\t # ptr + p2x" %}
@@ -4286,6 +4292,7 @@ instruct storeL(memory mem, iRegL src) %{
 // Store Pointer
 instruct storeP(memory dst, memoryRegP src) %{
   match(Set dst (StoreP dst src));
+  predicate(n->as_Store()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
   format %{ "STG     $src,$dst\t # ptr" %}
@@ -4388,6 +4395,7 @@ instruct memInitL(memoryRS mem, immL16 src) %{
 // Move Immediate to 8-byte memory.
 instruct memInitP(memoryRS mem, immP16 src) %{
   match(Set mem (StoreP mem src));
+  predicate(n->as_Store()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
   size(6);
   format %{ "MVGHI   $mem,$src\t # direct mem init 8" %}
@@ -4417,6 +4425,7 @@ instruct negL_reg_reg(iRegL dst, immL_0 zero, iRegL src, flagsReg cr) %{
 // Load narrow oop
 instruct loadN(iRegN dst, memory mem) %{
   match(Set dst (LoadN mem));
+  predicate(n->as_Load()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
   format %{ "LoadN   $dst,$mem\t # (cOop)" %}
@@ -4480,7 +4489,7 @@ instruct loadConNKlass(iRegN dst, immNKlass src) %{
 
 instruct decodeLoadN(iRegP dst, memory mem) %{
   match(Set dst (DecodeN (LoadN mem)));
-  predicate(false && (CompressedOops::base()==nullptr)&&(CompressedOops::shift()==0));
+  predicate(false && (CompressedOops::base()==nullptr) && (CompressedOops::shift()==0));
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
   format %{ "DecodeLoadN  $dst,$mem\t # (cOop Load+Decode)" %}
@@ -4735,6 +4744,7 @@ instruct encodeP_NN_Ex(iRegN dst, iRegP src, flagsReg cr) %{
 // Store Compressed Pointer
 instruct storeN(memory mem, iRegN_P2N src) %{
   match(Set mem (StoreN mem src));
+  predicate(n->as_Store()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP_SIZE);
   format %{ "ST      $src,$mem\t # (cOop)" %}
@@ -5146,6 +5156,7 @@ instruct compareAndSwapL_bool(iRegP mem_ptr, rarg5RegL oldval, iRegL newval, iRe
 
 instruct compareAndSwapP_bool(iRegP mem_ptr, rarg5RegP oldval, iRegP_N2P newval, iRegI res, flagsReg cr) %{
   match(Set res (CompareAndSwapP mem_ptr (Binary oldval newval)));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   effect(USE mem_ptr, USE_KILL oldval, KILL cr);
   size(18);
   format %{ "$res = CompareAndSwapP $oldval,$newval,$mem_ptr" %}
@@ -5156,6 +5167,7 @@ instruct compareAndSwapP_bool(iRegP mem_ptr, rarg5RegP oldval, iRegP_N2P newval,
 
 instruct compareAndSwapN_bool(iRegP mem_ptr, rarg5RegN oldval, iRegN_P2N newval, iRegI res, flagsReg cr) %{
   match(Set res (CompareAndSwapN mem_ptr (Binary oldval newval)));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   effect(USE mem_ptr, USE_KILL oldval, KILL cr);
   size(16);
   format %{ "$res = CompareAndSwapN $oldval,$newval,$mem_ptr" %}
@@ -5443,6 +5455,7 @@ instruct xchgL_reg_mem(memoryRSY mem, iRegL dst, iRegL tmp, flagsReg cr) %{
 %}
 
 instruct xchgN_reg_mem(memoryRSY mem, iRegN dst, iRegI tmp, flagsReg cr) %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set dst (GetAndSetN mem dst));
   effect(KILL cr, TEMP tmp); // USE_DEF dst by match rule.
   format %{ "XCHGN   $dst,[$mem]\t # EXCHANGE (coop, atomic), temp $tmp" %}
@@ -5452,6 +5465,7 @@ instruct xchgN_reg_mem(memoryRSY mem, iRegN dst, iRegI tmp, flagsReg cr) %{
 
 instruct xchgP_reg_mem(memoryRSY mem, iRegP dst, iRegL tmp, flagsReg cr) %{
   match(Set dst (GetAndSetP mem dst));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   effect(KILL cr, TEMP tmp); // USE_DEF dst by match rule.
   format %{ "XCHGP   $dst,[$mem]\t # EXCHANGE (oop, atomic), temp $tmp" %}
   ins_encode(z_enc_SwapL(mem, dst, tmp));
@@ -5926,7 +5940,7 @@ instruct addP_regN_reg_imm20(iRegP dst, iRegP_N2P src1, iRegL src2, immL20 con) 
 instruct addP_mem_imm(memoryRSY mem, immL8 src, flagsReg cr) %{
   match(Set mem (StoreP mem (AddP (LoadP mem) src)));
   effect(KILL cr);
-  predicate(VM_Version::has_MemWithImmALUOps());
+  predicate(VM_Version::has_MemWithImmALUOps() && n->as_LoadStore()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
   size(6);
   format %{ "AGSI    $mem,$src\t # direct mem add 8 (ptr)" %}
