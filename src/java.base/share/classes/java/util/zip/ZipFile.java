@@ -402,7 +402,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 return null;
             }
             in = new ZipFileInputStream(zsrc.cen, pos);
-            switch (CENHOW(zsrc.cen, pos)) {
+            switch (get16(zsrc.cen, pos + CENHOW)) {
                 case STORED:
                     synchronized (istreams) {
                         istreams.add(in);
@@ -411,7 +411,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 case DEFLATED:
                     // Inflater likes a bit of slack
                     // MORE: Compute good size for inflater stream:
-                    long size = CENLEN(zsrc.cen, pos) + 2;
+                    long size = get32(zsrc.cen, pos + CENLEN) + 2;
                     if (size > 65536) {
                         size = 8192;
                     }
@@ -625,7 +625,7 @@ public class ZipFile implements ZipConstants, Closeable {
 
     private String getEntryName(int pos) {
         byte[] cen = res.zsrc.cen;
-        int nlen = CENNAM(cen, pos);
+        int nlen = get16(cen, pos + CENNAM);
         ZipCoder zc = res.zsrc.zipCoderForPos(pos);
         return zc.toString(cen, pos + CENHDR, nlen);
     }
@@ -676,20 +676,20 @@ public class ZipFile implements ZipConstants, Closeable {
                 ? Source.JUJA.entryFor(jarFile, name)
                 : new ZipEntry(name);
 
-        e.flag = CENFLG(cen, pos);
-        e.xdostime = CENTIM(cen, pos);
-        e.crc = CENCRC(cen, pos);
-        e.size = CENLEN(cen, pos);
-        e.csize = CENSIZ(cen, pos);
-        e.method = CENHOW(cen, pos);
-        if (CENVEM_FA(cen, pos) == FILE_ATTRIBUTES_UNIX) {
+        e.flag = get16(cen, pos + CENFLG);
+        e.xdostime = get32(cen, pos + CENTIM);
+        e.crc = get32(cen, pos + CENCRC);
+        e.size = get32(cen, pos + CENLEN);
+        e.csize = get32(cen, pos + CENSIZ);
+        e.method = get16(cen, pos + CENHOW);
+        if (Byte.toUnsignedInt(cen[pos + CENVEM_FA]) == FILE_ATTRIBUTES_UNIX) {
             // read all bits in this field, including sym link attributes
-            e.externalFileAttributes = CENATX_PERMS(cen, pos) & 0xFFFF;
+            e.externalFileAttributes = get16(cen, pos + CENATX_PERMS);
         }
 
-        int nlen = CENNAM(cen, pos);
-        int elen = CENEXT(cen, pos);
-        int clen = CENCOM(cen, pos);
+        int nlen = get16(cen, pos + CENNAM);
+        int elen = get16(cen, pos + CENEXT);
+        int clen = get16(cen, pos + CENCOM);
 
         if (elen != 0) {
             int start = pos + CENHDR + nlen;
@@ -880,9 +880,9 @@ public class ZipFile implements ZipConstants, Closeable {
         protected long size;    // uncompressed size of this entry
 
         ZipFileInputStream(byte[] cen, int cenpos) {
-            rem = CENSIZ(cen, cenpos);
-            size = CENLEN(cen, cenpos);
-            pos = CENOFF(cen, cenpos);
+            rem = get32(cen, cenpos + CENSIZ);
+            size = get32(cen, cenpos + CENLEN);
+            pos = get32(cen, cenpos + CENOFF);
             // ZIP64
             if (rem == ZIP64_MAGICVAL || size == ZIP64_MAGICVAL ||
                 pos == ZIP64_MAGICVAL) {
@@ -893,8 +893,8 @@ public class ZipFile implements ZipConstants, Closeable {
         }
 
         private void checkZIP64(byte[] cen, int cenpos) {
-            int off = cenpos + CENHDR + CENNAM(cen, cenpos);
-            int end = off + CENEXT(cen, cenpos);
+            int off = cenpos + CENHDR + get16(cen, cenpos + CENNAM);
+            int end = off + get16(cen, cenpos + CENEXT);
             while (off + 4 < end) {
                 int tag = get16(cen, off);
                 int sz = get16(cen, off + 2);
@@ -943,10 +943,10 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (len != LOCHDR) {
                     throw new ZipException("ZipFile error reading zip file");
                 }
-                if (LOCSIG(loc) != LOCSIG) {
+                if (get32(loc, 0) != LOCSIG) {
                     throw new ZipException("ZipFile invalid LOC header (bad signature)");
                 }
-                pos += LOCHDR + LOCNAM(loc) + LOCEXT(loc);
+                pos += LOCHDR + get16(loc, LOCNAM) + get16(loc, LOCEXT);
                 startingPos = pos; // Save starting position for the entry
             }
             return pos;
@@ -1219,49 +1219,42 @@ public class ZipFile implements ZipConstants, Closeable {
         //
         private int[] entries;                  // array of hashed cen entry
 
-        // Checks the entry at offset state.pos in the CEN, calculates the Entry values as per above.
-        // Returns false if the last entry has been processed
-        private boolean processNextCENEntry(CENState state)
+        // Checks the entry at offset pos in the CEN, calculates the Entry values as per above.
+        // Returns position of next entry
+        private int processNextCENEntry(int pos, CENState state)
             throws IOException
         {
-            int pos = state.pos;
             byte[] cen = this.cen;
-            if (pos > cen.length - CENHDR) {
-                return false;
-            }
             // The entry length, from pos + CENHDR
-            int nlen = CENNAM(cen, pos);
+            int nlen = get16(cen, pos + CENNAM);
 
             // Validate and return the full header size (a value between CENHDR and 0xFFFF, inclusive)
-            int headerSize = checkCENHeader(state, nlen);
+            int headerSize = checkCENHeader(pos, state, nlen);
 
-            addEntry(state, nlen);
+            addEntry(pos, state, nlen);
 
             // Adds name to metanames.
             if (isMetaName(pos, nlen)) {
-                checkAndAddMetaEntry(state, nlen);
+                checkAndAddMetaEntry(pos, state, nlen);
             }
-
-            state.pos += headerSize;
             state.idx += 3;
-            return true;
+            return pos + headerSize;
         }
 
-        private int checkCENHeader(CENState state, int nlen) throws ZipException {
+        private int checkCENHeader(int pos, CENState state, int nlen) throws ZipException {
             int index = state.idx;
             if (index >= entries.length) {
                 zerror(INDEX_OVERFLOW);
             }
 
             byte[] cen = this.cen;
-            int pos = state.pos;
-            int elen = CENEXT(cen, pos);
-            int clen = CENCOM(cen, pos);
-            if (CENSIG(cen, pos) != CENSIG) {
+            int elen = get16(cen, pos + CENEXT);
+            int clen = get16(cen, pos + CENCOM);
+            if (get32(cen, pos) != CENSIG) {
                 zerror("invalid CEN header (bad signature)");
             }
-            int method = CENHOW(cen, pos);
-            int flag   = CENFLG(cen, pos);
+            int method = get16(cen, pos + CENHOW);
+            int flag   = get16(cen, pos + CENFLG);
             if ((flag & 1) != 0) {
                 zerror("invalid CEN header (encrypted entry)");
             }
@@ -1272,6 +1265,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // CEN header size + name length + comment length + extra length
             // should not exceed 65,535 bytes per the PKWare APP.NOTE
             // 4.4.10, 4.4.11, & 4.4.12.  Also check that current CEN header will
+
             // not exceed the length of the CEN array (while being conscious that
             // pos + headerSize could overflow)
             if (headerSize > 0xFFFF || pos > cen.length - headerSize) {
@@ -1282,10 +1276,10 @@ public class ZipFile implements ZipConstants, Closeable {
             // fields in the CEN header are properly set
             if (elen > 0 && !DISABLE_ZIP64_EXTRA_VALIDATION) {
                 checkExtraFields(pos, pos + CENHDR + nlen, elen);
-            } else if (elen == 0 && (CENSIZ(cen, pos) == ZIP64_MAGICVAL
-                    || CENLEN(cen, pos) == ZIP64_MAGICVAL
-                    || CENOFF(cen, pos) == ZIP64_MAGICVAL
-                    || CENDSK(cen, pos) == ZIP64_MAGICCOUNT)) {
+            } else if (elen == 0 && (get32(cen, pos + CENSIZ) == ZIP64_MAGICVAL
+                    || get32(cen, pos + CENLEN) == ZIP64_MAGICVAL
+                    || get32(cen, pos + CENOFF) == ZIP64_MAGICVAL
+                    || get32(cen,pos + CENDSK) == ZIP64_MAGICCOUNT)) {
                 zerror("Invalid CEN header (invalid zip64 extra len size)");
             }
 
@@ -1296,9 +1290,8 @@ public class ZipFile implements ZipConstants, Closeable {
             return headerSize;
         }
 
-        private void addEntry(CENState state, int nlen) throws ZipException {
+        private void addEntry(int pos, CENState state, int nlen) throws ZipException {
             try {
-                int pos = state.pos;
                 int hash = zipCoderForPos(pos).checkedHash(cen, pos + CENHDR, nlen);
                 int[] table = this.table;
                 int hsh = (hash & 0x7fffffff) % table.length;
@@ -1325,9 +1318,8 @@ public class ZipFile implements ZipConstants, Closeable {
             }
         }
 
-        private void checkAndAddMetaEntry(CENState state, int nlen) {
+        private void checkAndAddMetaEntry(int pos, CENState state, int nlen) {
             // nlen is at least META_INF_LENGTH
-            int pos = state.pos;
             if (isManifestName(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN)) {
                 manifestPos = pos;
                 manifestNum++;
@@ -1395,13 +1387,13 @@ public class ZipFile implements ZipConstants, Closeable {
 
                 if (tag == EXTID_ZIP64) {
                     // Get the compressed size;
-                    long csize = CENSIZ(cen, cenPos);
+                    long csize = get32(cen, cenPos + CENSIZ);
                     // Get the uncompressed size;
-                    long size = CENLEN(cen, cenPos);
+                    long size = get32(cen, cenPos + CENLEN);
                     // Get the LOC offset
-                    long locoff = CENOFF(cen, cenPos);
+                    long locoff = get32(cen, cenPos + CENOFF);
                     // Get the Disk Number
-                    int diskNo = CENDSK(cen, cenPos);
+                    int diskNo = get16(cen, cenPos + CENDSK);
 
                     checkZip64ExtraFieldValues(currentOffset, tagBlockSize,
                             csize, size, locoff, diskNo);
@@ -1447,7 +1439,7 @@ public class ZipFile implements ZipConstants, Closeable {
             }
             // Check the uncompressed size is not negative
             if (size == ZIP64_MAGICVAL) {
-                if ( blockSize >= Long.BYTES) {
+                if (blockSize >= Long.BYTES) {
                     if (get64(cen, off) < 0) {
                         zerror("Invalid zip64 extra block size value");
                     }
@@ -1632,7 +1624,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 initCEN(-1);
                 byte[] buf = new byte[4];
                 readFullyAt(buf, 0, 4, 0);
-                this.startsWithLoc = (LOCSIG(buf) == LOCSIG);
+                this.startsWithLoc = (get32(buf, 0) == LOCSIG);
             } catch (IOException x) {
                 try {
                     this.zfile.close();
@@ -1714,17 +1706,14 @@ public class ZipFile implements ZipConstants, Closeable {
                 }
                 // Now scan the block backwards for END header signature
                 for (int i = READBLOCKSZ - ENDHDR; i >= 0; i--) {
-                    if (buf[i+0] == (byte)'P'    &&
-                        buf[i+1] == (byte)'K'    &&
-                        buf[i+2] == (byte)'\005' &&
-                        buf[i+3] == (byte)'\006') {
+                    if (get32(buf, i) == ENDSIG) {
                         // Found ENDSIG header
                         byte[] endbuf = Arrays.copyOfRange(buf, i, i + ENDHDR);
-                        end.centot = ENDTOT(endbuf);
-                        end.cenlen = ENDSIZ(endbuf);
-                        end.cenoff = ENDOFF(endbuf);
+                        end.centot = get16(endbuf, ENDTOT);
+                        end.cenlen = get32(endbuf, ENDSIZ);
+                        end.cenoff = get32(endbuf, ENDOFF);
                         end.endpos = pos + i;
-                        int comlen = ENDCOM(endbuf);
+                        int comlen = get16(endbuf, ENDCOM);
                         if (end.endpos + ENDHDR + comlen != ziplen) {
                             // ENDSIG matched, however the size of file comment in it does
                             // not match the real size. One "common" cause for this problem
@@ -1737,9 +1726,9 @@ public class ZipFile implements ZipConstants, Closeable {
                             if  (cenpos < 0 ||
                                  locpos < 0 ||
                                  readFullyAt(sbuf, 0, sbuf.length, cenpos) != 4 ||
-                                 GETSIG(sbuf) != CENSIG ||
+                                 get32(sbuf, 0) != CENSIG ||
                                  readFullyAt(sbuf, 0, sbuf.length, locpos) != 4 ||
-                                 GETSIG(sbuf) != LOCSIG) {
+                                 get32(sbuf, 0) != LOCSIG) {
                                 continue;
                             }
                         }
@@ -1754,19 +1743,19 @@ public class ZipFile implements ZipConstants, Closeable {
                             byte[] loc64 = new byte[ZIP64_LOCHDR];
                             if (end.endpos < ZIP64_LOCHDR ||
                                 readFullyAt(loc64, 0, loc64.length, end.endpos - ZIP64_LOCHDR)
-                                != loc64.length || GETSIG(loc64) != ZIP64_LOCSIG) {
+                                != loc64.length || get32(loc64, 0) != ZIP64_LOCSIG) {
                                 return end;
                             }
-                            long end64pos = ZIP64_LOCOFF(loc64);
+                            long end64pos = get64(loc64, ZIP64_LOCOFF);
                             byte[] end64buf = new byte[ZIP64_ENDHDR];
                             if (readFullyAt(end64buf, 0, end64buf.length, end64pos)
-                                != end64buf.length || GETSIG(end64buf) != ZIP64_ENDSIG) {
+                                != end64buf.length || get32(end64buf, 0) != ZIP64_ENDSIG) {
                                 return end;
                             }
                             // end64 candidate found,
-                            long cenlen64 = ZIP64_ENDSIZ(end64buf);
-                            long cenoff64 = ZIP64_ENDOFF(end64buf);
-                            long centot64 = ZIP64_ENDTOT(end64buf);
+                            long cenlen64 = get64(end64buf, ZIP64_ENDSIZ);
+                            long cenoff64 = get64(end64buf, ZIP64_ENDOFF);
+                            long centot64 = get64(end64buf, ZIP64_ENDTOT);
                             // double-check
                             if (cenlen64 != end.cenlen && end.cenlen != ZIP64_MAGICVAL ||
                                 cenoff64 != end.cenoff && end.cenoff != ZIP64_MAGICVAL ||
@@ -1787,7 +1776,6 @@ public class ZipFile implements ZipConstants, Closeable {
         }
 
         private static class CENState {
-            int pos;
             int idx;
             List<Integer> signatureNames;
             Set<Integer> metaVersionsSet;
@@ -1839,9 +1827,38 @@ public class ZipFile implements ZipConstants, Closeable {
 
             // Iterate through the entries in the central directory
             var state = new CENState(); // state holder
+            int pos = 0;
             try {
+                int limit = cen.length - CENHDR;
                 // Checks the entry and adds values to entries[idx ... idx+2], state.pos will contain position of next entry
-                while (processNextCENEntry(state)) {}
+                while (pos < limit) {
+                    pos = processNextCENEntry(pos, state);
+                }
+
+                if (pos != cen.length) {
+                    zerror("invalid CEN header (bad header size)");
+                }
+
+                // Adjust the total entries
+                total = state.idx / 3;
+
+                if (state.signatureNames != null) {
+                    int signatures = state.signatureNames.size();
+                    signatureMetaNames = new int[signatures];
+                    for (int j = 0; j < signatures; j++) {
+                        signatureMetaNames[j] = state.signatureNames.get(j);
+                    }
+                }
+                if (state.metaVersionsSet != null) {
+                    int size = state.metaVersionsSet.size();
+                    metaVersions = new int[size];
+                    int c = 0;
+                    for (Integer version : state.metaVersionsSet) {
+                        metaVersions[c++] = version;
+                    }
+                } else {
+                    metaVersions = EMPTY_META_VERSIONS;
+                }
             } catch (ZipException ze) {
                 if (ze.getMessage().equals(INDEX_OVERFLOW)) {
                     // This will only happen if the ZIP file has an incorrect
@@ -1853,30 +1870,6 @@ public class ZipFile implements ZipConstants, Closeable {
                     return;
                 }
                 throw ze;
-            }
-
-            // Adjust the total entries
-            total = state.idx / 3;
-
-            if (state.signatureNames != null) {
-                int signatures = state.signatureNames.size();
-                signatureMetaNames = new int[signatures];
-                for (int j = 0; j < signatures; j++) {
-                    signatureMetaNames[j] = state.signatureNames.get(j);
-                }
-            }
-            if (state.metaVersionsSet != null) {
-                int size = state.metaVersionsSet.size();
-                metaVersions = new int[size];
-                int c = 0;
-                for (Integer version : state.metaVersionsSet) {
-                    metaVersions[c++] = version;
-                }
-            } else {
-                metaVersions = EMPTY_META_VERSIONS;
-            }
-            if (state.pos != cen.length) {
-                zerror("invalid CEN header (bad header size)");
             }
         }
 
@@ -1901,14 +1894,16 @@ public class ZipFile implements ZipConstants, Closeable {
 
             // Search down the target hash chain for a entry whose
             // 32 bit hash matches the hashed name.
+
             int[] entries = this.entries;
             byte[] cen = this.cen;
             while (idx != 0) {
                 if (entries[idx - 1] == hsh) {
                     int pos = entries[idx + 1];
+
                     ZipCoder zc = zipCoderForPos(pos);
                     // Compare the lookup name with the name encoded in the CEN
-                    switch (zc.compare(name, cen, pos + CENHDR, CENNAM(cen, pos), addSlash)) {
+                    switch (zc.compare(name, cen, pos + CENHDR, get16(cen, pos + CENNAM), addSlash)) {
                         case ZipCoder.EXACT_MATCH:
                             // We found an exact match for "name"
                             return new EntryPos(name, pos);
@@ -1936,7 +1931,7 @@ public class ZipFile implements ZipConstants, Closeable {
             if (zc.isUTF8()) {
                 return zc;
             }
-            if ((CENFLG(cen, pos) & USE_UTF8) != 0) {
+            if ((get16(cen, pos + CENFLG) & USE_UTF8) != 0) {
                 return ZipCoder.UTF8;
             }
             return zc;
@@ -2080,9 +2075,10 @@ public class ZipFile implements ZipConstants, Closeable {
          */
         private static int countCENHeaders(byte[] cen, int size) {
             int count = 0;
+            size -= CENHDR;
             for (int p = 0;
-                 p + CENHDR <= size;
-                 p += CENHDR + CENNAM(cen, p) + CENEXT(cen, p) + CENCOM(cen, p))
+                 p <= size;
+                 p += CENHDR + get16(cen, p + CENNAM) + get16(cen, p + CENEXT) + get16(cen, p + CENCOM))
                 count++;
             return count;
         }
