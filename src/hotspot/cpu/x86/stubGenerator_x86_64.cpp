@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "classfile/javaClasses.hpp"
 #include "classfile/vmIntrinsics.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -3796,6 +3797,28 @@ address StubGenerator::generate_upcall_stub_exception_handler() {
   return start;
 }
 
+// load Method* target of MethodHandle
+// j_rarg0 = jobject receiver
+// rbx = result
+address StubGenerator::generate_upcall_stub_load_target() {
+  StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+  address start = __ pc();
+
+  __ resolve_global_jobject(j_rarg0, r15_thread, rscratch1);
+    // Load target method from receiver
+  __ load_heap_oop(rbx, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), rscratch1);
+  __ load_heap_oop(rbx, Address(rbx, java_lang_invoke_LambdaForm::vmentry_offset()), rscratch1);
+  __ load_heap_oop(rbx, Address(rbx, java_lang_invoke_MemberName::method_offset()), rscratch1);
+  __ access_load_at(T_ADDRESS, IN_HEAP, rbx,
+                    Address(rbx, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+                    noreg, noreg);
+  __ movptr(Address(r15_thread, JavaThread::callee_target_offset()), rbx); // just in case callee is deoptimized
+
+  __ ret(0);
+
+  return start;
+}
+
 address StubGenerator::generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
   StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
 
@@ -3955,6 +3978,7 @@ void StubGenerator::generate_final_stubs() {
   }
 
   StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+  StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
 }
 
 void StubGenerator::generate_compiler_stubs() {
