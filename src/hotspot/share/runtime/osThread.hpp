@@ -26,6 +26,7 @@
 #define SHARE_RUNTIME_OSTHREAD_HPP
 
 #include "utilities/macros.hpp"
+// The actual class declaration is platform specific.
 #include OS_HEADER(osThread)
 
 #endif // SHARE_RUNTIME_OSTHREAD_HPP
