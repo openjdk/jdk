@@ -81,7 +81,6 @@
  * to the QPack decoder's dynamic table. When set to 0, servers are not permitted to add
  * entries to the client's QPack encoder's dynamic table.
  * </li>
- * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.qpack.encoderTableCapacityLimit}</b> (default: 4096,
  * or 4 kB)
  * <br> The HTTP/3 client maximum QPACK encoder dynamic header table size in bytes.
@@ -146,7 +145,6 @@
  * below)<br>The number of seconds to keep idle HTTP/2 connections alive. If not set, then the
  * {@code jdk.httpclient.keepalive.timeout} setting is used.
  * </li>
- * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout.h3}</b> (default: see
  * below)<br>The number of seconds to keep idle HTTP/3 connections alive. If not set, then the
  * {@code jdk.httpclient.keepalive.timeout.h2} setting is used.
@@ -158,7 +156,6 @@
  * <li><p><b>{@systemProperty jdk.httpclient.maxstreams}</b> (default: 100)<br>
  * The maximum number of HTTP/2 push streams that the client will permit servers to open
  * simultaneously.
- * </li>
  * </li>
  * <li><p><b>{@systemProperty jdk.http3.maxConcurrentPushStreams}</b> (default: 100)<br>
  * The maximum number of HTTP/3 push streams that the client will permit servers to open
