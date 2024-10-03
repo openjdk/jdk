@@ -30,22 +30,21 @@
  * @run main OwnedWindowShowTest
  */
 
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Window;
 
 public class OwnedWindowShowTest {
-    public static void main(String args[])
-    {
+    public static void main(String args[]) throws Exception {
+        EventQueue.invokeAndWait(() -> runTest());
+    }
+
+    static void runTest() {
         Frame parent = new Frame("OwnedWindowShowTest");
-        try
-        {
+        try {
             Window owner = new Window(parent);
             Window window = new Window(owner);
-            try {
-                window.setVisible(true);
-            } catch (NullPointerException npe) {
-                throw new RuntimeException("Got Null pointer exception");
-            }
+            window.setVisible(true);
         } finally {
             if (parent != null) {
                 parent.dispose();

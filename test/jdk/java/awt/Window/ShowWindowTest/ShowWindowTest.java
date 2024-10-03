@@ -25,7 +25,7 @@
  * @test
  * @bug 4084997
  * @summary See if Window can be created without its size explicitly set
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual ShowWindowTest
  */

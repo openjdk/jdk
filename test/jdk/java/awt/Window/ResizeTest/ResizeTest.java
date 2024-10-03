@@ -26,7 +26,7 @@
  * @bug 4225955
  * @summary Tests that focus lost is delivered to a lightweight component
  * in a disposed window
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual ResizeTest
  */

@@ -25,7 +25,7 @@
  * @test
  * @bug 6318630
  * @summary Test that location by platform works
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TestLocationByPlatform
 */
