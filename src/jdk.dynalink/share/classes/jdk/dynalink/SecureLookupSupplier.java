@@ -34,7 +34,7 @@ import java.util.Objects;
  *
  * @apiNote
  * SecureLookupSupplier provided a way in older JDK releases to guard access to
- * a {@code MethodHandles.Lookup} object when runinng with a security manager set.
+ * a {@code MethodHandles.Lookup} object when running with a security manager set.
  *
  * @since 9
  */
