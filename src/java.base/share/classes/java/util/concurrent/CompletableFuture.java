@@ -35,6 +35,8 @@
 
 package java.util.concurrent;
 
+import jdk.internal.invoke.MhUtil;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.concurrent.locks.LockSupport;
@@ -306,13 +308,57 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return RESULT.compareAndSet(this, null, (t == null) ? NIL : t);
     }
 
+    static CompletionException wrapInCompletionException(Throwable t) {
+        if (t == null)
+            return new CompletionException();
+
+        String message;
+        Throwable suppressed;
+        try {
+            message = t.toString();
+            suppressed = null;
+        } catch (Throwable unknown) {
+            message = "";
+            suppressed = unknown;
+        }
+
+        final CompletionException wrapping = new CompletionException(message, t);
+
+        if (suppressed != null)
+            wrapping.addSuppressed(suppressed);
+
+        return wrapping;
+    }
+
+    static ExecutionException wrapInExecutionException(Throwable t) {
+        if (t == null)
+            return new ExecutionException();
+
+        String message;
+        Throwable suppressed;
+        try {
+            message = t.toString();
+            suppressed = null;
+        } catch (Throwable unknown) {
+            message = "";
+            suppressed = unknown;
+        }
+
+        final ExecutionException wrapping = new ExecutionException(message, t);
+
+        if (suppressed != null)
+            wrapping.addSuppressed(suppressed);
+
+        return wrapping;
+    }
+
     /**
      * Returns the encoding of the given (non-null) exception as a
      * wrapped CompletionException unless it is one already.
      */
     static AltResult encodeThrowable(Throwable x) {
         return new AltResult((x instanceof CompletionException) ? x :
-                             new CompletionException(x));
+                wrapInCompletionException(x));
     }
 
     /** Completes with an exceptional result, unless already completed. */
@@ -329,7 +375,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
      */
     static Object encodeThrowable(Throwable x, Object r) {
         if (!(x instanceof CompletionException))
-            x = new CompletionException(x);
+            x = wrapInCompletionException(x);
         else if (r instanceof AltResult && x == ((AltResult)r).ex)
             return r;
         return new AltResult(x);
@@ -365,7 +411,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         if (r instanceof AltResult
             && (x = ((AltResult)r).ex) != null
             && !(x instanceof CompletionException))
-            r = new AltResult(new CompletionException(x));
+            r = new AltResult(wrapInCompletionException(x));
         return r;
     }
 
@@ -393,7 +439,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
             if ((x instanceof CompletionException) &&
                 (cause = x.getCause()) != null)
                 x = cause;
-            throw new ExecutionException(x);
+            throw wrapInExecutionException(x);
         }
         return r;
     }
@@ -410,7 +456,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
                 throw new CancellationException(details, (CancellationException)x);
             if (x instanceof CompletionException)
                 throw (CompletionException)x;
-            throw new CompletionException(x);
+            throw wrapInCompletionException(x);
         }
         return r;
     }
@@ -2134,6 +2180,9 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return ((r = result) == null) ? valueIfAbsent : (T) reportJoin(r, "getNow");
     }
 
+    /**
+     * @since 19
+     */
     @Override
     public T resultNow() {
         Object r = result;
@@ -2149,6 +2198,9 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         throw new IllegalStateException();
     }
 
+    /**
+     * @since 19
+     */
     @Override
     public Throwable exceptionNow() {
         Object r = result;
@@ -2396,26 +2448,41 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return uniExceptionallyStage(null, fn);
     }
 
+    /**
+     * @since 12
+     */
     public CompletableFuture<T> exceptionallyAsync(
         Function<Throwable, ? extends T> fn) {
         return uniExceptionallyStage(defaultExecutor(), fn);
     }
 
+    /**
+     * @since 12
+     */
     public CompletableFuture<T> exceptionallyAsync(
         Function<Throwable, ? extends T> fn, Executor executor) {
         return uniExceptionallyStage(screenExecutor(executor), fn);
     }
 
+    /**
+     * @since 12
+     */
     public CompletableFuture<T> exceptionallyCompose(
         Function<Throwable, ? extends CompletionStage<T>> fn) {
         return uniComposeExceptionallyStage(null, fn);
     }
 
+    /**
+     * @since 12
+     */
     public CompletableFuture<T> exceptionallyComposeAsync(
         Function<Throwable, ? extends CompletionStage<T>> fn) {
         return uniComposeExceptionallyStage(defaultExecutor(), fn);
     }
 
+    /**
+     * @since 12
+     */
     public CompletableFuture<T> exceptionallyComposeAsync(
         Function<Throwable, ? extends CompletionStage<T>> fn,
         Executor executor) {
@@ -2541,6 +2608,9 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return ((r = result) instanceof AltResult) && r != NIL;
     }
 
+    /**
+     * @since 19
+     */
     @Override
     public State state() {
         Object r = result;
@@ -2605,8 +2675,8 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     /**
      * Returns a string identifying this CompletableFuture, as well as
      * its completion state.  The state, in brackets, contains the
-     * String {@code "Completed Normally"} or the String {@code
-     * "Completed Exceptionally"}, or the String {@code "Not
+     * String {@code "Completed normally"} or the String {@code
+     * "Completed exceptionally"}, or the String {@code "Not
      * completed"} followed by the number of CompletableFutures
      * dependent upon its completion, if any.
      *
@@ -2623,7 +2693,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
                 ? "[Not completed]"
                 : "[Not completed, " + count + " dependents]")
              : (((r instanceof AltResult) && ((AltResult)r).ex != null)
-                ? "[Completed exceptionally: " + ((AltResult)r).ex + "]"
+                ? "[Completed exceptionally: " + ((AltResult)r).ex.getClass().getName() + "]"
                 : "[Completed normally]"));
     }
 
@@ -2737,7 +2807,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     /**
      * Exceptionally completes this CompletableFuture with
      * a {@link TimeoutException} if not otherwise completed
-     * before the given timeout.
+     * before the given timeout elapsed.
      *
      * @param timeout how long to wait before completing exceptionally
      *        with a TimeoutException, in units of {@code unit}
@@ -2757,7 +2827,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
 
     /**
      * Completes this CompletableFuture with the given value if not
-     * otherwise completed before the given timeout.
+     * otherwise completed before the given timeout elapsed.
      *
      * @param value the value to use upon timeout
      * @param timeout how long to wait before completing normally
@@ -3011,14 +3081,10 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
     private static final VarHandle STACK;
     private static final VarHandle NEXT;
     static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            RESULT = l.findVarHandle(CompletableFuture.class, "result", Object.class);
-            STACK = l.findVarHandle(CompletableFuture.class, "stack", Completion.class);
-            NEXT = l.findVarHandle(Completion.class, "next", Completion.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
+        MethodHandles.Lookup l = MethodHandles.lookup();
+        RESULT = MhUtil.findVarHandle(l, "result", Object.class);
+        STACK = MhUtil.findVarHandle(l, "stack", Completion.class);
+        NEXT = MhUtil.findVarHandle(l, Completion.class, "next", Completion.class);
 
         // Reduce the risk of rare disastrous classloading in first call to
         // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773

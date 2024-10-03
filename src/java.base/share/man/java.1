@@ -36,7 +36,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JAVA" "1" "2024" "JDK 23-ea" "JDK Commands"
+.TH "JAVA" "1" "2025" "JDK 24-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -186,7 +186,7 @@ with new values added and old values removed.
 You\[aq]ll get an error message if you use a value of \f[I]N\f[R] that
 is no longer supported.
 The supported values of \f[I]N\f[R] are the current Java SE release
-(\f[V]23\f[R]) and a limited number of previous releases, detailed in
+(\f[V]24\f[R]) and a limited number of previous releases, detailed in
 the command-line help for \f[V]javac\f[R], under the \f[V]--source\f[R]
 and \f[V]--release\f[R] options.
 .RE
@@ -552,15 +552,45 @@ of the release.
 Native access involves access to code or data outside the Java runtime.
 This is generally unsafe and, if done incorrectly, might crash the JVM
 or result in memory corruption.
-Methods that provide native access are restricted, and by default their
-use causes warnings.
-This option allows code in the specified modules to use restricted
-methods without warnings.
-\f[I]module\f[R] can be \f[V]ALL-UNNAMED\f[R] to indicate code on the
-class path.
-When this option is present, any use of restricted methods by code
-outside the specified modules causes an
+Native access can occur as a result of calling a method that is either
+\f[B]restricted\f[R] [https://openjdk.org/jeps/454#Safety], or
+\f[V]native\f[R].
+This option allows code in the specified modules to perform native
+access.
+Native access occurring in a module that has not been explicitly enabled
+is deemed \f[I]illegal\f[R].
+.RS
+.PP
+\f[I]module\f[R] can be a module name, or \f[V]ALL-UNNAMED\f[R] to
+indicate code on the class path.
+.RE
+.TP
+-\f[V]--illegal-native-access=\f[R]\f[I]parameter\f[R]
+This option specifies a mode for how illegal native access is handled:
+.RS
+.RS
+.PP
+\f[B]Note:\f[R] This option will be removed in a future release.
+.RE
+.IP \[bu] 2
+\f[V]allow\f[R]: This mode allows illegal native access in all modules,
+without any warings.
+.IP \[bu] 2
+\f[V]warn\f[R]: This mode is identical to \f[V]allow\f[R] except that a
+warning message is issued for the first illegal native access found in a
+module.
+This mode is the default for the current JDK but will change in a future
+release.
+.IP \[bu] 2
+\f[V]deny\f[R]: This mode disables illegal native access.
+That is, any illegal native access causes an
 \f[V]IllegalCallerException\f[R].
+This mode will become the default in a future release.
+.PP
+To verify that your application is ready for a future version of the
+JDK, run it with \f[V]--illegal-native-access=deny\f[R] along with any
+necessary \f[V]--enable-native-access\f[R] options.
+.RE
 .TP
 \f[V]--finalization=\f[R]\f[I]value\f[R]
 Controls whether the JVM performs finalization of objects.
@@ -1195,7 +1225,7 @@ or directories.
 \f[V]--source\f[R] \f[I]version\f[R]
 Sets the version of the source in source-file mode.
 .TP
-\f[V]--sun-misc-unsafe-memory-acces=\f[R] \f[I]value\f[R]
+\f[V]--sun-misc-unsafe-memory-access=\f[R] \f[I]value\f[R]
 Allow or deny usage of unsupported API \f[V]sun.misc.Unsafe\f[R].
 \f[I]value\f[R] is one of:
 .RS
@@ -1710,10 +1740,12 @@ This prevents the JVM from exiting and keeps the process active so that
 you can attach a debugger to it to investigate the cause of the error.
 By default, this option is disabled.
 .TP
-\f[V]-XX:StartFlightRecording=\f[R]\f[I]parameter\f[R]\f[V]=\f[R]\f[I]value\f[R]
+\f[V]-XX:StartFlightRecording:\f[R]\f[I]parameter\f[R]\f[V]=\f[R]\f[I]value\f[R]
 Starts a JFR recording for the Java application.
 This option is equivalent to the \f[V]JFR.start\f[R] diagnostic command
 that starts a recording during runtime.
+\f[V]-XX:StartFlightRecording:help\f[R] prints available options and
+example command lines.
 You can set the following \f[I]parameter\f[R]\f[V]=\f[R]\f[I]value\f[R]
 entries when starting a JFR recording:
 .RS
@@ -1760,6 +1792,8 @@ written when the recording is stopped, for example:
 .PP
 If %p and/or %t is specified in the filename, it expands to the
 JVM\[aq]s PID and the current timestamp, respectively.
+The filename may also be a directory in which case, the filename is
+generated from the PID and the current date in the specified directory.
 .RE
 .TP
 \f[V]name=\f[R]\f[I]identifier\f[R]
@@ -1840,6 +1874,9 @@ The whitespace delimiter can be omitted for timespan values, i.e.
 20ms.
 For more information about the settings syntax, see Javadoc of the
 jdk.jfr package.
+.PP
+To only see warnings and errors from JFR during startup set
+-Xlog:jfr+startup=warning.
 .RE
 .TP
 \f[V]-XX:ThreadStackSize=\f[R]\f[I]size\f[R]
@@ -3484,16 +3521,6 @@ By default, this option is disabled.
 Enables printing of information about adaptive-generation sizing.
 By default, this option is disabled.
 .TP
-\f[V]-XX:+ScavengeBeforeFullGC\f[R]
-Enables GC of the young generation before each full GC.
-This option is enabled by default.
-It is recommended that you \f[I]don\[aq]t\f[R] disable it, because
-scavenging the young generation before a full GC can reduce the number
-of objects reachable from the old generation space into the young
-generation space.
-To disable GC of the young generation before each full GC, specify the
-option \f[V]-XX:-ScavengeBeforeFullGC\f[R].
-.TP
 \f[V]-XX:SoftRefLRUPolicyMSPerMB=\f[R]\f[I]time\f[R]
 Sets the amount of time (in milliseconds) a softly reachable object is
 kept active on the heap after the last time it was referenced.
@@ -3722,12 +3749,6 @@ future JDK release.
 They\[aq]re still accepted and acted upon, but a warning is issued when
 they\[aq]re used.
 .TP
-\f[V]-Xfuture\f[R]
-Enables strict class-file format checks that enforce close conformance
-to the class-file format specification.
-Developers should use this flag when developing new code.
-Stricter checks may become the default in future releases.
-.TP
 \f[V]-Xloggc:\f[R]\f[I]filename\f[R]
 Sets the file to which verbose GC events information should be
 redirected for logging.
@@ -3747,45 +3768,18 @@ Example:
 Enables the use of Java Flight Recorder (JFR) during the runtime of the
 application.
 Since JDK 8u40 this option has not been required to use JFR.
+.SH OBSOLETE JAVA OPTIONS
+.PP
+These \f[V]java\f[R] options are still accepted but ignored, and a
+warning is issued when they\[aq]re used.
 .TP
-\f[V]-XX:InitialRAMFraction=\f[R]\f[I]ratio\f[R]
-Sets the initial amount of memory that the JVM may use for the Java heap
-before applying ergonomics heuristics as a ratio of the maximum amount
-determined as described in the \f[V]-XX:MaxRAM\f[R] option.
-The default value is 64.
-.RS
-.PP
-Use the option \f[V]-XX:InitialRAMPercentage\f[R] instead.
-.RE
-.TP
-\f[V]-XX:MaxRAMFraction=\f[R]\f[I]ratio\f[R]
-Sets the maximum amount of memory that the JVM may use for the Java heap
-before applying ergonomics heuristics as a fraction of the maximum
-amount determined as described in the \f[V]-XX:MaxRAM\f[R] option.
-The default value is 4.
-.RS
-.PP
-Specifying this option disables automatic use of compressed oops if the
-combined result of this and other options influencing the maximum amount
-of memory is larger than the range of memory addressable by compressed
-oops.
-See \f[V]-XX:UseCompressedOops\f[R] for further information about
-compressed oops.
-.PP
-Use the option \f[V]-XX:MaxRAMPercentage\f[R] instead.
-.RE
-.TP
-\f[V]-XX:MinRAMFraction=\f[R]\f[I]ratio\f[R]
-Sets the maximum amount of memory that the JVM may use for the Java heap
-before applying ergonomics heuristics as a fraction of the maximum
-amount determined as described in the \f[V]-XX:MaxRAM\f[R] option for
-small heaps.
-A small heap is a heap of approximately 125 MB.
-The default value is 2.
-.RS
-.PP
-Use the option \f[V]-XX:MinRAMPercentage\f[R] instead.
-.RE
+\f[V]--illegal-access=\f[R]\f[I]parameter\f[R]
+Controlled \f[I]relaxed strong encapsulation\f[R], as defined in
+\f[B]JEP 261\f[R]
+[https://openjdk.org/jeps/261#Relaxed-strong-encapsulation].
+This option was deprecated in JDK 16 by \f[B]JEP 396\f[R]
+[https://openjdk.org/jeps/396] and made obsolete in JDK 17 by \f[B]JEP
+403\f[R] [https://openjdk.org/jeps/403].
 .TP
 \f[V]-XX:RTMAbortRatio=\f[R]\f[I]abort_ratio\f[R]
 Specifies the RTM abort ratio is specified as a percentage (%) of all
@@ -3863,42 +3857,79 @@ As a result, the processors repeatedly invalidate the cache lines of
 other processors, which forces them to read from main memory instead of
 their cache.
 .RE
-.SH OBSOLETE JAVA OPTIONS
-.PP
-These \f[V]java\f[R] options are still accepted but ignored, and a
-warning is issued when they\[aq]re used.
-.TP
-\f[V]--illegal-access=\f[R]\f[I]parameter\f[R]
-Controlled \f[I]relaxed strong encapsulation\f[R], as defined in
-\f[B]JEP 261\f[R]
-[https://openjdk.org/jeps/261#Relaxed-strong-encapsulation].
-This option was deprecated in JDK 16 by \f[B]JEP 396\f[R]
-[https://openjdk.org/jeps/396] and made obsolete in JDK 17 by \f[B]JEP
-403\f[R] [https://openjdk.org/jeps/403].
 .SH REMOVED JAVA OPTIONS
 .PP
-These \f[V]java\f[R] options have been removed in JDK 23 and using them
+These \f[V]java\f[R] options have been removed in JDK 24 and using them
 results in an error of:
 .RS
 .PP
 \f[V]Unrecognized VM option\f[R] \f[I]option-name\f[R]
 .RE
 .TP
-\f[V]-XX:+UseHugeTLBFS\f[R]
-\f[B]Linux only:\f[R] This option is the equivalent of specifying
-\f[V]-XX:+UseLargePages\f[R].
-This option is disabled by default.
-This option pre-allocates all large pages up-front, when memory is
-reserved; consequently the JVM can\[aq]t dynamically grow or shrink
-large pages memory areas; see \f[V]-XX:UseTransparentHugePages\f[R] if
-you want this behavior.
+\f[V]-XX:InitialRAMFraction=\f[R]\f[I]ratio\f[R]
+Sets the initial amount of memory that the JVM may use for the Java heap
+before applying ergonomics heuristics as a ratio of the maximum amount
+determined as described in the \f[V]-XX:MaxRAM\f[R] option.
+The default value is 64.
+.RS
+.PP
+Use the option \f[V]-XX:InitialRAMPercentage\f[R] instead.
+.RE
 .TP
-\f[V]-XX:+UseSHM\f[R]
-\f[B]Linux only:\f[R] Enables the JVM to use shared memory to set up
-large pages.
+\f[V]-XX:MaxRAMFraction=\f[R]\f[I]ratio\f[R]
+Sets the maximum amount of memory that the JVM may use for the Java heap
+before applying ergonomics heuristics as a fraction of the maximum
+amount determined as described in the \f[V]-XX:MaxRAM\f[R] option.
+The default value is 4.
+.RS
+.PP
+Specifying this option disables automatic use of compressed oops if the
+combined result of this and other options influencing the maximum amount
+of memory is larger than the range of memory addressable by compressed
+oops.
+See \f[V]-XX:UseCompressedOops\f[R] for further information about
+compressed oops.
+.PP
+Use the option \f[V]-XX:MaxRAMPercentage\f[R] instead.
+.RE
+.TP
+\f[V]-XX:MinRAMFraction=\f[R]\f[I]ratio\f[R]
+Sets the maximum amount of memory that the JVM may use for the Java heap
+before applying ergonomics heuristics as a fraction of the maximum
+amount determined as described in the \f[V]-XX:MaxRAM\f[R] option for
+small heaps.
+A small heap is a heap of approximately 125 MB.
+The default value is 2.
+.RS
+.PP
+Use the option \f[V]-XX:MinRAMPercentage\f[R] instead.
+.RE
+.TP
+\f[V]-XX:+ScavengeBeforeFullGC\f[R]
+Enables GC of the young generation before each full GC.
+This option is enabled by default.
+It is recommended that you \f[I]don\[aq]t\f[R] disable it, because
+scavenging the young generation before a full GC can reduce the number
+of objects reachable from the old generation space into the young
+generation space.
+To disable GC of the young generation before each full GC, specify the
+option \f[V]-XX:-ScavengeBeforeFullGC\f[R].
+.TP
+\f[V]-Xfuture\f[R]
+Enables strict class-file format checks that enforce close conformance
+to the class-file format specification.
+Developers should use this flag when developing new code.
+Stricter checks may become the default in future releases.
+.RS
+.PP
+Use the option \f[V]-Xverify:all\f[R] instead.
+.RE
 .PP
 For the lists and descriptions of options removed in previous releases
 see the \f[I]Removed Java Options\f[R] section in:
+.IP \[bu] 2
+\f[B]The \f[VB]java\f[B] Command, Release 23\f[R]
+[https://docs.oracle.com/en/java/javase/23/docs/specs/man/java.html]
 .IP \[bu] 2
 \f[B]The \f[VB]java\f[B] Command, Release 22\f[R]
 [https://docs.oracle.com/en/java/javase/22/docs/specs/man/java.html]
@@ -4798,7 +4829,7 @@ level to a file called \f[V]gc.txt\f[R] with no decorations.
 The default configuration for all other messages at level
 \f[V]warning\f[R] is still in effect.
 .TP
-\f[V]-Xlog:gc=trace:file=gctrace.txt:uptimemillis,pids:filecount=5,filesize=1024\f[R]
+\f[V]-Xlog:gc=trace:file=gctrace.txt:uptimemillis,pid:filecount=5,filesize=1024\f[R]
 Logs messages tagged with the \f[V]gc\f[R] tag using the \f[V]trace\f[R]
 level to a rotating file set with 5 files with size 1 MB with the base
 name \f[V]gctrace.txt\f[R] and uses decorations \f[V]uptimemillis\f[R]

@@ -35,6 +35,9 @@
                          range,                                           \
                          constraint)                                      \
                                                                           \
+product(bool, UseAllWindowsProcessorGroups, false,                        \
+        "Use all processor groups on supported Windows versions")         \
+                                                                          \
 product(bool, UseOSErrorReporting, false,                                 \
         "Let VM fatal error propagate to the OS (ie. WER on Windows)")
 

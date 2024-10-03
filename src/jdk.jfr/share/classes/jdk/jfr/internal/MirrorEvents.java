@@ -48,6 +48,7 @@ import jdk.jfr.events.VirtualThreadStartEvent;
 import jdk.jfr.events.VirtualThreadSubmitFailedEvent;
 import jdk.jfr.events.X509CertificateEvent;
 import jdk.jfr.events.X509ValidationEvent;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * This class registers all mirror events.
@@ -85,7 +86,7 @@ final class MirrorEvents {
     }
 
     static Class<? extends MirrorEvent> find(Class<? extends jdk.internal.event.Event> eventClass) {
-        return find(eventClass.getClassLoader() == null, eventClass.getName());
+        return find(Utils.isJDKClass(eventClass), eventClass.getName());
     }
 
     static Class<? extends MirrorEvent> find(boolean bootClassLoader, String name) {

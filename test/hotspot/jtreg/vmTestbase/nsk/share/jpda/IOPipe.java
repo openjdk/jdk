@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,12 +72,16 @@ public class IOPipe extends SocketIOPipe {
                 (long)debugee.getArgumentHandler().getWaitTime() * 60 * 1000,
                 true);
         setServerSocket(debugee.getPipeServerSocket());
+        if (debugee.pipe != null) {
+            throw new RuntimeException("debugee pipe is already set");
+        }
+        debugee.pipe = this;
     }
 
     /**
       * Make general <code>IOPipe</code> object with specified parameters.
       */
-    protected IOPipe(Log log, String host, int port, long timeout, boolean listening) {
+    private IOPipe(Log log, String host, int port, long timeout, boolean listening) {
         super("IOPipe", log, PIPE_LOG_PREFIX, host, port, timeout, listening);
     }
 

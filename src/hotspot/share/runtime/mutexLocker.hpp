@@ -40,7 +40,6 @@ extern Mutex*   SharedDictionary_lock;           // a lock on the CDS shared dic
 extern Monitor* ClassInitError_lock;             // a lock on the class initialization error table
 extern Mutex*   Module_lock;                     // a lock on module and package related data structures
 extern Mutex*   CompiledIC_lock;                 // a lock used to guard compiled IC patching and access
-extern Mutex*   InlineCacheBuffer_lock;          // a lock used to guard the InlineCacheBuffer
 extern Mutex*   VMStatistic_lock;                // a lock used to guard statistics count increment
 extern Mutex*   JmethodIdCreation_lock;          // a lock on creating JNI method identifiers
 extern Mutex*   JfieldIdCreation_lock;           // a lock on creating JNI static field identifiers
@@ -141,6 +140,8 @@ extern Mutex*   ClassLoaderDataGraph_lock;       // protects CLDG list, needed f
 
 extern Mutex*   CodeHeapStateAnalytics_lock;     // lock print functions against concurrent analyze functions.
                                                  // Only used locally in PrintCodeCacheLayout processing.
+
+extern Mutex*   ExternalsRecorder_lock;          // used to guard access to the external addresses table
 
 extern Monitor* ContinuationRelativize_lock;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   os::trace_page_sizes("Mark Bitmap", raw_bytes, raw_bytes,
                        rs.base(), rs.size(), used_page_sz);
 
-  MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
+  MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
 
   _virtual_space = new PSVirtualSpace(rs, page_sz);
   if (_virtual_space != nullptr && _virtual_space->expand_by(_reserved_byte_size)) {
@@ -62,7 +62,7 @@ ParMarkBitMap::initialize(MemRegion covered_region)
     return true;
   }
 
-  _heap_start = 0;
+  _heap_start = nullptr;
   _heap_size = 0;
   if (_virtual_space != nullptr) {
     delete _virtual_space;

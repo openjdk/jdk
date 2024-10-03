@@ -227,7 +227,7 @@ void G1CollectedHeap::register_region_with_region_attr(G1HeapRegion* r) {
 void G1CollectedHeap::register_old_region_with_region_attr(G1HeapRegion* r) {
   assert(!r->has_pinned_objects(), "must be");
   assert(r->rem_set()->is_complete(), "must be");
-  _region_attr.set_in_old(r->hrm_index(), r->rem_set()->is_tracked());
+  _region_attr.set_in_old(r->hrm_index(), true);
   _rem_set->exclude_region_from_scan(r->hrm_index());
 }
 
@@ -253,6 +253,7 @@ inline bool G1CollectedHeap::is_obj_filler(const oop obj) {
 }
 
 inline bool G1CollectedHeap::is_obj_dead(const oop obj, const G1HeapRegion* hr) const {
+  assert(!hr->is_free(), "looking up obj " PTR_FORMAT " in Free region %u", p2i(obj), hr->hrm_index());
   if (hr->is_in_parsable_area(obj)) {
     // This object is in the parsable part of the heap, live unless scrubbed.
     return is_obj_filler(obj);

@@ -229,6 +229,9 @@ public:
 static BuiltinException _null_ptr_exception;
 static BuiltinException _arithmetic_exception;
 static BuiltinException _internal_error;
+static BuiltinException _array_index_out_of_bounds_exception;
+static BuiltinException _array_store_exception;
+static BuiltinException _class_cast_exception;
 
 objArrayOop Universe::the_empty_class_array ()  {
   return (objArrayOop)_the_empty_class_array.resolve();
@@ -246,6 +249,9 @@ oop Universe::the_min_jint_string()               { return _the_min_jint_string.
 oop Universe::null_ptr_exception_instance()       { return _null_ptr_exception.instance(); }
 oop Universe::arithmetic_exception_instance()     { return _arithmetic_exception.instance(); }
 oop Universe::internal_error_instance()           { return _internal_error.instance(); }
+oop Universe::array_index_out_of_bounds_exception_instance() { return _array_index_out_of_bounds_exception.instance(); }
+oop Universe::array_store_exception_instance()    { return _array_store_exception.instance(); }
+oop Universe::class_cast_exception_instance()     { return _class_cast_exception.instance(); }
 
 oop Universe::the_null_sentinel()                 { return _the_null_sentinel.resolve(); }
 
@@ -302,6 +308,9 @@ void Universe::archive_exception_instances() {
   _null_ptr_exception.store_in_cds();
   _arithmetic_exception.store_in_cds();
   _internal_error.store_in_cds();
+  _array_index_out_of_bounds_exception.store_in_cds();
+  _array_store_exception.store_in_cds();
+  _class_cast_exception.store_in_cds();
 }
 
 void Universe::load_archived_object_instances() {
@@ -318,6 +327,9 @@ void Universe::load_archived_object_instances() {
     _null_ptr_exception.load_from_cds();
     _arithmetic_exception.load_from_cds();
     _internal_error.load_from_cds();
+    _array_index_out_of_bounds_exception.load_from_cds();
+    _array_store_exception.load_from_cds();
+    _class_cast_exception.load_from_cds();
   }
 }
 #endif
@@ -334,6 +346,9 @@ void Universe::serialize(SerializeClosure* f) {
   _null_ptr_exception.serialize(f);
   _arithmetic_exception.serialize(f);
   _internal_error.serialize(f);
+  _array_index_out_of_bounds_exception.serialize(f);
+  _array_store_exception.serialize(f);
+  _class_cast_exception.serialize(f);
 #endif
 
   f->do_ptr(&_fillerArrayKlass);
@@ -361,7 +376,7 @@ void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
 static void initialize_basic_type_klass(Klass* k, TRAPS) {
   Klass* ok = vmClasses::Object_klass();
 #if INCLUDE_CDS
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
     assert(k->super() == ok, "u3");
     if (k->is_instance_klass()) {
@@ -394,7 +409,7 @@ void Universe::genesis(TRAPS) {
     // determine base vtable size; without that we cannot create the array klasses
     compute_base_vtable_size();
 
-    if (!UseSharedSpaces) {
+    if (!CDSConfig::is_using_archive()) {
       // Initialization of the fillerArrayKlass must come before regular
       // int-TypeArrayKlass so that the int-Array mirror points to the
       // int-TypeArrayKlass.
@@ -425,7 +440,7 @@ void Universe::genesis(TRAPS) {
 
 
 #if INCLUDE_CDS
-    if (UseSharedSpaces) {
+    if (CDSConfig::is_using_archive()) {
       // Verify shared interfaces array.
       assert(_the_array_interfaces_array->at(0) ==
              vmClasses::Cloneable_klass(), "u3");
@@ -527,7 +542,7 @@ void Universe::genesis(TRAPS) {
 
 void Universe::initialize_basic_type_mirrors(TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
-    if (UseSharedSpaces &&
+    if (CDSConfig::is_using_archive() &&
         ArchiveHeapLoader::is_in_use() &&
         _basic_type_mirrors[T_INT].resolve() != nullptr) {
       assert(ArchiveHeapLoader::can_use(), "Sanity");
@@ -565,7 +580,7 @@ void Universe::fixup_mirrors(TRAPS) {
   assert(vmClasses::Class_klass_loaded(), "java.lang.Class should be loaded");
   HandleMark hm(THREAD);
 
-  if (!UseSharedSpaces) {
+  if (!CDSConfig::is_using_archive()) {
     // Cache the start of the static fields
     InstanceMirrorKlass::init_offset_of_static_fields();
   }
@@ -877,7 +892,7 @@ jint universe_init() {
 
 #if INCLUDE_CDS
   DynamicArchive::check_for_dynamic_dump();
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     // Read the data structures supporting the shared spaces (shared
     // system dictionary, symbol table, etc.)
     MetaspaceShared::initialize_shared_spaces();
@@ -1062,7 +1077,7 @@ bool universe_post_init() {
   assert(!is_init_completed(), "Error: initialization not yet completed!");
   Universe::_fully_initialized = true;
   EXCEPTION_MARK;
-  if (!UseSharedSpaces) {
+  if (!CDSConfig::is_using_archive()) {
     reinitialize_vtables();
     reinitialize_itables();
   }
@@ -1083,10 +1098,12 @@ bool universe_post_init() {
     Universe::_delayed_stack_overflow_error_message = OopHandle(Universe::vm_global(), instance);
   }
 
-  // Setup preallocated NullPointerException/ArithmeticException
-  // (used for a cheap & dirty solution in compiler exception handling)
+  // Setup preallocated exceptions used for a cheap & dirty solution in compiler exception handling
   _null_ptr_exception.init_if_empty(vmSymbols::java_lang_NullPointerException(), CHECK_false);
   _arithmetic_exception.init_if_empty(vmSymbols::java_lang_ArithmeticException(), CHECK_false);
+  _array_index_out_of_bounds_exception.init_if_empty(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), CHECK_false);
+  _array_store_exception.init_if_empty(vmSymbols::java_lang_ArrayStoreException(), CHECK_false);
+  _class_cast_exception.init_if_empty(vmSymbols::java_lang_ClassCastException(), CHECK_false);
 
   // Virtual Machine Error for when we get into a situation we can't resolve
   Klass* k = vmClasses::InternalError_klass();

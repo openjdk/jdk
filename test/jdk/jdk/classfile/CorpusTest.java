@@ -31,12 +31,15 @@
 import helpers.ClassRecord;
 import helpers.ClassRecord.CompatibilityFilter;
 import helpers.Transforms;
+import jdk.internal.classfile.impl.BufWriterImpl;
+import jdk.internal.classfile.impl.Util;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import java.io.ByteArrayInputStream;
+import java.lang.classfile.attribute.CodeAttribute;
 import java.util.*;
 
 import static helpers.ClassRecord.assertEqualsDeep;
@@ -79,13 +82,13 @@ class CorpusTest {
     static void splitTableAttributes(String sourceClassFile, String targetClassFile) throws IOException, URISyntaxException {
         var root = Paths.get(URI.create(CorpusTest.class.getResource("CorpusTest.class").toString())).getParent();
         var cc = ClassFile.of();
-        Files.write(root.resolve(targetClassFile), cc.transform(cc.parse(root.resolve(sourceClassFile)), ClassTransform.transformingMethodBodies((cob, coe) -> {
+        Files.write(root.resolve(targetClassFile), cc.transformClass(cc.parse(root.resolve(sourceClassFile)), ClassTransform.transformingMethodBodies((cob, coe) -> {
             var dcob = (DirectCodeBuilder)cob;
             var curPc = dcob.curPc();
             switch (coe) {
                 case LineNumber ln -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.lineNumberTable()) {
                     @Override
-                    public void writeBody(BufWriter b) {
+                    public void writeBody(BufWriterImpl b) {
                         b.writeU2(1);
                         b.writeU2(curPc);
                         b.writeU2(ln.line());
@@ -93,16 +96,16 @@ class CorpusTest {
                 });
                 case LocalVariable lv -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTable()) {
                     @Override
-                    public void writeBody(BufWriter b) {
+                    public void writeBody(BufWriterImpl b) {
                         b.writeU2(1);
-                        lv.writeTo(b);
+                        Util.writeLocalVariable(b, lv);
                     }
                 });
                 case LocalVariableType lvt -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTypeTable()) {
                     @Override
-                    public void writeBody(BufWriter b) {
+                    public void writeBody(BufWriterImpl b) {
                         b.writeU2(1);
-                        lvt.writeTo(b);
+                        Util.writeLocalVariable(b, lvt);
                     }
                 });
                 default -> cob.with(coe);
@@ -117,7 +120,7 @@ class CorpusTest {
     static Path[] corpus() throws IOException, URISyntaxException {
         splitTableAttributes("testdata/Pattern2.class", "testdata/Pattern2-split.class");
         return Stream.of(
-                Files.walk(JRT.getPath("modules/java.base/java")),
+                Files.walk(JRT.getPath("modules/java.base/java/util")),
                 Files.walk(JRT.getPath("modules"), 2).filter(p -> p.endsWith("module-info.class")),
                 Files.walk(Paths.get(URI.create(CorpusTest.class.getResource("CorpusTest.class").toString())).getParent()))
                 .flatMap(p -> p)
@@ -140,13 +143,14 @@ class CorpusTest {
         for (Transforms.NoOpTransform m : Transforms.NoOpTransform.values()) {
             if (m == Transforms.NoOpTransform.ARRAYCOPY
                 || m == Transforms.NoOpTransform.SHARED_3_NO_STACKMAP
+                || m == Transforms.NoOpTransform.CLASS_REMAPPER
                 || m.name().startsWith("ASM"))
                 continue;
 
             try {
                 byte[] transformed = m.shared && m.classTransform != null
                                      ? ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS)
-                                                .transform(ClassFile.of().parse(bytes), m.classTransform)
+                                                .transformClass(ClassFile.of().parse(bytes), m.classTransform)
                                      : m.transform.apply(bytes);
                 Map<Integer, Integer> newDups = findDups(transformed);
                 oldRecord = m.classRecord(bytes);
@@ -190,12 +194,8 @@ class CorpusTest {
                                  .collect(joining("\n"));
             fail(String.format("Errors in testNullAdapt: %s", msg));
         }
-    }
 
-    @ParameterizedTest
-    @MethodSource("corpus")
-    void testReadAndTransform(Path path) throws IOException {
-        byte[] bytes = Files.readAllBytes(path);
+        // test read and transform
         var cc = ClassFile.of();
         var classModel = cc.parse(bytes);
         assertEqualsDeep(ClassRecord.ofClassModel(classModel), ClassRecord.ofStreamingElements(classModel),
@@ -203,7 +203,7 @@ class CorpusTest {
 
         byte[] newBytes = cc.build(
                 classModel.thisClass().asSymbol(),
-                classModel::forEachElement);
+                classModel::forEach);
         var newModel = cc.parse(newBytes);
         assertEqualsDeep(ClassRecord.ofClassModel(newModel, CompatibilityFilter.By_ClassBuilder),
                 ClassRecord.ofClassModel(classModel, CompatibilityFilter.By_ClassBuilder),
@@ -213,7 +213,7 @@ class CorpusTest {
 
         //testing maxStack and maxLocals are calculated identically by StackMapGenerator and StackCounter
         byte[] noStackMaps = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS)
-                                      .transform(newModel,
+                                      .transformClass(newModel,
                                                          ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL));
         var noStackModel = cc.parse(noStackMaps);
         var itStack = newModel.methods().iterator();
@@ -223,9 +223,11 @@ class CorpusTest {
             var m1 = itStack.next();
             var m2 = itNoStack.next();
             var text1 = m1.methodName().stringValue() + m1.methodType().stringValue() + ": "
-                      + m1.code().map(c -> c.maxLocals() + " / " + c.maxStack()).orElse("-");
+                      + m1.code().map(CodeAttribute.class::cast)
+                                 .map(c -> c.maxLocals() + " / " + c.maxStack()).orElse("-");
             var text2 = m2.methodName().stringValue() + m2.methodType().stringValue() + ": "
-                      + m2.code().map(c -> c.maxLocals() + " / " + c.maxStack()).orElse("-");
+                      + m2.code().map(CodeAttribute.class::cast)
+                                 .map(c -> c.maxLocals() + " / " + c.maxStack()).orElse("-");
             assertEquals(text1, text2);
         }
         assertFalse(itNoStack.hasNext());

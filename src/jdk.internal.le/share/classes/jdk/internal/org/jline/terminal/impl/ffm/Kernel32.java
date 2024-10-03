@@ -236,7 +236,7 @@ final class Kernel32 {
         MethodHandle mh$ = requireNonNull(ScrollConsoleScreenBufferW$MH, "ScrollConsoleScreenBuffer");
         try {
             return (int)
-                    mh$.invokeExact(hConsoleOutput, lpScrollRectangle, lpClipRectangle, dwDestinationOrigin, lpFill);
+                    mh$.invokeExact(hConsoleOutput, lpScrollRectangle.seg, lpClipRectangle.seg, dwDestinationOrigin.seg, lpFill.seg);
         } catch (Throwable ex$) {
             throw new AssertionError("should not reach here", ex$);
         }

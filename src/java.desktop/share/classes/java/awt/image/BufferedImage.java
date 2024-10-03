@@ -899,7 +899,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the coordinates are not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -933,7 +933,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the region is not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -1003,7 +1003,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the coordinates are not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -1033,7 +1033,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the region is not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *

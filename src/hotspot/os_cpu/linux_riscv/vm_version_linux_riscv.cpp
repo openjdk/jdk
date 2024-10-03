@@ -35,6 +35,7 @@
 #include <asm/hwcap.h>
 #include <ctype.h>
 #include <sys/auxv.h>
+#include <sys/prctl.h>
 
 #ifndef HWCAP_ISA_I
 #define HWCAP_ISA_I  nth_bit('I' - 'A')
@@ -82,6 +83,23 @@
         __v;                                                    \
 })
 
+// prctl PR_RISCV_SET_ICACHE_FLUSH_CTX is from Linux 6.9
+#ifndef PR_RISCV_SET_ICACHE_FLUSH_CTX
+#define PR_RISCV_SET_ICACHE_FLUSH_CTX 71
+#endif
+#ifndef PR_RISCV_CTX_SW_FENCEI_ON
+#define PR_RISCV_CTX_SW_FENCEI_ON  0
+#endif
+#ifndef PR_RISCV_CTX_SW_FENCEI_OFF
+#define PR_RISCV_CTX_SW_FENCEI_OFF 1
+#endif
+#ifndef PR_RISCV_SCOPE_PER_PROCESS
+#define PR_RISCV_SCOPE_PER_PROCESS 0
+#endif
+#ifndef PR_RISCV_SCOPE_PER_THREAD
+#define PR_RISCV_SCOPE_PER_THREAD  1
+#endif
+
 uint32_t VM_Version::cpu_vector_length() {
   assert(ext_V.enabled(), "should not call this");
   return (uint32_t)read_csr(CSR_VLENB);
@@ -102,6 +120,7 @@ void VM_Version::setup_cpu_available_features() {
   if (!RiscvHwprobe::probe_features()) {
     os_aux_features();
   }
+
   char* uarch = os_uarch_additional_features();
   vendor_features();
 
@@ -131,7 +150,10 @@ void VM_Version::setup_cpu_available_features() {
       if (_feature_list[i]->feature_string()) {
         const char* tmp = _feature_list[i]->pretty();
         if (strlen(tmp) == 1) {
-          strcat(buf, " ");
+          // Feature string is expected to be in multi-character form
+          // like rvc, rvv, etc so that it will be easier to specify
+          // target feature string in tests.
+          strcat(buf, " rv");
           strcat(buf, tmp);
         } else {
           // Feature string is expected to be lower case.
@@ -150,6 +172,24 @@ void VM_Version::setup_cpu_available_features() {
       }
     }
     i++;
+  }
+
+  // Linux kernel require Zifencei
+  if (!ext_Zifencei.enabled()) {
+    log_info(os, cpu)("Zifencei not found, required by Linux, enabling.");
+    ext_Zifencei.enable_feature();
+  }
+
+  if (UseCtxFencei) {
+    // Note that we can set this up only for effected threads
+    // via PR_RISCV_SCOPE_PER_THREAD, i.e. on VM attach/deattach.
+    int ret = prctl(PR_RISCV_SET_ICACHE_FLUSH_CTX, PR_RISCV_CTX_SW_FENCEI_ON, PR_RISCV_SCOPE_PER_PROCESS);
+    if (ret == 0) {
+      log_debug(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) enabled.");
+    } else {
+      FLAG_SET_ERGO(UseCtxFencei, false);
+      log_info(os, cpu)("UseCtxFencei (PR_RISCV_CTX_SW_FENCEI_ON) disabled, unsupported by kernel.");
+    }
   }
 
   _features_string = os::strdup(buf);

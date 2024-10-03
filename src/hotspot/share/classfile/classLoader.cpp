@@ -78,7 +78,11 @@
 #include "utilities/classpathStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/utf8.hpp"
+
+#include <stdlib.h>
+#include <ctype.h>
 
 // Entry point in java.dll for path canonicalization
 
@@ -118,8 +122,39 @@ PerfCounter*    ClassLoader::_perf_define_appclass_time = nullptr;
 PerfCounter*    ClassLoader::_perf_define_appclass_selftime = nullptr;
 PerfCounter*    ClassLoader::_perf_app_classfile_bytes_read = nullptr;
 PerfCounter*    ClassLoader::_perf_sys_classfile_bytes_read = nullptr;
+PerfCounter*    ClassLoader::_perf_ik_link_methods_time = nullptr;
+PerfCounter*    ClassLoader::_perf_method_adapters_time = nullptr;
+PerfCounter*    ClassLoader::_perf_ik_link_methods_count = nullptr;
+PerfCounter*    ClassLoader::_perf_method_adapters_count = nullptr;
 PerfCounter*    ClassLoader::_unsafe_defineClassCallCounter = nullptr;
 PerfCounter*    ClassLoader::_perf_secondary_hash_time = nullptr;
+
+PerfCounter*    ClassLoader::_perf_resolve_indy_time = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_invokehandle_time = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_mh_time = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_mt_time = nullptr;
+
+PerfCounter*    ClassLoader::_perf_resolve_indy_count = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_invokehandle_count = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_mh_count = nullptr;
+PerfCounter*    ClassLoader::_perf_resolve_mt_count = nullptr;
+
+void ClassLoader::print_counters(outputStream *st) {
+  // The counters are only active if the logging is enabled, but
+  // we print to the passed in outputStream as requested.
+  if (log_is_enabled(Info, perf, class, link)) {
+    st->print_cr("ClassLoader:");
+    st->print_cr("  clinit:               " JLONG_FORMAT "ms / " JLONG_FORMAT " events", ClassLoader::class_init_time_ms(), ClassLoader::class_init_count());
+    st->print_cr("  link methods:         " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_ik_link_methods_time->get_value())   , _perf_ik_link_methods_count->get_value());
+    st->print_cr("  method adapters:      " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_method_adapters_time->get_value())   , _perf_method_adapters_count->get_value());
+    st->print_cr("  resolve...");
+    st->print_cr("    invokedynamic:   " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_indy_time->get_value())         , _perf_resolve_indy_count->get_value());
+    st->print_cr("    invokehandle:    " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_invokehandle_time->get_value()) , _perf_resolve_invokehandle_count->get_value());
+    st->print_cr("    CP_MethodHandle: " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_mh_time->get_value())           , _perf_resolve_mh_count->get_value());
+    st->print_cr("    CP_MethodType:   " JLONG_FORMAT "ms / " JLONG_FORMAT " events", Management::ticks_to_ms(_perf_resolve_mt_time->get_value())           , _perf_resolve_mt_count->get_value());
+    st->cr();
+  }
+}
 
 GrowableArray<ModuleClassPathList*>* ClassLoader::_patch_mod_entries = nullptr;
 GrowableArray<ModuleClassPathList*>* ClassLoader::_exploded_entries = nullptr;
@@ -438,7 +473,7 @@ bool ClassPathImageEntry::is_modules_image() const {
 void ClassLoader::exit_with_path_failure(const char* error, const char* message) {
   assert(CDSConfig::is_dumping_archive(), "sanity");
   tty->print_cr("Hint: enable -Xlog:class+path=info to diagnose the failure");
-  vm_exit_during_initialization(error, message);
+  vm_exit_during_cds_dumping(error, message);
 }
 #endif
 
@@ -547,6 +582,8 @@ void ClassLoader::setup_module_search_path(JavaThread* current, const char* path
   new_entry = create_class_path_entry(current, path, &st,
                                       false /*is_boot_append */, false /* from_class_path_attr */);
   if (new_entry != nullptr) {
+    // ClassLoaderExt::process_module_table() filters out non-jar entries before calling this function.
+    assert(new_entry->is_jar_file(), "module path entry %s is not a jar file", new_entry->name());
     add_to_module_path_entries(path, new_entry);
   }
 }
@@ -802,7 +839,8 @@ bool ClassLoader::add_to_app_classpath_entries(JavaThread* current,
   ClassPathEntry* e = _app_classpath_entries;
   if (check_for_duplicates) {
     while (e != nullptr) {
-      if (strcmp(e->name(), entry->name()) == 0) {
+      if (strcmp(e->name(), entry->name()) == 0 &&
+          e->from_class_path_attr() == entry->from_class_path_attr()) {
         // entry already exists
         return false;
       }
@@ -1176,7 +1214,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bo
 }
 
 #if INCLUDE_CDS
-char* ClassLoader::skip_uri_protocol(char* source) {
+static const char* skip_uri_protocol(const char* source) {
   if (strncmp(source, "file:", 5) == 0) {
     // file: protocol path could start with file:/ or file:///
     // locate the char after all the forward slashes
@@ -1193,6 +1231,47 @@ char* ClassLoader::skip_uri_protocol(char* source) {
     source += 5;
   }
   return source;
+}
+
+static char decode_percent_encoded(const char *str, size_t& index) {
+  if (str[index] == '%'
+      && isxdigit(str[index + 1])
+      && isxdigit(str[index + 2])) {
+    char hex[3];
+    hex[0] = str[index + 1];
+    hex[1] = str[index + 2];
+    hex[2] = '\0';
+    index += 2;
+    return (char) strtol(hex, NULL, 16);
+  }
+  return str[index];
+}
+
+char* ClassLoader::uri_to_path(const char* uri) {
+  const size_t len = strlen(uri) + 1;
+  char* path = NEW_RESOURCE_ARRAY(char, len);
+
+  uri = skip_uri_protocol(uri);
+
+  if (strncmp(uri, "//", 2) == 0) {
+    // Skip the empty "authority" part
+    uri += 2;
+  }
+
+#ifdef _WINDOWS
+  if (uri[0] == '/') {
+    // Absolute path name on Windows does not begin with a slash
+    uri += 1;
+  }
+#endif
+
+  size_t path_index = 0;
+  for (size_t i = 0; i < strlen(uri); ++i) {
+    char decoded = decode_percent_encoded(uri, i);
+    path[path_index++] = decoded;
+  }
+  path[path_index] = '\0';
+  return path;
 }
 
 // Record the shared classpath index and loader type for classes loaded
@@ -1228,7 +1307,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
     // Save the path from the file: protocol or the module name from the jrt: protocol
     // if no protocol prefix is found, path is the same as stream->source(). This path
     // must be valid since the class has been successfully parsed.
-    char* path = skip_uri_protocol(src);
+    const char* path = ClassLoader::uri_to_path(src);
     assert(path != nullptr, "sanity");
     for (int i = 0; i < FileMapInfo::get_number_of_shared_paths(); i++) {
       SharedClassPathEntry* ent = FileMapInfo::shared_path(i);
@@ -1336,9 +1415,25 @@ void ClassLoader::initialize(TRAPS) {
     NEWPERFTICKCOUNTER(_perf_define_appclass_selftime, SUN_CLS, "defineAppClassTime.self");
     NEWPERFBYTECOUNTER(_perf_app_classfile_bytes_read, SUN_CLS, "appClassBytes");
     NEWPERFBYTECOUNTER(_perf_sys_classfile_bytes_read, SUN_CLS, "sysClassBytes");
-
     NEWPERFEVENTCOUNTER(_unsafe_defineClassCallCounter, SUN_CLS, "unsafeDefineClassCalls");
     NEWPERFTICKCOUNTER(_perf_secondary_hash_time, SUN_CLS, "secondarySuperHashTime");
+
+    if (log_is_enabled(Info, perf, class, link)) {
+      NEWPERFTICKCOUNTER(_perf_ik_link_methods_time, SUN_CLS, "linkMethodsTime");
+      NEWPERFTICKCOUNTER(_perf_method_adapters_time, SUN_CLS, "makeAdaptersTime");
+      NEWPERFEVENTCOUNTER(_perf_ik_link_methods_count, SUN_CLS, "linkMethodsCount");
+      NEWPERFEVENTCOUNTER(_perf_method_adapters_count, SUN_CLS, "makeAdaptersCount");
+
+      NEWPERFTICKCOUNTER(_perf_resolve_indy_time, SUN_CLS, "resolve_invokedynamic_time");
+      NEWPERFTICKCOUNTER(_perf_resolve_invokehandle_time, SUN_CLS, "resolve_invokehandle_time");
+      NEWPERFTICKCOUNTER(_perf_resolve_mh_time, SUN_CLS, "resolve_MethodHandle_time");
+      NEWPERFTICKCOUNTER(_perf_resolve_mt_time, SUN_CLS, "resolve_MethodType_time");
+
+      NEWPERFEVENTCOUNTER(_perf_resolve_indy_count, SUN_CLS, "resolve_invokedynamic_count");
+      NEWPERFEVENTCOUNTER(_perf_resolve_invokehandle_count, SUN_CLS, "resolve_invokehandle_count");
+      NEWPERFEVENTCOUNTER(_perf_resolve_mh_count, SUN_CLS, "resolve_MethodHandle_count");
+      NEWPERFEVENTCOUNTER(_perf_resolve_mt_count, SUN_CLS, "resolve_MethodType_count");
+    }
   }
 
   // lookup java library entry points
@@ -1483,7 +1578,7 @@ void ClassLoader::classLoader_init2(JavaThread* current) {
   // entries will be added to the exploded build array.
   if (!has_jrt_entry()) {
     assert(!CDSConfig::is_dumping_archive(), "not supported with exploded module builds");
-    assert(!UseSharedSpaces, "UsedSharedSpaces not supported with exploded module builds");
+    assert(!CDSConfig::is_using_archive(), "UsedSharedSpaces not supported with exploded module builds");
     // Set up the boot loader's _exploded_entries list.  Note that this gets
     // done before loading any classes, by the same thread that will
     // subsequently do the first class load. So, no lock is needed for this.

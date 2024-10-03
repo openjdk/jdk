@@ -595,6 +595,7 @@ class UpcallLinker;
 
 // A (Panama) upcall stub. Not used by JNI.
 class UpcallStub: public RuntimeBlob {
+  friend class VMStructs;
   friend class UpcallLinker;
  private:
   jobject _receiver;

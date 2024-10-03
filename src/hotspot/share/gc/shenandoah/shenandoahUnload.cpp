@@ -168,7 +168,7 @@ void ShenandoahUnload::unload() {
   // Make sure stale metadata and nmethods are no longer observable
   {
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_class_unload_rendezvous);
-    heap->rendezvous_threads();
+    heap->rendezvous_threads("Shenandoah Class Unloading");
   }
 
   // Purge stale metadata and nmethods that were unlinked

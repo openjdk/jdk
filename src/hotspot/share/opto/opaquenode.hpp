@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,26 +91,6 @@ public:
   IfNode* if_node() const;
 };
 
-//------------------------------Opaque3Node------------------------------------
-// A node to prevent unwanted optimizations. Will be optimized only during
-// macro nodes expansion.
-class Opaque3Node : public Node {
-  int _opt; // what optimization it was used for
-  virtual uint hash() const;
-  virtual bool cmp(const Node &n) const;
-  public:
-  enum { RTM_OPT };
-  Opaque3Node(Compile* C, Node* n, int opt) : Node(0, n), _opt(opt) {
-    // Put it on the Macro nodes list to removed during macro nodes expansion.
-    init_flags(Flag_is_macro);
-    C->add_macro_node(this);
-  }
-  virtual int Opcode() const;
-  virtual const Type* bottom_type() const { return TypeInt::INT; }
-  virtual Node* Identity(PhaseGVN* phase);
-  bool rtm_opt() const { return (_opt == RTM_OPT); }
-};
-
 // Input 1 is a check that we know implicitly is always true or false
 // but the compiler has no way to prove. If during optimizations, that
 // check becomes true or false, the Opaque4 node is replaced by that
@@ -160,7 +140,7 @@ class ProfileBooleanNode : public Node {
   virtual uint hash() const ;                  // { return NO_HASH; }
   virtual bool cmp( const Node &n ) const;
   public:
-  ProfileBooleanNode(Node *n, uint false_cnt, uint true_cnt) : Node(0, n),
+  ProfileBooleanNode(Node *n, uint false_cnt, uint true_cnt) : Node(nullptr, n),
           _false_cnt(false_cnt), _true_cnt(true_cnt), _consumed(false), _delay_removal(true) {}
 
   uint false_count() const { return _false_cnt; }

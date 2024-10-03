@@ -141,7 +141,7 @@ ClassLoaderData::ClassLoaderData(Handle h_class_loader, bool has_class_mirror_ho
   // A non-strong hidden class loader data doesn't have anything to keep
   // it from being unloaded during parsing of the non-strong hidden class.
   // The null-class-loader should always be kept alive.
-  _keep_alive((has_class_mirror_holder || h_class_loader.is_null()) ? 1 : 0),
+  _keep_alive_ref_count((has_class_mirror_holder || h_class_loader.is_null()) ? 1 : 0),
   _claim(0),
   _handles(),
   _klasses(nullptr), _packages(nullptr), _modules(nullptr), _unnamed_module(nullptr), _dictionary(nullptr),
@@ -202,9 +202,9 @@ OopHandle ClassLoaderData::ChunkedHandleList::add(oop o) {
 
 int ClassLoaderData::ChunkedHandleList::count() const {
   int count = 0;
-  Chunk* chunk = _head;
+  Chunk* chunk = Atomic::load_acquire(&_head);
   while (chunk != nullptr) {
-    count += chunk->_size;
+    count += Atomic::load(&chunk->_size);
     chunk = chunk->_next;
   }
   return count;
@@ -258,9 +258,9 @@ bool ClassLoaderData::ChunkedHandleList::contains(oop p) {
 
 #ifndef PRODUCT
 bool ClassLoaderData::ChunkedHandleList::owner_of(oop* oop_handle) {
-  Chunk* chunk = _head;
+  Chunk* chunk = Atomic::load_acquire(&_head);
   while (chunk != nullptr) {
-    if (&(chunk->_data[0]) <= oop_handle && oop_handle < &(chunk->_data[chunk->_size])) {
+    if (&(chunk->_data[0]) <= oop_handle && oop_handle < &(chunk->_data[Atomic::load(&chunk->_size)])) {
       return true;
     }
     chunk = chunk->_next;
@@ -345,26 +345,26 @@ void ClassLoaderData::demote_strong_roots() {
 // while the class is being parsed, and if the class appears on the module fixup list.
 // Due to the uniqueness that no other class shares the hidden class' name or
 // ClassLoaderData, no other non-GC thread has knowledge of the hidden class while
-// it is being defined, therefore _keep_alive is not volatile or atomic.
-void ClassLoaderData::inc_keep_alive() {
+// it is being defined, therefore _keep_alive_ref_count is not volatile or atomic.
+void ClassLoaderData::inc_keep_alive_ref_count() {
   if (has_class_mirror_holder()) {
-    assert(_keep_alive > 0, "Invalid keep alive increment count");
-    _keep_alive++;
+    assert(_keep_alive_ref_count > 0, "Invalid keep alive increment count");
+    _keep_alive_ref_count++;
   }
 }
 
-void ClassLoaderData::dec_keep_alive() {
+void ClassLoaderData::dec_keep_alive_ref_count() {
   if (has_class_mirror_holder()) {
-    assert(_keep_alive > 0, "Invalid keep alive decrement count");
-    if (_keep_alive == 1) {
-      // When the keep_alive counter is 1, the oop handle area is a strong root,
+    assert(_keep_alive_ref_count > 0, "Invalid keep alive decrement count");
+    if (_keep_alive_ref_count == 1) {
+      // When the keep_alive_ref_count counter is 1, the oop handle area is a strong root,
       // acting as input to the GC tracing. Such strong roots are part of the
       // snapshot-at-the-beginning, and can not just be pulled out from the
       // system when concurrent GCs are running at the same time, without
       // invoking the right barriers.
       demote_strong_roots();
     }
-    _keep_alive--;
+    _keep_alive_ref_count--;
   }
 }
 
@@ -680,8 +680,8 @@ oop ClassLoaderData::holder_no_keepalive() const {
 
 // Unloading support
 bool ClassLoaderData::is_alive() const {
-  bool alive = keep_alive()         // null class loader and incomplete non-strong hidden class.
-      || (_holder.peek() != nullptr);  // and not cleaned by the GC weak handle processing.
+  bool alive = (_keep_alive_ref_count > 0) // null class loader and incomplete non-strong hidden class.
+      || (_holder.peek() != nullptr);      // and not cleaned by the GC weak handle processing.
 
   return alive;
 }
@@ -1009,7 +1009,7 @@ void ClassLoaderData::print_on(outputStream* out) const {
   out->print_cr(" - unloading           %s", _unloading ? "true" : "false");
   out->print_cr(" - class mirror holder %s", _has_class_mirror_holder ? "true" : "false");
   out->print_cr(" - modified oops       %s", _modified_oops ? "true" : "false");
-  out->print_cr(" - keep alive          %d", _keep_alive);
+  out->print_cr(" - _keep_alive_ref_count %d", _keep_alive_ref_count);
   out->print   (" - claim               ");
   switch(_claim) {
     case _claim_none:                       out->print_cr("none"); break;

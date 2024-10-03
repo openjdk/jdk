@@ -340,6 +340,13 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
+  if (UseSecondarySupersTable && PowerArchitecturePPC64 < 7) {
+    if (!FLAG_IS_DEFAULT(UseSecondarySupersTable)) {
+      warning("UseSecondarySupersTable requires Power7 or later.");
+    }
+    FLAG_SET_DEFAULT(UseSecondarySupersTable, false);
+  }
+
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
     UseSquareToLenIntrinsic = true;

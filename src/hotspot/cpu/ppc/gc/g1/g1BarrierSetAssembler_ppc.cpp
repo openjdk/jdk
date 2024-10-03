@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,19 @@
 #include "c1/c1_LIRAssembler.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "gc/g1/c1/g1BarrierSetC1.hpp"
-#endif
+#endif // COMPILER1
+#ifdef COMPILER2
+#include "gc/g1/c2/g1BarrierSetC2.hpp"
+#endif // COMPILER2
 
 #define __ masm->
+
+static void generate_marking_inactive_test(MacroAssembler* masm) {
+  int active_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset());
+  assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+  __ lbz(R0, active_offset, R16_thread);  // tmp1 := *(mark queue active address)
+  __ cmpwi(CCR0, R0, 0);
+}
 
 void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                             Register from, Register to, Register count,
@@ -58,16 +68,10 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
     Label filtered;
 
     // Is marking active?
-    if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-      __ lwz(R0, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()), R16_thread);
-    } else {
-      guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-      __ lbz(R0, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()), R16_thread);
-    }
-    __ cmpdi(CCR0, R0, 0);
+    generate_marking_inactive_test(masm);
     __ beq(CCR0, filtered);
 
-    __ save_LR_CR(R0);
+    __ save_LR(R0);
     __ push_frame(frame_size, R0);
     int slot_nr = 0;
     __ std(from,  frame_size - (++slot_nr) * wordSize, R1_SP);
@@ -89,7 +93,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
     if (preserve1 != noreg) { __ ld(preserve1, frame_size - (++slot_nr) * wordSize, R1_SP); }
     if (preserve2 != noreg) { __ ld(preserve2, frame_size - (++slot_nr) * wordSize, R1_SP); }
     __ addi(R1_SP, R1_SP, frame_size); // pop_frame()
-    __ restore_LR_CR(R0);
+    __ restore_LR(R0);
 
     __ bind(filtered);
   }
@@ -100,44 +104,57 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   int spill_slots = (preserve != noreg) ? 1 : 0;
   const int frame_size = align_up(frame::native_abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
 
-  __ save_LR_CR(R0);
+  __ save_LR(R0);
   __ push_frame(frame_size, R0);
   if (preserve != noreg) { __ std(preserve, frame_size - 1 * wordSize, R1_SP); }
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_post_entry), addr, count);
   if (preserve != noreg) { __ ld(preserve, frame_size - 1 * wordSize, R1_SP); }
   __ addi(R1_SP, R1_SP, frame_size); // pop_frame();
-  __ restore_LR_CR(R0);
+  __ restore_LR(R0);
+}
+
+static void generate_queue_insertion(MacroAssembler* masm, ByteSize index_offset, ByteSize buffer_offset, Label& runtime,
+                                     const Register value, const Register temp) {
+  assert_different_registers(value, temp);
+  // Can we store a value in the given thread's buffer?
+  // (The index field is typed as size_t.)
+  __ ld(temp, in_bytes(index_offset), R16_thread);  // temp := *(index address)
+  __ cmpdi(CCR0, temp, 0);                          // jump to runtime if index == 0 (full buffer)
+  __ beq(CCR0, runtime);
+  // The buffer is not full, store value into it.
+  __ ld(R0, in_bytes(buffer_offset), R16_thread);   // R0 := buffer address
+  __ addi(temp, temp, -wordSize);                   // temp := next index
+  __ std(temp, in_bytes(index_offset), R16_thread); // *(index address) := next index
+  __ stdx(value, temp, R0);                         // *(buffer address + next index) := value
 }
 
 void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, DecoratorSet decorators,
                                                  Register obj, RegisterOrConstant ind_or_offs, Register pre_val,
                                                  Register tmp1, Register tmp2,
                                                  MacroAssembler::PreservationLevel preservation_level) {
+  assert_different_registers(pre_val, tmp1, tmp2);
+
   bool not_null  = (decorators & IS_NOT_NULL) != 0,
        preloaded = obj == noreg;
   Register nv_save = noreg;
 
-  if (preloaded) {
+  // Determine necessary runtime invocation preservation measures
+  const bool needs_frame = preservation_level >= MacroAssembler::PRESERVATION_FRAME_LR;
+  const bool preserve_gp_registers = preservation_level >= MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS;
+  const bool preserve_fp_registers = preservation_level >= MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS;
+  int nbytes_save = 0;
+
+  if (pre_val->is_volatile() && preloaded && !preserve_gp_registers) {
     // We are not loading the previous value so make
     // sure that we don't trash the value in pre_val
     // with the code below.
-    assert_different_registers(pre_val, tmp1, tmp2);
-    if (pre_val->is_volatile()) {
-      nv_save = !tmp1->is_volatile() ? tmp1 : tmp2;
-      assert(!nv_save->is_volatile(), "need one nv temp register if pre_val lives in volatile register");
-    }
+    nv_save = !tmp1->is_volatile() ? tmp1 : tmp2;
+    assert(!nv_save->is_volatile(), "need one nv temp register if pre_val lives in volatile register");
   }
 
   Label runtime, filtered;
 
-  // Is marking active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    __ lwz(tmp1, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()), R16_thread);
-  } else {
-    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    __ lbz(tmp1, in_bytes(G1ThreadLocalData::satb_mark_queue_active_offset()), R16_thread);
-  }
-  __ cmpdi(CCR0, tmp1, 0);
+  generate_marking_inactive_test(masm);
   __ beq(CCR0, filtered);
 
   // Do we need to load the previous value?
@@ -175,27 +192,11 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
   // Can we store original value in the thread's buffer?
   // Is index == 0?
   // (The index field is typed as size_t.)
-  const Register Rbuffer = tmp1, Rindex = tmp2;
-
-  __ ld(Rindex, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()), R16_thread);
-  __ cmpdi(CCR0, Rindex, 0);
-  __ beq(CCR0, runtime); // If index == 0, goto runtime.
-  __ ld(Rbuffer, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()), R16_thread);
-
-  __ addi(Rindex, Rindex, -wordSize); // Decrement index.
-  __ std(Rindex, in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset()), R16_thread);
-
-  // Record the previous value.
-  __ stdx(pre_val, Rbuffer, Rindex);
+  generate_queue_insertion(masm, G1ThreadLocalData::satb_mark_queue_index_offset(), G1ThreadLocalData::satb_mark_queue_buffer_offset(),
+                           runtime, pre_val, tmp1);
   __ b(filtered);
 
   __ bind(runtime);
-
-  // Determine necessary runtime invocation preservation measures
-  const bool needs_frame = preservation_level >= MacroAssembler::PRESERVATION_FRAME_LR;
-  const bool preserve_gp_registers = preservation_level >= MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS;
-  const bool preserve_fp_registers = preservation_level >= MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS;
-  int nbytes_save = 0;
 
   // May need to preserve LR. Also needed if current frame is not compatible with C calling convention.
   if (needs_frame) {
@@ -206,21 +207,21 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
       __ save_volatile_gprs(R1_SP, -nbytes_save, preserve_fp_registers);
     }
 
-    __ save_LR_CR(tmp1);
+    __ save_LR(tmp1);
     __ push_frame_reg_args(nbytes_save, tmp2);
   }
 
-  if (pre_val->is_volatile() && preloaded && !preserve_gp_registers) {
+  if (nv_save != noreg) {
     __ mr(nv_save, pre_val); // Save pre_val across C call if it was preloaded.
   }
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry), pre_val, R16_thread);
-  if (pre_val->is_volatile() && preloaded && !preserve_gp_registers) {
+  if (nv_save != noreg) {
     __ mr(pre_val, nv_save); // restore
   }
 
   if (needs_frame) {
     __ pop_frame();
-    __ restore_LR_CR(tmp1);
+    __ restore_LR(tmp1);
 
     if (preserve_gp_registers) {
       __ restore_volatile_gprs(R1_SP, -nbytes_save, preserve_fp_registers);
@@ -228,6 +229,26 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
   }
 
   __ bind(filtered);
+}
+
+static void generate_region_crossing_test(MacroAssembler* masm, const Register store_addr, const Register new_val) {
+  __ xorr(R0, store_addr, new_val);                  // tmp1 := store address ^ new value
+  __ srdi_(R0, R0, G1HeapRegion::LogOfHRGrainBytes); // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
+}
+
+static Address generate_card_young_test(MacroAssembler* masm, const Register store_addr, const Register tmp1, const Register tmp2) {
+  CardTableBarrierSet* ct = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
+  __ load_const_optimized(tmp1, (address)(ct->card_table()->byte_map_base()), tmp2);
+  __ srdi(tmp2, store_addr, CardTable::card_shift());        // tmp1 := card address relative to card table base
+  __ lbzx(R0, tmp1, tmp2);                                   // tmp1 := card address
+  __ cmpwi(CCR0, R0, (int)G1CardTable::g1_young_card_val());
+  return Address(tmp1, tmp2); // return card address
+}
+
+static void generate_card_dirty_test(MacroAssembler* masm, Address card_addr) {
+  __ membar(Assembler::StoreLoad);                        // Must reload after StoreLoad membar due to concurrent refinement
+  __ lbzx(R0, card_addr.base(), card_addr.index());       // tmp2 := card
+  __ cmpwi(CCR0, R0, (int)G1CardTable::dirty_card_val()); // tmp2 := card == dirty_card_val?
 }
 
 void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, DecoratorSet decorators,
@@ -241,9 +262,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
 
   CardTableBarrierSet* ct = barrier_set_cast<CardTableBarrierSet>(BarrierSet::barrier_set());
 
-  // Does store cross heap regions?
-  __ xorr(tmp1, store_addr, new_val);
-  __ srdi_(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);
+  generate_region_crossing_test(masm, store_addr, new_val);
   __ beq(CCR0, filtered);
 
   // Crosses regions, storing null?
@@ -257,43 +276,22 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm, Decorato
     __ beq(CCR0, filtered);
   }
 
-  // Storing region crossing non-null, is card already dirty?
-  const Register Rcard_addr = tmp1;
-  Register Rbase = tmp2;
-  __ load_const_optimized(Rbase, (address)(ct->card_table()->byte_map_base()), /*temp*/ tmp3);
-
-  __ srdi(Rcard_addr, store_addr, CardTable::card_shift());
-
-  // Get the address of the card.
-  __ lbzx(/*card value*/ tmp3, Rbase, Rcard_addr);
-  __ cmpwi(CCR0, tmp3, (int)G1CardTable::g1_young_card_val());
+  Address card_addr = generate_card_young_test(masm, store_addr, tmp1, tmp2);
   __ beq(CCR0, filtered);
 
-  __ membar(Assembler::StoreLoad);
-  __ lbzx(/*card value*/ tmp3, Rbase, Rcard_addr);  // Reload after membar.
-  __ cmpwi(CCR0, tmp3 /* card value */, (int)G1CardTable::dirty_card_val());
+  generate_card_dirty_test(masm, card_addr);
   __ beq(CCR0, filtered);
 
-  // Storing a region crossing, non-null oop, card is clean.
-  // Dirty card and log.
-  __ li(tmp3, (int)G1CardTable::dirty_card_val());
-  //release(); // G1: oops are allowed to get visible after dirty marking.
-  __ stbx(tmp3, Rbase, Rcard_addr);
+  __ li(R0, (int)G1CardTable::dirty_card_val());
+  __ stbx(R0, card_addr.base(), card_addr.index()); // *(card address) := dirty_card_val
 
-  __ add(Rcard_addr, Rbase, Rcard_addr); // This is the address which needs to get enqueued.
-  Rbase = noreg; // end of lifetime
+  Register Rcard_addr = tmp3;
+  __ add(Rcard_addr, card_addr.base(), card_addr.index()); // This is the address which needs to get enqueued.
 
-  const Register Rqueue_index = tmp2,
-                 Rqueue_buf   = tmp3;
-  __ ld(Rqueue_index, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()), R16_thread);
-  __ cmpdi(CCR0, Rqueue_index, 0);
-  __ beq(CCR0, runtime); // index == 0 then jump to runtime
-  __ ld(Rqueue_buf, in_bytes(G1ThreadLocalData::dirty_card_queue_buffer_offset()), R16_thread);
-
-  __ addi(Rqueue_index, Rqueue_index, -wordSize); // decrement index
-  __ std(Rqueue_index, in_bytes(G1ThreadLocalData::dirty_card_queue_index_offset()), R16_thread);
-
-  __ stdx(Rcard_addr, Rqueue_buf, Rqueue_index); // store card
+  generate_queue_insertion(masm,
+                           G1ThreadLocalData::dirty_card_queue_index_offset(),
+                           G1ThreadLocalData::dirty_card_queue_buffer_offset(),
+                           runtime, Rcard_addr, tmp1);
   __ b(filtered);
 
   __ bind(runtime);
@@ -392,6 +390,142 @@ void G1BarrierSetAssembler::resolve_jobject(MacroAssembler* masm, Register value
   __ bind(done);
 }
 
+#ifdef COMPILER2
+
+static void generate_c2_barrier_runtime_call(MacroAssembler* masm, G1BarrierStubC2* stub, const Register arg, const address runtime_path) {
+  SaveLiveRegisters save_registers(masm, stub);
+  __ call_VM_leaf(runtime_path, arg, R16_thread);
+}
+
+void G1BarrierSetAssembler::g1_write_barrier_pre_c2(MacroAssembler* masm,
+                                                    Register obj,
+                                                    Register pre_val,
+                                                    Register tmp1,
+                                                    Register tmp2,
+                                                    G1PreBarrierStubC2* stub) {
+  assert_different_registers(obj, tmp1, tmp2, R0);
+  assert_different_registers(pre_val, tmp1, R0);
+  assert(!UseCompressedOops || tmp2 != noreg, "tmp2 needed with CompressedOops");
+
+  stub->initialize_registers(obj, pre_val, R16_thread, tmp1, tmp2);
+
+  generate_marking_inactive_test(masm);
+  __ bc_far_optimized(Assembler::bcondCRbiIs0, __ bi0(CCR0, Assembler::equal), *stub->entry());
+
+  __ bind(*stub->continuation());
+}
+
+void G1BarrierSetAssembler::generate_c2_pre_barrier_stub(MacroAssembler* masm,
+                                                         G1PreBarrierStubC2* stub) const {
+  Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
+  Label runtime;
+  Register obj = stub->obj();
+  Register pre_val = stub->pre_val();
+  Register tmp1 = stub->tmp1();
+
+  __ bind(*stub->entry());
+
+  if (obj != noreg) {
+    // Note: C2 currently doesn't use implicit null checks with barriers.
+    // Otherwise, obj could be null and the following instruction would raise a SIGSEGV.
+    if (UseCompressedOops) {
+      __ lwz(pre_val, 0, obj);
+    } else {
+      __ ld(pre_val, 0, obj);
+    }
+  }
+  __ cmpdi(CCR0, pre_val, 0);
+  __ bc_far_optimized(Assembler::bcondCRbiIs1, __ bi0(CCR0, Assembler::equal), *stub->continuation());
+
+  Register pre_val_decoded = pre_val;
+  if (UseCompressedOops) {
+    pre_val_decoded = __ decode_heap_oop_not_null(stub->tmp2(), pre_val);
+  }
+
+  generate_queue_insertion(masm,
+                           G1ThreadLocalData::satb_mark_queue_index_offset(),
+                           G1ThreadLocalData::satb_mark_queue_buffer_offset(),
+                           runtime, pre_val_decoded, tmp1);
+  __ b(*stub->continuation());
+
+  __ bind(runtime);
+  generate_c2_barrier_runtime_call(masm, stub, pre_val_decoded, CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_pre_entry));
+  __ b(*stub->continuation());
+}
+
+void G1BarrierSetAssembler::g1_write_barrier_post_c2(MacroAssembler* masm,
+                                                     Register store_addr,
+                                                     Register new_val,
+                                                     Register tmp1,
+                                                     Register tmp2,
+                                                     G1PostBarrierStubC2* stub,
+                                                     bool decode_new_val) {
+  assert_different_registers(store_addr, new_val, tmp1, R0);
+  assert_different_registers(store_addr, tmp1, tmp2, R0);
+
+  stub->initialize_registers(R16_thread, tmp1, tmp2);
+
+  bool null_check_required = (stub->barrier_data() & G1C2BarrierPostNotNull) == 0;
+  Register new_val_decoded = new_val;
+
+  if (decode_new_val) {
+    assert(UseCompressedOops, "or should not be here");
+    if (null_check_required && CompressedOops::base() != nullptr) {
+      // We prefer doing the null check after the region crossing check.
+      // Only compressed oop modes with base != null require a null check here.
+      __ cmpwi(CCR0, new_val, 0);
+      __ beq(CCR0, *stub->continuation());
+      null_check_required = false;
+    }
+    new_val_decoded = __ decode_heap_oop_not_null(tmp2, new_val);
+  }
+
+  generate_region_crossing_test(masm, store_addr, new_val_decoded);
+  __ beq(CCR0, *stub->continuation());
+
+  // crosses regions, storing null?
+  if (null_check_required) {
+    __ cmpdi(CCR0, new_val_decoded, 0);
+    __ beq(CCR0, *stub->continuation());
+  }
+
+  Address card_addr = generate_card_young_test(masm, store_addr, tmp1, tmp2);
+  assert(card_addr.base() == tmp1 && card_addr.index() == tmp2, "needed by post barrier stub");
+  __ bc_far_optimized(Assembler::bcondCRbiIs0, __ bi0(CCR0, Assembler::equal), *stub->entry());
+
+  __ bind(*stub->continuation());
+}
+
+void G1BarrierSetAssembler::generate_c2_post_barrier_stub(MacroAssembler* masm,
+                                                          G1PostBarrierStubC2* stub) const {
+  Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
+  Label runtime;
+  Address card_addr(stub->tmp1(), stub->tmp2()); // See above.
+
+  __ bind(*stub->entry());
+
+  generate_card_dirty_test(masm, card_addr);
+  __ bc_far_optimized(Assembler::bcondCRbiIs1, __ bi0(CCR0, Assembler::equal), *stub->continuation());
+
+  __ li(R0, (int)G1CardTable::dirty_card_val());
+  __ stbx(R0, card_addr.base(), card_addr.index()); // *(card address) := dirty_card_val
+
+  Register Rcard_addr = stub->tmp1();
+  __ add(Rcard_addr, card_addr.base(), card_addr.index()); // This is the address which needs to get enqueued.
+
+  generate_queue_insertion(masm,
+                           G1ThreadLocalData::dirty_card_queue_index_offset(),
+                           G1ThreadLocalData::dirty_card_queue_buffer_offset(),
+                           runtime, Rcard_addr, stub->tmp2());
+  __ b(*stub->continuation());
+
+  __ bind(runtime);
+  generate_c2_barrier_runtime_call(masm, stub, Rcard_addr, CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_field_post_entry));
+  __ b(*stub->continuation());
+}
+
+#endif // COMPILER2
+
 #ifdef COMPILER1
 
 #undef __
@@ -470,13 +604,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   __ std(tmp2, -24, R1_SP);
 
   // Is marking still active?
-  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
-    __ lwz(tmp, satb_q_active_byte_offset, R16_thread);
-  } else {
-    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
-    __ lbz(tmp, satb_q_active_byte_offset, R16_thread);
-  }
-  __ cmpdi(CCR0, tmp, 0);
+  generate_marking_inactive_test(sasm);
   __ beq(CCR0, marking_not_active);
 
   __ bind(restart);

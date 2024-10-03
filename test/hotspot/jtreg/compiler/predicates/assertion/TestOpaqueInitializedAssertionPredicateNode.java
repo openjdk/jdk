@@ -54,6 +54,17 @@
  * @run main compiler.predicates.assertion.TestOpaqueInitializedAssertionPredicateNode
  */
 
+/*
+ * @test id=clone_loop_handle_data_uses
+ * @bug 8333644
+ * @modules java.base/jdk.internal.misc:+open
+ * @summary Test that using OpaqueInitializedAssertionPredicate for Initialized Assertion Predicates instead of Opaque4
+ *          nodes also works with clone_loop_handle_data_uses() which missed a case before.
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,*TestOpaqueInitializedAssertionPredicateNode::test*
+ *                   -XX:CompileCommand=dontinline,*TestOpaqueInitializedAssertionPredicateNode::dontInline
+ *                   compiler.predicates.assertion.TestOpaqueInitializedAssertionPredicateNode
+ */
+
 package compiler.predicates.assertion;
 
 import jdk.internal.misc.Unsafe;
@@ -63,6 +74,7 @@ public class TestOpaqueInitializedAssertionPredicateNode {
 
     static boolean flag, flag2;
     static int iFld;
+    static long lFld;
     static int x;
     static int y = 51;
     static int iArrLength;
@@ -95,6 +107,7 @@ public class TestOpaqueInitializedAssertionPredicateNode {
             testPolicyRangeCheck(a);
             testUnsafeAccess(a);
             testOpaqueOutsideLoop();
+            testOpaqueOutsideLoop8333644();
             testOpaqueInsideIfOutsideLoop();
         }
     }
@@ -346,6 +359,35 @@ public class TestOpaqueInitializedAssertionPredicateNode {
             // OpaqueInitializedAssertionPredicate of IAP is outside of i-loop.
             if (initializedAssertionPredicateBool) {
                 iFld = 3;
+            }
+        }
+    }
+
+    // Same as testOpaqueOutsideLoop() but we crash later when generating the Mach graph due to wrongly having an If
+    // with a Phi input instead of: If <- Bool <- CmpU <- [x, Phi]. Found by fuzzing.
+    static void testOpaqueOutsideLoop8333644() {
+        int a = 3, b = 7;
+        boolean bArr[] = new boolean[1];
+        for (int i = 1; i < 122; i++) {
+            float f = 1.729F;
+            while (++a < 7) {
+                iArr[a] *= lFld;
+                switch (i) {
+                    case 26:
+                        for (; b < 1; ) {}
+                    case 27:
+                        iArr[1] = 9;
+                    case 28:
+                        break;
+                    case 33:
+                        iArr[1] = a;
+                        break;
+                    case 35:
+                        lFld = b;
+                        break;
+                    default:
+                        ;
+                }
             }
         }
     }

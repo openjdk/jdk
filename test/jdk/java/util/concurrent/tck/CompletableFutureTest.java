@@ -80,7 +80,14 @@ public class CompletableFutureTest extends JSR166TestCase {
         return new TestSuite(CompletableFutureTest.class);
     }
 
-    static class CFException extends RuntimeException {}
+    static class CFException extends RuntimeException {
+        // This makes sure that CompletableFuture still behaves appropriately
+        // even if thrown exceptions end up throwing exceptions from their String
+        // representations.
+        @Override public String getMessage() {
+            throw new IllegalStateException("malformed");
+        }
+    }
 
     void checkIncomplete(CompletableFuture<?> f) {
         assertFalse(f.isDone());
@@ -272,8 +279,8 @@ public class CompletableFutureTest extends JSR166TestCase {
      */
     public void testCompleteExceptionally() {
         CompletableFuture<Item> f = new CompletableFuture<>();
-        CFException ex = new CFException();
         checkIncomplete(f);
+        CFException ex = new CFException();
         f.completeExceptionally(ex);
         checkCompletedExceptionally(f, ex);
     }
@@ -5142,5 +5149,4 @@ public class CompletableFutureTest extends JSR166TestCase {
         checkCompletedWithWrappedException(g.toCompletableFuture(), r.ex);
         r.assertInvoked();
     }}
-
 }

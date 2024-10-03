@@ -200,6 +200,9 @@ class SourceChannelImpl
     }
     @Override
     public void kill() {
+        // wait for any read operation to complete before trying to close
+        readLock.lock();
+        readLock.unlock();
         synchronized (stateLock) {
             assert !isOpen();
             if (state == ST_CLOSING) {

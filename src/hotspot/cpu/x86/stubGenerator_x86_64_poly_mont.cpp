@@ -249,7 +249,6 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
   const Register tmp     = r9;
 
   montgomeryMultiply(aLimbs, bLimbs, rLimbs, tmp, _masm);
-  __ mov64(rax, 0x1); // Return 1 (Fig. 5, Step 6 [1] skipped in montgomeryMultiply)
 
   __ leave();
   __ ret(0);

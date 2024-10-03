@@ -113,7 +113,7 @@ jobject JNICALL jfr_get_event_writer(JNIEnv* env, jclass jvm);
 
 jobject JNICALL jfr_new_event_writer(JNIEnv* env, jclass jvm);
 
-jboolean JNICALL jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size);
+void JNICALL jfr_event_writer_flush(JNIEnv* env, jclass jvm, jobject writer, jint used_size, jint requested_size);
 
 jlong JNICALL jfr_commit(JNIEnv* env, jclass cls, jlong next_position);
 void JNICALL jfr_flush(JNIEnv* env, jclass jvm);
@@ -164,6 +164,8 @@ void JNICALL jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes);
 jlong JNICALL jfr_register_stack_filter(JNIEnv* env, jclass jvm, jobjectArray classes, jobjectArray methods);
 
 jlong JNICALL jfr_unregister_stack_filter(JNIEnv* env, jclass jvm, jlong id);
+
+jlong JNICALL jfr_nanos_now(JNIEnv* env, jclass jvm);
 
 #ifdef __cplusplus
 }
