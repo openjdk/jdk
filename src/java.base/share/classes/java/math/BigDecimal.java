@@ -5233,10 +5233,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     private static BigInteger fiveToTwoToThe(int n) {
         if (n >= FIVE_TO_2_TO_LEN) {
-            for (int i = FIVE_TO_2_TO_LEN; i <= n; i++) {
-                BigInteger pow = FIVE_TO_2_TO[i - 1];
-                FIVE_TO_2_TO[i] = pow.multiply(pow);
-            }
+            BigInteger pow = FIVE_TO_2_TO[FIVE_TO_2_TO_LEN - 1];
+            for (int i = FIVE_TO_2_TO_LEN; i <= n; i++)
+                FIVE_TO_2_TO[i] = pow = pow.multiply(pow);
 
             FIVE_TO_2_TO_LEN = n + 1;
         }
