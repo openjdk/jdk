@@ -5279,8 +5279,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
         }
 
-        for (int i = BigInteger.bitLengthForLong(remainingZeros) - 1;
-                i >= 0 && intVal.compareMagnitude(5L) >= 0; i--) {
+        for (int i = BigInteger.bitLengthForLong(remainingZeros) - 1; i >= 0; i--) {
             final int exp = 1 << i;
             qr = intVal.divideAndRemainder(fiveToTwoToThe(i));
             if (qr[1].signum() != 0) { // non-0 remainder
