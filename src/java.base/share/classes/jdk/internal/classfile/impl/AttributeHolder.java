@@ -30,7 +30,7 @@ import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributeMapper;
 
 public class AttributeHolder {
-    private static Attribute<?>[] EMPTY_ATTRIBUTE_ARRAY = {};
+    private static final Attribute<?>[] EMPTY_ATTRIBUTE_ARRAY = {};
     private int attributesCount = 0;
     private Attribute<?>[] attributes = EMPTY_ATTRIBUTE_ARRAY;
 
