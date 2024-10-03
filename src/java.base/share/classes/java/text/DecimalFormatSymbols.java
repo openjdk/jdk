@@ -765,6 +765,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             minusSign == other.minusSign &&
             minusSignText.equals(other.minusSignText) &&
             patternSeparator == other.patternSeparator &&
+            // Nullable instance variables
             Objects.equals(infinity, other.infinity) &&
             Objects.equals(NaN, other.NaN) &&
             Objects.equals(getCurrencySymbol(), other.getCurrencySymbol()) && // possible currency init occurs here
