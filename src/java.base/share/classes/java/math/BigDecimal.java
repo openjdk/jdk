@@ -5219,7 +5219,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@code FIVE_TO_2_TO[n] == 5^(2^n)}
      */
     // floor(log2(log5(2^Integer.MAX_VALUE))) == 29
-    private static final BigInteger[] FIVE_TO_2_TO = new BigInteger[29];
+    private static final BigInteger[] FIVE_TO_2_TO = new BigInteger[30];
 
     private static int FIVE_TO_2_TO_LEN = 1;
 
