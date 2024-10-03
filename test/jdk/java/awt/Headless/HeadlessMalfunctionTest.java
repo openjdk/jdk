@@ -31,7 +31,7 @@ import java.nio.file.Path;
 /*
  * @test
  * @bug 8336382
- * @summary Test to ensure GraphicsEnvironment's isHeadless method is removed by the agent
+ * @summary Test that in absence of isHeadless method, the JDK throws a meaningful error message.
  * @library /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
  * @build HeadlessMalfunctionAgent
