@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6466476
+ * @bug 6466476 8341484
  * @summary Compatibility test for the old JDK ID mapping and Olson IDs
  * @comment Expecting the new (Olson compatible) mapping (default)
  * @run main/othervm -Dsun.timezone.ids.oldmapping=null OldIDMappingTest -new
@@ -44,13 +44,15 @@
  * @run main/othervm -Dsun.timezone.ids.oldmapping=YES OldIDMappingTest -old
  */
 
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
 
 public class OldIDMappingTest {
+
     private static final String MAPPING_PROPERTY_NAME = "sun.timezone.ids.oldmapping";
-    private static final Map<String, String> newmap = new HashMap<String, String>();
+    private static final Map<String, String> newmap = new HashMap<>();
     static {
         // Add known new mappings
         newmap.put("EST", "EST");
@@ -59,7 +61,7 @@ public class OldIDMappingTest {
     }
 
     public static void main(String[] args) {
-        boolean useOldMapping = true;
+        boolean useOldMapping;
         String arg = args[0];
         if (arg.equals("-new")) {
             useOldMapping = false;
@@ -72,6 +74,12 @@ public class OldIDMappingTest {
         Map<String, String> oldmap = TzIDOldMapping.MAP;
         String prop = System.getProperty(MAPPING_PROPERTY_NAME);
         System.out.println(MAPPING_PROPERTY_NAME + "=" + prop);
+
+        // Only need to run on a singular @run invocation
+        // Check that valid zoneID mappings are provided
+        if (prop.equals("true") && useOldMapping) {
+            toZoneIdTest();
+        }
 
         // Try the test multiple times with modifying TimeZones to
         // make sure TimeZone instances for the old mapping are
@@ -116,6 +124,17 @@ public class OldIDMappingTest {
                     tzAlias.setRawOffset(tzAlias.getRawOffset() * count);
                 }
             }
+        }
+    }
+
+    // 8341484 fixes "HST" throwing an exception when using the old mapping zone ID
+    private static void toZoneIdTest() {
+        if (TimeZone.getTimeZone("EST").toZoneId().equals(ZoneId.of("America/New_York")) &&
+        TimeZone.getTimeZone("MST").toZoneId().equals(ZoneId.of("America/Denver")) &&
+        TimeZone.getTimeZone("HST").toZoneId().equals(ZoneId.of("Pacific/Honolulu"))) {
+            System.out.print("Old mapping toZoneID is correct");
+        } else {
+            throw new RuntimeException("toZoneIdTest failed, old mapping zone IDs are not correct");
         }
     }
 }
