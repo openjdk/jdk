@@ -5238,7 +5238,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         BigInteger[] qr; // quotient-remainder pair
         boolean zeroR = true;
-        for (int i = 0; zeroR && remainingZeros >= 1 << i; i++) {
+        for (int i = 0; zeroR && remainingZeros >= 1L << i; i++) {
             qr = intVal.divideAndRemainder(pows[i]);
             if (qr[1].signum() != 0) {
                 zeroR = false; // non-0 remainder
