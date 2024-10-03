@@ -65,9 +65,6 @@ import java.util.Objects;
  *         initiated the request, when the stream limit is reached, or
  *     </li>
  *     <li>
- *         transparently retry the request, or
- *     </li>
- *     <li>
  *         wait for a {@linkplain HttpRequest.Builder#timeout(Duration) reasonable time} in
  *         the hope that more streams will become available, or
  *     </li>
