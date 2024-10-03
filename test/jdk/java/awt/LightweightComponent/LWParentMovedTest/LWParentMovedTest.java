@@ -25,7 +25,6 @@
  * @test
  * @bug 4147246
  * @summary Simple check for peer != null in Component.componentMoved
- * (Component.java)
  * @key headful
  * @run main LWParentMovedTest
  */
