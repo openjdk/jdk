@@ -129,6 +129,7 @@ class SerializeClosure;
   template(java_net_URL,                              "java/net/URL")                             \
   template(java_net_URLClassLoader,                   "java/net/URLClassLoader")                  \
   template(java_util_jar_Manifest,                    "java/util/jar/Manifest")                   \
+  template(java_util_jar_JarVerifier,                 "java/util/jar/JarVerifier")                \
   template(java_io_ByteArrayInputStream,              "java/io/ByteArrayInputStream")             \
   template(java_io_Serializable,                      "java/io/Serializable")                     \
   template(java_nio_Buffer,                           "java/nio/Buffer")                          \
@@ -742,6 +743,7 @@ class SerializeClosure;
   template(toFileURL_name,                                  "toFileURL")                                          \
   template(toFileURL_signature,                             "(Ljava/lang/String;)Ljava/net/URL;")                 \
   template(url_array_classloader_void_signature,            "([Ljava/net/URL;Ljava/lang/ClassLoader;)V")          \
+  template(JarVerifier_constructor_signature,               "(Ljava/lang/String;[B)V")                            \
                                                                                                                   \
   /* Thread.dump_to_file jcmd */                                                                                  \
   template(jdk_internal_vm_ThreadDumper,           "jdk/internal/vm/ThreadDumper")                                \
