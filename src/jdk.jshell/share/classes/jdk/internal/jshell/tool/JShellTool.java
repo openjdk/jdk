@@ -858,7 +858,7 @@ public class JShellTool implements MessageHandler {
      * @param key the resource key
      */
     void hardrb(String key) {
-        hard(getResourceString(key));
+        hard("%s", getResourceString(key));
     }
 
     /**
@@ -881,7 +881,7 @@ public class JShellTool implements MessageHandler {
      */
     @Override
     public void hardmsg(String key, Object... args) {
-        hard(messageFormat(key, args));
+        hard("%s", messageFormat(key, args));
     }
 
     /**
@@ -2331,7 +2331,7 @@ public class JShellTool implements MessageHandler {
             sb.append(startup.show(false));
             sb.append(startup.showDetail());
         }
-        hard(sb.toString());
+        hard("%s", sb);
     }
 
     private void showIndent() {
@@ -3261,7 +3261,7 @@ public class JShellTool implements MessageHandler {
                 sb.append(a);
             }
             if (sb.length() > 0) {
-                hard(sb.toString());
+                hard("%s", sb);
             }
             return false;
         }
@@ -3774,7 +3774,7 @@ public class JShellTool implements MessageHandler {
             case NONEXISTENT:
             default:
                 // Should not occur
-                error("Unexpected status: " + previousStatus.toString() + "=>" + status.toString());
+                error("Unexpected status: %s=>%s", previousStatus, status);
                 act = FormatAction.DROPPED;
         }
         return act;
