@@ -5228,7 +5228,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
-     * @param n an integer such that {@code 0 <= n < POWERS_OF_5.length}
+     * @param n an integer such that {@code 0 <= n < FIVE_TO_2_TO.length}
      * @return {@code 5^(2^n)}
      */
     private static BigInteger fiveToTwoToThe(int n) {
