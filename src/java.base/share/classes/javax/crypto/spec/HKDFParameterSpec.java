@@ -39,11 +39,12 @@ import java.util.Objects;
  * function is defined in <a href="http://tools.ietf.org/html/rfc5869">RFC
  * 5869</a>.
  * <p>
- * In the Extract and Extract-then-Expand cases, the {@code addIKM} and
- * {@code addSalt} methods may be called repeatedly (and chained). This provides
- * for use-cases where a portion of the input keying material (IKM) resides in a
- * non-extractable {@code SecretKey} and the whole IKM cannot be provided as a
- * single object. The same feature is available for salts.
+ * In the Extract and Extract-then-Expand cases, users may call the {@code
+ * addIKM} and/or {@code addSalt} methods repeatedly (and chain these calls).
+ * This provides for use-cases where a portion of the input keying material
+ * (IKM) resides in a non-extractable {@code SecretKey} and the whole IKM
+ * cannot be provided as a single object. The same feature is available for
+ * salts.
  * <p>
  * The above feature is particularly useful for "labeled" HKDF Extract used in
  * TLS 1.3 and HPKE, where the IKM consists of concatenated components, which
@@ -137,7 +138,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         /**
          * Adds input keying material (IKM) to the builder.
          * <p>
-         * {@code addIKM} may be called multiple times when the input keying
+         * Users may call {@code addIKM} multiple times when the input keying
          * material value is to be assembled piece-meal or if part of the IKM is
          * to be supplied by a hardware crypto device. The {@code ikms()}
          * method of the {@code Extract} or {@code ExtractThenExpand} object
@@ -162,7 +163,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * Adds input keying material (IKM) to the builder. Note that an
          * {@code ikm} byte array of length zero will be discarded.
          * <p>
-         * {@code addIKM} may be called multiple times when the input keying
+         * Users may call {@code addIKM} multiple times when the input keying
          * material value is to be assembled piece-meal or if part of the IKM is
          * to be supplied by a hardware crypto device. The {@code ikms()}
          * method of the {@code Extract} or {@code ExtractThenExpand} object
@@ -189,7 +190,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         /**
          * Adds a salt to the builder.
          * <p>
-         * {@code addSalt} may be called multiple times when the salt value is
+         * Users may call {@code addSalt} multiple times when the salt value is
          * to be assembled piece-meal or if part of the salt is to be supplied
          * by a hardware crypto device. The {@code salts()} method of the
          * {@code Extract} or {@code ExtractThenExpand} object that is
@@ -214,7 +215,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * Adds a salt to the builder. Note that a {@code salt} byte array of
          * length zero will be discarded.
          * <p>
-         * {@code addSalt} may be called multiple times when the salt value is
+         * Users may call {@code addSalt} multiple times when the salt value is
          * to be assembled piece-meal or if part of the salt is to be supplied
          * by a hardware crypto device. The {@code salts()} method of the
          * {@code Extract} or {@code ExtractThenExpand} object that is
