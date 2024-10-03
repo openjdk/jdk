@@ -93,8 +93,8 @@ class VirtualThreadSchedulerMXBeanTest {
             try {
                 // saturate
                 IntStream.range(0, parallelism).forEach(_ -> executor.submit(busyTask));
-                awaitPoolSize(bean, ps -> ps >= parallelism, ">= " + parallelism);
-                awaitMountedVirtualThreadCount(bean, c -> c >= parallelism, ">= " + parallelism);
+                awaitPoolSizeGte(bean, parallelism);
+                awaitMountedVirtualThreadCountGte(bean, parallelism);
 
                 // increase parallelism
                 for (int k = 1; k <= 4; k++) {
@@ -103,8 +103,8 @@ class VirtualThreadSchedulerMXBeanTest {
                     executor.submit(busyTask);
 
                     // pool size and mounted virtual thread should increase
-                    awaitPoolSize(bean, ps -> ps >= newParallelism, ">= " + newParallelism);
-                    awaitMountedVirtualThreadCount(bean, c -> c >= newParallelism, ">= " + newParallelism);
+                    awaitPoolSizeGte(bean, newParallelism);
+                    awaitMountedVirtualThreadCountGte(bean, newParallelism);
                 }
             } finally {
                 done.set(true);
@@ -145,24 +145,34 @@ class VirtualThreadSchedulerMXBeanTest {
                 int highParallelism = parallelism + 4;
                 bean.setParallelism(highParallelism);
                 IntStream.range(0, highParallelism).forEach(_ -> executor.submit(busyTask));
-                awaitMountedVirtualThreadCount(bean, c -> c >= highParallelism, ">= " + highParallelism);
+
+                // mounted virtual thread count should increase to highParallelism.
+                // Sample the count at highParallelism a few times.
+                for (int i = 0; i < 5; i++) {
+                    Thread.sleep(100);
+                    awaitMountedVirtualThreadCountEq(bean, highParallelism);
+                }
 
                 // reduce parallelism and workload
                 int lowParallelism = Math.clamp(parallelism / 2, 1, parallelism);
                 bean.setParallelism(lowParallelism);
                 sleep.set(true);
+
+                // mounted virtual thread count should reduce to lowParallelism or less.
+                // Sample the count at lowParallelism or less a few times.
                 for (int i = 0; i < 5; i++) {
                     Thread.sleep(100);
-                    awaitMountedVirtualThreadCount(bean, c -> c <= lowParallelism, "<= " + lowParallelism);
+                    awaitMountedVirtualThreadCountLte(bean, lowParallelism);
                 }
 
-                // increase workload. The mounted virtual thread count should not exceed
-                // lowParallelism. Use awaitMountedVirtualThreadCount as the count may
-                // need to be sampled several times due to over estimation.
+                // increase workload
                 sleep.set(false);
+
+                // mounted virtual thread count should not exceed lowParallelism.
+                // Sample the count at lowParallelism a few times.
                 for (int i = 0; i < 5; i++) {
                     Thread.sleep(100);
-                    awaitMountedVirtualThreadCount(bean, c -> c == lowParallelism, "== " + lowParallelism);
+                    awaitMountedVirtualThreadCountEq(bean, lowParallelism);
                 }
 
             } finally {
@@ -219,7 +229,7 @@ class VirtualThreadSchedulerMXBeanTest {
                 // saturate
                 int parallelism = bean.getParallelism();
                 IntStream.range(0, parallelism).forEach(_ -> executor.submit(busyTask));
-                awaitMountedVirtualThreadCount(bean, c -> c >= parallelism, ">= " + parallelism);
+                awaitMountedVirtualThreadCountGte(bean, parallelism);
 
                 // start 5 virtual threads, their tasks will be queued to execute
                 for (int i = 0; i < 5; i++) {
@@ -233,7 +243,38 @@ class VirtualThreadSchedulerMXBeanTest {
     }
 
     /**
-     * Waits until evaluating the given predicte with the pool size is true.
+     * Waits for pool size >= target to be true.
+     */
+    void awaitPoolSizeGte(VirtualThreadSchedulerMXBean bean, int target) throws InterruptedException {
+        awaitPoolSize(bean, ps -> ps >= target, ">= " + target);
+    }
+
+    /**
+     * Waits for the mounted virtual thread count >= target to be true.
+     */
+    void awaitMountedVirtualThreadCountGte(VirtualThreadSchedulerMXBean bean,
+                                           long target) throws InterruptedException {
+        awaitMountedVirtualThreadCount(bean, c -> c >= target, ">= " + target);
+    }
+
+    /**
+     * Waits for the mounted virtual thread count <= target to be true.
+     */
+    void awaitMountedVirtualThreadCountLte(VirtualThreadSchedulerMXBean bean,
+                                           long target) throws InterruptedException {
+        awaitMountedVirtualThreadCount(bean, c -> c <= target, "<= " + target);
+    }
+
+    /**
+     * Waits for the mounted virtual thread count == target to be true.
+     */
+    void awaitMountedVirtualThreadCountEq(VirtualThreadSchedulerMXBean bean,
+                                          long target) throws InterruptedException {
+        awaitMountedVirtualThreadCount(bean, c -> c == target, "== " + target);
+    }
+
+    /**
+     * Waits until evaluating the given predicte on the pool size is true.
      */
     void awaitPoolSize(VirtualThreadSchedulerMXBean bean,
                        IntPredicate predicate,
@@ -250,7 +291,7 @@ class VirtualThreadSchedulerMXBeanTest {
     }
 
     /**
-     * Waits until evaluating the given predicte with the mounted thread count is true.
+     * Waits until evaluating the given predicte on the mounted thread count is true.
      */
     void awaitMountedVirtualThreadCount(VirtualThreadSchedulerMXBean bean,
                                         LongPredicate predicate,
