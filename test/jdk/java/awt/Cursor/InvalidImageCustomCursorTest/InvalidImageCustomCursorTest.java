@@ -46,15 +46,6 @@ public class InvalidImageCustomCursorTest {
 
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
-                The bug is that createCustomCursor does not check absence
-                of the image for the cursor. Under Solaris Exception used
-                to be thrown.
-
-                Fix for the bug is that we default invalid image for the
-                cursor to a hidded cursor. So when one tries to create a
-                cursor with invalid image transparent cursor will be created
-                instead with hotspot at (0,0).
-
                 Press 'Hide' button to hide (set transparent) cursor for the
                 green panel. Move the pointer over the green panel - pointer
                 should disappear. Press 'Default' button to set default cursor
