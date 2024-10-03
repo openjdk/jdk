@@ -49,15 +49,6 @@ import sun.awt.AppContext;
  * methods are implemented by a service provider in a subclass and the
  * unification of the results from all installed lookup classes are reported by
  * the static methods of this class when called by the application.
- * <p>
- * A {@code PrintServiceLookup} implementor is recommended to check for the
- * {@code SecurityManager.checkPrintJobAccess()} to deny access to untrusted
- * code. Following this recommended policy means that untrusted code may not be
- * able to locate any print services. Downloaded applets are the most common
- * example of untrusted code.
- * <p>
- * This check is made on a per lookup service basis to allow flexibility in the
- * policy to reflect the needs of different lookup services.
  */
 public abstract class PrintServiceLookup {
 
