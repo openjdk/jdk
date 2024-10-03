@@ -28,6 +28,8 @@
 #include "cds/cdsHeapVerifier.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -127,7 +129,8 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   if (CDSConfig::is_dumping_invokedynamic()) {
     ADD_EXCL("java/lang/invoke/MethodHandles",            "IMPL_NAMES");           // D
     ADD_EXCL("java/lang/invoke/MemberName$Factory",       "INSTANCE");             // D
-    ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator", "MEMBERNAME_FACTORY");   // D
+    ADD_EXCL("java/lang/invoke/InvokerBytecodeGenerator", "MEMBERNAME_FACTORY",    // D
+                                                          "INVOKER_SUPER_DESC");   // E same as java.lang.constant.ConstantDescs::CD_Object
   }
 
 # undef ADD_EXCL
@@ -160,7 +163,7 @@ public:
 
     oop static_obj_field = _ik->java_mirror()->obj_field(fd->offset());
     if (static_obj_field != nullptr) {
-      Klass* klass_of_field = static_obj_field->klass();
+      Klass* field_type = static_obj_field->klass();
       if (_exclusions != nullptr) {
         for (const char** p = _exclusions; *p != nullptr; p++) {
           if (fd->name()->equals(*p)) {
@@ -180,15 +183,22 @@ public:
         // This field points to an archived mirror.
         return;
       }
-      if (klass_of_field->has_archived_enum_objs()) {
-        // This field is an Enum. If any instance of this Enum has been archived, we will archive
-        // all static fields of this Enum as well.
-        // See HeapShared::initialize_enum_klass().
-        return;
-      }
-      if (klass_of_field->is_instance_klass()) {
-        if (InstanceKlass::cast(klass_of_field)->is_initialized() &&
-            AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass::cast(klass_of_field))) {
+
+      if (field_type->is_instance_klass()) {
+        InstanceKlass* field_ik = InstanceKlass::cast(field_type);
+        if (field_ik->java_super() == vmClasses::Enum_klass()) {
+          if (field_ik->has_archived_enum_objs() || AOTClassInitializer::can_archive_initialized_mirror(field_ik)) {
+            // This field is an Enum. If any instance of this Enum has been archived, we will archive
+            // all static fields of this Enum as well.
+            return;
+          }
+        }
+
+        if (field_ik->is_hidden() && AOTClassInitializer::can_archive_initialized_mirror(field_ik)) {
+          // We have a static field in a core-library class that points to a method reference
+          // E.g., SharedSecrets::javaSecuritySpecAccess => EncodedKeySpec::clear(). These are safe
+          // to archive.
+          guarantee(_ik->module()->name() == vmSymbols::java_base(), "sanity");
           return;
         }
       }

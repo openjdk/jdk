@@ -31,10 +31,11 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes/
  * @build AOTLinkedLambdas
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *                 AOTLinkedLambdasApp
+ *                 AOTLinkedLambdasApp StaticClass Ticket TestA
  * @run driver AOTLinkedLambdas
  */
 
+import java.util.function.Supplier;
 import static java.util.stream.Collectors.*;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
@@ -54,6 +55,8 @@ public class AOTLinkedLambdas {
         CDSOptions opts = (new CDSOptions())
             .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
                        "-XX:+AOTClassLinking",
+                       "-Xlog:cds+resolve=trace",
+                       "-Xlog:cds+class=debug",
                        "-cp", appJar);
 
         CDSTestUtils.createArchiveAndCheck(opts);
@@ -71,12 +74,67 @@ public class AOTLinkedLambdas {
     }
 }
 
+class Ticket {
+    static {
+        System.out.println("Ticket.<clinit>");
+    }
+    static int n = 0;
+    static int next() {
+        return ++n;
+    }
+    static int current() {
+        return n;
+    }
+}
+
 class AOTLinkedLambdasApp {
+    static {
+        System.out.println("AOTLinkedLambdasApp.<clinit>");
+    }
     public static void main(String args[]) {
         System.out.println("Hello AOTLinkedLambdasApp");
 
         var words = java.util.List.of("hello", "fuzzy", "world");
         System.out.println(words.stream().filter(w->!w.contains("u")).collect(joining(", ")));
         // => hello, world
+
+        TestA.doit();
+    }
+}
+
+class TestA {
+    static {
+        System.out.println("TestA.<clinit>");
+    }
+    static int ticket = Ticket.next(); // Should be 1
+    static void doit() {
+        System.out.println(Ticket.current());
+
+        // Using a static method reference
+        Supplier<Long> staticRef = StaticClass::getTicket;
+        System.out.println(Ticket.current());
+        if (Ticket.current() != 1) {
+            throw new RuntimeException("Expected 1 but got " + Ticket.current());
+        }
+        long t2 = staticRef.get(); // StaticClass.<clinit> is called only at this point.
+        System.out.println(ticket);
+        System.out.println(t2);
+        if (ticket != 1 && t2 != 2) {
+            throw new RuntimeException("Expected 1, 2 but got " + ticket + ", " + t2);
+        }
+    }
+}
+
+
+class StaticClass {
+    static {
+        // <clinit> shouldn't be called until the "staticRef.get()" expression is
+        // is evaluated in TestA.doit().
+        System.out.println("StaticClass.<clinit>");
+    }
+    static int ticket = Ticket.next(); // Should be 2
+
+    static long getTicket() {
+        return ticket; // When this function is caled, ticket must have been initialized.
     }
 }

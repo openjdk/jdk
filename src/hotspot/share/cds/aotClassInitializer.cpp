@@ -165,18 +165,20 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
     static AllowedSpec specs[] = {
       // Java heap objects (MethodTypes, MethodHandle, etc) that are associated with resolved indy
       // call sites may have references to static final fields in the following classes.
+      //
       // For example, a BoundMethodHandle could reference SimpleMethodHandle::BMH_SPECIES.
+      //
       // Try doing this:
-      //    - comment out the line below for SimpleMethodHandle.
-      //    - rebuild JDK
+      //    - Comment out all the lines in specs[] except the {nullptr} line.
+      //    - Rebuild the JDK
+      //
       // The run the following:
       //    java -XX:AOTMode=record -XX:AOTConfiguration=jc.aotconfig com.sun.tools.javac.Main
       //    java -XX:AOTMode=create -Xlog:cds -XX:AOTCache=jc.aot -XX:AOTConfiguration=jc.aotconfig
+      //
       // You will see a warning like this:
       //    [warning][cds,heap] Archive heap points to a static field that may be reinitialized at runtime:
       //    [warning][cds,heap] Field: java/lang/invoke/SimpleMethodHandle::BMH_SPECIES
-      {"java/lang/Boolean"},
-      {"java/lang/Character$CharacterCache"},
       {"java/lang/invoke/BoundMethodHandle"},
       {"java/lang/invoke/BoundMethodHandle$Specializer"},
       {"java/lang/invoke/BoundMethodHandle$Species_", IS_PREFIX},

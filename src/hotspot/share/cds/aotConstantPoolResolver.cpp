@@ -440,7 +440,7 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(Constant
  Symbol* sig = cp->method_handle_signature_ref_at(mh_index);
   if (log_is_enabled(Debug, cds, resolve)) {
     ResourceMark rm;
-    log_debug(cds, resolve)("Checking MethodType of MethodHandle for  LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
+    log_debug(cds, resolve)("Checking MethodType of MethodHandle for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
   }
   if (!check_lambda_metafactory_signature(cp, sig, false)) {
     return false;

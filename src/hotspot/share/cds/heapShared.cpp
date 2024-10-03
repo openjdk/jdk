@@ -931,6 +931,25 @@ bool KlassSubGraphInfo::is_non_early_klass(Klass* k) {
   }
 }
 
+static bool is_trivial_clinit(InstanceKlass* ik) {
+  if (ik->class_initializer() != nullptr) {
+    return false;
+  }
+
+  InstanceKlass* super = ik->java_super();
+  if (super != nullptr && !is_trivial_clinit(super)) {
+    return false;
+  }
+
+  Array<InstanceKlass*>* interfaces = ik->local_interfaces();
+  for (int i = 0; i < interfaces->length(); i++) {
+    if (!is_trivial_clinit(interfaces->at(i))) {
+      return false;
+    }
+  }
+  return true;
+}
+
 // Initialize an archived subgraph_info_record from the given KlassSubGraphInfo.
 void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
   _k = info->klass();
@@ -978,10 +997,16 @@ void ArchivedKlassSubGraphInfoRecord::init(KlassSubGraphInfo* info) {
       if (log_is_enabled(Info, cds, heap)) {
         ResourceMark rm;
         const char* owner_name =  is_special ? "<special>" : _k->external_name();
-
+        const char* trivial_clinit = "";
+        if (subgraph_k->is_instance_klass()) {
+          InstanceKlass* src_ik = InstanceKlass::cast(ArchiveBuilder::current()->get_source_addr(subgraph_k));
+          if (is_trivial_clinit(InstanceKlass::cast(src_ik))) {
+            trivial_clinit = " (trivial clinit)";
+          }
+        }
         log_info(cds, heap)(
-          "Archived object klass %s (%2d) => %s",
-          owner_name, i, subgraph_k->external_name());
+          "Archived object klass %s (%2d) => %s%s",
+          owner_name, i, subgraph_k->external_name(), trivial_clinit);
       }
       _subgraph_object_klasses->at_put(i, subgraph_k);
       ArchivePtrMarker::mark_pointer(_subgraph_object_klasses->adr_at(i));
