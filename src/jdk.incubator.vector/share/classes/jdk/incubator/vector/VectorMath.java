@@ -27,6 +27,8 @@ package jdk.incubator.vector;
 /**
  * The class {@code VectorMath} contains methods for performing
  * scalar numeric operations in support of vector numeric operations.
+ * @author  Paul Sandoz
+ * @since   24
  */
 public final class VectorMath {
 
@@ -43,7 +45,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the smaller of {@code a} and {@code b}.
      * @see VectorOperators#UMIN
-     * @since 24
      */
     public static long minUnsigned(long a, long b) {
         return Long.compareUnsigned(a, b) < 0 ? a : b;
@@ -60,7 +61,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the larger of {@code a} and {@code b}.
      * @see VectorOperators#UMAX
-     * @since 24
      */
     public static long maxUnsigned(long a, long b) {
         return Long.compareUnsigned(a, b) > 0 ? a : b;
@@ -82,7 +82,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating addition of the operands.
      * @see VectorOperators#SADD
-     * @since 24
      */
     public static long addSaturating(long a, long b) {
         long res = a + b;
@@ -110,7 +109,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating difference of the operands.
      * @see VectorOperators#SSUB
-     * @since 24
      */
     public static long subSaturating(long a, long b) {
         long res = a - b;
@@ -138,7 +136,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating addition of the operands.
      * @see VectorOperators#SUADD
-     * @since 24
      */
     public static long addSaturatingUnsigned(long a, long b) {
         long res = a + b;
@@ -165,7 +162,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating difference of the operands.
      * @see VectorOperators#SUSUB
-     * @since 24
      */
     public static long subSaturatingUnsigned(long a, long b) {
         if (Long.compareUnsigned(b, a) < 0) {
@@ -186,7 +182,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the smaller of {@code a} and {@code b}.
      * @see VectorOperators#UMIN
-     * @since 24
      */
     public static int minUnsigned(int a, int b) {
         return Integer.compareUnsigned(a, b) < 0 ? a : b;
@@ -203,7 +198,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the larger of {@code a} and {@code b}.
      * @see VectorOperators#UMAX
-     * @since 24
      */
     public static int maxUnsigned(int a, int b) {
         return Integer.compareUnsigned(a, b) > 0 ? a : b;
@@ -225,7 +219,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating addition of the operands.
      * @see VectorOperators#SADD
-     * @since 24
      */
     public static int addSaturating(int a, int b) {
         long res = (long)a + (long)b;
@@ -254,7 +247,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating difference of the operands.
      * @see VectorOperators#SSUB
-     * @since 24
      */
     public static int subSaturating(int a, int b) {
         long res = (long)a - (long)b;
@@ -282,7 +274,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating addition of the operands.
      * @see VectorOperators#SADD
-     * @since 24
      */
     public static int addSaturatingUnsigned(int a, int b) {
         int res = a + b;
@@ -309,7 +300,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating difference of the operands.
      * @see VectorOperators#SSUB
-     * @since 24
      */
     public static int subSaturatingUnsigned(int a, int b) {
         if (Integer.compareUnsigned(b, a) < 0) {
@@ -330,7 +320,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the smaller of {@code a} and {@code b}.
      * @see VectorOperators#UMIN
-     * @since 24
      */
     public static short minUnsigned(short a, short b) {
         return Short.compareUnsigned(a, b) < 0 ? a : b;
@@ -347,7 +336,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the larger of {@code a} and {@code b}.
      * @see VectorOperators#UMAX
-     * @since 24
      */
     public static short maxUnsigned(short a, short b) {
         return Short.compareUnsigned(a, b) > 0 ? a : b;
@@ -369,7 +357,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating addition of the operands.
      * @see VectorOperators#SADD
-     * @since 24
      */
     public static short addSaturating(short a, short b) {
         int res = a + b;
@@ -398,7 +385,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating difference of the operands.
      * @see VectorOperators#SSUB
-     * @since 24
      */
     public static short subSaturating(short a, short b) {
         int res = a - b;
@@ -426,7 +412,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating addition of the operands.
      * @see VectorOperators#SADD
-     * @since 24
      */
     public static short addSaturatingUnsigned(short a, short b) {
         short res = (short)(a + b);
@@ -453,7 +438,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating difference of the operands.
      * @see VectorOperators#SSUB
-     * @since 24
      */
     public static short subSaturatingUnsigned(short a, short b) {
         if (Short.compareUnsigned(b, a) < 0) {
@@ -474,7 +458,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the smaller of {@code a} and {@code b}.
      * @see VectorOperators#UMIN
-     * @since 24
      */
     public static byte minUnsigned(byte a, byte b) {
         return Byte.compareUnsigned(a, b) < 0 ? a : b;
@@ -491,7 +474,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the larger of {@code a} and {@code b}.
      * @see VectorOperators#UMAX
-     * @since 24
      */
     public static byte maxUnsigned(byte a, byte b) {
         return Byte.compareUnsigned(a, b) > 0 ? a : b;
@@ -513,7 +495,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating addition of the operands.
      * @see VectorOperators#SADD
-     * @since 24
      */
     public static byte addSaturating(byte a, byte b) {
         int res = a + b;
@@ -542,7 +523,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating difference of the operands.
      * @see VectorOperators#SSUB
-     * @since 24
      */
     public static byte subSaturating(byte a, byte b) {
         int res = a - b;
@@ -570,7 +550,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating addition of the operands.
      * @see VectorOperators#SADD
-     * @since 24
      */
     public static byte addSaturatingUnsigned(byte a, byte b) {
         byte res = (byte)(a + b);
@@ -597,7 +576,6 @@ public final class VectorMath {
      * @param b the second operand.
      * @return the saturating difference of the operands.
      * @see VectorOperators#SSUB
-     * @since 24
      */
    public static byte subSaturatingUnsigned(byte a, byte b) {
         if (Byte.compareUnsigned(b, a) < 0) {
