@@ -39,10 +39,10 @@ import javax.swing.JPanel;
 public class MailTest extends JPanel {
 
     static final String INSTRUCTIONS = """
-            This test could launch the mail client to composing mail
+            This test could launch the mail client to compose mail
             with and without filling the message fields.
             After test execution close the mail composing windows if they
-            were lunched by test.
+            were launched by test.
             If you see any unexpected EXCEPTION messages in the output
             press Fail. Otherwise press Pass.
             """;

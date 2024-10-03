@@ -41,7 +41,7 @@ public class BrowseTest extends JPanel {
             This test could launch default file manager to open user's home
             directory, and default web browser to show the URL of java vendor.
             After test execution close the native file manager and web browser
-            windows if they were lunched by test.
+            windows if they were launched by test.
             Also check output for any unexpected EXCEPTIONS,
             if you see any failure messages press Fail otherwise press Pass.
             """;
