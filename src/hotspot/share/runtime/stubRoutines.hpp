@@ -281,6 +281,7 @@ class StubRoutines: AllStatic {
   static address _dlibm_reduce_pi04l;
   static address _dlibm_tan_cot_huge;
   static address _dtan;
+  static address _dtanh;
   static address _fmod;
 
   static address _f2hf;
@@ -297,6 +298,7 @@ class StubRoutines: AllStatic {
   static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
 
   static address _upcall_stub_exception_handler;
+  static address _upcall_stub_load_target;
 
   static address _lookup_secondary_supers_table_stubs[];
   static address _lookup_secondary_supers_table_slow_path_stub;
@@ -472,6 +474,7 @@ class StubRoutines: AllStatic {
   static address dlibm_sin_cos_huge()  { return _dlibm_sin_cos_huge; }
   static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
   static address dtan()                { return _dtan; }
+  static address dtanh()               { return _dtanh; }
 
   // These are versions of the java.lang.Float::floatToFloat16() and float16ToFloat()
   // methods which perform the same operations as the intrinsic version.
@@ -502,6 +505,11 @@ class StubRoutines: AllStatic {
   static address upcall_stub_exception_handler() {
     assert(_upcall_stub_exception_handler != nullptr, "not implemented");
     return _upcall_stub_exception_handler;
+  }
+
+  static address upcall_stub_load_target() {
+    assert(_upcall_stub_load_target != nullptr, "not implemented");
+    return _upcall_stub_load_target;
   }
 
   static address lookup_secondary_supers_table_stub(u1 slot) {

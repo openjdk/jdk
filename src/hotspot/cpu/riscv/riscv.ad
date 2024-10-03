@@ -2224,7 +2224,8 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   assert_cond(m != nullptr);
   if (is_vshift_con_pattern(n, m) || // ShiftV src (ShiftCntV con)
       is_vector_bitwise_not_pattern(n, m) ||
-      is_vector_scalar_bitwise_pattern(n, m)) {
+      is_vector_scalar_bitwise_pattern(n, m) ||
+      is_encode_and_store_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
   }
@@ -4785,6 +4786,7 @@ instruct loadP(iRegPNoSp dst, memory mem)
 // Load Compressed Pointer
 instruct loadN(iRegNNoSp dst, memory mem)
 %{
+  predicate(n->as_Load()->barrier_data() == 0);
   match(Set dst (LoadN mem));
 
   ins_cost(LOAD_COST);
@@ -5220,6 +5222,7 @@ instruct storeimmP0(immP0 zero, memory mem)
 // Store Compressed Pointer
 instruct storeN(iRegN src, memory mem)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreN mem src));
 
   ins_cost(STORE_COST);
@@ -5234,6 +5237,7 @@ instruct storeN(iRegN src, memory mem)
 
 instruct storeImmN0(immN0 zero, memory mem)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreN mem zero));
 
   ins_cost(STORE_COST);
@@ -5424,6 +5428,7 @@ instruct compareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval
 
 instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + ALU_COST * 8 + BRANCH_COST * 4);
@@ -5545,7 +5550,7 @@ instruct compareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP new
 
 instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
-  predicate(needs_acquiring_load_reserved(n));
+  predicate(needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
 
@@ -5653,6 +5658,7 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 3 + ALU_COST * 3);
@@ -5786,7 +5792,7 @@ instruct compareAndExchangeLAcq(iRegLNoSp res, indirect mem, iRegL oldval, iRegL
 
 instruct compareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
-  predicate(needs_acquiring_load_reserved(n));
+  predicate(needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
 
@@ -5914,6 +5920,7 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 
 instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
 
   ins_cost(LOAD_COST + STORE_COST + BRANCH_COST * 2 + ALU_COST * 4);
@@ -6045,7 +6052,7 @@ instruct weakCompareAndSwapLAcq(iRegINoSp res, indirect mem, iRegL oldval, iRegL
 
 instruct weakCompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
-  predicate(needs_acquiring_load_reserved(n));
+  predicate(needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
 
@@ -6117,6 +6124,8 @@ instruct get_and_setL(indirect mem, iRegL newv, iRegLNoSp prev)
 
 instruct get_and_setN(indirect mem, iRegN newv, iRegINoSp prev)
 %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
+
   match(Set prev (GetAndSetN mem newv));
 
   ins_cost(ALU_COST);
@@ -6182,7 +6191,7 @@ instruct get_and_setLAcq(indirect mem, iRegL newv, iRegLNoSp prev)
 
 instruct get_and_setNAcq(indirect mem, iRegN newv, iRegINoSp prev)
 %{
-  predicate(needs_acquiring_load_reserved(n));
+  predicate(needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set prev (GetAndSetN mem newv));
 

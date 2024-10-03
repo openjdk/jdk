@@ -58,6 +58,7 @@ public sealed interface IncrementInstruction extends Instruction
      *
      * @param slot the local variable slot to increment
      * @param constant the value to increment by
+     * @throws IllegalArgumentException if {@code slot} or {@code constant} is out of range
      */
     static IncrementInstruction of(int slot, int constant) {
         return new AbstractInstruction.UnboundIncrementInstruction(slot, constant);

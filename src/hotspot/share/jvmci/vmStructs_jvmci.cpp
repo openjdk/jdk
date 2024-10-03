@@ -246,6 +246,7 @@
   nonstatic_field(JavaThread,                  _lock_stack,                                   LockStack)                             \
   nonstatic_field(JavaThread,                  _om_cache,                                     OMCache)                               \
   nonstatic_field(JavaThread,                  _cont_entry,                                   ContinuationEntry*)                    \
+  nonstatic_field(JavaThread,                  _unlocked_inflated_monitor,                    ObjectMonitor*)                        \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_tmp_VTMS_transition,                    bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_disable_suspend,                           bool))                                 \
