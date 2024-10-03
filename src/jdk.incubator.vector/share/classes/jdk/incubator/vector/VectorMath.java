@@ -137,7 +137,7 @@ public final class VectorMath {
      * @param a the first operand.
      * @param b the second operand.
      * @return the saturating addition of the operands.
-     * @see VectorOperators#SADD
+     * @see VectorOperators#SUADD
      * @since 24
      */
     public static long addSaturatingUnsigned(long a, long b) {
@@ -164,7 +164,7 @@ public final class VectorMath {
      * @param a the first operand.
      * @param b the second operand.
      * @return the saturating difference of the operands.
-     * @see VectorOperators#SSUB
+     * @see VectorOperators#SUSUB
      * @since 24
      */
     public static long subSaturatingUnsigned(long a, long b) {
