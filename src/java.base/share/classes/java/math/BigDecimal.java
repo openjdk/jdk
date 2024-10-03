@@ -5242,6 +5242,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             qr = intVal.divideAndRemainder(pows[i]);
             if (qr[1].signum() != 0) {
                 zeroR = false; // non-0 remainder
+                remainingZeros = exp - 1;
             } else {
                 long exp = 1L << i;
                 intVal = qr[0];
@@ -5256,7 +5257,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         for (int i = BigInteger.bitLengthForLong(remainingZeros) - 1;
                 i >= 0 && intVal.compareMagnitude(10L) >= 0; i--) {
             qr = intVal.divideAndRemainder(pows[i]);
-            if (qr[1].signum() == 0) { // zero remainder
+            if (qr[1].signum() != 0) { // non-0 remainder
+                remainingZeros = exp - 1;
+            } else {
                 long exp = 1L << i;
                 intVal = qr[0];
                 scale = checkScale(intVal, scale - exp); // could Overflow
