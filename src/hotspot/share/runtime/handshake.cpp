@@ -701,6 +701,10 @@ void HandshakeState::do_self_suspend() {
   assert(!_handshakee->has_last_Java_frame() || _handshakee->frame_anchor()->walkable(), "should have walkable stack");
   assert(_handshakee->thread_state() == _thread_blocked, "Caller should have transitioned to _thread_blocked");
 
+  // Separate all the writes above for other threads reading state
+  // set by this suspended thread.
+  OrderAccess::fence();
+
   while (is_suspended()) {
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended", p2i(_handshakee));
     _lock.wait_without_safepoint_check();
