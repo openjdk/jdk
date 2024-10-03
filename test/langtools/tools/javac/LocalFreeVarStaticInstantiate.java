@@ -7,14 +7,38 @@
 
 class LocalFreeVarStaticInstantiate {
 
+    // local class in method
     static void foo(Object there) {
         class Local {
             {
                 there.hashCode();
             }
+
             static {
                 new Local();    // can't get there from here
             }
+
+            static Runnable r = () -> {
+                new Local();    // can't get there from here
+            };
         }
     }
+
+    // local class in lambda
+    static Runnable foo = () -> {
+        Object there = "";
+        class Local {
+            {
+                there.hashCode();
+            }
+
+            static {
+                new Local();    // can't get there from here
+            }
+
+            static Runnable r = () -> {
+                new Local();    // can't get there from here
+            };
+        }
+    };
 }

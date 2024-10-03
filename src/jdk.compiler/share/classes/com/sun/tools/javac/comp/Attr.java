@@ -50,8 +50,6 @@ import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
 import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
 import com.sun.tools.javac.comp.MatchBindingsComputer.MatchBindings;
-import com.sun.tools.javac.comp.Resolve.InvalidSymbolError;
-import com.sun.tools.javac.comp.Resolve.RefBeforeCtorCalledError;
 import com.sun.tools.javac.jvm.*;
 
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.Diamond;
@@ -3074,7 +3072,7 @@ public class Attr extends JCTree.Visitor {
             }
             Symbol res = isLocal ?
                     rs.findLocalClassOwner(env, type.tsym) :
-                    rs.findSelfContaining(pos, env, type.getEnclosingType().tsym, names._this, isSuper);
+                    rs.findSelfContaining(pos, env, type.getEnclosingType().tsym, isSuper);
             if (res.exists()) {
                 rs.accessBase(res, pos, env.enclClass.sym.type, names._this, true);
             } else {

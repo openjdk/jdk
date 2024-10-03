@@ -3787,15 +3787,13 @@ public class Resolve {
     Symbol findSelfContaining(DiagnosticPosition pos,
                     Env<AttrContext> env,
                     TypeSymbol c,
-                    Name name,
                     boolean isSuper) {
-        Assert.check(name == names._this);
         Env<AttrContext> env1 = isSuper ? env.outer : env;
         boolean staticOnly = false;
         while (env1.outer != null) {
             if (isStatic(env1)) staticOnly = true;
             if (env1.enclClass.sym.isSubClass(c, types)) {
-                Symbol sym = env1.info.scope.findFirst(name);
+                Symbol sym = env1.info.scope.findFirst(names._this);
                 if (sym != null) {
                     if (staticOnly) {
                         // current class is not an inner class, stop search
@@ -3829,7 +3827,7 @@ public class Resolve {
         while (env1.outer != null) {
             if (env1.info.scope.owner == owner) {
                 return (staticOnly) ?
-                    new StaticError(owner) :
+                    new BadLocalClassCreation(c) :
                     owner;
             }
             if (isStatic(env1)) staticOnly = true;
@@ -4713,6 +4711,28 @@ public class Resolve {
                 : sym);
             return diags.create(dkind, log.currentSource(), pos,
                     "non-static.cant.be.ref", kindName(sym), errSym);
+        }
+    }
+
+    /**
+     * Specialization of {@link StaticError} for illegal
+     * creation of local class instances from a static context.
+     */
+    class BadLocalClassCreation extends StaticError {
+        BadLocalClassCreation(Symbol sym) {
+            super(sym, "bad local class creation");
+        }
+
+        @Override
+        JCDiagnostic getDiagnostic(JCDiagnostic.DiagnosticType dkind,
+                                   DiagnosticPosition pos,
+                                   Symbol location,
+                                   Type site,
+                                   Name name,
+                                   List<Type> argtypes,
+                                   List<Type> typeargtypes) {
+            return diags.create(dkind, log.currentSource(), pos,
+                    "local.cant.be.inst.static", kindName(sym), sym);
         }
     }
 
