@@ -36,23 +36,7 @@ import java.lang.classfile.*;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.*;
 
-import static java.lang.classfile.ClassFile.TAG_CLASS;
-import static java.lang.classfile.ClassFile.TAG_CONSTANTDYNAMIC;
-import static java.lang.classfile.ClassFile.TAG_DOUBLE;
-import static java.lang.classfile.ClassFile.TAG_FIELDREF;
-import static java.lang.classfile.ClassFile.TAG_FLOAT;
-import static java.lang.classfile.ClassFile.TAG_INTEGER;
-import static java.lang.classfile.ClassFile.TAG_INTERFACEMETHODREF;
-import static java.lang.classfile.ClassFile.TAG_INVOKEDYNAMIC;
-import static java.lang.classfile.ClassFile.TAG_LONG;
-import static java.lang.classfile.ClassFile.TAG_METHODHANDLE;
-import static java.lang.classfile.ClassFile.TAG_METHODREF;
-import static java.lang.classfile.ClassFile.TAG_METHODTYPE;
-import static java.lang.classfile.ClassFile.TAG_MODULE;
-import static java.lang.classfile.ClassFile.TAG_NAMEANDTYPE;
-import static java.lang.classfile.ClassFile.TAG_PACKAGE;
-import static java.lang.classfile.ClassFile.TAG_STRING;
-import static java.lang.classfile.ClassFile.TAG_UTF8;
+import static java.lang.classfile.constantpool.PoolEntry.*;
 
 public final class ClassReaderImpl
         implements ClassReader {
@@ -98,15 +82,15 @@ public final class ClassReaderImpl
             ++p;
             switch (tag) {
                 // 2
-                case TAG_CLASS, TAG_METHODTYPE, TAG_MODULE, TAG_STRING, TAG_PACKAGE -> p += 2;
+                case TAG_CLASS, TAG_METHOD_TYPE, TAG_MODULE, TAG_STRING, TAG_PACKAGE -> p += 2;
 
                 // 3
-                case TAG_METHODHANDLE -> p += 3;
+                case TAG_METHOD_HANDLE -> p += 3;
 
                 // 4
-                case TAG_CONSTANTDYNAMIC, TAG_FIELDREF, TAG_FLOAT, TAG_INTEGER,
-                     TAG_INTERFACEMETHODREF, TAG_INVOKEDYNAMIC, TAG_METHODREF,
-                     TAG_NAMEANDTYPE -> p += 4;
+                case TAG_DYNAMIC, TAG_FIELDREF, TAG_FLOAT, TAG_INTEGER,
+                     TAG_INTERFACE_METHODREF, TAG_INVOKE_DYNAMIC, TAG_METHODREF,
+                     TAG_NAME_AND_TYPE -> p += 4;
 
                 // 8
                 case TAG_DOUBLE, TAG_LONG -> {
@@ -354,12 +338,12 @@ public final class ClassReaderImpl
             case TAG_STRING -> AbstractPoolEntry.StringEntryImpl.class;
             case TAG_FIELDREF -> AbstractPoolEntry.FieldRefEntryImpl.class;
             case TAG_METHODREF -> AbstractPoolEntry.MethodRefEntryImpl.class;
-            case TAG_INTERFACEMETHODREF -> AbstractPoolEntry.InterfaceMethodRefEntryImpl.class;
-            case TAG_NAMEANDTYPE -> AbstractPoolEntry.NameAndTypeEntryImpl.class;
-            case TAG_METHODHANDLE -> AbstractPoolEntry.MethodHandleEntryImpl.class;
-            case TAG_METHODTYPE -> AbstractPoolEntry.MethodTypeEntryImpl.class;
-            case TAG_CONSTANTDYNAMIC -> AbstractPoolEntry.ConstantDynamicEntryImpl.class;
-            case TAG_INVOKEDYNAMIC -> AbstractPoolEntry.InvokeDynamicEntryImpl.class;
+            case TAG_INTERFACE_METHODREF -> AbstractPoolEntry.InterfaceMethodRefEntryImpl.class;
+            case TAG_NAME_AND_TYPE -> AbstractPoolEntry.NameAndTypeEntryImpl.class;
+            case TAG_METHOD_HANDLE -> AbstractPoolEntry.MethodHandleEntryImpl.class;
+            case TAG_METHOD_TYPE -> AbstractPoolEntry.MethodTypeEntryImpl.class;
+            case TAG_DYNAMIC -> AbstractPoolEntry.ConstantDynamicEntryImpl.class;
+            case TAG_INVOKE_DYNAMIC -> AbstractPoolEntry.InvokeDynamicEntryImpl.class;
             case TAG_MODULE -> AbstractPoolEntry.ModuleEntryImpl.class;
             case TAG_PACKAGE -> AbstractPoolEntry.PackageEntryImpl.class;
             default -> null;
@@ -402,15 +386,15 @@ public final class ClassReaderImpl
                         readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
                 case TAG_METHODREF -> new AbstractPoolEntry.MethodRefEntryImpl(this, index, readEntry(q, AbstractPoolEntry.ClassEntryImpl.class),
                         readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
-                case TAG_INTERFACEMETHODREF -> new AbstractPoolEntry.InterfaceMethodRefEntryImpl(this, index, readEntry(q, AbstractPoolEntry.ClassEntryImpl.class),
+                case TAG_INTERFACE_METHODREF -> new AbstractPoolEntry.InterfaceMethodRefEntryImpl(this, index, readEntry(q, AbstractPoolEntry.ClassEntryImpl.class),
                         readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
-                case TAG_NAMEANDTYPE -> new AbstractPoolEntry.NameAndTypeEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class),
+                case TAG_NAME_AND_TYPE -> new AbstractPoolEntry.NameAndTypeEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class),
                         readEntry(q + 2, AbstractPoolEntry.Utf8EntryImpl.class));
-                case TAG_METHODHANDLE -> new AbstractPoolEntry.MethodHandleEntryImpl(this, index, readU1(q),
+                case TAG_METHOD_HANDLE -> new AbstractPoolEntry.MethodHandleEntryImpl(this, index, readU1(q),
                                                                                      readEntry(q + 1, AbstractPoolEntry.AbstractMemberRefEntry.class));
-                case TAG_METHODTYPE -> new AbstractPoolEntry.MethodTypeEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class));
-                case TAG_CONSTANTDYNAMIC -> new AbstractPoolEntry.ConstantDynamicEntryImpl(this, index, readU2(q), readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
-                case TAG_INVOKEDYNAMIC -> new AbstractPoolEntry.InvokeDynamicEntryImpl(this, index, readU2(q), readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
+                case TAG_METHOD_TYPE -> new AbstractPoolEntry.MethodTypeEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class));
+                case TAG_DYNAMIC -> new AbstractPoolEntry.ConstantDynamicEntryImpl(this, index, readU2(q), readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
+                case TAG_INVOKE_DYNAMIC -> new AbstractPoolEntry.InvokeDynamicEntryImpl(this, index, readU2(q), readEntry(q + 2, AbstractPoolEntry.NameAndTypeEntryImpl.class));
                 case TAG_MODULE -> new AbstractPoolEntry.ModuleEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class));
                 case TAG_PACKAGE -> new AbstractPoolEntry.PackageEntryImpl(this, index, readEntry(q, AbstractPoolEntry.Utf8EntryImpl.class));
                 default -> throw new ConstantPoolException(
