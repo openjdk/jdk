@@ -789,7 +789,7 @@ private:
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
 
 #ifdef ASSERT
-  bool       phase_verify_ideal_loop() { return _phase_verify_ideal_loop; }
+  bool       phase_verify_ideal_loop() const { return _phase_verify_ideal_loop; }
   void   set_phase_verify_ideal_loop() { _phase_verify_ideal_loop = true; }
   void reset_phase_verify_ideal_loop() { _phase_verify_ideal_loop = false; }
 #endif
@@ -835,16 +835,16 @@ private:
 
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
-  bool failing(DEBUG_ONLY(bool no_stress_bailout = false)) {
+  bool failing() {
     if (failing_internal()) {
       return true;
     }
 #ifdef ASSERT
-    // Disable stress code for PhaseIdealLoop verification
+    // Disable stress code for PhaseIdealLoop verification (would have cascading effects).
     if (phase_verify_ideal_loop()) {
       return false;
     }
-    if (StressBailout && !no_stress_bailout) {
+    if (StressBailout) {
       return fail_randomly();
     }
 #endif

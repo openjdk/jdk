@@ -2115,7 +2115,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     igvn_worklist()->ensure_empty(); // should be done with igvn
 
     while (inline_incrementally_one()) {
-      assert(!failing(true) || failure_is_artificial(), "inconsistent");
+      assert(!failing_internal() || failure_is_artificial(), "inconsistent");
     }
     if (failing())  return;
 
@@ -2158,7 +2158,7 @@ void Compile::process_late_inline_calls_no_inline(PhaseIterGVN& igvn) {
     igvn_worklist()->ensure_empty(); // should be done with igvn
 
     while (inline_incrementally_one()) {
-      assert(!failing(true) || failure_is_artificial(), "inconsistent");
+      assert(!failing_internal() || failure_is_artificial(), "inconsistent");
     }
     if (failing())  return;
 
@@ -4372,7 +4372,7 @@ Compile::TracePhase::TracePhase(const char* name, elapsedTimer* accumulator)
 }
 
 Compile::TracePhase::~TracePhase() {
-  if (_compile->failing(DEBUG_ONLY(true))) return; // timing code, not stressing bailouts.
+  if (_compile->failing_internal()) return; // timing code, not stressing bailouts.
 #ifdef ASSERT
   if (PrintIdealNodeCount) {
     tty->print_cr("phase name='%s' nodes='%d' live='%d' live_graph_walk='%d'",

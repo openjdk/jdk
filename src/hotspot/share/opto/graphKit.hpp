@@ -82,7 +82,7 @@ class GraphKit : public Phase {
 
 #ifdef ASSERT
   ~GraphKit() {
-    assert(failing(true) || !has_exceptions(),
+    assert(failing_internal() || !has_exceptions(),
            "unless compilation failed, user must call transfer_exceptions_into_jvms");
   }
 #endif
@@ -181,7 +181,8 @@ class GraphKit : public Phase {
   void set_map_clone(SafePointNode* m);
 
   // Tell if the compilation is failing.
-  bool failing(DEBUG_ONLY(bool no_stress_bailout = false)) const { return C->failing(DEBUG_ONLY(no_stress_bailout)); }
+  bool failing() const { return C->failing(); }
+  bool failing_internal() const { return C->failing_internal(); }
 
   // Set _map to null, signalling a stop to further bytecode execution.
   // Preserve the map intact for future use, and return it back to the caller.

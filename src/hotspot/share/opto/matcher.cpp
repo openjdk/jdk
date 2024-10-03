@@ -2686,7 +2686,7 @@ bool Matcher::gen_narrow_oop_implicit_null_checks() {
 
 // Compute RegMask for an ideal register.
 const RegMask* Matcher::regmask_for_ideal_register(uint ideal_reg, Node* ret) {
-  assert(!C->failing(true) || C->failure_is_artificial(), "already failing.");
+  assert(!C->failing_internal() || C->failure_is_artificial(), "already failing.");
   if (C->failing()) {
     return nullptr;
   }
@@ -2857,7 +2857,7 @@ bool Matcher::is_non_long_integral_vector(const Node* n) {
 
 #ifdef ASSERT
 bool Matcher::verify_after_postselect_cleanup() {
-  assert(!C->failing(true) || C->failure_is_artificial(), "sanity");
+  assert(!C->failing_internal() || C->failure_is_artificial(), "sanity");
   if (supports_generic_vector_operands) {
     Unique_Node_List useful;
     C->identify_useful_nodes(useful);
