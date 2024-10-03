@@ -120,7 +120,7 @@ static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, 
 static jboolean AddApplicationOptions(int cpathc, const char **cpathv);
 
 static void PrintJavaVersion(JNIEnv *env);
-static void PrintUsage(JNIEnv* env, jboolean doXUsage);
+static void PrintUsage(JNIEnv* env, jboolean doXUsage, jboolean conciseUsage);
 static void ShowSettings(JNIEnv* env, char *optString);
 static void ShowResolvedModules(JNIEnv* env);
 static void ListModules(JNIEnv* env);
@@ -538,7 +538,7 @@ JavaMain(void* _args)
 
     /* If the user specified neither a class name nor a JAR file */
     if (printXUsage || printUsage || what == 0 || mode == LM_UNKNOWN) {
-        PrintUsage(env, printXUsage);
+        PrintUsage(env, printXUsage, what == 0 || mode == LM_UNKNOWN);
         CHECK_EXCEPTION_LEAVE(1);
         LEAVE();
     }
@@ -1921,14 +1921,19 @@ DescribeModule(JNIEnv *env, char *optString)
  * Prints default usage or the Xusage message, see sun.launcher.LauncherHelper.java
  */
 static void
-PrintUsage(JNIEnv* env, jboolean doXUsage)
+PrintUsage(JNIEnv* env, jboolean doXUsage, jboolean conciseUsage)
 {
-  jmethodID initHelp, vmSelect, vmSynonym, printHelp, printXUsageMessage;
+  jmethodID initHelp, vmSelect, vmSynonym;
+  jmethodID printHelp, printConciseUsageMessage, printXUsageMessage;
   jstring jprogname, vm1, vm2;
   int i;
   jclass cls = GetLauncherHelperClass(env);
   NULL_CHECK(cls);
-  if (doXUsage) {
+  if (conciseUsage) {
+    NULL_CHECK(printConciseUsageMessage = (*env)->GetStaticMethodID(env, cls,
+                                        "printConciseUsageMessage", "(Z)V"));
+    (*env)->CallStaticVoidMethod(env, cls, printConciseUsageMessage, printTo);
+  } else if (doXUsage) {
     NULL_CHECK(printXUsageMessage = (*env)->GetStaticMethodID(env, cls,
                                         "printXUsageMessage", "(Z)V"));
     (*env)->CallStaticVoidMethod(env, cls, printXUsageMessage, printTo);
