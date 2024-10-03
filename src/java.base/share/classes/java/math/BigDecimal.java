@@ -5261,7 +5261,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (qr[1].signum() != 0) { // non-0 remainder
                 remainingZeros = exp - 1;
             } else {
-                long exp = 1L << i;
                 intVal = qr[0];
                 scale = checkScale(intVal, scale - exp); // could Overflow
                 remainingZeros -= exp;
