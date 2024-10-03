@@ -27,7 +27,6 @@ package jdk.incubator.vector;
 /**
  * The class {@code VectorMath} contains methods for performing
  * scalar numeric operations in support of vector numeric operations.
- * @author  Paul Sandoz
  * @since   24
  */
 public final class VectorMath {
