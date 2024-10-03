@@ -5254,17 +5254,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
 
         for (int i = BigInteger.bitLengthForLong(remainingZeros) - 1;
-                i >= 0 && remainingZeros >= 0 && intVal.compareMagnitude(10L) >= 0; i--) {
-            final long exp = 1L << i;
-            if (remainingZeros >= exp) {
-                qr = intVal.divideAndRemainder(pows[i]);
-                if (qr[1].signum() == 0) { // zero remainder
-                    intVal = qr[0];
-                    scale = checkScale(intVal, scale - exp); // could Overflow
-                    remainingZeros -= exp;
-        
-                    i = BigInteger.bitLengthForLong(remainingZeros);
-                }
+                i >= 0 && intVal.compareMagnitude(10L) >= 0; i--) {
+            qr = intVal.divideAndRemainder(pows[i]);
+            if (qr[1].signum() == 0) { // zero remainder
+                long exp = 1L << i;
+                intVal = qr[0];
+                scale = checkScale(intVal, scale - exp); // could Overflow
+                remainingZeros -= exp;
+    
+                i = BigInteger.bitLengthForLong(remainingZeros);
             }
         }
 
