@@ -188,6 +188,7 @@ address StubRoutines::_cont_returnBarrier = nullptr;
 address StubRoutines::_cont_returnBarrierExc = nullptr;
 
 address StubRoutines::_upcall_stub_exception_handler = nullptr;
+address StubRoutines::_upcall_stub_load_target = nullptr;
 
 address StubRoutines::_lookup_secondary_supers_table_slow_path_stub = nullptr;
 address StubRoutines::_lookup_secondary_supers_table_stubs[Klass::SECONDARY_SUPERS_TABLE_SIZE] = { nullptr };
