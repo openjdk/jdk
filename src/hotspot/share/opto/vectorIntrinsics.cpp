@@ -2960,10 +2960,11 @@ bool LibraryCallKit::inline_vector_select_from_two_vectors() {
   }
 
   int cast_vopc = VectorCastNode::opcode(-1, elem_bt, true);
-  if (is_floating_point_type(elem_bt)) {
-    if (!arch_supports_vector(Op_AndV, num_elem, index_elem_bt, VecMaskNotUsed)              ||
-        !arch_supports_vector(cast_vopc, num_elem, index_elem_bt, VecMaskNotUsed)            ||
-        !arch_supports_vector(Op_Replicate, num_elem, index_elem_bt, VecMaskNotUsed)) {
+  if (!lowerSelectFromOp) {
+    if (!arch_supports_vector(Op_AndV, num_elem, index_elem_bt, VecMaskNotUsed)      ||
+        !arch_supports_vector(Op_Replicate, num_elem, index_elem_bt, VecMaskNotUsed) ||
+        (is_floating_point_type(elem_bt) &&
+         !arch_supports_vector(cast_vopc, num_elem, index_elem_bt, VecMaskNotUsed))) {
       log_if_needed("  ** index wrapping not supported: vlen=%d etype=%s" ,
                      num_elem, type2name(elem_bt));
       return false; // not supported
