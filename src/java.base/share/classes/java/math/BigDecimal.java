@@ -5253,7 +5253,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
         }
 
-        
         for (int i = BigInteger.bitLengthForLong(remainingZeros) - 1;
                 i >= 0 && remainingZeros >= 1 << i && intVal.compareMagnitude(10L) >= 0; i--) {
             qr = intVal.divideAndRemainder(pows[i]);
@@ -5265,7 +5264,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
                 i = BigInteger.bitLengthForLong(remainingZeros);
             }
-            
         }
 
         return valueOf(intVal, scale, 0);
