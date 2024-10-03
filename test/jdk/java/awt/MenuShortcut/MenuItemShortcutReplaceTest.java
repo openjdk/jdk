@@ -100,12 +100,12 @@ public class MenuItemShortcutReplaceTest implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         //change the shortcut key
         if (e.getSource() == change) {
-                ms = new MenuShortcut(KeyEvent.VK_C);
-                mi.setShortcut(ms);
-                PassFailJFrame.log("Shortcut key set to "+shortcut+"C");
+            ms = new MenuShortcut(KeyEvent.VK_C);
+            mi.setShortcut(ms);
+            PassFailJFrame.log("Shortcut key set to "+shortcut+"C");
         }
         if (e.getSource() == mi) {
-                PassFailJFrame.log("MenuItem Selected");
+            PassFailJFrame.log("MenuItem Selected");
         }
     }
 }

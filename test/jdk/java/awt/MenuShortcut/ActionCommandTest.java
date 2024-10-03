@@ -48,9 +48,6 @@ import static java.awt.event.KeyEvent.VK_META;
 
 public class ActionCommandTest implements ActionListener {
 
-    static volatile Menu m;
-    static volatile MenuBar mb;
-    static volatile MenuItem mi;
     static volatile Frame frame;
     static volatile boolean event = false;
     static volatile boolean failed = false;
@@ -58,9 +55,9 @@ public class ActionCommandTest implements ActionListener {
 
     static void createUI() {
         frame = new Frame("ActionCommand Menu Shortcut Test");
-        mb = new MenuBar();
-        m = new Menu("Test");
-        mi = new MenuItem(ITEMTEXT, new MenuShortcut(KeyEvent.VK_T));
+        MenuBar mb = new MenuBar();
+        Menu m = new Menu("Test");
+        MenuItem mi = new MenuItem(ITEMTEXT, new MenuShortcut(KeyEvent.VK_T));
         mi.addActionListener(new ActionCommandTest());
         m.add(mi);
         mb.add(m);

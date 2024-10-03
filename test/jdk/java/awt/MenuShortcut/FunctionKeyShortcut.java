@@ -46,29 +46,25 @@ import static java.awt.event.KeyEvent.VK_META;
 
 public class FunctionKeyShortcut implements ActionListener {
 
-    static volatile Menu m;
-    static volatile MenuBar mb;
-    static volatile MenuItem mi1, mi2, mi3, mi4, mi5, mi6, mi7, mi8, mi9;
     static volatile Frame frame;
     static volatile boolean event = false;
     static volatile boolean failed = false;
-    static final String ITEMTEXT = "Testitem";
 
     static final boolean isMac = System.getProperty("os.name").contains("OS X");
 
     static void createUI() {
         frame = new Frame("Function Key Menu Shortcut Test");
-        mb = new MenuBar();
-        m = new Menu("Test");
-        mi1 = new MenuItem("Function key 1", new MenuShortcut(KeyEvent.VK_F1));
-        mi2 = new MenuItem("Function key 2", new MenuShortcut(KeyEvent.VK_F2));
-        mi3 = new MenuItem("Function key 3", new MenuShortcut(KeyEvent.VK_F3));
-        mi4 = new MenuItem("Function key 4", new MenuShortcut(KeyEvent.VK_F4));
-        mi5 = new MenuItem("Function key 5", new MenuShortcut(KeyEvent.VK_F5));
-        mi6 = new MenuItem("Function key 6", new MenuShortcut(KeyEvent.VK_F6));
-        mi7 = new MenuItem("Function key 7", new MenuShortcut(KeyEvent.VK_F7));
-        mi8 = new MenuItem("Function key 8", new MenuShortcut(KeyEvent.VK_F8));
-        mi9 = new MenuItem("Function key 8", new MenuShortcut(KeyEvent.VK_F9));
+        MenuBar mb = new MenuBar();
+        Menu m = new Menu("Test");
+        MenuItem mi1 = new MenuItem("Function key 1", new MenuShortcut(KeyEvent.VK_F1));
+        MenuItem mi2 = new MenuItem("Function key 2", new MenuShortcut(KeyEvent.VK_F2));
+        MenuItem mi3 = new MenuItem("Function key 3", new MenuShortcut(KeyEvent.VK_F3));
+        MenuItem mi4 = new MenuItem("Function key 4", new MenuShortcut(KeyEvent.VK_F4));
+        MenuItem mi5 = new MenuItem("Function key 5", new MenuShortcut(KeyEvent.VK_F5));
+        MenuItem mi6 = new MenuItem("Function key 6", new MenuShortcut(KeyEvent.VK_F6));
+        MenuItem mi7 = new MenuItem("Function key 7", new MenuShortcut(KeyEvent.VK_F7));
+        MenuItem mi8 = new MenuItem("Function key 8", new MenuShortcut(KeyEvent.VK_F8));
+        MenuItem mi9 = new MenuItem("Function key 8", new MenuShortcut(KeyEvent.VK_F9));
 
         FunctionKeyShortcut fks = new FunctionKeyShortcut();
         mi1.addActionListener(fks);
