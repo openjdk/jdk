@@ -30,6 +30,7 @@
  * correctly on Windows. This is a manual test dependent on making changes to
  * the platform setting of the machine and thus cannot be automated.
  * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual DefaultTimeZoneTest
  */
 
