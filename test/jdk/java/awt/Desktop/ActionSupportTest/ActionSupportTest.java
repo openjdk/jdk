@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 6255196
- * @key headful
  * @summary Verifies the supported actions on different platforms.
+ * @library /test/lib
  * @run main/othervm ActionSupportTest
  */
 
@@ -33,6 +33,7 @@ import java.awt.Desktop;
 import java.io.File;
 import java.net.URI;
 import javax.swing.JMenuBar;
+import jtreg.SkippedException;
 
 import static java.awt.desktop.QuitStrategy.NORMAL_EXIT;
 
@@ -44,9 +45,8 @@ public class ActionSupportTest {
         final StringBuilder error = new StringBuilder();
 
         if (!Desktop.isDesktopSupported()) {
-            System.out.println("Class java.awt.Desktop is not supported on " +
+            throw new SkippedException("Class java.awt.Desktop is not supported on " +
                     "current platform. Farther testing will not be performed");
-            return;
         }
 
         Desktop desktop = Desktop.getDesktop();
