@@ -324,15 +324,27 @@ void G1BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* 
 Node* G1BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {
   DecoratorSet decorators = access.decorators();
   bool anonymous = (decorators & ON_UNKNOWN_OOP_REF) != 0;
+  bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
+  bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
   bool in_heap = (decorators & IN_HEAP) != 0;
   bool tightly_coupled_alloc = (decorators & C2_TIGHTLY_COUPLED_ALLOC) != 0;
   bool need_store_barrier = !(tightly_coupled_alloc && use_ReduceInitialCardMarks()) && (in_heap || anonymous);
+  bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
   if (access.is_oop() && need_store_barrier) {
     access.set_barrier_data(get_store_barrier(access));
     if (tightly_coupled_alloc) {
       assert(!use_ReduceInitialCardMarks(),
              "post-barriers are only needed for tightly-coupled initialization stores when ReduceInitialCardMarks is disabled");
       access.set_barrier_data(access.barrier_data() ^ G1C2BarrierPre);
+    }
+  }
+  if ((on_weak || on_phantom) && no_keepalive) {
+    // Be extra paranoid around this path. Only accept null stores,
+    // otherwise we need a post-store barrier.
+    C2ParseAccess &parse_access = static_cast<C2ParseAccess &>(access);
+    if (val.node() == parse_access.kit()->null()) {
+      access.set_barrier_data(access.barrier_data() & !G1C2BarrierPre);
+      access.set_barrier_data(access.barrier_data() & !G1C2BarrierPost);
     }
   }
   return BarrierSetC2::store_at_resolved(access, val);

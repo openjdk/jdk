@@ -80,9 +80,7 @@ public class ReferenceClearTests {
             )));
         }
         if (GC.isSelectedErgonomically() && GC.G1.isSupported()) {
-            // G1 has SATB/keep-alive barriers, but they should not be present
-            // for clear()-s. There are inter-generational barriers on stores,
-            // but they should be folded away for null stores like clear().
+            // G1 does not have barriers in C2 IR.
             framework.addScenarios(new Scenario(idx++, args(
                 "-XX:+UseG1GC"
             )));
