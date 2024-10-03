@@ -1260,7 +1260,7 @@ public class ZipFile implements ZipConstants, Closeable {
             try {
                 ZipCoder zcp = zipCoderForPos(pos);
                 int hash = zcp.checkedHash(cen, entryPos, nlen);
-                int hsh = (hash & 0x7fffffff) % table.length;
+                int hsh = (hash & 0x7fffffff) % tablelen;
                 int next = table[hsh];
                 table[hsh] = index;
                 // Record the CEN offset and the name hash in our hash cell.
