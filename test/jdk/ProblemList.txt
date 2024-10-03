@@ -800,3 +800,6 @@ java/awt/PopupMenu/PopupHangTest.java 8340022 windows-all
 java/awt/Focus/MinimizeNonfocusableWindowTest.java 8024487 windows-all
 java/awt/Focus/InactiveFocusRace.java 8023263 linux-all
 java/awt/List/HandlingKeyEventIfMousePressedTest.java 6848358 macosx-all,windows-all
+java/awt/Checkbox/CheckboxBoxSizeTest.java 8340870 windows-all
+java/awt/Checkbox/CheckboxIndicatorSizeTest.java 8340870 windows-all
+java/awt/Checkbox/CheckboxNullLabelTest.java 8340870 windows-all
