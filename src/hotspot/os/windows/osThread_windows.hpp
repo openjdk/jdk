@@ -44,7 +44,6 @@ class OSThread : public OSThreadBase {
  public:
   OSThread();
   ~OSThread();
-  NONCOPYABLE(OSThread);
 
   thread_id_t thread_id() const                    { return _thread_id; }
   void set_thread_id(thread_id_t id)               { _thread_id = id; }

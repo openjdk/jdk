@@ -61,7 +61,9 @@ class OSThreadBase: public CHeapObj<mtThread> {
 
   // Methods
  public:
+  OSThreadBase() {}
   virtual ~OSThreadBase() {}
+  NONCOPYABLE(OSThreadBase);
 
   void set_state(ThreadState state)                { _state = state; }
   ThreadState get_state()                          { return _state; }

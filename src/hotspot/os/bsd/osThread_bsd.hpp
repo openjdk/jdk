@@ -55,7 +55,6 @@ class OSThread : public OSThreadBase {
  public:
   OSThread();
   ~OSThread();
-  NONCOPYABLE(OSThread);
 
   int thread_type() const {
     return _thread_type;
