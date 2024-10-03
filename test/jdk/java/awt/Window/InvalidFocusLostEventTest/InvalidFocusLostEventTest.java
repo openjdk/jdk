@@ -45,7 +45,6 @@ public class InvalidFocusLostEventTest implements ActionListener {
     private static Frame f;
     private static Button b;
     private static KeyboardFocusManager fm;
-    static boolean failed;
     private static volatile CountDownLatch countDownLatch;
     private static volatile Point bp;
 
@@ -57,7 +56,7 @@ public class InvalidFocusLostEventTest implements ActionListener {
             runTest();
             countDownLatch.await();
             if (fm.getFocusOwner() != b) {
-                failed = true;
+                throw new RuntimeException("Failed: focus was lost");
             }
         } finally {
             EventQueue.invokeAndWait(() -> {
@@ -65,9 +64,6 @@ public class InvalidFocusLostEventTest implements ActionListener {
                     f.dispose();
                 }
             });
-            if (failed) {
-                throw new RuntimeException("Failed: focus was lost");
-            }
         }
     }
 
