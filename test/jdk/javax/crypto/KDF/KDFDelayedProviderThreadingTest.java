@@ -26,13 +26,12 @@
  * @bug 8331008
  * @library /test/lib /test/jdk/security/unsignedjce
  * @build java.base/javax.crypto.ProviderVerifier
- * @run testng/othervm -Djava.security.debug=provider,engine=kdf KDFDelayedProviderThreadingTest
+ * @run main/othervm KDFDelayedProviderThreadingTest
  * @summary delayed provider selection threading test
  * @enablePreview
  */
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import jdk.test.lib.Asserts;
 
 import javax.crypto.KDF;
 import javax.crypto.KDFParameters;
@@ -40,35 +39,61 @@ import javax.crypto.KDFSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 
 public class KDFDelayedProviderThreadingTest {
+    /// This number of iterations is enough to see a case where the threads
+    /// arrange themselves such that both `deriveData` attempts cause "ERROR",
+    /// which is still a passing case.
+    static final int ITERATIONS = 10000;
+    static int threadOrderReversalCounter = 0;
+    static final String ERROR = "ERROR";
+    static volatile String out;
+    static final HKDFParameterSpec input
+            = HKDFParameterSpec.ofExtract().extractOnly();
 
-    KDF k;
-
-    @BeforeClass
-    public void setUp() throws NoSuchAlgorithmException {
-        Security.insertProviderAt(new P(), 1);
-        k = KDF.getInstance("HKDF-SHA256");
+    static String derive(KDF kdf) {
+        try {
+            return Arrays.toString(kdf.deriveData(input));
+        } catch (Exception e) {
+            return ERROR;
+        }
     }
 
-    @Test(threadPoolSize = 50, invocationCount = 1000000, timeOut = 150)
-    public void testThreading() throws Exception {
-        var input = HKDFParameterSpec.ofExtract().extractOnly();
-        new Thread(() -> {
-            try {
-                System.out.println(Arrays.toString(k.deriveData(input)));
-            } catch (Exception e) {
-                System.out.println(e);
-                throw new RuntimeException(e);
-            }
-        }).start();
-        new Thread(() -> k.getProviderName()).start();
-        System.out.println(Arrays.toString(k.deriveData(input)));
+    public static void main(String[] args) throws Exception {
+        Security.insertProviderAt(new P(), 1);
+        for (int i = 0; i < ITERATIONS; i++) {
+            test();
+        }
+
+        // If the value of threadOrderReversalCounter is consistently zero,
+        // then this test may need to be adjusted for newer hardware to ensure
+        // a thorough test. This didn't seem fitting for a check, such as
+        // `Asserts.assertTrue(threadOrderReversalCounter > 0);`, since we
+        // may not want to start failing the test right away when running on
+        // better hardware someday.
+        System.out.println("Also tested atypical threading condition "
+                           + threadOrderReversalCounter + "/" + ITERATIONS
+                           + " iterations (depends on hardware specs/utilization).");
+    }
+
+    static void test() throws Exception {
+        var k = KDF.getInstance("HKDF-SHA256");
+        var t1 = new Thread(() -> out = derive(k));
+        var t2 = new Thread(() -> k.getProviderName());
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+
+        String out2 = derive(k);
+        Asserts.assertEquals(out, out2);
+        if (out.length() < 10) { // "error"
+            threadOrderReversalCounter++;
+        }
     }
 
     public static class P extends Provider {
