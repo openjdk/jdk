@@ -916,11 +916,11 @@ public final class StackMapGenerator {
         var frames = this.frames;
         int i = 0, framesCount = this.framesCount;
         for (; i < framesCount; i++) {
-            var frame = frames[i];
-            if (frame.offset == offset) {
+            var frameOffset = frames[i].offset;
+            if (frameOffset == offset) {
                 return;
             }
-            if (frame.offset > offset) {
+            if (frameOffset > offset) {
                 break;
             }
         }
