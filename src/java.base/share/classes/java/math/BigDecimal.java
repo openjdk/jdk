@@ -5228,13 +5228,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     private static BigDecimal createAndStripZerosToMatchScale(BigInteger intVal, int scale, long preferredScale) {
         // a multiple of 10^n must be a multiple of 2^n
-        long remainingZeros = Math.min(scale - preferredScale, intVal.getLowestSetBit());
+        int powsOf2 = intVal.getLowestSetBit();
+        long remainingZeros = Math.min(scale - preferredScale, powsOf2);
         if (remainingZeros <= 0L)
             return valueOf(intVal, scale, 0);
 
-        // pows[i] == 10^(2^i)
+        intVal = intVal.shiftRight(powsOf2); // remove powers of 2
+        // pows[i] == 5^(2^i)
         BigInteger[] pows = new BigInteger[BigInteger.bitLengthForLong(remainingZeros)];
-        pows[0] = BigInteger.TEN;
+        pows[0] = BigInteger.valueOf(5L);
 
         BigInteger[] qr; // quotient-remainder pair
         boolean zeroR = true;
@@ -5243,11 +5245,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             qr = intVal.divideAndRemainder(pows[i]);
             if (qr[1].signum() != 0) {
                 zeroR = false; // non-0 remainder
-                remainingZeros = exp - 1;
+                remainingZeros = exp - 1L;
             } else {
                 intVal = qr[0];
                 scale = checkScale(intVal, scale - exp); // could Overflow
                 remainingZeros -= exp;
+                powsOf2 -= exp;
 
                 if (remainingZeros >= exp << 1)
                     pows[i + 1] = pows[i].multiply(pows[i]);
@@ -5259,17 +5262,18 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             final long exp = 1L << i;
             qr = intVal.divideAndRemainder(pows[i]);
             if (qr[1].signum() != 0) { // non-0 remainder
-                remainingZeros = exp - 1;
+                remainingZeros = exp - 1L;
             } else {
                 intVal = qr[0];
                 scale = checkScale(intVal, scale - exp); // could Overflow
                 remainingZeros -= exp;
+                powsOf2 -= exp;
 
                 i = BigInteger.bitLengthForLong(remainingZeros);
             }
         }
 
-        return valueOf(intVal, scale, 0);
+        return valueOf(intVal.shiftLeft(powsOf2), scale, 0);
     }
 
     /**
