@@ -384,7 +384,7 @@ public:
 //
 class ZStat : public ZThread {
 private:
-  static const uint64_t sample_hz = 1;
+  static const uint64_t SampleHz = 1;
 
   ZMetronome _metronome;
 

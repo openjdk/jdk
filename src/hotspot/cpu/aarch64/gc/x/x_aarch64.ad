@@ -51,7 +51,7 @@ static void x_load_barrier_slow_path(MacroAssembler* masm, const MachNode* node,
 %}
 
 // Load Pointer
-instruct xLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
+instruct xLoadP(iRegPNoSp dst, memory mem, rFlagsReg cr)
 %{
   match(Set dst (LoadP mem));
   predicate(UseZGC && !ZGenerational && !needs_acquiring_load(n) && (n->as_Load()->barrier_data() != 0));

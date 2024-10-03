@@ -1084,5 +1084,8 @@ public class BuiltinClassLoader
     private void resetArchivedStates() {
         ucp = null;
         resourceCache = null;
+        if (!moduleToReader.isEmpty()) {
+            moduleToReader.clear();
+        }
     }
 }
