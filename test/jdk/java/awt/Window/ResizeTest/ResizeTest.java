@@ -75,7 +75,6 @@ public class ResizeTest
             d.setVisible(true);
         });
         f.pack();
-        f.setVisible(true);
         return f;
     }
 }

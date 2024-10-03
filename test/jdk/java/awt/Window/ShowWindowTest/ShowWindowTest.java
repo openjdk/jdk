@@ -73,8 +73,6 @@ public class ShowWindowTest implements ActionListener
         win = new Window(frame);
         win.add("Center", new Label("Hello World"));
         win.setLocationRelativeTo(null);
-
-        frame.setVisible(true);
         return frame;
     }
 
