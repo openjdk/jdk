@@ -6997,10 +6997,6 @@ bool LibraryCallKit::inline_reference_clear0(bool is_phantom) {
   final_sync(ideal);
 #undef __
 
-  // Add memory barrier to prevent commoning the accesses in this code,
-  // since GC can change the value of referent at any time.
-  insert_mem_bar(Op_MemBarCPUOrder);
-
   return true;
 }
 
