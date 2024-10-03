@@ -195,7 +195,7 @@ class BytecodeStream: public BaseBytecodeStream {
       int len = Bytecodes::length_for(code);
       if (len == 0) len = Bytecodes::length_at(_method(), bcp);
       if (len <= 0 || (_bci > _end_bci - len) || (_bci - len >= _next_bci)) {
-        raw_code = code = Bytecodes::_illegal;
+        fatal("Should have been caught by verifier");
       } else {
         _next_bci  += len;
         assert(_bci < _next_bci, "length must be > 0");
