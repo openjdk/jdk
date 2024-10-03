@@ -58,7 +58,7 @@ class DnDSource extends Button implements Transferable,
 
         try {
             m_df = new DataFlavor("text/html; Class=" + InputStream.class.getName() + "; charset=UTF-8");
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
@@ -84,7 +84,7 @@ class DnDSource extends Button implements Transferable,
                     }
                 }
             );
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

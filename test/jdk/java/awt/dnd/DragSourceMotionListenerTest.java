@@ -147,16 +147,13 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
             robot.delay(1000);
 
             EventQueue.invokeAndWait(() -> {
-                Point p = getPoint(source, 1);
-                srcPoint = p;
+                srcPoint = getPoint(source, 1);
 
-                p = getPoint(frame, 3);
-                dstOutsidePoint = p;
-                testPoint1.setLocation(p);
+                dstOutsidePoint = getPoint(frame, 3);
+                testPoint1.setLocation(dstOutsidePoint);
 
-                p = getPoint(target, 1);
-                dstInsidePoint = p;
-                testPoint2.setLocation(p);
+                dstInsidePoint = getPoint(target, 1);
+                testPoint2.setLocation(dstInsidePoint);
             });
             robot.waitForIdle();
 
@@ -198,14 +195,14 @@ public class DragSourceMotionListenerTest implements AWTEventListener {
             if (!passedTest2) {
                 throw new RuntimeException("Failed second test.");
             }
-    } finally {
-        EventQueue.invokeAndWait(() -> {
-            if (frame != null) {
-                frame.dispose();
-            }
-        });
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
     }
-}
 
     private static Point getPoint(Container container, int multiple) {
         Point p = container.getLocationOnScreen();
