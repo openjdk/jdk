@@ -5216,6 +5216,35 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
+     * {@code FIVE_TO_2_TO[n] == 5^(2^n)}
+     */
+    // floor(log2(log5(2^Integer.MAX_VALUE))) == 29
+    private static final BigInteger[] FIVE_TO_2_TO = new BigInteger[29];
+
+    private static int FIVE_TO_2_TO_LEN = 1;
+
+    static {
+        FIVE_TO_2_TO[0] = BigInteger.valueOf(5L);
+    }
+
+    /**
+     * @param n an integer such that {@code 0 <= n < POWERS_OF_5.length}
+     * @return {@code 5^(2^n)}
+     */
+    private static BigInteger fiveToTwoToThe(int n) {
+        if (n >= FIVE_TO_2_TO_LEN) {
+            for (int i = FIVE_TO_2_TO_LEN; i <= n; i++) {
+                BigInteger pow = FIVE_TO_2_TO[i - 1];
+                FIVE_TO_2_TO[i] = pow.multiply(pow);
+            }
+
+            FIVE_TO_2_TO_LEN = n + 1;
+        }
+
+        return FIVE_TO_2_TO[n];
+    }
+
+    /**
      * Remove insignificant trailing zeros from this
      * {@code BigInteger} value until the preferred scale is reached or no
      * more zeros can be removed.  If the preferred scale is less than
@@ -5234,38 +5263,32 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return valueOf(intVal, scale, 0);
 
         intVal = intVal.shiftRight(powsOf2); // remove powers of 2
-        // pows[i] == 5^(2^i)
-        BigInteger[] pows = new BigInteger[BigInteger.bitLengthForLong(remainingZeros)];
-        pows[0] = BigInteger.valueOf(5L);
-
         BigInteger[] qr; // quotient-remainder pair
+
         boolean zeroR = true;
         for (int i = 0; zeroR && remainingZeros >= 1L << i; i++) {
-            final long exp = 1L << i;
-            qr = intVal.divideAndRemainder(pows[i]);
+            final int exp = 1 << i;
+            qr = intVal.divideAndRemainder(fiveToTwoToThe(i));
             if (qr[1].signum() != 0) {
                 zeroR = false; // non-0 remainder
-                remainingZeros = exp - 1L;
+                remainingZeros = exp - 1;
             } else {
                 intVal = qr[0];
-                scale = checkScale(intVal, scale - exp); // could Overflow
+                scale = checkScale(intVal, (long) scale - exp); // could Overflow
                 remainingZeros -= exp;
                 powsOf2 -= exp;
-
-                if (remainingZeros >= exp << 1)
-                    pows[i + 1] = pows[i].multiply(pows[i]);
             }
         }
 
         for (int i = BigInteger.bitLengthForLong(remainingZeros) - 1;
                 i >= 0 && intVal.compareMagnitude(5L) >= 0; i--) {
-            final long exp = 1L << i;
-            qr = intVal.divideAndRemainder(pows[i]);
+            final int exp = 1 << i;
+            qr = intVal.divideAndRemainder(fiveToTwoToThe(i));
             if (qr[1].signum() != 0) { // non-0 remainder
-                remainingZeros = exp - 1L;
+                remainingZeros = exp - 1;
             } else {
                 intVal = qr[0];
-                scale = checkScale(intVal, scale - exp); // could Overflow
+                scale = checkScale(intVal, (long) scale - exp); // could Overflow
                 remainingZeros -= exp;
                 powsOf2 -= exp;
 
