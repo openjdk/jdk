@@ -114,6 +114,7 @@ public class LightWeightTabFocus {
         f.add(btn2);
         f.pack();
         f.setVisible(true);
+        return f;
     }
 }
 
