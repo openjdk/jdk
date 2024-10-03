@@ -65,7 +65,6 @@ public class BadConfigure
         ch.add("One");
         ch.add("One");
         f.setSize(200, 200);
-        f.setVisible(true);
         f.validate();
         return f;
     }

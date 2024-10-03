@@ -21,7 +21,8 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @bug 4397883
  * @summary Tests that non-focusable Window doesn't grab focus
  * @key headful
@@ -38,23 +39,32 @@ import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
+import java.util.concurrent.CountDownLatch;
 
 public class InvalidFocusLostEventTest implements ActionListener {
     private static Frame f;
     private static Button b;
-    private KeyboardFocusManager fm;
-
-    static boolean failed = false;
+    private static KeyboardFocusManager fm;
+    static boolean failed;
+    private static volatile CountDownLatch countDownLatch;
+    private static volatile Point bp;
 
     public static void main(String[] args) throws Exception {
         try {
             InvalidFocusLostEventTest test = new InvalidFocusLostEventTest();
             EventQueue.invokeAndWait(() -> test.createUI());
+            countDownLatch = new CountDownLatch(1);
             runTest();
-        } finally {
-            if (f != null) {
-                f.dispose();
+            countDownLatch.await();
+            if (fm.getFocusOwner() != b) {
+                failed = true;
             }
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                if (f != null) {
+                    f.dispose();
+                }
+            });
             if (failed) {
                 throw new RuntimeException("Failed: focus was lost");
             }
@@ -76,10 +86,10 @@ public class InvalidFocusLostEventTest implements ActionListener {
         Robot robot = new Robot();
         robot.setAutoDelay(100);
         robot.setAutoWaitForIdle(true);
-        Point bp = b.getLocationOnScreen();
+        EventQueue.invokeAndWait(() -> bp = b.getLocationOnScreen());
         robot.mouseMove(bp.x + b.getWidth() / 2, bp.y + b.getHeight() / 2 );
-        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK );
-        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK );
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
     }
 
     public void actionPerformed(ActionEvent ev) {
@@ -89,10 +99,6 @@ public class InvalidFocusLostEventTest implements ActionListener {
 
         // we should check focus after all events are processed,
         // since focus transfers are asynchronous
-        EventQueue.invokeLater(() -> {
-            if (fm.getFocusOwner() != b) {
-                failed = true;
-            }
-        });
+        EventQueue.invokeLater(() -> countDownLatch.countDown());
     }
 }
