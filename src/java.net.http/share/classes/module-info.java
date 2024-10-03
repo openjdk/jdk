@@ -75,6 +75,19 @@
  * <li><p><b>{@systemProperty jdk.httpclient.hpack.maxheadertablesize}</b> (default: 16384 or
  * 16 kB)<br> The HTTP/2 client maximum HPACK header table size in bytes.
  * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.qpack.decoderMaxTableCapacity}</b> (default: 0)
+ * <br> The HTTP/3 client maximum QPACK decoder dynamic header table size in bytes.
+ * <br> Setting this value to a positive number will allow HTTP/3 servers to add entries
+ * to the QPack decoder's dynamic table. When set to 0, servers are not permitted to add
+ * entries to the client's QPack encoder's dynamic table.
+ * </li>
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.qpack.encoderTableCapacityLimit}</b> (default: 4096,
+ * or 4 kB)
+ * <br> The HTTP/3 client maximum QPACK encoder dynamic header table size in bytes.
+ * <br> Setting this value to a positive number allows the HTTP/3 client's QPack encoder to
+ * add entries to the server's QPack decoder's dynamic table, if the server permits it.
+ * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.HttpClient.log}</b> (default: none)<br>
  * Enables high-level logging of various events through the {@linkplain java.lang.System.Logger
  * Platform Logging API}. The value contains a comma-separated list of any of the
@@ -133,12 +146,22 @@
  * below)<br>The number of seconds to keep idle HTTP/2 connections alive. If not set, then the
  * {@code jdk.httpclient.keepalive.timeout} setting is used.
  * </li>
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout.h3}</b> (default: see
+ * below)<br>The number of seconds to keep idle HTTP/3 connections alive. If not set, then the
+ * {@code jdk.httpclient.keepalive.timeout.h2} setting is used.
+ * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.maxframesize}</b> (default: 16384 or 16kB)<br>
  * The HTTP/2 client maximum frame size in bytes. The server is not permitted to send a frame
  * larger than this.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.maxstreams}</b> (default: 100)<br>
  * The maximum number of HTTP/2 push streams that the client will permit servers to open
+ * simultaneously.
+ * </li>
+ * </li>
+ * <li><p><b>{@systemProperty jdk.http3.maxConcurrentPushStreams}</b> (default: 100)<br>
+ * The maximum number of HTTP/3 push streams that the client will permit servers to open
  * simultaneously.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.receiveBufferSize}</b> (default: operating system
@@ -178,9 +201,26 @@
  * are disallowed for use by the HTTP client implementation, for HTTP CONNECT tunneling.
  * </li>
  * </ul>
+ * The following system properties can be used to configure some aspects of the
+ * <a href="https://www.rfc-editor.org/info/rfc9000">QUIC Protocol</a>
+ * implementation used for HTTP/3:
+ * <ul>
+ * <li><p><b>{@systemProperty jdk.httpclient.quic.receiveBufferSize}</b> (default: operating system
+ * default)<br>The QUIC {@linkplain java.nio.channels.DatagramChannel UDP client socket}
+ * <a href="../java.base/java/net/StandardSocketOptions.html#SO_RCVBUF">
+ * socket receive buffer size</a> in bytes.
+ * Values less than or equal to zero are ignored.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.quic.sendBufferSize}</b> (default: operating system
+ * default)<br>The QUIC {@linkplain java.nio.channels.DatagramChannel UDP client socket}
+ * <a href="../java.base/java/net/StandardSocketOptions.html#SO_SNDBUF">send buffer size</a>.
+ * Values less than or equal to zero are ignored.
+ * </li>
+ *
+ * </ul>
  * <blockquote>
- *     // TODO: Revisit - we also have a property for HTTP/3 idle timeout, as
- *     //       well as for various HTTP/3 and Quic related settings
+ *     // TODO: Revisit - there are more properties we may want to expose and
+ *     //       and document for HTTP/3, QPack, and Quic related settings
  </blockquote>
  * @moduleGraph
  * @since 11
