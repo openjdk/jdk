@@ -257,7 +257,7 @@ class VM_HandshakeAllThreads: public VM_Operation {
     if (UseSystemMemoryBarrier) {
       SystemMemoryBarrier::emit();
     } else {
-      OrderAccess::fence(); // storestore|storeload, global state -> local state
+      OrderAccess::fence();
     }
 
     if (number_of_threads_issued < 1) {
@@ -386,7 +386,7 @@ void Handshake::execute(HandshakeClosure* hs_cl, ThreadsListHandle* tlh, JavaThr
   if (UseSystemMemoryBarrier) {
     SystemMemoryBarrier::emit();
   } else {
-    OrderAccess::fence(); // storestore|storeload, global state -> local state
+    OrderAccess::fence();
   }
 
   // Keeps count on how many of own emitted handshakes
