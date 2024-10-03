@@ -22,33 +22,36 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_CHUNKEDARRAYPROCESSOR_HPP
-#define SHARE_GC_SHARED_CHUNKEDARRAYPROCESSOR_HPP
+#ifndef SHARE_GC_SHARED_PARTIALARRAYPROCESSOR_HPP
+#define SHARE_GC_SHARED_PARTIALARRAYPROCESSOR_HPP
 
 #include "gc/shared/partialArrayTaskStepper.hpp"
-#include "oop/objArrayOop.hpp"
+#include "oops/objArrayOop.hpp"
 
 class PartialArrayStateAllocator;
 class PartialArrayState;
 
-class ChunkedArrayProcessor {
+template <typename T>
+class PartialArrayProcessor {
 private:
   PartialArrayTaskStepper           _partial_array_stepper;
   PartialArrayStateAllocator* const _partial_array_state_allocator;
   uint                              _partial_array_state_allocator_index;
-
+  T* const                          _queue;
 public:
-  ChunkedArrayProcessor(T* queue, PartialArrayStateAllocator* allocator) :
+  PartialArrayProcessor(uint n_workers, size_t chunk_size, PartialArrayStateAllocator* allocator, T* q) :
+    _partial_array_stepper(n_workers, chunk_size),
     _partial_array_state_allocator(allocator),
-    _partial_array_state_allocator_index(UINT_MAX) { }
+    _partial_array_state_allocator_index(UINT_MAX),
+    _queue(q) { }
 
   void set_partial_array_state_allocator_index(uint i) { _partial_array_state_allocator_index = i; }
 
   template <typename PUSH_FUNC, typename PROC_FUNC>
-  void begin_chunk_array(objArrayOop old_obj, objArrayOop new_obj, PUSH_FUNC pushf, PROC_FUNC procf);
+  void start(objArrayOop from_array, objArrayOop to_array, PUSH_FUNC& pushf, PROC_FUNC& procf);
 
   template <typename PUSH_FUNC, typename PROC_FUNC>
-  void process_array_chunk(PartialArrayState* state, PUSH_FUNC pushf, PROC_FUNC procf);
+  void process_array_chunk(PartialArrayState* state, PUSH_FUNC& pushf, PROC_FUNC& procf);
 };
 
-#endif // SHARE_GC_SHARED_CHUNKEDARRAYPROCESSOR_HPP
+#endif // SHARE_GC_SHARED_PARTIALARRAYPROCESSOR_HPP

@@ -22,35 +22,37 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_CHUNKEDARRAYPROCESSOR_INLINE_HPP
-#define SHARE_GC_SHARED_CHUNKEDARRAYPROCESSOR_INLINE_HPP
+#ifndef SHARE_GC_SHARED_PARTIALARRAYPROCESSOR_INLINE_HPP
+#define SHARE_GC_SHARED_PARTIALARRAYPROCESSOR_INLINE_HPP
 
-#include "gc/shared/chunkArrayProcessor.hpp"
+#include "gc/shared/partialArrayProcessor.hpp"
 #include "utilities/checkedCast.hpp"
 
+template <typename T>
 template <typename PUSH_FUNC, typename PROC_FUNC>
-void ChunkedArrayProcessor<Q, T>::begin_chunk_array(objArrayOop old_obj, objArrayOop new_obj, PUSH_FUNC pushf, PROC_FUNC procf) {
-  size_t array_length = objArrayOop(obj)->length();
+void PartialArrayProcessor<T>::start(objArrayOop from_array, objArrayOop to_array, PUSH_FUNC& pushf, PROC_FUNC& procf) {
+  size_t array_length = from_array->length();
   PartialArrayTaskStepper::Step step = _partial_array_stepper.start(array_length);
   if (step._ncreate > 0) {
-    TASKQUEUE_STATS_ONLY(_queue->record_array_chunked());
+    TASKQUEUE_STATS_ONLY(_queue->record_arrays_chunked());
     PartialArrayState* state =
     _partial_array_state_allocator->allocate(_partial_array_state_allocator_index,
-                                             old_obj, new_obj,
+                                             from_array, to_array,
                                              step._index,
                                              array_length,
                                              step._ncreate);
     for (uint i = 0; i < step._ncreate; ++i) {
-      pushf(state));
+      pushf(state);
     }
     TASKQUEUE_STATS_ONLY(_queue->record_array_chunk_pushes(step._ncreate));
   }
 
-  procf(state, 0, checked_cast<int>(step._index));
+  procf(from_array, to_array, 0, checked_cast<int>(step._index));
 }
 
+template <typename T>
 template <typename PUSH_FUNC, typename PROC_FUNC>
-void ChunkedArrayProcessor<Q, T>::process_array_chunk(PartialArrayState* state, PUSH_FUNC pushf, PROC_FUNC procf) {
+void PartialArrayProcessor<T>::process_array_chunk(PartialArrayState* state, PUSH_FUNC& pushf, PROC_FUNC& procf) {
   TASKQUEUE_STATS_ONLY(_queue->record_array_chunks_processed());
 
   // Claim a chunk.  Push additional tasks before processing the claimed
@@ -66,10 +68,10 @@ void ChunkedArrayProcessor<Q, T>::process_array_chunk(PartialArrayState* state, 
   int start = checked_cast<int>(step._index);
   int end = checked_cast<int>(step._index + _partial_array_stepper.chunk_size());
   assert(start < end, "invariant");
-  procf(state, start, end);
+  procf(state->source(), state->destination(), start, end);
 
   // Release reference to state, now that we're done with it.
   _partial_array_state_allocator->release(_partial_array_state_allocator_index, state);
 }
 
-#endif // SHARE_GC_SHARED_CHUNKEDARRAYPROCESSOR_INLINE_HPP
+#endif // SHARE_GC_SHARED_PARTIALARRAYPROCESSOR_INLINE_HPP

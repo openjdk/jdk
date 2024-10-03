@@ -178,6 +178,9 @@ void ChunkedArrayTaskQueue<E, MT, N>::print_array_chunk_stats(outputStream* cons
 #undef FMT
 }
 
+template<class T, MemTag MT>
+ChunkedArrayTaskQueueSet<T, MT>::ChunkedArrayTaskQueueSet(uint n) :
+  GenericTaskQueueSet<T, MT>(n) { }
 
 template<class T, MemTag MT>
 void ChunkedArrayTaskQueueSet<T, MT>::print_taskqueue_array_stats_hdr(outputStream* const st) {
@@ -192,17 +195,8 @@ void ChunkedArrayTaskQueueSet<T, MT>::print_taskqueue_array_stats_hdr(outputStre
 
 template<class T, MemTag MT>
 void ChunkedArrayTaskQueueSet<T, MT>::print_taskqueue_stats(outputStream* const st, const char* label) {
-  GenericTaskQueueSet<T, MT>::print_taskqueue_stats_hdr(st, label);
-
-  TaskQueueStats totals;
-  const uint n = size();
-  for (uint i = 0; i < n; ++i) {
-    st->print("%3u ", i); queue(i)->stats.print(st); st->cr();
-    totals += queue(i)->stats;
-  }
-  st->print_raw("tot "); totals.print(st); st->cr();
-  DEBUG_ONLY(totals.verify());
-
+  GenericTaskQueueSet<T, MT>::print_taskqueue_stats(st, label);
+  uint n = size();
   print_taskqueue_array_stats_hdr(st);
   for (uint i = 0; i < n; ++i) {
     queue(i)->print_array_chunk_stats(st, i); st->cr();

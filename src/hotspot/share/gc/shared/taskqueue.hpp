@@ -471,8 +471,8 @@ public:
 
   void record_array_chunk_steal()  { ++_array_chunk_steals; }
   void record_array_chunk_pushes(size_t n) { _array_chunk_pushes += n; }
-  void record_arrays_chunked(size_t n) { _arrays_chunked += n; }
-  void record__array_chunks_processed(size_t) { ++_array_chunks_processed; }
+  void record_arrays_chunked() { ++_arrays_chunked; }
+  void record_array_chunks_processed() { ++_array_chunks_processed; }
 
 private:
   void reset_array_stats();
@@ -533,12 +533,12 @@ public:
 private:
   static void print_taskqueue_stats_hdr(outputStream* const st, const char* label);
 public:
-  void print_taskqueue_stats(outputStream* const st, const char* label);
+  virtual void print_taskqueue_stats(outputStream* const st, const char* label);
   virtual void reset_taskqueue_stats();
 
   // Prints taskqueue set statistics into gc+task+stats=trace and resets
   // its statistics.
-  virtual void print_and_reset_taskqueue_stats(const char* label);
+  void print_and_reset_taskqueue_stats(const char* label);
 #endif // TASKQUEUE_STATS
 };
 
@@ -574,9 +574,11 @@ uint GenericTaskQueueSet<T, MT>::tasks() const {
 
 template<class T, MemTag MT>
 class ChunkedArrayTaskQueueSet: public GenericTaskQueueSet<T, MT> {
+public:
   using GenericTaskQueueSet<T, MT>::size;
   using GenericTaskQueueSet<T, MT>::queue;
 
+  ChunkedArrayTaskQueueSet(uint n);
 #if TASKQUEUE_STATS
 private:
   static void print_taskqueue_array_stats_hdr(outputStream* const st);

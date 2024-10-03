@@ -37,6 +37,7 @@
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/partialArrayTaskStepper.inline.hpp"
+#include "gc/shared/partialArrayProcessor.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -83,8 +84,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
     _surviving_young_words(nullptr),
     _surviving_words_length(collection_set->young_region_length() + 1),
     _old_gen_is_full(false),
-    _partial_array_state_allocator(pas_allocator),
-    _partial_array_stepper(num_workers, ParGCArrayScanChunk),
+    _partial_array_processor(num_workers, ParGCArrayScanChunk, pas_allocator, _task_queue),
     _string_dedup_requests(),
     _max_num_optional_regions(collection_set->optional_region_length()),
     _numa(g1h->numa()),
@@ -113,6 +113,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
                                                              collection_set->only_contains_young_regions());
 
   _oops_into_optional_regions = new G1OopStarChunkedList[_max_num_optional_regions];
+
+  _partial_array_processor.set_partial_array_state_allocator_index(worker_id);
 
   initialize_numa_stats();
 }
@@ -238,27 +240,18 @@ void G1ParScanThreadState::do_partial_array(PartialArrayState* state) {
   assert(to_obj->is_objArray(), "must be obj array");
 #endif // ASSERT
 
-  objArrayOop to_array = objArrayOop(to_obj);
+  auto push_func = [&] (PartialArrayState* state) {
+    push_on_queue(ScannerTask(state));
+  };
 
-  // Claim a chunk and get number of additional tasks to enqueue.
-  PartialArrayTaskStepper::Step step = _partial_array_stepper.next(state);
-  // Push any additional partial scan tasks needed.  Pushed before processing
-  // the claimed chunk to allow other workers to steal while we're processing.
-  if (step._ncreate > 0) {
-    state->add_references(step._ncreate);
-    for (uint i = 0; i < step._ncreate; ++i) {
-      push_on_queue(ScannerTask(state));
-    }
-  }
+  auto process_func = [&] (objArrayOop from_array, objArrayOop to_array, uint begin, uint end) {
+      G1HeapRegionAttr dest_attr = _g1h->region_attr(to_array);
+      G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor());
+      // Process claimed task.
+      to_array->oop_iterate_range(&_scanner, begin, end);
+  };
 
-  G1HeapRegionAttr dest_attr = _g1h->region_attr(to_array);
-  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor());
-  // Process claimed task.
-  to_array->oop_iterate_range(&_scanner,
-                              checked_cast<int>(step._index),
-                              checked_cast<int>(step._index + _partial_array_stepper.chunk_size()));
-  // Release reference to the state, now that we're done with it.
-  _partial_array_state_allocator->release(_worker_id, state);
+  _partial_array_processor.process_array_chunk(state, push_func, process_func);
 }
 
 MAYBE_INLINE_EVACUATION
@@ -270,40 +263,24 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
   assert(from_obj->forwardee() == to_obj, "precondition");
   assert(to_obj->is_objArray(), "precondition");
 
-  objArrayOop to_array = objArrayOop(to_obj);
+  auto push_func = [&] (PartialArrayState* state) {
+    push_on_queue(ScannerTask(state));
+  };
 
-  size_t array_length = to_array->length();
-  PartialArrayTaskStepper::Step step = _partial_array_stepper.start(array_length);
+  auto process_func = [&] (objArrayOop from_array, objArrayOop to_array, uint begin, uint end) {
+    // Skip the card enqueue iff the object (to_array) is in survivor region.
+    // However, G1HeapRegion::is_survivor() is too expensive here.
+    // Instead, we use dest_attr.is_young() because the two values are always
+    // equal: successfully allocated young regions must be survivor regions.
+    assert(dest_attr.is_young() == _g1h->heap_region_containing(to_array)->is_survivor(), "must be");
+    G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
+    // Process the initial chunk.  No need to process the type in the
+    // klass, as it will already be handled by processing the built-in
+    // module.
+    to_array->oop_iterate_range(&_scanner, begin, end);
+  };
 
-  // Push any needed partial scan tasks.  Pushed before processing the
-  // initial chunk to allow other workers to steal while we're processing.
-  if (step._ncreate > 0) {
-    assert(step._index < array_length, "invariant");
-    assert(((array_length - step._index) % _partial_array_stepper.chunk_size()) == 0,
-           "invariant");
-    PartialArrayState* state =
-      _partial_array_state_allocator->allocate(_worker_id,
-                                               from_obj, to_obj,
-                                               step._index,
-                                               array_length,
-                                               step._ncreate);
-    for (uint i = 0; i < step._ncreate; ++i) {
-      push_on_queue(ScannerTask(state));
-    }
-  } else {
-    assert(step._index == array_length, "invariant");
-  }
-
-  // Skip the card enqueue iff the object (to_array) is in survivor region.
-  // However, G1HeapRegion::is_survivor() is too expensive here.
-  // Instead, we use dest_attr.is_young() because the two values are always
-  // equal: successfully allocated young regions must be survivor regions.
-  assert(dest_attr.is_young() == _g1h->heap_region_containing(to_array)->is_survivor(), "must be");
-  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
-  // Process the initial chunk.  No need to process the type in the
-  // klass, as it will already be handled by processing the built-in
-  // module.
-  to_array->oop_iterate_range(&_scanner, 0, checked_cast<int>(step._index));
+  _partial_array_processor.start(objArrayOop(from_obj), objArrayOop(to_obj), push_func, process_func);
 }
 
 MAYBE_INLINE_EVACUATION
