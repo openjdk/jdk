@@ -586,7 +586,6 @@ private:
   static void print_taskqueue_array_stats_hdr(outputStream* const st);
 };
 #else
-
 template<class E, MemTag MT, unsigned int N = TASKQUEUE_SIZE>
 using PartialArraySupportTaskQueue = OverflowTaskQueue<E, MT, N>;
 
