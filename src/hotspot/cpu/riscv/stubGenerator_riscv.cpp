@@ -6124,6 +6124,29 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+  // load Method* target of MethodHandle
+  // j_rarg0 = jobject receiver
+  // xmethod = Method* result
+  address generate_upcall_stub_load_target() {
+
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+    address start = __ pc();
+
+    __ resolve_global_jobject(j_rarg0, t0, t1);
+      // Load target method from receiver
+    __ load_heap_oop(xmethod, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), t0, t1);
+    __ load_heap_oop(xmethod, Address(xmethod, java_lang_invoke_LambdaForm::vmentry_offset()), t0, t1);
+    __ load_heap_oop(xmethod, Address(xmethod, java_lang_invoke_MemberName::method_offset()), t0, t1);
+    __ access_load_at(T_ADDRESS, IN_HEAP, xmethod,
+                      Address(xmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+                      noreg, noreg);
+    __ sd(xmethod, Address(xthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+
+    __ ret();
+
+    return start;
+  }
+
 #undef __
 
   // Initialization
@@ -6189,6 +6212,7 @@ static const int64_t right_3_bits = right_n_bits(3);
 #endif // COMPILER2
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
 
     StubRoutines::riscv::set_completed();
   }
