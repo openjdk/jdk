@@ -3628,22 +3628,14 @@ void TemplateTable::_new() {
 
     // The object is initialized before the header.  If the object size is
     // zero, go directly to the header initialization.
-    if (UseCompactObjectHeaders) {
-      assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong), "oop base offset must be 8-byte-aligned");
-      __ sub(r3, r3, oopDesc::base_offset_in_bytes());
-    } else {
-      __ sub(r3, r3, sizeof(oopDesc));
-    }
+    int header_size = oopDesc::header_size() * HeapWordSize;
+    assert(is_aligned(header_size, BytesPerLong), "oop header size must be 8-byte-aligned");
+    __ sub(r3, r3, header_size);
     __ cbz(r3, initialize_header);
 
     // Initialize object fields
     {
-      if (UseCompactObjectHeaders) {
-        assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong), "oop base offset must be 8-byte-aligned");
-        __ add(r2, r0, oopDesc::base_offset_in_bytes());
-      } else {
-        __ add(r2, r0, sizeof(oopDesc));
-      }
+      __ add(r2, r0, header_size);
       Label loop;
       __ bind(loop);
       __ str(zr, Address(__ post(r2, BytesPerLong)));

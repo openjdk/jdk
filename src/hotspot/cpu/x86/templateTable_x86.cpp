@@ -4110,15 +4110,10 @@ void TemplateTable::_new() {
     // initialize remaining object fields: rdx was a multiple of 8
     { Label loop;
     __ bind(loop);
-    if (UseCompactObjectHeaders) {
-      assert(is_aligned(oopDesc::base_offset_in_bytes(), BytesPerLong), "oop base offset must be 8-byte-aligned");
-      int header_size = oopDesc::base_offset_in_bytes();
-      __ movptr(Address(rax, rdx, Address::times_8, header_size - 1*oopSize), rcx);
-      NOT_LP64(__ movptr(Address(rax, rdx, Address::times_8, header_size - 2*oopSize), rcx));
-    } else {
-      __ movptr(Address(rax, rdx, Address::times_8, sizeof(oopDesc) - 1*oopSize), rcx);
-      NOT_LP64(__ movptr(Address(rax, rdx, Address::times_8, sizeof(oopDesc) - 2*oopSize), rcx));
-    }
+    int header_size_bytes = oopDesc::header_size() * HeapWordSize;
+    assert(is_aligned(header_size_bytes, BytesPerLong), "oop header size must be 8-byte-aligned");
+    __ movptr(Address(rax, rdx, Address::times_8, header_size_bytes - 1*oopSize), rcx);
+    NOT_LP64(__ movptr(Address(rax, rdx, Address::times_8, header_size_bytes - 2*oopSize), rcx));
     __ decrement(rdx);
     __ jcc(Assembler::notZero, loop);
     }
