@@ -87,7 +87,7 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
             """
         );
         var expectedErrors = List.of(
-            "T.java:1:30: compiler.err.report.access: A, private, S.A",
+            "T.java:1:32: compiler.err.report.access: S.A, private, S",
             "1 error"
         );
 
@@ -158,12 +158,13 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
         );
 
         var expectedErrors = List.of(
-            "T.java:1:17: compiler.err.report.access: A, private, S.A",
+            "T.java:1:17: compiler.err.report.access: S.A, private, S",
             "1 error"
         );
 
         var compileErrors = new toolbox.JavacTask(tb)
             .files(root.resolve("S.java"), root.resolve("T.java"))
+            .options("-XDrawDiagnostics")
             .run(toolbox.Task.Expect.FAIL)
             .getOutputLines(Task.OutputKind.DIRECT);
 
