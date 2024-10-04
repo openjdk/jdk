@@ -688,16 +688,16 @@ public class BindingSpecializer {
             if (!callingSequence.needsReturnBuffer()) {
                 emitSaveReturnValue(storeType);
             } else {
-                int valueIdx = cb.allocateLocal(storeTypeKind);
-                cb.storeLocal(storeTypeKind, valueIdx); // store away the stored value, need it later
-
                 assert returnBufferIdx != -1;
-                cb.aload(returnBufferIdx);
+                int valueIdx = cb.allocateLocal(storeTypeKind);
+                cb.storeLocal(storeTypeKind, valueIdx) // store away the stored value, need it later
+                  .aload(returnBufferIdx);
                 ClassDesc valueLayoutType = emitLoadLayoutConstant(storeType);
                 cb.loadConstant(retBufOffset)
-                  .loadLocal(storeTypeKind, valueIdx);
-                MethodTypeDesc descriptor = MethodTypeDesc.of(CD_void, valueLayoutType, CD_long, classDesc(storeType));
-                cb.invokeinterface(CD_MemorySegment, "set", descriptor);
+                  .loadLocal(storeTypeKind, valueIdx)
+                  .invokeinterface(CD_MemorySegment,
+                        "set",
+                        MethodTypeDesc.of(CD_void, valueLayoutType, CD_long, classDesc(storeType)));
                 retBufOffset += abi.arch.typeSize(vmStore.storage().type());
             }
         }
@@ -714,9 +714,10 @@ public class BindingSpecializer {
                 assert returnBufferIdx != -1;
                 cb.aload(returnBufferIdx);
                 ClassDesc valueLayoutType = emitLoadLayoutConstant(loadType);
-                cb.loadConstant(retBufOffset);
-                MethodTypeDesc descriptor = MethodTypeDesc.of(classDesc(loadType), valueLayoutType, CD_long);
-                cb.invokeinterface(CD_MemorySegment, "get", descriptor);
+                cb.loadConstant(retBufOffset)
+                  .invokeinterface(CD_MemorySegment,
+                          "get",
+                          MethodTypeDesc.of(classDesc(loadType), valueLayoutType, CD_long));
                 retBufOffset += abi.arch.typeSize(vmLoad.storage().type());
                 pushType(loadType);
             }
@@ -806,9 +807,10 @@ public class BindingSpecializer {
 
         if (SharedUtils.isPowerOfTwo(byteWidth)) {
             ClassDesc valueLayoutType = emitLoadLayoutConstant(loadType);
-            cb.loadConstant(offset);
-            MethodTypeDesc descriptor = MethodTypeDesc.of(classDesc(loadType), valueLayoutType, CD_long);
-            cb.invokeinterface(CD_MemorySegment, "get", descriptor);
+            cb.loadConstant(offset)
+              .invokeinterface(CD_MemorySegment,
+                      "get",
+                      MethodTypeDesc.of(classDesc(loadType), valueLayoutType, CD_long));
         } else {
             // chunked
             int readAddrIdx = cb.allocateLocal(REFERENCE);
