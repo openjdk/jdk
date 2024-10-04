@@ -265,7 +265,8 @@ public interface Types {
      * @throws IllegalArgumentException if the component type is not valid for
      *          an array. All valid types are {@linkplain ReferenceType
      *          reference types} or {@linkplain PrimitiveType primitive types}.
-     *          Invalid types include null, executable, package, module, and wildcard types.
+     *          Invalid types include {@linkplain NullType null}, executable, package,
+     *          module, and wildcard types.
      * @jls 10.1 Array Types
      */
     ArrayType getArrayType(TypeMirror componentType);
