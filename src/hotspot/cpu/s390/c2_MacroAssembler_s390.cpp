@@ -34,12 +34,12 @@
 #define BIND(label)        bind(label); BLOCK_COMMENT(#label ":")
 
 void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register temp1, Register temp2) {
-  compiler_fast_lock_lightweight_object(obj, temp1, temp2);
+  compiler_fast_lock_lightweight_object(obj, box, temp1, temp2);
 }
 
 
 void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register box, Register temp1, Register temp2) {
-  compiler_fast_unlock_lightweight_object(obj, temp1, temp2);
+  compiler_fast_unlock_lightweight_object(obj, box, temp1, temp2);
 }
 
 //------------------------------------------------------

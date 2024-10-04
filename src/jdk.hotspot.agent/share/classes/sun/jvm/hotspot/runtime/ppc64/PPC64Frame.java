@@ -345,8 +345,9 @@ public class PPC64Frame extends Frame {
   //------------------------------------------------------------------------------
   // frame::adjust_unextended_sp
   private void adjustUnextendedSP() {
-    raw_unextendedSP = getFP();
+    // Nothing to do. senderForInterpreterFrame finds the correct unextendedSP.
   }
+
   private Frame senderForInterpreterFrame(PPC64RegisterMap map) {
     if (DEBUG) {
       System.out.println("senderForInterpreterFrame");

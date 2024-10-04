@@ -281,6 +281,7 @@ class StubRoutines: AllStatic {
   static address _dlibm_reduce_pi04l;
   static address _dlibm_tan_cot_huge;
   static address _dtan;
+  static address _dtanh;
   static address _fmod;
 
   static address _f2hf;
@@ -472,6 +473,7 @@ class StubRoutines: AllStatic {
   static address dlibm_sin_cos_huge()  { return _dlibm_sin_cos_huge; }
   static address dlibm_tan_cot_huge()  { return _dlibm_tan_cot_huge; }
   static address dtan()                { return _dtan; }
+  static address dtanh()               { return _dtanh; }
 
   // These are versions of the java.lang.Float::floatToFloat16() and float16ToFloat()
   // methods which perform the same operations as the intrinsic version.

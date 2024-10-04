@@ -493,7 +493,7 @@ final class LongMaxVector extends LongVector {
                                    VectorMask<Long> m) {
         return (LongMaxVector)
             super.selectFromTemplate((LongMaxVector) v,
-                                     (LongMaxMask) m);  // specialize
+                                     LongMaxMask.class, (LongMaxMask) m);  // specialize
     }
 
 
@@ -818,6 +818,13 @@ final class LongMaxVector extends LongVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public LongMaxShuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, LongMaxShuffle.class, this, VLENGTH,
+                                                    (s) -> ((LongMaxShuffle)(((AbstractShuffle<Long>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

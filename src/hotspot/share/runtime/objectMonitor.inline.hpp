@@ -206,13 +206,30 @@ inline void ObjectMonitor::set_next_om(ObjectMonitor* new_value) {
   Atomic::store(&_next_om, new_value);
 }
 
+// Block out deflation.
 inline ObjectMonitorContentionMark::ObjectMonitorContentionMark(ObjectMonitor* monitor)
-  : _monitor(monitor) {
+  : _monitor(monitor), _extended(false) {
+  // Contentions is incremented to a positive value as part of the
+  // contended enter protocol, which prevents the deflater thread from
+  // winning the last part of the 2-part async deflation
+  // protocol. See: ObjectMonitor::deflate_monitor() and
+  // ObjectMonitor::TryLockWithContentionMark().
   _monitor->add_to_contentions(1);
 }
 
 inline ObjectMonitorContentionMark::~ObjectMonitorContentionMark() {
+  // Decrement contentions when the contention mark goes out of
+  // scope. This opens up for deflation, if the contention mark
+  // hasn't been extended.
   _monitor->add_to_contentions(-1);
+}
+
+inline void ObjectMonitorContentionMark::extend() {
+  // Used by ObjectMonitor::TryLockWithContentionMark() to "extend the
+  // lifetime" of the contention mark.
+  assert(!_extended, "extending twice is probably a bad design");
+  _monitor->add_to_contentions(1);
+  _extended = true;
 }
 
 inline oop ObjectMonitor::object_peek() const {

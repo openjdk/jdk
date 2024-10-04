@@ -493,7 +493,7 @@ final class Long512Vector extends LongVector {
                                    VectorMask<Long> m) {
         return (Long512Vector)
             super.selectFromTemplate((Long512Vector) v,
-                                     (Long512Mask) m);  // specialize
+                                     Long512Mask.class, (Long512Mask) m);  // specialize
     }
 
 
@@ -832,6 +832,13 @@ final class Long512Vector extends LongVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Long512Shuffle wrapIndexes() {
+            return VectorSupport.wrapShuffleIndexes(ETYPE, Long512Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Long512Shuffle)(((AbstractShuffle<Long>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline
