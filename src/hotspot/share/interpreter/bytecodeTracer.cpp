@@ -105,7 +105,7 @@ class BytecodePrinter {
       // the incoming method.  We could lose a line of trace output.
       // This is acceptable in a debug-only feature.
       st->cr();
-      st->print("[%ld] ", (long) Thread::current()->osthread()->thread_id());
+      st->print("[" UINTX_FORMAT "] ", Thread::current()->osthread()->thread_id_for_printing());
       method->print_name(st);
       st->cr();
       _current_method = method();
@@ -128,7 +128,7 @@ class BytecodePrinter {
         code == Bytecodes::_return_register_finalizer ||
         (code >= Bytecodes::_ireturn && code <= Bytecodes::_return)) {
       int bci = (int)(bcp - method->code_base());
-      st->print("[%ld] ", (long) Thread::current()->osthread()->thread_id());
+      st->print("[" UINTX_FORMAT  "] ", Thread::current()->osthread()->thread_id_for_printing());
       if (Verbose) {
         st->print("%8d  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
             BytecodeCounter::counter_value(), bci, tos, tos2, Bytecodes::name(code));
