@@ -26,22 +26,17 @@
 #ifndef OS_AIX_OSTHREAD_AIX_HPP
 #define OS_AIX_OSTHREAD_AIX_HPP
 
- public:
+#include "runtime/osThreadBase.hpp"
+#include "suspendResume_posix.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class OSThread : public OSThreadBase {
+  friend class VMStructs;
+
   typedef pthread_t thread_id_t;
 
- private:
+  thread_id_t _thread_id;
   int _thread_type;
-
- public:
-
-  int thread_type() const {
-    return _thread_type;
-  }
-  void set_thread_type(int type) {
-    _thread_type = type;
-  }
-
- private:
 
   // On AIX, we use the pthread id as OSThread::thread_id and keep the kernel thread id
   // separately for diagnostic purposes.
@@ -54,15 +49,27 @@
   sigset_t _caller_sigmask; // Caller's signal mask
 
  public:
+  OSThread();
+  ~OSThread();
+
+  int thread_type() const {
+    return _thread_type;
+  }
+  void set_thread_type(int type) {
+    _thread_type = type;
+  }
 
   // Methods to save/restore caller's signal mask
   sigset_t  caller_sigmask() const       { return _caller_sigmask; }
   void    set_caller_sigmask(sigset_t sigmask)  { _caller_sigmask = sigmask; }
 
-#ifndef PRODUCT
-  // Used for debugging, return a unique integer for each thread.
-  int thread_identifier() const   { return _thread_id; }
-#endif
+  thread_id_t thread_id() const {
+    return _thread_id;
+  }
+  void set_thread_id(thread_id_t id) {
+    _thread_id = id;
+  }
+
   tid_t kernel_thread_id() const {
     return _kernel_thread_id;
   }
@@ -71,7 +78,7 @@
   }
 
   pthread_t pthread_id() const {
-    // Here: same as OSThread::thread_id()
+    // Here: same as thread_id()
     return _thread_id;
   }
 
@@ -79,7 +86,6 @@
   // suspension support.
   // ***************************************************************
 
- public:
   // flags that support signal based suspend/resume on Aix are in a
   // separate class to avoid confusion with many flags in OSThread that
   // are used by VM level suspend/resume.
@@ -125,22 +131,17 @@
     return _startThread_lock;
   }
 
-  // ***************************************************************
-  // Platform dependent initialization and cleanup
-  // ***************************************************************
-
- private:
-
-  void pd_initialize();
-  void pd_destroy();
-
- public:
-
   // The last measured values of cpu timing to prevent the "stale
   // value return" bug in thread_cpu_time.
   volatile struct {
     jlong sys;
     jlong user;
   } _last_cpu_times;
+
+  // Printing
+  uintx thread_id_for_printing() const override {
+    return (uintx)_thread_id;
+  }
+};
 
 #endif // OS_AIX_OSTHREAD_AIX_HPP

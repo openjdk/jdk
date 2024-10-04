@@ -33,6 +33,7 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -139,7 +140,6 @@ public final class ModuleBootstrap {
      */
     private static boolean canUseArchivedBootLayer() {
         return getProperty("jdk.module.upgrade.path") == null &&
-               getProperty("jdk.module.path") == null &&
                getProperty("jdk.module.patch.0") == null &&       // --patch-module
                getProperty("jdk.module.addmods.0") == null  &&    // --add-modules
                getProperty("jdk.module.limitmods") == null &&     // --limit-modules
@@ -203,7 +203,8 @@ public final class ModuleBootstrap {
         SystemModules systemModules = null;
         ModuleFinder systemModuleFinder;
 
-        boolean haveModulePath = (appModulePath != null || upgradeModulePath != null);
+        boolean haveUpgradeModulePath = (upgradeModulePath != null);
+        boolean haveModulePath = (appModulePath != null || haveUpgradeModulePath);
         boolean needResolution = true;
         boolean mayContainSplitPackages = true;
         boolean mayContainIncubatorModules = true;
@@ -463,7 +464,10 @@ public final class ModuleBootstrap {
 
         // Step 8: CDS dump phase
 
-        if (CDS.isDumpingStaticArchive() && !haveModulePath && addModules.isEmpty()) {
+        if (CDS.isDumpingStaticArchive()
+                && !haveUpgradeModulePath
+                && addModules.isEmpty()
+                && allJrtOrModularJar(cf)) {
             assert !isPatched;
 
             // Archive module graph and maybe boot layer
@@ -507,6 +511,29 @@ public final class ModuleBootstrap {
             } else if (loader instanceof BuiltinClassLoader) {
                 ((BuiltinClassLoader) loader).loadModule(mref);
             }
+        }
+    }
+
+    /**
+     * Returns true if all modules in the configuration are in the run-time image or
+     * modular JAR files.
+     */
+    private static boolean allJrtOrModularJar(Configuration cf) {
+        return !cf.modules().stream()
+                .map(m -> m.reference().location().orElseThrow())
+                .anyMatch(uri -> !uri.getScheme().equalsIgnoreCase("jrt")
+                        && !isJarFile(uri));
+    }
+
+    /**
+     * Returns true if the given URI locates a jar file on the file system.
+     */
+    private static boolean isJarFile(URI uri) {
+        if ("file".equalsIgnoreCase(uri.getScheme())) {
+            Path path = Path.of(uri);
+            return path.toString().endsWith(".jar") && Files.isRegularFile(path);
+        } else {
+            return false;
         }
     }
 

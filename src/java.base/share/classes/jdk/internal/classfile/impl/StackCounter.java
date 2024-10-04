@@ -41,6 +41,8 @@ import java.util.Queue;
 import java.util.stream.Collectors;
 
 import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.constantpool.PoolEntry.*;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 public final class StackCounter {
 
@@ -120,8 +122,8 @@ public final class StackCounter {
             for (var smfi : smta.entries()) {
                 int frameStack = smfi.stack().size();
                 for (var vti : smfi.stack()) {
-                    if (vti == StackMapFrameInfo.SimpleVerificationTypeInfo.ITEM_LONG
-                     || vti == StackMapFrameInfo.SimpleVerificationTypeInfo.ITEM_DOUBLE) frameStack++;
+                    if (vti == StackMapFrameInfo.SimpleVerificationTypeInfo.LONG
+                     || vti == StackMapFrameInfo.SimpleVerificationTypeInfo.DOUBLE) frameStack++;
                 }
                 if (maxStack < frameStack) maxStack = frameStack;
                 targets.add(new Target(labelContext.labelToBci(smfi.target()), frameStack));
@@ -376,11 +378,11 @@ public final class StackCounter {
 
     private void processLdc(int index) {
         switch (cp.entryByIndex(index).tag()) {
-            case TAG_UTF8, TAG_STRING, TAG_CLASS, TAG_INTEGER, TAG_FLOAT, TAG_METHODHANDLE, TAG_METHODTYPE ->
+            case TAG_UTF8, TAG_STRING, TAG_CLASS, TAG_INTEGER, TAG_FLOAT, TAG_METHOD_HANDLE, TAG_METHOD_TYPE ->
                 addStackSlot(+1);
             case TAG_DOUBLE, TAG_LONG ->
                 addStackSlot(+2);
-            case TAG_CONSTANTDYNAMIC ->
+            case TAG_DYNAMIC ->
                 addStackSlot(cp.entryByIndex(index, ConstantDynamicEntry.class).typeKind().slotSize());
             default ->
                 throw error("CP entry #%d %s is not loadable constant".formatted(index, cp.entryByIndex(index).tag()));
