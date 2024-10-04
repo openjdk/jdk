@@ -76,12 +76,6 @@ public abstract class ModuleReference {
     /**
      * Returns the location of this module's content, if known.
      *
-     * <p> This URI, when present, can be used as the {@linkplain
-     * java.security.CodeSource#getLocation location} value of a {@link
-     * java.security.CodeSource CodeSource} so that a module's classes can be
-     * granted specific permissions when loaded by a {@link
-     * java.security.SecureClassLoader SecureClassLoader}.
-     *
      * @return The location or an empty {@code Optional} if not known
      */
     public final Optional<URI> location() {
