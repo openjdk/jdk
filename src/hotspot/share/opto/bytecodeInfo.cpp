@@ -313,10 +313,10 @@ bool InlineTree::should_not_inline(ciMethod* callee_method, ciMethod* caller_met
     if (MinInlineFrequencyRatio > 0) {
       int call_site_count  = caller_method->scale_count(profile.count());
       int invoke_count     = caller_method->interpreter_invocation_count();
-      assert(invoke_count != 0, "require invocation count greater than zero");
+      assert(invoke_count >= 0, "require invocation count greater than zero");
       double freq = (double)call_site_count / (double)invoke_count;
       // avoid division by 0, set divisor to at least 1
-      int cp_min_inv = MAX2(1, CompilationPolicy::min_invocations());
+      double cp_min_inv = MAX2(1.0, CompilationPolicy::min_invocations());
       double min_freq = MAX2(MinInlineFrequencyRatio, 1.0 / cp_min_inv);
 
       if (freq < min_freq) {
