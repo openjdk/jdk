@@ -121,6 +121,8 @@ java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 gen
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
 java/awt/Frame/RestoreToOppositeScreen/RestoreToOppositeScreen.java 8286840 linux-all
+java/awt/Frame/InitialIconifiedTest.java 8203920 macosx-all,linux-all
+java/awt/Frame/ShapeNotSetSometimes/ShapeNotSetSometimes.java 8341370 macosx-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
@@ -465,6 +467,9 @@ java/awt/KeyboardFocusmanager/ConsumeNextMnemonicKeyTypedTest/ConsumeNextMnemoni
 java/awt/Window/GetScreenLocation/GetScreenLocationTest.java 8225787 linux-x64
 java/awt/Dialog/MakeWindowAlwaysOnTop/MakeWindowAlwaysOnTop.java 8266243 macosx-aarch64
 java/awt/dnd/BadSerializationTest/BadSerializationTest.java 8277817 linux-x64,windows-x64
+java/awt/dnd/DragSourceMotionListenerTest.java 8225131 windows-all
+java/awt/dnd/RejectDragTest.java 7124259 macosx-all
+java/awt/dnd/DnDHTMLToOutlookTest/DnDHTMLToOutlookTest.java 8027424 generic-all
 java/awt/GraphicsDevice/DisplayModes/UnknownRefrshRateTest.java 8286436 macosx-aarch64
 java/awt/image/multiresolution/MultiresolutionIconTest.java 8291979 linux-x64,windows-all
 java/awt/event/SequencedEvent/MultipleContextsFunctionalTest.java 8305061 macosx-x64
@@ -797,3 +802,7 @@ java/awt/Frame/SizeMinimizedTest.java 8305915 linux-x64
 java/awt/PopupMenu/PopupHangTest.java 8340022 windows-all
 java/awt/Focus/MinimizeNonfocusableWindowTest.java 8024487 windows-all
 java/awt/Focus/InactiveFocusRace.java 8023263 linux-all
+java/awt/List/HandlingKeyEventIfMousePressedTest.java 6848358 macosx-all,windows-all
+java/awt/Checkbox/CheckboxBoxSizeTest.java 8340870 windows-all
+java/awt/Checkbox/CheckboxIndicatorSizeTest.java 8340870 windows-all
+java/awt/Checkbox/CheckboxNullLabelTest.java 8340870 windows-all

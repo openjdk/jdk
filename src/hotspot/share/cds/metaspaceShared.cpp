@@ -77,6 +77,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -300,6 +301,7 @@ void MetaspaceShared::post_initialize(TRAPS) {
         }
         ClassLoaderExt::init_paths_start_index(info->app_class_paths_start_index());
         ClassLoaderExt::init_app_module_paths_start_index(info->app_module_paths_start_index());
+        ClassLoaderExt::init_num_module_paths(info->header()->num_module_paths());
       }
     }
   }
@@ -791,8 +793,21 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
     // Do this at the very end, when no Java code will be executed. Otherwise
     // some new strings may be added to the intern table.
     StringTable::allocate_shared_strings_array(CHECK);
+  } else {
+    log_info(cds)("Not dumping heap, reset CDSConfig::_is_using_optimized_module_handling");
+    CDSConfig::stop_using_optimized_module_handling();
   }
 #endif
+
+  // Dummy call to load classes used at CDS runtime
+  JavaValue result(T_OBJECT);
+  Handle path_string = java_lang_String::create_from_str("dummy.jar", CHECK);
+  JavaCalls::call_static(&result,
+                         vmClasses::jdk_internal_loader_ClassLoaders_klass(),
+                         vmSymbols::toFileURL_name(),
+                         vmSymbols::toFileURL_signature(),
+                         path_string,
+                         CHECK);
 
   VM_PopulateDumpSharedSpace op(builder);
   VMThread::execute(&op);

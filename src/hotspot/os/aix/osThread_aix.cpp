@@ -23,32 +23,28 @@
  *
  */
 
-// no precompiled headers
-
-#include "memory/allocation.inline.hpp"
-#include "runtime/handles.inline.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/os.hpp"
+#include "precompiled.hpp"
+#include "memory/allocation.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/safepoint.hpp"
-#include "runtime/vmThread.hpp"
 
-void OSThread::pd_initialize() {
-  _thread_id        = 0;
-  _kernel_thread_id = 0;
-  _siginfo = nullptr;
-  _ucontext = nullptr;
-  _expanding_stack = 0;
-  _alt_sig_stack = nullptr;
+#include <signal.h>
 
-  _last_cpu_times.sys = _last_cpu_times.user = 0L;
-
+OSThread::OSThread()
+  : _thread_id(0),
+    _thread_type(),
+    _kernel_thread_id(0),
+    _caller_sigmask(),
+    sr(),
+    _siginfo(nullptr),
+    _ucontext(nullptr),
+    _expanding_stack(0),
+    _alt_sig_stack(nullptr),
+    _last_cpu_times(),
+    _startThread_lock(new Monitor(Mutex::event, "startThread_lock")) {
   sigemptyset(&_caller_sigmask);
-
-  _startThread_lock = new Monitor(Mutex::event, "startThread_lock");
-  assert(_startThread_lock != nullptr, "check");
 }
 
-void OSThread::pd_destroy() {
+OSThread::~OSThread() {
   delete _startThread_lock;
 }

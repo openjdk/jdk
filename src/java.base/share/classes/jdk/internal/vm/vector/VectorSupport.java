@@ -263,6 +263,20 @@ public class VectorSupport {
       return defaultImpl.apply(sh);
     }
 
+    public interface WrapShuffleIndexesOperation<SH extends VectorShuffle<?>> {
+        SH apply(SH sh);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <E,
+     SH extends VectorShuffle<E>>
+    SH wrapShuffleIndexes(Class<E> eClass, Class<? extends SH> shClass, SH sh, int length,
+                          WrapShuffleIndexesOperation<SH> defaultImpl) {
+       assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+       return defaultImpl.apply(sh);
+    }
+
     /* ============================================================================ */
     public interface IndexOperation<V extends Vector<?>,
                                     S extends VectorSpecies<?>> {
@@ -603,6 +617,23 @@ public class VectorSupport {
                   VectorRearrangeOp<V, SH, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v, sh, m);
+    }
+
+    public interface VectorSelectFromOp<V extends Vector<?>,
+                                        M extends VectorMask<?>> {
+        V apply(V v1, V v2, M m);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>,
+     M  extends VectorMask<E>,
+     E>
+    V selectFromOp(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
+                   int length, V v1, V v2, M m,
+                   VectorSelectFromOp<V, M> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(v1, v2, m);
     }
 
     /* ============================================================================ */

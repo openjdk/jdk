@@ -163,6 +163,7 @@ public abstract sealed class AbstractPseudoInstruction
         protected final Label endScope;
 
         public AbstractLocalPseudo(int slot, Utf8Entry name, Utf8Entry descriptor, Label startScope, Label endScope) {
+            BytecodeHelpers.validateSlot(slot);
             this.slot = slot;
             this.name = name;
             this.descriptor = descriptor;

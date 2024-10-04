@@ -1000,6 +1000,10 @@ int MachNode::compute_padding(int current_offset) const {
 
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
+  if (is_encode_and_store_pattern(n, m)) {
+    mstack.push(m, Visit);
+    return true;
+  }
   return false;
 }
 
@@ -5407,7 +5411,7 @@ instruct loadRange(iRegIdst dst, memory mem) %{
 // Load Compressed Pointer
 instruct loadN(iRegNdst dst, memory mem) %{
   match(Set dst (LoadN mem));
-  predicate(n->as_Load()->is_unordered() || followed_by_acquire(n));
+  predicate((n->as_Load()->is_unordered() || followed_by_acquire(n)) && n->as_Load()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "LWZ     $dst, $mem \t// load compressed ptr" %}
@@ -5419,6 +5423,7 @@ instruct loadN(iRegNdst dst, memory mem) %{
 // Load Compressed Pointer acquire.
 instruct loadN_ac(iRegNdst dst, memory mem) %{
   match(Set dst (LoadN mem));
+  predicate(n->as_Load()->barrier_data() == 0);
   ins_cost(3*MEMORY_REF_COST);
 
   format %{ "LWZ     $dst, $mem \t// load acquire compressed ptr\n\t"
@@ -5432,7 +5437,7 @@ instruct loadN_ac(iRegNdst dst, memory mem) %{
 // Load Compressed Pointer and decode it if narrow_oop_shift == 0.
 instruct loadN2P_unscaled(iRegPdst dst, memory mem) %{
   match(Set dst (DecodeN (LoadN mem)));
-  predicate(_kids[0]->_leaf->as_Load()->is_unordered() && CompressedOops::shift() == 0);
+  predicate(_kids[0]->_leaf->as_Load()->is_unordered() && CompressedOops::shift() == 0 && _kids[0]->_leaf->as_Load()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "LWZ     $dst, $mem \t// DecodeN (unscaled)" %}
@@ -6423,6 +6428,7 @@ instruct reinterpretX(vecX dst) %{
 // Store Compressed Oop
 instruct storeN(memory dst, iRegN_P2N src) %{
   match(Set dst (StoreN dst src));
+  predicate(n->as_Store()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
 
   format %{ "STW     $src, $dst \t// compressed oop" %}
@@ -7477,6 +7483,7 @@ instruct compareAndSwapI_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, iRegIsrc
 
 instruct compareAndSwapN_regP_regN_regN(iRegIdst res, iRegPdst mem_ptr, iRegNsrc src1, iRegNsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndSwapN mem_ptr (Binary src1 src2)));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
@@ -7676,7 +7683,7 @@ instruct weakCompareAndSwapI_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
 
 instruct weakCompareAndSwapN_regP_regN_regN(iRegIdst res, iRegPdst mem_ptr, iRegNsrc src1, iRegNsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapN mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
+  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst && n->as_LoadStore()->barrier_data() == 0);
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGW $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
@@ -7690,7 +7697,7 @@ instruct weakCompareAndSwapN_regP_regN_regN(iRegIdst res, iRegPdst mem_ptr, iReg
 
 instruct weakCompareAndSwapN_acq_regP_regN_regN(iRegIdst res, iRegPdst mem_ptr, iRegNsrc src1, iRegNsrc src2, flagsRegCR0 cr0) %{
   match(Set res (WeakCompareAndSwapN mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst);
+  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) && n->as_LoadStore()->barrier_data() == 0);
   effect(TEMP_DEF res, TEMP cr0); // TEMP_DEF to avoid jump
   format %{ "weak CMPXCHGW acq $res, $mem_ptr, $src1, $src2; as bool" %}
   ins_encode %{
@@ -7939,7 +7946,7 @@ instruct compareAndExchangeI_acq_regP_regI_regI(iRegIdst res, iRegPdst mem_ptr, 
 
 instruct compareAndExchangeN_regP_regN_regN(iRegNdst res, iRegPdst mem_ptr, iRegNsrc src1, iRegNsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeN mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst);
+  predicate(((CompareAndSwapNode*)n)->order() != MemNode::acquire && ((CompareAndSwapNode*)n)->order() != MemNode::seqcst && n->as_LoadStore()->barrier_data() == 0);
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGW $res, $mem_ptr, $src1, $src2; as narrow oop" %}
   ins_encode %{
@@ -7953,7 +7960,7 @@ instruct compareAndExchangeN_regP_regN_regN(iRegNdst res, iRegPdst mem_ptr, iReg
 
 instruct compareAndExchangeN_acq_regP_regN_regN(iRegNdst res, iRegPdst mem_ptr, iRegNsrc src1, iRegNsrc src2, flagsRegCR0 cr0) %{
   match(Set res (CompareAndExchangeN mem_ptr (Binary src1 src2)));
-  predicate(((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst);
+  predicate((((CompareAndSwapNode*)n)->order() == MemNode::acquire || ((CompareAndSwapNode*)n)->order() == MemNode::seqcst) && n->as_LoadStore()->barrier_data() == 0);
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "CMPXCHGW acq $res, $mem_ptr, $src1, $src2; as narrow oop" %}
   ins_encode %{
@@ -8262,6 +8269,7 @@ instruct getAndSetP(iRegPdst res, iRegPdst mem_ptr, iRegPsrc src, flagsRegCR0 cr
 
 instruct getAndSetN(iRegNdst res, iRegPdst mem_ptr, iRegNsrc src, flagsRegCR0 cr0) %{
   match(Set res (GetAndSetN mem_ptr src));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   effect(TEMP_DEF res, TEMP cr0);
   format %{ "GetAndSetN $res, $mem_ptr, $src" %}
   ins_encode %{
