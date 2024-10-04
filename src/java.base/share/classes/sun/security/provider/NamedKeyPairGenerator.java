@@ -38,17 +38,28 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
 import java.util.Objects;
 
-/// An implementation extends this class to create its own `KeyPairGenerator`.
+/// A base class for all `KeyPairGenerator` implementations that can be
+/// configured with a named parameter set.
 ///
-/// An implementation must include a zero-argument public constructor that calls
-/// `super(fname, pnames)`, where `fname` is the family name of the algorithm and
-/// `pnames` are the supported parameter set names. `pnames` must contain at least
-/// one element and the first element is the default parameter set name,
-/// i.e. the parameter set to be used in key pair generation unless
+/// Together with [NamedKeyFactory], [NamedKEM], and [NamedSignature], these
+/// classes form a compact framework designed to support any public key
+/// algorithm standardized with named parameter sets. In this scenario,
+/// the algorithm name is the "family name" and each standardized parameter
+/// set has a "parameter set name". Implementations of these classes are able
+/// to instantiate a `KeyPairGenerator`, `KeyFactory`, or `KEM` or `Signature`
+/// object using either the family name or a parameter set name. All keys used
+/// in this context will be of the type [NamedPKCS8Key] or [NamedX509Key],
+/// with `getAlgorithm` returning the family name, and `getParams` returning
+/// the parameter set name as a [NamedParameterSpec] object.
+///
+/// An implementation must include a zero-argument public constructor that
+/// calls `super(fname, pnames)`, where `fname` is the family name of the
+/// algorithm and `pnames` are its supported parameter set names. `pnames`
+/// must contain at least one element. For an implementation of
+/// `NamedKeyPairGenerator`, the first element becomes its default parameter
+/// set, i.e. the parameter set to be used in key pair generation unless
 /// [#initialize(AlgorithmParameterSpec, java.security.SecureRandom)]
-/// is called to choose a specific parameter set. This requirement also applies
-/// to implementations of [NamedKeyFactory], [NamedKEM], and [NamedSignature],
-/// although there is no default parameter set concept for these classes.
+/// is called on a different parameter set.
 ///
 /// An implementation must implement all abstract methods. For all these
 /// methods, the implementation must relinquish any "ownership" of any input
@@ -57,19 +68,19 @@ import java.util.Objects;
 /// content later. Similarly, the implementation must not modify any input
 /// array argument and must not retain any reference to an input array argument
 /// after the call. Together, this makes sure that the caller does not need to
-/// make any defensive copy on the input and output arrays. This requirement
-/// also applies to abstract methods defined in [NamedKEM] and [NamedSignature].
+/// make any defensive copy on the input and output arrays.
 ///
 /// Also, an implementation must not keep any extra copy of a private key.
 /// For key generation, the only copy is the one returned in the
 /// [#implGenerateKeyPair] call. For all other methods, it must not make
-/// a copy of the input private key. A `KEM` implementation also must
-/// not keep a copy of the shared secret key, no matter if it's an
-/// encapsulator or a decapsulator.
+/// a copy of the input private key. A `KEM` implementation also must not
+/// keep a copy of the shared secret key, no matter if it's an encapsulator
+/// or a decapsulator. Only the code that owns these sensitive data can
+/// choose to perform cleanup when it determines they are no longer needed.
 ///
 /// The `NamedSignature` and `NamedKEM` classes provide `implCheckPublicKey`
 /// and `implCheckPrivateKey` methods that allow an implementation to validate
-/// a key before using it. An implementation may return a parsed key of
+/// a key before using it. An implementation may return a parsed key in
 /// a local type, and this parsed key will be passed to an operational method
 /// (For example, `implSign`) later. An implementation must not retain
 /// a reference of the parsed key.
@@ -78,7 +89,7 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
     private final String fname; // family name
     private final String[] pnames; // allowed parameter set name (at least one)
 
-    protected String name = null; // init as
+    protected String name; // init as
     private SecureRandom secureRandom;
 
     /// Creates a new `NamedKeyPairGenerator` object.
@@ -114,14 +125,14 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
             throw new InvalidAlgorithmParameterException(
                     "Unknown AlgorithmParameterSpec: " + params);
         }
-        this.secureRandom = random ;
+        this.secureRandom = random;
     }
 
     @Override
     public void initialize(int keysize, SecureRandom random) {
         if (keysize != -1) {
-            // Bonus: a chance to provide a SecureRandom without
-            // specifying a parameter set name
+            // User can call initialize(-1, sr) to provide a SecureRandom
+            // without touching the parameter set currently used
             throw new InvalidParameterException("keysize not supported");
         }
         this.secureRandom = random;
@@ -141,5 +152,5 @@ public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
     /// @param sr `SecureRandom` object, `null` if not initialized
     /// @return public key and private key (in this order) in raw bytes
     /// @throws ProviderException if there is an internal error
-    public abstract byte[][] implGenerateKeyPair(String pname, SecureRandom sr);
+    protected abstract byte[][] implGenerateKeyPair(String pname, SecureRandom sr);
 }

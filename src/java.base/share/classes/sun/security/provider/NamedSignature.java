@@ -42,11 +42,11 @@ import java.security.SignatureSpi;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Objects;
 
-/// An implementation extends this class to create its own `Signature`.
+/// A base class for all `Signature` implementations that can be
+/// configured with a named parameter set. See [NamedKeyPairGenerator]
+/// for more details.
 ///
 /// This class does not work with preHash signatures.
-///
-/// @see NamedKeyPairGenerator
 public abstract class NamedSignature extends SignatureSpi {
 
     private final String fname; // family name
@@ -166,7 +166,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @return the signature
     /// @throws ProviderException if there is an internal error
     /// @throws SignatureException if there is another error
-    public abstract byte[] implSign(String name, byte[] sk, Object sk2,
+    protected abstract byte[] implSign(String name, byte[] sk, Object sk2,
             byte[] msg, SecureRandom sr) throws SignatureException;
 
     /// User-defined verify function.
@@ -179,7 +179,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @return true if verified
     /// @throws ProviderException if there is an internal error
     /// @throws SignatureException if there is another error
-    public abstract boolean implVerify(String name, byte[] pk, Object pk2,
+    protected abstract boolean implVerify(String name, byte[] pk, Object pk2,
             byte[] msg, byte[] sig) throws SignatureException;
 
     /// User-defined function to validate a public key.
@@ -195,7 +195,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @param pk public key in raw bytes
     /// @return a parsed key, `null` if none.
     /// @throws InvalidKeyException if the key is invalid
-    public Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
+    protected Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
         return null;
     }
 
@@ -212,7 +212,7 @@ public abstract class NamedSignature extends SignatureSpi {
     /// @param sk public key in raw bytes
     /// @return a parsed key, `null` if none.
     /// @throws InvalidKeyException if the key is invalid
-    public Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
+    protected Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
         return null;
     }
 }

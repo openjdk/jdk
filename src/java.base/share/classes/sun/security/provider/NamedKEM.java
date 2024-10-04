@@ -44,9 +44,9 @@ import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
 import java.util.Objects;
 
-/// An implementation extends this class to create its own `KEM`.
-///
-/// @see NamedKeyPairGenerator
+/// A base class for all `KEM` implementations that can be
+/// configured with a named parameter set. See [NamedKeyPairGenerator]
+/// for more details.
 public abstract class NamedKEM implements KEMSpi {
 
     private final String fname; // family name
@@ -154,7 +154,7 @@ public abstract class NamedKEM implements KEMSpi {
     /// @param sr SecureRandom object, `null` if not initialized
     /// @return the key encapsulation message and the shared key (in this order)
     /// @throws ProviderException if there is an internal error
-    public abstract byte[][] implEncapsulate(String name, byte[] pk, Object pk2, SecureRandom sr);
+    protected abstract byte[][] implEncapsulate(String name, byte[] pk, Object pk2, SecureRandom sr);
 
     /// User-defined decap function.
     ///
@@ -165,7 +165,7 @@ public abstract class NamedKEM implements KEMSpi {
     /// @return the shared key
     /// @throws ProviderException if there is an internal error
     /// @throws DecapsulateException if there is another error
-    public abstract byte[] implDecapsulate(String name, byte[] sk, Object sk2, byte[] encap)
+    protected abstract byte[] implDecapsulate(String name, byte[] sk, Object sk2, byte[] encap)
             throws DecapsulateException;
 
     /// User-defined function returning shared secret key length.
@@ -173,14 +173,14 @@ public abstract class NamedKEM implements KEMSpi {
     /// @param name parameter name
     /// @return shared secret key length
     /// @throws ProviderException if there is an internal error
-    public abstract int implSecretSize(String name);
+    protected abstract int implSecretSize(String name);
 
     /// User-defined function returning key encapsulation message length.
     ///
     /// @param name parameter name
     /// @return key encapsulation message length
     /// @throws ProviderException if there is an internal error
-    public abstract int implEncapsulationSize(String name);
+    protected abstract int implEncapsulationSize(String name);
 
     /// User-defined function to validate a public key.
     ///
@@ -195,7 +195,7 @@ public abstract class NamedKEM implements KEMSpi {
     /// @param pk public key in raw bytes
     /// @return a parsed key, `null` if none.
     /// @throws InvalidKeyException if the key is invalid
-    public Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
+    protected Object implCheckPublicKey(String name, byte[] pk) throws InvalidKeyException {
         return null;
     }
 
@@ -212,7 +212,7 @@ public abstract class NamedKEM implements KEMSpi {
     /// @param sk public key in raw bytes
     /// @return a parsed key, `null` if none.
     /// @throws InvalidKeyException if the key is invalid
-    public Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
+    protected Object implCheckPrivateKey(String name, byte[] sk) throws InvalidKeyException {
         return null;
     }
 }

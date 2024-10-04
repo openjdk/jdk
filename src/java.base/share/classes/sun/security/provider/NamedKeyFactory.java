@@ -44,9 +44,11 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Objects;
 
-/// An implementation extends this class to create its own `KeyFactory`.
+/// A base class for all `KeyFactory` implementations that can be
+/// configured with a named parameter set. See [NamedKeyPairGenerator]
+/// for more details.
 ///
-/// Bonus: This factory supports reading and writing to RAW formats:
+/// This factory supports reading and writing to RAW formats:
 ///
 /// 1. It reads from a RAW key using `translateKey` if `key.getFormat` is "RAW".
 /// 2. It writes to a RAW [EncodedKeySpec] if `getKeySpec(key, EncodedKeySpec.class)`
@@ -56,8 +58,6 @@ import java.util.Objects;
 ///
 /// When reading from a RAW format, it needs enough info to derive the
 /// parameter set name.
-///
-/// @see NamedKeyPairGenerator
 public class NamedKeyFactory extends KeyFactorySpi {
 
     private final String fname; // family name
@@ -240,7 +240,7 @@ public class NamedKeyFactory extends KeyFactorySpi {
             var kAlg = key.getAlgorithm();
             if (key instanceof AsymmetricKey pk) {
                 String name;
-                // Three case that we can find the parameter set name from a RAW key:
+                // Three cases that we can find the parameter set name from a RAW key:
                 // 1. getParams() returns one
                 // 2. getAlgorithm() returns param set name (some provider does this)
                 // 3. getAlgorithm() returns family name but this KF is for param set name
