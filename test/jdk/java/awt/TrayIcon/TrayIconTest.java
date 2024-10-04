@@ -62,7 +62,7 @@ import jtreg.SkippedException;
  * @test
  * @key headful
  * @bug 4310333
- * @library /jdk/java/awt/regtesthelpers /test/lib
+ * @library /java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame jtreg.SkippedException
  * @summary  A unit test for TrayIcon RFE
  * @run main/manual TrayIconTest
@@ -281,6 +281,7 @@ public class TrayIconTest {
             });
         }
     }
+
     private static Frame createAndShowUI() {
         final TrayIconControl ctrl = new TrayIconControl();
         frame.setLayout(new BorderLayout());
@@ -296,6 +297,7 @@ public class TrayIconTest {
         frame.pack();
         return frame;
     }
+
     private static class TrayIconControl {
         final String RED_ICON = "RED ICON";
         final String BLUE_ICON = "BLUE ICON";
@@ -309,7 +311,12 @@ public class TrayIconTest {
         Choice balloonChoice = new Choice();
         String[] balloonTypes = new String[] { "ERROR", "WARNING", "INFO", "NONE" };
 
-        TextField balloonText = new TextField("A TrayIcon can generate various MouseEvents and supports adding corresponding listeners to receive notification of these events. TrayIcon processes some of the events by itself. For example, by default, when the right-mouse click", 70);
+        TextField balloonText = new TextField(
+                                "A TrayIcon can generate various MouseEvents and"
+                                + " supports adding corresponding listeners to receive"
+                                + " notification of these events. TrayIcon processes"
+                                + " some of the events by itself. For example,"
+                                + " by default, when the right-mouse click", 70);
         TextField balloonCaption = new TextField("TrayIcon", 70);
 
         MessageType[] typeArr = new MessageType[] { MessageType.ERROR, MessageType.WARNING,
@@ -423,7 +430,6 @@ public class TrayIconTest {
             tipPanel.add(tipText);
             tipPanel.add(tipButton);
             tipPanel.addTo(raw4);
-
 
             addButton.addActionListener(e -> {
                 try {
