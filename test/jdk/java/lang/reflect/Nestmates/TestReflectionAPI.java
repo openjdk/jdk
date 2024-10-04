@@ -50,7 +50,6 @@
  *          HostWithDuplicateMembers.jcod
  *
  * @run main/othervm TestReflectionAPI
- * @run main/othervm/java.security.policy=empty.policy TestReflectionAPI
  */
 
 // We need a nest member class that is invalid for each of the possible reasons,
