@@ -44,7 +44,7 @@ public class OwnedWindowShowTest {
         try {
             Window owner = new Window(parent);
             Window window = new Window(owner);
-            // Showing a window with multiple level of ownership
+            // Showing a window with multiple levels of ownership
             // should not throw NullPointerException
             window.setVisible(true);
         } finally {

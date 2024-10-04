@@ -40,7 +40,7 @@ import java.awt.event.ActionListener;
 
 public class ShowWindowTest implements ActionListener
 {
-    private static Window win;
+    private static Window window;
     private static Button showButton;
     private static Button hideButton;
 
@@ -49,7 +49,7 @@ public class ShowWindowTest implements ActionListener
             1. You should see a Frame with a "Show" and a "Hide" button in it.
             2. Click on the "Show" button. A window with a "Hello World" Label
             should appear
-            3. If the window does not appear the test failed, otherwise passed.
+            3. If the window does not appear, the test failed, otherwise passed.
             """;
 
         PassFailJFrame.builder()
@@ -72,17 +72,17 @@ public class ShowWindowTest implements ActionListener
         showButton.addActionListener(handler);
         hideButton.addActionListener(handler);
 
-        win = new Window(frame);
-        win.add("Center", new Label("Hello World"));
-        win.setLocationRelativeTo(null);
+        window = new Window(frame);
+        window.add("Center", new Label("Hello World"));
+        window.setLocationRelativeTo(null);
         return frame;
     }
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == showButton) {
-            win.pack();
-            win.setVisible(true);
+            window.pack();
+            window.setVisible(true);
         } else if (e.getSource() == hideButton)
-            win.setVisible(false);
+            window.setVisible(false);
     }
 }

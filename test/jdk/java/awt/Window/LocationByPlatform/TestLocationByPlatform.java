@@ -81,25 +81,25 @@ public class TestLocationByPlatform {
         PassFailJFrame.addTestWindow(frame);
         frame.setVisible(true);
     }
-}
 
-class MyCanvas extends Canvas {
-    @Override
-    public Dimension getPreferredSize() {
-        return new Dimension(400, 400);
-    }
-
-    @Override
-    public void paint(Graphics g) {
-        g.setColor(Color.red);
-        for (int i = 399; i >= 0; i--) {
-            g.drawLine(400 - i - 1, 400 - i - 1,
-                400 - i - 1, 399);
+    static class MyCanvas extends Canvas {
+        @Override
+        public Dimension getPreferredSize() {
+            return new Dimension(400, 400);
         }
-        g.setColor(Color.blue);
-        g.drawLine(0, 0, 399, 0);
-        g.drawLine(0, 0, 0, 399);
-        g.drawLine(0, 399, 399, 399);
-        g.drawLine(399, 0, 399, 399);
+
+        @Override
+        public void paint(Graphics g) {
+            g.setColor(Color.red);
+            for (int i = 399; i >= 0; i--) {
+                g.drawLine(400 - i - 1, 400 - i - 1,
+                    400 - i - 1, 399);
+            }
+            g.setColor(Color.blue);
+            g.drawLine(0, 0, 399, 0);
+            g.drawLine(0, 0, 0, 399);
+            g.drawLine(0, 399, 399, 399);
+            g.drawLine(399, 0, 399, 399);
+        }
     }
 }
