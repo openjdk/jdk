@@ -184,14 +184,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   JVMCI_VM_ENTRY_MARK;                                     \
   ResourceMark rm;                                         \
   bool __is_hotspot = env == thread->jni_environment();    \
-  bool __block_can_call_java;                              \
-  if (__is_hotspot) {                                      \
-    __block_can_call_java = true;                          \
-  } else if (thread->is_Compiler_thread()) {               \
-    __block_can_call_java = CompilerThread::cast(thread)->can_call_java();  \
-  } else {                                                 \
-    __block_can_call_java = true;                          \
-  }                                                        \
+  bool __block_can_call_java = __is_hotspot || !thread->is_Compiler_thread() || CompilerThread::cast(thread)->can_call_java(); \
   CompilerThreadCanCallJava ccj(thread, __block_can_call_java); \
   JVMCIENV_FROM_JNI(JVMCI::compilation_tick(thread), env); \
 
