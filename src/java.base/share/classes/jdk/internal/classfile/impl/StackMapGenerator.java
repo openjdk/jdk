@@ -806,7 +806,7 @@ public final class StackMapGenerator {
                     throw generatorError("Bad operand type when invoking <init>");
                 }
             } else {
-                currentFrame.popStack();
+                currentFrame.decStack(1);
             }
         }
         currentFrame.pushStack(mDesc.returnType());
