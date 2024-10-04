@@ -479,12 +479,14 @@ public class VMProps implements Callable<Map<String, String>> {
         }
         String CCP_DISABLED = "-XX:-UseCompressedClassPointers";
         String G1GC_ENABLED = "-XX:+UseG1GC";
+        String PARALLELGC_ENABLED = "-XX:+UseParallelGC";
+        String SERIALGC_ENABLED = "-XX:+UseSerialGC";
         for (String opt : jtropts.split(",")) {
             if (opt.equals(CCP_DISABLED)) {
                 return false;
             }
             if (opt.startsWith(GC_PREFIX) && opt.endsWith(GC_SUFFIX) &&
-                !opt.equals(G1GC_ENABLED)) {
+                !opt.equals(G1GC_ENABLED) && !opt.equals(PARALLELGC_ENABLED) && !opt.equals(SERIALGC_ENABLED)) {
                 return false;
             }
         }
