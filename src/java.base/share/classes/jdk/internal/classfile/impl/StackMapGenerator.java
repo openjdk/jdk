@@ -783,7 +783,7 @@ public final class StackMapGenerator {
         var nameAndType = opcode == INVOKEDYNAMIC
                 ? cp.entryByIndex(index, InvokeDynamicEntry.class).nameAndType()
                 : cp.entryByIndex(index, MemberRefEntry.class).nameAndType();
-        var mDesc = Util.methodTypeSymbol(nameAndType);
+        var mDesc = Util.methodTypeSymbol(nameAndType.type());
         int bci = bcs.bci();
         var currentFrame = this.currentFrame;
         currentFrame.decStack(Util.parameterSlots(mDesc));
