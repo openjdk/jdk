@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 6255196
+ * @key headful
  * @summary Verifies the supported actions on different platforms.
  * @library /test/lib
  * @run main/othervm ActionSupportTest
