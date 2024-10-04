@@ -213,7 +213,7 @@ public class TargetApplicationWaitingAgents {
             if (targetApplicationInitialized)
                 throw new TestBug("TargetApplication already initialized");
 
-            log = new Log(System.out, true);
+            log = new Log(System.out);
 
             argParser = createArgParser(args);
 

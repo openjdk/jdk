@@ -781,12 +781,12 @@ bool FileMapInfo::check_paths(int shared_path_start_idx, int num_paths, Growable
     assert(strlen(rp_array->at(i)) > (size_t)runtime_prefix_len, "sanity");
     const char* runtime_path = rp_array->at(i)  + runtime_prefix_len;
     if (!os::same_files(dumptime_path, runtime_path)) {
-      return true;
+      return false;
     }
     i++;
     j++;
   }
-  return false;
+  return true;
 }
 
 bool FileMapInfo::validate_boot_class_paths() {
@@ -810,7 +810,7 @@ bool FileMapInfo::validate_boot_class_paths() {
   char* rp = skip_first_path_entry(runtime_boot_path);
   assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
   int dp_len = header()->app_class_paths_start_index() - 1; // ignore the first path to the module image
-  bool mismatch = false;
+  bool match = true;
 
   bool relaxed_check = !header()->has_platform_or_app_classes();
   if (dp_len == 0 && rp == nullptr) {
@@ -823,7 +823,7 @@ bool FileMapInfo::validate_boot_class_paths() {
       if (check_paths_existence(rp)) {
         // If a path exists in the runtime boot paths, it is considered a mismatch
         // since there's no boot path specified during dump time.
-        mismatch = true;
+        match = false;
       }
     }
   } else if (dp_len > 0 && rp != nullptr) {
@@ -840,16 +840,16 @@ bool FileMapInfo::validate_boot_class_paths() {
         // check the full runtime boot path, must match with dump time
         num = rp_len;
       }
-      mismatch = check_paths(1, num, rp_array, 0, 0);
+      match = check_paths(1, num, rp_array, 0, 0);
     } else {
       // create_path_array() ignores non-existing paths. Although the dump time and runtime boot classpath lengths
       // are the same initially, after the call to create_path_array(), the runtime boot classpath length could become
       // shorter. We consider boot classpath mismatch in this case.
-      mismatch = true;
+      match = false;
     }
   }
 
-  if (mismatch) {
+  if (!match) {
     // The paths are different
     return classpath_failure("[BOOT classpath mismatch, actual =", runtime_boot_path);
   }
@@ -860,7 +860,7 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
   const char *appcp = Arguments::get_appclasspath();
   assert(appcp != nullptr, "null app classpath");
   int rp_len = num_paths(appcp);
-  bool mismatch = false;
+  bool match = false;
   if (rp_len < shared_app_paths_len) {
     return classpath_failure("Run time APP classpath is shorter than the one at dump time: ", appcp);
   }
@@ -889,8 +889,8 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
     // run 2: -cp x.jar:NE4:b.jar      -> x.jar:b.jar -> mismatched
 
     int j = header()->app_class_paths_start_index();
-    mismatch = check_paths(j, shared_app_paths_len, rp_array, 0, 0);
-    if (mismatch) {
+    match = check_paths(j, shared_app_paths_len, rp_array, 0, 0);
+    if (!match) {
       // To facilitate app deployment, we allow the JAR files to be moved *together* to
       // a different location, as long as they are still stored under the same directory
       // structure. E.g., the following is OK.
@@ -901,10 +901,10 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
       if (dumptime_prefix_len != 0 || runtime_prefix_len != 0) {
         log_info(class, path)("LCP length for app classpath (dumptime: %u, runtime: %u)",
                               dumptime_prefix_len, runtime_prefix_len);
-        mismatch = check_paths(j, shared_app_paths_len, rp_array,
+        match = check_paths(j, shared_app_paths_len, rp_array,
                                dumptime_prefix_len, runtime_prefix_len);
       }
-      if (mismatch) {
+      if (!match) {
         return classpath_failure("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
       }
     }
@@ -926,15 +926,35 @@ void FileMapInfo::log_paths(const char* msg, int start_idx, int end_idx) {
   }
 }
 
+void FileMapInfo::extract_module_paths(const char* runtime_path, GrowableArray<const char*>* module_paths) {
+  GrowableArray<const char*>* path_array = create_path_array(runtime_path);
+  int num_paths = path_array->length();
+  for (int i = 0; i < num_paths; i++) {
+    const char* name = path_array->at(i);
+    ClassLoaderExt::extract_jar_files_from_path(name, module_paths);
+  }
+  // module paths are stored in sorted order in the CDS archive.
+  module_paths->sort(ClassLoaderExt::compare_module_path_by_name);
+}
+
 bool FileMapInfo::check_module_paths() {
-  const char* rp = Arguments::get_property("jdk.module.path");
-  int num_paths = CDSConfig::num_archives(rp);
-  if (num_paths != header()->num_module_paths()) {
+  const char* runtime_path = Arguments::get_property("jdk.module.path");
+  int archived_num_module_paths = header()->num_module_paths();
+  if (runtime_path == nullptr && archived_num_module_paths == 0) {
+    return true;
+  }
+  if ((runtime_path == nullptr && archived_num_module_paths > 0) ||
+      (runtime_path != nullptr && archived_num_module_paths == 0)) {
     return false;
   }
   ResourceMark rm;
-  GrowableArray<const char*>* rp_array = create_path_array(rp);
-  return check_paths(header()->app_module_paths_start_index(), num_paths, rp_array, 0, 0);
+  GrowableArray<const char*>* module_paths = new GrowableArray<const char*>(3);
+  extract_module_paths(runtime_path, module_paths);
+  int num_paths = module_paths->length();
+  if (num_paths != archived_num_module_paths) {
+    return false;
+  }
+  return check_paths(header()->app_module_paths_start_index(), num_paths, module_paths, 0, 0);
 }
 
 bool FileMapInfo::validate_shared_path_table() {
@@ -944,6 +964,16 @@ bool FileMapInfo::validate_shared_path_table() {
 
   // Load the shared path table info from the archive header
   _shared_path_table = header()->shared_path_table();
+
+  bool matched_module_paths = true;
+  if (CDSConfig::is_dumping_dynamic_archive() || header()->has_full_module_graph()) {
+    matched_module_paths = check_module_paths();
+  }
+  if (header()->has_full_module_graph() && !matched_module_paths) {
+    CDSConfig::stop_using_optimized_module_handling();
+    log_info(cds)("optimized module handling: disabled because of mismatched module paths");
+  }
+
   if (CDSConfig::is_dumping_dynamic_archive()) {
     // Only support dynamic dumping with the usage of the default CDS archive
     // or a simple base archive.
@@ -959,7 +989,7 @@ bool FileMapInfo::validate_shared_path_table() {
         "Dynamic archiving is disabled because base layer archive has appended boot classpath");
     }
     if (header()->num_module_paths() > 0) {
-      if (!check_module_paths()) {
+      if (!matched_module_paths) {
         CDSConfig::disable_dumping_dynamic_archive();
         log_warning(cds)(
           "Dynamic archiving is disabled because base layer archive has a different module path");

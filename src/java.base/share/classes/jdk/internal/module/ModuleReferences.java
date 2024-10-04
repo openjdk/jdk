@@ -91,8 +91,19 @@ class ModuleReferences {
                                         ModulePatcher patcher,
                                         Path file) {
         URI uri = file.toUri();
-        Supplier<ModuleReader> supplier = () -> new JarModuleReader(file, uri);
-        HashSupplier hasher = (a) -> ModuleHashes.computeHash(supplier, a);
+        String fileString = file.toString();
+        Supplier<ModuleReader> supplier = new Supplier<>() {
+            @Override
+            public ModuleReader get() {
+                return new JarModuleReader(fileString, uri);
+            }
+        };
+        HashSupplier hasher = new HashSupplier() {
+            @Override
+            public byte[] generate(String algorithm) {
+              return ModuleHashes.computeHash(supplier, algorithm);
+            }
+        };
         return newModule(attrs, uri, supplier, patcher, hasher);
     }
 
@@ -222,9 +233,9 @@ class ModuleReferences {
         private final JarFile jf;
         private final URI uri;
 
-        static JarFile newJarFile(Path path) {
+        static JarFile newJarFile(String path) {
             try {
-                return new JarFile(new File(path.toString()),
+                return new JarFile(new File(path),
                                    true,                       // verify
                                    ZipFile.OPEN_READ,
                                    JarFile.runtimeVersion());
@@ -233,7 +244,7 @@ class ModuleReferences {
             }
         }
 
-        JarModuleReader(Path path, URI uri) {
+        JarModuleReader(String path, URI uri) {
             this.jf = newJarFile(path);
             this.uri = uri;
         }
