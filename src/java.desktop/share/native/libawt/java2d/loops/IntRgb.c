@@ -34,7 +34,7 @@
 #include "ByteGray.h"
 #include "Index12Gray.h"
 
-#include "sanitizers/ub.h"
+#include "ub.h"
 
 /*
  * This file declares, registers, and defines the various graphics

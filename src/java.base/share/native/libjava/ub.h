@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef _SANITIZERS_UB_H_
-#define _SANITIZERS_UB_H_
+#ifndef _UB_H_
+#define _UB_H_
 
 /* ATTRIBUTE_NO_UBSAN - Function attribute which informs the compiler to disable UBSan checks in the
  * following function or method.
