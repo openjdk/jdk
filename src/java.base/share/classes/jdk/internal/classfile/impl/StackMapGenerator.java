@@ -350,6 +350,7 @@ public final class StackMapGenerator {
         var it = handlers.listIterator();
         while (it.hasNext()) {
             var e = it.next();
+            var labelContext = this.labelContext;
             int handlerStart = labelContext.labelToBci(e.tryStart());
             int handlerEnd = labelContext.labelToBci(e.tryEnd());
             if (rangeStart >= handlerEnd || rangeEnd <= handlerStart) {
@@ -391,14 +392,15 @@ public final class StackMapGenerator {
         return framesCount == 0 ? null : new UnboundAttribute.AdHocAttribute<>(Attributes.stackMapTable()) {
             @Override
             public void writeBody(BufWriterImpl b) {
-                b.writeU2(framesCount);
-                Frame prevFrame =  new Frame(classHierarchy);
-                prevFrame.setLocalsFromArg(methodName, methodDesc, isStatic, thisType);
+                var gen = StackMapGenerator.this;
+                b.writeU2(gen.framesCount);
+                Frame prevFrame = gen.new Frame(gen.classHierarchy);
+                prevFrame.setLocalsFromArg(gen.methodName, gen.methodDesc, gen.isStatic, gen.thisType);
                 prevFrame.trimAndCompress();
-                for (int i = 0; i < framesCount; i++) {
-                    var fr = frames[i];
+                for (int i = 0; i < gen.framesCount; i++) {
+                    var fr = gen.frames[i];
                     fr.trimAndCompress();
-                    fr.writeTo(b, prevFrame, cp);
+                    fr.writeTo(b, prevFrame, gen.cp);
                     prevFrame = fr;
                 }
             }
@@ -461,6 +463,7 @@ public final class StackMapGenerator {
             processExceptionHandlerTargets(bci, this_uninit);
             verified_exc_handlers = true;
         }
+        var currentFrame = this.currentFrame;
         switch (opcode) {
             case NOP -> {}
             case RETURN -> {
@@ -655,6 +658,7 @@ public final class StackMapGenerator {
     }
 
     private void processExceptionHandlerTargets(int bci, boolean this_uninit) {
+        var currentFrame = this.currentFrame;
         for (var ex : rawHandlers) {
             if (bci == ex.start || (currentFrame.localsChanged && bci > ex.start && bci < ex.end)) {
                 int flags = currentFrame.flags;
@@ -669,6 +673,7 @@ public final class StackMapGenerator {
     private void processLdc(int index) {
         var e = cp.entryByIndex(index);
         byte tag = e.tag();
+        var currentFrame = this.currentFrame;
         switch (tag) {
             case TAG_UTF8 ->
                 currentFrame.pushStack(Type.OBJECT_TYPE);
