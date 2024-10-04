@@ -63,6 +63,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/suspendedThreadTask.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
@@ -1947,7 +1948,10 @@ void os::win32::print_windows_version(outputStream* st) {
       // - 2016 GA 10/2016 build: 14393
       // - 2019 GA 11/2018 build: 17763
       // - 2022 GA 08/2021 build: 20348
-      if (build_number > 20347) {
+      // - 2025 Preview build   : 26040
+      if (build_number > 26039) {
+        st->print("Server 2025");
+      } else if (build_number > 20347) {
         st->print("Server 2022");
       } else if (build_number > 17762) {
         st->print("Server 2019");
@@ -3123,7 +3127,7 @@ class NUMANodeListHolder {
 
 static size_t _large_page_size = 0;
 
-static bool request_lock_memory_privilege() {
+bool os::win32::request_lock_memory_privilege() {
   HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE,
                                 os::current_process_id());
 
@@ -3307,14 +3311,14 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
   return p_buf;
 }
 
-static size_t large_page_init_decide_size() {
+size_t os::win32::large_page_init_decide_size() {
   // print a warning if any large page related flag is specified on command line
   bool warn_on_failure = !FLAG_IS_DEFAULT(UseLargePages) ||
                          !FLAG_IS_DEFAULT(LargePageSizeInBytes);
 
-#define WARN(msg) if (warn_on_failure) { warning(msg); }
+#define WARN(...) if (warn_on_failure) { warning(__VA_ARGS__); }
 
-  if (!request_lock_memory_privilege()) {
+  if (!os::win32::request_lock_memory_privilege()) {
     WARN("JVM cannot use large page memory because it does not have enough privilege to lock pages in memory.");
     return 0;
   }
@@ -3325,15 +3329,26 @@ static size_t large_page_init_decide_size() {
     return 0;
   }
 
-#if defined(IA32) || defined(AMD64)
-  if (size > 4*M || LargePageSizeInBytes > 4*M) {
+#if defined(IA32)
+  if (size > 4 * M || LargePageSizeInBytes > 4 * M) {
     WARN("JVM cannot use large pages bigger than 4mb.");
     return 0;
   }
+#elif defined(AMD64)
+  if (!EnableAllLargePageSizesForWindows) {
+    if (size > 4 * M || LargePageSizeInBytes > 4 * M) {
+      WARN("JVM cannot use large pages bigger than 4mb.");
+      return 0;
+    }
+  }
 #endif
 
-  if (LargePageSizeInBytes > 0 && LargePageSizeInBytes % size == 0) {
-    size = LargePageSizeInBytes;
+  if (LargePageSizeInBytes > 0) {
+    if (LargePageSizeInBytes % size == 0) {
+      size = LargePageSizeInBytes;
+    } else {
+      WARN("The specified large page size (%d) is not a multiple of the minimum large page size (%d), defaulting to minimum page size.", LargePageSizeInBytes, size);
+    }
   }
 
 #undef WARN
@@ -3346,12 +3361,23 @@ void os::large_page_init() {
     return;
   }
 
-  _large_page_size = large_page_init_decide_size();
+  _large_page_size = os::win32::large_page_init_decide_size();
   const size_t default_page_size = os::vm_page_size();
   if (_large_page_size > default_page_size) {
+#if !defined(IA32)
+    if (EnableAllLargePageSizesForWindows) {
+      size_t min_size = GetLargePageMinimum();
+
+      // Populate _page_sizes with large page sizes less than or equal to _large_page_size, ensuring each page size is double the size of the previous one.
+      for (size_t page_size = min_size; page_size < _large_page_size; page_size *= 2) {
+        _page_sizes.add(page_size);
+      }
+    }
+#endif
+
     _page_sizes.add(_large_page_size);
   }
-
+  // Set UseLargePages based on whether a large page size was successfully determined
   UseLargePages = _large_page_size != 0;
 }
 
@@ -3428,7 +3454,7 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MEMFLAGS flag = mtNone) {
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemTag mem_tag = mtNone) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
       "Alignment must be a multiple of allocation granularity (page size)");
   assert(is_aligned(size, os::vm_allocation_granularity()),
@@ -3441,8 +3467,8 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   static const int max_attempts = 20;
 
   for (int attempt = 0; attempt < max_attempts && aligned_base == nullptr; attempt ++) {
-    char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc, flag) :
-                                         os::reserve_memory(extra_size, false, flag);
+    char* extra_base = file_desc != -1 ? os::map_memory_to_file(extra_size, file_desc, mem_tag) :
+                                         os::reserve_memory(extra_size, false, mem_tag);
     if (extra_base == nullptr) {
       return nullptr;
     }
@@ -3458,8 +3484,8 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
 
     // Attempt to map, into the just vacated space, the slightly smaller aligned area.
     // Which may fail, hence the loop.
-    aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, flag) :
-                                     os::attempt_reserve_memory_at(aligned_base, size, false, flag);
+    aligned_base = file_desc != -1 ? os::attempt_map_memory_to_file_at(aligned_base, size, file_desc, mem_tag) :
+                                     os::attempt_reserve_memory_at(aligned_base, size, false, mem_tag);
   }
 
   assert(aligned_base != nullptr,
@@ -3473,8 +3499,8 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
 }
 
-char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag) {
-  return map_or_reserve_memory_aligned(size, alignment, fd, flag);
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemTag mem_tag) {
+  return map_or_reserve_memory_aligned(size, alignment, fd, mem_tag);
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
@@ -3615,7 +3641,6 @@ static char* reserve_large_pages_aligned(size_t size, size_t alignment, bool exe
 char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* addr,
                                     bool exec) {
   assert(UseLargePages, "only for large pages");
-  assert(page_size == os::large_page_size(), "Currently only support one large page size on Windows");
   assert(is_aligned(addr, alignment), "Must be");
   assert(is_aligned(addr, page_size), "Must be");
 
@@ -3624,11 +3649,17 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
     return nullptr;
   }
 
+  // Ensure GetLargePageMinimum() returns a valid positive value
+  size_t large_page_min = GetLargePageMinimum();
+  if (large_page_min <= 0) {
+    return nullptr;
+  }
+
   // The requested alignment can be larger than the page size, for example with G1
   // the alignment is bound to the heap region size. So this reservation needs to
   // ensure that the requested alignment is met. When there is a requested address
   // this solves it self, since it must be properly aligned already.
-  if (addr == nullptr && alignment > page_size) {
+  if (addr == nullptr && alignment > large_page_min) {
     return reserve_large_pages_aligned(bytes, alignment, exec);
   }
 
@@ -4090,6 +4121,39 @@ int    os::win32::_build_minor               = 0;
 bool   os::win32::_processor_group_warning_displayed = false;
 bool   os::win32::_job_object_processor_group_warning_displayed = false;
 
+void getWindowsInstallationType(char* buffer, int bufferSize) {
+  HKEY hKey;
+  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+  const char* valueName = "InstallationType";
+
+  DWORD valueLength = bufferSize;
+
+  // Initialize buffer with empty string
+  buffer[0] = '\0';
+
+  // Open the registry key
+  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
+    // Return empty buffer if key cannot be opened
+    return;
+  }
+
+  // Query the value
+  if (RegQueryValueExA(hKey, valueName, NULL, NULL, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
+    RegCloseKey(hKey);
+    buffer[0] = '\0';
+    return;
+  }
+
+  RegCloseKey(hKey);
+}
+
+bool isNanoServer() {
+  const int BUFFER_SIZE = 256;
+  char installationType[BUFFER_SIZE];
+  getWindowsInstallationType(installationType, BUFFER_SIZE);
+  return (strcmp(installationType, "Nano Server") == 0);
+}
+
 void os::win32::initialize_windows_version() {
   assert(_major_version == 0, "windows version already initialized.");
 
@@ -4107,7 +4171,13 @@ void os::win32::initialize_windows_version() {
     warning("Attempt to determine system directory failed: %s", buf_len != 0 ? error_msg_buffer : "<unknown error>");
     return;
   }
-  strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
+
+  if (isNanoServer()) {
+    // On Windows Nanoserver the kernel32.dll is located in the forwarders subdirectory
+    strncat(kernel32_path, "\\forwarders\\kernel32.dll", MAX_PATH - ret);
+  } else {
+    strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
+  }
 
   DWORD version_size = GetFileVersionInfoSize(kernel32_path, nullptr);
   if (version_size == 0) {
@@ -5741,11 +5811,23 @@ void Parker::unpark() {
   SetEvent(_ParkHandle);
 }
 
+// Platform Mutex/Monitor implementation
+
+PlatformMutex::PlatformMutex() {
+  InitializeCriticalSection(&_mutex);
+}
+
 PlatformMutex::~PlatformMutex() {
   DeleteCriticalSection(&_mutex);
 }
 
-// Platform Monitor implementation
+PlatformMonitor::PlatformMonitor() {
+  InitializeConditionVariable(&_cond);
+}
+
+PlatformMonitor::~PlatformMonitor() {
+  // There is no DeleteConditionVariable API
+}
 
 // Must already be locked
 int PlatformMonitor::wait(uint64_t millis) {
@@ -5911,7 +5993,7 @@ static void do_resume(HANDLE* h) {
 // retrieve a suspend/resume context capable handle
 // from the tid. Caller validates handle return value.
 void get_thread_handle_for_extended_context(HANDLE* h,
-                                            OSThread::thread_id_t tid) {
+                                            DWORD tid) {
   if (h != nullptr) {
     *h = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, tid);
   }

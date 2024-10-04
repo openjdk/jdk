@@ -28,7 +28,7 @@
  * @requires vm.continuations
  * @requires vm.jvmti
  * @requires vm.compMode != "Xcomp"
- * @modules java.base/java.lang:+open
+ * @modules jdk.management
  * @library /test/lib
  * @run main/othervm/native
  *     -Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading VThreadEventTest attach

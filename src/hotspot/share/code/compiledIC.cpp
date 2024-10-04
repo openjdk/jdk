@@ -83,6 +83,7 @@ void CompiledICData::initialize(CallInfo* call_info, Klass* receiver_klass) {
     _speculated_klass = (uintptr_t)receiver_klass;
   }
   if (call_info->call_kind() == CallInfo::itable_call) {
+    assert(call_info->resolved_method() != nullptr, "virtual or interface method must be found");
     _itable_defc_klass = call_info->resolved_method()->method_holder();
     _itable_refc_klass = call_info->resolved_klass();
   }
@@ -238,6 +239,7 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info) {
       return;
     }
 #ifdef ASSERT
+    assert(call_info->resolved_method() != nullptr, "virtual or interface method must be found");
     int index = call_info->resolved_method()->itable_index();
     assert(index == itable_index, "CallInfo pre-computes this");
     InstanceKlass* k = call_info->resolved_method()->method_holder();
@@ -254,6 +256,7 @@ void CompiledIC::set_to_megamorphic(CallInfo* call_info) {
     }
   }
 
+  assert(call_info->selected_method() != nullptr, "virtual or interface method must be found");
   log_trace(inlinecache)("IC@" INTPTR_FORMAT ": to megamorphic %s entry: " INTPTR_FORMAT,
                          p2i(_call->instruction_address()), call_info->selected_method()->print_value_string(), p2i(entry));
 
@@ -290,7 +293,7 @@ bool CompiledIC::is_monomorphic() const {
 }
 
 bool CompiledIC::is_megamorphic() const {
-  return VtableStubs::entry_point(destination()) != nullptr;;
+  return VtableStubs::entry_point(destination()) != nullptr;
 }
 
 bool CompiledIC::is_speculated_klass(Klass* receiver_klass) {

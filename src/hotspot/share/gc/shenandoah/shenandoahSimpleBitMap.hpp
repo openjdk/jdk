@@ -50,7 +50,7 @@ typedef ssize_t idx_t;
 // ShenandoahSimpleBitMap resembles CHeapBitMap but adds missing support for find_first_consecutive_set_bits() and
 // find_last_consecutive_set_bits.  An alternative refactoring of code would subclass CHeapBitMap, but this might
 // break abstraction rules, because efficient implementation requires assumptions about superclass internals that
-// might be violatee through future software maintenance.
+// might be violated through future software maintenance.
 class ShenandoahSimpleBitMap {
   const idx_t _num_bits;
   const size_t _num_words;
@@ -84,7 +84,7 @@ public:
 
   inline idx_t aligned_index(idx_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
-    idx_t array_idx = idx & ~right_n_bits(LogBitsPerWord);
+    idx_t array_idx = idx & ~(BitsPerWord - 1);
     return array_idx;
   }
 
@@ -107,7 +107,7 @@ public:
   inline void set_bit(idx_t idx) {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
-    uintx bit_number = idx & right_n_bits(LogBitsPerWord);
+    uintx bit_number = idx & (BitsPerWord - 1);
     uintx the_bit = nth_bit(bit_number);
     _bitmap[array_idx] |= the_bit;
   }
@@ -116,7 +116,7 @@ public:
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     assert(idx >= 0, "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
-    uintx bit_number = idx & right_n_bits(LogBitsPerWord);
+    uintx bit_number = idx & (BitsPerWord - 1);
     uintx the_bit = nth_bit(bit_number);
     _bitmap[array_idx] &= ~the_bit;
   }
@@ -125,9 +125,9 @@ public:
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     assert(idx >= 0, "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
-    uintx bit_number = idx & right_n_bits(LogBitsPerWord);
+    uintx bit_number = idx & (BitsPerWord - 1);
     uintx the_bit = nth_bit(bit_number);
-    return (_bitmap[array_idx] & the_bit)? true: false;
+    return (_bitmap[array_idx] & the_bit) != 0;
   }
 
   // Return the index of the first set bit in the range [beg, size()), or size() if none found.

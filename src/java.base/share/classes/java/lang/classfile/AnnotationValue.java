@@ -38,6 +38,8 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.Constable;
 import java.util.ArrayList;
 import java.util.List;
+
+import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -58,7 +60,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models an annotation value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_ANNOTATION}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_ANNOTATION}.
      *
      * @since 22
      */
@@ -71,7 +73,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models an array value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_ARRAY}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_ARRAY}.
      *
      * @since 22
      */
@@ -129,7 +131,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a string value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_STRING}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_STRING}.
      *
      * @since 22
      */
@@ -157,7 +159,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a double value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_DOUBLE}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_DOUBLE}.
      *
      * @since 22
      */
@@ -185,7 +187,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a float value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_FLOAT}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_FLOAT}.
      *
      * @since 22
      */
@@ -213,7 +215,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a long value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_LONG}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_LONG}.
      *
      * @since 22
      */
@@ -241,7 +243,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models an int value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_INT}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_INT}.
      *
      * @since 22
      */
@@ -269,7 +271,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a short value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_SHORT}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_SHORT}.
      *
      * @since 22
      */
@@ -300,7 +302,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a char value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_CHAR}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_CHAR}.
      *
      * @since 22
      */
@@ -331,7 +333,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a byte value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_BYTE}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_BYTE}.
      *
      * @since 22
      */
@@ -362,7 +364,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a boolean value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_BOOLEAN}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_BOOLEAN}.
      *
      * @since 22
      */
@@ -393,7 +395,7 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a class value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_CLASS}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_CLASS}.
      *
      * @since 22
      */
@@ -405,13 +407,13 @@ public sealed interface AnnotationValue {
 
         /** {@return the class descriptor} */
         default ClassDesc classSymbol() {
-            return ClassDesc.ofDescriptor(className().stringValue());
+            return Util.fieldTypeSymbol(className());
         }
     }
 
     /**
      * Models an enum value of an element-value pair.
-     * The {@linkplain #tag tag} of this value is {@value ClassFile#AEV_ENUM}.
+     * The {@linkplain #tag tag} of this value is {@value TAG_ENUM}.
      *
      * @since 22
      */
@@ -423,16 +425,59 @@ public sealed interface AnnotationValue {
 
         /** {@return the enum class descriptor} */
         default ClassDesc classSymbol() {
-            return ClassDesc.ofDescriptor(className().stringValue());
+            return Util.fieldTypeSymbol(className());
         }
 
         /** {@return the enum constant name} */
         Utf8Entry constantName();
     }
 
+    /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfByte}. */
+    int TAG_BYTE = 'B';
+
+    /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfChar}. */
+    int TAG_CHAR = 'C';
+
+    /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfDouble}. */
+    int TAG_DOUBLE = 'D';
+
+    /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfFloat}. */
+    int TAG_FLOAT = 'F';
+
+    /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfInt}. */
+    int TAG_INT = 'I';
+
+    /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfLong}. */
+    int TAG_LONG = 'J';
+
+    /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfShort}. */
+    int TAG_SHORT = 'S';
+
+    /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfBoolean}. */
+    int TAG_BOOLEAN = 'Z';
+
+    /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfString}. */
+    int TAG_STRING = 's';
+
+    /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfEnum}. */
+    int TAG_ENUM = 'e';
+
+    /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfClass}. */
+    int TAG_CLASS = 'c';
+
+    /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfAnnotation}. */
+    int TAG_ANNOTATION = '@';
+
+    /** The {@link #tag() tag} indicating the value of an element-value pair is {@link OfArray}. */
+    int TAG_ARRAY = '[';
+
     /**
      * {@return the tag character for this value as per JVMS {@jvms 4.7.16.1}}
      * The tag characters have a one-to-one mapping to the types of annotation element values.
+     *
+     * @apiNote
+     * {@code TAG_}-prefixed constants in this class, such as {@link #TAG_INT},
+     * describe the possible return values of this method.
      */
     char tag();
 
@@ -452,7 +497,7 @@ public sealed interface AnnotationValue {
      * @param constantName the name of the enum constant
      */
     static OfEnum ofEnum(ClassDesc className, String constantName) {
-        return ofEnum(TemporaryConstantPool.INSTANCE.utf8Entry(className.descriptorString()),
+        return ofEnum(TemporaryConstantPool.INSTANCE.utf8Entry(className),
                       TemporaryConstantPool.INSTANCE.utf8Entry(constantName));
     }
 
@@ -469,7 +514,7 @@ public sealed interface AnnotationValue {
      * @param className the descriptor of the class
      */
     static OfClass ofClass(ClassDesc className) {
-        return ofClass(TemporaryConstantPool.INSTANCE.utf8Entry(className.descriptorString()));
+        return ofClass(TemporaryConstantPool.INSTANCE.utf8Entry(className));
     }
 
     /**

@@ -64,7 +64,7 @@ private:
   GrowableArrayCHeap<address, mtGC> _store_good_relocations;
 
 public:
-  static const int32_t _zpointer_address_mask = 0xFFFF0000;
+  static const int32_t ZPointerAddressMask = 0xFFFF0000;
 
   ZBarrierSetAssembler();
 

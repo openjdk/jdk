@@ -475,7 +475,7 @@ void jniCheck::validate_class_descriptor(JavaThread* thr, const char* name) {
   }
 
   // Verify that the class name given is a valid utf8 string
-  if (!UTF8::is_legal_utf8((const unsigned char*)name, (int)strlen(name), false)) {
+  if (!UTF8::is_legal_utf8((const unsigned char*)name, strlen(name), false)) {
     char msg[JVM_MAXPATHLEN];
     jio_snprintf(msg, JVM_MAXPATHLEN, "%s%s%s", fatal_non_utf8_class_name1, name, fatal_non_utf8_class_name2);
     ReportJNIFatalError(thr, msg);
