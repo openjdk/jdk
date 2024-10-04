@@ -90,7 +90,8 @@ public class MBeanResource implements RestResource {
         } else if (path.matches(pathPrefix + "/info$")
                 && exchange.getRequestMethod().equalsIgnoreCase("GET")) {
             RestResource.super.handle(exchange);
-        } else if (path.matches(pathPrefix + "/[^/]+/?$")
+        } else if (
+                (path.matches(pathPrefix + "/[^/]+/?$") || path.matches(pathPrefix + "/.*[^/]+/?$"))
                 && exchange.getRequestMethod().equalsIgnoreCase("POST")) {
             RestResource.super.handle(exchange);
         } else {
@@ -171,8 +172,10 @@ public class MBeanResource implements RestResource {
      */
     @Override
     public HttpResponse doPost(HttpExchange exchange) {
+
         String path = exchange.getRequestURI().getPath();
         String reqBody = null;
+
         try {
             if (path.matches(pathPrefix + "/?$")) { // POST to current URL
                 reqBody = HttpUtil.readRequestBody(exchange);
@@ -204,21 +207,40 @@ public class MBeanResource implements RestResource {
             } else if (path.matches(pathPrefix + "/addNotificationListener$")) {
                 // POST to addNotificationListner,
                 // e.g.  /jmx/servers/platform/mbeans/java.lang:name=G1 Old Gen,type=MemoryPool/addNotificationListener
-                System.err.println("XXXXX MBeanResource.doPost: " + path);
-                Matcher matcher = Pattern.compile(pathPrefix + "/").matcher(path);
-
                 reqBody = HttpUtil.readRequestBody(exchange);
-                JSONParser parser = new JSONParser(reqBody);
-                JSONElement jsonElement = parser.parse();
-                System.err.println("XXXXX MBeanResource.doPost: " + jsonElement);
+                JSONElement jsonElement = null;
+
+                if (!reqBody.isEmpty()) {
+                    JSONParser parser = new JSONParser(reqBody);
+                    jsonElement = parser.parse();
 
                     if (!(jsonElement instanceof JSONObject)) {
                         return new HttpResponse(HttpResponse.BAD_REQUEST,
                                 "Invalid parameters : [" + reqBody + "] for addNotificationListener");
                     }
-                    JSONElement result = doAddNotificationListener((JSONObject) jsonElement);
-                    return new HttpResponse(HttpURLConnection.HTTP_OK, result.toJsonString());
+                }
+                String pathFull = PlatformRestAdapter.getDomain() +
+                                exchange.getRequestURI().getPath().replaceAll("/$", "").replaceAll("/addNotificationListener", "");
+                pathFull = URLDecoder.decode(pathFull, StandardCharsets.UTF_8.displayName());
 
+                JSONElement result = doAddNotificationListener(pathFull, (JSONObject) jsonElement);
+                return new HttpResponse(HttpURLConnection.HTTP_OK, result.toJsonString());
+
+            } else if (path.matches(pathPrefix + "/pollNotifications/[0-9]+$")) {
+                // pollNotifications is also a POST 
+                Matcher matcher = Pattern.compile(pathPrefix + "/pollNotifications/([0-9a-f]+)$").matcher(path);
+                if (matcher.find()) {
+                    String id = matcher.group(1);
+
+                    reqBody = HttpUtil.readRequestBody(exchange);
+                    JSONParser parser = new JSONParser(reqBody);
+                    JSONElement json = parser.parse();
+
+                    JSONElement result = doPollNotifications(id, (JSONObject) json);
+                    return new HttpResponse(HttpURLConnection.HTTP_OK, result.toJsonString());
+                } else {
+                    return HttpResponse.BAD_REQUEST;
+                }                
             } else if (path.matches(pathPrefix + "/[^/]+/?$")) {
                 // POST to MBeanOperation
                 // e.g. /jmx/servers/platform/mbeans/java.lang:type=Threading/getThreadInfo
@@ -487,6 +509,7 @@ public class MBeanResource implements RestResource {
         jarr = new JSONArray();
 
         for (MBeanNotificationInfo notification : notifications) {
+
             JSONObject jobj1 = new JSONObject();
             jobj1.put("name", notification.getName());
             JSONArray jarr1 = new JSONArray();
@@ -498,6 +521,7 @@ public class MBeanResource implements RestResource {
             if (notification.getDescriptor().getFieldNames().length > 1) {
                 jobj1.put("descriptor", getDescriptorJSON(notification.getDescriptor()));
             }
+//            System.err.println("ZZZ JSON: " + jobj1.toJsonString());
             jarr.add(jobj1);
         }
         jobj.put("notificationInfo", jarr);
@@ -528,7 +552,7 @@ public class MBeanResource implements RestResource {
             Object fieldValue = descriptor.getFieldValue(descName);
             if (fieldValue != null) {
                 String s = fieldValue.toString();
-                s = s.replace("%", "X");
+                s = s.replace("%", "X"); // XXXXXXXX
                 jobj2.put(descName, s);
             } else {
                 jobj2.put(descName, (String) null);
@@ -740,27 +764,27 @@ public class MBeanResource implements RestResource {
         }
     }
 
-    private JSONElement doAddNotificationListener(JSONObject j) {
-        System.err.println("XXXX MBeanResource addNotifListener: " + j.toJsonString());
-
+    private JSONElement doAddNotificationListener(String path, JSONObject body) {
         // Create a NotificationListener here on the server, which will queue
         // its invocations.
-        // Provide an href where a client can poll for its results.
-        // Could check incoming name equals this.objectName
+        // Return an href where a client can poll for its results.
 
-        JSONObject jobj = new JSONObject();
-        jobj.put("blah", "12345");
-
-        List<Notification> list = new LinkedList<>();
+        // Not just an int id in future...
 //        SecureRandom sr = new SecureRandom();
         long h = notifHash.incrementAndGet();
-        String ref = Long.toString(h);
-        notifLists.put(ref, list);
-        jobj.put("ref", ref);
+        String id = Long.toString(h);
+        List<Notification> list = new LinkedList<>();
+
+        synchronized(notifLock) {
+            notifLists.put(id, list);
+        }
+        JSONObject jobj = new JSONObject();
+        jobj.put("href", HttpUtil.escapeUrl(path + "/pollNotifications/" + id));
         NotificationListener listener = new NotificationListenerQ(list);
-        // NotificationFilterSupport filter = new NotificationFilterSupport();
+        NotificationFilterSupport filter = null; // new NotificationFilterSupport();
         try {
-            mBeanServer.addNotificationListener(objectName, listener, null /* filter */, null /* handback */);
+            mBeanServer.addNotificationListener(objectName, listener, filter, null /* handback */);
+
         } catch (InstanceNotFoundException infe) {
             infe.printStackTrace(System.err);
         }
@@ -769,6 +793,7 @@ public class MBeanResource implements RestResource {
 
     private static AtomicLong notifHash = new AtomicLong(0);
     private Map<String, List<Notification>> notifLists = new HashMap<>();
+    private Object notifLock = new Object(); // a coarse lock for now...
 
     public class NotificationListenerQ implements NotificationListener {
 
@@ -779,9 +804,57 @@ public class MBeanResource implements RestResource {
         }
 
         public void handleNotification(Notification notification, Object handback) {
-            list.add(notification);
+            System.err.println("XXXX server handleNotification: " + notification);
+            synchronized(notifLock) {
+                list.add(notification);
+            }
         }
     }
+
+    private JSONElement doPollNotifications(String path, JSONObject body) {
+        JSONArray result = new JSONArray();
+        // Extract queue ID from path.
+        synchronized(notifLock) {
+            List<Notification> list = notifLists.get(path);
+            //System.err.println("XXX doPollNotifications " + path + " = " + list); 
+
+            // Respond and drain queued Notifications.
+            // get any notifs from that list,
+            // send them in the reponse
+            for (Notification n : list) {
+                // e.g.
+                // javax.management.Notification[source=java.lang:type=GarbageCollector,name=G1 Young Generation][type=com.sun.management.gc.notification][message=G1 Young Generation]
+                // is class javax.management.Notification
+
+
+/*                JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(n.getClass());
+                if (typeMapper != null) {
+                    try {
+                        System.err.println("NOTIF: " + n);
+                        JSONElement json = typeMapper.toJsonValue(n);
+                        if (json != null) {
+                            System.err.println("NOTIF: " + json.toJsonString());
+                            result.add(json);
+                        }
+                    } catch (JSONMappingException jme) {
+                        jme.printStackTrace(System.err);
+                    }
+                } else { */
+                    System.err.println("XXX no mapper for: " + n.getClass());
+                    JSONObject json = new JSONObject();
+                    json.put("source", n.getSource().toString());
+                    json.put("type", n.getType());
+                    json.put("sequenceNumber", n.getSequenceNumber());
+                    json.put("timeStamp", n.getTimeStamp());
+                    json.put("message", n.getMessage());
+                    System.err.println("XXX NOTIF: " + json.toJsonString());
+                    result.add(json);
+//                }
+            }
+            list.clear();
+        }
+        return result;
+    }    
 
     private String[] getStrings(JSONArray jsonArray) throws JSONDataException {
         List<String> attributes = new ArrayList<>();

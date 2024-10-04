@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,10 @@ public class JSONObject extends LinkedHashMap<String, JSONElement> implements JS
         return super.put(key, new JSONPrimitive(value));
     }
 
+    public JSONElement put(String key, long value) {
+        // long value can appear unquoted in JSON.
+        return super.put(key, new JSONPrimitive(value));
+    }
 
     public static String getObjectFieldString(JSONObject json, String name) {
         JSONElement e = json.get(name);

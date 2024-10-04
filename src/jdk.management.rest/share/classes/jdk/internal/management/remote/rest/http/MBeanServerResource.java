@@ -163,7 +163,7 @@ public final class MBeanServerResource implements RestResource, JmxRestAdapter {
         // Route request to appropriate resource
         if (path.matches(pathPrefix + "/?$")) {
             RestResource.super.handle(exchange);
-        } else if (path.matches(pathPrefix + "/mbeans.*")) {
+        } else if (path.matches(pathPrefix + "/mbeans.*")) { // startsWith XXXX
             mBeansResource.handle(exchange);
         } else {
             HttpUtil.sendResponse(exchange, HttpResponse.REQUEST_NOT_FOUND);

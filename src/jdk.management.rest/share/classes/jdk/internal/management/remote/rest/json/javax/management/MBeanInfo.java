@@ -144,9 +144,10 @@ public class MBeanInfo extends javax.management.MBeanInfo {
         }
 
         MBeanNotificationInfo[] notifications = null;
-        JSONArray ni = JSONObject.getObjectFieldArray(json, "operationInfo");
+        JSONArray ni = JSONObject.getObjectFieldArray(json, "notificationInfo");
         if (ni != null && ni.size() > 0) {
             notifications = new MBeanNotificationInfo[ni.size()];
+//            System.err.println("XXXX mbean info.from: " + name + " : notifs = " + ni.size());
             for (int i = 0; i < ni.size(); i++) {
                 JSONObject j = (JSONObject) ni.get(i);
                 String nName = JSONObject.getObjectFieldString(j, "name");
@@ -161,6 +162,7 @@ public class MBeanInfo extends javax.management.MBeanInfo {
                 String nDescription = JSONObject.getObjectFieldString(j, "description");
                 String nDescriptor = JSONObject.getObjectFieldString(j, "descriptor");
                 notifications[i] = new MBeanNotificationInfo(nNotifTypes, nName, nDescription); // XXXX , nDescriptor);
+//                System.err.println("XXXX notifs at client: notifications[" + i + "] = " + notifications[i]);
             }
         }
         return new MBeanInfo(className, description, attributes, constructors, operations, notifications);

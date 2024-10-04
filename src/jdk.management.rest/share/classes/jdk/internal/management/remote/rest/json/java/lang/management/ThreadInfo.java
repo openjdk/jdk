@@ -78,10 +78,8 @@ public class ThreadInfo extends java.lang.management.ThreadInfo {
         StackTraceElement[] stackTrace =  null;
         JSONArray stackTraceJSON = JSONObject.getObjectFieldArray(json, "stackTrace");
         if (stackTraceJSON != null) {
-//            System.err.println("\n\nXXX stackTrace = " + stackTraceJSON.toJsonString());
             stackTrace = new StackTraceElement[stackTraceJSON.size()];
             for (int i=0; i< stackTraceJSON.size(); i++) {
-//                System.err.println("\nFF = " + stackTraceJSON.get(i).toJsonString());
                     JSONObject e = (JSONObject) stackTraceJSON.get(i);
                     String classLoaderName = JSONObject.getObjectFieldString(e, "classLoaderName");
                     String className = JSONObject.getObjectFieldString(e, "className");

@@ -69,6 +69,7 @@ import jdk.internal.management.remote.rest.mapper.JSONMappingException;
 import jdk.internal.management.remote.rest.mapper.JSONMappingFactory;
 
 /**
+ * Implementation of MBeanServerConnection using HTTP as a transport.
  */
 public class HttpRestConnection implements MBeanServerConnection {
 
@@ -88,12 +89,12 @@ public class HttpRestConnection implements MBeanServerConnection {
     private static final String CHARSET = "UTF-8";
 
     /**
+     * Construct given a base URL and env.
      */    
     public HttpRestConnection(String baseURL, Map<String,?> env) {
         this.env = env;
         // URL should end /jmx/servers/servername/ e.g. /jmx/servers/platform/
         this.baseURL = baseURL; // "http://" + host + ":" + port + "/jmx/servers/platform/";
-//        System.err.println("HttpRestConnection: baseURL = " + baseURL);
         objectRefMap = new HashMap<ObjectName,String>();
         objectMap = new HashMap<ObjectName, JSONObject>();
         objectInfoRefMap = new HashMap<ObjectName,String>();
@@ -102,19 +103,17 @@ public class HttpRestConnection implements MBeanServerConnection {
 
     public void setup() throws IOException { 
         // Fetch /jmx/servers/platform, populate basic info and MBeans.
-    
+   
         JSONObject jo = (JSONObject) getJSONForURL(url(baseURL));
-
-        try {
-        // System.err.println("defaultDomain json value = " + value);
+        if (jo == null) {
+            throw new IOException("cannot read JSON from base URL");
+        }
         defaultDomain = JSONObject.getObjectFieldString(jo, "defaultDomain");
 
         // domains:  "[JMImplementation, java.util.logging, jdk.management.jfr, java.lang, com.sun.management, java.nio]"
         // populated in MBeanServerResource with Arrays.toString(mbeanServer.getDomains())
         JSONArray domainsArray = JSONObject.getObjectFieldArray(jo, "domains");
-
         if (domainsArray != null) {
-            // JSONArray extends ArrayList<JSONElement>. 
             ArrayList<String> a = new ArrayList<>();
             for (JSONElement e : domainsArray) {
                 String d = (String) ((JSONPrimitive) e).getValue();
@@ -122,13 +121,9 @@ public class HttpRestConnection implements MBeanServerConnection {
             }
             domains = a.toArray(new String[0]);
         } else {
-            System.err.println("XXXX no domains");
+            domains = new String[0];
         }
         readMBeans();
-
-        } catch (Exception e) {
-            throw new IOException(e);
-        }
     }
 
     protected void readMBeans() throws IOException {
@@ -137,8 +132,10 @@ public class HttpRestConnection implements MBeanServerConnection {
         // and populate map:
 
         JSONObject jo = (JSONObject) getJSONForURL(url(baseURL, "mbeans"));
+        if (jo == null) {
+            throw new IOException("cannot read mbeans at " + baseURL);
+        }
         mBeanCount = JSONObject.getObjectFieldInt(jo, "mbeanCount");
-//        System.err.println("XXX readMBeans: mBeanCount = " + mBeanCount + " from: " + jo.toJsonString());
 
         JSONArray mbeans = JSONObject.getObjectFieldArray(jo, "mbeans");
         if (mbeans != null) {
@@ -147,7 +144,6 @@ public class HttpRestConnection implements MBeanServerConnection {
                 // Extract info to populate objectMap...
                 String name = JSONObject.getObjectFieldString(bean, "name");
                 String href = JSONObject.getObjectFieldString(bean, "href");
-   //             System.err.println("XXX readMBeans: name = " + name + " href = " + href);
                 if (name != null) {
                     try {
                         objectRefMap.put(new ObjectName(name), href);
@@ -158,8 +154,7 @@ public class HttpRestConnection implements MBeanServerConnection {
                 }
             }
         } else {
-            System.err.println("XXX readMBeans: no mbeans");
-   //         throw new RuntimeException("no mbeans");
+            throw new IOException("cannot read mbeans");
         }
 
     }
@@ -228,7 +223,6 @@ public class HttpRestConnection implements MBeanServerConnection {
         }
         try {
             ObjectInstance oi = new ObjectInstance(objectName, className);
-//            System.err.println("ZZZZ objectInstanceForJSON: " + objectName + ", " + className + " = " + oi);
             return oi;
         } catch (MalformedObjectNameException mone) {
             throw new InstanceNotFoundException("Not found due to: " + mone);
@@ -250,6 +244,7 @@ public class HttpRestConnection implements MBeanServerConnection {
         if (query == null) {
             return true;
         }
+        // XXXXX TODO
         return true;
     }
 
@@ -259,7 +254,7 @@ public class HttpRestConnection implements MBeanServerConnection {
         Set<JSONObject> results = new HashSet<>();
 
         // objectInfoRefMap.keySet is the list of all known ObjectNames.
-        // Consider refreshing.
+        // Consider refreshing?
 
         for (ObjectName n : objectInfoRefMap.keySet()) {
             JSONObject json = objectInfoForName(n);
@@ -278,8 +273,6 @@ public class HttpRestConnection implements MBeanServerConnection {
         // Query operations are a client-side convenience now, rather than a means for a
         // client to query a remote server.
 
-        // Consider refreshing?
-
         Set<JSONObject> q = queryMB(name, query);
         Set<ObjectInstance> results = new HashSet<>();
         for (JSONObject json : q) {
@@ -294,7 +287,6 @@ public class HttpRestConnection implements MBeanServerConnection {
 
     public Set<ObjectName> queryNames(ObjectName name, QueryExp query) throws IOException {
 
-        //Set<ObjectInstance> objects = queryMBeans(name, query);
         Set<JSONObject> q = queryMB(name, query);
         Set<ObjectName> results = new HashSet<ObjectName>();
         for (JSONObject json : q) {
@@ -303,7 +295,6 @@ public class HttpRestConnection implements MBeanServerConnection {
             try {
                 results.add(new ObjectName(n));
             } catch (MalformedObjectNameException mone) {
-                /// xxx
                 mone.printStackTrace(System.err);
             }
         }
@@ -323,7 +314,7 @@ public class HttpRestConnection implements MBeanServerConnection {
     public Integer getMBeanCount() throws IOException {
         // RMI uses com/sun/jmx/mbeanserver/Repository.java which holds a count.
 
-        // Consider refresh
+        // Consider refreshing.
         return mBeanCount;
     }
 
@@ -341,8 +332,6 @@ public class HttpRestConnection implements MBeanServerConnection {
         if (oi == null) {
             throw new InstanceNotFoundException("no object info for '" + name + "'");
         }
-//        System.err.println("XXX getAttribute gets " + o);
-        // Get attribute.
         JSONObject attributes = JSONObject.getObjectFieldObject(o, "attributes");
         if (attributes == null) {
             throw new AttributeNotFoundException("no Attributes in '" + name + "' (internal error)");
@@ -809,7 +798,7 @@ public class HttpRestConnection implements MBeanServerConnection {
             throw new InstanceNotFoundException("Not known: " + name);
         }
 
-        // Server will need to do its own addNotificationListener, with a proxy listener.
+        // Server will perform its own addNotificationListener, with a proxy listener to store results.
         JSONObject body = new JSONObject();
         body.put("addNotificationListener", "123");
         body.put("name", name.toString());
@@ -818,14 +807,18 @@ public class HttpRestConnection implements MBeanServerConnection {
         String href = objectRefMap.get(name);
         href += "/addNotificationListener";
         String s = executeHttpPostRequest(url(href), body.toJsonString());
-        System.err.println("XXXX http client: addNotificationListener gets: " + s);
         try {
             JSONParser parser = new JSONParser(s);
             JSONObject json = (JSONObject) parser.parse();
             // Repsonse should contain where to poll for Notifications.
             // handback is sent to the poller for later us.
-            System.err.println("XXXX http client addNotifListener: " + json.toJsonString());
-            String ref = JSONObject.getObjectFieldString(json, "ref");
+            System.err.println("XXXX http client addNotifListener result: " + json.toJsonString());
+            String ref = JSONObject.getObjectFieldString(json, "href");
+            if (ref != null) {
+                registerNotif(ref, listener, handback);
+            } else {
+
+            }
         } catch (ParseException pe) {
             pe.printStackTrace(System.err);
         }
@@ -838,7 +831,6 @@ public class HttpRestConnection implements MBeanServerConnection {
             throws InstanceNotFoundException, IOException {
 
         // XXXX
-
         // listener is the name of another object which will listen?
 
         JSONObject o = objectInfoForName(name);
@@ -851,16 +843,110 @@ public class HttpRestConnection implements MBeanServerConnection {
         }
     }
 
+    protected void registerNotif(String ref, NotificationListener listener, Object handback) {
+        // Check Notification polling thread is active.
+        if (notifPoller == null) {
+            notifPoller = new NotifPoller();
+            Thread thr = new Thread(notifPoller);
+            thr.setDaemon(true);
+            thr.start();
+        }    
+        // Add ref to locations to poll.
+        notifPoller.add(ref, listener, handback);
+    }
+
+    // To poll notifs we need: a URL, a listener, a possible handback object.
+    private NotifPoller notifPoller;
+    protected int pollDelay = 10000;
+
+    protected class NotifPoller implements Runnable {
+
+        protected List<String> refs;
+        protected List<NotificationListener> listeners;
+        protected volatile boolean active;
+
+        public NotifPoller() {
+            refs = new ArrayList<>();
+            listeners = new ArrayList<>();
+            active = true; // add a stop method?
+        }
+
+        public void add(String r, NotificationListener listener, Object handback) {
+            refs.add(r);
+            listeners.add(listener);
+        }
+
+        public void run() {
+            while (active) {
+                try {
+                    Thread.sleep(pollDelay);
+                } catch (InterruptedException ie) {
+                    // ignored
+                }
+                JSONObject body = new JSONObject();
+                // Could consider a body that requests specific notifs, but for now
+                // not poll fetches and clears all notifications.
+                body.put("blah", "123");
+                for (int i = 0; i < refs.size(); i++) {
+                    String r = refs.get(i); 
+                    try {
+                        String s = executeHttpPostRequest(url(r), body.toJsonString());
+                        if (s != null) {
+                            JSONParser parser = new JSONParser(s);
+                            try {
+                            JSONArray j = (JSONArray) parser.parse();
+                            System.err.println("XXXX Notification poll gets: " + j.toJsonString());
+                            // Recognise any Notifications and invoke them here in the client...
+                            NotificationListener listener = listeners.get(i); 
+                            Object handback = null;
+                            for (JSONElement json : j) {
+                                if (json != null && json instanceof JSONObject) {
+                                    Notification n = decodeNotification((JSONObject) json);
+                                    System.err.println("GOT: " + n);
+                                    listener.handleNotification(n, handback);
+                                }
+                            }
+                            } catch (ParseException pe) {
+                                pe.printStackTrace(System.err);
+                            }
+                        } else {
+                            System.err.println("XXXX Notification poll post gets null.");
+                        }
+                    } catch (IllegalArgumentException e) {
+                        e.printStackTrace(System.err);
+                        // should remove r
+                    } catch (IOException e) {
+                        // e.printStackTrace(System.err);
+                    }
+                }
+            }
+        }
+    }
+    protected static Notification decodeNotification(JSONObject json) {
+        // This is manual deserialisation as Notif is not a Composite object or a type the
+        // json type mapper handles...
+        String type = JSONObject.getObjectFieldString(json, "type");
+        String source = JSONObject.getObjectFieldString(json, "source");
+        long sequenceNumber = JSONObject.getObjectFieldLong(json, "sequenceNumber");
+        long timeStamp = JSONObject.getObjectFieldLong(json, "timeStamp");
+        String message = JSONObject.getObjectFieldString(json, "message");
+        Notification n = new Notification(type, source, sequenceNumber, timeStamp, message);
+        return n;
+    }
+
     public void removeNotificationListener(ObjectName name,
                                            ObjectName listener)
         throws InstanceNotFoundException, ListenerNotFoundException,
                IOException {
 
-        // XXXX
         JSONObject o = objectInfoForName(name);
         if (o == null) {
             throw new InstanceNotFoundException("Not known: " + name);
         }
+        // XXXX
+        // This is doable:
+        // remove local poller
+        // call server to remove its listener.
     }
 
     public void removeNotificationListener(ObjectName name,
@@ -913,7 +999,6 @@ public class HttpRestConnection implements MBeanServerConnection {
         if (objectClassName == null) {
             throw new InstanceNotFoundException("No className in MBean (internal error): " + o);
         }
-//        System.err.println("ZZZZZ isInstanceOf: " + name + ", " + className + " gets objectClassName: " + objectClassName);
 
         if (objectClassName.equals("com.sun.management.internal.OperatingSystemImpl")
             && className.equals("java.lang.management.OperatingSystemMXBean")) {
@@ -968,19 +1053,18 @@ public class HttpRestConnection implements MBeanServerConnection {
     }
 
     protected JSONObject objectForName(ObjectName name) {
-        // jmx/servers/platform/mbeans
-        // Info for attributes may be rapidly changing, operations likely to be static.
+        // Info for attributes may be rapidly changing, so fetch eatch time.
+        // Some info, e.g. Operations, is likely to be static.
         synchronized(objectMap) {
         try {
-            JSONObject o = objectMap.get(name);
-//            if (o == null) {
-                String ref = objectRefMap.get(name);
-                if (ref == null) {
-                    return null;
-                }
-                o = (JSONObject) getJSONForURL(url(ref));
-                objectMap.put(name, o);
-//            }
+            // Could check if Object is already known:
+            // JSONObject o = objectMap.get(name);
+            String ref = objectRefMap.get(name);
+            if (ref == null) {
+                return null;
+            }
+            JSONObject o = (JSONObject) getJSONForURL(url(ref));
+            objectMap.put(name, o);
             return o;
         } catch (Exception e) {
             return null;
@@ -989,9 +1073,8 @@ public class HttpRestConnection implements MBeanServerConnection {
     }
 
     protected JSONObject objectInfoForName(ObjectName name) {
-        // jmx/servers/platform/mbeans/NAME/info
         // Object info such as name, class, description, attributeInfo, operationInfo
-        // is generally static.
+        // is generally static.  Use objectInfoMap as a cache.
         synchronized(objectInfoMap) {
         try {
             JSONObject o = objectInfoMap.get(name);
