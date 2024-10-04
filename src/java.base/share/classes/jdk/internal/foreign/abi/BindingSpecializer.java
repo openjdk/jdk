@@ -813,7 +813,6 @@ public class BindingSpecializer {
             // chunked
             int readAddrIdx = cb.allocateLocal(REFERENCE);
             cb.astore(readAddrIdx)
-
               .loadConstant(0L); // result
             int resultIdx = cb.allocateLocal(LONG);
             cb.lstore(resultIdx);
@@ -899,7 +898,6 @@ public class BindingSpecializer {
           .loadConstant(0L)
           .loadConstant(size)
           .invokestatic(CD_MemorySegment, "copy", MTD_COPY, true)
-
           .aload(storeIdx);
         pushType(MemorySegment.class);
     }
