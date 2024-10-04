@@ -5255,6 +5255,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws ArithmeticException if scale overflows.
      */
     private static BigDecimal createAndStripZerosToMatchScale(BigInteger intVal, int scale, long preferredScale) {
+        // avoid overflow of scale - preferredScale
+        preferredScale = Math.clamp(preferredScale, Integer.MIN_VALUE - 1L, Integer.MAX_VALUE);
         // a multiple of 10^n must be a multiple of 2^n
         int powsOf2 = intVal.getLowestSetBit();
         long remainingZeros = Math.min(scale - preferredScale, powsOf2);
