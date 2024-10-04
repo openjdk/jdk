@@ -67,8 +67,7 @@ import java.util.Objects;
 /// any reference to a returning array so that it won't be able to modify its
 /// content later. Similarly, the implementation must not modify any input
 /// array argument and must not retain any reference to an input array argument
-/// after the call. Together, this makes sure that the caller does not need to
-/// make any defensive copy on the input and output arrays.
+/// after the call.
 ///
 /// Also, an implementation must not keep any extra copy of a private key.
 /// For key generation, the only copy is the one returned in the
@@ -84,6 +83,17 @@ import java.util.Objects;
 /// a local type, and this parsed key will be passed to an operational method
 /// (For example, `implSign`) later. An implementation must not retain
 /// a reference of the parsed key.
+///
+/// When constructing a [NamedX509Key] or [NamedPKCS8Key] object from raw key
+/// bytes, the key bytes are directly referenced within the object, so the
+/// caller must not modify them afterward. Similarly, the key's `getRawBytes`
+/// method returns direct references to the underlying raw key bytes, meaning
+/// the caller must not alter the contents of the returned value.
+///
+/// Together, these measures ensure the classes are as efficient as possible,
+/// preventing unnecessary array cloning and potential data leaks. While these
+/// classes should not be considered immutable, strictly adhering to the rules
+/// above will ensure data integrity is maintained.
 public abstract class NamedKeyPairGenerator extends KeyPairGeneratorSpi {
 
     private final String fname; // family name
