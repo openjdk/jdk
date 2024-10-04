@@ -1294,9 +1294,10 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if (room < 0)
                     throw new RejectedExecutionException("Queue capacity exceeded");
                 else if ((room == 0 ||
-                          a[m & (s - 1)] == null) && // may have appeared empty
+                          a[m & (s - 1)] == null || // may have appeared empty
+                          (task instanceof ForkJoinTask.InterruptibleTask)) &&
                          pool != null)
-                    pool.signalWork(null, -1);
+                    pool.signalWork();
             }
         }
 
@@ -1861,21 +1862,16 @@ public class ForkJoinPool extends AbstractExecutorService {
             }
             unlockRunState();
             if (replaceable)
-                signalWork(null, -1);
+                signalWork();
         }
         if (ex != null)
             ForkJoinTask.rethrow(ex);
     }
 
     /**
-     * Releases an idle worker, or creates one if not enough exist,
-     * returning on contention if signalled task is already taken.
-     *
-     * @param a if nonnull, a task array holding task signalled (used
-     * only for signal propagation)
-     * @param k index of task in array
+     * Releases an idle worker, or creates one if not enough exist.
      */
-    final void signalWork(ForkJoinTask<?>[] a, int k) {
+    final void signalWork() {
         int pc = parallelism;
         for (long c = ctl;;) {
             WorkQueue[] qs = queues;
@@ -1907,8 +1903,6 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
                 break;
             }
-            if (k >= 0 && a != null && a.length > k && a[k] == null)
-                break;
         }
     }
 
@@ -1985,7 +1979,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     final void runWorker(WorkQueue w) {
         if (w != null) {
             int phase = w.phase, r = w.stackPred;     // seed from registerWorker
-            int cfg = w.config, nsteals = 0, src = -1, propagated = 0;
+            int cfg = w.config, nsteals = 0;
             for (;;) {
                 WorkQueue[] qs;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
@@ -2013,29 +2007,17 @@ public class ForkJoinPool extends AbstractExecutorService {
                                 }
                             }
                             else if (U.compareAndSetReference(a, kp, t, null)) {
-                                q.updateBase(nb);
+                                q.base = nb;
                                 rescan = true;
-                                ++nsteals;
-                                if (src != j || propagated != phase) {
-                                    w.source = src = j;
-                                    if (a[nk = nb & (cap - 1)] != null) {
-                                        propagated = phase;
-                                        signalWork(a, nk);
-                                    }
-                                }
+                                w.nsteals = ++nsteals;
+                                w.source = j;              // volatile write
                                 w.topLevelExec(t, cfg);
                             }
                         }
                     }
                 }
-                if (!rescan) {
-                    if (nsteals != 0) {
-                        w.nsteals += nsteals;
-                        nsteals = 0;
-                    }
-                    else if (((phase = deactivate(w, phase)) & IDLE) != 0)
-                        break;
-                }
+                if (!rescan && ((phase = deactivate(w, phase)) & IDLE) != 0)
+                    break;
             }
         }
     }
@@ -2055,7 +2037,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         w.stackPred = (int)pc;               // set ctl stack link
         w.phase = p;
         if (!compareAndSetCtl(pc, qc))       // try to enqueue
-            return w.phase = activePhase;    // ctl contention
+            return w.phase = phase;          // back out on ctl contention
         WorkQueue[] qs; int n;
         if (((runState & SHUTDOWN) != 0L && quiescent() > 0) ||
             (qs = queues) == null || (n = qs.length) <= 0)
@@ -2066,11 +2048,10 @@ public class ForkJoinPool extends AbstractExecutorService {
                 return activePhase;
             else if (i >= steps)
                 return awaitWork(w, p);      // block, drop, or exit
-            else if ((i & 3) != 0)
+            else if ((q = qs[i & (n - 1)]) == null)
                 Thread.onSpinWait();         // reduce flailing
-            else if ((q = qs[i & (n - 1)]) != null &&
-                     ((q.phase & IDLE) == 0 || q.top - q.base > 0))
-                signalWork(null, -1);        // help signal
+            else if (q.top - q.base > 0)
+                signalWork();                // help signal
         }
     }
 
