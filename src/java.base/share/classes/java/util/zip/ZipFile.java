@@ -1220,11 +1220,10 @@ public class ZipFile implements ZipConstants, Closeable {
         private int[] entries;                  // array of hashed cen entry
 
         // Checks the entry at offset pos in the CEN, calculates the Entry values as per above.
-        private void processNextCENEntry(InitCENState state)
+        private int processNextCENEntry(InitCENState state)
             throws IOException
         {
             int pos = state.pos;
-            byte[] cen = this.cen;
             // The entry length, from pos + CENHDR
             int nlen = state.cen16(CENNAM);
 
@@ -1238,7 +1237,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 checkAndAddMetaEntry(state, nlen);
             }
             state.idx += 3;
-            state.pos = pos + headerSize;
+            return state.pos = pos + headerSize;
         }
 
         private int checkCENHeader(InitCENState state, int nlen) throws ZipException {
@@ -1861,9 +1860,7 @@ public class ZipFile implements ZipConstants, Closeable {
             try {
                 int limit = cen.length - CENHDR;
                 // Checks the entry and adds values to entries[idx ... idx+2], state.pos will contain position of next entry
-                while (state.pos < limit) {
-                    processNextCENEntry(state);
-                }
+                while (processNextCENEntry(state) < limit) {}
 
                 if (state.pos != cen.length) {
                     zerror("invalid CEN header (bad header size)");
