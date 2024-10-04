@@ -77,8 +77,10 @@ public class CDSPluginTest {
         }
         subDir += "server" + sep;
 
-        boolean COMPACT_HEADERS =
-                Platform.is64bit() && WhiteBox.getWhiteBox().getBooleanVMFlag("UseCompactObjectHeaders");
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        boolean COMPACT_HEADERS = Platform.is64bit() &&
+                                  wb.getBooleanVMFlag("UseCompactObjectHeaders") &&
+                                  wb.isDefaultVMFlag("UseCompactObjectHeaders");
 
         String suffix = COMPACT_HEADERS ? "_coh.jsa" : ".jsa";
 
