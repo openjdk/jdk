@@ -377,7 +377,15 @@ bool ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy
 
 template <class T, bool HAS_FWD, bool EVAC, bool ENQUEUE>
 void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
-  assert(HAS_FWD == _heap->has_forwarded_objects(), "Forwarded object status is sane");
+  // Young cycles are allowed to run when old marking is in progress. When old marking is in progress,
+  // this barrier will be called with ENQUEUE=true and HAS_FWD=false, even though the young generation
+  // may have forwarded objects. In this case, the `arraycopy_work` is first called with HAS_FWD=true and
+  // ENQUEUE=false.
+  assert(HAS_FWD == _heap->has_forwarded_objects() || (_heap->gc_state() & ShenandoahHeap::OLD_MARKING) != 0,
+         "Forwarded object status is sane");
+  // This function cannot be called to handle marking and evacuation at the same time (they operate on
+  // different sides of the copy).
+  assert((HAS_FWD || EVAC) != ENQUEUE, "Cannot evacuate and mark both sides of copy.");
 
   Thread* thread = Thread::current();
   SATBMarkQueue& queue = ShenandoahThreadLocalData::satb_mark_queue(thread);
@@ -395,7 +403,6 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
         }
         shenandoah_assert_forwarded_except(elem_ptr, obj, _heap->cancelled_gc());
         ShenandoahHeap::atomic_update_oop(fwd, elem_ptr, o);
-        obj = fwd;
       }
       if (ENQUEUE && !ctx->is_marked_strong_or_old(obj)) {
         _satb_mark_queue_set.enqueue_known_active(queue, obj);
