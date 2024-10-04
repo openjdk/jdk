@@ -37,9 +37,6 @@
  * members of a target object (based on its runtime class) or the
  * members declared by a given class.
  *
- * <p>{@link AccessibleObject} allows suppression of access checks if
- * the necessary {@link ReflectPermission} is available.
- *
  * <p>{@link Array} provides static methods to dynamically create and
  * access arrays.
  *
