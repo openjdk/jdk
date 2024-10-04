@@ -509,7 +509,6 @@ private:
   ShenandoahVerifier*        _verifier;
 
   ShenandoahPhaseTimings*       _phase_timings;
-  ShenandoahEvacuationTracker*  _evac_tracker;
   ShenandoahMmuTracker          _mmu_tracker;
 
 public:
@@ -534,7 +533,6 @@ public:
   ShenandoahPacer*           pacer()             const { return _pacer;             }
 
   ShenandoahPhaseTimings*      phase_timings()   const { return _phase_timings;     }
-  ShenandoahEvacuationTracker* evac_tracker()    const { return _evac_tracker;      }
 
   ShenandoahEvacOOMHandler* oom_evac_handler() { return &_oom_evac_handler; }
 

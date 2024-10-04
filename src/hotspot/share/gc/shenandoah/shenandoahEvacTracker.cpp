@@ -27,14 +27,13 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/thread.hpp"
 
-ShenandoahEvacuationStats::ShenandoahEvacuationStats(bool generational)
+ShenandoahEvacuationStats::ShenandoahEvacuationStats()
   : _evacuations_completed(0), _bytes_completed(0),
     _evacuations_attempted(0), _bytes_attempted(0),
-    _use_age_table(generational && (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring)) {
+    _use_age_table(ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring) {
   if (_use_age_table) {
     _age_table = new AgeTable(false);
   }
@@ -81,6 +80,7 @@ void ShenandoahEvacuationStats::reset() {
 }
 
 void ShenandoahEvacuationStats::print_on(outputStream* st) {
+#ifndef PRODUCT
   size_t abandoned_size = _bytes_attempted - _bytes_completed;
   size_t abandoned_count = _evacuations_attempted - _evacuations_completed;
   st->print_cr("Evacuated " SIZE_FORMAT "%s across " SIZE_FORMAT " objects, "
@@ -89,6 +89,7 @@ void ShenandoahEvacuationStats::print_on(outputStream* st) {
             _evacuations_completed,
             byte_size_in_proper_unit(abandoned_size),   proper_unit_for_byte_size(abandoned_size),
             abandoned_count);
+#endif
   if (_use_age_table) {
     _age_table->print_on(st);
   }
@@ -109,25 +110,24 @@ void ShenandoahEvacuationTracker::print_evacuations_on(outputStream* st,
   st->cr();
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (_generational) {
-    AgeTable young_region_ages(false);
-    for (uint i = 0; i < heap->num_regions(); ++i) {
-      ShenandoahHeapRegion* r = heap->get_region(i);
-      if (r->is_young()) {
-        young_region_ages.add(r->age(), r->get_live_data_words());
-      }
+
+  AgeTable young_region_ages(false);
+  for (uint i = 0; i < heap->num_regions(); ++i) {
+    ShenandoahHeapRegion* r = heap->get_region(i);
+    if (r->is_young()) {
+      young_region_ages.add(r->age(), r->get_live_data_words());
     }
-    st->print("Young regions: ");
-    young_region_ages.print_on(st);
-    st->cr();
   }
+  st->print("Young regions: ");
+  young_region_ages.print_on(st);
+  st->cr();
 }
 
 class ShenandoahStatAggregator : public ThreadClosure {
 public:
   ShenandoahEvacuationStats* _target;
   explicit ShenandoahStatAggregator(ShenandoahEvacuationStats* target) : _target(target) {}
-  virtual void do_thread(Thread* thread) override {
+  void do_thread(Thread* thread) override {
     ShenandoahEvacuationStats* local = ShenandoahThreadLocalData::evacuation_stats(thread);
     _target->accumulate(local);
     local->reset();
@@ -135,7 +135,7 @@ public:
 };
 
 ShenandoahCycleStats ShenandoahEvacuationTracker::flush_cycle_to_global() {
-  ShenandoahEvacuationStats mutators(_generational), workers(_generational);
+  ShenandoahEvacuationStats mutators, workers;
 
   ThreadsListHandle java_threads_iterator;
   ShenandoahStatAggregator aggregate_mutators(&mutators);
@@ -147,7 +147,7 @@ ShenandoahCycleStats ShenandoahEvacuationTracker::flush_cycle_to_global() {
   _mutators_global.accumulate(&mutators);
   _workers_global.accumulate(&workers);
 
-  if (_generational && (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring)) {
+  if (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring) {
     // Ingest mutator & worker collected population vectors into the heap's
     // global census data, and use it to compute an appropriate tenuring threshold
     // for use in the next cycle.

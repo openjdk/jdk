@@ -39,7 +39,7 @@ private:
   AgeTable* _age_table;
 
  public:
-  ShenandoahEvacuationStats(bool generational);
+  ShenandoahEvacuationStats();
 
   AgeTable* age_table() const;
 
@@ -59,16 +59,12 @@ struct ShenandoahCycleStats {
 
 class ShenandoahEvacuationTracker : public CHeapObj<mtGC> {
 private:
-  bool _generational;
 
   ShenandoahEvacuationStats _workers_global;
   ShenandoahEvacuationStats _mutators_global;
 
 public:
-  ShenandoahEvacuationTracker(bool generational) :
-   _generational(generational),
-   _workers_global(generational),
-   _mutators_global(generational) {}
+  ShenandoahEvacuationTracker() = default;
 
   void begin_evacuation(Thread* thread, size_t bytes);
   void end_evacuation(Thread* thread, size_t bytes);
@@ -76,8 +72,8 @@ public:
 
   void print_global_on(outputStream* st);
   void print_evacuations_on(outputStream* st,
-                                   ShenandoahEvacuationStats* workers,
-                                   ShenandoahEvacuationStats* mutators);
+                            ShenandoahEvacuationStats* workers,
+                            ShenandoahEvacuationStats* mutators);
 
   ShenandoahCycleStats flush_cycle_to_global();
 };

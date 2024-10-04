@@ -28,12 +28,15 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 class ShenandoahOldGeneration;
+class ShenandoahGeneration;
+class ShenandoahGenerationalHeap;
+class ShenandoahHeap;
 
 class ShenandoahGenerationalControlThread: public ShenandoahController {
   friend class VMStructs;
@@ -101,13 +104,13 @@ private:
   // Returns true if the old generation marking was interrupted to allow a young cycle.
   bool preempt_old_marking(ShenandoahGenerationType generation);
 
-  void process_phase_timings(const ShenandoahHeap* heap);
+  void process_phase_timings(const ShenandoahGenerationalHeap* heap);
 
-  void service_concurrent_normal_cycle(ShenandoahHeap* heap,
+  void service_concurrent_normal_cycle(ShenandoahGenerationalHeap* heap,
                                        ShenandoahGenerationType generation,
                                        GCCause::Cause cause);
 
-  void service_concurrent_old_cycle(ShenandoahHeap* heap,
+  void service_concurrent_old_cycle(ShenandoahGenerationalHeap* heap,
                                     GCCause::Cause &cause);
 
   void set_gc_mode(GCMode new_mode);

@@ -46,8 +46,9 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _plab_allows_promotion(true),
   _plab_retries_enabled(true),
   _evacuation_stats(nullptr) {
-  bool gen_mode = ShenandoahHeap::heap()->mode()->is_generational();
-  _evacuation_stats = new ShenandoahEvacuationStats(gen_mode);
+  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    _evacuation_stats = new ShenandoahEvacuationStats();
+  }
 }
 
 ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {

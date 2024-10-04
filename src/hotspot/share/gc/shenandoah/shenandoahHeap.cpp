@@ -501,7 +501,6 @@ void ShenandoahHeap::initialize_mode() {
 void ShenandoahHeap::initialize_heuristics() {
   _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity(), max_capacity());
   _global_generation->initialize_heuristics(mode());
-  _evac_tracker = new ShenandoahEvacuationTracker(mode()->is_generational());
 }
 
 #ifdef _MSC_VER
@@ -536,7 +535,6 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _pacer(nullptr),
   _verifier(nullptr),
   _phase_timings(nullptr),
-  _evac_tracker(nullptr),
   _mmu_tracker(),
   _monitoring_support(nullptr),
   _memory_pool(nullptr),
