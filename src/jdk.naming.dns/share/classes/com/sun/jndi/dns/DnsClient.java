@@ -318,9 +318,12 @@ public class DnsClient {
                         if (debug) {
                             dprint("Caught Exception:" + ex);
                         }
-                        if (caughtException == null) {
+                        if (caughtException == null || servers.length == 1) {
+                            // If there are several servers we continue trying with other
+                            // servers, otherwise this exception will be reported
                             caughtException = ex;
                         } else {
+                            // Best reporting effort
                             caughtException.addSuppressed(ex);
                         }
                         doNotRetry[i] = true;
@@ -349,9 +352,12 @@ public class DnsClient {
                             caughtException = e;
                         }
                     } catch (NamingException e) {
-                        if (caughtException == null) {
+                        if (caughtException == null || servers.length == 1) {
+                            // If there are several servers we continue trying with other
+                            // servers, otherwise this exception will be reported
                             caughtException = e;
                         } else {
+                            // Best reporting effort
                             caughtException.addSuppressed(e);
                         }
                         doNotRetry[i] = true;
