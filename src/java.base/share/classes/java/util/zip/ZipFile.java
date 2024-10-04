@@ -1234,12 +1234,9 @@ public class ZipFile implements ZipConstants, Closeable {
             // Validate and return the full header size (a value between CENHDR and 0xFFFF, inclusive)
             int headerSize = checkCENHeader(state, nlen);
 
+            // Process the entry, checking and adding any META-INF entry information as needed
             addEntry(state, nlen);
 
-            // Adds name to metanames.
-            if (isMetaName(state, nlen)) {
-                checkAndAddMetaEntry(state, nlen);
-            }
             state.idx += 3;
             return state.pos += headerSize;
         }
@@ -1303,6 +1300,9 @@ public class ZipFile implements ZipConstants, Closeable {
                 table[hsh] = index; // Store state.idx + 1, reserving 0 for end-of-chain
                 entries[index++] = next;
                 entries[index] = pos;
+
+                // Check if this entry is a META-INF entry and process it accordingly.
+                checkAndAddMetaEntry(state, nlen);
             } catch (Exception e) {
                 zerror("invalid CEN header (bad entry name or comment)");
             }
@@ -1319,13 +1319,17 @@ public class ZipFile implements ZipConstants, Closeable {
         }
 
         private void checkAndAddMetaEntry(InitCENState state, int nlen) {
+            if (!isMetaName(state, nlen)) {
+                return;
+            }
             int pos = state.pos;
+            int entryPos = pos + CENHDR;
             // nlen is at least META_INF_LENGTH
-            if (isManifestName(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN)) {
+            if (isManifestName(entryPos + META_INF_LEN, nlen - META_INF_LEN)) {
                 manifestPos = pos;
                 manifestNum++;
             } else {
-                if (isSignatureRelated(pos + CENHDR, nlen)) {
+                if (isSignatureRelated(entryPos, nlen)) {
                     if (state.signatureNames == null) {
                         state.signatureNames = new ArrayList<>(4);
                     }
@@ -1335,7 +1339,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 // If this is a versioned entry, parse the version
                 // and store it for later. This optimizes lookup
                 // performance in multi-release jar files
-                int version = getMetaVersion(pos + CENHDR + META_INF_LEN, nlen - META_INF_LEN);
+                int version = getMetaVersion(entryPos + META_INF_LEN, nlen - META_INF_LEN);
                 if (version > 0) {
                     if (state.metaVersionsSet == null) {
                         state.metaVersionsSet = new TreeSet<>();
