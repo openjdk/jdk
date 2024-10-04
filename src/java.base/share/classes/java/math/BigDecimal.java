@@ -5310,14 +5310,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     private static BigDecimal createAndStripZerosToMatchScale(long compactVal, int scale, long preferredScale) {
         long mag = Math.abs(compactVal);
-        while (mag >= 10L && scale > preferredScale) {
-            if ((mag & 1L) != 0L)
-                break; // odd number cannot end in 0
-            long r = mag % 10L;
-            if (r != 0L)
-                break; // non-0 remainder
+        while (mag % 10L == 0L && scale > preferredScale) {
             mag /= 10L;
-            scale = checkScale(mag, (long) scale - 1); // could Overflow
+            scale = checkScale(mag, scale - 1L); // could Overflow
         }
         return valueOf(compactVal >= 0 ? mag : -mag, scale);
     }
