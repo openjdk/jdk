@@ -509,19 +509,19 @@ public final class StackMapGenerator {
             case DALOAD ->
                 currentFrame.decStack2PushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case AALOAD ->
-                currentFrame.pushStack((type1 = currentFrame.decStack(1).popStack()) == Type.NULL_TYPE ? Type.NULL_TYPE : type1.getComponent());
+                currentFrame.pushStack((type1 = currentFrame.decStack().popStack()) == Type.NULL_TYPE ? Type.NULL_TYPE : type1.getComponent());
             case ISTORE ->
-                currentFrame.decStack(1).setLocal(bcs.getIndex(), Type.INTEGER_TYPE);
+                currentFrame.decStack().setLocal(bcs.getIndex(), Type.INTEGER_TYPE);
             case ISTORE_0, ISTORE_1, ISTORE_2, ISTORE_3 ->
-                currentFrame.decStack(1).setLocal(opcode - ISTORE_0, Type.INTEGER_TYPE);
+                currentFrame.decStack().setLocal(opcode - ISTORE_0, Type.INTEGER_TYPE);
             case LSTORE ->
                 currentFrame.decStack(2).setLocal2(bcs.getIndex(), Type.LONG_TYPE, Type.LONG2_TYPE);
             case LSTORE_0, LSTORE_1, LSTORE_2, LSTORE_3 ->
                 currentFrame.decStack(2).setLocal2(opcode - LSTORE_0, Type.LONG_TYPE, Type.LONG2_TYPE);
             case FSTORE ->
-                currentFrame.decStack(1).setLocal(bcs.getIndex(), Type.FLOAT_TYPE);
+                currentFrame.decStack().setLocal(bcs.getIndex(), Type.FLOAT_TYPE);
             case FSTORE_0, FSTORE_1, FSTORE_2, FSTORE_3 ->
-                currentFrame.decStack(1).setLocal(opcode - FSTORE_0, Type.FLOAT_TYPE);
+                currentFrame.decStack().setLocal(opcode - FSTORE_0, Type.FLOAT_TYPE);
             case DSTORE ->
                 currentFrame.decStack(2).setLocal2(bcs.getIndex(), Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
             case DSTORE_0, DSTORE_1, DSTORE_2, DSTORE_3 ->
@@ -535,7 +535,7 @@ public final class StackMapGenerator {
             case IASTORE, BASTORE, CASTORE, SASTORE, FASTORE, AASTORE ->
                 currentFrame.decStack(3);
             case POP, MONITORENTER, MONITOREXIT ->
-                currentFrame.decStack(1);
+                currentFrame.decStack();
             case POP2 ->
                  currentFrame.decStack(2);
             case DUP ->
@@ -603,7 +603,7 @@ public final class StackMapGenerator {
             case IF_ICMPEQ, IF_ICMPNE, IF_ICMPLT, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ACMPEQ, IF_ACMPNE ->
                 checkJumpTarget(currentFrame.decStack(2), bcs.dest());
             case IFEQ, IFNE, IFLT, IFGE, IFGT, IFLE, IFNULL, IFNONNULL ->
-                checkJumpTarget(currentFrame.decStack(1), bcs.dest());
+                checkJumpTarget(currentFrame.decStack(), bcs.dest());
             case GOTO -> {
                 checkJumpTarget(currentFrame, bcs.dest());
                 ncf = true;
@@ -621,7 +621,7 @@ public final class StackMapGenerator {
                 ncf = true;
             }
             case IRETURN, FRETURN, ARETURN, ATHROW -> {
-                currentFrame.decStack(1);
+                currentFrame.decStack();
                 ncf = true;
             }
             case GETSTATIC, PUTSTATIC, GETFIELD, PUTFIELD ->
@@ -638,10 +638,9 @@ public final class StackMapGenerator {
                 currentFrame.decStack1PushStack(cpIndexToType(bcs.getIndexU2(), cp));
             case MULTIANEWARRAY -> {
                 type1 = cpIndexToType(bcs.getIndexU2(), cp);
-                int dim = bcs.getU1Unchecked(bcs.bci() + 3);
-                for (int i = 0; i < dim; i++) {
-                    currentFrame.popStack();
-                }
+                currentFrame.decStack(
+                        bcs.getU1Unchecked(bcs.bci() + 3) /* dim */
+                );
                 currentFrame.pushStack(type1);
             }
             case JSR, JSR_W, RET ->
@@ -701,7 +700,7 @@ public final class StackMapGenerator {
         int alignedBci = RawBytecodeHelper.align(bci + 1);
         int defaultOffset = bcs.getIntUnchecked(alignedBci);
         int keys, delta;
-        currentFrame.popStack();
+        currentFrame.decStack();
         if (bcs.opcode() == TABLESWITCH) {
             int low = bcs.getIntUnchecked(alignedBci + 4);
             int high = bcs.getIntUnchecked(alignedBci + 2 * 4);
@@ -781,7 +780,7 @@ public final class StackMapGenerator {
                     throw generatorError("Bad operand type when invoking <init>");
                 }
             } else {
-                currentFrame.popStack();
+                currentFrame.decStack();
             }
         }
         currentFrame.pushStack(mDesc.returnType());
@@ -794,8 +793,15 @@ public final class StackMapGenerator {
     }
 
     private void processAnewarray(int index) {
-        currentFrame.popStack();
+        currentFrame.decStack();
         currentFrame.pushStack(cpIndexToType(index, cp).toArray());
+    }
+
+    /**
+     * {@return the generator error with stack underflow}
+     */
+    private IllegalArgumentException stackUnderflow() {
+        return generatorError("Operand stack underflow");
     }
 
     /**
@@ -948,7 +954,7 @@ public final class StackMapGenerator {
 
         Frame dup() {
             int stackSize = this.stackSize;
-            if (stackSize < 1) throw generatorError("Operand stack underflow");
+            if (stackSize < 1) throw stackUnderflow();
             checkStack(stackSize + 1);
             stack[stackSize] = stack[stackSize - 1];
             this.stackSize = stackSize + 1;
@@ -957,7 +963,7 @@ public final class StackMapGenerator {
 
         Frame dup_x1() {
             int stackSize = this.stackSize;
-            if (stackSize < 2) throw generatorError("Operand stack underflow");
+            if (stackSize < 2) throw stackUnderflow();
             checkStack(stackSize + 1);
             Type type0 = stack[stackSize - 2];
             Type type1 = stack[stackSize - 1];
@@ -970,7 +976,7 @@ public final class StackMapGenerator {
 
         Frame dup_x2() {
             int stackSize = this.stackSize;
-            if (stackSize < 3) throw generatorError("Operand stack underflow");
+            if (stackSize < 3) throw stackUnderflow();
             checkStack(stackSize + 1);
             Type type0 = stack[stackSize - 3];
             Type type1 = stack[stackSize - 2];
@@ -985,7 +991,7 @@ public final class StackMapGenerator {
 
         Frame dup2() {
             int stackSize = this.stackSize;
-            if (stackSize < 2) throw generatorError("Operand stack underflow");
+            if (stackSize < 2) throw stackUnderflow();
             checkStack(stackSize + 2);
             stack[stackSize    ] = stack[stackSize - 2];
             stack[stackSize + 1] = stack[stackSize - 1];
@@ -995,7 +1001,7 @@ public final class StackMapGenerator {
 
         Frame dup2_x1() {
             int stackSize = this.stackSize;
-            if (stackSize < 3) throw generatorError("Operand stack underflow");
+            if (stackSize < 3) throw stackUnderflow();
             checkStack(stackSize + 2);
             Type type0 = stack[stackSize - 3];
             Type type1 = stack[stackSize - 2];
@@ -1011,7 +1017,7 @@ public final class StackMapGenerator {
 
         Frame dup2_x2() {
             int stackSize = this.stackSize;
-            if (stackSize < 4) throw generatorError("Operand stack underflow");
+            if (stackSize < 4) throw stackUnderflow();
             checkStack(stackSize + 4);
             Type type0 = stack[stackSize - 4];
             Type type1 = stack[stackSize - 3];
@@ -1030,7 +1036,7 @@ public final class StackMapGenerator {
 
         Frame swap() {
             int stackSize = this.stackSize - 2;
-            if (stackSize < 0) throw generatorError("Operand stack underflow");
+            if (stackSize < 0) throw stackUnderflow();
             Type type = stack[stackSize];
             stack[stackSize] = stack[stackSize + 1];
             stack[stackSize + 1] = type;
@@ -1076,20 +1082,25 @@ public final class StackMapGenerator {
 
         Type popStack() {
             int stackSize = this.stackSize - 1;
-            if (stackSize < 0) throw generatorError("Operand stack underflow");
+            if (stackSize < 0) throw stackUnderflow();
             this.stackSize = stackSize;
             return stack[stackSize];
         }
 
+        Frame decStack() {
+            if (--stackSize < 0) throw stackUnderflow();
+            return this;
+        }
+
         Frame decStack(int size) {
             stackSize -= size;
-            if (stackSize < 0) throw generatorError("Operand stack underflow");
+            if (stackSize < 0) throw stackUnderflow();
             return this;
         }
 
         Frame decStack1PushStack(Type type1, Type type2) {
             int stackSize = this.stackSize - 1;
-            if (stackSize < 0) throw generatorError("Operand stack underflow");
+            if (stackSize < 0) throw stackUnderflow();
             checkStack(stackSize + 2);
             stack[stackSize    ] = type1;
             stack[stackSize + 1] = type2;
@@ -1099,14 +1110,14 @@ public final class StackMapGenerator {
 
         Frame decStack1PushStack(Type type) {
             int stackSize = this.stackSize - 1;
-            if (stackSize < 0) throw generatorError("Operand stack underflow");
+            if (stackSize < 0) throw stackUnderflow();
             stack[stackSize] = type;
             return this;
         }
 
         Frame decStack2PushStack(Type type) {
             int stackSize = this.stackSize - 2;
-            if (stackSize < 0) throw generatorError("Operand stack underflow");
+            if (stackSize < 0) throw stackUnderflow();
             stack[stackSize] = type;
             this.stackSize = stackSize + 1;
             return this;
@@ -1114,7 +1125,7 @@ public final class StackMapGenerator {
 
         Frame decStack2PushStack(Type type1, Type type2) {
             int stackSize = this.stackSize - 2;
-            if (stackSize < 0) throw generatorError("Operand stack underflow");
+            if (stackSize < 0) throw stackUnderflow();
             stack[stackSize   ] = type1;
             stack[stackSize + 1] = type2;
             return this;
@@ -1122,7 +1133,7 @@ public final class StackMapGenerator {
 
         Frame decStack3PushStack(Type type1, Type type2) {
             int stackSize = this.stackSize - 3;
-            if (stackSize < 0) throw generatorError("Operand stack underflow");
+            if (stackSize < 0) throw stackUnderflow();
             stack[stackSize   ] = type1;
             stack[stackSize + 1] = type2;
             this.stackSize = stackSize + 2;
@@ -1131,7 +1142,7 @@ public final class StackMapGenerator {
 
         Frame decStack4PushStack(Type type) {
             int stackSize = this.stackSize - 4;
-            if (stackSize < 0) throw generatorError("Operand stack underflow");
+            if (stackSize < 0) throw stackUnderflow();
             stack[stackSize] = type;
             this.stackSize = stackSize + 1;
             return this;
@@ -1139,7 +1150,7 @@ public final class StackMapGenerator {
 
         Frame decStack4PushStack(Type type1, Type type2) {
             int stackSize = this.stackSize - 4;
-            if (stackSize < 0) throw generatorError("Operand stack underflow");
+            if (stackSize < 0) throw stackUnderflow();
             stack[stackSize   ] = type1;
             stack[stackSize + 1] = type2;
             this.stackSize = stackSize + 2;
