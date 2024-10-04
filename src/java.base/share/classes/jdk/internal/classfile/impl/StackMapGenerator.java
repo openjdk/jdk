@@ -910,18 +910,6 @@ public final class StackMapGenerator {
         this.framesCount = framesCount + 1;
     }
 
-    private void detectFrameOffsetsRawHandlers(BitSet offsets) throws IllegalArgumentException {
-        for (int i = 0, size = rawHandlers.size(); i < size; i++) {
-            var exhandler = rawHandlers.get(i);
-            try {
-                offsets.set(exhandler.handler());
-            } catch (IllegalArgumentException iae) {
-                if (!filterDeadLabels)
-                    throw generatorError("Detected exception handler out of bytecode range");
-            }
-        }
-    }
-
     private final class Frame {
 
         int offset;
