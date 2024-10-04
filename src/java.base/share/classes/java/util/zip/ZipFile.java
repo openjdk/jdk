@@ -939,7 +939,7 @@ public class ZipFile implements ZipConstants, Closeable {
             if (pos <= 0) {
                 byte[] loc = new byte[LOCHDR];
                 pos = -pos;
-                int len = ZipFile.this.res.zsrc.readFullyAt(loc, 0, loc.length, pos);
+                int len = ZipFile.this.res.zsrc.readFullyAt(loc, 0, LOCHDR, pos);
                 if (len != LOCHDR) {
                     throw new ZipException("ZipFile error reading zip file");
                 }
@@ -1279,7 +1279,7 @@ public class ZipFile implements ZipConstants, Closeable {
             } else if (elen == 0 && (state.cen32(CENSIZ) == ZIP64_MAGICVAL
                     || state.cen32(CENLEN) == ZIP64_MAGICVAL
                     || state.cen32(CENOFF) == ZIP64_MAGICVAL
-                    || state.cen32(CENDSK) == ZIP64_MAGICCOUNT)) {
+                    || state.cen16(CENDSK) == ZIP64_MAGICCOUNT)) {
                 zerror("Invalid CEN header (invalid zip64 extra len size)");
             }
 
@@ -1859,8 +1859,10 @@ public class ZipFile implements ZipConstants, Closeable {
             var state = new InitCENState(); // state holder
             try {
                 int limit = cen.length - CENHDR;
-                // Checks the entry and adds values to entries[idx ... idx+2], state.pos will contain position of next entry
-                while (processNextCENEntry(state) < limit) {}
+                if (limit >= 0) {
+                    // Checks the entry and adds values to entries[idx ... idx+2], state.pos will contain position of next entry
+                    while (processNextCENEntry(state) <= limit) {}
+                }
 
                 if (state.pos != cen.length) {
                     zerror("invalid CEN header (bad header size)");
