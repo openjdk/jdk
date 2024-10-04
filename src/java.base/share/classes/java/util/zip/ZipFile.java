@@ -1289,7 +1289,8 @@ public class ZipFile implements ZipConstants, Closeable {
         private void addEntry(InitCENState state, int nlen) throws ZipException {
             try {
                 int pos = state.pos;
-                int hash = zipCoderForPos(pos).checkedHash(cen, pos + CENHDR, nlen);
+                int entryPos = pos + CENHDR;
+                int hash = zipCoderForPos(pos).checkedHash(cen, entryPos, nlen);
                 int[] table = this.table;
                 int hsh = (hash & 0x7fffffff) % tablelen;
                 int next = table[hsh];
@@ -1302,7 +1303,31 @@ public class ZipFile implements ZipConstants, Closeable {
                 entries[index] = pos;
 
                 // Check if this entry is a META-INF entry and process it accordingly.
-                checkAndAddMetaEntry(state, nlen);
+                if (isMetaName(entryPos, nlen)) {
+                    // nlen is at least META_INF_LENGTH
+                    if (isManifestName(entryPos + META_INF_LEN, nlen - META_INF_LEN)) {
+                        manifestPos = pos;
+                        manifestNum++;
+                    } else {
+                        if (isSignatureRelated(entryPos, nlen)) {
+                            if (state.signatureNames == null) {
+                                state.signatureNames = new ArrayList<>(4);
+                            }
+                            state.signatureNames.add(pos);
+                        }
+
+                        // If this is a versioned entry, parse the version
+                        // and store it for later. This optimizes lookup
+                        // performance in multi-release jar files
+                        int version = getMetaVersion(entryPos + META_INF_LEN, nlen - META_INF_LEN);
+                        if (version > 0) {
+                            if (state.metaVersionsSet == null) {
+                                state.metaVersionsSet = new TreeSet<>();
+                            }
+                            state.metaVersionsSet.add(version);
+                        }
+                    }
+                }
             } catch (Exception e) {
                 zerror("invalid CEN header (bad entry name or comment)");
             }
@@ -1315,37 +1340,6 @@ public class ZipFile implements ZipConstants, Closeable {
                 zipCoderForPos(pos).toString(cen, pos + headerSize - clen, clen);
             } catch (Exception e) {
                 zerror("invalid CEN header (bad entry name or comment)");
-            }
-        }
-
-        private void checkAndAddMetaEntry(InitCENState state, int nlen) {
-            if (!isMetaName(state, nlen)) {
-                return;
-            }
-            int pos = state.pos;
-            int entryPos = pos + CENHDR;
-            // nlen is at least META_INF_LENGTH
-            if (isManifestName(entryPos + META_INF_LEN, nlen - META_INF_LEN)) {
-                manifestPos = pos;
-                manifestNum++;
-            } else {
-                if (isSignatureRelated(entryPos, nlen)) {
-                    if (state.signatureNames == null) {
-                        state.signatureNames = new ArrayList<>(4);
-                    }
-                    state.signatureNames.add(pos);
-                }
-
-                // If this is a versioned entry, parse the version
-                // and store it for later. This optimizes lookup
-                // performance in multi-release jar files
-                int version = getMetaVersion(entryPos + META_INF_LEN, nlen - META_INF_LEN);
-                if (version > 0) {
-                    if (state.metaVersionsSet == null) {
-                        state.metaVersionsSet = new TreeSet<>();
-                    }
-                    state.metaVersionsSet.add(version);
-                }
             }
         }
 
@@ -1953,10 +1947,9 @@ public class ZipFile implements ZipConstants, Closeable {
          * Returns true if the bytes represent a non-directory name
          * beginning with "META-INF/", disregarding ASCII case.
          */
-        private boolean isMetaName(InitCENState state, int len) {
+        private boolean isMetaName(int off, int len) {
             // Use the "oldest ASCII trick in the book":
             // ch | 0x20 == Character.toLowerCase(ch)
-            int off = state.pos + CENHDR;
             byte[] name = cen;
             return len > META_INF_LEN       // "META-INF/".length()
                 && name[off + len - 1] != '/'  // non-directory
