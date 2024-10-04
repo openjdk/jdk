@@ -2642,22 +2642,31 @@ public abstract class HtmlDocletWriter {
             //in Java platform:
             var restrictedDiv = HtmlTree.DIV(HtmlStyles.restrictedBlock);
             restrictedDiv.setId(htmlIds.forRestrictedSection(forWhat));
-            String name = forWhat.getSimpleName().toString();
+            var name = forWhat.getSimpleName().toString();
             var nameCode = HtmlTree.CODE(Text.of(name));
-            var restrictedSectionPath = replaceDocRootDir(contents.getContent("doclet.Restricted.url").toString());
-            var restrictedSectionLink = links.createLink(DocPath.create(restrictedSectionPath),
-                                                   contents.getContent("doclet.Restricted.text"));
-            String leadingNoteKey = "doclet.RestrictedLeadingNote";
-            Content leadingNote =
-                    contents.getContent(leadingNoteKey, nameCode, restrictedSectionLink);
-            restrictedDiv.add(HtmlTree.SPAN(HtmlStyles.restrictedLabel,
-                    leadingNote));
-            Content note1 = contents.getContent("doclet.RestrictedTrailingNote1", nameCode);
+            var restrictedMethodLink = getRestrictedMethodDocLink();
+            var leadingNoteKey = "doclet.RestrictedLeadingNote";
+            var leadingNote = contents.getContent(leadingNoteKey, nameCode, restrictedMethodLink);
+            restrictedDiv.add(HtmlTree.SPAN(HtmlStyles.restrictedLabel, leadingNote));
+            var note1 = contents.getContent("doclet.RestrictedTrailingNote1", nameCode);
             restrictedDiv.add(HtmlTree.DIV(HtmlStyles.restrictedComment, note1));
-            Content note2 = contents.getContent("doclet.RestrictedTrailingNote2", nameCode);
+            var note2 = contents.getContent("doclet.RestrictedTrailingNote2", nameCode);
             restrictedDiv.add(HtmlTree.DIV(HtmlStyles.restrictedComment, note2));
             target.add(restrictedDiv);
         }
+    }
+
+    private Content getRestrictedMethodDocLink() {
+        var restrictedMethodLabel = contents.getContent("doclet.RestrictedMethod");
+        var javaLang = utils.elementUtils.getPackageElement("java.lang");
+        if (utils.isIncluded(javaLang)) {
+            var restrictedDocPath = pathToRoot
+                    .resolve(docPaths.forPackage(javaLang))
+                    .resolve(DocPaths.DOC_FILES)
+                    .resolve(DocPaths.RESTRICTED_DOC);
+            return links.createLink(restrictedDocPath, restrictedMethodLabel);
+        }
+        return restrictedMethodLabel;
     }
 
 }
