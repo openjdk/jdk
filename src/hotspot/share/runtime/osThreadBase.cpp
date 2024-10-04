@@ -24,19 +24,11 @@
 
 #include "precompiled.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/osThread.hpp"
-
-OSThread::OSThread() {
-  pd_initialize();
-}
-
-OSThread::~OSThread() {
-  pd_destroy();
-}
+#include "runtime/osThreadBase.hpp"
 
 // Printing
-void OSThread::print_on(outputStream *st) const {
-  st->print("nid=" UINT64_FORMAT " ", (uint64_t)thread_id());
+void OSThreadBase::print_on(outputStream *st) const {
+  st->print("nid=" UINTX_FORMAT " ", thread_id_for_printing());
   switch (_state) {
     case ALLOCATED:               st->print("allocated ");                 break;
     case INITIALIZED:             st->print("initialized ");               break;
@@ -51,4 +43,4 @@ void OSThread::print_on(outputStream *st) const {
   }
 }
 
-void OSThread::print() const { print_on(tty); }
+void OSThreadBase::print() const { print_on(tty); }
