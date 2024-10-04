@@ -95,6 +95,7 @@ size_t ShenandoahGenerationalHeap::unsafe_max_tlab_alloc(Thread *thread) const {
 ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy) :
   ShenandoahHeap(policy),
   _age_census(nullptr),
+  _evac_tracker(new ShenandoahEvacuationTracker()),
   _min_plab_size(calculate_min_plab()),
   _max_plab_size(calculate_max_plab()),
   _regulator_thread(nullptr),
@@ -112,6 +113,18 @@ void ShenandoahGenerationalHeap::post_initialize() {
 void ShenandoahGenerationalHeap::print_init_logger() const {
   ShenandoahGenerationalInitLogger logger;
   logger.print_all();
+}
+
+void ShenandoahGenerationalHeap::print_tracing_info() const {
+  ShenandoahHeap::print_tracing_info();
+
+  LogTarget(Info, gc, stats) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.cr();
+    ls.cr();
+    evac_tracker()->print_global_on(&ls);
+  }
 }
 
 void ShenandoahGenerationalHeap::initialize_heuristics() {
@@ -317,7 +330,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
   }
 
   // Copy the object:
-  evac_tracker()->begin_evacuation(thread, size * HeapWordSize);
+  NOT_PRODUCT(evac_tracker()->begin_evacuation(thread, size * HeapWordSize));
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
   oop copy_val = cast_to_oop(copy);
 
@@ -339,7 +352,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
 
     // Record that the evacuation succeeded
-    evac_tracker()->end_evacuation(thread, size * HeapWordSize);
+    NOT_PRODUCT(evac_tracker()->end_evacuation(thread, size * HeapWordSize));
 
     if (target_gen == OLD_GENERATION) {
       old_generation()->handle_evacuation(copy, size, from_region->is_young());

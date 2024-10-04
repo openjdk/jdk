@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahFullGC.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahOldGC.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -337,7 +338,7 @@ void ShenandoahGenerationalControlThread::run_service() {
   }
 }
 
-void ShenandoahGenerationalControlThread::process_phase_timings(const ShenandoahHeap* heap) {
+void ShenandoahGenerationalControlThread::process_phase_timings(const ShenandoahGenerationalHeap* heap) {
   // Commit worker statistics to cycle data
   heap->phase_timings()->flush_par_workers_to_cycle();
   if (ShenandoahPacing) {
@@ -391,9 +392,9 @@ void ShenandoahGenerationalControlThread::process_phase_timings(const Shenandoah
 //      |        v                                   v       |
 //      +--->  Global Degen +--------------------> Full <----+
 //
-void ShenandoahGenerationalControlThread::service_concurrent_normal_cycle(ShenandoahHeap* heap,
-                                                              const ShenandoahGenerationType generation,
-                                                              GCCause::Cause cause) {
+void ShenandoahGenerationalControlThread::service_concurrent_normal_cycle(ShenandoahGenerationalHeap* heap,
+                                                                          const ShenandoahGenerationType generation,
+                                                                          GCCause::Cause cause) {
   GCIdMark gc_id_mark;
   switch (generation) {
     case YOUNG: {
@@ -421,7 +422,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_normal_cycle(Shenan
   }
 }
 
-void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(ShenandoahHeap* heap, GCCause::Cause &cause) {
+void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(ShenandoahGenerationalHeap* heap, GCCause::Cause &cause) {
   ShenandoahOldGeneration* old_generation = heap->old_generation();
   ShenandoahYoungGeneration* young_generation = heap->young_generation();
   ShenandoahOldGeneration::State original_state = old_generation->state();
