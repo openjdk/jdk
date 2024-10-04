@@ -35,8 +35,8 @@ import java.awt.Frame;
 import java.awt.Window;
 
 public class OwnedWindowShowTest {
-    public static void main(String args[]) throws Exception {
-        EventQueue.invokeAndWait(() -> runTest());
+    public static void main(String[] args) throws Exception {
+        EventQueue.invokeAndWait(OwnedWindowShowTest::runTest);
     }
 
     static void runTest() {
@@ -44,11 +44,11 @@ public class OwnedWindowShowTest {
         try {
             Window owner = new Window(parent);
             Window window = new Window(owner);
+            // Showing a window with multiple level of ownership
+            // should not throw NullPointerException
             window.setVisible(true);
         } finally {
-            if (parent != null) {
-                parent.dispose();
-            }
+            parent.dispose();
         }
     }
 }

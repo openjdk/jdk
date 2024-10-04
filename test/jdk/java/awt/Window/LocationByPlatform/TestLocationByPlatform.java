@@ -28,7 +28,7 @@
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TestLocationByPlatform
-*/
+ */
 
 import java.awt.BorderLayout;
 import java.awt.Canvas;
@@ -45,10 +45,11 @@ public class TestLocationByPlatform {
             should be displayed somewhere on the screen most probably without
             intersecting other Frames or stacked over normal frame with some
             offset. Another has its location explicitly set to (0, 450).
-            Please verify that the frames are situated correctly.
-            Also, please verify that the picture inside of frames looks the same
+            Please verify that the frames are located correctly on the screen.
+
+            Also verify that the picture inside of frames looks the same
             and consists of red descending triangle occupying exactly the bottom
-            half of the frame. Also, that there is a blue rect exactly
+            half of the frame. Make sure that there is a blue rectangle exactly
             surrounding the client area of frame with no pixels between it and
             the frame's decorations. Press Pass if this all is true,
             otherwise press Fail.
@@ -60,30 +61,13 @@ public class TestLocationByPlatform {
             .rows(13)
             .columns(40)
             .build();
-        EventQueue.invokeAndWait(() -> createUI());
+        EventQueue.invokeAndWait(TestLocationByPlatform::createUI);
         passFailJFrame.awaitAndCheck();
     }
     private static void createUI() {
         Frame frame = new Frame("Normal");
         frame.setLocation(0, 450);
-        Canvas c = new Canvas() {
-            public Dimension getPreferredSize() {
-                return new Dimension(400, 400);
-            }
-
-            public void paint(Graphics g) {
-                g.setColor(Color.red);
-                for (int i = 399; i >= 0; i--) {
-                    g.drawLine(400 - i - 1, 400 - i - 1,
-                        400 - i - 1, 399);
-                }
-                g.setColor(Color.blue);
-                g.drawLine(0, 0, 399, 0);
-                g.drawLine(0, 0, 0, 399);
-                g.drawLine(0, 399, 399, 399);
-                g.drawLine(399, 0, 399, 399);
-            }
-        };
+        Canvas c = new MyCanvas();
         frame.add(c, BorderLayout.CENTER);
         frame.pack();
         PassFailJFrame.addTestWindow(frame);
@@ -91,27 +75,31 @@ public class TestLocationByPlatform {
 
         frame = new Frame("Location by platform");
         frame.setLocationByPlatform(true);
-        c = new Canvas() {
-            public Dimension getPreferredSize() {
-                return new Dimension(400, 400);
-            }
-
-            public void paint(Graphics g) {
-                g.setColor(Color.red);
-                for (int i = 399; i >= 0; i--) {
-                    g.drawLine(400 - i - 1, 400 - i - 1,
-                        400 - i - 1, 399);
-                }
-                g.setColor(Color.blue);
-                g.drawLine(0, 0, 399, 0);
-                g.drawLine(0, 0, 0, 399);
-                g.drawLine(0, 399, 399, 399);
-                g.drawLine(399, 0, 399, 399);
-            }
-        };
+        c = new MyCanvas();
         frame.add(c, BorderLayout.CENTER);
         frame.pack();
         PassFailJFrame.addTestWindow(frame);
         frame.setVisible(true);
+    }
+}
+
+class MyCanvas extends Canvas {
+    @Override
+    public Dimension getPreferredSize() {
+        return new Dimension(400, 400);
+    }
+
+    @Override
+    public void paint(Graphics g) {
+        g.setColor(Color.red);
+        for (int i = 399; i >= 0; i--) {
+            g.drawLine(400 - i - 1, 400 - i - 1,
+                400 - i - 1, 399);
+        }
+        g.setColor(Color.blue);
+        g.drawLine(0, 0, 399, 0);
+        g.drawLine(0, 0, 0, 399);
+        g.drawLine(0, 399, 399, 399);
+        g.drawLine(399, 0, 399, 399);
     }
 }

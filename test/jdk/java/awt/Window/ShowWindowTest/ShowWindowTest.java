@@ -47,9 +47,9 @@ public class ShowWindowTest implements ActionListener
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
             1. You should see a Frame with a "Show" and a "Hide" button in it.
-            2. Click on the "Show" button. A Window with a "Hello World" Label
+            2. Click on the "Show" button. A window with a "Hello World" Label
             should appear
-            3. If a Window does not appear, the test failed.
+            3. If the window does not appear the test failed, otherwise passed.
             """;
 
         PassFailJFrame.builder()
@@ -67,8 +67,10 @@ public class ShowWindowTest implements ActionListener
         frame.setSize(100,100);
         frame.add(showButton = new Button("Show"));
         frame.add(hideButton = new Button("Hide"));
-        showButton.addActionListener(new ShowWindowTest());
-        hideButton.addActionListener(new ShowWindowTest());
+
+        ActionListener handler = new ShowWindowTest();
+        showButton.addActionListener(handler);
+        hideButton.addActionListener(handler);
 
         win = new Window(frame);
         win.add("Center", new Label("Hello World"));
