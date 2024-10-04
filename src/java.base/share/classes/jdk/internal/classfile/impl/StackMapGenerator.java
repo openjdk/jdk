@@ -965,6 +965,7 @@ public final class StackMapGenerator {
             int stackSize = this.stackSize;
             if (stackSize < 2) throw stackUnderflow();
             checkStack(stackSize + 1);
+            var stack = this.stack;
             Type type0 = stack[stackSize - 2];
             Type type1 = stack[stackSize - 1];
             stack[stackSize - 2] = type1;
@@ -978,6 +979,7 @@ public final class StackMapGenerator {
             int stackSize = this.stackSize;
             if (stackSize < 3) throw stackUnderflow();
             checkStack(stackSize + 1);
+            var stack = this.stack;
             Type type0 = stack[stackSize - 3];
             Type type1 = stack[stackSize - 2];
             Type type2 = stack[stackSize - 1];
@@ -1003,6 +1005,7 @@ public final class StackMapGenerator {
             int stackSize = this.stackSize;
             if (stackSize < 3) throw stackUnderflow();
             checkStack(stackSize + 2);
+            var stack = this.stack;
             Type type0 = stack[stackSize - 3];
             Type type1 = stack[stackSize - 2];
             Type type2 = stack[stackSize - 1];
@@ -1019,11 +1022,11 @@ public final class StackMapGenerator {
             int stackSize = this.stackSize;
             if (stackSize < 4) throw stackUnderflow();
             checkStack(stackSize + 4);
+            var stack = this.stack;
             Type type0 = stack[stackSize - 4];
             Type type1 = stack[stackSize - 3];
             Type type2 = stack[stackSize - 2];
             Type type3 = stack[stackSize - 1];
-
             stack[stackSize - 4] = type2;
             stack[stackSize - 3] = type3;
             stack[stackSize - 2] = type0;
@@ -1037,6 +1040,7 @@ public final class StackMapGenerator {
         Frame swap() {
             int stackSize = this.stackSize - 2;
             if (stackSize < 0) throw stackUnderflow();
+            var stack = this.stack;
             Type type = stack[stackSize];
             stack[stackSize] = stack[stackSize + 1];
             stack[stackSize + 1] = type;
@@ -1126,6 +1130,7 @@ public final class StackMapGenerator {
         Frame decStack2PushStack(Type type1, Type type2) {
             int stackSize = this.stackSize - 2;
             if (stackSize < 0) throw stackUnderflow();
+            var stack = this.stack;
             stack[stackSize   ] = type1;
             stack[stackSize + 1] = type2;
             return this;
@@ -1151,6 +1156,7 @@ public final class StackMapGenerator {
         Frame decStack4PushStack(Type type1, Type type2) {
             int stackSize = this.stackSize - 4;
             if (stackSize < 0) throw stackUnderflow();
+            var stack = this.stack;
             stack[stackSize   ] = type1;
             stack[stackSize + 1] = type2;
             this.stackSize = stackSize + 2;
@@ -1222,14 +1228,15 @@ public final class StackMapGenerator {
 
         private void setLocalRawInternal(int index, Type type) {
             checkLocal(index);
+            var locals = this.locals;
             localsChanged |= !type.equals(locals[index]);
             locals[index] = type;
         }
 
         private void setLocalRawInternal(int index, Type type1, Type type2) {
             checkLocal(index + 1);
-            localsChanged |= !type1.equals(locals[index]);
-            localsChanged |= !type2.equals(locals[index + 1]);
+            var locals = this.locals;
+            localsChanged |= !type1.equals(locals[index]) || !type2.equals(locals[index + 1]);
             locals[index    ] = type1;
             locals[index + 1] = type2;
         }
