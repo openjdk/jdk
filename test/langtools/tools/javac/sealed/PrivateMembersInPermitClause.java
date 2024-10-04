@@ -21,19 +21,22 @@
  * questions.
  */
 
-import java.nio.file.Path;
-
 /**
  * @test
  * @bug 8338981
  * @summary Access to private classes should be permitted inside the permits clause of the enclosing top-level class
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
- * jdk.compiler/com.sun.tools.javac.main
- * jdk.compiler/com.sun.tools.javac.util
+ *                     jdk.compiler/com.sun.tools.javac.main
+ *                     jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.Task
  * @run main PrivateMembersInPermitClause
  */
+
+import java.nio.file.Path;
+import java.util.Objects;
+import toolbox.Task;
+import java.util.List;
 
 public class PrivateMembersInPermitClause extends toolbox.TestRunner {
 
@@ -76,20 +79,28 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
             public class S {
                 private static final class A extends S {}
             }
-            """
-        );
-
-        tb.writeJavaFiles(root,
+            """,
             """
             public sealed class T permits S.A {
-                private static final class A extends T {}
+                private static final class A {}
             }
             """
         );
+        var expectedErrors = List.of(
+            "T.java:1:30: compiler.err.report.access: A, private, S.A",
+            "1 error"
+        );
 
-        new toolbox.JavacTask(tb)
+        var compileErrors = new toolbox.JavacTask(tb)
             .files(root.resolve("S.java"), root.resolve("T.java"))
-            .run(toolbox.Task.Expect.FAIL);
+            .options("-XDrawDiagnostics")
+            .run(toolbox.Task.Expect.FAIL)
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        if (!Objects.equals(compileErrors, expectedErrors)) {
+            throw new AssertionError("Expected errors: " + expectedErrors + ", but got: " + compileErrors);
+        }
+
     }
 
     @Test
@@ -132,27 +143,32 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
     }
 
     @Test
-    public void givenPrivateClassInPermitsClause_whenThanCompilingClassThatReferencesPrivateClassInExtendsClause_thenShouldFail() throws Exception {
+    public void givenPrivateClassInPermitsClause_whenThanCompilingOtherClassThatReferencesPrivateClassInPermitsClause_thenShouldFail() throws Exception {
         var root = Path.of("src");
         tb.writeJavaFiles(root,
             """
             sealed class S permits S.A {
                 private static final class A extends S {}
             }
+            """,
             """
-        );
-
-        tb.writeJavaFiles(root,
-            """
-            import S;
-            class T extends T.A {
-                private static final class A extends T {}
+            class T permits S.A {
             }
             """
         );
 
-        new toolbox.JavacTask(tb)
+        var expectedErrors = List.of(
+            "T.java:1:17: compiler.err.report.access: A, private, S.A",
+            "1 error"
+        );
+
+        var compileErrors = new toolbox.JavacTask(tb)
             .files(root.resolve("S.java"), root.resolve("T.java"))
-            .run(toolbox.Task.Expect.FAIL);
+            .run(toolbox.Task.Expect.FAIL)
+            .getOutputLines(Task.OutputKind.DIRECT);
+
+        if (!Objects.equals(compileErrors, expectedErrors)) {
+            throw new AssertionError("Expected errors: " + expectedErrors + ", but got: " + compileErrors);
+        }
     }
 }

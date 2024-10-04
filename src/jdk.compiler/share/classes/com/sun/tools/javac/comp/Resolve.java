@@ -424,12 +424,12 @@ public class Resolve {
             return
                 (env.enclClass.sym == sym.owner // fast special case
                  ||
-                 env.info.isPermitsClause
-                 &&
-                 ((JCClassDecl) env.tree).sym.outermostClass() == sym.owner.outermostClass()
-                 ||
                  env.enclClass.sym.outermostClass() ==
-                 sym.owner.outermostClass())
+                 sym.owner.outermostClass()
+                 ||
+                 (env.info.isPermitsClause
+                 &&
+                 ((JCClassDecl) env.tree).sym.outermostClass() == sym.owner.outermostClass()))
                 &&
                 sym.isInheritedIn(site.tsym, types);
         case 0:
@@ -462,7 +462,6 @@ public class Resolve {
             return isAccessible(env, site, checkInner) && notOverriddenIn(site, sym);
         }
     }
-
     //where
     /* `sym' is accessible only if not overridden by
      * another symbol which is a member of `site'
