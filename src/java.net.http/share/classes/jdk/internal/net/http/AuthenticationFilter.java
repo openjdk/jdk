@@ -243,23 +243,8 @@ class AuthenticationFilter implements HeaderFilter {
         int status = r.statusCode();
         HttpHeaders hdrs = r.headers();
         HttpRequestImpl req = r.request();
-        boolean authenticatorPresent =
-            exchange.client().authenticator().isPresent();
-        boolean userSetAuth = req.tryUserSetAuthorization();
 
-        if (userSetAuth && status != PROXY_UNAUTHORIZED && status != UNAUTHORIZED) {
-            return null;
-        }
-
-        if (authenticatorPresent && userSetAuth &&
-            (status == PROXY_UNAUTHORIZED || status == UNAUTHORIZED))
-        {
-            // a user set Authorization header is allowed to
-            // override the Authenticator, but this behavior
-            // is disabled if authentication fails
-            req.tryUserSetAuthorization(false);
-        }
-        if (!userSetAuth && status != PROXY_UNAUTHORIZED) {
+        if (status != PROXY_UNAUTHORIZED) {
             if (exchange.proxyauth != null && !exchange.proxyauth.fromcache) {
                 AuthInfo au = exchange.proxyauth;
                 URI proxyURI = getProxyURI(req);
@@ -281,7 +266,7 @@ class AuthenticationFilter implements HeaderFilter {
         boolean proxy = status == PROXY_UNAUTHORIZED;
         String authname = proxy ? "Proxy-Authenticate" : "WWW-Authenticate";
         List<String> authvals = hdrs.allValues(authname);
-        if (authvals.isEmpty() && authenticatorPresent) {
+        if (authvals.isEmpty() && exchange.client().authenticator().isPresent()) {
             throw new IOException(authname + " header missing for response code " + status);
         }
         String authval = null;
@@ -345,7 +330,7 @@ class AuthenticationFilter implements HeaderFilter {
             }
 
             // if no authenticator, let the user deal with 407/401
-            if (!authenticatorPresent) return null;
+            if (exchange.client().authenticator().isEmpty()) return null;
 
             // try again
             PasswordAuthentication pw = getCredentials(authval, proxy, req);

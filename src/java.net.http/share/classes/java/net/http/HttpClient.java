@@ -410,6 +410,11 @@ public abstract class HttpClient implements AutoCloseable {
         /**
          * Sets an authenticator to use for HTTP authentication.
          *
+         * @apiNote
+         * If a {@link HttpRequest} has an {@code Authorization} or {@code
+         * Proxy-Authorization} header set then its value will override any
+         * value derived from the given {@link Authenticator}.
+         *
          * @param authenticator the Authenticator
          * @return this builder
          */

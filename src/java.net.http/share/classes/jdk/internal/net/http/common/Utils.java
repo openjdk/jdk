@@ -217,39 +217,19 @@ public final class Utils {
     // Needs to be BiPred<String,String> to fit with general form of predicates
     // used by caller.
 
-    public static final BiPredicate<String, String> CONTEXT_RESTRICTED(
-        HttpClient client, HttpRequestImpl req)
-    {
 /*
-        return (k, v) -> client.authenticator().isEmpty()
-            || (!k.equalsIgnoreCase("Authorization")
-                && !k.equalsIgnoreCase("Proxy-Authorization"))
-
-            // flag may be true for first attempt, and will be false
-            // for subsequent attempts if the first attempt failed
-            // due to 401/407
-
-            || req.tryUserSetAuthorization();
-*/
-        return (k, v) -> {
-            boolean r = client.authenticator().isEmpty()
-            || (!k.equalsIgnoreCase("Authorization")
-                && !k.equalsIgnoreCase("Proxy-Authorization"))
-
-            // flag may be true for first attempt, and will be false
-            // for subsequent attempts if the first attempt failed
-            // due to 401/407
-
-            || req.tryUserSetAuthorization();
-            return r;
-        };
+    public static final BiPredicate<String, String> CONTEXT_RESTRICTED(HttpClient client) {
+        return (k, v) -> client.authenticator().isEmpty() ||
+                (!k.equalsIgnoreCase("Authorization")
+                        && !k.equalsIgnoreCase("Proxy-Authorization"));
     }
+*/
 
     public record ProxyHeaders(HttpHeaders userHeaders, HttpHeaders systemHeaders) {}
 
     private static final BiPredicate<String, String> HOST_RESTRICTED = (k,v) -> !"host".equalsIgnoreCase(k);
-    public static final BiPredicate<String, String> PROXY_TUNNEL_RESTRICTED(HttpClient client, HttpRequestImpl req)  {
-        return CONTEXT_RESTRICTED(client, req).and(HOST_RESTRICTED);
+    public static final BiPredicate<String, String> PROXY_TUNNEL_RESTRICTED(HttpClient client)  {
+        return HOST_RESTRICTED;
     }
 
     private static final Predicate<String> IS_HOST = "host"::equalsIgnoreCase;
