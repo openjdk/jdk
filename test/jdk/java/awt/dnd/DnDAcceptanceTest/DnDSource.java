@@ -24,10 +24,12 @@
 import java.awt.Button;
 import java.awt.Color;
 import java.awt.Container;
+import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.dnd.DnDConstants;
+import java.awt.dnd.MouseDragGestureRecognizer;
 import java.awt.dnd.DragGestureEvent;
 import java.awt.dnd.DragGestureListener;
 import java.awt.dnd.DragSource;
@@ -50,8 +52,9 @@ class DnDSource extends Button implements Transferable,
 
     DnDSource(String label) {
         super(label);
-        new MyMouseDragGestureRecognizer(DragSource.getDefaultDragSource(),
-                                         this, DnDConstants.ACTION_COPY, this);
+        Toolkit.getDefaultToolkit().createDragGestureRecognizer(MouseDragGestureRecognizer.class,
+                                                                DragSource.getDefaultDragSource(),
+                                                                this, DnDConstants.ACTION_COPY, this);
         setBackground(Color.yellow);
         setForeground(Color.blue);
         df = new DataFlavor(DnDSource.class, "DnDSource");
