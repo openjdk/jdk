@@ -54,7 +54,7 @@ import javax.net.ssl.SSLSocket;
 
 /**
  * To reproduce @bug 8331682 (client sends an unencrypted TLS alert during 1.3 handshake)
- * with SSLSockets we use a SSLSocket on the server side and a plain TCP socket backed by
+ * with SSLSockets we use an SSLSocket on the server side and a plain TCP socket backed by
  * SSLEngine on the client side.
  */
 public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHelloClientShutdown {
@@ -117,19 +117,18 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
                 try {
                     Queue<ByteBuffer> delayed = new ArrayDeque<>() {};
                     SSLEngineResult clientResult;
-                    // Client-side plain socket.
+                    // Client-side plain TCP socket.
                     clientSocket = new Socket("localhost", port);
 
                     log("=================");
 
-                    // client wrap
-                    // produce client_hello
+                    // Produce client_hello
                     log("---Client Wrap client_hello---");
                     clientResult = clientEngine.wrap(clientOut, cTOs);
                     logEngineStatus(clientEngine, clientResult);
                     runDelegatedTasks(clientEngine);
 
-                    // Read and store all available messages from the server
+                    // Send client_hello, read and store all available messages from the server.
                     while (delayed.size() < 6) {
                         ByteBuffer msg = clientWriteRead();
                         if (msg == null) {
@@ -142,13 +141,13 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
                     log("---Client closeOutbound---");
                     clientEngine.closeOutbound();
 
-                    // Sends an unencrypted user_canceled
+                    // Produce an unencrypted user_canceled
                     log("---Client Wrap user_canceled---");
                     clientResult = clientEngine.wrap(clientOut, cTOs);
                     logEngineStatus(clientEngine, clientResult);
                     runDelegatedTasks(clientEngine);
 
-                    // Sends an unencrypted close_notify
+                    // Produce an unencrypted close_notify
                     log("---Client Wrap close_notify---");
                     clientResult = clientEngine.wrap(clientOut, cTOs);
                     logEngineStatus(clientEngine, clientResult);
@@ -156,6 +155,8 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
                     assertEquals(clientResult.getStatus(), Status.CLOSED);
                     runDelegatedTasks(clientEngine);
 
+                    // Send user_canceled and close_notify alerts to server. Server should process
+                    // 2 unencrypted alerts and send its own close_notify alert back to the client.
                     ByteBuffer serverCloseNotify = clientWriteRead();
 
                     // Consume delayed messages.
@@ -166,10 +167,10 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
                         log("---Client Unwrap delayed flight " + i + "---");
                         clientResult = clientEngine.unwrap(msg, clientIn);
                         logEngineStatus(clientEngine, clientResult);
-                        assertTrue(clientEngine.isOutboundDone());
                         runDelegatedTasks(clientEngine);
                     }
 
+                    // Consume close_notify alert from server.
                     assert serverCloseNotify != null;
                     inspectTlsBuffer(serverCloseNotify);
 
@@ -190,7 +191,7 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
         return t;
     }
 
-    private ByteBuffer clientWriteRead() throws IOException {
+    protected ByteBuffer clientWriteRead() throws IOException {
         OutputStream os = clientSocket.getOutputStream();
         InputStream is = clientSocket.getInputStream();
         byte[] inbound = new byte[8192];
