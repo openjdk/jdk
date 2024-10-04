@@ -566,6 +566,10 @@ bool HandshakeState::process_by_self(bool allow_suspend, bool check_async_except
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
 
+  // Separate all the writes above for other threads reading state
+  // set by this thread in case the operation is ThreadSuspendHandshake.
+  OrderAccess::fence();
+
   while (has_operation()) {
     // Handshakes cannot safely safepoint. The exceptions to this rule are
     // the asynchronous suspension and unsafe access error handshakes.
@@ -700,10 +704,6 @@ void HandshakeState::do_self_suspend() {
   assert(_lock.owned_by_self(), "Lock must be held");
   assert(!_handshakee->has_last_Java_frame() || _handshakee->frame_anchor()->walkable(), "should have walkable stack");
   assert(_handshakee->thread_state() == _thread_blocked, "Caller should have transitioned to _thread_blocked");
-
-  // Separate all the writes above for other threads reading state
-  // set by this suspended thread.
-  OrderAccess::fence();
 
   while (is_suspended()) {
     log_trace(thread, suspend)("JavaThread:" INTPTR_FORMAT " suspended", p2i(_handshakee));
