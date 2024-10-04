@@ -30,12 +30,6 @@
  * @run main PopupProxyCrash
  */
 
-import javax.swing.Box;
-import javax.swing.JComboBox;
-import javax.swing.JTextField;
-import javax.swing.plaf.basic.BasicComboBoxUI;
-import javax.swing.plaf.basic.BasicComboPopup;
-import javax.swing.plaf.basic.ComboPopup;
 import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Color;
@@ -51,6 +45,13 @@ import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
+
+import javax.swing.Box;
+import javax.swing.JComboBox;
+import javax.swing.JTextField;
+import javax.swing.plaf.basic.BasicComboBoxUI;
+import javax.swing.plaf.basic.BasicComboPopup;
+import javax.swing.plaf.basic.ComboPopup;
 
 public class PopupProxyCrash implements ActionListener {
     private static JTextField jtf;
@@ -121,7 +122,6 @@ public class PopupProxyCrash implements ActionListener {
         parent.add(cb);
 
         frame.add(parent, BorderLayout.CENTER);
-        frame.setSize(200,200);
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
@@ -163,15 +163,15 @@ public class PopupProxyCrash implements ActionListener {
             robot.mouseMove(point.x, point.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.delay(500);
             robot.waitForIdle();
+            robot.delay(500);
 
             point = getItemPointToClick(i % fonts.length);
             robot.mouseMove(point.x, point.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.delay(500);
             robot.waitForIdle();
+            robot.delay(500);
         }
     }
     public void actionPerformed(ActionEvent ae) {

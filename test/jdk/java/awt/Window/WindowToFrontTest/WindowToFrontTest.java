@@ -60,6 +60,7 @@ public class WindowToFrontTest implements ActionListener {
         EventQueue.invokeAndWait(() -> createUI());
         passFailJFrame.awaitAndCheck();
     }
+
     private static void createUI() {
         frame = new Frame("WindowToFrontTest");
         frame.setLayout(new BorderLayout());

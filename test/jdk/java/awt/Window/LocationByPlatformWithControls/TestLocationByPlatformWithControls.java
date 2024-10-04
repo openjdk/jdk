@@ -44,14 +44,23 @@ import java.util.Vector;
 
 public class TestLocationByPlatformWithControls extends Frame
     implements ActionListener, ItemListener {
-    Panel northP, centerP;
-    Checkbox undecoratedCB, defaultLocationCB, visibleCB,
-        iconifiedCB, maximizedCB;
-    Button createB, packB, moveB, resizeB, reshapeB, disposeB;
+    Panel northP;
+    Panel centerP;
+    Checkbox undecoratedCB;
+    Checkbox defaultLocationCB;
+    Checkbox visibleCB;
+    Checkbox iconifiedCB;
+    Checkbox maximizedCB;
+    Button createB;
+    Button packB;
+    Button moveB;
+    Button resizeB;
+    Button reshapeB;
+    Button disposeB;
     Vector frames;
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
-            This test is to check that LocationByPlatform works with  other
+            This test is to check that LocationByPlatform works with other
             controls API.
             1) Create New Frame by clicking on "Create" Button in
             "TestLocationByPlatformWithControls" window.
