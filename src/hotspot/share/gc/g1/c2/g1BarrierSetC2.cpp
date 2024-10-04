@@ -332,7 +332,8 @@ Node* G1BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) co
     if (tightly_coupled_alloc) {
       assert(!use_ReduceInitialCardMarks(),
              "post-barriers are only needed for tightly-coupled initialization stores when ReduceInitialCardMarks is disabled");
-      access.set_barrier_data(access.barrier_data() ^ G1C2BarrierPre);
+      // Pre-barriers are unnecessary for tightly-coupled initialization stores.
+      access.set_barrier_data(access.barrier_data() & ~G1C2BarrierPre);
     }
   }
   return BarrierSetC2::store_at_resolved(access, val);
