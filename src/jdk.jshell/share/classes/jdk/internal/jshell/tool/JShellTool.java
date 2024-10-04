@@ -925,7 +925,7 @@ public class JShellTool implements MessageHandler {
      * Escape '%' signs in a plain string to make it a valid format string.
      */
     String escape(Object s) {
-        return s.toString().replaceAll("%", "%%");
+        return s.toString().replace("%", "%%");
     }
 
     /**
