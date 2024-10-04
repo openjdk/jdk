@@ -5309,12 +5309,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws ArithmeticException if scale overflows.
      */
     private static BigDecimal createAndStripZerosToMatchScale(long compactVal, int scale, long preferredScale) {
-        long mag = Math.abs(compactVal);
-        while (mag % 10L == 0L && scale > preferredScale) {
-            mag /= 10L;
-            scale = checkScale(mag, scale - 1L); // could Overflow
+        while (compactVal % 10L == 0L && scale > preferredScale) {
+            compactVal /= 10L;
+            scale = checkScale(compactVal, scale - 1L); // could Overflow
         }
-        return valueOf(compactVal >= 0 ? mag : -mag, scale);
+        return valueOf(compactVal, scale);
     }
 
     /**
