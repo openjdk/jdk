@@ -254,7 +254,7 @@ public abstract sealed class AbstractPoolEntry {
             }
         }
 
-        private void inflateNonAscii(int singleBytes, int hash) throws ConstantPoolException {
+        private void inflateNonAscii(int singleBytes, int hash) {
             char[] chararr = new char[rawLen];
             int chararr_count = singleBytes;
             // Inflate prefix of bytes to characters
