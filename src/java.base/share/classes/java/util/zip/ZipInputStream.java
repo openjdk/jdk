@@ -499,7 +499,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
         } catch (EOFException e) {
             return null;
         }
-        if (get32(tmpbuf, 0) != LOCSIG) {
+        if (get32S(tmpbuf, 0) != LOCSIG) {
             return null;
         }
         // get flag first, we need check USE_UTF8.

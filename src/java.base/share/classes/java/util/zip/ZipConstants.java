@@ -37,22 +37,22 @@ interface ZipConstants {
     /**
      * Local file (LOC) header signature.
      */
-    static long LOCSIG = 0x04034b50L;   // "PK\003\004"
+    static int LOCSIG = 0x04034b50;   // "PK\003\004"
 
     /**
      * Extra local (EXT) header signature.
      */
-    static long EXTSIG = 0x08074b50L;   // "PK\007\008"
+    static int EXTSIG = 0x08074b50;   // "PK\007\008"
 
     /**
      * Central directory (CEN) header signature.
      */
-    static long CENSIG = 0x02014b50L;   // "PK\001\002"
+    static int CENSIG = 0x02014b50;   // "PK\001\002"
 
     /**
      * End of central directory (END) header signature.
      */
-    static long ENDSIG = 0x06054b50L;   // "PK\005\006"
+    static int ENDSIG = 0x06054b50;   // "PK\005\006"
 
     /**
      * Local file (LOC) header size in bytes (including signature).

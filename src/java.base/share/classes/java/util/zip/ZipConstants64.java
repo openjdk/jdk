@@ -43,6 +43,7 @@ class ZipConstants64 {
 
     static final int  ZIP64_MAGICCOUNT = 0xFFFF;
     static final long ZIP64_MAGICVAL = 0xFFFFFFFFL;
+    static final int  ZIP64_MAGICVAL_INT = 0xFFFFFFFF;
 
     /*
      * Zip64 End of central directory (END) header field offsets
