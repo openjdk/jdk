@@ -35,7 +35,7 @@ import jtreg.SkippedException;
  * @test
  * @bug 6267943
  * @requires (os.family == "windows")
- * @library /open/test/jdk/java/awt/regtesthelpers /open/test/lib
+ * @library /java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame jtreg.SkippedException
  * @summary Tests the possibility of selecting a tray icon with the keyboard.
  * @run main/manual TrayIconKeySelectTest
