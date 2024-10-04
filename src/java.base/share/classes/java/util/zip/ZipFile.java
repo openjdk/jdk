@@ -1225,7 +1225,7 @@ public class ZipFile implements ZipConstants, Closeable {
         {
             int pos = state.pos;
             // The entry length, from pos + CENHDR
-            int nlen = state.cen16(CENNAM);
+            int nlen = state.getCen16(CENNAM);
 
             // Validate and return the full header size (a value between CENHDR and 0xFFFF, inclusive)
             int headerSize = checkCENHeader(state, nlen);
@@ -1248,13 +1248,13 @@ public class ZipFile implements ZipConstants, Closeable {
             }
 
             byte[] cen = this.cen;
-            int elen = state.cen16(CENEXT);
-            int clen = state.cen16(CENCOM);
-            if (get32(cen, pos) != CENSIG) {
+            int elen = state.getCen16(CENEXT);
+            int clen = state.getCen16(CENCOM);
+            if (state.getCen32(0) != CENSIG) {
                 zerror("invalid CEN header (bad signature)");
             }
-            int method = state.cen16(CENHOW);
-            int flag   = state.cen16(CENFLG);
+            int method = state.getCen16(CENHOW);
+            int flag   = state.getCen16(CENFLG);
             if ((flag & 1) != 0) {
                 zerror("invalid CEN header (encrypted entry)");
             }
@@ -1276,10 +1276,10 @@ public class ZipFile implements ZipConstants, Closeable {
             // fields in the CEN header are properly set
             if (elen > 0 && !DISABLE_ZIP64_EXTRA_VALIDATION) {
                 checkExtraFields(pos, pos + CENHDR + nlen, elen);
-            } else if (elen == 0 && (state.cen32(CENSIZ) == ZIP64_MAGICVAL
-                    || state.cen32(CENLEN) == ZIP64_MAGICVAL
-                    || state.cen32(CENOFF) == ZIP64_MAGICVAL
-                    || state.cen16(CENDSK) == ZIP64_MAGICCOUNT)) {
+            } else if (elen == 0 && (state.getCen32(CENSIZ) == ZIP64_MAGICVAL
+                    || state.getCen32(CENLEN) == ZIP64_MAGICVAL
+                    || state.getCen32(CENOFF) == ZIP64_MAGICVAL
+                    || state.getCen16(CENDSK) == ZIP64_MAGICCOUNT)) {
                 zerror("Invalid CEN header (invalid zip64 extra len size)");
             }
 
@@ -1835,12 +1835,12 @@ public class ZipFile implements ZipConstants, Closeable {
             List<Integer> signatureNames;
             Set<Integer> metaVersionsSet;
 
-            int cen16(int offset) {
+            int getCen16(int offset) {
                 return get16(cen, pos + offset);
             }
 
-            int cen32(int offset) {
-                return get16(cen, pos + offset);
+            long getCen32(int offset) {
+                return get32(cen, pos + offset);
             }
         }
 
