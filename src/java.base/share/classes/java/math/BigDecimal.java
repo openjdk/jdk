@@ -2213,7 +2213,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 long normScale = minWorkingPrec - this.precision() + this.scale;
                 normScale += normScale & 1L; // the scale for normalizing must be even
 
-                BigDecimal working = new BigDecimal(this.intVal, this.intCompact, checkScale(this.intVal, this.scale - normScale), this.precision);
+                final long workingScale = this.scale - normScale;
+                if (workingScale != (int) workingScale)
+                    throw new ArithmeticException("Overflow");
+
+                BigDecimal working = new BigDecimal(this.intVal, this.intCompact, (int) workingScale, this.precision);
                 BigInteger workingInt = working.toBigInteger();
                 BigInteger[] sqrtRem = workingInt.sqrtAndRemainder();
                 BigInteger sqrt = sqrtRem[0];
