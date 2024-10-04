@@ -206,7 +206,7 @@ public interface Types {
      *
      * @throws IllegalArgumentException if the given type has no
      *         unboxing conversion. Only types for the {@linkplain
-     *         java.lang##wrapperClasses wrapper classes} have an
+     *         java.lang##wrapperClass wrapper classes} have an
      *         unboxing conversion.
      * @jls 5.1.8 Unboxing Conversion
      */
