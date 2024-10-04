@@ -158,7 +158,7 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
         );
 
         var expectedErrors = List.of(
-            "T.java:1:17: compiler.err.report.access: S.A, private, S",
+            "T.java:1:25: compiler.err.report.access: S.A, private, S",
             "1 error"
         );
 
