@@ -8572,7 +8572,7 @@ void Assembler::vpmuludq(XMMRegister dst, XMMRegister nds, XMMRegister src, int 
 
 void Assembler::vpmuldq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(vector_len == AVX_128bit ? VM_Version::supports_avx() :
-        (vector_len == AVX_256bit ? VM_Version::supports_avx2() : VM_Version::supports_avx512f()), "");
+        (vector_len == AVX_256bit ? VM_Version::supports_avx2() : VM_Version::supports_evex()), "");
   // TODO check what legacy_mode needs to be set to
   InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
