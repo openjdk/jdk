@@ -5219,7 +5219,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@code FIVE_TO_2_TO[n] == 5^(2^n)}
      */
     // floor(log2(log5(2^Integer.MAX_VALUE))) == 29
-    private static final BigInteger[] FIVE_TO_2_TO = new BigInteger[29];
+    private static final BigInteger[] FIVE_TO_2_TO = new BigInteger[30];
 
     private static int FIVE_TO_2_TO_LEN = 1;
 
@@ -5228,15 +5228,14 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
-     * @param n an integer such that {@code 0 <= n < POWERS_OF_5.length}
+     * @param n an integer such that {@code 0 <= n < FIVE_TO_2_TO.length}
      * @return {@code 5^(2^n)}
      */
     private static BigInteger fiveToTwoToThe(int n) {
         if (n >= FIVE_TO_2_TO_LEN) {
-            for (int i = FIVE_TO_2_TO_LEN; i <= n; i++) {
-                BigInteger pow = FIVE_TO_2_TO[i - 1];
-                FIVE_TO_2_TO[i] = pow.multiply(pow);
-            }
+            BigInteger pow = FIVE_TO_2_TO[FIVE_TO_2_TO_LEN - 1];
+            for (int i = FIVE_TO_2_TO_LEN; i <= n; i++)
+                FIVE_TO_2_TO[i] = pow = pow.multiply(pow);
 
             FIVE_TO_2_TO_LEN = n + 1;
         }
@@ -5256,6 +5255,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws ArithmeticException if scale overflows.
      */
     private static BigDecimal createAndStripZerosToMatchScale(BigInteger intVal, int scale, long preferredScale) {
+        // avoid overflow of scale - preferredScale
+        preferredScale = Math.clamp(preferredScale, Integer.MIN_VALUE - 1L, Integer.MAX_VALUE);
         // a multiple of 10^n must be a multiple of 2^n
         int powsOf2 = intVal.getLowestSetBit();
         long remainingZeros = Math.min(scale - preferredScale, powsOf2);
@@ -5280,8 +5281,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
         }
 
-        for (int i = BigInteger.bitLengthForLong(remainingZeros) - 1;
-                i >= 0 && intVal.compareMagnitude(5L) >= 0; i--) {
+        for (int i = BigInteger.bitLengthForLong(remainingZeros) - 1; i >= 0; i--) {
             final int exp = 1 << i;
             qr = intVal.divideAndRemainder(fiveToTwoToThe(i));
             if (qr[1].signum() != 0) { // non-0 remainder
@@ -5311,17 +5311,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @throws ArithmeticException if scale overflows.
      */
     private static BigDecimal createAndStripZerosToMatchScale(long compactVal, int scale, long preferredScale) {
-        long mag = Math.abs(compactVal);
-        while (mag >= 10L && scale > preferredScale) {
-            if ((mag & 1L) != 0L)
-                break; // odd number cannot end in 0
-            long r = mag % 10L;
-            if (r != 0L)
-                break; // non-0 remainder
-            mag /= 10L;
-            scale = checkScale(mag, (long) scale - 1); // could Overflow
+        while (compactVal % 10L == 0L && scale > preferredScale) {
+            compactVal /= 10L;
+            scale = checkScale(compactVal, scale - 1L); // could Overflow
         }
-        return valueOf(compactVal >= 0 ? mag : -mag, scale);
+        return valueOf(compactVal, scale);
     }
 
     /**
