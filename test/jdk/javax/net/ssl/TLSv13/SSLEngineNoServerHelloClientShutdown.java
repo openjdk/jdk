@@ -36,7 +36,7 @@
 
 import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
-import static jdk.test.lib.security.SecurityUtils.inspectTlsFlight;
+import static jdk.test.lib.security.SecurityUtils.inspectTlsBuffer;
 
 import java.nio.ByteBuffer;
 
@@ -59,15 +59,16 @@ import javax.net.ssl.SSLSession;
  * produced.
  */
 public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
-    protected final SSLEngine clientEngine;     // client Engine
-    protected final ByteBuffer clientOut;       // write side of clientEngine
+
+    protected SSLEngine clientEngine;     // client Engine
+    protected ByteBuffer clientOut;       // write side of clientEngine
     protected final ByteBuffer clientIn;        // read side of clientEngine
 
     protected final SSLEngine serverEngine;     // server Engine
     protected final ByteBuffer serverOut;       // write side of serverEngine
     protected final ByteBuffer serverIn;        // read side of serverEngine
 
-    protected final ByteBuffer cTOs;      // "reliable" transport client->server
+    protected ByteBuffer cTOs;      // "reliable" transport client->server
     protected final ByteBuffer sTOc;      // "reliable" transport server->client
 
     protected SSLEngineNoServerHelloClientShutdown() throws Exception {
@@ -88,9 +89,9 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         clientIn = ByteBuffer.allocate(appBufferMax + 50);
         serverIn = ByteBuffer.allocate(appBufferMax + 50);
 
-        cTOs = ByteBuffer.allocateDirect(netBufferMax);
+        cTOs = ByteBuffer.allocateDirect(netBufferMax * 2);
         // Make it larger so subsequent server wraps won't generate BUFFER_OVERFLOWS
-        sTOc = ByteBuffer.allocateDirect(netBufferMax + 1000);
+        sTOc = ByteBuffer.allocateDirect(netBufferMax * 2);
 
         clientOut = createClientOutputBuffer();
         serverOut = createServerOutputBuffer();
@@ -189,7 +190,7 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         runDelegatedTasks(clientEngine);
 
         cTOs.flip();
-        inspectTlsFlight(cTOs);
+        inspectTlsBuffer(cTOs);
 
         // Server unwrap should process an unencrypted 2 byte packet user_canceled alert.
         log("---Server Unwrap user_canceled alert---");
@@ -208,7 +209,7 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         runDelegatedTasks(clientEngine);
 
         cTOs.flip();
-        inspectTlsFlight(cTOs);
+        inspectTlsBuffer(cTOs);
 
         // Server unwrap should process an unencrypted 2 byte close_notify alert.
         log("---Server Unwrap close_notify alert---");
@@ -219,26 +220,21 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         runDelegatedTasks(serverEngine);
 
         sTOc.flip();
+        inspectTlsBuffer(sTOc);
 
         // Client receives delayed serverHello
-        inspectTlsFlight(sTOc);
-
         log("---Client Unwrap serverHello---");
         clientResult = clientEngine.unwrap(sTOc, clientIn);
         logEngineStatus(clientEngine, clientResult);
         runDelegatedTasks(clientEngine);
 
         // Client receives delayed CCS
-        inspectTlsFlight(sTOc);
-
         log("---Client Unwrap CCS---");
         clientResult = clientEngine.unwrap(sTOc, clientIn);
         logEngineStatus(clientEngine, clientResult);
         runDelegatedTasks(clientEngine);
 
         // Client receives delayed EE
-        inspectTlsFlight(sTOc);
-
         log("---Client Unwrap EE---");
         clientResult = clientEngine.unwrap(sTOc, clientIn);
         logEngineStatus(clientEngine, clientResult);
@@ -246,10 +242,10 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
 
         sTOc.compact();
 
-        // Only a stand-alone user_canceled alert is needed in server -> client direction
+        // Only a stand-alone close_notify alert is needed in server -> client direction
         // to terminate the handshake after the server already received user_canceled:close_notify
         // sequence from the client.
-        log("---Server Wrap user_canceled---");
+        log("---Server Wrap close_notify---");
         serverResult = serverEngine.wrap(serverOut, sTOc);
         logEngineStatus(serverEngine, serverResult);
         assertTrue(serverEngine.isOutboundDone());
@@ -257,7 +253,7 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         runDelegatedTasks(serverEngine);
 
         sTOc.flip();
-        inspectTlsFlight(sTOc);
+        inspectTlsBuffer(sTOc);
 
         log("---Client Unwrap user_canceled alert---");
         clientResult = clientEngine.unwrap(sTOc, clientIn);
@@ -267,13 +263,13 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         runDelegatedTasks(clientEngine);
     }
 
-    private static void logEngineStatus(SSLEngine engine) {
+    protected static void logEngineStatus(SSLEngine engine) {
         log("\tCurrent HS State: " + engine.getHandshakeStatus());
         log("\tisInboundDone() : " + engine.isInboundDone());
         log("\tisOutboundDone(): " + engine.isOutboundDone());
     }
 
-    private static void logEngineStatus(
+    protected static void logEngineStatus(
             SSLEngine engine, SSLEngineResult result) {
         log("\tResult Status    : " + result.getStatus());
         log("\tResult HS Status : " + result.getHandshakeStatus());
@@ -283,7 +279,7 @@ public class SSLEngineNoServerHelloClientShutdown extends SSLContextTemplate {
         log("\tMore Result      : " + result);
     }
 
-    private static void log(String message) {
+    protected static void log(String message) {
         System.err.println(message);
     }
 

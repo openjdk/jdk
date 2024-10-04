@@ -25,6 +25,8 @@
 
 package sun.security.ssl;
 
+import sun.security.ssl.SSLCipher.SSLReadCipher;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,8 +34,8 @@ import java.io.OutputStream;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.locks.ReentrantLock;
+
 import javax.crypto.BadPaddingException;
-import sun.security.ssl.SSLCipher.SSLReadCipher;
 
 /**
  * {@code InputRecord} takes care of the management of SSL/TLS/DTLS input
@@ -155,8 +157,11 @@ abstract class InputRecord implements Record, Closeable {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * @return the last record we attempted to decode
+     */
     // apply to SSLSocket only
-    ByteBuffer getCurrentFlight() {
+    ByteBuffer getLastDecodeRecord() {
         throw new UnsupportedOperationException();
     }
 

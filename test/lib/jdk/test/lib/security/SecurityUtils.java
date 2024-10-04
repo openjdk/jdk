@@ -127,21 +127,24 @@ public final class SecurityUtils {
         return false;
     }
 
-    public static void inspectTlsFlight(ByteBuffer flight) throws IOException {
+    public static void inspectTlsBuffer(ByteBuffer flight) throws IOException {
+        if (flight == null || !flight.hasRemaining()) {
+            return;
+        }
+
         ByteBuffer packet = flight.slice();
+        System.err.printf("---TLS Buffer Inspection. Bytes Remaining: %d---\n", packet.remaining());
 
-        System.err.println("---TLS Flight Inspection---");
-
-        if (packet.position() < packet.limit()) {
+        for (int i = 1; packet.position() < packet.limit(); i++) {
             byte contentType = packet.get();                   // pos: 0
             byte majorVersion = packet.get();                  // pos: 1
             byte minorVersion = packet.get();                  // pos: 2
             int contentLen = getInt16(packet);                 // pos: 3, 4
 
-            System.err.println("\tcontentType: " + (int) contentType);
-            System.err.println("\tmajorVersion: " + (int) majorVersion);
-            System.err.println("\tminorVersion: " + (int) minorVersion);
-            System.err.println("\tcontentLen: " + contentLen);
+            System.err.printf("Flight %d: contentType: %d; majorVersion: %d; minorVersion: %d; contentLen: %d\n",
+                    i, (int) contentType, (int) majorVersion, (int) minorVersion, contentLen);
+
+            packet.position(packet.position() + contentLen);
         }
     }
 

@@ -109,7 +109,7 @@ interface SSLTransport {
         Plaintext[] plaintexts = null;
         ByteBuffer currentFlight = null;
 
-        if (srcs != null && srcsLength == 1) {
+        if (srcs != null) {
             currentFlight = srcs[srcsOffset].slice();
         }
 
@@ -131,8 +131,9 @@ interface SSLTransport {
             // Check for unexpected plaintext alert message during TLSv1.3 handshake.
             // This can happen if client doesn't receive ServerHello due to network timeout
             // and tries to close the connection by sending an alert message.
+
             if (context.inputRecord instanceof SSLSocketInputRecord) {
-                currentFlight = context.inputRecord.getCurrentFlight();
+                currentFlight = context.inputRecord.getLastDecodeRecord();
             }
 
             if (currentFlight != null && !context.sslConfig.isClientMode && !context.isNegotiated &&
@@ -146,7 +147,7 @@ interface SSLTransport {
 
                 if (contentLen == 2 && ContentType.ALERT.equals(ContentType.valueOf(contentType))) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-                        SSLLogger.finest("Processing plaintext alert during TLSv1.3+ handshake");
+                        SSLLogger.info("Processing plaintext alert during TLSv1.3+ handshake");
                     }
 
                     plaintexts = new Plaintext[]{
