@@ -555,7 +555,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
         private final int moduleDescriptorsPerMethod;
 
-        private final ArrayList<Consumer<ClassBuilder>> amendaments = new ArrayList<>();
+        private final ArrayList<Consumer<ClassBuilder>> amendments = new ArrayList<>();
 
         // A builder to create one single Set instance for a given set of
         // names or modifiers to reduce the footprint
@@ -637,12 +637,12 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         genModuleReads(clb, cf);
 
                         // generate module helpers
-                        amendaments.forEach(amendament -> amendament.accept(clb));
+                        amendments.forEach(amendment -> amendment.accept(clb));
                     });
         }
 
-        private void addModuleHelpers(Consumer<ClassBuilder> amendament) {
-            amendaments.add(amendament);
+        private void addModuleHelpers(Consumer<ClassBuilder> amendment) {
+            amendments.add(amendment);
         }
 
         /**
@@ -661,14 +661,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         }
 
         private void genConstants(ClassBuilder clb) {
-            var cinitSnippets = dedupSetBuilder.buildConstants(clb);
-            if (!cinitSnippets.isEmpty()) {
+            var clinitSnippets = dedupSetBuilder.buildConstants(clb);
+            if (!clinitSnippets.isEmpty()) {
                 clb.withMethodBody(
                         CLASS_INIT_NAME,
                         MTD_void,
                         ACC_STATIC,
                         cob -> {
-                            cinitSnippets.forEach(snippet -> snippet.accept(cob));
+                            clinitSnippets.forEach(snippet -> snippet.accept(cob));
                             cob.return_();
                         });
             }
@@ -743,29 +743,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             //     mi, m{i+1} ...
             // to avoid exceeding the 64kb limit of method length.  Then it will call
             // "sub{i+1}" to creates the next batch of module descriptors m{i+n}, m{i+n+1}...
-            // and so on.  During the construction of the module descriptors, the string sets and
-            // modifier sets are deduplicated (see SystemModulesClassGenerator.DedupSetBuilder)
-            // and cached in the locals. These locals are saved in an array list so
-            // that the helper method can restore the local variables that may be
-            // referenced by the bytecode generated for creating module descriptors.
-            // Pseudo code looks like this:
-            //
-            // void subi(ModuleDescriptor[] mdescs, ArrayList<Object> localvars) {
-            //      // assign localvars to local variables
-            //      var l3 = localvars.get(0);
-            //      var l4 = localvars.get(1);
-            //        :
-            //      // fill mdescs[i] to mdescs[i+n-1]
-            //      mdescs[i] = ...
-            //      mdescs[i+1] = ...
-            //        :
-            //      // save new local variables added
-            //      localvars.add(lx)
-            //      localvars.add(l{x+1})
-            //        :
-            //      sub{i+i}(mdescs, localvars);
-            // }
-
+            // and so on.
             List<List<ModuleInfo>> splitModuleInfos = new ArrayList<>();
             List<ModuleInfo> currentModuleInfos = null;
             for (int index = 0; index < moduleInfos.size(); index++) {
@@ -1595,14 +1573,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             private static final String VALUES_ARRAY = "dedupSetValues";
 
             final ClassDesc owner;
-            int counterStoredValues = 0;
+            int countOfStoredValues = 0;
 
             DedupSetBuilder(ClassDesc owner) {
                 this.owner = owner;
             }
 
             int requestValueStorage() {
-                return counterStoredValues++;
+                return countOfStoredValues++;
             }
 
             /*
@@ -1673,12 +1651,12 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             /*
              * Adding provider methods to the class. For those set used more than once, built
              * once and keep the reference for later access.
-             * Return a list of snippet to be used in <cinit>.
+             * Return a list of snippet to be used in <clinit>.
              */
             Collection<Consumer<CodeBuilder>> buildConstants(ClassBuilder clb) {
                 var index = 0;
                 ArrayList<Consumer<CodeBuilder>> setValueBuilders = new ArrayList<>();
-
+                // The SetReferences need to be sorted to reproduce same result.
                 for (var ref : sorted(stringSets.values())) {
                     index++;
                     ref.generateConstant(clb, "dedupStringSet" + index).ifPresent(setValueBuilders::add);
@@ -1696,11 +1674,12 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     ref.generateConstant(clb, "dedupRequiresSet" + index).ifPresent(setValueBuilders::add);
                 }
 
-                if (counterStoredValues > 0) {
-                    assert setValueBuilders.size() == counterStoredValues;
+                if (countOfStoredValues > 0) {
+                    assert setValueBuilders.size() == countOfStoredValues;
                     clb.withField(VALUES_ARRAY, CD_Set.arrayType(), ACC_STATIC | ACC_FINAL);
+                    // Allocate array before assign values
                     setValueBuilders.addFirst(cob ->
-                            cob.loadConstant(counterStoredValues)
+                            cob.loadConstant(countOfStoredValues)
                                .anewarray(CD_Set)
                                .putstatic(owner, VALUES_ARRAY, CD_Set.arrayType()));
                 }
@@ -1711,6 +1690,20 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 cob.getstatic(owner, VALUES_ARRAY, CD_Set.arrayType());
             }
 
+            /*
+             * SetReference count references to the set, and use a CodeBuilder that
+             * generate bytecode to load an element onto the operand stack to generate bytecode
+             * to support loading the set onto operand stack.
+             *
+             * When a set size is over SET_SIZE_THRESHOLD, a provider function is generated
+             * to build the set rather than inline to avoid method size overflow.
+             *
+             * When a set is referenced more than once, the set value is to be built once
+             * and cached in an array to be load later.
+             *
+             * generateConstant method should be called to setup the provider methods and cache array.
+             * load method can then be called to load the set onto the operand stack.
+             */
             class SetReference<T extends Comparable<T>> implements Comparable<SetReference<T>> {
                 private final Set<T> elements;
                 private final BiConsumer<CodeBuilder, T> elementLoader;
