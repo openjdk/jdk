@@ -617,7 +617,7 @@ public class BindingSpecializer {
                 assert storeType == long.class; // chunking only for int and long
             }
             int longValueIdx = cb.allocateLocal(LONG);
-            cb.storeLocal(LONG, longValueIdx);
+            cb.lstore(longValueIdx);
             int writeAddrIdx = cb.allocateLocal(REFERENCE);
             cb.astore(writeAddrIdx);
 
@@ -646,7 +646,7 @@ public class BindingSpecializer {
                 //int writeChunk = (int) (((0xFFFF_FFFFL << shiftAmount) & longValue) >>> shiftAmount);
                 int shiftAmount = chunkOffset * Byte.SIZE;
                 mask = mask << shiftAmount;
-                cb.loadLocal(LONG, longValueIdx)
+                cb.lload(longValueIdx)
                   .loadConstant(mask)
                   .land();
                 if (shiftAmount != 0) {
@@ -816,7 +816,7 @@ public class BindingSpecializer {
 
               .loadConstant(0L); // result
             int resultIdx = cb.allocateLocal(LONG);
-            cb.storeLocal(LONG, resultIdx);
+            cb.lstore(resultIdx);
 
             int remaining = byteWidth;
             int chunkOffset = 0;
@@ -860,15 +860,15 @@ public class BindingSpecializer {
                       .lshl();
                 }
                 // add to result
-                cb.loadLocal(LONG, resultIdx)
+                cb.lload(resultIdx)
                   .lor()
-                  .storeLocal(LONG, resultIdx);
+                  .lstore(resultIdx);
 
                 remaining -= chunkSize;
                 chunkOffset += chunkSize;
             } while (remaining != 0);
 
-            cb.loadLocal(LONG, resultIdx);
+            cb.lload(resultIdx);
             if (loadType == int.class) {
                 cb.l2i();
             } else {
