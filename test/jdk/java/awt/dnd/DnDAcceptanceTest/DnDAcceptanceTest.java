@@ -62,7 +62,7 @@ public class DnDAcceptanceTest {
                        .awaitAndCheck();
      }
 
-    private static Frame createUI() {
+     private static Frame createUI() {
          Frame frame = new Frame("DnDAcceptanceTest");
          Panel mainPanel;
          Component dragSource, dropTarget;
@@ -83,5 +83,5 @@ public class DnDAcceptanceTest {
          frame.add(mainPanel, BorderLayout.CENTER);
          frame.setAlwaysOnTop(true);
          return frame;
-    }
- }
+     }
+}
