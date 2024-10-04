@@ -60,7 +60,7 @@ void CompilerThread::set_compiler(AbstractCompiler* c) {
    * we need to enable Java calls for upcalls to the jargraal compiler.
    * Java calls are also needed by InterpreterRuntime when running the jargraal compiler.
    */
-  _can_call_java = c != nullptr && c->is_jvmci() && !UseJVMCINativeLibrary;
+  _can_call_java = c != nullptr && c->is_jvmci() JVMCI_ONLY(&& !UseJVMCINativeLibrary);
   _compiler = c;
 }
 
