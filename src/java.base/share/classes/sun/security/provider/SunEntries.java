@@ -189,6 +189,19 @@ public final class SunEntries {
         attrs.clear();
         attrs.put("ImplementedIn", "Software");
         addWithAlias(p, "Signature", "HSS/LMS", "sun.security.provider.HSS", attrs);
+
+        add(p, "Signature", "ML-DSA", "sun.security.provider.ML_DSA_Provider$SIG", attrs);
+        addWithAlias(p, "Signature", "ML-DSA-44", "sun.security.provider.ML_DSA_Provider$SIG2", attrs);
+        addWithAlias(p, "Signature", "ML-DSA-65", "sun.security.provider.ML_DSA_Provider$SIG3", attrs);
+        addWithAlias(p, "Signature", "ML-DSA-87", "sun.security.provider.ML_DSA_Provider$SIG5", attrs);
+        add(p, "KeyPairGenerator", "ML-DSA", "sun.security.provider.ML_DSA_Provider$KPG", attrs);
+        addWithAlias(p, "KeyPairGenerator", "ML-DSA-44", "sun.security.provider.ML_DSA_Provider$KPG2", attrs);
+        addWithAlias(p, "KeyPairGenerator", "ML-DSA-65", "sun.security.provider.ML_DSA_Provider$KPG3", attrs);
+        addWithAlias(p, "KeyPairGenerator", "ML-DSA-87", "sun.security.provider.ML_DSA_Provider$KPG5", attrs);
+        add(p, "KeyFactory", "ML-DSA", "sun.security.provider.ML_DSA_Provider$KF", attrs);
+        addWithAlias(p, "KeyFactory", "ML-DSA-44", "sun.security.provider.ML_DSA_Provider$KF2", attrs);
+        addWithAlias(p, "KeyFactory", "ML-DSA-65", "sun.security.provider.ML_DSA_Provider$KF3", attrs);
+        addWithAlias(p, "KeyFactory", "ML-DSA-87", "sun.security.provider.ML_DSA_Provider$KF5", attrs);
         /*
          *  Key Pair Generator engines
          */
