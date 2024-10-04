@@ -831,20 +831,20 @@ public class JShellTool implements MessageHandler {
      * bracketing with prefix/postfix.  No prefixing when non-interactive.
      * Both input and result strings are expected to be the format for a printf.
      *
-     * @param s the format string to prefix
+     * @param format the format string to prefix
      * @param pre the string to prepend to each line (printf safe)
      * @param post the string to append to each line (replacing newline; printf safe)
      * @return the pre/post-fixed and bracketed format string
      */
-    String prefix(String s, String pre, String post) {
-        if (s == null) {
+    String prefix(String format, String pre, String post) {
+        if (format == null) {
             return "";
         }
         if (!interactiveModeBegun) {
             // messages expect to be new-line terminated (even when not prefixed)
-            return s + "%n";
+            return format + "%n";
         }
-        String pp = s.replaceAll("\\R", post + pre);
+        String pp = format.replaceAll("\\R", post + pre);
         if (pp.endsWith(post + pre)) {
             // prevent an extra prefix char and blank line when the string
             // already terminates with newline
