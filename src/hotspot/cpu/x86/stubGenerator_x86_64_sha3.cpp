@@ -111,7 +111,7 @@ address StubGenerator::generate_sha3_implCompress(bool multiBlock, const char *n
   const Register limit        = c_rarg4;
 #else
   const Address limit_mem(rbp, 6 * wordSize);
-  const Address limit = r12;
+  const Register limit = r12;
 #endif
 
   const Register permsAndRots = r10;
