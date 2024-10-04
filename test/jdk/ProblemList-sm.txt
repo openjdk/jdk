@@ -8,8 +8,6 @@ java/lang/annotation/repeatingAnnotations/CustomRepeatingWithSecurityManager.jav
 java/lang/annotation/repeatingAnnotations/RepeatingWithSecurityManager.java 0000000 generic-all
 java/lang/constant/methodTypeDesc/ResolveConstantDesc.java 0000000 generic-all
 java/lang/reflect/Nestmates/TestReflectionAPI.java 0000000 generic-all
-java/lang/reflect/records/RecordPermissionsTest.java 0000000 generic-all
-java/lang/reflect/records/RecordReflectionTest.java 0000000 generic-all
 java/lang/reflect/sealed_classes/TestSecurityManagerChecks.java 0000000 generic-all
 
 # :tier2_part1
