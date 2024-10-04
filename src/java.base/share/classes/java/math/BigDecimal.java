@@ -5232,15 +5232,17 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @return {@code 5^(2^n)}
      */
     private static BigInteger fiveToTwoToThe(int n) {
-        if (n >= FIVE_TO_2_TO_LEN) {
-            BigInteger pow = FIVE_TO_2_TO[FIVE_TO_2_TO_LEN - 1];
-            for (int i = FIVE_TO_2_TO_LEN; i <= n; i++)
-                FIVE_TO_2_TO[i] = pow = pow.multiply(pow);
+        synchronized(BigDecimal.class) {
+            int len = FIVE_TO_2_TO_LEN;
+            if (n >= len) {
+                BigInteger pow = FIVE_TO_2_TO[len - 1];
+                for (; len <= n; len++)
+                    FIVE_TO_2_TO[len] = pow = pow.multiply(pow);
 
-            FIVE_TO_2_TO_LEN = n + 1;
+                FIVE_TO_2_TO_LEN = len;
+            }
+            return FIVE_TO_2_TO[n];
         }
-
-        return FIVE_TO_2_TO[n];
     }
 
     /**
