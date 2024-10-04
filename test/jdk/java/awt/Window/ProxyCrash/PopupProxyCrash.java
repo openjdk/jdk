@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4381561
+ * @key headful
  * @summary Tests that when we show the popup window AWT doesn't crash due to
  * the problems with focus proxy window code
  * @run main PopupProxyCrash
