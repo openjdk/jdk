@@ -190,7 +190,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   } else if (thread->is_Compiler_thread()) {               \
     __block_can_call_java = CompilerThread::cast(thread)->can_call_java();  \
   } else {                                                 \
-    __block_can_call_java = false;                         \
+    __block_can_call_java = true;                          \
   }                                                        \
   CompilerThreadCanCallJava ccj(thread, __block_can_call_java); \
   JVMCIENV_FROM_JNI(JVMCI::compilation_tick(thread), env); \
