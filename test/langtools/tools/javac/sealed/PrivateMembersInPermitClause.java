@@ -152,7 +152,7 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
             }
             """,
             """
-            class T permits S.A {
+            sealed class T permits S.A {
             }
             """
         );
