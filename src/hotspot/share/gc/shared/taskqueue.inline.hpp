@@ -148,63 +148,6 @@ inline bool OverflowTaskQueue<E, MT, N>::try_push_to_taskqueue(E t) {
   return taskqueue_t::push(t);
 }
 
-template<class E, MemTag MT, unsigned int N>
-ChunkedArrayTaskQueue<E, MT, N>::ChunkedArrayTaskQueue() :
-  OverflowTaskQueue<E, MT, N>() {
-  TASKQUEUE_STATS_ONLY(reset_array_stats());
-}
-
-#if TASKQUEUE_STATS
-template<class E, MemTag MT, unsigned int N>
-void ChunkedArrayTaskQueue<E, MT, N>::reset_stats() {
-  OverflowTaskQueue<E, MT, N>::reset_stats();
-  reset_array_stats();
-}
-
-template<class E, MemTag MT, unsigned int N>
-void ChunkedArrayTaskQueue<E, MT, N>::reset_array_stats() {
-  _array_chunk_pushes = 0;
-  _array_chunk_steals = 0;
-  _arrays_chunked = 0;
-  _array_chunks_processed = 0;
-}
-
-template<class E, MemTag MT, unsigned int N>
-void ChunkedArrayTaskQueue<E, MT, N>::print_array_chunk_stats(outputStream* const st, uint i) {
-#define FMT " " SIZE_FORMAT_W(10)
-  st->print_cr("%3u" FMT FMT FMT FMT,
-                i, _array_chunk_pushes, _array_chunk_steals,
-                _arrays_chunked, _array_chunks_processed);
-#undef FMT
-}
-
-template<class T, MemTag MT>
-ChunkedArrayTaskQueueSet<T, MT>::ChunkedArrayTaskQueueSet(uint n) :
-  GenericTaskQueueSet<T, MT>(n) { }
-
-template<class T, MemTag MT>
-void ChunkedArrayTaskQueueSet<T, MT>::print_taskqueue_array_stats_hdr(outputStream* const st) {
-  static const char* const pm_stats_hdr[] = {
-    "    ----partial array----     arrays      array",
-    "thr       push      steal    chunked     chunks",
-    "--- ---------- ---------- ---------- ----------"
-  };
-  const uint hlines = sizeof(pm_stats_hdr) / sizeof(pm_stats_hdr[0]);
-  for (uint i = 0; i < hlines; ++i) st->print_cr("%s", pm_stats_hdr[i]);
-}
-
-template<class T, MemTag MT>
-void ChunkedArrayTaskQueueSet<T, MT>::print_taskqueue_stats(outputStream* const st, const char* label) {
-  GenericTaskQueueSet<T, MT>::print_taskqueue_stats(st, label);
-  uint n = size();
-  print_taskqueue_array_stats_hdr(st);
-  for (uint i = 0; i < n; ++i) {
-    queue(i)->print_array_chunk_stats(st, i); st->cr();
-  }
-}
-
-#endif // TASKQUEUE_STATS
-
 // pop_local_slow() is done by the owning thread and is trying to
 // get the last task in the queue.  It will compete with pop_global()
 // that will be used by other threads.  The tag age is incremented
@@ -462,5 +405,59 @@ inline void GenericTaskQueue<E, MT, N>::iterate(Fn fn) {
   }
 }
 
+#if TASKQUEUE_STATS
+template<class E, MemTag MT, unsigned int N>
+PartialArraySupportTaskQueue<E, MT, N>::PartialArraySupportTaskQueue() :
+  OverflowTaskQueue<E, MT, N>() {
+  TASKQUEUE_STATS_ONLY(reset_array_stats());
+}
 
+template<class E, MemTag MT, unsigned int N>
+void PartialArraySupportTaskQueue<E, MT, N>::reset_stats() {
+  OverflowTaskQueue<E, MT, N>::reset_stats();
+  reset_array_stats();
+}
+
+template<class E, MemTag MT, unsigned int N>
+void PartialArraySupportTaskQueue<E, MT, N>::reset_array_stats() {
+  _array_chunk_pushes = 0;
+  _array_chunk_steals = 0;
+  _arrays_chunked = 0;
+  _array_chunks_processed = 0;
+}
+
+template<class E, MemTag MT, unsigned int N>
+void PartialArraySupportTaskQueue<E, MT, N>::print_array_chunk_stats(outputStream* const st, uint i) {
+#define FMT " " SIZE_FORMAT_W(10)
+  st->print_cr("%3u" FMT FMT FMT FMT,
+                i, _array_chunk_pushes, _array_chunk_steals,
+                _arrays_chunked, _array_chunks_processed);
+#undef FMT
+}
+
+template<class T, MemTag MT>
+PartialArraySupportTaskQueueSet<T, MT>::PartialArraySupportTaskQueueSet(uint n) :
+  GenericTaskQueueSet<T, MT>(n) { }
+
+template<class T, MemTag MT>
+void PartialArraySupportTaskQueueSet<T, MT>::print_taskqueue_array_stats_hdr(outputStream* const st) {
+  static const char* const pm_stats_hdr[] = {
+    "    ----partial array----     arrays      array",
+    "thr       push      steal    chunked     chunks",
+    "--- ---------- ---------- ---------- ----------"
+  };
+  const uint hlines = sizeof(pm_stats_hdr) / sizeof(pm_stats_hdr[0]);
+  for (uint i = 0; i < hlines; ++i) st->print_cr("%s", pm_stats_hdr[i]);
+}
+
+template<class T, MemTag MT>
+void PartialArraySupportTaskQueueSet<T, MT>::print_taskqueue_stats(outputStream* const st, const char* label) {
+  GenericTaskQueueSet<T, MT>::print_taskqueue_stats(st, label);
+  uint n = size();
+  print_taskqueue_array_stats_hdr(st);
+  for (uint i = 0; i < n; ++i) {
+    queue(i)->print_array_chunk_stats(st, i); st->cr();
+  }
+}
+#endif // TASKQUEUE_STATS
 #endif // SHARE_GC_SHARED_TASKQUEUE_INLINE_HPP

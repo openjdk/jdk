@@ -221,6 +221,7 @@ private:
   void flush_numa_stats();
   inline void update_numa_stats(uint node_index);
 
+  void process_array_chunk(objArrayOop array, int begin, int end);
 public:
   oop copy_to_survivor_space(G1HeapRegionAttr region_attr, oop obj, markWord old_mark);
 

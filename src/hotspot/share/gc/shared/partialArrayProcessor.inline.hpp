@@ -26,7 +26,34 @@
 #define SHARE_GC_SHARED_PARTIALARRAYPROCESSOR_INLINE_HPP
 
 #include "gc/shared/partialArrayProcessor.hpp"
+#include "gc/shared/partialArrayState.hpp"
+#include "gc/shared/partialArrayTaskStepper.inline.hpp"
 #include "utilities/checkedCast.hpp"
+
+template <typename T>
+void PartialArrayProcessor<T>::set_partial_array_state_allocator(PartialArrayStateAllocator* alloc) {
+  assert(_partial_array_state_allocator == nullptr, "Set PartialArrayStateAllocator twice");
+  _partial_array_state_allocator = alloc;
+}
+template <typename T>
+void PartialArrayProcessor<T>::set_partial_array_state_allocator_index(uint i) {
+  assert(_partial_array_state_allocator_index == UINT_MAX, "Set PartialArrayStateAllocator index twice");
+  _partial_array_state_allocator_index = i;
+}
+
+template <typename T>
+PartialArrayProcessor<T>::PartialArrayProcessor(uint n_workers, size_t chunk_size, PartialArrayStateAllocator* allocator, T* q) :
+  _partial_array_stepper(n_workers, chunk_size),
+  _partial_array_state_allocator(allocator),
+  _partial_array_state_allocator_index(UINT_MAX),
+  _queue(q) { }
+
+template <typename T>
+PartialArrayProcessor<T>::PartialArrayProcessor(uint n_workers, size_t chunk_size, T* q) :
+  _partial_array_stepper(n_workers, chunk_size),
+  _partial_array_state_allocator(nullptr),
+  _partial_array_state_allocator_index(UINT_MAX),
+  _queue(q) { }
 
 template <typename T>
 template <typename PUSH_FUNC, typename PROC_FUNC>
@@ -34,6 +61,7 @@ void PartialArrayProcessor<T>::start(objArrayOop from_array, objArrayOop to_arra
   size_t array_length = from_array->length();
   PartialArrayTaskStepper::Step step = _partial_array_stepper.start(array_length);
   if (step._ncreate > 0) {
+    assert(_partial_array_state_allocator != nullptr, "PartialArrayStateAllocator not initialized");
     TASKQUEUE_STATS_ONLY(_queue->record_arrays_chunked());
     PartialArrayState* state =
     _partial_array_state_allocator->allocate(_partial_array_state_allocator_index,
@@ -68,10 +96,9 @@ void PartialArrayProcessor<T>::process_array_chunk(PartialArrayState* state, PUS
   int start = checked_cast<int>(step._index);
   int end = checked_cast<int>(step._index + _partial_array_stepper.chunk_size());
   assert(start < end, "invariant");
-  procf(state->source(), state->destination(), start, end);
+  procf(objArrayOop(state->source()), objArrayOop(state->destination()), start, end);
 
   // Release reference to state, now that we're done with it.
   _partial_array_state_allocator->release(_partial_array_state_allocator_index, state);
 }
-
 #endif // SHARE_GC_SHARED_PARTIALARRAYPROCESSOR_INLINE_HPP

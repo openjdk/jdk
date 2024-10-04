@@ -35,17 +35,15 @@ template <typename T>
 class PartialArrayProcessor {
 private:
   PartialArrayTaskStepper           _partial_array_stepper;
-  PartialArrayStateAllocator* const _partial_array_state_allocator;
+  PartialArrayStateAllocator*       _partial_array_state_allocator;
   uint                              _partial_array_state_allocator_index;
   T* const                          _queue;
 public:
-  PartialArrayProcessor(uint n_workers, size_t chunk_size, PartialArrayStateAllocator* allocator, T* q) :
-    _partial_array_stepper(n_workers, chunk_size),
-    _partial_array_state_allocator(allocator),
-    _partial_array_state_allocator_index(UINT_MAX),
-    _queue(q) { }
+  PartialArrayProcessor(uint n_workers, size_t chunk_size, PartialArrayStateAllocator* allocator, T* q);
+  PartialArrayProcessor(uint n_workers, size_t chunk_size, T* q);
 
-  void set_partial_array_state_allocator_index(uint i) { _partial_array_state_allocator_index = i; }
+  void set_partial_array_state_allocator(PartialArrayStateAllocator* alloc);
+  void set_partial_array_state_allocator_index(uint i);
 
   template <typename PUSH_FUNC, typename PROC_FUNC>
   void start(objArrayOop from_array, objArrayOop to_array, PUSH_FUNC& pushf, PROC_FUNC& procf);

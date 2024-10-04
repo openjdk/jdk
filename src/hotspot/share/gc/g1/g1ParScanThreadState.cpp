@@ -227,6 +227,17 @@ void G1ParScanThreadState::do_oop_evac(T* p) {
   write_ref_field_post(p, obj);
 }
 
+void inline G1ParScanThreadState::process_array_chunk(objArrayOop array, int begin, int end) {
+  // Skip the card enqueue iff the object (to_array) is in survivor region.
+  // However, G1HeapRegion::is_survivor() is too expensive here.
+  // Instead, we use dest_attr.is_young() because the two values are always
+  // equal: successfully allocated young regions must be survivor regions.
+  G1HeapRegionAttr dest_attr = _g1h->region_attr(array);
+  G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor());
+  // Process claimed task.
+  array->oop_iterate_range(&_scanner, begin, end);
+}
+
 MAYBE_INLINE_EVACUATION
 void G1ParScanThreadState::do_partial_array(PartialArrayState* state) {
   oop to_obj = state->destination();
@@ -245,10 +256,7 @@ void G1ParScanThreadState::do_partial_array(PartialArrayState* state) {
   };
 
   auto process_func = [&] (objArrayOop from_array, objArrayOop to_array, uint begin, uint end) {
-      G1HeapRegionAttr dest_attr = _g1h->region_attr(to_array);
-      G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_new_survivor());
-      // Process claimed task.
-      to_array->oop_iterate_range(&_scanner, begin, end);
+    process_array_chunk(to_array, begin, end);
   };
 
   _partial_array_processor.process_array_chunk(state, push_func, process_func);
@@ -267,17 +275,8 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
     push_on_queue(ScannerTask(state));
   };
 
-  auto process_func = [&] (objArrayOop from_array, objArrayOop to_array, uint begin, uint end) {
-    // Skip the card enqueue iff the object (to_array) is in survivor region.
-    // However, G1HeapRegion::is_survivor() is too expensive here.
-    // Instead, we use dest_attr.is_young() because the two values are always
-    // equal: successfully allocated young regions must be survivor regions.
-    assert(dest_attr.is_young() == _g1h->heap_region_containing(to_array)->is_survivor(), "must be");
-    G1SkipCardEnqueueSetter x(&_scanner, dest_attr.is_young());
-    // Process the initial chunk.  No need to process the type in the
-    // klass, as it will already be handled by processing the built-in
-    // module.
-    to_array->oop_iterate_range(&_scanner, begin, end);
+  auto process_func = [&] (objArrayOop from_array, objArrayOop to_array, int begin, int end) {
+    process_array_chunk(to_array, begin, end);
   };
 
   _partial_array_processor.start(objArrayOop(from_obj), objArrayOop(to_obj), push_func, process_func);

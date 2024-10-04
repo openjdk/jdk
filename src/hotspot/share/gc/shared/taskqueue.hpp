@@ -458,29 +458,6 @@ private:
   overflow_t _overflow_stack;
 };
 
-template<class E, MemTag MT, unsigned int N = TASKQUEUE_SIZE>
-class ChunkedArrayTaskQueue: public OverflowTaskQueue<E, MT, N> {
-#if TASKQUEUE_STATS
-  size_t                        _array_chunk_pushes;
-  size_t                        _array_chunk_steals;
-  size_t                        _arrays_chunked;
-  size_t                        _array_chunks_processed;
-public:
-  void reset_stats() override;
-  void print_array_chunk_stats(outputStream* const st, uint i);
-
-  void record_array_chunk_steal()  { ++_array_chunk_steals; }
-  void record_array_chunk_pushes(size_t n) { _array_chunk_pushes += n; }
-  void record_arrays_chunked() { ++_arrays_chunked; }
-  void record_array_chunks_processed() { ++_array_chunks_processed; }
-
-private:
-  void reset_array_stats();
-#endif // TASKQUEUE_STATS
-public:
-  ChunkedArrayTaskQueue();
-};
-
 class TaskQueueSetSuper {
 public:
   // Assert all queues in the set are empty.
@@ -572,20 +549,50 @@ uint GenericTaskQueueSet<T, MT>::tasks() const {
   return n;
 }
 
+#if TASKQUEUE_STATS
+// PartialArraySupportTaskQueue and PartialArraySupportTaskQueueSet
+// support collecting and reporting array chunking statistics.
+template<class E, MemTag MT, unsigned int N = TASKQUEUE_SIZE>
+class PartialArraySupportTaskQueue: public OverflowTaskQueue<E, MT, N> {
+  size_t                        _array_chunk_pushes;
+  size_t                        _array_chunk_steals;
+  size_t                        _arrays_chunked;
+  size_t                        _array_chunks_processed;
+public:
+  PartialArraySupportTaskQueue();
+
+  void reset_stats() override;
+  void print_array_chunk_stats(outputStream* const st, uint i);
+
+  void record_array_chunk_steal()  { ++_array_chunk_steals; }
+  void record_array_chunk_pushes(size_t n) { _array_chunk_pushes += n; }
+  void record_arrays_chunked() { ++_arrays_chunked; }
+  void record_array_chunks_processed() { ++_array_chunks_processed; }
+private:
+  void reset_array_stats();
+};
+
+
 template<class T, MemTag MT>
-class ChunkedArrayTaskQueueSet: public GenericTaskQueueSet<T, MT> {
+class PartialArraySupportTaskQueueSet: public GenericTaskQueueSet<T, MT> {
 public:
   using GenericTaskQueueSet<T, MT>::size;
   using GenericTaskQueueSet<T, MT>::queue;
 
-  ChunkedArrayTaskQueueSet(uint n);
-#if TASKQUEUE_STATS
+  PartialArraySupportTaskQueueSet(uint n);
+
+  void print_taskqueue_stats(outputStream* const st, const char* label) override;
 private:
   static void print_taskqueue_array_stats_hdr(outputStream* const st);
-public:
-  void print_taskqueue_stats(outputStream* const st, const char* label) override;
-#endif // TASKQUEUE_STATS
 };
+#else
+
+template<class E, MemTag MT, unsigned int N = TASKQUEUE_SIZE>
+using PartialArraySupportTaskQueue = OverflowTaskQueue<E, MT, N>;
+
+template<class T, MemTag MT>
+using PartialArraySupportTaskQueueSet = GenericTaskQueueSet<T, MT>;
+#endif // TASKQUEUE_STATS
 
 // When to terminate from the termination protocol.
 class TerminatorTerminator: public CHeapObj<mtInternal> {
