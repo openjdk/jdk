@@ -1110,15 +1110,15 @@ public final class StringConcatFactory {
                 MTD_String_double   = MethodTypeDescImpl.ofValidated(CD_String, CD_double),
                 MTD_String_Object   = MethodTypeDescImpl.ofValidated(CD_String, CD_Object),
 
-               MTD_INIT             = MethodTypeDescImpl.ofValidated(CD_void, CD_Array_String),
-               MTD_NEW_ARRAY_SUFFIX = MethodTypeDescImpl.ofValidated(CD_Array_byte, CD_String, CD_int, CD_byte),
-               MTD_STRING_INIT      = MethodTypeDescImpl.ofValidated(CD_void, CD_Array_byte, CD_byte),
+                MTD_INIT             = MethodTypeDescImpl.ofValidated(CD_void, CD_Array_String),
+                MTD_NEW_ARRAY_SUFFIX = MethodTypeDescImpl.ofValidated(CD_Array_byte, CD_String, CD_int, CD_byte),
+                MTD_STRING_INIT      = MethodTypeDescImpl.ofValidated(CD_void, CD_Array_byte, CD_byte),
 
-               PREPEND_int     = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_int, CD_String),
-               PREPEND_long    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_long, CD_String),
-               PREPEND_boolean = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_boolean, CD_String),
-               PREPEND_char    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_char, CD_String),
-               PREPEND_String  = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_String, CD_String);
+                PREPEND_int     = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_int, CD_String),
+                PREPEND_long    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_long, CD_String),
+                PREPEND_boolean = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_boolean, CD_String),
+                PREPEND_char    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_char, CD_String),
+                PREPEND_String  = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_String, CD_String);
 
         static final RuntimeVisibleAnnotationsAttribute FORCE_INLINE = RuntimeVisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/ForceInline;")));
 
