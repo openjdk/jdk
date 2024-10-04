@@ -578,8 +578,6 @@ class PartialArraySupportTaskQueueSet: public GenericTaskQueueSet<T, MT> {
 public:
   using GenericTaskQueueSet<T, MT>::size;
   using GenericTaskQueueSet<T, MT>::queue;
-//  using GenericTaskQueueSet<T, MT>::print_taskqueue_stats;
-//  using GenericTaskQueueSet<T, MT>::reset_taskqueue_stats;
 
   PartialArraySupportTaskQueueSet(uint n);
 
