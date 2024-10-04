@@ -456,7 +456,7 @@ void PartialArraySupportTaskQueueSet<T, MT>::print_taskqueue_stats(outputStream*
   uint n = size();
   print_taskqueue_array_stats_hdr(st);
   for (uint i = 0; i < n; ++i) {
-    queue(i)->print_array_chunk_stats(st, i); st->cr();
+    queue(i)->print_array_chunk_stats(st, i);
   }
 }
 #endif // TASKQUEUE_STATS

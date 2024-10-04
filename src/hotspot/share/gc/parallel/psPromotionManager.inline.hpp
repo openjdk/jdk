@@ -340,7 +340,7 @@ inline bool PSPromotionManager::steal_depth(int queue_num, ScannerTask& t) {
 #if TASKQUEUE_STATS
 void PSPromotionManager::record_steal(ScannerTask task) {
   if (task.is_partial_array_state()) {
-    ++_array_chunk_steals;
+     _claimed_stack_depth.record_array_chunk_steal();
   }
 }
 #endif // TASKQUEUE_STATS

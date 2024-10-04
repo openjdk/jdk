@@ -123,7 +123,7 @@ void PSPromotionManager::pre_scavenge() {
 bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
   bool promotion_failure_occurred = false;
 
-  TASKQUEUE_STATS_ONLY(print_taskqueue_stats());
+  TASKQUEUE_STATS_ONLY(stack_array_depth()->print_and_reset_taskqueue_stats("Oop Queue");)
   for (uint i = 0; i < ParallelGCThreads; i++) {
     PSPromotionManager* manager = manager_array(i);
     assert(manager->claimed_stack_depth()->is_empty(), "should be empty");
@@ -145,46 +145,6 @@ bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
   }
   return promotion_failure_occurred;
 }
-
-#if TASKQUEUE_STATS
-void
-PSPromotionManager::print_local_stats(outputStream* const out, uint i) const {
-  #define FMT " " SIZE_FORMAT_W(10)
-  out->print_cr("%3u" FMT FMT FMT FMT,
-                i, _array_chunk_pushes, _array_chunk_steals,
-                _arrays_chunked, _array_chunks_processed);
-  #undef FMT
-}
-
-static const char* const pm_stats_hdr[] = {
-  "    ----partial array----     arrays      array",
-  "thr       push      steal    chunked     chunks",
-  "--- ---------- ---------- ---------- ----------"
-};
-
-void PSPromotionManager::print_taskqueue_stats() {
-  if (!log_is_enabled(Trace, gc, task, stats)) {
-    return;
-  }
-  Log(gc, task, stats) log;
-  ResourceMark rm;
-  LogStream ls(log.trace());
-
-  stack_array_depth()->print_taskqueue_stats(&ls, "Oop Queue");
-
-  const uint hlines = sizeof(pm_stats_hdr) / sizeof(pm_stats_hdr[0]);
-  for (uint i = 0; i < hlines; ++i) ls.print_cr("%s", pm_stats_hdr[i]);
-  for (uint i = 0; i < ParallelGCThreads; ++i) {
-    manager_array(i)->print_local_stats(&ls, i);
-  }
-}
-
-void PSPromotionManager::reset_stats() {
-  claimed_stack_depth()->stats.reset();
-  _array_chunk_pushes = _array_chunk_steals = 0;
-  _arrays_chunked = _array_chunks_processed = 0;
-}
-#endif // TASKQUEUE_STATS
 
 // Most members are initialized either by initialize() or reset().
 PSPromotionManager::PSPromotionManager()
@@ -222,8 +182,6 @@ void PSPromotionManager::reset() {
   _old_gen_is_full = false;
 
   _promotion_failed_info.reset();
-
-  TASKQUEUE_STATS_ONLY(reset_stats());
 }
 
 void PSPromotionManager::register_preserved_marks(PreservedMarks* preserved_marks) {

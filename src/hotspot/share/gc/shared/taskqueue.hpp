@@ -511,7 +511,7 @@ private:
   static void print_taskqueue_stats_hdr(outputStream* const st, const char* label);
 public:
   virtual void print_taskqueue_stats(outputStream* const st, const char* label);
-  virtual void reset_taskqueue_stats();
+  void reset_taskqueue_stats();
 
   // Prints taskqueue set statistics into gc+task+stats=trace and resets
   // its statistics.
@@ -578,6 +578,8 @@ class PartialArraySupportTaskQueueSet: public GenericTaskQueueSet<T, MT> {
 public:
   using GenericTaskQueueSet<T, MT>::size;
   using GenericTaskQueueSet<T, MT>::queue;
+//  using GenericTaskQueueSet<T, MT>::print_taskqueue_stats;
+//  using GenericTaskQueueSet<T, MT>::reset_taskqueue_stats;
 
   PartialArraySupportTaskQueueSet(uint n);
 
