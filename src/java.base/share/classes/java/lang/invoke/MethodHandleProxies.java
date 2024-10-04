@@ -396,7 +396,7 @@ public class MethodHandleProxies {
                    .invokespecial(CD_Object, INIT_NAME, MTD_void)
                    // call ensureOriginalLookup to verify the given Lookup has access
                    .aload(1)
-                   .invokestatic(proxyDesc, "ensureOriginalLookup", MTD_void_Lookup)
+                   .invokestatic(proxyDesc, ENSURE_ORIGINAL_LOOKUP, MTD_void_Lookup)
                    // this.target = target;
                    .aload(0)
                    .aload(2)
