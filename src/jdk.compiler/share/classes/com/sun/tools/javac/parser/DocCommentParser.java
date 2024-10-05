@@ -286,16 +286,17 @@ public class DocCommentParser {
         int depth = 1;                  // only used when phase is INLINE
         int pos = bp;                   // only used when phase is INLINE
 
+        if (textKind == DocTree.Kind.MARKDOWN) {
+            initMarkdownLine();
+        }
+
         loop:
         while (bp < buflen) {
             switch (ch) {
                 case '\n', '\r' -> {
                     nextChar();
                     if (textKind == DocTree.Kind.MARKDOWN) {
-                        markdown.update();
-                        if (markdown.isIndentedCodeBlock()) {
-                            markdown.skipLine();
-                        }
+                        initMarkdownLine();
                     }
                 }
 
@@ -486,6 +487,17 @@ public class DocCommentParser {
             textStart = bp;
         lastNonWhite = bp;
         nextChar();
+    }
+
+    void initMarkdownLine() {
+        if (textStart == -1) {
+            textStart = bp;
+        }
+        markdown.update();
+        if (markdown.isIndentedCodeBlock()) {
+            markdown.skipLine();
+            lastNonWhite = bp - 1; // do not include newline or EOF
+        }
     }
 
     private IllegalStateException unknownTextKind(DocTree.Kind textKind) {
