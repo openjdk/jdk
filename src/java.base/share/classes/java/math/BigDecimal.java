@@ -5286,7 +5286,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 remainingZeros -= exp;
                 powsOf2 -= exp;
 
-                i = BigInteger.bitLengthForLong(remainingZeros);
+                if (remainingZeros <= exp >> 2)
+                    i = BigInteger.bitLengthForLong(remainingZeros);
             }
         }
 
