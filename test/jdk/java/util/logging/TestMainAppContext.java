@@ -46,8 +46,8 @@ public class TestMainAppContext {
             rootTG = rootTG.getParent();
         }
 
-        ThreadGroup tg = new ThreadGroup(rootTG, "FakeApplet");
-        final Thread t1 = new Thread(tg, "createNewAppContext") {
+        ThreadGroup tg = new ThreadGroup(rootTG, "main");
+        final Thread t1 = new Thread(tg, "child") {
             @Override
             public void run() {
                 try {
