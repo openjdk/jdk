@@ -32,9 +32,9 @@ package java.security;
  * @author Li Gong
  * @author Roland Schemers
  * @since 1.2
- * @deprecated There is no replacement for this class.
- *       See <a href="https://openjdk.org/jeps/411">JEP 411</a> for
- *       discussion and alternatives.
+ * @deprecated This class was only useful in conjunction with the Security
+ *       Manager, which is no longer supported. There is no replacement for
+ *       the Security Manager or this class.
  */
 @Deprecated(since="17", forRemoval=true)
 public final class AccessController {
@@ -63,7 +63,7 @@ public final class AccessController {
      * @see #doPrivileged(PrivilegedExceptionAction)
      * @apiNote This method originally performed the specified
      *     {@code PrivilegedAction} with privileges enabled. Running the action
-     *     with privileges enabled is only useful in conjunction with
+     *     with privileges enabled was only useful in conjunction with
      *     {@linkplain SecurityManager the Security Manager}, which is no
      *     longer supported. This method has been changed to run the action as
      *     is, and has equivalent behavior as if there were no Security Manager
@@ -93,7 +93,7 @@ public final class AccessController {
      * @apiNote This method originally performed the specified
      *     {@code PrivilegedAction} with privileges enabled and with the current
      *     access control context's domain combiner preserved. Running the
-     *     action with privileges enabled is only useful in conjunction with
+     *     action with privileges enabled was only useful in conjunction with
      *     {@linkplain SecurityManager the Security Manager}, which is no
      *     longer supported. This method has been changed to run the action as
      *     is, and has equivalent behavior as if there were no Security Manager
@@ -125,7 +125,7 @@ public final class AccessController {
      * @apiNote This method originally performed the specified
      *     {@code PrivilegedAction} with privileges enabled and restricted
      *     by the specified {@code AccessControlContext}. Running the
-     *     action with privileges enabled is only useful in conjunction with
+     *     action with privileges enabled was only useful in conjunction with
      *     {@linkplain SecurityManager the Security Manager}, which is no
      *     longer supported. This method has been changed to run the action as
      *     is, and has equivalent behavior as if there were no Security Manager
@@ -160,7 +160,7 @@ public final class AccessController {
      *     {@code PrivilegedAction} with privileges enabled and restricted
      *     by the specified {@code AccessControlContext} and with a privilege
      *     scope limited by the specified {@code Permission} arguments. Running
-     *     the action with privileges enabled is only useful in conjunction with
+     *     the action with privileges enabled was only useful in conjunction with
      *     {@linkplain SecurityManager the Security Manager}, which is no
      *     longer supported. This method has been changed to run the action as
      *     is, and has equivalent behavior as if there were no Security Manager
@@ -200,7 +200,7 @@ public final class AccessController {
      *     scope limited by the specified {@code Permission} arguments. This
      *     method also originally preserved the current access control context's
      *     domain combiner while the action was performed. Running the action
-     *     with privileges enabled is only useful in conjunction with
+     *     with privileges enabled was only useful in conjunction with
      *     {@linkplain SecurityManager the Security Manager}, which is no
      *     longer supported. This method has been changed to run the action as
      *     is, and has equivalent behavior as if there were no Security Manager
@@ -236,7 +236,7 @@ public final class AccessController {
      *
      * @apiNote This method originally performed the specified
      *     {@code PrivilegedExceptionAction} with privileges enabled. Running
-     *     the action with privileges enabled is only useful in conjunction with
+     *     the action with privileges enabled was only useful in conjunction with
      *     {@linkplain SecurityManager the Security Manager}, which is no
      *     longer supported. This method has been changed to run the action as
      *     is, and has equivalent behavior as if there were no Security Manager
@@ -277,7 +277,7 @@ public final class AccessController {
      * @apiNote This method originally performed the specified
      *     {@code PrivilegedExceptionAction} with privileges enabled and with
      *     the current access control context's domain combiner preserved.
-     *     Running the the action with privileges enabled is only useful in
+     *     Running the action with privileges enabled was only useful in
      *     conjunction with {@linkplain SecurityManager the Security Manager},
      *     which is no longer supported. This method has been changed to run
      *     the action as is, and has equivalent behavior as if there were no
@@ -321,7 +321,7 @@ public final class AccessController {
      * @apiNote This method originally performed the specified
      *     {@code PrivilegedExceptionAction} with privileges enabled and
      *     restricted by the specified {@code AccessControlContext}. Running the
-     *     action with privileges enabled is only useful in conjunction with
+     *     action with privileges enabled was only useful in conjunction with
      *     {@linkplain SecurityManager the Security Manager}, which is no
      *     longer supported. This method has been changed to run the action as
      *     is, and has equivalent behavior as if there were no Security Manager
@@ -366,7 +366,7 @@ public final class AccessController {
      *     {@code PrivilegedExceptionAction} with privileges enabled and
      *     restricted by the specified {@code AccessControlContext} and with a
      *     privilege scope limited by the specified {@code Permission}
-     *     arguments. Running the action with privileges enabled is only useful
+     *     arguments. Running the action with privileges enabled was only useful
      *     in conjunction with {@linkplain SecurityManager the Security Manager},
      *     which is no longer supported. This method has been changed to run
      *     the action as is, and has equivalent behavior as if there were no
@@ -419,7 +419,7 @@ public final class AccessController {
      *     privilege scope limited by the specified {@code Permission}
      *     arguments. This method also preserved the current access control
      *     context's domain combiner while the action was performed. Running
-     *     the action with privileges enabled is only useful in conjunction
+     *     the action with privileges enabled was only useful in conjunction
      *     with {@linkplain SecurityManager the Security Manager}, which is no
      *     longer supported. This method has been changed to run the action as
      *     is, and has equivalent behavior as if there were no Security Manager
@@ -462,7 +462,7 @@ public final class AccessController {
      *       control context and any limited privilege scope. This method has
      *       been changed to always return an innocuous
      *       {@code AccessControlContext} that fails all permission checks.
-     *       This method is only useful in conjunction with
+     *       This method was only useful in conjunction with
      *       {@linkplain SecurityManager the Security Manager}, which is no
      *       longer supported. There is no replacement for the Security Manager
      *       or this method.
@@ -483,7 +483,7 @@ public final class AccessController {
      *       indicated by the specified permission should be allowed or denied,
      *       based on the current {@code AccessControlContext} and security
      *       policy. This method has been changed to always throw
-     *       {@code AccessControlException}. This method is only useful in
+     *       {@code AccessControlException}. This method was only useful in
      *       conjunction with {@linkplain SecurityManager the Security Manager},
      *       which is no longer supported. There is no replacement for the
      *       Security Manager or this method.

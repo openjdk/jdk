@@ -32,10 +32,9 @@ package java.security;
  * object is no longer supported.
  *
  * @since 1.6
- * @deprecated This class is only useful in conjunction with
- *       {@linkplain SecurityManager the Security Manager}, which is deprecated
- *       and subject to removal in a future release. Consequently, this class
- *       is also deprecated and subject to removal. There is no replacement for
+ * @deprecated This class was only useful in conjunction with
+ *       {@linkplain SecurityManager the Security Manager}, which is no
+ *       longer supported. There is no replacement for
  *       the Security Manager or this class.
  */
 

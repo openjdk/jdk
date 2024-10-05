@@ -35,7 +35,7 @@ import sun.security.jca.GetInstance;
  * @author Roland Schemers
  * @author Gary Ellison
  * @since 1.2
- * @deprecated This class is only useful in conjunction with
+ * @deprecated This class was only useful in conjunction with
  *       {@linkplain SecurityManager the Security Manager}, which is no longer
  *       supported. Installing a system-wide {@code Policy} object is no longer
  *       supported. The {@linkplain #setPolicy setPolicy} method has been
@@ -99,7 +99,7 @@ public abstract class Policy {
      *    {@code Policy} implementation. Installing a system-wide {@code Policy}
      *    object is no longer supported. This method always returns a
      *    default {@code Policy} object that grants no permissions. A
-     *    {@code Policy} object is only useful in conjunction with
+     *    {@code Policy} object was only useful in conjunction with
      *    {@linkplain SecurityManager the Security Manager}, which is no
      *    longer supported. There is no replacement for this method.
      *
@@ -119,7 +119,7 @@ public abstract class Policy {
      * @throws UnsupportedOperationException always
      * @deprecated This method originally installed the system-wide
      *    {@code Policy} object. Installing a system-wide {@code Policy} object
-     *    is no longer supported. A {@code Policy} object is only useful in
+     *    is no longer supported. A {@code Policy} object was only useful in
      *    conjunction with {@linkplain SecurityManager the Security Manager},
      *    which is no longer supported. There is no replacement for this method.
      *
@@ -495,7 +495,7 @@ public abstract class Policy {
      * This represents a marker interface for Policy parameters.
      *
      * @since 1.6
-     * @deprecated This class is only useful in conjunction with
+     * @deprecated This class was only useful in conjunction with
      *       {@linkplain SecurityManager the Security Manager}, which is
      *       no longer supported. There is no replacement for the Security
      *       Manager or this class.

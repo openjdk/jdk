@@ -32,7 +32,7 @@ package java.security;
  * @since 1.2
  * @deprecated This exception was originally thrown by the
  *       {@link AccessController} to indicate that a requested access was
- *       denied. The {@code AccessController} is only useful in conjunction
+ *       denied. The {@code AccessController} was only useful in conjunction
  *       with {@linkplain SecurityManager the Security Manager}, which is no
  *       longer supported. There is no replacement for the Security Manager,
  *       the {@code AccessController}, or this class.
