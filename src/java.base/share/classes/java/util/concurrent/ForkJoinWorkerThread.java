@@ -92,9 +92,8 @@ public class ForkJoinWorkerThread extends Thread {
      * pool, and with the given policy for preserving ThreadLocals.
      *
      * @param group if non-null, the thread group for this
-     * thread. Otherwise, the thread group is chosen by the security
-     * manager if present, else set to the current thread's thread
-     * group.
+     * thread. Otherwise, the thread group is set to the current thread's
+     * thread group.
      * @param pool the pool this thread works in
      * @param preserveThreadLocals if true, always preserve the values of
      * ThreadLocal variables across tasks; otherwise they may be cleared.
