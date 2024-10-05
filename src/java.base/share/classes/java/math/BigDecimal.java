@@ -5244,7 +5244,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@code BigInteger} value until the preferred scale is reached or no
      * more zeros can be removed.  If the preferred scale is less than
      * Integer.MIN_VALUE, all the trailing zeros will be removed.
-     * Assumes {@code this != 0}.
+     * Assumes {@code intVal != 0}.
      *
      * @return new {@code BigDecimal} with a scale possibly reduced
      * to be closed to the preferred scale.
@@ -5298,7 +5298,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@code long} value until the preferred scale is reached or no
      * more zeros can be removed.  If the preferred scale is less than
      * Integer.MIN_VALUE, all the trailing zeros will be removed.
-     * Assumes {@code this != 0 && intCompact != INFLATED}.
+     * Assumes {@code compactVal != 0 && compactVal != INFLATED}.
      *
      * @return new {@code BigDecimal} with a scale possibly reduced
      * to be closed to the preferred scale.
@@ -5313,7 +5313,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
-     * Assumes {@code this != 0}.
+     * Assumes {@code intVal != 0 && compactVal != 0}.
      */
     private static BigDecimal stripZerosToMatchScale(BigInteger intVal, long intCompact, int scale, long preferredScale) {
         if(intCompact!=INFLATED) {
