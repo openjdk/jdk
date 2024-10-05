@@ -63,6 +63,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/suspendedThreadTask.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
@@ -5992,7 +5993,7 @@ static void do_resume(HANDLE* h) {
 // retrieve a suspend/resume context capable handle
 // from the tid. Caller validates handle return value.
 void get_thread_handle_for_extended_context(HANDLE* h,
-                                            OSThread::thread_id_t tid) {
+                                            DWORD tid) {
   if (h != nullptr) {
     *h = OpenThread(THREAD_SUSPEND_RESUME | THREAD_GET_CONTEXT | THREAD_QUERY_INFORMATION, FALSE, tid);
   }
