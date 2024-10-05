@@ -299,7 +299,6 @@ public final class RawBytecodeHelper {
     private int nextBci;
     private int bci;
     private int opcode;
-    private boolean isWide;
 
     public static CodeRange of(byte[] array) {
         return new CodeRange(array, array.length);
@@ -341,14 +340,14 @@ public final class RawBytecodeHelper {
      * be valid and can be accessed unchecked.
      */
     public int opcode() {
-        return opcode;
+        return opcode & 0xFF;
     }
 
     /**
      * Returns whether the current functional opcode is in wide.
      */
     public boolean isWide() {
-        return isWide;
+        return (opcode & (WIDE << 8)) != 0;
     }
 
     /**
@@ -411,7 +410,7 @@ public final class RawBytecodeHelper {
 
     // *load, *store, iinc
     public int getIndex() {
-        return isWide ? getU2Unchecked(bci + 2) : getIndexU1();
+        return isWide() ? getU2Unchecked(bci + 2) : getIndexU1();
     }
 
     // ldc
@@ -443,12 +442,11 @@ public final class RawBytecodeHelper {
         int len = LENGTHS[code & 0xFF]; // & 0xFF eliminates bound check
         this.bci = bci;
         opcode = code;
-        isWide = false;
         if (len <= 0) {
             len = checkSpecialInstruction(bci, end, code); // sets opcode
         }
 
-        if (len <= 0 || (nextBci += len) > end) {
+        if ((nextBci += len) > end) {
             opcode = ILLEGAL;
         }
 
@@ -457,37 +455,34 @@ public final class RawBytecodeHelper {
 
     // Put rarely used code in another method to reduce code size
     private int checkSpecialInstruction(int bci, int end, int code) {
+        int len = -1;
         if (code == WIDE) {
-            if (bci + 1 >= end) {
-                return -1;
+            if (bci + 1 < end) {
+                opcode = (WIDE << 8) | (code = getIndexU1());
+                // Validated in UtilTest.testOpcodeLengthTable
+                len = LENGTHS[code] * 2;
             }
-            opcode = code = getIndexU1();
-            isWide = true;
-            // Validated in UtilTest.testOpcodeLengthTable
-            return LENGTHS[code] * 2;
-        }
-        if (code == TABLESWITCH) {
+        } else if (code == TABLESWITCH) {
             int alignedBci = align(bci + 1);
-            if (alignedBci + 3 * 4 >= end) {
-                return -1;
+            if (alignedBci + 3 * 4 < end) {
+                int lo = getIntUnchecked(alignedBci + 1 * 4);
+                int hi = getIntUnchecked(alignedBci + 2 * 4);
+                long l = alignedBci - bci + (3L + (long) hi - lo + 1L) * 4L;
+                len = l > 0 && ((int) l == l) ? (int) l : -1;
             }
-            int lo = getIntUnchecked(alignedBci + 1 * 4);
-            int hi = getIntUnchecked(alignedBci + 2 * 4);
-            long l = alignedBci - bci + (3L + (long) hi - lo + 1L) * 4L;
-            return l > 0 && ((int) l == l) ? (int) l : -1;
-        }
-        if (code == LOOKUPSWITCH) {
+        } else if (code == LOOKUPSWITCH) {
             int alignedBci = align(bci + 1);
-            if (alignedBci + 2 * 4 >= end) {
-                return -1;
+            if (alignedBci + 2 * 4 < end) {
+                int npairs = getIntUnchecked(alignedBci + 4);
+                if (npairs >= 0) {
+                    long l = alignedBci - bci + (2L + 2L * npairs) * 4L;
+                    len = l > 0 && ((int) l == l) ? (int) l : -1;
+                }
             }
-            int npairs = getIntUnchecked(alignedBci + 4);
-            if (npairs < 0) {
-                return -1;
-            }
-            long l = alignedBci - bci + (2L + 2L * npairs) * 4L;
-            return l > 0 && ((int) l == l) ? (int) l : -1;
         }
-        return -1;
+        if (len <= 0) {
+            opcode = ILLEGAL;
+        }
+        return len;
     }
 }
