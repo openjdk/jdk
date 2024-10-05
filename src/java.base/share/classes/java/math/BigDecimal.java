@@ -5313,7 +5313,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     }
 
     /**
-     * Assumes {@code intVal != 0 && compactVal != 0}.
+     * Assumes {@code intVal != 0 && intCompact != 0}.
      */
     private static BigDecimal stripZerosToMatchScale(BigInteger intVal, long intCompact, int scale, long preferredScale) {
         if(intCompact!=INFLATED) {
