@@ -33,6 +33,9 @@
 #include "runtime/jniHandles.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
+#ifdef COMPILER2
+#include "gc/shared/c2/barrierSetC2.hpp"
+#endif // COMPILER2
 
 #define __ masm->
 
@@ -194,8 +197,93 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
 
 #ifdef COMPILER2
 
-OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) {
-  Unimplemented(); // This must be implemented to support late barrier expansion.
+OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Name opto_reg) const {
+  if (!OptoReg::is_reg(opto_reg)) {
+    return OptoReg::Bad;
+  }
+
+  VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+  if ((vm_reg->is_Register() || vm_reg ->is_FloatRegister()) && (opto_reg & 1) != 0) {
+    return OptoReg::Bad;
+  }
+
+  return opto_reg;
+}
+
+#undef __
+#define __ _masm->
+
+SaveLiveRegisters::SaveLiveRegisters(MacroAssembler *masm, BarrierStubC2 *stub)
+  : _masm(masm), _reg_mask(stub->preserve_set()) {
+
+  const int register_save_size = iterate_over_register_mask(ACTION_COUNT_ONLY) * BytesPerWord;
+
+  _frame_size = align_up(register_save_size, frame::alignment_in_bytes) + frame::z_abi_160_size; // FIXME: this could be restricted to argument only
+
+  __ save_return_pc();
+  __ push_frame(_frame_size, Z_R14); // FIXME: check if Z_R1_scaratch can do a job here;
+
+  __ z_lg(Z_R14, _z_common_abi(return_pc) + _frame_size, Z_SP);
+
+  iterate_over_register_mask(ACTION_SAVE, _frame_size);
+}
+
+SaveLiveRegisters::~SaveLiveRegisters() {
+  iterate_over_register_mask(ACTION_RESTORE, _frame_size);
+
+  __ pop_frame();
+
+  __ restore_return_pc();
+}
+
+int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int offset) {
+  int reg_save_index = 0;
+  RegMaskIterator live_regs_iterator(_reg_mask);
+
+  while(live_regs_iterator.has_next()) {
+    const OptoReg::Name opto_reg = live_regs_iterator.next();
+
+    // Filter out stack slots (spilled registers, i.e., stack-allocated registers).
+    if (!OptoReg::is_reg(opto_reg)) {
+      continue;
+    }
+
+    const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+    if (vm_reg->is_Register()) {
+      Register std_reg = vm_reg->as_Register();
+
+      if (std_reg->encoding() >= Z_R2->encoding() && std_reg->encoding() <= Z_R15->encoding()) {
+        reg_save_index++;
+
+        if (action == ACTION_SAVE) {
+          __ z_stg(std_reg, offset - reg_save_index * BytesPerWord, Z_SP);
+        } else if (action == ACTION_RESTORE) {
+          __ z_lg(std_reg, offset - reg_save_index * BytesPerWord, Z_SP);
+        } else {
+          assert(action == ACTION_COUNT_ONLY, "Sanity");
+        }
+      }
+    } else if (vm_reg->is_FloatRegister()) {
+      FloatRegister fp_reg = vm_reg->as_FloatRegister();
+      if (fp_reg->encoding() >= Z_F0->encoding() && fp_reg->encoding() <= Z_F15->encoding()
+          && fp_reg->encoding() != Z_F1->encoding()) {
+        reg_save_index++;
+
+        if (action == ACTION_SAVE) {
+          __ z_std(fp_reg, offset - reg_save_index * BytesPerWord, Z_SP);
+        } else if (action == ACTION_RESTORE) {
+          __ z_ld(fp_reg, offset - reg_save_index * BytesPerWord, Z_SP);
+        } else {
+          assert(action == ACTION_COUNT_ONLY, "Sanity");
+        }
+      }
+    } else if (false /* vm_reg->is_VectorRegister() */){
+      fatal("Vector register support is not there yet!");
+    } else {
+      fatal("Register type is not known");
+    }
+  }
+  return reg_save_index;
 }
 
 #endif // COMPILER2

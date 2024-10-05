@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Arm Limited. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,28 +19,36 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_UTILITIES_INTPOW_HPP
-#define SHARE_UTILITIES_INTPOW_HPP
+/*
+ * @test
+ * @bug 4177156
+ * @key headful
+ * @summary Tests that multiple level of window ownership doesn't cause
+ * NullPointerException when showing a Window
+ * @run main OwnedWindowShowTest
+ */
 
-#include "metaprogramming/enableIf.hpp"
-#include <limits>
-#include <type_traits>
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.Window;
 
-// Raise v to the power p mod 2**N, where N is the width of the type T.
-template <typename T, ENABLE_IF(std::is_integral<T>::value && std::is_unsigned<T>::value)>
-static constexpr T intpow(T v, unsigned p) {
-  if (p == 0) {
-    return 1;
-  }
+public class OwnedWindowShowTest {
+    public static void main(String[] args) throws Exception {
+        EventQueue.invokeAndWait(OwnedWindowShowTest::runTest);
+    }
 
-  // We use exponentiation by squaring to calculate the required power.
-  T a = intpow(v, p / 2);
-  T b = (p % 2) ? v : 1;
-
-  return a * a * b;
+    static void runTest() {
+        Frame parent = new Frame("OwnedWindowShowTest");
+        try {
+            Window owner = new Window(parent);
+            Window window = new Window(owner);
+            // Showing a window with multiple levels of ownership
+            // should not throw NullPointerException
+            window.setVisible(true);
+        } finally {
+            parent.dispose();
+        }
+    }
 }
-
-#endif // SHARE_UTILITIES_INTPOW_HPP
