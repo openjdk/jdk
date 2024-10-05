@@ -39,7 +39,7 @@ import java.util.Objects;
 
 /**
  * The {@code UnresolvedPermission} class used to hold Permissions that were
- * "unresolved" when the {code Policy} was initialized. Installing a
+ * "unresolved" when the {@code Policy} was initialized. Installing a
  * system-wide {@code Policy} object is no longer supported.
  *
  * @see java.security.Permission
