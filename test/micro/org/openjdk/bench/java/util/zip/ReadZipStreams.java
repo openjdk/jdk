@@ -27,7 +27,6 @@ import org.openjdk.jmh.annotations.*;
 
 import java.io.*;
 import java.nio.file.Files;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.*;
 
@@ -53,13 +52,16 @@ public class ReadZipStreams {
 
     public File zipFile;
 
+    // Used by transferTo
+    private static byte[] buffer = new byte[16384];
+
     @Setup(Level.Trial)
     public void beforeRun() throws IOException {
         // Create a test Zip file with the number of entries.
         File tempFile = Files.createTempFile("zip-micro", ".zip").toFile();
         tempFile.deleteOnExit();
-        byte[] content = new byte[2048];
-        new Random().nextBytes(content);
+        // Using a class file a gives a representative compression rate
+        byte[] content = readClassFile(getClass());
         CRC32 crc = new CRC32();
         crc.update(content);
         try (FileOutputStream fos = new FileOutputStream(tempFile);
@@ -79,27 +81,26 @@ public class ReadZipStreams {
         zipFile = tempFile;
     }
 
-
     @Benchmark
-    public void zipInputStream() throws Exception {
+    public void readZipInputStream() throws Exception {
         try (var fi = new FileInputStream(zipFile);
              var wrap = buffered ? new BufferedInputStream(fi) : fi;
                 var in = new ZipInputStream(wrap)) {
             ZipEntry entry;
             while ((entry = in.getNextEntry()) != null) {
-                in.transferTo(OutputStream.nullOutputStream());
+                transferTo(in, OutputStream.nullOutputStream());
             }
         }
     }
 
     @Benchmark
-    public void zipFile() throws Exception {
+    public void readZipFileInputStream() throws Exception {
         try (var zf = new ZipFile(zipFile)) {
             var entries = zf.entries();
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
                 try (var in = zf.getInputStream(entry)) {
-                    in.transferTo(OutputStream.nullOutputStream());
+                    transferTo(in, OutputStream.nullOutputStream());
                 }
             }
         }
@@ -113,6 +114,25 @@ public class ReadZipStreams {
                 ZipEntry entry = entries.nextElement();
                 zf.getInputStream(entry).close();
             }
+        }
+    }
+
+    // Read class file data for a class
+    private byte[] readClassFile(Class<?> clazz) throws IOException {
+        byte[] content;
+        try (var is = clazz.getResourceAsStream(clazz.getSimpleName() +".class")) {
+            content = is.readAllBytes();
+        }
+        return content;
+    }
+
+    // Transfer bytes using an existing buffer
+    private static void transferTo(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = ReadZipStreams.buffer;
+        int read;
+        while (true) {
+            if (!((read = in.read(buffer, 0, buffer.length)) >= 0)) break;
+            out.write(buffer, 0, read);
         }
     }
 }
