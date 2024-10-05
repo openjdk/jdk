@@ -293,7 +293,6 @@ public class ServerSocket implements java.io.Closeable {
      * @param   endpoint        The IP address and port number to bind to.
      * @throws  IOException if the bind operation fails, the socket
      *                      is already bound or the socket is closed.
-     * its {@code checkListen} method doesn't allow the operation.
      * @throws  IllegalArgumentException if endpoint is a
      *          SocketAddress subclass not supported by this socket
      * @since 1.4
