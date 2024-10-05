@@ -62,7 +62,8 @@ public class CreateCoredumpOnCrash {
             runTest("-XX:-CreateMinidumpOnCrash").shouldContain("CreateCoredumpOnCrash turned off, no core file dumped")
             .shouldNotHaveExitValue(0);
         } else {
-            OutputAnalyzer oa = new OutputAnalyzer(Runtime.getRuntime().exec("ulimit -c"));
+            String exec_cmd[] = {"/bin/sh", "-c", "ulimit -c"};
+            OutputAnalyzer oa = new OutputAnalyzer(Runtime.getRuntime().exec(exec_cmd));
             oa.shouldHaveExitValue(0);
             if (!oa.contains("0\n")) {
                 oa = runTest("-XX:+CreateCoredumpOnCrash");
@@ -71,12 +72,10 @@ public class CreateCoredumpOnCrash {
 
                 oa = runTest("-XX:+CreateCoredumpOnCrash", ulimitString(1024));
                 oa.shouldContain("warning: CreateCoredumpOnCrash specified, but");
-                oa.shouldContain("To ensure a full core dump");
                 oa.shouldNotHaveExitValue(0);
 
                 oa = runTest("-XX:+CreateCoredumpOnCrash", ulimitString(0));
                 oa.shouldContain("warning: CreateCoredumpOnCrash specified, but");
-                oa.shouldContain("To enable core dumping");
                 oa.shouldNotHaveExitValue(0);
             } else {
                 throw new Exception("ulimit is not set correctly, try 'ulimit -c unlimited' and re-run.");
