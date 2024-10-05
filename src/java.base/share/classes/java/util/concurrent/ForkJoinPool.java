@@ -158,10 +158,6 @@ import jdk.internal.vm.SharedThreadContainer;
  * If no thread factory is supplied via a system property, then the
  * common pool uses a factory that uses the system class loader as the
  * {@linkplain Thread#getContextClassLoader() thread context class loader}.
- * In addition, if a {@link SecurityManager} is present, then
- * the common pool uses a factory supplying threads that have no
- * {@link Permissions} enabled, and are not guaranteed to preserve
- * the values of {@link java.lang.ThreadLocal} variables across tasks.
  *
  * Upon any error in establishing these settings, default parameters
  * are used. It is possible to disable or limit the use of threads in
