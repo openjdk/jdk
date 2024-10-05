@@ -5218,31 +5218,25 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
     /**
      * {@code FIVE_TO_2_TO[n] == 5^(2^n)}
      */
-    // floor(log2(log5(2^Integer.MAX_VALUE))) == 29
-    private static final BigInteger[] FIVE_TO_2_TO = new BigInteger[30];
-
-    private static int FIVE_TO_2_TO_LEN = 1;
+    private static final BigInteger[] FIVE_TO_2_TO = new BigInteger[20];
 
     static {
-        FIVE_TO_2_TO[0] = BigInteger.valueOf(5L);
+        BigInteger pow = FIVE_TO_2_TO[0] = BigInteger.valueOf(5L);
+        for (int i = 1; i < FIVE_TO_2_TO.length; i++)
+            FIVE_TO_2_TO[i] = pow = pow.multiply(pow);
     }
 
     /**
-     * @param n an integer such that {@code 0 <= n < FIVE_TO_2_TO.length}
+     * @param n a non-negative integer
      * @return {@code 5^(2^n)}
      */
     private static BigInteger fiveToTwoToThe(int n) {
-        synchronized (BigDecimal.class) {
-            int len = FIVE_TO_2_TO_LEN;
-            if (n >= len) {
-                BigInteger pow = FIVE_TO_2_TO[len - 1];
-                for (; len <= n; len++)
-                    FIVE_TO_2_TO[len] = pow = pow.multiply(pow);
+        int i = Math.min(n, FIVE_TO_2_TO.length - 1);
+        BigInteger pow = FIVE_TO_2_TO[i];
+        for (; i < n; i++)
+            pow = pow.multiply(pow);
 
-                FIVE_TO_2_TO_LEN = len;
-            }
-            return FIVE_TO_2_TO[n];
-        }
+        return pow;
     }
 
     /**
@@ -5268,12 +5262,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         intVal = intVal.shiftRight(powsOf2); // remove powers of 2
         BigInteger[] qr; // quotient-remainder pair
 
-        boolean zeroR = true;
-        for (int i = 0; zeroR && remainingZeros >= 1L << i; i++) {
+        for (int i = 0; remainingZeros >= 1L << i; i++) {
             final int exp = 1 << i;
             qr = intVal.divideAndRemainder(fiveToTwoToThe(i));
-            if (qr[1].signum() != 0) {
-                zeroR = false; // non-0 remainder
+            if (qr[1].signum() != 0) { // non-0 remainder
                 remainingZeros = exp - 1;
             } else {
                 intVal = qr[0];
