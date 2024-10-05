@@ -377,8 +377,8 @@ public class BytecodeHelpers {
     public static void validateSlot(Opcode opcode, int slot, boolean load) {
         int size = opcode.sizeIfFixed();
         if (size == 1 && slot == (load ? intrinsicLoadSlot(opcode) : intrinsicStoreSlot(opcode)) ||
-                size == 2 && 0 == (slot & ~0xFF) ||
-                size == 4 && 0 == (slot & ~0xFFFF))
+                size == 2 && (slot & ~0xFF) == 0 ||
+                size == 4 && (slot & ~0xFFFF) == 0)
             return;
         throw slotOutOfBounds(opcode, slot);
     }
@@ -404,8 +404,8 @@ public class BytecodeHelpers {
     }
 
     public static void validateRet(Opcode opcode, int slot) {
-        if (opcode == Opcode.RET && 0 == (slot & ~0xFF) ||
-                opcode == Opcode.RET_W && 0 == (slot & ~0xFFFF))
+        if (opcode == Opcode.RET && (slot & ~0xFF) == 0 ||
+                opcode == Opcode.RET_W && (slot & ~0xFFFF) == 0)
             return;
         Objects.requireNonNull(opcode);
         throw slotOutOfBounds(opcode, slot);
