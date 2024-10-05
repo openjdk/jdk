@@ -302,4 +302,43 @@ public interface CharSequence {
         return cs1.length() - cs2.length();
     }
 
+    /**
+     * Characters are copied from this sequence into the
+     * destination character array {@code dst}. The first character to
+     * be copied is at index {@code srcBegin}; the last character to
+     * be copied is at index {@code srcEnd-1}. The total number of
+     * characters to be copied is {@code srcEnd-srcBegin}. The
+     * characters are copied into the subarray of {@code dst} starting
+     * at index {@code dstBegin} and ending at index:
+     * <pre>{@code
+     * dstbegin + (srcEnd-srcBegin) - 1
+     * }</pre>
+     *
+     * @param      srcBegin   start copying at this offset.
+     * @param      srcEnd     stop copying at this offset.
+     * @param      dst        the array to copy the data into.
+     * @param      dstBegin   offset into {@code dst}.
+     * @throws     IndexOutOfBoundsException  if any of the following is true:
+     *             <ul>
+     *             <li>{@code srcBegin} is negative
+     *             <li>{@code dstBegin} is negative
+     *             <li>the {@code srcBegin} argument is greater than
+     *             the {@code srcEnd} argument.
+     *             <li>{@code srcEnd} is greater than
+     *             {@code this.length()}.
+     *             <li>{@code dstBegin+srcEnd-srcBegin} is greater than
+     *             {@code dst.length}
+     *             </ul>
+     *
+     * @implSpec
+     * The default implementation iterates over {@link #charAt(int)}.
+     *
+     * @since 24
+     */
+    public default void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+        Objects.checkFromToIndex(srcBegin, srcEnd, length());
+        Objects.checkFromIndexSize(dstBegin, srcEnd - srcBegin, dst.length);
+        while (srcBegin < srcEnd)
+            dst[dstBegin++] = charAt(srcBegin++);
+    }
 }

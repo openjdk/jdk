@@ -2333,4 +2333,27 @@ public abstract sealed class $Type$Buffer
 
 #end[streamableType]
 
+#if[char]
+    /**
+     * {@inheritDoc}
+     *
+     * @apiNote This method exists solely to implement
+     * {@link CharSequence#getChars(int,int,char[],int)}.
+     * It has no additional benefit over {@link #get(int, char[], int, int)}.
+     *
+     * @implSpec This method is equivalent to
+     * {@code get(srcBegin, dst, dstBegin, srcEnd - srcBegin)}.
+     *
+     * @implNote This method allows for superior performance over the default
+     * implementation in {@code CharSequence}. It performs a direct
+     * buffer-to-array copy of the complete specified region.
+     *
+     * @since 24
+     */
+    @Override
+    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+        get(srcBegin, dst, dstBegin, srcEnd - srcBegin);
+    }
+#end[char]
+
 }
