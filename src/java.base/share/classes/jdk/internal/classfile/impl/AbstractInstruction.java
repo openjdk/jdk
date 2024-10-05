@@ -1071,7 +1071,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public int count() {
             return op == Opcode.INVOKEINTERFACE
-                   ? Util.parameterSlots(Util.methodTypeSymbol(methodEntry.nameAndType())) + 1
+                   ? Util.parameterSlots(Util.methodTypeSymbol(methodEntry.type())) + 1
                    : 0;
         }
 
