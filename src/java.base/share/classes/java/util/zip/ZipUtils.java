@@ -40,7 +40,6 @@ import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.Preconditions;
-import jdk.internal.vm.annotation.ForceInline;
 
 class ZipUtils {
 
@@ -171,7 +170,6 @@ class ZipUtils {
      * Fetches unsigned 16-bit value from byte array at specified offset.
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
-    @ForceInline
     public static final int get16(byte[] b, int off) {
         Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
         Preconditions.checkIndex(off + 1, b.length, Preconditions.AIOOBE_FORMATTER);
@@ -183,7 +181,6 @@ class ZipUtils {
      * Fetches unsigned 32-bit value from byte array at specified offset.
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
-    @ForceInline
     public static final long get32(byte[] b, int off) {
         Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
         Preconditions.checkIndex(off + 3, b.length, Preconditions.AIOOBE_FORMATTER);
@@ -195,7 +192,6 @@ class ZipUtils {
      * Fetches signed 64-bit value from byte array at specified offset.
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
-    @ForceInline
     public static final long get64(byte[] b, int off) {
         Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
         Preconditions.checkIndex(off + 7, b.length, Preconditions.AIOOBE_FORMATTER);
