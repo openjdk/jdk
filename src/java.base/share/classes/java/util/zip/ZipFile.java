@@ -411,12 +411,9 @@ public class ZipFile implements ZipConstants, Closeable {
                 case DEFLATED:
                     // Inflater likes a bit of slack
                     // MORE: Compute good size for inflater stream:
-                    long size = CENLEN(zsrc.cen, pos) + 2;
+                    long size = CENSIZ(zsrc.cen, pos);
                     if (size > 65536) {
                         size = 8192;
-                    }
-                    if (size <= 0) {
-                        size = 4096;
                     }
                     InputStream is = new ZipFileInflaterInputStream(in, res, (int) size);
                     synchronized (istreams) {
