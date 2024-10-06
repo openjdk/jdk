@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -48,7 +48,7 @@ static long sys_flush_icache(uintptr_t start, uintptr_t end , uintptr_t flags) {
 }
 
 bool RiscvFlushIcache::test() {
-  alignas(64) char memory[64];
+  alignas(16) char memory[64];
   long ret = sys_flush_icache((uintptr_t)&memory[0],
                               (uintptr_t)&memory[sizeof(memory) - 1],
                               SYS_RISCV_FLUSH_ICACHE_ALL);
