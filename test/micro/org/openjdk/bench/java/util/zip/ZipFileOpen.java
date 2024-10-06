@@ -108,6 +108,8 @@ public class ZipFileOpen {
         zf2.close();
     }
 
+    // Provide a simple one-off run without JMH dependencies enable simple debugging,
+    // diagnostics and dual-purposing this micro as a startup test.
     public static void main(String... args) throws Exception {
         var bench = new ZipFileOpen();
         bench.size = 1024*4;

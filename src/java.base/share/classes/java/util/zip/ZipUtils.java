@@ -245,7 +245,7 @@ class ZipUtils {
     static final int  ENDCOM(byte[] b) { return get16(b, 20);}  // size of ZIP file comment
     static final int  ENDCOM(byte[] b, int off) { return get16(b, off + 20);}
 
-    // zip64 end of central directory recoder fields
+    // zip64 end of central directory record fields
     static final long ZIP64_ENDTOD(byte[] b) { return get64(b, 24);}  // total number of entries on disk
     static final long ZIP64_ENDTOT(byte[] b) { return get64(b, 32);}  // total number of entries
     static final long ZIP64_ENDSIZ(byte[] b) { return get64(b, 40);}  // central directory size
