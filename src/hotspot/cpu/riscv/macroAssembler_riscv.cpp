@@ -2947,7 +2947,7 @@ int MacroAssembler::corrected_idivq(Register result, Register rs1, Register rs2,
   return idivq_offset;
 }
 
-// Look up the method for a megamorpic invkkeinterface call.
+// Look up the method for a megamorphic invokeinterface call.
 // The target method is determined by <intf_klass, itable_index>.
 // The receiver klass is in recv_klass.
 // On success, the result will be in method_result, and execution falls through.
@@ -2962,9 +2962,9 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   assert_different_registers(recv_klass, intf_klass, scan_tmp);
   assert_different_registers(method_result, intf_klass, scan_tmp);
   assert(recv_klass != method_result || !return_method,
-         "recv_klass can be destroyed when mehtid isn't needed");
+         "recv_klass can be destroyed when method isn't needed");
   assert(itable_index.is_constant() || itable_index.as_register() == method_result,
-         "caller must be same register for non-constant itable index as for method");
+         "caller must use same register for non-constant itable index as for method");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable).
   int vtable_base = in_bytes(Klass::vtable_start_offset());

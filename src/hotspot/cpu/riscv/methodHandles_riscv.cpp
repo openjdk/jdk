@@ -444,7 +444,6 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       __ far_jump(RuntimeAddress(SharedRuntime::throw_IncompatibleClassChangeError_entry()));
     }
   }
-
 }
 
 #ifndef PRODUCT
