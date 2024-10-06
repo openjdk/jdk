@@ -27,6 +27,7 @@ package jdk.internal.constant;
 import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles;
 
+import jdk.internal.vm.annotation.Stable;
 import static jdk.internal.constant.ConstantUtils.*;
 
 /**
@@ -36,7 +37,7 @@ import static jdk.internal.constant.ConstantUtils.*;
  */
 public final class ReferenceClassDescImpl implements ClassDesc {
     private final String descriptor;
-    private transient String internalName;
+    private @Stable String internalName;
 
     private ReferenceClassDescImpl(String descriptor) {
         this.descriptor = descriptor;
