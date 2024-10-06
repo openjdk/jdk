@@ -149,7 +149,7 @@ public class Util {
         if (cd instanceof ReferenceClassDescImpl rcd) {
             return rcd.internalName();
         }
-        return cd.descriptorString();
+        throw new IllegalArgumentException(cd.descriptorString());
     }
 
     public static ClassDesc toClassDesc(String classInternalNameOrArrayDesc) {
