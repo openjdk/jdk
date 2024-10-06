@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8338981
- * @summary Access to private classes should be permitted inside the permits clause of the enclosing top-level class
+ * @summary Access to private classes should be permitted inside the permits clause of the enclosing top-level class.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *                     jdk.compiler/com.sun.tools.javac.main
@@ -32,7 +32,6 @@
  * @build toolbox.ToolBox toolbox.JavacTask toolbox.Task
  * @run main PrivateMembersInPermitClause
  */
-
 import java.nio.file.Path;
 import java.util.Objects;
 import toolbox.Task;
@@ -55,8 +54,11 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
         runTests(_ -> new Object[] {});
     }
 
+    /**
+     * Tests that a private class in the permits clause compiles successfully.
+     */
     @Test
-    public void givenPrivateClassInPermitsClause_whenCompiling_thenShouldCompile() throws Exception {
+    public void privateClassPermitted() throws Exception {
         var root = Path.of("src");
         tb.writeJavaFiles(root,
             """
@@ -71,8 +73,11 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
             .run(toolbox.Task.Expect.SUCCESS);
     }
 
+    /**
+     * Tests that a private class from another top-level class in the permits clause fails to compile.
+     */
     @Test
-    public void givenPrivateClassOfOtherTopLevelClassInPermitsClause_whenCompiling_thenShouldFail() throws Exception {
+    public void otherTopLevelPrivateClassFails() throws Exception {
         var root = Path.of("src");
         tb.writeJavaFiles(root,
             """
@@ -100,11 +105,13 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
         if (!Objects.equals(compileErrors, expectedErrors)) {
             throw new AssertionError("Expected errors: " + expectedErrors + ", but got: " + compileErrors);
         }
-
     }
 
+    /**
+     * Tests that a private class in the permits clause of an inner class compiles successfully.
+     */
     @Test
-    public void givenPrivateClassInPermitsClauseOfInnerClass_whenCompiling_thenShouldCompile() throws Exception {
+    public void privateClassInInnerPermitted() throws Exception {
         var root = Path.of("src");
         tb.writeJavaFiles(root,
             """
@@ -121,8 +128,11 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
             .run(toolbox.Task.Expect.SUCCESS);
     }
 
+    /**
+     * Tests that a private class in the permits clause contained in a sibling private inner class compiles successfully.
+     */
     @Test
-    public void givenPrivateClassInPermitsClauseContainedInSiblingPrivateInnerClass_whenCompiling_thenShouldCompile() throws Exception {
+    public void siblingPrivateClassesPermitted() throws Exception {
         var root = Path.of("src");
         tb.writeJavaFiles(root,
             """
@@ -142,8 +152,11 @@ public class PrivateMembersInPermitClause extends toolbox.TestRunner {
             .run(toolbox.Task.Expect.SUCCESS);
     }
 
+    /**
+     * Tests that referencing a private class in the permits clause from another class fails to compile.
+     */
     @Test
-    public void givenPrivateClassInPermitsClause_whenThanCompilingOtherClassThatReferencesPrivateClassInPermitsClause_thenShouldFail() throws Exception {
+    public void referencePrivateClassFails() throws Exception {
         var root = Path.of("src");
         tb.writeJavaFiles(root,
             """
