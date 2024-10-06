@@ -30,6 +30,7 @@ import java.util.Objects;
 /**
  * A character stream whose source is a string.
  *
+ * @apiNote
  * As of release JDK 24, this class has been supplemented with an equivalent
  * API designed for use by a single thread, {@link Reader#of(CharSequence)}.
  * {@code Reader.of(String)} should generally be used in preference to this one,

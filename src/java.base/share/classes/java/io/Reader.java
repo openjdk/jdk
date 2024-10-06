@@ -143,38 +143,35 @@ public abstract class Reader implements Readable, Closeable {
     /**
      * Returns a new {@code Reader} whose source is a {@link CharSequence}.
      *
-     * <p> The returned reader's class provides an API compatible with
-     * {@link StringReader}, but with no guarantee of synchronization, and
-     * without limitation to {@code String} sources. This class is designed for
-     * use as a drop-in replacement for {@code StringReader} in places where the
-     * reader was being used by a single thread (as is generally the case).
-     * Where possible, it is recommended that this class be used in preference
-     * to {@code StringReader} as it will be faster under most implementations.
+     * <p> The resulting reader is not safe for use by multiple
+     * concurrent threads. If the reader is to be used by more than one
+     * thread it should be controlled by appropriate synchronization.
      *
-     * <p> The returned stream is initially open. The stream is closed by
+     * <p> The returned reader is initially open. The reader is closed by
      * calling the {@code close()} method. Subsequent calls to {@code close()}
      * have no effect.
      *
-     * <p> After the stream has been closed, the {@code read()},
+     * <p> After the reader has been closed, the {@code read()},
      * {@code read(char[])}, {@code read(char[], int, int)},
      * {@code read(CharBuffer)}, {@code ready()}, {@code skip(long)}, and
      * {@code transferTo()} methods all throw {@code IOException}.
      *
      * <p> The {@code markSupported()} method returns {@code true}.
      *
-     * <p> The {@link #lock object} used to synchronize operations on the
-     * returned {@code Reader} is not specified.
+     * @param source {@code CharSequence} providing the character stream.
      *
-     * @param c {@code CharSequence} providing the character stream.
+     * @return a {@code Reader} which reads characters from {@code source}
      *
-     * @return a {@code Reader} which reads characters from {@code c}
+     * @throws NullPointerException if {@code source} is {@code null}
      *
      * @since 24
      */
-    public static Reader of(CharSequence c) {
+    public static Reader of(CharSequence source) {
+        Objects.requireNonNull(source);
+
         return new Reader() {
-            private final int length = c.length();
-            private CharSequence cs = c;
+            private final int length = source.length();
+            private CharSequence cs = source;
             private int next = 0;
             private int mark = 0;
 
