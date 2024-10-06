@@ -91,7 +91,6 @@ public class ChoiceDragEventsInside extends Frame {
                 size = choice1.getSize();
             });
             testDragInsideChoice(InputEvent.BUTTON1_MASK);
-            //            testDragInsideChoiceWhileUnfurled(InputEvent.BUTTON1_MASK);
             testDragInsideChoiceList(InputEvent.BUTTON1_MASK);
             testDragOutsideChoice(InputEvent.BUTTON1_MASK);
         } catch (Throwable e) {
@@ -133,31 +132,6 @@ public class ChoiceDragEventsInside extends Frame {
         robot.delay(200);
     }
 
-    public void testDragInsideChoiceWhileUnfurled(int button) {
-        robot.mouseMove(pt.x + size.width / 2, pt.y + size.height / 2);
-        robot.delay(100);
-        robot.mousePress(button);
-        robot.mouseRelease(button);
-        robot.delay(200);
-
-        robot.mouseMove(pt.x + size.width / 4, pt.y + size.height / 2);
-        robot.mousePress(button);
-
-        dragMouse(pt.x + size.width / 4, pt.y + size.height / 2,
-                pt.x + size.width * 3 / 4, pt.y + size.height / 2);
-        robot.mouseRelease(button);
-        robot.delay(200);
-        if (mouseDragged) {
-            throw new RuntimeException("Test failed. Choice should generate MouseDragged events inside Choice itself while opened");
-        } else {
-            System.out.println("Stage 2 passed. Choice generates MouseDragged events inside Choice itself");
-        }
-        robot.keyPress(KeyEvent.VK_ESCAPE);
-        robot.keyRelease(KeyEvent.VK_ESCAPE);
-        robot.delay(200);
-        mouseDragged = false;
-    }
-
     public void testDragInsideChoiceList(int button) {
         robot.mouseMove(pt.x + size.width / 2, pt.y + size.height / 2);
         robot.delay(100);
@@ -176,7 +150,7 @@ public class ChoiceDragEventsInside extends Frame {
         if (mouseDragged) {
             throw new RuntimeException("Test failed. Choice shouldn't generate MouseDragged events inside Choice's list");
         } else {
-            System.out.println("Stage 3 passed. Choice doesn't generate MouseDragged events inside Choice's list");
+            System.out.println("Stage 2 passed. Choice doesn't generate MouseDragged events inside Choice's list");
         }
         robot.keyPress(KeyEvent.VK_ESCAPE);
         robot.keyRelease(KeyEvent.VK_ESCAPE);
@@ -198,7 +172,7 @@ public class ChoiceDragEventsInside extends Frame {
         if (!mouseDragged || !mouseDraggedOutside) {
             throw new RuntimeException("Test failed. Choice should generate MouseDragged events outside Choice");
         } else {
-            System.out.println("Stage 4 passed. Choice generates MouseDragged events outside Choice");
+            System.out.println("Stage 3 passed. Choice generates MouseDragged events outside Choice");
         }
         robot.keyPress(KeyEvent.VK_ESCAPE);
         robot.keyRelease(KeyEvent.VK_ESCAPE);
