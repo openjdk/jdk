@@ -1768,9 +1768,8 @@ public class ZipFile implements ZipConstants, Closeable {
             // Iterate through the entries in the central directory
             int idx = 0; // Index into the entries array
             int pos = 0;
-            int limit = cen.length;
             manifestNum = 0;
-            while (pos <= limit - CENHDR) {
+            while (pos <= cen.length - CENHDR) {
                 if (idx >= entriesLength) {
                     // This will only happen if the ZIP file has an incorrect
                     // ENDTOT field, which usually means it contains more than
