@@ -957,16 +957,6 @@ public class VectorGatherMaskFoldingTest {
         Asserts.assertNotEquals(res2, longVector);
     }
 
-    @Test
-    @IR(counts = { IRNode.STORE_VECTOR, ">= 1", IRNode.LOAD_VECTOR_L, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
-    public static void testStoreLoadLongVectorDifferentSpeciesVector() {
-        long[] res = new long[L_SPECIES.length()];
-        longVector.intoArray(res, 0);
-        LongVector res2 = LongVector.fromArray(LongVector.SPECIES_64, res, 0);
-        Asserts.assertFalse(L_SPECIES.length() != 1 && res2.equals(longVector));
-    }
-
-
     // IntVector tests
 
     @Test
@@ -1022,16 +1012,6 @@ public class VectorGatherMaskFoldingTest {
         IntVector res2 = IntVector.fromArray(I_SPECIES, res, 0, intVectorMask);
         Asserts.assertNotEquals(res2, intVector);
     }
-
-    @Test
-    @IR(counts = { IRNode.STORE_VECTOR, ">= 1", IRNode.LOAD_VECTOR_I, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
-    public static void testStoreLoadIntVectorDifferentSpeciesVector() {
-        int[] res = new int[I_SPECIES.length()];
-        intVector.intoArray(res, 0);
-        IntVector res2 = IntVector.fromArray(IntVector.SPECIES_64, res, 0);
-        Asserts.assertNotEquals(res2, intVector);
-    }
-
 
     // DoubleVector tests
 
@@ -1089,16 +1069,6 @@ public class VectorGatherMaskFoldingTest {
         Asserts.assertNotEquals(res2, doubleVector);
     }
 
-    @Test
-    @IR(counts = { IRNode.STORE_VECTOR, ">= 1", IRNode.LOAD_VECTOR_D, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
-    public static void testStoreLoadDoubleVectorDifferentSpeciesVector() {
-        double[] res = new double[D_SPECIES.length()];
-        doubleVector.intoArray(res, 0);
-        DoubleVector res2 = DoubleVector.fromArray(DoubleVector.SPECIES_64, res, 0);
-        Asserts.assertFalse(D_SPECIES.length() != 1 && res2.equals(doubleVector));
-    }
-
-
     // FloatVector tests
 
     @Test
@@ -1154,16 +1124,6 @@ public class VectorGatherMaskFoldingTest {
         FloatVector res2 = FloatVector.fromArray(F_SPECIES, res, 0, floatVectorMask);
         Asserts.assertNotEquals(res2, floatVector);
     }
-
-    @Test
-    @IR(counts = { IRNode.STORE_VECTOR, ">= 1", IRNode.LOAD_VECTOR_F, ">= 1" }, applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"})
-    public static void testStoreLoadFloatVectorDifferentSpeciesVector() {
-        float[] res = new float[F_SPECIES.length()];
-        floatVector.intoArray(res, 0);
-        FloatVector res2 = FloatVector.fromArray(FloatVector.SPECIES_64, res, 0);
-        Asserts.assertNotEquals(res2, floatVector);
-    }
-
 
     // LOAD - STORE tests
 

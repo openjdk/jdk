@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,11 @@ uint ConNode::hash() const {
 }
 
 //------------------------------make-------------------------------------------
-ConNode *ConNode::make(const Type *t) {
+ConNode* ConNode::make(const Type *t) {
+  if (t->isa_vect()) {
+    return new ConVNode(t->is_vect());
+  }
+
   switch( t->basic_type() ) {
   case T_INT:         return new ConINode( t->is_int() );
   case T_LONG:        return new ConLNode( t->is_long() );
@@ -64,4 +68,10 @@ ConNode *ConNode::make(const Type *t) {
     ShouldNotReachHere();
     return nullptr;
   }
+}
+
+ConVNode::ConVNode(const TypeVect* vt) : ConNode(vt) {
+  assert(Matcher::match_rule_supported(Op_ConV), "unsupported");
+  Compile* C = Compile::current();
+  C->set_max_vector_size(MAX2(C->max_vector_size(), vt->length_in_bytes()));
 }

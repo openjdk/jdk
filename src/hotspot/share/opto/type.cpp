@@ -679,9 +679,6 @@ void Type::Initialize_shared(Compile* current) {
   // get_zero_type() should not happen for T_CONFLICT
   _zero_type[T_CONFLICT]= nullptr;
 
-  TypeVect::VECTMASK = (TypeVect*)(new TypeVectMask(TypeInt::BOOL, MaxVectorSize))->hashcons();
-  mreg2type[Op_RegVectMask] = TypeVect::VECTMASK;
-
   if (Matcher::supports_scalable_vector()) {
     TypeVect::VECTA = TypeVect::make(T_BYTE, Matcher::scalable_vector_reg_size(T_BYTE));
   }
@@ -702,6 +699,13 @@ void Type::Initialize_shared(Compile* current) {
   if (Matcher::vector_size_supported(T_FLOAT,16)) {
     TypeVect::VECTZ = TypeVect::make(T_FLOAT,16);
   }
+
+  const Type** elem_types = static_cast<const Type**>(Compile::current()->type_arena()->AmallocWords(sizeof(Type*) * MaxVectorSize));
+  for (uint i = 0; i < uint(MaxVectorSize); i++) {
+    elem_types[i] = TypeInt::BOOL;
+  }
+  TypeVect::VECTMASK = (TypeVect*)(new TypeVectMask(T_BYTE, MaxVectorSize, elem_types))->hashcons();
+  mreg2type[Op_RegVectMask] = TypeVect::VECTMASK;
 
   mreg2type[Op_VecA] = TypeVect::VECTA;
   mreg2type[Op_VecS] = TypeVect::VECTS;
@@ -2491,160 +2495,168 @@ const TypeVect *TypeVect::VECTZ = nullptr; // 512-bit vectors
 const TypeVect *TypeVect::VECTMASK = nullptr; // predicate/mask vector
 
 //------------------------------make-------------------------------------------
-const TypeVect* TypeVect::make(const Type *elem, uint length, bool is_mask) {
-  if (is_mask) {
-    return makemask(elem, length);
-  }
-  BasicType elem_bt = elem->array_element_basic_type();
+const TypeVect* TypeVect::make(void* buf, BasicType elem_bt, uint length, const Type** elem_types) {
+  static_assert(sizeof(TypeVect) == sizeof(TypeVectA), "must be since buf is preallocated");
+  static_assert(sizeof(TypeVect) == sizeof(TypeVectS), "");
+  static_assert(sizeof(TypeVect) == sizeof(TypeVectD), "");
+  static_assert(sizeof(TypeVect) == sizeof(TypeVectX), "");
+  static_assert(sizeof(TypeVect) == sizeof(TypeVectY), "");
+  static_assert(sizeof(TypeVect) == sizeof(TypeVectZ), "");
   assert(is_java_primitive(elem_bt), "only primitive types in vector");
   assert(Matcher::vector_size_supported(elem_bt, length), "length in range");
   int size = length * type2aelembytes(elem_bt);
   switch (Matcher::vector_ideal_reg(size)) {
-  case Op_VecA:
-    return (TypeVect*)(new TypeVectA(elem, length))->hashcons();
-  case Op_VecS:
-    return (TypeVect*)(new TypeVectS(elem, length))->hashcons();
+  case Op_VecA: return (TypeVect*)(::new(buf) TypeVectA(elem_bt, length, elem_types))->hashcons();
+  case Op_VecS: return (TypeVect*)(::new(buf) TypeVectS(elem_bt, length, elem_types))->hashcons();
   case Op_RegL:
   case Op_VecD:
-  case Op_RegD:
-    return (TypeVect*)(new TypeVectD(elem, length))->hashcons();
-  case Op_VecX:
-    return (TypeVect*)(new TypeVectX(elem, length))->hashcons();
-  case Op_VecY:
-    return (TypeVect*)(new TypeVectY(elem, length))->hashcons();
-  case Op_VecZ:
-    return (TypeVect*)(new TypeVectZ(elem, length))->hashcons();
+  case Op_RegD: return (TypeVect*)(::new(buf) TypeVectD(elem_bt, length, elem_types))->hashcons();
+  case Op_VecX: return (TypeVect*)(::new(buf) TypeVectX(elem_bt, length, elem_types))->hashcons();
+  case Op_VecY: return (TypeVect*)(::new(buf) TypeVectY(elem_bt, length, elem_types))->hashcons();
+  case Op_VecZ: return (TypeVect*)(::new(buf) TypeVectZ(elem_bt, length, elem_types))->hashcons();
   }
- ShouldNotReachHere();
+  ShouldNotReachHere();
   return nullptr;
-}
-
-const TypeVect *TypeVect::makemask(const Type* elem, uint length) {
-  BasicType elem_bt = elem->array_element_basic_type();
-  if (Matcher::has_predicated_vectors() &&
-      Matcher::match_rule_supported_vector_masked(Op_VectorLoadMask, length, elem_bt)) {
-    return TypeVectMask::make(elem, length);
-  } else {
-    return make(elem, length);
-  }
 }
 
 //------------------------------meet-------------------------------------------
 // Compute the MEET of two types.  It returns a new Type object.
-const Type *TypeVect::xmeet( const Type *t ) const {
+const Type* TypeVect::xmeet(const Type* t) const {
   // Perform a fast test for common case; meeting the same types together.
-  if( this == t ) return this;  // Meeting same type-rep?
-
-  // Current "this->_base" is Vector
-  switch (t->base()) {          // switch on original type
-
-  case Bottom:                  // Ye Olde Default
-    return t;
-
-  default:                      // All else is a mistake
-    typerr(t);
-  case VectorMask: {
-    const TypeVectMask* v = t->is_vectmask();
-    assert(  base() == v->base(), "");
-    assert(length() == v->length(), "");
-    assert(element_basic_type() == v->element_basic_type(), "");
-    return TypeVect::makemask(_elem->xmeet(v->_elem), _length);
+  if (this == t) {
+    return this;
   }
-  case VectorA:
-  case VectorS:
-  case VectorD:
-  case VectorX:
-  case VectorY:
-  case VectorZ: {                // Meeting 2 vectors?
-    const TypeVect* v = t->is_vect();
-    assert(  base() == v->base(), "");
-    assert(length() == v->length(), "");
-    assert(element_basic_type() == v->element_basic_type(), "");
-    return TypeVect::make(_elem->xmeet(v->_elem), _length);
+
+  const TypeVect* v = t->isa_vect();
+  if (v == nullptr) {
+    if (t->base() == Bottom) {
+      return t;
+    } else if (t->base() == Top) {
+      return this;
+    } else {
+      typerr(t);
+    }
   }
-  case Top:
-    break;
-  }
-  return this;
+
+  assert(base() == v->base(), "");
+  assert(length() == v->length(), "");
+  assert(element_basic_type() == v->element_basic_type(), "");
+  return TypeVect::make(element_basic_type(), length(), [&](uint idx) {
+    return element_type(idx)->meet(v->element_type(idx));
+  });
 }
 
 //------------------------------xdual------------------------------------------
 // Dual: compute field-by-field dual
-const Type *TypeVect::xdual() const {
-  return new TypeVect(base(), _elem->dual(), _length);
+const Type* TypeVect::xdual() const {
+  const Type** elem_types = static_cast<const Type**>(Compile::current()->type_arena()->AmallocWords(sizeof(Type*) * length()));
+  for (uint i = 0; i < length(); i++) {
+    elem_types[i] = element_type(i)->dual();
+  }
+  return new TypeVect(base(), element_basic_type(), length(), elem_types);
 }
 
 //------------------------------eq---------------------------------------------
 // Structural equality check for Type representations
 bool TypeVect::eq(const Type *t) const {
-  const TypeVect *v = t->is_vect();
-  return (_elem == v->_elem) && (_length == v->_length);
+  const TypeVect* v = t->is_vect();
+  if (!is_compatible(v)) {
+    return false;
+  }
+
+  for (uint i = 0; i < length(); i++) {
+    if (element_type(i) != v->element_type(i)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
-uint TypeVect::hash(void) const {
-  return (uint)(uintptr_t)_elem + (uint)(uintptr_t)_length;
+uint TypeVect::hash() const {
+  uint res = element_basic_type() + length();
+  for (uint i = 0; i < length(); i++) {
+    res += element_type(i)->hash();
+  }
+  return res;
 }
 
 //------------------------------singleton--------------------------------------
 // TRUE if Type is a singleton type, FALSE otherwise.   Singletons are simple
 // constants (Ldi nodes).  Vector is singleton if all elements are the same
 // constant value (when vector is created with Replicate code).
-bool TypeVect::singleton(void) const {
-// There is no Con node for vectors yet.
-//  return _elem->singleton();
-  return false;
+bool TypeVect::singleton() const {
+  for (uint i = 0; i < length(); i++) {
+    if (!element_type(i)->singleton()) {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool TypeVect::empty(void) const {
-  return _elem->empty();
+  for (uint i = 0; i < length(); i++) {
+    if (element_type(i)->empty()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool TypeVect::supports_predicate_vector(BasicType elem_bt, uint length) {
+  return Matcher::has_predicated_vectors() && Matcher::match_rule_supported_vector_masked(Op_VectorLoadMask, length, elem_bt);
+}
+
+const Type* TypeVectMask::xdual() const {
+  const Type** elem_types = static_cast<const Type**>(Compile::current()->type_arena()->AmallocWords(sizeof(Type*) * length()));
+  for (uint i = 0; i < length(); i++) {
+    elem_types[i] = element_type(i)->dual();
+  }
+  return new TypeVectMask(element_basic_type(), length(), elem_types);
 }
 
 //------------------------------dump2------------------------------------------
 #ifndef PRODUCT
-void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
+void TypeVect::dump2(Dict& d, uint depth, outputStream* st) const {
   switch (base()) {
   case VectorA:
-    st->print("vectora["); break;
+    st->print("vectora"); break;
   case VectorS:
-    st->print("vectors["); break;
+    st->print("vectors"); break;
   case VectorD:
-    st->print("vectord["); break;
+    st->print("vectord"); break;
   case VectorX:
-    st->print("vectorx["); break;
+    st->print("vectorx"); break;
   case VectorY:
-    st->print("vectory["); break;
+    st->print("vectory"); break;
   case VectorZ:
-    st->print("vectorz["); break;
-  case VectorMask:
-    st->print("vectormask["); break;
+    st->print("vectorz"); break;
   default:
     ShouldNotReachHere();
   }
-  st->print("%d]:{", _length);
-  _elem->dump2(d, depth, st);
-  st->print("}");
+  st->print("<%c,%u>[", type2char(element_basic_type()), length());
+  element_type(0)->dump2(d, depth, st);
+  for (uint i = 1; i < length(); i++) {
+    st->print(", ");
+    element_type(i)->dump2(d, depth, st);
+  }
+  st->print("]");
+}
+
+void TypeVectMask::dump2(Dict& d, uint depth, outputStream* st) const {
+  st->print("vectormask:");
+  for (uint i = 0; i < length(); i++) {
+    if (element_type(i) == TypeInt::ONE) {
+      st->print("1");
+    } else if (element_type(i) == TypeInt::ZERO) {
+      st->print("0");
+    } else {
+      st->print("*");
+    }
+  }
 }
 #endif
-
-bool TypeVectMask::eq(const Type *t) const {
-  const TypeVectMask *v = t->is_vectmask();
-  return (element_type() == v->element_type()) && (length() == v->length());
-}
-
-const Type *TypeVectMask::xdual() const {
-  return new TypeVectMask(element_type()->dual(), length());
-}
-
-const TypeVectMask *TypeVectMask::make(const BasicType elem_bt, uint length) {
-  return make(get_const_basic_type(elem_bt), length);
-}
-
-const TypeVectMask *TypeVectMask::make(const Type* elem, uint length) {
-  const TypeVectMask* mtype = Matcher::predicate_reg_type(elem, length);
-  return (TypeVectMask*) const_cast<TypeVectMask*>(mtype)->hashcons();
-}
 
 //=============================================================================
 // Convenience common pre-built types.

@@ -1700,57 +1700,74 @@ void C2_MacroAssembler::load_vector_mask(KRegister dst, XMMRegister src, XMMRegi
   }
 }
 
-void C2_MacroAssembler::load_vector(XMMRegister dst, Address src, int vlen_in_bytes) {
-  switch (vlen_in_bytes) {
+void C2_MacroAssembler::load_vector(BasicType bt, XMMRegister dst, Address src, int vlen_in_bytes) {
+  if (is_integral_type(bt)) {
+    switch (vlen_in_bytes) {
     case 4:  movdl(dst, src);   break;
     case 8:  movq(dst, src);    break;
     case 16: movdqu(dst, src);  break;
     case 32: vmovdqu(dst, src); break;
     case 64: evmovdqul(dst, src, Assembler::AVX_512bit); break;
     default: ShouldNotReachHere();
+    }
+  } else {
+    switch (vlen_in_bytes) {
+    case 4:  movflt(dst, src); break;
+    case 8:  movdbl(dst, src); break;
+    case 16: movups(dst, src); break;
+    case 32: vmovups(dst, src, Assembler::AVX_256bit); break;
+    case 64: vmovups(dst, src, Assembler::AVX_512bit); break;
+    default: ShouldNotReachHere();
+    }
   }
 }
 
-void C2_MacroAssembler::load_vector(XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch) {
+void C2_MacroAssembler::load_vector(BasicType bt, XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
 
   if (reachable(src)) {
-    load_vector(dst, as_Address(src), vlen_in_bytes);
+    load_vector(bt, dst, as_Address(src), vlen_in_bytes);
   } else {
     lea(rscratch, src);
-    load_vector(dst, Address(rscratch, 0), vlen_in_bytes);
+    load_vector(bt, dst, Address(rscratch, 0), vlen_in_bytes);
   }
 }
 
-void C2_MacroAssembler::load_constant_vector(BasicType bt, XMMRegister dst, InternalAddress src, int vlen) {
+void C2_MacroAssembler::load_constant_vector(BasicType bt, XMMRegister dst, InternalAddress src, int width, int vlen) {
   int vlen_enc = vector_length_encoding(vlen);
-  if (VM_Version::supports_avx()) {
-    if (bt == T_LONG) {
-      if (VM_Version::supports_avx2()) {
-        vpbroadcastq(dst, src, vlen_enc);
-      } else {
-        vmovddup(dst, src, vlen_enc);
-      }
-    } else if (bt == T_DOUBLE) {
-      if (vlen_enc != Assembler::AVX_128bit) {
-        vbroadcastsd(dst, src, vlen_enc, noreg);
-      } else {
-        vmovddup(dst, src, vlen_enc);
-      }
+  if (width == vlen) {
+    load_vector(bt, dst, as_Address(src), vlen);
+    return;
+  }
+  if (is_integral_type(bt) && VM_Version::supports_avx2()) {
+    if (width == 4) {
+      vpbroadcastd(dst, as_Address(src), vlen_enc);
+    } else if (width == 8) {
+      vpbroadcastq(dst, as_Address(src), vlen_enc);
+    } else if (width == 16) {
+      vbroadcasti128(dst, as_Address(src), vlen_enc);
     } else {
-      if (VM_Version::supports_avx2() && is_integral_type(bt)) {
-        vpbroadcastd(dst, src, vlen_enc);
+      assert(width == 32, "");
+      evbroadcasti64x4(dst, as_Address(src), vlen_enc);
+    }
+  } else if (VM_Version::supports_avx()) {
+    if (width == 4) {
+      vbroadcastss(dst, as_Address(src), vlen_enc);
+    } else if (width == 8) {
+      if (vlen_enc == AVX_128bit) {
+        vmovddup(dst, as_Address(src), vlen_enc);
       } else {
-        vbroadcastss(dst, src, vlen_enc);
+        vbroadcastsd(dst, as_Address(src), vlen_enc);
       }
+    } else if (width == 16) {
+      vbroadcastf128(dst, as_Address(src), vlen_enc);
+    } else {
+      assert(width == 32, "");
+      evbroadcastf64x4(dst, as_Address(src), vlen_enc);
     }
-  } else if (VM_Version::supports_sse3()) {
-    movddup(dst, src);
   } else {
-    movq(dst, src);
-    if (vlen == 16) {
-      punpcklqdq(dst, dst);
-    }
+    assert(width == 8, "");
+    movddup(dst, as_Address(src));
   }
 }
 
@@ -1761,7 +1778,7 @@ void C2_MacroAssembler::load_iota_indices(XMMRegister dst, int vlen_in_bytes, Ba
     offset += 128;
   }
   ExternalAddress addr(StubRoutines::x86::vector_iota_indices() + offset);
-  load_vector(dst, addr, vlen_in_bytes);
+  load_vector(T_BYTE, dst, addr, vlen_in_bytes);
 }
 
 // Reductions for vectors of bytes, shorts, ints, longs, floats, and doubles.
@@ -3451,11 +3468,11 @@ void C2_MacroAssembler::arrays_hashcode_elload(Register dst, Address src, BasicT
 }
 
 void C2_MacroAssembler::arrays_hashcode_elvload(XMMRegister dst, Address src, BasicType eltype) {
-  load_vector(dst, src, arrays_hashcode_elsize(eltype) * 8);
+  load_vector(eltype, dst, src, arrays_hashcode_elsize(eltype) * 8);
 }
 
 void C2_MacroAssembler::arrays_hashcode_elvload(XMMRegister dst, AddressLiteral src, BasicType eltype) {
-  load_vector(dst, src, arrays_hashcode_elsize(eltype) * 8);
+  load_vector(eltype, dst, src, arrays_hashcode_elsize(eltype) * 8);
 }
 
 void C2_MacroAssembler::arrays_hashcode_elvcast(XMMRegister dst, BasicType eltype) {

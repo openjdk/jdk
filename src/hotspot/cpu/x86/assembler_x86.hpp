@@ -1677,7 +1677,9 @@ private:
   void kordl(KRegister dst, KRegister src1, KRegister src2);
   void korql(KRegister dst, KRegister src1, KRegister src2);
 
+  void kxnorbl(KRegister dst, KRegister src1, KRegister src2);
   void kxnorwl(KRegister dst, KRegister src1, KRegister src2);
+  void kxnorql(KRegister dst, KRegister src1, KRegister src2);
 
   void kxorbl(KRegister dst, KRegister src1, KRegister src2);
   void kxorwl(KRegister dst, KRegister src1, KRegister src2);
@@ -1709,7 +1711,6 @@ private:
   void kortestdl(KRegister dst, KRegister src);
   void kortestql(KRegister dst, KRegister src);
 
-  void kxnorbl(KRegister dst, KRegister src1, KRegister src2);
   void kshiftlbl(KRegister dst, KRegister src, int imm8);
   void kshiftlql(KRegister dst, KRegister src, int imm8);
   void kshiftrbl(KRegister dst, KRegister src, int imm8);
@@ -3026,10 +3027,12 @@ private:
   void vpbroadcastd(XMMRegister dst, Address src, int vector_len);
   void vpbroadcastq(XMMRegister dst, XMMRegister src, int vector_len);
   void vpbroadcastq(XMMRegister dst, Address src, int vector_len);
+  void vbroadcasti128(XMMRegister dst, Address src, int vector_len);
 
   void evbroadcasti32x4(XMMRegister dst, Address src, int vector_len);
   void evbroadcasti64x2(XMMRegister dst, XMMRegister src, int vector_len);
   void evbroadcasti64x2(XMMRegister dst, Address src, int vector_len);
+  void evbroadcasti64x4(XMMRegister dst, Address src, int vector_len);
 
   // scalar single/double/128bit precision replicate
   void vbroadcastss(XMMRegister dst, XMMRegister src, int vector_len);
@@ -3038,6 +3041,7 @@ private:
   void vbroadcastsd(XMMRegister dst, Address src, int vector_len);
   void vbroadcastf128(XMMRegister dst, Address src, int vector_len);
   void evbroadcastf64x2(XMMRegister dst, Address src, int vector_len);
+  void evbroadcastf64x4(XMMRegister dst, Address src, int vector_len);
 
   // gpr sourced byte/word/dword/qword replicate
   void evpbroadcastb(XMMRegister dst, Register src, int vector_len);

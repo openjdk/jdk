@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,6 +195,7 @@ instanceOop VectorSupport::allocate_vector(InstanceKlass* ik, frame* fr, Registe
   Handle payload_instance = VectorSupport::allocate_vector_payload(ik, fr, reg_map, payload_value, CHECK_NULL);
   instanceOop vbox = ik->allocate_instance(CHECK_NULL);
   vector_VectorPayload::set_payload(vbox, payload_instance());
+  OrderAccess::release();
   return vbox;
 }
 

@@ -119,13 +119,13 @@ public class IRNode {
     public static final String VECTOR_SIZE_32  = VECTOR_SIZE + "32";
     public static final String VECTOR_SIZE_64  = VECTOR_SIZE + "64";
 
-    private static final String TYPE_BYTE   = "byte";
-    private static final String TYPE_CHAR   = "char";
-    private static final String TYPE_SHORT  = "short";
-    private static final String TYPE_INT    = "int";
-    private static final String TYPE_LONG   = "long";
-    private static final String TYPE_FLOAT  = "float";
-    private static final String TYPE_DOUBLE = "double";
+    private static final String TYPE_BYTE   = "B";
+    private static final String TYPE_CHAR   = "C";
+    private static final String TYPE_SHORT  = "S";
+    private static final String TYPE_INT    = "I";
+    private static final String TYPE_LONG   = "J";
+    private static final String TYPE_FLOAT  = "F";
+    private static final String TYPE_DOUBLE = "D";
 
     /**
      * IR placeholder string to regex-for-compile-phase map.
@@ -495,6 +495,11 @@ public class IRNode {
     public static final String CON_L = PREFIX + "CON_L" + POSTFIX;
     static {
         beforeMatchingNameRegex(CON_L, "ConL");
+    }
+
+    public static final String CON_V = PREFIX + "CON_V" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CON_V, "ConV");
     }
 
     public static final String COUNTED_LOOP = PREFIX + "COUNTED_LOOP" + POSTFIX;
@@ -2405,7 +2410,7 @@ public class IRNode {
         TestFramework.check(isVectorIRNode(irNodePlaceholder), "vectorNode: failed prefix check for irNodePlaceholder "
                                                                + irNodePlaceholder + " -> did you use VECTOR_PREFIX?");
         // IS_REPLACED is later replaced with the specific type and size of the vector.
-        String regex = START + irNodeRegex + MID  + IS_REPLACED + END;
+        String regex = START + irNodeRegex + MID + IS_REPLACED + END;
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.IDEAL_INDEPENDENT, regex));
         VECTOR_NODE_TYPE.put(irNodePlaceholder, typeString);
     }

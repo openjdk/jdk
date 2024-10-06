@@ -784,95 +784,183 @@ public:
 //------------------------------TypeVect---------------------------------------
 // Class of Vector Types
 class TypeVect : public Type {
-  const Type*   _elem;  // Vector's element type
-  const uint  _length;  // Elements in vector (power of 2)
+  const BasicType _elem_bt; // Vector's element type
+  const uint _length;       // Elements in vector (power of 2)
+  const Type* const * const _elem_types;
 
 protected:
-  TypeVect(TYPES t, const Type* elem, uint length) : Type(t),
-    _elem(elem), _length(length) {}
+  TypeVect(TYPES t, BasicType elem_bt, uint length, const Type** elem_types) : Type(t),
+    _elem_bt(elem_bt), _length(length), _elem_types(elem_types) {}
 
 public:
-  const Type* element_type() const { return _elem; }
-  BasicType element_basic_type() const { return _elem->array_element_basic_type(); }
-  uint length() const { return _length; }
-  uint length_in_bytes() const {
-   return _length * type2aelembytes(element_basic_type());
+  BasicType element_basic_type() const { return _elem_bt; }
+  uint length()                  const { return _length; }
+  uint length_in_bytes()         const { return length() * type2aelembytes(element_basic_type()); }
+  const Type* element_type(uint idx) const {
+    assert(idx < _length, "index %u out of bounds for length %u", idx, _length);
+    return _elem_types[idx];
   }
 
-  virtual bool eq(const Type *t) const;
+  bool is_compatible(const TypeVect* v) const {
+    return base() == v->base() && element_basic_type() == v->element_basic_type() && length() == v->length();
+  }
+
+  virtual bool eq(const Type* t) const;
   virtual uint hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 
-  static const TypeVect *make(const BasicType elem_bt, uint length, bool is_mask = false) {
-    // Use bottom primitive type.
-    return make(get_const_basic_type(elem_bt), length, is_mask);
+  static const TypeVect* make(BasicType elem_bt, uint length, bool is_mask = false) {
+    if (is_mask) {
+      return makemask(elem_bt, length);
+    } else {
+      const Type* elem_bottom_type = get_const_basic_type(elem_bt);
+      return make(elem_bt, length, [elem_bottom_type](uint idx) {
+        return elem_bottom_type;
+      });
+    }
   }
-  // Used directly by Replicate nodes to construct singleton vector.
-  static const TypeVect *make(const Type* elem, uint length, bool is_mask = false);
 
-  static const TypeVect *makemask(const BasicType elem_bt, uint length) {
-    // Use bottom primitive type.
-    return makemask(get_const_basic_type(elem_bt), length);
+  template <class TypeSupplier>
+  static const TypeVect* make(BasicType elem_bt, uint length, TypeSupplier ts) {
+    char* buf = static_cast<char*>(Type::operator new(sizeof(TypeVect) + sizeof(const Type*) * length));
+    const Type** elem_types = reinterpret_cast<const Type**>(buf + sizeof(TypeVect));
+
+    const Type* elem_bottom_type = get_const_basic_type(elem_bt);
+    for (uint i = 0; i < length; i++) {
+      const Type* elem_type = ts(i);
+      assert(elem_type == elem_bottom_type || elem_type->higher_equal(elem_bottom_type), "invalid element");
+      elem_types[i] = elem_type;
+    }
+    return make(buf, elem_bt, length, elem_types);
   }
-  static const TypeVect *makemask(const Type* elem, uint length);
 
+  static const TypeVect* makemask(BasicType elem_bt, uint length) {
+    return makemask(elem_bt, length, [](uint idx) {
+      return TypeInt::BOOL;
+    });
+  }
 
-  virtual const Type *xmeet( const Type *t) const;
-  virtual const Type *xdual() const;     // Compute dual right now.
+  template <class TypeSupplier>
+  static const TypeVect* makemask(BasicType elem_bt, uint length, TypeSupplier ts);
 
-  static const TypeVect *VECTA;
-  static const TypeVect *VECTS;
-  static const TypeVect *VECTD;
-  static const TypeVect *VECTX;
-  static const TypeVect *VECTY;
-  static const TypeVect *VECTZ;
-  static const TypeVect *VECTMASK;
+  virtual const Type* xmeet(const Type* t) const;
+  virtual const Type* xdual() const;     // Compute dual right now.
+
+  static const TypeVect* VECTA;
+  static const TypeVect* VECTS;
+  static const TypeVect* VECTD;
+  static const TypeVect* VECTX;
+  static const TypeVect* VECTY;
+  static const TypeVect* VECTZ;
+  static const TypeVect* VECTMASK;
 
 #ifndef PRODUCT
-  virtual void dump2(Dict &d, uint, outputStream *st) const; // Specialized per-Type dumping
+  virtual void dump2(Dict& d, uint, outputStream* st) const; // Specialized per-Type dumping
 #endif
+
+private:
+  static const TypeVect* make(void* buf, BasicType elem_bt, uint length, const Type** elem_types);
+  static bool supports_predicate_vector(BasicType elem_bt, uint length);
 };
 
 class TypeVectA : public TypeVect {
   friend class TypeVect;
-  TypeVectA(const Type* elem, uint length) : TypeVect(VectorA, elem, length) {}
+  TypeVectA(BasicType elem_bt, uint length, const Type** elem_types) : TypeVect(VectorA, elem_bt, length, elem_types) {}
 };
 
 class TypeVectS : public TypeVect {
   friend class TypeVect;
-  TypeVectS(const Type* elem, uint length) : TypeVect(VectorS, elem, length) {}
+  TypeVectS(BasicType elem_bt, uint length, const Type** elem_types) : TypeVect(VectorS, elem_bt, length, elem_types) {}
 };
 
 class TypeVectD : public TypeVect {
   friend class TypeVect;
-  TypeVectD(const Type* elem, uint length) : TypeVect(VectorD, elem, length) {}
+  TypeVectD(BasicType elem_bt, uint length, const Type** elem_types) : TypeVect(VectorD, elem_bt, length, elem_types) {}
 };
 
 class TypeVectX : public TypeVect {
   friend class TypeVect;
-  TypeVectX(const Type* elem, uint length) : TypeVect(VectorX, elem, length) {}
+  TypeVectX(BasicType elem_bt, uint length, const Type** elem_types) : TypeVect(VectorX, elem_bt, length, elem_types) {}
 };
 
 class TypeVectY : public TypeVect {
   friend class TypeVect;
-  TypeVectY(const Type* elem, uint length) : TypeVect(VectorY, elem, length) {}
+  TypeVectY(BasicType elem_bt, uint length, const Type** elem_types) : TypeVect(VectorY, elem_bt, length, elem_types) {}
 };
 
 class TypeVectZ : public TypeVect {
   friend class TypeVect;
-  TypeVectZ(const Type* elem, uint length) : TypeVect(VectorZ, elem, length) {}
+  TypeVectZ(BasicType elem_bt, uint length, const Type** elem_types) : TypeVect(VectorZ, elem_bt, length, elem_types) {}
 };
 
 class TypeVectMask : public TypeVect {
 public:
   friend class TypeVect;
-  TypeVectMask(const Type* elem, uint length) : TypeVect(VectorMask, elem, length) {}
-  virtual bool eq(const Type *t) const;
-  virtual const Type *xdual() const;
-  static const TypeVectMask* make(const BasicType elem_bt, uint length);
-  static const TypeVectMask* make(const Type* elem, uint length);
+  TypeVectMask(BasicType elem_bt, uint length, const Type** elem_types) : TypeVect(VectorMask, elem_bt, length, elem_types) {}
+  virtual const Type* xdual() const;
+  static const TypeVectMask* make(BasicType elem_bt, uint length) {
+    return make(elem_bt, length, [](uint idx) {
+      return TypeInt::BOOL;
+    });
+  }
+
+  template <class TypeSupplier>
+  static const TypeVectMask* make(BasicType elem_bt, uint length, TypeSupplier ts) {
+    char* buf = static_cast<char*>(Type::operator new(sizeof(TypeVectMask) + sizeof(const Type*) * length));
+    const Type** elem_types = reinterpret_cast<const Type**>(buf + sizeof(TypeVectMask));
+
+    for (uint i = 0; i < length; i++) {
+      const Type* elem_type = ts(i);
+      assert(elem_type == TypeInt::BOOL || elem_type->higher_equal(TypeInt::BOOL), "invalid element");
+      elem_types[i] = elem_type;
+    }
+    return static_cast<const TypeVectMask*>((::new(buf) TypeVectMask(elem_bt, length, elem_types))->hashcons());
+  }
+
+#ifndef PRODUCT
+  virtual void dump2(Dict& d, uint, outputStream* st) const; // Specialized per-Type dumping
+#endif
 };
+
+template <class TypeSupplier>
+const TypeVect* TypeVect::makemask(BasicType elem_bt, uint length, TypeSupplier ts)  {
+  if (supports_predicate_vector(elem_bt, length)) {
+    return TypeVectMask::make(elem_bt, length, ts);
+  }
+
+  BasicType bit_bt = elem_bt;
+  if (bit_bt == T_FLOAT) {
+    bit_bt = T_INT;
+  } else if (bit_bt == T_DOUBLE) {
+    bit_bt = T_LONG;
+  }
+
+  if (bit_bt == T_LONG) {
+    const TypeLong* elem_bottom_type = TypeLong::make(-1, 0, WidenMin);
+    return make(bit_bt, length, [&](uint idx) {
+      const Type* elem_type = ts(idx);
+      if (elem_type == TypeInt::ZERO) {
+        return TypeLong::ZERO;
+      } else if (elem_type == TypeInt::ONE) {
+        return TypeLong::MINUS_1;
+      } else {
+        return elem_bottom_type;
+      }
+    });
+  } else {
+    return make(bit_bt, length, [&](uint idx) {
+      const Type* elem_type = ts(idx);
+      if (elem_type == TypeInt::ZERO) {
+        return TypeInt::ZERO;
+      } else if (elem_type == TypeInt::ONE) {
+        return TypeInt::MINUS_1;
+      } else {
+        return TypeInt::CC_LE;
+      }
+    });
+  }
+}
 
 // Set of implemented interfaces. Referenced from TypeOopPtr and TypeKlassPtr.
 class TypeInterfaces : public Type {

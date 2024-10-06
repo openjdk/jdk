@@ -75,7 +75,7 @@ class VectorNode : public TypeNode {
 
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 
-  static VectorNode* scalar2vector(Node* s, uint vlen, const Type* opd_t, bool is_mask = false);
+  static VectorNode* scalar2vector(Node* s, uint vlen, BasicType elem_bt, bool is_mask = false);
   static VectorNode* shift_count(int opc, Node* cnt, uint vlen, BasicType bt);
   static VectorNode* make(int opc, Node* n1, Node* n2, uint vlen, BasicType bt, bool is_var_shift = false);
   static VectorNode* make(int vopc, Node* n1, Node* n2, const TypeVect* vt, bool is_mask = false, bool is_var_shift = false);
@@ -1663,9 +1663,7 @@ class VectorReinterpretNode : public VectorNode {
  public:
   VectorReinterpretNode(Node* in, const TypeVect* src_vt, const TypeVect* dst_vt)
      : VectorNode(in, dst_vt), _src_vt(src_vt) {
-     assert((!dst_vt->isa_vectmask() && !src_vt->isa_vectmask()) ||
-            (type2aelembytes(src_vt->element_basic_type()) >= type2aelembytes(dst_vt->element_basic_type())),
-            "unsupported mask widening reinterpretation");
+     assert((!dst_vt->isa_vectmask() && !src_vt->isa_vectmask()) || dst_vt->length() >= src_vt->length(), "unsupported mask reinterpretation");
      init_class_id(Class_VectorReinterpret);
   }
 
@@ -1874,9 +1872,10 @@ class VectorUnboxNode : public VectorNode {
   virtual int Opcode() const;
   Node* obj() const { return in(2); }
   Node* mem() const { return in(1); }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
-  Node* Ideal(PhaseGVN* phase, bool can_reshape);
   bool is_shuffle_to_vector() { return _shuffle_to_vector; }
+  const TypeVect* try_constant_fold(PhaseGVN* phase) const;
 };
 
 class RotateRightVNode : public VectorNode {

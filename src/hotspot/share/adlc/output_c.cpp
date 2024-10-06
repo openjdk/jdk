@@ -3792,6 +3792,8 @@ static void path_to_constant(FILE *fp, FormDict &globals,
       fprintf(fp, "_leaf->getd()");
     } else if ( (strcmp(optype,"ConL") == 0) ) {
       fprintf(fp, "_leaf->get_long()");
+    } else if ( (strcmp(optype,"ConV") == 0) ) {
+      fprintf(fp, "_leaf->bottom_type()->is_vect()");
     } else if ( (strcmp(optype,"Con")==0) ) {
       // !!!!! - Update if adding a machine-independent constant type
       fprintf(fp, "_leaf->get_int()");

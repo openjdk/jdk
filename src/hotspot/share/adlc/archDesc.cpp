@@ -1055,6 +1055,7 @@ const char *ArchDesc::getIdealType(const char *idealOp) {
   case 'F':    return "Type::FLOAT";
   case 'D':    return "Type::DOUBLE";
   case 'L':    return "TypeLong::LONG";
+  case 'V':    return "";
   case 's':    return "TypeInt::CC /*flags*/";
   default:
     return nullptr;
@@ -1092,7 +1093,7 @@ void ArchDesc::initBaseOpTypes() {
         !strcmp(ident, "ConN") || !strcmp(ident, "ConNKlass") ||
         !strcmp(ident, "ConF") || !strcmp(ident, "ConD") ||
         !strcmp(ident, "ConL") || !strcmp(ident, "Con" ) ||
-        !strcmp(ident, "Bool")) {
+        !strcmp(ident, "ConV") || !strcmp(ident, "Bool")) {
       constructOperand(ident, true);
     } else {
       InstructForm *insForm = new InstructForm(ident, true);

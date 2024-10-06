@@ -127,13 +127,13 @@ public:
   void evpcmp(BasicType typ, KRegister kdmask, KRegister ksmask, XMMRegister src1, AddressLiteral src2, int comparison, int vector_len, Register rscratch = noreg);
   void evpblend(BasicType typ, XMMRegister dst, KRegister kmask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
 
-  void load_vector(XMMRegister dst, Address        src, int vlen_in_bytes);
-  void load_vector(XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch = noreg);
+  void load_vector(BasicType bt, XMMRegister dst, Address        src, int vlen_in_bytes);
+  void load_vector(BasicType bt, XMMRegister dst, AddressLiteral src, int vlen_in_bytes, Register rscratch = noreg);
 
   void load_vector_mask(XMMRegister dst, XMMRegister src, int vlen_in_bytes, BasicType elem_bt, bool is_legacy);
   void load_vector_mask(KRegister   dst, XMMRegister src, XMMRegister xtmp, bool novlbwdq, int vlen_enc);
 
-  void load_constant_vector(BasicType bt, XMMRegister dst, InternalAddress src, int vlen);
+  void load_constant_vector(BasicType bt, XMMRegister dst, InternalAddress src, int width, int vlen);
   void load_iota_indices(XMMRegister dst, int vlen_in_bytes, BasicType bt);
 
   // Reductions for vectors of bytes, shorts, ints, longs, floats, and doubles.

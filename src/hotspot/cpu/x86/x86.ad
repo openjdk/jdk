@@ -1269,6 +1269,44 @@ public:
   };
 };
 
+class VectorPredicate {
+public:
+  static bool conv_is_zero(const Node* n) {
+    const TypeVect* v = n->bottom_type()->is_vect();
+    for (uint i = 0; i < v->length(); i++) {
+      const Type* e = v->element_type(i);
+      if (e != TypeInt::ZERO && e != TypeLong::ZERO && e != TypeF::ZERO && e != TypeD::ZERO) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static bool conv_is_allset(const Node* n) {
+    const TypeVect* v = n->bottom_type()->is_vect();
+    for (uint i = 0; i < v->length(); i++) {
+      const Type* e = v->element_type(i);
+      if (e != TypeInt::MINUS_1 && e != TypeLong::MINUS_1) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static bool conm_is_allset(const Node* n) {
+    const TypeVectMask* v = n->bottom_type()->isa_vectmask();
+    if (v == nullptr) {
+      return false;
+    }
+    for (uint i = 0; i < v->length(); i++) {
+      if (v->element_type(i) != TypeInt::ONE) {
+        return false;
+      }
+    }
+    return true;
+  }
+};
+
 %} // end source_hpp
 
 source %{
@@ -2231,10 +2269,6 @@ const RegMask* Matcher::predicate_reg_mask(void) {
   return &_VECTMASK_REG_mask;
 }
 
-const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return new TypeVectMask(elemTy, length);
-}
-
 // Max vector size in bytes. 0 if not supported.
 int Matcher::vector_width_in_bytes(BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
@@ -2721,23 +2755,93 @@ void vec_spill_helper(C2_MacroAssembler *masm, bool is_load,
   }
 }
 
-template <class T>
-static inline GrowableArray<jvalue>* vreplicate_imm(BasicType bt, T con, int len) {
-  GrowableArray<jvalue>* val = new GrowableArray<jvalue>(len);
-  jvalue ele;
-  switch (bt) {
-    case T_BYTE:   ele.b = con; break;
-    case T_SHORT:  ele.s = con; break;
-    case T_INT:    ele.i = con; break;
-    case T_LONG:   ele.j = con; break;
-    case T_FLOAT:  ele.f = con; break;
-    case T_DOUBLE: ele.d = con; break;
-    default: ShouldNotReachHere();
+static void materialize_vector_con(jbyte* data, const TypeVect* vt) {
+  for (uint i = 0; i < vt->length(); i++) {
+    size_t offset = i * type2aelembytes(vt->element_basic_type());
+    const Type* et = vt->element_type(i);
+    switch (vt->element_basic_type()) {
+    case T_BYTE: {
+      data[i] = et->is_int()->get_con();
+      break;
+    }
+    case T_SHORT: {
+      jshort e = et->is_int()->get_con();
+      memcpy(&data[offset], &e, sizeof(jshort));
+      break;
+    }
+    case T_INT: {
+      jint e = et->is_int()->get_con();
+      memcpy(&data[offset], &e, sizeof(jint));
+      break;
+    }
+    case T_LONG: {
+      jlong e = et->is_long()->get_con();
+      memcpy(&data[offset], &e, sizeof(jlong));
+      break;
+    }
+    case T_FLOAT: {
+      jfloat e = et->getf();
+      memcpy(&data[offset], &e, sizeof(jfloat));
+      break;
+    }
+    case T_DOUBLE: {
+      jdouble e = et->getd();
+      memcpy(&data[offset], &e, sizeof(jdouble));
+      break;
+    }
+    default:
+      assert(false, "%s", type2name(vt->element_basic_type()));
+    }
   }
-  for (int i = 0; i < len; i++) {
-    val->append(ele);
+}
+
+static uint vector_con_width(const jbyte* data, uint size) {
+  uint width;
+  if (VM_Version::supports_avx()) {
+    width = 4; // vbroadcastss can be used
+  } else if (VM_Version::supports_sse3()) {
+    width = 8; // movddup can be used
+  } else {
+    width = 16; // No broadcast instruction, must load the constant
   }
-  return val;
+
+  width = MIN2(width, size);
+  for (; width < size; width *= 2) {
+    bool satisfied = true; // whether this ConV is a broadcast of the current width
+    for (uint i = 0; i < size - width; i++) {
+      if (data[i] != data[i + width]) {
+        satisfied = false;
+        break;
+      }
+    }
+    if (satisfied) {
+      break;
+    }
+  }
+  assert(width >= 4, "vectors should not be less than 4 bytes");
+  return width;
+}
+
+static GrowableArray<jbyte>* vector_con_data(const MachTypeNode* n) {
+  constexpr size_t max_vector_size = 64;
+  const TypeVect* vt = n->bottom_type()->is_vect();
+  assert(vt->length_in_bytes() <= max_vector_size, "increase max_vector_size: %u", vt->length_in_bytes());
+  jbyte data[max_vector_size];
+  materialize_vector_con(data, vt);
+  uint width = vector_con_width(data, vt->length_in_bytes());
+  GrowableArray<jbyte>* res = new GrowableArray<jbyte>(width, width, 0);
+  memcpy(res->adr_at(0), data, width);
+  return res;
+}
+
+static inline jlong mask_con_data(const MachTypeNode* n) {
+  jlong res = 0;
+  const TypeVectMask* v = n->bottom_type()->is_vectmask();
+  for (int i = v->length() - 1; i >= 0; i--) {
+    res <<= 1;
+    res |= v->element_type(i)->is_int()->get_con();
+  }
+  return res;
 }
 
 static inline jlong high_bit_set(BasicType bt) {
@@ -2813,6 +2917,41 @@ operand rxmm0() %{
 // instruction definitions.
 
 // Vectors
+
+operand immV() %{
+  match(ConV);
+
+  op_cost(10);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immV_0() %{
+  predicate(VectorPredicate::conv_is_zero(n));
+  match(ConV);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immV_M1() %{
+  predicate(VectorPredicate::conv_is_allset(n));
+  match(ConV);
+
+  op_cost(5);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immM_M1() %{
+  predicate(VectorPredicate::conm_is_allset(n));
+  match(ConV);
+
+  op_cost(5);
+  format %{ %}
+  interface(CONST_INTER);
+%}
 
 // Dummy generic vector class. Should be used for all vector operands.
 // Replaced with vec[SDXYZ] during post-selection pass.
@@ -2950,6 +3089,84 @@ instruct ShouldNotReachHere() %{
 %}
 
 // ============================================================================
+
+instruct loadConV(vec dst, immV src) %{
+  match(Set dst src);
+  format %{ "loadvector  $dst, [$constantaddress]" %}
+  ins_cost(125);
+  ins_encode %{
+    constexpr size_t max_vector_size = 64;
+    InternalAddress addr = $constantaddress(vector_con_data(this));
+    const TypeVect* vt = this->bottom_type()->is_vect();
+    uint vlen = vt->length_in_bytes();
+    assert(vlen <= max_vector_size, "increase max_vector_size: %u", vlen);
+    jbyte data[max_vector_size];
+    materialize_vector_con(data, vt);
+    __ load_constant_vector(vt->element_basic_type(), $dst$$XMMRegister, addr, vector_con_width(data, vlen), vlen);
+  %}
+  ins_pipe(fpu_reg_mem);
+%}
+
+instruct loadConV_zero(vec dst, immV_0 src) %{
+  match(Set dst src);
+  format %{ "vzero   $dst" %}
+  ins_cost(50);
+  ins_encode %{
+    if (VM_Version::supports_evex() && !VM_Version::supports_avx512vldq()) {
+      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vector_length_encoding(this));
+    } else if (is_integral_type(Matcher::vector_element_basic_type(this))) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    } else {
+      __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
+    }
+  %}
+  ins_pipe(fpu_reg_reg_reg);
+%}
+
+instruct loadConV_allset(vec dst, immV_M1 src) %{
+  match(Set dst src);
+  format %{ "vallones    $dst" %}
+  ins_cost(100);
+  ins_encode %{
+    __ vallones($dst$$XMMRegister, vector_length_encoding(this));
+  %}
+  ins_pipe(fpu_reg_reg_reg);
+%}
+
+instruct loadConM(kReg dst, immV src) %{
+  match(Set dst src);
+  format %{ "loadmask    $dst, [$constantaddress]" %}
+  ins_cost(125);
+  ins_encode %{
+    InternalAddress addr = $constantaddress(mask_con_data(this));
+    __ kmov($dst$$KRegister, __ as_Address(addr));
+  %}
+  ins_pipe(fpu_reg_mem);
+%}
+
+instruct loadConM_0(kReg dst, immV_0 src) %{
+  match(Set dst src);
+  format %{ "kzero   $dst" %}
+  ins_cost(50);
+  ins_encode %{
+    __ kxorwl($dst$$KRegister, $dst$$KRegister, $dst$$KRegister);
+  %}
+  ins_pipe(fpu_reg_reg_reg);
+%}
+
+instruct loadConM_M1(kReg dst, immM_M1 src) %{
+  match(Set dst src);
+  format %{ "kallones    $dst" %}
+  ins_cost(100);
+  ins_encode %{
+    if (VM_Version::supports_avx512bw()) {
+      __ kxnorql($dst$$KRegister, k0, k0);
+    } else {
+      __ kxnorwl($dst$$KRegister, k0, k0);
+    }
+  %}
+  ins_pipe(fpu_reg_reg_reg);
+%}
 
 instruct addF_reg(regF dst, regF src) %{
   predicate((UseSSE>=1) && (UseAVX == 0));
@@ -4019,7 +4236,8 @@ instruct loadV(vec dst, memory mem) %{
   ins_cost(125);
   format %{ "load_vector $dst,$mem" %}
   ins_encode %{
-    __ load_vector($dst$$XMMRegister, $mem$$Address, Matcher::vector_length_in_bytes(this));
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ load_vector(bt, $dst$$XMMRegister, $mem$$Address, Matcher::vector_length_in_bytes(this));
   %}
   ins_pipe( pipe_slow );
 %}
@@ -4497,49 +4715,6 @@ instruct ReplI_mem(vec dst, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct ReplI_imm(vec dst, immI con) %{
-  predicate(Matcher::is_non_long_integral_vector(n));
-  match(Set dst (Replicate con));
-  format %{ "replicateI $dst,$con" %}
-  ins_encode %{
-    InternalAddress addr = $constantaddress(Matcher::vector_element_basic_type(this),
-        vreplicate_imm(Matcher::vector_element_basic_type(this), $con$$constant,
-            (VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 4 : 8) : 8) /
-                type2aelembytes(Matcher::vector_element_basic_type(this))));
-    BasicType bt = Matcher::vector_element_basic_type(this);
-    int vlen = Matcher::vector_length_in_bytes(this);
-    __ load_constant_vector(bt, $dst$$XMMRegister, addr, vlen);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-// Replicate scalar zero to be vector
-instruct ReplI_zero(vec dst, immI_0 zero) %{
-  predicate(Matcher::is_non_long_integral_vector(n));
-  match(Set dst (Replicate zero));
-  format %{ "replicateI $dst,$zero" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    if (VM_Version::supports_evex() && !VM_Version::supports_avx512vl()) {
-      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    } else {
-      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
-    }
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-instruct ReplI_M1(vec dst, immI_M1 con) %{
-  predicate(UseSSE >= 2 && Matcher::is_non_long_integral_vector(n));
-  match(Set dst (Replicate con));
-  format %{ "vallones $dst" %}
-  ins_encode %{
-    int vector_len = vector_length_encoding(this);
-    __ vallones($dst$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 // ====================ReplicateL=======================================
 
 #ifdef _LP64
@@ -4637,45 +4812,6 @@ instruct ReplL_mem(vec dst, memory mem) %{
   ins_pipe( pipe_slow );
 %}
 
-// Replicate long (8 byte) scalar immediate to be vector by loading from const table.
-instruct ReplL_imm(vec dst, immL con) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst (Replicate con));
-  format %{ "replicateL $dst,$con" %}
-  ins_encode %{
-    InternalAddress addr = $constantaddress(T_LONG, vreplicate_imm(T_LONG, $con$$constant, 1));
-    int vlen = Matcher::vector_length_in_bytes(this);
-    __ load_constant_vector(T_LONG, $dst$$XMMRegister, addr, vlen);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct ReplL_zero(vec dst, immL0 zero) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst (Replicate zero));
-  format %{ "replicateL $dst,$zero" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    if (VM_Version::supports_evex() && !VM_Version::supports_avx512vl()) {
-      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    } else {
-      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
-    }
-  %}
-  ins_pipe( fpu_reg_reg );
-%}
-
-instruct ReplL_M1(vec dst, immL_M1 con) %{
-  predicate(UseSSE >= 2 && Matcher::vector_element_basic_type(n) == T_LONG);
-  match(Set dst (Replicate con));
-  format %{ "vallones $dst" %}
-  ins_encode %{
-    int vector_len = vector_length_encoding(this);
-    __ vallones($dst$$XMMRegister, vector_len);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 // ====================ReplicateF=======================================
 
 instruct vReplF_reg(vec dst, vlRegF src) %{
@@ -4717,35 +4853,6 @@ instruct ReplF_mem(vec dst, memory mem) %{
     __ vbroadcastss($dst$$XMMRegister, $mem$$Address, vlen_enc);
   %}
   ins_pipe( pipe_slow );
-%}
-
-// Replicate float scalar immediate to be vector by loading from const table.
-instruct ReplF_imm(vec dst, immF con) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
-  match(Set dst (Replicate con));
-  format %{ "replicateF $dst,$con" %}
-  ins_encode %{
-    InternalAddress addr = $constantaddress(T_FLOAT, vreplicate_imm(T_FLOAT, $con$$constant,
-        VM_Version::supports_sse3() ? (VM_Version::supports_avx() ? 1 : 2) : 2));
-    int vlen = Matcher::vector_length_in_bytes(this);
-    __ load_constant_vector(T_FLOAT, $dst$$XMMRegister, addr, vlen);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct ReplF_zero(vec dst, immF0 zero) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
-  match(Set dst (Replicate zero));
-  format %{ "replicateF $dst,$zero" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    if (VM_Version::supports_evex() && !VM_Version::supports_avx512vldq()) {
-      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    } else {
-      __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
-    }
-  %}
-  ins_pipe( fpu_reg_reg );
 %}
 
 // ====================ReplicateD=======================================
@@ -4794,34 +4901,6 @@ instruct ReplD_mem(vec dst, memory mem) %{
     }
   %}
   ins_pipe( pipe_slow );
-%}
-
-// Replicate double (8 byte) scalar immediate to be vector by loading from const table.
-instruct ReplD_imm(vec dst, immD con) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
-  match(Set dst (Replicate con));
-  format %{ "replicateD $dst,$con" %}
-  ins_encode %{
-    InternalAddress addr = $constantaddress(T_DOUBLE, vreplicate_imm(T_DOUBLE, $con$$constant, 1));
-    int vlen = Matcher::vector_length_in_bytes(this);
-    __ load_constant_vector(T_DOUBLE, $dst$$XMMRegister, addr, vlen);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct ReplD_zero(vec dst, immD0 zero) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
-  match(Set dst (Replicate zero));
-  format %{ "replicateD $dst,$zero" %}
-  ins_encode %{
-    int vlen_enc = vector_length_encoding(this);
-    if (VM_Version::supports_evex() && !VM_Version::supports_avx512vldq()) {
-      __ vpxor($dst$$XMMRegister, $dst$$XMMRegister, $dst$$XMMRegister, vlen_enc);
-    } else {
-      __ xorps($dst$$XMMRegister, $dst$$XMMRegister);
-    }
-  %}
-  ins_pipe( fpu_reg_reg );
 %}
 
 // ====================VECTOR INSERT=======================================
@@ -9612,7 +9691,7 @@ instruct vreverse_reg_gfni(vec dst, vec src, vec xtmp) %{
   ins_encode %{
     int vec_enc = vector_length_encoding(this);
     BasicType bt  = Matcher::vector_element_basic_type(this);
-    InternalAddress addr = $constantaddress(T_LONG, vreplicate_imm(T_LONG, 0x8040201008040201L, 1));
+    InternalAddress addr = $constantaddress(jlong(0x8040201008040201));
     __ vector_reverse_bit_gfni(bt, $dst$$XMMRegister, $src$$XMMRegister, addr, vec_enc,
                                $xtmp$$XMMRegister);
   %}

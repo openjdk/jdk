@@ -715,7 +715,7 @@ Node* PhaseGVN::transform(Node* n) {
     k->raise_bottom_type(t);
   }
 
-  if (t->singleton() && !k->is_Con()) {
+  if (t->singleton() && !k->is_Con() && (!t->isa_vect() || Matcher::match_rule_supported(Op_ConV))) {
     NOT_PRODUCT(set_progress();)
     return makecon(t);          // Turn into a constant
   }

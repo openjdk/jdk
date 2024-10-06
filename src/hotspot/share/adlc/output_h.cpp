@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,6 +237,12 @@ static void declareConstStorage(FILE *fp, FormDict &globals, OperandForm *oper) 
       if (i > 0) fprintf(fp,", ");
       fprintf(fp,"  jdouble        _c%d;\n", i);
     }
+    else if (!strcmp(type, "ConV")) {
+      if (i > 0) {
+        fprintf(fp, ", ");
+      }
+      fprintf(fp, "  const TypeVect* _c%d;\n", i);
+    }
     else if (!strcmp(type, "Bool")) {
       fprintf(fp,"private:\n");
       fprintf(fp,"  BoolTest::mask _c%d;\n", i);
@@ -275,6 +281,10 @@ static void declareConstStorage(FILE *fp, FormDict &globals, OperandForm *oper) 
       }
       else if (!strcmp(comp->base_type(globals), "ConD")) {
         fprintf(fp,"  jdouble          _c%d;\n", i);
+        i++;
+      }
+      else if (!strcmp(comp->base_type(globals), "ConV")) {
+        fprintf(fp,"  const TypeVect*  _c%d;\n", i);
         i++;
       }
     }
@@ -316,6 +326,7 @@ static void defineConstructor(FILE *fp, const char *name, uint num_consts,
     case Form::idealL :      { fprintf(fp,"jlong c%d", i);   break;        }
     case Form::idealF :      { fprintf(fp,"jfloat c%d", i);  break;        }
     case Form::idealD :      { fprintf(fp,"jdouble c%d", i); break;        }
+    case Form::idealV :      { fprintf(fp,"const TypeVect* c%d", i); break;}
     default:
       assert(!is_ideal_bool, "Non-constant operand lacks component list.");
       break;
@@ -357,6 +368,11 @@ static void defineConstructor(FILE *fp, const char *name, uint num_consts,
       else if (!strcmp(comp->base_type(globals), "ConD")) {
         if (i > 0) fprintf(fp,", ");
         fprintf(fp,"jdouble c%d", i);
+        i++;
+      }
+      else if (!strcmp(comp->base_type(globals), "ConV")) {
+        if (i > 0) fprintf(fp,", ");
+        fprintf(fp,"const TypeVect* c%d", i);
         i++;
       }
       else if (!strcmp(comp->base_type(globals), "Bool")) {
@@ -430,6 +446,10 @@ static uint dump_spec_constant(FILE *fp, const char *ideal_type, uint i, Operand
     fprintf(fp,"    st->print(\"#%%f\", _c%d);\n", i);
     fprintf(fp,"    jlong _c%dl = JavaValue(_c%d).get_jlong();\n", i, i);
     fprintf(fp,"    st->print(\"/\" UINT64_FORMAT_X_0, (uint64_t)_c%dl);\n", i);
+    ++i;
+  }
+  else if (!strcmp(ideal_type, "ConV")) {
+    fprintf(fp,"    _c%d->dump_on(st);\n", i);
     ++i;
   }
   else if (!strcmp(ideal_type, "Bool")) {
@@ -1256,11 +1276,10 @@ void ArchDesc::declareClasses(FILE *fp) {
       oper->_matrule->base_operand(position,_globalNames,opret,opname,optype);
       fprintf(fp,"  virtual const Type    *type() const {");
       const char *type = getIdealType(optype);
-      if( type != nullptr ) {
+      if (type != nullptr) {
         Form::DataType data_type = oper->is_base_constant(_globalNames);
-        // Check if we are an ideal pointer type
-        if( data_type == Form::idealP || data_type == Form::idealN || data_type == Form::idealNKlass ) {
-          // Return the ideal type we already have: <TypePtr *>
+        if (data_type == Form::idealP || data_type == Form::idealN || data_type == Form::idealNKlass || data_type == Form::idealV) {
+          // Just return the type if available
           fprintf(fp," return _c0;");
         } else {
           // Return the appropriate bottom type
@@ -1892,6 +1911,7 @@ void ArchDesc::declareClasses(FILE *fp) {
       case Form::idealP:
       case Form::idealN:
       case Form::idealNKlass:
+      case Form::idealV:
         fprintf(fp,"    return  opnd_array(1)->type();\n");
         break;
       case Form::idealD:

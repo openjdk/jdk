@@ -2659,7 +2659,8 @@ void OperandForm::format_constant(FILE *fp, uint const_index, uint const_type) {
   case Form::idealI: fprintf(fp,"  st->print(\"#%%d\", _c%d);\n", const_index); break;
   case Form::idealP: fprintf(fp,"  if (_c%d) _c%d->dump_on(st);\n", const_index, const_index); break;
   case Form::idealNKlass:
-  case Form::idealN: fprintf(fp,"  if (_c%d) _c%d->dump_on(st);\n", const_index, const_index); break;
+  case Form::idealN:
+  case Form::idealV: fprintf(fp,"  if (_c%d) _c%d->dump_on(st);\n", const_index, const_index); break;
   case Form::idealL: fprintf(fp,"  st->print(\"#\" INT64_FORMAT, (int64_t)_c%d);\n", const_index); break;
   case Form::idealF: fprintf(fp,"  st->print(\"#%%f\", _c%d);\n", const_index); break;
   case Form::idealD: fprintf(fp,"  st->print(\"#%%f\", _c%d);\n", const_index); break;
@@ -4332,6 +4333,7 @@ Form::DataType MatchRule::is_ideal_load() const {
 
 bool MatchRule::is_vector() const {
   static const char *vector_list[] = {
+    "ConV",
     "AddVB","AddVS","AddVI","AddVL","AddVF","AddVD",
     "SubVB","SubVS","SubVI","SubVL","SubVF","SubVD",
     "MulVB","MulVS","MulVI","MulVL","MulVF","MulVD",

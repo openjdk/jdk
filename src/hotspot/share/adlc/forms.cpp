@@ -221,6 +221,7 @@ Form::DataType Form::ideal_to_const_type(const char *name) const {
   if (strcmp(name,"ConL")==0) return Form::idealL;
   if (strcmp(name,"ConF")==0) return Form::idealF;
   if (strcmp(name,"ConD")==0) return Form::idealD;
+  if (strcmp(name,"ConV")==0) return Form::idealV;
   if (strcmp(name,"Bool")==0) return Form::idealI;
 
   return Form::none;

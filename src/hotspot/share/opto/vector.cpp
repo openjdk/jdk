@@ -439,6 +439,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
                                                         T_OBJECT,
                                                         IN_HEAP));
   kit.set_memory(field_store, vec_adr_type);
+  kit.insert_mem_bar(Op_MemBarStoreStore);
 
   kit.replace_call(vbox_alloc, vec_obj, true);
   C->remove_macro_node(vbox_alloc);
@@ -450,6 +451,14 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
   if (vec_unbox->outcnt() > 0) {
     GraphKit kit;
     PhaseGVN& gvn = kit.gvn();
+    const TypeVect* cvt = vec_unbox->try_constant_fold(&gvn);
+    if (cvt != nullptr) {
+      gvn.hash_delete(vec_unbox);
+      vec_unbox->disconnect_inputs(C);
+      C->gvn_replace_by(vec_unbox, gvn.makecon(cvt));
+      C->remove_macro_node(vec_unbox);
+      return;
+    }
 
     Node* obj = vec_unbox->obj();
     const TypeInstPtr* tinst = gvn.type(obj)->isa_instptr();
