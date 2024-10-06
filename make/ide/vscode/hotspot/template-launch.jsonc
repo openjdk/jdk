@@ -39,7 +39,7 @@
             "preLaunchTask": "Make 'exploded-image'",
             "osx": {
                 "MIMode": "lldb",
-                "internalConsoleOptions": "openOnSessionStart",
+                "internalConsoleOptions": "openOnSessionStart"
             },
             "linux": {
                 "MIMode": "gdb",
@@ -50,6 +50,13 @@
                     }
                 ]
             }
+        },
+        {
+            "type": "java",
+            "name": "[debug] jdk",
+            "request": "attach",
+            "hostName": "localhost",
+            "port": "5005"
         }
     ]
 }
