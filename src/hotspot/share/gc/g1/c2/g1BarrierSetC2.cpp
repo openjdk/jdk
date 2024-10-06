@@ -343,8 +343,8 @@ Node* G1BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) co
     // otherwise we need a post-store barrier.
     C2ParseAccess &parse_access = static_cast<C2ParseAccess &>(access);
     if (val.node() == parse_access.kit()->null()) {
-      access.set_barrier_data(access.barrier_data() & !G1C2BarrierPre);
-      access.set_barrier_data(access.barrier_data() & !G1C2BarrierPost);
+      access.set_barrier_data(access.barrier_data() & ~G1C2BarrierPre);
+      access.set_barrier_data(access.barrier_data() & ~G1C2BarrierPost);
     }
   }
   return BarrierSetC2::store_at_resolved(access, val);
