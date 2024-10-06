@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +88,9 @@ class InvokerBytecodeGenerator {
 
     private static final String CLASS_PREFIX = "java/lang/invoke/LambdaForm$";
     private static final String SOURCE_PREFIX = "LambdaForm$";
+    private static final ReferenceClassDescImpl CD_MH = ReferenceClassDescImpl.ofValidated("L" + CLASS_PREFIX + "MH;");
+    private static final ReferenceClassDescImpl CD_BMH = ReferenceClassDescImpl.ofValidated("L" + CLASS_PREFIX + "BMH;");
+    private static final ReferenceClassDescImpl CD_DMH = ReferenceClassDescImpl.ofValidated("L" + CLASS_PREFIX + "DMH;");
 
     /** Name of its super class*/
     static final ClassDesc INVOKER_SUPER_DESC = CD_Object;
@@ -131,9 +135,17 @@ class InvokerBytecodeGenerator {
             name = makeDumpableClassName(name);
         }
         this.name = name;
-        this.className = CLASS_PREFIX.concat(name);
-        validateInternalClassName(name);
-        this.classEntry = pool.classEntry(ReferenceClassDescImpl.ofValidated(concat("L", className, ";")));
+        var classDesc = switch (name) {
+            case "MH"  -> CD_MH;
+            case "DMH" -> CD_DMH;
+            case "BMH" -> CD_BMH;
+            default -> {
+                validateInternalClassName(name);
+                yield ReferenceClassDescImpl.ofValidated(concat("L" + CLASS_PREFIX, name, ";"));
+            }
+        };
+        this.className = classDesc.internalName();
+        this.classEntry = pool.classEntry(classDesc);
         this.lambdaForm = lambdaForm;
         this.invokerName = invokerName;
         this.invokerType = invokerType;
