@@ -25,7 +25,7 @@
  * @bug 8341595
  * @modules java.base/jdk.internal.util
  * @summary Verify that ZipFile can read from a ZIP file with a maximally large CEN size
- * @run junit CenSizeMaximum
+ * @run junit/othervm -Xmx2500M CenSizeMaximum
  */
 
 import jdk.internal.util.ArraysSupport;
@@ -85,7 +85,7 @@ public class CenSizeMaximum {
      */
     @AfterEach
     public void cleanup() throws IOException {
-        Files.deleteIfExists(hugeZipFile);
+        //Files.deleteIfExists(hugeZipFile);
     }
 
     /**
