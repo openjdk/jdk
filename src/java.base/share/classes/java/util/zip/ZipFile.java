@@ -906,21 +906,21 @@ public class ZipFile implements ZipConstants, Closeable {
                     if (size == ZIP64_MAGICVAL) {
                         if (sz < 8 || (off + 8) > end)
                             break;
-                        size = get64(cen, off);
+                        size = get64S(cen, off);
                         sz -= 8;
                         off += 8;
                     }
                     if (rem == ZIP64_MAGICVAL) {
                         if (sz < 8 || (off + 8) > end)
                             break;
-                        rem = get64(cen, off);
+                        rem = get64S(cen, off);
                         sz -= 8;
                         off += 8;
                     }
                     if (pos == ZIP64_MAGICVAL) {
                         if (sz < 8 || (off + 8) > end)
                             break;
-                        pos = get64(cen, off);
+                        pos = get64S(cen, off);
                         sz -= 8;
                         off += 8;
                     }
@@ -1376,7 +1376,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // Check the uncompressed size is not negative
             if (size == ZIP64_MAGICVAL) {
                 if ( blockSize >= Long.BYTES) {
-                    if (get64(cen, off) < 0) {
+                    if (get64S(cen, off) < 0) {
                         zerror("Invalid zip64 extra block size value");
                     }
                     off += Long.BYTES;
@@ -1388,7 +1388,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // Check the compressed size is not negative
             if (csize == ZIP64_MAGICVAL) {
                 if (blockSize >= Long.BYTES) {
-                    if (get64(cen, off) < 0) {
+                    if (get64S(cen, off) < 0) {
                         zerror("Invalid zip64 extra block compressed size value");
                     }
                     off += Long.BYTES;
@@ -1400,7 +1400,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // Check the LOC offset is not negative
             if (locoff == ZIP64_MAGICVAL) {
                 if (blockSize >= Long.BYTES) {
-                    if (get64(cen, off) < 0) {
+                    if (get64S(cen, off) < 0) {
                         zerror("Invalid zip64 extra block LOC OFFSET value");
                     }
                     // Note: We do not need to adjust the following fields as

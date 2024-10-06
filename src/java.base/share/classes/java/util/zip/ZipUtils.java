@@ -192,7 +192,7 @@ class ZipUtils {
      * Fetches signed 64-bit value from byte array at specified offset.
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
-    public static final long get64(byte[] b, int off) {
+    public static final long get64S(byte[] b, int off) {
         Preconditions.checkIndex(off, b.length, Preconditions.AIOOBE_FORMATTER);
         Preconditions.checkIndex(off + 7, b.length, Preconditions.AIOOBE_FORMATTER);
         return UNSAFE.getLongUnaligned(b, off + Unsafe.ARRAY_BYTE_BASE_OFFSET, false);
@@ -246,11 +246,11 @@ class ZipUtils {
     static final int  ENDCOM(byte[] b, int off) { return get16(b, off + 20);}
 
     // zip64 end of central directory record fields
-    static final long ZIP64_ENDTOD(byte[] b) { return get64(b, 24);}  // total number of entries on disk
-    static final long ZIP64_ENDTOT(byte[] b) { return get64(b, 32);}  // total number of entries
-    static final long ZIP64_ENDSIZ(byte[] b) { return get64(b, 40);}  // central directory size
-    static final long ZIP64_ENDOFF(byte[] b) { return get64(b, 48);}  // central directory offset
-    static final long ZIP64_LOCOFF(byte[] b) { return get64(b, 8);}   // zip64 end offset
+    static final long ZIP64_ENDTOD(byte[] b) { return get64S(b, 24);}  // total number of entries on disk
+    static final long ZIP64_ENDTOT(byte[] b) { return get64S(b, 32);}  // total number of entries
+    static final long ZIP64_ENDSIZ(byte[] b) { return get64S(b, 40);}  // central directory size
+    static final long ZIP64_ENDOFF(byte[] b) { return get64S(b, 48);}  // central directory offset
+    static final long ZIP64_LOCOFF(byte[] b) { return get64S(b, 8);}   // zip64 end offset
 
     // central directory header (CEN) fields
     static final long CENSIG(byte[] b, int pos) { return get32(b, pos + 0); }
