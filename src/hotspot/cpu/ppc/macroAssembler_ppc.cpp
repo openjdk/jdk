@@ -2651,7 +2651,19 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   // flag == NE indicates failure
   bind(success);
   inc_held_monitor_count(temp);
+#ifdef ASSERT
+  // Check that unlocked label is reached with flag == EQ.
+  Label flag_correct;
+  beq(flag, flag_correct);
+  stop("compiler_fast_lock_object: Flag != EQ");
+#endif
   bind(failure);
+#ifdef ASSERT
+  // Check that slow_path label is reached with flag == NE.
+  bne(flag, flag_correct);
+  stop("compiler_fast_lock_object: Flag != NE");
+  bind(flag_correct);
+#endif
 }
 
 void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
@@ -2701,12 +2713,31 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   bind(object_has_monitor);
   STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
   addi(current_header, current_header, -(int)markWord::monitor_value); // monitor
-  ld(temp,             in_bytes(ObjectMonitor::owner_offset()), current_header);
 
-  // In case of LM_LIGHTWEIGHT, we may reach here with (temp & ObjectMonitor::ANONYMOUS_OWNER) != 0.
-  // This is handled like owner thread mismatches: We take the slow path.
-  cmpd(flag, temp, R16_thread);
-  bne(flag, failure);
+#ifdef ASSERT
+  {
+    Label is_owner, not_owner;
+    Register owner = temp;
+    Register stack_limit = displaced_header;
+    ld(owner, in_bytes(ObjectMonitor::owner_offset()), current_header);
+    cmpld(CCR0, owner, R16_thread);
+    beq(CCR0, is_owner);
+    if (LockingMode != LM_MONITOR) {
+      // With LM_LEGACY the owner field could point to the BasicLock in the stack.
+      // owner >= stack_base -> not owner
+      ld(stack_limit, in_bytes(Thread::stack_base_offset()), R16_thread);
+      cmpld(CCR0, owner, stack_limit);
+      bge(CCR0, not_owner);
+      // owner >= stack_end -> not owner
+      ld(R0, in_bytes(Thread::stack_size_offset()), R16_thread);
+      subf(stack_limit, R0, stack_limit);
+      cmpld(CCR0, owner, stack_limit);
+      bge(CCR0, is_owner);
+    }
+    bind(not_owner); stop("compiler_fast_unlock_object: not owner of monitor");
+    bind(is_owner);
+  }
+#endif
 
   ld(displaced_header, in_bytes(ObjectMonitor::recursions_offset()), current_header);
 
@@ -2752,7 +2783,19 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   // flag == NE indicates failure
   bind(success);
   dec_held_monitor_count(temp);
+#ifdef ASSERT
+  // Check that unlocked label is reached with flag == EQ.
+  Label flag_correct;
+  beq(flag, flag_correct);
+  stop("compiler_fast_unlock_object: Flag != EQ");
+#endif
   bind(failure);
+#ifdef ASSERT
+  // Check that slow_path label is reached with flag == NE.
+  bne(flag, flag_correct);
+  stop("compiler_fast_unlock_object: Flag != NE");
+  bind(flag_correct);
+#endif
 }
 
 void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister flag, Register obj, Register box,
