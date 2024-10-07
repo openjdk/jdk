@@ -5259,6 +5259,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (remainingZeros <= 0L)
             return valueOf(intVal, scale, 0);
 
+        final int sign = intVal.signum;
+        if (sign < 0)
+            intVal = intVal.negate(); // speed up computation of shiftRight() and bitLength()
+
         intVal = intVal.shiftRight(powsOf2); // remove powers of 2
         // maxPowsOf5 == ceil(log5(intValt)) roughly
         long maxPowsOf5 = (long) Math.ceil(intVal.bitLength() * Math.log(2.0) / Math.log(5.0));
@@ -5294,7 +5298,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
         }
 
-        return valueOf(intVal.shiftLeft(powsOf2), scale, 0);
+        intVal = intVal.shiftLeft(powsOf2); // restore remaining powers of 2
+        return valueOf(sign >= 0 ? intVal : intVal.negate(), scale, 0);
     }
 
     /**
