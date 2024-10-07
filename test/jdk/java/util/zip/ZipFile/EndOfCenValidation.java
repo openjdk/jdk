@@ -43,6 +43,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HexFormat;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
@@ -78,6 +79,8 @@ public class EndOfCenValidation {
     private static final String INVALID_CEN_BAD_OFFSET = "invalid END header (bad central directory offset)";
     // Expected message when CEN size is too large
     private static final String INVALID_CEN_SIZE_TOO_LARGE = "invalid END header (central directory size too large)";
+    // Expected message when total entry count is too large
+    private static final String INVALID_BAD_ENTRY_COUNT = "invalid END header (total entries count too large)";
 
     // A valid ZIP file, used as a template
     private byte[] zipBytes;
@@ -158,6 +161,137 @@ public class EndOfCenValidation {
         });
 
         assertEquals(ex.getMessage(), INVALID_CEN_BAD_OFFSET);
+    }
+
+    /**
+     * Validate that an 'End of central directory record' (the END header)
+     * where the value of the 'total entries' field is larger than what fits
+     * in the CEN size is rejected.
+     *
+     * @throws IOException if an error occurs
+     */
+    @Test
+    public void shouldRejectBadTotalEntries() throws IOException {
+        /*
+         * A small ZIP using ZIP64. Since such a small ZIP64 file cannot
+         * be produced using ZipOutputStream, it is included inline here.
+         *
+         * The file has the following structure:
+         *
+         * ------  Local File Header  ------
+         * 000000  signature          0x04034b50
+         * 000004  version            45
+         * 000006  flags              0x0808
+         * 000008  method             8              Deflated
+         * 000010  time               0x542c         10:33:24
+         * 000012  date               0x5947         2024-10-07
+         * 000014  crc                0x00000000
+         * 000018  csize              4294967295
+         * 000022  size               4294967295
+         * 000026  nlen               5
+         * 000028  elen               20
+         * 000030  name               5 bytes        'entry'
+         * 000035  ext id             0x0001         Zip64 extended information extra field
+         * 000037  ext size           16
+         * 000039  z64 size           0
+         * 000047  z64 csize          0
+         *
+         * ------  File Data  ------
+         * 000055  data               7 bytes
+         *
+         * ------  Data Descriptor  ------
+         * 000062  signature          0x08074b50
+         * 000066  crc                0x3610a686
+         * 000070  csize              7
+         * 000078  size               5
+         *
+         * ------  Central Directory File Header  ------
+         * 000086  signature          0x02014b50
+         * 000090  made by version    45
+         * 000092  extract version    45
+         * 000094  flags              0x0808
+         * 000096  method             8              Deflated
+         * 000098  time               0x542c         10:33:24
+         * 000100  date               0x5947         2024-10-07
+         * 000102  crc                0x3610a686
+         * 000106  csize              4294967295
+         * 000110  size               4294967295
+         * 000114  diskstart          65535
+         * 000116  nlen               5
+         * 000118  elen               32
+         * 000120  clen               9
+         * 000122  iattr              0x00
+         * 000124  eattr              0x0000
+         * 000128  loc offset         4294967295
+         * 000132  name               5 bytes        'entry'
+         * 000137  ext id             0x0001         Zip64 extended information extra field
+         * 000139  ext size           28
+         * 000141  z64 size           5
+         * 000149  z64 csize          7
+         * 000157  z64 locoff         0
+         * 000165  z64 diskStart      0
+         * 000169  comment            9 bytes        'A comment'
+         *
+         * ------  Zip64 End of Central Directory Record  ------
+         * 000178  signature          0x06064b50
+         * 000182  record size        44
+         * 000190  made by version    45
+         * 000192  extract version    45
+         * 000194  this disk          0
+         * 000198  cen disk           0
+         * 000202  entries            1
+         * 000210  total entries      1
+         * 000218  cen size           92
+         * 000226  cen offset         86
+         *
+         * ------  Zip64 End of Central Directory Locator  ------
+         * 000234  signature          0x07064b50
+         * 000238  eoc disk           0
+         * 000242  eoc offset         178
+         * 000250  total disks        1
+         *
+         * ------  End of Central Directory  ------
+         * 000254  signature          0x06054b50
+         * 000258  this disk          0
+         * 000260  cen disk           0
+         * 000262  entries disk       65535
+         * 000264  entries total      65535
+         * 000266  cen size           4294967295
+         * 000270  cen offset         4294967295
+         * 000274  clen               0
+         */
+
+        byte[] zipBytes = HexFormat.of().parseHex("""
+               504b03042d00080808002c54475900000000ffffffffffffffff05001400
+               656e7472790100100000000000000000000000000000000000cb48cdc9c9
+               0700504b070886a6103607000000000000000500000000000000504b0102
+               2d002d00080808002c54475986a61036ffffffffffffffff050020000900
+               ffff000000000000ffffffff656e74727901001c00050000000000000007
+               000000000000000000000000000000000000004120636f6d6d656e74504b
+               06062c000000000000002d002d0000000000000000000100000000000000
+               01000000000000005c000000000000005600000000000000504b06070000
+               0000b20000000000000001000000504b050600000000ffffffffffffffff
+               ffffffff0000
+               """.replaceAll("\n",""));
+
+        // Buffer to manipulate the above ZIP
+        ByteBuffer buf = ByteBuffer.wrap(zipBytes).order(ByteOrder.LITTLE_ENDIAN);
+        // Offset of the 'total entries' in the 'Zip64 End of Central Directory' record
+        int totOffset = 210;
+        // Update entry count to a value which cannot possibly fit in the small CEN
+        buf.putLong(totOffset, MAX_CEN_SIZE / 3);
+
+        // Write the ZIP to disk
+        Path zipFile = Path.of("bad-entry-count.zip");
+        Files.write(zipFile, zipBytes);
+
+        // Verify that the END header is rejected
+        ZipException ex = expectThrows(ZipException.class, () -> {
+            try (var zf = new ZipFile(zipFile.toFile())) {
+            }
+        });
+
+        assertEquals(ex.getMessage(), INVALID_BAD_ENTRY_COUNT);
     }
 
     /**
