@@ -461,9 +461,8 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(TAG_UTF8);
             if (rawBytes != null) {
-                pool.writeU2(rawLen);
+                pool.writeU1U2(TAG_UTF8, rawLen);
                 pool.writeBytes(rawBytes, offset, rawLen);
             }
             else {

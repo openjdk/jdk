@@ -38,6 +38,7 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.ForceInline;
 
+import static java.lang.classfile.constantpool.PoolEntry.TAG_UTF8;
 import static jdk.internal.util.ModifiedUtf.putChar;
 import static jdk.internal.util.ModifiedUtf.utfLen;
 
@@ -234,14 +235,15 @@ public final class BufWriterImpl implements BufWriter {
         if (utflen > 65535) {
             throw new IllegalArgumentException("string too long");
         }
-        reserveSpace(utflen + 2);
+        reserveSpace(utflen + 3);
 
         int offset = this.offset;
         byte[] elems = this.elems;
 
-        elems[offset    ] = (byte) (utflen >> 8);
-        elems[offset + 1] = (byte)  utflen;
-        offset += 2;
+        elems[offset    ] = (byte) TAG_UTF8;
+        elems[offset + 1] = (byte) (utflen >> 8);
+        elems[offset + 2] = (byte)  utflen;
+        offset += 3;
 
         str.getBytes(0, countNonZeroAscii, elems, offset);
         offset += countNonZeroAscii;
