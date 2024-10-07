@@ -467,7 +467,7 @@ public abstract sealed class AbstractPoolEntry {
             }
             else {
                 // state == STRING and no raw bytes
-                pool.writeUTF(stringValue);
+                pool.writeUtfEntry(stringValue);
             }
         }
 

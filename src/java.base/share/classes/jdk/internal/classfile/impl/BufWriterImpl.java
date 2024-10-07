@@ -228,7 +228,7 @@ public final class BufWriterImpl implements BufWriter {
     }
 
     @SuppressWarnings("deprecation")
-    void writeUTF(String str) {
+    void writeUtfEntry(String str) {
         int strlen = str.length();
         int countNonZeroAscii = JLA.countNonZeroAscii(str);
         int utflen = utfLen(str, countNonZeroAscii);
