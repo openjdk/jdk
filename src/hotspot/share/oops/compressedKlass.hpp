@@ -184,7 +184,7 @@ public:
   // The maximum possible shift; the actual shift employed later can be smaller (see initialize())
   static int max_shift()                 { check_init(_max_shift); return _max_shift; }
 
-  // Returns the maximum encoding range, given the current geometry (nklass bit size and shift)
+  // Returns the maximum encoding range, given the current geometry (narrow klass bit size and shift)
   static size_t max_encoding_range_size() { return nth_bit(narrow_klass_pointer_bits() + max_shift()); }
 
   // Returns the maximum allowed klass range size.
@@ -224,7 +224,7 @@ public:
   static int klass_alignment_in_bytes() { return nth_bit(MAX2(3, _shift)); }
   static int klass_alignment_in_words() { return klass_alignment_in_bytes() / BytesPerWord; }
 
-  // Returns the highest possible nKlass value given the current Klass range
+  // Returns the highest possible narrowKlass value given the current Klass range
   static narrowKlass highest_valid_narrow_klass_id() { return _highest_valid_narrow_klass_id; }
 
   static bool is_null(Klass* v)      { return v == nullptr; }

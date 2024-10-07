@@ -38,10 +38,10 @@ narrowKlass markWord::narrow_klass() const {
 #endif
 }
 
-markWord markWord::set_narrow_klass(narrowKlass nklass) const {
+markWord markWord::set_narrow_klass(narrowKlass narrow_klass) const {
 #ifdef _LP64
   assert(UseCompactObjectHeaders, "only used with compact object headers");
-  return markWord((value() & ~klass_mask_in_place) | ((uintptr_t) nklass << klass_shift));
+  return markWord((value() & ~klass_mask_in_place) | ((uintptr_t) narrow_klass << klass_shift));
 #else
   ShouldNotReachHere();
   return markWord(0);

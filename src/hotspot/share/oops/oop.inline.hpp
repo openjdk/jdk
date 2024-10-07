@@ -118,8 +118,8 @@ Klass* oopDesc::klass_or_null_acquire() const {
   if (UseCompactObjectHeaders) {
     return mark_acquire().klass();
   } else if (UseCompressedClassPointers) {
-    narrowKlass nklass = Atomic::load_acquire(&_metadata._compressed_klass);
-    return CompressedKlassPointers::decode(nklass);
+    narrowKlass narrow_klass = Atomic::load_acquire(&_metadata._compressed_klass);
+    return CompressedKlassPointers::decode(narrow_klass);
   } else {
     return Atomic::load_acquire(&_metadata._klass);
   }

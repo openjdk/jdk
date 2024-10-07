@@ -1392,7 +1392,7 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
     } else {
       // We did not manage to reserve at the preferred address, or were instructed to relocate. In that
       // case we reserve wherever possible, but the start address needs to be encodable as narrow Klass
-      // encoding base since the archived heap objects contain nKlass IDs pre-calculated toward the start
+      // encoding base since the archived heap objects contain narrow Klass IDs pre-calculated toward the start
       // of the shared Metaspace. That prevents us from using zero-based encoding and therefore we won't
       // try allocating in low-address regions.
       total_space_rs = Metaspace::reserve_address_space_for_compressed_classes(total_range_size, false /* optimize_for_zero_base */);

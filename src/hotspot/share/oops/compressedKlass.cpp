@@ -49,7 +49,7 @@ size_t CompressedKlassPointers::max_klass_range_size() {
   // We disallow klass range sizes larger than 4GB even if the encoding
   // range would allow for a larger Klass range (e.g. Base=zero, shift=3 -> 32GB).
   // That is because many CPU-specific compiler decodings do not want the
-  // shifted nKlass to spill over into the third quadrant of the 64-bit target
+  // shifted narrow Klass to spill over into the third quadrant of the 64-bit target
   // address, e.g. to use a 16-bit move for a simplified base addition.
   return MIN2(4 * G, max_encoding_range_size());
 }
@@ -69,7 +69,7 @@ void CompressedKlassPointers::sanity_check_after_initialization() {
   // In expectation of an assert, prepare condensed info to be printed with the assert.
   char tmp[256];
   os::snprintf(tmp, sizeof(tmp), "klass range: " RANGE2FMT ","
-      " base " PTR_FORMAT ", shift %d, lowest/highest valid nKlass %u/%u",
+      " base " PTR_FORMAT ", shift %d, lowest/highest valid narrowKlass %u/%u",
       RANGE2FMTARGS(_klass_range_start, _klass_range_end),
       p2i(_base), _shift, _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id);
 #define ASSERT_HERE(cond) assert(cond, " (%s)", tmp);
@@ -139,7 +139,7 @@ void CompressedKlassPointers::sanity_check_after_initialization() {
 void CompressedKlassPointers::calc_lowest_highest_narrow_klass_id() {
   address lowest_possible_klass_location = _klass_range_start;
 
-  // A Klass will never be placed at the Encoding range start, since that would translate to an nKlass=0, which
+  // A Klass will never be placed at the Encoding range start, since that would translate to a narrowKlass=0, which
   // is disallowed. Note that both Metaspace and CDS prvent allocation at the first address for this reason.
   if (lowest_possible_klass_location == _base) {
     lowest_possible_klass_location += klass_alignment_in_bytes();
