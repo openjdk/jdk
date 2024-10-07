@@ -732,9 +732,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * is required, call
      * {@link #getCanonicalHostName() getCanonicalHostName}.
      *
-     * @return  the host name for this IP address, or if the operation
-     *    is not allowed by the security check, the textual
-     *    representation of the IP address.
+     * @return  the host name for this IP address
      *
      * @see InetAddress#getCanonicalHostName
      */
@@ -774,8 +772,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * of the IP address.
      *
      * @return  the fully qualified domain name for this IP address.
-     *          If either the operation is not allowed by the security check
-     *          or the system-wide resolver wasn't able to determine the
+     *          If the system-wide resolver wasn't able to determine the
      *          fully qualified domain name for the IP address, the textual
      *          representation of the IP address is returned instead.
      *
