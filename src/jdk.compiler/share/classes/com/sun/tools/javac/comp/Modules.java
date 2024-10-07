@@ -141,6 +141,7 @@ public class Modules extends JCTree.Visitor {
     private final Symtab syms;
     private final Attr attr;
     private final Check chk;
+    private final Preview preview;
     private final DeferredLintHandler deferredLintHandler;
     private final TypeEnvs typeEnvs;
     private final Types types;
@@ -151,7 +152,6 @@ public class Modules extends JCTree.Visitor {
     private final boolean allowModules;
     private final boolean allowAccessIntoSystem;
     private final boolean allowRequiresTransitiveJavaBase;
-    private final boolean previewEnabled;
 
     public final boolean multiModuleMode;
 
@@ -194,6 +194,7 @@ public class Modules extends JCTree.Visitor {
         syms = Symtab.instance(context);
         attr = Attr.instance(context);
         chk = Check.instance(context);
+        preview = Preview.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         moduleFinder = ModuleFinder.instance(context);
@@ -210,7 +211,6 @@ public class Modules extends JCTree.Visitor {
 
         allowRequiresTransitiveJavaBase =
                 (Feature.JAVA_BASE_TRANSITIVE.allowedInSource(source) && (!preview.isPreview(Feature.JAVA_BASE_TRANSITIVE) || preview.isEnabled()));
-        previewEnabled = preview.isEnabled();
         lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
 
         multiModuleMode = fileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH);
@@ -815,7 +815,9 @@ public class Modules extends JCTree.Visitor {
                 allRequires.add(msym);
                 Set<RequiresFlag> flags = EnumSet.noneOf(RequiresFlag.class);
                 if (tree.isTransitive) {
-                    if (msym == syms.java_base && !allowRequiresTransitiveJavaBase) {
+                    if (msym == syms.java_base &&
+                        !allowRequiresTransitiveJavaBase &&
+                        !preview.participatesInPreview(syms, sym)) {
                         if (source.compareTo(Source.JDK10) >= 0) {
                             log.error(DiagnosticFlag.SOURCE_LEVEL,
                                       tree.pos(),
@@ -1509,14 +1511,6 @@ public class Modules extends JCTree.Visitor {
 
         msym.requires = msym.requires.appendList(List.from(addReads.getOrDefault(msym, Collections.emptySet())));
         
-        if (previewEnabled && msym.name == names.java_se) {
-            msym.requires.forEach(rd -> {
-                if (rd.module == syms.java_base) {
-                    rd.flags.add(RequiresFlag.TRANSITIVE);
-                }
-            });
-        }
-
         List<RequiresDirective> requires = msym.requires;
 
         while (requires.nonEmpty()) {
