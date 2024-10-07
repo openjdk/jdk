@@ -269,9 +269,9 @@ public final class Subject implements java.io.Serializable {
      * @deprecated This method used to get the subject associated with the
      *       provided {@link AccessControlContext}, which was only useful in
      *       conjunction with {@linkplain SecurityManager the Security Manager},
-     *       is no longer supported. This method has been changed to always
-     *       throw {@code UnsupportedOperationException}. A replacement API
-     *       named {@link #current()} has been added which can be used to
+     *       which is no longer supported. This method has been changed to
+     *       always throw {@code UnsupportedOperationException}. A replacement
+     *       API named {@link #current()} has been added which can be used to
      *       obtain the current subject. There is no replacement for the
      *       Security Manager.
      *
