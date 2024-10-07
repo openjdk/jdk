@@ -5324,9 +5324,7 @@ class StubGenerator: public StubCodeGenerator {
     const FloatRegister vpow = v12;  // powers of 31: <31^3, ..., 31^0>
     const FloatRegister vpowm = v13;
 
-    assert_different_registers(ary, cnt, result);
-    assert_different_registers(vdata0, vdata1, vdata2, vdata3, vmul0, vmul1, vmul2, vmul3, vpow,
-                               vpowm);
+    ARRAYS_HASHCODE_REGISTERS;
 
     Label SMALL_LOOP, LARGE_LOOP_PREHEADER, LARGE_LOOP, TAIL, TAIL_SHORTCUT, BR_BASE;
 

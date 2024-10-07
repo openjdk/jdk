@@ -49,8 +49,13 @@ typedef void (MacroAssembler::* chr_insn)(Register Rt, const Address &adr);
 
 // jdk.internal.util.ArraysSupport.vectorizedHashCode
 address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register result,
+                                           FloatRegister vdata0, FloatRegister vdata1,
+                                           FloatRegister vdata2, FloatRegister vdata3,
+                                           FloatRegister vmul0, FloatRegister vmul1,
+                                           FloatRegister vmul2, FloatRegister vmul3,
+                                           FloatRegister vpow, FloatRegister vpowm,
                                            BasicType eltype) {
-  assert_different_registers(ary, cnt, result, rscratch1, rscratch2);
+  ARRAYS_HASHCODE_REGISTERS;
 
   Register tmp1 = rscratch1, tmp2 = rscratch2;
 
