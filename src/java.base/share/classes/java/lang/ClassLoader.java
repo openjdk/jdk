@@ -768,12 +768,8 @@ public abstract class ClassLoader {
      * Before the {@code Class} can be used it must be resolved.
      *
      * <p> This method assigns a default {@link java.security.ProtectionDomain
-     * ProtectionDomain} to the newly defined class.  The
-     * {@code ProtectionDomain} is effectively granted the same set of
-     * permissions returned when {@link
-     * java.security.Policy#getPermissions(java.security.CodeSource)
-     * Policy.getPolicy().getPermissions(new CodeSource(null, null))}
-     * is invoked.  The default protection domain is created on the first invocation
+     * ProtectionDomain} to the newly defined class.
+     * The default protection domain is created on the first invocation
      * of {@link #defineClass(String, byte[], int, int) defineClass},
      * and re-used on subsequent invocations.
      *
