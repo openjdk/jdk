@@ -1523,10 +1523,10 @@ class InvokerBytecodeGenerator {
                                     cob.aastore();
                                 }
                                 // invoke
-                                cob.aload(0);
-                                cob.getfield(CD_MethodHandle, "form", CD_LambdaForm);
-                                cob.swap();  // swap form and array; avoid local variable
-                                cob.invokevirtual(CD_LambdaForm, "interpretWithArguments", MethodTypeDescImpl.ofValidated(CD_Object, CD_Object_array));
+                                cob.aload(0)
+                                   .getfield(CD_MethodHandle, "form", CD_LambdaForm)
+                                   .swap()  // swap form and array; avoid local variable
+                                   .invokevirtual(CD_LambdaForm, "interpretWithArguments", MethodTypeDescImpl.ofValidated(CD_Object, CD_Object_array));
 
                                 // maybe unbox
                                 Class<?> rtype = invokerType.returnType();
