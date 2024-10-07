@@ -1181,8 +1181,6 @@ public class ZipFile implements ZipConstants, Closeable {
         private static final int[] EMPTY_META_VERSIONS = new int[0];
         // CEN size is limited to the maximum array size in the JDK
         private static final int MAX_CEN_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
-        // The entries array is limited by the maximum array size in the JDK
-        private static final int MAX_ENTRIES = ArraysSupport.SOFT_MAX_ARRAY_LENGTH / 3;
 
         private final Key key;               // the key in files
         private final @Stable ZipCoder zc;   // ZIP coder used to decode/encode
@@ -1741,7 +1739,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (end.cenlen > MAX_CEN_SIZE) {
                     zerror("invalid END header (central directory size too large)");
                 }
-                if (end.centot > end.cenlen / CENHDR || end.centot > MAX_ENTRIES) {
+                if (end.centot > end.cenlen / CENHDR) {
                     zerror("invalid END header (total entries count too large)");
                 }
                 cen = this.cen = new byte[(int)end.cenlen];
