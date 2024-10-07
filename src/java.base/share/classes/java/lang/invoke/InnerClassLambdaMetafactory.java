@@ -61,6 +61,7 @@ import static java.lang.invoke.MethodType.methodType;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.constant.ReferenceClassDescImpl;
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 /**
@@ -72,6 +73,8 @@ import sun.invoke.util.Wrapper;
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
     private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
+    private static final String ARG_NAME_0 = "arg$1";
+    private static final @Stable String[] ARG_NAMES_1 = {ARG_NAME_0};
     private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = ConstantUtils.EMPTY_CLASSDESC;
 
     // For dumping generated classes to disk, for debugging purposes
@@ -174,18 +177,32 @@ import sun.invoke.util.Wrapper;
                                implKind == MethodHandleInfo.REF_invokeSpecial ||
                                implKind == MethodHandleInfo.REF_invokeStatic && implClass.isHidden();
         int parameterCount = factoryType.parameterCount();
+        String[] argNames;
+        ClassDesc[] argDescs;
+        MethodTypeDesc constructorTypeDesc;
         if (parameterCount > 0) {
-            argNames = new String[parameterCount];
+            argNames = parameterCount == 1 ? ARG_NAMES_1 : buildArgNames(parameterCount);
             argDescs = new ClassDesc[parameterCount];
             for (int i = 0; i < parameterCount; i++) {
-                argNames[i] = "arg$" + (i + 1);
                 argDescs[i] = classDesc(factoryType.parameterType(i));
             }
+            constructorTypeDesc = MethodTypeDescImpl.ofValidated(CD_void, argDescs);
         } else {
             argNames = EMPTY_STRING_ARRAY;
             argDescs = EMPTY_CLASSDESC_ARRAY;
+            constructorTypeDesc = MTD_void;
         }
-        constructorTypeDesc = MethodTypeDescImpl.ofValidated(CD_void, argDescs);
+        this.argNames = argNames;
+        this.argDescs = argDescs;
+        this.constructorTypeDesc = constructorTypeDesc;
+    }
+
+    private static String[] buildArgNames(int parameterCount) {
+        var argNames = new String[parameterCount];
+        for (int i = 0; i < parameterCount; i++) {
+            argNames[i] = i == 0 ? ARG_NAME_0 : "arg$" + (i + 1);
+        }
+        return argNames;
     }
 
     private static String lambdaClassName(Class<?> targetClass) {
