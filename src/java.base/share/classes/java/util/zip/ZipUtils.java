@@ -279,7 +279,7 @@ class ZipUtils {
     static final int  CENDSK(byte[] b, int pos) { return SH(b, pos + 34);}
     static final int  CENATT(byte[] b, int pos) { return SH(b, pos + 36);}
     static final long CENATX(byte[] b, int pos) { return LG(b, pos + 38);}
-    static final int  CENATX_PERMS(byte[] b, int pos) { return SH(b, pos + 40);} // posix permission data
+    static final int  CENATX_UNIX(byte[] b, int pos) { return SH(b, pos + 40);} // Unix file attributes
     static final long CENOFF(byte[] b, int pos) { return LG(b, pos + 42);}
 
     // The END header is followed by a variable length comment of size < 64k.
