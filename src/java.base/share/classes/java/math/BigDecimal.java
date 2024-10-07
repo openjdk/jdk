@@ -5264,7 +5264,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             intVal = intVal.negate(); // speed up computation of shiftRight() and bitLength()
 
         intVal = intVal.shiftRight(powsOf2); // remove powers of 2
-        // maxPowsOf5 == ceil(log5(intValt)) roughly
+        // maxPowsOf5 == ceil(log5(intVal)) roughly
         long maxPowsOf5 = (long) Math.ceil(intVal.bitLength() * Math.log(2.0) / Math.log(5.0));
         remainingZeros = Math.min(remainingZeros, maxPowsOf5);
 
