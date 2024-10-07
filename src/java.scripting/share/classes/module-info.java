@@ -26,9 +26,12 @@
 /**
  * Defines the Scripting API.
  *
- * <p> The <em>{@index jrunscript jrunscript tool}</em> included in the JDK
- * implementation of this module, has been deprecated for removal since
- * JDK 24 and will be removed in a future release.
+ * <p> The JDK implementation of this module includes a language-independent
+ * command-line script shell, <em>{@index jrunscript jrunscript tool}</em>,
+ * that supports executing JavaScript and other languages if its corresponding
+ * script engine is installed.
+ * <p> The {@code jrunscript} tool is deprecated for removal since JDK 24
+ * and will be removed in a future release.
  *
  * @toolGuide jrunscript
  *
