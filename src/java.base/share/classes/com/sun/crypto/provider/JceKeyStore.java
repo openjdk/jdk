@@ -46,6 +46,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateException;
 import javax.crypto.SealedObject;
 
+import jdk.internal.access.SharedSecrets;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
@@ -694,9 +696,23 @@ public final class JceKeyStore extends KeyStoreSpi {
             ByteArrayInputStream bais = null;
             byte[] encoded = null;
             int trustedKeyCount = 0, privateKeyCount = 0, secretKeyCount = 0;
+            String keystorePath = null;
 
             if (stream == null)
                 return;
+
+            if (debug != null) {
+                if (stream instanceof FileInputStream) {
+                    keystorePath = SharedSecrets
+                                    .getJavaIOFileInputStreamAccess()
+                                    .getPath((FileInputStream) stream);
+                    if (keystorePath != null) {
+                        debug.println("JceKeyStore: Loading \"" + keystorePath.substring(
+                            keystorePath.lastIndexOf(File.separator) + 1)
+                            + "\" keystore");
+                    }
+                }
+            }
 
             byte[] allData = stream.readAllBytes();
             int fullLength = allData.length;
@@ -864,6 +880,11 @@ public final class JceKeyStore extends KeyStoreSpi {
                 }
 
                 if (debug != null) {
+                    if (keystorePath != null) {
+                        debug.println("JceKeyStore: Loaded \"" + keystorePath.substring(
+                            keystorePath.lastIndexOf(File.separator) + 1)
+                            + "\" keystore");
+                    }
                     debug.println("JceKeyStore load: private key count: " +
                         privateKeyCount + ". trusted key count: " +
                         trustedKeyCount + ". secret key count: " +

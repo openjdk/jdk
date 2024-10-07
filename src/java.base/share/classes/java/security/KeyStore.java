@@ -38,6 +38,9 @@ import javax.security.auth.callback.*;
 
 import sun.security.util.Debug;
 
+import jdk.internal.access.JavaSecurityKeyStoreAccess;
+import jdk.internal.access.SharedSecrets;
+
 /**
  * This class represents a storage facility for cryptographic
  * keys and certificates.
@@ -209,6 +212,9 @@ public class KeyStore {
      * </pre>
      */
     private static final String KEYSTORE_TYPE = "keystore.type";
+
+    //The keystore full path
+    private static String keystorePath;
 
     // The keystore type
     private final String type;
@@ -802,6 +808,16 @@ public class KeyStore {
         }
     }
 
+    // Set up JavaIOFileInputStreamAccess in SharedSecrets
+    static {
+        SharedSecrets.setJavaSecurityKeyStoreAccess(
+                new JavaSecurityKeyStoreAccess() {
+                    public String getPath(KeyStore ks) {
+                        return keystorePath;
+                    }
+                }
+        );
+    }
     /**
      * Creates a {@code KeyStore} object of the given type, and encapsulates
      * the given provider implementation (SPI object) in it.
@@ -1496,6 +1512,11 @@ public class KeyStore {
     public final void load(InputStream stream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
+        if (stream instanceof FileInputStream) {
+            keystorePath = SharedSecrets
+                    .getJavaIOFileInputStreamAccess()
+                    .getPath((FileInputStream) stream);
+        }
         keyStoreSpi.engineLoad(stream, password);
         initialized = true;
     }

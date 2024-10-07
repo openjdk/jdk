@@ -387,6 +387,10 @@ final class TrustStoreManager {
                 try (@SuppressWarnings("removal") FileInputStream fis = AccessController.doPrivileged(
                         new OpenFileInputStreamAction(descriptor.storeFile))) {
                     ks.load(fis, password);
+                    if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+                        SSLLogger.fine(
+                                "Loaded keystore: " + descriptor.storeName);
+                    }
                 } catch (FileNotFoundException fnfe) {
                     // No file available, no KeyStore available.
                     if (SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {

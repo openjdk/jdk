@@ -30,6 +30,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.ObjectInputFilter;
 import java.lang.invoke.MethodHandles;
 import java.lang.module.ModuleDescriptor;
+import java.security.KeyStore;
 import java.security.Security;
 import java.security.spec.EncodedKeySpec;
 import java.util.ResourceBundle;
@@ -87,6 +88,7 @@ public class SharedSecrets {
     private static JavaUtilZipFileAccess javaUtilZipFileAccess;
     private static JavaUtilResourceBundleAccess javaUtilResourceBundleAccess;
     private static JavaSecurityAccess javaSecurityAccess;
+    private static JavaSecurityKeyStoreAccess javaSecurityKeyStoreAccess;
     private static JavaSecurityPropertiesAccess javaSecurityPropertiesAccess;
     private static JavaSecuritySignatureAccess javaSecuritySignatureAccess;
     private static JavaSecuritySpecAccess javaSecuritySpecAccess;
@@ -358,6 +360,19 @@ public class SharedSecrets {
         if (access == null) {
             ensureClassInitialized(ProtectionDomain.class);
             access = javaSecurityAccess;
+        }
+        return access;
+    }
+
+    public static void setJavaSecurityKeyStoreAccess(JavaSecurityKeyStoreAccess jsks) {
+        javaSecurityKeyStoreAccess = jsks;
+    }
+
+    public static JavaSecurityKeyStoreAccess getJavaSecurityKeyStoreAccess() {
+        var access = javaSecurityKeyStoreAccess;
+        if (access == null) {
+            ensureClassInitialized(KeyStore.class);
+            access = javaSecurityKeyStoreAccess;
         }
         return access;
     }

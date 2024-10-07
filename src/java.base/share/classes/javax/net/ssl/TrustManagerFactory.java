@@ -25,11 +25,14 @@
 
 package javax.net.ssl;
 
+import java.io.File;
 import java.security.Security;
 import java.security.*;
 import java.util.Objects;
 
+import jdk.internal.access.SharedSecrets;
 import sun.security.jca.GetInstance;
+import sun.security.ssl.SSLLogger;
 
 /**
  * This class acts as a factory for trust managers based on a
@@ -275,6 +278,17 @@ public class TrustManagerFactory {
      */
     public final void init(KeyStore ks) throws KeyStoreException {
         factorySpi.engineInit(ks);
+        if (ks != null && SSLLogger.isOn && SSLLogger.isOn("trustmanager")) {
+            String keystorePath = SharedSecrets
+                    .getJavaSecurityKeyStoreAccess()
+                    .getPath(ks);
+            if (keystorePath != null) {
+                SSLLogger.fine(provider.getName() + ": Loaded \"" + keystorePath
+                        .substring(keystorePath
+                                .lastIndexOf(File.separator) + 1)
+                        + "\" keystore in " + ks.getType() + " format");
+            }
+        }
     }
 
 

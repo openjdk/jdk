@@ -37,9 +37,6 @@ import java.security.cert.CertificateException;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Set;
-
-import jdk.internal.access.SharedSecrets;
-
 /**
  * This class delegates to a primary or secondary keystore implementation.
  *
@@ -288,17 +285,6 @@ public class KeyStoreDelegator extends KeyStoreSpi {
             }
 
             if (debug != null) {
-                if (stream instanceof FileInputStream) {
-                    String keystorePath = SharedSecrets
-                                    .getJavaIOFileInputStreamAccess()
-                                    .getPath((FileInputStream) stream);
-                    if (keystorePath != null) {
-                        debug.println("Loaded \"" + keystorePath.substring(
-                            keystorePath.lastIndexOf(File.separator) + 1)
-                            + "\" keystore in " + type + " format");
-                        return;
-                    }
-                }
                 debug.println("Loaded a keystore in " + type + " format");
             }
         }

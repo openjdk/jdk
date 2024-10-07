@@ -40,6 +40,7 @@ import sun.security.util.Debug;
 import sun.security.util.IOUtils;
 import sun.security.util.KeyStoreDelegator;
 
+import jdk.internal.access.SharedSecrets;
 /**
  * This class provides the keystore implementation referred to as "JKS".
  *
@@ -658,6 +659,7 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             ByteArrayInputStream bais;
             byte[] encoded;
             int trustedKeyCount = 0, privateKeyCount = 0;
+            String keystorePath = null;
 
             if (stream == null)
                 return;
@@ -669,6 +671,18 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
                 dis = new DataInputStream(stream);
             }
 
+            if (debug != null) {
+                if (stream instanceof FileInputStream) {
+                    keystorePath = SharedSecrets
+                                    .getJavaIOFileInputStreamAccess()
+                                    .getPath((FileInputStream) stream);
+                    if (keystorePath != null) {
+                        debug.println("JavaKeyStore: Loading \"" + keystorePath.substring(
+                            keystorePath.lastIndexOf(File.separator) + 1)
+                            + "\" keystore");
+                    }
+                }
+            }
             // Body format: see store method
 
             int xMagic = dis.readInt();
@@ -786,6 +800,11 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             }
 
             if (debug != null) {
+                if (keystorePath != null) {
+                        debug.println("JavaKeyStore: Loaded \"" + keystorePath.substring(
+                            keystorePath.lastIndexOf(File.separator) + 1)
+                            + "\" keystore");
+                }
                 debug.println("JavaKeyStore load: private key count: " +
                     privateKeyCount + ". trusted key count: " + trustedKeyCount);
             }

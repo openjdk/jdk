@@ -64,7 +64,7 @@ public class LogKeyStorePathVerifier {
     public static void main(String args[]) throws Exception {
         System.setProperty("test.java.opts",
                     "-Dtest.src=" + System.getProperty("test.src") +
-                            " -Djava.security.debug=keystore");
+                            " -Djavax.net.debug=trustmanager");
 
         System.out.println("test.java.opts: " +
                 System.getProperty("test.java.opts"));
@@ -77,7 +77,7 @@ public class LogKeyStorePathVerifier {
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             // Check for the presence of new message and verify the
             // keystore name in debug logs
-            output.shouldContain("Loaded \"keystore\" keystore in PKCS12 format");
+            output.shouldContain("Loaded \"keystore\" keystore in pkcs12 format");
         } catch (Exception e) {
             throw e;
         }
