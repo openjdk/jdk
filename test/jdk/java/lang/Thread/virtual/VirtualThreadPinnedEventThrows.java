@@ -24,7 +24,7 @@
 /**
  * @test
  * @summary Test parking when pinned and emitting the JFR VirtualThreadPinnedEvent throws
- * @modules java.base/java.lang:+open java.base/jdk.internal.event
+ * @modules java.base/java.lang:+open java.base/jdk.internal.event jdk.management
  * @library /test/lib
  * @compile/module=java.base jdk/internal/event/VirtualThreadPinnedEvent.java
  * @run junit/othervm --enable-native-access=ALL-UNNAMED VirtualThreadPinnedEventThrows
@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import jdk.internal.event.VirtualThreadPinnedEvent;
 
-import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.management
 import jdk.test.lib.thread.VThreadPinner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;

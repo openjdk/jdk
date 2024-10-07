@@ -47,7 +47,7 @@ import jdk.internal.util.random.RandomSupport.AbstractSplittableGenerator;
  * <li>Series of generated values pass the DieHarder suite testing
  * independence and uniformity properties of random number generators.
  * (Most recently validated with <a
- * href="http://www.phy.duke.edu/~rgb/General/dieharder.php"> version
+ * href="https://webhome.phy.duke.edu/~rgb/General/dieharder.php"> version
  * 3.31.1</a>.) These tests validate only the methods for certain
  * types and ranges, but similar properties are expected to hold, at
  * least approximately, for others as well. The <em>period</em>

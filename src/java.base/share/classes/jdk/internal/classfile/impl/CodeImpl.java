@@ -39,7 +39,7 @@ import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.instruction.*;
 
-import static java.lang.classfile.ClassFile.*;
+import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 
 public final class CodeImpl
         extends BoundAttribute.BoundCodeAttribute
@@ -55,13 +55,13 @@ public final class CodeImpl
                     case ARRAY_STORE -> ArrayStoreInstruction.of(o);
                     case CONSTANT -> ConstantInstruction.ofIntrinsic(o);
                     case CONVERT -> ConvertInstruction.of(o);
-                    case LOAD -> LoadInstruction.of(o, o.slot());
+                    case LOAD -> new AbstractInstruction.UnboundLoadInstruction(o, BytecodeHelpers.intrinsicLoadSlot(o));
                     case MONITOR -> MonitorInstruction.of(o);
                     case NOP -> NopInstruction.of();
                     case OPERATOR -> OperatorInstruction.of(o);
                     case RETURN -> ReturnInstruction.of(o);
                     case STACK -> StackInstruction.of(o);
-                    case STORE -> StoreInstruction.of(o, o.slot());
+                    case STORE -> new AbstractInstruction.UnboundStoreInstruction(o, BytecodeHelpers.intrinsicStoreSlot(o));
                     case THROW_EXCEPTION -> ThrowInstruction.of();
                     default -> throw new AssertionError("invalid opcode: " + o);
                 };
@@ -122,7 +122,7 @@ public final class CodeImpl
         if (!inflated) {
             if (labels == null)
                 labels = new LabelImpl[codeLength + 1];
-            if (classReader.context().lineNumbersOption() == ClassFile.LineNumbersOption.PASS_LINE_NUMBERS)
+            if (classReader.context().passLineNumbers())
                 inflateLineNumbers();
             inflateJumpTargets();
             inflateTypeAnnotations();
@@ -167,7 +167,7 @@ public final class CodeImpl
         inflateMetadata();
         boolean doLineNumbers = (lineNumbers != null);
         generateCatchTargets(consumer);
-        if (classReader.context().debugElementsOption() == ClassFile.DebugElementsOption.PASS_DEBUG)
+        if (classReader.context().passDebugElements())
             generateDebugElements(consumer);
         for (int pos=codeStart; pos<codeEnd; ) {
             if (labels[pos - codeStart] != null)
@@ -258,6 +258,14 @@ public final class CodeImpl
                     switch (i) {
                         case BranchInstruction br -> br.target();
                         case DiscontinuedInstruction.JsrInstruction jsr -> jsr.target();
+                        case LookupSwitchInstruction ls -> {
+                            ls.defaultTarget();
+                            ls.cases();
+                        }
+                        case TableSwitchInstruction ts -> {
+                            ts.defaultTarget();
+                            ts.cases();
+                        }
                         default -> {}
                     }
                     pos += i.sizeInBytes();

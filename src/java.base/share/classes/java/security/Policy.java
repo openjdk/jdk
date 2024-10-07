@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -895,6 +895,16 @@ public abstract class Policy {
          */
         @Override public Enumeration<Permission> elements() {
             return perms.elements();
+        }
+
+        /**
+         * If this object is readonly, no new objects can be added to it using {@code add}.
+         *
+         * @return {@code true} if this object is marked as readonly, {@code false} otherwise.
+         */
+        @Override
+        public boolean isReadOnly() {
+            return perms.isReadOnly();
         }
     }
 }

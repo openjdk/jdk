@@ -87,8 +87,6 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Indicates whether in the last generation (old) there is no more space
   // available for allocation.
   bool _old_gen_is_full;
-  // Size (in elements) of a partial objArray task chunk.
-  size_t _partial_objarray_chunk_size;
   PartialArrayStateAllocator* _partial_array_state_allocator;
   PartialArrayTaskStepper _partial_array_stepper;
   StringDedup::Requests _string_dedup_requests;

@@ -21,6 +21,7 @@
  * questions.
  */
 
+import jdk.internal.util.ArraysSupport;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.InvocationTargetException;
@@ -37,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *          Base64.Decoder.decode behavior with large, (Integer.MAX_VALUE) sized
  *          input array/buffer. Tests the private methods "encodedOutLength" and
  *          "decodedOutLength".
+ * @modules java.base/jdk.internal.util
  * @run junit/othervm --add-opens java.base/java.util=ALL-UNNAMED TestEncodingDecodingLength
  */
 
@@ -45,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class TestEncodingDecodingLength {
 
     // A value large enough to test the desired memory conditions in encode and decode
-    private static final int LARGE_MEM_SIZE = Integer.MAX_VALUE - 8;
+    private static final int LARGE_MEM_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
     private static final Base64.Decoder DECODER = Base64.getDecoder();
     private static final Base64.Encoder ENCODER = Base64.getEncoder();
 
