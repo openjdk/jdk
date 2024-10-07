@@ -1817,7 +1817,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      */
     final void deregisterWorker(ForkJoinWorkerThread wt, Throwable ex) {
         if ((runState & STOP) != 0L)       // ensure released
-            releaseAll();
+            reactivate(true);
         WorkQueue w = null;
         int src = 0, phase = 0;
         boolean replaceable = false;
@@ -1903,11 +1903,11 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     /**
-     * Releases all waiting workers. Called only during shutdown.
+     * Releases one or all waiting workers
      *
      * @return current ctl
      */
-    private long releaseAll() {
+    private long reactivate(boolean all) {
         long c = ctl;
         for (;;) {
             WorkQueue[] qs; WorkQueue v; int sp, i;
@@ -1920,6 +1920,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                 v.phase = sp;
                 if (v.parking != 0)
                     U.unpark(v.owner);
+                if (!all)
+                    break;
             }
         }
         return c;
@@ -2046,21 +2048,16 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (((runState & SHUTDOWN) != 0L && quiescent() > 0) ||
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                      // terminating
-        boolean possibleMiss = false;         // interleave spins and rechecks
         for (int steps = Math.max(n << 2, SPIN_WAITS), i = 0; ; ++i) {
-            WorkQueue q;
+            WorkQueue q;                      // interleave spins and rechecks
             if (w.phase == activePhase)
                 return activePhase;
             else if (i >= steps)
                 return awaitWork(w, p);       // block, drop, or exit
             else if ((i & 1) != 0 || (q = qs[i & (n - 1)]) == null)
                 Thread.onSpinWait();
-            else if (q.top - q.base > 0) {
-                if (!possibleMiss)
-                    possibleMiss = true;
-                else
-                    signalWork();
-            }
+            else if (q.top - q.base > 0)
+                reactivate(false);            // help signal
         }
     }
 
@@ -2738,7 +2735,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                 if (quiescent() > 0)
                     e = runState;
             }
-            if ((e & STOP) != 0L && (releaseAll() & RC_MASK) > 0L && now)
+            if ((e & STOP) != 0L && (reactivate(true) & RC_MASK) > 0L && now)
                 interruptAll();
         }
         if ((e & (STOP | TERMINATED)) == STOP) { // help cancel tasks
