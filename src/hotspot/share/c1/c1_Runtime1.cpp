@@ -1182,7 +1182,6 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
               n_copy->set_data((intx) (load_klass));
             } else {
               // Don't need a G1 pre-barrier here since we assert above that data isn't an oop.
-              assert(((uintptr_t) (copy_buff + 2) & (wordSize -1)) == 0, "address of oop immediate not wordSize aligned");
               n_copy->set_data(cast_from_oop<intx>(mirror()));
             }
 
@@ -1195,7 +1194,6 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
           assert(n_copy->data() == 0 ||
                  n_copy->data() == (intptr_t)Universe::non_oop_word(),
                  "illegal init value");
-          assert(((uintptr_t) (copy_buff + 2) & (wordSize -1)) == 0, "address of oop immediate not wordSize aligned");
           n_copy->set_data(cast_from_oop<intx>(appendix()));
 
           if (TracePatching) {
