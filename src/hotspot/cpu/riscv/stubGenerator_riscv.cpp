@@ -4482,7 +4482,7 @@ class StubGenerator: public StubCodeGenerator {
     RegSet reg_cache_saved_regs = RegSet::of(x24, x25, x26, x27); // s8, s9, s10, s11
     RegSet reg_cache_regs;
     reg_cache_regs += reg_cache_saved_regs;
-    reg_cache_regs += RegSet::of(x28, x29, x30, x31); // t3, t4, t5, t6
+    reg_cache_regs += RegSet::of(t3, t4, t5, t6);
     BufRegCache reg_cache(_masm, reg_cache_regs);
 
     RegSet saved_regs;
@@ -5462,8 +5462,8 @@ class StubGenerator: public StubCodeGenerator {
     Register isMIME = c_rarg6;
 
     Register codec     = c_rarg7;
-    Register dstBackup = x31;
-    Register length    = x28;     // t3, total length of src data in bytes
+    Register dstBackup = t6;
+    Register length    = t3;     // total length of src data in bytes
 
     Label ProcessData, Exit;
     Label ProcessScalar, ScalarLoop;
@@ -5498,7 +5498,7 @@ class StubGenerator: public StubCodeGenerator {
       Register stepSrcM1 = send;
       Register stepSrcM2 = doff;
       Register stepDst   = isURL;
-      Register size      = x29;   // t4
+      Register size      = t4;
 
       __ mv(size, MaxVectorSize * 2);
       __ mv(stepSrcM1, MaxVectorSize * 4);
@@ -5550,7 +5550,7 @@ class StubGenerator: public StubCodeGenerator {
     // scalar version
     {
       Register byte0 = soff, byte1 = send, byte2 = doff, byte3 = isURL;
-      Register combined32Bits = x29; // t5
+      Register combined32Bits = t4;
 
       // encoded:   [byte0[5:0] : byte1[5:0] : byte2[5:0]] : byte3[5:0]] =>
       // plain:     [byte0[5:0]+byte1[5:4] : byte1[3:0]+byte2[5:2] : byte2[1:0]+byte3[5:0]]
@@ -5708,10 +5708,10 @@ class StubGenerator: public StubCodeGenerator {
     Register nmax  = c_rarg4;
     Register base  = c_rarg5;
     Register count = c_rarg6;
-    Register temp0 = x28; // t3
-    Register temp1 = x29; // t4
-    Register temp2 = x30; // t5
-    Register temp3 = x31; // t6
+    Register temp0 = t3;
+    Register temp1 = t4;
+    Register temp2 = t5;
+    Register temp3 = t6;
 
     VectorRegister vzero = v31;
     VectorRegister vbytes = v8; // group: v8, v9, v10, v11
@@ -6102,7 +6102,7 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     __ kernel_crc32(crc, buf, len,
                     c_rarg3, c_rarg4, c_rarg5, c_rarg6, // tmp's for tables
-                    c_rarg7, t2, x28, x29, x30, x31);   // misc tmps
+                    c_rarg7, t2, t3, t4, t5, t6);       // misc tmps
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
