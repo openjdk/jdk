@@ -887,7 +887,7 @@ static Klass* resolve_field_return_klass(const methodHandle& caller, int bci, TR
 //             movl reg, [reg1 + <const>]  (for field offsets)
 //             jmp continue
 //             <being_init offset> <bytes to copy> <bytes to skip>
-// patch_stub: jmp Runtim1::patch_code (through a runtime stub)
+// patch_stub: jmp Runtime1::patch_code (through a runtime stub)
 //             jmp patch_site
 //
 // If the class is being initialized the patch body is rewritten and
@@ -1182,6 +1182,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
               n_copy->set_data((intx) (load_klass));
             } else {
               // Don't need a G1 pre-barrier here since we assert above that data isn't an oop.
+              assert(((uintptr_t) (copy_buff + 2) & (wordSize -1)) == 0, "address of oop immediate not wordSize aligned");
               n_copy->set_data(cast_from_oop<intx>(mirror()));
             }
 
@@ -1194,6 +1195,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, C1StubId stub_id ))
           assert(n_copy->data() == 0 ||
                  n_copy->data() == (intptr_t)Universe::non_oop_word(),
                  "illegal init value");
+          assert(((uintptr_t) (copy_buff + 2) & (wordSize -1)) == 0, "address of oop immediate not wordSize aligned");
           n_copy->set_data(cast_from_oop<intx>(appendix()));
 
           if (TracePatching) {
