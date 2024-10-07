@@ -5261,8 +5261,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         intVal = intVal.shiftRight(powsOf2); // remove powers of 2
         // powsOf5 == ceil(log5(intValt)) roughly
-		long powsOf5 = (long) Math.ceil(intVal.bitLength() * Math.log(2) / Math.log(5));
-		remainingZeros = Math.min(remainingZeros, powsOf5);
+        long powsOf5 = (long) Math.ceil(intVal.bitLength() * Math.log(2) / Math.log(5));
+        remainingZeros = Math.min(remainingZeros, powsOf5);
 
         BigInteger[] qr; // quotient-remainder pair
         for (int i = 0; remainingZeros >= 1L << i; i++) {
