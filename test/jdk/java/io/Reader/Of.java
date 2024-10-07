@@ -54,7 +54,30 @@ public class Of {
             Reader.of(new StringBuilder(CONTENT)),
             Reader.of(ByteBuffer.allocateDirect(CONTENT.length() * 2)
                     .asCharBuffer().put(CONTENT).flip()),
-            Reader.of(CharBuffer.wrap(CONTENT.toCharArray()))
+            Reader.of(CharBuffer.wrap(CONTENT.toCharArray())),
+            Reader.of(new CharSequence() {
+                @Override
+                public char charAt(int index) {
+                    return CONTENT.charAt(index);
+                }
+
+                @Override
+                public int length() {
+                    return CONTENT.length();
+                }
+
+                @Override
+                public CharSequence subSequence(int start, int end) {
+                    // unused by Reader.Of's result
+                    throw new UnsupportedOperationException();
+                }
+
+                @Override
+                public String toString() {
+                    // Reader.Of's result SHALL NOT convert to String
+                    throw new UnsupportedOperationException();
+                }
+            })
         };
     }
 
