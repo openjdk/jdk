@@ -87,6 +87,7 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
             try {
                 // Server-side SSL socket that will read.
                 SSLSocket socket = (SSLSocket) serverSocket.accept();
+                socket.setSoTimeout(2000);
                 InputStream is = socket.getInputStream();
                 byte[] inbound = new byte[8192];
 
@@ -119,6 +120,7 @@ public class SSLSocketNoServerHelloClientShutdown extends SSLEngineNoServerHello
                     SSLEngineResult clientResult;
                     // Client-side plain TCP socket.
                     clientSocket = new Socket("localhost", port);
+                    clientSocket.setSoTimeout(500);
 
                     log("=================");
 
