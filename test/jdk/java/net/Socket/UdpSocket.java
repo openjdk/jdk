@@ -142,9 +142,11 @@ public class UdpSocket {
                 return new Socket(InetAddress.getLoopbackAddress(), 8000, false);
             } catch (BindException be) {
                 unexpected = be;
-                System.out.printf("BindException caught: retry Socket creation [%s/%s]%n",
-                        i+1, MAX_RETRIES);
-                Thread.sleep(10 + 10 * i);
+                if (i != MAX_RETRIES - 1) {
+                    System.out.printf("BindException caught: retry Socket creation [%s/%s]%n",
+                            i + 1, MAX_RETRIES);
+                    Thread.sleep(10 + 10 * i);
+                }
             }
         }
         throw unexpected;
