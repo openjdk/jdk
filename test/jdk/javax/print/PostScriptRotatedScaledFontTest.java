@@ -101,7 +101,9 @@ public class PostScriptRotatedScaledFontTest {
                 boolean expectedHorizontal = (quadrants % 2 == 0);
                 if (horizontal != expectedHorizontal) {
                     throw new RuntimeException("Wrong orientation: scale=" + scale
-                        + ", quadrants=" + quadrants + ", horizontal=" + horizontal);
+                        + ", quadrants=" + quadrants + ", bounds=" + bounds
+                        + ", expectedHorizontal=" + expectedHorizontal
+                        + ", horizontal=" + horizontal);
                 }
             }
         } finally {

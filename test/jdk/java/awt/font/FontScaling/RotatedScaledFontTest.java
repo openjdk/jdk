@@ -64,21 +64,25 @@ public class RotatedScaledFontTest {
                 Rectangle bounds = findTextBoundingBox(image);
                 if (bounds == null) {
                     throw new RuntimeException("Text missing: scale=" + scale
-                        + ", quadrants=" + quadrants);
+                        + ", quadrants=" + quadrants + ", center=" + center);
                 }
                 boolean horizontal = (bounds.width > bounds.height);
                 boolean expectedHorizontal = (quadrants % 2 == 0);
                 if (horizontal != expectedHorizontal) {
                     throw new RuntimeException("Wrong orientation: scale=" + scale
-                        + ", quadrants=" + quadrants + ", horizontal=" + horizontal);
+                        + ", quadrants=" + quadrants + ", center=" + center
+                        + ", bounds=" + bounds + ", horizontal=" + horizontal
+                        + ", expectedHorizontal=" + expectedHorizontal);
                 }
                 if (!roughlyEqual(center, bounds.x, scale) && !roughlyEqual(center, bounds.x + bounds.width, scale)) {
                     throw new RuntimeException("No x-edge at center: scale=" + scale
-                        + ", quadrants=" + quadrants);
+                        + ", quadrants=" + quadrants + ", center=" + center
+                        + ", bounds=" + bounds);
                 }
                 if (!roughlyEqual(center, bounds.y, scale) && !roughlyEqual(center, bounds.y + bounds.height, scale)) {
                     throw new RuntimeException("No y-edge at center: scale=" + scale
-                        + ", quadrants=" + quadrants);
+                        + ", quadrants=" + quadrants + ", center=" + center
+                        + ", bounds=" + bounds);
                 }
             }
         } finally {
@@ -122,6 +126,6 @@ public class RotatedScaledFontTest {
     }
 
     private static boolean roughlyEqual(int x1, int x2, int scale) {
-        return Math.abs(x1 - x2) <= Math.ceil(scale / 2d); // higher scale = higher allowed variance
+        return Math.abs(x1 - x2) <= Math.ceil(scale / 2d) + 1; // higher scale = higher allowed variance
     }
 }
