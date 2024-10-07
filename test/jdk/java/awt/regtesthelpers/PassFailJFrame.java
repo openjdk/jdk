@@ -45,6 +45,7 @@ import java.awt.image.RenderedImage;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -289,9 +290,15 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  */
 public final class PassFailJFrame {
 
-    private static final String TITLE = "Test Instruction Frame";
+    /** A default title for the instruction frame. */
+    private static final String TITLE = "Test Instructions";
+
+    /** A default test timeout. */
     private static final long TEST_TIMEOUT = 5;
+
+    /** A default number of rows for displaying the test instructions. */
     private static final int ROWS = 10;
+    /** A default number of columns for displaying the test instructions. */
     private static final int COLUMNS = 40;
 
     /**
@@ -304,7 +311,7 @@ public final class PassFailJFrame {
      */
     private static final String FAILURE_REASON = "Failure Reason:\n";
     /**
-     * The failure reason message when the user didn't provide one.
+     * The failure reason message when the user doesn't provide one.
      */
     private static final String EMPTY_REASON = "(no reason provided)";
 
@@ -1824,9 +1831,41 @@ public final class PassFailJFrame {
             return new PassFailJFrame(this);
         }
 
+        /**
+         * Returns the file name of the test, if the {@code test.file} property
+         * is defined, concatenated with {@code " - "} which serves as a prefix
+         * to the default instruction frame title;
+         * or an empty string if the {@code test.file} property is not defined.
+         *
+         * @return the prefix to the default title:
+         *         either the file name of the test or an empty string
+         *
+         * @see <a href="https://openjdk.org/jtreg/tag-spec.html#testvars">jtreg
+         * test-specific system properties and environment variables</a>
+         */
+        private static String getTestFileNamePrefix() {
+            String testFile = System.getProperty("test.file");
+            if (testFile == null) {
+                return "";
+            }
+
+            return Paths.get(testFile).getFileName().toString()
+                   + " - ";
+        }
+
+        /**
+         * Validates the state of the builder and
+         * expands parameters that have no assigned values
+         * to their default values.
+         *
+         * @throws IllegalStateException if no instructions are provided,
+         *              or if {@code PositionWindows} implementation is
+         *              provided but neither window creator nor
+         *              test window list are set
+         */
         private void validate() {
             if (title == null) {
-                title = TITLE;
+                title = getTestFileNamePrefix() + TITLE;
             }
 
             if (instructions == null || instructions.isEmpty()) {
