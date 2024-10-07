@@ -191,7 +191,6 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       break;
     case Op_StoreB:
     case Op_StoreC:
-    case Op_StoreCM:
     case Op_StoreD:
     case Op_StoreF:
     case Op_StoreI:
@@ -723,7 +722,6 @@ void PhaseCFG::adjust_register_pressure(Node* n, Block* block, intptr_t* recalc_
         switch (iop) {
         case Op_StoreB:
         case Op_StoreC:
-        case Op_StoreCM:
         case Op_StoreD:
         case Op_StoreF:
         case Op_StoreI:
@@ -1004,21 +1002,6 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
           local++;              // One more block-local input
       }
       ready_cnt.at_put(n->_idx, local); // Count em up
-
-#ifdef ASSERT
-      if (UseG1GC) {
-        if( n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_StoreCM ) {
-          // Check the precedence edges
-          for (uint prec = n->req(); prec < n->len(); prec++) {
-            Node* oop_store = n->in(prec);
-            if (oop_store != nullptr) {
-              assert(get_block_for_node(oop_store)->_dom_depth <= block->_dom_depth, "oop_store must dominate card-mark");
-            }
-          }
-        }
-      }
-#endif
-
       // A few node types require changing a required edge to a precedence edge
       // before allocation.
       if( n->is_Mach() && n->req() > TypeFunc::Parms &&

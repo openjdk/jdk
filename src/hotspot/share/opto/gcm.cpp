@@ -216,19 +216,13 @@ void PhaseCFG::schedule_pinned_nodes(VectorSet &visited) {
       for (uint i = node->len()-1; i >= node->req(); i--) {
         Node* m = node->in(i);
         if (m == nullptr) continue;
-
-        // Only process precedence edges that are CFG nodes. Safepoints and control projections can be in the middle of a block
-        if (is_CFG(m)) {
-          node->rm_prec(i);
-          if (n == nullptr) {
-            n = m;
-          } else {
-            assert(is_dominator(n, m) || is_dominator(m, n), "one must dominate the other");
-            n = is_dominator(n, m) ? m : n;
-          }
+        assert(is_CFG(m), "must be a CFG node");
+        node->rm_prec(i);
+        if (n == nullptr) {
+          n = m;
         } else {
-          assert(node->is_Mach(), "sanity");
-          assert(node->as_Mach()->ideal_Opcode() == Op_StoreCM, "must be StoreCM node");
+          assert(is_dominator(n, m) || is_dominator(m, n), "one must dominate the other");
+          n = is_dominator(n, m) ? m : n;
         }
       }
       if (n != nullptr) {
