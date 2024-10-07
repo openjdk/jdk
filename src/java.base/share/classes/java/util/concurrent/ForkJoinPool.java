@@ -2048,18 +2048,18 @@ public class ForkJoinPool extends AbstractExecutorService {
             return IDLE;                      // terminating
         boolean possibleMiss = false;         // interleave spins and rechecks
         for (int steps = Math.max(n << 2, SPIN_WAITS), i = 0; ; ++i) {
-            WorkQueue q; ForkJoinTask<?>[] a; int cap;
+            WorkQueue q;
             if (w.phase == activePhase)
                 return activePhase;
             else if (i >= steps)
                 return awaitWork(w, p);       // block, drop, or exit
             else if ((i & 1) != 0 || (q = qs[i & (n - 1)]) == null)
                 Thread.onSpinWait();
-            else if ((a = q.array) != null && (cap = a.length) > 0 &&
-                     U.getReference(a, slotOffset(q.base & (cap - 1))) != null) {
-                if (possibleMiss && ctl == qc && compareAndSetCtl(qc, pc))
-                    return w.phase = activePhase; // reactivate
-                possibleMiss = true;
+            else if (q.top - q.base > 0) {
+                if (!possibleMiss)
+                    possibleMiss = true;
+                else
+                    signalWork();
             }
         }
     }
