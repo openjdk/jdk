@@ -59,7 +59,7 @@ LogDecorators LogSelectionList::get_default_decorators() const {
       return LogDecorators();
     }
   }
-  return LogDecorators(0);
+  return LogDecorators(LogDecorators::mask_from_decorators(LogDecorators::NoDecorators));
 }
 
 bool LogSelectionList::parse(const char* str, outputStream* errstream) {
