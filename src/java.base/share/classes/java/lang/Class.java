@@ -605,8 +605,6 @@ public final class Class<T> implements java.io.Serializable,
      * a binary name.  This method returns {@code null} on failure rather than
      * throwing a {@link ClassNotFoundException}, as is done by
      * the {@link #forName(String, boolean, ClassLoader)} method.
-     * The security check is a stack-based permission check if the caller
-     * loads a class in another module.
      *
      * @param  module   A module
      * @param  name     The {@linkplain ClassLoader##binary-name binary name}
@@ -2858,11 +2856,10 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @param  name name of the desired resource
      * @return A {@link java.net.URL} object; {@code null} if no resource with
-     *         this name is found, the resource cannot be located by a URL, the
+     *         this name is found, the resource cannot be located by a URL, or the
      *         resource is in a package that is not
      *         {@linkplain Module#isOpen(String, Module) open} to at least the caller
-     *         module, or access to the resource is denied by the security
-     *         manager.
+     *         module.
      * @throws NullPointerException If {@code name} is {@code null}
      * @since  1.1
      */
