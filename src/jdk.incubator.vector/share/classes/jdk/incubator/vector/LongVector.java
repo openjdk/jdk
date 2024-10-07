@@ -2244,17 +2244,18 @@ public abstract class LongVector extends AbstractVector<Long> {
      */
     @Override
     public abstract
-    LongVector rearrange(VectorShuffle<Long> m);
+    LongVector rearrange(VectorShuffle<Long> shuffle);
 
     /*package-private*/
     @ForceInline
     final
     <S extends VectorShuffle<Long>>
     LongVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        shuffle.checkIndexes();
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, long.class, length(),
-            this, shuffle, null,
+            this, ws, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = s_.laneSource(i);
                 return v1.lane(ei);
@@ -2279,17 +2280,14 @@ public abstract class LongVector extends AbstractVector<Long> {
                                            M m) {
 
         m.check(masktype, this);
-        VectorMask<Long> valid = shuffle.laneIsValid();
-        if (m.andNot(valid).anyTrue()) {
-            shuffle.checkIndexes();
-            throw new AssertionError();
-        }
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, long.class, length(),
-                   this, shuffle, m,
+                   this, ws, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
                         int ei = s_.laneSource(i);
-                        return ei < 0  || !m_.laneIsSet(i) ? 0 : v1.lane(ei);
+                        return !m_.laneIsSet(i) ? 0 : v1.lane(ei);
                    }));
     }
 
@@ -2402,7 +2400,10 @@ public abstract class LongVector extends AbstractVector<Long> {
     /*package-private*/
     @ForceInline
     final LongVector selectFromTemplate(LongVector v) {
-        return v.rearrange(this.toShuffle());
+        return (LongVector)VectorSupport.selectFromOp(getClass(), null, long.class,
+                                                        length(), this, v, null,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle()));
     }
 
     /**
@@ -2414,9 +2415,15 @@ public abstract class LongVector extends AbstractVector<Long> {
 
     /*package-private*/
     @ForceInline
-    final LongVector selectFromTemplate(LongVector v,
-                                                  AbstractMask<Long> m) {
-        return v.rearrange(this.toShuffle(), m);
+    final
+    <M extends VectorMask<Long>>
+    LongVector selectFromTemplate(LongVector v,
+                                            Class<M> masktype, M m) {
+        m.check(masktype, this);
+        return (LongVector)VectorSupport.selectFromOp(getClass(), masktype, long.class,
+                                                        length(), this, v, m,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle(), _m));
     }
 
     /// Ternary operations

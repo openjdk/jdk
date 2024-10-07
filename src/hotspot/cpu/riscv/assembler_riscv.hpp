@@ -143,6 +143,10 @@ constexpr Register x19_sender_sp = x19; // Sender's SP while in interpreter
 constexpr Register t0 = x5;
 constexpr Register t1 = x6;
 constexpr Register t2 = x7;
+constexpr Register t3 = x28;
+constexpr Register t4 = x29;
+constexpr Register t5 = x30;
+constexpr Register t6 = x31;
 
 const Register g_INTArgReg[Argument::n_int_register_parameters_c] = {
   c_rarg0, c_rarg1, c_rarg2, c_rarg3, c_rarg4, c_rarg5, c_rarg6, c_rarg7
@@ -702,6 +706,16 @@ public:
     patch((address)&insn, 23, 20, successor);   // succ
     patch((address)&insn, 27, 24, predecessor); // pred
     patch((address)&insn, 31, 28, 0b0000);      // fm
+    emit(insn);
+  }
+
+  void fencei() {
+    unsigned insn = 0;
+    patch((address)&insn,  6,  0, 0b0001111);      // opcode
+    patch((address)&insn, 11,  7, 0b00000);        // rd
+    patch((address)&insn, 14, 12, 0b001);          // func
+    patch((address)&insn, 19, 15, 0b00000);        // rs1
+    patch((address)&insn, 31, 20, 0b000000000000); // fm
     emit(insn);
   }
 

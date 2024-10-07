@@ -118,7 +118,6 @@ static jclass GetApplicationClass(JNIEnv *env);
 
 static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***pargv);
 static jboolean AddApplicationOptions(int cpathc, const char **cpathv);
-static void SetApplicationClassPath(const char**);
 
 static void PrintJavaVersion(JNIEnv *env);
 static void PrintUsage(JNIEnv* env, jboolean doXUsage);
@@ -126,9 +125,6 @@ static void ShowSettings(JNIEnv* env, char *optString);
 static void ShowResolvedModules(JNIEnv* env);
 static void ListModules(JNIEnv* env);
 static void DescribeModule(JNIEnv* env, char* optString);
-static jboolean ValidateModules(JNIEnv* env);
-
-static void SetPaths(int argc, char **argv);
 
 static void DumpState();
 

@@ -493,6 +493,7 @@ void MacroAssembler::clinit_barrier(Register klass, Register tmp, Label* L_fast_
 
   // Fast path check: class is fully initialized
   lbu(tmp, Address(klass, InstanceKlass::init_state_offset()));
+  membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   sub(tmp, tmp, InstanceKlass::fully_initialized);
   beqz(tmp, *L_fast_path);
 
@@ -1455,6 +1456,7 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
 }
 
 
+#ifdef COMPILER2
 // This improvement (vectorization) is based on java.base/share/native/libzip/zlib/zcrc32.c.
 // To make it, following steps are taken:
 //  1. in zcrc32.c, modify N to 16 and related code,
@@ -1550,6 +1552,7 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
       addi(buf, buf, N*4);
     }
 }
+#endif // COMPILER2
 
 /**
  * @param crc   register containing existing CRC (32-bit)
@@ -1562,7 +1565,10 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
   assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
-  Label L_by16_loop, L_vector_entry, L_unroll_loop, L_unroll_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
+  Label L_vector_entry,
+        L_unroll_loop,
+        L_by4_loop_entry, L_by4_loop,
+        L_by1_loop, L_exit;
 
   const int64_t single_table_size = 256;
   const int64_t unroll = 16;
@@ -1576,26 +1582,24 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   add(table2, table0, 2*single_table_size*sizeof(juint), tmp1);
   add(table3, table2, 1*single_table_size*sizeof(juint), tmp1);
 
+#ifdef COMPILER2
   if (UseRVV) {
     const int64_t tmp_limit = MaxVectorSize >= 32 ? unroll_words*3 : unroll_words*5;
     mv(tmp1, tmp_limit);
     bge(len, tmp1, L_vector_entry);
   }
-  subw(len, len, unroll_words);
-  bge(len, zr, L_unroll_loop_entry);
+#endif // COMPILER2
 
-  addiw(len, len, unroll_words-4);
-  bge(len, zr, L_by4_loop);
-  addiw(len, len, 4);
-  bgt(len, zr, L_by1_loop);
-  j(L_exit);
+  mv(tmp1, unroll_words);
+  blt(len, tmp1, L_by4_loop_entry);
+
+  const Register loop_buf_end = tmp3;
 
   align(CodeEntryAlignment);
-  bind(L_unroll_loop_entry);
-    const Register buf_end = tmp3;
-    add(buf_end, buf, len); // buf_end will be used as endpoint for loop below
+  // Entry for L_unroll_loop
+    add(loop_buf_end, buf, len);    // loop_buf_end will be used as endpoint for loop below
     andi(len, len, unroll_words-1); // len = (len % unroll_words)
-    sub(len, len, unroll_words); // Length after all iterations
+    sub(loop_buf_end, loop_buf_end, len);
   bind(L_unroll_loop);
     for (int i = 0; i < unroll; i++) {
       ld(tmp1, Address(buf, i*wordSize));
@@ -1604,57 +1608,52 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     }
 
     addi(buf, buf, unroll_words);
-    ble(buf, buf_end, L_unroll_loop);
-    addiw(len, len, unroll_words-4);
-    bge(len, zr, L_by4_loop);
-    addiw(len, len, 4);
-    bgt(len, zr, L_by1_loop);
-    j(L_exit);
+    blt(buf, loop_buf_end, L_unroll_loop);
 
+  bind(L_by4_loop_entry);
+    mv(tmp1, 4);
+    blt(len, tmp1, L_by1_loop);
+    add(loop_buf_end, buf, len); // loop_buf_end will be used as endpoint for loop below
+    andi(len, len, 3);
+    sub(loop_buf_end, loop_buf_end, len);
   bind(L_by4_loop);
     lwu(tmp1, Address(buf));
     update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, false);
-    subw(len, len, 4);
     addi(buf, buf, 4);
-    bge(len, zr, L_by4_loop);
-    addiw(len, len, 4);
-    ble(len, zr, L_exit);
+    blt(buf, loop_buf_end, L_by4_loop);
 
   bind(L_by1_loop);
+    beqz(len, L_exit);
+
     subw(len, len, 1);
     lwu(tmp1, Address(buf));
     andi(tmp2, tmp1, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
-    ble(len, zr, L_exit);
+    beqz(len, L_exit);
 
     subw(len, len, 1);
     srli(tmp2, tmp1, 8);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
-    ble(len, zr, L_exit);
+    beqz(len, L_exit);
 
     subw(len, len, 1);
     srli(tmp2, tmp1, 16);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
-    ble(len, zr, L_exit);
 
-    srli(tmp2, tmp1, 24);
-    andi(tmp2, tmp2, right_8_bits);
-    update_byte_crc32(crc, tmp2, table0);
-
+#ifdef COMPILER2
   // put vector code here, otherwise "offset is too large" error occurs.
   if (UseRVV) {
-    j(L_exit); // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
+    // only need to jump exit when UseRVV == true, it's a jump from end of block `L_by1_loop`.
+    j(L_exit);
 
     bind(L_vector_entry);
     vector_update_crc32(crc, buf, len, tmp1, tmp2, tmp3, tmp4, tmp6, table0, table3);
 
-    addiw(len, len, -4);
-    bge(len, zr, L_by4_loop);
-    addiw(len, len, 4);
-    bgt(len, zr, L_by1_loop);
+    bgtz(len, L_by4_loop_entry);
   }
+#endif // COMPILER2
 
   bind(L_exit);
     andn(crc, tmp5, crc);
@@ -2085,23 +2084,11 @@ void MacroAssembler::addw(Register Rd, Register Rn, int32_t increment, Register 
 }
 
 void MacroAssembler::sub(Register Rd, Register Rn, int64_t decrement, Register temp) {
-  if (is_simm12(-decrement)) {
-    addi(Rd, Rn, -decrement);
-  } else {
-    assert_different_registers(Rn, temp);
-    li(temp, decrement);
-    sub(Rd, Rn, temp);
-  }
+  add(Rd, Rn, -decrement, temp);
 }
 
 void MacroAssembler::subw(Register Rd, Register Rn, int32_t decrement, Register temp) {
-  if (is_simm12(-decrement)) {
-    addiw(Rd, Rn, -decrement);
-  } else {
-    assert_different_registers(Rn, temp);
-    li(temp, decrement);
-    subw(Rd, Rn, temp);
-  }
+  addw(Rd, Rn, -decrement, temp);
 }
 
 void MacroAssembler::andrw(Register Rd, Register Rs1, Register Rs2) {
@@ -2961,7 +2948,7 @@ int MacroAssembler::corrected_idivq(Register result, Register rs1, Register rs2,
   return idivq_offset;
 }
 
-// Look up the method for a megamorpic invkkeinterface call.
+// Look up the method for a megamorphic invokeinterface call.
 // The target method is determined by <intf_klass, itable_index>.
 // The receiver klass is in recv_klass.
 // On success, the result will be in method_result, and execution falls through.
@@ -2976,9 +2963,9 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   assert_different_registers(recv_klass, intf_klass, scan_tmp);
   assert_different_registers(method_result, intf_klass, scan_tmp);
   assert(recv_klass != method_result || !return_method,
-         "recv_klass can be destroyed when mehtid isn't needed");
+         "recv_klass can be destroyed when method isn't needed");
   assert(itable_index.is_constant() || itable_index.as_register() == method_result,
-         "caller must be same register for non-constant itable index as for method");
+         "caller must use same register for non-constant itable index as for method");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable).
   int vtable_base = in_bytes(Klass::vtable_start_offset());
@@ -3168,6 +3155,13 @@ void MacroAssembler::membar(uint32_t order_constraint) {
 
     membar_mask_to_pred_succ(order_constraint, predecessor, successor);
     fence(predecessor, successor);
+  }
+}
+
+void MacroAssembler::cmodx_fence() {
+  BLOCK_COMMENT("cmodx fence");
+  if (VM_Version::supports_fencei_barrier()) {
+    Assembler::fencei();
   }
 }
 

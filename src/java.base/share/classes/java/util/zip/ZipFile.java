@@ -63,6 +63,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.access.JavaUtilZipFileAccess;
 import jdk.internal.access.JavaUtilJarAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.OperatingSystem;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.ref.CleanerFactory;
@@ -1178,6 +1179,8 @@ public class ZipFile implements ZipConstants, Closeable {
         // "META-INF/".length()
         private static final int META_INF_LEN = 9;
         private static final int[] EMPTY_META_VERSIONS = new int[0];
+        // CEN size is limited to the maximum array size in the JDK
+        private static final int MAX_CEN_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
         private final Key key;               // the key in files
         private final @Stable ZipCoder zc;   // ZIP coder used to decode/encode
@@ -1185,7 +1188,7 @@ public class ZipFile implements ZipConstants, Closeable {
         private int refs = 1;
 
         private RandomAccessFile zfile;      // zfile of the underlying ZIP file
-        private byte[] cen;                  // CEN & ENDHDR
+        private byte[] cen;                  // CEN
         private long locpos;                 // position of first LOC header (usually 0)
         private byte[] comment;              // ZIP file comment
                                              // list of meta entries in META-INF dir
@@ -1236,12 +1239,12 @@ public class ZipFile implements ZipConstants, Closeable {
             int nlen = CENNAM(cen, pos);
             int elen = CENEXT(cen, pos);
             int clen = CENCOM(cen, pos);
-            long headerSize = (long)CENHDR + nlen + clen + elen;
+            int headerSize = CENHDR + nlen + clen + elen;
             // CEN header size + name length + comment length + extra length
             // should not exceed 65,535 bytes per the PKWare APP.NOTE
             // 4.4.10, 4.4.11, & 4.4.12.  Also check that current CEN header will
             // not exceed the length of the CEN array
-            if (headerSize > 0xFFFF || pos + headerSize > cen.length - ENDHDR) {
+            if (headerSize > 0xFFFF || pos > cen.length - headerSize) {
                 zerror("invalid CEN header (bad header size)");
             }
 
@@ -1294,7 +1297,7 @@ public class ZipFile implements ZipConstants, Closeable {
             }
             // CEN Offset where this Extra field ends
             int extraEndOffset = startingOffset + extraFieldLen;
-            if (extraEndOffset > cen.length - ENDHDR) {
+            if (extraEndOffset > cen.length) {
                 zerror("Invalid CEN header (extra data field size too long)");
             }
             int currentOffset = startingOffset;
@@ -1732,12 +1735,12 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (locpos < 0) {
                     zerror("invalid END header (bad central directory offset)");
                 }
-                // read in the CEN and END
-                if (end.cenlen + ENDHDR >= Integer.MAX_VALUE) {
+                // read in the CEN
+                if (end.cenlen > MAX_CEN_SIZE) {
                     zerror("invalid END header (central directory size too large)");
                 }
-                cen = this.cen = new byte[(int)(end.cenlen + ENDHDR)];
-                if (readFullyAt(cen, 0, cen.length, cenpos) != end.cenlen + ENDHDR) {
+                cen = this.cen = new byte[(int)end.cenlen];
+                if (readFullyAt(cen, 0, cen.length, cenpos) != end.cenlen) {
                     zerror("read CEN tables failed");
                 }
                 this.total = end.centot;
@@ -1765,18 +1768,18 @@ public class ZipFile implements ZipConstants, Closeable {
             // Iterate through the entries in the central directory
             int idx = 0; // Index into the entries array
             int pos = 0;
-            int entryPos = CENHDR;
-            int limit = cen.length - ENDHDR;
             manifestNum = 0;
-            while (entryPos <= limit) {
+            int limit = cen.length - CENHDR;
+            while (pos <= limit) {
                 if (idx >= entriesLength) {
                     // This will only happen if the ZIP file has an incorrect
                     // ENDTOT field, which usually means it contains more than
                     // 65535 entries.
-                    initCEN(countCENHeaders(cen, limit));
+                    initCEN(countCENHeaders(cen));
                     return;
                 }
 
+                int entryPos = pos + CENHDR;
                 // Checks the entry and adds values to entries[idx ... idx+2]
                 int nlen = checkAndAddEntry(pos, idx);
                 idx += 3;
@@ -1807,7 +1810,6 @@ public class ZipFile implements ZipConstants, Closeable {
                 }
                 // skip to the start of the next entry
                 pos = nextEntryPos(pos, entryPos, nlen);
-                entryPos = pos + CENHDR;
             }
 
             // Adjust the total entries
@@ -1829,7 +1831,7 @@ public class ZipFile implements ZipConstants, Closeable {
             } else {
                 metaVersions = EMPTY_META_VERSIONS;
             }
-            if (pos + ENDHDR != cen.length) {
+            if (pos != cen.length) {
                 zerror("invalid CEN header (bad header size)");
             }
         }
@@ -1869,15 +1871,15 @@ public class ZipFile implements ZipConstants, Closeable {
 
                     // Compare the lookup name with the name encoded in the CEN
                     switch (zc.compare(name, cen, noff, nlen, addSlash)) {
-                        case EXACT_MATCH:
+                        case ZipCoder.EXACT_MATCH:
                             // We found an exact match for "name"
                             return new EntryPos(name, pos);
-                        case DIRECTORY_MATCH:
+                        case ZipCoder.DIRECTORY_MATCH:
                             // We found the directory "name/"
                             // Track its position, then continue the search for "name"
                             dirPos = pos;
                             break;
-                        case NO_MATCH:
+                        case ZipCoder.NO_MATCH:
                             // Hash collision, continue searching
                     }
                 }
@@ -2031,17 +2033,20 @@ public class ZipFile implements ZipConstants, Closeable {
 
         /**
          * Returns the number of CEN headers in a central directory.
-         * Will not throw, even if the ZIP file is corrupt.
          *
          * @param cen copy of the bytes in a ZIP file's central directory
-         * @param size number of bytes in central directory
+         * @throws ZipException if a CEN header exceeds the length of the CEN array
          */
-        private static int countCENHeaders(byte[] cen, int size) {
+        private static int countCENHeaders(byte[] cen) throws ZipException {
             int count = 0;
-            for (int p = 0;
-                 p + CENHDR <= size;
-                 p += CENHDR + CENNAM(cen, p) + CENEXT(cen, p) + CENCOM(cen, p))
+            for (int p = 0; p <= cen.length - CENHDR;) {
+                int headerSize = CENHDR + CENNAM(cen, p) + CENEXT(cen, p) + CENCOM(cen, p);
+                if (p > cen.length - headerSize) {
+                    zerror("invalid CEN header (bad header size)");
+                }
+                p += headerSize;
                 count++;
+            }
             return count;
         }
     }

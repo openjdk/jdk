@@ -44,6 +44,6 @@ public sealed interface MethodRefEntry extends MemberRefEntry
      * {@return a symbolic descriptor for the method's type}
      */
     default MethodTypeDesc typeSymbol() {
-        return Util.methodTypeSymbol(nameAndType());
+        return Util.methodTypeSymbol(type());
     }
 }

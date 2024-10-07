@@ -50,6 +50,7 @@ import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ModuleDesc;
 import java.lang.reflect.AccessFlag;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.classfile.ClassFile.ACC_STATIC;
@@ -230,14 +231,6 @@ public class Util {
         return ((AbstractPoolEntry.Utf8EntryImpl) utf8).methodTypeSymbol();
     }
 
-    public static ClassDesc fieldTypeSymbol(NameAndTypeEntry nat) {
-        return fieldTypeSymbol(nat.type());
-    }
-
-    public static MethodTypeDesc methodTypeSymbol(NameAndTypeEntry nat) {
-        return methodTypeSymbol(nat.type());
-    }
-
     @SuppressWarnings("unchecked")
     private static <T extends Attribute<T>> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
         if (attr instanceof CustomAttribute<?> ca) {
@@ -249,17 +242,21 @@ public class Util {
         }
     }
 
+    @ForceInline
     public static void writeAttributes(BufWriterImpl buf, List<? extends Attribute<?>> list) {
-        buf.writeU2(list.size());
-        for (var e : list) {
-            writeAttribute(buf, e);
+        int size = list.size();
+        buf.writeU2(size);
+        for (int i = 0; i < size; i++) {
+            writeAttribute(buf, list.get(i));
         }
     }
 
+    @ForceInline
     static void writeList(BufWriterImpl buf, List<Writable> list) {
-        buf.writeU2(list.size());
-        for (var e : list) {
-            e.writeTo(buf);
+        int size = list.size();
+        buf.writeU2(size);
+        for (int i = 0; i < size; i++) {
+            list.get(i).writeTo(buf);
         }
     }
 

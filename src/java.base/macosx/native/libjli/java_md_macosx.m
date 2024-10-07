@@ -297,6 +297,7 @@ static void ParkEventLoop() {
 static void MacOSXStartup(int argc, char *argv[]) {
     // Thread already started?
     static jboolean started = false;
+    int rc;
     if (started) {
         return;
     }
@@ -309,12 +310,14 @@ static void MacOSXStartup(int argc, char *argv[]) {
 
     // Fire up the main thread
     pthread_t main_thr;
-    if (pthread_create(&main_thr, NULL, &apple_main, &args) != 0) {
-        JLI_ReportErrorMessageSys("Could not create main thread: %s\n", strerror(errno));
+    rc = pthread_create(&main_thr, NULL, &apple_main, &args);
+    if (rc != 0) {
+        JLI_ReportErrorMessageSys("Could not create main thread, return code: %d\n", rc);
         exit(1);
     }
-    if (pthread_detach(main_thr)) {
-        JLI_ReportErrorMessageSys("pthread_detach() failed: %s\n", strerror(errno));
+    rc = pthread_detach(main_thr);
+    if (rc != 0) {
+        JLI_ReportErrorMessage("pthread_detach() failed, return code: %d\n", rc);
         exit(1);
     }
 
