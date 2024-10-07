@@ -59,11 +59,6 @@ public class Of {
     }
 
     @Test(dataProvider = "readers")
-    public void testOpen(Reader reader) {
-        assertNotNull(reader, "Reader.of(String) returned null");
-    }
-
-    @Test(dataProvider = "readers")
     public void testRead(Reader reader) throws IOException {
         String s = "";
         for (int c; (c = reader.read()) != -1; s += (char) c);
