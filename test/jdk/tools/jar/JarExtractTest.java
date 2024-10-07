@@ -247,6 +247,27 @@ public class JarExtractTest {
     }
 
     /**
+     * Tests that when the destination directory specified for jar extract is actually a file
+     * or one of the path component in the specified destination path is a file, then the
+     * extraction fails.
+     */
+    @Test
+    public void testExtractToNonDirectory() throws Exception {
+        final String expectedErrMsg = "could not create directory";
+        final Path notADir1 = Files.createTempFile(Path.of("."), "8173970", ".txt");
+        final Path notADir2 = notADir1.resolve("foobar");
+        for (final Path dest : List.of(notADir1, notADir2)) {
+            final String[] args = {"-x", "-f", testJarPath.toString(), "-C", dest.toString()};
+            final ByteArrayOutputStream err = new ByteArrayOutputStream();
+            printJarCommand(args);
+            int exitCode = JAR_TOOL.run(System.out, new PrintStream(err), args);
+            assertNotEquals(0, exitCode, "jar extraction was expected to fail but didn't");
+            // verify it did indeed fail due to the right reason
+            assertTrue(err.toString(StandardCharsets.UTF_8).contains(expectedErrMsg));
+        }
+    }
+
+    /**
      * Tests that extracting a jar using {@code -P} flag and without any explicit destination
      * directory works correctly if the jar contains entries with leading slashes and/or {@code ..}
      * parts preserved.
