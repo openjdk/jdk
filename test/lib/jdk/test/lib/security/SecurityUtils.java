@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,12 +127,12 @@ public final class SecurityUtils {
         return false;
     }
 
-    public static void inspectTlsBuffer(ByteBuffer flight) throws IOException {
-        if (flight == null || !flight.hasRemaining()) {
+    public static void inspectTlsBuffer(ByteBuffer buffer) throws IOException {
+        if (buffer == null || !buffer.hasRemaining()) {
             return;
         }
 
-        ByteBuffer packet = flight.slice();
+        ByteBuffer packet = buffer.slice();
         System.err.printf("---TLS Buffer Inspection. Bytes Remaining: %d---\n", packet.remaining());
 
         for (int i = 1; packet.position() < packet.limit(); i++) {
