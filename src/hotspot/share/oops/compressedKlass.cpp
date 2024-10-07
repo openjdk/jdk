@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "memory/metaspace.hpp"
-#include "oops/klass.hpp"
 #include "oops/compressedKlass.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"

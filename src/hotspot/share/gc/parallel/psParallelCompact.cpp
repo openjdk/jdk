@@ -773,6 +773,8 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
   //
   // The size of the filler (min-obj-size) is 2 heap words with the default
   // MinObjAlignment, since both markword and klass take 1 heap word.
+  // With +UseCompactObjectHeaders, the minimum filler size is only one word,
+  // because both Klass* gets encoded in the mark-word.
   //
   // The size of the gap (if any) right before dense-prefix-end is
   // MinObjAlignment.
@@ -781,17 +783,13 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
   // filler obj will extend to next region.
 
   // Note: If min-fill-size decreases to 1, this whole method becomes redundant.
-  if (UseCompactObjectHeaders) {
-    // The gap is always equal to min-fill-size, so nothing to do.
-    return;
-  }
   assert(CollectedHeap::min_fill_size() >= 2, "inv");
 #ifndef _LP64
   // In 32-bit system, each heap word is 4 bytes, so MinObjAlignment == 2.
   // The gap is always equal to min-fill-size, so nothing to do.
   return;
 #endif
-  if (MinObjAlignment > 1) {
+  if (MinObjAlignment >= checked_cast<int>(CollectedHeap::min_fill_size())) {
     return;
   }
   assert(CollectedHeap::min_fill_size() == 2, "inv");

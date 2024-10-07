@@ -279,6 +279,7 @@
   nonstatic_field(Klass,                       _bitmap,                                       uintx)                                 \
   nonstatic_field(Klass,                       _hash_slot,                                    uint8_t)                               \
   nonstatic_field(Klass,                       _misc_flags._flags,                            u1)                                    \
+  nonstatic_field(Klass,                       _prototype_header,                             markWord)                              \
                                                                                                                                      \
   nonstatic_field(LocalVariableTableElement,   start_bci,                                     u2)                                    \
   nonstatic_field(LocalVariableTableElement,   length,                                        u2)                                    \

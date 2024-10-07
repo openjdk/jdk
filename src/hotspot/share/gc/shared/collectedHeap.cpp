@@ -220,7 +220,7 @@ bool CollectedHeap::supports_concurrent_gc_breakpoints() const {
   return false;
 }
 
-bool klass_is_sane(oop object) {
+static bool klass_is_sane(oop object) {
   Klass* klass;
   if (UseCompactObjectHeaders) {
     // With compact headers, we can't safely access the Klass* when
@@ -229,17 +229,16 @@ bool klass_is_sane(oop object) {
     // the forwarding pointer, and here we have no way to make a
     // distinction between Full-GC and regular GC forwarding.
     markWord mark = object->mark();
-    if (!mark.is_forwarded()) {
-      klass = mark.klass_without_asserts();
-    } else {
+    if (mark.is_forwarded()) {
       // We can't access the Klass*. We optimistically assume that
       // it is ok. This happens very rarely.
-      klass = nullptr;
+      return true;
     }
-  } else {
-    klass = object->klass_without_asserts();
+
+    return Metaspace::contains(mark.klass_without_asserts());
   }
-  return klass == nullptr || Metaspace::contains(klass);
+
+  return Metaspace::contains(object->klass_without_asserts());
 }
 
 bool CollectedHeap::is_oop(oop object) const {
