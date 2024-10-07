@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -361,15 +361,6 @@ import jdk.internal.reflect.Reflection;
  *   instantiated. </li>
  *
  * </ul>
- *
- * <h2> Security </h2>
- *
- * <p> Service loaders always execute in the security context of the caller
- * of the iterator or stream methods and may also be restricted by the security
- * context of the caller that created the service loader.
- * Trusted system code should typically invoke the methods in this class, and
- * the methods of the iterators which they return, from within a privileged
- * security context.
  *
  * <h2> Concurrency </h2>
  *
