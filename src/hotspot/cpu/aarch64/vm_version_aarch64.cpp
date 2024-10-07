@@ -260,7 +260,7 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
     }
     if (FLAG_IS_DEFAULT(CodeEntryAlignment)) {
-      FLAG_SET_DEFAULT(CodeEntryAlignment, 16);
+      FLAG_SET_DEFAULT(CodeEntryAlignment, 32);
     }
   }
 
