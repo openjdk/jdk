@@ -86,7 +86,9 @@ bool OopStorageSet::print_containing(const void* addr, outputStream* st) {
   if (addr != nullptr) {
     const void* aligned_addr = align_down(addr, alignof(oop));
     for (OopStorage* storage : Range<Id>()) {
-      if (storage->print_containing((oop*) aligned_addr, st)) {
+      // Check for null for extra safety: might get here while handling error
+      // before storage initialization.
+      if ((storage != nullptr) && storage->print_containing((oop*) aligned_addr, st)) {
         if (aligned_addr != addr) {
           st->print_cr(" (unaligned)");
         } else {
