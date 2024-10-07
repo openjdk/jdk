@@ -24,6 +24,7 @@
 import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -69,6 +70,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
+import javax.swing.border.Border;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
@@ -655,6 +657,8 @@ public final class PassFailJFrame {
                                                        boolean addLogArea,
                                                        int logAreaRows) {
         JPanel main = new JPanel(new BorderLayout());
+        main.setBorder(createFrameBorder());
+
         timeoutHandlerPanel = new TimeoutHandlerPanel(testTimeOut);
         main.add(timeoutHandlerPanel, BorderLayout.NORTH);
 
@@ -664,7 +668,7 @@ public final class PassFailJFrame {
         text.setEditable(false);
 
         JPanel textPanel = new JPanel(new BorderLayout());
-        textPanel.setBorder(createEmptyBorder(4, 0, 0, 0));
+        textPanel.setBorder(createEmptyBorder(GAP, 0, GAP, 0));
         textPanel.add(new JScrollPane(text), BorderLayout.CENTER);
 
         main.add(textPanel, BorderLayout.CENTER);
@@ -681,7 +685,8 @@ public final class PassFailJFrame {
             timeoutHandlerPanel.stop();
         });
 
-        JPanel buttonsPanel = new JPanel();
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER,
+                                                        GAP, 0));
         buttonsPanel.add(btnPass);
         buttonsPanel.add(btnFail);
 
@@ -692,10 +697,12 @@ public final class PassFailJFrame {
         if (addLogArea) {
             logArea = new JTextArea(logAreaRows, columns);
             logArea.setEditable(false);
+            logArea.setBorder(createTextBorder());
 
             Box buttonsLogPanel = Box.createVerticalBox();
 
             buttonsLogPanel.add(buttonsPanel);
+            buttonsLogPanel.add(Box.createVerticalStrut(GAP));
             buttonsLogPanel.add(new JScrollPane(logArea));
 
             main.add(buttonsLogPanel, BorderLayout.SOUTH);
@@ -713,7 +720,7 @@ public final class PassFailJFrame {
         JTextArea text = new JTextArea(instructions, rows, columns);
         text.setLineWrap(true);
         text.setWrapStyleWord(true);
-        text.setBorder(createEmptyBorder(4, 4, 4, 4));
+        text.setBorder(createTextBorder());
         return text;
     }
 
@@ -733,6 +740,29 @@ public final class PassFailJFrame {
         styles.addRule("code { font-size: inherit }");
 
         return text;
+    }
+
+    /** A default gap between components. */
+    private static final int GAP = 4;
+
+    /**
+     * Creates a default border for frames or dialogs.
+     * It uses the default gap of {@value GAP}.
+     *
+     * @return the border for frames and dialogs
+     */
+    private static Border createFrameBorder() {
+        return createEmptyBorder(GAP, GAP, GAP, GAP);
+    }
+
+    /**
+     * Creates a border set to text area.
+     * It uses the default gap of {@value GAP}.
+     *
+     * @return the border for text area
+     */
+    private static Border createTextBorder() {
+        return createEmptyBorder(GAP, GAP, GAP, GAP);
     }
 
 
@@ -1086,26 +1116,30 @@ public final class PassFailJFrame {
      * Requests the description of the test failure reason from the tester.
      */
     private static void requestFailureReason() {
-        final JDialog dialog = new JDialog(frame, "Test Failure ", true);
-        dialog.setTitle("Failure reason");
-        JPanel jPanel = new JPanel(new BorderLayout());
-        JTextArea jTextArea = new JTextArea(5, 20);
+        final JDialog dialog = new JDialog(frame, "Failure reason", true);
+
+        JTextArea reason = new JTextArea(5, 20);
+        reason.setBorder(createTextBorder());
 
         JButton okButton = new JButton("OK");
         okButton.addActionListener((ae) -> {
-            String text = jTextArea.getText();
+            String text = reason.getText();
             setFailureReason(FAILURE_REASON
                              + (!text.isEmpty() ? text : EMPTY_REASON));
             dialog.setVisible(false);
         });
 
-        jPanel.add(new JScrollPane(jTextArea), BorderLayout.CENTER);
-
-        JPanel okayBtnPanel = new JPanel();
+        JPanel okayBtnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER,
+                                                        GAP, 0));
+        okayBtnPanel.setBorder(createEmptyBorder(GAP, 0, 0, 0));
         okayBtnPanel.add(okButton);
 
-        jPanel.add(okayBtnPanel, BorderLayout.SOUTH);
-        dialog.add(jPanel);
+        JPanel main = new JPanel(new BorderLayout());
+        main.setBorder(createFrameBorder());
+        main.add(new JScrollPane(reason), BorderLayout.CENTER);
+        main.add(okayBtnPanel, BorderLayout.SOUTH);
+
+        dialog.add(main);
         dialog.setLocationRelativeTo(frame);
         dialog.pack();
         dialog.setVisible(true);
