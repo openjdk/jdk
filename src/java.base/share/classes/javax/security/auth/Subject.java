@@ -312,7 +312,7 @@ public final class Subject implements java.io.Serializable {
      * Executes a {@code Callable} with {@code subject} as the
      * current subject.
      *
-     * <p> this method launches {@code action} and binds {@code subject} to the
+     * <p> This method launches {@code action} and binds {@code subject} to the
      * period of its execution.
      *
      * @param subject the {@code Subject} that the specified {@code action}
@@ -363,7 +363,7 @@ public final class Subject implements java.io.Serializable {
      *
      * @deprecated This method originally performed the specified
      *       {@code PrivilegedAction} with privileges enabled. Running the
-     *       action with privileges enabled is only useful in conjunction
+     *       action with privileges enabled was only useful in conjunction
      *       with {@linkplain SecurityManager the Security Manager}, which is
      *       no longer supported. This method has been changed to launch the
      *       action as is and bind the subject to the period of its execution.
@@ -427,7 +427,7 @@ public final class Subject implements java.io.Serializable {
      *
      * @deprecated This method originally performed the specified
      *       {@code PrivilegedExceptionAction} with privileges enabled.
-     *       Running the action with privileges enabled is only useful in
+     *       Running the action with privileges enabled was only useful in
      *       conjunction with {@linkplain SecurityManager the Security Manager},
      *       which is no longer supported. This method has been changed to
      *       launch the action as is and bind the subject to the period of its
@@ -493,7 +493,7 @@ public final class Subject implements java.io.Serializable {
      * @deprecated This method originally performed the specified
      *       {@code PrivilegedAction} with privileges enabled and restricted
      *       by the specified {@code AccessControlContext}. Running the
-     *       action with privileges enabled is only useful in conjunction
+     *       action with privileges enabled was only useful in conjunction
      *       with {@linkplain SecurityManager the Security Manager}, which is
      *       no longer supported. This method has been changed to ignore the
      *       {@code AccessControlContext} and launch the action as is and bind
@@ -561,7 +561,7 @@ public final class Subject implements java.io.Serializable {
      * @deprecated This method originally performed the specified
      *       {@code PrivilegedExceptionAction} with privileges enabled and
      *       restricted by the specified {@code AccessControlContext}. Running
-     *       the action with privileges enabled is only useful in conjunction
+     *       the action with privileges enabled was only useful in conjunction
      *       with {@linkplain SecurityManager the Security Manager}, which is
      *       no longer supported. This method has been changed to ignore the
      *       {@code AccessControlContext} and launch the action as is and bind
