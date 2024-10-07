@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
  * @run driver CreateCoredumpOnCrash
+ * @requires vm.flagless
  */
 
 import jdk.test.lib.process.ProcessTools;
@@ -62,7 +63,7 @@ public class CreateCoredumpOnCrash {
             runTest("-XX:-CreateMinidumpOnCrash").shouldContain("CreateCoredumpOnCrash turned off, no core file dumped")
             .shouldNotHaveExitValue(0);
         } else {
-            String exec_cmd[] = {"/bin/sh", "-c", "ulimit -c"};
+            String exec_cmd[] = {"sh", "-c", "ulimit -c"};
             OutputAnalyzer oa = new OutputAnalyzer(Runtime.getRuntime().exec(exec_cmd));
             oa.shouldHaveExitValue(0);
             if (!oa.contains("0\n")) {
@@ -97,7 +98,7 @@ public class CreateCoredumpOnCrash {
         for (String s:pb.command()) {
             args += s+" ";
         }
-        String exec_cmd[] = {"/bin/sh", "-c", limit+args};
+        String exec_cmd[] = {"sh", "-c", limit+args};
         return new OutputAnalyzer(Runtime.getRuntime().exec(exec_cmd));
     }
 }
