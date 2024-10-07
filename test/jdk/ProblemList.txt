@@ -128,6 +128,8 @@ java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 
 java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
 java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.java 8171510 macosx-all
 java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 windows-x64
+java/awt/dnd/DragExitBeforeDropTest.java 8242805 macosx-all
+java/awt/dnd/DragThresholdTest.java 8076299 macosx-all
 java/awt/Focus/ChoiceFocus/ChoiceFocus.java 8169103 windows-all,macosx-all
 java/awt/Focus/ClearLwQueueBreakTest/ClearLwQueueBreakTest.java 8198618 macosx-all
 java/awt/Focus/ConsumeNextKeyTypedOnModalShowTest/ConsumeNextKeyTypedOnModalShowTest.java 6986252 macosx-all
@@ -806,3 +808,4 @@ java/awt/List/HandlingKeyEventIfMousePressedTest.java 6848358 macosx-all,windows
 java/awt/Checkbox/CheckboxBoxSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxIndicatorSizeTest.java 8340870 windows-all
 java/awt/Checkbox/CheckboxNullLabelTest.java 8340870 windows-all
+java/awt/dnd/WinMoveFileToShellTest.java 8341665 windows-all
