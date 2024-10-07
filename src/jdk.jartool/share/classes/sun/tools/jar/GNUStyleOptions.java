@@ -264,8 +264,8 @@ class GNUStyleOptions {
         CREATE("create"),
         CREATE_UPDATE("create.update"),
         CREATE_UPDATE_INDEX("create.update.index"),
-        OTHER("other"),
-        EXTRACT("extract");
+        EXTRACT("extract"),
+        OTHER("other");
 
         /** Resource lookup section prefix. */
         final String name;
