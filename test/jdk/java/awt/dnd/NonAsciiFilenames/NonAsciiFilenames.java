@@ -25,7 +25,7 @@
  * @test
  * @bug 4187490
  * @summary Verify that Non-ASCII file names can be dragged and dropped
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual NonAsciiFilenames
  */

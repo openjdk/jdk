@@ -25,7 +25,7 @@
  * @test
  * @bug 6362095
  * @summary Tests basic DnD functionality to a wordpad
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual DnDToWordpadTest
  */
@@ -65,13 +65,14 @@ public class DnDToWordpadTest {
         String INSTRUCTIONS = """
                 The test window contains a yellow button. Click on the button
                 to copy image into the clipboard or drag the image.
-                Paste or drop the image over runned Wordpad (when the mouse
+                Paste or drop the image over Wordpad (when the mouse
                 enters the Wordpad during the drag, the application
                 should change the cursor to indicate that a copy operation is
                 about to happen; release the mouse button).
                 An image of a red rectangle should appear inside the document.
                 You should be able to repeat this operation multiple times.
-                Please, select "Pass" just in case of success or "Fail" for another
+                Please, click "Pass" if above conditions are true,
+                otherwise click "Fail".
                 """;
 
         PassFailJFrame.builder()

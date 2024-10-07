@@ -82,7 +82,7 @@ public class DnDClipboardDeadlockTest {
     Robot robot = null;
     Panel panel = null;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         DnDClipboardDeadlockTest test = new DnDClipboardDeadlockTest();
         if (args.length == 4) {
             test.run(args);
@@ -91,7 +91,7 @@ public class DnDClipboardDeadlockTest {
         }
     }
 
-    public void run(String[] args) {
+    public void run(String[] args) throws InterruptedException, AWTException {
         try {
             if (args.length != 4) {
                 throw new RuntimeException("Incorrect command line arguments.");
@@ -122,8 +122,7 @@ public class DnDClipboardDeadlockTest {
             robot = new Robot();
 
             if (!Util.pointInComponent(robot, sourcePoint, panel)) {
-                System.err.println("WARNING: Cannot locate source panel");
-                System.exit(0);
+                throw new RuntimeException("WARNING: Cannot locate source panel");
             }
 
             robot.mouseMove(sourcePoint.x, sourcePoint.y);
@@ -138,9 +137,6 @@ public class DnDClipboardDeadlockTest {
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.keyRelease(KeyEvent.VK_CONTROL);
 
-        } catch (Throwable e) {
-            e.printStackTrace();
-            System.exit(DnDClipboardDeadlockTest.CODE_FAILURE);
         }
     } // run()
 
@@ -322,7 +318,7 @@ class DragSourceButton extends Button implements Serializable,
         } catch (IOException ioe) {
             ioe.printStackTrace();
             if (!ioe.getMessage().equals("Owner failed to convert data")) {
-                System.exit(DnDClipboardDeadlockTest.CODE_FAILURE);
+                throw new RuntimeException("Owner failed to convert data");
             }
         } catch (IllegalStateException e) {
             // IllegalStateExceptions do not indicate a bug in this case.
