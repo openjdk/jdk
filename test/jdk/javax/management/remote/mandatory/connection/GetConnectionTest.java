@@ -54,7 +54,7 @@ public class GetConnectionTest {
              "calling getMBeanServerConnection to a unconnected connector.");
 
         boolean ok = true;
-        String[] protocols = {"rmi", "iiop", "jmxmp"};
+        String[] protocols = {"rmi", "http"};
 
         for (int i = 0; i < protocols.length; i++) {
             final String proto = protocols[i];

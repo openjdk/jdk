@@ -14,6 +14,6 @@ module jdk.management.rest {
     // to support the HTTP protocol.
     provides javax.management.remote.JMXConnectorProvider with
         com.sun.jmx.remote.protocol.http.ClientProvider;
-    //provides javax.management.remote.JMXConnectorServerProvider with
-    //    com.sun.jmx.remote.protocol.http.ServerProvider;
+    provides javax.management.remote.JMXConnectorServerProvider with
+        com.sun.jmx.remote.protocol.http.ServerProvider;
 }
