@@ -267,13 +267,15 @@ public final class Subject implements java.io.Serializable {
      * @throws UnsupportedOperationException always
      *
      * @deprecated This method used to get the subject associated with the
-     *       provided {@link AccessControlContext}, which, in conjunction with
-     *       {@linkplain SecurityManager the Security Manager}, is deprecated
-     *       and subject to removal in a future release. This method has been
-     *       changed to always throw {@code UnsupportedOperationException}.
-     *       A replacement API named {@link #current()} has been added which
-     *       can be used to obtain the current subject. There is no replacement
-     *       for the Security Manager.
+     *       provided {@link AccessControlContext}, which was only useful in
+     *       conjunction with {@linkplain SecurityManager the Security Manager},
+     *       is no longer supported. This method has been changed to always
+     *       throw {@code UnsupportedOperationException}. A replacement API
+     *       named {@link #current()} has been added which can be used to
+     *       obtain the current subject. There is no replacement for the
+     *       Security Manager.
+     *
+     * @see #current()
      */
     @SuppressWarnings("removal")
     @Deprecated(since="17", forRemoval=true)
@@ -370,6 +372,8 @@ public final class Subject implements java.io.Serializable {
      *       A replacement API named {@link #callAs} has been added which can
      *       be used to perform the same work. There is no replacement for the
      *       Security Manager.
+     *
+     * @see #callAs(Subject, Callable)
      */
     @SuppressWarnings("removal")
     @Deprecated(since="18", forRemoval=true)
@@ -403,7 +407,7 @@ public final class Subject implements java.io.Serializable {
      *
      * <p> This method launches {@code action} and binds {@code subject} to the
      * period of its execution.
-
+     *
      * @param subject the {@code Subject} that the specified
      *                  {@code action} will run as.  This parameter
      *                  may be {@code null}.
@@ -434,6 +438,8 @@ public final class Subject implements java.io.Serializable {
      *       execution. A replacement API named {@link #callAs} has been added
      *       which can be used to perform the same work. There is no
      *       replacement for the Security Manager.
+     *
+     * @see #callAs(Subject, Callable)
      */
     @SuppressWarnings("removal")
     @Deprecated(since="18", forRemoval=true)
@@ -497,8 +503,11 @@ public final class Subject implements java.io.Serializable {
      *       with {@linkplain SecurityManager the Security Manager}, which is
      *       no longer supported. This method has been changed to ignore the
      *       {@code AccessControlContext} and launch the action as is and bind
-     *       the subject to the period of its execution. There is no
-     *       replacement for the Security Manager.
+     *       the subject to the period of its execution. A replacement API
+     *       named {@link #callAs} has been added which can be used to perform
+     *       the same work. There is no replacement for the Security Manager.
+     *
+     * @see #callAs(Subject, Callable)
      */
     @SuppressWarnings("removal")
     @Deprecated(since="17", forRemoval=true)
@@ -565,8 +574,11 @@ public final class Subject implements java.io.Serializable {
      *       with {@linkplain SecurityManager the Security Manager}, which is
      *       no longer supported. This method has been changed to ignore the
      *       {@code AccessControlContext} and launch the action as is and bind
-     *       the subject to the period of its execution. There is no
-     *       replacement for the Security Manager.
+     *       the subject to the period of its execution. A replacement API
+     *       named {@link #callAs} has been added which can be used to perform
+     *       the same work. There is no replacement for the Security Manager.
+     *
+     * @see #callAs(Subject, Callable)
      */
     @SuppressWarnings("removal")
     @Deprecated(since="17", forRemoval=true)

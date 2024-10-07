@@ -39,9 +39,9 @@ import java.lang.ref.WeakReference;
  * longer exists.
  *
  * @since 1.4
- * @deprecated There is no replacement for this class.
- *       See <a href="https://openjdk.org/jeps/411">JEP 411</a> for
- *       discussion and alternatives.
+ * @deprecated This class was only useful in conjunction with the Security
+ *       Manager, which is no longer supported. There is no replacement for
+ *       the Security Manager or this class.
  */
 @SuppressWarnings("removal")
 @Deprecated(since="17", forRemoval=true)
