@@ -1097,9 +1097,8 @@ class G1MergeHeapRootsTask : public WorkerTask {
       _merge_card_set_cache.flush();
       // Compensation for the dummy cards that were initially pushed into the
       // card cache.
-      // We do not need to compensate for the MergeRSFromRemSetCards counter
-      // because the dummy card mark will always fail because it is initally
-      // "dirty".
+      // We do not need to compensate for the other counters because the dummy
+      // card mark will never update another counter because it is initally "dirty".
       _stats.dec_remset_cards(G1MergeCardSetCache::CacheSize);
       return _stats;
     }
