@@ -70,12 +70,12 @@ import static jdk.internal.classfile.impl.RawBytecodeHelper.*;
 public final class DirectCodeBuilder
         extends AbstractDirectBuilder<CodeModel>
         implements TerminalCodeBuilder {
-    private static final CharacterRange[] EMPTY_CHARACTER_RANGE = new CharacterRange[0];
-    private static final DeferredLabel[] EMPTY_LABEL_ARRAY = new DeferredLabel[0];
-    private static final LocalVariable[] EMPTY_LOCAL_VARIABLE_ARRAY = new LocalVariable[0];
-    private static final LocalVariableType[] EMPTY_LOCAL_VARIABLE_TYPE_ARRAY = new LocalVariableType[0];
-    private static final AbstractPseudoInstruction.ExceptionCatchImpl[] EMPTY_HANDLER_ARRAY = new AbstractPseudoInstruction.ExceptionCatchImpl[0];
-    private static final DeferredLabel[] EMPTY_DEFERRED_LABEL_ARRAY = new DeferredLabel[0];
+    private static final CharacterRange[] EMPTY_CHARACTER_RANGE = {};
+    private static final DeferredLabel[] EMPTY_LABEL_ARRAY = {};
+    private static final LocalVariable[] EMPTY_LOCAL_VARIABLE_ARRAY = {};
+    private static final LocalVariableType[] EMPTY_LOCAL_VARIABLE_TYPE_ARRAY = {};
+    private static final AbstractPseudoInstruction.ExceptionCatchImpl[] EMPTY_HANDLER_ARRAY = {};
+    private static final DeferredLabel[] EMPTY_DEFERRED_LABEL_ARRAY = {};
 
     final List<AbstractPseudoInstruction.ExceptionCatchImpl> handlers = new ArrayList<>();
     private CharacterRange[] characterRanges = EMPTY_CHARACTER_RANGE;

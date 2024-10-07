@@ -163,7 +163,7 @@ public final class StackMapGenerator {
     private static final int FLAG_THIS_UNINIT = 0x01;
     private static final int FRAME_DEFAULT_CAPACITY = 10;
     private static final int T_BOOLEAN = 4, T_LONG = 11;
-    private static final Frame[] EMPTY_FRAME_ARRAY = new Frame[0];
+    private static final Frame[] EMPTY_FRAME_ARRAY = {};
 
     private static final int ITEM_TOP = 0,
             ITEM_INTEGER = 1,
