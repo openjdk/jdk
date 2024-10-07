@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@
  * @run main/othervm TestDriver
  */
 
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.ProcessTools;
 
 import java.io.IOException;
@@ -53,33 +52,33 @@ public class TestDriver {
             throws Throwable {
 
         Path userDir = Paths.get(System.getProperty("user.dir"));
-        String java = JDKToolFinder.getTestJDKTool("java");
         String basename = userDir.getFileName().toString();
         setup(userDir);
         ProcessBuilder[] tests = new ProcessBuilder[]{
-                new ProcessBuilder(
-                        java, TEST_NAME, "./" + ARCHIVE_NAME
+                ProcessTools.createTestJavaProcessBuilder(
+                        TEST_NAME,
+                        "./" + ARCHIVE_NAME
                 ),
-                new ProcessBuilder(
-                        java, "-cp", ".",
+                ProcessTools.createTestJavaProcessBuilder(
+                        "-cp", ".",
                         "-Djava.security.policy=file:./policy",
                         "-Djava.security.manager",
                         TEST_NAME, "./" + ARCHIVE_NAME
                 ),
-                new ProcessBuilder(
-                        java, "-cp", ".",
+                ProcessTools.createTestJavaProcessBuilder(
+                        "-cp", ".",
                         "-Djava.security.policy=file:./policy",
                         "-Djava.security.manager",
                         TEST_NAME, "./" + ARCHIVE_NAME
                 ),
-                new ProcessBuilder(
-                        java, "-cp", "..",
+                ProcessTools.createTestJavaProcessBuilder(
+                        "-cp", "..",
                         "-Djava.security.policy=file:../policy",
                         "-Djava.security.manager",
                         TEST_NAME, "../" + ARCHIVE_NAME
                 ).directory(userDir.resolve("tmp").toFile()),
-                new ProcessBuilder(
-                        java, "-cp", basename,
+                ProcessTools.createTestJavaProcessBuilder(
+                        "-cp", basename,
                         "-Djava.security.policy=file:" + basename + "/policy",
                         "-Djava.security.manager",
                         TEST_NAME, basename + "/" + ARCHIVE_NAME

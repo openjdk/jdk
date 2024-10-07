@@ -1,3 +1,4 @@
+#
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1290,6 +1291,10 @@ Zone America/Menominee	-5:50:27 -	LMT	1885 Sep 18 12:00
 #	<http://cs.ucla.edu/~eggert/The-Waste-of-Daylight-19th.pdf>
 #	[PDF] (1914-03)
 #
+# For the 1911/1912 establishment of standard time in French possessions, see:
+# Société Française de Physique, Recueil de constantes physiques (1913),
+# page 752, 18b.
+#
 # See the 'europe' file for Greenland.
 
 # Canada
@@ -1376,7 +1381,7 @@ Zone America/Menominee	-5:50:27 -	LMT	1885 Sep 18 12:00
 # From Paul Eggert (2014-10-18):
 # H. David Matthews and Mary Vincent's map
 # "It's about TIME", _Canadian Geographic_ (September-October 1998)
-# http://www.canadiangeographic.ca/Magazine/SO98/alacarte.asp
+# https://web.archive.org/web/19990827055050/https://canadiangeographic.ca/SO98/geomap.htm
 # contains detailed boundaries for regions observing nonstandard
 # time and daylight saving time arrangements in Canada circa 1998.
 #
@@ -1475,7 +1480,7 @@ Rule	StJohns	1989	2006	-	Apr	Sun>=1	0:01	1:00	D
 Rule	StJohns	2007	2011	-	Mar	Sun>=8	0:01	1:00	D
 Rule	StJohns	2007	2010	-	Nov	Sun>=1	0:01	0	S
 #
-# St John's has an apostrophe, but Posix file names can't have apostrophes.
+# St John's has an apostrophe, but POSIX file names can't have apostrophes.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/St_Johns	-3:30:52 -	LMT	1884
 			-3:30:52 StJohns N%sT	1918
@@ -1664,6 +1669,15 @@ Zone America/Moncton	-4:19:08 -	LMT	1883 Dec  9
 #     Some cities in the United States have pushed the deadline back
 #     three weeks and will change over from daylight saving in October.
 
+# From Chris Walton (2024-01-09):
+# The [Toronto] changes in 1947, 1948, and 1949 took place at 2:00 a.m. local
+# time instead of midnight....  Toronto Daily Star - ...
+# April 2, 1947 - Page 39 ... April 7, 1948 - Page 13 ...
+# April 2, 1949 - Page 1 ... April 7, 1949 - Page 24 ...
+# November 25, 1949 - Page 52 ... April 21, 1950 - Page 14 ...
+# September 19, 1950 - Page 46 ... September 20, 1950 - Page 3 ...
+# November 24, 1950 - Page 21
+
 # From Arthur David Olson (2010-07-17):
 #
 # "Standard Time and Time Zones in Canada" appeared in
@@ -1725,13 +1739,9 @@ Rule	Toronto	1927	1937	-	Sep	Sun>=25	2:00	0	S
 Rule	Toronto	1928	1937	-	Apr	Sun>=25	2:00	1:00	D
 Rule	Toronto	1938	1940	-	Apr	lastSun	2:00	1:00	D
 Rule	Toronto	1938	1939	-	Sep	lastSun	2:00	0	S
-Rule	Toronto	1945	1946	-	Sep	lastSun	2:00	0	S
-Rule	Toronto	1946	only	-	Apr	lastSun	2:00	1:00	D
-Rule	Toronto	1947	1949	-	Apr	lastSun	0:00	1:00	D
-Rule	Toronto	1947	1948	-	Sep	lastSun	0:00	0	S
-Rule	Toronto	1949	only	-	Nov	lastSun	0:00	0	S
-Rule	Toronto	1950	1973	-	Apr	lastSun	2:00	1:00	D
-Rule	Toronto	1950	only	-	Nov	lastSun	2:00	0	S
+Rule	Toronto	1945	1948	-	Sep	lastSun	2:00	0	S
+Rule	Toronto	1946	1973	-	Apr	lastSun	2:00	1:00	D
+Rule	Toronto	1949	1950	-	Nov	lastSun	2:00	0	S
 Rule	Toronto	1951	1956	-	Sep	lastSun	2:00	0	S
 # Shanks & Pottenger say Toronto ended DST a week early in 1971,
 # namely on 1971-10-24, but Mark Brader wrote (2003-05-31) that this
@@ -3454,7 +3464,7 @@ Zone	America/Jamaica	-5:07:10 -	LMT	1890        # Kingston
 # Martinique
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
 Zone America/Martinique	-4:04:20 -      LMT	1890        # Fort-de-France
-			-4:04:20 -	FFMT	1911 May    # Fort-de-France MT
+			-4:04:20 -	FFMT	1911 May  1 # Fort-de-France MT
 			-4:00	-	AST	1980 Apr  6
 			-4:00	1:00	ADT	1980 Sep 28
 			-4:00	-	AST
@@ -3561,7 +3571,7 @@ Zone America/Puerto_Rico -4:24:25 -	LMT	1899 Mar 28 12:00 # San Juan
 # St Pierre and Miquelon
 # There are too many St Pierres elsewhere, so we'll use 'Miquelon'.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Miquelon	-3:44:40 -	LMT	1911 May 15 # St Pierre
+Zone America/Miquelon	-3:44:40 -	LMT	1911 Jun 15 # St Pierre
 			-4:00	-	AST	1980 May
 			-3:00	-	-03	1987
 			-3:00	Canada	-03/-02

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,12 @@ static jint load_agent(AttachOperation* op, outputStream* out) {
     }
   }
 
-  return JvmtiAgentList::load_agent(agent, absParam, options, out);
+  // The abs parameter should be "true" or "false".
+  const bool is_absolute_path = (absParam != nullptr) && (strcmp(absParam, "true") == 0);
+  JvmtiAgentList::load_agent(agent, is_absolute_path, options, out);
+
+  // Agent_OnAttach result or error message is written to 'out'.
+  return JNI_OK;
 }
 
 // Implementation of "properties" command.
@@ -218,7 +223,7 @@ static jint jcmd(AttachOperation* op, outputStream* out) {
 //   arg0: Name of the dump file
 //   arg1: "-live" or "-all"
 //   arg2: Compress level
-jint dump_heap(AttachOperation* op, outputStream* out) {
+static jint dump_heap(AttachOperation* op, outputStream* out) {
   const char* path = op->arg(0);
   if (path == nullptr || path[0] == '\0') {
     out->print_cr("No dump file specified");
@@ -249,7 +254,7 @@ jint dump_heap(AttachOperation* op, outputStream* out) {
     // This helps reduces the amount of unreachable objects in the dump
     // and makes it easier to browse.
     HeapDumper dumper(live_objects_only /* request GC */);
-    dumper.dump(path, out, level, false, HeapDumper::default_num_of_dump_threads());
+    dumper.dump(path, out, level);
   }
   return JNI_OK;
 }
@@ -390,7 +395,13 @@ void AttachListenerThread::thread_entry(JavaThread* thread, TRAPS) {
     }
 
     ResourceMark rm;
-    bufferedStream st;
+    // jcmd output can get lengthy. As long as we miss jcmd continuous streaming output
+    // and instead just send the output in bulk, make sure large command output does not
+    // cause asserts. We still retain a max cap, but dimensioned in a way that makes it
+    // highly unlikely we should ever hit it under normal conditions.
+    constexpr size_t initial_size = 1 * M;
+    constexpr size_t max_size = 3 * G;
+    bufferedStream st(initial_size, max_size);
     jint res = JNI_OK;
 
     // handle special detachall operation

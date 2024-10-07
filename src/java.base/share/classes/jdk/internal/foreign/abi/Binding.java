@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -749,11 +749,12 @@ public sealed interface Binding {
         }
 
         @Override
+        @SuppressWarnings("restricted")
         public void interpret(Deque<Object> stack, StoreFunc storeFunc,
                               LoadFunc loadFunc, SegmentAllocator allocator) {
             MemorySegment segment = Utils.longToAddress((long) stack.pop(), size, align);
             if (needsScope) {
-                segment = segment.reinterpret((Arena) allocator, null);
+                segment = segment.reinterpret((Arena) allocator, null); // restricted
             }
             stack.push(segment);
         }

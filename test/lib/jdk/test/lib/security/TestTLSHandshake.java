@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ public final class TestTLSHandshake extends SSLSocketTest {
         "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384";
     public static final long CERT_ID = Integer.toUnsignedLong(-1057291798);
     public static final long ANCHOR_CERT_ID = Integer.toUnsignedLong(1688661792);
-    public static final String CERT_SERIAL = "edbec8f705af2514";
-    public static final String ANCHOR_CERT_SERIAL = "8e191778b2f331be";
+    public static final String CERT_SERIAL = "00:ed:be:c8:f7:05:af:25:14";
+    public static final String ANCHOR_CERT_SERIAL = "8e:19:17:78:b2:f3:31:be";
 
     public String protocolVersion;
     public String peerHost;

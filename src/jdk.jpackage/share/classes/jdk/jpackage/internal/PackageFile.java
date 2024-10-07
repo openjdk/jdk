@@ -62,5 +62,5 @@ public final class PackageFile {
 
     private final String packageName;
 
-    private final static String FILENAME = ".package";
+    private static final String FILENAME = ".package";
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,27 @@
  * @test
  * @bug 8255560
  * @summary Class::isRecord should check that the current class is final and not abstract
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @enablePreview
  * @library /test/lib
  * @run testng/othervm IsRecordTest
  * @run testng/othervm/java.security.policy=allPermissions.policy IsRecordTest
  */
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.reflect.AccessFlag;
 import java.util.List;
 import java.util.Map;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Opcodes;
+
+import java.lang.classfile.attribute.RecordAttribute;
+import java.lang.classfile.attribute.RecordComponentInfo;
 import jdk.test.lib.ByteCodeLoader;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static jdk.internal.org.objectweb.asm.ClassWriter.*;
+import static java.lang.classfile.ClassFile.ACC_ABSTRACT;
+import static java.lang.classfile.ClassFile.ACC_FINAL;
+import static java.lang.constant.ConstantDescs.CD_int;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
@@ -82,9 +86,9 @@ public class IsRecordTest {
         out.println("\n--- testDirectSubClass isFinal=%s, isAbstract=%s, extendsJLR=%s, withRecordAttr=%s, expectIsRecord=%s ---"
                 .formatted(isFinal, isAbstract, extendsJLR, withRecordAttr, expectIsRecord));
 
-        List<RecordComponentEntry> rc = null;
+        List<RecordComponentInfo> rc = null;
         if (withRecordAttr)
-            rc = List.of(new RecordComponentEntry("x", "I"));
+            rc = List.of(RecordComponentInfo.of("x", CD_int));
         String superName = extendsJLR ? "java/lang/Record" : "java/lang/Object";
         var classBytes = generateClassBytes("C", isFinal, isAbstract, superName, rc);
         Class<?> cls = ByteCodeLoader.load("C", classBytes);
@@ -109,9 +113,9 @@ public class IsRecordTest {
         out.println("\n--- testIndirectSubClass isFinal=%s, isAbstract=%s withRecordAttr=%s ---"
                 .formatted(isFinal, isAbstract, withRecordAttr));
 
-        List<RecordComponentEntry> rc = null;
+        List<RecordComponentInfo> rc = null;
         if (withRecordAttr)
-            rc = List.of(new RecordComponentEntry("x", "I"));
+            rc = List.of(RecordComponentInfo.of("x", CD_int));
         var supFooClassBytes = generateClassBytes("SupFoo", false, isAbstract, "java/lang/Record", rc);
         var subFooClassBytes = generateClassBytes("SubFoo", isFinal, isAbstract, "SupFoo", rc);
         var allClassBytes = Map.of("SupFoo", supFooClassBytes,
@@ -161,29 +165,18 @@ public class IsRecordTest {
                               boolean isFinal,
                               boolean isAbstract,
                               String superName,
-                              List<RecordComponentEntry> components) {
-        ClassWriter cw = new ClassWriter(COMPUTE_MAXS | COMPUTE_FRAMES);
-
-        int access = 0;
-        if (isFinal)
-            access = access | Opcodes.ACC_FINAL;
-        if (isAbstract)
-            access = access | Opcodes.ACC_ABSTRACT;
-
-        cw.visit(Opcodes.V16,
-                 access,
-                 className,
-                 null,
-                 superName,
-                 null);
-
-        if (components != null)
-            components.forEach(rc -> cw.visitRecordComponent(rc.name(), rc.descriptor(), null));
-
-        cw.visitEnd();
-        return cw.toByteArray();
+                              List<RecordComponentInfo> components) {
+        return ClassFile.of().build(ClassDesc.ofInternalName(className), clb -> {
+            int access = 0;
+            if (isFinal)
+                access = access | ACC_FINAL;
+            if (isAbstract)
+                access = access | ACC_ABSTRACT;
+            clb.withFlags(access);
+            clb.withSuperclass(ClassDesc.ofInternalName(superName));
+            if (components != null)
+                clb.accept(RecordAttribute.of(components));
+        });
     }
-
-    record RecordComponentEntry (String name, String descriptor) { }
 
 }

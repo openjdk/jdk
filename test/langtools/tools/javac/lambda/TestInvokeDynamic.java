@@ -265,7 +265,7 @@ public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
                 fail("Test method not found");
                 return;
             }
-            CodeAttribute ea = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute ea = testMethod.findAttribute(Attributes.code()).orElse(null);
             if (ea == null) {
                 fail("Code attribute for test() method not found");
                 return;
@@ -289,7 +289,7 @@ public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
             }
 
             BootstrapMethodsAttribute bsm_attr = cm
-                    .findAttribute(Attributes.BOOTSTRAP_METHODS).orElseThrow();
+                    .findAttribute(Attributes.bootstrapMethods()).orElseThrow();
             if (bsm_attr.bootstrapMethodsSize() != 1) {
                 fail("Bad number of method specifiers " +
                         "in BootstrapMethods attribute");
@@ -337,7 +337,7 @@ public class TestInvokeDynamic extends ComboInstance<TestInvokeDynamic> {
                 return;
             }
 
-            LineNumberTableAttribute lnt = ea.findAttribute(Attributes.LINE_NUMBER_TABLE).orElse(null);
+            LineNumberTableAttribute lnt = ea.findAttribute(Attributes.lineNumberTable()).orElse(null);
 
             if (lnt == null) {
                 fail("No LineNumberTable attribute");

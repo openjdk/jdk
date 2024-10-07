@@ -102,6 +102,7 @@ import jdk.dynalink.StandardOperation;
  * constructor. You might want to expose a mechanism in your language for
  * selecting a constructor with an explicit signature through
  * {@link BeansLinker#getConstructorMethod(Class, String)}.
+ * @since 9
  */
 public final class StaticClass implements Serializable {
     private static final ClassValue<StaticClass> staticClasses = new ClassValue<>() {

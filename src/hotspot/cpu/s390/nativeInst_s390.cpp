@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -540,7 +540,7 @@ void NativeMovConstReg::set_narrow_klass(intptr_t data) {
   ICache::invalidate_range(start, range);
 }
 
-void NativeMovConstReg::set_pcrel_addr(intptr_t newTarget, CompiledMethod *passed_nm /* = nullptr */) {
+void NativeMovConstReg::set_pcrel_addr(intptr_t newTarget, nmethod *passed_nm /* = nullptr */) {
   address next_address;
   address loc = addr_at(0);
 
@@ -565,7 +565,7 @@ void NativeMovConstReg::set_pcrel_addr(intptr_t newTarget, CompiledMethod *passe
   }
 }
 
-void NativeMovConstReg::set_pcrel_data(intptr_t newData, CompiledMethod *passed_nm /* = nullptr */) {
+void NativeMovConstReg::set_pcrel_data(intptr_t newData, nmethod *passed_nm /* = nullptr */) {
   address  next_address;
   address  loc = addr_at(0);
 

@@ -146,7 +146,7 @@ void VM_G1PauseConcurrent::doit() {
 
   G1ConcGCMonitoringScope monitoring_scope(g1h->monitoring_support());
   SvcGCMarker sgcm(SvcGCMarker::CONCURRENT);
-  IsGCActiveMark x;
+  IsSTWGCActiveMark x;
 
   work();
 }

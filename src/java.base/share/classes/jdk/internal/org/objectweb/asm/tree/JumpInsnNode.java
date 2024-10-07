@@ -117,4 +117,3 @@ public class JumpInsnNode extends AbstractInsnNode {
         return new JumpInsnNode(opcode, clone(label, clonedLabels)).cloneAnnotations(this);
     }
 }
-

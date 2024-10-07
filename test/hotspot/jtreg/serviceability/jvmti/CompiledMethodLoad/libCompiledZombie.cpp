@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ void JNICALL CompiledMethodLoad(jvmtiEnv* jvmti, jmethodID method,
 
 // Continuously generate CompiledMethodLoad events for all currently compiled methods
 void JNICALL GenerateEventsThread(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
-    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, NULL);
+    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, nullptr);
     int count = 0;
 
     while (true) {
@@ -64,7 +64,7 @@ void JNICALL VMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     jmethodID thread_constructor = jni->GetMethodID(thread_class, "<init>", "()V");
     jthread agent_thread = jni->NewObject(thread_class, thread_constructor);
 
-    jvmti->RunAgentThread(agent_thread, GenerateEventsThread, NULL, JVMTI_THREAD_NORM_PRIORITY);
+    jvmti->RunAgentThread(agent_thread, GenerateEventsThread, nullptr, JVMTI_THREAD_NORM_PRIORITY);
 }
 
 JNIEXPORT
@@ -83,7 +83,7 @@ jint JNICALL Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
     callbacks.VMInit = VMInit;
     callbacks.CompiledMethodLoad = CompiledMethodLoad;
     jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
-    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr);
 
     return 0;
 }

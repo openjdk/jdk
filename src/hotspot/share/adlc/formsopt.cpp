@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,6 +198,20 @@ void RegisterForm::output(FILE *fp) {          // Write info to output files
   fprintf(fp,"-------------------- end  RegisterForm --------------------\n");
 }
 
+void RegisterForm::forms_do(FormClosure *f) {
+  const char *name = nullptr;
+  if (_current_ac) f->do_form(_current_ac);
+  for(_rdefs.reset(); (name = _rdefs.iter()) != nullptr;) {
+    f->do_form((RegDef*)_regDef[name]);
+  }
+  for (_rclasses.reset(); (name = _rclasses.iter()) != nullptr;) {
+    f->do_form((RegClass*)_regClass[name]);
+  }
+  for (_aclasses.reset(); (name = _aclasses.iter()) != nullptr;) {
+    f->do_form((AllocClass*)_allocClass[name]);
+  }
+}
+
 //------------------------------RegDef-----------------------------------------
 // Constructor
 RegDef::RegDef(char *regname, char *callconv, char *c_conv, char * idealtype, char * encode, char * concrete)
@@ -322,6 +336,13 @@ void RegClass::output(FILE *fp) {           // Write info to output files
   fprintf(fp,"--- done with entries for reg_class %s\n\n",_classid);
 }
 
+void RegClass::forms_do(FormClosure *f) {
+  const char *name = nullptr;
+  for( _regDefs.reset(); (name = _regDefs.iter()) != nullptr; ) {
+    f->do_form((RegDef*)_regDef[name]);
+  }
+}
+
 void RegClass::declare_register_masks(FILE* fp) {
   const char* prefix = "";
   const char* rc_name_to_upper = toUpper(_classid);
@@ -434,6 +455,14 @@ void AllocClass::output(FILE *fp) {       // Write info to output files
     ((RegDef*)_regDef[name])->output(fp);
   }
   fprintf(fp,"--- done with entries for alloc_class %s\n\n",_classid);
+}
+
+void AllocClass::forms_do(FormClosure* f) {
+  const char *name;
+  for(_regDefs.reset(); (name = _regDefs.iter()) != nullptr;) {
+    f->do_form((RegDef*)_regDef[name]);
+  }
+  return;
 }
 
 //==============================Frame Handling=================================
@@ -704,6 +733,15 @@ void Peephole::output(FILE *fp) {         // Write info to output files
   if( _replace != nullptr )     _replace->output(fp);
   // Output the next entry
   if( _next ) _next->output(fp);
+}
+
+void Peephole::forms_do(FormClosure *f) {
+  if (_predicate) f->do_form(_predicate);
+  if (_match) f->do_form(_match);
+  if (_procedure) f->do_form(_procedure);
+  if (_constraint) f->do_form(_constraint);
+  if (_replace) f->do_form(_replace);
+  return;
 }
 
 //----------------------------PeepPredicate------------------------------------

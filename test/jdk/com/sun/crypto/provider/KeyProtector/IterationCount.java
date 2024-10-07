@@ -52,9 +52,6 @@ import jdk.test.lib.process.ProcessTools;
 
 public class IterationCount {
     private static final String clientStr = "CLIENT";
-    private static final String javaBinPath =
-            System.getProperty("java.home", ".") + File.separator + "bin" +
-                    File.separator + "java";
 
     public static void main(String[] args) throws Throwable {
         if (args[0].equals("HOST")) {
@@ -78,22 +75,14 @@ public class IterationCount {
         System.out.println("TEST PASS - OK");
     }
 
-    private static List<String> getBasicCommand() {
-        List<String> cmd = new ArrayList<>();
-        cmd.add(javaBinPath);
-        cmd.add("-cp");
-        cmd.add(System.getProperty("test.classes", "."));
-        return cmd;
-    }
-
     private static void executeCommand(List<String> cmd, String expectedCount)
             throws Throwable {
         cmd.add("--add-opens=java.base/com.sun.crypto.provider=ALL-UNNAMED");
         cmd.add(IterationCount.class.getName());
         cmd.add(clientStr);
         cmd.add(expectedCount);
-        OutputAnalyzer out = ProcessTools.executeCommand(
-                cmd.toArray(new String[cmd.size()]));
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmd);
+        OutputAnalyzer out = ProcessTools.executeCommand(pb);
         out.shouldHaveExitValue(0);
     }
 
@@ -102,7 +91,7 @@ public class IterationCount {
         System.out.println("Test setting " +
                 (setValue != null ? setValue : "nothing") +
                 " as a System property");
-        List<String> cmd = getBasicCommand();
+        List<String> cmd = new ArrayList<>();
         if (setValue != null) {
             cmd.add("-Djdk.jceks.iterationCount=" + setValue);
         }
@@ -112,7 +101,7 @@ public class IterationCount {
 
     private static void testSecurity(String expectedCount, String setValue)
             throws Throwable {
-        testSecurity(expectedCount, setValue, getBasicCommand());
+        testSecurity(expectedCount, setValue, new ArrayList<>());
     }
 
     private static void testSecurity(String expectedCount, String setValue,
@@ -140,15 +129,14 @@ public class IterationCount {
                 " the Security one");
         String systemValue = Integer.toString(30000);
         System.out.println("System value: " + systemValue);
-        List<String> cmd = getBasicCommand();
+        List<String> cmd = new ArrayList<>();
         cmd.add("-Djdk.jceks.iterationCount=" + systemValue);
         testSecurity(systemValue, Integer.toString(40000), cmd);
     }
 
     private static void writeJavaSecurityProp(String javaSecurityPath,
             String setValue) throws IOException {
-        try (FileOutputStream fos = new FileOutputStream(
-                new File(javaSecurityPath))) {
+        try (FileOutputStream fos = new FileOutputStream(javaSecurityPath)) {
             fos.write(("jdk.jceks.iterationCount=" + setValue).getBytes());
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import com.sun.tools.javac.util.StringUtils;
  * deletion without notice.</b>
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_23)
+@SupportedSourceVersion(SourceVersion.RELEASE_24)
 public class PrintingProcessor extends AbstractProcessor {
     PrintWriter writer;
 
@@ -118,7 +118,6 @@ public class PrintingProcessor extends AbstractProcessor {
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        @SuppressWarnings("preview") // isUnnamed
         public PrintingElementVisitor visitExecutable(ExecutableElement e, Boolean p) {
             ElementKind kind = e.getKind();
 
@@ -156,14 +155,25 @@ public class PrintingProcessor extends AbstractProcessor {
                     break;
                 }
 
-                writer.print("(");
-                printParameters(e);
-                writer.print(")");
-                AnnotationValue defaultValue = e.getDefaultValue();
-                if (defaultValue != null)
-                    writer.print(" default " + defaultValue);
+                if (elementUtils.isCompactConstructor(e)) {
+                    // A record's compact constructor by definition
+                    // lacks source-explicit parameters and lacks a
+                    // throws clause.
+                    writer.print(" {} /* compact constructor */ ");
+                } else {
+                    writer.print("(");
+                    printParameters(e);
+                    writer.print(")");
 
-                printThrows(e);
+                    // Display any default values for an annotation
+                    // interface element
+                    AnnotationValue defaultValue = e.getDefaultValue();
+                    if (defaultValue != null)
+                        writer.print(" default " + defaultValue);
+
+                    printThrows(e);
+                }
+
                 writer.println(";");
             }
             return this;
@@ -171,7 +181,6 @@ public class PrintingProcessor extends AbstractProcessor {
 
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
-        @SuppressWarnings("preview") // isUnnamed
         public PrintingElementVisitor visitType(TypeElement e, Boolean p) {
             ElementKind kind = e.getKind();
             NestingKind nestingKind = e.getNestingKind();

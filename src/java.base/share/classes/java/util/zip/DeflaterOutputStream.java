@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,9 @@ import java.io.IOException;
  * This class implements an output stream filter for compressing data in
  * the "deflate" compression format. It is also used as the basis for other
  * types of compression filters, such as GZIPOutputStream.
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
  *
  * @see         Deflater
  * @author      David Connelly
@@ -240,14 +243,30 @@ public class DeflaterOutputStream extends FilterOutputStream {
      */
     public void close() throws IOException {
         if (!closed) {
+            closed = true;
+            IOException finishException = null;
             try {
                 finish();
+            } catch (IOException ioe){
+                finishException = ioe;
+                throw ioe;
             } finally {
-                if (usesDefaultDeflater)
+                if (usesDefaultDeflater) {
                     def.end();
+                }
+                if (finishException == null) {
+                    out.close();
+                } else {
+                    try {
+                        out.close();
+                    } catch (IOException ioe) {
+                        if (finishException != ioe) {
+                            ioe.addSuppressed(finishException);
+                        }
+                        throw ioe;
+                    }
+                }
             }
-            out.close();
-            closed = true;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -57,7 +56,7 @@ abstract class AbstractDCmd {
     private String source;
 
     // Called by native
-    public abstract String[] printHelp();
+    public abstract String[] getHelp();
 
     // Called by native. The number of arguments for each command is
     // reported to the DCmdFramework as a hardcoded number in native.
@@ -233,7 +232,7 @@ abstract class AbstractDCmd {
     }
 
     protected final void printHelpText() {
-        for (String line : printHelp()) {
+        for (String line : getHelp()) {
             println(line);
         }
     }
@@ -287,42 +286,5 @@ abstract class AbstractDCmd {
         } else {
             return "/directory/recordings";
         }
-    }
-
-    static String expandFilename(String filename) {
-        if (filename == null || filename.indexOf('%') == -1) {
-            return filename;
-        }
-
-        String pid = null;
-        String time = null;
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < filename.length(); i++) {
-            char c = filename.charAt(i);
-            if (c == '%' && i < filename.length() - 1) {
-                char nc = filename.charAt(i + 1);
-                if (nc == '%') { // %% ==> %
-                    sb.append('%');
-                    i++;
-                } else if (nc == 'p') {
-                    if (pid == null) {
-                        pid = JVM.getPid();
-                    }
-                    sb.append(pid);
-                    i++;
-                } else if (nc == 't') {
-                    if (time == null) {
-                        time = ValueFormatter.formatDateTime(LocalDateTime.now());
-                    }
-                    sb.append(time);
-                    i++;
-                } else {
-                    sb.append('%');
-                }
-            } else {
-                sb.append(c);
-            }
-        }
-        return sb.toString();
     }
 }

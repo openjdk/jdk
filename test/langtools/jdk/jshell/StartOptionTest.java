@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,6 +122,13 @@ public class StartOptionTest {
         check(cmdout, checkCmdOutput, "cmdout");
         check(cmderr, checkError, "cmderr");
         check(console, checkConsole, "console");
+        check(userout, checkUserOutput, "userout");
+        check(usererr, null, "usererr");
+    }
+
+    protected void startCheckUserOutput(Consumer<String> checkUserOutput,
+            String... args) {
+        runShell(args);
         check(userout, checkUserOutput, "userout");
         check(usererr, null, "usererr");
     }
@@ -356,6 +363,17 @@ public class StartOptionTest {
                 null,
                 s -> assertTrue(s.trim().startsWith("jshell>"), "Expected prompt, got: " + s),
                 "--show-version");
+    }
+
+    public void testPreviewEnabled() {
+        String fn = writeToFile("System.out.println(\"prefix\");\n" +
+                "System.out.println(MethodHandle.class.getName());\n" +
+                "System.out.println(\"suffix\");\n" +
+                "/exit\n");
+        startCheckUserOutput(s -> assertEquals(s, "prefix\nsuffix\n"),
+                             fn);
+        startCheckUserOutput(s -> assertEquals(s, "prefix\njava.lang.invoke.MethodHandle\nsuffix\n"),
+                             "--enable-preview", fn);
     }
 
     @AfterMethod

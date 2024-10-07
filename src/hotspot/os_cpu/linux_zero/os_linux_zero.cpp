@@ -27,7 +27,6 @@
 #include "asm/assembler.inline.hpp"
 #include "atomic_linux_zero.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"

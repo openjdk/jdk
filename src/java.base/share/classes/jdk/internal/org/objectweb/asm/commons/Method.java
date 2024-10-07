@@ -292,4 +292,3 @@ public class Method {
         return name.hashCode() ^ descriptor.hashCode();
     }
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,9 @@
 
 package com.sun.tools.jdeprscan.scan;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-
 import java.io.IOException;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -92,9 +91,9 @@ public class ClassFinder {
      * @param className the class to search for
      * @return a ClassFile instance, or null if not found
      */
-    public ClassFile find(String className) {
+    public ClassModel find(String className) {
         for (PathEntry pe : list) {
-            ClassFile cf = pe.find(className);
+            ClassModel cf = pe.find(className);
             if (cf != null) {
                 return cf;
             }
@@ -113,7 +112,7 @@ public class ClassFinder {
          * @param className the class to search for
          * @return a ClassFile instance, or null if not found
          */
-        ClassFile find(String className);
+        ClassModel find(String className);
     }
 
     /**
@@ -127,14 +126,14 @@ public class ClassFinder {
         }
 
         @Override
-        public ClassFile find(String className) {
+        public ClassModel find(String className) {
             JarEntry entry = jarFile.getJarEntry(className + ".class");
             if (entry == null) {
                 return null;
             }
             try {
-                return ClassFile.read(jarFile.getInputStream(entry));
-            } catch (IOException | ConstantPoolException ex) {
+                return ClassFile.of().parse(jarFile.getInputStream(entry).readAllBytes());
+            } catch (IOException | IllegalArgumentException ex) {
                 if (verbose) {
                     ex.printStackTrace();
                 }
@@ -154,13 +153,13 @@ public class ClassFinder {
         }
 
         @Override
-        public ClassFile find(String className) {
+        public ClassModel find(String className) {
             Path classFileName = dir.resolve(className + ".class");
             try {
-                return ClassFile.read(classFileName);
+                return ClassFile.of().parse(classFileName);
             } catch (NoSuchFileException nsfe) {
                 // not found, return silently
-            } catch (IOException | ConstantPoolException ex) {
+            } catch (IOException | IllegalArgumentException ex) {
                 if (verbose) {
                     ex.printStackTrace();
                 }
@@ -181,7 +180,7 @@ public class ClassFinder {
         final FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
 
         @Override
-        public ClassFile find(String className) {
+        public ClassModel find(String className) {
             int end = className.lastIndexOf('/');
             if (end < 0) {
                 return null;
@@ -194,13 +193,13 @@ public class ClassFinder {
                         .filter(Files::exists)
                         .findFirst();
                 if (opath.isPresent()) {
-                    return ClassFile.read(opath.get());
+                    return ClassFile.of().parse(opath.get());
                 } else {
                     return null;
                 }
             } catch (NoSuchFileException nsfe) {
                 // not found, return silently
-            } catch (IOException | ConstantPoolException ex) {
+            } catch (IOException | IllegalArgumentException ex) {
                 if (verbose) {
                     ex.printStackTrace();
                 }

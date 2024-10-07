@@ -61,7 +61,7 @@ public class TestInliningProtectionDomain extends InliningBase {
         boolean inlineFails = testClass == ProtectionDomainTestNoOtherCompilationPrivate.class;
         int inlineeCount = inlineFails ? 1 : 5;
 
-        List<InlineEntry> inlineesNormal = parseLogFile(LOG_FILE_NORMAL, entryString, "compile_id='" + getCompileIdFromFile(getReplayFileName()), inlineeCount);
+        List<InlineEntry> inlineesNormal = parseLogFile(LOG_FILE_NORMAL, entryString, "compile_id='" + getCompileIdFromFile(getReplayFileName()) + "'", inlineeCount);
         List<InlineEntry> inlineesReplay = parseLogFile(LOG_FILE_REPLAY, entryString, "test ()V", inlineeCount);
         verifyLists(inlineesNormal, inlineesReplay, inlineeCount);
 

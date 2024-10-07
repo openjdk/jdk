@@ -227,7 +227,7 @@ public class AnnotationRemapper extends AnnotationVisitor {
 
     /**
       * Maps an annotation attribute name with the remapper. Returns the original name unchanged if the
-      * internal name of the annotation is {@literal null}.
+      * descriptor of the annotation is {@literal null}.
       *
       * @param name the name of the annotation attribute.
       * @return the new name of the annotation attribute.
@@ -239,4 +239,3 @@ public class AnnotationRemapper extends AnnotationVisitor {
         return remapper.mapAnnotationAttributeName(descriptor, name);
     }
 }
-

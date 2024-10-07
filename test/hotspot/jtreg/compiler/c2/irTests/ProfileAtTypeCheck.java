@@ -70,7 +70,7 @@ public class ProfileAtTypeCheck {
 
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS_OR_NKLASS, "2" })
+    @IR(phase = { CompilePhase.AFTER_MACRO_EXPANSION }, counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS_OR_NKLASS, "2" })
     public static void test1(Object o) {
         dummyA((A)o);
     }
@@ -103,7 +103,7 @@ public class ProfileAtTypeCheck {
 
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS_OR_NKLASS, "1" })
+    @IR(phase = { CompilePhase.AFTER_MACRO_EXPANSION }, counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS_OR_NKLASS, "1" })
     public static void test3(Object o) {
         if (o instanceof B) {
             dummyB((B)o);
@@ -121,7 +121,7 @@ public class ProfileAtTypeCheck {
     // full subtype check
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "3", IRNode.LOAD_KLASS_OR_NKLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    @IR(phase = { CompilePhase.AFTER_MACRO_EXPANSION }, counts = { IRNode.CMP_P, "3", IRNode.LOAD_KLASS_OR_NKLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
     public static void test4(Object o) {
         dummyI((I)o);
     }
@@ -138,7 +138,7 @@ public class ProfileAtTypeCheck {
     // full subtype check + profile use for success path
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS_OR_NKLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    @IR(phase = { CompilePhase.AFTER_MACRO_EXPANSION }, counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS_OR_NKLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
     public static void test5(Object o) {
         dummyI((I)o);
     }
@@ -153,7 +153,7 @@ public class ProfileAtTypeCheck {
     // Check primary super
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS_OR_NKLASS, "2" }, failOn = { IRNode.PARTIAL_SUBTYPE_CHECK })
+    @IR(phase = { CompilePhase.AFTER_MACRO_EXPANSION }, counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS_OR_NKLASS, "2" }, failOn = { IRNode.PARTIAL_SUBTYPE_CHECK })
     public static void test6(Object o) {
         dummyA((A)o);
     }
@@ -169,7 +169,7 @@ public class ProfileAtTypeCheck {
     // full subtype check + profile use for both success and failure paths
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS_OR_NKLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    @IR(phase = { CompilePhase.AFTER_MACRO_EXPANSION }, counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS_OR_NKLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
     public static boolean test7(Object o) {
         return o instanceof I;
     }
@@ -184,7 +184,7 @@ public class ProfileAtTypeCheck {
     // full subtype check + profile use for success path (profile has unrecorded entries)
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS_OR_NKLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    @IR(phase = { CompilePhase.AFTER_MACRO_EXPANSION }, counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS_OR_NKLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
     public static void test8(Object o) {
         dummyI((I)o);
     }
@@ -394,7 +394,7 @@ public class ProfileAtTypeCheck {
     // full subtype check + profile use for success path
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS_OR_NKLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    @IR(phase = { CompilePhase.AFTER_MACRO_EXPANSION }, counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS_OR_NKLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
     public static void test15(Object o) {
         array[0] = o;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,17 +40,19 @@ import sun.security.action.GetBooleanAction;
  * This class implements an output stream filter for writing files in the
  * ZIP file format. Includes support for both compressed and uncompressed
  * entries.
- *
+ * <p> Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
  * @author      David Connelly
  * @since 1.1
  */
 public class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
 
     /**
-     * Whether to use ZIP64 for zip files with more than 64k entries.
-     * Until ZIP64 support in zip implementations is ubiquitous, this
-     * system property allows the creation of zip files which can be
-     * read by legacy zip implementations which tolerate "incorrect"
+     * Whether to use ZIP64 for ZIP files with more than 64k entries.
+     * Until ZIP64 support in ZIP implementations is ubiquitous, this
+     * system property allows the creation of ZIP files which can be
+     * read by legacy ZIP implementations which tolerate "incorrect"
      * total entry count fields, such as the ones in jdk6, and even
      * some in jdk7.
      */
@@ -231,7 +233,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             // descriptor immediately following the compressed entry data.
             // Ignore the compressed size of a ZipEntry if it was implcitely set
             // while reading that ZipEntry from a  ZipFile or ZipInputStream because
-            // we can't know the compression level of the source zip file/stream.
+            // we can't know the compression level of the source ZIP file/stream.
             if (e.size  == -1 || e.csize == -1 || e.crc   == -1 || !e.csizeSet) {
                 e.flag = 8;
             }
@@ -376,6 +378,10 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * Finishes writing the contents of the ZIP output stream without closing
      * the underlying stream. Use this method when applying multiple filters
      * in succession to the same output stream.
+     * <p>
+     * A ZipException will be thrown if the combined length, after encoding,
+     * of the entry name, the extra field data, the entry comment and
+     * {@linkplain #CENHDR CEN Header size}, exceeds 65,535 bytes.
      * @throws    ZipException if a ZIP file error has occurred
      * @throws    IOException if an I/O exception has occurred
      */
@@ -396,7 +402,9 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     }
 
     /**
-     * Closes the ZIP output stream as well as the stream being filtered.
+     * Closes the underlying stream and the stream being filtered after
+     * the contents of the ZIP output stream are fully written.
+     *
      * @throws    ZipException if a ZIP file error has occurred
      * @throws    IOException if an I/O error has occurred
      */
@@ -483,7 +491,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         writeShort(elen);
         writeBytes(nameBytes, 0, nameBytes.length);
         if (hasZip64) {
-            writeShort(ZIP64_EXTID);
+            writeShort(EXTID_ZIP64);
             writeShort(16);
             writeLong(e.size);
             writeLong(e.csize);
@@ -539,7 +547,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      * to a version value.
      */
     private int versionMadeBy(ZipEntry e, int version) {
-        return (e.extraAttributes < 0) ? version :
+        return (e.externalFileAttributes < 0) ? version :
                 VERSION_MADE_BY_BASE_UNIX | (version & 0xff);
     }
 
@@ -587,7 +595,8 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         writeInt(csize);            // compressed size
         writeInt(size);             // uncompressed size
         byte[] nameBytes = zc.getBytes(e.name);
-        writeShort(nameBytes.length);
+        int nlen = nameBytes.length;
+        writeShort(nlen);
 
         int elen = getExtraLen(e.extra);
         if (hasZip64) {
@@ -624,24 +633,23 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
             }
         }
         writeShort(elen);
-        byte[] commentBytes;
+        byte[] commentBytes = null;
+        int clen = 0;
         if (e.comment != null) {
             commentBytes = zc.getBytes(e.comment);
-            writeShort(Math.min(commentBytes.length, 0xffff));
-        } else {
-            commentBytes = null;
-            writeShort(0);
+            clen = Math.min(commentBytes.length, 0xffff);
         }
+        writeShort(clen);              // file comment length
         writeShort(0);              // starting disk number
         writeShort(0);              // internal file attributes (unused)
         // extra file attributes, used for storing posix permissions etc.
-        writeInt(e.extraAttributes > 0 ? e.extraAttributes << 16 : 0);
+        writeInt(e.externalFileAttributes > 0 ? e.externalFileAttributes << 16 : 0);
         writeInt(offset);           // relative offset of local header
-        writeBytes(nameBytes, 0, nameBytes.length);
+        writeBytes(nameBytes, 0, nlen);
 
         // take care of EXTID_ZIP64 and EXTID_EXTT
         if (hasZip64) {
-            writeShort(ZIP64_EXTID);// Zip64 extra
+            writeShort(EXTID_ZIP64);// Zip64 extra
             writeShort(elenZIP64);
             if (size == ZIP64_MAGICVAL)
                 writeLong(e.size);
@@ -677,9 +685,17 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
                 }
             }
         }
+
+        // CEN header size + name length + comment length + extra length
+        // should not exceed 65,535 bytes per the PKWare APP.NOTE
+        // 4.4.10, 4.4.11, & 4.4.12.
+        long headerSize = (long)CENHDR + nlen + clen + elen;
+        if (headerSize > 0xFFFF ) {
+            throw new ZipException("invalid CEN header (bad header size)");
+        }
         writeExtra(e.extra);
         if (commentBytes != null) {
-            writeBytes(commentBytes, 0, Math.min(commentBytes.length, 0xffff));
+            writeBytes(commentBytes, 0, clen);
         }
     }
 
@@ -732,7 +748,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         writeShort(count);                // total number of directory entries
         writeInt(xlen);                   // length of central directory
         writeInt(xoff);                   // offset of central directory
-        if (comment != null) {            // zip file comment
+        if (comment != null) {            // ZIP file comment
             writeShort(comment.length);
             writeBytes(comment, 0, comment.length);
         } else {

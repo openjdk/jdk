@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -899,7 +899,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the coordinates are not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -933,7 +933,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the region is not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -1003,7 +1003,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the coordinates are not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -1033,7 +1033,7 @@ public class BufferedImage extends java.awt.Image
      *
      * <p>
      *
-     * An {@code ArrayOutOfBoundsException} may be thrown
+     * An {@code ArrayIndexOutOfBoundsException} may be thrown
      * if the region is not in bounds.
      * However, explicit bounds checking is not guaranteed.
      *
@@ -1509,31 +1509,7 @@ public class BufferedImage extends java.awt.Image
      * @see #getData(Rectangle)
     */
     public void setData(Raster r) {
-        int width = r.getWidth();
-        int height = r.getHeight();
-        int startX = r.getMinX();
-        int startY = r.getMinY();
-
-        int[] tdata = null;
-
-        // Clip to the current Raster
-        Rectangle rclip = new Rectangle(startX, startY, width, height);
-        Rectangle bclip = new Rectangle(0, 0, raster.width, raster.height);
-        Rectangle intersect = rclip.intersection(bclip);
-        if (intersect.isEmpty()) {
-            return;
-        }
-        width = intersect.width;
-        height = intersect.height;
-        startX = intersect.x;
-        startY = intersect.y;
-
-        // remind use get/setDataElements for speed if Rasters are
-        // compatible
-        for (int i = startY; i < startY+height; i++)  {
-            tdata = r.getPixels(startX,i,width,1,tdata);
-            raster.setPixels(startX,i,width,1, tdata);
-        }
+        raster.setRect(r);
     }
 
 

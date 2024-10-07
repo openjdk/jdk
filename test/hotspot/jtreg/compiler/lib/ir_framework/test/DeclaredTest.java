@@ -27,24 +27,23 @@ import compiler.lib.ir_framework.CompLevel;
 import compiler.lib.ir_framework.shared.TestRunException;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
 
 /**
  * This class represents a @Test method.
  */
 public class DeclaredTest {
     private final Method testMethod;
-    private final ArgumentValue[] arguments;
+    private final ArgumentsProvider argumentsProvider;
     private final int warmupIterations;
     private final CompLevel compLevel;
     private Method attachedMethod;
 
-    public DeclaredTest(Method testMethod, ArgumentValue[] arguments, CompLevel compLevel, int warmupIterations) {
+    public DeclaredTest(Method testMethod, ArgumentsProvider argumentsProvider, CompLevel compLevel, int warmupIterations) {
         // Make sure we can also call non-public or public methods in package private classes
         testMethod.setAccessible(true);
         this.testMethod = testMethod;
         this.compLevel = compLevel;
-        this.arguments = arguments;
+        this.argumentsProvider = argumentsProvider;
         this.warmupIterations = warmupIterations;
         this.attachedMethod = null;
     }
@@ -61,12 +60,8 @@ public class DeclaredTest {
         return warmupIterations;
     }
 
-    public boolean hasArguments() {
-        return arguments != null;
-    }
-
-    public Object[] getArguments() {
-        return Arrays.stream(arguments).map(ArgumentValue::getArgument).toArray();
+    public Object[] getArguments(Object invocationTarget, int invocationCounter) {
+        return argumentsProvider.getArguments(invocationTarget, invocationCounter);
     }
 
     public void setAttachedMethod(Method m) {
@@ -77,41 +72,22 @@ public class DeclaredTest {
         return attachedMethod;
     }
 
-    public void printFixedRandomArguments() {
-        if (hasArguments()) {
-            boolean hasRandomArgs = false;
-            StringBuilder builder = new StringBuilder("Fixed random arguments for method ").append(testMethod).append(": ");
-            for (int i = 0; i < arguments.length; i++) {
-                ArgumentValue argument = arguments[i];
-                if (argument.isFixedRandom()) {
-                    hasRandomArgs = true;
-                    Object argumentVal = argument.getArgument();
-                    builder.append("arg ").append(i).append(": ").append(argumentVal.toString());
-                    if (argumentVal instanceof Character) {
-                        builder.append(" (").append((int)(Character)argumentVal).append(")");
-                    }
-                    builder.append(", ");
-                }
-            }
-            if (hasRandomArgs) {
-                // Drop the last comma and space.
-                builder.setLength(builder.length() - 2);
-                System.out.println(builder.toString());
-            }
+    /**
+     * Format an array of arguments to string for error reporting.
+     */
+    public String formatArguments(Object[] arguments) {
+        if (arguments == null) {
+            return "<null>";
         }
-    }
-
-    public String getArgumentsString() {
-        if (hasArguments()) {
-            StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < arguments.length; i++) {
-                builder.append("arg ").append(i).append(": ").append(arguments[i].getArgument()).append(", ");
-            }
-            builder.setLength(builder.length() - 2);
-            return builder.toString();
-        } else {
+        if (arguments.length == 0) {
             return "<void>";
         }
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < arguments.length; i++) {
+            builder.append("arg ").append(i).append(": ").append(arguments[i]).append(", ");
+        }
+        builder.setLength(builder.length() - 2);
+        return builder.toString();
     }
 
     public Object invoke(Object obj, Object... args) {

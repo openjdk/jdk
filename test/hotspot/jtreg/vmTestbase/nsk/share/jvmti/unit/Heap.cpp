@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "jni.h"
 #include "jvmti.h"
-#include "agent_common.h"
+#include "agent_common.hpp"
 
 extern "C" {
 
@@ -42,7 +42,7 @@ static jboolean user_data_error_flag = JNI_FALSE;
 static jvmtiEventObjectFree object_free_callback;
 
 static void JNICALL default_object_free(jvmtiEnv *env, jlong tag) {
-    if (object_free_callback != NULL) {
+    if (object_free_callback != nullptr) {
         (*object_free_callback)(env, tag);
     }
 }
@@ -58,9 +58,9 @@ static jvmtiIterationControl JNICALL default_heap_object_callback
 }
 
 static jvmtiHeapObjectCallback heap_object_callback = default_heap_object_callback;
-static jvmtiHeapRootCallback heap_root_callback = NULL;
-static jvmtiStackReferenceCallback stack_ref_callback = NULL;
-static jvmtiObjectReferenceCallback object_ref_callback = NULL;
+static jvmtiHeapRootCallback heap_root_callback = nullptr;
+static jvmtiStackReferenceCallback stack_ref_callback = nullptr;
+static jvmtiObjectReferenceCallback object_ref_callback = nullptr;
 
 /*
  * Basic tagging functions
@@ -182,13 +182,13 @@ JNIEXPORT jint JNICALL Java_nsk_share_jvmti_unit_Heap_getObjectsWithTags
 
     /* get rid of any arrays that we are holding from a previous call */
 
-    if (object_results_ref != NULL) {
+    if (object_results_ref != nullptr) {
         env->DeleteGlobalRef(object_results_ref);
-        object_results_ref = NULL;
+        object_results_ref = nullptr;
     }
-    if (tag_results_ref != NULL) {
+    if (tag_results_ref != nullptr) {
         env->DeleteGlobalRef(tag_results_ref);
-        tag_results_ref = NULL;
+        tag_results_ref = nullptr;
     }
 
     /* copy input list-of-tags from java into C */
@@ -210,7 +210,7 @@ JNIEXPORT jint JNICALL Java_nsk_share_jvmti_unit_Heap_getObjectsWithTags
 
     cls = env->FindClass("java/lang/Object");
 
-    object_array = env->NewObjectArray(count, cls, NULL);
+    object_array = env->NewObjectArray(count, cls, nullptr);
     tag_array = env->NewLongArray(count);
 
     for (i=0; i<count; i++) {
@@ -333,7 +333,7 @@ static jvmtiIterationControl JNICALL simple_stack_ref_callback
      jlong thread_tag, jint depth, jmethodID method, jint slot, void* user_data)
 {
     if (root_kind == JVMTI_HEAP_ROOT_STACK_LOCAL) {
-        if (method == NULL) {
+        if (method == nullptr) {
             fprintf(stderr, "WARNING: jmethodID missing for STACK_LOCAL\n");
         }
     }
@@ -362,23 +362,23 @@ JNIEXPORT void JNICALL Java_nsk_share_jvmti_unit_Heap_setHeapRootCallback
     (JNIEnv *env, jclass cls)
 {
     heap_root_callback = simple_heap_root_callback;
-    stack_ref_callback = NULL;
-    object_ref_callback = NULL;
+    stack_ref_callback = nullptr;
+    object_ref_callback = nullptr;
 }
 
 JNIEXPORT void JNICALL Java_nsk_share_jvmti_unit_Heap_setStackRefCallback
     (JNIEnv *env, jclass cls)
 {
-    heap_root_callback = NULL;
+    heap_root_callback = nullptr;
     stack_ref_callback = simple_stack_ref_callback;
-    object_ref_callback = NULL;
+    object_ref_callback = nullptr;
 }
 
 JNIEXPORT void JNICALL Java_nsk_share_jvmti_unit_Heap_setObjectRefCallback
     (JNIEnv *env, jclass cls)
 {
-    heap_root_callback = NULL;
-    stack_ref_callback = NULL;
+    heap_root_callback = nullptr;
+    stack_ref_callback = nullptr;
     object_ref_callback = simple_object_ref_callback;
 }
 
@@ -450,7 +450,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
 
 
     /* enable OBJECT_FREE events */
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         fprintf(stderr, "SetEventNotificationMode failed, error=%d\n", err);
         return -1;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ class VectorNode : public TypeNode {
   static VectorNode* make_mask_node(int vopc, Node* n1, Node* n2, uint vlen, BasicType bt);
 
   static bool is_shift_opcode(int opc);
-  static bool can_transform_shift_op(Node* n, BasicType bt);
+  static bool can_use_RShiftI_instead_of_URShiftI(Node* n, BasicType bt);
   static bool is_convert_opcode(int opc);
   static bool is_minmax_opcode(int opc);
 
@@ -96,13 +96,11 @@ class VectorNode : public TypeNode {
   static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc
 
   // Limits on vector size (number of elements) for auto-vectorization.
-  static bool vector_size_supported_superword(const BasicType bt, int size);
+  static bool vector_size_supported_auto_vectorization(const BasicType bt, int size);
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);
-  static bool is_type_transition_short_to_int(Node* n);
-  static bool is_type_transition_to_int(Node* n);
-  static bool is_muladds2i(Node* n);
+  static bool is_muladds2i(const Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
   static bool is_vector_rotate_supported(int opc, uint vlen, BasicType bt);
@@ -131,6 +129,9 @@ class VectorNode : public TypeNode {
   static bool is_vector_shift_count(Node* n) {
     return is_vector_shift_count(n->Opcode());
   }
+
+  static bool is_scalar_unary_op_with_equal_input_and_output_types(int opc);
+  static bool is_scalar_op_that_returns_int_but_vector_op_returns_long(int opc);
 
   static void trace_new_vector(Node* n, const char* context) {
 #ifdef ASSERT
@@ -205,7 +206,9 @@ class ReductionNode : public Node {
     init_class_id(Class_Reduction);
   }
 
-  static ReductionNode* make(int opc, Node* ctrl, Node* in1, Node* in2, BasicType bt);
+  static ReductionNode* make(int opc, Node* ctrl, Node* in1, Node* in2, BasicType bt,
+                             // This only effects floating-point add and mul reductions.
+                             bool requires_strict_order = true);
   static int  opcode(int opc, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
   // Make an identity scalar (zero for add, one for mul, etc) for scalar opc.
@@ -227,47 +230,97 @@ class ReductionNode : public Node {
 
   // Needed for proper cloning.
   virtual uint size_of() const { return sizeof(*this); }
-};
 
-//---------------------------UnorderedReductionNode-------------------------------------
-// Order of reduction does not matter. Example int add. Not true for float add.
-class UnorderedReductionNode : public ReductionNode {
-public:
-  UnorderedReductionNode(Node * ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {
-    init_class_id(Class_UnorderedReduction);
+  // Floating-point addition and multiplication are non-associative, so
+  // AddReductionVF/D and MulReductionVF/D require strict ordering
+  // in auto-vectorization. Vector API can generate AddReductionVF/D
+  // and MulReductionVF/VD without strict ordering, which can benefit
+  // some platforms.
+  //
+  // Other reductions don't need strict ordering.
+  virtual bool requires_strict_order() const {
+    return false;
   }
+
+#ifndef PRODUCT
+  void dump_spec(outputStream* st) const {
+    if (requires_strict_order()) {
+      st->print("requires_strict_order");
+    } else {
+      st->print("no_strict_order");
+    }
+  }
+#endif
 };
 
 //------------------------------AddReductionVINode--------------------------------------
 // Vector add byte, short and int as a reduction
-class AddReductionVINode : public UnorderedReductionNode {
+class AddReductionVINode : public ReductionNode {
 public:
-  AddReductionVINode(Node * ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  AddReductionVINode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------AddReductionVLNode--------------------------------------
 // Vector add long as a reduction
-class AddReductionVLNode : public UnorderedReductionNode {
+class AddReductionVLNode : public ReductionNode {
 public:
-  AddReductionVLNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  AddReductionVLNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------AddReductionVFNode--------------------------------------
 // Vector add float as a reduction
 class AddReductionVFNode : public ReductionNode {
+private:
+  // True if add reduction operation for floats requires strict ordering.
+  // As an example - The value is true when add reduction for floats is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
 public:
-  AddReductionVFNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  AddReductionVFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
   virtual int Opcode() const;
+
+  virtual bool requires_strict_order() const { return _requires_strict_order; }
+
+  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
+
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
+  }
+
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------AddReductionVDNode--------------------------------------
 // Vector add double as a reduction
 class AddReductionVDNode : public ReductionNode {
+private:
+  // True if add reduction operation for doubles requires strict ordering.
+  // As an example - The value is true when add reduction for doubles is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
 public:
-  AddReductionVDNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  AddReductionVDNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
   virtual int Opcode() const;
+
+  virtual bool requires_strict_order() const { return _requires_strict_order; }
+
+  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
+
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
+  }
+
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------SubVBNode--------------------------------------
@@ -402,34 +455,70 @@ public:
 
 //------------------------------MulReductionVINode--------------------------------------
 // Vector multiply byte, short and int as a reduction
-class MulReductionVINode : public UnorderedReductionNode {
+class MulReductionVINode : public ReductionNode {
 public:
-  MulReductionVINode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  MulReductionVINode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------MulReductionVLNode--------------------------------------
 // Vector multiply int as a reduction
-class MulReductionVLNode : public UnorderedReductionNode {
+class MulReductionVLNode : public ReductionNode {
 public:
-  MulReductionVLNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  MulReductionVLNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------MulReductionVFNode--------------------------------------
 // Vector multiply float as a reduction
 class MulReductionVFNode : public ReductionNode {
+  // True if mul reduction operation for floats requires strict ordering.
+  // As an example - The value is true when mul reduction for floats is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
 public:
-  MulReductionVFNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  MulReductionVFNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
   virtual int Opcode() const;
+
+  virtual bool requires_strict_order() const { return _requires_strict_order; }
+
+  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
+
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
+  }
+
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------MulReductionVDNode--------------------------------------
 // Vector multiply double as a reduction
 class MulReductionVDNode : public ReductionNode {
+  // True if mul reduction operation for doubles requires strict ordering.
+  // As an example - The value is true when mul reduction for doubles is auto-vectorized
+  // as auto-vectorization mandates strict ordering but the value is false when this node
+  // is generated through VectorAPI as VectorAPI does not impose any such rules on ordering.
+  const bool _requires_strict_order;
 public:
-  MulReductionVDNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  //_requires_strict_order is set to true by default as mandated by auto-vectorization
+  MulReductionVDNode(Node* ctrl, Node* in1, Node* in2, bool requires_strict_order = true) :
+    ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
   virtual int Opcode() const;
+
+  virtual bool requires_strict_order() const { return _requires_strict_order; }
+
+  virtual uint hash() const { return Node::hash() + _requires_strict_order; }
+
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
+  }
+
+  virtual uint size_of() const { return sizeof(*this); }
 };
 
 //------------------------------DivVFNode--------------------------------------
@@ -755,9 +844,9 @@ class AndVNode : public VectorNode {
 
 //------------------------------AndReductionVNode--------------------------------------
 // Vector and byte, short, int, long as a reduction
-class AndReductionVNode : public UnorderedReductionNode {
+class AndReductionVNode : public ReductionNode {
  public:
-  AndReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  AndReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -772,9 +861,9 @@ class OrVNode : public VectorNode {
 
 //------------------------------OrReductionVNode--------------------------------------
 // Vector xor byte, short, int, long as a reduction
-class OrReductionVNode : public UnorderedReductionNode {
+class OrReductionVNode : public ReductionNode {
  public:
-  OrReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  OrReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -789,25 +878,25 @@ class XorVNode : public VectorNode {
 
 //------------------------------XorReductionVNode--------------------------------------
 // Vector and int, long as a reduction
-class XorReductionVNode : public UnorderedReductionNode {
+class XorReductionVNode : public ReductionNode {
  public:
-  XorReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  XorReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------MinReductionVNode--------------------------------------
 // Vector min byte, short, int, long, float, double as a reduction
-class MinReductionVNode : public UnorderedReductionNode {
+class MinReductionVNode : public ReductionNode {
 public:
-  MinReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  MinReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------MaxReductionVNode--------------------------------------
 // Vector min byte, short, int, long, float, double as a reduction
-class MaxReductionVNode : public UnorderedReductionNode {
+class MaxReductionVNode : public ReductionNode {
 public:
-  MaxReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  MaxReductionVNode(Node* ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -847,6 +936,8 @@ class ExpandVNode: public VectorNode {
 //------------------------------LoadVectorNode---------------------------------
 // Load Vector from memory
 class LoadVectorNode : public LoadNode {
+ private:
+  DEBUG_ONLY( bool _must_verify_alignment = false; );
  public:
   LoadVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, ControlDependency control_dependency = LoadNode::DependsOnlyOnTest)
     : LoadNode(c, mem, adr, at, vt, MemNode::unordered, control_dependency) {
@@ -871,22 +962,47 @@ class LoadVectorNode : public LoadNode {
                               uint vlen, BasicType bt,
                               ControlDependency control_dependency = LoadNode::DependsOnlyOnTest);
   uint element_size(void) { return type2aelembytes(vect_type()->element_basic_type()); }
+
+  // Needed for proper cloning.
+  virtual uint size_of() const { return sizeof(*this); }
+
+#ifdef ASSERT
+  // When AlignVector is enabled, SuperWord only creates aligned vector loads and stores.
+  // VerifyAlignVector verifies this. We need to mark the nodes created in SuperWord,
+  // because nodes created elsewhere (i.e. VectorAPI) may still be misaligned.
+  bool must_verify_alignment() const { return _must_verify_alignment; }
+  void set_must_verify_alignment() { _must_verify_alignment = true; }
+#endif
 };
 
 //------------------------------LoadVectorGatherNode------------------------------
 // Load Vector from memory via index map
 class LoadVectorGatherNode : public LoadVectorNode {
  public:
-  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices)
+  LoadVectorGatherNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* offset = nullptr)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGather);
-    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
     add_req(indices);
-    assert(req() == MemNode::ValueIn + 1, "match_edge expects that last input is in MemNode::ValueIn");
+    DEBUG_ONLY(bool is_subword = is_subword_type(vt->element_basic_type()));
+    assert(is_subword || indices->bottom_type()->is_vect(), "indices must be in vector");
+    assert(is_subword || !offset, "");
+    assert(req() == MemNode::ValueIn + 1, "match_edge expects that index input is in MemNode::ValueIn");
+    if (offset) {
+      add_req(offset);
+    }
   }
 
   virtual int Opcode() const;
-  virtual uint match_edge(uint idx) const { return idx == MemNode::Address || idx == MemNode::ValueIn; }
+  virtual uint match_edge(uint idx) const {
+     return idx == MemNode::Address ||
+            idx == MemNode::ValueIn ||
+            ((is_subword_type(vect_type()->element_basic_type())) &&
+              idx == MemNode::ValueIn + 1);
+  }
+  virtual int store_Opcode() const {
+    // Ensure it is different from any store opcode to avoid folding when indices are used
+    return -1;
+  }
 };
 
 //------------------------------StoreVectorNode--------------------------------
@@ -894,6 +1010,7 @@ class LoadVectorGatherNode : public LoadVectorNode {
 class StoreVectorNode : public StoreNode {
  private:
   const TypeVect* _vect_type;
+  DEBUG_ONLY( bool _must_verify_alignment = false; );
  public:
   StoreVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val)
     : StoreNode(c, mem, adr, at, val, MemNode::unordered), _vect_type(val->bottom_type()->is_vect()) {
@@ -918,6 +1035,16 @@ class StoreVectorNode : public StoreNode {
 
   // Needed for proper cloning.
   virtual uint size_of() const { return sizeof(*this); }
+  virtual Node* mask() const { return nullptr; }
+  virtual Node* indices() const { return nullptr; }
+
+#ifdef ASSERT
+  // When AlignVector is enabled, SuperWord only creates aligned vector loads and stores.
+  // VerifyAlignVector verifies this. We need to mark the nodes created in SuperWord,
+  // because nodes created elsewhere (i.e. VectorAPI) may still be misaligned.
+  bool must_verify_alignment() const { return _must_verify_alignment; }
+  void set_must_verify_alignment() { _must_verify_alignment = true; }
+#endif
 };
 
 //------------------------------StoreVectorScatterNode------------------------------
@@ -925,6 +1052,7 @@ class StoreVectorNode : public StoreNode {
 
  class StoreVectorScatterNode : public StoreVectorNode {
   public:
+   enum { Indices = 4 };
    StoreVectorScatterNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices)
      : StoreVectorNode(c, mem, adr, at, val) {
      init_class_id(Class_StoreVectorScatter);
@@ -936,12 +1064,14 @@ class StoreVectorNode : public StoreNode {
    virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1; }
+   virtual Node* indices() const { return in(Indices); }
 };
 
 //------------------------------StoreVectorMaskedNode--------------------------------
 // Store Vector to memory under the influence of a predicate register(mask).
 class StoreVectorMaskedNode : public StoreVectorNode {
  public:
+  enum { Mask = 4 };
   StoreVectorMaskedNode(Node* c, Node* mem, Node* dst, Node* src, const TypePtr* at, Node* mask)
    : StoreVectorNode(c, mem, dst, at, src) {
     init_class_id(Class_StoreVectorMasked);
@@ -955,6 +1085,7 @@ class StoreVectorMaskedNode : public StoreVectorNode {
     return idx > 1;
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual Node* mask() const { return in(Mask); }
 };
 
 //------------------------------LoadVectorMaskedNode--------------------------------
@@ -975,32 +1106,46 @@ class LoadVectorMaskedNode : public LoadVectorNode {
     return idx > 1;
   }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual int store_Opcode() const {
+    // Ensure it is different from any store opcode to avoid folding when a mask is used
+    return -1;
+  }
 };
 
 //-------------------------------LoadVectorGatherMaskedNode---------------------------------
 // Load Vector from memory via index map under the influence of a predicate register(mask).
 class LoadVectorGatherMaskedNode : public LoadVectorNode {
  public:
-  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask)
+  LoadVectorGatherMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, Node* indices, Node* mask, Node* offset = nullptr)
     : LoadVectorNode(c, mem, adr, at, vt) {
     init_class_id(Class_LoadVectorGatherMasked);
-    assert(indices->bottom_type()->is_vect(), "indices must be in vector");
-    assert(mask->bottom_type()->isa_vectmask(), "sanity");
     add_req(indices);
     add_req(mask);
     assert(req() == MemNode::ValueIn + 2, "match_edge expects that last input is in MemNode::ValueIn+1");
+    if (is_subword_type(vt->element_basic_type())) {
+      add_req(offset);
+    }
   }
 
   virtual int Opcode() const;
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
                                                    idx == MemNode::ValueIn ||
-                                                   idx == MemNode::ValueIn + 1; }
+                                                   idx == MemNode::ValueIn + 1 ||
+                                                   (is_subword_type(vect_type()->is_vect()->element_basic_type()) &&
+                                                   idx == MemNode::ValueIn + 2); }
+  virtual int store_Opcode() const {
+    // Ensure it is different from any store opcode to avoid folding when indices and mask are used
+    return -1;
+  }
 };
 
 //------------------------------StoreVectorScatterMaskedNode--------------------------------
 // Store Vector into memory via index map under the influence of a predicate register(mask).
 class StoreVectorScatterMaskedNode : public StoreVectorNode {
   public:
+   enum { Indices = 4,
+          Mask
+   };
    StoreVectorScatterMaskedNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* indices, Node* mask)
      : StoreVectorNode(c, mem, adr, at, val) {
      init_class_id(Class_StoreVectorScatterMasked);
@@ -1015,6 +1160,27 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1 ||
                                                     idx == MemNode::ValueIn + 2; }
+   virtual Node* mask() const { return in(Mask); }
+   virtual Node* indices() const { return in(Indices); }
+};
+
+// Verify that memory address (adr) is aligned. The mask specifies the
+// least significant bits which have to be zero in the address.
+//
+// if (adr & mask == 0) {
+//   return adr
+// } else {
+//   stop("verify_vector_alignment found a misaligned vector memory access")
+// }
+//
+// This node is used just before a vector load/store with -XX:+VerifyAlignVector
+class VerifyVectorAlignmentNode : public Node {
+  virtual uint hash() const { return NO_HASH; };
+public:
+  VerifyVectorAlignmentNode(Node* adr, Node* mask) : Node(nullptr, adr, mask) {}
+  virtual int Opcode() const;
+  virtual uint size_of() const { return sizeof(*this); }
+  virtual const Type *bottom_type() const { return in(1)->bottom_type(); }
 };
 
 //------------------------------VectorCmpMaskedNode--------------------------------
@@ -1506,7 +1672,7 @@ class VectorReinterpretNode : public VectorNode {
   const TypeVect* src_type() { return _src_vt; }
   virtual uint hash() const { return VectorNode::hash() + _src_vt->hash(); }
   virtual bool cmp( const Node &n ) const {
-    return VectorNode::cmp(n) && !Type::cmp(_src_vt,((VectorReinterpretNode&)n)._src_vt);
+    return VectorNode::cmp(n) && Type::equals(_src_vt, ((VectorReinterpretNode&) n)._src_vt);
   }
   virtual Node* Identity(PhaseGVN* phase);
 
@@ -1642,12 +1808,12 @@ class VectorInsertNode : public VectorNode {
   VectorInsertNode(Node* vsrc, Node* new_val, ConINode* pos, const TypeVect* vt) : VectorNode(vsrc, new_val, (Node*)pos, vt) {
    assert(pos->get_int() >= 0, "positive constants");
    assert(pos->get_int() < (int)vt->length(), "index must be less than vector length");
-   assert(Type::cmp(vt, vsrc->bottom_type()) == 0, "input and output must be same type");
+   assert(Type::equals(vt, vsrc->bottom_type()), "input and output must be same type");
   }
   virtual int Opcode() const;
   uint pos() const { return in(3)->get_int(); }
 
-  static Node* make(Node* vec, Node* new_val, int position);
+  static Node* make(Node* vec, Node* new_val, int position, PhaseGVN& gvn);
 };
 
 class VectorBoxNode : public Node {

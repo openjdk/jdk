@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,7 @@ static void halfsiphash_init64(uint32_t v[4], uint64_t seed) {
   v[1] ^= 0xee;
 }
 
-uint32_t halfsiphash_finish32(uint32_t v[4], int rounds) {
+static uint32_t halfsiphash_finish32(uint32_t v[4], int rounds) {
   v[2] ^= 0xff;
   halfsiphash_rounds(v, rounds);
   return (v[1] ^ v[3]);

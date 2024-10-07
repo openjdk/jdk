@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include <string.h>
 #include <inttypes.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -43,34 +43,34 @@ typedef struct {
     jint count;
 } watch_info;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static int missesCount = 0;
 static watch_info watches[] = {
-    { NULL, "staticBoolean", "Z", JNI_TRUE, 0, 0 },
-    { NULL, "staticByte", "B", JNI_TRUE, 0, 0 },
-    { NULL, "staticShort", "S", JNI_TRUE, 0, 0 },
-    { NULL, "staticInt", "I", JNI_TRUE, 0, 0 },
-    { NULL, "staticLong", "J", JNI_TRUE, 0, 0 },
-    { NULL, "staticFloat", "F", JNI_TRUE, 0, 0 },
-    { NULL, "staticDouble", "D", JNI_TRUE, 0, 0 },
-    { NULL, "staticChar", "C", JNI_TRUE, 0, 0 },
-    { NULL, "staticObject", "Ljava/lang/Object;", JNI_TRUE, 0, 0 },
-    { NULL, "staticArrInt", "[I", JNI_TRUE, 0, 0 },
+    { nullptr, "staticBoolean", "Z", JNI_TRUE, 0, 0 },
+    { nullptr, "staticByte", "B", JNI_TRUE, 0, 0 },
+    { nullptr, "staticShort", "S", JNI_TRUE, 0, 0 },
+    { nullptr, "staticInt", "I", JNI_TRUE, 0, 0 },
+    { nullptr, "staticLong", "J", JNI_TRUE, 0, 0 },
+    { nullptr, "staticFloat", "F", JNI_TRUE, 0, 0 },
+    { nullptr, "staticDouble", "D", JNI_TRUE, 0, 0 },
+    { nullptr, "staticChar", "C", JNI_TRUE, 0, 0 },
+    { nullptr, "staticObject", "Ljava/lang/Object;", JNI_TRUE, 0, 0 },
+    { nullptr, "staticArrInt", "[I", JNI_TRUE, 0, 0 },
 
-    { NULL, "instanceBoolean", "Z", JNI_FALSE, 0, 0 },
-    { NULL, "instanceByte", "B", JNI_FALSE, 0, 0 },
-    { NULL, "instanceShort", "S", JNI_FALSE, 0, 0 },
-    { NULL, "instanceInt", "I", JNI_FALSE, 0, 0 },
-    { NULL, "instanceLong", "J", JNI_FALSE, 0, 0 },
-    { NULL, "instanceFloat", "F", JNI_FALSE, 0, 0 },
-    { NULL, "instanceDouble", "D", JNI_FALSE, 0, 0 },
-    { NULL, "instanceChar", "C", JNI_FALSE, 0, 0 },
-    { NULL, "instanceObject", "Ljava/lang/Object;", JNI_FALSE, 0, 0 },
-    { NULL, "instanceArrInt", "[I", JNI_FALSE, 0, 0 }
+    { nullptr, "instanceBoolean", "Z", JNI_FALSE, 0, 0 },
+    { nullptr, "instanceByte", "B", JNI_FALSE, 0, 0 },
+    { nullptr, "instanceShort", "S", JNI_FALSE, 0, 0 },
+    { nullptr, "instanceInt", "I", JNI_FALSE, 0, 0 },
+    { nullptr, "instanceLong", "J", JNI_FALSE, 0, 0 },
+    { nullptr, "instanceFloat", "F", JNI_FALSE, 0, 0 },
+    { nullptr, "instanceDouble", "D", JNI_FALSE, 0, 0 },
+    { nullptr, "instanceChar", "C", JNI_FALSE, 0, 0 },
+    { nullptr, "instanceObject", "Ljava/lang/Object;", JNI_FALSE, 0, 0 },
+    { nullptr, "instanceArrInt", "[I", JNI_FALSE, 0, 0 }
 };
 
 
@@ -103,12 +103,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -162,7 +162,7 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw006_getReady(JNIEnv *env,
     jvmtiError err;
     size_t i;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -191,7 +191,7 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw006_getReady(JNIEnv *env,
         }
     }
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_FIELD_ACCESS, NULL);
+        JVMTI_EVENT_FIELD_ACCESS, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("(SetEventNotificationMode) unexpected error: %s (%d)\n",
                TranslateError(err), err);

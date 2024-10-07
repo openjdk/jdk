@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <jni.h>
-#include <jni_tools.h>
-#include <nsk_tools.h>
-#include <aod.h>
+#include <jni_tools.hpp>
+#include <nsk_tools.hpp>
+#include <aod.hpp>
 
 extern "C" {
 
@@ -44,13 +44,13 @@ void nsk_aod_internal_error() {
 }
 
 void nsk_free_options(Options* options) {
-  if (options != NULL) {
+  if (options != nullptr) {
     int i;
     for (i = 0; i < NSK_AOD_MAX_OPTIONS; i++) {
-      if (options->names[i] != NULL) {
+      if (options->names[i] != nullptr) {
         free(options->names[i]);
       }
-      if (options->values[i] != NULL) {
+      if (options->values[i] != nullptr) {
         free(options->values[i]);
       }
     }
@@ -71,20 +71,20 @@ static Options* nsk_aod_createOptionsObject(char* optionsString) {
     char* value;
     char* sep;
 
-    if (optionsString == NULL) {
+    if (optionsString == nullptr) {
       NSK_COMPLAIN0("options were not passed to the native agent\n");
-      return NULL;
+      return nullptr;
     }
     options = (Options*) malloc(sizeof(Options));
     memset(options, 0, sizeof(Options));
     options->size = 0;
     name = optionsString;
-    while (name != NULL && i < NSK_AOD_MAX_OPTIONS) {
+    while (name != nullptr && i < NSK_AOD_MAX_OPTIONS) {
       sep = strchr(name, '=');
-      if (sep == NULL) { // name not found
+      if (sep == nullptr) { // name not found
         NSK_COMPLAIN1("Invalid options format: '%s'\n", optionsString);
         nsk_free_options(options);
-        return NULL;
+        return nullptr;
       }
       *sep = '\0';
       options->names[i] =  strdup(name);
@@ -92,10 +92,10 @@ static Options* nsk_aod_createOptionsObject(char* optionsString) {
       if (*value == '\0') { // value not found
         NSK_COMPLAIN1("Option '%s' is empty\n", options->names[i]);
         nsk_free_options(options);
-        return NULL;
+        return nullptr;
       }
       sep = strchr(value, ' ');
-      if (sep != NULL) {
+      if (sep != nullptr) {
         *sep = '\0';
         name = sep + 1;
       } else {
@@ -105,10 +105,10 @@ static Options* nsk_aod_createOptionsObject(char* optionsString) {
       i++;
 
       if (*name == '\0') {
-        name = NULL;
+        name = nullptr;
       }
     }
-    if (name != NULL) {
+    if (name != nullptr) {
       NSK_COMPLAIN1("WARNING: not all options were parsed, only %d options can be specified\n",
                     NSK_AOD_MAX_OPTIONS);
     }
@@ -119,12 +119,12 @@ static Options* nsk_aod_createOptionsObject(char* optionsString) {
 Options* nsk_aod_createOptions(char* optionsString) {
     Options* options;
 
-    if (!NSK_VERIFY((options = (Options*) nsk_aod_createOptionsObject(optionsString)) != NULL))
-        return NULL;
+    if (!NSK_VERIFY((options = (Options*) nsk_aod_createOptionsObject(optionsString)) != nullptr))
+        return nullptr;
 
     if (!NSK_VERIFY(nsk_aod_optionSpecified(options, NSK_AOD_AGENT_NAME_OPTION))) {
         NSK_COMPLAIN0("Agent name wasn't specified\n");
-        return NULL;
+        return nullptr;
     }
 
     /*
@@ -143,9 +143,9 @@ Options* nsk_aod_createOptions(char* optionsString) {
 const char* nsk_aod_getOptionValue(Options* options, const char* option) {
     int i;
 
-    if (!NSK_VERIFY(options != NULL)) {
-        NSK_COMPLAIN0("Options NULL\n");
-        return NULL;
+    if (!NSK_VERIFY(options != nullptr)) {
+        NSK_COMPLAIN0("Options null\n");
+        return nullptr;
     }
 
     for (i = 0; i < options->size; i++) {
@@ -156,14 +156,14 @@ const char* nsk_aod_getOptionValue(Options* options, const char* option) {
 
     NSK_COMPLAIN1("Option '%s' isn't defined\n", option);
 
-    return NULL;
+    return nullptr;
 }
 
 int nsk_aod_optionSpecified(Options* options, const char* option) {
     int i;
 
-    if (!NSK_VERIFY(options != NULL)) {
-        NSK_COMPLAIN0("Options NULL\n");
+    if (!NSK_VERIFY(options != nullptr)) {
+        NSK_COMPLAIN0("Options null\n");
         return NSK_FALSE;
     }
 
@@ -188,9 +188,9 @@ static const char* AGENT_LOADED_METHOD_SIGNATURE = "(Ljava/lang/String;)V";
 static const char* AGENT_FINISHED_METHOD_NAME = "agentFinished";
 static const char* AGENT_FINISHED_METHOD_SIGNATURE = "(Ljava/lang/String;Z)V";
 
-static jclass targetAppClass = NULL;
-static jmethodID agentLoadedMethod = NULL;
-static jmethodID agentFinishedMethod = NULL;
+static jclass targetAppClass = nullptr;
+static jmethodID agentLoadedMethod = nullptr;
+static jmethodID agentFinishedMethod = nullptr;
 
 // this function is used to notify target application that native agent has been loaded
 int nsk_aod_agentLoaded(JNIEnv* jni, const char* agentName) {
@@ -198,31 +198,31 @@ int nsk_aod_agentLoaded(JNIEnv* jni, const char* agentName) {
 
     NSK_DISPLAY1("Agent %s is loaded\n", agentName);
 
-    if (targetAppClass == NULL) {
+    if (targetAppClass == nullptr) {
         /*
          * FindClass returns local reference, to cache reference to target application class
          * global reference should be created
          */
         jclass localTargetAppClass;
         if (!NSK_JNI_VERIFY(jni, (localTargetAppClass =
-            jni->FindClass(TARGET_APP_CLASS_NAME)) != NULL)) {
+            jni->FindClass(TARGET_APP_CLASS_NAME)) != nullptr)) {
             return NSK_FALSE;
         }
 
         if (!NSK_JNI_VERIFY(jni, (targetAppClass = (jclass)
-            jni->NewGlobalRef(localTargetAppClass)) != NULL)) {
+            jni->NewGlobalRef(localTargetAppClass)) != nullptr)) {
             return NSK_FALSE;
         }
     }
 
-    if (agentLoadedMethod == NULL) {
+    if (agentLoadedMethod == nullptr) {
         if (!NSK_JNI_VERIFY(jni, (agentLoadedMethod =
-            jni->GetStaticMethodID(targetAppClass, AGENT_LOADED_METHOD_NAME, AGENT_LOADED_METHOD_SIGNATURE)) != NULL))
+            jni->GetStaticMethodID(targetAppClass, AGENT_LOADED_METHOD_NAME, AGENT_LOADED_METHOD_SIGNATURE)) != nullptr))
             return NSK_FALSE;
     }
 
     if (!NSK_JNI_VERIFY(jni, (agentNameString =
-        jni->NewStringUTF(agentName)) != NULL))
+        jni->NewStringUTF(agentName)) != nullptr))
         return NSK_FALSE;
 
     jni->CallStaticVoidMethod(targetAppClass, agentLoadedMethod, agentNameString);
@@ -252,13 +252,13 @@ int nsk_aod_agentFinished(JNIEnv* jni, const char* agentName, int success) {
 
     NSK_DISPLAY2("Agent %s finished (success: %d)\n", agentName, success);
 
-    if (agentFinishedMethod == NULL) {
+    if (agentFinishedMethod == nullptr) {
         if (!NSK_JNI_VERIFY(jni, (agentFinishedMethod =
-            jni->GetStaticMethodID(targetAppClass, AGENT_FINISHED_METHOD_NAME, AGENT_FINISHED_METHOD_SIGNATURE)) != NULL))
+            jni->GetStaticMethodID(targetAppClass, AGENT_FINISHED_METHOD_NAME, AGENT_FINISHED_METHOD_SIGNATURE)) != nullptr))
             return NSK_FALSE;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (agentNameString = jni->NewStringUTF(agentName)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (agentNameString = jni->NewStringUTF(agentName)) != nullptr))
         return NSK_FALSE;
 
     jni->CallStaticVoidMethod(targetAppClass, agentFinishedMethod, agentNameString, success ? JNI_TRUE : JNI_FALSE);
@@ -276,7 +276,7 @@ JNIEnv* nsk_aod_createJNIEnv(JavaVM* vm) {
     JNIEnv* jni;
     vm->GetEnv((void**)&jni, JNI_VERSION_1_2);
 
-    NSK_VERIFY(jni != NULL);
+    NSK_VERIFY(jni != nullptr);
 
     return jni;
 }

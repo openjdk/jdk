@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -448,7 +448,8 @@ public class ResourcePoolManager {
 
     public static CompressedModuleData newCompressedResource(ResourcePoolEntry original,
             ByteBuffer compressed,
-            String plugin, String pluginConfig, StringTable strings,
+            String plugin,
+            StringTable strings,
             ByteOrder order) {
         Objects.requireNonNull(original);
         Objects.requireNonNull(compressed);
@@ -461,13 +462,9 @@ public class ResourcePoolManager {
             uncompressed_size = comp.getUncompressedSize();
         }
         int nameOffset = strings.addString(plugin);
-        int configOffset = -1;
-        if (pluginConfig != null) {
-            configOffset = strings.addString(plugin);
-        }
         CompressedResourceHeader rh
                 = new CompressedResourceHeader(compressed.limit(), original.contentLength(),
-                        nameOffset, configOffset, isTerminal);
+                        nameOffset, isTerminal);
         // Merge header with content;
         byte[] h = rh.getBytes(order);
         ByteBuffer bb = ByteBuffer.allocate(compressed.limit() + h.length);

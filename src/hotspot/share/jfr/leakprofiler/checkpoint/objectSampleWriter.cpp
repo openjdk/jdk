@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -199,7 +199,7 @@ static ArrayInfo* array_infos = nullptr;
 static FieldTable* field_infos = nullptr;
 static RootDescriptionInfo* root_infos = nullptr;
 
-int __write_sample_info__(JfrCheckpointWriter* writer, const void* si) {
+static int __write_sample_info__(JfrCheckpointWriter* writer, const void* si) {
   assert(writer != nullptr, "invariant");
   assert(si != nullptr, "invariant");
   const OldObjectSampleInfo* const oosi = (const OldObjectSampleInfo*)si;
@@ -224,7 +224,7 @@ static void write_sample_infos(JfrCheckpointWriter& writer) {
   }
 }
 
-int __write_reference_info__(JfrCheckpointWriter* writer, const void* ri) {
+static int __write_reference_info__(JfrCheckpointWriter* writer, const void* ri) {
   assert(writer != nullptr, "invariant");
   assert(ri != nullptr, "invariant");
   const ReferenceInfo* const ref_info = (const ReferenceInfo*)ri;
@@ -246,7 +246,7 @@ static void write_reference_infos(JfrCheckpointWriter& writer) {
   }
 }
 
-int __write_array_info__(JfrCheckpointWriter* writer, const void* ai) {
+static int __write_array_info__(JfrCheckpointWriter* writer, const void* ai) {
   assert(writer != nullptr, "invariant");
   assert(ai != nullptr, "invariant");
   const ObjectSampleArrayInfo* const osai = (const ObjectSampleArrayInfo*)ai;
@@ -283,7 +283,7 @@ static void write_array_infos(JfrCheckpointWriter& writer) {
   }
 }
 
-int __write_field_info__(JfrCheckpointWriter* writer, const void* fi) {
+static int __write_field_info__(JfrCheckpointWriter* writer, const void* fi) {
   assert(writer != nullptr, "invariant");
   assert(fi != nullptr, "invariant");
   const FieldTable::FieldInfoEntry* field_info_entry = (const FieldTable::FieldInfoEntry*)fi;
@@ -340,7 +340,7 @@ static const char* description(const ObjectSampleRootDescriptionInfo* osdi) {
   return description.description();
 }
 
-int __write_root_description_info__(JfrCheckpointWriter* writer, const void* di) {
+static int __write_root_description_info__(JfrCheckpointWriter* writer, const void* di) {
   assert(writer != nullptr, "invariant");
   assert(di != nullptr, "invariant");
   const ObjectSampleRootDescriptionInfo* const osdi = (const ObjectSampleRootDescriptionInfo*)di;
@@ -367,11 +367,11 @@ typedef JfrTypeWriterImplHost<const ObjectSampleRootDescriptionInfo*, __write_ro
 typedef JfrTypeWriterHost<RootDescriptionWriterImpl, TYPE_OLDOBJECTGCROOT> RootDescriptionWriter;
 
 
-int _edge_reference_compare_(uintptr_t lhs, uintptr_t rhs) {
+static int _edge_reference_compare_(uintptr_t lhs, uintptr_t rhs) {
   return lhs > rhs ? 1 : (lhs < rhs) ? -1 : 0;
 }
 
-int _root_desc_compare_(const ObjectSampleRootDescriptionInfo*const & lhs, const ObjectSampleRootDescriptionInfo* const& rhs) {
+static int _root_desc_compare_(const ObjectSampleRootDescriptionInfo*const & lhs, const ObjectSampleRootDescriptionInfo* const& rhs) {
   const uintptr_t lhs_ref = lhs->_data._root_edge->reference().addr<uintptr_t>();
   const uintptr_t rhs_ref = rhs->_data._root_edge->reference().addr<uintptr_t>();
   return _edge_reference_compare_(lhs_ref, rhs_ref);

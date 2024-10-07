@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,19 +68,19 @@ public class TestAnchorNames extends JavadocTester {
                 """
                     <section class="nested-class-summary" id="nested-class-summary">
                     <h2>Nested Class Summary</h2>""",
-                "<a href=\"#nested-class-summary\">",
+                "<a href=\"#nested-class-summary\" tabindex=\"0\">",
                 """
                     <section class="method-summary" id="method-summary">
                     <h2>Method Summary</h2>""",
-                "<a href=\"#method-summary\">",
+                "<a href=\"#method-summary\" tabindex=\"0\">",
                 """
                     <section class="field-details" id="field-detail">
                     <h2>Field Details</h2>""",
-                "<a href=\"#field-detail\">",
+                "<a href=\"#field-detail\" tabindex=\"0\">",
                 """
                     <section class="constructor-details" id="constructor-detail">
                     <h2>Constructor Details</h2>""",
-                "<a href=\"#constructor-detail\">");
+                "<a href=\"#constructor-detail\" tabindex=\"0\">");
 
         // Test some members and link to these members
         checkOutput("pkg1/RegClass.html", true,

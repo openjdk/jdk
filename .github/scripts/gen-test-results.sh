@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@ for test in $failures $errors; do
   base_path="$(echo "$test" | tr '#' '_')"
   report_file="$report_dir/$base_path.jtr"
   hs_err_files=$(ls $report_dir/$base_path/hs_err*.log 2> /dev/null || true)
+  replay_files=$(ls $report_dir/$base_path/replay*.log 2> /dev/null || true)
   echo "####  <a id="$anchor">$test"
-
   echo '<details><summary>View test results</summary>'
   echo ''
   echo '```'
@@ -73,6 +73,20 @@ for test in $failures $errors; do
     echo ''
   fi
 
+  if [[ "$replay_files" != "" ]]; then
+    echo '<details><summary>View HotSpot replay file</summary>'
+    echo ''
+    for replay in $replay_files; do
+      echo '```'
+      echo "$replay:"
+      echo ''
+      cat "$replay"
+      echo '```'
+    done
+
+    echo '</details>'
+    echo ''
+  fi
 done >> $GITHUB_STEP_SUMMARY
 
 # With many failures, the summary can easily exceed 1024 kB, the limit set by Github

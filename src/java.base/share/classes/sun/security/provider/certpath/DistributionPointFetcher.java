@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,16 +101,28 @@ public class DistributionPointFetcher {
                 }
                 return Collections.emptySet();
             }
-            List<DistributionPoint> points =
-                    ext.getDistributionPoints();
+            List<DistributionPoint> points = ext.getDistributionPoints();
             Set<X509CRL> results = new HashSet<>();
+            CertStoreException savedCSE = null;
             for (Iterator<DistributionPoint> t = points.iterator();
                  t.hasNext() && !Arrays.equals(reasonsMask, ALL_REASONS); ) {
-                DistributionPoint point = t.next();
-                Collection<X509CRL> crls = getCRLs(selector, certImpl,
-                    point, reasonsMask, signFlag, prevKey, prevCert, provider,
-                    certStores, trustAnchors, validity, variant, anchor);
-                results.addAll(crls);
+                try {
+                    DistributionPoint point = t.next();
+                    Collection<X509CRL> crls = getCRLs(selector, certImpl,
+                        point, reasonsMask, signFlag, prevKey, prevCert, provider,
+                        certStores, trustAnchors, validity, variant, anchor);
+                    results.addAll(crls);
+                } catch (CertStoreException cse) {
+                    if (savedCSE == null) {
+                        savedCSE = cse;
+                    } else {
+                        savedCSE.addSuppressed(cse);
+                    }
+                }
+            }
+            // only throw CertStoreException if no CRLs are retrieved
+            if (results.isEmpty() && savedCSE != null) {
+                throw savedCSE;
             }
             if (debug != null) {
                 debug.println("Returning " + results.size() + " CRLs");
@@ -182,7 +194,11 @@ public class DistributionPointFetcher {
                     }
                 }
             } catch (CertStoreException cse) {
-                savedCSE = cse;
+                if (savedCSE == null) {
+                    savedCSE = cse;
+                } else {
+                    savedCSE.addSuppressed(cse);
+                }
             }
         }
         // only throw CertStoreException if no CRLs are retrieved
@@ -314,7 +330,7 @@ public class DistributionPointFetcher {
         if (debug != null) {
             debug.println("DistributionPointFetcher.verifyCRL: " +
                 "checking revocation status for" +
-                "\n  SN: " + Debug.toHexString(certImpl.getSerialNumber()) +
+                "\n  SN: " + Debug.toString(certImpl.getSerialNumber()) +
                 "\n  Subject: " + certImpl.getSubjectX500Principal() +
                 "\n  Issuer: " + certImpl.getIssuerX500Principal());
         }

@@ -134,7 +134,7 @@ public class Driver extends TestResult {
                     // test class signature
                     testAttribute(
                             className,
-                            () -> classFile.findAttribute(Attributes.SIGNATURE).orElse(null),
+                            () -> classFile.findAttribute(Attributes.signature()).orElse(null),
                             getClassExpectedSignature(className, clazz).get(className));
 
                     testFields(getExpectedFieldSignatures(clazz), classFile);
@@ -173,7 +173,7 @@ public class Driver extends TestResult {
             }
             testAttribute(
                     methodName,
-                    () -> method.findAttribute(Attributes.SIGNATURE).orElse(null),
+                    () -> method.findAttribute(Attributes.signature()).orElse(null),
                     expectedSignatures.get(methodName));
             foundMethods.add(methodName);
         }
@@ -204,7 +204,7 @@ public class Driver extends TestResult {
             printf("Testing field %s\n", fieldName);
             testAttribute(
                     fieldName,
-                    () -> field.findAttribute(Attributes.SIGNATURE).orElse(null),
+                    () -> field.findAttribute(Attributes.signature()).orElse(null),
                     expectedSignatures.get(fieldName));
             foundFields.add(fieldName);
         }

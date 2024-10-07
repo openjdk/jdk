@@ -48,8 +48,6 @@ class G1BarrierSet: public CardTableBarrierSet {
     return barrier_set_cast<G1BarrierSet>(BarrierSet::barrier_set());
   }
 
-  void invalidate(JavaThread* thread, MemRegion mr);
-
  public:
   G1BarrierSet(G1CardTable* table);
   ~G1BarrierSet() { }
@@ -73,10 +71,8 @@ class G1BarrierSet: public CardTableBarrierSet {
   template <DecoratorSet decorators, typename T>
   void write_ref_field_pre(T* field);
 
-  inline void invalidate(MemRegion mr);
-  inline void write_region(JavaThread* thread, MemRegion mr);
-
-  inline void write_ref_array_work(MemRegion mr);
+  inline void write_region(MemRegion mr);
+  void write_region(JavaThread* thread, MemRegion mr);
 
   template <DecoratorSet decorators, typename T>
   void write_ref_field_post(T* field);

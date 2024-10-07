@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,11 @@
  * questions.
  */
 
+import jdk.test.lib.Asserts;
+
 import java.lang.SuppressWarnings;
+import java.util.Arrays;
+import java.util.HexFormat;
 
 import static jdk.test.lib.Asserts.*;
 
@@ -49,6 +53,7 @@ public class AssertsTest {
         testLessThan();
         testLessThanOrEqual();
         testEquals();
+        testEqualsByteArray();
         testGreaterThanOrEqual();
         testGreaterThan();
         testNotEquals();
@@ -88,6 +93,26 @@ public class AssertsTest {
         expectFail(Assertion.EQ, f1, f2);
         expectFail(Assertion.LTE, null, 2);
         expectFail(Assertion.LTE, 2, null);
+    }
+
+    private static void testEqualsByteArray() throws Exception {
+        byte[] b1 = new byte[1];
+        byte[] b11 = new byte[1];
+        byte[] b2 = new byte[2];
+
+        expectPass(Assertion.EQBA, b1, b1);
+        expectPass(Assertion.EQBA, b1, b11);
+        expectPass(Assertion.EQBA, (byte[])null, (byte[])null);
+        expectPass(Assertion.NEQBA, b1, b2);
+        expectPass(Assertion.NEQBA, b1, (byte[])null);
+        expectPass(Assertion.NEQBA, (byte[])null, b1);
+
+        expectFail(Assertion.EQBA, b1, b2);
+        expectFail(Assertion.EQBA, (byte[])null, b1);
+        expectFail(Assertion.EQBA, b1, (byte[])null);
+        expectFail(Assertion.NEQBA, b1, b1);
+        expectFail(Assertion.NEQBA, b1, b11);
+        expectFail(Assertion.NEQBA, (byte[])null, (byte[])null);
     }
 
     private static void testGreaterThanOrEqual() throws Exception {
@@ -191,10 +216,47 @@ public class AssertsTest {
                             " to throw a RuntimeException");
     }
 
+    private static void expectPass(Assertion assertion, byte[] b1, byte[] b2)
+            throws Exception {
+        if (assertion == Assertion.EQBA) {
+            String msg = "Expected " + Assertion.asString("assertEqualsByteArray",
+                    Arrays.toString(b1), Arrays.toString(b2)) + " to pass";
+            Asserts.assertEqualsByteArray(b1, b2, msg);
+        } else {
+            String msg = "Expected " + Assertion.asString("assertNotEqualsByteArray",
+                    Arrays.toString(b1), Arrays.toString(b2)) + " to pass";
+            Asserts.assertNotEqualsByteArray(b1, b2, msg);
+        }
+    }
+
+    private static void expectFail(Assertion assertion, byte[] b1, byte[] b2)
+            throws Exception {
+        if (assertion == Assertion.EQBA) {
+            try {
+                Asserts.assertEqualsByteArray(b1, b2);
+            } catch (RuntimeException e) {
+                return;
+            }
+            throw new Exception("Expected "
+                    + Assertion.asString("assertEqualsByteArray",
+                    Arrays.toString(b1), Arrays.toString(b2))
+                    + " to throw a RuntimeException");
+        } else {
+            try {
+                Asserts.assertNotEqualsByteArray(b1, b2);
+            } catch (RuntimeException e) {
+                return;
+            }
+            throw new Exception("Expected "
+                    + Assertion.asString("assertNotEqualsByteArray",
+                    Arrays.toString(b1), Arrays.toString(b2))
+                    + " to throw a RuntimeException");
+        }
+    }
 }
 
 enum Assertion {
-    LT, LTE, EQ, GTE, GT, NE, NULL, NOTNULL, FALSE, TRUE;
+    LT, LTE, EQ, EQBA, NEQBA, GTE, GT, NE, NULL, NOTNULL, FALSE, TRUE;
 
     @SuppressWarnings("unchecked")
     public static <T extends Comparable<T>> void run(Assertion assertion, T ... args) {
@@ -262,7 +324,7 @@ enum Assertion {
         }
     }
 
-    private static String asString(String assertion, Object ... args) {
+    public static String asString(String assertion, Object ... args) {
         if (args == null) {
             return String.format("%s(null)", assertion);
         }

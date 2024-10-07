@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -18,8 +18,7 @@ import java.util.List;
  * @author <a href="mailto:gnodet@gmail.com">Guillaume Nodet</a>
  * @since 2.3
  */
-public interface Completer
-{
+public interface Completer {
     /**
      * Populates <i>candidates</i> with a list of possible completions for the <i>command line</i>.
      *

@@ -43,7 +43,6 @@ private:
 
 public:
   static size_t heap_reserved_size_bytes();
-  static size_t heap_max_size_bytes();
 };
 
 #endif // SHARE_GC_PARALLEL_PARALLELARGUMENTS_HPP

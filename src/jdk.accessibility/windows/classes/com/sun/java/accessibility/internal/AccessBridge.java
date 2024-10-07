@@ -160,7 +160,7 @@ public final class AccessBridge {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void initStatic() {
         // Load the appropriate DLLs
         boolean is32on64 = false;
@@ -7424,7 +7424,7 @@ public final class AccessBridge {
      * A helper class to handle coordinate conversion between screen and user spaces.
      * See {@link sun.java2d.SunGraphicsEnvironment}
      */
-    private static abstract class AccessibilityGraphicsEnvironment extends GraphicsEnvironment {
+    private abstract static class AccessibilityGraphicsEnvironment extends GraphicsEnvironment {
         /**
          * Returns the graphics configuration which bounds contain the given point in the user's space.
          *

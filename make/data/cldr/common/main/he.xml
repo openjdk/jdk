@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1253,7 +1253,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">מיון ספר טלפונים</type>
 			<type key="collation" type="phonetic">סדר מיון פונטי</type>
 			<type key="collation" type="pinyin">מיון פיניין</type>
-			<type key="collation" type="reformed">סדר מיון מתוקן</type>
 			<type key="collation" type="search">חיפוש למטרה כללית</type>
 			<type key="collation" type="searchjl" draft="contributed">חפש לפי העיצור הראשון באותיות הנגול</type>
 			<type key="collation" type="standard">סדר מיון רגיל</type>
@@ -2875,9 +2874,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>שעון {0}</regionFormat>
 			<regionFormat type="daylight">שעון {0} (קיץ)</regionFormat>
 			<regionFormat type="standard">שעון {0} (חורף)</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>סנטה איזבל</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>זמן אוניברסלי מתואם</standard>
@@ -2999,9 +2995,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>מלבורן</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>קרי</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>הוברט</exemplarCity>
@@ -3156,9 +3149,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>קרסטון</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>ילונייף</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>אדמונטון</exemplarCity>
 			</zone>
@@ -3177,29 +3167,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>רזולוט</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>רייני ריבר</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>רנקין אינלט</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>אטיקוקן</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>ת׳אנדר ביי</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>ניפיגון</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>טורונטו</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>איקלואיט</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>פנגנירטונג</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>מונקטון</exemplarCity>
@@ -4014,17 +3992,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>דאר א-סלאם</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>אוז׳הורוד</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>קייב</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>סימפרופול</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>זפורוז׳יה</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>קמפאלה</exemplarCity>
@@ -4043,9 +4015,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>הונולולו</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ג׳ונסטון</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>אנקורג׳</exemplarCity>
@@ -4729,11 +4698,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="contributed">שעון קיץ מקאו</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>שעון מקווארי</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>שעון מגדן</generic>
@@ -4771,13 +4735,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>שעון מאוסון</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>שעון צפון-מערב מקסיקו</generic>
-					<standard>שעון צפון-מערב מקסיקו (חורף)</standard>
-					<daylight>שעון צפון-מערב מקסיקו (קיץ)</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

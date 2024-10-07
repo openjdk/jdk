@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @bug 8152817
+ * @bug 8152817 8174269
  * @summary Make sure that resource bundles in the jdk.localedata module are
  *          loaded under a security manager.
  * @modules jdk.localedata
- * @run main/othervm -Djava.security.manager=allow -Djava.locale.providers=COMPAT
+ * @run main/othervm -Djava.security.manager=allow
  *      -Djava.security.debug=access,failure,codebase=jrt:/jdk.localedata Bug8152817
  */
 
@@ -42,13 +42,14 @@ public class Bug8152817 {
         System.setSecurityManager(new SecurityManager());
 
         DateFormatSymbols syms = DateFormatSymbols.getInstance(Locale.GERMAN);
-        if (!"Oktober".equals(syms.getMonths()[Calendar.OCTOBER])) {
-            throw new RuntimeException("Test failed (FormatData)");
+        String s = syms.getMonths()[Calendar.OCTOBER];
+        if (!"Oktober".equals(s)) {
+            throw new RuntimeException("Test failed: " + s);
         }
 
-        String s = HijrahChronology.INSTANCE.getDisplayName(TextStyle.FULL, Locale.GERMAN);
-        if (!s.contains("Islamischer Kalender")) {
-            throw new RuntimeException("Test failed (JavaTimeSupplementary)");
+        s = HijrahChronology.INSTANCE.getDisplayName(TextStyle.FULL, Locale.GERMAN);
+        if (!s.contains("Hidschri-Kalender (Umm al-Qura)")) {
+            throw new RuntimeException("Test failed: " + s);
         }
     }
 }

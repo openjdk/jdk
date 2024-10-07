@@ -55,7 +55,7 @@ public class ScalarReplacementTests {
     }
 
     @Test
-    @Arguments(Argument.RANDOM_EACH)
+    @Arguments(values = Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.CALL, IRNode.LOAD, IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.ALLOC})
     public String stringConstant(int age) {
         Person p = new Person("Java", age);
@@ -63,7 +63,7 @@ public class ScalarReplacementTests {
     }
 
     @Test
-    @Arguments(Argument.RANDOM_EACH)
+    @Arguments(values = Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.CALL, IRNode.LOAD, IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.ALLOC})
     public int intConstant(int age) {
         Person p = new Person("Java", age);
@@ -71,7 +71,7 @@ public class ScalarReplacementTests {
     }
 
     @Test
-    @Arguments(Argument.RANDOM_EACH)
+    @Arguments(values = Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.CALL, IRNode.LOAD, IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.ALLOC})
     public String nestedStringConstant(int age) {
         Person p1 = new Person("Java", age);
@@ -80,7 +80,7 @@ public class ScalarReplacementTests {
     }
 
     @Test
-    @Arguments(Argument.RANDOM_EACH)
+    @Arguments(values = Argument.RANDOM_EACH)
     @IR(failOn = {IRNode.CALL, IRNode.LOAD, IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.ALLOC})
     public int nestedIntConstant(int age) {
         Person p1 = new Person("Java", age);
@@ -89,7 +89,7 @@ public class ScalarReplacementTests {
     }
 
     @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = {IRNode.CALL, IRNode.LOAD, IRNode.STORE, IRNode.FIELD_ACCESS, IRNode.ALLOC})
     public int nestedConstants(int age1, int age2) {
         Person p = new Person(

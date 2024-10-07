@@ -51,19 +51,19 @@ public class TestNativeStack {
     public static void main(String[] args) throws Throwable {
         // case 1: Trigger a JNI warning with Xcheck:jni
         OutputAnalyzer oa =
-            ProcessTools.executeTestJvm("-Xcheck:jni",
-                                        "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
-                                        "TestNativeStack$Main");
+            ProcessTools.executeTestJava("-Xcheck:jni",
+                                         "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
+                                         "TestNativeStack$Main");
         oa.shouldHaveExitValue(0);
         oa.shouldContain("WARNING in native method");
         oa.shouldContain("thread_start");
         oa.reportDiagnosticSummary();
 
         // Case 2: Trigger a JNI FatalError call
-        oa = ProcessTools.executeTestJvm("-XX:-CreateCoredumpOnCrash",
-                                         "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
-                                         "TestNativeStack$Main",
-                                         "error");
+        oa = ProcessTools.executeTestJava("-XX:-CreateCoredumpOnCrash",
+                                          "-Djava.library.path=" + Utils.TEST_NATIVE_PATH,
+                                          "TestNativeStack$Main",
+                                          "error");
         oa.shouldNotHaveExitValue(0);
         oa.shouldContain("FATAL ERROR in native method");
         oa.shouldContain("thread_start");

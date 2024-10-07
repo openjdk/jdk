@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -34,7 +34,7 @@ extern "C" {
 #define STATUS_FAILED 2
 #define JVM_ACC_SYNTHETIC     0x1000
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
@@ -54,12 +54,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -102,9 +102,9 @@ checkClassMethods(jclass klass) {
     jmethodID mid;
     jboolean isSynthetic;
     jint meth_cnt = 0;
-    jmethodID* methods_ptr = NULL;
-    char* name_ptr = NULL;
-    char* sign_ptr = NULL;
+    jmethodID* methods_ptr = nullptr;
+    char* name_ptr = nullptr;
+    char* sign_ptr = nullptr;
     int i;
 
     err = jvmti->GetClassMethods(klass, &meth_cnt, &methods_ptr);
@@ -118,7 +118,7 @@ checkClassMethods(jclass klass) {
         jint mods;
         mid = methods_ptr[i];
         err = jvmti->GetMethodName(mid, &name_ptr,
-                                    &sign_ptr, (char **) NULL);
+                                    &sign_ptr, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("(GetMethodName#%d) unexpected error: %s (%d)\n",
                    i, TranslateError(err), err);
@@ -160,12 +160,12 @@ checkClassFields(jclass klass) {
     jfieldID fid;
     jboolean isSynthetic;
     jint fld_cnt = 0;
-    jfieldID* fields_ptr = NULL;
-    char* name_ptr = NULL;
-    char* sign_ptr = NULL;
+    jfieldID* fields_ptr = nullptr;
+    char* name_ptr = nullptr;
+    char* sign_ptr = nullptr;
     int i;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -181,7 +181,7 @@ checkClassFields(jclass klass) {
         jint mods;
         fid = fields_ptr[i];
         err = jvmti->GetFieldName(klass, fid, &name_ptr,
-                                    &sign_ptr, (char **) NULL);
+                                    &sign_ptr, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("(GetFieldName#%d) unexpected error: %s (%d)\n",
                    i, TranslateError(err), err);
@@ -222,13 +222,13 @@ Java_nsk_jvmti_unit_IsSynthetic_issynth001_check(JNIEnv *env,
         jclass cls, jclass klass) {
 
     jvmtiError err;
-    char* class_sign = NULL;
+    char* class_sign = nullptr;
 
     if (!caps.can_get_synthetic_attribute) {
         return result;
     }
 
-    err = jvmti->GetClassSignature(cls, &class_sign, (char **) NULL);
+    err = jvmti->GetClassSignature(cls, &class_sign, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("GetSourceFileName unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -249,7 +249,7 @@ Java_nsk_jvmti_unit_IsSynthetic_issynth001_check(JNIEnv *env,
         return result;
     }
 
-    err = jvmti->GetClassSignature(klass, &class_sign, (char **) NULL);
+    err = jvmti->GetClassSignature(klass, &class_sign, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("GetSourceFileName unexpected error: %s (%d)\n",
                TranslateError(err), err);

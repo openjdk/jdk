@@ -63,6 +63,10 @@ JRT_LEAF(void, ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_hea
   ZBarrier::store_barrier_on_native_oop_field((zpointer*)p, false /* heal */);
 JRT_END
 
+JRT_LEAF(void, ZBarrierSetRuntime::load_barrier_on_oop_array(oop* p, size_t length))
+  ZBarrier::load_barrier_on_oop_array((zpointer*)p, length);
+JRT_END
+
 JRT_LEAF(void, ZBarrierSetRuntime::clone(oopDesc* src, oopDesc* dst, size_t size))
   HeapAccess<>::clone(src, dst, size);
 JRT_END
@@ -124,6 +128,10 @@ address ZBarrierSetRuntime::store_barrier_on_oop_field_without_healing_addr() {
 
 address ZBarrierSetRuntime::store_barrier_on_native_oop_field_without_healing_addr() {
   return reinterpret_cast<address>(store_barrier_on_native_oop_field_without_healing);
+}
+
+address ZBarrierSetRuntime::load_barrier_on_oop_array_addr() {
+  return reinterpret_cast<address>(load_barrier_on_oop_array);
 }
 
 address ZBarrierSetRuntime::clone_addr() {

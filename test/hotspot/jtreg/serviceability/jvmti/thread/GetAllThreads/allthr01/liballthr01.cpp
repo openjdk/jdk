@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -46,7 +46,7 @@ static jrawMonitorID stopping_agent_thread_lock;
 static const char main_name[] = "main";
 static const char thread1_name[] = "thread1";
 static const char sys_thread_name[] = "SysThread";
-// Tes uses -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
+// Test uses -Djdk.virtualThreadScheduler.maxPoolSize=1
 // to make name of carrier thread deterministic
 static const char fj_thread_name[] = "ForkJoinPool-1-worker-1";
 
@@ -93,7 +93,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti_env, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti_env == NULL) {
+  if (res != JNI_OK || jvmti_env == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -162,7 +162,7 @@ JNIEXPORT void
 Java_allthr01_startAgentThread(JNIEnv *jni) {
   RawMonitorLocker rml1 = RawMonitorLocker(jvmti_env, jni, starting_agent_thread_lock);
   jvmtiError err = jvmti_env->RunAgentThread(create_jthread(jni),
-                                             sys_thread, NULL,JVMTI_THREAD_NORM_PRIORITY);
+                                             sys_thread, nullptr,JVMTI_THREAD_NORM_PRIORITY);
   check_jvmti_status(jni, err, "Failed to run AgentThread");
   rml1.wait();
   LOG("Started Agent Thread\n");

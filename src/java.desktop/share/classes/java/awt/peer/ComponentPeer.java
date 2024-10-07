@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,8 +497,10 @@ public interface ComponentPeer {
 
     /**
      * Updates internal data structures related to the component's GC.
-     * @param gc the reference graphics configuration
-     * @return if the peer needs to be recreated for the changes to take effect
+     *
+     * @param  gc the reference graphics configuration
+     * @return {@code true} if the peer needs to be recreated for the changes to
+     *         take effect, otherwise {@code false}
      * @since 1.7
      */
     boolean updateGraphicsData(GraphicsConfiguration gc);

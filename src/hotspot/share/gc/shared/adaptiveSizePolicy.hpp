@@ -48,18 +48,8 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   virtual GCPolicyKind kind() const { return _gc_adaptive_size_policy; }
 
   enum SizePolicyTrueValues {
-    decrease_old_gen_for_throughput_true = -7,
-    decrease_young_gen_for_througput_true = -6,
-
-    increase_old_gen_for_min_pauses_true = -5,
-    decrease_old_gen_for_min_pauses_true = -4,
-    decrease_young_gen_for_maj_pauses_true = -3,
-    increase_young_gen_for_min_pauses_true = -2,
-    increase_old_gen_for_maj_pauses_true = -1,
-
     decrease_young_gen_for_min_pauses_true = 1,
     decrease_old_gen_for_maj_pauses_true = 2,
-    increase_young_gen_for_maj_pauses_true = 3,
 
     increase_old_gen_for_throughput_true = 4,
     increase_young_gen_for_througput_true = 5,
@@ -267,12 +257,12 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
     // to use minor_collection_end() in its current form.
   }
 
-  virtual size_t eden_increment(size_t cur_eden);
-  virtual size_t eden_increment(size_t cur_eden, uint percent_change);
-  virtual size_t eden_decrement(size_t cur_eden);
-  virtual size_t promo_increment(size_t cur_eden);
-  virtual size_t promo_increment(size_t cur_eden, uint percent_change);
-  virtual size_t promo_decrement(size_t cur_eden);
+  size_t eden_increment(size_t cur_eden);
+  size_t eden_increment(size_t cur_eden, uint percent_change);
+  size_t eden_decrement(size_t cur_eden);
+  size_t promo_increment(size_t cur_eden);
+  size_t promo_increment(size_t cur_eden, uint percent_change);
+  size_t promo_decrement(size_t cur_eden);
 
   virtual void clear_generation_free_space_flags();
 
@@ -344,17 +334,11 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   AdaptiveWeightedAverage* avg_eden_live() const { return _avg_eden_live; }
   AdaptiveWeightedAverage* avg_old_live() const { return _avg_old_live; }
 
-  AdaptivePaddedAverage*  avg_survived() const { return _avg_survived; }
-  AdaptivePaddedNoZeroDevAverage*  avg_pretenured() { return _avg_pretenured; }
-
   // Methods indicating events of interest to the adaptive size policy,
   // called by GC algorithms. It is the responsibility of users of this
   // policy to call these methods at the correct times!
   virtual void minor_collection_begin();
   virtual void minor_collection_end(GCCause::Cause gc_cause);
-  virtual LinearLeastSquareFit* minor_pause_old_estimator() const {
-    return _minor_pause_old_estimator;
-  }
 
   LinearLeastSquareFit* minor_pause_young_estimator() {
     return _minor_pause_young_estimator;
@@ -402,10 +386,6 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   }
   void set_gc_overhead_limit_exceeded(bool v) {
     _overhead_checker.set_gc_overhead_limit_exceeded(v);
-  }
-
-  bool gc_overhead_limit_near() {
-    return _overhead_checker.gc_overhead_limit_near();
   }
 
   void reset_gc_overhead_limit_count() {

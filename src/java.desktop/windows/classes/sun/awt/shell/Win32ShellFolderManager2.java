@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -522,7 +522,7 @@ final class Win32ShellFolderManager2 extends ShellFolderManager {
         boolean special1 = sf1.isSpecial();
         boolean special2 = sf2.isSpecial();
 
-        if (special1 || special2) {
+        if (special1 && special2) {
             if (topFolderList == null) {
                 ArrayList<Win32ShellFolder2> tmpTopFolderList = new ArrayList<>();
                 tmpTopFolderList.add(Win32ShellFolderManager2.getPersonal());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,41 +52,13 @@
 static const ZStatCriticalPhase ZCriticalPhaseRelocationStall("Relocation Stall");
 static const ZStatSubPhase ZSubPhaseConcurrentRelocateRememberedSetFlipPromotedYoung("Concurrent Relocate Remset FP", ZGenerationId::young);
 
-static uintptr_t forwarding_index(ZForwarding* forwarding, zoffset from_offset) {
-  return (from_offset - forwarding->start()) >> forwarding->object_alignment_shift();
-}
-
-static zaddress forwarding_find(ZForwarding* forwarding, zoffset from_offset, ZForwardingCursor* cursor) {
-  const uintptr_t from_index = forwarding_index(forwarding, from_offset);
-  const ZForwardingEntry entry = forwarding->find(from_index, cursor);
-  return entry.populated() ? ZOffset::address(to_zoffset(entry.to_offset())) : zaddress::null;
-}
-
-static zaddress forwarding_find(ZForwarding* forwarding, zaddress_unsafe from_addr, ZForwardingCursor* cursor) {
-  return forwarding_find(forwarding, ZAddress::offset(from_addr), cursor);
-}
-
-static zaddress forwarding_find(ZForwarding* forwarding, zaddress from_addr, ZForwardingCursor* cursor) {
-  return forwarding_find(forwarding, ZAddress::offset(from_addr), cursor);
-}
-
-static zaddress forwarding_insert(ZForwarding* forwarding, zoffset from_offset, zaddress to_addr, ZForwardingCursor* cursor) {
-  const uintptr_t from_index = forwarding_index(forwarding, from_offset);
-  const zoffset to_offset = ZAddress::offset(to_addr);
-  const zoffset to_offset_final = forwarding->insert(from_index, to_offset, cursor);
-  return ZOffset::address(to_offset_final);
-}
-
-static zaddress forwarding_insert(ZForwarding* forwarding, zaddress from_addr, zaddress to_addr, ZForwardingCursor* cursor) {
-  return forwarding_insert(forwarding, ZAddress::offset(from_addr), to_addr, cursor);
-}
-
 ZRelocateQueue::ZRelocateQueue()
   : _lock(),
     _queue(),
     _nworkers(0),
     _nsynchronized(0),
     _synchronize(false),
+    _is_active(false),
     _needs_attention(0) {}
 
 bool ZRelocateQueue::needs_attention() const {
@@ -101,6 +73,20 @@ void ZRelocateQueue::inc_needs_attention() {
 void ZRelocateQueue::dec_needs_attention() {
   const int needs_attention = Atomic::sub(&_needs_attention, 1);
   assert(needs_attention == 0 || needs_attention == 1, "Invalid state");
+}
+
+void ZRelocateQueue::activate(uint nworkers) {
+  _is_active = true;
+  join(nworkers);
+}
+
+void ZRelocateQueue::deactivate() {
+  Atomic::store(&_is_active, false);
+  clear();
+}
+
+bool ZRelocateQueue::is_active() const {
+  return Atomic::load(&_is_active);
 }
 
 void ZRelocateQueue::join(uint nworkers) {
@@ -327,7 +313,7 @@ ZWorkers* ZRelocate::workers() const {
 }
 
 void ZRelocate::start() {
-  _queue.join(workers()->active_workers());
+  _queue.activate(workers()->active_workers());
 }
 
 void ZRelocate::add_remset(volatile zpointer* p) {
@@ -353,7 +339,7 @@ static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_add
   ZUtils::object_copy_disjoint(from_addr, to_addr, size);
 
   // Insert forwarding
-  const zaddress to_addr_final = forwarding_insert(forwarding, from_addr, to_addr, cursor);
+  const zaddress to_addr_final = forwarding->insert(from_addr, to_addr, cursor);
 
   if (to_addr_final != to_addr) {
     // Already relocated, try undo allocation
@@ -367,7 +353,7 @@ zaddress ZRelocate::relocate_object(ZForwarding* forwarding, zaddress_unsafe fro
   ZForwardingCursor cursor;
 
   // Lookup forwarding
-  zaddress to_addr = forwarding_find(forwarding, from_addr, &cursor);
+  zaddress to_addr = forwarding->find(from_addr, &cursor);
   if (!is_null(to_addr)) {
     // Already relocated
     return to_addr;
@@ -394,8 +380,7 @@ zaddress ZRelocate::relocate_object(ZForwarding* forwarding, zaddress_unsafe fro
 }
 
 zaddress ZRelocate::forward_object(ZForwarding* forwarding, zaddress_unsafe from_addr) {
-  ZForwardingCursor cursor;
-  const zaddress to_addr = forwarding_find(forwarding, from_addr, &cursor);
+  const zaddress to_addr = forwarding->find(from_addr);
   assert(!is_null(to_addr), "Should be forwarded: " PTR_FORMAT, untype(from_addr));
   return to_addr;
 }
@@ -426,7 +411,7 @@ static void retire_target_page(ZGeneration* generation, ZPage* page) {
   // relocate the remaining objects, leaving the target page empty when
   // relocation completed.
   if (page->used() == 0) {
-    ZHeap::heap()->free_page(page);
+    ZHeap::heap()->free_page(page, true /* allow_defragment */);
   }
 }
 
@@ -611,7 +596,7 @@ private:
 
     // Lookup forwarding
     {
-      const zaddress to_addr = forwarding_find(_forwarding, from_addr, &cursor);
+      const zaddress to_addr = _forwarding->find(from_addr, &cursor);
       if (!is_null(to_addr)) {
         // Already relocated
         increase_other_forwarded(size);
@@ -635,7 +620,7 @@ private:
     }
 
     // Insert forwarding
-    const zaddress to_addr = forwarding_insert(_forwarding, from_addr, allocated_addr, &cursor);
+    const zaddress to_addr = _forwarding->insert(from_addr, allocated_addr, &cursor);
     if (to_addr != allocated_addr) {
       // Already relocated, undo allocation
       _allocator->undo_alloc_object(to_page, to_addr, size);
@@ -858,7 +843,23 @@ private:
 
     // Promotions happen through a new cloned page
     ZPage* const to_page = promotion ? from_page->clone_limited() : from_page;
-    to_page->reset(to_age, ZPageResetType::InPlaceRelocation);
+
+    // Reset page for in-place relocation
+    to_page->reset(to_age);
+    to_page->reset_top_for_allocation();
+    if (promotion) {
+      to_page->remset_alloc();
+    }
+
+    // Verify that the inactive remset is clear when resetting the page for
+    // in-place relocation.
+    if (from_page->age() == ZPageAge::old) {
+      if (ZGeneration::old()->active_remset_is_current()) {
+        to_page->verify_remset_cleared_previous();
+      } else {
+        to_page->verify_remset_cleared_current();
+      }
+    }
 
     // Clear remset bits for all objects that were relocated
     // before this page became an in-place relocated page.
@@ -942,35 +943,15 @@ public:
     return ZGeneration::old()->active_remset_is_current();
   }
 
-  void clear_remset_before_reuse(ZPage* page, bool in_place) {
+  void clear_remset_before_in_place_reuse(ZPage* page) {
     if (_forwarding->from_age() != ZPageAge::old) {
       // No remset bits
       return;
     }
 
-    if (in_place) {
-      // Clear 'previous' remset bits. For in-place relocated pages, the previous
-      // remset bits are always used, even when active_remset_is_current().
-      page->clear_remset_previous();
-
-      return;
-    }
-
-    // Normal relocate
-
-    // Clear active remset bits
-    if (active_remset_is_current()) {
-      page->clear_remset_current();
-    } else {
-      page->clear_remset_previous();
-    }
-
-    // Verify that inactive remset bits are all cleared
-    if (active_remset_is_current()) {
-      page->verify_remset_cleared_previous();
-    } else {
-      page->verify_remset_cleared_current();
-    }
+    // Clear 'previous' remset bits. For in-place relocated pages, the previous
+    // remset bits are always used, even when active_remset_is_current().
+    page->clear_remset_previous();
   }
 
   void finish_in_place_relocation() {
@@ -1016,7 +997,7 @@ public:
       ZPage* const page = _forwarding->detach_page();
 
       // Ensure that previous remset bits are cleared
-      clear_remset_before_reuse(page, true /* in_place */);
+      clear_remset_before_in_place_reuse(page);
 
       page->log_msg(" (relocate page done in-place)");
 
@@ -1028,15 +1009,10 @@ public:
       // Wait for all other threads to call release_page
       ZPage* const page = _forwarding->detach_page();
 
-      // Ensure that all remset bits are cleared
-      // Note: cleared after detach_page, when we know that
-      // the young generation isn't scanning the remset.
-      clear_remset_before_reuse(page, false /* in_place */);
-
       page->log_msg(" (relocate page done normal)");
 
       // Free page
-      ZHeap::heap()->free_page(page);
+      ZHeap::heap()->free_page(page, true /* allow_defragment */);
     }
   }
 };
@@ -1088,6 +1064,9 @@ public:
 
   ~ZRelocateTask() {
     _generation->stat_relocation()->at_relocate_end(_small_allocator.in_place_count(), _medium_allocator.in_place_count());
+
+    // Signal that we're not using the queue anymore. Used mostly for asserts.
+    _queue->deactivate();
   }
 
   virtual void work() {
@@ -1232,8 +1211,6 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
     ZRelocateAddRemsetForFlipPromoted task(relocation_set->flip_promoted_pages());
     workers()->run(&task);
   }
-
-  _queue.clear();
 }
 
 ZPageAge ZRelocate::compute_to_age(ZPageAge from_age) {
@@ -1284,8 +1261,14 @@ public:
       prev_page->log_msg(promotion ? " (flip promoted)" : " (flip survived)");
 
       // Setup to-space page
-      ZPage* const new_page = promotion ? prev_page->clone_limited_promote_flipped() : prev_page;
-      new_page->reset(to_age, ZPageResetType::FlipAging);
+      ZPage* const new_page = promotion ? prev_page->clone_limited() : prev_page;
+
+      // Reset page for flip aging
+      new_page->reset(to_age);
+      new_page->reset_livemap();
+      if (promotion) {
+        new_page->remset_alloc();
+      }
 
       if (promotion) {
         ZGeneration::young()->flip_promote(prev_page, new_page);
@@ -1315,4 +1298,8 @@ void ZRelocate::desynchronize() {
 
 ZRelocateQueue* ZRelocate::queue() {
   return &_queue;
+}
+
+bool ZRelocate::is_queue_active() const {
+  return _queue.is_active();
 }

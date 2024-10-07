@@ -46,6 +46,7 @@ import static org.testng.Assert.fail;
  * @test
  * @bug 8318144
  * @enablePreview
+ * @modules java.base/jdk.internal.classfile
  * @compile SwitchBootstrapsTest.java
  * @run testng/othervm SwitchBootstrapsTest
  */
@@ -111,12 +112,9 @@ public class SwitchBootstrapsTest {
         testType(Short.valueOf((short) 1), 0, 0, 1, Integer.class);
         testType(Character.valueOf((char) 1), 0, 0, 1, Integer.class);
         testType(Integer.valueOf((int) 1), 0, 0, 1, Integer.class);
-        try {
-            testType(1, 0, 1, 1.0, Integer.class);
-            fail("Didn't get the expected exception.");
-        } catch (IllegalArgumentException ex) {
-            //OK
-        }
+        testType(1, 0, 1, 1.0d, Integer.class);
+        testType(1, 0, 1, 1.0f, Integer.class);
+        testType(1, 0, 1, true, Integer.class);
         testType("", 0, 0, String.class, String.class, String.class, String.class, String.class);
         testType("", 1, 1, String.class, String.class, String.class, String.class, String.class);
         testType("", 2, 2, String.class, String.class, String.class, String.class, String.class);
@@ -124,6 +122,15 @@ public class SwitchBootstrapsTest {
         testType("", 3, 3, String.class, String.class, String.class, String.class, String.class);
         testType("", 4, 4, String.class, String.class, String.class, String.class, String.class);
         testType("", 0, 0);
+        testType(new Object() {
+            @Override
+            public boolean equals(Object obj) {
+                if (obj instanceof Long i) {
+                    return i == 1;
+                }
+                return super.equals(obj);
+            }
+        }, 0, 1, 1L);
     }
 
     public void testEnums() throws Throwable {
@@ -178,7 +185,6 @@ public class SwitchBootstrapsTest {
     public void testWrongSwitchTypes() throws Throwable {
         MethodType[] switchTypes = new MethodType[] {
             MethodType.methodType(int.class, Object.class),
-            MethodType.methodType(int.class, double.class, int.class),
             MethodType.methodType(int.class, Object.class, Integer.class)
         };
         for (MethodType switchType : switchTypes) {

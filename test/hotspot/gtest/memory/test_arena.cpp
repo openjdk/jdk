@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -94,15 +94,15 @@ TEST_VM(Arena, realloc_same_size) {
   ASSERT_RANGE_IS_MARKED(p2, 0x200);
 }
 
-// Test behavior for Afree(NULL) and Arealloc(NULL, x)
+// Test behavior for Afree(nullptr) and Arealloc(nullptr, x)
 TEST_VM(Arena, free_null) {
   Arena ar(mtTest);
-  ar.Afree(NULL, 10); // should just be ignored
+  ar.Afree(nullptr, 10); // should just be ignored
 }
 
 TEST_VM(Arena, realloc_null) {
   Arena ar(mtTest);
-  void* p = ar.Arealloc(NULL, 0, 20); // equivalent to Amalloc(20)
+  void* p = ar.Arealloc(nullptr, 0, 20); // equivalent to Amalloc(20)
   ASSERT_AMALLOC(ar, p);
 }
 
@@ -238,7 +238,7 @@ TEST_VM(Arena, random_allocs) {
   for (int i = 0; i < num_allocs; i ++) {
     size_t size = os::random() % (avg_alloc_size * 2); // Note: size==0 is okay; we want to test that too
     size_t alignment = 0;
-    void* p = NULL;
+    void* p = nullptr;
     if (os::random() % 2) { // randomly switch between Amalloc and AmallocWords
       p = ar.Amalloc(size);
       alignment = BytesPerLong;
@@ -297,7 +297,7 @@ TEST_VM(Arena, random_allocs) {
       ar.Afree(ptrs[i], sizes[i]);
       // In debug builds the freed space should be filled the space with badResourceValue
       DEBUG_ONLY(ASSERT_RANGE_IS_MARKED_WITH(ptrs[i], sizes[i], badResourceValue));
-      ptrs[i] = NULL;
+      ptrs[i] = nullptr;
     }
   }
 

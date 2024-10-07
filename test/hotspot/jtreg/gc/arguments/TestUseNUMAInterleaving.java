@@ -39,11 +39,10 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestUseNUMAInterleaving {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(
+        OutputAnalyzer output = GCArguments.executeTestJava(
             "-XX:+UseNUMA",
             "-XX:+PrintFlagsFinal",
             "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         boolean isNUMAEnabled
                 = Boolean.parseBoolean(output.firstMatch(NUMA_FLAG_PATTERN, 1));

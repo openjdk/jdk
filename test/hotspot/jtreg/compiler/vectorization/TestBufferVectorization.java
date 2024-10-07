@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,16 @@
 
 /**
  * @test
- * @bug 8257531
+ * @bug 8257531 8310190
  * @summary Test vectorization for Buffer operations.
  * @library /test/lib /
- *
- * @requires vm.flagless
- * @requires vm.compiler2.enabled & vm.debug == true
- * @requires os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
- *
- * @run driver compiler.vectorization.TestBufferVectorization array
- * @run driver compiler.vectorization.TestBufferVectorization arrayOffset
- * @run driver compiler.vectorization.TestBufferVectorization buffer
- * @run driver compiler.vectorization.TestBufferVectorization bufferHeap
- * @run driver compiler.vectorization.TestBufferVectorization bufferDirect
- * @run driver compiler.vectorization.TestBufferVectorization arrayView
+ * @requires vm.compiler2.enabled
+ * @run driver compiler.vectorization.TestBufferVectorization
  */
 
 package compiler.vectorization;
+
+import compiler.lib.ir_framework.*;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -48,205 +41,196 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 
-import jdk.test.lib.Platform;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-
 public class TestBufferVectorization {
-    final static int N = 500;
-    final static int ITER = 1000;
-    final static IntBuffer buffer = IntBuffer.allocate(N);
-    final static int offset = buffer.arrayOffset();
-    final static IntBuffer heap_buffer_byte_to_int = ByteBuffer.allocate(N * Integer.BYTES).order(ByteOrder.nativeOrder()).asIntBuffer();
-    final static IntBuffer direct_buffer_byte_to_int = ByteBuffer.allocateDirect(N * Integer.BYTES).order(ByteOrder.nativeOrder()).asIntBuffer();
+    final static int N = 1024*16;
+    static int offset = 0;
     final static VarHandle VH_arr_view = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.nativeOrder()).withInvokeExactBehavior();
-    final static String arch = System.getProperty("os.arch");
-
-    interface Test {
-        void init();
-        void run();
-        void verify();
-    }
-
-    static class TestArray implements Test {
-        final int[] array = new int[N];
-
-        public void init() {
-            for (int k = 0; k < array.length; k++) {
-                array[k] = k;
-            }
-        }
-
-        public void run() {
-            for(int k = 0; k < array.length; k++) {
-                array[k] += 1;
-            }
-        }
-
-        public void verify() {
-            init(); // reset
-            run();  // run compiled code
-            for(int k = 0; k < array.length; k++) {
-                if (array[k] != (k + 1)) {
-                    throw new RuntimeException(" Invalid result: array[" + k + "]: " + array[k] + " != " + (k + 1));
-                }
-            }
-        }
-    }
-
-    static class TestArrayOffset implements Test {
-        final int offset;
-        final int[] array = new int[N];
-
-        public TestArrayOffset(int off) {
-            offset = off;
-        }
-
-        public void init() {
-            for (int k = 0; k < array.length; k++) {
-                array[k] = k;
-            }
-        }
-
-        public void run() {
-            int l = array.length - offset;
-            for(int k = 0; k < l; k++) {
-                array[k + offset] += 1;
-            }
-        }
-
-        public void verify() {
-            init(); // reset
-            run();  // run compiled code
-            int l = array.length - offset;
-            for(int k = 0; k < l; k++) {
-                if (array[k] != (k + 1)) {
-                    throw new RuntimeException(" Invalid result: arrayOffset[" + k + "]: " + array[k] + " != " + (k + 1));
-                }
-            }
-            for(int k = l; k < array.length; k++) {
-                if (array[k] != k) {
-                    throw new RuntimeException(" Invalid result: arrayOffset[" + k + "]: " + array[k] + " != " + k);
-                }
-            }
-        }
-    }
-
-    static class TestBuffer implements Test {
-        final IntBuffer buffer;
-
-        public TestBuffer(IntBuffer buf) {
-            buffer = buf;
-        }
-
-        public void init() {
-            for (int k = 0; k < buffer.limit(); k++) {
-                buffer.put(k, k);
-            }
-        }
-
-        public void run() {
-            for (int k = 0; k < buffer.limit(); k++) {
-                buffer.put(k, buffer.get(k) + 1);
-            }
-        }
-
-        public void verify() {
-            init(); // reset
-            run();  // run compiled code
-            for(int k = 0; k < buffer.limit(); k++) {
-                if (buffer.get(k) != (k + 1)) {
-                    throw new RuntimeException(" Invalid result: buffer.get(" + k + "): " + buffer.get(k) + " != " + (k + 1));
-                }
-            }
-        }
-    }
-
-    static class TestArrayView implements Test {
-        final byte[] b_arr = new byte[N * Integer.BYTES];
-
-        public void init() {
-            for (int k = 0; k < N; k++) {
-                VH_arr_view.set(b_arr, k, k);
-            }
-        }
-
-        public void run() {
-            for (int k = 0; k < b_arr.length; k += 4) {
-                int v = (int) VH_arr_view.get(b_arr, k);
-                VH_arr_view.set(b_arr, k, v + 1);
-            }
-        }
-
-        public void verify() {
-            init(); // reset
-            // Save initial INT values
-            final int[] i_arr = new int[N];
-            for (int k = 0; k < i_arr.length; k++) {
-                i_arr[k] = (int) VH_arr_view.get(b_arr, k * Integer.BYTES);
-            }
-            run();  // run compiled code
-            for (int k = 0; k < i_arr.length; k++) {
-                int v = (int) VH_arr_view.get(b_arr, k * Integer.BYTES);
-                if (v != (i_arr[k] + 1)) {
-                    throw new RuntimeException(" Invalid result: VH_arr_view.get(b_arr, " + (k * Integer.BYTES) + "): " + v + " != " + (i_arr[k] + 1));
-                }
-            }
-        }
-    }
 
     public static void main(String[] args) {
-        if (args.length == 0) {
-            throw new RuntimeException(" Missing test name: array, arrayOffset, buffer, bufferHeap, bufferDirect, arrayView");
-        } else if (args.length == 1) {
-            verify_vectors(args[0]);
-        } else {
-            Test te = switch (args[0]) {
-                case "array" -> new TestArray();
-                case "arrayOffset" -> new TestArrayOffset(offset);
-                case "buffer" -> new TestBuffer(buffer);
-                case "bufferHeap" -> new TestBuffer(heap_buffer_byte_to_int);
-                case "bufferDirect" -> new TestBuffer(direct_buffer_byte_to_int);
-                case "arrayView" -> new TestArrayView();
-                default -> throw new RuntimeException(" Unknown test: " + args[0]);
-            };
-
-            te.init();
-            for (int i = 0; i < ITER; i++) {
-                te.run();
-            }
-            te.verify();
-        }
-
+        TestFramework.run();
     }
 
-    static void verify_vectors(String testName) {
-        ProcessBuilder pb;
-        OutputAnalyzer out;
-        try {
-            pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:-BackgroundCompilation",
-                                                                  "-XX:+TraceNewVectors",
-                                                                  "compiler.vectorization.TestBufferVectorization",
-                                                                  testName,
-                                                                  "run");
-            out = new OutputAnalyzer(pb.start());
-        } catch (Exception e) {
-            throw new RuntimeException(" Exception launching Java process: " + e);
+    @Run(test = "testArray")
+    public static void runArray() {
+        int[] array = new int[N];
+
+        for (int k = 0; k < array.length; k++) {
+            array[k] = k;
         }
 
-        out.shouldHaveExitValue(0);
+        testArray(array);
 
-        if (testName.equals("bufferDirect")) {
-            return; // bufferDirect uses Unsafe memory accesses which are not vectorized currently
+        for(int k = 0; k < array.length; k++) {
+            if (array[k] != (k + 1)) {
+                throw new RuntimeException(" Invalid result: array[" + k + "]: " + array[k] + " != " + (k + 1));
+            }
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.REPLICATE_I,   ">0",
+                  IRNode.LOAD_VECTOR_I, ">0",
+                  IRNode.ADD_VI,        ">0",
+                  IRNode.STORE_VECTOR,  ">0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    public static void testArray(int[] array) {
+        for(int k = 0; k < array.length; k++) {
+            array[k] += 1;
+        }
+    }
+
+    @Run(test = "testArrayOffset")
+    public static void runArrayOffset() {
+        // Moving offset between 0..255
+        offset = (offset + 1) % 256;
+
+        int[] array = new int[N];
+
+        for (int k = 0; k < array.length; k++) {
+            array[k] = k;
         }
 
-        if (testName.equals("bufferHeap") && (Platform.is32bit())) {
-            return; // bufferHeap uses Long type for memory accesses which are not vectorized in 32-bit VM
+        testArrayOffset(array, offset);
+
+        int l = array.length - offset;
+        for(int k = 0; k < offset; k++) {
+            if (array[k] != k) {
+                throw new RuntimeException(" Invalid result: arrayOffset[" + k + "]: " + array[k] + " != " + (k + 1));
+            }
+        }
+        for(int k = offset; k < array.length; k++) {
+            if (array[k] != (k + 1)) {
+                throw new RuntimeException(" Invalid result: arrayOffset[" + k + "]: " + array[k] + " != " + k);
+            }
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.REPLICATE_I,   ">0",
+                  IRNode.LOAD_VECTOR_I, ">0",
+                  IRNode.ADD_VI,        ">0",
+                  IRNode.STORE_VECTOR,  ">0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    public static void testArrayOffset(int[] array, int offset) {
+        int l = array.length - offset;
+        for(int k = 0; k < l; k++) {
+            array[k + offset] += 1;
+        }
+    }
+
+    @Run(test = "testBuffer")
+    public static void runBuffer() {
+        IntBuffer buffer = IntBuffer.allocate(N);
+        initBuffer(buffer);
+        testBuffer(buffer);
+        verifyBuffer(buffer);
+    }
+
+    @Test
+    @IR(counts = {IRNode.REPLICATE_I,   ">0",
+                  IRNode.LOAD_VECTOR_I, ">0",
+                  IRNode.ADD_VI,        ">0",
+                  IRNode.STORE_VECTOR,  ">0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    public static void testBuffer(IntBuffer buffer) {
+        for (int k = 0; k < buffer.limit(); k++) {
+            buffer.put(k, buffer.get(k) + 1);
+        }
+    }
+
+    @Run(test = "testBufferHeap")
+    public static void runBufferHeap() {
+        IntBuffer buffer = ByteBuffer.allocate(N * Integer.BYTES).order(ByteOrder.nativeOrder()).asIntBuffer();
+        initBuffer(buffer);
+        testBufferHeap(buffer);
+        verifyBuffer(buffer);
+    }
+
+    @Test
+    @IR(counts = {IRNode.REPLICATE_I,   IRNode.VECTOR_SIZE_ANY, ">0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_ANY, ">0",
+                  IRNode.ADD_VI,        IRNode.VECTOR_SIZE_ANY, ">0",
+                  IRNode.STORE_VECTOR,                          ">0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AlignVector", "false"},
+        applyIfPlatform = {"64-bit", "true"})
+    // VECTOR_SIZE_ANY: Unrolling does not always seem to go far enough to reach maximum vector size.
+    //                  This looks like a BUG.
+    // AlignVector: Buffer get/put have an invariant that is in bytes (LoadL in ByteBufferAsIntBufferL::byteOffset).
+    //              This makes sense: we are accessing a byte buffer. But to be able to align the 4 byte ints,
+    //              we would require to know that the invariant is a multiple of 4. Without that, we cannot
+    //              guarantee alignment by adjusting the limit of the pre-loop with a stride of 4 bytes.
+    // 64-bit: bufferHeap uses Long type for memory accesses which are not vectorized in 32-bit VM
+    public static void testBufferHeap(IntBuffer buffer) {
+        for (int k = 0; k < buffer.limit(); k++) {
+            buffer.put(k, buffer.get(k) + 1);
+        }
+    }
+
+    @Run(test = "testBufferDirect")
+    public static void runBufferDirect() {
+        IntBuffer buffer = ByteBuffer.allocateDirect(N * Integer.BYTES).order(ByteOrder.nativeOrder()).asIntBuffer();
+        initBuffer(buffer);
+        testBufferDirect(buffer);
+        verifyBuffer(buffer);
+    }
+
+    @Test
+    // bufferDirect uses Unsafe memory accesses which are not vectorized currently
+    // We find a CastX2P in pointer analysis (VPointer)
+    public static void testBufferDirect(IntBuffer buffer) {
+        for (int k = 0; k < buffer.limit(); k++) {
+            buffer.put(k, buffer.get(k) + 1);
+        }
+    }
+
+    public static void initBuffer(IntBuffer buffer) {
+        for (int k = 0; k < buffer.limit(); k++) {
+            buffer.put(k, k);
+        }
+    }
+
+    public static void verifyBuffer(IntBuffer buffer) {
+        for(int k = 0; k < buffer.limit(); k++) {
+            if (buffer.get(k) != (k + 1)) {
+                throw new RuntimeException(" Invalid result: buffer.get(" + k + "): " + buffer.get(k) + " != " + (k + 1));
+            }
+        }
+    }
+
+    @Run(test = "testArrayView")
+    public static void runArrayView() {
+        byte[] b_arr = new byte[N * Integer.BYTES];
+
+        for (int k = 0; k < N; k++) {
+            VH_arr_view.set(b_arr, k, k);
         }
 
-        out.shouldContain("Replicate");
-        out.shouldContain("LoadVector");
-        out.shouldContain("AddVI");
-        out.shouldContain("StoreVector");
+        // Save initial INT values
+        int[] i_arr = new int[N];
+        for (int k = 0; k < i_arr.length; k++) {
+            i_arr[k] = (int) VH_arr_view.get(b_arr, k * Integer.BYTES);
+        }
+        testArrayView(b_arr);
+
+        for (int k = 0; k < i_arr.length; k++) {
+            int v = (int) VH_arr_view.get(b_arr, k * Integer.BYTES);
+            if (v != (i_arr[k] + 1)) {
+                throw new RuntimeException(" Invalid result: VH_arr_view.get(b_arr, " + (k * Integer.BYTES) + "): " + v + " != " + (i_arr[k] + 1));
+            }
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.REPLICATE_I,   ">0",
+                  IRNode.LOAD_VECTOR_I, ">0",
+                  IRNode.ADD_VI,        ">0",
+                  IRNode.STORE_VECTOR,  ">0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    public static void testArrayView(byte[] b_arr) {
+        for (int k = 0; k < b_arr.length; k += 4) {
+            int v = (int) VH_arr_view.get(b_arr, k);
+            VH_arr_view.set(b_arr, k, v + 1);
+        }
     }
 }

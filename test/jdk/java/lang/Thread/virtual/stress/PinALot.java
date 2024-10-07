@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,15 @@
  * @test
  * @summary Stress test timed park when pinned
  * @requires vm.debug != true
- * @run main PinALot 500000
+ * @library /test/lib
+ * @run main/othervm --enable-native-access=ALL-UNNAMED PinALot 500000
  */
 
 /*
  * @test
  * @requires vm.debug == true
- * @run main/othervm/timeout=300 PinALot 200000
+ * @library /test/lib
+ * @run main/othervm/timeout=300 --enable-native-access=ALL-UNNAMED PinALot 200000
  */
 
 import java.time.Duration;
@@ -39,36 +41,36 @@ import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
+import jdk.test.lib.thread.VThreadPinner;
+
 public class PinALot {
 
-    static final Object lock = new Object();
-
     public static void main(String[] args) throws Exception {
-        int iterations = 1_000_000;
+        int iterations;
         if (args.length > 0) {
             iterations = Integer.parseInt(args[0]);
+        } else {
+            iterations = 1_000_000;
         }
-        final int ITERATIONS = iterations;
 
         AtomicInteger count = new AtomicInteger();
-
         Thread thread = Thread.ofVirtual().start(() -> {
-            synchronized (lock) {
-                while (count.incrementAndGet() < ITERATIONS) {
+            VThreadPinner.runPinned(() -> {
+                while (count.incrementAndGet() < iterations) {
                     LockSupport.parkNanos(1);
                 }
-            }
+            });
         });
 
         boolean terminated;
         do {
             terminated = thread.join(Duration.ofSeconds(1));
-            System.out.println(Instant.now() + " => " + count.get());
+            System.out.println(Instant.now() + " => " + count.get() + " of " + iterations);
         } while (!terminated);
 
         int countValue = count.get();
-        if (countValue != ITERATIONS) {
-            throw new RuntimeException("count = " + countValue);
+        if (countValue != iterations) {
+            throw new RuntimeException("Thread terminated, count=" + countValue);
         }
     }
 }

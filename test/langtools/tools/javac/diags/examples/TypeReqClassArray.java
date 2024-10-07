@@ -27,5 +27,13 @@
 import java.util.*;
 
 class TypeReqClassArray {
-    boolean b = (this instanceof int);
+    interface Sig {
+        void m(int s);
+    }
+
+    Sig consume(Sig s) { return s; }
+
+    public void meth() {
+        Sig s = consume(int::new);
+    }
 }

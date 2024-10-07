@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,9 +86,6 @@ bool JfrRecorder::create_oop_storages() {
   return ObjectSampler::create_oop_storage();
 }
 
-// Subsystem
-static JfrCheckpointManager* _checkpoint_manager = nullptr;
-
 bool JfrRecorder::on_create_vm_1() {
   if (!is_disabled()) {
     if (FlightRecorder || is_started_on_commandline()) {
@@ -99,9 +96,10 @@ bool JfrRecorder::on_create_vm_1() {
     return false;
   }
 
-  _checkpoint_manager = JfrCheckpointManager::create();
-  if (_checkpoint_manager == nullptr || !_checkpoint_manager->initialize_early()) {
-    return false;
+  if (is_started_on_commandline()) {
+    if (!create_checkpoint_manager()) {
+      return false;
+    }
   }
 
   // fast time initialization
@@ -240,7 +238,7 @@ bool JfrRecorder::on_create_vm_2() {
 }
 
 bool JfrRecorder::on_create_vm_3() {
-  assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE, "invalid init sequence");
+  JVMTI_ONLY( assert(JvmtiEnvBase::get_phase() == JVMTI_PHASE_LIVE, "invalid init sequence"); )
   return CDSConfig::is_dumping_archive() || launch_command_line_recordings(JavaThread::current());
 }
 
@@ -292,7 +290,7 @@ bool JfrRecorder::create_components() {
   if (!create_storage()) {
     return false;
   }
-  if (!create_checkpoint_manager()) {
+  if (!initialize_checkpoint_manager()) {
     return false;
   }
   if (!create_stacktrace_repository()) {
@@ -321,6 +319,7 @@ static JfrStackTraceRepository* _stack_trace_repository;
 static JfrStringPool* _stringpool = nullptr;
 static JfrOSInterface* _os_interface = nullptr;
 static JfrThreadSampling* _thread_sampling = nullptr;
+static JfrCheckpointManager* _checkpoint_manager = nullptr;
 
 bool JfrRecorder::create_java_event_writer() {
   return JfrJavaEventWriter::initialize();
@@ -357,6 +356,17 @@ bool JfrRecorder::create_storage() {
 }
 
 bool JfrRecorder::create_checkpoint_manager() {
+  assert(_checkpoint_manager == nullptr, "invariant");
+  _checkpoint_manager = JfrCheckpointManager::create();
+  return _checkpoint_manager != nullptr && _checkpoint_manager->initialize_early();
+}
+
+bool JfrRecorder::initialize_checkpoint_manager() {
+  if (_checkpoint_manager == nullptr) {
+    if (!create_checkpoint_manager()) {
+      return false;
+    }
+  }
   assert(_checkpoint_manager != nullptr, "invariant");
   assert(_repository != nullptr, "invariant");
   return _checkpoint_manager->initialize(&_repository->chunkwriter());

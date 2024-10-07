@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ public class Cleaners {
                 Proc.binOut(b.getMic(MSG));
             }
         }
-        System.out.println("Prepare for GC");
+        System.err.println("Prepare for GC");
         for (int i = 0; i < 10; i++) {
             System.gc();
             Thread.sleep(100);
@@ -162,9 +162,9 @@ public class Cleaners {
     private static void ensureCleanersCalled(Proc p) throws Exception {
         p.output()
                 .shouldHaveExitValue(0)
-                .stdoutShouldMatch("Prepare for GC(.|\\n)*GSSLibStub_deleteContext")
-                .stdoutShouldMatch("Prepare for GC(.|\\n)*GSSLibStub_releaseName")
-                .stdoutShouldMatch("Prepare for GC(.|\\n)*GSSLibStub_releaseCred");
+                .stderrShouldMatch("Prepare for GC(.|\\n)*GSSLibStub_deleteContext")
+                .stderrShouldMatch("Prepare for GC(.|\\n)*GSSLibStub_releaseName")
+                .stderrShouldMatch("Prepare for GC(.|\\n)*GSSLibStub_releaseCred");
     }
 
     private static Proc proc(String type) throws Exception {

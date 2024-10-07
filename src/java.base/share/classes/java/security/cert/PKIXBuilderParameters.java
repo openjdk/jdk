@@ -98,6 +98,7 @@ public class PKIXBuilderParameters extends PKIXParameters {
      * {@code trustAnchors} are not of type
      * {@code java.security.cert.TrustAnchor}
      */
+    @SuppressWarnings("this-escape")
     public PKIXBuilderParameters(Set<TrustAnchor> trustAnchors, CertSelector
         targetConstraints) throws InvalidAlgorithmParameterException
     {
@@ -123,6 +124,7 @@ public class PKIXBuilderParameters extends PKIXParameters {
      * @throws NullPointerException if {@code keystore} is
      * {@code null}
      */
+    @SuppressWarnings("this-escape")
     public PKIXBuilderParameters(KeyStore keystore,
         CertSelector targetConstraints)
         throws KeyStoreException, InvalidAlgorithmParameterException

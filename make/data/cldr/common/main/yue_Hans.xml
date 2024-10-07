@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -1259,7 +1259,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="collation" type="phonebook">电话簿排序</type>
 			<type key="collation" type="phonetic">发音排序</type>
 			<type key="collation" type="pinyin">拼音排序</type>
-			<type key="collation" type="reformed">改良排序</type>
 			<type key="collation" type="search">一般用途搜寻</type>
 			<type key="collation" type="searchjl" draft="contributed">韩文子音排序</type>
 			<type key="collation" type="standard">标准排序</type>
@@ -3256,9 +3255,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 		<timeZoneNames>
 			<regionFormat>{0}时间</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>圣伊萨贝尔</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>协调世界时间</standard>
@@ -3380,9 +3376,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>墨尔本</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>克黎</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>荷巴特</exemplarCity>
@@ -3537,9 +3530,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Creston">
 				<exemplarCity>克雷斯顿</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>耶洛奈夫</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>艾德蒙吞</exemplarCity>
 			</zone>
@@ -3558,29 +3548,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Resolute">
 				<exemplarCity>罗斯鲁特</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>雨河镇</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>兰今湾</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>阿蒂科肯</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>珊德湾</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>尼皮冈</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>多伦多</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>伊魁特</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>潘尼尔东</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>蒙克顿</exemplarCity>
@@ -4395,17 +4373,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>沙兰港</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>乌兹哥洛</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>基辅</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>辛非洛浦</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>札波罗结</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>坎帕拉</exemplarCity>
@@ -4424,9 +4396,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>檀香山</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>强斯顿</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>安克拉治</exemplarCity>
@@ -5127,11 +5096,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>澳门夏令时间</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>麦觉理时间</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>马加丹时间</generic>
@@ -5169,13 +5133,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>莫森时间</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>墨西哥西北部时间</generic>
-					<standard>墨西哥西北部标准时间</standard>
-					<daylight>墨西哥西北部夏令时间</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

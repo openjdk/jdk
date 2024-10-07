@@ -150,7 +150,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             return new DocEnvImpl(toolEnv, etable);
         }
 
-        ListBuffer<JCCompilationUnit> classTrees = new ListBuffer<>();
+        ListBuffer<JCCompilationUnit> compilationUnits = new ListBuffer<>();
 
         try {
             StandardJavaFileManager fm = toolEnv.fileManager instanceof StandardJavaFileManager sfm
@@ -161,7 +161,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             // Parse the files and collect the package names.
             for (String arg: javaNames) {
                 if (fm != null && arg.endsWith(".java") && isRegularFile(arg)) {
-                    parse(fm.getJavaFileObjects(arg), classTrees, true);
+                    parse(fm.getJavaFileObjects(arg), compilationUnits, true);
                 } else if (isValidPackageName(arg)) {
                     packageNames.add(arg);
                 } else if (arg.endsWith(".java")) {
@@ -179,10 +179,10 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
             }
 
             // Parse file objects provide via the DocumentationTool API
-            parse(fileObjects, classTrees, true);
+            parse(fileObjects, compilationUnits, true);
 
             etable.packages(packageNames)
-                    .classTrees(classTrees.toList())
+                    .compilationUnits(compilationUnits.toList())
                     .scanSpecifiedItems();
 
             // abort, if errors were encountered during modules initialization
@@ -192,7 +192,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
 
             // Parse the files in the packages and subpackages to be documented
             ListBuffer<JCCompilationUnit> allTrees = new ListBuffer<>();
-            allTrees.addAll(classTrees);
+            allTrees.addAll(compilationUnits);
             parse(etable.getFilesToParse(), allTrees, false);
             modules.newRound();
             modules.initModules(allTrees.toList());
@@ -209,7 +209,7 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
                 return null;
             }
 
-            etable.setClassDeclList(listClasses(classTrees.toList()));
+            etable.setClassDeclList(listClasses(compilationUnits.toList()));
 
             dcfh.setHandler(dcfh.userCodeHandler);
             etable.analyze();

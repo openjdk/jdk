@@ -69,8 +69,7 @@ public class TestG1ConcRefinementThreads {
     }
     Collections.addAll(vmOpts, "-XX:+UseG1GC", "-XX:+PrintFlagsFinal", "-version");
 
-    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(vmOpts);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeTestJava(vmOpts);
 
     output.shouldHaveExitValue(0);
     String stdout = output.getStdout();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -338,7 +338,8 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
      * Appends the specified character sequence to this writer.
      *
      * <p> An invocation of this method of the form {@code out.append(csq)}
-     * behaves in exactly the same way as the invocation
+     * when {@code csq} is not {@code null}, behaves in exactly the same way
+     * as the invocation
      *
      * {@snippet lang=java :
      *     out.write(csq.toString())
@@ -369,7 +370,6 @@ public abstract class Writer implements Appendable, Closeable, Flushable {
 
     /**
      * Appends a subsequence of the specified character sequence to this writer.
-     * {@code Appendable}.
      *
      * <p> An invocation of this method of the form
      * {@code out.append(csq, start, end)} when {@code csq}

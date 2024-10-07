@@ -39,6 +39,7 @@ package compiler.intrinsics.sha.cli;
 
 import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForOtherCPU;
 import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForUnsupportedAArch64CPU;
+import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForUnsupportedRISCV64CPU;
 import compiler.intrinsics.sha.cli.testcases.GenericTestCaseForUnsupportedX86CPU;
 import compiler.intrinsics.sha.cli.testcases.UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU;
 
@@ -48,6 +49,8 @@ public class TestUseMD5IntrinsicsOptionOnUnsupportedCPU {
                 new GenericTestCaseForUnsupportedX86CPU(
                         DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false),
                 new GenericTestCaseForUnsupportedAArch64CPU(
+                        DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false),
+                new GenericTestCaseForUnsupportedRISCV64CPU(
                         DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false),
                 new GenericTestCaseForOtherCPU(
                         DigestOptionsBase.USE_MD5_INTRINSICS_OPTION, /* checkUseSHA = */ false)).test();

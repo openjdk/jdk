@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <jni.h>
-#include <aod.h>
+#include <aod.hpp>
 
 extern "C" {
 
@@ -44,18 +44,18 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *optionsString, void *reser
 }
 
 JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM *vm, char *optionsString, void *reserved) {
-    JNIEnv* jni = NULL;
-    Options* options = NULL;
+    JNIEnv* jni = nullptr;
+    Options* options = nullptr;
     const char* agentName;
 
     options = (Options*) nsk_aod_createOptions(optionsString);
-    if (!NSK_VERIFY(options != NULL))
+    if (!NSK_VERIFY(options != nullptr))
         return JNI_ERR;
 
     agentName = nsk_aod_getOptionValue(options, NSK_AOD_AGENT_NAME_OPTION);
 
     jni = (JNIEnv*) nsk_aod_createJNIEnv(vm);
-    if (jni == NULL)
+    if (jni == nullptr)
         return JNI_ERR;
 
     NSK_DISPLAY1("%s: initialization was done\n", agentName);

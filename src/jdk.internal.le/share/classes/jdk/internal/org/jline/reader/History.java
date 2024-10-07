@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -21,8 +21,7 @@ import java.util.ListIterator;
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  * @since 2.3
  */
-public interface History extends Iterable<History.Entry>
-{
+public interface History extends Iterable<History.Entry> {
 
     /**
      * Initialize the history for the given reader.
@@ -75,7 +74,6 @@ public interface History extends Iterable<History.Entry>
      */
     void purge() throws IOException;
 
-
     int size();
 
     default boolean isEmpty() {
@@ -110,8 +108,7 @@ public interface History extends Iterable<History.Entry>
     // Entries
     //
 
-    interface Entry
-    {
+    interface Entry {
         int index();
 
         Instant time();
@@ -132,14 +129,17 @@ public interface History extends Iterable<History.Entry>
     default Iterator<Entry> reverseIterator(int index) {
         return new Iterator<Entry>() {
             private final ListIterator<Entry> it = iterator(index + 1);
+
             @Override
             public boolean hasNext() {
                 return it.hasPrevious();
             }
+
             @Override
             public Entry next() {
                 return it.previous();
             }
+
             @Override
             public void remove() {
                 it.remove();

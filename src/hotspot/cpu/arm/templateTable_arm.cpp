@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2494,8 +2494,8 @@ void TemplateTable::_return(TosState state) {
     assert(state == vtos, "only valid state");
     __ ldr(R1, aaddress(0));
     __ load_klass(Rtemp, R1);
-    __ ldr_u32(Rtemp, Address(Rtemp, Klass::access_flags_offset()));
-    __ tbz(Rtemp, exact_log2(JVM_ACC_HAS_FINALIZER), skip_register_finalizer);
+    __ ldrb(Rtemp, Address(Rtemp, Klass::misc_flags_offset()));
+    __ tbz(Rtemp, exact_log2(KlassFlags::_misc_has_finalizer), skip_register_finalizer);
 
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), R1);
 
@@ -3666,15 +3666,15 @@ void TemplateTable::prepare_invoke(Register Rcache, Register recv) {
   // load receiver if needed (after extra argument is pushed so parameter size is correct)
   if (load_receiver) {
     __ ldrh(recv, Address(Rcache, in_bytes(ResolvedMethodEntry::num_parameters_offset())));
-    Address recv_addr = __ receiver_argument_address(Rstack_top, Rtemp, recv);
-    __ ldr(recv, recv_addr);
+    __ add(recv, Rstack_top, AsmOperand(recv, lsl, Interpreter::logStackElementSize));
+    __ ldr(recv, Address(recv, -Interpreter::stackElementSize));
     __ verify_oop(recv);
   }
 
   // load return address
   { const address table = (address) Interpreter::invoke_return_entry_table_for(code);
-    __ mov_slow(Rtemp, table);
-    __ ldr(LR, Address::indexed_ptr(Rtemp, ret_type));
+    __ mov_slow(LR, table);
+    __ ldr(LR, Address::indexed_ptr(LR, ret_type));
   }
 }
 
@@ -3744,10 +3744,13 @@ void TemplateTable::invokevirtual(int byte_no) {
 void TemplateTable::invokespecial(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
+
   const Register Rrecv  = R2_tmp;
-  load_resolved_method_entry_special_or_static(R2_tmp,  // ResolvedMethodEntry*
+  const Register Rflags = R3_tmp;
+
+  load_resolved_method_entry_special_or_static(Rrecv,  // ResolvedMethodEntry*
                                                Rmethod, // Method*
-                                               R3_tmp); // Flags
+                                               Rflags); // Flags
   prepare_invoke(Rrecv, Rrecv);
   __ verify_oop(Rrecv);
   __ null_check(Rrecv, Rtemp);
@@ -3760,12 +3763,16 @@ void TemplateTable::invokespecial(int byte_no) {
 void TemplateTable::invokestatic(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
-  load_resolved_method_entry_special_or_static(R2_tmp,  // ResolvedMethodEntry*
+
+  const Register Rrecv  = R2_tmp;
+  const Register Rflags = R3_tmp;
+
+  load_resolved_method_entry_special_or_static(Rrecv,  // ResolvedMethodEntry*
                                                Rmethod, // Method*
-                                               R3_tmp); // Flags
-  prepare_invoke(R2_tmp, R2_tmp);
+                                               Rflags); // Flags
+  prepare_invoke(Rrecv, Rrecv);
   // do the call
-  __ profile_call(R2_tmp);
+  __ profile_call(Rrecv);
   __ jump_from_interpreted(Rmethod);
 }
 
@@ -3788,10 +3795,10 @@ void TemplateTable::invokeinterface(int byte_no) {
   const Register Rflags  = R3_tmp;
   const Register Rklass  = R2_tmp; // Note! Same register with Rrecv
 
-  load_resolved_method_entry_interface(R2_tmp,  // ResolvedMethodEntry*
-                                       R1_tmp,  // Klass*
+  load_resolved_method_entry_interface(Rrecv,   // ResolvedMethodEntry*
+                                       Rinterf, // Klass*
                                        Rmethod, // Method* or itable/vtable index
-                                       R3_tmp); // Flags
+                                       Rflags); // Flags
   prepare_invoke(Rrecv, Rrecv);
 
   // First check for Object case, then private interface method,
@@ -3964,16 +3971,17 @@ void TemplateTable::_new() {
   __ b(slow_case, ne);
   __ load_resolved_klass_at_offset(Rcpool, Rindex, Rklass);
 
-  // make sure klass is initialized & doesn't have finalizer
+  // make sure klass is initialized
   // make sure klass is fully initialized
   __ ldrb(Rtemp, Address(Rklass, InstanceKlass::init_state_offset()));
+  __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), Rtemp);
   __ cmp(Rtemp, InstanceKlass::fully_initialized);
   __ b(slow_case, ne);
 
   // get instance_size in InstanceKlass (scaled to a count of bytes)
   __ ldr_u32(Rsize, Address(Rklass, Klass::layout_helper_offset()));
 
-  // test to see if it has a finalizer or is malformed in some way
+  // test to see if it is malformed in some way
   // Klass::_lh_instance_slow_path_bit is really a bit mask, not bit number
   __ tbnz(Rsize, exact_log2(Klass::_lh_instance_slow_path_bit), slow_case);
 

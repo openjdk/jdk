@@ -81,7 +81,7 @@ public class MergeName {
         }
         content.add("};");
         Files.write(Paths.get(file), content);
-        ProcessTools.executeTestJvm("-Djava.security.manager",
+        ProcessTools.executeTestJava("-Djava.security.manager",
                 "-Djava.security.policy=" + file,
                 "MergeName",
                 "x",

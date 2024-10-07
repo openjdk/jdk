@@ -180,8 +180,6 @@ class G1MonitoringSupport : public CHeapObj<mtGC> {
   // Recalculate all the sizes.
   void recalculate_sizes();
 
-  void recalculate_eden_size();
-
 public:
   G1MonitoringSupport(G1CollectedHeap* g1h);
   ~G1MonitoringSupport();

@@ -5,9 +5,9 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
 -->
 
 <!--
-  Copyright © 1991-2023 Unicode, Inc.
+  Copyright © 1991-2024 Unicode, Inc.
   For terms of use, see http://www.unicode.org/copyright.html
-  SPDX-License-Identifier: Unicode-DFS-2016
+  SPDX-License-Identifier: Unicode-3.0
   CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 --><xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
   <xs:element name="supplementalData">
@@ -28,6 +28,7 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
         <xs:element minOccurs="0" ref="timeData"/>
         <xs:element minOccurs="0" ref="measurementData"/>
         <xs:element minOccurs="0" ref="unitIdComponents"/>
+        <xs:element minOccurs="0" ref="unitPrefixes"/>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="unitConstants"/>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="unitQuantities"/>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="convertUnits"/>
@@ -63,17 +64,17 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   <xs:element name="version">
     <xs:complexType>
       <xs:attribute name="number" use="required"/>
-      <xs:attribute default="44" name="cldrVersion">
+      <xs:attribute default="45" name="cldrVersion">
         <xs:simpleType>
           <xs:restriction base="xs:string">
-            <xs:enumeration value="44"/>
+            <xs:enumeration value="45"/>
           </xs:restriction>
         </xs:simpleType>
       </xs:attribute>
-      <xs:attribute default="15.0.0" name="unicodeVersion">
+      <xs:attribute default="15.1.0" name="unicodeVersion">
         <xs:simpleType>
           <xs:restriction base="xs:string">
-            <xs:enumeration value="15.0.0"/>
+            <xs:enumeration value="15.1.0"/>
           </xs:restriction>
         </xs:simpleType>
       </xs:attribute>
@@ -209,9 +210,11 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="alternate"/>
       </xs:sequence>
       <xs:attribute name="before" type="xs:NMTOKEN"/>
+      <xs:attribute name="iso4217" type="xs:NMTOKEN" use="required"/>
       <xs:attribute name="from" type="xs:NMTOKEN"/>
       <xs:attribute name="to" type="xs:NMTOKEN"/>
-      <xs:attribute name="iso4217" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="tz"/>
+      <xs:attribute name="to-tz"/>
       <xs:attribute name="digits" type="xs:NMTOKEN"/>
       <xs:attribute name="rounding" type="xs:NMTOKEN"/>
       <xs:attribute name="cashRounding" type="xs:NMTOKEN"/>
@@ -239,6 +242,10 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
     </xs:complexType>
   </xs:element>
   <!-- use from and to instead. -->
+  
+  
+  
+  
   
   
   
@@ -919,6 +926,32 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
   
   
   
+  <xs:element name="unitPrefixes">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="unitPrefix"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="unitPrefix">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="symbol" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="power10" type="xs:NMTOKEN"/>
+      <xs:attribute name="power2" type="xs:NMTOKEN"/>
+    </xs:complexType>
+  </xs:element>
+  <!--
+    <unitPrefix type='quecto' symbol='q' power10='-30'>
+    <unitPrefix type='kibi' symbol='Ki' power2='10'>
+  -->
+  
+  
+  
+  
+  
+  
+  
   <xs:element name="unitConstants">
     <xs:complexType>
       <xs:sequence>
@@ -976,10 +1009,13 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       <xs:attribute name="baseUnit" type="xs:NMTOKEN" use="required"/>
       <xs:attribute name="factor"/>
       <xs:attribute name="offset"/>
+      <xs:attribute name="special" type="xs:NMTOKEN"/>
       <xs:attribute name="systems" type="xs:NMTOKENS"/>
       <xs:attribute name="description"/>
     </xs:complexType>
   </xs:element>
+  
+  
   
   
   
@@ -2049,16 +2085,19 @@ Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file 
       <xs:sequence>
         <xs:element maxOccurs="unbounded" minOccurs="0" ref="parentLocale"/>
       </xs:sequence>
-      <xs:attribute name="component" type="xs:NMTOKEN"/>
+      <xs:attribute name="component" type="xs:NMTOKENS"/>
     </xs:complexType>
   </xs:element>
   
   <xs:element name="parentLocale">
     <xs:complexType>
       <xs:attribute name="parent" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="localeRules" type="xs:NMTOKENS"/>
       <xs:attribute name="locales" type="xs:NMTOKENS" use="required"/>
     </xs:complexType>
   </xs:element>
+  
+  
   
   
   

@@ -43,7 +43,7 @@ public class TestSpecialCasesOf_AMinusB_Plus_CMinusD_InAddIdeal {
     }
 
     @Test
-    @Arguments({Argument.RANDOM_ONCE, Argument.RANDOM_ONCE, Argument.RANDOM_ONCE})
+    @Arguments(values = {Argument.RANDOM_ONCE, Argument.RANDOM_ONCE, Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.ADD_I})
     @IR(counts = {IRNode.SUB_I, "1"})
     public int test1Int(int a, int b, int c) {
@@ -51,7 +51,7 @@ public class TestSpecialCasesOf_AMinusB_Plus_CMinusD_InAddIdeal {
     }
 
     @Test
-    @Arguments({Argument.RANDOM_ONCE, Argument.RANDOM_ONCE, Argument.RANDOM_ONCE})
+    @Arguments(values = {Argument.RANDOM_ONCE, Argument.RANDOM_ONCE, Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.ADD_L})
     @IR(counts = {IRNode.SUB_L, "1"})
     public long test1Long(long a, long b, long c) {
@@ -59,7 +59,7 @@ public class TestSpecialCasesOf_AMinusB_Plus_CMinusD_InAddIdeal {
     }
 
     @Test
-    @Arguments({Argument.RANDOM_ONCE, Argument.RANDOM_ONCE, Argument.RANDOM_ONCE})
+    @Arguments(values = {Argument.RANDOM_ONCE, Argument.RANDOM_ONCE, Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.ADD_I})
     @IR(counts = {IRNode.SUB_I, "1"})
     public int test2Int(int b, int a, int c) { // make sure inputs sorted
@@ -67,7 +67,7 @@ public class TestSpecialCasesOf_AMinusB_Plus_CMinusD_InAddIdeal {
     }
 
     @Test
-    @Arguments({Argument.RANDOM_ONCE, Argument.RANDOM_ONCE, Argument.RANDOM_ONCE})
+    @Arguments(values = {Argument.RANDOM_ONCE, Argument.RANDOM_ONCE, Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.ADD_L})
     @IR(counts = {IRNode.SUB_L, "1"})
     public long test2Long(long b, long a, long c) { // make sure inputs sorted

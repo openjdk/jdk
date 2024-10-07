@@ -120,7 +120,8 @@ public class Throwable implements Serializable {
     private static final long serialVersionUID = -3042686055658047285L;
 
     /**
-     * Flag that determines if exceptions should be traced by JFR
+     * Flag set by jdk.internal.event.JFRTracing to indicate if
+     * exceptions should be traced by JFR.
      */
     static volatile boolean jfrTracing;
 
@@ -260,6 +261,7 @@ public class Throwable implements Serializable {
      * <p>The {@link #fillInStackTrace()} method is called to initialize
      * the stack trace data in the newly created throwable.
      */
+    @SuppressWarnings("this-escape")
     public Throwable() {
         fillInStackTrace();
         if (jfrTracing) {
@@ -278,6 +280,7 @@ public class Throwable implements Serializable {
      * @param   message   the detail message. The detail message is saved for
      *          later retrieval by the {@link #getMessage()} method.
      */
+    @SuppressWarnings("this-escape")
     public Throwable(String message) {
         fillInStackTrace();
         detailMessage = message;
@@ -303,6 +306,7 @@ public class Throwable implements Serializable {
      *         unknown.)
      * @since  1.4
      */
+    @SuppressWarnings("this-escape")
     public Throwable(String message, Throwable cause) {
         fillInStackTrace();
         detailMessage = message;
@@ -329,6 +333,7 @@ public class Throwable implements Serializable {
      *         unknown.)
      * @since  1.4
      */
+    @SuppressWarnings("this-escape")
     public Throwable(Throwable cause) {
         fillInStackTrace();
         detailMessage = (cause==null ? null : cause.toString());
@@ -378,6 +383,7 @@ public class Throwable implements Serializable {
      * @see ArithmeticException
      * @since 1.7
      */
+    @SuppressWarnings("this-escape")
     protected Throwable(String message, Throwable cause,
                         boolean enableSuppression,
                         boolean writableStackTrace) {

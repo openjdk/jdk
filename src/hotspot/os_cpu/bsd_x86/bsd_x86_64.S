@@ -1,5 +1,5 @@
-# 
-# Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+#
+# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,18 @@
 # questions.
 #
 
-#ifdef __APPLE__
-# Darwin uses _ prefixed global symbols
-#define SYMBOL(s) _ ## s
-#define ELF_TYPE(name, description)
-#else
-#define SYMBOL(s) s
-#define ELF_TYPE(name, description) .type name,description
-#endif
+#include "defs.S.inc"
 
         # NOTE WELL!  The _Copy functions are called directly
-	# from server-compiler-generated code via CallLeafNoFP,
-	# which means that they *must* either not use floating
-	# point or use it in the same manner as does the server
-	# compiler.
-	
-        .globl SYMBOL(_Copy_arrayof_conjoint_bytes)
-	.globl SYMBOL(_Copy_arrayof_conjoint_jshorts)
-        .globl SYMBOL(_Copy_conjoint_jshorts_atomic)
-        .globl SYMBOL(_Copy_arrayof_conjoint_jints)
-        .globl SYMBOL(_Copy_conjoint_jints_atomic)
-        .globl SYMBOL(_Copy_arrayof_conjoint_jlongs)
-        .globl SYMBOL(_Copy_conjoint_jlongs_atomic)
+        # from server-compiler-generated code via CallLeafNoFP,
+        # which means that they *must* either not use floating
+        # point or use it in the same manner as does the server
+        # compiler.
 
-	.text
+        .text
 
-        .globl SYMBOL(SpinPause)
         .p2align 4,,15
-        ELF_TYPE(SpinPause,@function)
-SYMBOL(SpinPause):
+DECLARE_FUNC(SpinPause):
         rep
         nop
         movq   $1, %rax
@@ -63,15 +46,14 @@ SYMBOL(SpinPause):
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-	ELF_TYPE(_Copy_arrayof_conjoint_bytes,@function)
-SYMBOL(_Copy_arrayof_conjoint_bytes):
+DECLARE_FUNC(_Copy_arrayof_conjoint_bytes):
         movq     %rdx,%r8             # byte count
         shrq     $3,%rdx              # qword count
         cmpq     %rdi,%rsi
         leaq     -1(%rdi,%r8,1),%rax  # from + bcount*1 - 1
         jbe      acb_CopyRight
         cmpq     %rax,%rsi
-        jbe      acb_CopyLeft 
+        jbe      acb_CopyLeft
 acb_CopyRight:
         leaq     -8(%rdi,%rdx,8),%rax # from + qcount*8 - 8
         leaq     -8(%rsi,%rdx,8),%rcx # to + qcount*8 - 8
@@ -165,17 +147,15 @@ acb_CopyLeft:
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-	ELF_TYPE(_Copy_arrayof_conjoint_jshorts,@function)
-	ELF_TYPE(_Copy_conjoint_jshorts_atomic,@function)
-SYMBOL(_Copy_arrayof_conjoint_jshorts):
-SYMBOL(_Copy_conjoint_jshorts_atomic):
+DECLARE_FUNC(_Copy_arrayof_conjoint_jshorts):
+DECLARE_FUNC(_Copy_conjoint_jshorts_atomic):
         movq     %rdx,%r8             # word count
         shrq     $2,%rdx              # qword count
         cmpq     %rdi,%rsi
         leaq     -2(%rdi,%r8,2),%rax  # from + wcount*2 - 2
         jbe      acs_CopyRight
         cmpq     %rax,%rsi
-        jbe      acs_CopyLeft 
+        jbe      acs_CopyLeft
 acs_CopyRight:
         leaq     -8(%rdi,%rdx,8),%rax # from + qcount*8 - 8
         leaq     -8(%rsi,%rdx,8),%rcx # to + qcount*8 - 8
@@ -255,17 +235,15 @@ acs_CopyLeft:
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-	ELF_TYPE(_Copy_arrayof_conjoint_jints,@function)
-	ELF_TYPE(_Copy_conjoint_jints_atomic,@function)
-SYMBOL(_Copy_arrayof_conjoint_jints):
-SYMBOL(_Copy_conjoint_jints_atomic):
+DECLARE_FUNC(_Copy_arrayof_conjoint_jints):
+DECLARE_FUNC(_Copy_conjoint_jints_atomic):
         movq     %rdx,%r8             # dword count
         shrq     %rdx                 # qword count
         cmpq     %rdi,%rsi
         leaq     -4(%rdi,%r8,4),%rax  # from + dcount*4 - 4
         jbe      aci_CopyRight
         cmpq     %rax,%rsi
-        jbe      aci_CopyLeft 
+        jbe      aci_CopyLeft
 aci_CopyRight:
         leaq     -8(%rdi,%rdx,8),%rax # from + qcount*8 - 8
         leaq     -8(%rsi,%rdx,8),%rcx # to + qcount*8 - 8
@@ -334,15 +312,13 @@ aci_CopyLeft:
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-	ELF_TYPE(_Copy_arrayof_conjoint_jlongs,@function)
-	ELF_TYPE(_Copy_conjoint_jlongs_atomic,@function)
-SYMBOL(_Copy_arrayof_conjoint_jlongs):
-SYMBOL(_Copy_conjoint_jlongs_atomic):
+DECLARE_FUNC(_Copy_arrayof_conjoint_jlongs):
+DECLARE_FUNC(_Copy_conjoint_jlongs_atomic):
         cmpq     %rdi,%rsi
         leaq     -8(%rdi,%rdx,8),%rax # from + count*8 - 8
         jbe      acl_CopyRight
         cmpq     %rax,%rsi
-        jbe      acl_CopyLeft 
+        jbe      acl_CopyLeft
 acl_CopyRight:
         leaq     -8(%rsi,%rdx,8),%rcx # to + count*8 - 8
         negq     %rdx

@@ -54,7 +54,7 @@ public class ProhibitedPackage {
             // will be ignored during dumping.
             TestCommon.dump(appJar,  classlist, "-Xlog:cds")
                 .shouldContain("Dumping")
-                .shouldContain("[cds] Prohibited package for non-bootstrap classes: java/lang/Prohibited.class")
+                .shouldContain("Prohibited package for non-bootstrap classes: java/lang/Prohibited.class")
                 .shouldHaveExitValue(0);
         }
 

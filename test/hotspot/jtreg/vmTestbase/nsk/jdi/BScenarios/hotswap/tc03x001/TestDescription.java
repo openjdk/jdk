@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@
  *      -g:lines,source,vars
  *      newclass
  *
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.BScenarios.hotswap.tc03x001
  *      ./bin
  *      -verbose

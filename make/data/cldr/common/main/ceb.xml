@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 the U.S. and other countries. CLDR data files are interpreted according to
@@ -1527,11 +1527,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 					<daylight>Oras sa Tag-init sa Lord Howe</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Oras sa Macquarie Island</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Oras sa Magadan</generic>
@@ -1569,13 +1564,6 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<metazone type="Mawson">
 				<long>
 					<standard>Oras sa Mawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Oras sa Northwest Mexico</generic>
-					<standard>Tamdanang Oras sa Northwest Mexico</standard>
-					<daylight>Oras sa Tag-init sa Northwest Mexico</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

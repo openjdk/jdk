@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,9 @@ import java.lang.reflect.TypeVariable;
 import java.lang.constant.Constable;
 import java.net.URL;
 import java.security.AccessController;
+import java.security.Permissions;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -70,6 +72,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
@@ -137,22 +140,24 @@ import sun.reflect.misc.ReflectUtil;
  * }}
  *
  * It is also possible to get the {@code Class} object for a named
- * class or interface (or for {@code void}) using a <i>class literal</i>.
+ * class or interface (or for {@code void}) using a <dfn>class literal</dfn>
+ * (JLS {@jls 15.8.2}).
  * For example:
  *
  * {@snippet lang="java" :
- * System.out.println("The name of class Foo is: "+Foo.class.getName());
+ * System.out.println("The name of class Foo is: " + Foo.class.getName()); // @highlight substring="Foo.class"
  * }
  *
  * <p> Some methods of class {@code Class} expose whether the declaration of
  * a class or interface in Java source code was <em>enclosed</em> within
  * another declaration. Other methods describe how a class or interface
- * is situated in a <em>nest</em>. A <a id="nest">nest</a> is a set of
+ * is situated in a <dfn>{@index "nest"}</dfn>. A <a id="nest">nest</a> is a set of
  * classes and interfaces, in the same run-time package, that
  * allow mutual access to their {@code private} members.
- * The classes and interfaces are known as <em>nestmates</em>.
+ * The classes and interfaces are known as <dfn>{@index "nestmates"}</dfn>
+ * (JVMS {@jvms 4.7.29}).
  * One nestmate acts as the
- * <em>nest host</em>, and enumerates the other nestmates which
+ * <dfn>nest host</dfn> (JVMS {@jvms 4.7.28}), and enumerates the other nestmates which
  * belong to the nest; each of them in turn records it as the nest host.
  * The classes and interfaces which belong to a nest, including its host, are
  * determined when
@@ -164,7 +169,7 @@ import sun.reflect.misc.ReflectUtil;
  * <h2><a id=hiddenClasses>Hidden Classes</a></h2>
  * A class or interface created by the invocation of
  * {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
- * Lookup::defineHiddenClass} is a {@linkplain Class#isHidden() <em>hidden</em>}
+ * Lookup::defineHiddenClass} is a {@linkplain Class#isHidden() <dfn>hidden</dfn>}
  * class or interface.
  * All kinds of class, including enum classes and record classes, may be
  * hidden classes; all kinds of interface, including annotation interfaces,
@@ -213,7 +218,6 @@ import sun.reflect.misc.ReflectUtil;
  *
  * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
  * @since   1.0
- * @jls 15.8.2 Class Literals
  */
 public final class Class<T> implements java.io.Serializable,
                               GenericDeclaration,
@@ -261,7 +265,8 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * Returns a string describing this {@code Class}, including
-     * information about modifiers and type parameters.
+     * information about modifiers, {@link #isSealed() sealed}/{@code
+     * non-sealed} status, and type parameters.
      *
      * The string is formatted as a list of type modifiers, if any,
      * followed by the kind of type (empty string for primitive types
@@ -314,6 +319,11 @@ public final class Class<T> implements java.io.Serializable,
                     sb.append(' ');
                 }
 
+                // A class cannot be strictfp and sealed/non-sealed so
+                // it is sufficient to check for sealed-ness after all
+                // modifiers are printed.
+                addSealingInfo(modifiers, sb);
+
                 if (isAnnotation()) {
                     sb.append('@');
                 }
@@ -342,6 +352,49 @@ public final class Class<T> implements java.io.Serializable,
 
             return sb.toString();
         }
+    }
+
+    private void addSealingInfo(int modifiers, StringBuilder sb) {
+        // A class can be final XOR sealed XOR non-sealed.
+        if (Modifier.isFinal(modifiers)) {
+            return; // no-op
+        } else {
+            if (isSealed()) {
+                sb.append("sealed ");
+                return;
+            } else {
+                // Check for sealed ancestor, which implies this class
+                // is non-sealed.
+                if (hasSealedAncestor(this)) {
+                    sb.append("non-sealed ");
+                }
+            }
+        }
+    }
+
+    private boolean hasSealedAncestor(Class<?> clazz) {
+        // From JLS 8.1.1.2:
+        // "It is a compile-time error if a class has a sealed direct
+        // superclass or a sealed direct superinterface, and is not
+        // declared final, sealed, or non-sealed either explicitly or
+        // implicitly.
+        // Thus, an effect of the sealed keyword is to force all
+        // direct subclasses to explicitly declare whether they are
+        // final, sealed, or non-sealed. This avoids accidentally
+        // exposing a sealed class hierarchy to unwanted subclassing."
+
+        // Therefore, will just check direct superclass and
+        // superinterfaces.
+        var superclass = clazz.getSuperclass();
+        if (superclass != null && superclass.isSealed()) {
+            return true;
+        }
+        for (var superinterface : clazz.getInterfaces()) {
+            if (superinterface.isSealed()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static String typeVarBounds(TypeVariable<?> typeVar) {
@@ -1060,8 +1113,8 @@ public final class Class<T> implements java.io.Serializable,
     // will throw NoSuchFieldException
     private final ClassLoader classLoader;
 
-    // Set by VM
-    private transient Object classData;
+    private transient Object classData; // Set by VM
+    private transient Object[] signers; // Read by VM, mutable
 
     // package-private
     Object getClassData() {
@@ -1195,7 +1248,7 @@ public final class Class<T> implements java.io.Serializable,
      * @return the fully qualified package name
      *
      * @since 9
-     * @jls 6.7 Fully Qualified Names
+     * @jls 6.7 Fully Qualified Names and Canonical Names
      */
     public String getPackageName() {
         String pn = this.packageName;
@@ -1408,7 +1461,7 @@ public final class Class<T> implements java.io.Serializable,
      * programming language and JVM modeling in core reflection</a>
      * @since 1.1
      * @jls 8.1.1 Class Modifiers
-     * @jls 9.1.1. Interface Modifiers
+     * @jls 9.1.1 Interface Modifiers
      * @jvms 4.1 The {@code ClassFile} Structure
      */
     @IntrinsicCandidate
@@ -1460,14 +1513,19 @@ public final class Class<T> implements java.io.Serializable,
      *          a primitive type or void.
      * @since   1.1
      */
-    public native Object[] getSigners();
-
+    public Object[] getSigners() {
+        var signers = this.signers;
+        return signers == null ? null : signers.clone();
+    }
 
     /**
      * Set the signers of this class.
      */
-    native void setSigners(Object[] signers);
-
+    void setSigners(Object[] signers) {
+        if (!isPrimitive() && !isArray()) {
+            this.signers = signers;
+        }
+    }
 
     /**
      * If this {@code Class} object represents a local or anonymous
@@ -1937,7 +1995,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return {@code true} if and only if this class is a local class.
      * @since 1.5
-     * @jls 14.3 Local Class Declarations
+     * @jls 14.3 Local Class and Interface Declarations
      */
     public boolean isLocalClass() {
         return isLocalOrAnonymousClass() &&
@@ -1950,7 +2008,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return {@code true} if and only if this class is a member class.
      * @since 1.5
-     * @jls 8.5 Member Type Declarations
+     * @jls 8.5 Member Class and Interface Declarations
      */
     public boolean isMemberClass() {
         return !isLocalOrAnonymousClass() && getDeclaringClass0() != null;
@@ -2487,7 +2545,7 @@ public final class Class<T> implements java.io.Serializable,
      *         </ul>
      *
      * @since 1.1
-     * @jls 8.5 Member Type Declarations
+     * @jls 8.5 Member Class and Interface Declarations
      */
     @CallerSensitive
     public Class<?>[] getDeclaredClasses() throws SecurityException {
@@ -3165,10 +3223,6 @@ public final class Class<T> implements java.io.Serializable,
         return true;
     }
 
-
-    /** protection domain returned when the internal domain is null */
-    private static java.security.ProtectionDomain allPermDomain;
-
     /**
      * Returns the {@code ProtectionDomain} of this class.  If there is a
      * security manager installed, this method first calls the security
@@ -3189,7 +3243,7 @@ public final class Class<T> implements java.io.Serializable,
      * @see java.lang.RuntimePermission
      * @since 1.2
      */
-    public java.security.ProtectionDomain getProtectionDomain() {
+    public ProtectionDomain getProtectionDomain() {
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -3198,26 +3252,30 @@ public final class Class<T> implements java.io.Serializable,
         return protectionDomain();
     }
 
-    // package-private
-    java.security.ProtectionDomain protectionDomain() {
-        java.security.ProtectionDomain pd = getProtectionDomain0();
-        if (pd == null) {
-            if (allPermDomain == null) {
-                java.security.Permissions perms =
-                    new java.security.Permissions();
-                perms.add(SecurityConstants.ALL_PERMISSION);
-                allPermDomain =
-                    new java.security.ProtectionDomain(null, perms);
-            }
-            pd = allPermDomain;
+    /** Holder for the protection domain returned when the internal domain is null */
+    private static class Holder {
+        private static final ProtectionDomain allPermDomain;
+        static {
+            Permissions perms = new Permissions();
+            perms.add(SecurityConstants.ALL_PERMISSION);
+            allPermDomain = new ProtectionDomain(null, perms);
         }
-        return pd;
+    }
+
+    // package-private
+    ProtectionDomain protectionDomain() {
+        ProtectionDomain pd = getProtectionDomain0();
+        if (pd == null) {
+            return Holder.allPermDomain;
+        } else {
+            return pd;
+        }
     }
 
     /**
      * Returns the ProtectionDomain of this class.
      */
-    private native java.security.ProtectionDomain getProtectionDomain0();
+    private native ProtectionDomain getProtectionDomain0();
 
     /*
      * Return the Virtual Machine's Class object for the named
@@ -4590,7 +4648,7 @@ public final class Class<T> implements java.io.Serializable,
             return Wrapper.forPrimitiveType(this).basicTypeString();
 
         if (isArray()) {
-            return "[" + componentType.descriptorString();
+            return "[".concat(componentType.descriptorString());
         } else if (isHidden()) {
             String name = getName();
             int index = name.indexOf('/');
@@ -4603,11 +4661,7 @@ public final class Class<T> implements java.io.Serializable,
                     .toString();
         } else {
             String name = getName().replace('.', '/');
-            return new StringBuilder(name.length() + 2)
-                    .append('L')
-                    .append(name)
-                    .append(';')
-                    .toString();
+            return StringConcatHelper.concat("L", name, ";");
         }
     }
 
@@ -4660,7 +4714,7 @@ public final class Class<T> implements java.io.Serializable,
     public Optional<ClassDesc> describeConstable() {
         Class<?> c = isArray() ? elementType() : this;
         return c.isHidden() ? Optional.empty()
-                            : Optional.of(ClassDesc.ofDescriptor(descriptorString()));
+                            : Optional.of(ConstantUtils.classDesc(this));
    }
 
     /**
@@ -4670,6 +4724,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @since 15
      * @see MethodHandles.Lookup#defineHiddenClass
+     * @see Class##hiddenClasses Hidden Classes
      */
     @IntrinsicCandidate
     public native boolean isHidden();

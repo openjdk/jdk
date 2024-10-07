@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1COLLECTIONSETCHOOSER_HPP
 #define SHARE_GC_G1_G1COLLECTIONSETCHOOSER_HPP
 
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allStatic.hpp"
 #include "runtime/globals.hpp"
@@ -40,7 +40,7 @@ class G1CollectionSetChooser : public AllStatic {
 
 public:
   static size_t mixed_gc_live_threshold_bytes() {
-    return HeapRegion::GrainBytes * (size_t) G1MixedGCLiveThresholdPercent / 100;
+    return G1HeapRegion::GrainBytes * (size_t)G1MixedGCLiveThresholdPercent / 100;
   }
 
   static bool region_occupancy_low_enough_for_evac(size_t live_bytes) {

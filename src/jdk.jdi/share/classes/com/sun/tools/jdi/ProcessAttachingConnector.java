@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,7 +103,7 @@ public class ProcessAttachingConnector
             Properties props = vm.getAgentProperties();
             address = props.getProperty("sun.jdwp.listenerAddress");
         } catch (Exception x) {
-            throw new IOException(x.getMessage());
+            throw new IOException(x);
         } finally {
             if (vm != null) vm.detach();
         }

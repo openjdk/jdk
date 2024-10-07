@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 #include "jni.h"
-#include "testlib_threads.h"
+#include "testlib_threads.hpp"
 
 struct Context {
     JavaVM* jvm;
@@ -32,7 +32,7 @@ struct Context {
 void call(void* ctxt) {
     Context* context = (Context*) ctxt;
     JNIEnv* env;
-    context->jvm->AttachCurrentThread((void**)&env, NULL);
+    context->jvm->AttachCurrentThread((void**)&env, nullptr);
     jclass symbolLookupClass = env->FindClass("java/lang/foreign/SymbolLookup");
     jmethodID loaderLookupMethod = env->GetStaticMethodID(symbolLookupClass, "loaderLookup", "()Ljava/lang/foreign/SymbolLookup;");
     context->res = env->NewGlobalRef(env->CallStaticObjectMethod(symbolLookupClass, loaderLookupMethod));

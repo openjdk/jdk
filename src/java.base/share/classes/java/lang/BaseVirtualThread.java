@@ -27,7 +27,7 @@ package java.lang;
 /**
  * Base class for virtual thread implementations.
  */
-sealed abstract class BaseVirtualThread extends Thread
+abstract sealed class BaseVirtualThread extends Thread
         permits VirtualThread, ThreadBuilders.BoundVirtualThread {
 
     /**

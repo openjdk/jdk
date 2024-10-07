@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,9 @@
  *
  * @run clean NotificationEmissionTest
  * @run build NotificationEmissionTest
+ *
  * @run main NotificationEmissionTest 1
+ * @run main/othervm -Djava.security.manager=allow NotificationEmissionTest 1
  * @run main/othervm -Djava.security.manager=allow NotificationEmissionTest 2
  * @run main/othervm -Djava.security.manager=allow NotificationEmissionTest 3
  * @run main/othervm -Djava.security.manager=allow NotificationEmissionTest 4

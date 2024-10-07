@@ -30,7 +30,6 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Hawaiian Standard Time" territory="001" type="Pacific/Honolulu"/>
 			<mapZone other="Hawaiian Standard Time" territory="CK" type="Pacific/Rarotonga"/>
 			<mapZone other="Hawaiian Standard Time" territory="PF" type="Pacific/Tahiti"/>
-			<mapZone other="Hawaiian Standard Time" territory="UM" type="Pacific/Johnston"/>
 			<mapZone other="Hawaiian Standard Time" territory="US" type="Pacific/Honolulu"/>
 			<mapZone other="Hawaiian Standard Time" territory="ZZ" type="Etc/GMT+10"/>
 
@@ -49,7 +48,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 
 			<!-- (UTC-08:00) Baja California -->
 			<mapZone other="Pacific Standard Time (Mexico)" territory="001" type="America/Tijuana"/>
-			<mapZone other="Pacific Standard Time (Mexico)" territory="MX" type="America/Tijuana America/Santa_Isabel"/>
+			<mapZone other="Pacific Standard Time (Mexico)" territory="MX" type="America/Tijuana"/>
 
 			<!-- (UTC-08:00) Coordinated Universal Time-08 -->
 			<mapZone other="UTC-08" territory="001" type="Etc/GMT+8"/>
@@ -75,7 +74,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 
 			<!-- (UTC-07:00) Mountain Time (US & Canada) -->
 			<mapZone other="Mountain Standard Time" territory="001" type="America/Denver"/>
-			<mapZone other="Mountain Standard Time" territory="CA" type="America/Edmonton America/Cambridge_Bay America/Inuvik America/Yellowknife"/>
+			<mapZone other="Mountain Standard Time" territory="CA" type="America/Edmonton America/Cambridge_Bay America/Inuvik"/>
 			<mapZone other="Mountain Standard Time" territory="MX" type="America/Ciudad_Juarez"/>
 			<mapZone other="Mountain Standard Time" territory="US" type="America/Denver America/Boise"/>
 			<mapZone other="Mountain Standard Time" territory="ZZ" type="MST7MDT"/>
@@ -97,7 +96,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 
 			<!-- (UTC-06:00) Central Time (US & Canada) -->
 			<mapZone other="Central Standard Time" territory="001" type="America/Chicago"/>
-			<mapZone other="Central Standard Time" territory="CA" type="America/Winnipeg America/Rainy_River America/Rankin_Inlet America/Resolute"/>
+			<mapZone other="Central Standard Time" territory="CA" type="America/Winnipeg America/Rankin_Inlet America/Resolute"/>
 			<mapZone other="Central Standard Time" territory="MX" type="America/Matamoros America/Ojinaga"/>
 			<mapZone other="Central Standard Time" territory="US" type="America/Chicago America/Indiana/Knox America/Indiana/Tell_City America/Menominee America/North_Dakota/Beulah America/North_Dakota/Center America/North_Dakota/New_Salem"/>
 			<mapZone other="Central Standard Time" territory="ZZ" type="CST6CDT"/>
@@ -133,7 +132,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<!-- (UTC-05:00) Eastern Time (US & Canada) -->
 			<mapZone other="Eastern Standard Time" territory="001" type="America/New_York"/>
 			<mapZone other="Eastern Standard Time" territory="BS" type="America/Nassau"/>
-			<mapZone other="Eastern Standard Time" territory="CA" type="America/Toronto America/Iqaluit America/Montreal America/Nipigon America/Pangnirtung America/Thunder_Bay"/>
+			<mapZone other="Eastern Standard Time" territory="CA" type="America/Toronto America/Iqaluit"/>
 			<mapZone other="Eastern Standard Time" territory="US" type="America/New_York America/Detroit America/Indiana/Petersburg America/Indiana/Vincennes America/Indiana/Winamac America/Kentucky/Monticello America/Louisville"/>
 			<mapZone other="Eastern Standard Time" territory="ZZ" type="EST5EDT"/>
 
@@ -421,7 +420,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="FLE Standard Time" territory="FI" type="Europe/Helsinki"/>
 			<mapZone other="FLE Standard Time" territory="LT" type="Europe/Vilnius"/>
 			<mapZone other="FLE Standard Time" territory="LV" type="Europe/Riga"/>
-			<mapZone other="FLE Standard Time" territory="UA" type="Europe/Kiev Europe/Uzhgorod Europe/Zaporozhye"/>
+			<mapZone other="FLE Standard Time" territory="UA" type="Europe/Kiev"/>
 
 			<!-- (UTC+02:00) Jerusalem -->
 			<mapZone other="Israel Standard Time" territory="001" type="Asia/Jerusalem"/>
@@ -538,7 +537,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<!-- (UTC+05:00) Ashgabat, Tashkent -->
 			<mapZone other="West Asia Standard Time" territory="001" type="Asia/Tashkent"/>
 			<mapZone other="West Asia Standard Time" territory="AQ" type="Antarctica/Mawson"/>
-			<mapZone other="West Asia Standard Time" territory="KZ" type="Asia/Oral Asia/Aqtau Asia/Aqtobe Asia/Atyrau"/>
+			<!-- Microsoft may create a new zone dedicated for Almaty and Qostanay. -->
+			<mapZone other="West Asia Standard Time" territory="KZ" type="Asia/Oral Asia/Almaty Asia/Aqtau Asia/Aqtobe Asia/Atyrau Asia/Qostanay"/>
 			<mapZone other="West Asia Standard Time" territory="MV" type="Indian/Maldives"/>
 			<mapZone other="West Asia Standard Time" territory="TF" type="Indian/Kerguelen"/>
 			<mapZone other="West Asia Standard Time" territory="TJ" type="Asia/Dushanbe"/>
@@ -570,13 +570,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Nepal Standard Time" territory="001" type="Asia/Katmandu"/>
 			<mapZone other="Nepal Standard Time" territory="NP" type="Asia/Katmandu"/>
 
-			<!-- (UTC+06:00) Astana -->
-			<mapZone other="Central Asia Standard Time" territory="001" type="Asia/Almaty"/>
+			<!-- (UTC+06:00) Astana --> <!-- Microsoft probably keeps Central Asia Standard Time, but change Astana to something else. -->
+			<mapZone other="Central Asia Standard Time" territory="001" type="Asia/Bishkek"/>
 			<mapZone other="Central Asia Standard Time" territory="AQ" type="Antarctica/Vostok"/>
 			<mapZone other="Central Asia Standard Time" territory="CN" type="Asia/Urumqi"/>
 			<mapZone other="Central Asia Standard Time" territory="IO" type="Indian/Chagos"/>
 			<mapZone other="Central Asia Standard Time" territory="KG" type="Asia/Bishkek"/>
-			<mapZone other="Central Asia Standard Time" territory="KZ" type="Asia/Almaty Asia/Qostanay"/>
 			<mapZone other="Central Asia Standard Time" territory="ZZ" type="Etc/GMT-6"/>
 
 			<!-- (UTC+06:00) Dhaka -->
@@ -710,7 +709,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 
 			<!-- (UTC+10:00) Hobart -->
 			<mapZone other="Tasmania Standard Time" territory="001" type="Australia/Hobart"/>
-			<mapZone other="Tasmania Standard Time" territory="AU" type="Australia/Hobart Australia/Currie Antarctica/Macquarie"/>
+			<mapZone other="Tasmania Standard Time" territory="AU" type="Australia/Hobart Antarctica/Macquarie"/>
 
 			<!-- (UTC+10:00) Vladivostok -->
 			<mapZone other="Vladivostok Standard Time" territory="001" type="Asia/Vladivostok"/>

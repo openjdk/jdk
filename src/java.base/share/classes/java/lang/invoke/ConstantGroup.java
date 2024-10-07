@@ -94,7 +94,7 @@ import java.util.function.IntFunction;
  */
 // public
 interface ConstantGroup {
-    /// Access
+    //--- Access
 
     /**
      * Returns the number of constants in this group.
@@ -148,7 +148,7 @@ interface ConstantGroup {
      */
     boolean isPresent(int index);
 
-    /// Views
+    //--- Views
 
     /**
      * Create a view on this group as a {@link List} view.
@@ -182,7 +182,7 @@ interface ConstantGroup {
         return new AbstractConstantGroup.SubGroup(this, start, end);
     }
 
-    /// Bulk operations
+    //--- Bulk operations
 
     /**
      * Copy a sequence of constant values into a given buffer.

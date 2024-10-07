@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -27,6 +27,9 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
     private long[] style;
     private int length;
     private TabStops tabs = new TabStops(0);
+    private char[] altIn;
+    private char[] altOut;
+    private boolean inAltCharset;
     private int lastLineLength = 0;
     private AttributedStyle current = AttributedStyle.DEFAULT;
 
@@ -81,10 +84,7 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
     @Override
     public AttributedString subSequence(int start, int end) {
         return new AttributedString(
-                Arrays.copyOfRange(buffer, start, end),
-                Arrays.copyOfRange(style, start, end),
-                0,
-                end - start);
+                Arrays.copyOfRange(buffer, start, end), Arrays.copyOfRange(style, start, end), 0, end - start);
     }
 
     @Override
@@ -108,6 +108,14 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return append(Character.toString(c));
     }
 
+    public AttributedStringBuilder append(char c, int repeat) {
+        AttributedString s = new AttributedString(Character.toString(c), current);
+        while (repeat-- > 0) {
+            append(s);
+        }
+        return this;
+    }
+
     public AttributedStringBuilder append(CharSequence csq, AttributedStyle style) {
         return append(new AttributedString(csq, style));
     }
@@ -117,12 +125,12 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return this;
     }
 
-    public AttributedStringBuilder style(Function<AttributedStyle,AttributedStyle> style) {
+    public AttributedStringBuilder style(Function<AttributedStyle, AttributedStyle> style) {
         current = style.apply(current);
         return this;
     }
 
-    public AttributedStringBuilder styled(Function<AttributedStyle,AttributedStyle> style, CharSequence cs) {
+    public AttributedStringBuilder styled(Function<AttributedStyle, AttributedStyle> style, CharSequence cs) {
         return styled(style, sb -> sb.append(cs));
     }
 
@@ -130,7 +138,8 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return styled(s -> style, sb -> sb.append(cs));
     }
 
-    public AttributedStringBuilder styled(Function<AttributedStyle,AttributedStyle> style, Consumer<AttributedStringBuilder> consumer) {
+    public AttributedStringBuilder styled(
+            Function<AttributedStyle, AttributedStyle> style, Consumer<AttributedStringBuilder> consumer) {
         AttributedStyle prev = current;
         current = style.apply(prev);
         consumer.accept(this);
@@ -338,21 +347,88 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
                     // This is not a SGR code, so ignore
                     ansiState = 0;
                 }
-            } else if (c == '\t' && tabs.defined()) {
-                insertTab(current);
             } else {
-                ensureCapacity(length + 1);
-                buffer[length] = c;
-                style[length] = this.current.getStyle();
-                if (c == '\n') {
-                    lastLineLength = 0;
-                } else {
-                    lastLineLength++;
+                if (ansiState >= 1) {
+                    ensureCapacity(length + 1);
+                    buffer[length++] = 27;
+                    if (ansiState >= 2) {
+                        ensureCapacity(length + 1);
+                        buffer[length++] = '[';
+                    }
+                    ansiState = 0;
                 }
-                length++;
+                if (c == '\t' && tabs.defined()) {
+                    insertTab(current);
+                } else {
+                    ensureCapacity(length + 1);
+                    if (inAltCharset) {
+                        switch (c) {
+                            case 'j':
+                                c = '\u2518';
+                                break;
+                            case 'k':
+                                c = '\u2510';
+                                break;
+                            case 'l':
+                                c = '\u250C';
+                                break;
+                            case 'm':
+                                c = '\u2514';
+                                break;
+                            case 'n':
+                                c = '\u253C';
+                                break;
+                            case 'q':
+                                c = '\u2500';
+                                break;
+                            case 't':
+                                c = '\u251C';
+                                break;
+                            case 'u':
+                                c = '\u2524';
+                                break;
+                            case 'v':
+                                c = '\u2534';
+                                break;
+                            case 'w':
+                                c = '\u252C';
+                                break;
+                            case 'x':
+                                c = '\u2502';
+                                break;
+                        }
+                    }
+                    buffer[length] = c;
+                    style[length] = this.current.getStyle();
+                    if (c == '\n') {
+                        lastLineLength = 0;
+                    } else {
+                        lastLineLength++;
+                    }
+                    length++;
+                    if (altIn != null && altOut != null) {
+                        char[] alt = inAltCharset ? altOut : altIn;
+                        if (equals(buffer, length - alt.length, alt, 0, alt.length)) {
+                            inAltCharset = !inAltCharset;
+                            length -= alt.length;
+                        }
+                    }
+                }
             }
         }
         return this;
+    }
+
+    private static boolean equals(char[] a, int aFromIndex, char[] b, int bFromIndex, int length) {
+        if (aFromIndex < 0 || bFromIndex < 0 || aFromIndex + length > a.length || bFromIndex + length > b.length) {
+            return false;
+        }
+        for (int i = 0; i < length; i++) {
+            if (a[aFromIndex + i] != b[bFromIndex + i]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected void insertTab(AttributedStyle s) {
@@ -393,6 +469,15 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return this;
     }
 
+    public AttributedStringBuilder altCharset(String altIn, String altOut) {
+        if (length > 0) {
+            throw new IllegalStateException("Cannot change alternative charset after appending text");
+        }
+        this.altIn = altIn != null ? altIn.toCharArray() : null;
+        this.altOut = altOut != null ? altOut.toCharArray() : null;
+        return this;
+    }
+
     public AttributedStringBuilder styleMatches(Pattern pattern, AttributedStyle s) {
         Matcher matcher = pattern.matcher(this);
         while (matcher.find()) {
@@ -416,7 +501,7 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         return this;
     }
 
-    private class TabStops {
+    private static class TabStops {
         private List<Integer> tabs = new ArrayList<>();
         private int lastStop = 0;
         private int lastSize = 0;
@@ -428,7 +513,7 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
         public TabStops(List<Integer> tabs) {
             this.tabs = tabs;
             int p = 0;
-            for (int s: tabs) {
+            for (int s : tabs) {
                 if (s <= p) {
                     continue;
                 }
@@ -447,7 +532,7 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
             if (lastLineLength >= lastStop) {
                 out = lastSize - (lastLineLength - lastStop) % lastSize;
             } else {
-                for (int s: tabs) {
+                for (int s : tabs) {
                     if (s > lastLineLength) {
                         out = s - lastLineLength;
                         break;
@@ -456,7 +541,5 @@ public class AttributedStringBuilder extends AttributedCharSequence implements A
             }
             return out;
         }
-
     }
-
 }

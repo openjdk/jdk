@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -397,6 +397,9 @@ class ClassFieldMap: public CHeapObj<mtInternal> {
   // constructor
   ClassFieldMap();
 
+  // calculates number of fields in all interfaces
+  static int interfaces_field_count(InstanceKlass* ik);
+
   // add a field
   void add(int index, char type, int offset);
 
@@ -424,6 +427,16 @@ ClassFieldMap::~ClassFieldMap() {
   delete _fields;
 }
 
+int ClassFieldMap::interfaces_field_count(InstanceKlass* ik) {
+  const Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
+  int count = 0;
+  for (int i = 0; i < interfaces->length(); i++) {
+    FilteredJavaFieldStream fld(interfaces->at(i));
+    count += fld.field_count();
+  }
+  return count;
+}
+
 void ClassFieldMap::add(int index, char type, int offset) {
   ClassFieldDescriptor* field = new ClassFieldDescriptor(index, type, offset);
   _fields->append(field);
@@ -431,48 +444,59 @@ void ClassFieldMap::add(int index, char type, int offset) {
 
 // Returns a heap allocated ClassFieldMap to describe the static fields
 // of the given class.
-//
 ClassFieldMap* ClassFieldMap::create_map_of_static_fields(Klass* k) {
   InstanceKlass* ik = InstanceKlass::cast(k);
 
   // create the field map
   ClassFieldMap* field_map = new ClassFieldMap();
 
-  FilteredFieldStream f(ik, false, false);
-  int max_field_index = f.field_count()-1;
+  // Static fields of interfaces and superclasses are reported as references from the interfaces/superclasses.
+  // Need to calculate start index of this class fields: number of fields in all interfaces and superclasses.
+  int index = interfaces_field_count(ik);
+  for (InstanceKlass* super_klass = ik->java_super(); super_klass != nullptr; super_klass = super_klass->java_super()) {
+    FilteredJavaFieldStream super_fld(super_klass);
+    index += super_fld.field_count();
+  }
 
-  int index = 0;
-  for (FilteredFieldStream fld(ik, true, true); !fld.eos(); fld.next(), index++) {
+  for (FilteredJavaFieldStream fld(ik); !fld.done(); fld.next(), index++) {
     // ignore instance fields
     if (!fld.access_flags().is_static()) {
       continue;
     }
-    field_map->add(max_field_index - index, fld.signature()->char_at(0), fld.offset());
+    field_map->add(index, fld.signature()->char_at(0), fld.offset());
   }
+
   return field_map;
 }
 
 // Returns a heap allocated ClassFieldMap to describe the instance fields
 // of the given class. All instance fields are included (this means public
-// and private fields declared in superclasses and superinterfaces too).
-//
+// and private fields declared in superclasses too).
 ClassFieldMap* ClassFieldMap::create_map_of_instance_fields(oop obj) {
   InstanceKlass* ik = InstanceKlass::cast(obj->klass());
 
   // create the field map
   ClassFieldMap* field_map = new ClassFieldMap();
 
-  FilteredFieldStream f(ik, false, false);
+  // fields of the superclasses are reported first, so need to know total field number to calculate field indices
+  int total_field_number = interfaces_field_count(ik);
+  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->java_super()) {
+    FilteredJavaFieldStream fld(klass);
+    total_field_number += fld.field_count();
+  }
 
-  int max_field_index = f.field_count()-1;
-
-  int index = 0;
-  for (FilteredFieldStream fld(ik, false, false); !fld.eos(); fld.next(), index++) {
-    // ignore static fields
-    if (fld.access_flags().is_static()) {
-      continue;
+  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->java_super()) {
+    FilteredJavaFieldStream fld(klass);
+    int start_index = total_field_number - fld.field_count();
+    for (int index = 0; !fld.done(); fld.next(), index++) {
+      // ignore static fields
+      if (fld.access_flags().is_static()) {
+        continue;
+      }
+      field_map->add(start_index + index, fld.signature()->char_at(0), fld.offset());
     }
-    field_map->add(max_field_index - index, fld.signature()->char_at(0), fld.offset());
+    // update total_field_number for superclass (decrease by the field count in the current class)
+    total_field_number = start_index;
   }
 
   return field_map;

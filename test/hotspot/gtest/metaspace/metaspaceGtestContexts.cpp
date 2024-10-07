@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,11 +34,11 @@ using metaspace::Settings;
 void ChunkGtestContext::checked_alloc_chunk_0(Metachunk** p_return_value, chunklevel_t preferred_level, chunklevel_t max_level,
                                                       size_t min_committed_size) {
 
-  *p_return_value = NULL;
+  *p_return_value = nullptr;
 
   Metachunk* c = cm().get_chunk(preferred_level, max_level, min_committed_size);
 
-  if (c != NULL) {
+  if (c != nullptr) {
 
     ASSERT_LE(c->level(), max_level);
     ASSERT_GE(c->level(), preferred_level);

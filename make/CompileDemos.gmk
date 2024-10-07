@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,9 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+
+include CopyFiles.gmk
 include JavaCompilation.gmk
-include NativeCompilation.gmk
 include TextFileProcessing.gmk
 include ZipArchive.gmk
 
@@ -182,7 +183,7 @@ $(eval $(call SetupBuildDemo, SwingSet2, \
 ))
 
 $(eval $(call SetupBuildDemo, Font2DTest, \
-    DISABLED_WARNINGS := rawtypes deprecation unchecked serial cast this-escape, \
+    DISABLED_WARNINGS := rawtypes deprecation unchecked serial cast this-escape dangling-doc-comments, \
     DEMO_SUBDIR := jfc, \
 ))
 
@@ -215,7 +216,7 @@ $(eval $(call SetupBuildDemo, SampleTree, \
 ))
 
 $(eval $(call SetupBuildDemo, TableExample, \
-    DISABLED_WARNINGS := rawtypes unchecked deprecation this-escape, \
+    DISABLED_WARNINGS := rawtypes unchecked deprecation this-escape dangling-doc-comments, \
     DEMO_SUBDIR := jfc, \
 ))
 

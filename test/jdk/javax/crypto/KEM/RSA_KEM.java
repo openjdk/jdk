@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @modules java.base/sun.security.jca
  *          java.base/sun.security.rsa
  *          java.base/sun.security.util
+ *          java.base/javax.crypto:+open
  */
 import sun.security.jca.JCAUtil;
 import sun.security.rsa.RSACore;
@@ -88,7 +89,7 @@ public class RSA_KEM {
             KeyPair kp = g.generateKeyPair();
             for (RSAKEMParameterSpec kspec : kspecs) {
                 SecretKey cek = KeyGenerator.getInstance("AES").generateKey();
-                KEM kem1 = KEM.getInstance("RSA-KEM", p);
+                KEM kem1 = getKemImpl(p);
                 Cipher c = Cipher.getInstance("AES/CBC/PKCS5Padding");
                 c.init(Cipher.ENCRYPT_MODE, cek, new IvParameterSpec(iv));
                 byte[] ciphertext = c.doFinal(msg);
@@ -101,7 +102,7 @@ public class RSA_KEM {
 
                 AlgorithmParameters a = AlgorithmParameters.getInstance("RSA-KEM", p);
                 a.init(enc.params());
-                KEM kem2 = KEM.getInstance("RSA-KEM", p);
+                KEM kem2 = getKemImpl(p);
                 KEM.Decapsulator d = kem2.newDecapsulator(kp.getPrivate(), a.getParameterSpec(AlgorithmParameterSpec.class));
                 SecretKey k = d.decapsulate(enc.encapsulation(), 0, d.secretSize(), "AES");
                 Cipher c3 = Cipher.getInstance(kspec.encAlg);
@@ -120,6 +121,14 @@ public class RSA_KEM {
                         d.secretSize(), d.encapsulationSize(), k.getAlgorithm());
             }
         }
+    }
+
+    // To bypass the JCE security provider signature check
+    private static KEM getKemImpl(Provider p) throws Exception {
+        var ctor = KEM.class.getDeclaredConstructor(
+                String.class, KEMSpi.class, Provider.class);
+        ctor.setAccessible(true);
+        return ctor.newInstance("RSA-KEM", new KEMImpl(), p);
     }
 
     static final String RSA_KEM = "1.2.840.113549.1.9.16.3.14";

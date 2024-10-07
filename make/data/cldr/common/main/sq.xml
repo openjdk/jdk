@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1008,7 +1008,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="gb2312han">Radhitje e kinezishtes së thjeshtësuar - GB2312</type>
 			<type key="collation" type="phonebook">Radhitje libri telefonik</type>
 			<type key="collation" type="pinyin">Radhitje pinini</type>
-			<type key="collation" type="reformed">Radhitje e reformuar</type>
 			<type key="collation" type="search">kërkim i përgjithshëm</type>
 			<type key="collation" type="searchjl">kërkim sipas bashkëtingëllores fillestare hangul</type>
 			<type key="collation" type="standard">radhitje standarde</type>
@@ -2125,9 +2124,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Ora: {0}</regionFormat>
 			<regionFormat type="daylight">Ora verore: {0}</regionFormat>
 			<regionFormat type="standard">Ora standarde: {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa-Izabela</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Ora universale e koordinuar</standard>
@@ -2225,9 +2221,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Melburn</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Kuri</exemplarCity>
 			</zone>
 			<zone type="Australia/Lindeman">
 				<exemplarCity>Lindëmen</exemplarCity>
@@ -2331,9 +2324,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>Kreston</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>Jellounajf</exemplarCity>
-			</zone>
 			<zone type="America/Swift_Current">
 				<exemplarCity>Rryma e Shpejtë</exemplarCity>
 			</zone>
@@ -2346,14 +2336,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Winnipeg">
 				<exemplarCity>Uinipeg</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Lumi i Shirave</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>Gryka Inlet</exemplarCity>
-			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>Gjiri i Bubullimës</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>Ikaluit</exemplarCity>
@@ -2921,9 +2905,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kiev</exemplarCity>
 			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporozhje</exemplarCity>
-			</zone>
 			<zone type="Pacific/Midway">
 				<exemplarCity>Miduej</exemplarCity>
 			</zone>
@@ -2932,9 +2913,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Honolulu</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Xhonston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Ankorejxh</exemplarCity>
@@ -3593,11 +3571,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Ora verore e Makaos</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Ora e Ishullit Makuari</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Ora e Magadanit</generic>
@@ -3635,13 +3608,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Ora e Mausonit</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Ora e Meksikës Veriperëndimore</generic>
-					<standard>Ora standarde e Meksikës Veriperëndimore</standard>
-					<daylight>Ora verore e Meksikës Veriperëndimore</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

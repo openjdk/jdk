@@ -283,11 +283,9 @@ void XPhysicalMemoryManager::nmt_commit(uintptr_t offset, size_t size) const {
 }
 
 void XPhysicalMemoryManager::nmt_uncommit(uintptr_t offset, size_t size) const {
-  if (MemTracker::enabled()) {
-    const uintptr_t addr = XAddress::marked0(offset);
-    Tracker tracker(Tracker::uncommit);
-    tracker.record((address)addr, size);
-  }
+  const uintptr_t addr = XAddress::marked0(offset);
+  ThreadCritical tc;
+  MemTracker::record_virtual_memory_uncommit((address)addr, size);
 }
 
 void XPhysicalMemoryManager::alloc(XPhysicalMemory& pmem, size_t size) {

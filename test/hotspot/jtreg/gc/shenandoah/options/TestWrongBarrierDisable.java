@@ -44,26 +44,17 @@ public class TestWrongBarrierDisable {
                 "ShenandoahCloneBarrier",
                 "ShenandoahStackWatermarkBarrier",
         };
-        String[] iu = {
-                "ShenandoahLoadRefBarrier",
-                "ShenandoahIUBarrier",
-                "ShenandoahCASBarrier",
-                "ShenandoahCloneBarrier",
-                "ShenandoahStackWatermarkBarrier",
-        };
 
         shouldFailAll("-XX:ShenandoahGCHeuristics=adaptive",   concurrent);
         shouldFailAll("-XX:ShenandoahGCHeuristics=static",     concurrent);
         shouldFailAll("-XX:ShenandoahGCHeuristics=compact",    concurrent);
         shouldFailAll("-XX:ShenandoahGCHeuristics=aggressive", concurrent);
-        shouldFailAll("-XX:ShenandoahGCMode=iu",               iu);
         shouldPassAll("-XX:ShenandoahGCMode=passive",          concurrent);
-        shouldPassAll("-XX:ShenandoahGCMode=passive",          iu);
     }
 
     private static void shouldFailAll(String h, String[] barriers) throws Exception {
         for (String b : barriers) {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -72,7 +63,6 @@ public class TestWrongBarrierDisable {
                     "-XX:-" + b,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldNotHaveExitValue(0);
             output.shouldContain("GC mode needs ");
             output.shouldContain("to work correctly");
@@ -81,7 +71,7 @@ public class TestWrongBarrierDisable {
 
     private static void shouldPassAll(String h, String[] barriers) throws Exception {
         for (String b : barriers) {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UnlockExperimentalVMOptions",
@@ -90,7 +80,6 @@ public class TestWrongBarrierDisable {
                     "-XX:-" + b,
                     "-version"
             );
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
         }
     }

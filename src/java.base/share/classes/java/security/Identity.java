@@ -116,6 +116,7 @@ public abstract class Identity implements Principal, Serializable {
      * @throws    KeyManagementException if there is already an {@code Identity}
      * with the same name in the scope.
      */
+    @SuppressWarnings("this-escape")
     public Identity(String name, IdentityScope scope) throws
     KeyManagementException {
         this(name);

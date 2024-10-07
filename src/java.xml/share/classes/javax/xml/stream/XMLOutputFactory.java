@@ -197,7 +197,7 @@ public abstract class XMLOutputFactory {
    * <li>
    *   <p>
    *   Use the value of the property {@code factoryId} set in the
-   * <a href="{@docRoot}/java.xml/module-summary.html#ConfigurationFile">configuration file</a>,
+   * <a href="{@docRoot}/java.xml/module-summary.html#Conf_CF">configuration file</a>,
    * jaxp.properties by default. If the file exists and the property {@code factoryId}
    * is specified in the file, its value will be used as the implementation class.
    * </li>

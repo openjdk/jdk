@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -673,7 +673,7 @@ public class Check {
                 && types.isSameType(tree.expr.type, tree.clazz.type)
                 && !(ignoreAnnotatedCasts && TreeInfo.containsTypeAnnotation(tree.clazz))
                 && !is292targetTypeCast(tree)) {
-            deferredLintHandler.report(() -> {
+            deferredLintHandler.report(_l -> {
                 if (lint.isEnabled(LintCategory.CAST))
                     log.warning(LintCategory.CAST,
                             tree.pos(), Warnings.RedundantCast(tree.clazz.type));
@@ -1350,7 +1350,7 @@ public class Check {
     private void warnOnExplicitStrictfp(DiagnosticPosition pos) {
         DiagnosticPosition prevLintPos = deferredLintHandler.setPos(pos);
         try {
-            deferredLintHandler.report(() -> {
+            deferredLintHandler.report(_l -> {
                                            if (lint.isEnabled(LintCategory.STRICTFP)) {
                                                log.warning(LintCategory.STRICTFP,
                                                            pos, Warnings.Strictfp); }
@@ -3809,13 +3809,13 @@ public class Check {
                 || s.isDeprecated() && !other.isDeprecated())
                 && (s.outermostClass() != other.outermostClass() || s.outermostClass() == null)
                 && s.kind != Kind.PCK) {
-            deferredLintHandler.report(() -> warnDeprecated(pos.get(), s));
+            deferredLintHandler.report(_l -> warnDeprecated(pos.get(), s));
         }
     }
 
     void checkSunAPI(final DiagnosticPosition pos, final Symbol s) {
         if ((s.flags() & PROPRIETARY) != 0) {
-            deferredLintHandler.report(() -> {
+            deferredLintHandler.report(_l -> {
                 log.mandatoryWarning(pos, Warnings.SunProprietary(s));
             });
         }
@@ -3834,10 +3834,10 @@ public class Check {
                     log.error(pos, Errors.IsPreview(s));
                 } else {
                     preview.markUsesPreview(pos);
-                    deferredLintHandler.report(() -> warnPreviewAPI(pos, Warnings.IsPreview(s)));
+                    deferredLintHandler.report(_l -> warnPreviewAPI(pos, Warnings.IsPreview(s)));
                 }
             } else {
-                    deferredLintHandler.report(() -> warnPreviewAPI(pos, Warnings.IsPreviewReflective(s)));
+                    deferredLintHandler.report(_l -> warnPreviewAPI(pos, Warnings.IsPreviewReflective(s)));
             }
         }
         if (preview.declaredUsingPreviewFeature(s)) {
@@ -3846,14 +3846,14 @@ public class Check {
                 //If "s" is compiled from source, then there was an error for it already;
                 //if "s" is from classfile, there already was an error for the classfile.
                 preview.markUsesPreview(pos);
-                deferredLintHandler.report(() -> warnDeclaredUsingPreview(pos, s));
+                deferredLintHandler.report(_l -> warnDeclaredUsingPreview(pos, s));
             }
         }
     }
 
     void checkRestricted(DiagnosticPosition pos, Symbol s) {
         if (s.kind == MTH && (s.flags() & RESTRICTED) != 0) {
-            deferredLintHandler.report(() -> warnRestrictedAPI(pos, s));
+            deferredLintHandler.report(_l -> warnRestrictedAPI(pos, s));
         }
     }
 
@@ -4060,9 +4060,9 @@ public class Check {
                     break;
                 }
 
-                // If super()/this() isn't first, require "statements before super()" feature
+                // If super()/this() isn't first, require flexible constructors feature
                 if (!firstStatement)
-                    preview.checkSourceLevel(apply.pos(), Feature.SUPER_INIT);
+                    preview.checkSourceLevel(apply.pos(), Feature.FLEXIBLE_CONSTRUCTORS);
 
                 // We found a legitimate super()/this() call; remember it
                 initCall = methodName;
@@ -4102,7 +4102,7 @@ public class Check {
             int opc = ((OperatorSymbol)operator).opcode;
             if (opc == ByteCodes.idiv || opc == ByteCodes.imod
                 || opc == ByteCodes.ldiv || opc == ByteCodes.lmod) {
-                deferredLintHandler.report(() -> warnDivZero(pos));
+                deferredLintHandler.report(_l -> warnDivZero(pos));
             }
         }
     }
@@ -4115,7 +4115,7 @@ public class Check {
      */
     void checkLossOfPrecision(final DiagnosticPosition pos, Type found, Type req) {
         if (found.isNumeric() && req.isNumeric() && !types.isAssignable(found, req)) {
-            deferredLintHandler.report(() -> {
+            deferredLintHandler.report(_l -> {
                 if (lint.isEnabled(LintCategory.LOSSY_CONVERSIONS))
                     log.warning(LintCategory.LOSSY_CONVERSIONS,
                             pos, Warnings.PossibleLossOfPrecision(found, req));
@@ -4319,7 +4319,7 @@ public class Check {
                             // Warning may be suppressed by
                             // annotations; check again for being
                             // enabled in the deferred context.
-                            deferredLintHandler.report(() -> {
+                            deferredLintHandler.report(_l -> {
                                 if (lint.isEnabled(LintCategory.MISSING_EXPLICIT_CTOR))
                                    log.warning(LintCategory.MISSING_EXPLICIT_CTOR,
                                                pos, Warnings.MissingExplicitCtor(c, pkg, modle));
@@ -4396,7 +4396,9 @@ public class Check {
     }
 
     public void checkImportsResolvable(final JCCompilationUnit toplevel) {
-        for (final JCImport imp : toplevel.getImports()) {
+        for (final JCImportBase impBase : toplevel.getImports()) {
+            if (!(impBase instanceof JCImport imp))
+                continue;
             if (!imp.staticImport || !imp.qualid.hasTag(SELECT))
                 continue;
             final JCFieldAccess select = imp.qualid;
@@ -4420,12 +4422,13 @@ public class Check {
 
     // Check that packages imported are in scope (JLS 7.4.3, 6.3, 6.5.3.1, 6.5.3.2)
     public void checkImportedPackagesObservable(final JCCompilationUnit toplevel) {
-        OUTER: for (JCImport imp : toplevel.getImports()) {
-            if (!imp.staticImport && TreeInfo.name(imp.qualid) == names.asterisk) {
+        OUTER: for (JCImportBase impBase : toplevel.getImports()) {
+            if (impBase instanceof JCImport imp && !imp.staticImport &&
+                TreeInfo.name(imp.qualid) == names.asterisk) {
                 TypeSymbol tsym = imp.qualid.selected.type.tsym;
                 if (tsym.kind == PCK && tsym.members().isEmpty() &&
                     !(Feature.IMPORT_ON_DEMAND_OBSERVABLE_PACKAGES.allowedInSource(source) && tsym.exists())) {
-                    log.error(DiagnosticFlag.RESOLVE_ERROR, imp.pos, Errors.DoesntExist(tsym));
+                    log.error(DiagnosticFlag.RESOLVE_ERROR, imp.qualid.selected.pos(), Errors.DoesntExist(tsym));
                 }
             }
         }
@@ -4473,26 +4476,6 @@ public class Check {
         } catch (CompletionFailure ex) {
             return false;
         }
-    }
-
-    public Type checkProcessorType(JCExpression processor, Type resultType, Env<AttrContext> env) {
-        Type processorType = processor.type;
-        Type interfaceType = types.asSuper(processorType, syms.processorType.tsym);
-
-        if (interfaceType != null) {
-            List<Type> typeArguments = interfaceType.getTypeArguments();
-
-            if (typeArguments.size() == 2) {
-                resultType = typeArguments.head;
-            } else {
-                resultType = syms.objectType;
-            }
-        } else {
-            log.error(DiagnosticFlag.RESOLVE_ERROR, processor.pos,
-                    Errors.NotAProcessorType(processorType.tsym));
-        }
-
-        return resultType;
     }
 
     public void checkLeaksNotAccessible(Env<AttrContext> env, JCClassDecl check) {
@@ -4674,7 +4657,7 @@ public class Check {
 
     void checkModuleExists(final DiagnosticPosition pos, ModuleSymbol msym) {
         if (msym.kind != MDL) {
-            deferredLintHandler.report(() -> {
+            deferredLintHandler.report(_l -> {
                 if (lint.isEnabled(LintCategory.MODULE))
                     log.warning(LintCategory.MODULE, pos, Warnings.ModuleNotFound(msym));
             });
@@ -4684,7 +4667,7 @@ public class Check {
     void checkPackageExistsForOpens(final DiagnosticPosition pos, PackageSymbol packge) {
         if (packge.members().isEmpty() &&
             ((packge.flags() & Flags.HAS_RESOURCE) == 0)) {
-            deferredLintHandler.report(() -> {
+            deferredLintHandler.report(_l -> {
                 if (lint.isEnabled(LintCategory.OPENS))
                     log.warning(pos, Warnings.PackageEmptyOrNotFound(packge));
             });
@@ -4693,7 +4676,7 @@ public class Check {
 
     void checkModuleRequires(final DiagnosticPosition pos, final RequiresDirective rd) {
         if ((rd.module.flags() & Flags.AUTOMATIC_MODULE) != 0) {
-            deferredLintHandler.report(() -> {
+            deferredLintHandler.report(_l -> {
                 if (rd.isTransitive() && lint.isEnabled(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC)) {
                     log.warning(pos, Warnings.RequiresTransitiveAutomatic);
                 } else if (lint.isEnabled(LintCategory.REQUIRES_AUTOMATIC)) {
@@ -4800,11 +4783,13 @@ public class Check {
 
         return false;
     }
-    void checkSwitchCaseLabelDominated(List<JCCase> cases) {
+    void checkSwitchCaseLabelDominated(JCCaseLabel unconditionalCaseLabel, List<JCCase> cases) {
         List<Pair<JCCase, JCCaseLabel>> caseLabels = List.nil();
         boolean seenDefault = false;
         boolean seenDefaultLabel = false;
         boolean warnDominatedByDefault = false;
+        boolean unconditionalFound = false;
+
         for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
             JCCase c = l.head;
             for (JCCaseLabel label : c.labels) {
@@ -4832,10 +4817,10 @@ public class Check {
                     JCCase testCase = caseAndLabel.fst;
                     JCCaseLabel testCaseLabel = caseAndLabel.snd;
                     Type testType = labelType(testCaseLabel);
-                    if (types.isSubtype(currentType, testType) &&
+                    boolean dominated = false;
+                    if (types.isUnconditionallyExact(currentType, testType) &&
                         !currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
                         //the current label is potentially dominated by the existing (test) label, check:
-                        boolean dominated = false;
                         if (label instanceof JCConstantCaseLabel) {
                             dominated |= !(testCaseLabel instanceof JCConstantCaseLabel) &&
                                          TreeInfo.unguardedCase(testCase);
@@ -4845,9 +4830,10 @@ public class Check {
                             dominated = patternDominated(testPatternCaseLabel.pat,
                                                          patternCL.pat);
                         }
-                        if (dominated) {
-                            log.error(label.pos(), Errors.PatternDominated);
-                        }
+                    }
+
+                    if (dominated) {
+                        log.error(label.pos(), Errors.PatternDominated);
                     }
                 }
                 caseLabels = caseLabels.prepend(Pair.of(c, label));
@@ -4858,22 +4844,15 @@ public class Check {
         private Type labelType(JCCaseLabel label) {
             return types.erasure(switch (label.getTag()) {
                 case PATTERNCASELABEL -> ((JCPatternCaseLabel) label).pat.type;
-                case CONSTANTCASELABEL -> types.boxedTypeOrType(((JCConstantCaseLabel) label).expr.type);
+                case CONSTANTCASELABEL -> ((JCConstantCaseLabel) label).expr.type;
                 default -> throw Assert.error("Unexpected tree kind: " + label.getTag());
             });
         }
         private boolean patternDominated(JCPattern existingPattern, JCPattern currentPattern) {
             Type existingPatternType = types.erasure(existingPattern.type);
             Type currentPatternType = types.erasure(currentPattern.type);
-            if (existingPatternType.isPrimitive() ^ currentPatternType.isPrimitive()) {
+            if (!types.isUnconditionallyExact(currentPatternType, existingPatternType)) {
                 return false;
-            }
-            if (existingPatternType.isPrimitive()) {
-                return types.isSameType(existingPatternType, currentPatternType);
-            } else {
-                if (!types.isSubtype(currentPatternType, existingPatternType)) {
-                    return false;
-                }
             }
             if (currentPattern instanceof JCBindingPattern ||
                 currentPattern instanceof JCAnyPattern) {

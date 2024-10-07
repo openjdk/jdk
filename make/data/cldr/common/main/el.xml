@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1140,7 +1140,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Σειρά ταξινόμησης τηλεφωνικού καταλόγου</type>
 			<type key="collation" type="phonetic">Φωνητική σειρά ταξινόμησης</type>
 			<type key="collation" type="pinyin">Σειρά ταξινόμησης Πινγίν</type>
-			<type key="collation" type="reformed">Ανασχηματισμένη σειρά ταξινόμησης</type>
 			<type key="collation" type="search">Αναζήτηση γενικού τύπου</type>
 			<type key="collation" type="searchjl" draft="contributed">Αναζήτηση κατά αρχικό σύμφωνο Χανγκούλ</type>
 			<type key="collation" type="standard">Τυπική σειρά ταξινόμησης</type>
@@ -2577,9 +2576,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat type="daylight">Θερινή ώρα ({0})</regionFormat>
 			<regionFormat type="standard">Χειμερινή ώρα ({0})</regionFormat>
 			<fallbackFormat>[{1} ({0})]</fallbackFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Σάντα Ιζαμπέλ</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Συντονισμένη Παγκόσμια Ώρα</standard>
@@ -2701,9 +2697,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>Μελβούρνη</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Κάρι</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>Χόμπαρτ</exemplarCity>
@@ -2858,9 +2851,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>Κρέστον</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>Γέλοουναϊφ</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>Έντμοντον</exemplarCity>
 			</zone>
@@ -2879,29 +2869,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>Ρέζολουτ</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Ρέινι Ρίβερ</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>Ράνκιν Ίνλετ</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>Ατικόκαν</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>Θάντερ Μπέι</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>Νιπιγκόν</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>Τορόντο</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>Ικαλούιτ</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>Πανγκνίρτουνγκ</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>Μόνκτον</exemplarCity>
@@ -3713,17 +3691,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Νταρ ες Σαλάμ</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Ούζχοροντ</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Κίεβο</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>Συμφερόπολη</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Ζαπορόζιε</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>Καμπάλα</exemplarCity>
@@ -3742,9 +3714,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>Χονολουλού</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>Τζόνστον</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>Άνκορατζ</exemplarCity>
@@ -4422,11 +4391,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="contributed">Θερινή ώρα Μακάο</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Ώρα Νησιού Μακουάρι</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Ώρα Μαγκαντάν</generic>
@@ -4464,13 +4428,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Ώρα Μόσον</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Ώρα Βορειοδυτικού Μεξικού</generic>
-					<standard>Χειμερινή ώρα Βορειοδυτικού Μεξικού</standard>
-					<daylight>Θερινή ώρα Βορειοδυτικού Μεξικού</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

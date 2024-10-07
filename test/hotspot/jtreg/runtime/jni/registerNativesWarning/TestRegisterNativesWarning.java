@@ -65,17 +65,17 @@ public class TestRegisterNativesWarning {
 
         String cp = Utils.TEST_CLASS_PATH;
         String libp = Utils.TEST_NATIVE_PATH;
-        OutputAnalyzer output = ProcessTools.executeTestJvm("-Djava.library.path=" + libp,
-                                                            Tester.class.getName());
+        OutputAnalyzer output = ProcessTools.executeTestJava("-Djava.library.path=" + libp,
+                                                             Tester.class.getName());
         output.shouldContain(warning);
         output.shouldHaveExitValue(0);
         output.reportDiagnosticSummary();
 
         // If we run everything from the "boot" loader there should be no warning
-        output = ProcessTools.executeTestJvm("-Djava.library.path=" + libp,
-                                             "-Xbootclasspath/a:" + cp,
-                                             "-Dsun.boot.library.path=" + libp,
-                                             Tester.class.getName());
+        output = ProcessTools.executeTestJava("-Djava.library.path=" + libp,
+                                              "-Xbootclasspath/a:" + cp,
+                                              "-Dsun.boot.library.path=" + libp,
+                                              Tester.class.getName());
         output.shouldNotContain(warning);
         output.shouldHaveExitValue(0);
         output.reportDiagnosticSummary();

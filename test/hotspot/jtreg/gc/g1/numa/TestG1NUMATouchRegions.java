@@ -109,7 +109,7 @@ public class TestG1NUMATouchRegions {
     // 1. -UseLargePages: default page, page size < G1HeapRegionSize
     //    +UseLargePages: large page size <= G1HeapRegionSize
     //
-    //    Each 'int' represents a numa id of single HeapRegion (bottom page).
+    //    Each 'int' represents a numa id of single G1HeapRegion (bottom page).
     //    e.g. 1MB heap region, 2MB page size and 2 NUMA nodes system
     //         Check the first set(2 regions)
     //         0| ...omitted..| 0
@@ -181,7 +181,7 @@ public class TestG1NUMATouchRegions {
             return;
         }
 
-        ProcessBuilder pb_enabled = ProcessTools.createLimitedTestJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                                               "-Xbootclasspath/a:.",
                                               "-Xlog:pagesize,gc+heap+region=trace",
                                               "-XX:+UseG1GC",
@@ -195,7 +195,6 @@ public class TestG1NUMATouchRegions {
                                               largePagesSetting,
                                               "-XX:G1HeapRegionSize=" + regionSizeInMB + "m",
                                               GCTest.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb_enabled.start());
 
         // Check NUMA availability.
         if (status == NUMASupportStatus.NOT_CHECKED) {

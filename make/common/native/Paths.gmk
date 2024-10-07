@@ -1,0 +1,242 @@
+#
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# This file contains functionality related to handling paths for source files
+# and object files. This is complicated by the fact that we usually, but not
+# always, use absolute instead of relative paths. It is further complicated
+# by the fact that not all tools allow inputting large lists of files as
+# "@-files", which we normally use to avoid hitting command line length limits.
+# Finally this file contains functionality for locating all source code files
+# that should be included in the compilation.
+
+################################################################################
+# When absolute paths are not allowed in the output, and the compiler does not
+# support any options to avoid it, we need to rewrite compile commands to use
+# relative paths. By doing this, the __FILE__ macro will resolve to relative
+# paths. The relevant input paths on the command line are the -I flags and the
+# path to the source file itself.
+#
+# The macro MakeCommandRelative is used to rewrite the command line like this:
+# 'CD $(WORKSPACE_ROOT) && <cmd>'
+# and changes all paths in cmd to be relative to the workspace root. This only
+# works properly if the build dir is inside the workspace root. If it's not,
+# relative paths are still calculated, but depending on the distance between the
+# dirs, paths in the build dir may end up as essentially absolute anyway.
+#
+# The fix-deps-file macro is used to adjust the contents of the generated make
+# dependency files to contain paths compatible with make.
+#
+REWRITE_PATHS_RELATIVE = false
+ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT)-$(FILE_MACRO_CFLAGS), false-)
+  REWRITE_PATHS_RELATIVE = true
+endif
+
+# CCACHE_BASEDIR needs fix-deps-file as makefiles use absolute filenames for
+# object files while CCACHE_BASEDIR will make ccache relativize all paths for
+# its compiler. The compiler then produces relative dependency files.
+# make does not know a relative and absolute filename is the same so it will
+# ignore such dependencies. This only applies when the OUTPUTDIR is inside
+# the WORKSPACE_ROOT.
+ifneq ($(CCACHE), )
+  ifneq ($(filter $(WORKSPACE_ROOT)/%, $(OUTPUTDIR)), )
+    REWRITE_PATHS_RELATIVE = true
+  endif
+endif
+
+ifeq ($(REWRITE_PATHS_RELATIVE), true)
+  # Need to handle -I flags as both '-Ifoo' and '-I foo'.
+  MakeCommandRelative = \
+      $(CD) $(WORKSPACE_ROOT) && \
+      $(foreach o, $1, \
+        $(if $(filter $(WORKSPACE_ROOT)/% $(OUTPUTDIR)/%, $o), \
+          $(call RelativePath, $o, $(WORKSPACE_ROOT)) \
+        , \
+          $(if $(filter -I$(WORKSPACE_ROOT)/%, $o), \
+            -I$(call RelativePath, $(patsubst -I%, %, $o), $(WORKSPACE_ROOT)) \
+          , \
+            $o \
+          ) \
+        ) \
+      )
+
+  # When compiling with relative paths, the deps file may come out with relative
+  # paths, and that path may start with './'. First remove any leading ./, then
+  # add WORKSPACE_ROOT to any line not starting with /, while allowing for
+  # leading spaces. There may also be multiple entries on the same line, so start
+  # with splitting such lines.
+  # Non GNU sed (BSD on macosx) cannot substitute in literal \n using regex.
+  # Instead use a bash escaped literal newline. To avoid having unmatched quotes
+  # ruin the ability for an editor to properly syntax highlight this file, define
+  # that newline sequence as a separate variable and add the closing quote behind
+  # a comment.
+  sed_newline := \'$$'\n''#'
+  define fix-deps-file
+	$(SED) \
+	    -e 's|\([^ ]\) \{1,\}\([^\\:]\)|\1 \\$(sed_newline) \2|g' \
+	    $1.tmp \
+	    | $(SED) \
+	        -e 's|^\([ ]*\)\./|\1|' \
+	        -e '/^[ ]*[^/ ]/s|^\([ ]*\)|\1$(WORKSPACE_ROOT)/|' \
+	        > $1
+  endef
+else
+  # By default the MakeCommandRelative macro does nothing.
+  MakeCommandRelative = $1
+
+  # No adjustment is needed.
+  define fix-deps-file
+	$(MV) $1.tmp $1
+  endef
+endif
+
+################################################################################
+define SetupSourceFiles
+  $$(foreach d, $$($1_SRC), $$(if $$(wildcard $$d), , \
+      $$(error SRC specified to SetupNativeCompilation $1 contains missing directory $$d)))
+
+  $1_SRCS_RAW := $$(call FindFiles, $$($1_SRC))
+  # Order src files according to the order of the src dirs
+  $1_SRCS := $$(foreach d, $$($1_SRC), $$(filter $$d%, $$($1_SRCS_RAW)))
+  $1_SRCS := $$(filter $$(NATIVE_SOURCE_EXTENSIONS), $$($1_SRCS))
+  # Extract the C/C++ files.
+  ifneq ($$($1_EXCLUDE_PATTERNS), )
+    # We must not match the exclude pattern against the src root(s).
+    $1_SRCS_WITHOUT_ROOTS := $$($1_SRCS)
+    $$(foreach i, $$($1_SRC), $$(eval $1_SRCS_WITHOUT_ROOTS := $$(patsubst \
+        $$i/%,%, $$($1_SRCS_WITHOUT_ROOTS))))
+    $1_ALL_EXCLUDE_FILES :=  $$(call containing, $$($1_EXCLUDE_PATTERNS), \
+        $$($1_SRCS_WITHOUT_ROOTS))
+  endif
+  ifneq ($$($1_EXCLUDE_FILES), )
+    $1_ALL_EXCLUDE_FILES += $$($1_EXCLUDE_FILES)
+  endif
+  ifneq ($$($1_ALL_EXCLUDE_FILES), )
+    $1_EXCLUDE_FILES_PAT := $$($1_ALL_EXCLUDE_FILES) \
+        $$(foreach i, $$($1_SRC), $$(addprefix $$i/, $$($1_ALL_EXCLUDE_FILES)))
+    $1_EXCLUDE_FILES_PAT := $$(addprefix %, $$($1_EXCLUDE_FILES_PAT))
+    $1_SRCS := $$(filter-out $$($1_EXCLUDE_FILES_PAT), $$($1_SRCS))
+  endif
+  ifneq ($$($1_INCLUDE_FILES), )
+    $1_INCLUDE_FILES_PAT := $$(foreach i, $$($1_SRC), $$(addprefix $$i/, $$($1_INCLUDE_FILES)))
+    $1_SRCS := $$(filter $$($1_INCLUDE_FILES_PAT), $$($1_SRCS))
+  endif
+  # Now we have a list of all c/c++ files to compile: $$($1_SRCS)
+
+  # Prepend the source/bin path to the filter expressions. Then do the filtering.
+  ifneq ($$($1_INCLUDES), )
+    $1_SRC_INCLUDES := $$(foreach i, $$($1_SRC), $$(addprefix $$i/, $$(addsuffix /%, $$($1_INCLUDES))))
+    $1_SRCS := $$(filter $$($1_SRC_INCLUDES), $$($1_SRCS))
+  endif
+  ifneq ($$($1_EXCLUDES), )
+    $1_SRC_EXCLUDES := $$(addsuffix /%, $$($1_EXCLUDES))
+    $1_SRC_EXCLUDES += $$(foreach i, $$($1_SRC), $$(addprefix $$i/, $$(addsuffix /%, $$($1_EXCLUDES))))
+    $1_SRCS := $$(filter-out $$($1_SRC_EXCLUDES), $$($1_SRCS))
+  endif
+
+  $1_SRCS += $$($1_EXTRA_FILES)
+
+  ifeq ($$($1_SRCS), )
+    $$(error No sources found for $1 when looking inside the dirs $$($1_SRC))
+  endif
+
+  ifeq ($$($1_TYPE), EXECUTABLE)
+    ifeq ($(UBSAN_ENABLED), true)
+      # We need to set the default options for UBSan. This needs to be included in every executable.
+      # Rather than copy and paste code to everything with a main function, we add an additional
+      # source file to every executable that exports __ubsan_default_options.
+      ifneq ($$(filter %.cpp %.cc, $$($1_SRCS)), )
+        $1_SRCS += $(TOPDIR)/make/data/ubsan/ubsan_default_options.cpp
+      else
+        $1_SRCS += $(TOPDIR)/make/data/ubsan/ubsan_default_options.c
+      endif
+    endif
+  endif
+endef
+
+################################################################################
+define SetupOutputFiles
+  # Calculate the expected output from compiling the sources
+  $1_EXPECTED_OBJS_FILENAMES := $$(call replace_with_obj_extension, $$(notdir $$($1_SRCS)))
+  $1_EXPECTED_OBJS := $$(addprefix $$($1_OBJECT_DIR)/, $$($1_EXPECTED_OBJS_FILENAMES))
+  # Sort to remove duplicates and provide a reproducible order on the input files to the linker.
+  $1_ALL_OBJS := $$(sort $$($1_EXPECTED_OBJS) $$($1_EXTRA_OBJECT_FILES))
+  ifeq ($(STATIC_LIBS), true)
+    # Exclude the object files that match with $1_STATIC_LIB_EXCLUDE_OBJS.
+    ifneq ($$($1_STATIC_LIB_EXCLUDE_OBJS), )
+      $1_ALL_OBJS := $$(call not-containing, $$($1_STATIC_LIB_EXCLUDE_OBJS), $$($1_ALL_OBJS))
+    endif
+  endif
+endef
+
+################################################################################
+define RemoveSuperfluousOutputFiles
+  # Are there too many object files on disk? Perhaps because some source file was removed?
+  $1_BINS := $$(wildcard $$($1_OBJECT_DIR)/*$(OBJ_SUFFIX))
+  $1_SUPERFLOUS_OBJS := $$(sort $$(filter-out $$($1_EXPECTED_OBJS), $$($1_BINS)))
+  # Clean out the superfluous object files.
+  ifneq ($$($1_SUPERFLUOUS_OBJS), )
+    $$(shell $(RM) -f $$($1_SUPERFLUOUS_OBJS))
+  endif
+endef
+
+################################################################################
+define SetupObjectFileList
+  $1_LD_OBJ_ARG := $$($1_ALL_OBJS)
+
+  # If there are many object files, use an @-file...
+  ifneq ($$(word 17, $$($1_ALL_OBJS)), )
+    $1_OBJ_FILE_LIST := $$($1_OBJECT_DIR)/_$1_objectfilenames.txt
+    $1_LD_OBJ_ARG := @$$($1_OBJ_FILE_LIST)
+
+    # If we are building static library, 'AR' on macosx/aix may not support @-file.
+    ifeq ($$($1_TYPE), STATIC_LIBRARY)
+      ifeq ($(call isTargetOs, macosx aix), true)
+        $1_LD_OBJ_ARG := `cat $$($1_OBJ_FILE_LIST)`
+      endif
+    endif
+  endif
+
+  # Unfortunately the @-file trick does not work reliably when using clang.
+  # Clang does not propagate the @-file parameter to the ld sub process, but
+  # instead puts the full content on the command line. At least the llvm ld
+  # does not even support an @-file.
+  #
+  # When linking a large amount of object files, we risk hitting the limit
+  # of the command line length even on posix systems if the path length of
+  # the output dir is very long due to our use of absolute paths. To
+  # mitigate this, use paths relative to the output dir when linking over
+  # 500 files with clang and the output dir path is deep.
+  ifneq ($$(word 500, $$($1_ALL_OBJS)), )
+    ifeq ($$(TOOLCHAIN_TYPE), clang)
+      # There is no strlen function in make, but checking path depth is a
+      # reasonable approximation.
+      ifneq ($$(word 10, $$(subst /, ,$$(OUTPUTDIR))), )
+        $1_LINK_OBJS_RELATIVE := true
+        $1_ALL_OBJS_RELATIVE := $$(patsubst $$(OUTPUTDIR)/%, %, $$($1_ALL_OBJS))
+      endif
+    endif
+  endif
+endef

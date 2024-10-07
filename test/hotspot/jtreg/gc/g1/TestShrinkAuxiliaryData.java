@@ -88,9 +88,8 @@ public class TestShrinkAuxiliaryData {
     }
 
     private void performTest(List<String> opts) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(opts);
+        OutputAnalyzer output = ProcessTools.executeTestJava(opts);
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());
         System.err.println(output.getStderr());
         output.shouldHaveExitValue(0);

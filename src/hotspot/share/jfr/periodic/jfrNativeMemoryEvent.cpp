@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,10 +63,10 @@ void JfrNativeMemoryEvent::send_total_event(const Ticks& timestamp) {
   event.commit();
 }
 
-void JfrNativeMemoryEvent::send_type_event(const Ticks& starttime, MEMFLAGS flag, size_t reserved, size_t committed) {
+void JfrNativeMemoryEvent::send_type_event(const Ticks& starttime, MemTag mem_tag, size_t reserved, size_t committed) {
   EventNativeMemoryUsage event(UNTIMED);
   event.set_starttime(starttime);
-  event.set_type(NMTUtil::flag_to_index(flag));
+  event.set_type(NMTUtil::tag_to_index(mem_tag));
   event.set_reserved(reserved);
   event.set_committed(committed);
   event.commit();
@@ -79,12 +79,12 @@ void JfrNativeMemoryEvent::send_type_events(const Ticks& timestamp) {
 
   NMTUsage* usage = get_usage(timestamp);
 
-  for (int index = 0; index < mt_number_of_types; index ++) {
-    MEMFLAGS flag = NMTUtil::index_to_flag(index);
-    if (flag == mtNone) {
+  for (int index = 0; index < mt_number_of_tags; index ++) {
+    MemTag mem_tag = NMTUtil::index_to_tag(index);
+    if (mem_tag == mtNone) {
       // Skip mtNone since it is not really used.
       continue;
     }
-    send_type_event(timestamp, flag, usage->reserved(flag), usage->committed(flag));
+    send_type_event(timestamp, mem_tag, usage->reserved(mem_tag), usage->committed(mem_tag));
   }
 }

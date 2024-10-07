@@ -123,6 +123,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * @param oid the identifier for the algorithm.
      * @param params the associated algorithm parameters, can be null.
      */
+    @SuppressWarnings("this-escape")
     public AlgorithmId(ObjectIdentifier oid, DerValue params)
             throws IOException {
         this.algid = oid;

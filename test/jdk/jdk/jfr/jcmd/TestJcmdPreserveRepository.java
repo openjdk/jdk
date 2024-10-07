@@ -57,7 +57,7 @@ public class TestJcmdPreserveRepository {
             "-Dtest.jdk=" + System.getProperty("test.jdk"),
             TestProcess.class.getName()
         };
-        OutputAnalyzer output = ProcessTools.executeTestJvm(arguments);
+        OutputAnalyzer output = ProcessTools.executeTestJava(arguments);
         output.shouldHaveExitValue(0);
         Optional<Path> p = Files.find(path, 99, (a,b) -> a.getFileName().toString().endsWith(".jfr")).findAny();
         if (p.isEmpty()) {

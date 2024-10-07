@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,22 +25,18 @@
  * @test
  * @bug 8140450
  * @summary Basic test for the StackWalker::getByteCodeIndex method
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
  * @run main TestBCI
  */
-
-import com.sun.tools.classfile.Attribute;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Code_attribute;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Descriptor;
-import com.sun.tools.classfile.LineNumberTable_attribute;
-import com.sun.tools.classfile.Method;
 
 import java.lang.StackWalker.StackFrame;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.MethodModel;
+import java.lang.constant.MethodTypeDesc;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,12 +62,12 @@ public class TestBCI {
 
     private final Map<String, MethodInfo> methods;
     private final Class<?> clazz;
-    TestBCI(Class<?> c) throws ConstantPoolException, IOException {
+    TestBCI(Class<?> c) throws IllegalArgumentException, IOException {
         Map<String, MethodInfo> methods;
         String filename = c.getName().replace('.', '/') + ".class";
         try (InputStream in = c.getResourceAsStream(filename)) {
-            ClassFile cf = ClassFile.read(in);
-            methods = Arrays.stream(cf.methods)
+            var cf = ClassFile.of().parse(in.readAllBytes());
+            methods = cf.methods().stream()
                 .map(m -> new MethodInfo(cf, m))
                 .collect(Collectors.toMap(MethodInfo::name, Function.identity()));
         }
@@ -129,37 +125,20 @@ public class TestBCI {
     }
 
     static class MethodInfo {
-        final Method method;
+        final MethodModel method;
         final String name;
-        final String paramTypes;
-        final String returnType;
+        final MethodTypeDesc desc;
         final Map<Integer, SortedSet<Integer>> bciToLineNumbers = new HashMap<>();
-        MethodInfo(ClassFile cf, Method m) {
+        MethodInfo(ClassModel cf, MethodModel m) {
             this.method = m;
-
-            String name;
-            String paramTypes;
-            String returnType;
-            LineNumberTable_attribute.Entry[] lineNumberTable;
-            try {
-                // method name
-                name = m.getName(cf.constant_pool);
-                // signature
-                paramTypes = m.descriptor.getParameterTypes(cf.constant_pool);
-                returnType = m.descriptor.getReturnType(cf.constant_pool);
-                Code_attribute codeAttr = (Code_attribute)
-                    m.attributes.get(Attribute.Code);
-                lineNumberTable = ((LineNumberTable_attribute)
-                    codeAttr.attributes.get(Attribute.LineNumberTable)).line_number_table;
-            } catch (ConstantPoolException|Descriptor.InvalidDescriptor e) {
-                throw new RuntimeException(e);
-            }
-            this.name = name;
-            this.paramTypes = paramTypes;
-            this.returnType = returnType;
-            Arrays.stream(lineNumberTable).forEach(entry ->
-                bciToLineNumbers.computeIfAbsent(entry.start_pc, _n -> new TreeSet<>())
-                    .add(entry.line_number));
+            this.name = m.methodName().stringValue();
+            this.desc = m.methodTypeSymbol();
+            m.code().orElseThrow(() -> new IllegalArgumentException("Missing Code in " + m))
+                    .findAttribute(Attributes.lineNumberTable())
+                    .orElseThrow(() -> new IllegalArgumentException("Missing LineNumberTable in " + m))
+                    .lineNumbers().forEach(entry ->
+                            bciToLineNumbers.computeIfAbsent(entry.startPc(), _ -> new TreeSet<>())
+                                    .add(entry.lineNumber()));
         }
 
         String name() {
@@ -178,7 +157,7 @@ public class TestBCI {
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append(name);
-            sb.append(paramTypes).append(returnType).append(" ");
+            sb.append(desc.displayDescriptor()).append(" ");
             bciToLineNumbers.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
                 .forEach(entry -> sb.append("bci:").append(entry.getKey()).append(" ")

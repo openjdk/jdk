@@ -38,7 +38,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestThreadCountsOverride {
     public static void main(String[] args) throws Exception {
         {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                 "-Xmx128m",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UnlockExperimentalVMOptions",
@@ -46,14 +46,13 @@ public class TestThreadCountsOverride {
                 "-XX:ParallelGCThreads=1",
                 "-XX:+PrintFlagsFinal",
                 "-version");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
             output.shouldMatch("ParallelGCThreads(.*)= 1 ");
             output.shouldHaveExitValue(0);
         }
 
         {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                 "-Xmx128m",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UnlockExperimentalVMOptions",
@@ -61,7 +60,6 @@ public class TestThreadCountsOverride {
                 "-XX:ConcGCThreads=1",
                 "-XX:+PrintFlagsFinal",
                 "-version");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
             output.shouldMatch("ConcGCThreads(.*)= 1 ");
             output.shouldHaveExitValue(0);

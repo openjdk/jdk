@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,16 @@
 
 class DirectivesParserTest : public ::testing::Test{
  protected:
-  const char* const _locale;
+  char* const _locale;
   ResourceMark rm;
   stringStream stream;
   // These tests require the "C" locale to correctly parse decimal values
-  DirectivesParserTest() : _locale(setlocale(LC_NUMERIC, NULL)) {
+  DirectivesParserTest() : _locale(os::strdup(setlocale(LC_NUMERIC, nullptr), mtTest)) {
     setlocale(LC_NUMERIC, "C");
   }
   ~DirectivesParserTest() {
     setlocale(LC_NUMERIC, _locale);
+    os::free(_locale);
   }
 
   void test_negative(const char* text) {

@@ -160,9 +160,9 @@ public class EntryCount64k {
         }
 
         // Check java -jar
-        OutputAnalyzer a = ProcessTools.executeTestJvm("-jar", zipFile.getName());
+        OutputAnalyzer a = ProcessTools.executeTestJava("-jar", zipFile.getName());
         a.shouldHaveExitValue(0);
         a.stdoutShouldMatch("\\AMain\\Z");
-        a.stderrShouldMatch("\\A\\Z");
+        a.stderrShouldMatchIgnoreDeprecatedWarnings("\\A\\Z");
     }
 }

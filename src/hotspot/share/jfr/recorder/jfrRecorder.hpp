@@ -42,6 +42,7 @@ class JfrRecorder : public JfrCHeapObj {
   static bool on_create_vm_2();
   static bool on_create_vm_3();
   static bool create_checkpoint_manager();
+  static bool initialize_checkpoint_manager();
   static bool create_chunk_repository();
   static bool create_java_event_writer();
   static bool create_jvmti_agent();

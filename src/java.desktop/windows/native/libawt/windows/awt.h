@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,41 +251,6 @@ extern JavaVM *jvm;
 #define CHECK_ISNOT_TOOLKIT_THREAD()
 #endif
 
-
-struct EnvHolder
-{
-    JavaVM *m_pVM;
-    JNIEnv *m_env;
-    bool    m_isOwner;
-    EnvHolder(
-        JavaVM *pVM,
-        LPCSTR name = "COM holder",
-        jint ver = JNI_VERSION_1_2)
-    : m_pVM(pVM),
-      m_env((JNIEnv *)JNU_GetEnv(pVM, ver)),
-      m_isOwner(false)
-    {
-        if (NULL == m_env) {
-            JavaVMAttachArgs attachArgs;
-            attachArgs.version  = ver;
-            attachArgs.name     = const_cast<char *>(name);
-            attachArgs.group    = NULL;
-            jint status = m_pVM->AttachCurrentThread(
-                (void**)&m_env,
-                &attachArgs);
-            m_isOwner = (NULL!=m_env);
-        }
-    }
-    ~EnvHolder() {
-        if (m_isOwner) {
-            m_pVM->DetachCurrentThread();
-        }
-    }
-    operator bool()  const { return NULL!=m_env; }
-    bool operator !()  const { return NULL==m_env; }
-    operator JNIEnv*() const { return m_env; }
-    JNIEnv* operator ->() const { return m_env; }
-};
 
 template <class T>
 class JLocalRef {

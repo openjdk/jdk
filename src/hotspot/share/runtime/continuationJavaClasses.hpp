@@ -83,7 +83,7 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static int _size_offset;
   static int _sp_offset;
   static int _pc_offset;
-  static int _argsize_offset;
+  static int _bottom_offset;
   static int _flags_offset;
   static int _maxThawingSize_offset;
   static int _cont_offset;
@@ -112,8 +112,9 @@ class jdk_internal_vm_StackChunk: AllStatic {
   static inline void set_sp(HeapWord* chunk, int value); // used while allocating
   static inline address pc(oop chunk);
   static inline void set_pc(oop chunk, address value);
-  static inline int argsize(oop chunk);
-  static inline void set_argsize(oop chunk, int value);
+  static inline int bottom(oop chunk);
+  static inline void set_bottom(oop chunk, int value);
+  static inline void set_bottom(HeapWord* chunk, int value);
   static inline uint8_t flags(oop chunk);
   static inline void set_flags(oop chunk, uint8_t value);
   static inline uint8_t flags_acquire(oop chunk);

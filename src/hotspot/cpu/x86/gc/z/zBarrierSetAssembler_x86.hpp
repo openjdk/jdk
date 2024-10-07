@@ -64,7 +64,7 @@ private:
   GrowableArrayCHeap<address, mtGC> _store_good_relocations;
 
 public:
-  static const int32_t _zpointer_address_mask = 0xFFFF0000;
+  static const int32_t ZPointerAddressMask = 0xFFFF0000;
 
   ZBarrierSetAssembler();
 
@@ -164,9 +164,6 @@ public:
 #endif // COMPILER1
 
 #ifdef COMPILER2
-  OptoReg::Name refine_register(const Node* node,
-                                OptoReg::Name opto_reg);
-
   void generate_c2_load_barrier_stub(MacroAssembler* masm,
                                      ZLoadBarrierStubC2* stub) const;
   void generate_c2_store_barrier_stub(MacroAssembler* masm,

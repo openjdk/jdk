@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,43 @@
 package javax.swing.text.html;
 
 import java.awt.font.TextAttribute;
-import java.util.*;
-import java.net.URL;
+import java.io.IOException;
+import java.io.StringReader;
 import java.net.MalformedURLException;
-import java.io.*;
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.undo.*;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Stack;
+import java.util.Vector;
+
+import javax.swing.ButtonGroup;
+import javax.swing.DefaultButtonModel;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListModel;
+import javax.swing.JToggleButton;
+import javax.swing.ListSelectionModel;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.EventListenerList;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultEditorKit;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
+import javax.swing.text.ElementIterator;
+import javax.swing.text.GapContent;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.PlainDocument;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.undo.UndoableEdit;
+
 import sun.swing.SwingUtilities2;
+
 import static sun.swing.SwingUtilities2.IMPLIED_CR;
 
 /**
@@ -2471,9 +2499,9 @@ public class HTMLDocument extends DefaultStyledDocument {
             tagMap.put(HTML.Tag.SCRIPT, ha);
             tagMap.put(HTML.Tag.SELECT, fa);
             tagMap.put(HTML.Tag.SMALL, ca);
-            tagMap.put(HTML.Tag.SPAN, ca);
+            tagMap.put(HTML.Tag.SPAN, new ConvertSpanAction());
             tagMap.put(HTML.Tag.STRIKE, conv);
-            tagMap.put(HTML.Tag.S, ca);
+            tagMap.put(HTML.Tag.S, conv);
             tagMap.put(HTML.Tag.STRONG, ca);
             tagMap.put(HTML.Tag.STYLE, new StyleAction());
             tagMap.put(HTML.Tag.SUB, conv);
@@ -3395,10 +3423,42 @@ public class HTMLDocument extends DefaultStyledDocument {
                 if (styleAttributes != null) {
                     charAttr.addAttributes(styleAttributes);
                 }
+
+                convertAttributes(t, attr);
             }
 
             public void end(HTML.Tag t) {
                 popCharacterStyle();
+            }
+
+            /**
+             * Converts HTML tags to CSS attributes.
+             * @param t the current HTML tag
+             * @param attr the attributes of the HTML tag
+             */
+            void convertAttributes(HTML.Tag t, MutableAttributeSet attr) {
+            }
+        }
+
+        final class ConvertSpanAction extends CharacterAction {
+            @Override
+            void convertAttributes(HTML.Tag t, MutableAttributeSet attr) {
+                Object newDecoration = attr.getAttribute(CSS.Attribute.TEXT_DECORATION);
+                Object previousDecoration =
+                        charAttrStack.peek()
+                                     .getAttribute(CSS.Attribute.TEXT_DECORATION);
+
+                if (newDecoration != null
+                    && !"none".equals(newDecoration.toString())
+                    && previousDecoration != null
+                    && !"none".equals(previousDecoration.toString())) {
+                    StyleSheet sheet = getStyleSheet();
+                    sheet.addCSSAttribute(charAttr,
+                                          CSS.Attribute.TEXT_DECORATION,
+                                          CSS.mergeTextDecoration(newDecoration + ","
+                                                                  + previousDecoration)
+                                             .toString());
+                }
             }
         }
 
@@ -3407,35 +3467,9 @@ public class HTMLDocument extends DefaultStyledDocument {
          * mappings that have a corresponding StyleConstants
          * and CSS mapping.  The conversion is to CSS attributes.
          */
-        class ConvertAction extends TagAction {
-
-            public void start(HTML.Tag t, MutableAttributeSet attr) {
-                pushCharacterStyle();
-                if (!foundInsertTag) {
-                    // Note that the third argument should really be based off
-                    // inParagraph and impliedP. If we're wrong (that is
-                    // insertTagDepthDelta shouldn't be changed), we'll end up
-                    // removing an extra EndSpec, which won't matter anyway.
-                    boolean insert = canInsertTag(t, attr, false);
-                    if (foundInsertTag) {
-                        if (!inParagraph) {
-                            inParagraph = impliedP = true;
-                        }
-                    }
-                    if (!insert) {
-                        return;
-                    }
-                }
-                if (attr.isDefined(IMPLIED)) {
-                    attr.removeAttribute(IMPLIED);
-                }
-                if (styleAttributes != null) {
-                    charAttr.addAttributes(styleAttributes);
-                }
-                // We also need to add attr, otherwise we lose custom
-                // attributes, including class/id for style lookups, and
-                // further confuse style lookup (doesn't have tag).
-                charAttr.addAttribute(t, attr.copyAttributes());
+        final class ConvertAction extends CharacterAction {
+            @Override
+            void convertAttributes(HTML.Tag t, MutableAttributeSet attr) {
                 StyleSheet sheet = getStyleSheet();
                 if (t == HTML.Tag.B) {
                     sheet.addCSSAttribute(charAttr, CSS.Attribute.FONT_WEIGHT, "bold");
@@ -3446,7 +3480,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                     String value = "underline";
                     value = (v != null) ? value + "," + v.toString() : value;
                     sheet.addCSSAttribute(charAttr, CSS.Attribute.TEXT_DECORATION, value);
-                } else if (t == HTML.Tag.STRIKE) {
+                } else if (t == HTML.Tag.STRIKE || t == HTML.Tag.S) {
                     Object v = charAttr.getAttribute(CSS.Attribute.TEXT_DECORATION);
                     String value = "line-through";
                     value = (v != null) ? value + "," + v.toString() : value;
@@ -3476,11 +3510,6 @@ public class HTMLDocument extends DefaultStyledDocument {
                     }
                 }
             }
-
-            public void end(HTML.Tag t) {
-                popCharacterStyle();
-            }
-
         }
 
         class AnchorAction extends CharacterAction {

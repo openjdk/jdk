@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
-#include "jvmti_thread.h"
+#include "jvmti_common.hpp"
+#include "jvmti_thread.hpp"
 
 #define MAX_FRAME_COUNT 80
 
@@ -34,7 +34,7 @@ const char CONTINUATION_METHOD_NAME[] = "enter";
 static void test_stack_trace(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) {
   jvmtiFrameInfo frames[MAX_FRAME_COUNT];
   jint count = -1;
-  jmethodID method = NULL;
+  jmethodID method = nullptr;
   jvmtiError err;
 
   err = jvmti->GetStackTrace(vthread, 0, MAX_FRAME_COUNT, frames, &count);
@@ -78,7 +78,7 @@ agentProc(jvmtiEnv * jvmti, JNIEnv * jni, void * arg) {
   LOG("Agent: started\n");
 
   while (true) {
-    jthread *threads = NULL;
+    jthread *threads = nullptr;
     jint count = 0;
     jvmtiError err;
 
@@ -90,7 +90,7 @@ agentProc(jvmtiEnv * jvmti, JNIEnv * jni, void * arg) {
     }
     check_jvmti_status(jni, err,  "Error in JVMTI GetAllThreads");
     for (int i = 0; i < count; i++) {
-      jthread tested_thread = NULL;
+      jthread tested_thread = nullptr;
 
       err = GetVirtualThread(jvmti, jni, threads[i], &tested_thread);
       if (err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
@@ -100,7 +100,7 @@ agentProc(jvmtiEnv * jvmti, JNIEnv * jni, void * arg) {
         return;
       }
       check_jvmti_status(jni, err,  "Error in JVMTI extension GetVirtualThread");
-      if (tested_thread != NULL) {
+      if (tested_thread != nullptr) {
         test_stack_trace(jvmti, jni, tested_thread);
       }
     }
@@ -132,7 +132,7 @@ extern JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *res
     return JNI_ERR;
   }
 
-  if (set_agent_proc(agentProc, NULL) != JNI_TRUE) {
+  if (set_agent_proc(agentProc, nullptr) != JNI_TRUE) {
     return JNI_ERR;
   }
 

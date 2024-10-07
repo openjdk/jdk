@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -77,10 +77,7 @@ class StubGenerator: public StubCodeGenerator {
 #define inc_counter_np(counter) ((void)0)
 #else
   void inc_counter_np_(uint& counter) {
-    __ la(t1, ExternalAddress((address)&counter));
-    __ lwu(t0, Address(t1, 0));
-    __ addiw(t0, t0, 1);
-    __ sw(t0, Address(t1, 0));
+    __ incrementw(ExternalAddress((address)&counter));
   }
 #define inc_counter_np(counter) \
   BLOCK_COMMENT("inc_counter " #counter); \
@@ -127,8 +124,9 @@ class StubGenerator: public StubCodeGenerator {
   //     [ return_from_Java     ] <--- sp
   //     [ argument word n      ]
   //      ...
-  // -34 [ argument word 1      ]
-  // -33 [ saved f27            ] <--- sp_after_call
+  // -35 [ argument word 1      ]
+  // -34 [ saved FRM in Floating-point Control and Status Register ] <--- sp_after_call
+  // -33 [ saved f27            ]
   // -32 [ saved f26            ]
   // -31 [ saved f25            ]
   // -30 [ saved f24            ]
@@ -165,8 +163,9 @@ class StubGenerator: public StubCodeGenerator {
 
   // Call stub stack layout word offsets from fp
   enum call_stub_layout {
-    sp_after_call_off  = -33,
+    sp_after_call_off  = -34,
 
+    frm_off            = sp_after_call_off,
     f27_off            = -33,
     f26_off            = -32,
     f25_off            = -31,
@@ -214,6 +213,7 @@ class StubGenerator: public StubCodeGenerator {
 
     const Address sp_after_call (fp, sp_after_call_off  * wordSize);
 
+    const Address frm_save      (fp, frm_off           * wordSize);
     const Address call_wrapper  (fp, call_wrapper_off   * wordSize);
     const Address result        (fp, result_off         * wordSize);
     const Address result_type   (fp, result_type_off    * wordSize);
@@ -295,6 +295,16 @@ class StubGenerator: public StubCodeGenerator {
     __ fsd(f25, f25_save);
     __ fsd(f26, f26_save);
     __ fsd(f27, f27_save);
+
+    __ frrm(t0);
+    __ sd(t0, frm_save);
+    // Set frm to the state we need. We do want Round to Nearest. We
+    // don't want non-IEEE rounding modes.
+    Label skip_fsrmi;
+    guarantee(__ RoundingMode::rne == 0, "must be");
+    __ beqz(t0, skip_fsrmi);
+    __ fsrmi(__ RoundingMode::rne);
+    __ bind(skip_fsrmi);
 
     // install Java thread in global register now we have saved
     // whatever value it held
@@ -414,6 +424,14 @@ class StubGenerator: public StubCodeGenerator {
     __ ld(x18, x18_save);
 
     __ ld(x9, x9_save);
+
+    // restore frm
+    Label skip_fsrm;
+    __ ld(t0, frm_save);
+    __ frrm(t1);
+    __ beq(t0, t1, skip_fsrm);
+    __ fsrm(t0);
+    __ bind(skip_fsrm);
 
     __ ld(c_rarg0, call_wrapper);
     __ ld(c_rarg1, result);
@@ -634,7 +652,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
     BLOCK_COMMENT("call MacroAssembler::debug");
-    __ call(CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
+    __ rt_call(CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
     __ ebreak();
 
     return start;
@@ -1115,9 +1133,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
+      // UnsafeMemoryAccess page error: continue after unsafe access
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, size);
     }
 
@@ -1191,9 +1209,9 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     {
-      // UnsafeCopyMemory page error: continue after ucm
+      // UnsafeMemoryAccess page error: continue after unsafe access
       bool add_entry = !is_oop && (!aligned || sizeof(jlong) == size);
-      UnsafeCopyMemoryMark ucmm(this, add_entry, true);
+      UnsafeMemoryAccessMark umam(this, add_entry, true);
       copy_memory(decorators, is_oop ? T_OBJECT : T_BYTE, aligned, s, d, count, -size);
     }
 
@@ -2410,10 +2428,18 @@ class StubGenerator: public StubCodeGenerator {
       __ la(t1, ExternalAddress(bs_asm->patching_epoch_addr()));
       __ lwu(t1, t1);
       __ sw(t1, thread_epoch_addr);
+      // There are two ways this can work:
+      // - The writer did system icache shootdown after the instruction stream update.
+      //   Hence do nothing.
+      // - The writer trust us to make sure our icache is in sync before entering.
+      //   Hence use cmodx fence (fence.i, may change).
+      if (UseCtxFencei) {
+        __ cmodx_fence();
+      }
       __ membar(__ LoadLoad);
     }
 
-    __ set_last_Java_frame(sp, fp, ra, t0);
+    __ set_last_Java_frame(sp, fp, ra);
 
     __ enter();
     __ add(t1, sp, wordSize);
@@ -2790,6 +2816,50 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 #ifdef COMPILER2
+  address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
+
+    address start = __ pc();
+    const Register
+      r_super_klass  = x10,
+      r_array_base   = x11,
+      r_array_length = x12,
+      r_array_index  = x13,
+      r_sub_klass    = x14,
+      result         = x15,
+      r_bitmap       = x16;
+
+    Label L_success;
+    __ enter();
+    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass, result,
+                                     r_array_base, r_array_length, r_array_index,
+                                     r_bitmap, super_klass_index, /*stub_is_near*/true);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
+  // Slow path implementation for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_slow_path_stub() {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table_slow_path");
+
+    address start = __ pc();
+    const Register
+      r_super_klass  = x10,        // argument
+      r_array_base   = x11,        // argument
+      temp1          = x12,        // tmp
+      r_array_index  = x13,        // argument
+      result         = x15,        // argument
+      r_bitmap       = x16;        // argument
+
+
+    __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index, r_bitmap, result, temp1);
+    __ ret();
+
+    return start;
+  }
+
   address generate_mulAdd()
   {
     __ align(CodeEntryAlignment);
@@ -2822,7 +2892,6 @@ class StubGenerator: public StubCodeGenerator {
    *    c_rarg2   - y address
    *    c_rarg3   - y length
    *    c_rarg4   - z address
-   *    c_rarg5   - z length
    */
   address generate_multiplyToLen()
   {
@@ -2835,8 +2904,8 @@ class StubGenerator: public StubCodeGenerator {
     const Register y     = x12;
     const Register ylen  = x13;
     const Register z     = x14;
-    const Register zlen  = x15;
 
+    const Register tmp0  = x15;
     const Register tmp1  = x16;
     const Register tmp2  = x17;
     const Register tmp3  = x7;
@@ -2847,7 +2916,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
-    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
 
@@ -2863,10 +2932,10 @@ class StubGenerator: public StubCodeGenerator {
     const Register x     = x10;
     const Register xlen  = x11;
     const Register z     = x12;
-    const Register zlen  = x13;
     const Register y     = x14; // == x
     const Register ylen  = x15; // == xlen
 
+    const Register tmp0  = x13; // zlen, unused
     const Register tmp1  = x16;
     const Register tmp2  = x17;
     const Register tmp3  = x7;
@@ -2879,7 +2948,7 @@ class StubGenerator: public StubCodeGenerator {
     __ enter();
     __ mv(y, x);
     __ mv(ylen, xlen);
-    __ multiply_to_len(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
+    __ multiply_to_len(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7);
     __ leave();
     __ ret();
 
@@ -3659,118 +3728,8 @@ class StubGenerator: public StubCodeGenerator {
       return entry;
     }
   };
+
 #endif // COMPILER2
-
-  // Continuation point for throwing of implicit exceptions that are
-  // not handled in the current activation. Fabricates an exception
-  // oop and initiates normal exception dispatching in this
-  // frame. Since we need to preserve callee-saved values (currently
-  // only for C2, but done for C1 as well) we need a callee-saved oop
-  // map and therefore have to make these stubs into RuntimeStubs
-  // rather than BufferBlobs.  If the compiler needs all registers to
-  // be preserved between the fault point and the exception handler
-  // then it must assume responsibility for that in
-  // AbstractCompiler::continuation_for_implicit_null_exception or
-  // continuation_for_implicit_division_by_zero_exception. All other
-  // implicit exceptions (e.g., NullPointerException or
-  // AbstractMethodError on entry) are either at call sites or
-  // otherwise assume that stack unwinding will be initiated, so
-  // caller saved registers were assumed volatile in the compiler.
-
-#undef __
-#define __ masm->
-
-  address generate_throw_exception(const char* name,
-                                   address runtime_entry,
-                                   Register arg1 = noreg,
-                                   Register arg2 = noreg) {
-    // Information about frame layout at time of blocking runtime call.
-    // Note that we only have to preserve callee-saved registers since
-    // the compilers are responsible for supplying a continuation point
-    // if they expect all registers to be preserved.
-    // n.b. riscv asserts that frame::arg_reg_save_area_bytes == 0
-    assert_cond(runtime_entry != nullptr);
-    enum layout {
-      fp_off = 0,
-      fp_off2,
-      return_off,
-      return_off2,
-      framesize // inclusive of return address
-    };
-
-    const int insts_size = 1024;
-    const int locs_size  = 64;
-
-    CodeBuffer code(name, insts_size, locs_size);
-    OopMapSet* oop_maps  = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-    assert_cond(oop_maps != nullptr && masm != nullptr);
-
-    address start = __ pc();
-
-    // This is an inlined and slightly modified version of call_VM
-    // which has the ability to fetch the return PC out of
-    // thread-local storage and also sets up last_Java_sp slightly
-    // differently than the real call_VM
-
-    __ enter(); // Save FP and RA before call
-
-    assert(is_even(framesize / 2), "sp not 16-byte aligned");
-
-    // ra and fp are already in place
-    __ addi(sp, fp, 0 - ((unsigned)framesize << LogBytesPerInt)); // prolog
-
-    int frame_complete = __ pc() - start;
-
-    // Set up last_Java_sp and last_Java_fp
-    address the_pc = __ pc();
-    __ set_last_Java_frame(sp, fp, the_pc, t0);
-
-    // Call runtime
-    if (arg1 != noreg) {
-      assert(arg2 != c_rarg1, "clobbered");
-      __ mv(c_rarg1, arg1);
-    }
-    if (arg2 != noreg) {
-      __ mv(c_rarg2, arg2);
-    }
-    __ mv(c_rarg0, xthread);
-    BLOCK_COMMENT("call runtime_entry");
-    __ call(runtime_entry);
-
-    // Generate oop map
-    OopMap* map = new OopMap(framesize, 0);
-    assert_cond(map != nullptr);
-
-    oop_maps->add_gc_map(the_pc - start, map);
-
-    __ reset_last_Java_frame(true);
-
-    __ leave();
-
-    // check for pending exceptions
-#ifdef ASSERT
-    Label L;
-    __ ld(t0, Address(xthread, Thread::pending_exception_offset()));
-    __ bnez(t0, L);
-    __ should_not_reach_here();
-    __ bind(L);
-#endif // ASSERT
-    __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
-
-    // codeBlob framesize is in words (not VMRegImpl::slot_size)
-    RuntimeStub* stub =
-      RuntimeStub::new_runtime_stub(name,
-                                    &code,
-                                    frame_complete,
-                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                    oop_maps, false);
-    assert(stub != nullptr, "create runtime stub fail!");
-    return stub->entry_point();
-  }
-
-#undef __
-#define __ _masm->
 
   address generate_cont_thaw(Continuation::thaw_kind kind) {
     bool return_barrier = Continuation::is_thaw_return_barrier(kind);
@@ -3823,7 +3782,7 @@ class StubGenerator: public StubCodeGenerator {
     Label thaw_success;
     // t1 contains the size of the frames to thaw, 0 if overflow or no more frames
     __ bnez(t1, thaw_success);
-    __ la(t0, ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
+    __ la(t0, RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
     __ jr(t0);
     __ bind(thaw_success);
 
@@ -3913,6 +3872,395 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
+
+#if COMPILER2_OR_JVMCI
+
+#undef __
+#define __ this->
+
+  class Sha2Generator : public MacroAssembler {
+    StubCodeGenerator* _cgen;
+   public:
+      Sha2Generator(MacroAssembler* masm, StubCodeGenerator* cgen) : MacroAssembler(masm->code()), _cgen(cgen) {}
+      address generate_sha256_implCompress(bool multi_block) {
+        return generate_sha2_implCompress(Assembler::e32, multi_block);
+      }
+      address generate_sha512_implCompress(bool multi_block) {
+        return generate_sha2_implCompress(Assembler::e64, multi_block);
+      }
+   private:
+
+    void vleXX_v(Assembler::SEW vset_sew, VectorRegister vr, Register sr) {
+      if (vset_sew == Assembler::e32) __ vle32_v(vr, sr);
+      else                            __ vle64_v(vr, sr);
+    }
+
+    void vseXX_v(Assembler::SEW vset_sew, VectorRegister vr, Register sr) {
+      if (vset_sew == Assembler::e32) __ vse32_v(vr, sr);
+      else                            __ vse64_v(vr, sr);
+    }
+
+    // Overview of the logic in each "quad round".
+    //
+    // The code below repeats 16/20 times the logic implementing four rounds
+    // of the SHA-256/512 core loop as documented by NIST. 16/20 "quad rounds"
+    // to implementing the 64/80 single rounds.
+    //
+    //    // Load four word (u32/64) constants (K[t+3], K[t+2], K[t+1], K[t+0])
+    //    // Output:
+    //    //   vTmp1 = {K[t+3], K[t+2], K[t+1], K[t+0]}
+    //    vl1reXX.v vTmp1, ofs
+    //
+    //    // Increment word constant address by stride (16/32 bytes, 4*4B/8B, 128b/256b)
+    //    addi ofs, ofs, 16/32
+    //
+    //    // Add constants to message schedule words:
+    //    //  Input
+    //    //    vTmp1 = {K[t+3], K[t+2], K[t+1], K[t+0]}
+    //    //    vW0 = {W[t+3], W[t+2], W[t+1], W[t+0]}; // Vt0 = W[3:0];
+    //    //  Output
+    //    //    vTmp0 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
+    //    vadd.vv vTmp0, vTmp1, vW0
+    //
+    //    //  2 rounds of working variables updates.
+    //    //     vState1[t+4] <- vState1[t], vState0[t], vTmp0[t]
+    //    //  Input:
+    //    //    vState1 = {c[t],d[t],g[t],h[t]}   " = vState1[t] "
+    //    //    vState0 = {a[t],b[t],e[t],f[t]}
+    //    //    vTmp0 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
+    //    //  Output:
+    //    //    vState1 = {f[t+2],e[t+2],b[t+2],a[t+2]}  " = vState0[t+2] "
+    //    //        = {h[t+4],g[t+4],d[t+4],c[t+4]}  " = vState1[t+4] "
+    //    vsha2cl.vv vState1, vState0, vTmp0
+    //
+    //    //  2 rounds of working variables updates.
+    //    //     vState0[t+4] <- vState0[t], vState0[t+2], vTmp0[t]
+    //    //  Input
+    //    //   vState0 = {a[t],b[t],e[t],f[t]}       " = vState0[t] "
+    //    //       = {h[t+2],g[t+2],d[t+2],c[t+2]}   " = vState1[t+2] "
+    //    //   vState1 = {f[t+2],e[t+2],b[t+2],a[t+2]}   " = vState0[t+2] "
+    //    //   vTmp0 = {W[t+3]+K[t+3], W[t+2]+K[t+2], W[t+1]+K[t+1], W[t+0]+K[t+0]}
+    //    //  Output:
+    //    //   vState0 = {f[t+4],e[t+4],b[t+4],a[t+4]}   " = vState0[t+4] "
+    //    vsha2ch.vv vState0, vState1, vTmp0
+    //
+    //    // Combine 2QW into 1QW
+    //    //
+    //    // To generate the next 4 words, "new_vW0"/"vTmp0" from vW0-vW3, vsha2ms needs
+    //    //     vW0[0..3], vW1[0], vW2[1..3], vW3[0, 2..3]
+    //    // and it can only take 3 vectors as inputs. Hence we need to combine
+    //    // vW1[0] and vW2[1..3] in a single vector.
+    //    //
+    //    // vmerge Vt4, Vt1, Vt2, V0
+    //    // Input
+    //    //  V0 = mask // first word from vW2, 1..3 words from vW1
+    //    //  vW2 = {Wt-8, Wt-7, Wt-6, Wt-5}
+    //    //  vW1 = {Wt-12, Wt-11, Wt-10, Wt-9}
+    //    // Output
+    //    //  Vt4 = {Wt-12, Wt-7, Wt-6, Wt-5}
+    //    vmerge.vvm vTmp0, vW2, vW1, v0
+    //
+    //    // Generate next Four Message Schedule Words (hence allowing for 4 more rounds)
+    //    // Input
+    //    //  vW0 = {W[t+ 3], W[t+ 2], W[t+ 1], W[t+ 0]}     W[ 3: 0]
+    //    //  vW3 = {W[t+15], W[t+14], W[t+13], W[t+12]}     W[15:12]
+    //    //  vTmp0 = {W[t+11], W[t+10], W[t+ 9], W[t+ 4]}     W[11: 9,4]
+    //    // Output (next four message schedule words)
+    //    //  vW0 = {W[t+19],  W[t+18],  W[t+17],  W[t+16]}  W[19:16]
+    //    vsha2ms.vv vW0, vTmp0, vW3
+    //
+    // BEFORE
+    //  vW0 - vW3 hold the message schedule words (initially the block words)
+    //    vW0 = W[ 3: 0]   "oldest"
+    //    vW1 = W[ 7: 4]
+    //    vW2 = W[11: 8]
+    //    vW3 = W[15:12]   "newest"
+    //
+    //  vt6 - vt7 hold the working state variables
+    //    vState0 = {a[t],b[t],e[t],f[t]}   // initially {H5,H4,H1,H0}
+    //    vState1 = {c[t],d[t],g[t],h[t]}   // initially {H7,H6,H3,H2}
+    //
+    // AFTER
+    //  vW0 - vW3 hold the message schedule words (initially the block words)
+    //    vW1 = W[ 7: 4]   "oldest"
+    //    vW2 = W[11: 8]
+    //    vW3 = W[15:12]
+    //    vW0 = W[19:16]   "newest"
+    //
+    //  vState0 and vState1 hold the working state variables
+    //    vState0 = {a[t+4],b[t+4],e[t+4],f[t+4]}
+    //    vState1 = {c[t+4],d[t+4],g[t+4],h[t+4]}
+    //
+    //  The group of vectors vW0,vW1,vW2,vW3 is "rotated" by one in each quad-round,
+    //  hence the uses of those vectors rotate in each round, and we get back to the
+    //  initial configuration every 4 quad-rounds. We could avoid those changes at
+    //  the cost of moving those vectors at the end of each quad-rounds.
+    void sha2_quad_round(Assembler::SEW vset_sew, VectorRegister rot1, VectorRegister rot2, VectorRegister rot3, VectorRegister rot4,
+                         Register scalarconst, VectorRegister vtemp, VectorRegister vtemp2, VectorRegister v_abef, VectorRegister v_cdgh,
+                         bool gen_words = true, bool step_const = true) {
+      __ vleXX_v(vset_sew, vtemp, scalarconst);
+      if (step_const) {
+        __ addi(scalarconst, scalarconst, vset_sew == Assembler::e32 ? 16 : 32);
+      }
+      __ vadd_vv(vtemp2, vtemp, rot1);
+      __ vsha2cl_vv(v_cdgh, v_abef, vtemp2);
+      __ vsha2ch_vv(v_abef, v_cdgh, vtemp2);
+      if (gen_words) {
+        __ vmerge_vvm(vtemp2, rot3, rot2);
+        __ vsha2ms_vv(rot1, vtemp2, rot4);
+      }
+    }
+
+    const char* stub_name(Assembler::SEW vset_sew, bool multi_block) {
+      if (vset_sew == Assembler::e32 && !multi_block) return "sha256_implCompress";
+      if (vset_sew == Assembler::e32 &&  multi_block) return "sha256_implCompressMB";
+      if (vset_sew == Assembler::e64 && !multi_block) return "sha512_implCompress";
+      if (vset_sew == Assembler::e64 &&  multi_block) return "sha512_implCompressMB";
+      ShouldNotReachHere();
+      return "bad name lookup";
+    }
+
+    // Arguments:
+    //
+    // Inputs:
+    //   c_rarg0   - byte[]  source+offset
+    //   c_rarg1   - int[]   SHA.state
+    //   c_rarg2   - int     offset
+    //   c_rarg3   - int     limit
+    //
+    address generate_sha2_implCompress(Assembler::SEW vset_sew, bool multi_block) {
+      alignas(64) static const uint32_t round_consts_256[64] = {
+        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
+        0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+        0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
+        0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+        0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc,
+        0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+        0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7,
+        0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+        0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13,
+        0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+        0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3,
+        0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+        0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5,
+        0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
+        0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2,
+      };
+      alignas(64) static const uint64_t round_consts_512[80] = {
+        0x428a2f98d728ae22l, 0x7137449123ef65cdl, 0xb5c0fbcfec4d3b2fl,
+        0xe9b5dba58189dbbcl, 0x3956c25bf348b538l, 0x59f111f1b605d019l,
+        0x923f82a4af194f9bl, 0xab1c5ed5da6d8118l, 0xd807aa98a3030242l,
+        0x12835b0145706fbel, 0x243185be4ee4b28cl, 0x550c7dc3d5ffb4e2l,
+        0x72be5d74f27b896fl, 0x80deb1fe3b1696b1l, 0x9bdc06a725c71235l,
+        0xc19bf174cf692694l, 0xe49b69c19ef14ad2l, 0xefbe4786384f25e3l,
+        0x0fc19dc68b8cd5b5l, 0x240ca1cc77ac9c65l, 0x2de92c6f592b0275l,
+        0x4a7484aa6ea6e483l, 0x5cb0a9dcbd41fbd4l, 0x76f988da831153b5l,
+        0x983e5152ee66dfabl, 0xa831c66d2db43210l, 0xb00327c898fb213fl,
+        0xbf597fc7beef0ee4l, 0xc6e00bf33da88fc2l, 0xd5a79147930aa725l,
+        0x06ca6351e003826fl, 0x142929670a0e6e70l, 0x27b70a8546d22ffcl,
+        0x2e1b21385c26c926l, 0x4d2c6dfc5ac42aedl, 0x53380d139d95b3dfl,
+        0x650a73548baf63del, 0x766a0abb3c77b2a8l, 0x81c2c92e47edaee6l,
+        0x92722c851482353bl, 0xa2bfe8a14cf10364l, 0xa81a664bbc423001l,
+        0xc24b8b70d0f89791l, 0xc76c51a30654be30l, 0xd192e819d6ef5218l,
+        0xd69906245565a910l, 0xf40e35855771202al, 0x106aa07032bbd1b8l,
+        0x19a4c116b8d2d0c8l, 0x1e376c085141ab53l, 0x2748774cdf8eeb99l,
+        0x34b0bcb5e19b48a8l, 0x391c0cb3c5c95a63l, 0x4ed8aa4ae3418acbl,
+        0x5b9cca4f7763e373l, 0x682e6ff3d6b2b8a3l, 0x748f82ee5defb2fcl,
+        0x78a5636f43172f60l, 0x84c87814a1f0ab72l, 0x8cc702081a6439ecl,
+        0x90befffa23631e28l, 0xa4506cebde82bde9l, 0xbef9a3f7b2c67915l,
+        0xc67178f2e372532bl, 0xca273eceea26619cl, 0xd186b8c721c0c207l,
+        0xeada7dd6cde0eb1el, 0xf57d4f7fee6ed178l, 0x06f067aa72176fbal,
+        0x0a637dc5a2c898a6l, 0x113f9804bef90dael, 0x1b710b35131c471bl,
+        0x28db77f523047d84l, 0x32caab7b40c72493l, 0x3c9ebe0a15c9bebcl,
+        0x431d67c49c100d4cl, 0x4cc5d4becb3e42b6l, 0x597f299cfc657e2al,
+        0x5fcb6fab3ad6faecl, 0x6c44198c4a475817l
+      };
+      const int const_add = vset_sew == Assembler::e32 ? 16 : 32;
+
+      __ align(CodeEntryAlignment);
+      StubCodeMark mark(_cgen, "StubRoutines", stub_name(vset_sew, multi_block));
+      address start = __ pc();
+
+      Register buf   = c_rarg0;
+      Register state = c_rarg1;
+      Register ofs   = c_rarg2;
+      Register limit = c_rarg3;
+      Register consts =  t2; // caller saved
+      Register state_c = x28; // caller saved
+      VectorRegister vindex = v2;
+      VectorRegister vW0 = v4;
+      VectorRegister vW1 = v6;
+      VectorRegister vW2 = v8;
+      VectorRegister vW3 = v10;
+      VectorRegister vState0 = v12;
+      VectorRegister vState1 = v14;
+      VectorRegister vHash0  = v16;
+      VectorRegister vHash1  = v18;
+      VectorRegister vTmp0   = v20;
+      VectorRegister vTmp1   = v22;
+
+      Label multi_block_loop;
+
+      __ enter();
+
+      address constant_table = vset_sew == Assembler::e32 ? (address)round_consts_256 : (address)round_consts_512;
+      la(consts, ExternalAddress(constant_table));
+
+      // Register use in this function:
+      //
+      // VECTORS
+      //  vW0 - vW3 (512/1024-bits / 4*128/256 bits / 4*4*32/65 bits), hold the message
+      //             schedule words (Wt). They start with the message block
+      //             content (W0 to W15), then further words in the message
+      //             schedule generated via vsha2ms from previous Wt.
+      //   Initially:
+      //     vW0 = W[  3:0] = { W3,  W2,  W1,  W0}
+      //     vW1 = W[  7:4] = { W7,  W6,  W5,  W4}
+      //     vW2 = W[ 11:8] = {W11, W10,  W9,  W8}
+      //     vW3 = W[15:12] = {W15, W14, W13, W12}
+      //
+      //  vState0 - vState1 hold the working state variables (a, b, ..., h)
+      //    vState0 = {f[t],e[t],b[t],a[t]}
+      //    vState1 = {h[t],g[t],d[t],c[t]}
+      //   Initially:
+      //    vState0 = {H5i-1, H4i-1, H1i-1 , H0i-1}
+      //    vState1 = {H7i-i, H6i-1, H3i-1 , H2i-1}
+      //
+      //  v0 = masks for vrgather/vmerge. Single value during the 16 rounds.
+      //
+      //  vTmp0 = temporary, Wt+Kt
+      //  vTmp1 = temporary, Kt
+      //
+      //  vHash0/vHash1 = hold the initial values of the hash, byte-swapped.
+      //
+      // During most of the function the vector state is configured so that each
+      // vector is interpreted as containing four 32/64 bits (e32/e64) elements (128/256 bits).
+
+      // vsha2ch/vsha2cl uses EGW of 4*SEW.
+      // SHA256 SEW = e32, EGW = 128-bits
+      // SHA512 SEW = e64, EGW = 256-bits
+      //
+      // VLEN is required to be at least 128.
+      // For the case of VLEN=128 and SHA512 we need LMUL=2 to work with 4*e64 (EGW = 256)
+      //
+      // m1: LMUL=1/2
+      // ta: tail agnostic (don't care about those lanes)
+      // ma: mask agnostic (don't care about those lanes)
+      // x0 is not written, we known the number of vector elements.
+
+      if (vset_sew == Assembler::e64 && MaxVectorSize == 16) { // SHA512 and VLEN = 128
+        __ vsetivli(x0, 4, vset_sew, Assembler::m2, Assembler::ma, Assembler::ta);
+      } else {
+        __ vsetivli(x0, 4, vset_sew, Assembler::m1, Assembler::ma, Assembler::ta);
+      }
+
+      int64_t indexes = vset_sew == Assembler::e32 ? 0x00041014ul : 0x00082028ul;
+      __ li(t0, indexes);
+      __ vmv_v_x(vindex, t0);
+
+      // Step-over a,b, so we are pointing to c.
+      // const_add is equal to 4x state variable, div by 2 is thus 2, a,b
+      __ addi(state_c, state, const_add/2);
+
+      // Use index-load to get {f,e,b,a},{h,g,d,c}
+      __ vluxei8_v(vState0, state, vindex);
+      __ vluxei8_v(vState1, state_c, vindex);
+
+      __ bind(multi_block_loop);
+
+      // Capture the initial H values in vHash0 and vHash1 to allow for computing
+      // the resulting H', since H' = H+{a',b',c',...,h'}.
+      __ vmv_v_v(vHash0, vState0);
+      __ vmv_v_v(vHash1, vState1);
+
+      // Load the 512/1024-bits of the message block in vW0-vW3 and perform
+      // an endian swap on each 4/8 bytes element.
+      //
+      // If Zvkb is not implemented one can use vrgather
+      // with an index sequence to byte-swap.
+      //  sequence = [3 2 1 0   7 6 5 4  11 10 9 8   15 14 13 12]
+      //   <https://oeis.org/A004444> gives us "N ^ 3" as a nice formula to generate
+      //  this sequence. 'vid' gives us the N.
+      __ vleXX_v(vset_sew, vW0, buf);
+      __ vrev8_v(vW0, vW0);
+      __ addi(buf, buf, const_add);
+      __ vleXX_v(vset_sew, vW1, buf);
+      __ vrev8_v(vW1, vW1);
+      __ addi(buf, buf, const_add);
+      __ vleXX_v(vset_sew, vW2, buf);
+      __ vrev8_v(vW2, vW2);
+      __ addi(buf, buf, const_add);
+      __ vleXX_v(vset_sew, vW3, buf);
+      __ vrev8_v(vW3, vW3);
+      __ addi(buf, buf, const_add);
+
+      // Set v0 up for the vmerge that replaces the first word (idx==0)
+      __ vid_v(v0);
+      __ vmseq_vi(v0, v0, 0x0);  // v0.mask[i] = (i == 0 ? 1 : 0)
+
+      VectorRegister rotation_regs[] = {vW0, vW1, vW2, vW3};
+      int rot_pos = 0;
+      // Quad-round #0 (+0, vW0->vW1->vW2->vW3) ... #11 (+3, vW3->vW0->vW1->vW2)
+      const int qr_end = vset_sew == Assembler::e32 ? 12 : 16;
+      for (int i = 0; i < qr_end; i++) {
+        sha2_quad_round(vset_sew,
+                   rotation_regs[(rot_pos + 0) & 0x3],
+                   rotation_regs[(rot_pos + 1) & 0x3],
+                   rotation_regs[(rot_pos + 2) & 0x3],
+                   rotation_regs[(rot_pos + 3) & 0x3],
+                   consts,
+                   vTmp1, vTmp0, vState0, vState1);
+        ++rot_pos;
+      }
+      // Quad-round #12 (+0, vW0->vW1->vW2->vW3) ... #15 (+3, vW3->vW0->vW1->vW2)
+      // Note that we stop generating new message schedule words (Wt, vW0-13)
+      // as we already generated all the words we end up consuming (i.e., W[63:60]).
+      const int qr_c_end = qr_end + 4;
+      for (int i = qr_end; i < qr_c_end; i++) {
+        sha2_quad_round(vset_sew,
+                   rotation_regs[(rot_pos + 0) & 0x3],
+                   rotation_regs[(rot_pos + 1) & 0x3],
+                   rotation_regs[(rot_pos + 2) & 0x3],
+                   rotation_regs[(rot_pos + 3) & 0x3],
+                   consts,
+                   vTmp1, vTmp0, vState0, vState1, false, i < (qr_c_end-1));
+        ++rot_pos;
+      }
+
+      //--------------------------------------------------------------------------------
+      // Compute the updated hash value H'
+      //   H' = H + {h',g',...,b',a'}
+      //      = {h,g,...,b,a} + {h',g',...,b',a'}
+      //      = {h+h',g+g',...,b+b',a+a'}
+
+      // H' = H+{a',b',c',...,h'}
+      __ vadd_vv(vState0, vHash0, vState0);
+      __ vadd_vv(vState1, vHash1, vState1);
+
+      if (multi_block) {
+        int total_adds = vset_sew == Assembler::e32 ? 240 : 608;
+        __ addi(consts, consts, -total_adds);
+        __ add(ofs, ofs, vset_sew == Assembler::e32 ? 64 : 128);
+        __ ble(ofs, limit, multi_block_loop);
+        __ mv(c_rarg0, ofs); // return ofs
+      }
+
+      // Store H[0..8] = {a,b,c,d,e,f,g,h} from
+      //  vState0 = {f,e,b,a}
+      //  vState1 = {h,g,d,c}
+      __ vsuxei8_v(vState0, state,   vindex);
+      __ vsuxei8_v(vState1, state_c, vindex);
+
+      __ leave();
+      __ ret();
+
+      return start;
+    }
+  };
+
+#undef __
+#define __ _masm->
 
   // Set of L registers that correspond to a contiguous memory area.
   // Each 64-bit register typically corresponds to 2 32-bit integers.
@@ -4134,7 +4482,7 @@ class StubGenerator: public StubCodeGenerator {
     RegSet reg_cache_saved_regs = RegSet::of(x24, x25, x26, x27); // s8, s9, s10, s11
     RegSet reg_cache_regs;
     reg_cache_regs += reg_cache_saved_regs;
-    reg_cache_regs += RegSet::of(x28, x29, x30, x31); // t3, t4, t5, t6
+    reg_cache_regs += RegSet::of(t3, t4, t5, t6);
     BufRegCache reg_cache(_masm, reg_cache_regs);
 
     RegSet saved_regs;
@@ -4155,14 +4503,18 @@ class StubGenerator: public StubCodeGenerator {
 
     // to minimize the number of memory operations:
     // read the 4 state 4-byte values in pairs, with a single ld,
-    // and split them into 2 registers
-    __ mv(t0, mask32);
+    // and split them into 2 registers.
+    //
+    // And, as the core algorithm of md5 works on 32-bits words, so
+    // in the following code, it does not care about the content of
+    // higher 32-bits in state[x]. Based on this observation,
+    // we can apply further optimization, which is to just ignore the
+    // higher 32-bits in state0/state2, rather than set the higher
+    // 32-bits of state0/state2 to zero explicitly with extra instructions.
     __ ld(state0, Address(state));
     __ srli(state1, state0, 32);
-    __ andr(state0, state0, t0);
     __ ld(state2, Address(state, 8));
     __ srli(state3, state2, 32);
-    __ andr(state2, state2, t0);
 
     Label md5_loop;
     __ BIND(md5_loop);
@@ -4419,6 +4771,1100 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
+
+  // ------------------------ SHA-1 intrinsic ------------------------
+
+  // K't =
+  //    5a827999, 0  <= t <= 19
+  //    6ed9eba1, 20 <= t <= 39
+  //    8f1bbcdc, 40 <= t <= 59
+  //    ca62c1d6, 60 <= t <= 79
+  void sha1_prepare_k(Register cur_k, int round) {
+    assert(round >= 0 && round < 80, "must be");
+
+    static const int64_t ks[] = {0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6};
+    if ((round % 20) == 0) {
+      __ mv(cur_k, ks[round/20]);
+    }
+  }
+
+  // W't =
+  //    M't,                                      0 <=  t <= 15
+  //    ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
+  void sha1_prepare_w(Register cur_w, Register ws[], Register buf, int round) {
+    assert(round >= 0 && round < 80, "must be");
+
+    if (round < 16) {
+      // in the first 16 rounds, in ws[], every register contains 2 W't, e.g.
+      //   in ws[0], high part contains W't-0, low part contains W't-1,
+      //   in ws[1], high part contains W't-2, low part contains W't-3,
+      //   ...
+      //   in ws[7], high part contains W't-14, low part contains W't-15.
+
+      if ((round % 2) == 0) {
+        __ ld(ws[round/2], Address(buf, (round/2) * 8));
+        // reverse bytes, as SHA-1 is defined in big-endian.
+        __ revb(ws[round/2], ws[round/2]);
+        __ srli(cur_w, ws[round/2], 32);
+      } else {
+        __ mv(cur_w, ws[round/2]);
+      }
+
+      return;
+    }
+
+    if ((round % 2) == 0) {
+      int idx = 16;
+      // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
+      __ srli(t1, ws[(idx-8)/2], 32);
+      __ xorr(t0, ws[(idx-3)/2], t1);
+
+      __ srli(t1, ws[(idx-14)/2], 32);
+      __ srli(cur_w, ws[(idx-16)/2], 32);
+      __ xorr(cur_w, cur_w, t1);
+
+      __ xorr(cur_w, cur_w, t0);
+      __ rolw_imm(cur_w, cur_w, 1, t0);
+
+      // copy the cur_w value to ws[8].
+      // now, valid w't values are at:
+      //  w0:       ws[0]'s lower 32 bits
+      //  w1 ~ w14: ws[1] ~ ws[7]
+      //  w15:      ws[8]'s higher 32 bits
+      __ slli(ws[idx/2], cur_w, 32);
+
+      return;
+    }
+
+    int idx = 17;
+    // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
+    __ srli(t1, ws[(idx-3)/2], 32);
+    __ xorr(t0, t1, ws[(idx-8)/2]);
+
+    __ xorr(cur_w, ws[(idx-16)/2], ws[(idx-14)/2]);
+
+    __ xorr(cur_w, cur_w, t0);
+    __ rolw_imm(cur_w, cur_w, 1, t0);
+
+    // copy the cur_w value to ws[8]
+    __ zero_extend(cur_w, cur_w, 32);
+    __ orr(ws[idx/2], ws[idx/2], cur_w);
+
+    // shift the w't registers, so they start from ws[0] again.
+    // now, valid w't values are at:
+    //  w0 ~ w15: ws[0] ~ ws[7]
+    Register ws_0 = ws[0];
+    for (int i = 0; i < 16/2; i++) {
+      ws[i] = ws[i+1];
+    }
+    ws[8] = ws_0;
+  }
+
+  // f't(x, y, z) =
+  //    Ch(x, y, z)     = (x & y) ^ (~x & z)            , 0  <= t <= 19
+  //    Parity(x, y, z) = x ^ y ^ z                     , 20 <= t <= 39
+  //    Maj(x, y, z)    = (x & y) ^ (x & z) ^ (y & z)   , 40 <= t <= 59
+  //    Parity(x, y, z) = x ^ y ^ z                     , 60 <= t <= 79
+  void sha1_f(Register dst, Register x, Register y, Register z, int round) {
+    assert(round >= 0 && round < 80, "must be");
+    assert_different_registers(dst, x, y, z, t0, t1);
+
+    if (round < 20) {
+      // (x & y) ^ (~x & z)
+      __ andr(t0, x, y);
+      __ andn(dst, z, x);
+      __ xorr(dst, dst, t0);
+    } else if (round >= 40 && round < 60) {
+      // (x & y) ^ (x & z) ^ (y & z)
+      __ andr(t0, x, y);
+      __ andr(t1, x, z);
+      __ andr(dst, y, z);
+      __ xorr(dst, dst, t0);
+      __ xorr(dst, dst, t1);
+    } else {
+      // x ^ y ^ z
+      __ xorr(dst, x, y);
+      __ xorr(dst, dst, z);
+    }
+  }
+
+  // T = ROTL'5(a) + f't(b, c, d) + e + K't + W't
+  // e = d
+  // d = c
+  // c = ROTL'30(b)
+  // b = a
+  // a = T
+  void sha1_process_round(Register a, Register b, Register c, Register d, Register e,
+                          Register cur_k, Register cur_w, Register tmp, int round) {
+    assert(round >= 0 && round < 80, "must be");
+    assert_different_registers(a, b, c, d, e, cur_w, cur_k, tmp, t0);
+
+    // T = ROTL'5(a) + f't(b, c, d) + e + K't + W't
+
+    // cur_w will be recalculated at the beginning of each round,
+    // so, we can reuse it as a temp register here.
+    Register tmp2 = cur_w;
+
+    // reuse e as a temporary register, as we will mv new value into it later
+    Register tmp3 = e;
+    __ add(tmp2, cur_k, tmp2);
+    __ add(tmp3, tmp3, tmp2);
+    __ rolw_imm(tmp2, a, 5, t0);
+
+    sha1_f(tmp, b, c, d, round);
+
+    __ add(tmp2, tmp2, tmp);
+    __ add(tmp2, tmp2, tmp3);
+
+    // e = d
+    // d = c
+    // c = ROTL'30(b)
+    // b = a
+    // a = T
+    __ mv(e, d);
+    __ mv(d, c);
+
+    __ rolw_imm(c, b, 30);
+    __ mv(b, a);
+    __ mv(a, tmp2);
+  }
+
+  // H(i)0 = a + H(i-1)0
+  // H(i)1 = b + H(i-1)1
+  // H(i)2 = c + H(i-1)2
+  // H(i)3 = d + H(i-1)3
+  // H(i)4 = e + H(i-1)4
+  void sha1_calculate_im_hash(Register a, Register b, Register c, Register d, Register e,
+                              Register prev_ab, Register prev_cd, Register prev_e) {
+    assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e);
+
+    __ add(a, a, prev_ab);
+    __ srli(prev_ab, prev_ab, 32);
+    __ add(b, b, prev_ab);
+
+    __ add(c, c, prev_cd);
+    __ srli(prev_cd, prev_cd, 32);
+    __ add(d, d, prev_cd);
+
+    __ add(e, e, prev_e);
+  }
+
+  void sha1_preserve_prev_abcde(Register a, Register b, Register c, Register d, Register e,
+                                Register prev_ab, Register prev_cd, Register prev_e) {
+    assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e, t0);
+
+    __ slli(t0, b, 32);
+    __ zero_extend(prev_ab, a, 32);
+    __ orr(prev_ab, prev_ab, t0);
+
+    __ slli(t0, d, 32);
+    __ zero_extend(prev_cd, c, 32);
+    __ orr(prev_cd, prev_cd, t0);
+
+    __ mv(prev_e, e);
+  }
+
+  // Intrinsic for:
+  //   void sun.security.provider.SHA.implCompress0(byte[] buf, int ofs)
+  //   void sun.security.provider.DigestBase.implCompressMultiBlock0(byte[] b, int ofs, int limit)
+  //
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0: byte[]  src array + offset
+  //   c_rarg1: int[]   SHA.state
+  //   - - - - - - below are only for implCompressMultiBlock0 - - - - - -
+  //   c_rarg2: int     offset
+  //   c_rarg3: int     limit
+  //
+  // Outputs:
+  //   - - - - - - below are only for implCompressMultiBlock0 - - - - - -
+  //   c_rarg0: int offset, when (multi_block == true)
+  //
+  address generate_sha1_implCompress(bool multi_block, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+
+    address start = __ pc();
+    __ enter();
+
+    RegSet saved_regs = RegSet::range(x18, x27);
+    if (multi_block) {
+      // use x9 as src below.
+      saved_regs += RegSet::of(x9);
+    }
+    __ push_reg(saved_regs, sp);
+
+    // c_rarg0 - c_rarg3: x10 - x13
+    Register buf    = c_rarg0;
+    Register state  = c_rarg1;
+    Register offset = c_rarg2;
+    Register limit  = c_rarg3;
+    // use src to contain the original start point of the array.
+    Register src    = x9;
+
+    if (multi_block) {
+      __ sub(limit, limit, offset);
+      __ add(limit, limit, buf);
+      __ sub(src, buf, offset);
+    }
+
+    // [args-reg]:  x14 - x17
+    // [temp-reg]:  x28 - x31
+    // [saved-reg]: x18 - x27
+
+    // h0/1/2/3/4
+    const Register a = x14, b = x15, c = x16, d = x17, e = x28;
+    // w0, w1, ... w15
+    // put two adjecent w's in one register:
+    //    one at high word part, another at low word part
+    // at different round (even or odd), w't value reside in different items in ws[].
+    // w0 ~ w15, either reside in
+    //    ws[0] ~ ws[7], where
+    //      w0 at higher 32 bits of ws[0],
+    //      w1 at lower 32 bits of ws[0],
+    //      ...
+    //      w14 at higher 32 bits of ws[7],
+    //      w15 at lower 32 bits of ws[7].
+    // or, reside in
+    //    w0:       ws[0]'s lower 32 bits
+    //    w1 ~ w14: ws[1] ~ ws[7]
+    //    w15:      ws[8]'s higher 32 bits
+    Register ws[9] = {x29, x30, x31, x18,
+                      x19, x20, x21, x22,
+                      x23}; // auxiliary register for calculating w's value
+    // current k't's value
+    const Register cur_k = x24;
+    // current w't's value
+    const Register cur_w = x25;
+    // values of a, b, c, d, e in the previous round
+    const Register prev_ab = x26, prev_cd = x27;
+    const Register prev_e = offset; // reuse offset/c_rarg2
+
+    // load 5 words state into a, b, c, d, e.
+    //
+    // To minimize the number of memory operations, we apply following
+    // optimization: read the states (a/b/c/d) of 4-byte values in pairs,
+    // with a single ld, and split them into 2 registers.
+    //
+    // And, as the core algorithm of SHA-1 works on 32-bits words, so
+    // in the following code, it does not care about the content of
+    // higher 32-bits in a/b/c/d/e. Based on this observation,
+    // we can apply further optimization, which is to just ignore the
+    // higher 32-bits in a/c/e, rather than set the higher
+    // 32-bits of a/c/e to zero explicitly with extra instructions.
+    __ ld(a, Address(state, 0));
+    __ srli(b, a, 32);
+    __ ld(c, Address(state, 8));
+    __ srli(d, c, 32);
+    __ lw(e, Address(state, 16));
+
+    Label L_sha1_loop;
+    if (multi_block) {
+      __ BIND(L_sha1_loop);
+    }
+
+    sha1_preserve_prev_abcde(a, b, c, d, e, prev_ab, prev_cd, prev_e);
+
+    for (int round = 0; round < 80; round++) {
+      // prepare K't value
+      sha1_prepare_k(cur_k, round);
+
+      // prepare W't value
+      sha1_prepare_w(cur_w, ws, buf, round);
+
+      // one round process
+      sha1_process_round(a, b, c, d, e, cur_k, cur_w, t2, round);
+    }
+
+    // compute the intermediate hash value
+    sha1_calculate_im_hash(a, b, c, d, e, prev_ab, prev_cd, prev_e);
+
+    if (multi_block) {
+      int64_t block_bytes = 16 * 4;
+      __ addi(buf, buf, block_bytes);
+
+      __ bge(limit, buf, L_sha1_loop, true);
+    }
+
+    // store back the state.
+    __ zero_extend(a, a, 32);
+    __ slli(b, b, 32);
+    __ orr(a, a, b);
+    __ sd(a, Address(state, 0));
+    __ zero_extend(c, c, 32);
+    __ slli(d, d, 32);
+    __ orr(c, c, d);
+    __ sd(c, Address(state, 8));
+    __ sw(e, Address(state, 16));
+
+    // return offset
+    if (multi_block) {
+      __ sub(c_rarg0, buf, src);
+    }
+
+    __ pop_reg(saved_regs, sp);
+
+    __ leave();
+    __ ret();
+
+    return (address) start;
+  }
+
+  /**
+   * vector registers:
+   *   input VectorRegister's:  intputV1-V3, for m2 they could be v2, v4, v6, for m1 they could be v1, v2, v3
+   *   index VectorRegister's:  idxV1-V4, for m2 they could be v8, v10, v12, v14, for m1 they could be v4, v5, v6, v7
+   *   output VectorRegister's: outputV1-V4, for m2 they could be v16, v18, v20, v22, for m1 they could be v8, v9, v10, v11
+   *
+   * NOTE: each field will occupy a vector register group
+   */
+  void base64_vector_encode_round(Register src, Register dst, Register codec,
+                    Register size, Register stepSrc, Register stepDst,
+                    VectorRegister inputV1, VectorRegister inputV2, VectorRegister inputV3,
+                    VectorRegister idxV1, VectorRegister idxV2, VectorRegister idxV3, VectorRegister idxV4,
+                    VectorRegister outputV1, VectorRegister outputV2, VectorRegister outputV3, VectorRegister outputV4,
+                    Assembler::LMUL lmul) {
+    // set vector register type/len
+    __ vsetvli(x0, size, Assembler::e8, lmul);
+
+    // segmented load src into v registers: mem(src) => vr(3)
+    __ vlseg3e8_v(inputV1, src);
+
+    // src = src + register_group_len_bytes * 3
+    __ add(src, src, stepSrc);
+
+    // encoding
+    //   1. compute index into lookup table: vr(3) => vr(4)
+    __ vsrl_vi(idxV1, inputV1, 2);
+
+    __ vsrl_vi(idxV2, inputV2, 2);
+    __ vsll_vi(inputV1, inputV1, 6);
+    __ vor_vv(idxV2, idxV2, inputV1);
+    __ vsrl_vi(idxV2, idxV2, 2);
+
+    __ vsrl_vi(idxV3, inputV3, 4);
+    __ vsll_vi(inputV2, inputV2, 4);
+    __ vor_vv(idxV3, inputV2, idxV3);
+    __ vsrl_vi(idxV3, idxV3, 2);
+
+    __ vsll_vi(idxV4, inputV3, 2);
+    __ vsrl_vi(idxV4, idxV4, 2);
+
+    //   2. indexed load: vr(4) => vr(4)
+    __ vluxei8_v(outputV1, codec, idxV1);
+    __ vluxei8_v(outputV2, codec, idxV2);
+    __ vluxei8_v(outputV3, codec, idxV3);
+    __ vluxei8_v(outputV4, codec, idxV4);
+
+    // segmented store encoded data in v registers back to dst: vr(4) => mem(dst)
+    __ vsseg4e8_v(outputV1, dst);
+
+    // dst = dst + register_group_len_bytes * 4
+    __ add(dst, dst, stepDst);
+  }
+
+  /**
+   *  void j.u.Base64.Encoder.encodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL)
+   *
+   *  Input arguments:
+   *  c_rarg0   - src, source array
+   *  c_rarg1   - sp, src start offset
+   *  c_rarg2   - sl, src end offset
+   *  c_rarg3   - dst, dest array
+   *  c_rarg4   - dp, dst start offset
+   *  c_rarg5   - isURL, Base64 or URL character set
+   */
+  address generate_base64_encodeBlock() {
+    alignas(64) static const char toBase64[64] = {
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+    };
+
+    alignas(64) static const char toBase64URL[64] = {
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "encodeBlock");
+    address start = __ pc();
+    __ enter();
+
+    Register src    = c_rarg0;
+    Register soff   = c_rarg1;
+    Register send   = c_rarg2;
+    Register dst    = c_rarg3;
+    Register doff   = c_rarg4;
+    Register isURL  = c_rarg5;
+
+    Register codec  = c_rarg6;
+    Register length = c_rarg7; // total length of src data in bytes
+
+    Label ProcessData, Exit;
+
+    // length should be multiple of 3
+    __ sub(length, send, soff);
+    // real src/dst to process data
+    __ add(src, src, soff);
+    __ add(dst, dst, doff);
+
+    // load the codec base address
+    __ la(codec, ExternalAddress((address) toBase64));
+    __ beqz(isURL, ProcessData);
+    __ la(codec, ExternalAddress((address) toBase64URL));
+    __ BIND(ProcessData);
+
+    // vector version
+    if (UseRVV) {
+      Label ProcessM2, ProcessM1, ProcessScalar;
+
+      Register size      = soff;
+      Register stepSrcM1 = send;
+      Register stepSrcM2 = doff;
+      Register stepDst   = isURL;
+
+      __ mv(size, MaxVectorSize * 2);
+      __ mv(stepSrcM1, MaxVectorSize * 3);
+      __ slli(stepSrcM2, stepSrcM1, 1);
+      __ mv(stepDst, MaxVectorSize * 2 * 4);
+
+      __ blt(length, stepSrcM2, ProcessM1);
+
+      __ BIND(ProcessM2);
+      base64_vector_encode_round(src, dst, codec,
+                    size, stepSrcM2, stepDst,
+                    v2, v4, v6,         // inputs
+                    v8, v10, v12, v14,  // indexes
+                    v16, v18, v20, v22, // outputs
+                    Assembler::m2);
+
+      __ sub(length, length, stepSrcM2);
+      __ bge(length, stepSrcM2, ProcessM2);
+
+      __ BIND(ProcessM1);
+      __ blt(length, stepSrcM1, ProcessScalar);
+
+      __ srli(size, size, 1);
+      __ srli(stepDst, stepDst, 1);
+      base64_vector_encode_round(src, dst, codec,
+                    size, stepSrcM1, stepDst,
+                    v1, v2, v3,         // inputs
+                    v4, v5, v6, v7,     // indexes
+                    v8, v9, v10, v11,   // outputs
+                    Assembler::m1);
+      __ sub(length, length, stepSrcM1);
+
+      __ BIND(ProcessScalar);
+    }
+
+    // scalar version
+    {
+      Register byte1 = soff, byte0 = send, byte2 = doff;
+      Register combined24Bits = isURL;
+
+      __ beqz(length, Exit);
+
+      Label ScalarLoop;
+      __ BIND(ScalarLoop);
+      {
+        // plain:   [byte0[7:0] : byte1[7:0] : byte2[7:0]] =>
+        // encoded: [byte0[7:2] : byte0[1:0]+byte1[7:4] : byte1[3:0]+byte2[7:6] : byte2[5:0]]
+
+        // load 3 bytes src data
+        __ lbu(byte0, Address(src, 0));
+        __ lbu(byte1, Address(src, 1));
+        __ lbu(byte2, Address(src, 2));
+        __ addi(src, src, 3);
+
+        // construct 24 bits from 3 bytes
+        __ slliw(byte0, byte0, 16);
+        __ slliw(byte1, byte1, 8);
+        __ orr(combined24Bits, byte0, byte1);
+        __ orr(combined24Bits, combined24Bits, byte2);
+
+        // get codec index and encode(ie. load from codec by index)
+        __ slliw(byte0, combined24Bits, 8);
+        __ srliw(byte0, byte0, 26);
+        __ add(byte0, codec, byte0);
+        __ lbu(byte0, byte0);
+
+        __ slliw(byte1, combined24Bits, 14);
+        __ srliw(byte1, byte1, 26);
+        __ add(byte1, codec, byte1);
+        __ lbu(byte1, byte1);
+
+        __ slliw(byte2, combined24Bits, 20);
+        __ srliw(byte2, byte2, 26);
+        __ add(byte2, codec, byte2);
+        __ lbu(byte2, byte2);
+
+        __ andi(combined24Bits, combined24Bits, 0x3f);
+        __ add(combined24Bits, codec, combined24Bits);
+        __ lbu(combined24Bits, combined24Bits);
+
+        // store 4 bytes encoded data
+        __ sb(byte0, Address(dst, 0));
+        __ sb(byte1, Address(dst, 1));
+        __ sb(byte2, Address(dst, 2));
+        __ sb(combined24Bits, Address(dst, 3));
+
+        __ sub(length, length, 3);
+        __ addi(dst, dst, 4);
+        // loop back
+        __ bnez(length, ScalarLoop);
+      }
+    }
+
+    __ BIND(Exit);
+
+    __ leave();
+    __ ret();
+
+    return (address) start;
+  }
+
+  /**
+   * vector registers:
+   * input VectorRegister's:  intputV1-V4, for m2 they could be v2, v4, v6, for m1 they could be v2, v4, v6, v8
+   * index VectorRegister's:  idxV1-V3, for m2 they could be v8, v10, v12, v14, for m1 they could be v10, v12, v14, v16
+   * output VectorRegister's: outputV1-V4, for m2 they could be v16, v18, v20, v22, for m1 they could be v18, v20, v22
+   *
+   * NOTE: each field will occupy a single vector register group
+   */
+  void base64_vector_decode_round(Register src, Register dst, Register codec,
+                    Register size, Register stepSrc, Register stepDst, Register failedIdx,
+                    VectorRegister inputV1, VectorRegister inputV2, VectorRegister inputV3, VectorRegister inputV4,
+                    VectorRegister idxV1, VectorRegister idxV2, VectorRegister idxV3, VectorRegister idxV4,
+                    VectorRegister outputV1, VectorRegister outputV2, VectorRegister outputV3,
+                    Assembler::LMUL lmul) {
+    // set vector register type/len
+    __ vsetvli(x0, size, Assembler::e8, lmul, Assembler::ma, Assembler::ta);
+
+    // segmented load src into v registers: mem(src) => vr(4)
+    __ vlseg4e8_v(inputV1, src);
+
+    // src = src + register_group_len_bytes * 4
+    __ add(src, src, stepSrc);
+
+    // decoding
+    //   1. indexed load: vr(4) => vr(4)
+    __ vluxei8_v(idxV1, codec, inputV1);
+    __ vluxei8_v(idxV2, codec, inputV2);
+    __ vluxei8_v(idxV3, codec, inputV3);
+    __ vluxei8_v(idxV4, codec, inputV4);
+
+    //   2. check wrong data
+    __ vor_vv(outputV1, idxV1, idxV2);
+    __ vor_vv(outputV2, idxV3, idxV4);
+    __ vor_vv(outputV1, outputV1, outputV2);
+    __ vmseq_vi(v0, outputV1, -1);
+    __ vfirst_m(failedIdx, v0);
+    Label NoFailure, FailureAtIdx0;
+    // valid value can only be -1 when < 0
+    __ bltz(failedIdx, NoFailure);
+    // when the first data (at index 0) fails, no need to process data anymore
+    __ beqz(failedIdx, FailureAtIdx0);
+    __ vsetvli(x0, failedIdx, Assembler::e8, lmul, Assembler::mu, Assembler::tu);
+    __ slli(stepDst, failedIdx, 1);
+    __ add(stepDst, failedIdx, stepDst);
+    __ BIND(NoFailure);
+
+    //   3. compute the decoded data: vr(4) => vr(3)
+    __ vsll_vi(idxV1, idxV1, 2);
+    __ vsrl_vi(outputV1, idxV2, 4);
+    __ vor_vv(outputV1, outputV1, idxV1);
+
+    __ vsll_vi(idxV2, idxV2, 4);
+    __ vsrl_vi(outputV2, idxV3, 2);
+    __ vor_vv(outputV2, outputV2, idxV2);
+
+    __ vsll_vi(idxV3, idxV3, 6);
+    __ vor_vv(outputV3, idxV4, idxV3);
+
+    // segmented store encoded data in v registers back to dst: vr(3) => mem(dst)
+    __ vsseg3e8_v(outputV1, dst);
+
+    // dst = dst + register_group_len_bytes * 3
+    __ add(dst, dst, stepDst);
+    __ BIND(FailureAtIdx0);
+  }
+
+  /**
+   * int j.u.Base64.Decoder.decodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL, boolean isMIME)
+   *
+   *  Input arguments:
+   *  c_rarg0   - src, source array
+   *  c_rarg1   - sp, src start offset
+   *  c_rarg2   - sl, src end offset
+   *  c_rarg3   - dst, dest array
+   *  c_rarg4   - dp, dst start offset
+   *  c_rarg5   - isURL, Base64 or URL character set
+   *  c_rarg6   - isMIME, Decoding MIME block
+   */
+  address generate_base64_decodeBlock() {
+
+    static const uint8_t fromBase64[256] = {
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u, 255u,  63u,
+        52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
+        15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u, 255u,
+        255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
+        41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+    };
+
+    static const uint8_t fromBase64URL[256] = {
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,  62u, 255u, 255u,
+        52u,  53u,  54u,  55u,  56u,  57u,  58u,  59u,  60u,  61u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u,   0u,   1u,   2u,   3u,   4u,   5u,   6u,   7u,   8u,   9u,  10u,  11u,  12u,  13u,  14u,
+        15u,  16u,  17u,  18u,  19u,  20u,  21u,  22u,  23u,  24u,  25u, 255u, 255u, 255u, 255u,  63u,
+        255u,  26u,  27u,  28u,  29u,  30u,  31u,  32u,  33u,  34u,  35u,  36u,  37u,  38u,  39u,  40u,
+        41u,  42u,  43u,  44u,  45u,  46u,  47u,  48u,  49u,  50u,  51u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+        255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u, 255u,
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "decodeBlock");
+    address start = __ pc();
+    __ enter();
+
+    Register src    = c_rarg0;
+    Register soff   = c_rarg1;
+    Register send   = c_rarg2;
+    Register dst    = c_rarg3;
+    Register doff   = c_rarg4;
+    Register isURL  = c_rarg5;
+    Register isMIME = c_rarg6;
+
+    Register codec     = c_rarg7;
+    Register dstBackup = t6;
+    Register length    = t3;     // total length of src data in bytes
+
+    Label ProcessData, Exit;
+    Label ProcessScalar, ScalarLoop;
+
+    // passed in length (send - soff) is guaranteed to be > 4,
+    // and in this intrinsic we only process data of length in multiple of 4,
+    // it's not guaranteed to be multiple of 4 by java level, so do it explicitly
+    __ sub(length, send, soff);
+    __ andi(length, length, -4);
+    // real src/dst to process data
+    __ add(src, src, soff);
+    __ add(dst, dst, doff);
+    // backup of dst, used to calculate the return value at exit
+    __ mv(dstBackup, dst);
+
+    // load the codec base address
+    __ la(codec, ExternalAddress((address) fromBase64));
+    __ beqz(isURL, ProcessData);
+    __ la(codec, ExternalAddress((address) fromBase64URL));
+    __ BIND(ProcessData);
+
+    // vector version
+    if (UseRVV) {
+      // for MIME case, it has a default length limit of 76 which could be
+      // different(smaller) from (send - soff), so in MIME case, we go through
+      // the scalar code path directly.
+      __ bnez(isMIME, ScalarLoop);
+
+      Label ProcessM1, ProcessM2;
+
+      Register failedIdx = soff;
+      Register stepSrcM1 = send;
+      Register stepSrcM2 = doff;
+      Register stepDst   = isURL;
+      Register size      = t4;
+
+      __ mv(size, MaxVectorSize * 2);
+      __ mv(stepSrcM1, MaxVectorSize * 4);
+      __ slli(stepSrcM2, stepSrcM1, 1);
+      __ mv(stepDst, MaxVectorSize * 2 * 3);
+
+      __ blt(length, stepSrcM2, ProcessM1);
+
+
+      // Assembler::m2
+      __ BIND(ProcessM2);
+      base64_vector_decode_round(src, dst, codec,
+                    size, stepSrcM2, stepDst, failedIdx,
+                    v2, v4, v6, v8,      // inputs
+                    v10, v12, v14, v16,  // indexes
+                    v18, v20, v22,       // outputs
+                    Assembler::m2);
+      __ sub(length, length, stepSrcM2);
+
+      // error check
+      // valid value of failedIdx can only be -1 when < 0
+      __ bgez(failedIdx, Exit);
+
+      __ bge(length, stepSrcM2, ProcessM2);
+
+
+      // Assembler::m1
+      __ BIND(ProcessM1);
+      __ blt(length, stepSrcM1, ProcessScalar);
+
+      __ srli(size, size, 1);
+      __ srli(stepDst, stepDst, 1);
+      base64_vector_decode_round(src, dst, codec,
+                    size, stepSrcM1, stepDst, failedIdx,
+                    v1, v2, v3, v4,      // inputs
+                    v5, v6, v7, v8,      // indexes
+                    v9, v10, v11,        // outputs
+                    Assembler::m1);
+      __ sub(length, length, stepSrcM1);
+
+      // error check
+      // valid value of failedIdx can only be -1 when < 0
+      __ bgez(failedIdx, Exit);
+
+      __ BIND(ProcessScalar);
+      __ beqz(length, Exit);
+    }
+
+    // scalar version
+    {
+      Register byte0 = soff, byte1 = send, byte2 = doff, byte3 = isURL;
+      Register combined32Bits = t4;
+
+      // encoded:   [byte0[5:0] : byte1[5:0] : byte2[5:0]] : byte3[5:0]] =>
+      // plain:     [byte0[5:0]+byte1[5:4] : byte1[3:0]+byte2[5:2] : byte2[1:0]+byte3[5:0]]
+      __ BIND(ScalarLoop);
+
+      // load 4 bytes encoded src data
+      __ lbu(byte0, Address(src, 0));
+      __ lbu(byte1, Address(src, 1));
+      __ lbu(byte2, Address(src, 2));
+      __ lbu(byte3, Address(src, 3));
+      __ addi(src, src, 4);
+
+      // get codec index and decode (ie. load from codec by index)
+      __ add(byte0, codec, byte0);
+      __ add(byte1, codec, byte1);
+      __ lb(byte0, Address(byte0, 0));
+      __ lb(byte1, Address(byte1, 0));
+      __ add(byte2, codec, byte2);
+      __ add(byte3, codec, byte3);
+      __ lb(byte2, Address(byte2, 0));
+      __ lb(byte3, Address(byte3, 0));
+      __ slliw(byte0, byte0, 18);
+      __ slliw(byte1, byte1, 12);
+      __ orr(byte0, byte0, byte1);
+      __ orr(byte0, byte0, byte3);
+      __ slliw(byte2, byte2, 6);
+      // For performance consideration, `combined32Bits` is constructed for 2 purposes at the same time,
+      //  1. error check below
+      //  2. decode below
+      __ orr(combined32Bits, byte0, byte2);
+
+      // error check
+      __ bltz(combined32Bits, Exit);
+
+      // store 3 bytes decoded data
+      __ sraiw(byte0, combined32Bits, 16);
+      __ sraiw(byte1, combined32Bits, 8);
+      __ sb(byte0, Address(dst, 0));
+      __ sb(byte1, Address(dst, 1));
+      __ sb(combined32Bits, Address(dst, 2));
+
+      __ sub(length, length, 4);
+      __ addi(dst, dst, 3);
+      // loop back
+      __ bnez(length, ScalarLoop);
+    }
+
+    __ BIND(Exit);
+    __ sub(c_rarg0, dst, dstBackup);
+
+    __ leave();
+    __ ret();
+
+    return (address) start;
+  }
+
+  void adler32_process_bytes(Register buff, Register s1, Register s2, VectorRegister vtable,
+    VectorRegister vzero, VectorRegister vbytes, VectorRegister vs1acc, VectorRegister vs2acc,
+    Register temp0, Register temp1, Register temp2,  Register temp3,
+    VectorRegister vtemp1, VectorRegister vtemp2, int step, Assembler::LMUL lmul) {
+
+    assert((lmul == Assembler::m4 && step == 64) ||
+           (lmul == Assembler::m2 && step == 32) ||
+           (lmul == Assembler::m1 && step == 16),
+           "LMUL should be aligned with step: m4 and 64, m2 and 32 or m1 and 16");
+    // Below is function for calculating Adler32 checksum with 64-, 32- or 16-byte step. LMUL=m4, m2 or m1 is used.
+    // The results are in v12, v13, ..., v22, v23. Example below is for 64-byte step case.
+    // We use b1, b2, ..., b64 to denote the 64 bytes loaded in each iteration.
+    // In non-vectorized code, we update s1 and s2 as:
+    //   s1 <- s1 + b1
+    //   s2 <- s2 + s1
+    //   s1 <- s1 + b2
+    //   s2 <- s2 + b1
+    //   ...
+    //   s1 <- s1 + b64
+    //   s2 <- s2 + s1
+    // Putting above assignments together, we have:
+    //   s1_new = s1 + b1 + b2 + ... + b64
+    //   s2_new = s2 + (s1 + b1) + (s1 + b1 + b2) + ... + (s1 + b1 + b2 + ... + b64) =
+    //          = s2 + s1 * 64 + (b1 * 64 + b2 * 63 + ... + b64 * 1) =
+    //          = s2 + s1 * 64 + (b1, b2, ... b64) dot (64, 63, ... 1)
+
+    __ mv(temp3, step);
+    // Load data
+    __ vsetvli(temp0, temp3, Assembler::e8, lmul);
+    __ vle8_v(vbytes, buff);
+    __ addi(buff, buff, step);
+
+    // Upper bound reduction sum for s1_new:
+    // 0xFF * 64 = 0x3FC0, so:
+    // 1. Need to do vector-widening reduction sum
+    // 2. It is safe to perform sign-extension during vmv.x.s with 16-bits elements
+    __ vwredsumu_vs(vs1acc, vbytes, vzero);
+    // Multiplication for s2_new
+    __ vwmulu_vv(vs2acc, vtable, vbytes);
+
+    // s2 = s2 + s1 * log2(step)
+    __ slli(temp1, s1, exact_log2(step));
+    __ add(s2, s2, temp1);
+
+    // Summing up calculated results for s2_new
+    if (MaxVectorSize > 16) {
+      __ vsetvli(temp0, temp3, Assembler::e16, lmul);
+    } else {
+      // Half of vector-widening multiplication result is in successor of vs2acc
+      // group for vlen == 16, in which case we need to double vector register
+      // group width in order to reduction sum all of them
+      Assembler::LMUL lmulx2 = (lmul == Assembler::m1) ? Assembler::m2 :
+                               (lmul == Assembler::m2) ? Assembler::m4 : Assembler::m8;
+      __ vsetvli(temp0, temp3, Assembler::e16, lmulx2);
+    }
+    // Upper bound for reduction sum:
+    // 0xFF * (64 + 63 + ... + 2 + 1) = 0x817E0 max for whole register group, so:
+    // 1. Need to do vector-widening reduction sum
+    // 2. It is safe to perform sign-extension during vmv.x.s with 32-bits elements
+    __ vwredsumu_vs(vtemp1, vs2acc, vzero);
+
+    // Extracting results for:
+    // s1_new
+    __ vmv_x_s(temp0, vs1acc);
+    __ add(s1, s1, temp0);
+    // s2_new
+    __ vsetvli(temp0, temp3, Assembler::e32, Assembler::m1);
+    __ vmv_x_s(temp1, vtemp1);
+    __ add(s2, s2, temp1);
+  }
+
+  /***
+   *  int java.util.zip.Adler32.updateBytes(int adler, byte[] b, int off, int len)
+   *
+   *  Arguments:
+   *
+   *  Inputs:
+   *   c_rarg0   - int   adler
+   *   c_rarg1   - byte* buff (b + off)
+   *   c_rarg2   - int   len
+   *
+   *  Output:
+   *   c_rarg0   - int adler result
+   */
+  address generate_updateBytesAdler32() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
+    address start = __ pc();
+
+    Label L_nmax, L_nmax_loop, L_nmax_loop_entry, L_by16, L_by16_loop,
+      L_by16_loop_unroll, L_by1_loop, L_do_mod, L_combine, L_by1;
+
+    // Aliases
+    Register adler  = c_rarg0;
+    Register s1     = c_rarg0;
+    Register s2     = c_rarg3;
+    Register buff   = c_rarg1;
+    Register len    = c_rarg2;
+    Register nmax  = c_rarg4;
+    Register base  = c_rarg5;
+    Register count = c_rarg6;
+    Register temp0 = t3;
+    Register temp1 = t4;
+    Register temp2 = t5;
+    Register temp3 = t6;
+
+    VectorRegister vzero = v31;
+    VectorRegister vbytes = v8; // group: v8, v9, v10, v11
+    VectorRegister vs1acc = v12; // group: v12, v13, v14, v15
+    VectorRegister vs2acc = v16; // group: v16, v17, v18, v19, v20, v21, v22, v23
+    VectorRegister vtable_64 = v24; // group: v24, v25, v26, v27
+    VectorRegister vtable_32 = v4; // group: v4, v5
+    VectorRegister vtable_16 = v30;
+    VectorRegister vtemp1 = v28;
+    VectorRegister vtemp2 = v29;
+
+    // Max number of bytes we can process before having to take the mod
+    // 0x15B0 is 5552 in decimal, the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
+    const uint64_t BASE = 0xfff1;
+    const uint64_t NMAX = 0x15B0;
+
+    // Loops steps
+    int step_64 = 64;
+    int step_32 = 32;
+    int step_16 = 16;
+    int step_1  = 1;
+
+    __ enter(); // Required for proper stackwalking of RuntimeStub frame
+    __ mv(temp1, 64);
+    __ vsetvli(temp0, temp1, Assembler::e8, Assembler::m4);
+
+    // Generating accumulation coefficients for further calculations
+    // vtable_64:
+    __ vid_v(vtemp1);
+    __ vrsub_vx(vtable_64, vtemp1, temp1);
+    // vtable_64 group now contains { 0x40, 0x3f, 0x3e, ..., 0x3, 0x2, 0x1 }
+
+    // vtable_32:
+    __ mv(temp1, 32);
+    __ vsetvli(temp0, temp1, Assembler::e8, Assembler::m2);
+    __ vid_v(vtemp1);
+    __ vrsub_vx(vtable_32, vtemp1, temp1);
+    // vtable_32 group now contains { 0x20, 0x1f, 0x1e, ..., 0x3, 0x2, 0x1 }
+
+    __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
+    // vtable_16:
+    __ mv(temp1, 16);
+    __ vid_v(vtemp1);
+    __ vrsub_vx(vtable_16, vtemp1, temp1);
+    // vtable_16 now contains { 0x10, 0xf, 0xe, ..., 0x3, 0x2, 0x1 }
+
+    __ vmv_v_i(vzero, 0);
+
+    __ mv(base, BASE);
+    __ mv(nmax, NMAX);
+
+    // s1 is initialized to the lower 16 bits of adler
+    // s2 is initialized to the upper 16 bits of adler
+    __ srliw(s2, adler, 16); // s2 = ((adler >> 16) & 0xffff)
+    __ zero_extend(s1, adler, 16); // s1 = (adler & 0xffff)
+
+    // The pipelined loop needs at least 16 elements for 1 iteration
+    // It does check this, but it is more effective to skip to the cleanup loop
+    __ mv(temp0, step_16);
+    __ bgeu(len, temp0, L_nmax);
+    __ beqz(len, L_combine);
+
+    // Jumping to L_by1_loop
+    __ sub(len, len, step_1);
+    __ j(L_by1_loop);
+
+  __ bind(L_nmax);
+    __ sub(len, len, nmax);
+    __ sub(count, nmax, 16);
+    __ bltz(len, L_by16);
+
+  // Align L_nmax loop by 64
+  __ bind(L_nmax_loop_entry);
+    __ sub(count, count, 32);
+
+  __ bind(L_nmax_loop);
+    adler32_process_bytes(buff, s1, s2, vtable_64, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_64, Assembler::m4);
+    __ sub(count, count, step_64);
+    __ bgtz(count, L_nmax_loop);
+
+    // There are three iterations left to do
+    adler32_process_bytes(buff, s1, s2, vtable_32, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_32, Assembler::m2);
+    adler32_process_bytes(buff, s1, s2, vtable_16, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_16, Assembler::m1);
+
+    // s1 = s1 % BASE
+    __ remuw(s1, s1, base);
+    // s2 = s2 % BASE
+    __ remuw(s2, s2, base);
+
+    __ sub(len, len, nmax);
+    __ sub(count, nmax, 16);
+    __ bgez(len, L_nmax_loop_entry);
+
+  __ bind(L_by16);
+    __ add(len, len, count);
+    __ bltz(len, L_by1);
+    // Trying to unroll
+    __ mv(temp3, step_64);
+    __ blt(len, temp3, L_by16_loop);
+
+  __ bind(L_by16_loop_unroll);
+    adler32_process_bytes(buff, s1, s2, vtable_64, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_64, Assembler::m4);
+    __ sub(len, len, step_64);
+    // By now the temp3 should still be 64
+    __ bge(len, temp3, L_by16_loop_unroll);
+
+  __ bind(L_by16_loop);
+    adler32_process_bytes(buff, s1, s2, vtable_16, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_16, Assembler::m1);
+    __ sub(len, len, step_16);
+    __ bgez(len, L_by16_loop);
+
+  __ bind(L_by1);
+    __ add(len, len, 15);
+    __ bltz(len, L_do_mod);
+
+  __ bind(L_by1_loop);
+    __ lbu(temp0, Address(buff, 0));
+    __ addi(buff, buff, step_1);
+    __ add(s1, temp0, s1);
+    __ add(s2, s2, s1);
+    __ sub(len, len, step_1);
+    __ bgez(len, L_by1_loop);
+
+  __ bind(L_do_mod);
+    // s1 = s1 % BASE
+    __ remuw(s1, s1, base);
+    // s2 = s2 % BASE
+    __ remuw(s2, s2, base);
+
+    // Combine lower bits and higher bits
+    // adler = s1 | (s2 << 16)
+  __ bind(L_combine);
+    __ slli(s2, s2, 16);
+    __ orr(s1, s1, s2);
+
+    __ leave(); // Required for proper stackwalking of RuntimeStub frame
+    __ ret();
+
+    return start;
+  }
+
+#endif // COMPILER2_OR_JVMCI
+
 #ifdef COMPILER2
 
 static const int64_t right_2_bits = right_n_bits(2);
@@ -4627,96 +6073,42 @@ static const int64_t right_3_bits = right_n_bits(3);
 
 #endif // COMPILER2
 
-#if INCLUDE_JFR
+  /**
+   *  Arguments:
+   *
+   * Inputs:
+   *   c_rarg0   - int crc
+   *   c_rarg1   - byte* buf
+   *   c_rarg2   - int length
+   *
+   * Output:
+   *   c_rarg0   - int crc result
+   */
+  address generate_updateBytesCRC32() {
+    assert(UseCRC32Intrinsics, "what are we doing here?");
 
-  static void jfr_prologue(address the_pc, MacroAssembler* _masm, Register thread) {
-    __ set_last_Java_frame(sp, fp, the_pc, t0);
-    __ mv(c_rarg0, thread);
-  }
-
-  static void jfr_epilogue(MacroAssembler* _masm) {
-    __ reset_last_Java_frame(true);
-  }
-  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
-  // It returns a jobject handle to the event writer.
-  // The handle is dereferenced and the return value is the event writer oop.
-  static RuntimeStub* generate_jfr_write_checkpoint() {
-    enum layout {
-      fp_off,
-      fp_off2,
-      return_off,
-      return_off2,
-      framesize // inclusive of return address
-    };
-
-    int insts_size = 1024;
-    int locs_size = 64;
-    CodeBuffer code("jfr_write_checkpoint", insts_size, locs_size);
-    OopMapSet* oop_maps = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-    MacroAssembler* _masm = masm;
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesCRC32");
 
     address start = __ pc();
-    __ enter();
-    int frame_complete = __ pc() - start;
-    address the_pc = __ pc();
-    jfr_prologue(the_pc, _masm, xthread);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
 
-    jfr_epilogue(_masm);
-    __ resolve_global_jobject(x10, t0, t1);
-    __ leave();
+    // input parameters
+    const Register crc    = c_rarg0;  // crc
+    const Register buf    = c_rarg1;  // source java byte array address
+    const Register len    = c_rarg2;  // length
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    __ kernel_crc32(crc, buf, len,
+                    c_rarg3, c_rarg4, c_rarg5, c_rarg6, // tmp's for tables
+                    c_rarg7, t2, t3, t4, t5, t6);       // misc tmps
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
 
-    OopMap* map = new OopMap(framesize, 1);
-    oop_maps->add_gc_map(the_pc - start, map);
-
-    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-      RuntimeStub::new_runtime_stub("jfr_write_checkpoint", &code, frame_complete,
-                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                    oop_maps, false);
-    return stub;
+    return start;
   }
-
-  // For c2: call to return a leased buffer.
-  static RuntimeStub* generate_jfr_return_lease() {
-    enum layout {
-      fp_off,
-      fp_off2,
-      return_off,
-      return_off2,
-      framesize // inclusive of return address
-    };
-
-    int insts_size = 1024;
-    int locs_size = 64;
-    CodeBuffer code("jfr_return_lease", insts_size, locs_size);
-    OopMapSet* oop_maps = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-    MacroAssembler* _masm = masm;
-
-    address start = __ pc();
-    __ enter();
-    int frame_complete = __ pc() - start;
-    address the_pc = __ pc();
-    jfr_prologue(the_pc, _masm, xthread);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), 1);
-
-    jfr_epilogue(_masm);
-    __ leave();
-    __ ret();
-
-    OopMap* map = new OopMap(framesize, 1);
-    oop_maps->add_gc_map(the_pc - start, map);
-
-    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
-      RuntimeStub::new_runtime_stub("jfr_return_lease", &code, frame_complete,
-                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                    oop_maps, false);
-    return stub;
-  }
-
-#endif // INCLUDE_JFR
 
   // exception handler for upcall stubs
   address generate_upcall_stub_exception_handler() {
@@ -4728,6 +6120,29 @@ static const int64_t right_3_bits = right_n_bits(3);
     __ verify_oop(x10); // return a exception oop in a0
     __ rt_call(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception));
     __ should_not_reach_here();
+
+    return start;
+  }
+
+  // load Method* target of MethodHandle
+  // j_rarg0 = jobject receiver
+  // xmethod = Method* result
+  address generate_upcall_stub_load_target() {
+
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
+    address start = __ pc();
+
+    __ resolve_global_jobject(j_rarg0, t0, t1);
+      // Load target method from receiver
+    __ load_heap_oop(xmethod, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), t0, t1);
+    __ load_heap_oop(xmethod, Address(xmethod, java_lang_invoke_LambdaForm::vmentry_offset()), t0, t1);
+    __ load_heap_oop(xmethod, Address(xmethod, java_lang_invoke_MemberName::method_offset()), t0, t1);
+    __ access_load_at(T_ADDRESS, IN_HEAP, xmethod,
+                      Address(xmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+                      noreg, noreg);
+    __ sd(xmethod, Address(xthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+
+    __ ret();
 
     return start;
   }
@@ -4746,8 +6161,8 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     StubRoutines::_forward_exception_entry = generate_forward_exception();
 
-    if (UnsafeCopyMemory::_table == nullptr) {
-      UnsafeCopyMemory::create_table(8);
+    if (UnsafeMemoryAccess::_table == nullptr) {
+      UnsafeMemoryAccess::create_table(8 + 4); // 8 for copyMemory; 4 for setMemory
     }
 
     StubRoutines::_call_stub_entry =
@@ -4756,15 +6171,11 @@ static const int64_t right_3_bits = right_n_bits(3);
     // is referenced by megamorphic call
     StubRoutines::_catch_exception_entry = generate_catch_exception();
 
-    // Build this early so it's available for the interpreter.
-    StubRoutines::_throw_StackOverflowError_entry =
-      generate_throw_exception("StackOverflowError throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::throw_StackOverflowError));
-    StubRoutines::_throw_delayed_StackOverflowError_entry =
-      generate_throw_exception("delayed StackOverflowError throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::throw_delayed_StackOverflowError));
+    if (UseCRC32Intrinsics) {
+      // set table address before stub generation which use it
+      StubRoutines::_crc_table_adr = (address)StubRoutines::riscv::_crc_table;
+      StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
+    }
   }
 
   void generate_continuation_stubs() {
@@ -4772,18 +6183,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     StubRoutines::_cont_thaw             = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier    = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-
-    JFR_ONLY(generate_jfr_stubs();)
   }
-
-#if INCLUDE_JFR
-  void generate_jfr_stubs() {
-    StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
-    StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
-    StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
-    StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
-  }
-#endif // INCLUDE_JFR
 
   void generate_final_stubs() {
     // support for verify_oop (must happen after universe_init)
@@ -4791,23 +6191,6 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
     }
 
-    StubRoutines::_throw_AbstractMethodError_entry =
-      generate_throw_exception("AbstractMethodError throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::
-                                                throw_AbstractMethodError));
-
-    StubRoutines::_throw_IncompatibleClassChangeError_entry =
-      generate_throw_exception("IncompatibleClassChangeError throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::
-                                                throw_IncompatibleClassChangeError));
-
-    StubRoutines::_throw_NullPointerException_at_call_entry =
-      generate_throw_exception("NullPointerException at call throw_exception",
-                               CAST_FROM_FN_PTR(address,
-                                                SharedRuntime::
-                                                throw_NullPointerException_at_call));
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
@@ -4816,13 +6199,25 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
     }
 
+#ifdef COMPILER2
+    if (UseSecondarySupersTable) {
+      StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
+      if (!InlineSecondarySupersTest) {
+        for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+          StubRoutines::_lookup_secondary_supers_table_stubs[slot]
+            = generate_lookup_secondary_supers_table_stub(slot);
+        }
+      }
+    }
+#endif // COMPILER2
+
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
 
     StubRoutines::riscv::set_completed();
   }
 
   void generate_compiler_stubs() {
-#if COMPILER2_OR_JVMCI
 #ifdef COMPILER2
     if (UseMulAddIntrinsic) {
       StubRoutines::_mulAdd = generate_mulAdd();
@@ -4856,11 +6251,18 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
       StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
     }
-#endif // COMPILER2
 
-    generate_compare_long_strings();
+    if (UseSHA256Intrinsics) {
+      Sha2Generator sha2(_masm, this);
+      StubRoutines::_sha256_implCompress   = sha2.generate_sha256_implCompress(false);
+      StubRoutines::_sha256_implCompressMB = sha2.generate_sha256_implCompress(true);
+    }
 
-    generate_string_indexof_stubs();
+    if (UseSHA512Intrinsics) {
+      Sha2Generator sha2(_masm, this);
+      StubRoutines::_sha512_implCompress   = sha2.generate_sha512_implCompress(false);
+      StubRoutines::_sha512_implCompressMB = sha2.generate_sha512_implCompress(true);
+    }
 
     if (UseMD5Intrinsics) {
       StubRoutines::_md5_implCompress   = generate_md5_implCompress(false, "md5_implCompress");
@@ -4871,7 +6273,25 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_chacha20Block = generate_chacha20Block();
     }
 
-#endif // COMPILER2_OR_JVMCI
+    if (UseSHA1Intrinsics) {
+      StubRoutines::_sha1_implCompress     = generate_sha1_implCompress(false, "sha1_implCompress");
+      StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(true, "sha1_implCompressMB");
+    }
+
+    if (UseBASE64Intrinsics) {
+      StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
+      StubRoutines::_base64_decodeBlock = generate_base64_decodeBlock();
+    }
+
+    if (UseAdler32Intrinsics) {
+      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
+    }
+
+    generate_compare_long_strings();
+
+    generate_string_indexof_stubs();
+
+#endif // COMPILER2
   }
 
  public:

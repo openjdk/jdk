@@ -90,7 +90,7 @@ public class Pos05 {
             if (testMethod == null) {
                 throw new Error("Test method not found");
             }
-            CodeAttribute ea = testMethod.findAttribute(Attributes.CODE).orElse(null);
+            CodeAttribute ea = testMethod.findAttribute(Attributes.code()).orElse(null);
             if (ea == null) {
                 throw new Error("Code attribute for test() method not found");
             }

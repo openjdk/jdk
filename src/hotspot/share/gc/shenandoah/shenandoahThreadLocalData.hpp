@@ -89,6 +89,7 @@ public:
   }
 
   static char gc_state(Thread* thread) {
+    assert(thread->is_Java_thread(), "GC state is only synchronized to java threads");
     return data(thread)->_gc_state;
   }
 
@@ -157,10 +158,6 @@ public:
   }
 
   // Offsets
-  static ByteSize satb_mark_queue_active_offset() {
-    return satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active();
-  }
-
   static ByteSize satb_mark_queue_index_offset() {
     return satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index();
   }

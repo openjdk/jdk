@@ -37,6 +37,8 @@
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Set;
+import java.util.List;
 
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
@@ -122,10 +124,9 @@ public class InitExceptionUnloadTest {
             }
         }
         cl = null;
-        ClassUnloadCommon.triggerUnloading();  // should unload these classes
-        for (String className : classNames) {
-          ClassUnloadCommon.failIf(wb.isClassAlive(className), "should be unloaded");
-        }
+
+        Set<String> aliveClasses = ClassUnloadCommon.triggerUnloading(List.of(classNames));
+        ClassUnloadCommon.failIf(!aliveClasses.isEmpty(), "should be unloaded: " + aliveClasses);
     }
     public static void main(java.lang.String[] unused) throws Throwable {
         test();

@@ -1,4 +1,4 @@
-/**
+/*
  * @test /nodynamiccopyright/
  * @bug 8246704
  * @summary Verify preview APIs are reported correctly when using --release.

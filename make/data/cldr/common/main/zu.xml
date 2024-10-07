@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1128,7 +1128,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Ukuhlunga kwebhuku lefoni</type>
 			<type key="collation" type="phonetic">Hlela Ngokwefonetiki</type>
 			<type key="collation" type="pinyin">Ukuhlunga nge-Pinyin</type>
-			<type key="collation" type="reformed">Ukuhlunga okwenziwe kabusha</type>
 			<type key="collation" type="search">Usesho olujwayelekile</type>
 			<type key="collation" type="searchjl">Sesha nge-Hangul Ongwaqa Basekuqaleni</type>
 			<type key="collation" type="standard">I-oda yokuhlunga ejwayelekile</type>
@@ -2147,9 +2146,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Isikhathi sase-{0}</regionFormat>
 			<regionFormat type="daylight">{0} Isikhathi sasemini</regionFormat>
 			<regionFormat type="standard">{0} isikhathi esivamile</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>i-Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>isikhathi somhlaba esididiyelwe</standard>
@@ -2271,9 +2267,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>i-Melbourne</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>i-Currie</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>i-Hobart</exemplarCity>
@@ -2428,9 +2421,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>i-Creston</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>i-Yellowknife</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>i-Edmonton</exemplarCity>
 			</zone>
@@ -2449,29 +2439,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>i-Resolute</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>i-Rainy River</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>i-Rankin Inlet</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>i-Atikokan</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>i-Thunder Bay</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>i-Nipigon</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>i-Toronto</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>i-Iqaluit</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>i-Pangnirtung</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>i-Moncton</exemplarCity>
@@ -3274,17 +3252,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>i-Dar es Salaam</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>i-Uzhhorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>i-Kiev</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>i-Simferopol</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>i-Zaporozhye</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>i-Kampala</exemplarCity>
@@ -3303,9 +3275,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>i-Honolulu</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>i-Johnston</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>i-Anchorage</exemplarCity>
@@ -3956,11 +3925,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>Isikhathi sase-Lord Howe sasemini</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Isikhathi sase-Macquarie Island</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Isikhathi sase-Magadan</generic>
@@ -3998,13 +3962,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Isikhathi sase-Mawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Isikhathi sase-Northwest Mexico</generic>
-					<standard>Isikhathi sase-Northwest Mexico esijwayelekile</standard>
-					<daylight>Isikhathi sase-Northwest Mexico sasemini</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

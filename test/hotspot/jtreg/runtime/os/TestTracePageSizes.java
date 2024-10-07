@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
+ * @requires os.arch != "ppc64le"
  * @run main/othervm -XX:+AlwaysPreTouch -Xlog:pagesize:ps-%p.log TestTracePageSizes
  */
 
@@ -51,6 +52,7 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
+ * @requires os.arch != "ppc64le"
  * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache -XX:+UseLargePages TestTracePageSizes
@@ -63,6 +65,7 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
+ * @requires os.arch != "ppc64le"
  * @requires vm.gc.G1
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseG1GC TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseG1GC -XX:+UseLargePages TestTracePageSizes
@@ -75,6 +78,7 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
+ * @requires os.arch != "ppc64le"
  * @requires vm.gc.Parallel
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseParallelGC TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseParallelGC -XX:+UseLargePages TestTracePageSizes
@@ -87,6 +91,7 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
+ * @requires os.arch != "ppc64le"
  * @requires vm.gc.Serial
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseSerialGC TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseSerialGC -XX:+UseLargePages TestTracePageSizes
@@ -261,12 +266,6 @@ public class TestTracePageSizes {
             throw new SkippedException("Kernel older than 3.8 - skipping this test.");
         }
 
-        // For similar reasons, we skip the test on ppc platforms, since there the smaps
-        //  format may follow a different logic.
-        if (Platform.isPPC()) {
-            throw new SkippedException("PPC - skipping this test.");
-        }
-
         // Parse /proc/self/smaps to compare with values logged in the VM.
         parseSmaps();
 
@@ -350,7 +349,7 @@ class RangeWithPageSize {
         this.start = Long.parseUnsignedLong(start, 16);
         this.end = Long.parseUnsignedLong(end, 16);
         this.pageSize = Long.parseLong(pageSize);
-        this.thpEligible = Integer.parseInt(thpEligible) == 1;
+        this.thpEligible = thpEligible == null ? false : (Integer.parseInt(thpEligible) == 1);
 
         vmFlagHG = false;
         vmFlagHT = false;
@@ -365,12 +364,11 @@ class RangeWithPageSize {
             }
         }
 
-        // When the THP policy is 'always' instead of 'madvise, the vmFlagHG property is false.
-        // Check the THPeligible property instead.
-        isTHP = !vmFlagHT && this.thpEligible;
+        // When the THP policy is 'always' instead of 'madvise, the vmFlagHG property is false,
+        // therefore also check thpEligible. If this is still causing problems in the future,
+        // we might have to check the AnonHugePages field.
 
-        // vmFlagHG should imply isTHP
-        assert !vmFlagHG || isTHP;
+        isTHP = vmFlagHG || this.thpEligible;
     }
 
     public long getPageSize() {

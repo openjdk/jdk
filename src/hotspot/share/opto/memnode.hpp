@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,8 +106,12 @@ public:
 
   static Node *optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oop, Node *load, PhaseGVN *phase);
   static Node *optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *load, PhaseGVN *phase);
-  // This one should probably be a phase-specific function:
-  static bool all_controls_dominate(Node* dom, Node* sub);
+  // The following two should probably be phase-specific functions:
+  static DomResult maybe_all_controls_dominate(Node* dom, Node* sub);
+  static bool all_controls_dominate(Node* dom, Node* sub) {
+    DomResult dom_result = maybe_all_controls_dominate(dom, sub);
+    return dom_result == DomResult::Dominate;
+  }
 
   virtual const class TypePtr *adr_type() const;  // returns bottom_type of address
 
@@ -119,12 +124,11 @@ public:
   // Raw access function, to allow copying of adr_type efficiently in
   // product builds and retain the debug info for debug builds.
   const TypePtr *raw_adr_type() const {
-#ifdef ASSERT
-    return _adr_type;
-#else
-    return 0;
-#endif
+    return DEBUG_ONLY(_adr_type) NOT_DEBUG(nullptr);
   }
+
+  // Return the barrier data of n, if available, or 0 otherwise.
+  static uint8_t barrier_data(const Node* n);
 
   // Map a load or store opcode to its corresponding store opcode.
   // (Return -1 if unknown.)
@@ -292,6 +296,8 @@ public:
   bool has_unknown_control_dependency() const  { return _control_dependency == UnknownControl; }
   bool has_pinned_control_dependency() const   { return _control_dependency == Pinned; }
 
+  LoadNode* pin_array_access_node() const;
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
@@ -317,6 +323,8 @@ protected:
   virtual bool depends_only_on_test() const {
     return adr_type() != TypeRawPtr::BOTTOM && _control_dependency == DependsOnlyOnTest;
   }
+
+  LoadNode* clone_pinned() const;
 };
 
 //------------------------------LoadBNode--------------------------------------
@@ -788,7 +796,7 @@ public:
     StoreNode(c, mem, adr, at, val, oop_store, MemNode::release),
     _oop_alias_idx(oop_alias_idx) {
     assert(_oop_alias_idx >= Compile::AliasIdxRaw ||
-           _oop_alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing(),
+           (_oop_alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing()),
            "bad oop alias idx");
   }
   virtual int Opcode() const;
@@ -1674,7 +1682,7 @@ public:
 // Allocation prefetch which may fault, TLAB size have to be adjusted.
 class PrefetchAllocationNode : public Node {
 public:
-  PrefetchAllocationNode(Node *mem, Node *adr) : Node(0,mem,adr) {}
+  PrefetchAllocationNode(Node *mem, Node *adr) : Node(nullptr,mem,adr) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const { return idx==2; }

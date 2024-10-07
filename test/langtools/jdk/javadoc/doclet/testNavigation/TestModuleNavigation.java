@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8196027 8196202
+ * @bug 8196027 8196202 8320458
  * @summary test navigation links
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -53,6 +53,122 @@ public class TestModuleNavigation extends JavadocTester {
     public TestModuleNavigation () {
         tb = new ToolBox();
     }
+
+    @Test
+    public void testSingleModule(Path base) throws Exception {
+        Path src = Files.createDirectories(base.resolve("src"));
+        ModuleBuilder mb = new ModuleBuilder(tb, "m")
+                .comment("Module m.")
+                .exports("p1")
+                .classes("package p1; @Deprecated public class A {}")
+                .classes("package p1; public class B {}");
+        mb.write(src);
+
+        javadoc("-d", base.resolve("out-single-module").toString(),
+                "--module-source-path", src.toString(),
+                "--module", "m");
+        checkExit(Exit.OK);
+
+        checkOutput("index.html", true,
+                """
+                    <script type="text/javascript">window.location.replace('m/module-summary.html')</script>
+                    <noscript>
+                    <meta http-equiv="Refresh" content="0;m/module-summary.html">
+                    </noscript>""",
+                """
+                    <p><a href="m/module-summary.html">m/module-summary.html</a></p>""");
+
+        checkOutput("m/module-summary.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li class="nav-bar-cell1-rev">Module</li>
+                    <li><a href="../overview-tree.html">Tree</a></li>
+                    <li><a href="../deprecated-list.html">Deprecated</a></li>
+                    <li><a href="../index-all.html">Index</a></li>
+                    <li><a href="../search.html">Search</a></li>
+                    <li><a href="../help-doc.html#module">Help</a></li>
+                    </ul>""");
+
+        checkOutput("overview-tree.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="m/module-summary.html">Module</a></li>
+                    <li class="nav-bar-cell1-rev">Tree</li>
+                    <li><a href="deprecated-list.html">Deprecated</a></li>
+                    <li><a href="index-all.html">Index</a></li>
+                    <li><a href="search.html">Search</a></li>
+                    <li><a href="help-doc.html#tree">Help</a></li>
+                    </ul>""");
+
+        checkOutput("deprecated-list.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="m/module-summary.html">Module</a></li>
+                    <li><a href="overview-tree.html">Tree</a></li>
+                    <li class="nav-bar-cell1-rev">Deprecated</li>
+                    <li><a href="index-all.html">Index</a></li>
+                    <li><a href="search.html">Search</a></li>
+                    <li><a href="help-doc.html#deprecated">Help</a></li>
+                    </ul>""");
+
+        checkOutput("index-all.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="m/module-summary.html">Module</a></li>
+                    <li><a href="overview-tree.html">Tree</a></li>
+                    <li><a href="deprecated-list.html">Deprecated</a></li>
+                    <li class="nav-bar-cell1-rev">Index</li>
+                    <li><a href="search.html">Search</a></li>
+                    <li><a href="help-doc.html#index">Help</a></li>
+                    </ul>""");
+
+        checkOutput("search.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="m/module-summary.html">Module</a></li>
+                    <li><a href="overview-tree.html">Tree</a></li>
+                    <li><a href="deprecated-list.html">Deprecated</a></li>
+                    <li><a href="index-all.html">Index</a></li>
+                    <li class="nav-bar-cell1-rev">Search</li>
+                    <li><a href="help-doc.html#search">Help</a></li>
+                    </ul>""");
+
+        checkOutput("help-doc.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="m/module-summary.html">Module</a></li>
+                    <li><a href="overview-tree.html">Tree</a></li>
+                    <li><a href="deprecated-list.html">Deprecated</a></li>
+                    <li><a href="index-all.html">Index</a></li>
+                    <li><a href="search.html">Search</a></li>
+                    <li class="nav-bar-cell1-rev">Help</li>
+                    </ul>""");
+
+        checkOutput("m/p1/package-summary.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="../module-summary.html">Module</a></li>
+                    <li class="nav-bar-cell1-rev">Package</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../../deprecated-list.html">Deprecated</a></li>
+                    <li><a href="../../index-all.html">Index</a></li>
+                    <li><a href="../../search.html">Search</a></li>
+                    <li><a href="../../help-doc.html#package">Help</a></li>
+                    </ul>""");
+
+        checkOutput("m/p1/A.html", true,
+                """
+                    <ul id="navbar-top-firstrow" class="nav-list" title="Navigation">
+                    <li><a href="../module-summary.html">Module</a></li>
+                    <li class="nav-bar-cell1-rev">Class</li>
+                    <li><a href="package-tree.html">Tree</a></li>
+                    <li><a href="../../deprecated-list.html">Deprecated</a></li>
+                    <li><a href="../../index-all.html">Index</a></li>
+                    <li><a href="../../search.html">Search</a></li>
+                    <li><a href="../../help-doc.html#class">Help</a></li>
+                    </ul>""");
+    }
+
 
     @Test
     public void checkNavbar(Path base) throws Exception {

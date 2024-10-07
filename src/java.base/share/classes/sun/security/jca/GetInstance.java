@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,33 +104,21 @@ public class GetInstance {
     }
 
     /**
-     * Return a List of all the available Services that implement
-     * (type, algorithm). Note that the list is initialized lazily
+     * Return an iterator over all the available Services that implement
+     * (type, algorithm). Note that the iterator is initialized lazily
      * and Provider loading and lookup is only triggered when
      * necessary.
      */
-    public static List<Service> getServices(String type, String algorithm) {
+    public static Iterator<Service> getServices(String type, String algorithm) {
         ProviderList list = Providers.getProviderList();
         return list.getServices(type, algorithm);
     }
 
     /**
-     * This method exists for compatibility with JCE only. It will be removed
-     * once JCE has been changed to use the replacement method.
-     * @deprecated use {@code getServices(List<ServiceId>)} instead
-     */
-    @Deprecated
-    public static List<Service> getServices(String type,
-            List<String> algorithms) {
-        ProviderList list = Providers.getProviderList();
-        return list.getServices(type, algorithms);
-    }
-
-    /**
-     * Return a List of all the available Services that implement any of
+     * Return an iterator over all the available Services that implement any of
      * the specified algorithms. See getServices(String, String) for details.
      */
-    public static List<Service> getServices(List<ServiceId> ids) {
+    public static Iterator<Service> getServices(List<ServiceId> ids) {
         ProviderList list = Providers.getProviderList();
         return list.getServices(ids);
     }
@@ -167,7 +155,9 @@ public class GetInstance {
         }
         // if we cannot get the service from the preferred provider,
         // fail over to the next
-        for (Service s : list.getServices(type, algorithm)) {
+        Iterator<Service> services = list.getServices(type, algorithm);
+        while (services.hasNext()) {
+            Service s = services.next();
             if (s == firstService) {
                 // do not retry initial failed service
                 continue;
@@ -183,9 +173,10 @@ public class GetInstance {
 
     public static Instance getInstance(String type, Class<?> clazz,
             String algorithm, Object param) throws NoSuchAlgorithmException {
-        List<Service> services = getServices(type, algorithm);
+        Iterator<Service> services = getServices(type, algorithm);
         NoSuchAlgorithmException failure = null;
-        for (Service s : services) {
+        while (services.hasNext()) {
+            Service s = services.next();
             try {
                 return getInstance(s, clazz, param);
             } catch (NoSuchAlgorithmException e) {

@@ -39,54 +39,58 @@ public:
 class ShenandoahCollectorPolicy : public CHeapObj<mtGC> {
 private:
   size_t _success_concurrent_gcs;
+  size_t _abbreviated_concurrent_gcs;
   size_t _success_degenerated_gcs;
+  size_t _abbreviated_degenerated_gcs;
   // Written by control thread, read by mutators
   volatile size_t _success_full_gcs;
+  uint _consecutive_degenerated_gcs;
   size_t _alloc_failure_degenerated;
   size_t _alloc_failure_degenerated_upgrade_to_full;
   size_t _alloc_failure_full;
-  size_t _explicit_concurrent;
-  size_t _explicit_full;
-  size_t _implicit_concurrent;
-  size_t _implicit_full;
-  size_t _degen_points[ShenandoahGC::_DEGENERATED_LIMIT];
+  size_t _collection_cause_counts[GCCause::_last_gc_cause];
+  size_t _degen_point_counts[ShenandoahGC::_DEGENERATED_LIMIT];
 
   ShenandoahSharedFlag _in_shutdown;
-
   ShenandoahTracer* _tracer;
 
-  size_t _cycle_counter;
 
 public:
   ShenandoahCollectorPolicy();
 
-  // TODO: This is different from gc_end: that one encompasses one VM operation.
-  // These two encompass the entire cycle.
-  void record_cycle_start();
-
-  void record_success_concurrent();
-  void record_success_degenerated();
+  // A collection cycle may be "abbreviated" if Shenandoah finds a sufficient percentage
+  // of regions that contain no live objects (ShenandoahImmediateThreshold). These cycles
+  // end after final mark, skipping the evacuation and reference-updating phases. Such
+  // cycles are very efficient and are worth tracking. Note that both degenerated and
+  // concurrent cycles can be abbreviated.
+  void record_success_concurrent(bool is_abbreviated);
+  void record_success_degenerated(bool is_abbreviated);
   void record_success_full();
   void record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point);
   void record_alloc_failure_to_full();
   void record_degenerated_upgrade_to_full();
-  void record_explicit_to_concurrent();
-  void record_explicit_to_full();
-  void record_implicit_to_concurrent();
-  void record_implicit_to_full();
+  void record_collection_cause(GCCause::Cause cause);
 
   void record_shutdown();
   bool is_at_shutdown();
 
   ShenandoahTracer* tracer() {return _tracer;}
 
-  size_t cycle_counter() const;
-
   void print_gc_stats(outputStream* out) const;
 
   size_t full_gc_count() const {
     return _success_full_gcs + _alloc_failure_degenerated_upgrade_to_full;
   }
+
+  // If the heuristics find that the number of consecutive degenerated cycles is above
+  // ShenandoahFullGCThreshold, then they will initiate a Full GC upon an allocation
+  // failure.
+  inline size_t consecutive_degenerated_gc_count() const {
+    return _consecutive_degenerated_gcs;
+  }
+
+  static bool should_run_full_gc(GCCause::Cause cause);
+  static bool should_handle_requested_gc(GCCause::Cause cause);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTORPOLICY_HPP

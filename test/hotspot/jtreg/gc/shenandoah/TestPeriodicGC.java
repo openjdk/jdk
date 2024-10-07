@@ -42,9 +42,8 @@ public class TestPeriodicGC {
         String[] cmds = Arrays.copyOf(args, args.length + 2);
         cmds[args.length] = TestPeriodicGC.class.getName();
         cmds[args.length + 1] = "test";
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmds);
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(cmds);
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         if (periodic && !output.getOutput().contains("Trigger: Time since last GC")) {
             throw new AssertionError(msg + ": Should have periodic GC in logs");
@@ -97,36 +96,6 @@ public class TestPeriodicGC {
                     "-XX:ShenandoahGuaranteedGCInterval=100000" // deliberately too long
             );
         }
-
-        testWith("Zero interval with iu mode",
-                 false,
-                 "-Xlog:gc",
-                 "-XX:+UnlockDiagnosticVMOptions",
-                 "-XX:+UnlockExperimentalVMOptions",
-                 "-XX:+UseShenandoahGC",
-                 "-XX:ShenandoahGCMode=iu",
-                 "-XX:ShenandoahGuaranteedGCInterval=0"
-        );
-
-        testWith("Short interval with iu mode",
-                 true,
-                 "-Xlog:gc",
-                 "-XX:+UnlockDiagnosticVMOptions",
-                 "-XX:+UnlockExperimentalVMOptions",
-                 "-XX:+UseShenandoahGC",
-                 "-XX:ShenandoahGCMode=iu",
-                 "-XX:ShenandoahGuaranteedGCInterval=1000"
-        );
-
-        testWith("Long interval with iu mode",
-                 false,
-                 "-Xlog:gc",
-                 "-XX:+UnlockDiagnosticVMOptions",
-                 "-XX:+UnlockExperimentalVMOptions",
-                 "-XX:+UseShenandoahGC",
-                 "-XX:ShenandoahGCMode=iu",
-                 "-XX:ShenandoahGuaranteedGCInterval=100000" // deliberately too long
-        );
 
         testWith("Short interval with aggressive",
                  false,

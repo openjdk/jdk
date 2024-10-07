@@ -465,6 +465,7 @@ class Arguments : AllStatic {
   static bool is_internal_module_property(const char* option);
   static bool is_add_modules_property(const char* key);
   static unsigned int addmods_count() { return  _addmods_count; }
+  static bool is_module_path_property(const char* key);
 
   // Miscellaneous System property value getter and setters.
   static void set_dll_dir(const char *value) { _sun_boot_library_path->set_value(value); }

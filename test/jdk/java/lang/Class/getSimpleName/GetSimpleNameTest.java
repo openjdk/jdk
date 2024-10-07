@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,24 @@
 /* @test
  * @bug 8057919
  * @summary Class.getSimpleName() should work for non-JLS compliant class names
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @enablePreview
  */
-import jdk.internal.org.objectweb.asm.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.attribute.EnclosingMethodAttribute;
+import java.lang.classfile.attribute.InnerClassInfo;
+import java.lang.classfile.attribute.InnerClassesAttribute;
+import java.lang.constant.ClassDesc;
+import java.lang.reflect.AccessFlag;
+import java.util.Optional;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 
 public class GetSimpleNameTest {
     static class NestedClass {}
@@ -121,88 +135,89 @@ public class GetSimpleNameTest {
     }
 
     static class BytecodeGenerator {
-        final String innerName;
-        final String outerName;
+        final ClassDesc innerName;
+        final ClassDesc outerName;
         final String simpleName;
 
         BytecodeGenerator(String innerName, String outerName, String simpleName) {
-            this.innerName = intl(innerName);
-            this.outerName = intl(outerName);
+            this.innerName = ClassDesc.of(innerName);
+            this.outerName = ClassDesc.of(outerName);
             this.simpleName = simpleName;
         }
 
-        static String intl(String name) { return name.replace('.', '/'); }
-
-        static void makeDefaultCtor(ClassWriter cw) {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
+        static void makeDefaultCtor(ClassBuilder clb) {
+            clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cb -> {
+                cb.aload(0);
+                cb.invokespecial(CD_Object, INIT_NAME, MTD_void);
+                cb.return_();
+            });
         }
 
-        void makeCtxk(ClassWriter cw, boolean isInner) {
+        void makeCtxk(ClassBuilder clb, boolean isInner) {
             if (isInner) {
-                cw.visitOuterClass(outerName, "f", "()V");
+                clb.with(EnclosingMethodAttribute.of(outerName,
+                        Optional.of("f"), Optional.of(MTD_void)));
             } else {
-                MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "f", "()V", null, null);
-                mv.visitCode();
-                mv.visitInsn(RETURN);
-                mv.visitMaxs(0, 0);
-                mv.visitEnd();
+                clb.withMethodBody("f", MTD_void, ACC_PUBLIC | ACC_STATIC,
+                        CodeBuilder::return_);
             }
         }
 
         byte[] getNestedClasses(boolean isInner) {
-            String name = (isInner ? innerName : outerName);
-            ClassWriter cw = new ClassWriter(0);
-            cw.visit(V1_7, ACC_PUBLIC + ACC_SUPER, name, null, "java/lang/Object", null);
-
-            cw.visitInnerClass(innerName, outerName, simpleName, ACC_PUBLIC | ACC_STATIC);
-
-            makeDefaultCtor(cw);
-            cw.visitEnd();
-            return cw.toByteArray();
+            var name = (isInner ? innerName : outerName);
+            return ClassFile.of().build(name, clb -> {
+                clb.withSuperclass(CD_Object);
+                clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+                clb.with(InnerClassesAttribute.of(
+                        InnerClassInfo.of(innerName,
+                                Optional.of(outerName),
+                                Optional.of(simpleName))));
+                makeDefaultCtor(clb);
+            });
         }
 
         byte[] getInnerClasses(boolean isInner) {
-            String name = (isInner ? innerName : outerName);
-            ClassWriter cw = new ClassWriter(0);
-            cw.visit(V1_7, ACC_PUBLIC + ACC_SUPER, name, null, "java/lang/Object", null);
-
-            cw.visitInnerClass(innerName, outerName, simpleName, ACC_PUBLIC);
-
-            makeDefaultCtor(cw);
-            cw.visitEnd();
-            return cw.toByteArray();
+            var name = (isInner ? innerName : outerName);
+            return ClassFile.of().build(name, clb -> {
+                clb.withSuperclass(CD_Object);
+                clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+                clb.with(InnerClassesAttribute.of(
+                        InnerClassInfo.of(innerName,
+                                Optional.of(outerName),
+                                Optional.of(simpleName),
+                                AccessFlag.PUBLIC)));
+                makeDefaultCtor(clb);
+            });
         }
 
         byte[] getLocalClasses(boolean isInner) {
-            String name = (isInner ? innerName : outerName);
-            ClassWriter cw = new ClassWriter(0);
-            cw.visit(V1_7, ACC_PUBLIC + ACC_SUPER, name, null, "java/lang/Object", null);
-
-            cw.visitInnerClass(innerName, null, simpleName, ACC_PUBLIC | ACC_STATIC);
-            makeCtxk(cw, isInner);
-
-            makeDefaultCtor(cw);
-            cw.visitEnd();
-            return cw.toByteArray();
+            var name = (isInner ? innerName : outerName);
+            return ClassFile.of().build(name, clb -> {
+                clb.withSuperclass(CD_Object);
+                clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+                clb.with(InnerClassesAttribute.of(
+                        InnerClassInfo.of(innerName,
+                                Optional.empty(),
+                                Optional.of(simpleName),
+                                AccessFlag.PUBLIC, AccessFlag.STATIC)));
+                makeDefaultCtor(clb);
+                makeCtxk(clb, isInner);
+            });
         }
 
         byte[] getAnonymousClasses(boolean isInner) {
-            String name = (isInner ? innerName : outerName);
-            ClassWriter cw = new ClassWriter(0);
-            cw.visit(V1_7, ACC_PUBLIC + ACC_SUPER, name, null, "java/lang/Object", null);
-
-            cw.visitInnerClass(innerName, null, null, ACC_PUBLIC | ACC_STATIC);
-            makeCtxk(cw, isInner);
-
-            makeDefaultCtor(cw);
-            cw.visitEnd();
-            return cw.toByteArray();
+            var name = (isInner ? innerName : outerName);
+            return ClassFile.of().build(name, clb -> {
+                clb.withSuperclass(CD_Object);
+                clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+                clb.with(InnerClassesAttribute.of(
+                        InnerClassInfo.of(innerName,
+                                Optional.empty(),
+                                Optional.empty(),
+                                AccessFlag.PUBLIC, AccessFlag.STATIC)));
+                makeDefaultCtor(clb);
+                makeCtxk(clb, isInner);
+            });
         }
     }
 }

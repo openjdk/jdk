@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import jdk.test.lib.Utils;
+import jdk.test.lib.process.ProcessTools;
 
 /**
  * Driver for tests
@@ -126,12 +127,10 @@ public class Driver {
         String testClassPath = System.getProperty("test.class.path", "?");
         String testClasses = System.getProperty("test.classes", "?");
         String sep = System.getProperty("file.separator", "?");
-        String javaCmd = testJdk + sep + "bin" + sep + "java";
         int retval = 10; // 10 is special exit code denoting a bind error
                          // in which case, we retry
         while (retval == 10) {
             List<String> cmd = new ArrayList<>();
-            cmd.add(javaCmd);
             cmd.add("-ea");
             cmd.add("-esa");
             cmd.add("-Dtest.jdk=" + testJdk);
@@ -150,7 +149,7 @@ public class Driver {
             cmd.add("Security");
             cmd.add(testnum);
 
-            ProcessBuilder processBuilder = new ProcessBuilder(cmd)
+            ProcessBuilder processBuilder = ProcessTools.createTestJavaProcessBuilder(cmd)
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)
                 .redirectErrorStream(true);
 

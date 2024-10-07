@@ -60,7 +60,7 @@ public class TestLambdaFormRetransformation {
 
     public static void main(String args[]) throws Throwable {
         Path agent = TestLambdaFormRetransformation.buildAgent();
-        OutputAnalyzer oa = ProcessTools.executeTestJvm("-javaagent:" +
+        OutputAnalyzer oa = ProcessTools.executeTestJava("-javaagent:" +
                                 agent.toAbsolutePath().toString(), "-version");
         oa.shouldHaveExitValue(ExitCode.OK.value);
     }

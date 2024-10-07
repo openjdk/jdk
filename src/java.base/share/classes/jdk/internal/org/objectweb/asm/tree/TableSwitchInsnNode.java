@@ -123,4 +123,3 @@ public class TableSwitchInsnNode extends AbstractInsnNode {
                 .cloneAnnotations(this);
     }
 }
-

@@ -73,9 +73,9 @@ public class TestGCId {
   }
 
   private static void testGCId(String gcFlag) throws Exception {
-    ProcessBuilder pb_default =
-      ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockExperimentalVMOptions", "-XX:+" + gcFlag, "-Xlog:gc", "-Xmx10M", GCTest.class.getName());
-    verifyContainsGCIDs(new OutputAnalyzer(pb_default.start()));
+    OutputAnalyzer output =
+      ProcessTools.executeLimitedTestJava("-XX:+UnlockExperimentalVMOptions", "-XX:+" + gcFlag, "-Xlog:gc", "-Xmx10M", GCTest.class.getName());
+    verifyContainsGCIDs(output);
   }
 
   static class GCTest {

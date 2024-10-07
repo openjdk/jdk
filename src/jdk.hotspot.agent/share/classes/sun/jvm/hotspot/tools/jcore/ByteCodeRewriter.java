@@ -24,12 +24,16 @@
 
 package sun.jvm.hotspot.tools.jcore;
 
-import sun.jvm.hotspot.oops.*;
-import sun.jvm.hotspot.interpreter.*;
-import sun.jvm.hotspot.utilities.*;
-import sun.jvm.hotspot.runtime.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+
+import sun.jvm.hotspot.interpreter.Bytecodes;
+import sun.jvm.hotspot.oops.ConstantPool;
+import sun.jvm.hotspot.oops.ConstantPoolCache;
+import sun.jvm.hotspot.oops.Method;
+import sun.jvm.hotspot.runtime.Bytes;
+import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.utilities.Assert;
 
 public class ByteCodeRewriter
 {
@@ -133,8 +137,8 @@ public class ByteCodeRewriter
                 }
 
                 case Bytecodes._invokedynamic: {
-                    int cpci = method.getNativeIntArg(bci + 1);
-                    cpoolIndex = (short) cpCache.getIndyEntryAt(~cpci).getConstantPoolIndex();
+                    int indy_index = method.getNativeIntArg(bci + 1);
+                    cpoolIndex = (short) cpCache.getIndyEntryAt(indy_index).getConstantPoolIndex();
                     writeShort(code, bci + 1, cpoolIndex);
                     writeShort(code, bci + 3, (short)0);  // clear out trailing bytes
                     break;

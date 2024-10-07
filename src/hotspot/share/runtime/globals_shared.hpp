@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,11 +74,9 @@
 #ifdef PRODUCT
 #define DECLARE_DEVELOPER_FLAG(type, name, value, ...)    const type name = value;
 #define DECLARE_PD_DEVELOPER_FLAG(type, name, ...)        const type name = pd_##name;
-#define DECLARE_NOTPRODUCT_FLAG(type, name, value, ...)   const type name = value;
 #else
 #define DECLARE_DEVELOPER_FLAG(type, name, value, ...)    extern "C" type name;
 #define DECLARE_PD_DEVELOPER_FLAG(type, name, ...)        extern "C" type name;
-#define DECLARE_NOTPRODUCT_FLAG(type, name, value, ...)   extern "C" type name;
 #endif // PRODUCT
 
 #define DECLARE_FLAGS(flag_group)         \
@@ -86,14 +84,12 @@
                DECLARE_PD_DEVELOPER_FLAG, \
                DECLARE_PRODUCT_FLAG,      \
                DECLARE_PD_PRODUCT_FLAG,   \
-               DECLARE_NOTPRODUCT_FLAG,   \
                IGNORE_RANGE,              \
                IGNORE_CONSTRAINT)
 
 #define DECLARE_ARCH_FLAGS(flag_group)    \
     flag_group(DECLARE_DEVELOPER_FLAG,    \
                DECLARE_PRODUCT_FLAG,      \
-               DECLARE_NOTPRODUCT_FLAG,   \
                IGNORE_RANGE, \
                IGNORE_CONSTRAINT)
 

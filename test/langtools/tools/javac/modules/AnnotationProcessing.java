@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1781,7 +1781,7 @@ public class AnnotationProcessing extends ModuleTestBase {
                     if (type == null) {
                         throw new AssertionError("Did not find the expected type.");
                     } else {
-                        processingEnv.getMessager().printMessage(Kind.NOTE, name + " found in module: " + processingEnv.getElementUtils().getModuleOf(type));
+                        processingEnv.getMessager().printNote(name + " found in module: " + processingEnv.getElementUtils().getModuleOf(type));
                     }
                 } else {
                     if (type != null) {

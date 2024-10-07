@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,9 @@ public enum CompilePhase {
     CCP1("PhaseCCP 1"),
     ITER_GVN2("Iter GVN 2"),
     PHASEIDEALLOOP_ITERATIONS("PhaseIdealLoop iterations"),
-    MACRO_EXPANSION("Macro expand"),
+    BEFORE_MACRO_EXPANSION("Before Macro Expansion"),
+    AFTER_MACRO_EXPANSION_STEP("After Macro Expansion Step"),
+    AFTER_MACRO_EXPANSION("After Macro Expansion"),
     BARRIER_EXPANSION("Barrier expand"),
     OPTIMIZE_FINISHED("Optimize finished"),
     PRINT_IDEAL("PrintIdeal"),

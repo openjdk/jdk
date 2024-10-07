@@ -23,16 +23,15 @@
  * questions.
  */
 
-/**
- * IOUtils: A collection of IO-related public static methods.
- */
-
 package sun.security.util;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * IOUtils: A collection of IO-related public static methods.
+ */
 public class IOUtils {
 
     /**

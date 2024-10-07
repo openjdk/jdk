@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,8 @@
 
 JfrArtifactSet::JfrArtifactSet(bool class_unload) : _symbol_table(nullptr),
                                                     _klass_list(nullptr),
-                                                    _total_count(0) {
+                                                    _total_count(0),
+                                                    _class_unload(class_unload) {
   initialize(class_unload);
   assert(_klass_list != nullptr, "invariant");
 }
@@ -41,6 +42,7 @@ static const size_t initial_klass_list_size = 256;
 const int initial_klass_loader_set_size = 64;
 
 void JfrArtifactSet::initialize(bool class_unload) {
+  _class_unload = class_unload;
   if (_symbol_table == nullptr) {
     _symbol_table = JfrSymbolTable::create();
     assert(_symbol_table != nullptr, "invariant");
@@ -51,6 +53,7 @@ void JfrArtifactSet::initialize(bool class_unload) {
   // resource allocation
   _klass_list = new GrowableArray<const Klass*>(initial_klass_list_size);
   _klass_loader_set = new GrowableArray<const Klass*>(initial_klass_loader_set_size);
+  _klass_loader_leakp_set = new GrowableArray<const Klass*>(initial_klass_loader_set_size);
 }
 
 void JfrArtifactSet::clear() {
@@ -97,14 +100,22 @@ int JfrArtifactSet::entries() const {
   return _klass_list->length();
 }
 
-bool JfrArtifactSet::should_do_loader_klass(const Klass* k) {
+static inline bool not_in_set(GrowableArray<const Klass*>* set, const Klass* k) {
+  assert(set != nullptr, "invariant");
+  assert(k != nullptr, "invariant");
+  return !JfrMutablePredicate<const Klass*, compare_klasses>::test(set, k);
+}
+
+bool JfrArtifactSet::should_do_cld_klass(const Klass* k, bool leakp) {
   assert(k != nullptr, "invariant");
   assert(_klass_loader_set != nullptr, "invariant");
-  return !JfrMutablePredicate<const Klass*, compare_klasses>::test(_klass_loader_set, k);
+  assert(_klass_loader_leakp_set != nullptr, "invariant");
+  return not_in_set(leakp ? _klass_loader_leakp_set : _klass_loader_set, k);
 }
 
 void JfrArtifactSet::register_klass(const Klass* k) {
   assert(k != nullptr, "invariant");
+  assert(IS_SERIALIZED(k), "invariant");
   assert(_klass_list != nullptr, "invariant");
   _klass_list->append(k);
 }

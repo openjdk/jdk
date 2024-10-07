@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2013, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2130,8 +2130,8 @@ void TemplateTable::_return(TosState state) {
 
     // Load klass of this obj.
     __ load_klass(Rklass, R17_tos);
-    __ lwz(Rklass_flags, in_bytes(Klass::access_flags_offset()), Rklass);
-    __ testbitdi(CCR0, R0, Rklass_flags, exact_log2(JVM_ACC_HAS_FINALIZER));
+    __ lbz(Rklass_flags, in_bytes(Klass::misc_flags_offset()), Rklass);
+    __ testbitdi(CCR0, R0, Rklass_flags, exact_log2(KlassFlags::_misc_has_finalizer));
     __ bfalse(CCR0, Lskip_register_finalizer);
 
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), R17_tos /* obj */);
@@ -3484,7 +3484,7 @@ void TemplateTable::invokevirtual(int byte_no) {
   __ testbitdi(CCR0, R0, Rflags, ResolvedMethodEntry::is_vfinal_shift);
   __ bfalse(CCR0, LnotFinal);
 
-  if (RewriteBytecodes && !UseSharedSpaces && !CDSConfig::is_dumping_static_archive()) {
+  if (RewriteBytecodes && !CDSConfig::is_using_archive() && !CDSConfig::is_dumping_static_archive()) {
     patch_bytecode(Bytecodes::_fast_invokevfinal, Rnew_bc, R12_scratch2);
   }
   invokevfinal_helper(Rcache, R11_scratch1, R12_scratch2, Rflags /* tmp */, Rrecv /* tmp */);
@@ -3803,16 +3803,15 @@ void TemplateTable::_new() {
     __ sldi(Roffset, Rindex, LogBytesPerWord);
     __ load_resolved_klass_at_offset(Rcpool, Roffset, RinstanceKlass);
 
-    // Make sure klass is fully initialized and get instance_size.
-    __ lbz(Rscratch, in_bytes(InstanceKlass::init_state_offset()), RinstanceKlass);
+    // Make sure klass is initialized.
+    assert(VM_Version::supports_fast_class_init_checks(), "Optimization requires support for fast class initialization checks");
+    __ clinit_barrier(RinstanceKlass, R16_thread, nullptr /*L_fast_path*/, &Lslow_case);
+
     __ lwz(Rinstance_size, in_bytes(Klass::layout_helper_offset()), RinstanceKlass);
 
-    __ cmpdi(CCR1, Rscratch, InstanceKlass::fully_initialized);
-    // Make sure klass does not have has_finalizer, or is abstract, or interface or java/lang/Class.
+    // Make sure klass is not abstract, or interface or java/lang/Class.
     __ andi_(R0, Rinstance_size, Klass::_lh_instance_slow_path_bit); // slow path bit equals 0?
-
-    __ crnand(CCR0, Assembler::equal, CCR1, Assembler::equal); // slow path bit set or not fully initialized?
-    __ beq(CCR0, Lslow_case);
+    __ bne(CCR0, Lslow_case);
 
     // --------------------------------------------------------------------------
     // Fast case:
@@ -3860,10 +3859,11 @@ void TemplateTable::_new() {
     __ store_klass(RallocatedObject, RinstanceKlass, Rscratch); // klass (last for cms)
 
     // Check and trigger dtrace event.
-    SkipIfEqualZero::skip_to_label_if_equal_zero(_masm, Rscratch, &DTraceAllocProbes, Ldone);
-    __ push(atos);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)));
-    __ pop(atos);
+    if (DTraceAllocProbes) {
+      __ push(atos);
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)));
+      __ pop(atos);
+    }
 
     __ b(Ldone);
   }

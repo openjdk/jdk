@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,14 +35,15 @@ import javax.lang.model.element.TypeElement;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Writes property documentation in HTML format.
@@ -74,11 +75,13 @@ public class PropertyWriter extends AbstractMemberWriter {
         if (!properties.isEmpty()) {
             Content propertyDetailsHeader = getPropertyDetailsHeader(detailsList);
             Content memberList = getMemberList();
+            writer.tableOfContents.addLink(HtmlIds.PROPERTY_DETAIL, contents.propertyDetailsLabel);
+            writer.tableOfContents.pushNestedList();
 
             for (Element property : properties) {
                 currentProperty = (ExecutableElement)property;
                 Content propertyContent = getPropertyHeaderContent(currentProperty);
-                Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+                Content div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
                 buildSignature(div);
                 buildDeprecationInfo(div);
                 buildPreviewInfo(div);
@@ -86,9 +89,12 @@ public class PropertyWriter extends AbstractMemberWriter {
                 buildTagInfo(div);
                 propertyContent.add(div);
                 memberList.add(getMemberListItem(propertyContent));
+                writer.tableOfContents.addLink(htmlIds.forProperty(currentProperty),
+                        Text.of(utils.getPropertyLabel(name(property))));
             }
             Content propertyDetails = getPropertyDetails(propertyDetailsHeader, memberList);
             detailsList.add(propertyDetails);
+            writer.tableOfContents.popNestedList();
         }
     }
 
@@ -156,7 +162,7 @@ public class PropertyWriter extends AbstractMemberWriter {
 
     @Override
     public void buildSummary(Content summariesList, Content content) {
-        writer.addSummary(HtmlStyle.propertySummary,
+        writer.addSummary(HtmlStyles.propertySummary,
                 HtmlIds.PROPERTY_SUMMARY, summariesList, content);
     }
 
@@ -174,7 +180,7 @@ public class PropertyWriter extends AbstractMemberWriter {
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(utils.getPropertyLabel(name(property))));
         content.add(heading);
-        return HtmlTree.SECTION(HtmlStyle.detail, content)
+        return HtmlTree.SECTION(HtmlStyles.detail, content)
                 .setId(htmlIds.forProperty(property));
     }
 
@@ -205,13 +211,13 @@ public class PropertyWriter extends AbstractMemberWriter {
                                     utils.isIncluded(holder)
                                             ? holder.getSimpleName() : holder.getQualifiedName());
                     var codeLink = HtmlTree.CODE(link);
-                    var descriptionFromLabel = HtmlTree.SPAN(HtmlStyle.descriptionFromTypeLabel,
+                    var descriptionFromLabel = HtmlTree.SPAN(HtmlStyles.descriptionFromTypeLabel,
                             utils.isClass(holder)
                                     ? contents.descriptionFromClassLabel
                                     : contents.descriptionFromInterfaceLabel);
                     descriptionFromLabel.add(Entity.NO_BREAK_SPACE);
                     descriptionFromLabel.add(codeLink);
-                    propertyContent.add(HtmlTree.DIV(HtmlStyle.block, descriptionFromLabel));
+                    propertyContent.add(HtmlTree.DIV(HtmlStyles.block, descriptionFromLabel));
                 }
                 writer.addInlineComment(property, propertyContent);
             }
@@ -224,7 +230,7 @@ public class PropertyWriter extends AbstractMemberWriter {
 
     protected Content getPropertyDetails(Content memberDetailsHeader, Content memberDetails) {
         return writer.getDetailsListItem(
-                HtmlTree.SECTION(HtmlStyle.propertyDetails)
+                HtmlTree.SECTION(HtmlStyles.propertyDetails)
                         .setId(HtmlIds.PROPERTY_DETAIL)
                         .add(memberDetailsHeader)
                         .add(memberDetails));
@@ -245,10 +251,10 @@ public class PropertyWriter extends AbstractMemberWriter {
 
     @Override
     protected Table<Element> createSummaryTable() {
-        return new Table<Element>(HtmlStyle.summaryTable)
+        return new Table<Element>(HtmlStyles.summaryTable)
                 .setCaption(contents.properties)
                 .setHeader(getSummaryTableHeader(typeElement))
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colSecond, HtmlStyles.colLast);
     }
 
     @Override
@@ -279,7 +285,7 @@ public class PropertyWriter extends AbstractMemberWriter {
         Content memberLink = writer.getDocLink(context, typeElement,
                 member,
                 Text.of(utils.getPropertyLabel(name(member))),
-                HtmlStyle.memberNameLink,
+                HtmlStyles.memberNameLink,
                 true);
 
         var code = HtmlTree.CODE(memberLink);

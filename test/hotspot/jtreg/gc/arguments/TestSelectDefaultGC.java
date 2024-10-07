@@ -44,12 +44,11 @@ public class TestSelectDefaultGC {
 
     public static void testDefaultGC(boolean actAsServer) throws Exception {
         // Start VM without specifying GC
-        ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder(
+        OutputAnalyzer output = GCArguments.executeLimitedTestJava(
             "-XX:" + (actAsServer ? "+" : "-") + "AlwaysActAsServerClassMachine",
             "-XX:" + (actAsServer ? "-" : "+") + "NeverActAsServerClassMachine",
             "-XX:+PrintFlagsFinal",
             "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
 
         final boolean isServer = actAsServer;

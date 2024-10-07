@@ -175,6 +175,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     break;
   case Interpreter::java_lang_math_fmaD:
   case Interpreter::java_lang_math_fmaF:
+  case Interpreter::java_lang_math_tanh:
     // TODO: Implement intrinsic
     break;
   default:
@@ -370,16 +371,15 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   if (index_size == sizeof(u4)) {
     __ load_resolved_indy_entry(Rcache, Rindex);
     __ ldrh(Rcache, Address(Rcache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
-    __ check_stack_top();
-    __ add(Rstack_top, Rstack_top, AsmOperand(Rcache, lsl, Interpreter::logStackElementSize));
   } else {
     // Pop N words from the stack
     assert(index_size == sizeof(u2), "Can only be u2");
     __ load_method_entry(Rcache, Rindex);
-    __ ldrh(Rcache, Address(Rcache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
-    __ check_stack_top();
-    __ add(Rstack_top, Rstack_top, AsmOperand(Rcache, lsl, Interpreter::logStackElementSize));
+    __ ldrh(Rcache, Address(Rcache, in_bytes(ResolvedMethodEntry::num_parameters_offset())));
   }
+
+  __ check_stack_top();
+  __ add(Rstack_top, Rstack_top, AsmOperand(Rcache, lsl, Interpreter::logStackElementSize));
 
   __ convert_retval_to_tos(state);
 
@@ -561,7 +561,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   __ cmp(Rtemp, R0);
 
   __ mov(SP, Rsender_sp, ls);  // restore SP
-  __ b(StubRoutines::throw_StackOverflowError_entry(), ls);
+  __ b(SharedRuntime::throw_StackOverflowError_entry(), ls);
 }
 
 

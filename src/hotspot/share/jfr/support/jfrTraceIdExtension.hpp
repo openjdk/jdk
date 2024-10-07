@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -44,11 +44,13 @@
 #define REMOVE_METHOD_ID(method) JfrTraceId::remove(method);
 #define RESTORE_ID(k) JfrTraceId::restore(k);
 
+static constexpr const uint16_t cleared_epoch_bits = 512 | 256;
+
 class JfrTraceFlag {
  private:
   mutable uint16_t _flags;
  public:
-  JfrTraceFlag() : _flags(0) {}
+  JfrTraceFlag() : _flags(cleared_epoch_bits) {}
   bool is_set(uint16_t flag) const {
     return (_flags & flag) != 0;
   }
@@ -95,6 +97,9 @@ class JfrTraceFlag {
   }                                                \
   uint8_t* trace_meta_addr() const {               \
     return _trace_flags.meta_addr();               \
+  }                                                \
+  void copy_trace_flags(uint16_t rhs_flags) const { \
+    _trace_flags.set_flags(_trace_flags.flags() | rhs_flags); \
   }
 
 #endif // SHARE_JFR_SUPPORT_JFRTRACEIDEXTENSION_HPP

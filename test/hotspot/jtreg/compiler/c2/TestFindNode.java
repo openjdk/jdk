@@ -27,9 +27,12 @@
  * @requires vm.debug == true & vm.flavor == "server"
  * @summary Test which uses some special flags in order to test Node::find() in debug builds which could result in an endless loop or a stack overflow crash.
  *
- * @run main/othervm -Xbatch -XX:CompileCommand=option,*::*,bool,Vectorize,true -XX:+PrintOpto -XX:+TraceLoopOpts compiler.c2.TestFindNode
+ * @run main/othervm -Xbatch -XX:CompileCommand=option,*::*,bool,Vectorize,true -XX:CompileCommand=memlimit,compiler.c2.TestFindNode::*,0
+ *                   -XX:+PrintOpto -XX:+TraceLoopOpts compiler.c2.TestFindNode
  */
 package compiler.c2;
+
+// Note; we disable the implicit memory limit of 1G in debug JVMs until JDK-8331283 is fixed
 
 public class TestFindNode {
     static volatile int[] iArr;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,7 @@ public class TestAgeOutput {
     }
 
     public static void runTest(String gcArg) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
             "-Xbootclasspath/a:.",
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:+UnlockDiagnosticVMOptions",
@@ -75,7 +75,6 @@ public class TestAgeOutput {
             "-Xmx10M",
             "-Xlog:gc+age=trace",
             GCTest.class.getName());
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         output.shouldHaveExitValue(0);
 
@@ -84,7 +83,7 @@ public class TestAgeOutput {
         String stdout = output.getStdout();
 
         checkPattern(".*GC\\(0\\) .*Desired survivor size.*", stdout);
-        checkPattern(".*GC\\(0\\) .*Age table with threshold.*", stdout);
+        checkPattern(".*GC\\(0\\) .*Age table:.*", stdout);
         checkPattern(".*GC\\(0\\) .*- age   1:.*", stdout);
     }
 

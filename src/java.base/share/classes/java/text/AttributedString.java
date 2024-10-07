@@ -223,6 +223,7 @@ public class AttributedString {
      * beginIndex and endIndex is out of the text range.
      * @see java.text.Annotation
      */
+    @SuppressWarnings("this-escape")
     public AttributedString(AttributedCharacterIterator text,
                             int beginIndex,
                             int endIndex,

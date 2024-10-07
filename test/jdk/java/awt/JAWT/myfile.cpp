@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,8 @@ JNIEXPORT void JNICALL Java_MyCanvas_paint
 
     /* Get the drawing surface */
     JAWT_DrawingSurface* ds = awt.GetDrawingSurface(env, canvas);
-    if (ds == NULL) {
-        printf("NULL drawing surface\n");
+    if (ds == nullptr) {
+        printf("null drawing surface\n");
         return;
     }
 
@@ -67,7 +67,7 @@ JNIEXPORT void JNICALL Java_MyCanvas_paint
 
     /* Get the drawing surface info */
     JAWT_DrawingSurfaceInfo* dsi = ds->GetDrawingSurfaceInfo(ds);
-    if (dsi == NULL) {
+    if (dsi == nullptr) {
         printf("Error getting surface info\n");
         ds->Unlock(ds);
         return;

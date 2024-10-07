@@ -49,7 +49,7 @@ public class IgnorableExceptionMessages extends SSLSocketTemplate {
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
             // A non-empty set of arguments occurs when the "runTest" argument
-            // is passed to the test via ProcessTools::executeTestJvm.
+            // is passed to the test via ProcessTools::executeTestJava.
             //
             // This is done because an OutputAnalyzer is unable to read
             // the output of the current running JVM, and must therefore create
@@ -67,7 +67,7 @@ public class IgnorableExceptionMessages extends SSLSocketTemplate {
                     className,
                     extraArgument);
 
-            OutputAnalyzer output = ProcessTools.executeTestJvm(jvmArgs);
+            OutputAnalyzer output = ProcessTools.executeTestJava(jvmArgs);
 
             if (output.getExitValue() != 0) {
                 output.asLines().forEach(System.out::println); // No need to dump the output unless the test fails

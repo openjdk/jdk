@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // ok. adapter blobs never have a frame complete and are never ok.
 
     if (!_cb->is_frame_complete_at(_pc)) {
-      if (_cb->is_compiled() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
+      if (_cb->is_nmethod() || _cb->is_adapter_blob() || _cb->is_runtime_stub()) {
         return false;
       }
     }
@@ -179,7 +179,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // because the return address counts against the callee's frame.
 
     if (sender_blob->frame_size() <= 0) {
-      assert(!sender_blob->is_compiled(), "should count return address at least");
+      assert(!sender_blob->is_nmethod(), "should count return address at least");
       return false;
     }
 
@@ -188,7 +188,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
     // should not be anything but the call stub (already covered), the interpreter (already covered)
     // or an nmethod.
 
-    if (!sender_blob->is_compiled()) {
+    if (!sender_blob->is_nmethod()) {
       return false;
     }
 
@@ -229,7 +229,7 @@ void frame::patch_pc(Thread* thread, address pc) {
   DEBUG_ONLY(address old_pc = _pc;)
   *pc_addr = pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
-  address original_pc = CompiledMethod::get_deopt_original_pc(this);
+  address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     assert(original_pc == old_pc, "expected original PC to be stored before patching");
     _deopt_state = is_deoptimized;
@@ -332,7 +332,7 @@ bool frame::upcall_stub_frame_is_first() const {
 // given unextended SP.  The unextended SP might also be the saved SP
 // for MethodHandle call sites.
 #ifdef ASSERT
-void frame::verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp, bool is_method_handle_return) {
+void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp, bool is_method_handle_return) {
   frame fr;
 
   // This is ugly but it's better than to change {get,set}_original_pc
@@ -357,19 +357,19 @@ void frame::adjust_unextended_sp() {
   // simplest way to tell whether we are returning to such a call site
   // is as follows:
 
-  CompiledMethod* sender_cm = (_cb == nullptr) ? nullptr : _cb->as_compiled_method_or_null();
-  if (sender_cm != nullptr) {
+  nmethod* sender_nm = (_cb == nullptr) ? nullptr : _cb->as_nmethod_or_null();
+  if (sender_nm != nullptr) {
     // If the sender PC is a deoptimization point, get the original
     // PC.  For MethodHandle call site the unextended_sp is stored in
     // saved_fp.
-    if (sender_cm->is_deopt_mh_entry(_pc)) {
-      DEBUG_ONLY(verify_deopt_mh_original_pc(sender_cm, _fp));
+    if (sender_nm->is_deopt_mh_entry(_pc)) {
+      DEBUG_ONLY(verify_deopt_mh_original_pc(sender_nm, _fp));
       _unextended_sp = _fp;
     }
-    else if (sender_cm->is_deopt_entry(_pc)) {
-      DEBUG_ONLY(verify_deopt_original_pc(sender_cm, _unextended_sp));
+    else if (sender_nm->is_deopt_entry(_pc)) {
+      DEBUG_ONLY(verify_deopt_original_pc(sender_nm, _unextended_sp));
     }
-    else if (sender_cm->is_method_handle_return(_pc)) {
+    else if (sender_nm->is_method_handle_return(_pc)) {
       _unextended_sp = _fp;
     }
   }

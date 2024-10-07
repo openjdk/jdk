@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -51,7 +51,7 @@ typedef struct Values {
 } Values;
 
 static const int MAX_EVENTS_TO_PROCESS = 20;
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static volatile jboolean completed = JNI_FALSE;
 
 static void
@@ -60,7 +60,7 @@ set_breakpoint(JNIEnv *jni, jclass klass, const char *mname, jlocation location)
   jmethodID method = find_method(jvmti, jni, klass, mname);
   jvmtiError err;
 
-  if (method == NULL) {
+  if (method == nullptr) {
     LOG("set_breakpoint: Failed to find method %s()\n", mname);
     fatal(jni, "set_breakpoint: not found method");
   }
@@ -88,10 +88,10 @@ find_method_depth(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread, const char *mna
 
   for (int depth = 0; depth < count; depth++) {
     jmethodID method = frames[depth].method;
-    char* name = NULL;
-    char* sign = NULL;
+    char* name = nullptr;
+    char* sign = nullptr;
 
-    err = jvmti->GetMethodName(method, &name, &sign, NULL);
+    err = jvmti->GetMethodName(method, &name, &sign, nullptr);
     if (err == JVMTI_ERROR_WRONG_PHASE || err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
       return -1; // VM or target thread completed its work
     }
@@ -107,15 +107,15 @@ find_method_depth(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread, const char *mna
 static void
 test_GetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
               int depth, int frame_count, Values *exp_values) {
-  jobject msg = NULL;
-  jobject tt = NULL;
+  jobject msg = nullptr;
+  jobject tt = nullptr;
   jint ii = 0;
   jlong ll = 0L;
   jfloat ff = 0.0;
   jdouble dd = 0.0;
   jvmtiError err;
 
-  LOG("test_GetLocal: mounted: %d depth: %d fcount: %d\n", cthread != NULL, depth, frame_count);
+  LOG("test_GetLocal: mounted: %d depth: %d fcount: %d\n", cthread != nullptr, depth, frame_count);
 
   int dep = find_method_depth(jvmti, jni, vthread, "producer");
   if (dep == -1) {
@@ -126,7 +126,7 @@ test_GetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
   }
 
   // #0: Test JVMTI GetLocalInstance function for carrier thread
-  if (cthread != NULL) {
+  if (cthread != nullptr) {
     suspend_thread(jvmti, jni, cthread);
 
     err = jvmti->GetLocalInstance(cthread, 3, &msg);
@@ -165,18 +165,18 @@ test_GetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
                " to return JVMTI_ERROR_INVALID_SLOT or JVMTI_ERROR_TYPE_MISMATCH");
   }
 
-  // #5: Test JVMTI GetLocalObject function with NULL value_ptr
-  err = jvmti->GetLocalObject(vthread, depth, SlotString, NULL);
+  // #5: Test JVMTI GetLocalObject function with nullptr value_ptr
+  err = jvmti->GetLocalObject(vthread, depth, SlotString, nullptr);
   if (err != JVMTI_ERROR_NULL_POINTER) {
-    LOG("JVMTI GetLocalObject with NULL value_ptr returned error: %d\n", err);
-    fatal(jni, "JVMTI GetLocalObject with NULL value_ptr failed to return JVMTI_ERROR_NULL_POINTER");
+    LOG("JVMTI GetLocalObject with null value_ptr returned error: %d\n", err);
+    fatal(jni, "JVMTI GetLocalObject with null value_ptr failed to return JVMTI_ERROR_NULL_POINTER");
   }
 
   // #6: Test JVMTI GetLocal<Type> functions with a good vthread
   err = jvmti->GetLocalObject(vthread, depth, SlotString, &msg);
   check_jvmti_status(jni, err, "error in JVMTI GetLocalObject with good vthread");
 
-  const char* str = jni->GetStringUTFChars((jstring)msg, NULL);
+  const char* str = jni->GetStringUTFChars((jstring)msg, nullptr);
   LOG("    local String value at slot %d: %s\n", SlotString, str);
   const char* exp_str = "msg: ...";
   if (strncmp(str, exp_str, 5) != 0) {
@@ -189,7 +189,7 @@ test_GetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
   check_jvmti_status(jni, err, "error in JVMTI GetLocalObject with good vthread");
 
   LOG("    local Thread value at slot %d: %p\n", SlotThread, (void*)tt);
-  if (exp_values->tt != NULL && !jni->IsSameObject(tt, exp_values->tt)) {
+  if (exp_values->tt != nullptr && !jni->IsSameObject(tt, exp_values->tt)) {
     LOG("    Failed: Expected local Thread value: %p, got: %p\n", exp_values->tt, tt);
     fatal(jni, "JVMTI GetLocalObject returned unexpected local Thread value");
   }
@@ -239,7 +239,7 @@ test_SetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
               int depth, int frame_count, Values *values, bool at_event) {
   jvmtiError err;
 
-  LOG("test_SetLocal: mounted: %d depth: %d fcount: %d\n", cthread != NULL, depth, frame_count);
+  LOG("test_SetLocal: mounted: %d depth: %d fcount: %d\n", cthread != nullptr, depth, frame_count);
 
   // #1: Test JVMTI SetLocalObject function with negative frame depth
   err = jvmti->SetLocalObject(vthread, -1, SlotString, values->tt);
@@ -257,7 +257,7 @@ test_SetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
 
   // #3: Test JVMTI SetLocalObject function with invalid slot -1
   err = jvmti->SetLocalObject(vthread, depth, SlotInvalid0, values->tt);
-  if (depth > 0 || cthread == NULL) {
+  if (depth > 0 || cthread == nullptr) {
     // JVMTI_ERROR_OPAQUE_FRAME can be returned for unmouted vthread or depth > 0
     if (err != JVMTI_ERROR_OPAQUE_FRAME) {
       LOG("JVMTI SetLocalObject for unmounted vthread or depth > 0 failed to return JVMTI_ERROR_OPAQUE_FRAME: %d\n", err);
@@ -271,14 +271,14 @@ test_SetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
 
   // #4: Test JVMTI SetLocalObject function with unaligned slot 4
   err = jvmti->SetLocalObject(vthread, depth, SlotUnaligned, values->tt);
-  if (depth > 0 || cthread == NULL) {
+  if (depth > 0 || cthread == nullptr) {
     // JVMTI_ERROR_OPAQUE_FRAME can be returned for unmouted vthread or depth > 0
     if (err != JVMTI_ERROR_OPAQUE_FRAME) {
       LOG("JVMTI SetLocalObject for unmounted vthread or depth > 0 failed to return JVMTI_ERROR_OPAQUE_FRAME: %d\n", err);
       fatal(jni, "JVMTI SetLocalObject for unmounted vthread or depth > 0 failed to return JVMTI_ERROR_OPAQUE_FRAME");
     }
   }
-  else if (cthread != NULL && err != JVMTI_ERROR_INVALID_SLOT && err != JVMTI_ERROR_TYPE_MISMATCH) {
+  else if (cthread != nullptr && err != JVMTI_ERROR_INVALID_SLOT && err != JVMTI_ERROR_TYPE_MISMATCH) {
     LOG("JVMTI SetLocalObject with unaligned slot 4 returned error: %d\n", err);
     fatal(jni, "JVMTI SetLocalObject with unaligned slot 4 failed"
                " to return JVMTI_ERROR_INVALID_SLOT or JVMTI_ERROR_TYPE_MISMATCH");
@@ -286,7 +286,7 @@ test_SetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
 
   // #6: Test JVMTI SetLocal<Type> functions with a good vthread
   err = jvmti->SetLocalObject(vthread, depth, SlotThread, values->tt);
-  if (depth > 0 || cthread == NULL) {
+  if (depth > 0 || cthread == nullptr) {
     if (err != JVMTI_ERROR_OPAQUE_FRAME) {
       LOG("JVMTI SetLocalObject for unmounted vthread or depth > 0 failed to return JVMTI_ERROR_OPAQUE_FRAME: %d\n", err);
       fatal(jni, "JVMTI SetLocalObject for unmounted vthread pr depth > 0failed to return JVMTI_ERROR_OPAQUE_FRAME");
@@ -314,8 +314,8 @@ test_SetLocal(jvmtiEnv *jvmti, JNIEnv *jni, jthread cthread, jthread vthread,
 
 static void
 test_GetSetLocal(jvmtiEnv *jvmti, JNIEnv* jni, jthread vthread, int depth, int frame_count, bool at_event) {
-  Values values0 = { NULL, NULL, 1, 2L, (jfloat)3.2F, (jdouble)4.500000047683716 };
-  Values values1 = { NULL, NULL, 2, 3L, (jfloat)4.2F, (jdouble)5.500000047683716 };
+  Values values0 = { nullptr, nullptr, 1, 2L, (jfloat)3.2F, (jdouble)4.500000047683716 };
+  Values values1 = { nullptr, nullptr, 2, 3L, (jfloat)4.2F, (jdouble)5.500000047683716 };
   jthread cthread = get_carrier_thread(jvmti, jni, vthread);
 
   values0.tt = vthread;
@@ -329,7 +329,7 @@ test_GetSetLocal(jvmtiEnv *jvmti, JNIEnv* jni, jthread vthread, int depth, int f
   if (!success) {
     goto End; // skip testing for compiled frame that can't be deoptimized
   }
-  if (depth > 0 || cthread == NULL) {
+  if (depth > 0 || cthread == nullptr) {
     // No values are expected to be set by SetLocal above as
     // unmounted virtual thread case is not supported.
     // So, we expect local values to remain the same.
@@ -368,8 +368,8 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv* jni, jthread vthread,
     test_GetSetLocal(jvmti, jni, vthread, depth, frame_count, true /* at_event */);
 
     // vthread passed to callback has to refer to current thread,
-    // so we can also test with NULL in place of vthread.
-    test_GetSetLocal(jvmti, jni, NULL, depth, frame_count, true /* at_event */);
+    // so we can also test with nullptr in place of vthread.
+    test_GetSetLocal(jvmti, jni, nullptr, depth, frame_count, true /* at_event */);
   }
   deallocate(jvmti, jni, (void*)mname);
   deallocate(jvmti, jni, (void*)tname);
@@ -439,7 +439,7 @@ Java_GetSetLocalTest_testSuspendedVirtualThreads(JNIEnv *jni, jclass klass, jthr
 
   // Test each of these cases only once: unmounted, positive depth, frame count 0.
   while (iter++ < 50 && (!seen_depth_0 || !seen_depth_positive || !seen_unmounted)) {
-    jmethodID method = NULL;
+    jmethodID method = nullptr;
     jlocation location = 0;
 
     sleep_ms(1);
@@ -460,7 +460,7 @@ Java_GetSetLocalTest_testSuspendedVirtualThreads(JNIEnv *jni, jclass klass, jthr
     }
     bool case_0 = !seen_depth_0 && depth == 0 && (int)location >= 30;
     bool case_1 = !seen_depth_positive && depth > 0 && (int)location >= 30;
-    bool case_2 = !seen_unmounted && depth >= 0 && cthread == NULL;
+    bool case_2 = !seen_unmounted && depth >= 0 && cthread == nullptr;
 
     if (case_0) {
       LOG("testSuspendedVirtualThreads: DEPTH == 0\n");

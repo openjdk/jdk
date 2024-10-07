@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,13 @@ collapse(char *path)
             for (j = i - 1; j >= 0; j--) {
                 if (ix[j]) break;
             }
-            if (j < 0) continue;
+            if (j < 0) {
+                // If there is no preceding name and this path is absolute,
+                // then remove this instance of ".."
+                if (path[0] == '/')
+                    ix[i] = 0;
+                continue;
+            }
             ix[j] = 0;
             ix[i] = 0;
         }

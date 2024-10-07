@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/semaphore.hpp"
 
 #if defined(LINUX) || defined(AIX) || defined(BSD)
 # include "mutex_posix.hpp"
@@ -221,7 +222,7 @@ class Monitor : public Mutex {
 
 class PaddedMutex : public Mutex {
   enum {
-    CACHE_LINE_PADDING = (int)DEFAULT_CACHE_LINE_SIZE - (int)sizeof(Mutex),
+    CACHE_LINE_PADDING = (int)DEFAULT_PADDING_SIZE - (int)sizeof(Mutex),
     PADDING_LEN = CACHE_LINE_PADDING > 0 ? CACHE_LINE_PADDING : 1
   };
   char _padding[PADDING_LEN];
@@ -232,13 +233,33 @@ public:
 
 class PaddedMonitor : public Monitor {
   enum {
-    CACHE_LINE_PADDING = (int)DEFAULT_CACHE_LINE_SIZE - (int)sizeof(Monitor),
+    CACHE_LINE_PADDING = (int)DEFAULT_PADDING_SIZE - (int)sizeof(Monitor),
     PADDING_LEN = CACHE_LINE_PADDING > 0 ? CACHE_LINE_PADDING : 1
   };
   char _padding[PADDING_LEN];
  public:
   PaddedMonitor(Rank rank, const char *name, bool allow_vm_block) : Monitor(rank, name, allow_vm_block) {};
   PaddedMonitor(Rank rank, const char *name) : Monitor(rank, name) {};
+};
+
+// RecursiveMutex is a minimal implementation, and has no safety and rank checks that Mutex has.
+// There are also no checks that the recursive lock is not held when going to Java or to JNI, like
+// other JVM mutexes have.  This should be used only for cases where the alternatives with all the
+// nice safety features don't work.
+// Waiting on the RecursiveMutex partipates in the safepoint protocol if the current thread is a Java thread,
+// (ie. waiting sets JavaThread to blocked)
+class RecursiveMutex : public CHeapObj<mtThread> {
+  Semaphore  _sem;
+  Thread*    _owner;
+  int        _recursions;
+
+  NONCOPYABLE(RecursiveMutex);
+ public:
+  RecursiveMutex();
+  void lock(Thread* current);
+  void unlock(Thread* current);
+  // For use in asserts
+  bool holds_lock(Thread* current) { return _owner == current; }
 };
 
 #endif // SHARE_RUNTIME_MUTEX_HPP

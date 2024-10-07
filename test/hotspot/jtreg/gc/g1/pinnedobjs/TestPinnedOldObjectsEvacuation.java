@@ -257,24 +257,23 @@ public class TestPinnedOldObjectsEvacuation {
                                              int expectedDropEvents,
                                              int expectedMarkingReclaimEvents,
                                              int expectedRetainedReclaimEvents) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                             "-XX:+UnlockDiagnosticVMOptions",
-                                                                             "-XX:+WhiteBoxAPI",
-                                                                             "-Xbootclasspath/a:.",
-                                                                             "-Xmx32M",
-                                                                             "-Xmn16M",
-                                                                             "-XX:MarkSweepDeadRatio=0",
-                                                                             "-XX:G1NumCollectionsKeepPinned=3",
-                                                                             "-XX:+UnlockExperimentalVMOptions",
-                                                                             // Take all old regions to make sure that the pinned one is included in the collection set.
-                                                                             "-XX:G1MixedGCLiveThresholdPercent=100",
-                                                                             "-XX:G1HeapWastePercent=0",
-                                                                             "-XX:+VerifyAfterGC",
-                                                                             "-Xlog:gc,gc+ergo+cset=trace",
-                                                                             TestObjectPin.class.getName(),
-                                                                             String.valueOf(youngGCsBeforeUnpin));
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-XX:+UnlockDiagnosticVMOptions",
+                                                                    "-XX:+WhiteBoxAPI",
+                                                                    "-Xbootclasspath/a:.",
+                                                                    "-Xmx32M",
+                                                                    "-Xmn16M",
+                                                                    "-XX:MarkSweepDeadRatio=0",
+                                                                    "-XX:G1NumCollectionsKeepPinned=3",
+                                                                    "-XX:+UnlockExperimentalVMOptions",
+                                                                    // Take all old regions to make sure that the pinned one is included in the collection set.
+                                                                    "-XX:G1MixedGCLiveThresholdPercent=100",
+                                                                    "-XX:G1HeapWastePercent=0",
+                                                                    "-XX:+VerifyAfterGC",
+                                                                    "-Xlog:gc,gc+ergo+cset=trace",
+                                                                    TestObjectPin.class.getName(),
+                                                                    String.valueOf(youngGCsBeforeUnpin));
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());
         output.shouldHaveExitValue(0);
 
@@ -334,4 +333,3 @@ class TestObjectPin {
         wb.youngGC();
     }
 }
-

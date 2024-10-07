@@ -168,10 +168,8 @@ public class Server {
         do {
             try {
                 Socket socket = serverSocket.accept();
-                 // Handle each incoming request in a separate thread. This is just for socket communication,
-                 // the actual compilation will be done by the threadpool.
-                Thread requestHandler = new Thread(() -> handleRequest(socket));
-                requestHandler.start();
+                 // Handle each incoming request in a threapool thread
+                compilerThreadPool.execute(() -> handleRequest(socket));
             } catch (SocketException se) {
                 // Caused by serverSocket.close() and indicates shutdown
             }
@@ -206,9 +204,9 @@ public class Server {
                 // If there has been any internal errors, notify client
                 checkInternalErrorLog();
 
-                // Perform compilation. This will call runCompiler() on a
-                // thread in the thread pool
-                int exitCode = compilerThreadPool.dispatchCompilation(args);
+                // Perform compilation
+                int exitCode = runCompiler(args);
+
                 Protocol.sendExitCode(out, exitCode);
 
                 // Check for internal errors again.
@@ -220,15 +218,14 @@ public class Server {
             // Not much to be done at this point. The client side request
             // code will most likely throw an IOException and the
             // compilation will fail.
+            ex.printStackTrace();
             Log.error(ex);
         } finally {
             Log.setLogForCurrentThread(null);
         }
     }
 
-    public static int runCompiler(Log log, String[] args) {
-        Log.setLogForCurrentThread(log);
-
+    public static int runCompiler(String[] args) {
         // Direct logging to our byte array stream.
         StringWriter strWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(strWriter);

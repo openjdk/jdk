@@ -221,6 +221,12 @@ public class ReplToolTesting {
         return s;
     }
 
+    public String getTerminalOutput() {
+        String s = normalizeLineEndings("\r\n", console.data.toString());
+        console.data.reset();
+        return s;
+    }
+
     public void test(ReplTest... tests) {
         test(new String[0], tests);
     }
@@ -476,6 +482,7 @@ public class ReplToolTesting {
 
     public void dropClass(boolean after, String cmd, String name, String output) {
         dropKey(after, cmd, name, classes, output);
+
     }
 
     public void dropImport(boolean after, String cmd, String name, String output) {
@@ -532,6 +539,11 @@ public class ReplToolTesting {
 
     public void assertCommand(boolean after, String cmd, String out, String err,
             String userinput, String print, String usererr) {
+        assertCommand(after, cmd, out, err, userinput, print, usererr, null);
+    }
+
+    public void assertCommand(boolean after, String cmd, String out, String err,
+            String userinput, String print, String usererr, String terminalOut) {
         if (!after) {
             if (userinput != null) {
                 setUserInput(userinput);
@@ -546,6 +558,7 @@ public class ReplToolTesting {
             assertOutput(getCommandErrorOutput(), err, "command error: " + cmd);
             assertOutput(getUserOutput(), print, "user output: " + cmd);
             assertOutput(getUserErrorOutput(), usererr, "user error: " + cmd);
+            assertOutput(getTerminalOutput(), terminalOut, "terminal output: " + cmd);
         }
     }
 
@@ -565,7 +578,11 @@ public class ReplToolTesting {
     }
 
     private String normalizeLineEndings(String text) {
-        return ANSI_CODE_PATTERN.matcher(text.replace(System.getProperty("line.separator"), "\n")).replaceAll("");
+        return normalizeLineEndings(System.getProperty("line.separator"), text);
+    }
+
+    private String normalizeLineEndings(String lineSeparator, String text) {
+        return ANSI_CODE_PATTERN.matcher(text.replace(lineSeparator, "\n")).replaceAll("");
     }
         private static final Pattern ANSI_CODE_PATTERN = Pattern.compile("\033\\[[\060-\077]*[\040-\057]*[\100-\176]");
 
@@ -846,6 +863,7 @@ public class ReplToolTesting {
 
     class PromptedCommandOutputStream extends OutputStream {
         private final ReplTest[] tests;
+        private final ByteArrayOutputStream data = new ByteArrayOutputStream();
         private int index = 0;
         PromptedCommandOutputStream(ReplTest[] tests) {
             this.tests = tests;
@@ -861,7 +879,8 @@ public class ReplToolTesting {
                     fail("Did not exit Repl tool after test");
                 }
                 ++index;
-            } // For now, anything else is thrown away
+            }
+            data.write(b);
         }
 
         @Override

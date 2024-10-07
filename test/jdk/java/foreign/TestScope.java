@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,11 @@ import org.testng.annotations.*;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.HexFormat;
+import java.util.stream.LongStream;
 
 import static org.testng.Assert.*;
 
@@ -108,6 +111,30 @@ public class TestScope {
         testDerivedBufferScope(segment1.reinterpret(10));
     }
 
+    @Test
+    public void testZeroedOfAuto() {
+        testZeroed(Arena.ofAuto());
+    }
+
+    @Test
+    public void testZeroedGlobal() {
+        testZeroed(Arena.global());
+    }
+
+    @Test
+    public void testZeroedOfConfined() {
+        try (Arena arena = Arena.ofConfined()) {
+            testZeroed(arena);
+        }
+    }
+
+    @Test
+    public void testZeroedOfShared() {
+        try (Arena arena = Arena.ofShared()) {
+            testZeroed(arena);
+        }
+    }
+
     void testDerivedBufferScope(MemorySegment segment) {
         ByteBuffer buffer = segment.asByteBuffer();
         MemorySegment.Scope expectedScope = segment.scope();
@@ -119,4 +146,14 @@ public class TestScope {
         IntBuffer view = buffer.asIntBuffer();
         assertEquals(expectedScope, MemorySegment.ofBuffer(view).scope());
     }
+
+    private static final MemorySegment ZEROED_MEMORY = MemorySegment.ofArray(new byte[8102]);
+
+    void testZeroed(Arena arena) {
+        long byteSize = ZEROED_MEMORY.byteSize();
+        var segment = arena.allocate(byteSize, Long.BYTES);
+        long mismatch = ZEROED_MEMORY.mismatch(segment);
+        assertEquals(mismatch, -1);
+    }
+
 }

@@ -152,6 +152,20 @@ void ZBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
   deoptimize_allocation(thread);
 }
 
+void ZBarrierSet::clone_obj_array(objArrayOop src_obj, objArrayOop dst_obj) {
+  volatile zpointer* src = (volatile zpointer*)src_obj->base();
+  volatile zpointer* dst = (volatile zpointer*)dst_obj->base();
+  const int length = src_obj->length();
+
+  for (const volatile zpointer* const end = src + length; src < end; src++, dst++) {
+    zaddress elem = ZBarrier::load_barrier_on_oop_field(src);
+    // We avoid healing here because the store below colors the pointer store good,
+    // hence avoiding the cost of a CAS.
+    ZBarrier::store_barrier_on_heap_oop_field(dst, false /* heal */);
+    Atomic::store(dst, ZAddress::store_good(elem));
+  }
+}
+
 void ZBarrierSet::print_on(outputStream* st) const {
   st->print_cr("ZBarrierSet");
 }

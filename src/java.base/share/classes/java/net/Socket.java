@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.net;
 
 import jdk.internal.event.SocketReadEvent;
 import jdk.internal.event.SocketWriteEvent;
+import jdk.internal.invoke.MhUtil;
 import sun.security.util.SecurityConstants;
 
 import java.io.InputStream;
@@ -102,14 +103,10 @@ import java.util.Collections;
 public class Socket implements java.io.Closeable {
     private static final VarHandle STATE, IN, OUT;
     static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            STATE = l.findVarHandle(Socket.class, "state", int.class);
-            IN = l.findVarHandle(Socket.class, "in", InputStream.class);
-            OUT = l.findVarHandle(Socket.class, "out", OutputStream.class);
-        } catch (Exception e) {
-            throw new InternalError(e);
-        }
+        MethodHandles.Lookup l = MethodHandles.lookup();
+        STATE = MhUtil.findVarHandle(l, "state", int.class);
+        IN = MhUtil.findVarHandle(l, "in", InputStream.class);
+        OUT = MhUtil.findVarHandle(l, "out", OutputStream.class);
     }
 
     // the underlying SocketImpl, may be null, may be swapped when connecting
@@ -172,10 +169,11 @@ public class Socket implements java.io.Closeable {
     /**
      * Creates an unconnected Socket.
      * <p>
-     * If the application has specified a client socket implementation
-     * factory, that factory's {@code createSocketImpl} method is called to
-     * create the actual socket implementation. Otherwise a system-default
-     * socket implementation is created.
+     * If the application has specified a {@linkplain SocketImplFactory client
+     * socket implementation factory}, that factory's
+     * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl}
+     * method is called to create the actual socket implementation. Otherwise
+     * a system-default socket implementation is created.
      *
      * @since   1.1
      */
@@ -211,6 +209,7 @@ public class Socket implements java.io.Closeable {
      *
      * @since   1.5
      */
+    @SuppressWarnings("this-escape")
     public Socket(Proxy proxy) {
         // Create a copy of Proxy as a security measure
         if (proxy == null) {
@@ -294,10 +293,11 @@ public class Socket implements java.io.Closeable {
      * In other words, it is equivalent to specifying an address of the
      * loopback interface. </p>
      * <p>
-     * If the application has specified a client socket implementation
-     * factory, that factory's {@code createSocketImpl} method is called to
-     * create the actual socket implementation. Otherwise a system-default
-     * socket implementation is created.
+     * If the application has specified a {@linkplain SocketImplFactory client
+     * socket implementation factory}, that factory's
+     * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl}
+     * method is called to create the actual socket implementation. Otherwise
+     * a system-default socket implementation is created.
      * <p>
      * If there is a security manager, its
      * {@code checkConnect} method is called
@@ -316,9 +316,9 @@ public class Socket implements java.io.Closeable {
      * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
-     * @see        java.net.SocketImpl
      * @see        SecurityManager#checkConnect
      */
+    @SuppressWarnings("this-escape")
     public Socket(String host, int port)
         throws UnknownHostException, IOException
     {
@@ -331,10 +331,11 @@ public class Socket implements java.io.Closeable {
      * Creates a stream socket and connects it to the specified port
      * number at the specified IP address.
      * <p>
-     * If the application has specified a client socket implementation
-     * factory, that factory's {@code createSocketImpl} method is called to
-     * create the actual socket implementation. Otherwise a system-default
-     * socket implementation is created.
+     * If the application has specified a {@linkplain SocketImplFactory client
+     * socket implementation factory}, that factory's
+     * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl}
+     * method is called to create the actual socket implementation. Otherwise
+     * a system-default socket implementation is created.
      * <p>
      * If there is a security manager, its
      * {@code checkConnect} method is called
@@ -350,9 +351,9 @@ public class Socket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      * @throws     NullPointerException if {@code address} is null.
-     * @see        java.net.SocketImpl
      * @see        SecurityManager#checkConnect
      */
+    @SuppressWarnings("this-escape")
     public Socket(InetAddress address, int port) throws IOException {
         this(address != null ? new InetSocketAddress(address, port) : null,
              (SocketAddress) null, true);
@@ -394,6 +395,7 @@ public class Socket implements java.io.Closeable {
      * @see        SecurityManager#checkConnect
      * @since   1.1
      */
+    @SuppressWarnings("this-escape")
     public Socket(String host, int port, InetAddress localAddr,
                   int localPort) throws IOException {
         this(host != null ? new InetSocketAddress(host, port) :
@@ -436,6 +438,7 @@ public class Socket implements java.io.Closeable {
      * @see        SecurityManager#checkConnect
      * @since   1.1
      */
+    @SuppressWarnings("this-escape")
     public Socket(InetAddress address, int port, InetAddress localAddr,
                   int localPort) throws IOException {
         this(address != null ? new InetSocketAddress(address, port) : null,
@@ -456,10 +459,11 @@ public class Socket implements java.io.Closeable {
      * stream socket. If the stream argument is {@code false}, it
      * creates a datagram socket.
      * <p>
-     * If the application has specified a client socket implementation
-     * factory, that factory's {@code createSocketImpl} method is called to
-     * create the actual socket implementation. Otherwise a system-default
-     * socket implementation is created.
+     * If the application has specified a {@linkplain SocketImplFactory client
+     * socket implementation factory}, that factory's
+     * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl}
+     * method is called to create the actual socket implementation. Otherwise
+     * a system-default socket implementation is created.
      * <p>
      * If there is a security manager, its
      * {@code checkConnect} method is called
@@ -478,11 +482,11 @@ public class Socket implements java.io.Closeable {
      * @throws     IllegalArgumentException if the port parameter is outside
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
-     * @see        java.net.SocketImpl
      * @see        SecurityManager#checkConnect
-     * @deprecated Use DatagramSocket instead for UDP transport.
+     * @deprecated Use {@link DatagramSocket} instead for UDP transport.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "1.1")
+    @SuppressWarnings("this-escape")
     public Socket(String host, int port, boolean stream) throws IOException {
         this(host != null ? new InetSocketAddress(host, port) :
                new InetSocketAddress(InetAddress.getByName(null), port),
@@ -497,10 +501,11 @@ public class Socket implements java.io.Closeable {
      * stream socket. If the stream argument is {@code false}, it
      * creates a datagram socket.
      * <p>
-     * If the application has specified a client socket implementation
-     * factory, that factory's {@code createSocketImpl} method is called to
-     * create the actual socket implementation. Otherwise a system-default
-     * socket implementation is created.
+     * If the application has specified a {@linkplain SocketImplFactory client
+     * socket implementation factory}, that factory's
+     * {@linkplain SocketImplFactory#createSocketImpl() createSocketImpl}
+     * method is called to create the actual socket implementation. Otherwise
+     * a system-default socket implementation is created.
      *
      * <p>If there is a security manager, its
      * {@code checkConnect} method is called
@@ -520,11 +525,11 @@ public class Socket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      * @throws     NullPointerException if {@code host} is null.
-     * @see        java.net.SocketImpl
      * @see        SecurityManager#checkConnect
-     * @deprecated Use DatagramSocket instead for UDP transport.
+     * @deprecated Use {@link DatagramSocket} instead for UDP transport.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "1.1")
+    @SuppressWarnings("this-escape")
     public Socket(InetAddress host, int port, boolean stream) throws IOException {
         this(host != null ? new InetSocketAddress(host, port) : null,
              new InetSocketAddress(0), stream);
@@ -675,7 +680,8 @@ public class Socket implements java.io.Closeable {
      * </ol>
      *
      * @param   endpoint the {@code SocketAddress}
-     * @throws  IOException if an error occurs during the connection
+     * @throws  IOException if an error occurs during the connection, the socket
+     *          is already connected or the socket is closed
      * @throws  java.nio.channels.IllegalBlockingModeException
      *          if this socket has an associated channel,
      *          and the channel is in non-blocking mode
@@ -709,7 +715,8 @@ public class Socket implements java.io.Closeable {
      *
      * @param   endpoint the {@code SocketAddress}
      * @param   timeout  the timeout value to be used in milliseconds.
-     * @throws  IOException if an error occurs during the connection
+     * @throws  IOException if an error occurs during the connection, the socket
+     *          is already connected or the socket is closed
      * @throws  SocketTimeoutException if timeout expires before connecting
      * @throws  java.nio.channels.IllegalBlockingModeException
      *          if this socket has an associated channel,
@@ -772,8 +779,8 @@ public class Socket implements java.io.Closeable {
      * an ephemeral port and a valid local address to bind the socket.
      *
      * @param   bindpoint the {@code SocketAddress} to bind to
-     * @throws  IOException if the bind operation fails, or if the socket
-     *                     is already bound.
+     * @throws  IOException if the bind operation fails, the socket
+     *          is already bound or the socket is closed.
      * @throws  IllegalArgumentException if bindpoint is a
      *          SocketAddress subclass not supported by this socket
      * @throws  SecurityException  if a security manager exists and its
@@ -1166,8 +1173,8 @@ public class Socket implements java.io.Closeable {
      * will close the associated socket.
      *
      * @return     an output stream for writing bytes to this socket.
-     * @throws     IOException  if an I/O error occurs when creating the
-     *               output stream or if the socket is not connected.
+     * @throws IOException  if an I/O error occurs when creating the
+     *         output stream, the socket is not connected or the socket is closed.
      */
     public OutputStream getOutputStream() throws IOException {
         int s = state;
@@ -1237,14 +1244,14 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Enable/disable {@link SocketOptions#TCP_NODELAY TCP_NODELAY}
+     * Enable/disable {@link StandardSocketOptions#TCP_NODELAY TCP_NODELAY}
      * (disable/enable Nagle's algorithm).
      *
-     * @param on {@code true} to enable TCP_NODELAY,
+     * @param on {@code true} to enable {@code TCP_NODELAY},
      * {@code false} to disable.
      *
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
      *
      * @since   1.1
      *
@@ -1257,12 +1264,12 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Tests if {@link SocketOptions#TCP_NODELAY TCP_NODELAY} is enabled.
+     * Tests if {@link StandardSocketOptions#TCP_NODELAY TCP_NODELAY} is enabled.
      *
      * @return a {@code boolean} indicating whether or not
-     *         {@link SocketOptions#TCP_NODELAY TCP_NODELAY} is enabled.
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     *         {@code TCP_NODELAY} is enabled.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
      * @since   1.1
      * @see #setTcpNoDelay(boolean)
      */
@@ -1273,7 +1280,7 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Enable/disable {@link SocketOptions#SO_LINGER SO_LINGER} with the
+     * Enable/disable {@link StandardSocketOptions#SO_LINGER SO_LINGER} with the
      * specified linger time in seconds. The maximum timeout value is platform
      * specific.
      *
@@ -1281,9 +1288,9 @@ public class Socket implements java.io.Closeable {
      *
      * @param on     whether or not to linger on.
      * @param linger how long to linger for, if on is true.
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
-     * @throws    IllegalArgumentException if the linger value is negative.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
+     * @throws  IllegalArgumentException if the linger value is negative.
      * @since 1.1
      * @see #getSoLinger()
      */
@@ -1303,15 +1310,15 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Returns setting for {@link SocketOptions#SO_LINGER SO_LINGER}.
+     * Returns setting for {@link StandardSocketOptions#SO_LINGER SO_LINGER}.
      * -1 returns implies that the
      * option is disabled.
      *
      * The setting only affects socket close.
      *
-     * @return the setting for {@link SocketOptions#SO_LINGER SO_LINGER}.
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     * @return the setting for {@code SO_LINGER}.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
      * @since   1.1
      * @see #setSoLinger(boolean, int)
      */
@@ -1357,12 +1364,11 @@ public class Socket implements java.io.Closeable {
      * and there is no capability to distinguish between normal data and urgent
      * data unless provided by a higher level protocol.
      *
-     * @param on {@code true} to enable
-     *           {@link SocketOptions#SO_OOBINLINE SO_OOBINLINE},
+     * @param on {@code true} to enable {@code SO_OOBINLINE},
      *           {@code false} to disable.
      *
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
      *
      * @since   1.4
      *
@@ -1378,10 +1384,10 @@ public class Socket implements java.io.Closeable {
      * Tests if {@link SocketOptions#SO_OOBINLINE SO_OOBINLINE} is enabled.
      *
      * @return a {@code boolean} indicating whether or not
-     *         {@link SocketOptions#SO_OOBINLINE SO_OOBINLINE} is enabled.
+     *         {@code SO_OOBINLINE} is enabled.
      *
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
      * @since   1.4
      * @see #setOOBInline(boolean)
      */
@@ -1402,8 +1408,8 @@ public class Socket implements java.io.Closeable {
      *  to have effect.
      *
      * @param timeout the specified timeout, in milliseconds.
-     * @throws  SocketException if there is an error in the underlying protocol,
-     *          such as a TCP error
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
      * @throws  IllegalArgumentException if {@code timeout} is negative
      * @since   1.1
      * @see #getSoTimeout()
@@ -1420,9 +1426,9 @@ public class Socket implements java.io.Closeable {
      * Returns setting for {@link SocketOptions#SO_TIMEOUT SO_TIMEOUT}.
      * 0 returns implies that the option is disabled (i.e., timeout of infinity).
      *
-     * @return the setting for {@link SocketOptions#SO_TIMEOUT SO_TIMEOUT}
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     * @return the setting for {@code SO_TIMEOUT}
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
      *
      * @since   1.1
      * @see #setSoTimeout(int)
@@ -1440,24 +1446,20 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Sets the {@link SocketOptions#SO_SNDBUF SO_SNDBUF} option to the
+     * Sets the {@link StandardSocketOptions#SO_SNDBUF SO_SNDBUF} option to the
      * specified value for this {@code Socket}.
-     * The {@link SocketOptions#SO_SNDBUF SO_SNDBUF} option is used by the
-     * platform's networking code as a hint for the size to set the underlying
-     * network I/O buffers.
+     * The {@code SO_SNDBUF} option is used by the platform's networking code
+     * as a hint for the size to set the underlying network I/O buffers.
      *
-     * <p>Because {@link SocketOptions#SO_SNDBUF SO_SNDBUF} is a hint,
-     * applications that want to verify what size the buffers were set to
-     * should call {@link #getSendBufferSize()}.
-     *
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     * <p>Because {@code SO_SNDBUF} is a hint, applications that want to verify
+     * what size the buffers were set to should call {@link #getSendBufferSize()}.
      *
      * @param size the size to which to set the send buffer
      * size. This value must be greater than 0.
      *
-     * @throws    IllegalArgumentException if the
-     * value is 0 or is negative.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
+     * @throws  IllegalArgumentException if the value is 0 or is negative.
      *
      * @see #getSendBufferSize()
      * @since 1.2
@@ -1471,14 +1473,13 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Get value of the {@link SocketOptions#SO_SNDBUF SO_SNDBUF} option
+     * Get value of the {@link StandardSocketOptions#SO_SNDBUF SO_SNDBUF} option
      * for this {@code Socket}, that is the buffer size used by the platform
      * for output on this {@code Socket}.
-     * @return the value of the {@link SocketOptions#SO_SNDBUF SO_SNDBUF}
-     *         option for this {@code Socket}.
+     * @return the value of the {@code SO_SNDBUF} option for this {@code Socket}.
      *
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
      *
      * @see #setSendBufferSize(int)
      * @since 1.2
@@ -1495,22 +1496,20 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Sets the {@link SocketOptions#SO_RCVBUF SO_RCVBUF} option to the
+     * Sets the {@link StandardSocketOptions#SO_RCVBUF SO_RCVBUF} option to the
      * specified value for this {@code Socket}. The
-     * {@link SocketOptions#SO_RCVBUF SO_RCVBUF} option is
-     * used by the platform's networking code as a hint for the size to set
-     * the underlying network I/O buffers.
+     * {@code SO_RCVBUF} option is used by the platform's networking code
+     * as a hint for the size to set the underlying network I/O buffers.
      *
      * <p>Increasing the receive buffer size can increase the performance of
      * network I/O for high-volume connection, while decreasing it can
      * help reduce the backlog of incoming data.
      *
-     * <p>Because {@link SocketOptions#SO_RCVBUF SO_RCVBUF} is a hint,
-     * applications that want to verify what size the buffers were set to
-     * should call {@link #getReceiveBufferSize()}.
+     * <p>Because {@code SO_RCVBUF} is a hint, applications that want to verify
+     * what size the buffers were set to should call {@link #getReceiveBufferSize()}.
      *
-     * <p>The value of {@link SocketOptions#SO_RCVBUF SO_RCVBUF} is also used
-     * to set the TCP receive window that is advertised to the remote peer.
+     * <p>The value of {@code SO_RCVBUF} is also used to set the TCP receive window
+     * that is advertised to the remote peer.
      * Generally, the window size can be modified at any time when a socket is
      * connected. However, if a receive window larger than 64K is required then
      * this must be requested <B>before</B> the socket is connected to the
@@ -1527,8 +1526,8 @@ public class Socket implements java.io.Closeable {
      * @throws    IllegalArgumentException if the value is 0 or is
      * negative.
      *
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
      *
      * @see #getReceiveBufferSize()
      * @see ServerSocket#setReceiveBufferSize(int)
@@ -1543,14 +1542,13 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Gets the value of the {@link SocketOptions#SO_RCVBUF SO_RCVBUF} option
+     * Gets the value of the {@link StandardSocketOptions#SO_RCVBUF SO_RCVBUF} option
      * for this {@code Socket}, that is the buffer size used by the platform
      * for input on this {@code Socket}.
      *
-     * @return the value of the {@link SocketOptions#SO_RCVBUF SO_RCVBUF}
-     *         option for this {@code Socket}.
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     * @return the value of the {@code SO_RCVBUF} option for this {@code Socket}.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
      * @see #setReceiveBufferSize(int)
      * @since 1.2
      */
@@ -1566,11 +1564,11 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Enable/disable {@link SocketOptions#SO_KEEPALIVE SO_KEEPALIVE}.
+     * Enable/disable {@link StandardSocketOptions#SO_KEEPALIVE SO_KEEPALIVE}.
      *
      * @param on  whether or not to have socket keep alive turned on.
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
      * @since 1.3
      * @see #getKeepAlive()
      */
@@ -1581,12 +1579,12 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Tests if {@link SocketOptions#SO_KEEPALIVE SO_KEEPALIVE} is enabled.
+     * Tests if {@link StandardSocketOptions#SO_KEEPALIVE SO_KEEPALIVE} is enabled.
      *
      * @return a {@code boolean} indicating whether or not
-     *         {@link SocketOptions#SO_KEEPALIVE SO_KEEPALIVE} is enabled.
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     *         {@code SO_KEEPALIVE} is enabled.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
      * @since   1.3
      * @see #setKeepAlive(boolean)
      */
@@ -1636,11 +1634,11 @@ public class Socket implements java.io.Closeable {
      * would be placed into the sin6_flowinfo field of the IP header.
      *
      * @param tc        an {@code int} value for the bitset.
-     * @throws SocketException if there is an error setting the
-     * traffic class or type-of-service
+     * @throws SocketException if there is an error setting the traffic class or type-of-service,
+     *         or the socket is closed.
      * @since 1.4
      * @see #getTrafficClass
-     * @see SocketOptions#IP_TOS
+     * @see StandardSocketOptions#IP_TOS
      */
     public void setTrafficClass(int tc) throws SocketException {
         if (tc < 0 || tc > 255)
@@ -1660,18 +1658,18 @@ public class Socket implements java.io.Closeable {
      * set using the {@link #setTrafficClass(int)} method on this Socket.
      *
      * @return the traffic class or type-of-service already set
-     * @throws SocketException if there is an error obtaining the
-     * traffic class or type-of-service value.
+     * @throws SocketException if there is an error obtaining the traffic class
+     *         or type-of-service value, or the socket is closed.
      * @since 1.4
      * @see #setTrafficClass(int)
-     * @see SocketOptions#IP_TOS
+     * @see StandardSocketOptions#IP_TOS
      */
     public int getTrafficClass() throws SocketException {
         return ((Integer) (getImpl().getOption(SocketOptions.IP_TOS))).intValue();
     }
 
     /**
-     * Enable/disable the {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR}
+     * Enable/disable the {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR}
      * socket option.
      * <p>
      * When a TCP connection is closed the connection may remain
@@ -1683,21 +1681,19 @@ public class Socket implements java.io.Closeable {
      * {@code SocketAddress} if there is a connection in the
      * timeout state involving the socket address or port.
      * <p>
-     * Enabling {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR}
-     * prior to binding the socket using {@link #bind(SocketAddress)} allows
-     * the socket to be bound even though a previous connection is in a timeout
-     * state.
+     * Enabling {@code SO_REUSEADDR} prior to binding the socket using
+     * {@link #bind(SocketAddress)} allows the socket to be bound even
+     * though a previous connection is in a timeout state.
      * <p>
      * When a {@code Socket} is created the initial setting
-     * of {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR} is disabled.
+     * of {@code SO_REUSEADDR} is disabled.
      * <p>
-     * The behaviour when {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR} is
-     * enabled or disabled after a socket is bound (See {@link #isBound()})
-     * is not defined.
+     * The behaviour when {@code SO_REUSEADDR} is enabled or disabled after
+     * a socket is bound (See {@link #isBound()}) is not defined.
      *
      * @param on  whether to enable or disable the socket option
      * @throws    SocketException if an error occurs enabling or
-     *            disabling the {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR}
+     *            disabling the {@code SO_REUSEADDR}
      *            socket option, or the socket is closed.
      * @since 1.4
      * @see #getReuseAddress()
@@ -1712,12 +1708,12 @@ public class Socket implements java.io.Closeable {
     }
 
     /**
-     * Tests if {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR} is enabled.
+     * Tests if {@link StandardSocketOptions#SO_REUSEADDR SO_REUSEADDR} is enabled.
      *
      * @return a {@code boolean} indicating whether or not
-     *         {@link SocketOptions#SO_REUSEADDR SO_REUSEADDR} is enabled.
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     *         {@code SO_REUSEADDR} is enabled.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or the socket is closed.
      * @since   1.4
      * @see #setReuseAddress(boolean)
      */
@@ -1734,8 +1730,9 @@ public class Socket implements java.io.Closeable {
      * will throw a {@link SocketException}.
      * <p>
      * Once a socket has been closed, it is not available for further networking
-     * use (i.e. can't be reconnected or rebound). A new socket needs to be
-     * created.
+     * use (i.e. can't be reconnected or rebound) and several of the methods defined
+     * by this class will throw an exception if invoked on the closed socket. A new
+     * socket needs to be created.
      *
      * <p> Closing this socket will also close the socket's
      * {@link java.io.InputStream InputStream} and
@@ -1768,8 +1765,8 @@ public class Socket implements java.io.Closeable {
      * socket, the stream's {@code available} method will return 0, and its
      * {@code read} methods will return {@code -1} (end of stream).
      *
-     * @throws    IOException if an I/O error occurs when shutting down this
-     * socket.
+     * @throws IOException if an I/O error occurs when shutting down this socket, the
+     *         socket is not connected or the socket is closed.
      *
      * @since 1.3
      * @see java.net.Socket#shutdownOutput()
@@ -1798,8 +1795,8 @@ public class Socket implements java.io.Closeable {
      * shutdownOutput() on the socket, the stream will throw
      * an IOException.
      *
-     * @throws    IOException if an I/O error occurs when shutting down this
-     * socket.
+     * @throws IOException if an I/O error occurs when shutting down this socket, the socket
+     *         is not connected or the socket is closed.
      *
      * @since 1.3
      * @see java.net.Socket#shutdownInput()

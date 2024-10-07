@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,33 @@
 /**
  * @test
  * @summary Test parking when pinned and emitting the JFR VirtualThreadPinnedEvent throws
- * @modules java.base/jdk.internal.event
+ * @modules java.base/java.lang:+open java.base/jdk.internal.event jdk.management
+ * @library /test/lib
  * @compile/module=java.base jdk/internal/event/VirtualThreadPinnedEvent.java
- * @run junit VirtualThreadPinnedEventThrows
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED VirtualThreadPinnedEventThrows
  */
 
 import java.lang.ref.Reference;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import jdk.internal.event.VirtualThreadPinnedEvent;
 
+import jdk.test.lib.thread.VThreadRunner;   // ensureParallelism requires jdk.management
+import jdk.test.lib.thread.VThreadPinner;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeAll;
 import static org.junit.jupiter.api.Assertions.*;
 
 class VirtualThreadPinnedEventThrows {
+
+    @BeforeAll
+    static void setup() {
+        // need >=2 carriers for testing pinning when main thread is a virtual thread
+        if (Thread.currentThread().isVirtual()) {
+            VThreadRunner.ensureParallelism(2);
+        }
+    }
 
     /**
      * Test parking when pinned and creating the VirtualThreadPinnedEvent fails with OOME.
@@ -82,29 +95,31 @@ class VirtualThreadPinnedEventThrows {
      * Test parking a virtual thread when pinned.
      */
     private void testParkWhenPinned() throws Exception {
-        Object lock = new Object();
+        var exception = new AtomicReference<Throwable>();
+        var done = new AtomicBoolean();
+        Thread thread = Thread.startVirtualThread(() -> {
+            try {
+                VThreadPinner.runPinned(() -> {
+                    while (!done.get()) {
+                        LockSupport.park();
+                    }
+                });
+            } catch (Throwable e) {
+                exception.set(e);
+            }
+        });
         try {
-            var completed = new AtomicBoolean();
-            Thread thread = Thread.startVirtualThread(() -> {
-                synchronized (lock) {
-                    LockSupport.park();
-                    completed.set(true);
-                }
-            });
-
             // wait for thread to park
             Thread.State state;
             while ((state = thread.getState()) != Thread.State.WAITING) {
                 assertTrue(state != Thread.State.TERMINATED);
                 Thread.sleep(10);
             }
-
-            // unpark and check that thread completed without exception
+        } finally {
+            done.set(true);
             LockSupport.unpark(thread);
             thread.join();
-            assertTrue(completed.get());
-        } finally {
-            Reference.reachabilityFence(lock);
         }
+        assertNull(exception.get());
     }
 }

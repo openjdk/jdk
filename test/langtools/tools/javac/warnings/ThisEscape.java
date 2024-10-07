@@ -313,7 +313,7 @@ public class ThisEscape {
                 }
             }
 
-            public class Inner2 {
+            public static class Inner2 {
                 public Inner2() {
                     new Test3().mightLeak();
                 }
@@ -582,6 +582,124 @@ public class ThisEscape {
 
         public static void main(String[] args) {
             new ThisEscapeNoEscapes();
+        }
+    }
+
+    // Verify 'this' escape correctly follows outer instances through member classes
+    public static class ThisEscapeOuterRef1 {
+        class Inner {
+            void foo() {
+                ThisEscapeOuterRef1.this.hashCode();
+            }
+        }
+        public ThisEscapeOuterRef1() {
+            new Inner().foo();
+        }
+    }
+
+    // Verify 'this' escape correctly follows outer instances through local classes
+    public static class ThisEscapeOuterRef2 {
+        public ThisEscapeOuterRef2() {
+            class Inner {
+                void foo() {
+                    ThisEscapeOuterRef2.this.hashCode();
+                }
+            }
+            new Inner().foo();
+        }
+    }
+
+    // Verify 'this' escape correctly follows outer instances through anonymous classes
+    public static class ThisEscapeOuterRef3 {
+        public ThisEscapeOuterRef3() {
+            new Runnable() {
+                public void run() {
+                    ThisEscapeOuterRef3.this.hashCode();    // leak here
+                }
+            }.run();
+        }
+    }
+
+    // Verify 'this' escape knows that enhanced for loops invoke iterator(), etc.
+    public static class ThisEscapeForeach1 implements Iterable<Object> {
+        public ThisEscapeForeach1() {
+            for (Object v : this)
+                v.hashCode();           // possible leak here
+        }
+        @Override
+        public final java.util.Iterator<Object> iterator() {
+            return new java.util.Iterator<Object>() {
+                @Override
+                public boolean hasNext() {
+                    return true;
+                }
+                @Override
+                public Object next() {
+                    return ThisEscapeForeach1.this;
+                }
+            };
+        }
+    }
+
+    // Verify 'this' escape tracks deferred return values
+    public static class DeferredReturn {
+
+        public DeferredReturn(int x) {
+            ((Supplier<DeferredReturn>)this::self).get().mightLeak();  // leak here
+        }
+
+        public DeferredReturn(float x) {
+            ((Supplier<DeferredReturn>)() -> this).get().mightLeak();  // leak here
+        }
+
+        private final DeferredReturn self() {
+            return this;
+        }
+
+        protected void mightLeak() {
+        }
+    }
+
+    // Verify 'this' escape properly tracks variable types
+    public static class TypeTracking {
+
+        public TypeTracking() {
+            Runnable r = new Runnable() {
+                public void run() {
+                    TypeTracking.this.mightLeak();
+                }
+            };
+            r.run();        // leak here - we know "r" has type TypeTracking$1
+        }
+
+        protected void mightLeak() {
+        }
+    }
+
+    // Verify 'this' escape doesn't warn for outer instances of anonymous classes that don't use them
+    public static class ThisEscapeOuterRef4 {
+        public ThisEscapeOuterRef4() {
+            new Runnable() {
+                public void run() {
+                    // there is no leak in here
+                }
+            }.run();
+        }
+    }
+
+    // Verify 'this' escape doesn't warn for doubly-outer instance references
+    public static class ThisEscapeDoubleOuter {
+        public class Inner1 {
+
+            public Inner1() {
+                new Inner2().foo();     // NOT a 'this' leak
+            }
+
+            class Inner2 {
+                void foo() {
+                    ThisEscapeDoubleOuter.this.hashCode();
+                }
+            }
         }
     }
 

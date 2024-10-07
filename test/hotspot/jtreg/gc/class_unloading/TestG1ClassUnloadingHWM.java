@@ -45,7 +45,7 @@ public class TestG1ClassUnloadingHWM {
   private static long YoungGenSize  = 32 * 1024 * 1024;
 
   private static OutputAnalyzer run(boolean enableUnloading) throws Exception {
-    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+    return ProcessTools.executeLimitedTestJava(
       "-Xbootclasspath/a:.",
       "-XX:+UnlockDiagnosticVMOptions",
       "-XX:+WhiteBoxAPI",
@@ -57,7 +57,6 @@ public class TestG1ClassUnloadingHWM {
       TestG1ClassUnloadingHWM.AllocateBeyondMetaspaceSize.class.getName(),
       "" + MetaspaceSize,
       "" + YoungGenSize);
-    return new OutputAnalyzer(pb.start());
   }
 
   public static OutputAnalyzer runWithG1ClassUnloading() throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 /*
  * @test
  * @summary test International Date Format API
- * @bug 8008577
- * @run junit/othervm -Djava.locale.providers=COMPAT,SPI IntlTestDateFormatAPI
+ * @bug 8008577 8174269
+ * @run junit IntlTestDateFormatAPI
  */
 /*
 (C) Copyright Taligent, Inc. 1996, 1997 - All Rights Reserved
@@ -127,7 +127,7 @@ public class IntlTestDateFormatAPI
 
         System.out.println("Testing parse()");
 
-        String text = new String("02/03/76 2:50 AM, CST");
+        String text = new String("02/03/76, 2:50 AM, CST");
         Object result1 = new Date();
         Date result2 = new Date();
         Date result3 = new Date();

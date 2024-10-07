@@ -41,14 +41,13 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestInitialTenuringThreshold {
 
   public static void runWithThresholds(int initial, int max, boolean shouldfail) throws Exception {
-    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(
+    OutputAnalyzer output = GCArguments.executeTestJava(
       "-XX:+UseParallelGC",
       "-XX:InitialTenuringThreshold=" + String.valueOf(initial),
       "-XX:MaxTenuringThreshold=" + String.valueOf(max),
       "-version"
       );
 
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
     if (shouldfail) {
       output.shouldHaveExitValue(1);
     } else {
@@ -58,14 +57,13 @@ public class TestInitialTenuringThreshold {
 
 
   public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(
+    OutputAnalyzer output = GCArguments.executeTestJava(
       // some value below the default value of InitialTenuringThreshold of 7
       "-XX:+UseParallelGC",
       "-XX:MaxTenuringThreshold=1",
       "-version"
       );
 
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldHaveExitValue(0);
     // successful tests
     runWithThresholds(0, 10, false);

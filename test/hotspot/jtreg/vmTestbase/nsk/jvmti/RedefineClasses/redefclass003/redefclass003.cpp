@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <jvmti.h>
-#include "jni_tools.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "jni_tools.hpp"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -35,7 +35,7 @@ extern "C" {
 #define PASSED 0
 #define NO_RESULTS 3
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 
 #ifdef STATIC_BUILD
@@ -94,7 +94,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass003_makeRedefinition(JNIEnv *env, jclas
     jvmtiClassDefinition classDef;
     int no_results = 0;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -106,7 +106,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass003_makeRedefinition(JNIEnv *env, jclas
 /* filling the structure jvmtiClassDefinition */
     classDef.klass = redefCls;
     classDef.class_byte_count = env->GetArrayLength(classBytes);
-    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
+    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, nullptr);
 
     if (vrb == 1)
         printf(">>>>>>>> Invoke RedefineClasses():\n\tnew class byte count=%d\n",
@@ -140,7 +140,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass003_checkNewFields(JNIEnv *env,
     jlong longFld;
 
     fid = env->GetStaticFieldID(redefCls, "intComplNewFld", "I");
-    if (fid == NULL) {
+    if (fid == nullptr) {
         printf("%s: Failed to get the field ID for the static field \"intComplNewFld\"\n",
             __FILE__);
         return STATUS_FAILED;
@@ -148,7 +148,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass003_checkNewFields(JNIEnv *env,
     intFld = env->GetStaticIntField(redefCls, fid);
 
     fid = env->GetStaticFieldID(redefCls, "longComplNewFld", "J");
-    if (fid == NULL) {
+    if (fid == nullptr) {
         printf("%s: Failed to get the field ID for the static field \"longComplNewFld\"\n",
             __FILE__);
         return STATUS_FAILED;

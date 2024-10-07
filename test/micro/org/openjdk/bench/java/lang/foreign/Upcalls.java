@@ -45,7 +45,7 @@ import static java.lang.invoke.MethodHandles.lookup;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
+@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native" })
 public class Upcalls extends CLayouts {
 
     static final Linker abi = Linker.nativeLinker();
@@ -120,7 +120,7 @@ public class Upcalls extends CLayouts {
 
     static MethodHandle linkFunc(String name, FunctionDescriptor baseDesc) {
         return abi.downcallHandle(
-                SymbolLookup.loaderLookup().find(name).orElseThrow(),
+                SymbolLookup.loaderLookup().findOrThrow(name),
                 baseDesc.appendArgumentLayouts(C_POINTER)
         );
     }

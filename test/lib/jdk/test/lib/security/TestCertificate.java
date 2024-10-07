@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public enum TestCertificate {
     // Subject: CN=SSLCertificate, O=SomeCompany
     // Issuer: CN=Intermediate CA Cert, O=SomeCompany
     // Validity: Tue Aug 30 14:37:19 PDT 2016 to Wed Aug 30 14:37:19 PDT 2017
-    ONE("1000",
+    ONE("10:00",
         "CN=SSLCertificate, O=SomeCompany",
         "CN=Intermediate CA Cert, O=SomeCompany",
         -1063259762,

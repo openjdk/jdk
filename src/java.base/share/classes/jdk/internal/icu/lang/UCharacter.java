@@ -23,7 +23,7 @@
  * questions.
  */
 
-/**
+/*
 *******************************************************************************
 * Copyright (C) 1996-2014, International Business Machines Corporation and
 * others. All Rights Reserved.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import sun.security.jca.GetInstance;
 import java.security.*;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -536,13 +538,23 @@ public final class KEM {
      */
     public static KEM getInstance(String algorithm)
             throws NoSuchAlgorithmException {
-        List<Provider.Service> list = GetInstance.getServices(
+        Iterator<Provider.Service> t = GetInstance.getServices(
                 "KEM",
                 Objects.requireNonNull(algorithm, "null algorithm name"));
-        if (list.isEmpty()) {
-            throw new NoSuchAlgorithmException(algorithm + " KEM not available");
+        List<Provider.Service> allowed = new ArrayList<>();
+        while (t.hasNext()) {
+            Provider.Service s = t.next();
+            if (!JceSecurity.canUseProvider(s.getProvider())) {
+                continue;
+            }
+            allowed.add(s);
         }
-        return new KEM(algorithm, new DelayedKEM(list.toArray(new Provider.Service[0])));
+        if (allowed.isEmpty()) {
+            throw new NoSuchAlgorithmException
+                    (algorithm + " KEM not available");
+        }
+
+        return new KEM(algorithm, new DelayedKEM(allowed.toArray(new Provider.Service[0])));
     }
 
     /**
@@ -568,7 +580,7 @@ public final class KEM {
         if (provider == null) {
             return getInstance(algorithm);
         }
-        GetInstance.Instance instance = GetInstance.getInstance(
+        GetInstance.Instance instance = JceSecurity.getInstance(
                 "KEM",
                 KEMSpi.class,
                 Objects.requireNonNull(algorithm, "null algorithm name"),
@@ -601,7 +613,7 @@ public final class KEM {
         if (provider == null) {
             return getInstance(algorithm);
         }
-        GetInstance.Instance instance = GetInstance.getInstance(
+        GetInstance.Instance instance = JceSecurity.getInstance(
                 "KEM",
                 KEMSpi.class,
                 Objects.requireNonNull(algorithm, "null algorithm name"),

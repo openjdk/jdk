@@ -39,16 +39,14 @@ public class TestDieWithOnError {
   static String ON_ERR_MSG = "Epsilon error handler message";
 
   public static void passWith(String... args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
-    OutputAnalyzer out = new OutputAnalyzer(pb.start());
+    OutputAnalyzer out = ProcessTools.executeLimitedTestJava(args);
     out.shouldNotContain("OutOfMemoryError");
     out.stdoutShouldNotMatch("^" + ON_ERR_MSG);
     out.shouldHaveExitValue(0);
   }
 
   public static void failWith(String... args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
-    OutputAnalyzer out = new OutputAnalyzer(pb.start());
+    OutputAnalyzer out = ProcessTools.executeLimitedTestJava(args);
     out.shouldContain("OutOfMemoryError");
     if (out.getExitValue() == 0) {
       throw new IllegalStateException("Should have failed with non-zero exit code");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -644,7 +644,14 @@ class ZipFileSystem extends FileSystem {
             if (e.type == Entry.CEN) {
                 e.type = Entry.COPY;     // copy e
             }
-            e.posixPerms = perms == null ? -1 : ZipUtils.permsToFlags(perms);
+            if (perms == null) {
+                e.externalFileAttributes = -1;
+            } else if (e.externalFileAttributes == -1) {
+                e.externalFileAttributes = ZipUtils.permsToFlags(perms);
+            } else {
+                e.externalFileAttributes = ZipUtils.permsToFlags(perms) |
+                        (e.externalFileAttributes & 0xFE00); // Preserve unrelated bits
+            }
             update(e);
         } finally {
             endWrite();
@@ -1703,7 +1710,7 @@ class ZipFileSystem extends FileSystem {
     private void checkZip64ExtraFieldValues(byte[] cen, int off, int blockSize, long csize,
                                             long size, long locoff, int diskNo)
             throws ZipException {
-        // if ZIP64_EXTID blocksize == 0, which may occur with some older
+        // if EXTID_ZIP64 blocksize == 0, which may occur with some older
         // versions of Apache Ant and Commons Compress, validate csize and size
         // to make sure neither field == ZIP64_MAGICVAL
         if (blockSize == 0) {
@@ -1711,7 +1718,7 @@ class ZipFileSystem extends FileSystem {
                     locoff == ZIP64_MINVAL || diskNo == ZIP64_MINVAL32) {
                 zerror("Invalid CEN header (invalid zip64 extra data field size)");
             }
-            // Only validate the ZIP64_EXTID data if the block size > 0
+            // Only validate the EXTID_ZIP64 data if the block size > 0
             return;
         }
         // Validate the Zip64 Extended Information Extra Field (0x0001)
@@ -2573,7 +2580,10 @@ class ZipFileSystem extends FileSystem {
                 pos = -pos + locpos;
                 byte[] buf = new byte[LOCHDR];
                 if (readNBytesAt(buf, 0, buf.length, pos) != LOCHDR) {
-                    throw new ZipException("invalid loc " + pos + " for entry reading");
+                    throw new ZipException("invalid LOC " + pos + " for entry reading");
+                }
+                if (LOCSIG(buf) != LOCSIG) {
+                    throw new ZipException("invalid LOC header (bad signature)");
                 }
                 pos += LOCHDR + LOCNAM(buf) + LOCEXT(buf);
             }
@@ -2877,7 +2887,7 @@ class ZipFileSystem extends FileSystem {
         // entry attributes
         int    version;
         int    flag;
-        int    posixPerms = -1; // posix permissions
+        int    externalFileAttributes = -1; // file type, setuid, setgid, sticky, posix permissions
         int    method = -1;    // compression method
         long   mtime  = -1;    // last modification time (in DOS time)
         long   atime  = -1;    // last access time
@@ -2913,7 +2923,7 @@ class ZipFileSystem extends FileSystem {
             for (FileAttribute<?> attr : attrs) {
                 String attrName = attr.name();
                 if (attrName.equals("posix:permissions")) {
-                    posixPerms = ZipUtils.permsToFlags((Set<PosixFilePermission>)attr.value());
+                    externalFileAttributes = ZipUtils.permsToFlags((Set<PosixFilePermission>)attr.value());
                 }
             }
         }
@@ -2948,7 +2958,7 @@ class ZipFileSystem extends FileSystem {
             */
             this.locoff    = e.locoff;
             this.comment   = e.comment;
-            this.posixPerms = e.posixPerms;
+            this.externalFileAttributes = e.externalFileAttributes;
             this.type      = type;
         }
 
@@ -2978,7 +2988,7 @@ class ZipFileSystem extends FileSystem {
          * to a version value.
          */
         private int versionMadeBy(int version) {
-            return (posixPerms < 0) ? version :
+            return (externalFileAttributes < 0) ? version :
                 VERSION_MADE_BY_BASE_UNIX | (version & 0xff);
         }
 
@@ -3005,7 +3015,7 @@ class ZipFileSystem extends FileSystem {
             attrsEx     = CENATX(cen, pos);
             */
             if (CENVEM_FA(cen, pos) == FILE_ATTRIBUTES_UNIX) {
-                posixPerms = CENATX_PERMS(cen, pos) & 0xFFF; // 12 bits for setuid, setgid, sticky + perms
+                externalFileAttributes = (CENATX_PERMS(cen, pos) & 0xFFFF); // 16 bits for file type, setuid, setgid, sticky + perms
             }
             locoff      = CENOFF(cen, pos);
             pos += CENHDR;
@@ -3095,7 +3105,7 @@ class ZipFileSystem extends FileSystem {
             }
             writeShort(os, 0);              // starting disk number
             writeShort(os, 0);              // internal file attributes (unused)
-            writeInt(os, posixPerms > 0 ? posixPerms << 16 : 0); // external file
+            writeInt(os, externalFileAttributes > 0 ? externalFileAttributes << 16 : 0); // external file
                                             // attributes, used for storing posix
                                             // permissions
             writeInt(os, locoff0);          // relative offset of local header
@@ -3518,10 +3528,10 @@ class ZipFileSystem extends FileSystem {
         @Override
         public Optional<Set<PosixFilePermission>> storedPermissions() {
             Set<PosixFilePermission> perms = null;
-            if (posixPerms != -1) {
+            if (externalFileAttributes != -1) {
                 perms = HashSet.newHashSet(PosixFilePermission.values().length);
                 for (PosixFilePermission perm : PosixFilePermission.values()) {
-                    if ((posixPerms & ZipUtils.permToFlag(perm)) != 0) {
+                    if ((externalFileAttributes & ZipUtils.permToFlag(perm)) != 0) {
                         perms.add(perm);
                     }
                 }

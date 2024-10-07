@@ -129,7 +129,7 @@ final class P11SecretKeyFactory extends SecretKeyFactorySpi {
         }
     }
 
-    static abstract sealed class PBEKeyInfo extends KeyInfo
+    abstract static sealed class PBEKeyInfo extends KeyInfo
             permits AESPBEKeyInfo, PBKDF2KeyInfo, P12MacPBEKeyInfo {
         public static final long INVALID_PRF = -1;
         public final long kdfMech;

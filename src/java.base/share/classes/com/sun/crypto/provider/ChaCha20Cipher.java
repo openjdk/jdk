@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
      */
     @Override
     protected void engineSetMode(String mode) throws NoSuchAlgorithmException {
-        if (mode.equalsIgnoreCase("None") == false) {
+        if (!mode.equalsIgnoreCase("None")) {
             throw new NoSuchAlgorithmException("Mode must be None");
         }
     }
@@ -174,7 +174,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
     @Override
     protected void engineSetPadding(String padding)
             throws NoSuchPaddingException {
-        if (padding.equalsIgnoreCase("NoPadding") == false) {
+        if (!padding.equalsIgnoreCase("NoPadding")) {
             throw new NoSuchPaddingException("Padding must be NoPadding");
         }
     }
@@ -326,7 +326,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
         // We will ignore the secure random implementation and use the nonce
         // from the AlgorithmParameterSpec instead.
-        byte[] newNonce = null;
+        byte[] newNonce;
         switch (mode) {
             case MODE_NONE:
                 if (!(params instanceof ChaCha20ParameterSpec)) {
@@ -360,7 +360,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
 
     /**
      * Initialize the engine using the {@code AlgorithmParameter} initialization
-     * format.  This cipher does supports initialization with
+     * format.  This cipher supports initialization with
      * {@code AlgorithmParameter} objects for ChaCha20-Poly1305 but not for
      * ChaCha20 as a simple stream cipher.  In the latter case, it will throw
      * an {@code InvalidAlgorithmParameterException} if the value is non-null.
@@ -618,7 +618,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
      *      or if the key encoding format is not {@code RAW}.
      */
     private static byte[] getEncodedKey(Key key) throws InvalidKeyException {
-        if ("RAW".equals(key.getFormat()) == false) {
+        if (!"RAW".equals(key.getFormat())) {
             throw new InvalidKeyException("Key encoding format must be RAW");
         }
         byte[] encodedKey = key.getEncoded();
@@ -675,7 +675,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
     @Override
     protected int engineUpdate(byte[] in, int inOfs, int inLen,
             byte[] out, int outOfs) throws ShortBufferException {
-        int bytesUpdated = 0;
+        int bytesUpdated;
         try {
             bytesUpdated = engine.doUpdate(in, inOfs, inLen, out, outOfs);
         } catch (KeyException ke) {
@@ -691,10 +691,10 @@ abstract class ChaCha20Cipher extends CipherSpi {
      * @param output ByteBuffer that will hold the resulting data.  This
      *      must be large enough to hold the resulting data.
      *
-     * @return the length in bytes of the data written into the {@code out}
+     * @return the length in bytes of the data written into the {@code output}
      *      buffer.
      *
-     * @throws ShortBufferException if the buffer {@code out} does not have
+     * @throws ShortBufferException if the buffer {@code output} does not have
      *      enough space to hold the resulting data.
      */
     @Override
@@ -763,7 +763,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
     protected int engineDoFinal(byte[] in, int inOfs, int inLen, byte[] out,
             int outOfs) throws ShortBufferException, AEADBadTagException {
 
-        int bytesUpdated = 0;
+        int bytesUpdated;
         try {
             bytesUpdated = engine.doFinal(in, inOfs, inLen, out, outOfs);
         } catch (KeyException ke) {
@@ -784,6 +784,9 @@ abstract class ChaCha20Cipher extends CipherSpi {
      *      must be large enough to hold the resulting data.
      *
      * @return the resulting plaintext or ciphertext bytes.
+     *
+     * @throws ShortBufferException if the buffer {@code output} does not have
+     *      enough space to hold the resulting data.
      *
      * @throws AEADBadTagException if, during decryption, the provided tag
      *      does not match the calculated tag.
@@ -947,12 +950,8 @@ abstract class ChaCha20Cipher extends CipherSpi {
      * key and nonce into their proper locations.  The counter field is not
      * set here.
      *
-     * @throws IllegalArgumentException if the key or nonce are not in
-     *      their proper lengths (32 bytes for the key, 12 bytes for the
-     *      nonce).
-     * @throws InvalidKeyException if the key does not support an encoded form.
      */
-    private void setInitialState() throws InvalidKeyException {
+    private void setInitialState() {
         // Apply constants to first 4 words
         startState[0] = STATE_CONST_0;
         startState[1] = STATE_CONST_1;
@@ -1257,11 +1256,11 @@ abstract class ChaCha20Cipher extends CipherSpi {
      * @param out the array to write the resulting tag into
      * @param outOff the offset to begin writing the data.
      *
-     * @throws ShortBufferException if there is insufficient room to
+     * @throws ProviderException if there is insufficient room to
      *      write the tag.
      */
     private void authFinalizeData(byte[] data, int dataOff, int length,
-            byte[] out, int outOff) throws ShortBufferException {
+            byte[] out, int outOff) {
         // Update with the final chunk of ciphertext, then pad to a
         // multiple of 16.
         if (data != null) {
@@ -1300,7 +1299,7 @@ abstract class ChaCha20Cipher extends CipherSpi {
      * @param dLen the length of the application data.
      * @param buf the buffer to write the two lengths into.
      *
-     * @note it is the caller's responsibility to provide an array large
+     * @implNote it is the caller's responsibility to provide an array large
      *      enough to hold the two longs.
      */
     private void authWriteLengths(long aLen, long dLen, byte[] buf) {

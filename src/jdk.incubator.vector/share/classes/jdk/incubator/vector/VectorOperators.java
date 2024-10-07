@@ -801,7 +801,7 @@ public abstract class VectorOperators {
                                     kind, dom, ran);
     }
 
-    private static abstract class OperatorImpl implements Operator {
+    private abstract static class OperatorImpl implements Operator {
         private final String symName;
         private final String opName;
         private final int opInfo;
@@ -1111,7 +1111,7 @@ public abstract class VectorOperators {
         private static final @Stable ConversionImpl<?,?>[][][]
             CACHES = new ConversionImpl<?,?>[KIND_LIMIT][LINE_LIMIT][LINE_LIMIT];
 
-        private synchronized static void initCaches() {
+        private static synchronized void initCaches() {
             for (var f : VectorOperators.class.getFields()) {
                 if (f.getType() != Conversion.class)  continue;
                 ConversionImpl<?,?> conv;

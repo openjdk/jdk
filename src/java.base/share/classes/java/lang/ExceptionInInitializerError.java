@@ -52,6 +52,7 @@ public class ExceptionInInitializerError extends LinkageError {
      * throwable object.
      * A detail message is a String that describes this particular exception.
      */
+    @SuppressWarnings("this-escape")
     public ExceptionInInitializerError() {
         initCause(null); // Disallow subsequent initCause
     }

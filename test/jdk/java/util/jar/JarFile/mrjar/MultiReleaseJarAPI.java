@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,15 +101,12 @@ public class MultiReleaseJarAPI {
         testCustomMultiReleaseValue("true", true);
         testCustomMultiReleaseValue("true\r\nOther: value", true);
         testCustomMultiReleaseValue("true\nOther: value", true);
-        // JDK-8200530: '\r' support in Manifest/Attributes will be addressed separately
-        // testCustomMultiReleaseValue("true\rOther: value", true);
+        testCustomMultiReleaseValue("true\rOther: value", true);
 
         testCustomMultiReleaseValue("false", false);
         testCustomMultiReleaseValue(" true", false);
         testCustomMultiReleaseValue("true ", false);
         testCustomMultiReleaseValue("true\n true", false);
-
-        // JDK-8200530: '\r' support in Manifest/Attributes will be addressed separately
         testCustomMultiReleaseValue("true\r true", false);
         testCustomMultiReleaseValue("true\r\n true", false);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -678,27 +678,26 @@ public class TestCommon extends CDSTestUtils {
         return true;
     }
 
-    static Pattern pattern;
-
     static void findAllClasses(ArrayList<String> list) throws Exception {
         // Find all the classes in the jrt file system
-        pattern = Pattern.compile("/modules/[a-z.]*[a-z]+/([^-]*)[.]class");
+        Pattern pattern = Pattern.compile("/modules/[a-z.]*[a-z]+/([^-]*)[.]class");
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
         Path base = fs.getPath("/modules/");
-        findAllClassesAtPath(base, list);
+        findAllClassesAtPath(base, pattern, list);
     }
 
-    private static void findAllClassesAtPath(Path p, ArrayList<String> list) throws Exception {
+    private static void findAllClassesAtPath(Path p, Pattern pattern, ArrayList<String> list) throws Exception {
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(p)) {
             for (Path entry: stream) {
-                Matcher matcher = pattern.matcher(entry.toString());
-                if (matcher.find()) {
-                    String className = matcher.group(1);
-                    list.add(className);
+                if (Files.isDirectory(entry)) {
+                    findAllClassesAtPath(entry, pattern, list);
+                } else {
+                    Matcher matcher = pattern.matcher(entry.toString());
+                    if (matcher.find()) {
+                        String className = matcher.group(1);
+                        list.add(className);
+                    }
                 }
-                try {
-                    findAllClassesAtPath(entry, list);
-                } catch (Exception ex) {}
             }
         }
     }

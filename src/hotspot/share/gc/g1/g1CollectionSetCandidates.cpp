@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1CollectionSetCandidates.hpp"
+#include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -38,13 +38,13 @@ void G1CollectionCandidateList::set(G1CollectionSetCandidateInfo* candidate_info
   _candidates.appendAll(&a);
 }
 
-void G1CollectionCandidateList::append_unsorted(HeapRegion* r) {
+void G1CollectionCandidateList::append_unsorted(G1HeapRegion* r) {
   G1CollectionSetCandidateInfo c(r, r->calc_gc_efficiency());
   _candidates.append(c);
 }
 
 void G1CollectionCandidateList::sort_by_efficiency() {
-  _candidates.sort(compare);
+  _candidates.sort(compare_gc_efficiency);
 }
 
 void G1CollectionCandidateList::remove(G1CollectionCandidateRegionList* other) {
@@ -94,7 +94,22 @@ void G1CollectionCandidateList::verify() {
 }
 #endif
 
-int G1CollectionCandidateList::compare(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
+int G1CollectionCandidateList::compare_gc_efficiency(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
+  assert(ci1->_r != nullptr && ci2->_r != nullptr, "Should not be!");
+
+  double gc_eff1 = ci1->_gc_efficiency;
+  double gc_eff2 = ci2->_gc_efficiency;
+
+  if (gc_eff1 > gc_eff2) {
+    return -1;
+  } else if (gc_eff1 < gc_eff2) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+int G1CollectionCandidateList::compare_reclaimble_bytes(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2) {
   // Make sure that null entries are moved to the end.
   if (ci1->_r == nullptr) {
     if (ci2->_r == nullptr) {
@@ -106,12 +121,12 @@ int G1CollectionCandidateList::compare(G1CollectionSetCandidateInfo* ci1, G1Coll
     return -1;
   }
 
-  double gc_eff1 = ci1->_gc_efficiency;
-  double gc_eff2 = ci2->_gc_efficiency;
+  size_t reclaimable1 = ci1->_r->reclaimable_bytes();
+  size_t reclaimable2 = ci2->_r->reclaimable_bytes();
 
-  if (gc_eff1 > gc_eff2) {
+  if (reclaimable1 > reclaimable2) {
     return -1;
-  } if (gc_eff1 < gc_eff2) {
+  } else if (reclaimable1 < reclaimable2) {
     return 1;
   } else {
     return 0;
@@ -120,7 +135,7 @@ int G1CollectionCandidateList::compare(G1CollectionSetCandidateInfo* ci1, G1Coll
 
 G1CollectionCandidateRegionList::G1CollectionCandidateRegionList() : _regions(2, mtGC) { }
 
-void G1CollectionCandidateRegionList::append(HeapRegion* r) {
+void G1CollectionCandidateRegionList::append(G1HeapRegion* r) {
   assert(!_regions.contains(r), "must be");
   _regions.append(r);
 }
@@ -129,7 +144,7 @@ void G1CollectionCandidateRegionList::remove_prefix(G1CollectionCandidateRegionL
 #ifdef ASSERT
   // Check that the given list is a prefix of this list.
   int i = 0;
-  for (HeapRegion* r : *other) {
+  for (G1HeapRegion* r : *other) {
     assert(_regions.at(i) == r, "must be in order, but element %d is not", i);
     i++;
   }
@@ -141,7 +156,7 @@ void G1CollectionCandidateRegionList::remove_prefix(G1CollectionCandidateRegionL
   _regions.remove_till(other->length());
 }
 
-HeapRegion* G1CollectionCandidateRegionList::at(uint index) {
+G1HeapRegion* G1CollectionCandidateRegionList::at(uint index) {
   return _regions.at(index);
 }
 
@@ -161,7 +176,7 @@ G1CollectionSetCandidates::~G1CollectionSetCandidates() {
   FREE_C_HEAP_ARRAY(CandidateOrigin, _contains_map);
 }
 
-bool G1CollectionSetCandidates::is_from_marking(HeapRegion* r) const {
+bool G1CollectionSetCandidates::is_from_marking(G1HeapRegion* r) const {
   assert(contains(r), "must be");
   return _contains_map[r->hrm_index()] == CandidateOrigin::Marking;
 }
@@ -182,6 +197,17 @@ void G1CollectionSetCandidates::clear() {
   _last_marking_candidates_length = 0;
 }
 
+void G1CollectionSetCandidates::sort_marking_by_efficiency() {
+  G1CollectionCandidateListIterator iter = _marking_regions.begin();
+  for (; iter != _marking_regions.end(); ++iter) {
+    G1HeapRegion* hr = (*iter)->_r;
+    (*iter)->_gc_efficiency = hr->calc_gc_efficiency();
+  }
+  _marking_regions.sort_by_efficiency();
+
+  _marking_regions.verify();
+}
+
 void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandidateInfo* candidate_infos,
                                                             uint num_infos) {
   assert(_marking_regions.length() == 0, "must be empty before adding new ones");
@@ -190,7 +216,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(G1CollectionSetCandi
 
   _marking_regions.set(candidate_infos, num_infos);
   for (uint i = 0; i < num_infos; i++) {
-    HeapRegion* r = candidate_infos[i]._r;
+    G1HeapRegion* r = candidate_infos[i]._r;
     assert(!contains(r), "must not contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
   }
@@ -207,7 +233,7 @@ void G1CollectionSetCandidates::sort_by_efficiency() {
   _retained_regions.verify();
 }
 
-void G1CollectionSetCandidates::add_retained_region_unsorted(HeapRegion* r) {
+void G1CollectionSetCandidates::add_retained_region_unsorted(G1HeapRegion* r) {
   assert(!contains(r), "must not contain region %u", r->hrm_index());
   _contains_map[r->hrm_index()] = CandidateOrigin::Retained;
   _retained_regions.append_unsorted(r);
@@ -223,7 +249,7 @@ void G1CollectionSetCandidates::remove(G1CollectionCandidateRegionList* other) {
   G1CollectionCandidateRegionList other_marking_regions;
   G1CollectionCandidateRegionList other_retained_regions;
 
-  for (HeapRegion* r : *other) {
+  for (G1HeapRegion* r : *other) {
     if (is_from_marking(r)) {
       other_marking_regions.append(r);
     } else {
@@ -234,7 +260,7 @@ void G1CollectionSetCandidates::remove(G1CollectionCandidateRegionList* other) {
   _marking_regions.remove(&other_marking_regions);
   _retained_regions.remove(&other_retained_regions);
 
-  for (HeapRegion* r : *other) {
+  for (G1HeapRegion* r : *other) {
     assert(contains(r), "must contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Invalid;
   }
@@ -263,7 +289,7 @@ void G1CollectionSetCandidates::verify_helper(G1CollectionCandidateList* list, u
   list->verify();
 
   for (uint i = 0; i < (uint)list->length(); i++) {
-    HeapRegion* r = list->at(i)._r;
+    G1HeapRegion* r = list->at(i)._r;
 
     if (is_from_marking(r)) {
       from_marking++;
@@ -308,13 +334,13 @@ void G1CollectionSetCandidates::verify() {
 }
 #endif
 
-bool G1CollectionSetCandidates::contains(const HeapRegion* r) const {
+bool G1CollectionSetCandidates::contains(const G1HeapRegion* r) const {
   const uint index = r->hrm_index();
   assert(index < _max_regions, "must be");
   return _contains_map[index] != CandidateOrigin::Invalid;
 }
 
-const char* G1CollectionSetCandidates::get_short_type_str(const HeapRegion* r) const {
+const char* G1CollectionSetCandidates::get_short_type_str(const G1HeapRegion* r) const {
   static const char* type_strings[] = {
     "Ci",  // Invalid
     "Cm",  // Marking

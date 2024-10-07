@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @compile SuspendResume2.java
  * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm/native
- *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
+ *      -Djdk.virtualThreadScheduler.maxPoolSize=1
  *      -agentlib:SuspendResume2
  *      SuspendResume2
  */
@@ -40,7 +40,6 @@
  * @compile SuspendResume2.java
  * @run driver jdk.test.lib.FileInstaller . .
  * @run main/othervm/native
- *      -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
  *      -agentlib:SuspendResume2
  *      -XX:+UnlockExperimentalVMOptions
  *      -XX:-VMContinuations

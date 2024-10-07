@@ -109,9 +109,7 @@ public class TestMixedGCLiveThreshold {
 
         basicOpts.add(GCTest.class.getName());
 
-        ProcessBuilder procBuilder =  ProcessTools.createLimitedTestJavaProcessBuilder(basicOpts);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
-        return analyzer;
+        return ProcessTools.executeLimitedTestJava(basicOpts);
     }
 
     private static boolean regionsSelectedForRebuild(String output) throws Exception {

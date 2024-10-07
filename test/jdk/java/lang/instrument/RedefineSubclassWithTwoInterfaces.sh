@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ cp "${TESTSRC}"/RedefineSubclassWithTwoInterfacesImpl_1.java \
 "${JAVAC}" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
     -cp "${TESTCLASSES}" -d . \
     RedefineSubclassWithTwoInterfacesTarget.java \
-    RedefineSubclassWithTwoInterfacesImpl.java 
+    RedefineSubclassWithTwoInterfacesImpl.java
 status="$?"
 if [ "$status" != 0 ]; then
     echo "FAIL: compile of *_1.java files failed."
@@ -87,7 +87,7 @@ mv RedefineSubclassWithTwoInterfacesImpl.class \
 
 echo "INFO: launching RedefineSubclassWithTwoInterfacesApp"
 
-"${JAVA}" ${TESTVMOPTS} \
+"${JAVA}" ${TESTVMOPTS} ${TESTJAVAOPTS} \
     -Xlog:redefine+class+load=trace,redefine+class+load+exceptions=trace,redefine+class+timer=trace,redefine+class+obsolete=trace,redefine+class+obsolete+metadata=trace,redefine+class+constantpool=trace \
     -javaagent:RedefineSubclassWithTwoInterfacesAgent.jar \
     -classpath "${TESTCLASSES}" \

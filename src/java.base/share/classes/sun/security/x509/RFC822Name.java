@@ -50,6 +50,7 @@ public class RFC822Name implements GeneralNameInterface
      * @param derValue the encoded DER RFC822Name.
      * @exception IOException on error.
      */
+    @SuppressWarnings("this-escape")
     public RFC822Name(DerValue derValue) throws IOException {
         name = derValue.getIA5String();
         parseName(name);
@@ -61,6 +62,7 @@ public class RFC822Name implements GeneralNameInterface
      * @param name the RFC822Name.
      * @throws IOException on invalid input name
      */
+    @SuppressWarnings("this-escape")
     public RFC822Name(String name) throws IOException {
         parseName(name);
         this.name = name;

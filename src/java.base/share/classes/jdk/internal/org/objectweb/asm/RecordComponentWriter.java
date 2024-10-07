@@ -255,4 +255,3 @@ final class RecordComponentWriter extends RecordComponentVisitor {
         attributePrototypes.addAttributes(firstAttribute);
     }
 }
-

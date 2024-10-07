@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.nio.charset.StandardCharsets;
 
 /*
  * @test
- * @bug 8236987
+ * @bug 8236987 8320328
  * @summary Verifies ImageIcon constructor produces no output when the
  *          thread is interrupted
  * @run main LoadInterruptTest
@@ -74,6 +74,8 @@ public class LoadInterruptTest {
         Thread.currentThread().interrupt();
         ImageIcon i = new ImageIcon("https://openjdk.org/images/openjdk.png");
         int status = i.getImageLoadStatus();
+        boolean interrupted = Thread.currentThread().isInterrupted();
+
         System.out.flush();
         String outString = testOut.toString(StandardCharsets.UTF_8);
 
@@ -84,6 +86,9 @@ public class LoadInterruptTest {
         if (status == MediaTracker.LOADING) {
             throw new RuntimeException("Test Case Failed!!! LOADING... status!!!");
         }
+
+        if (!interrupted) {
+            throw new RuntimeException("Interrupted state of the thread is not preserved");
+        }
     }
 }
-

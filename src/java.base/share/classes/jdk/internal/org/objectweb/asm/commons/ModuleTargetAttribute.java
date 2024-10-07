@@ -116,4 +116,3 @@ public final class ModuleTargetAttribute extends Attribute {
         return byteVector;
     }
 }
-

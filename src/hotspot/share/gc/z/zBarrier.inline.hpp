@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,13 @@
 
 #include "gc/z/zBarrier.hpp"
 
-#include "code/codeCache.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zResurrection.inline.hpp"
+#include "gc/z/zVerify.hpp"
 #include "oops/oop.hpp"
 #include "runtime/atomic.hpp"
-#include "runtime/continuation.hpp"
 
 // A self heal must always "upgrade" the address metadata bits in
 // accordance with the metadata bits state machine. The following
@@ -320,17 +319,9 @@ inline zaddress ZBarrier::make_load_good_no_relocate(zpointer o) {
   return remap(ZPointer::uncolor_unsafe(o), remap_generation(o));
 }
 
-inline void z_assert_is_barrier_safe() {
-  assert(!Thread::current()->is_ConcurrentGC_thread() ||          /* Need extra checks for ConcurrentGCThreads */
-         Thread::current()->is_suspendible_thread() ||            /* Thread prevents safepoints */
-         Thread::current()->is_indirectly_suspendible_thread() || /* Coordinator thread prevents safepoints */
-         SafepointSynchronize::is_at_safepoint(),                 /* Is at safepoint */
-         "Shouldn't perform load barrier");
-}
-
 template <typename ZBarrierSlowPath>
 inline zaddress ZBarrier::barrier(ZBarrierFastPath fast_path, ZBarrierSlowPath slow_path, ZBarrierColor color, volatile zpointer* p, zpointer o, bool allow_null) {
-  z_assert_is_barrier_safe();
+  z_verify_safepoints_are_blocked();
 
   // Fast path
   if (fast_path(o)) {
@@ -482,6 +473,12 @@ inline zaddress ZBarrier::load_barrier_on_oop_field_preloaded(volatile zpointer*
 inline zaddress ZBarrier::keep_alive_load_barrier_on_oop_field_preloaded(volatile zpointer* p, zpointer o) {
   assert(!ZResurrection::is_blocked(), "This operation is only valid when resurrection is not blocked");
   return barrier(is_mark_good_fast_path, keep_alive_slow_path, color_mark_good, p, o);
+}
+
+inline void ZBarrier::load_barrier_on_oop_array(volatile zpointer* p, size_t length) {
+  for (volatile const zpointer* const end = p + length; p < end; p++) {
+    load_barrier_on_oop_field(p);
+  }
 }
 
 //
@@ -748,7 +745,7 @@ inline void ZBarrier::mark_and_remember(volatile zpointer* p, zaddress addr) {
 
 template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
 inline void ZBarrier::mark(zaddress addr) {
-  assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr), false), "must be oop");
+  assert_is_oop(addr);
 
   if (ZHeap::heap()->is_old(addr)) {
     ZGeneration::old()->mark_object_if_active<resurrect, gc_thread, follow, finalizable>(addr);
@@ -760,7 +757,7 @@ inline void ZBarrier::mark(zaddress addr) {
 template <bool resurrect, bool gc_thread, bool follow>
 inline void ZBarrier::mark_young(zaddress addr) {
   assert(ZGeneration::young()->is_phase_mark(), "Should only be called during marking");
-  assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr), false), "must be oop");
+  assert_is_oop(addr);
   assert(ZHeap::heap()->is_young(addr), "Must be young");
 
   ZGeneration::young()->mark_object<resurrect, gc_thread, follow, ZMark::Strong>(addr);

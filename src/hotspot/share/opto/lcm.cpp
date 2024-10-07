@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     for (uint i1 = 0; i1 < null_block->number_of_nodes(); i1++) {
       Node* nn = null_block->get_node(i1);
       if (nn->is_MachCall() &&
-          nn->as_MachCall()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point()) {
+          nn->as_MachCall()->entry_point() == OptoRuntime::uncommon_trap_blob()->entry_point()) {
         const Type* trtype = nn->in(TypeFunc::Parms)->bottom_type();
         if (trtype->isa_int() && trtype->is_int()->is_con()) {
           jint tr_con = trtype->is_int()->get_con();
@@ -150,8 +150,9 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   bool is_decoden = ((intptr_t)val) & 1;
   val = (Node*)(((intptr_t)val) & ~1);
 
-  assert(!is_decoden || (val->in(0) == nullptr) && val->is_Mach() &&
-         (val->as_Mach()->ideal_Opcode() == Op_DecodeN), "sanity");
+  assert(!is_decoden ||
+         ((val->in(0) == nullptr) && val->is_Mach() &&
+          (val->as_Mach()->ideal_Opcode() == Op_DecodeN)), "sanity");
 
   // Search the successor block for a load or store who's base value is also
   // the tested value.  There may be several.
@@ -160,6 +161,14 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     Node *m = val->out(i);
     if( !m->is_Mach() ) continue;
     MachNode *mach = m->as_Mach();
+    if (mach->barrier_data() != 0) {
+      // Using memory accesses with barriers to perform implicit null checks is
+      // not supported. These operations might expand into multiple assembly
+      // instructions during code emission, including new memory accesses (e.g.
+      // in G1's pre-barrier), which would invalidate the implicit null
+      // exception table.
+      continue;
+    }
     was_store = false;
     int iop = mach->ideal_Opcode();
     switch( iop ) {

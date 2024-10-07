@@ -74,4 +74,3 @@ public interface Value {
       */
     int getSize();
 }
-

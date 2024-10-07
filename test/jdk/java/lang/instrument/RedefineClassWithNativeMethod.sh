@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ fi
 JAVAC="${COMPILEJAVA}"/bin/javac
 JAVA="${TESTJAVA}"/bin/java
 
-"${JAVA}" ${TESTVMOPTS} \
+"${JAVA}" ${TESTVMOPTS} ${TESTJAVAOPTS} \
     -javaagent:RedefineClassWithNativeMethodAgent.jar=java/lang/Thread.class \
     -classpath "${TESTCLASSES}" RedefineClassWithNativeMethodApp \
     > output.log 2>&1

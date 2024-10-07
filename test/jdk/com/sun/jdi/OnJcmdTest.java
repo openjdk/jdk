@@ -51,12 +51,12 @@ public class OnJcmdTest {
 
     public static void main(String[] args) throws Throwable {
         // First check if we get the expected errors.
-        OutputAnalyzer output = ProcessTools.executeTestJvm(
+        OutputAnalyzer output = ProcessTools.executeTestJava(
                 "-agentlib:jdwp=transport=dt_socket,address=any,onjcmd=y");
         output.shouldContain("Can only use onjcmd with server=y");
         output.shouldHaveExitValue(1);
 
-        output = ProcessTools.executeTestJvm(
+        output = ProcessTools.executeTestJava(
                 "-agentlib:jdwp=transport=dt_socket,address=any,onjcmd=y,onthrow=a,launch=a");
         output.shouldContain("Cannot combine onjcmd and launch suboptions");
         output.shouldHaveExitValue(1);

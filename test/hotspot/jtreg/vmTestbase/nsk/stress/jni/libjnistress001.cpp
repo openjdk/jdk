@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /* Changed from strings.h to string.h for Windows. */
 #include <string.h>
 #include <stdlib.h>
-#include "jnihelper.h"
+#include "jnihelper.hpp"
 
 extern "C" {
 
@@ -108,8 +108,8 @@ Java_nsk_stress_jni_JNIter001_jnistress (JNIEnv *env, jobject jobj, jstring jstr
       }
       if (memcmp(digest, element->checkstr[j], DIGESTLENGTH) == 0) {
         env->ReleaseStringUTFChars(jstr, element->str[j]); CE
-        element->str[j] = NULL;
-        element->checkstr[j] = NULL;
+        element->str[j] = nullptr;
+        element->checkstr[j] = nullptr;
       } else {
         compared = 0;
         printf("The element No. %d has been corrupted %s vs %s\n", j,
@@ -217,8 +217,8 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
       free(elem);
       if (memcmp(digest, javachars->checkstr[j], javachars->size[j]) == 0) {
         env->ReleaseStringChars(jstr, javachars->str[j]); CE
-        javachars->str[j] = NULL;
-        javachars->checkstr[j] = NULL;
+        javachars->str[j] = nullptr;
+        javachars->checkstr[j] = nullptr;
         javachars->size[j] = 0;
       } else {
         equal = 0;

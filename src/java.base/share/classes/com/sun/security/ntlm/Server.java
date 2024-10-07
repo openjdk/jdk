@@ -64,6 +64,7 @@ public abstract class Server extends NTLM {
      * @param domain the domain, must not be null
      * @throws NTLMException if {@code domain} is null.
      */
+    @SuppressWarnings("this-escape")
     public Server(String version, String domain) throws NTLMException {
         super(version);
         if (domain == null) {

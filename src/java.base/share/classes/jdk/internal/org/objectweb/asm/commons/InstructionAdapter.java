@@ -1094,7 +1094,8 @@ public class InstructionAdapter extends MethodVisitor {
     /**
       * Deprecated.
       *
-      * @param owner the internal name of the method's owner class.
+      * @param owner the internal name of the method's owner class (see {@link
+      *     Type#getInternalName()}).
       * @param name the method's name.
       * @param descriptor the method's descriptor (see {@link Type}).
       * @deprecated use {@link #invokevirtual(String, String, String, boolean)} instead.
@@ -1132,7 +1133,8 @@ public class InstructionAdapter extends MethodVisitor {
     /**
       * Deprecated.
       *
-      * @param owner the internal name of the method's owner class.
+      * @param owner the internal name of the method's owner class (see {@link
+      *     Type#getInternalName()}).
       * @param name the method's name.
       * @param descriptor the method's descriptor (see {@link Type}).
       * @deprecated use {@link #invokespecial(String, String, String, boolean)} instead.
@@ -1170,7 +1172,8 @@ public class InstructionAdapter extends MethodVisitor {
     /**
       * Deprecated.
       *
-      * @param owner the internal name of the method's owner class.
+      * @param owner the internal name of the method's owner class (see {@link
+      *     Type#getInternalName()}).
       * @param name the method's name.
       * @param descriptor the method's descriptor (see {@link Type}).
       * @deprecated use {@link #invokestatic(String, String, String, boolean)} instead.
@@ -1329,4 +1332,3 @@ public class InstructionAdapter extends MethodVisitor {
         mv.visitLabel(label);
     }
 }
-

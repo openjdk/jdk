@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -61,7 +61,7 @@ struct BinListBasicTest {
     // Try to get a block from an empty list.
     size_t real_size = 4711;
     MetaWord* p = bl.remove_block(innocous_size, &real_size);
-    EXPECT_EQ(p, (MetaWord*)NULL);
+    EXPECT_EQ(p, (MetaWord*)nullptr);
     EXPECT_EQ((size_t)0, real_size);
 
     // Add a block...
@@ -102,7 +102,7 @@ struct BinListBasicTest {
           CHECK_BL_CONTENT(bl, 0, 0);
           DEBUG_ONLY(bl.verify();)
         } else {
-          EXPECT_EQ(p, (MetaWord*)NULL);
+          EXPECT_EQ(p, (MetaWord*)nullptr);
           EXPECT_EQ((size_t)0, real_size);
           CHECK_BL_CONTENT(bl, 1, s1);
           DEBUG_ONLY(bl.verify();)
@@ -135,7 +135,7 @@ struct BinListBasicTest {
     for (;;) {
       size_t s = rgen.get();
       MetaWord* p = fb.get(s);
-      if (p != NULL) {
+      if (p != nullptr) {
         bl[which].add_block(p, s);
         cnt[which].add(s);
         which = which == 0 ? 1 : 0;
@@ -156,7 +156,7 @@ struct BinListBasicTest {
 
       size_t real_size = 4711;
       MetaWord* p = bl[giver].remove_block(s, &real_size);
-      if (p != NULL) {
+      if (p != nullptr) {
 
         ASSERT_TRUE(fb.is_valid_range(p, real_size));
         ASSERT_GE(real_size, s);
@@ -166,7 +166,7 @@ struct BinListBasicTest {
         cnt[taker].add(real_size);
 
       } else {
-        ASSERT_EQ(real_size, (size_t)NULL);
+        ASSERT_EQ(real_size, (size_t)nullptr);
       }
 
       CHECK_COUNTERS;
@@ -185,7 +185,7 @@ struct BinListBasicTest {
         size_t real_size = 4711;
         MetaWord* p = bl[which].remove_block(1, &real_size);
 
-        ASSERT_NE(p, (MetaWord*) NULL);
+        ASSERT_NE(p, (MetaWord*) nullptr);
         ASSERT_GE(real_size, (size_t)1);
         ASSERT_TRUE(fb.is_valid_range(p, real_size));
 

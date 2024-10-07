@@ -1,0 +1,35 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns:core="https://schemas.opentest4j.org/reporting/core/0.1.0"
+           xmlns:e="https://schemas.opentest4j.org/reporting/events/0.1.0"
+           targetNamespace="https://schemas.opentest4j.org/reporting/events/0.1.0"
+           elementFormDefault="qualified">
+  <xs:import schemaLocation="core.xsd" namespace="https://schemas.opentest4j.org/reporting/core/0.1.0"/>
+  <xs:element name="events">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="core:infrastructure" minOccurs="0"/>
+        <xs:choice minOccurs="0" maxOccurs="unbounded">
+          <xs:element name="started" type="e:Started"/>
+          <xs:element name="reported" type="e:Event"/>
+          <xs:element name="finished" type="e:Event"/>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="Event">
+    <xs:complexContent>
+      <xs:extension base="core:TestInfo">
+        <xs:attribute name="id" type="xs:string" use="required"/>
+        <xs:attribute name="time" type="xs:dateTime" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="Started">
+    <xs:complexContent>
+      <xs:extension base="e:Event">
+        <xs:attribute name="parentId" type="xs:string"/>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+</xs:schema>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -1197,26 +1197,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Resolute">
 				<exemplarCity>རི་སོ་ལིའུཊ</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>རཱེ་ནི་རི་ཝར</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>རེན་ཀིན་ ཨིན་ལེཊ</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>ཨ་ཏི་ཀོ་ཀཱན</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>ཐན་ཌར་ བའེ</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>ནི་པི་གཱོན</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>ཊོ་རོན་ཊོ</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>པེང་ནིར་ཏུང</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>མཱོངཀ་ཊོན</exemplarCity>
@@ -1550,9 +1538,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Pacific/Wake">
 				<exemplarCity draft="unconfirmed">ཝེཀ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity draft="unconfirmed">ཇཱོནསི་ཊོན</exemplarCity>
 			</zone>
 			<zone type="America/Yakutat">
 				<exemplarCity>ཡ་ཀུ་ཏཏ</exemplarCity>

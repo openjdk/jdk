@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,15 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
 #define MAX_FRAME_COUNT 20
 
-static jvmtiEnv *jvmti = NULL;
-static jthread exp_thread = NULL;
-static jrawMonitorID event_mon = NULL;
+static jvmtiEnv *jvmti = nullptr;
+static jthread exp_thread = nullptr;
+static jrawMonitorID event_mon = nullptr;
 static int method_entry_count = 0;
 static int method_exit_count = 0;
 static int frame_pop_count = 0;
@@ -40,11 +40,11 @@ static void
 print_frame_event_info(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method, const char* event_name) {
   char* tname = get_thread_name(jvmti, jni, thread);
   char* cname = get_method_class_name(jvmti, jni, method);
-  char* mname = NULL;
-  char* msign = NULL;
+  char* mname = nullptr;
+  char* msign = nullptr;
   jvmtiError err;
 
-  err = jvmti->GetMethodName(method, &mname, &msign, NULL);
+  err = jvmti->GetMethodName(method, &mname, &msign, nullptr);
   check_jvmti_status(jni, err, "event handler: error in JVMTI GetMethodName call");
 
   if (strcmp(event_name, "MethodEntry") == 0) {

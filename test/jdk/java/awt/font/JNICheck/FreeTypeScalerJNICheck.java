@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -45,7 +45,10 @@ public class FreeTypeScalerJNICheck {
         } else {
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder("-Xcheck:jni", FreeTypeScalerJNICheck.class.getName(), "runtest");
             OutputAnalyzer oa = ProcessTools.executeProcess(pb);
-            oa.shouldContain("Done").shouldNotContain("WARNING").shouldHaveExitValue(0);
+            oa.shouldContain("Done")
+                .shouldNotContain("WARNING")
+                .shouldNotContain("AWT Assertion")
+                .shouldHaveExitValue(0);
         }
     }
 
@@ -54,8 +57,7 @@ public class FreeTypeScalerJNICheck {
         BufferedImage bi = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = bi.createGraphics();
 
-        for (String ff : families)
-        {
+        for (String ff : families) {
             Font font = new Font(ff, Font.PLAIN, 12);
             Rectangle2D bounds = font.getStringBounds("test", g2d.getFontRenderContext());
             g2d.setFont(font);
@@ -66,4 +68,3 @@ public class FreeTypeScalerJNICheck {
         System.out.println("Done");
     }
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -592,7 +592,7 @@ public class IndexColorModel extends ColorModel {
     private BigInteger getAllValid() {
         int numbytes = (map_size+7)/8;
         byte[] valid = new byte[numbytes];
-        java.util.Arrays.fill(valid, (byte)0xff);
+        Arrays.fill(valid, (byte)0xff);
         valid[0] = (byte)(0xff >>> (numbytes*8 - map_size));
 
         return new BigInteger(1, valid);

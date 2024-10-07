@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ failures=0
 
 go() {
     echo ''
-    sh -xc "$JAVA ${TESTVMOPTS} -javaagent:Agent.jar -classpath SimpleTests.jar  $1 $2 $3" 2>&1
+    sh -xc "$JAVA ${TESTVMOPTS} ${TESTJAVAOPTS} -javaagent:Agent.jar -classpath SimpleTests.jar  $1 $2 $3" 2>&1
     if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 }
 
@@ -85,11 +85,11 @@ mv Application.class InstrumentedApplication.bytes
 cp "${TESTSRC}"/Application.java .
 "${JAVAC}" ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . Application.java
 
-sh -xc "$JAVA ${TESTVMOPTS} -classpath . -javaagent:Agent.jar DynamicTest" 2>&1
+sh -xc "$JAVA ${TESTVMOPTS} ${TESTJAVAOPTS} -classpath . -javaagent:Agent.jar DynamicTest" 2>&1
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # Repeat test with security manager
-sh -xc "$JAVA ${TESTVMOPTS} -classpath . -javaagent:Agent.jar -Djava.security.manager DynamicTest" 2>&1
+sh -xc "$JAVA ${TESTVMOPTS} ${TESTJAVAOPTS} -classpath . -javaagent:Agent.jar -Djava.security.manager DynamicTest" 2>&1
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 #

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -454,12 +454,26 @@ final class P11AEADCipher extends CipherSpi {
             if (session == null) {
                 session = token.getOpSession();
             }
-            if (encrypt) {
-                token.p11.C_EncryptInit(session.id(), mechWithParams,
-                    p11KeyID);
+
+            if (type == Transformation.AES_GCM) {
+                CK_VERSION cryptokiVersion = token.p11.getVersion();
+                boolean useNormativeMechFirst = cryptokiVersion.major > 2 ||
+                    (cryptokiVersion.major == 2  && cryptokiVersion.minor >= 40);
+                if (encrypt) {
+                    token.p11.C_GCMEncryptInitWithRetry(session.id(), mechWithParams,
+                        p11KeyID, useNormativeMechFirst);
+                } else {
+                    token.p11.C_GCMDecryptInitWithRetry(session.id(), mechWithParams,
+                        p11KeyID, useNormativeMechFirst);
+                }
             } else {
-                token.p11.C_DecryptInit(session.id(), mechWithParams,
-                    p11KeyID);
+                if (encrypt) {
+                    token.p11.C_EncryptInit(session.id(), mechWithParams,
+                        p11KeyID);
+                } else {
+                    token.p11.C_DecryptInit(session.id(), mechWithParams,
+                        p11KeyID);
+                }
             }
         } catch (PKCS11Exception e) {
             p11Key.releaseKeyID();

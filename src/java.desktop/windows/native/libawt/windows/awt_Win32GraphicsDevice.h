@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,6 @@ public:
     jobject                 GetJavaDevice() { return javaDevice; }
     int                     GetDeviceIndex() { return screen; }
     void                    Release();
-    void                    DisableOffscreenAcceleration();
     void                    DisableScaleAutoRefresh();
     void                    Invalidate(JNIEnv *env);
     void                    InitDesktopScales();
@@ -96,7 +95,6 @@ public:
     static void             ResetAllDesktopScales();
     static BOOL             IsPrimaryPalettized() { return primaryPalettized; }
     static int              GetDefaultDeviceIndex() { return primaryIndex; }
-    static void             DisableOffscreenAccelerationForDevice(HMONITOR hMonitor);
     static HDC              GetDCFromScreen(int screen);
     static int              GetScreenFromHMONITOR(HMONITOR mon);
 

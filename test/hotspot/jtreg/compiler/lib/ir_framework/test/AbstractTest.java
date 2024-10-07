@@ -94,7 +94,6 @@ abstract class AbstractTest {
         if (skip) {
             return;
         }
-        onStart();
         for (int i = 0; i < warmupIterations; i++) {
             invokeTest();
         }
@@ -102,10 +101,6 @@ abstract class AbstractTest {
         compileTest();
         // Always run the test as a last step of the test execution.
         invokeTest();
-    }
-
-    protected void onStart() {
-        // Do nothing by default.
     }
 
     abstract protected void invokeTest();

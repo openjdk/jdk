@@ -44,7 +44,7 @@ public class TestShiftAndMask {
     }
 
     @Test
-    @Arguments(Argument.RANDOM_EACH)
+    @Arguments(values = Argument.RANDOM_EACH)
     @IR(failOn = { IRNode.AND_I, IRNode.LSHIFT_I })
     public static int shiftMaskInt(int i) {
         return (i << 2) & 3; // transformed to: return 0;
@@ -58,7 +58,7 @@ public class TestShiftAndMask {
     }
 
     @Test
-    @Arguments(Argument.RANDOM_EACH)
+    @Arguments(values = Argument.RANDOM_EACH)
     @IR(failOn = { IRNode.AND_L, IRNode.LSHIFT_L })
     public static long shiftMaskLong(long i) {
         return (i << 2) & 3; // transformed to: return 0;
@@ -75,7 +75,7 @@ public class TestShiftAndMask {
     static volatile int barrier;
 
     @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.BOOLEAN_TOGGLE_FIRST_TRUE})
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.BOOLEAN_TOGGLE_FIRST_TRUE})
     @IR(failOn = { IRNode.AND_I, IRNode.LSHIFT_I })
     public static int shiftNonConstMaskInt(int i, boolean flag) {
         int mask;
@@ -96,7 +96,7 @@ public class TestShiftAndMask {
     }
 
     @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.BOOLEAN_TOGGLE_FIRST_TRUE})
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.BOOLEAN_TOGGLE_FIRST_TRUE})
     @IR(failOn = { IRNode.AND_L, IRNode.LSHIFT_L })
     public static long shiftNonConstMaskLong(long i, boolean flag) {
         long mask;
@@ -207,7 +207,7 @@ public class TestShiftAndMask {
     }
 
     @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = { IRNode.AND_I, IRNode.ADD_I, IRNode.LSHIFT_I })
     public static int addShiftMaskInt2(int i, int j) {
         return ((j << 2) + (i << 2)) & 3; // transformed to: return 0;
@@ -221,7 +221,7 @@ public class TestShiftAndMask {
     }
 
     @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = { IRNode.AND_L, IRNode.ADD_L, IRNode.LSHIFT_L })
     public static long addShiftMaskLong2(long i, long j) {
         return ((j << 2) + (i << 2)) & 3; // transformed to: return 0;
@@ -274,7 +274,7 @@ public class TestShiftAndMask {
     }
 
     @Test
-    @Arguments({Argument.RANDOM_EACH})
+    @Arguments(values = {Argument.RANDOM_EACH})
     @IR(failOn = { IRNode.AND_L, IRNode.LSHIFT_I, IRNode.CONV_I2L })
     public static long shiftConvMask(int i) {
         return ((long)(i << 2)) & 3; // transformed to: return 0;
@@ -288,7 +288,7 @@ public class TestShiftAndMask {
     }
 
     @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.BOOLEAN_TOGGLE_FIRST_TRUE})
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.BOOLEAN_TOGGLE_FIRST_TRUE})
     @IR(failOn = { IRNode.AND_L, IRNode.LSHIFT_I, IRNode.CONV_I2L })
     public static long shiftNotConstConvMask(int i, boolean flag) {
         long mask;
@@ -326,7 +326,7 @@ public class TestShiftAndMask {
     }
 
     @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @Arguments(values = {Argument.RANDOM_EACH, Argument.RANDOM_EACH})
     @IR(failOn = { IRNode.AND_L, IRNode.ADD_L, IRNode.LSHIFT_I, IRNode.CONV_I2L })
     public static long addShiftConvMask2(int i, int j) {
         return (((long)(j << 2)) + ((long)(i << 2))) & 3; // transformed to: return 0;

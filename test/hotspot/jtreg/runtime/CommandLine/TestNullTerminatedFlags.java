@@ -50,8 +50,7 @@ public class TestNullTerminatedFlags {
             "-Xshare:on",
             "-Xshare:auto",
             "-Xshare:off",
-            "-Xdebug",
-            "-Xnoagent"
+            "-Xdebug"
         };
 
     public static void main(String args[]) throws Exception{

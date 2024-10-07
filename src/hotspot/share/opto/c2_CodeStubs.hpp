@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ public:
   C2CodeStubList();
 
   void add_stub(C2CodeStub* stub) { _stubs.append(stub); }
-  void emit(CodeBuffer& cb);
+  void emit(C2_MacroAssembler& masm);
 };
 
 class C2SafepointPollStub : public C2CodeStub {
@@ -97,20 +97,25 @@ public:
   void emit(C2_MacroAssembler& masm);
 };
 
-#ifdef _LP64
-class C2HandleAnonOMOwnerStub : public C2CodeStub {
+class C2FastUnlockLightweightStub : public C2CodeStub {
 private:
-  Register _monitor;
-  Register _tmp;
+  Register _obj;
+  Register _mark;
+  Register _t;
+  Register _thread;
+  Label _slow_path;
+  Label _push_and_slow_path;
+  Label _unlocked_continuation;
 public:
-  C2HandleAnonOMOwnerStub(Register monitor, Register tmp = noreg) : C2CodeStub(),
-    _monitor(monitor), _tmp(tmp) {}
-  Register monitor() { return _monitor; }
-  Register tmp() { return _tmp; }
+  C2FastUnlockLightweightStub(Register obj, Register mark, Register t, Register thread) : C2CodeStub(),
+    _obj(obj), _mark(mark), _t(t), _thread(thread) {}
   int max_size() const;
   void emit(C2_MacroAssembler& masm);
+  Label& slow_path() { return _slow_path; }
+  Label& push_and_slow_path() { return _push_and_slow_path; }
+  Label& unlocked_continuation() { return _unlocked_continuation; }
+  Label& slow_path_continuation() { return continuation(); }
 };
-#endif
 
 //-----------------------------C2GeneralStub-----------------------------------
 // A generalized stub that can be used to implement an arbitrary stub in a

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,25 @@
  * questions.
  */
 
-import java.awt.*;
+import java.awt.Button;
+import java.awt.Canvas;
+import java.awt.Checkbox;
+import java.awt.CheckboxGroup;
+import java.awt.Choice;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Label;
+import java.awt.List;
+import java.awt.Point;
+import java.awt.Scrollbar;
+import java.awt.TextArea;
+import java.awt.TextField;
+import java.awt.Toolkit;
+import java.awt.Frame;
+import java.awt.FlowLayout;
 import java.awt.image.BufferedImage;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
@@ -34,7 +52,6 @@ import java.util.Vector;
  * @summary Display a dialog with a parent, the dialog contains all awt components
  *          added to it & each components are setted with different cursors types.
  *          Dispose the parent & collect GC. Garbage collection should happen
- * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @library /lib/client
  * @build ExtendedRobot
  * @run main/othervm -Xmx20m DisposeParentGC
@@ -100,7 +117,7 @@ public class DisposeParentGC {
         child.setLocation(20, 140 * number);
 
         Button button = new Button("Press Me") ;
-        TextArea textArea = new TextArea(5,5);
+        TextArea textArea = new TextArea(5, 5);
         TextField textField = new TextField(10);
         Choice choice = new Choice();
         choice.add("One");
@@ -115,15 +132,15 @@ public class DisposeParentGC {
         list.add("Four");
         list.add("Five");
         Checkbox checkBox = new Checkbox("Hai");
-        Scrollbar scrollBar = new Scrollbar(Scrollbar.VERTICAL,0,1,0,200);
+        Scrollbar scrollBar = new Scrollbar(Scrollbar.VERTICAL, 0, 1, 0, 200);
         CheckboxGroup checkboxGroup = new CheckboxGroup();
-        Checkbox radioButton = new Checkbox("Hello" ,true, checkboxGroup);
+        Checkbox radioButton = new Checkbox("Hello", true, checkboxGroup);
         Canvas canvas = new Canvas();
         Label label = new Label("I am label!");
         Cursor customCursor = null;
 
         child.setLayout(new FlowLayout());
-        canvas.setSize(100,100);
+        canvas.setSize(100, 100);
         canvas.setBackground(Color.red);
 
         button.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
@@ -138,13 +155,17 @@ public class DisposeParentGC {
 
         /* create a custom cursor */
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        Dimension d = toolkit.getBestCursorSize(32,32);
+        Dimension d = toolkit.getBestCursorSize(32, 32);
         int color = toolkit.getMaximumCursorColors();
 
-        if(!d.equals(new Dimension(0,0)) && color != 0 )
-            customCursor = toolkit.createCustomCursor(new BufferedImage( 16, 16, BufferedImage.TYPE_INT_RGB ), new Point(10, 10), "custom cursor.");
-        else
+        if (!d.equals(new Dimension(0,0)) && color != 0) {
+            customCursor = toolkit.createCustomCursor(
+                new BufferedImage(16, 16, BufferedImage.TYPE_INT_RGB),
+                new Point(10, 10), "custom cursor.");
+        }
+        else {
             System.err.println("Platform doesn't support to create a custom cursor.");
+        }
 
         textArea.setCursor(customCursor);
         child.add(label);

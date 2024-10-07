@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -190,11 +190,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
   } else if (index_size == sizeof(u4)) {
     // assert(EnableInvokeDynamic, "giant index used only for JSR 292");
     ldrw(index, Address(rbcp, bcp_offset));
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    eonw(index, index, zr);  // convert to plain index
   } else if (index_size == sizeof(u1)) {
     load_unsigned_byte(index, Address(rbcp, bcp_offset));
   } else {
@@ -695,14 +690,13 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
 
     if (DiagnoseSyncOnValueBasedClasses != 0) {
       load_klass(tmp, obj_reg);
-      ldrw(tmp, Address(tmp, Klass::access_flags_offset()));
-      tstw(tmp, JVM_ACC_IS_VALUE_BASED_CLASS);
+      ldrb(tmp, Address(tmp, Klass::misc_flags_offset()));
+      tst(tmp, KlassFlags::_misc_is_value_based_class);
       br(Assembler::NE, slow_case);
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      ldr(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      lightweight_lock(obj_reg, tmp, tmp2, tmp3, slow_case);
+      lightweight_lock(lock_reg, obj_reg, tmp, tmp2, tmp3, slow_case);
       b(count);
     } else if (LockingMode == LM_LEGACY) {
       // Load (object->mark() | 1) into swap_reg
@@ -758,15 +752,9 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      call_VM(noreg,
-              CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj),
-              obj_reg);
-    } else {
-      call_VM(noreg,
-              CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-              lock_reg);
-    }
+    call_VM(noreg,
+            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+            lock_reg);
     b(done);
 
     bind(count);
@@ -818,22 +806,6 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       Label slow_case;
-
-      // Check for non-symmetric locking. This is allowed by the spec and the interpreter
-      // must handle it.
-      Register tmp = rscratch1;
-      // First check for lock-stack underflow.
-      ldrw(tmp, Address(rthread, JavaThread::lock_stack_top_offset()));
-      cmpw(tmp, (unsigned)LockStack::start_offset());
-      br(Assembler::LE, slow_case);
-      // Then check if the top of the lock-stack matches the unlocked object.
-      subw(tmp, tmp, oopSize);
-      ldr(tmp, Address(rthread, tmp));
-      cmpoop(tmp, obj_reg);
-      br(Assembler::NE, slow_case);
-
-      ldr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      tbnz(header_reg, exact_log2(markWord::monitor_value), slow_case);
       lightweight_unlock(obj_reg, header_reg, swap_reg, tmp_reg, slow_case);
       b(count);
       bind(slow_case);
@@ -1440,8 +1412,7 @@ void InterpreterMacroAssembler::notify_method_entry() {
     bind(L);
   }
 
-  {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false);
+  if (DTraceMethodProbes) {
     get_method(c_rarg1);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
                  rthread, c_rarg1);
@@ -1480,8 +1451,7 @@ void InterpreterMacroAssembler::notify_method_exit(
     pop(state);
   }
 
-  {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false);
+  if (DTraceMethodProbes) {
     push(state);
     get_method(c_rarg1);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
@@ -1800,6 +1770,8 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
   ldr(cache, Address(rcpool, ConstantPoolCache::field_entries_offset()));
   add(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
   lea(cache, Address(cache, index));
+  // Prevents stale data from being read after the bytecode is patched to the fast bytecode
+  membar(MacroAssembler::LoadLoad);
 }
 
 void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {

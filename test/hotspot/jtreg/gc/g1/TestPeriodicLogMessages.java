@@ -40,24 +40,22 @@ import jdk.test.lib.process.ProcessTools;
 public class TestPeriodicLogMessages {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                             "-XX:G1PeriodicGCInterval=0",
-                                                                             "-Xlog:gc+init,gc+periodic=debug",
-                                                                             "-Xmx10M",
-                                                                             GCTest.class.getName());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-XX:G1PeriodicGCInterval=0",
+                                                                    "-Xlog:gc+init,gc+periodic=debug",
+                                                                    "-Xmx10M",
+                                                                    GCTest.class.getName());
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Periodic GC: Disabled");
         output.shouldNotContain("Checking for periodic GC");
         output.shouldHaveExitValue(0);
 
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                              "-XX:G1PeriodicGCInterval=100",
-                                                              "-Xlog:gc+init,gc+periodic=debug",
-                                                              "-Xmx10M",
-                                                              GCTest.class.getName());
+        output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                     "-XX:G1PeriodicGCInterval=100",
+                                                     "-Xlog:gc+init,gc+periodic=debug",
+                                                     "-Xmx10M",
+                                                     GCTest.class.getName());
 
-        output = new OutputAnalyzer(pb.start());
         output.shouldContain("Periodic GC: Enabled");
         output.shouldContain("Periodic GC Interval: 100ms");
         output.shouldContain("Checking for periodic GC");

@@ -69,10 +69,13 @@ import jdk.internal.org.objectweb.asm.ModuleVisitor;
  */
 public class ModuleProvideNode {
 
-    /** The internal name of the service. */
+    /** The internal name of the service (see {@link jdk.internal.org.objectweb.asm.Type#getInternalName()}). */
     public String service;
 
-    /** The internal names of the implementations of the service (there is at least one provider). */
+    /**
+      * The internal names of the implementations of the service (there is at least one provider). See
+      * {@link jdk.internal.org.objectweb.asm.Type#getInternalName()}.
+      */
     public List<String> providers;
 
     /**
@@ -80,7 +83,7 @@ public class ModuleProvideNode {
       *
       * @param service the internal name of the service.
       * @param providers the internal names of the implementations of the service (there is at least
-      *     one provider).
+      *     one provider). See {@link jdk.internal.org.objectweb.asm.Type#getInternalName()}.
       */
     public ModuleProvideNode(final String service, final List<String> providers) {
         this.service = service;
@@ -96,4 +99,3 @@ public class ModuleProvideNode {
         moduleVisitor.visitProvide(service, providers.toArray(new String[0]));
     }
 }
-
