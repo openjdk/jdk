@@ -583,7 +583,7 @@ JvmtiEnvBase::jvf_for_thread_and_depth(JavaThread* java_thread, jint depth) {
                       RegisterMap::WalkContinuation::include);
   javaVFrame *jvf = java_thread->last_java_vframe(&reg_map);
 
-  // There should not be any VTMS transition here. This is for safety.   
+  // There should not be any VTMS transition here. This is for safety.
   if (java_thread->is_in_VTMS_transition()) {
     jvf = JvmtiEnvBase::check_and_skip_hidden_frames(java_thread, jvf);
   }

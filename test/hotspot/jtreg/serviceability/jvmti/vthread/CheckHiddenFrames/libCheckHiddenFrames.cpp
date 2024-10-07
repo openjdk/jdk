@@ -75,7 +75,7 @@ check_top_frames_in_stack_trace(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
 
   for (int depth = 0; depth < 2; depth++) {
     char* mname = get_method_name(jvmti, jni, frameInfo[depth].method);
-    
+
     if (method_must_be_hidden(mname)) {
       LOG("Failed: GetStackTrace returned info for frame expected to be hidden: frame[%d]=%s\n", depth, mname);
       status = JNI_FALSE;
