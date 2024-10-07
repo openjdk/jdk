@@ -164,7 +164,7 @@ public class EndOfCenValidation {
     }
 
     /**
-     * Validate that an 'End of central directory record' (the END header)
+     * Validate that a 'Zip64 End of Central Directory' record (the END header)
      * where the value of the 'total entries' field is larger than what fits
      * in the CEN size is rejected.
      *
