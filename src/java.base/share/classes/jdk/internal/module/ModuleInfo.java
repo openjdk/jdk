@@ -409,7 +409,7 @@ public final class ModuleInfo {
                                                   + " has ACC_SYNTHETIC set");
                 }
                 if (major >= 54
-                    && ((mods.contains(Requires.Modifier.TRANSITIVE) && !previewClassfile)
+                    && ((mods.contains(Requires.Modifier.TRANSITIVE) && !previewClassfile && !mn.startsWith("java."))
                         || mods.contains(Requires.Modifier.STATIC))) {
                     String flagName;
                     if (mods.contains(Requires.Modifier.TRANSITIVE) && !previewClassfile) {

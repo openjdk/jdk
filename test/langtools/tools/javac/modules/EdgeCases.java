@@ -1179,7 +1179,7 @@ public class EdgeCases extends ModuleTestBase {
         log = new JavacTask(tb)
             .outdir(classes)
             .options("-XDrawDiagnostics", "-XDshould-stop.at=FLOW")
-            .callback(verifyJavaSEDependency(false, seenJavaSEDependency))
+            .callback(verifyJavaSEDependency(true, seenJavaSEDependency))
             .files(findJavaFiles(src))
             .run(Task.Expect.FAIL)
             .writeAll()
@@ -1187,8 +1187,7 @@ public class EdgeCases extends ModuleTestBase {
 
         List<String> expected = List.of(
                 "Test.java:2:8: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.module.imports)",
-                "Test.java:4:5: compiler.err.cant.resolve.location: kindname.class, ArrayList, , , (compiler.misc.location: kindname.class, test.Test, null)",
-                "2 errors");
+                "1 error");
 
         if (!expected.equals(log))
             throw new Exception("expected output not found: " + log);
@@ -1225,7 +1224,7 @@ public class EdgeCases extends ModuleTestBase {
                                         t.getElements().getModuleElement("java.base");
                                 ModuleElement javaSE =
                                         t.getElements().getModuleElement("java.se");
-                                RequiresDirective requiresJavaSE = 
+                                RequiresDirective requiresJavaBase =
                                         javaSE.getDirectives()
                                               .stream()
                                               .filter(d -> d.getKind() == DirectiveKind.REQUIRES)
@@ -1233,9 +1232,9 @@ public class EdgeCases extends ModuleTestBase {
                                               .filter(d -> d.getDependency() == javaBase)
                                               .findAny()
                                               .orElseThrow();
-                                if (requiresJavaSE.isTransitive() != expectedTransitive) {
+                                if (requiresJavaBase.isTransitive() != expectedTransitive) {
                                     throw new AssertionError("Expected: " + expectedTransitive + ", " +
-                                                             "but got: " + requiresJavaSE.isTransitive());
+                                                             "but got: " + requiresJavaBase.isTransitive());
                                 }
                                 seenJavaSEDependency.set(true);
                             }
