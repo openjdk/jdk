@@ -210,7 +210,8 @@ public class Modules extends JCTree.Visitor {
         Preview preview = Preview.instance(context);
 
         allowRequiresTransitiveJavaBase =
-                (Feature.JAVA_BASE_TRANSITIVE.allowedInSource(source) && (!preview.isPreview(Feature.JAVA_BASE_TRANSITIVE) || preview.isEnabled()));
+                Feature.JAVA_BASE_TRANSITIVE.allowedInSource(source) &&
+                 (!preview.isPreview(Feature.JAVA_BASE_TRANSITIVE) || preview.isEnabled());
         lintOptions = options.isUnset(Option.XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option);
 
         multiModuleMode = fileManager.hasLocation(StandardLocation.MODULE_SOURCE_PATH);

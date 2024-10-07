@@ -409,13 +409,18 @@ public final class ModuleInfo {
                                                   + " has ACC_SYNTHETIC set");
                 }
                 if (major >= 54
-                    && ((mods.contains(Requires.Modifier.TRANSITIVE) && !previewClassfile && !mn.startsWith("java."))
+                    && ((mods.contains(Requires.Modifier.TRANSITIVE) &&
+                         //requires transitive java.base; permitted for preview classfiles:
+                         !previewClassfile &&
+                         //java.* modules are deemed participating in preview
+                         //and are allowed to use requires transitive java.base:
+                         !mn.startsWith("java."))
                         || mods.contains(Requires.Modifier.STATIC))) {
                     String flagName;
-                    if (mods.contains(Requires.Modifier.TRANSITIVE) && !previewClassfile) {
-                        flagName = "ACC_TRANSITIVE";
-                    } else {
+                    if (mods.contains(Requires.Modifier.STATIC)) {
                         flagName = "ACC_STATIC_PHASE";
+                    } else {
+                        flagName = "ACC_TRANSITIVE";
                     }
                     throw invalidModuleDescriptor("The requires entry for java.base"
                                                   + " has " + flagName + " set");
