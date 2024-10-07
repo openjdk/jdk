@@ -65,6 +65,7 @@ public class SecurityManager {
     protected Class<?>[] getClassContext() {
         return StackWalkerHolder.STACK_WALKER
                 .walk(s -> s.map(StackWalker.StackFrame::getDeclaringClass)
+                        .skip(1L)
                         .toArray(Class[]::new));
     }
 
