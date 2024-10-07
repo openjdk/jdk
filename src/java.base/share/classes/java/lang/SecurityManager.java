@@ -39,8 +39,6 @@ import java.security.Permission;
  *
  * @since   1.0
  * @deprecated There is no replacement for this class.
- *       See <a href="https://openjdk.org/jeps/411">JEP 411</a> for
- *       discussion and alternatives.
  */
 @Deprecated(since="17", forRemoval=true)
 public class SecurityManager {
