@@ -467,7 +467,6 @@ void MetaspaceArena::verify() const {
 }
 
 // Returns true if the given block is contained in this arena
-// Returns true if the given block is contained in this arena
 bool MetaspaceArena::contains(MetaBlock bl) const {
   DEBUG_ONLY(bl.verify();)
   assert(bl.is_nonempty(), "Sanity");

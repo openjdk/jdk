@@ -62,6 +62,8 @@ inline markWord Klass::prototype_header() const {
   return _prototype_header;
 }
 
+// This is only used when dumping the archive. In other cases,
+// the _prototype_header is already initialized to the right thing.
 inline void Klass::set_prototype_header(markWord header) {
   assert(UseCompactObjectHeaders, "only with compact headers");
   _prototype_header = header;

@@ -160,6 +160,7 @@ class Klass : public Metadata {
   // Provide access the corresponding instance java.lang.ClassLoader.
   ClassLoaderData* _class_loader_data;
 
+  markWord _prototype_header;   // Used to initialize objects' header
 
   int _vtable_len;              // vtable length. This field may be read very often when we
                                 // have lots of itable dispatches (e.g., lambdas and streams).
@@ -168,8 +169,6 @@ class Klass : public Metadata {
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
                                 // Some flags created by the JVM, not in the class file itself,
                                 // are in _misc_flags below.
-
-  markWord _prototype_header;   // Used to initialize objects' header
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 

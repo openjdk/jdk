@@ -679,7 +679,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
         nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift()) :
         SharedSpaceObjectAlignment;
 #else
-    SharedSpaceObjectAlignment;
+      SharedSpaceObjectAlignment;
 #endif
     dest = dump_region->allocate(bytes, alignment);
   } else {
