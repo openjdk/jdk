@@ -48,6 +48,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -235,6 +236,7 @@ public class TestJcmdWithSideCar {
 
     static class MainContainer {
         private static final String MAIN_CONTAINER_NAME_PREFIX = "test-container-main";
+        private static final Random RANDOM = Utils.getRandomInstance();
 
         String name;
         boolean mainMethodStarted;
@@ -256,7 +258,7 @@ public class TestJcmdWithSideCar {
                 opts.addDockerOpts(NET_BIND_SERVICE);
             }
 
-            name = MAIN_CONTAINER_NAME_PREFIX + "-elevated-" + elevated;
+            name = MAIN_CONTAINER_NAME_PREFIX + "-elevated-" + elevated + "-" + RANDOM.nextInt();
 
             opts.addDockerOpts("--cap-add=SYS_PTRACE")
                 .addDockerOpts("--init")
