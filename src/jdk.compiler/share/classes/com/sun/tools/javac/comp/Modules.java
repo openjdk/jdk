@@ -257,7 +257,12 @@ public class Modules extends JCTree.Visitor {
 
     public boolean enter(List<JCCompilationUnit> trees, ClassSymbol c) {
         Assert.check(rootModules != null || inInitModules || !allowModules);
-        return enter(trees, modules -> {}, c);
+        return enter(trees, modules -> {
+            //make sure java.base is completed in all cases before continuing.
+            //the next steps may query if the current module participates in preview,
+            //and that requires a completed java.base:
+            syms.java_base.complete();
+        }, c);
     }
 
     private boolean enter(List<JCCompilationUnit> trees, Consumer<Set<ModuleSymbol>> init, ClassSymbol c) {
