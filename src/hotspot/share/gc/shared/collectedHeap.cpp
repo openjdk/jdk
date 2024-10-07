@@ -221,7 +221,6 @@ bool CollectedHeap::supports_concurrent_gc_breakpoints() const {
 }
 
 static bool klass_is_sane(oop object) {
-  Klass* klass;
   if (UseCompactObjectHeaders) {
     // With compact headers, we can't safely access the Klass* when
     // the object has been forwarded, because non-full-GC-forwarding
