@@ -417,11 +417,13 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, BasicType bt) {
   Node* in1 = in(1);
   Node* in2 = in(2);
   jlong multiplier;
+
+  // While multiplications can be potentially optimized to power-of-2 subtractions (e.g., a * 7 => (a << 3) - a),
+  // (x - y) + y => x is already handled by the Identity() methods. So, we don't need to check for that pattern here.
   if (find_simple_addition_pattern(in1, bt, &multiplier) == in2
       || find_simple_lshift_pattern(in1, bt, &multiplier) == in2
       || find_simple_multiplication_pattern(in1, bt, &multiplier) == in2
-      || find_power_of_two_addition_pattern(in1, bt, &multiplier) == in2
-      || find_power_of_two_subtraction_pattern(in1, bt, &multiplier) == in2) {
+      || find_power_of_two_addition_pattern(in1, bt, &multiplier) == in2) {
     multiplier++; // +1 for the in2 term
 
     Node* con = (bt == T_INT)
@@ -544,31 +546,6 @@ Node* AddNode::find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* 
     }
     return nullptr;
   }
-  return nullptr;
-}
-
-// Try to match `(a << CON) - a`. On success, return `a` and set `(1 << CON1) - 1` as `multiplier`.
-// Match `n` for pattern: SubNode(LShiftNode(a, CON), a)
-Node* AddNode::find_power_of_two_subtraction_pattern(Node* n, BasicType bt, jlong* multiplier) {
-  if (n->Opcode() == Op_Sub(bt) && n->in(1)->Opcode() == Op_LShift(bt) && n->in(1)->in(2)->is_Con()) {
-    Node* lshift = n->in(1);
-    Node* base = n->in(2);
-
-    Node* lshift_base = lshift->in(1);
-    if (lshift_base != base) {
-      return nullptr;
-    }
-
-    Node* con = lshift->in(2);
-    if (con->is_top()) {
-      return nullptr;
-    }
-
-    // We can't simply return the lshift node even if ((a << CON) - a) + a cancels out. Ideal() must return a new node.
-    *multiplier = ((jlong) 1 << con->get_int()) - 1;
-    return base;
-  }
-
   return nullptr;
 }
 

@@ -48,7 +48,6 @@ class AddNode : public Node {
   static Node* find_simple_lshift_pattern(Node* n, BasicType bt, jlong* multiplier);
   static Node* find_simple_multiplication_pattern(Node* n, BasicType bt, jlong* multiplier);
   static Node* find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* multiplier);
-  static Node* find_power_of_two_subtraction_pattern(Node* n, BasicType bt, jlong* multiplier);
 
 public:
   AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
