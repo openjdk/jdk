@@ -1239,12 +1239,12 @@ public class ZipFile implements ZipConstants, Closeable {
             int nlen = CENNAM(cen, pos);
             int elen = CENEXT(cen, pos);
             int clen = CENCOM(cen, pos);
-            long headerSize = (long)CENHDR + nlen + clen + elen;
+            int headerSize = CENHDR + nlen + clen + elen;
             // CEN header size + name length + comment length + extra length
             // should not exceed 65,535 bytes per the PKWare APP.NOTE
             // 4.4.10, 4.4.11, & 4.4.12.  Also check that current CEN header will
             // not exceed the length of the CEN array
-            if (headerSize > 0xFFFF || pos + headerSize > cen.length) {
+            if (headerSize > 0xFFFF || pos > cen.length - headerSize) {
                 zerror("invalid CEN header (bad header size)");
             }
 
@@ -1768,18 +1768,18 @@ public class ZipFile implements ZipConstants, Closeable {
             // Iterate through the entries in the central directory
             int idx = 0; // Index into the entries array
             int pos = 0;
-            int entryPos = CENHDR;
-            int limit = cen.length;
             manifestNum = 0;
-            while (entryPos <= limit) {
+            int limit = cen.length - CENHDR;
+            while (pos <= limit) {
                 if (idx >= entriesLength) {
                     // This will only happen if the ZIP file has an incorrect
                     // ENDTOT field, which usually means it contains more than
                     // 65535 entries.
-                    initCEN(countCENHeaders(cen, limit));
+                    initCEN(countCENHeaders(cen));
                     return;
                 }
 
+                int entryPos = pos + CENHDR;
                 // Checks the entry and adds values to entries[idx ... idx+2]
                 int nlen = checkAndAddEntry(pos, idx);
                 idx += 3;
@@ -1810,7 +1810,6 @@ public class ZipFile implements ZipConstants, Closeable {
                 }
                 // skip to the start of the next entry
                 pos = nextEntryPos(pos, entryPos, nlen);
-                entryPos = pos + CENHDR;
             }
 
             // Adjust the total entries
@@ -2034,17 +2033,20 @@ public class ZipFile implements ZipConstants, Closeable {
 
         /**
          * Returns the number of CEN headers in a central directory.
-         * Will not throw, even if the ZIP file is corrupt.
          *
          * @param cen copy of the bytes in a ZIP file's central directory
-         * @param size number of bytes in central directory
+         * @throws ZipException if a CEN header exceeds the length of the CEN array
          */
-        private static int countCENHeaders(byte[] cen, int size) {
+        private static int countCENHeaders(byte[] cen) throws ZipException {
             int count = 0;
-            for (int p = 0;
-                 p + CENHDR <= size;
-                 p += CENHDR + CENNAM(cen, p) + CENEXT(cen, p) + CENCOM(cen, p))
+            for (int p = 0; p <= cen.length - CENHDR;) {
+                int headerSize = CENHDR + CENNAM(cen, p) + CENEXT(cen, p) + CENCOM(cen, p);
+                if (p > cen.length - headerSize) {
+                    zerror("invalid CEN header (bad header size)");
+                }
+                p += headerSize;
                 count++;
+            }
             return count;
         }
     }
