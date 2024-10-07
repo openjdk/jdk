@@ -32,6 +32,7 @@
  */
 
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import sun.security.ec.ed.EdDSAOperations;
 import sun.security.ec.ed.EdDSAParameters;
 import sun.security.ec.point.AffinePoint;
@@ -230,5 +231,9 @@ public class NamedEdDSA {
         Asserts.assertTrue(s2.verify(sig1));
         s2.initVerify(pk);
         Asserts.assertTrue(s2.verify(sig2));
+        // No parameters defined
+        s1.setParameter(null);
+        Utils.runAndCheckException(() -> s1.setParameter(NamedParameterSpec.ED448),
+                InvalidAlgorithmParameterException.class);
     }
 }

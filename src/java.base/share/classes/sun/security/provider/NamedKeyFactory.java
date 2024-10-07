@@ -68,10 +68,13 @@ public class NamedKeyFactory extends KeyFactorySpi {
     /// @param fname the family name
     /// @param pnames the standard parameter set names, at least one is needed.
     protected NamedKeyFactory(String fname, String... pnames) {
-        this.fname = Objects.requireNonNull(fname);
+        if (fname == null) {
+            throw new AssertionError("fname cannot be null");
+        }
         if (pnames == null || pnames.length == 0) {
             throw new AssertionError("pnames cannot be null or empty");
         }
+        this.fname = fname;
         this.pnames = pnames;
     }
 
