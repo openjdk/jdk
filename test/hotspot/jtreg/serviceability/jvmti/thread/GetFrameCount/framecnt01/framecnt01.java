@@ -79,7 +79,7 @@ public class framecnt01 {
         }
 
         // this is too fragile, implementation can change at any time.
-        checkFrames(vThread1, false, 13);
+        checkFrames(vThread1, false, 11);
         LockSupport.unpark(vThread1);
         vThread1.join();
 

@@ -28,6 +28,7 @@ package jdk.internal.vm;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.JvmtiMountTransition;
 import sun.security.action.GetPropertyAction;
 
 import java.util.EnumSet;
@@ -340,6 +341,7 @@ public class Continuation {
      * @throws IllegalStateException if not currently in the given {@code scope},
      */
     @Hidden
+    @JvmtiMountTransition
     public static boolean yield(ContinuationScope scope) {
         Continuation cont = JLA.getContinuation(currentCarrierThread());
         Continuation c;
@@ -352,6 +354,7 @@ public class Continuation {
     }
 
     @Hidden
+    @JvmtiMountTransition
     private boolean yield0(ContinuationScope scope, Continuation child) {
         preempted = false;
 

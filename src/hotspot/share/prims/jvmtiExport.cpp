@@ -1810,7 +1810,8 @@ void JvmtiExport::post_method_entry(JavaThread *thread, Method* method, frame cu
     // for any thread that actually wants method entry, interp_only_mode is set
     return;
   }
-  if (mh->jvmti_mount_transition() || thread->is_in_any_VTMS_transition()) {
+  // pure continuations have no VTMS transitions but they use methods annotated with JvmtiMountTransition
+  if ((mh->jvmti_mount_transition() && state->is_virtual()) || thread->is_in_any_VTMS_transition()) {
     return; // no events should be posted if thread is in any VTMS transition
   }
   EVT_TRIG_TRACE(JVMTI_EVENT_METHOD_ENTRY, ("[%s] Trg Method Entry triggered %s.%s",
@@ -1894,7 +1895,8 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
                                          bool exception_exit,
                                          frame current_frame,
                                          jvalue& value) {
-  if (mh->jvmti_mount_transition() || thread->is_in_any_VTMS_transition()) {
+  // pure continuations have no VTMS transitions but they use methods annotated with JvmtiMountTransition
+  if ((mh->jvmti_mount_transition() && state->is_virtual()) || thread->is_in_any_VTMS_transition()) {
     return; // no events should be posted if thread is in any VTMS transition
   }
 
@@ -1970,7 +1972,8 @@ void JvmtiExport::post_single_step(JavaThread *thread, Method* method, address l
   if (state == nullptr) {
     return;
   }
-  if (mh->jvmti_mount_transition() || thread->is_in_any_VTMS_transition()) {
+  // pure continuations have no VTMS transitions but they use methods annotated with JvmtiMountTransition
+  if ((mh->jvmti_mount_transition() && state->is_virtual()) || thread->is_in_any_VTMS_transition()) {
     return; // no events should be posted if thread is in any VTMS transition
   }
 
@@ -2134,7 +2137,8 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
       assert(!state->is_exception_caught(), "exception must not be caught yet.");
       state->set_exception_caught();
 
-      if (mh->jvmti_mount_transition() || thread->is_in_any_VTMS_transition()) {
+      // pure continuations have no VTMS transitions but they use methods annotated with JvmtiMountTransition
+      if ((mh->jvmti_mount_transition() && state->is_virtual()) || thread->is_in_any_VTMS_transition()) {
         return; // no events should be posted if thread is in any VTMS transition
       }
       JvmtiEnvThreadStateIterator it(state);
