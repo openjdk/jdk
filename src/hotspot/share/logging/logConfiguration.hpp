@@ -90,6 +90,7 @@ class LogConfiguration : public AllStatic {
   static void describe_available(outputStream* out);
   static void describe_current_configuration(outputStream* out);
 
+
  public:
   // Initialization and finalization of log configuration, to be run at vm startup and shutdown respectively.
   static void initialize(jlong vm_start_time);

@@ -24,7 +24,6 @@
 #include "precompiled.hpp"
 #include "logging/logDecorators.hpp"
 #include "runtime/os.hpp"
-#include "logDecorators.hpp"
 
 const LogLevelType AnyLevel = LogLevelType::NotMentioned;
 #define UNDECORATED_DEFAULTS \
