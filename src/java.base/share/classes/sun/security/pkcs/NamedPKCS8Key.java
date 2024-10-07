@@ -129,9 +129,9 @@ public final class NamedPKCS8Key extends PKCS8Key {
     @Override
     public void destroy() throws DestroyFailedException {
         Arrays.fill(rawBytes, (byte)0);
-        Arrays.fill(this.key, (byte)0);
-        if (this.encodedKey != null) {
-            Arrays.fill(this.encodedKey, (byte)0);
+        Arrays.fill(key, (byte)0);
+        if (encodedKey != null) {
+            Arrays.fill(encodedKey, (byte)0);
         }
         destroyed = true;
     }
