@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,9 @@
 /**
  * Defines the Scripting API.
  *
- * <p> The JDK implementation of this module includes a language-independent
- * command-line script shell, <em>{@index jrunscript jrunscript tool}</em>,
- * that supports executing JavaScript and other languages if its corresponding
- * script engine is installed.
+ * <p> The <em>{@index jrunscript jrunscript tool}</em> included in the JDK
+ * implementation of this module, has been deprecated for removal since
+ * JDK 24 and will be removed in a future release.
  *
  * @toolGuide jrunscript
  *
