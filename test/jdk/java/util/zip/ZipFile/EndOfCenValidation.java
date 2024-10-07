@@ -172,115 +172,104 @@ public class EndOfCenValidation {
      */
     @Test
     public void shouldRejectBadTotalEntries() throws IOException {
-        /*
-         * A small ZIP using ZIP64. Since such a small ZIP64 file cannot
-         * be produced using ZipOutputStream, it is included inline here.
+        /**
+         * A small ZIP using the ZIP64 format.
+         *
+         * ZIP created using: "echo -n hello | zip zip64.zip -"
+         * Hex encoded using: "cat zip64.zip | xxd -ps"
          *
          * The file has the following structure:
          *
-         * ------  Local File Header  ------
-         * 000000  signature          0x04034b50
-         * 000004  version            45
-         * 000006  flags              0x0808
-         * 000008  method             8              Deflated
-         * 000010  time               0x542c         10:33:24
-         * 000012  date               0x5947         2024-10-07
-         * 000014  crc                0x00000000
-         * 000018  csize              4294967295
-         * 000022  size               4294967295
-         * 000026  nlen               5
-         * 000028  elen               20
-         * 000030  name               5 bytes        'entry'
-         * 000035  ext id             0x0001         Zip64 extended information extra field
-         * 000037  ext size           16
-         * 000039  z64 size           0
-         * 000047  z64 csize          0
+         * 0000 LOCAL HEADER #1       04034B50
+         * 0004 Extract Zip Spec      2D '4.5'
+         * 0005 Extract OS            00 'MS-DOS'
+         * 0006 General Purpose Flag  0000
+         * 0008 Compression Method    0000 'Stored'
+         * 000A Last Mod Time         5947AB78 'Mon Oct  7 21:27:48 2024'
+         * 000E CRC                   363A3020
+         * 0012 Compressed Length     FFFFFFFF
+         * 0016 Uncompressed Length   FFFFFFFF
+         * 001A Filename Length       0001
+         * 001C Extra Length          0014
+         * 001E Filename              '-'
+         * 001F Extra ID #0001        0001 'ZIP64'
+         * 0021   Length              0010
+         * 0023   Uncompressed Size   0000000000000006
+         * 002B   Compressed Size     0000000000000006
+         * 0033 PAYLOAD               hello.
          *
-         * ------  File Data  ------
-         * 000055  data               7 bytes
+         * 0039 CENTRAL HEADER #1     02014B50
+         * 003D Created Zip Spec      1E '3.0'
+         * 003E Created OS            03 'Unix'
+         * 003F Extract Zip Spec      2D '4.5'
+         * 0040 Extract OS            00 'MS-DOS'
+         * 0041 General Purpose Flag  0000
+         * 0043 Compression Method    0000 'Stored'
+         * 0045 Last Mod Time         5947AB78 'Mon Oct  7 21:27:48 2024'
+         * 0049 CRC                   363A3020
+         * 004D Compressed Length     00000006
+         * 0051 Uncompressed Length   FFFFFFFF
+         * 0055 Filename Length       0001
+         * 0057 Extra Length          000C
+         * 0059 Comment Length        0000
+         * 005B Disk Start            0000
+         * 005D Int File Attributes   0001
+         *      [Bit 0]               1 Text Data
+         * 005F Ext File Attributes   11B00000
+         * 0063 Local Header Offset   00000000
+         * 0067 Filename              '-'
+         * 0068 Extra ID #0001        0001 'ZIP64'
+         * 006A   Length              0008
+         * 006C   Uncompressed Size   0000000000000006
          *
-         * ------  Data Descriptor  ------
-         * 000062  signature          0x08074b50
-         * 000066  crc                0x3610a686
-         * 000070  csize              7
-         * 000078  size               5
+         * 0074 ZIP64 END CENTRAL DIR 06064B50
+         *      RECORD
+         * 0078 Size of record        000000000000002C
+         * 0080 Created Zip Spec      1E '3.0'
+         * 0081 Created OS            03 'Unix'
+         * 0082 Extract Zip Spec      2D '4.5'
+         * 0083 Extract OS            00 'MS-DOS'
+         * 0084 Number of this disk   00000000
+         * 0088 Central Dir Disk no   00000000
+         * 008C Entries in this disk  0000000000000001
+         * 0094 Total Entries         0000000000000001
+         * 009C Size of Central Dir   000000000000003B
+         * 00A4 Offset to Central dir 0000000000000039
          *
-         * ------  Central Directory File Header  ------
-         * 000086  signature          0x02014b50
-         * 000090  made by version    45
-         * 000092  extract version    45
-         * 000094  flags              0x0808
-         * 000096  method             8              Deflated
-         * 000098  time               0x542c         10:33:24
-         * 000100  date               0x5947         2024-10-07
-         * 000102  crc                0x3610a686
-         * 000106  csize              4294967295
-         * 000110  size               4294967295
-         * 000114  diskstart          65535
-         * 000116  nlen               5
-         * 000118  elen               32
-         * 000120  clen               9
-         * 000122  iattr              0x00
-         * 000124  eattr              0x0000
-         * 000128  loc offset         4294967295
-         * 000132  name               5 bytes        'entry'
-         * 000137  ext id             0x0001         Zip64 extended information extra field
-         * 000139  ext size           28
-         * 000141  z64 size           5
-         * 000149  z64 csize          7
-         * 000157  z64 locoff         0
-         * 000165  z64 diskStart      0
-         * 000169  comment            9 bytes        'A comment'
+         * 00AC ZIP64 END CENTRAL DIR 07064B50
+         *      LOCATOR
+         * 00B0 Central Dir Disk no   00000000
+         * 00B4 Offset to Central dir 0000000000000074
+         * 00BC Total no of Disks     00000001
          *
-         * ------  Zip64 End of Central Directory Record  ------
-         * 000178  signature          0x06064b50
-         * 000182  record size        44
-         * 000190  made by version    45
-         * 000192  extract version    45
-         * 000194  this disk          0
-         * 000198  cen disk           0
-         * 000202  entries            1
-         * 000210  total entries      1
-         * 000218  cen size           92
-         * 000226  cen offset         86
-         *
-         * ------  Zip64 End of Central Directory Locator  ------
-         * 000234  signature          0x07064b50
-         * 000238  eoc disk           0
-         * 000242  eoc offset         178
-         * 000250  total disks        1
-         *
-         * ------  End of Central Directory  ------
-         * 000254  signature          0x06054b50
-         * 000258  this disk          0
-         * 000260  cen disk           0
-         * 000262  entries disk       65535
-         * 000264  entries total      65535
-         * 000266  cen size           4294967295
-         * 000270  cen offset         4294967295
-         * 000274  clen               0
+         * 00C0 END CENTRAL HEADER    06054B50
+         * 00C4 Number of this disk   0000
+         * 00C6 Central Dir Disk no   0000
+         * 00C8 Entries in this disk  0001
+         * 00CA Total Entries         0001
+         * 00CC Size of Central Dir   0000003B
+         * 00D0 Offset to Central Dir FFFFFFFF
+         * 00D4 Comment Length        0000
          */
 
         byte[] zipBytes = HexFormat.of().parseHex("""
-               504b03042d00080808002c54475900000000ffffffffffffffff05001400
-               656e7472790100100000000000000000000000000000000000cb48cdc9c9
-               0700504b070886a6103607000000000000000500000000000000504b0102
-               2d002d00080808002c54475986a61036ffffffffffffffff050020000900
-               ffff000000000000ffffffff656e74727901001c00050000000000000007
-               000000000000000000000000000000000000004120636f6d6d656e74504b
-               06062c000000000000002d002d0000000000000000000100000000000000
-               01000000000000005c000000000000005600000000000000504b06070000
-               0000b20000000000000001000000504b050600000000ffffffffffffffff
-               ffffffff0000
-               """.replaceAll("\n",""));
+                504b03042d000000000078ab475920303a36ffffffffffffffff01001400
+                2d010010000600000000000000060000000000000068656c6c6f0a504b01
+                021e032d000000000078ab475920303a3606000000ffffffff01000c0000
+                00000001000000b011000000002d010008000600000000000000504b0606
+                2c000000000000001e032d00000000000000000001000000000000000100
+                0000000000003b000000000000003900000000000000504b060700000000
+                740000000000000001000000504b050600000000010001003b000000ffff
+                ffff0000           
+                """.replaceAll("\n",""));
 
         // Buffer to manipulate the above ZIP
         ByteBuffer buf = ByteBuffer.wrap(zipBytes).order(ByteOrder.LITTLE_ENDIAN);
-        // Offset of the 'total entries' in the 'Zip64 End of Central Directory' record
-        int totOffset = 210;
-        // Update entry count to a value which cannot possibly fit in the small CEN
-        buf.putLong(totOffset, MAX_CEN_SIZE / 3);
-
+        // Offset of the 'total entries' in the 'ZIP64 END CENTRAL DIR' record
+        // Update ZIP64 entry count to a value which cannot possibly fit in the small CEN
+        buf.putLong(0x94, MAX_CEN_SIZE / 3);
+        // The corresponding END field needs the ZIP64 magic value
+        buf.putShort(0xCA, (short) 0xFFFF);
         // Write the ZIP to disk
         Path zipFile = Path.of("bad-entry-count.zip");
         Files.write(zipFile, zipBytes);
