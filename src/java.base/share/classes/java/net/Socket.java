@@ -464,7 +464,6 @@ public class Socket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      * @throws     NullPointerException if {@code host} is null.
-     * @see        SecurityManager#checkConnect
      * @deprecated Use {@link DatagramSocket} instead for UDP transport.
      */
     @Deprecated(forRemoval = true, since = "1.1")
