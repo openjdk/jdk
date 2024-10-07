@@ -738,7 +738,7 @@ JvmtiEnvBase::get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map_
   javaVFrame *jvf = cthread_with_cont ? jt->carrier_last_java_vframe(reg_map_p)
                                       : jt->last_java_vframe(reg_map_p);
 
-  // There should not be any VTMS transition here. This is for safety.   
+  // There should not be any VTMS transition here. This is for safety.
   if (jt->is_in_VTMS_transition()) {
     // Skip hidden frames only for carrier threads
     // which are in non-temporary VTMS transition.
