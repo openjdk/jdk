@@ -43,8 +43,7 @@ typedef const Pair<Node*, jint> ConstAddOperands;
 class AddNode : public Node {
   virtual uint hash() const;
 
-private:
-  Node* convert_serial_additions(PhaseGVN* phase, bool can_reshape, BasicType bt);
+  Node* convert_serial_additions(PhaseGVN* phase, BasicType bt);
   static Node* find_simple_addition_pattern(Node* n, BasicType bt, jlong* multiplier);
   static Node* find_simple_lshift_pattern(Node* n, BasicType bt, jlong* multiplier);
   static Node* find_simple_multiplication_pattern(Node* n, BasicType bt, jlong* multiplier);

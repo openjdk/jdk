@@ -396,7 +396,7 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   }
 
   // Convert a + a + ... + a into a*n
-  Node* serial_additions = convert_serial_additions(phase, can_reshape, bt);
+  Node* serial_additions = convert_serial_additions(phase, bt);
   if (serial_additions != nullptr) {
     return serial_additions;
   }
@@ -404,8 +404,9 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   return AddNode::Ideal(phase, can_reshape);
 }
 
-// Convert a + a + ... + a into a*n
-Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, BasicType bt) {
+// Try to convert a serial of additions into a single multiplication. Also convert `(a * CON) + a` to `(CON + 1) * a` as
+// a side effect. On success, a new MulNode is returned.
+Node* AddNode::convert_serial_additions(PhaseGVN* phase, BasicType bt) {
   // We need to make sure that the current AddNode is not part of a MulNode that has already been optimized to a
   // power-of-2 addition (e.g., 3 * a => (a << 2) + a). Without this check, GVN would keep trying to optimize the same
   // node and can't progress. For example, 3 * a => (a << 2) + a => 3 * a => (a << 2) + a => ...
@@ -426,15 +427,15 @@ Node* AddNode::convert_serial_additions(PhaseGVN* phase, bool can_reshape, Basic
     Node* con = (bt == T_INT)
                 ? (Node*) phase->intcon((jint) multiplier) // intentional type narrowing to allow overflow at max_jint
                 : (Node*) phase->longcon(multiplier);
-    return MulNode::make(con, in(2), bt);
+    return MulNode::make(con, in2, bt);
   }
 
   return nullptr;
 }
 
-// Match `a + a`, extract `a` and `2`
+// Try to match `a + a`. On success, return `a` and set `2` as `multiplier`.
+// The method matches `n` to for pattern: AddNode(a, a).
 Node* AddNode::find_simple_addition_pattern(Node* n, BasicType bt, jlong* multiplier) {
-  // Look for pattern: AddNode(a, a)
   if (n->Opcode() == Op_Add(bt) && n->in(1) == n->in(2)) {
     *multiplier = 2;
     return n->in(1);
@@ -443,9 +444,10 @@ Node* AddNode::find_simple_addition_pattern(Node* n, BasicType bt, jlong* multip
   return nullptr;
 }
 
-// Match `a << CON`, extract `a` and `1 << CON`
+// Try to match `a << CON`. On success, return `a` and set `1 << CON` as `multiplier`.
+// Match `n` for pattern: LShiftNode(a, CON).
+// Note that the power-of-2 multiplication optimization could potentially convert a MulNode to this pattern.
 Node* AddNode::find_simple_lshift_pattern(Node* n, BasicType bt, jlong* multiplier) {
-  // Look for pattern: LShiftNode(a, CON)
   // Note that power-of-2 multiplication optimization could potentially convert a MulNode to this pattern
   if (n->Opcode() == Op_LShift(bt) && n->in(2)->is_Con()) {
     Node* con = n->in(2);
@@ -460,12 +462,12 @@ Node* AddNode::find_simple_lshift_pattern(Node* n, BasicType bt, jlong* multipli
   return nullptr;
 }
 
-// Match `CON * a`, extract `a` and `CON`
+// Try to match `CON * a`. On success, return `a` and set `CON` as `multiplier`.
+// Match `n` for patterns:
+//     - MulNode(CON, a)
+//     - MulNode(a, CON)
 Node* AddNode::find_simple_multiplication_pattern(Node* n, BasicType bt, jlong* multiplier) {
-  // Look for patterns:
-  //     - MulNode(CON, a)
-  //     - MulNode(a, CON)
-  // This optimization technically only produces MulNode(CON, a), but we might as well transform (a * CON) + a, too.
+  // This optimization technically only produces MulNode(CON, a), but we might as match MulNode(a, CON), too.
   if (n->Opcode() == Op_Mul(bt) && (n->in(1)->is_Con() || n->in(2)->is_Con())) {
     Node* con = n->in(1);
     Node* base = n->in(2);
@@ -486,13 +488,14 @@ Node* AddNode::find_simple_multiplication_pattern(Node* n, BasicType bt, jlong* 
   return nullptr;
 }
 
-// Match `(a << CON1) + (a << CON2)`, extract `a` and `(1 << CON1) + (1 << CON2)`
-// Note that one of the term of the addition could simply be `a` (i.e., a << 0)
+// Try to match `(a << CON1) + (a << CON2)`. On success, return `a` and set `(1 << CON1) + (1 << CON2)` as `multiplier`.
+// Match `n` for patterns:
+//     - AddNode(LShiftNode(a, CON), LShiftNode(a, CON)/a)
+//     - AddNode(LShiftNode(a, CON)/a, LShiftNode(a, CON))
+// given that lhs is different from rhs.
+// Note that one of the term of the addition could simply be `a` (i.e., a << 0). Calling this function with `multiplier`
+// being null is safe.
 Node* AddNode::find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* multiplier) {
-  // Look for patterns:
-  //     - AddNode(LShiftNode(a, CON), LShiftNode(a, CON)/a)
-  //     - AddNode(LShiftNode(a, CON)/a, LShiftNode(a, CON))
-  // given that lhs is different from rhs
   if (n->Opcode() == Op_Add(bt) && n->in(1) != n->in(2)) {
     Node* lhs = n->in(1);
     Node* rhs = n->in(2);
@@ -539,16 +542,14 @@ Node* AddNode::find_power_of_two_addition_pattern(Node* n, BasicType bt, jlong* 
 
       return lhs->in(1);
     }
-
     return nullptr;
   }
-
   return nullptr;
 }
 
-// Match `(a << CON) - a`, extract `a` and `(1 << CON) - 1`
+// Try to match `(a << CON) - a`. On success, return `a` and set `(1 << CON1) - 1` as `multiplier`.
+// Match `n` for pattern: SubNode(LShiftNode(a, CON), a)
 Node* AddNode::find_power_of_two_subtraction_pattern(Node* n, BasicType bt, jlong* multiplier) {
-  // Look for pattern: SubNode(LShiftNode(a, CON), a)
   if (n->Opcode() == Op_Sub(bt) && n->in(1)->Opcode() == Op_LShift(bt) && n->in(1)->in(2)->is_Con()) {
     Node* lshift = n->in(1);
     Node* base = n->in(2);
