@@ -25,13 +25,13 @@
  * @bug 8272746
  * @modules java.base/jdk.internal.util
  * @summary Verify that ZipFile rejects files with CEN sizes exceeding the implementation limit
- * @run testng/othervm EndOfCenValidation
+ * @run junit/othervm EndOfCenValidation
  */
 
 import jdk.internal.util.ArraysSupport;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -49,7 +49,7 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * This test augments {@link TestTooManyEntries}. It creates sparse ZIPs where
@@ -89,7 +89,7 @@ public class EndOfCenValidation {
      * Create a valid ZIP file, used as a template
      * @throws IOException if an error occurs
      */
-    @BeforeTest
+    @BeforeEach
     public void setup() throws IOException {
         zipBytes = templateZip();
     }
@@ -98,7 +98,7 @@ public class EndOfCenValidation {
      * Delete big files after test, in case the file system did not support sparse files.
      * @throws IOException if an error occurs
      */
-    @AfterTest
+    @AfterEach
     public void cleanup() throws IOException {
         Files.deleteIfExists(CEN_TOO_LARGE_ZIP);
         Files.deleteIfExists(INVALID_CEN_SIZE);
@@ -116,11 +116,11 @@ public class EndOfCenValidation {
 
         Path zip = zipWithModifiedEndRecord(size, true, 0, CEN_TOO_LARGE_ZIP);
 
-        ZipException ex = expectThrows(ZipException.class, () -> {
+        ZipException ex = assertThrows(ZipException.class, () -> {
             new ZipFile(zip.toFile());
         });
 
-        assertEquals(ex.getMessage(), INVALID_CEN_SIZE_TOO_LARGE);
+        assertEquals(INVALID_CEN_SIZE_TOO_LARGE, ex.getMessage());
     }
 
     /**
@@ -136,11 +136,11 @@ public class EndOfCenValidation {
 
         Path zip = zipWithModifiedEndRecord(size, false, 0, INVALID_CEN_SIZE);
 
-        ZipException ex = expectThrows(ZipException.class, () -> {
+        ZipException ex = assertThrows(ZipException.class, () -> {
             new ZipFile(zip.toFile());
         });
 
-        assertEquals(ex.getMessage(), INVALID_CEN_BAD_SIZE);
+        assertEquals(INVALID_CEN_BAD_SIZE, ex.getMessage());
     }
 
     /**
@@ -156,11 +156,11 @@ public class EndOfCenValidation {
 
         Path zip = zipWithModifiedEndRecord(size, true, 100, BAD_CEN_OFFSET_ZIP);
 
-        ZipException ex = expectThrows(ZipException.class, () -> {
+        ZipException ex = assertThrows(ZipException.class, () -> {
             new ZipFile(zip.toFile());
         });
 
-        assertEquals(ex.getMessage(), INVALID_CEN_BAD_OFFSET);
+        assertEquals(INVALID_CEN_BAD_OFFSET, ex.getMessage());
     }
 
     /**
@@ -275,12 +275,12 @@ public class EndOfCenValidation {
         Files.write(zipFile, zipBytes);
 
         // Verify that the END header is rejected
-        ZipException ex = expectThrows(ZipException.class, () -> {
+        ZipException ex = assertThrows(ZipException.class, () -> {
             try (var zf = new ZipFile(zipFile.toFile())) {
             }
         });
 
-        assertEquals(ex.getMessage(), INVALID_BAD_ENTRY_COUNT);
+        assertEquals(INVALID_BAD_ENTRY_COUNT, ex.getMessage());
     }
 
     /**
