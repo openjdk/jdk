@@ -2594,7 +2594,7 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
   return MacroAssembler::in_scratch_emit_size();
 }
 
-void C2_MacroAssembler::load_nklass_compact_c2(Register dst, Register obj, int disp) {
+void C2_MacroAssembler::load_narrow_klass_compact_c2(Register dst, Register obj, int disp) {
   // Note: Don't clobber obj anywhere in that method!
 
   // The incoming address is pointing into obj-start + klass_offset_in_bytes. We need to extract
