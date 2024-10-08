@@ -756,22 +756,20 @@ public final class StackMapGenerator {
     }
 
     private void processFieldInstructions(RawBytecodeHelper bcs) {
-        var desc = Util.fieldTypeSymbol(cp.entryByIndex(bcs.getIndexU2(), MemberRefEntry.class).nameAndType());
+        var desc = Util.fieldTypeSymbol(cp.entryByIndex(bcs.getIndexU2(), MemberRefEntry.class).type());
+        var currentFrame = this.currentFrame;
         switch (bcs.opcode()) {
             case GETSTATIC ->
                 currentFrame.pushStack(desc);
             case PUTSTATIC -> {
-                currentFrame.popStack();
-                if (Util.isDoubleSlot(desc)) currentFrame.popStack();
+                currentFrame.decStack(Util.isDoubleSlot(desc) ? 2 : 1);
             }
             case GETFIELD -> {
-                currentFrame.popStack();
+                currentFrame.decStack(1);
                 currentFrame.pushStack(desc);
             }
             case PUTFIELD -> {
-                currentFrame.popStack();
-                currentFrame.popStack();
-                if (Util.isDoubleSlot(desc)) currentFrame.popStack();
+                currentFrame.decStack(Util.isDoubleSlot(desc) ? 3 : 2);
             }
             default -> throw new AssertionError("Should not reach here");
         }
@@ -783,12 +781,12 @@ public final class StackMapGenerator {
         var nameAndType = opcode == INVOKEDYNAMIC
                 ? cp.entryByIndex(index, InvokeDynamicEntry.class).nameAndType()
                 : cp.entryByIndex(index, MemberRefEntry.class).nameAndType();
-        String invokeMethodName = nameAndType.name().stringValue();
-        var mDesc = Util.methodTypeSymbol(nameAndType);
+        var mDesc = Util.methodTypeSymbol(nameAndType.type());
         int bci = bcs.bci();
+        var currentFrame = this.currentFrame;
         currentFrame.decStack(Util.parameterSlots(mDesc));
         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
-            if (OBJECT_INITIALIZER_NAME.equals(invokeMethodName)) {
+            if (nameAndType.name().equalsString(OBJECT_INITIALIZER_NAME)) {
                 Type type = currentFrame.popStack();
                 if (type == Type.UNITIALIZED_THIS_TYPE) {
                     if (inTryBlock) {
@@ -797,9 +795,7 @@ public final class StackMapGenerator {
                     currentFrame.initializeObject(type, thisType);
                     thisUninit = true;
                 } else if (type.tag == ITEM_UNINITIALIZED) {
-                    int new_offset = type.bci;
-                    int new_class_index = bcs.getU2(new_offset + 1);
-                    Type new_class_type = cpIndexToType(new_class_index, cp);
+                    Type new_class_type = cpIndexToType(bcs.getU2(type.bci + 1), cp);
                     if (inTryBlock) {
                         processExceptionHandlerTargets(bci, thisUninit);
                     }
@@ -808,7 +804,7 @@ public final class StackMapGenerator {
                     throw generatorError("Bad operand type when invoking <init>");
                 }
             } else {
-                currentFrame.popStack();
+                currentFrame.decStack(1);
             }
         }
         currentFrame.pushStack(mDesc.returnType());
