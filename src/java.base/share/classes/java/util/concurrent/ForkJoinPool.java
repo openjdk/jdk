@@ -2048,16 +2048,19 @@ public class ForkJoinPool extends AbstractExecutorService {
         if (((runState & SHUTDOWN) != 0L && quiescent() > 0) ||
             (qs = queues) == null || (n = qs.length) <= 0)
             return IDLE;                      // terminating
+        boolean signalled = false;
         for (int steps = Math.max(n << 2, SPIN_WAITS), i = 0; ; ++i) {
             WorkQueue q;                      // interleave spins and rechecks
             if (w.phase == activePhase)
                 return activePhase;
             else if (i >= steps)
                 return awaitWork(w, p);       // block, drop, or exit
-            else if ((i & 1) != 0 || (q = qs[i & (n - 1)]) == null)
+            else if ((i & 1) != 0 || signalled || (q = qs[i & (n - 1)]) == null)
                 Thread.onSpinWait();
-            else if (q.top - q.base > 0)
+            else if ((q.phase & IDLE) == 0 || q.top - q.base > 0) {
+                signalled = true;
                 reactivate(false);            // help signal
+            }
         }
     }
 
