@@ -285,16 +285,11 @@ public class TestZoneInfo310 {
     private static void diff (String[] o, String[] n) {
         var l1 = Arrays.asList(o);
         var l2 = Arrays.asList(n);
-
-        if (l1.equals(l2)) {
-            System.out.println("no diff");
-        } else {
-            var al1 = new ArrayList<>(l1);
-            var al2 = new ArrayList<>(l2);
-            al1.removeAll(l2);
-            al2.removeAll(l1);
-            System.out.println("extra in old: "+al1);
-            System.out.println("extra in new: "+al2);
+        var al1 = new ArrayList<>(l1);
+        var al2 = new ArrayList<>(l2);
+        al1.removeAll(l2);
+        al2.removeAll(l1);
+        System.out.println("extra in old: "+al1);
+        System.out.println("extra in new: "+al2);
         }
-    }
 }
