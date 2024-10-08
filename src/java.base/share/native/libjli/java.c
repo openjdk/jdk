@@ -538,7 +538,7 @@ JavaMain(void* _args)
 
     /* If the user specified neither a class name nor a JAR file */
     if (printXUsage || printUsage || what == 0 || mode == LM_UNKNOWN) {
-        PrintUsage(env, printXUsage, what == 0 || mode == LM_UNKNOWN);
+        PrintUsage(env, printXUsage, !printXUsage && !printUsage);
         CHECK_EXCEPTION_LEAVE(1);
         LEAVE();
     }

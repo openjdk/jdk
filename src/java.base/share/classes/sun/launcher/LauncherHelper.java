@@ -70,6 +70,7 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jdk.internal.access.SharedSecrets;
 
 import jdk.internal.misc.MethodFinder;
 import jdk.internal.misc.PreviewFeatures;
@@ -591,6 +592,8 @@ public final class LauncherHelper {
      */
     static void printConciseUsageMessage(boolean printToStderr) {
         initOutput(printToStderr);
+        ostream.println(SharedSecrets.getJavaLangAccess().shortVersionString());
+        ostream.println();
         ostream.println(getLocalizedMessage("java.launcher.opt.concise.header",
                 File.pathSeparator));
     }
