@@ -73,7 +73,7 @@ public class DnDCursorCrashTest {
     public static void main(String[] args) throws Exception {
         try {
             EventQueue.invokeAndWait(() -> {
-                frame.setTitle("Test frame");
+                frame.setTitle("DnD Cursor Test Frame");
                 frame.setLocation(200, 200);
                 frame.setLayout(new GridLayout(2, 1));
                 frame.add(dragSourcePanel);

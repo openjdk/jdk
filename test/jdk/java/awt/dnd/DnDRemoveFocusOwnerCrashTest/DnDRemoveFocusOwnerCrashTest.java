@@ -62,10 +62,12 @@ import java.io.Serializable;
 public class DnDRemoveFocusOwnerCrashTest {
     public static final int FRAME_ACTIVATION_TIMEOUT = 1000;
     public static Frame frame;
+    public static Robot robot;
     public static DragSourceButton dragSourceButton;
 
     public static void main(String[] args) throws Exception {
         try {
+            robot = new Robot();
             EventQueue.invokeAndWait(() -> {
                 frame = new Frame();
                 dragSourceButton = new DragSourceButton();
@@ -79,8 +81,8 @@ public class DnDRemoveFocusOwnerCrashTest {
                 frame.setVisible(true);
 
                 try {
-                    Thread.sleep(FRAME_ACTIVATION_TIMEOUT);
-                } catch (InterruptedException e) {
+                    robot.delay(FRAME_ACTIVATION_TIMEOUT);
+                } catch (Exception e) {
                     e.printStackTrace();
                     throw new RuntimeException("The test failed.");
                 }
@@ -95,7 +97,7 @@ public class DnDRemoveFocusOwnerCrashTest {
                     robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
                     for (int dy = 0; dy < 50; dy++) {
                         robot.mouseMove(p.x, p.y + dy);
-                        Thread.sleep(10);
+                        robot.delay(10);
                     }
                     robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
                     robot.keyRelease(KeyEvent.VK_CONTROL);

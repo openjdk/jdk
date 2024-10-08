@@ -52,8 +52,8 @@ public class NonAsciiFilenames {
 
                 Open a native file browsing application, such as Windows
                 Explorer. Try to find a file whose name uses non-ISO 8859-1
-                characters. You will not be verifying the fix for 4187490 unless
-                you drag a file which contains non-ISO 8859-1 characters. Drag
+                characters. Create a file and name it such that it contains
+                non-ISO 8859-1 characters (For ex. é, à, ö, €, ¥). Drag
                 the file from the native application and drop it on the test
                 Frame. If the file name appears normally, then the test passes.
                 If boxes or question marks appear for characters, or if you see
