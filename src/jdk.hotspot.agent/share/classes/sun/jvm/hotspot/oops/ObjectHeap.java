@@ -37,7 +37,6 @@ import sun.jvm.hotspot.gc.epsilon.*;
 import sun.jvm.hotspot.gc.g1.*;
 import sun.jvm.hotspot.gc.shenandoah.*;
 import sun.jvm.hotspot.gc.parallel.*;
-import sun.jvm.hotspot.gc.x.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
