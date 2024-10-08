@@ -54,7 +54,7 @@ public class ML_DSA_Provider {
             var r = sr != null ? sr : JCAUtil.getDefSecureRandom();
             r.nextBytes(seed);
             ML_DSA mlDsa = new ML_DSA(name2int(name));
-            ML_DSA.ML_DSA_KeyPair kp = mlDsa.generateKeyPair(seed);
+            ML_DSA.ML_DSA_KeyPair kp = mlDsa.generateKeyPairInternal(seed);
             return new byte[][] {
                     mlDsa.pkEncode(kp.publicKey()),
                     mlDsa.skEncode(kp.privateKey()) };
@@ -122,7 +122,7 @@ public class ML_DSA_Provider {
             byte[] rnd = new byte[32];
             r.nextBytes(rnd);
             var mlDsa = new ML_DSA(size);
-            ML_DSA.ML_DSA_Signature sig = mlDsa.sign(msg, rnd, skBytes);
+            ML_DSA.ML_DSA_Signature sig = mlDsa.signInternal(msg, rnd, skBytes);
             return mlDsa.sigEncode(sig);
         }
 
@@ -130,7 +130,7 @@ public class ML_DSA_Provider {
         public boolean implVerify(String name, byte[] pkBytes, Object pk2, byte[] msg, byte[] sigBytes) {
             var size = name2int(name);
             var mlDsa = new ML_DSA(size);
-            return mlDsa.verify(pkBytes, msg, sigBytes);
+            return mlDsa.verifyInternal(pkBytes, msg, sigBytes);
         }
     }
 

@@ -493,7 +493,8 @@ public class ML_DSA {
     public record ML_DSA_Signature(byte[] commitmentHash, int[][] response, boolean[][] hint) {
     }
 
-    public ML_DSA_KeyPair generateKeyPair(byte[] randomBytes) {
+    //Internal functions in Section 6 of specification
+    public ML_DSA_KeyPair generateKeyPairInternal(byte[] randomBytes) {
         //Initialize hash functions
         var hash = new SHAKE256(0);
         var crHash = new SHAKE256(mlDsaTrLength);
@@ -536,7 +537,7 @@ public class ML_DSA {
         return new ML_DSA_KeyPair(sk, pk);
     }
 
-    public ML_DSA_Signature sign(byte[] message, byte[] rnd, byte[] skBytes) {
+    public ML_DSA_Signature signInternal(byte[] message, byte[] rnd, byte[] skBytes) {
         //Decode private key and initialize hash function
         ML_DSA_PrivateKey sk = skDecode(skBytes);
         var hash = new SHAKE256(0);
@@ -610,7 +611,7 @@ public class ML_DSA {
         }
     }
 
-    public boolean verify(byte[] pkBytes, byte[] message, byte[] sigBytes) {
+    public boolean verifyInternal(byte[] pkBytes, byte[] message, byte[] sigBytes) {
         //Decode sig and initialize hash
         ML_DSA_Signature sig = sigDecode(sigBytes);
         var hash = new SHAKE256(0);
