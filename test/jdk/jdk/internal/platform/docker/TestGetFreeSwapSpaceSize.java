@@ -25,7 +25,7 @@
  * @test
  * @key cgroups
  * @bug 8242480
- * @requires docker.support
+ * @requires container.support
  * @library /test/lib
  * @build GetFreeSwapSpaceSize
  * @run driver TestGetFreeSwapSpaceSize

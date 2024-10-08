@@ -28,7 +28,7 @@
  * @bug 8308090
  * @key cgroups
  * @summary Test container limits updating as they get updated at runtime without restart
- * @requires docker.support
+ * @requires container.support
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox LimitUpdateChecker
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox

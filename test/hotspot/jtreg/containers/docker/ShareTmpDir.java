@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 8286030
  * @key cgroups
  * @summary Test for hsperfdata file name conflict when two containers share the same /tmp directory
- * @requires docker.support
+ * @requires container.support
  * @library /test/lib
  * @build WaitForFlagFile
  * @run driver ShareTmpDir
