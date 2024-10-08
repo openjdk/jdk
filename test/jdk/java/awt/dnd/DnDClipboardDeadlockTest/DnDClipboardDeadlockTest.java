@@ -137,6 +137,9 @@ public class DnDClipboardDeadlockTest {
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.keyRelease(KeyEvent.VK_CONTROL);
 
+        } catch (Throwable e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     } // run()
 
