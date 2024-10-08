@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Label;
 import java.lang.classfile.PseudoInstruction;
+import java.lang.classfile.attribute.CharacterRangeInfo;
 import java.lang.classfile.attribute.CharacterRangeTableAttribute;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundCharacterRange;
@@ -45,6 +46,34 @@ import jdk.internal.javac.PreviewFeature;
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CharacterRange extends PseudoInstruction
         permits AbstractPseudoInstruction.UnboundCharacterRange, BoundCharacterRange {
+
+    /** The bit mask of STATEMENT {@link CharacterRangeInfo} kind. */
+    int FLAG_STATEMENT = 0x0001;
+
+    /** The bit mask of BLOCK {@link CharacterRangeInfo} kind. */
+    int FLAG_BLOCK = 0x0002;
+
+    /** The bit mask of ASSIGNMENT {@link CharacterRangeInfo} kind. */
+    int FLAG_ASSIGNMENT = 0x0004;
+
+    /** The bit mask of FLOW_CONTROLLER {@link CharacterRangeInfo} kind. */
+    int FLAG_FLOW_CONTROLLER = 0x0008;
+
+    /** The bit mask of FLOW_TARGET {@link CharacterRangeInfo} kind. */
+    int FLAG_FLOW_TARGET = 0x0010;
+
+    /** The bit mask of INVOKE {@link CharacterRangeInfo} kind. */
+    int FLAG_INVOKE = 0x0020;
+
+    /** The bit mask of CREATE {@link CharacterRangeInfo} kind. */
+    int FLAG_CREATE = 0x0040;
+
+    /** The bit mask of BRANCH_TRUE {@link CharacterRangeInfo} kind. */
+    int FLAG_BRANCH_TRUE = 0x0080;
+
+    /** The bit mask of BRANCH_FALSE {@link CharacterRangeInfo} kind. */
+    int FLAG_BRANCH_FALSE = 0x0100;
+
     /**
      * {@return the start of the instruction range}
      */
@@ -75,15 +104,15 @@ public sealed interface CharacterRange extends PseudoInstruction
      * A flags word, indicating the kind of range.  Multiple flag bits
      * may be set.  Valid flags include:
      * <ul>
-     * <li>{@link java.lang.classfile.ClassFile#CRT_STATEMENT}
-     * <li>{@link java.lang.classfile.ClassFile#CRT_BLOCK}
-     * <li>{@link java.lang.classfile.ClassFile#CRT_ASSIGNMENT}
-     * <li>{@link java.lang.classfile.ClassFile#CRT_FLOW_CONTROLLER}
-     * <li>{@link java.lang.classfile.ClassFile#CRT_FLOW_TARGET}
-     * <li>{@link java.lang.classfile.ClassFile#CRT_INVOKE}
-     * <li>{@link java.lang.classfile.ClassFile#CRT_CREATE}
-     * <li>{@link java.lang.classfile.ClassFile#CRT_BRANCH_TRUE}
-     * <li>{@link java.lang.classfile.ClassFile#CRT_BRANCH_FALSE}
+     * <li>{@link #FLAG_STATEMENT}
+     * <li>{@link #FLAG_BLOCK}
+     * <li>{@link #FLAG_ASSIGNMENT}
+     * <li>{@link #FLAG_FLOW_CONTROLLER}
+     * <li>{@link #FLAG_FLOW_TARGET}
+     * <li>{@link #FLAG_INVOKE}
+     * <li>{@link #FLAG_CREATE}
+     * <li>{@link #FLAG_BRANCH_TRUE}
+     * <li>{@link #FLAG_BRANCH_FALSE}
      * </ul>
      *
      * @see java.lang.classfile.attribute.CharacterRangeInfo#flags()

@@ -311,7 +311,7 @@ inline bool ZPage::mark_object(zaddress addr, bool finalizable, bool& inc_live) 
   assert(is_in(addr), "Invalid address");
 
   // Verify oop
-  (void)to_oop(addr);
+  assert_is_oop(addr);
 
   // Set mark bit
   const BitMap::idx_t index = bit_index(addr);

@@ -87,7 +87,8 @@
   template(HeapWalkOperation)                     \
   template(HeapIterateOperation)                  \
   template(ReportJavaOutOfMemory)                 \
-  template(JFRCheckpoint)                         \
+  template(JFRSafepointClear)                     \
+  template(JFRSafepointWrite)                     \
   template(ShenandoahFullGC)                      \
   template(ShenandoahInitMark)                    \
   template(ShenandoahFinalMarkStartEvac)          \
@@ -108,7 +109,6 @@
   template(PrintCompileQueue)                     \
   template(PrintClassHierarchy)                   \
   template(PrintClasses)                          \
-  template(ICBufferFull)                          \
   template(PrintMetadata)                         \
   template(GTestExecuteAtSafepoint)               \
   template(GTestStopSafepoint)                    \

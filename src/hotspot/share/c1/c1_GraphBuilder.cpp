@@ -1389,6 +1389,11 @@ void GraphBuilder::jsr(int dest) {
   // If the bytecodes are strange (jumping out of a jsr block) then we
   // might end up trying to re-parse a block containing a jsr which
   // has already been activated. Watch for this case and bail out.
+  if (next_bci() >= method()->code_size()) {
+    // This can happen if the subroutine does not terminate with a ret,
+    // effectively turning the jsr into a goto.
+    BAILOUT("too-complicated jsr/ret structure");
+  }
   for (ScopeData* cur_scope_data = scope_data();
        cur_scope_data != nullptr && cur_scope_data->parsing_jsr() && cur_scope_data->scope() == scope();
        cur_scope_data = cur_scope_data->parent()) {
@@ -1563,7 +1568,7 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
   // The conditions for a memory barrier are described in Parse::do_exits().
   bool need_mem_bar = false;
   if (method()->name() == ciSymbols::object_initializer_name() &&
-       (scope()->wrote_final() ||
+       (scope()->wrote_final() || scope()->wrote_stable() ||
          (AlwaysSafeConstructors && scope()->wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && scope()->wrote_volatile()))) {
     need_mem_bar = true;
@@ -1741,14 +1746,16 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
     }
   }
 
-  if (field->is_final() && (code == Bytecodes::_putfield)) {
-    scope()->set_wrote_final();
-  }
-
   if (code == Bytecodes::_putfield) {
     scope()->set_wrote_fields();
     if (field->is_volatile()) {
       scope()->set_wrote_volatile();
+    }
+    if (field->is_final()) {
+      scope()->set_wrote_final();
+    }
+    if (field->is_stable()) {
+      scope()->set_wrote_stable();
     }
   }
 
@@ -2114,7 +2121,7 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
   }
 
   if (cha_monomorphic_target != nullptr) {
-    assert(!target->can_be_statically_bound() || target == cha_monomorphic_target, "");
+    assert(!target->can_be_statically_bound() || target->equals(cha_monomorphic_target), "");
     assert(!cha_monomorphic_target->is_abstract(), "");
     if (!cha_monomorphic_target->can_be_statically_bound(actual_recv)) {
       // If we inlined because CHA revealed only a single target method,
@@ -3332,6 +3339,7 @@ GraphBuilder::GraphBuilder(Compilation* compilation, IRScope* scope)
   case vmIntrinsics::_dsin          : // fall through
   case vmIntrinsics::_dcos          : // fall through
   case vmIntrinsics::_dtan          : // fall through
+  case vmIntrinsics::_dtanh         : // fall through
   case vmIntrinsics::_dlog          : // fall through
   case vmIntrinsics::_dlog10        : // fall through
   case vmIntrinsics::_dexp          : // fall through
@@ -3734,6 +3742,9 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee, bool ignore_return) {
 bool GraphBuilder::try_inline_jsr(int jsr_dest_bci) {
   // Introduce a new callee continuation point - all Ret instructions
   // will be replaced with Gotos to this point.
+  if (next_bci() >= method()->code_size()) {
+    return false;
+  }
   BlockBegin* cont = block_at(next_bci());
   assert(cont != nullptr, "continuation must exist (BlockListBuilder starts a new block after a jsr");
 

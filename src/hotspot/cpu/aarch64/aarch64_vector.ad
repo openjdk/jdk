@@ -155,7 +155,7 @@ source %{
     }
 
     int length_in_bytes = vlen * type2aelembytes(bt);
-    if (UseSVE == 0 && length_in_bytes > 16) {
+    if (UseSVE == 0 && length_in_bytes > FloatRegister::neon_vl) {
       return false;
     }
 
