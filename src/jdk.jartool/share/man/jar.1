@@ -1,4 +1,4 @@
-.\" Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,8 @@ operation mode included in the \f[V]jar\f[R] command.
 \f[V]-C\f[R] \f[I]DIR\f[R]
 Changes the specified directory and includes the \f[I]files\f[R]
 specified at the end of the command line.
+When used in extract mode, extracts the JAR file to the specified
+directory.
 .RS
 .PP
 \f[V]jar\f[R] [\f[I]OPTION\f[R] ...]
@@ -202,6 +204,10 @@ Stores without using ZIP compression.
 The timestamp in ISO-8601 extended offset date-time with optional
 time-zone format, to use for the timestamp of the entries, e.g.
 \[dq]2022-02-12T12:30:00-05:00\[dq].
+.SH OPERATION MODIFIERS VALID ONLY IN EXTRACT MODE
+.TP
+\f[V]--dir\f[R] \f[I]DIR\f[R]
+Directory into which the jar will be extracted.
 .SH OTHER OPTIONS
 .PP
 The following options are recognized by the \f[V]jar\f[R] command and
@@ -341,4 +347,18 @@ file that lists the files to include in the JAR file and pass it to the
 .PP
 If one or more entries in the arg file cannot be found then the jar
 command fails without creating the JAR file.
+.RE
+.IP \[bu] 2
+Extract a JAR file \f[V]foo.jar\f[R] to \f[V]/tmp/bar/\f[R] directory:
+.RS 2
+.RS
+.PP
+\f[V]jar -xf foo.jar -C /tmp/bar/\f[R]
+.RE
+.PP
+Alternatively, you can also do:
+.RS
+.PP
+\f[V]jar --extract --file foo.jar --dir /tmp/bar/\f[R]
+.RE
 .RE
