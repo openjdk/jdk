@@ -101,17 +101,11 @@ class LayoutRawBlock : public ResourceObj {
   // sort fields in decreasing order.
   // Note: with line types, the comparison should include alignment constraint if sizes are equals
   static int compare_size_inverted(LayoutRawBlock** x, LayoutRawBlock** y)  {
-#if defined (_WINDOWS) || defined (__APPLE__)
-    // qsort() on Windows/macOS reverse the order of fields with the same size
-    // the extension of the comparison function below preserves this order
     int diff = (*y)->size() - (*x)->size();
     if (diff == 0) {
       diff = (*x)->field_index() - (*y)->field_index();
     }
     return diff;
-#else
-    return (*y)->size() - (*x)->size();
-#endif // _WINDOWS || __APPLE__
   }
 
 };

@@ -27,7 +27,7 @@ import jdk.internal.misc.Unsafe;
 /*
  * @test
  * @bug 8341471
- * @summary [macOS_aarch64] Reversed field layout caused by unstable sorting
+ * @summary Reversed field layout caused by unstable sorting
  * @modules java.base/jdk.internal.misc
  * @run main/othervm TestFieldLayout
  */
