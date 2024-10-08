@@ -422,8 +422,7 @@ void VTransformScalarNode::print_spec() const {
 }
 
 void VTransformReplicateNode::print_spec() const {
-  tty->print("vlen=%d element_type=", _vlen);
-  _element_type->dump();
+  tty->print("vlen=%d element_type=%s", _vlen, type2name(_element_type));
 }
 
 void VTransformShiftCountNode::print_spec() const {
