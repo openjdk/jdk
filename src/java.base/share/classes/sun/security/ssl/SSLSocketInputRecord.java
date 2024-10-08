@@ -56,7 +56,7 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
     private ByteBuffer recordBody = ByteBuffer.allocate(1024);
 
     // Store the last record we attempted to decode.
-    private ByteBuffer lastDecodeRecord = ByteBuffer.allocate(headerSize + recordBody.capacity());
+    private ByteBuffer lastDecodeRecord = null;
 
     private boolean formatVerified = false;     // SSLv2 ruled out?
 
@@ -213,7 +213,7 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
     }
 
     private void saveLastDecodeRecord() {
-        if (lastDecodeRecord.capacity() < headerSize + recordBody.remaining()) {
+        if (lastDecodeRecord == null || lastDecodeRecord.capacity() < headerSize + recordBody.remaining()) {
             lastDecodeRecord = ByteBuffer.allocate(headerSize + recordBody.remaining());
         }
         lastDecodeRecord.clear();
