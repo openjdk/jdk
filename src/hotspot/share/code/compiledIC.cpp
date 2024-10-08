@@ -293,7 +293,7 @@ bool CompiledIC::is_monomorphic() const {
 }
 
 bool CompiledIC::is_megamorphic() const {
-  return VtableStubs::entry_point(destination()) != nullptr;;
+  return VtableStubs::entry_point(destination()) != nullptr;
 }
 
 bool CompiledIC::is_speculated_klass(Klass* receiver_klass) {

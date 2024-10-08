@@ -3974,6 +3974,7 @@ void TemplateTable::_new() {
   // make sure klass is initialized
   // make sure klass is fully initialized
   __ ldrb(Rtemp, Address(Rklass, InstanceKlass::init_state_offset()));
+  __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::LoadLoad | MacroAssembler::LoadStore), Rtemp);
   __ cmp(Rtemp, InstanceKlass::fully_initialized);
   __ b(slow_case, ne);
 
