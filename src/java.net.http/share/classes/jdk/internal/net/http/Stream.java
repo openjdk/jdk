@@ -779,6 +779,7 @@ class Stream<T> extends ExchangeImpl<T> {
         HttpHeaders userh = filterHeaders(request.getUserHeaders());
         // Filter context restricted from userHeaders
         userh = HttpHeaders.of(userh.map(), (k, v) -> true);
+        Utils.setUserAuthFlags(request, userh);
 
         // Don't override Cookie values that have been set by the CookieHandler.
         final HttpHeaders uh = userh;

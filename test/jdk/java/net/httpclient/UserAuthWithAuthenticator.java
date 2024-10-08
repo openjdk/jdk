@@ -51,12 +51,23 @@ public class UserAuthWithAuthenticator {
 
     static final String[] proxyResponses = {
         "HTTP/1.1 407 Proxy Authentication Required\r\n"+
+        "Content-Length: 0\r\n" +
         "Proxy-Authenticate: Basic realm=\"Access to the proxy\"\r\n\r\n"
         ,
         "HTTP/1.1 200 OK\r\n"+
         "Date: Mon, 15 Jan 2001 12:18:21 GMT\r\n" +
         "Server: Apache/1.3.14 (Unix)\r\n" +
         "Content-Length: " + data.length() + "\r\n\r\n" + data
+    };
+
+    static final String[] proxyWithErrorResponses = {
+        "HTTP/1.1 407 Proxy Authentication Required\r\n"+
+        "Content-Length: 0\r\n" +
+        "Proxy-Authenticate: Basic realm=\"Access to the proxy\"\r\n\r\n"
+        ,
+        "HTTP/1.1 407 Proxy Authentication Required\r\n"+
+        "Content-Length: 0\r\n" +
+        "Proxy-Authenticate: Basic realm=\"Access to the proxy\"\r\n\r\n"
     };
 
     static final String[] serverResponses = {
@@ -68,6 +79,7 @@ public class UserAuthWithAuthenticator {
 
     static final String[] authenticatorResponses = {
         "HTTP/1.1 401 Authentication Required\r\n"+
+        "Content-Length: 0\r\n" +
         "WWW-Authenticate: Basic realm=\"Access to the server\"\r\n\r\n"
         ,
         "HTTP/1.1 200 OK\r\n"+
@@ -79,6 +91,7 @@ public class UserAuthWithAuthenticator {
     public static void main(String[] args) throws Exception {
         testServerOnly();
         testServerWithProxy();
+        testServerWithProxyError();
         testServerOnlyAuthenticator();
     }
 
@@ -112,6 +125,35 @@ public class UserAuthWithAuthenticator {
             assertPattern(".*^Proxy-Authorization:.*Basic " + encoded + ".*", proxyStr);
             assertPattern(".*^User-Agent:.*myUserAgent.*", proxyStr);
             assertPattern(".*^Authorization:.*Basic.*", proxyStr);
+            System.out.println("testServerWithProxy: OK");
+        } finally {
+            proxyMock.stopMocker();
+        }
+    }
+
+    static void testServerWithProxyError() throws IOException, InterruptedException {
+        Mocker proxyMock = new Mocker(proxyWithErrorResponses);
+        proxyMock.start();
+        try {
+
+            var client = HttpClient.newBuilder()
+                .version(java.net.http.HttpClient.Version.HTTP_1_1)
+                .proxy(new ProxySel(proxyMock.getPort()))
+                .authenticator(new ProxyAuth())
+                .build();
+
+            var plainCreds = "user:pwd";
+            var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
+            var badCreds = "user:wrong";
+            var encoded1 = java.util.Base64.getEncoder().encodeToString(badCreds.getBytes(US_ASCII));
+            var request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1/some_url"))
+                .setHeader("User-Agent", "myUserAgent")
+                .setHeader("Proxy-Authorization", "Basic " + encoded)
+                .build();
+
+            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            assertEquals(407, response.statusCode());
             System.out.println("testServerWithProxy: OK");
         } finally {
             proxyMock.stopMocker();
@@ -237,12 +279,11 @@ public class UserAuthWithAuthenticator {
                 s = ss.accept();
                 in = s.getInputStream();
                 out = s.getOutputStream();
-                while (true) {
+                while (index < responses.length) {
                     requests.add(readRequest());
                     out.write(responses[index++].getBytes(US_ASCII));
                 }
             } catch (Exception e) {
-                System.err.println("Delete this: " + e);
                 //e.printStackTrace();
             }
         }
