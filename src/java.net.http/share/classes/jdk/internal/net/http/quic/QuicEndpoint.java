@@ -126,6 +126,8 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         // than that of an IPv4).
         // We have only one direct buffer of this size per endpoint.
         final int defSize = 65527;
+        // This is the value that will be transmitted to the server in the
+        // max_udp_payload_size parameter
         int size = Utils.getIntegerProperty("jdk.httpclient.quic.maxUdpPayloadSize", defSize);
         // don't allow the value to be below 1200 and above 65527, to conform with RFC-9000,
         // section 18.2.
@@ -147,13 +149,56 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         IS_WINDOWS = OperatingSystem.isWindows();
     }
 
-    public sealed interface Datagram permits QuicDatagram, StatelessReset, SendStatelessReset, UnmatchedDatagram {
+    /**
+     * This interface represent a UDP Datagram. This could be
+     * either an incoming datagram or an outgoing datagram.
+     */
+    public sealed interface Datagram
+            permits QuicDatagram, StatelessReset, SendStatelessReset, UnmatchedDatagram {
+        /**
+         * {@return the peer address}
+         * For incoming datagrams, this is the sender address.
+         * For outgoing datagrams, this is the destination address.
+         */
         SocketAddress address();
+
+        /**
+         * {@return the datagram payload}
+         */
         ByteBuffer payload();
     }
+
+    /**
+     * An incoming UDP Datagram for which no connection was found.
+     * On the server side it may represent a new connection attempt.
+     * @param address the {@linkplain Datagram#address() sender address}
+     * @param payload {@inheritDoc}
+     */
     public record UnmatchedDatagram(SocketAddress address, ByteBuffer payload) implements Datagram {}
+
+    /**
+     * A stateless reset that should be sent in response
+     * to an incoming datagram targeted at a deleted connection.
+     * @param address the {@linkplain Datagram#address() destination address}
+     * @param payload the outgoing stateless reset
+     */
     public record SendStatelessReset(SocketAddress address, ByteBuffer payload) implements Datagram {}
+
+    /**
+     * An incoming datagram containing a stateless reset
+     * @param connection the connection to reset
+     * @param address    the {@linkplain Datagram#address() sender address}
+     * @param payload    the datagram payload
+     */
     public record StatelessReset(QuicPacketReceiver connection, SocketAddress address, ByteBuffer payload) implements Datagram {}
+
+    /**
+     * An outgoing datagram, or an incoming datagram for which
+     * a connection was identified.
+     * @param connection the sending or receiving connection
+     * @param address    {@inheritDoc}
+     * @param payload    {@inheritDoc}
+     */
     public record QuicDatagram(QuicPacketReceiver connection, SocketAddress address, ByteBuffer payload)
             implements Datagram {}
 
