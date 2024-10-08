@@ -703,7 +703,7 @@ public final class DirectCodeBuilder
 
     public void writeLoadConstant(Opcode opcode, LoadableConstantEntry value) {
         // Make sure Long and Double have LDC2_W and
-        // rewrite to _W if index is > 256
+        // rewrite to _W if index is >= 256
         int index = AbstractPoolEntry.maybeClone(constantPool, value).index();
         if (value instanceof LongEntry || value instanceof DoubleEntry) {
             opcode = Opcode.LDC2_W;
