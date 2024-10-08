@@ -55,10 +55,10 @@ public class FocusTest {
               (You would click on the caption bar of another window,
               and then on the caption bar of the FocusTest Frame.)
 
-              If the focus rectangle again appears, the test passes.
+              If the focus rectangle appears again, the test passes.
               If it does not appear, or appears around the top rectangle,
               the test fails.
-            """;
+              """;
 
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()

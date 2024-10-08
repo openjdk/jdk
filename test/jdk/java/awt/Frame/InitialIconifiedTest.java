@@ -68,7 +68,7 @@ public class InitialIconifiedTest {
             });
         }
 
-        if (!FAILURES.toString().isBlank()) {
+        if (!FAILURES.isEmpty()) {
             throw new RuntimeException(FAILURES.toString());
         }
     }
