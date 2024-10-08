@@ -710,11 +710,11 @@ public final class DirectCodeBuilder
         } else if (index >= 256)
             opcode = Opcode.LDC_W;
 
-        bytecodesBufWriter.writeU1(opcode.bytecode());
+        assert !opcode.isWide();
         if (opcode.sizeIfFixed() == 3) {
-            bytecodesBufWriter.writeU2(index);
+            bytecodesBufWriter.writeU1U2(opcode.bytecode(), index);
         } else {
-            bytecodesBufWriter.writeU1(index);
+            bytecodesBufWriter.writeU1U1(opcode.bytecode(), index);
         }
     }
 
