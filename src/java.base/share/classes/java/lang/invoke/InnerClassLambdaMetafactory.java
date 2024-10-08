@@ -406,7 +406,7 @@ import sun.invoke.util.Wrapper;
                         for (int i = 0; i < parameterCount; i++) {
                             cob.aload(0)
                                .loadLocal(TypeKind.from(factoryType.parameterType(i)), cob.parameterSlot(i))
-                               .putfield(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(argNames[i], argDescs[i])));
+                               .putfield(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(argName(i), argDescs[i])));
                         }
                         cob.return_();
                     }
