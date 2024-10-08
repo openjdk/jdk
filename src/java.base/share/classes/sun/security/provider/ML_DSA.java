@@ -536,18 +536,15 @@ public class ML_DSA {
         return new ML_DSA_KeyPair(sk, pk);
     }
 
-    public ML_DSA_Signature sign(byte[] message, byte[] rnd, ML_DSA_PrivateKey sk) {
-        //Initialize hash functions
+    public ML_DSA_Signature sign(byte[] message, byte[] rnd, byte[] skBytes) {
+        //Decode private key and initialize hash function
+        ML_DSA_PrivateKey sk = skDecode(skBytes);
         var hash = new SHAKE256(0);
 
-        int[][] s1 = Arrays.stream(sk.s1()).map(int[]::clone).toArray(int[][]::new);
-        int[][] s2 = Arrays.stream(sk.s2()).map(int[]::clone).toArray(int[][]::new);
-        int[][] t0 = Arrays.stream(sk.t0()).map(int[]::clone).toArray(int[][]::new);
-
         //Do some NTTs
-        mlDsaVectorNtt(s1);
-        mlDsaVectorNtt(s2);
-        mlDsaVectorNtt(t0);
+        mlDsaVectorNtt(sk.s1());
+        mlDsaVectorNtt(sk.s2());
+        mlDsaVectorNtt(sk.t0());
         int[][][] aHat = generateA(sk.rho());
 
         //Compute mu
@@ -560,7 +557,7 @@ public class ML_DSA {
         hash.update(sk.k());
         hash.update(rnd);
         hash.update(mu);
-        byte[] rhoPrime = hash.squeeze(mlDsaMaskSeedLength);
+        byte[] rhoDoublePrime = hash.squeeze(mlDsaMaskSeedLength);
         hash.reset();
 
         //Initialize vectors used in loop
@@ -570,12 +567,12 @@ public class ML_DSA {
 
         int kappa = 0;
         while (true) {
-            int[][] y = expandMask(rhoPrime, kappa);
+            int[][] y = expandMask(rhoDoublePrime, kappa);
 
             //Compute w and w1
             mlDsaVectorNtt(y); //y is now in NTT domain
             int[][] w = matrixVectorPointwiseMultiply(aHat, y);
-            mlDsaVectorInverseNtt(w); //w is not in normal domain
+            mlDsaVectorInverseNtt(w); //w is now in normal domain
             int[][] w0 = new int[mlDsa_k][mlDsa_n];
             int[][] w1 = new int[mlDsa_k][mlDsa_n];
             decompose(w, w0, w1);
@@ -590,8 +587,8 @@ public class ML_DSA {
             //Get z and r0
             int[] c = sampleInBall(commitmentHash);
             mlDsaNtt(c); //c is now in NTT domain
-            int[][] cs1 = nttConstMultiply(c, s1);
-            int[][] cs2 = nttConstMultiply(c, s2);
+            int[][] cs1 = nttConstMultiply(c, sk.s1());
+            int[][] cs2 = nttConstMultiply(c, sk.s2());
             mlDsaVectorInverseNtt(cs1);
             mlDsaVectorInverseNtt(cs2);
             z = vectorAdd(y, cs1);
@@ -602,7 +599,7 @@ public class ML_DSA {
             if (vectorNormBound(z, gamma1 - beta) || vectorNormBound(r0, gamma2 - beta)) {
                 continue;
             } else {
-                int[][] ct0 = nttConstMultiply(c, t0);
+                int[][] ct0 = nttConstMultiply(c, sk.t0());
                 mlDsaVectorInverseNtt(ct0);
                 h = makeHint(vectorConstMul(-1, ct0), vectorAdd(vectorAdd(w, vectorConstMul(-1, cs2)), ct0));
                 if (vectorNormBound(ct0, gamma2) || (hammingWeight(h) > omega)) {
@@ -613,17 +610,22 @@ public class ML_DSA {
         }
     }
 
-    public boolean verify(ML_DSA_PublicKey pk, byte[] message, ML_DSA_Signature sig) {
+    public boolean verify(byte[] pkBytes, byte[] message, byte[] sigBytes) {
+        //Decode sig and initialize hash
+        ML_DSA_Signature sig = sigDecode(sigBytes);
         var hash = new SHAKE256(0);
 
         //Check hint encoding
         if (sig.hint() == null) {return false;}
 
+        //Decode pk
+        ML_DSA_PublicKey pk = pkDecode(pkBytes);
+
         //Expand A
         int[][][] aHat = generateA(pk.rho());
 
         //Generate tr
-        hash.update(pkEncode(pk));
+        hash.update(pkBytes);
         byte[] tr = hash.squeeze(mlDsaTrLength);
         hash.reset();
 
@@ -637,13 +639,12 @@ public class ML_DSA {
         int[] cHat = sampleInBall(sig.commitmentHash());
         mlDsaNtt(cHat);
 
-        //Deal with z
-        int[][] z = Arrays.stream(sig.response()).map(int[]::clone).toArray(int[][]::new);
-        boolean zNorm = vectorNormBound(z, gamma1 - beta);
-        mlDsaVectorNtt(z);
+        //Compute response norm and put it in NTT domain
+        boolean zNorm = vectorNormBound(sig.response(), gamma1 - beta);
+        mlDsaVectorNtt(sig.response());
 
         //Reconstruct signer's commitment
-        int[][] aHatZ = matrixVectorPointwiseMultiply(aHat, z);
+        int[][] aHatZ = matrixVectorPointwiseMultiply(aHat, sig.response());
         int[][] t1Hat = vectorConstMul(1 << mlDsa_d, pk.t1());
         mlDsaVectorNtt(t1Hat);
         int[][] wApprox = vectorSub(aHatZ,nttConstMultiply(cHat, t1Hat));
@@ -657,12 +658,11 @@ public class ML_DSA {
 
         //Check verify conditions
         boolean hashEq = Arrays.equals(sig.commitmentHash(), cTildePrime);
-        boolean weight = hammingWeight(sig.hint()) <= omega;
-        return !zNorm && hashEq && weight;
+        return !zNorm && hashEq;
     }
 
     /*
-    Data conversion functions in Section 8.1 of specification
+    Data conversion functions in Section 7.1 of specification
      */
 
     // Bit-pack the t1 and w1 vector into a byte array.
@@ -770,7 +770,13 @@ public class ML_DSA {
             if (j < idx || j > omega) {
                 return null;
             }
+            int first = idx;
             while (idx < j) {
+                if (idx > first) {
+                    if (y[idx - 1] >= y[idx]) {
+                        return null;
+                    }
+                }
                 int hintIndex = y[idx] & 0xff;
                 h[i][hintIndex] = true;
                 idx++;
@@ -787,7 +793,7 @@ public class ML_DSA {
     }
 
     /*
-    Encoding functions as specified in Section 8.2 of the specification
+    Encoding functions as specified in Section 7.2 of the specification
      */
 
     public byte[] pkEncode(ML_DSA_PublicKey key) {
@@ -891,7 +897,7 @@ public class ML_DSA {
     }
 
     /*
-    Auxiliary functions defined in Section 8.3 of specification
+    Auxiliary functions defined in Section 7.3 of specification
      */
 
     private class Shake256Slicer {
@@ -964,6 +970,45 @@ public class ML_DSA {
         return c;
     }
 
+    int[][][] generateA(byte[] seed) {
+        int blockSize = 168;  // the size of one block of SHAKE128 output
+        var xof = new SHAKE128(0);
+        byte[] xofSeed = new byte[mlDsaASeedLength + 2];
+        System.arraycopy(seed, 0, xofSeed, 0, mlDsaASeedLength);
+        int[][][] a = new int[mlDsa_k][mlDsa_l][mlDsa_n];
+
+        for (int i = 0; i < mlDsa_k; i++) {
+            for (int j = 0; j < mlDsa_l; j++) {
+                xofSeed[mlDsaASeedLength] = (byte) j;
+                xofSeed[mlDsaASeedLength + 1] = (byte) i;
+                xof.reset();
+                xof.update(xofSeed);
+
+                byte[] rawAij = new byte[blockSize];
+                int[] aij = new int[mlDsa_n];
+                int ofs = 0;
+                int rawOfs = blockSize;
+                int tmp;
+                while (ofs < mlDsa_n) {
+                    if (rawOfs == blockSize) {  // works because 3 divides blockSize (=168)
+                        xof.squeeze(rawAij, 0, blockSize);
+                        rawOfs = 0;
+                    }
+                    tmp = (rawAij[rawOfs] & 0xFF) +
+                        ((rawAij[rawOfs + 1] & 0xFF) << 8) +
+                        ((rawAij[rawOfs + 2] & 0x7F) << 16);
+                    rawOfs += 3;
+                    if (tmp < mlDsa_q) {
+                        aij[ofs] = tmp;
+                        ofs++;
+                    }
+                }
+                a[i][j] = aij;
+            }
+        }
+        return a;
+    }
+
     private void sampleS1S2(int[][] s1, int[][] s2, SHAKE256 xof, byte[] rhoPrime) {
         byte[] seed = new byte[mlDsaS1S2SeedLength + 2];
         System.arraycopy(rhoPrime, 0, seed, 0, mlDsaS1S2SeedLength);
@@ -1018,45 +1063,6 @@ public class ML_DSA {
         }
     }
 
-    int[][][] generateA(byte[] seed) {
-        int blockSize = 168;  // the size of one block of SHAKE128 output
-        var xof = new SHAKE128(0);
-        byte[] xofSeed = new byte[mlDsaASeedLength + 2];
-        System.arraycopy(seed, 0, xofSeed, 0, mlDsaASeedLength);
-        int[][][] a = new int[mlDsa_k][mlDsa_l][mlDsa_n];
-
-        for (int i = 0; i < mlDsa_k; i++) {
-            for (int j = 0; j < mlDsa_l; j++) {
-                xofSeed[mlDsaASeedLength] = (byte) j;
-                xofSeed[mlDsaASeedLength + 1] = (byte) i;
-                xof.reset();
-                xof.update(xofSeed);
-
-                byte[] rawAij = new byte[blockSize];
-                int[] aij = new int[mlDsa_n];
-                int ofs = 0;
-                int rawOfs = blockSize;
-                int tmp;
-                while (ofs < mlDsa_n) {
-                    if (rawOfs == blockSize) {  // works because 3 divides blockSize (=168)
-                        xof.squeeze(rawAij, 0, blockSize);
-                        rawOfs = 0;
-                    }
-                    tmp = (rawAij[rawOfs] & 0xFF) +
-                        ((rawAij[rawOfs + 1] & 0xFF) << 8) +
-                        ((rawAij[rawOfs + 2] & 0x7F) << 16);
-                    rawOfs += 3;
-                    if (tmp < mlDsa_q) {
-                        aij[ofs] = tmp;
-                        ofs++;
-                    }
-                }
-                a[i][j] = aij;
-            }
-        }
-        return a;
-    }
-
     private int[][] expandMask(byte[] rho, int mu) {
         var xof = new SHAKE256(0);
 
@@ -1078,7 +1084,7 @@ public class ML_DSA {
     }
 
     /*
-    Auxiliary functions defined in section 8.4 of specification
+    Auxiliary functions defined in section 7.4 of specification
      */
 
     private void power2Round(int[][] input, int[][] lowPart, int[][] highPart) {
@@ -1158,7 +1164,7 @@ public class ML_DSA {
     }
 
     /*
-    NTT functions as specified in Section 8.5 of specification
+    NTT functions as specified in Section 7.5 of specification
     */
 
     public static int[] mlDsaNtt(int[] coeffs) {

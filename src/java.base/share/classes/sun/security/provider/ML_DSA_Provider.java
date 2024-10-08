@@ -122,8 +122,7 @@ public class ML_DSA_Provider {
             byte[] rnd = new byte[32];
             r.nextBytes(rnd);
             var mlDsa = new ML_DSA(size);
-            var sk = mlDsa.skDecode(skBytes);
-            ML_DSA.ML_DSA_Signature sig = mlDsa.sign(msg, rnd, sk);
+            ML_DSA.ML_DSA_Signature sig = mlDsa.sign(msg, rnd, skBytes);
             return mlDsa.sigEncode(sig);
         }
 
@@ -131,9 +130,7 @@ public class ML_DSA_Provider {
         public boolean implVerify(String name, byte[] pkBytes, Object pk2, byte[] msg, byte[] sigBytes) {
             var size = name2int(name);
             var mlDsa = new ML_DSA(size);
-            var pk = mlDsa.pkDecode(pkBytes);
-            var sig = mlDsa.sigDecode(sigBytes);
-            return mlDsa.verify(pk, msg, sig);
+            return mlDsa.verify(pkBytes, msg, sigBytes);
         }
     }
 
