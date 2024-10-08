@@ -283,12 +283,15 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
   *gc_overhead_limit_was_exceeded = false;
 
   HeapWord* result = young_gen()->allocate(size);
+  if (result != nullptr) {
+    return result;
+  }
 
   uint loop_count = 0;
   uint gc_count = total_collections();
   uint gclocker_stalled_count = 0;
 
-  while (result == nullptr) {
+  do {
     // We don't want to have multiple collections for a single filled generation.
     // To prevent this, each thread has to try to exchange VM_CollectForAllocation::_collect_for_allocation_started
     // from false to true atomically,
@@ -300,11 +303,11 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
     }
 
     if (gc_count != total_collections()) {
-      result = young_gen()->allocate(size);
-      gc_count = total_collections();
+      result = young_gen()->eden_space()->cas_allocate(size, true);
       if (result != nullptr) {
         return result;
       }
+      gc_count = total_collections();
     }
 
     // If certain conditions hold, try allocating from the old gen.
@@ -318,6 +321,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       if (result != nullptr) {
         return result;
       }
+      gc_count = total_collections();
     }
 
     if (gclocker_stalled_count > GCLockerRetryAllocationCount) {
@@ -353,7 +357,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       }
 
       // Generate a VM operation
-      VM_ParallelCollectForAllocation op(size, is_tlab, total_collections());
+      VM_ParallelCollectForAllocation op(size, is_tlab, gc_count);
       VMThread::execute(&op);
 
       // Did the VM operation execute? If so, return the result directly.
@@ -407,7 +411,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
       log_warning(gc)("ParallelScavengeHeap::mem_allocate retries %d times", loop_count);
       log_warning(gc)("\tsize=" SIZE_FORMAT, size);
     }
-  }
+  } while (result == nullptr);
 
   return result;
 }
@@ -422,7 +426,7 @@ HeapWord* ParallelScavengeHeap::allocate_old_gen_and_record(size_t size) {
 }
 
 HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
-  return allocate_old_gen_and_record(size);;
+  return allocate_old_gen_and_record(size);
 }
 
 void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {

@@ -123,7 +123,7 @@ class MutableSpace: public CHeapObj<mtGC> {
   virtual size_t unsafe_max_tlab_alloc(Thread* thr) const { return free_in_bytes();                }
 
   // Allocation (return null if full)
-  virtual HeapWord* cas_allocate(size_t word_size);
+  virtual HeapWord* cas_allocate(size_t word_size, bool yield_safepoint = false);
   // Optional deallocation. Used in NUMA-allocator.
   bool cas_deallocate(HeapWord *obj, size_t size);
   // Return true if this space needs to be expanded in order to satisfy an
