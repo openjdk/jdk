@@ -149,11 +149,11 @@ public:
       if (_disable_writing) {
         return false;
       }
+      // Need compressed class pointers for heap region dump.
       if (!UseCompressedClassPointers) {
-        // CDS needs compressed class pointers for heap region dump.
         return false;
       }
-      // All GCs, except ZGC so far, support heap region dump.
+      // Almost all GCs support heap region dump, except ZGC (so far).
       return !UseZGC;
     )
     NOT_CDS_JAVA_HEAP(return false;)
