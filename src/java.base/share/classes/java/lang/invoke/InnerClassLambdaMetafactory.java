@@ -190,7 +190,7 @@ import sun.invoke.util.Wrapper;
     private static String argName(int i) {
         String argName = i < ARG_NAME_CACHE_SIZE ? ARG_NAME_CACHE[i] : null;
         if (argName == null) {
-            argName = "arg$".concat(Integer.toString(i + 1));
+            argName = "arg$" + (i + 1);
             if (i < ARG_NAME_CACHE_SIZE) {
                 ARG_NAME_CACHE[i] = argName;
             }
