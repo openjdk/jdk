@@ -101,12 +101,12 @@
 // -Djdk.tracePinnedThreads=full
 // -Djdk.httpclient.HttpClient.log=requests,errors,quic:retransmit:control,http3
 // -Djdk.httpclient.HttpClient.log=errors,requests,quic:all
-// -Djdk.httpclient.quic.defaultPDU=64000
-// -Djdk.httpclient.quic.defaultPDU=16384
-// -Djdk.httpclient.quic.defaultPDU=4096
+// -Djdk.httpclient.quic.defaultMTU=64000
+// -Djdk.httpclient.quic.defaultMTU=16384
+// -Djdk.httpclient.quic.defaultMTU=4096
 // -Djdk.http3.maxStreamLimitTimeout=1375
 // -Xmx16g
-// -Djdk.httpclient.quic.defaultPDU=16384
+// -Djdk.httpclient.quic.defaultMTU=16384
 // -Djdk.internal.httpclient.debug=err
 // -XX:+HeapDumpOnOutOfMemoryError
 // -Djdk.httpclient.HttpClient.log=errors,quic:cc

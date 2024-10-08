@@ -31,8 +31,8 @@
  */
 // -Djdk.tracePinnedThreads=full
 // -Djdk.httpclient.HttpClient.log=requests,errors,quic
-// -Djdk.httpclient.quic.defaultPDU=64000
-// -Djdk.httpclient.quic.defaultPDU=16384
+// -Djdk.httpclient.quic.defaultMTU=64000
+// -Djdk.httpclient.quic.defaultMTU=16384
 // -Djdk.http3.maxStreamLimitTimeout=1375
 
 

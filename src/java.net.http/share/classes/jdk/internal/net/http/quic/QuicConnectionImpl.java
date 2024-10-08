@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.VarHandle;
 import java.net.ConnectException;
+import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -145,6 +146,7 @@ import static jdk.internal.net.http.quic.TerminationCause.forTransportError;
 import static jdk.internal.net.http.quic.QuicConnectionId.MAX_CONNECTION_ID_LENGTH;
 import static jdk.internal.net.http.quic.QuicRttEstimator.MAX_PTO_BACKOFF_TIMEOUT;
 import static jdk.internal.net.http.quic.QuicRttEstimator.MIN_PTO_BACKOFF_TIMEOUT;
+import static jdk.internal.net.http.quic.frames.QuicFrame.MAX_VL_INTEGER;
 import static jdk.internal.net.http.quic.streams.QuicStreams.isUnidirectional;
 import static jdk.internal.net.http.quic.streams.QuicStreams.streamType;
 import static jdk.internal.net.quic.QuicTLSEngine.HandshakeState.HANDSHAKE_CONFIRMED;
@@ -165,6 +167,9 @@ import static jdk.internal.net.quic.QuicTransportErrors.PROTOCOL_VIOLATION;
  *      RFC 9002: QUIC Loss Detection and Congestion Control
  */
 public class QuicConnectionImpl extends QuicConnection implements QuicPacketReceiver {
+
+    private static final int MAX_IPV6_MTU = 65527;
+    private static final int MAX_IPV4_MTU = 65507;
 
     // Quic assumes a minimum packet size of 1200
     // See https://www.rfc-editor.org/rfc/rfc9000#name-datagram-size
@@ -207,13 +212,13 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         } catch (Exception x) {
             throw new ExceptionInInitializerError(x);
         }
-        int size = Utils.getIntegerProperty("jdk.httpclient.quic.defaultPDU",
+        int size = Utils.getIntegerProperty("jdk.httpclient.quic.defaultMTU",
                 SMALLEST_MAXIMUM_DATAGRAM_SIZE);
         // don't allow the value to be below 1200 and above 65527, to conform with RFC-9000,
         // section 18.2:
         // The default for this parameter is the maximum permitted UDP payload of 65527.
         // Values below 1200 are invalid.
-        if (size < 1200 || size > 65527) {
+        if (size < SMALLEST_MAXIMUM_DATAGRAM_SIZE || size > MAX_IPV6_MTU) {
             // fallback to SMALLEST_MAXIMUM_DATAGRAM_SIZE
             size = SMALLEST_MAXIMUM_DATAGRAM_SIZE;
         }
@@ -281,6 +286,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     // start off with 1200 or whatever is configured through
     // jdk.net.httpclient.quic.defaultPDU system property
     private int maxPeerAdvertisedPayloadSize = DEFAULT_DATAGRAM_SIZE;
+    // max MTU size on the connection: either MAX_IPV4_MTU or MAX_IPV6_MTU,
+    // depending on whether the peer address is IPv6 or IPv4
+    private final int maxConnectionMTU;
     // we start with a pathMTU that is 1200 or whatever is configured through
     // jdk.net.httpclient.quic.defaultPDU system property
     private int pathMTU = DEFAULT_DATAGRAM_SIZE;
@@ -305,6 +313,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                  String logTag) {
         this.quicInstance = Objects.requireNonNull(quicInstance, "quicInstance");
         this.peerAddress = peerAddress;
+        this.maxConnectionMTU = peerAddress.getAddress() instanceof Inet6Address
+                ? MAX_IPV6_MTU
+                : MAX_IPV4_MTU;
+        this.pathMTU = Math.clamp(DEFAULT_DATAGRAM_SIZE, SMALLEST_MAXIMUM_DATAGRAM_SIZE, maxConnectionMTU);
         this.cachedToString = String.format("QuicConnection(%s:%s)",
                 Arrays.toString(sslParameters.getApplicationProtocols()), peerAddress);
         this.connectionId = this.quicInstance.idFactory().newConnectionId();
@@ -616,7 +628,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      *
      * @param buffer     a byte buffer containing the incoming packet
      */
-    private void decrypt(ByteBuffer buffer) throws IOException {
+    private void decrypt(ByteBuffer buffer) {
         // Processes an incoming encrypted packet that has just been
         // read off the network.
         PacketType packetType = decoder.peekPacketType(buffer);
@@ -674,7 +686,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * at which position the packet has been written. The datagram position
      * indicates where to write the next packet.
      * <p>
-     * Additionally a {@code ProtectionRecord} may carry some flags indicating the
+     * Additionally, a {@code ProtectionRecord} may carry some flags indicating the
      * intended usage of the datagram. The following flags are supported:
      * <ul>
      *     <li>{@link #SINGLE_PACKET}: the default - it is not expected that the
@@ -943,18 +955,17 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         }
     }
 
-
-
     /**
      * A class used to check that 1-RTT received data doesn't exceed
      * the MAX_DATA of the connection
      */
     class OneRttFlowControlledReceivingQueue {
+        private static final long MIN_BUFFER_SIZE = 16L << 10; // 16k
         private volatile long receivedData;
         private volatile long maxData;
         private volatile long processedData;
         // Desired buffer size; used when updating maxStreamData
-        private volatile long desiredBufferSize = DEFAULT_INITIAL_MAX_DATA;
+        private final long desiredBufferSize = Math.clamp(DEFAULT_INITIAL_MAX_DATA, MIN_BUFFER_SIZE, MAX_VL_INTEGER);
         private final Supplier<String> logTag;
 
         OneRttFlowControlledReceivingQueue(Supplier<String> logTag) {
@@ -1123,7 +1134,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
         // implementation of the sending loop.
         private boolean sendStreamData() {
-            Throwable failure = null;
+            Throwable failure;
             try {
                 return sendStreamData0();
             } catch (Throwable t) {
@@ -1333,15 +1344,15 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
     /**
      * Schedule a frame for sending in a 1-RTT packet.
-     *
+     * <p>
      * For use with frames that do not change with time
      * (like MAX_* / *_BLOCKED / ACK),
      * or with remaining datagram capacity (like STREAM or CRYPTO),
      * and do not require certain path (PATH_CHALLENGE / RESPONSE).
-     *
+     * <p>
      * Use with frames like HANDSHAKE_DONE, NEW_TOKEN,
      * NEW_CONNECTION_ID, RETIRE_CONNECTION_ID.
-     *
+     * <p>
      * Maximum accepted frame size is 1000 bytes to ensure that the frame
      * will fit in a 1-RTT datagram in the foreseeable future.
      * @param frame frame to send
@@ -1626,9 +1637,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             return MinimalFuture.failedFuture(new ClosedChannelException());
         }
         final CompletableFuture<CompletableFuture<QuicBidiStream>> streamCF =
-            this.handshakeFlow.handshakeCF().thenApply((ignored) -> {
-                return streams.createNewLocalBidiStream(limitIncreaseDuration);
-            });
+            this.handshakeFlow.handshakeCF().thenApply((ignored) ->
+                    streams.createNewLocalBidiStream(limitIncreaseDuration));
         return streamCF.thenCompose(Function.identity());
     }
 
@@ -1638,9 +1648,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             return MinimalFuture.failedFuture(new ClosedChannelException());
         }
         final CompletableFuture<CompletableFuture<QuicSenderStream>> streamCF =
-        this.handshakeFlow.handshakeCF().thenApply((ignored) -> {
-            return streams.createNewLocalUniStream(limitIncreaseDuration);
-        });
+        this.handshakeFlow.handshakeCF().thenApply((ignored)
+                -> streams.createNewLocalUniStream(limitIncreaseDuration));
         return streamCF.thenCompose(Function.identity());
     }
 
@@ -1664,7 +1673,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return localConnIdManager.connectionIds();
     }
 
-    public LocalConnIdManager localConnectionIdManager() {
+    LocalConnIdManager localConnectionIdManager() {
         return localConnIdManager;
     }
 
@@ -2016,193 +2025,210 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                             KeySpace.ONE_RTT, frame.getTypeField(),
                             PROTOCOL_VIOLATION);
                 }
-                if (frame instanceof AckFrame ackFrame) {
-                    if (debug.on()) {
-                        debug.log("Received ack frame: %s", ackFrame);
-                    }
-                    packetSpace.processAckFrame(ackFrame);
-                } else if (frame instanceof StreamFrame streamFrame) {
-                    // TODO: move all of this to QuicConnectionStreams?
-                    var streamId = streamFrame.streamId();
-                    if (debug.on()) {
-                        debug.log("got %s", streamFrame);
-                    }
-                    QuicReceiverStream stream = getReceivingStream(streamId, frame.getTypeField());
-                    if (stream != null) {
-                        assert streamFrame.streamId() == stream.streamId();
-                        streams.processIncomingFrame(stream, streamFrame);
-                    }
-                } else if (frame instanceof CryptoFrame crypto) {
-                    long buffer = crypto.offset() + crypto.length() - peerCryptoFlow.offset();
-
-                    if (buffer > MAX_INCOMING_CRYPTO_CAPACITY) {
-                        throw new QuicTransportException(
-                                "Crypto buffer exceeded, required: " + buffer,
-                                KeySpace.ONE_RTT, frame.frameType(),
-                                QuicTransportErrors.CRYPTO_BUFFER_EXCEEDED);
-                    }
-
-                    crypto = peerCryptoFlow.receive(crypto);
-                    while (crypto != null) {
-                        quicTLSEngine.consumeHandshakeBytes(KeySpace.ONE_RTT, crypto.payload());
-                        crypto = peerCryptoFlow.poll();
-                    }
-                } else if (frame instanceof ResetStreamFrame resetStreamFrame) {
-                    // TODO: move all of this to QuicConnectionStreams?
-                    var streamId = resetStreamFrame.streamId();
-                    if (debug.on()) {
-                        debug.log("got ResetStreamFrame(streamId=%s)", streamId);
-                    }
-                    QuicReceiverStream stream = getReceivingStream(streamId, frame.getTypeField());
-                    if (stream != null) {
-                        assert resetStreamFrame.streamId() == stream.streamId();
-                        streams.processIncomingFrame(stream, resetStreamFrame);
-                    }
-                } else if (frame instanceof DataBlockedFrame dataBlockedFrame) {
-                    if (debug.on()) {
-                        debug.log("got DataBlockedFrame");
-                    }
-                    // TODO any specific handling?
-                } else if (frame instanceof StreamDataBlockedFrame streamDataBlockedFrame) {
-                    // TODO: move all of this to QuicConnectionStreams?
-                    var streamId = streamDataBlockedFrame.streamId();
-                    if (debug.on()) {
-                        debug.log("got StreamDataBlockedFrame(streamId=%s)", streamId);
-                    }
-                    QuicReceiverStream stream = getReceivingStream(streamId, frame.getTypeField());
-                    // TODO any specific handling?
-                } else if (frame instanceof StreamsBlockedFrame streamsBlockedFrame) {
-                    if (debug.on()) {
-                        debug.log("Received StreamsBlockedFrame; bidi? "
-                                + streamsBlockedFrame.isBidi());
-                    }
-                    if (streamsBlockedFrame.maxStreams() > MAX_STREAMS_VALUE_LIMIT) {
-                        throw new QuicTransportException("Invalid maxStreams value %s"
-                                .formatted(streamsBlockedFrame.maxStreams()),
-                                KeySpace.ONE_RTT,
-                                frame.getTypeField(), QuicTransportErrors.FRAME_ENCODING_ERROR);
-                    }
-                    streams.peerStreamsBlocked(streamsBlockedFrame);
-                } else if (frame instanceof PaddingFrame paddingFrame) {
-                    if (debug.on()) {
-                        debug.log("consuming padding: %d bytes", paddingFrame.size());
-                    }
-                } else if (frame instanceof MaxDataFrame maxData) {
-                    oneRttSndQueue.setMaxData(maxData.maxData(), false);
-                } else if (frame instanceof MaxStreamDataFrame maxStreamData) {
-                    long streamId = maxStreamData.streamID();
-                    QuicSenderStream stream = getSendingStream(streamId, frame.getTypeField());
-                    if (stream != null) {
-                        streams.setMaxStreamData(stream, maxStreamData.maxStreamData());
-                    }
-                } else if (frame instanceof MaxStreamsFrame maxStreamsFrame) {
-                    if (debug.on()) {
-                        debug.log("Received " + (maxStreamsFrame.isBidi() ? "bidi" : "uni")
-                                + " MAX_STREAMS frame");
-                    }
-                    if (maxStreamsFrame.maxStreams() >> 60 != 0) {
-                        throw new QuicTransportException("Invalid maxStreams value %s"
-                                .formatted(maxStreamsFrame.maxStreams()),
-                                KeySpace.ONE_RTT,
-                                frame.getTypeField(), QuicTransportErrors.FRAME_ENCODING_ERROR);
-                    }
-                    final boolean increased = streams.tryIncreaseStreamLimit(maxStreamsFrame);
-                    if (debug.on()) {
-                        debug.log((increased ? "increased" : "did not increase")
-                                + " " + (maxStreamsFrame.isBidi() ? "bidi" : "uni")
-                                + " stream limit to " + maxStreamsFrame.maxStreams());
-                    }
-                } else if (frame instanceof StopSendingFrame stopSendingFrame) {
-                    long streamId = stopSendingFrame.streamID();
-                    QuicSenderStream stream = getSendingStream(streamId, frame.getTypeField());
-                    if (stream != null) {
-                        streams.stopSendingReceived(stream,
-                                stopSendingFrame.errorCode());
-                    }
-                } else if (frame instanceof PingFrame ping) {
-                    // As per RFC-9000, section 19.2:
-                    // "The receiver of a PING frame simply needs to acknowledge the packet
-                    // containing this frame."
-                    // So we don't have to do anything here, since the packet would have been
-                    // acknowledged (outside this method), because PingFrame class is marked
-                    // as ack eliciting
-                    if (debug.on()) {
-                        debug.log("Received ping frame: %s", ping);
-                    }
-                } else if (frame instanceof ConnectionCloseFrame close) {
-                    terminator.incomingConnectionCloseFrame(quicPacket, close);
-                } else if (frame instanceof HandshakeDoneFrame) {
-                    if (!isClientConnection()) {
-                        // RFC-9000, section 19.20: A HANDSHAKE_DONE frame can only be sent by
-                        // the server. ... A server MUST treat receipt of a HANDSHAKE_DONE frame
-                        // as a connection error of type PROTOCOL_VIOLATION
-                        throw new QuicTransportException("HANDSHAKE_DONE frame isn't allowed from clients",
-                                null,
-                                frame.getTypeField(), PROTOCOL_VIOLATION);
-                    }
-                    if (quicTLSEngine.tryReceiveHandshakeDone()) {
-                        // now that HANDSHAKE_DONE is received (and thus handshake confirmed),
-                        // close the HANDSHAKE packet space (and thus discard the keys)
+                switch (frame) {
+                    case AckFrame ackFrame -> {
                         if (debug.on()) {
-                            debug.log("received HANDSHAKE_DONE from server, initiating close of" +
-                                    " HANDSHAKE packet space");
+                            debug.log("Received ack frame: %s", ackFrame);
                         }
-                        packetSpace(PacketNumberSpace.HANDSHAKE).close();
+                        packetSpace.processAckFrame(ackFrame);
                     }
-                    packetSpace.confirmHandshake();
-                } else if (frame instanceof NewConnectionIDFrame newCid) {
-                    if (peerConnectionId().length() == 0) {
-                        throw new QuicTransportException(
-                                "NEW_CONNECTION_ID not allowed here",
-                                null, frame.getTypeField(), PROTOCOL_VIOLATION);
+                    case StreamFrame streamFrame -> {
+                        // TODO: move all of this to QuicConnectionStreams?
+                        var streamId = streamFrame.streamId();
+                        if (debug.on()) {
+                            debug.log("got %s", streamFrame);
+                        }
+                        QuicReceiverStream stream = getReceivingStream(streamId, frame.getTypeField());
+                        if (stream != null) {
+                            assert streamFrame.streamId() == stream.streamId();
+                            streams.processIncomingFrame(stream, streamFrame);
+                        }
                     }
-                    this.peerConnIdManager.handleNewConnectionIdFrame(newCid);
-                } else if (frame instanceof RetireConnectionIDFrame retireCid) {
-                    this.localConnIdManager.handleRetireConnectionIdFrame(oneRTT.destinationId(),
-                            PacketType.ONERTT, retireCid);
-                } else if (frame instanceof NewTokenFrame newTokenFrame) {
-                    if (!isClientConnection()) {
-                        // This is a server connection and as per RFC-9000, section 19.7, clients
-                        // aren't supposed to send NEW_TOKEN frames and if a server receives such
-                        // a frame then it is considered a connection error
-                        // of type PROTOCOL_VIOLATION.
-                        throw new QuicTransportException("NEW_TOKEN frame isn't allowed from clients",
-                                null,
-                                frame.getTypeField(), PROTOCOL_VIOLATION);
+                    case CryptoFrame crypto -> {
+                        long buffer = crypto.offset() + crypto.length() - peerCryptoFlow.offset();
+
+                        if (buffer > MAX_INCOMING_CRYPTO_CAPACITY) {
+                            throw new QuicTransportException(
+                                    "Crypto buffer exceeded, required: " + buffer,
+                                    KeySpace.ONE_RTT, frame.frameType(),
+                                    QuicTransportErrors.CRYPTO_BUFFER_EXCEEDED);
+                        }
+
+                        crypto = peerCryptoFlow.receive(crypto);
+                        while (crypto != null) {
+                            quicTLSEngine.consumeHandshakeBytes(KeySpace.ONE_RTT, crypto.payload());
+                            crypto = peerCryptoFlow.poll();
+                        }
                     }
-                    if (debug.on()) {
-                        debug.log("Received new token frame");
+                    case ResetStreamFrame resetStreamFrame -> {
+                        // TODO: move all of this to QuicConnectionStreams?
+                        var streamId = resetStreamFrame.streamId();
+                        if (debug.on()) {
+                            debug.log("got ResetStreamFrame(streamId=%s)", streamId);
+                        }
+                        QuicReceiverStream stream = getReceivingStream(streamId, frame.getTypeField());
+                        if (stream != null) {
+                            assert resetStreamFrame.streamId() == stream.streamId();
+                            streams.processIncomingFrame(stream, resetStreamFrame);
+                        }
                     }
-                    // as per RFC 9000, section 19.7, token cannot be empty and if it is, then
-                    // a connection error of type FRAME_ENCODING_ERROR needs to be raised
-                    final byte[] newToken = newTokenFrame.token();
-                    if (newToken.length == 0) {
-                        throw new QuicTransportException("Empty token in NEW_TOKEN frame",
-                                KeySpace.ONE_RTT,
-                                frame.getTypeField(), QuicTransportErrors.FRAME_ENCODING_ERROR);
+                    case DataBlockedFrame dataBlockedFrame -> {
+                        if (debug.on()) {
+                            debug.log("got DataBlockedFrame[maxData=%s]",
+                                    dataBlockedFrame.maxData());
+                        }
+                        // TODO any specific handling?
                     }
-                    assert this.quicInstance instanceof QuicClient : "Not a QuicClient";
-                    final QuicClient quicClient = (QuicClient) this.quicInstance;
-                    // set this as the initial token to be used in INITIAL packets when attempting
-                    // any new subsequent connections against this same target server
-                    quicClient.registerInitialToken(this.peerAddress, newToken);
-                    if (debug.on()) {
-                        debug.log("Registered a new (initial) token for peer " + this.peerAddress);
+                    case StreamDataBlockedFrame streamDataBlockedFrame -> {
+                        // TODO: move all of this to QuicConnectionStreams?
+                        var streamId = streamDataBlockedFrame.streamId();
+                        if (debug.on()) {
+                            debug.log("got StreamDataBlockedFrame(streamId=%s)", streamId);
+                        }
+                        QuicReceiverStream _ = getReceivingStream(streamId, frame.getTypeField());
+                        // TODO any specific handling?
                     }
-                } else if (frame instanceof PathResponseFrame pathResponseFrame) {
-                    throw new QuicTransportException("Unmatched PATH_RESPONSE frame",
-                            KeySpace.ONE_RTT,
-                            frame.getTypeField(), PROTOCOL_VIOLATION);
-                } else if (frame instanceof PathChallengeFrame pathChallengeFrame) {
-                    pathChallengeFrameQueue.offer(pathChallengeFrame);
-                    if (pathChallengeFrameQueue.size() > 3) {
-                        // we don't expect to hold more than 1 PathChallende per path.
-                        // If there's more than 3 outstanding challenges, drop the oldest one.
-                        pathChallengeFrameQueue.poll();
+                    case StreamsBlockedFrame streamsBlockedFrame -> {
+                        if (debug.on()) {
+                            debug.log("Received StreamsBlockedFrame; bidi? "
+                                    + streamsBlockedFrame.isBidi());
+                        }
+                        if (streamsBlockedFrame.maxStreams() > MAX_STREAMS_VALUE_LIMIT) {
+                            throw new QuicTransportException("Invalid maxStreams value %s"
+                                    .formatted(streamsBlockedFrame.maxStreams()),
+                                    KeySpace.ONE_RTT,
+                                    frame.getTypeField(), QuicTransportErrors.FRAME_ENCODING_ERROR);
+                        }
+                        streams.peerStreamsBlocked(streamsBlockedFrame);
                     }
-                } else {
-                    if (debug.on()) {
-                        debug.log("Frame type: %s not supported yet", frame.getClass());
+                    case PaddingFrame paddingFrame -> {
+                        if (debug.on()) {
+                            debug.log("consuming padding: %d bytes", paddingFrame.size());
+                        }
+                    }
+                    case MaxDataFrame maxData -> oneRttSndQueue.setMaxData(maxData.maxData(), false);
+                    case MaxStreamDataFrame maxStreamData -> {
+                        long streamId = maxStreamData.streamID();
+                        QuicSenderStream stream = getSendingStream(streamId, frame.getTypeField());
+                        if (stream != null) {
+                            streams.setMaxStreamData(stream, maxStreamData.maxStreamData());
+                        }
+                    }
+                    case MaxStreamsFrame maxStreamsFrame -> {
+                        if (debug.on()) {
+                            debug.log("Received " + (maxStreamsFrame.isBidi() ? "bidi" : "uni")
+                                    + " MAX_STREAMS frame");
+                        }
+                        if (maxStreamsFrame.maxStreams() >> 60 != 0) {
+                            throw new QuicTransportException("Invalid maxStreams value %s"
+                                    .formatted(maxStreamsFrame.maxStreams()),
+                                    KeySpace.ONE_RTT,
+                                    frame.getTypeField(), QuicTransportErrors.FRAME_ENCODING_ERROR);
+                        }
+                        final boolean increased = streams.tryIncreaseStreamLimit(maxStreamsFrame);
+                        if (debug.on()) {
+                            debug.log((increased ? "increased" : "did not increase")
+                                    + " " + (maxStreamsFrame.isBidi() ? "bidi" : "uni")
+                                    + " stream limit to " + maxStreamsFrame.maxStreams());
+                        }
+                    }
+                    case StopSendingFrame stopSendingFrame -> {
+                        long streamId = stopSendingFrame.streamID();
+                        QuicSenderStream stream = getSendingStream(streamId, frame.getTypeField());
+                        if (stream != null) {
+                            streams.stopSendingReceived(stream,
+                                    stopSendingFrame.errorCode());
+                        }
+                    }
+                    case PingFrame ping -> {
+                        // As per RFC-9000, section 19.2:
+                        // "The receiver of a PING frame simply needs to acknowledge the packet
+                        // containing this frame."
+                        // So we don't have to do anything here, since the packet would have been
+                        // acknowledged (outside this method), because PingFrame class is marked
+                        // as ack eliciting
+                        if (debug.on()) {
+                            debug.log("Received ping frame: %s", ping);
+                        }
+                    }
+                    case ConnectionCloseFrame close -> terminator.incomingConnectionCloseFrame(quicPacket, close);
+                    case HandshakeDoneFrame _ -> {
+                        if (!isClientConnection()) {
+                            // RFC-9000, section 19.20: A HANDSHAKE_DONE frame can only be sent by
+                            // the server. ... A server MUST treat receipt of a HANDSHAKE_DONE frame
+                            // as a connection error of type PROTOCOL_VIOLATION
+                            throw new QuicTransportException("HANDSHAKE_DONE frame isn't allowed from clients",
+                                    null,
+                                    frame.getTypeField(), PROTOCOL_VIOLATION);
+                        }
+                        if (quicTLSEngine.tryReceiveHandshakeDone()) {
+                            // now that HANDSHAKE_DONE is received (and thus handshake confirmed),
+                            // close the HANDSHAKE packet space (and thus discard the keys)
+                            if (debug.on()) {
+                                debug.log("received HANDSHAKE_DONE from server, initiating close of" +
+                                        " HANDSHAKE packet space");
+                            }
+                            packetSpace(PacketNumberSpace.HANDSHAKE).close();
+                        }
+                        packetSpace.confirmHandshake();
+                    }
+                    case NewConnectionIDFrame newCid -> {
+                        if (peerConnectionId().length() == 0) {
+                            throw new QuicTransportException(
+                                    "NEW_CONNECTION_ID not allowed here",
+                                    null, frame.getTypeField(), PROTOCOL_VIOLATION);
+                        }
+                        this.peerConnIdManager.handleNewConnectionIdFrame(newCid);
+                    }
+                    case RetireConnectionIDFrame retireCid ->
+                            this.localConnIdManager.handleRetireConnectionIdFrame(oneRTT.destinationId(),
+                                    PacketType.ONERTT, retireCid);
+                    case NewTokenFrame newTokenFrame -> {
+                        if (!isClientConnection()) {
+                            // This is a server connection and as per RFC-9000, section 19.7, clients
+                            // aren't supposed to send NEW_TOKEN frames and if a server receives such
+                            // a frame then it is considered a connection error
+                            // of type PROTOCOL_VIOLATION.
+                            throw new QuicTransportException("NEW_TOKEN frame isn't allowed from clients",
+                                    null,
+                                    frame.getTypeField(), PROTOCOL_VIOLATION);
+                        }
+                        if (debug.on()) {
+                            debug.log("Received new token frame");
+                        }
+                        // as per RFC 9000, section 19.7, token cannot be empty and if it is, then
+                        // a connection error of type FRAME_ENCODING_ERROR needs to be raised
+                        final byte[] newToken = newTokenFrame.token();
+                        if (newToken.length == 0) {
+                            throw new QuicTransportException("Empty token in NEW_TOKEN frame",
+                                    KeySpace.ONE_RTT,
+                                    frame.getTypeField(), QuicTransportErrors.FRAME_ENCODING_ERROR);
+                        }
+                        assert this.quicInstance instanceof QuicClient : "Not a QuicClient";
+                        final QuicClient quicClient = (QuicClient) this.quicInstance;
+                        // set this as the initial token to be used in INITIAL packets when attempting
+                        // any new subsequent connections against this same target server
+                        quicClient.registerInitialToken(this.peerAddress, newToken);
+                        if (debug.on()) {
+                            debug.log("Registered a new (initial) token for peer " + this.peerAddress);
+                        }
+                    }
+                    case PathResponseFrame _ ->
+                            throw new QuicTransportException("Unmatched PATH_RESPONSE frame",
+                                    KeySpace.ONE_RTT,
+                                    frame.getTypeField(), PROTOCOL_VIOLATION);
+                    case PathChallengeFrame pathChallengeFrame -> {
+                        pathChallengeFrameQueue.offer(pathChallengeFrame);
+                        if (pathChallengeFrameQueue.size() > 3) {
+                            // we don't expect to hold more than 1 PathChallenge per path.
+                            // If there's more than 3 outstanding challenges, drop the oldest one.
+                            pathChallengeFrameQueue.poll();
+                        }
+                    }
+                    default -> {
+                        if (debug.on()) {
+                            debug.log("Frame type: %s not supported yet", frame.getClass());
+                        }
                     }
                 }
             }
@@ -2375,67 +2401,74 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         for (var frame: packet.frames()) {
             int size = frame.size();
             total += size;
-            if (frame instanceof AckFrame ack) {
-                if (debug.on()) {
-                    debug.log("Received ack frame: %s", ack);
-                }
-                packetSpace(packet.numberSpace()).processAckFrame(ack);
-                if (!handshakeFlow.handshakeReachedPeerCF.isDone()) {
-                    if (debug.on()) debug.log("completing handshakeStartedCF normally");
-                    handshakeFlow.handshakeReachedPeerCF.complete(null);
-                }
-            } else if (frame instanceof CryptoFrame crypto) {
-                // make sure to provide the frames in order, and
-                // buffer them if at the wrong offset
-                if (debug.on()) {
-                    debug.log("Received crypto frame: %s", crypto);
-                }
-                if (!handshakeFlow.handshakeReachedPeerCF.isDone()) {
-                    if (debug.on()) debug.log("completing handshakeStartedCF normally");
-                    handshakeFlow.handshakeReachedPeerCF.complete(null);
-                }
-                long buffer = crypto.offset() + crypto.length() - peerInitial.offset();
-
-                if (buffer > MAX_INCOMING_CRYPTO_CAPACITY) {
-                    throw new QuicTransportException(
-                            "Crypto buffer exceeded, required: " + buffer,
-                            KeySpace.INITIAL, frame.frameType(),
-                            QuicTransportErrors.CRYPTO_BUFFER_EXCEEDED);
-                }
-
-                crypto = peerInitial.receive(crypto);
-                while (crypto != null) {
+            switch (frame) {
+                case AckFrame ack -> {
                     if (debug.on()) {
-                        debug.log("Provide crypto frame to engine: %s", crypto);
+                        debug.log("Received ack frame: %s", ack);
                     }
-                    quicTLSEngine.consumeHandshakeBytes(KeySpace.INITIAL, crypto.payload());
-                    provided += crypto.length();
-                    crypto = peerInitial.poll();
-                    if (debug.on()) {
-                        debug.log("Provided: " + provided);
+                    packetSpace(packet.numberSpace()).processAckFrame(ack);
+                    if (!handshakeFlow.handshakeReachedPeerCF.isDone()) {
+                        if (debug.on()) debug.log("completing handshakeStartedCF normally");
+                        handshakeFlow.handshakeReachedPeerCF.complete(null);
                     }
                 }
-            } else if (frame instanceof PaddingFrame paddingFrame) {
-                if (debug.on()) {
-                    debug.log("consuming padding: %d bytes", paddingFrame.size());
+                case CryptoFrame crypto -> {
+                    // make sure to provide the frames in order, and
+                    // buffer them if at the wrong offset
+                    if (debug.on()) {
+                        debug.log("Received crypto frame: %s", crypto);
+                    }
+                    if (!handshakeFlow.handshakeReachedPeerCF.isDone()) {
+                        if (debug.on()) debug.log("completing handshakeStartedCF normally");
+                        handshakeFlow.handshakeReachedPeerCF.complete(null);
+                    }
+                    long buffer = crypto.offset() + crypto.length() - peerInitial.offset();
+
+                    if (buffer > MAX_INCOMING_CRYPTO_CAPACITY) {
+                        throw new QuicTransportException(
+                                "Crypto buffer exceeded, required: " + buffer,
+                                KeySpace.INITIAL, frame.frameType(),
+                                QuicTransportErrors.CRYPTO_BUFFER_EXCEEDED);
+                    }
+
+                    crypto = peerInitial.receive(crypto);
+                    while (crypto != null) {
+                        if (debug.on()) {
+                            debug.log("Provide crypto frame to engine: %s", crypto);
+                        }
+                        quicTLSEngine.consumeHandshakeBytes(KeySpace.INITIAL, crypto.payload());
+                        provided += crypto.length();
+                        crypto = peerInitial.poll();
+                        if (debug.on()) {
+                            debug.log("Provided: " + provided);
+                        }
+                    }
                 }
-            } else if (frame instanceof PingFrame ping) {
-                if (debug.on()) {
-                    debug.log("Received ping frame: %s", ping);
+                case PaddingFrame paddingFrame -> {
+                    if (debug.on()) {
+                        debug.log("consuming padding: %d bytes", paddingFrame.size());
+                    }
                 }
-            } else if (frame instanceof ConnectionCloseFrame close) {
-                if (debug.on()) {
-                    debug.log("Received ConnectionCloseFrame: " + close);
+                case PingFrame ping -> {
+                    if (debug.on()) {
+                        debug.log("Received ping frame: %s", ping);
+                    }
                 }
-                terminator.incomingConnectionCloseFrame(packet, close);
-            } else {
-                if (debug.on()) {
-                    debug.log("Received invalid frame: " + frame);
+                case ConnectionCloseFrame close -> {
+                    if (debug.on()) {
+                        debug.log("Received ConnectionCloseFrame: " + close);
+                    }
+                    terminator.incomingConnectionCloseFrame(packet, close);
                 }
-                assert !frame.isValidIn(packet.packetType()) : frame.getClass();
-                throw new QuicTransportException("Invalid frame in this packet type",
-                        packet.packetType().keySpace().get(), frame.getTypeField(),
-                        PROTOCOL_VIOLATION);
+                default -> {
+                    if (debug.on()) {
+                        debug.log("Received invalid frame: " + frame);
+                    }
+                    assert !frame.isValidIn(packet.packetType()) : frame.getClass();
+                    throw new QuicTransportException("Invalid frame in this packet type",
+                            packet.packetType().keySpace().orElse(null), frame.getTypeField(),
+                            PROTOCOL_VIOLATION);
+                }
             }
         }
         if (total != initialPayloadSize) {
@@ -2460,40 +2493,43 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         for (var frame: packet.frames()) {
             int size = frame.size();
             total += size;
-            if (frame instanceof AckFrame ack) {
-                packetNumberSpaces().handshake().processAckFrame(ack);
-            } else if (frame instanceof CryptoFrame crypto) {
-                // make sure to provide the frames in order, and
-                // buffer them if at the wrong offset
-                long buffer = crypto.offset() + crypto.length() - peerHandshake.offset();
+            switch (frame) {
+                case AckFrame ack -> packetNumberSpaces().handshake().processAckFrame(ack);
+                case CryptoFrame crypto -> {
+                    // make sure to provide the frames in order, and
+                    // buffer them if at the wrong offset
+                    long buffer = crypto.offset() + crypto.length() - peerHandshake.offset();
 
-                if (buffer > MAX_INCOMING_CRYPTO_CAPACITY) {
-                    throw new QuicTransportException(
-                            "Crypto buffer exceeded, required: " + buffer,
-                            KeySpace.HANDSHAKE, frame.frameType(),
-                            QuicTransportErrors.CRYPTO_BUFFER_EXCEEDED);
+                    if (buffer > MAX_INCOMING_CRYPTO_CAPACITY) {
+                        throw new QuicTransportException(
+                                "Crypto buffer exceeded, required: " + buffer,
+                                KeySpace.HANDSHAKE, frame.frameType(),
+                                QuicTransportErrors.CRYPTO_BUFFER_EXCEEDED);
+                    }
+                    crypto = peerHandshake.receive(crypto);
+                    while (crypto != null) {
+                        quicTLSEngine.consumeHandshakeBytes(KeySpace.HANDSHAKE, crypto.payload());
+                        provided += crypto.length();
+                        crypto = peerHandshake.poll();
+                    }
                 }
-                crypto = peerHandshake.receive(crypto);
-                while (crypto != null) {
-                    quicTLSEngine.consumeHandshakeBytes(KeySpace.HANDSHAKE, crypto.payload());
-                    provided += crypto.length();
-                    crypto = peerHandshake.poll();
+                case PaddingFrame paddingFrame -> {
+                    if (debug.on()) {
+                        debug.log("consuming padding: %d bytes", paddingFrame.size());
+                    }
                 }
-            } else if (frame instanceof PaddingFrame paddingFrame) {
-                if (debug.on()) {
-                    debug.log("consuming padding: %d bytes", paddingFrame.size());
+                case PingFrame ping -> {
+                    if (debug.on()) {
+                        debug.log("Received ping frame: %s", ping);
+                    }
                 }
-             } else if (frame instanceof PingFrame ping) {
-                if (debug.on()) {
-                    debug.log("Received ping frame: %s", ping);
+                case ConnectionCloseFrame close -> terminator.incomingConnectionCloseFrame(packet, close);
+                default -> {
+                    assert !frame.isValidIn(packet.packetType()) : frame.getClass();
+                    throw new QuicTransportException("Invalid frame in this packet type",
+                            packet.packetType().keySpace().orElse(null), frame.getTypeField(),
+                            PROTOCOL_VIOLATION);
                 }
-            } else if (frame instanceof ConnectionCloseFrame close) {
-                terminator.incomingConnectionCloseFrame(packet, close);
-            } else {
-                assert !frame.isValidIn(packet.packetType()) : frame.getClass();
-                throw new QuicTransportException("Invalid frame in this packet type",
-                        packet.packetType().keySpace().get(), frame.getTypeField(),
-                        PROTOCOL_VIOLATION);
             }
         }
         if (total != payloadSize) {
@@ -2609,11 +2645,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     /**
-     * Returns the next (higher) max streams limit that should be advertised to the remote peer.
-     * Returns {@code 0} if the limit should not be increased.
+     * {@return the next (higher) max streams limit that should be advertised to the remote peer.
+     * Returns {@code 0} if the limit should not be increased}
      *
      * @param bidi true if bidirectional stream, false otherwise
-     * @return
      */
     public long nextMaxStreamsLimit(final boolean bidi) {
         if (isClientConnection() && bidi) return 0; // server does not open bidi streams
@@ -2914,12 +2949,12 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
         // flip the datagram
         datagram.limit(datagram.position());
-        datagram.position(protectionRecord.firstPacketOffset());
+        datagram.position(firstPacketOffset);
         final PacketType packetType = protectionRecord.packet().packetType();
         final long packetNumber = protectionRecord.packet().packetNumber();
 
         if (debug.on()) {
-            if (protectionRecord.packetOffset() == protectionRecord.firstPacketOffset()) {
+            if (packetOffset == firstPacketOffset) {
                 debug.log("Pushing datagram([%s(%d)], %d)", packetType, packetNumber,
                         datagram.remaining());
             } else {
@@ -3115,7 +3150,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     /**
      * Allocate a {@link ByteBuffer} that can be used to encrypt the
      * given packet.
-     * @param packet
+     * @param packet the packet to encrypt
      * @return a new {@link ByteBuffer} with sufficient space to encrypt
      * the given packet.
      */
@@ -3203,7 +3238,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             if (handshakeState == QuicTLSEngine.HandshakeState.NEED_SEND_CRYPTO) {
                 // buffer next TLS message
                 KeySpace keySpace = quicTLSEngine.getCurrentSendKeySpace();
-                ByteBuffer payloadBuffer = null;
+                ByteBuffer payloadBuffer;
                 handshakeLock.lock();
                 try {
                     payloadBuffer = quicTLSEngine.getHandshakeBytes(keySpace);
@@ -3211,7 +3246,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     assert payloadBuffer.hasRemaining();
                     if (keySpace == KeySpace.INITIAL) {
                         flow.localInitial.enqueue(payloadBuffer);
-                        handshakeDataAvailable = true;
+                        initialDataAvailable = true;
                     } else if (keySpace == KeySpace.HANDSHAKE) {
                         flow.localHandshake.enqueue(payloadBuffer);
                         handshakeDataAvailable = true;
@@ -3220,7 +3255,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     handshakeLock.unlock();
                 }
 
-                if (debug.on() && payloadBuffer != null) {
+                assert payloadBuffer != null;
+                if (debug.on()) {
                     debug.log("continueHandshake: buffered %s bytes in %s keyspace",
                             payloadBuffer.remaining(), keySpace);
                 }
@@ -3529,9 +3565,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     /**
-     * Returns the number of (active) connection ids that this endpoint is willing
-     * to accept from the peer for a given connection.
-     * @return
+     * {@return the number of (active) connection ids that this endpoint is willing
+     * to accept from the peer for a given connection}
      */
     protected long getLocalActiveConnIDLimit() {
         // currently we don't accept anything more than 2 (the RFC defined default minimum)
@@ -3539,9 +3574,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     /**
-     * Returns the number of (active) connection ids that the peer is willing to accept
-     * for a given connection
-     * @return
+     * {@return the number of (active) connection ids that the peer is willing to accept
+     * for a given connection}
      */
     protected long getPeerActiveConnIDLimit() {
         return this.peerActiveConnIdsLimit;
@@ -3759,10 +3793,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     @Override
     public CompletableFuture<Long> requestSendPing() {
         var space = quicTLSEngine.getCurrentSendKeySpace();
-        boolean sendPing = switch (space) {
-            case ONE_RTT -> true;
-            default -> false;
-        };
+        boolean sendPing = space == KeySpace.ONE_RTT;
 
         if (sendPing) {
             var spaceManager = packetSpaces.get(PacketNumberSpace.of(space));
@@ -3830,6 +3861,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         // happened in QuicTransportParameters.checkParameter().
         // intentional cast to int since the value will be within int range
         maxPeerAdvertisedPayloadSize = (int) params.getIntParameter(max_udp_payload_size);
+        congestionController.updateMaxDatagramSize(getMaxDatagramSize());
         if (params.isPresent(ParameterId.initial_max_data)) {
             oneRttSndQueue.setMaxData(params.getIntParameter(ParameterId.initial_max_data), true);
         }
@@ -3959,13 +3991,13 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     /**
-     * Returns the idle timeout, in milli seconds, negotiated for this connection.
+     * Returns the idle timeout, in milliseconds, negotiated for this connection.
      * The negotiated idle timeout of a connection is the minimum of the idle connection
      * timeout that is advertised by this endpoint and the idle connection timeout advertised
      * by the peer. If neither endpoints have advertised any idle connection timeout then this
      * method returns an {@linkplain Optional#empty() empty} value.
      *
-     * @return the idle timeout in milli seconds or {@linkplain Optional#empty() empty}
+     * @return the idle timeout in milliseconds or {@linkplain Optional#empty() empty}
      */
     public Optional<Long> getIdleTimeout() {
         return this.idleTimeoutManager.getIdleTimeout();
@@ -4027,7 +4059,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                             Log.logQuic("[" + Thread.currentThread().getName() + "] "
                                     + logTag() + ": DIRECTBB: got direct buffer from pool"
                                     + ", inFlight: " + bbInFlight.get() + ", peak: " + bbPeak.get()
-                                    +  ", unreleased:" + bbUnreleased.get());
+                                    + ", unreleased:" + bbUnreleased.get());
                         }
                         int inFlight = bbInFlight.incrementAndGet();
                         if (inFlight > bbPeak.get()) {
@@ -4044,32 +4076,33 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     }
                     buffer = null;
                 }
-                if (buffer == null) {
-                    int allocated;
-                    while ((allocated = bbAllocated.get()) < MAX_DBB_POOL_SIZE) {
-                        if (bbAllocated.compareAndSet(allocated, allocated + 1)) {
-                            if (Log.quicDBB()) {
-                                Log.logQuic("[" + Thread.currentThread().getName() + "] "
-                                        + logTag() + ": DIRECTBB: allocating direct buffer #" + (allocated + 1)
-                                        + ", inFlight: " + bbInFlight.get() + ", peak: "
-                                        + bbPeak.get() +  ", unreleased:" + bbUnreleased.get());
-                            }
-                            int inFlight = bbInFlight.incrementAndGet();
-                            if (inFlight > bbPeak.get()) {
-                                synchronized (this) {
-                                    if (inFlight > bbPeak.get()) bbPeak.set(inFlight);
-                                }
-                            }
-                            return ByteBuffer.allocateDirect(getMaxDatagramSize());
+
+                assert buffer == null;
+                int allocated;
+                while ((allocated = bbAllocated.get()) < MAX_DBB_POOL_SIZE) {
+                    if (bbAllocated.compareAndSet(allocated, allocated + 1)) {
+                        if (Log.quicDBB()) {
+                            Log.logQuic("[" + Thread.currentThread().getName() + "] "
+                                    + logTag() + ": DIRECTBB: allocating direct buffer #" + (allocated + 1)
+                                    + ", inFlight: " + bbInFlight.get() + ", peak: "
+                                    + bbPeak.get() + ", unreleased:" + bbUnreleased.get());
                         }
-                    }
-                    if (Log.quicDBB()) {
-                        Log.logQuic("[" + Thread.currentThread().getName() + "] "
-                                + logTag() + ": DIRECTBB: too many buffers allocated: " + allocated
-                                + ", inFlight: " + bbInFlight.get() + ", peak: "
-                                + bbPeak.get() +  ", unreleased:" + bbUnreleased.get());
+                        int inFlight = bbInFlight.incrementAndGet();
+                        if (inFlight > bbPeak.get()) {
+                            synchronized (this) {
+                                if (inFlight > bbPeak.get()) bbPeak.set(inFlight);
+                            }
+                        }
+                        return ByteBuffer.allocateDirect(getMaxDatagramSize());
                     }
                 }
+                if (Log.quicDBB()) {
+                    Log.logQuic("[" + Thread.currentThread().getName() + "] "
+                            + logTag() + ": DIRECTBB: too many buffers allocated: " + allocated
+                            + ", inFlight: " + bbInFlight.get() + ", peak: "
+                            + bbPeak.get() + ", unreleased:" + bbUnreleased.get());
+                }
+
             } else {
                 if (Log.quicDBB()) {
                     Log.logQuic("[" + Thread.currentThread().getName() + "] "
