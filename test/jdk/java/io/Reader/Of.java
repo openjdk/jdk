@@ -160,7 +160,7 @@ public class Of {
         StringWriter sw = new StringWriter(16);
         assertEquals(reader.transferTo(sw), 16, "transferTo() != 16");
         assertEquals(reader.transferTo(sw), 0,
-                "transferTo() does not resect empty stream");
+                "transferTo() does not respect empty stream");
         assertEquals(sw.toString(), CONTENT,
                 "transferTo() provides wrong content");
     }
