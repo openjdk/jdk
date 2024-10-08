@@ -747,7 +747,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
 
   Node* initial_mem = load->in(MemNode::Memory);
 
-  // We don't optimize memory graph for pinned loads, so we may need to raise the
+  // We don't optimize the memory graph for pinned loads, so we may need to raise the
   // root of our search tree through the corresponding slices of MergeMem nodes to
   // get to the node that really creates the memory state for this slice.
   if (load_alias_idx >= Compile::AliasIdxRaw) {
