@@ -108,9 +108,10 @@ public class IncompatibleOptions {
             testDump(1, "-XX:+UseZGC", "-XX:-UseCompressedOops", null, false);
         }
 
-        // Dump heap objects with ParallelGC and SerialGC
+        // Dump heap objects with Parallel, Serial, Shenandoah GC
         testDump(2, "-XX:+UseParallelGC", "", "", false);
         testDump(3, "-XX:+UseSerialGC", "", "", false);
+        testDump(4, "-XX:+UseShenandoahGC", "", "", false);
 
         // Explicitly archive with compressed oops, run without.
         testDump(5, "-XX:+UseG1GC", "-XX:+UseCompressedOops", null, false);
