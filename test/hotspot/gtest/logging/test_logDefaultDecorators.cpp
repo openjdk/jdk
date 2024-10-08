@@ -21,11 +21,10 @@
  * questions.
  */
 
-#include "logging/logTag.hpp"
 #include "precompiled.hpp"
 #include "jvm.h"
 #include "logging/logDecorators.hpp"
-#include "runtime/os.hpp"
+#include "logging/logTag.hpp"
 #include "unittest.hpp"
 
 
