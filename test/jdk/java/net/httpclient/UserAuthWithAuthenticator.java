@@ -141,19 +141,19 @@ public class UserAuthWithAuthenticator {
                 .authenticator(new ProxyAuth())
                 .build()) {
 
-            var plainCreds = "user:pwd";
-            var encoded = java.util.Base64.getEncoder().encodeToString(plainCreds.getBytes(US_ASCII));
             var badCreds = "user:wrong";
             var encoded1 = java.util.Base64.getEncoder().encodeToString(badCreds.getBytes(US_ASCII));
             var request = HttpRequest.newBuilder().uri(URI.create("http://127.0.0.1/some_url"))
                 .setHeader("User-Agent", "myUserAgent")
-                .setHeader("Proxy-Authorization", "Basic " + encoded)
+                .setHeader("Proxy-Authorization", "Basic " + encoded1)
                 .build();
 
             var response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
+            var proxyStr = proxyMock.getRequest(0);
             assertEquals(407, response.statusCode());
-            System.out.println("testServerWithProxy: OK");
+            assertPattern(".*^Proxy-Authorization:.*Basic " + encoded1 + ".*", proxyStr);
+            System.out.println("testServerWithProxyError: OK");
         } finally {
             proxyMock.stopMocker();
         }
