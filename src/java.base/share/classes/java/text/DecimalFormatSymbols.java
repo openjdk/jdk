@@ -349,10 +349,11 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * unchanged.
      *
      * @param infinity the string representing infinity
+     * @throws NullPointerException if {@code infinity} is {@code null}
      */
     public void setInfinity(String infinity) {
+        this.infinity = Objects.requireNonNull(infinity);
         hashCode = 0;
-        this.infinity = infinity;
     }
 
     /**
@@ -370,10 +371,11 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * unchanged.
      *
      * @param NaN the string representing "not a number"
+     * @throws NullPointerException if {@code NaN} is {@code null}
      */
     public void setNaN(String NaN) {
+        this.NaN = Objects.requireNonNull(NaN);
         hashCode = 0;
-        this.NaN = NaN;
     }
 
     /**
@@ -415,13 +417,17 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
 
     /**
      * Sets the currency symbol for the currency of these
-     * DecimalFormatSymbols in their locale.
+     * DecimalFormatSymbols in their locale. Unlike {@link
+     * #setInternationalCurrencySymbol(String)}, this method does not update
+     * the other Currency related fields as well.
      *
      * @param currency the currency symbol
+     * @throws NullPointerException if {@code currency} is {@code null}
      * @since 1.2
      */
     public void setCurrencySymbol(String currency)
     {
+        Objects.requireNonNull(currency);
         initializeCurrency(locale);
         hashCode = 0;
         currencySymbol = currency;
@@ -448,27 +454,25 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * this also sets the currency attribute to the corresponding Currency
      * instance and the currency symbol attribute to the currency's symbol
      * in the DecimalFormatSymbols' locale. If the currency code is not valid,
-     * then the currency attribute is set to null and the currency symbol
-     * attribute is not modified.
+     * then the currency attribute and the currency symbol attribute are not modified.
      *
      * @param currencyCode the currency code
+     * @throws NullPointerException if {@code currencyCode} is {@code null}
      * @see #setCurrency
      * @see #setCurrencySymbol
      * @since 1.2
      */
-    public void setInternationalCurrencySymbol(String currencyCode)
-    {
+    public void setInternationalCurrencySymbol(String currencyCode) {
+        Objects.requireNonNull(currencyCode);
+        // init over setting currencyInit flag as true so that currency has
+        // fallback if code is not valid
         initializeCurrency(locale);
         hashCode = 0;
         intlCurrencySymbol = currencyCode;
-        currency = null;
-        if (currencyCode != null) {
-            try {
-                currency = Currency.getInstance(currencyCode);
-                currencySymbol = currency.getSymbol();
-            } catch (IllegalArgumentException e) {
-            }
-        }
+        try {
+            currency = Currency.getInstance(currencyCode);
+            currencySymbol = currency.getSymbol(locale);
+        } catch (IllegalArgumentException _) {} // Simply ignore if not valid
     }
 
     /**
@@ -497,9 +501,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @see #setInternationalCurrencySymbol
      */
     public void setCurrency(Currency currency) {
-        if (currency == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(currency);
         initializeCurrency(locale);
         hashCode = 0;
         this.currency = currency;
@@ -555,9 +557,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      */
     public void setExponentSeparator(String exp)
     {
-        if (exp == null) {
-            throw new NullPointerException();
-        }
+        Objects.requireNonNull(exp);
         hashCode = 0;
         exponentialSeparator = exp;
     }
@@ -765,11 +765,11 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
             minusSign == other.minusSign &&
             minusSignText.equals(other.minusSignText) &&
             patternSeparator == other.patternSeparator &&
-            // Nullable instance variables
-            Objects.equals(infinity, other.infinity) &&
-            Objects.equals(NaN, other.NaN) &&
-            Objects.equals(getCurrencySymbol(), other.getCurrencySymbol()) && // possible currency init occurs here
-            Objects.equals(intlCurrencySymbol, other.intlCurrencySymbol) &&
+            infinity.equals(other.infinity) &&
+            NaN.equals(other.NaN) &&
+            // Currency fields are lazy. Init via get call to ensure non-null
+            getCurrencySymbol().equals(other.getCurrencySymbol()) &&
+            intlCurrencySymbol.equals(other.intlCurrencySymbol) &&
             currency == other.currency &&
             monetarySeparator == other.monetarySeparator &&
             monetaryGroupingSeparator == other.monetaryGroupingSeparator &&
