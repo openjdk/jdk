@@ -302,13 +302,22 @@ public final class ConstantUtils {
     }
 
     public static void validateArrayDepth(int rank) {
+        ensureRankPositive(rank);
+        validateMaxArrayDepth(rank, true);
+    }
+
+    public static void ensureRankPositive(int rank) {
         if (rank <= 0) {
             throw new IllegalArgumentException("rank " + rank + " is not a positive value");
         }
+    }
+
+    public static void validateMaxArrayDepth(int rank, boolean iae) {
         if (rank > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
-            throw new IllegalArgumentException("rank: " + rank +
+            String message = "rank: " + rank +
                     " exceeds maximum supported dimension of " +
-                    MAX_ARRAY_TYPE_DESC_DIMENSIONS);
+                    MAX_ARRAY_TYPE_DESC_DIMENSIONS;
+            throw iae ? new IllegalArgumentException(message) : new IllegalStateException(message);
         }
     }
 

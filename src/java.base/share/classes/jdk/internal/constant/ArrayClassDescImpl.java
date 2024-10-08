@@ -42,7 +42,7 @@ import static jdk.internal.constant.ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS
  * </ul>
  */
 public final class ArrayClassDescImpl implements ClassDesc {
-    private final ClassDesc element;
+    private final ClassDesc elementType;
     private final int rank;
     private @Stable String cachedDescriptorString;
 
@@ -61,35 +61,31 @@ public final class ArrayClassDescImpl implements ClassDesc {
         return ret;
     }
 
-    public static ArrayClassDescImpl ofValidated(ClassDesc element, int rank) {
-        assert !element.isArray() && element != CD_void;
+    public static ArrayClassDescImpl ofValidated(ClassDesc elementType, int rank) {
+        assert !elementType.isArray() && elementType != CD_void;
         assert rank > 0 && rank <= MAX_ARRAY_TYPE_DESC_DIMENSIONS;
 
-        return new ArrayClassDescImpl(element, rank);
+        return new ArrayClassDescImpl(elementType, rank);
     }
 
-    private ArrayClassDescImpl(ClassDesc element, int rank) {
-        this.element = element;
+    private ArrayClassDescImpl(ClassDesc elementType, int rank) {
+        this.elementType = elementType;
         this.rank = rank;
     }
 
     @Override
     public ClassDesc arrayType() {
-        if (rank == MAX_ARRAY_TYPE_DESC_DIMENSIONS)
-            throw new IllegalStateException(
-                "Cannot create an array type descriptor with more than "
-                        + MAX_ARRAY_TYPE_DESC_DIMENSIONS + " dimensions");
-        return new ArrayClassDescImpl(element, rank + 1);
+        int rank = this.rank + 1;
+        ConstantUtils.validateMaxArrayDepth(rank, false);
+        return new ArrayClassDescImpl(elementType, rank);
     }
 
     @Override
     public ClassDesc arrayType(int rank) {
-        if (rank <= 0) {
-            throw new IllegalArgumentException("rank " + rank + " is not a positive value");
-        }
+        ConstantUtils.ensureRankPositive(rank);
         rank += this.rank;
         ConstantUtils.validateArrayDepth(rank);
-        return new ArrayClassDescImpl(element, rank);
+        return new ArrayClassDescImpl(elementType, rank);
     }
 
     @Override
@@ -99,7 +95,7 @@ public final class ArrayClassDescImpl implements ClassDesc {
 
     @Override
     public ClassDesc componentType() {
-        return rank == 1 ? element : new ArrayClassDescImpl(element, rank - 1);
+        return rank == 1 ? elementType : new ArrayClassDescImpl(elementType, rank - 1);
     }
 
     @Override
@@ -117,7 +113,7 @@ public final class ArrayClassDescImpl implements ClassDesc {
     }
 
     private String computeDescriptor() {
-        var componentDesc = element.descriptorString();
+        var componentDesc = elementType.descriptorString();
         StringBuilder sb = new StringBuilder(rank + componentDesc.length());
         sb.repeat('[', rank);
         sb.append(componentDesc);
@@ -126,11 +122,11 @@ public final class ArrayClassDescImpl implements ClassDesc {
 
     @Override
     public Class<?> resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException {
-        if (element.isPrimitive()) {
+        if (elementType.isPrimitive()) {
             return lookup.findClass(descriptorString());
         }
         // Class.forName is slow on class or interface arrays
-        Class<?> clazz = element.resolveConstantDesc(lookup);
+        Class<?> clazz = elementType.resolveConstantDesc(lookup);
         for (int i = 0; i < rank; i++)
             clazz = clazz.arrayType();
         return clazz;
@@ -140,7 +136,7 @@ public final class ArrayClassDescImpl implements ClassDesc {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o instanceof ArrayClassDescImpl constant) {
-            return element.equals(constant.element) && rank == constant.rank;
+            return elementType.equals(constant.elementType) && rank == constant.rank;
         }
         return false;
     }
@@ -152,6 +148,6 @@ public final class ArrayClassDescImpl implements ClassDesc {
 
     @Override
     public String toString() {
-        return String.format("ArrayClassDesc[%s, %d]", element.displayName(), rank);
+        return String.format("ArrayClassDesc[%s, %d]", elementType.displayName(), rank);
     }
 }
