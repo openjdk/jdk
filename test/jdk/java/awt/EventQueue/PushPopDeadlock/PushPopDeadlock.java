@@ -66,6 +66,7 @@ public class PushPopDeadlock {
         f = new Frame("Click Here!");
         l = new Label("Counter: " + counter);
         f.add(l);
+        f.setSize(200, 200);
         return f;
     }
 
@@ -77,8 +78,6 @@ public class PushPopDeadlock {
             }
         };
         EventQueue q2 = new EventQueue();
-
-        f.setSize(200, 200);
 
         Toolkit.getDefaultToolkit().getSystemEventQueue().push(q);
 
