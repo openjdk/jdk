@@ -189,9 +189,9 @@ public abstract class NamedKEM implements KEMSpi {
 
     /// User-defined function to validate a public key.
     ///
-    /// This method will be called in `newEncapsulator`. This gives provider a chance to
+    /// This method will be called in `newEncapsulator`. This gives the provider a chance to
     /// reject the key so an `InvalidKeyException` can be thrown earlier.
-    /// An implementation can optional return a "parsed key" as an `Object` value.
+    /// An implementation can optionally return a "parsed key" as an `Object` value.
     /// This object will be passed into the [#implEncapsulate] method along with the raw key.
     ///
     /// The default implementation returns `null`.
@@ -206,9 +206,9 @@ public abstract class NamedKEM implements KEMSpi {
 
     /// User-defined function to validate a private key.
     ///
-    /// This method will be called in `newDecapsulator`. This gives provider a chance to
+    /// This method will be called in `newDecapsulator`. This gives the provider a chance to
     /// reject the key so an `InvalidKeyException` can be thrown earlier.
-    /// An implementation can optional return a "parsed key" as an `Object` value.
+    /// An implementation can optionally return a "parsed key" as an `Object` value.
     /// This object will be passed into the [#implDecapsulate] method along with the raw key.
     ///
     /// The default implementation returns `null`.
