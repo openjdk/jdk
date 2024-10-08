@@ -274,7 +274,7 @@ public class SignatureUtil {
             return signatureAlgorithm.substring(0, with);
         } else {
             throw new IllegalArgumentException(
-                    "Unknown algorithm: " + signatureAlgorithm);
+                    "Cannot extract digest algorithm from " + signatureAlgorithm);
         }
     }
 
@@ -495,8 +495,10 @@ public class SignatureUtil {
             case "EDDSA" -> k instanceof EdECPrivateKey
                     ? ((EdECPrivateKey) k).getParams().getName()
                     : kAlg;
-            default -> kAlg; // All modern signature algorithms,
-                             // RSASSA-PSS, ED25519, ED448, HSS/LMS, etc
+            default -> kAlg.contains("KEM") ? null : kAlg;
+                // All modern signature algorithms use the same name across
+                // key algorithms and signature algorithms, for example,
+                // RSASSA-PSS, ED25519, ED448, HSS/LMS, etc
         };
     }
 

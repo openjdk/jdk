@@ -55,12 +55,12 @@ public abstract class NamedSignature extends SignatureSpi {
     private final ByteArrayOutputStream bout = new ByteArrayOutputStream();
 
     // init with...
-    private String name = null;
-    private byte[] secKey = null;
-    private byte[] pubKey = null;
+    private String name;
+    private byte[] secKey;
+    private byte[] pubKey;
 
-    private Object sk2 = null;
-    private Object pk2 = null;
+    private Object sk2;
+    private Object pk2;
 
     /// Creates a new `NamedSignature` object.
     ///
@@ -118,7 +118,7 @@ public abstract class NamedSignature extends SignatureSpi {
             bout.reset();
             return implSign(name, secKey, sk2, msg, appRandom);
         } else {
-            throw new IllegalStateException("No private key");
+            throw new SignatureException("No private key");
         }
     }
 
@@ -129,7 +129,7 @@ public abstract class NamedSignature extends SignatureSpi {
             bout.reset();
             return implVerify(name, pubKey, pk2, msg, sig);
         } else {
-            throw new IllegalStateException("No public key");
+            throw new SignatureException("No public key");
         }
     }
 
@@ -137,13 +137,13 @@ public abstract class NamedSignature extends SignatureSpi {
     @SuppressWarnings("deprecation")
     protected void engineSetParameter(String param, Object value)
             throws InvalidParameterException {
-        throw new UnsupportedOperationException("setParameter() not supported");
+        throw new InvalidParameterException("setParameter() not supported");
     }
 
     @Override
     @SuppressWarnings("deprecation")
     protected Object engineGetParameter(String param) throws InvalidParameterException {
-        throw new UnsupportedOperationException("getParameter() not supported");
+        throw new InvalidParameterException("getParameter() not supported");
     }
 
     @Override
@@ -188,9 +188,9 @@ public abstract class NamedSignature extends SignatureSpi {
 
     /// User-defined function to validate a public key.
     ///
-    /// This method will be called in `initVerify`. This gives provider a chance to
+    /// This method will be called in `initVerify`. This gives the provider a chance to
     /// reject the key so an `InvalidKeyException` can be thrown earlier.
-    /// An implementation can optional return a "parsed key" as an `Object` value.
+    /// An implementation can optionally return a "parsed key" as an `Object` value.
     /// This object will be passed into the [#implVerify] method along with the raw key.
     ///
     /// The default implementation returns `null`.
@@ -205,9 +205,9 @@ public abstract class NamedSignature extends SignatureSpi {
 
     /// User-defined function to validate a private key.
     ///
-    /// This method will be called in `initSign`. This gives provider a chance to
+    /// This method will be called in `initSign`. This gives the provider a chance to
     /// reject the key so an `InvalidKeyException` can be thrown earlier.
-    /// An implementation can optional return a "parsed key" as an `Object` value.
+    /// An implementation can optionally return a "parsed key" as an `Object` value.
     /// This object will be passed into the [#implSign] method along with the raw key.
     ///
     /// The default implementation returns `null`.
