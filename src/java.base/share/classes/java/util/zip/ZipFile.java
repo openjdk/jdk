@@ -411,12 +411,9 @@ public class ZipFile implements ZipConstants, Closeable {
                 case DEFLATED:
                     // Inflater likes a bit of slack
                     // MORE: Compute good size for inflater stream:
-                    long size = CENLEN(zsrc.cen, pos) + 2;
+                    long size = CENSIZ(zsrc.cen, pos);
                     if (size > 65536) {
                         size = 8192;
-                    }
-                    if (size <= 0) {
-                        size = 4096;
                     }
                     InputStream is = new ZipFileInflaterInputStream(in, res, (int) size);
                     synchronized (istreams) {
@@ -906,21 +903,21 @@ public class ZipFile implements ZipConstants, Closeable {
                     if (size == ZIP64_MAGICVAL) {
                         if (sz < 8 || (off + 8) > end)
                             break;
-                        size = get64(cen, off);
+                        size = get64S(cen, off);
                         sz -= 8;
                         off += 8;
                     }
                     if (rem == ZIP64_MAGICVAL) {
                         if (sz < 8 || (off + 8) > end)
                             break;
-                        rem = get64(cen, off);
+                        rem = get64S(cen, off);
                         sz -= 8;
                         off += 8;
                     }
                     if (pos == ZIP64_MAGICVAL) {
                         if (sz < 8 || (off + 8) > end)
                             break;
-                        pos = get64(cen, off);
+                        pos = get64S(cen, off);
                         sz -= 8;
                         off += 8;
                     }
@@ -1376,7 +1373,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // Check the uncompressed size is not negative
             if (size == ZIP64_MAGICVAL) {
                 if ( blockSize >= Long.BYTES) {
-                    if (get64(cen, off) < 0) {
+                    if (get64S(cen, off) < 0) {
                         zerror("Invalid zip64 extra block size value");
                     }
                     off += Long.BYTES;
@@ -1388,7 +1385,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // Check the compressed size is not negative
             if (csize == ZIP64_MAGICVAL) {
                 if (blockSize >= Long.BYTES) {
-                    if (get64(cen, off) < 0) {
+                    if (get64S(cen, off) < 0) {
                         zerror("Invalid zip64 extra block compressed size value");
                     }
                     off += Long.BYTES;
@@ -1400,7 +1397,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // Check the LOC offset is not negative
             if (locoff == ZIP64_MAGICVAL) {
                 if (blockSize >= Long.BYTES) {
-                    if (get64(cen, off) < 0) {
+                    if (get64S(cen, off) < 0) {
                         zerror("Invalid zip64 extra block LOC OFFSET value");
                     }
                     // Note: We do not need to adjust the following fields as
@@ -1641,10 +1638,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 }
                 // Now scan the block backwards for END header signature
                 for (int i = buf.length - ENDHDR; i >= 0; i--) {
-                    if (buf[i+0] == (byte)'P'    &&
-                        buf[i+1] == (byte)'K'    &&
-                        buf[i+2] == (byte)'\005' &&
-                        buf[i+3] == (byte)'\006') {
+                    if (get32(buf, i) == ENDSIG) {
                         // Found ENDSIG header
                         byte[] endbuf = Arrays.copyOfRange(buf, i, i + ENDHDR);
                         end.centot = ENDTOT(endbuf);
@@ -1664,9 +1658,9 @@ public class ZipFile implements ZipConstants, Closeable {
                             if  (cenpos < 0 ||
                                  locpos < 0 ||
                                  readFullyAt(sbuf, 0, sbuf.length, cenpos) != 4 ||
-                                 GETSIG(sbuf) != CENSIG ||
+                                 get32(sbuf, 0) != CENSIG ||
                                  readFullyAt(sbuf, 0, sbuf.length, locpos) != 4 ||
-                                 GETSIG(sbuf) != LOCSIG) {
+                                 get32(sbuf, 0) != LOCSIG) {
                                 continue;
                             }
                         }
@@ -1681,13 +1675,13 @@ public class ZipFile implements ZipConstants, Closeable {
                             byte[] loc64 = new byte[ZIP64_LOCHDR];
                             if (end.endpos < ZIP64_LOCHDR ||
                                 readFullyAt(loc64, 0, loc64.length, end.endpos - ZIP64_LOCHDR)
-                                != loc64.length || GETSIG(loc64) != ZIP64_LOCSIG) {
+                                != loc64.length || get32(loc64, 0) != ZIP64_LOCSIG) {
                                 return end;
                             }
                             long end64pos = ZIP64_LOCOFF(loc64);
                             byte[] end64buf = new byte[ZIP64_ENDHDR];
                             if (readFullyAt(end64buf, 0, end64buf.length, end64pos)
-                                != end64buf.length || GETSIG(end64buf) != ZIP64_ENDSIG) {
+                                != end64buf.length || get32(end64buf, 0) != ZIP64_ENDSIG) {
                                 return end;
                             }
                             // end64 candidate found,
