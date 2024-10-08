@@ -25,7 +25,7 @@
  * @test
  * @bug 4476083
  * @summary Disabled components do not receive MouseEvent in Popups
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PopupTest
  */

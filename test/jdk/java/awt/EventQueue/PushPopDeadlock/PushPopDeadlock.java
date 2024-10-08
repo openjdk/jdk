@@ -26,7 +26,7 @@
  * @bug 4212687
  * @summary Verifies that calling EventQueue.push() and EventQueue.pop()
  *          does not deadlock.
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PushPopDeadlock
  */
