@@ -25,7 +25,7 @@
  * @test
  * @bug 4148078
  * @summary Repainting problems in scrolled panel
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PanelRepaint
  */
@@ -47,7 +47,6 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 
 public class PanelRepaint extends Panel implements FocusListener {
-    static Frame frame;
     static ScrollPanel sPanel;
     static Panel panel;
 

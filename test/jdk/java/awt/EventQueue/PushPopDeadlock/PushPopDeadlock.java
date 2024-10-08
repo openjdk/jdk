@@ -40,6 +40,8 @@ import java.awt.Toolkit;
 public class PushPopDeadlock {
     static int counter = 0;
     static Robot robot;
+    static Frame f;
+    static Label l;
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -49,22 +51,25 @@ public class PushPopDeadlock {
                 stops increasing (remains at a constant value), the test fails.
                 """;
 
-        PassFailJFrame.builder()
+        PassFailJFrame pfJFrame = PassFailJFrame.builder()
                 .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(35)
                 .testUI(PushPopDeadlock::createUI)
-                .build()
-                .awaitAndCheck();
+                .build();
+        PushPopDeadlock.test();
+        pfJFrame.awaitAndCheck();
     }
 
     public static Frame createUI() {
-        Frame f = new Frame("Click Here!");
-
-        Label l = new Label("" + counter);
+        f = new Frame("Click Here!");
+        l = new Label("Counter: " + counter);
         f.add(l);
+        return f;
+    }
 
+    public static void test() {
         EventQueue q = new EventQueue() {
             public void push(EventQueue queue) {
                 super.push(queue);
@@ -80,7 +85,7 @@ public class PushPopDeadlock {
         new Thread(() -> {
             while (true) {
                 robot.delay(500);
-                l.setText("" + ++counter);
+                l.setText("Counter: " + ++counter);
                 q.push(q2);
                 try {
                     Thread.currentThread().sleep(500);
@@ -89,6 +94,5 @@ public class PushPopDeadlock {
                 }
             }
         }).start();
-        return f;
     }
 }
