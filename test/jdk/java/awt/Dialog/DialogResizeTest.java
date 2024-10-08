@@ -77,14 +77,13 @@ public class DialogResizeTest {
     }
 }
 
-class MyDialog extends Dialog implements ItemListener, ComponentListener {
+class MyDialog extends Dialog implements ItemListener {
     String sText = "Tests java.awt.Dialog.setResizable method";
     TextArea ta = new TextArea(sText, 2, 40, TextArea.SCROLLBARS_NONE);
 
     public MyDialog(Frame f) {
 
         super(f, "setResizable test", false);
-        this.addComponentListener(this);
 
         Panel cbPanel = new Panel();
         cbPanel.setLayout(new FlowLayout());
@@ -95,6 +94,7 @@ class MyDialog extends Dialog implements ItemListener, ComponentListener {
 
         Checkbox cb = new Checkbox("Check this box to change the dialog's " +
                 "resizable state", null, isResizable());
+        cb.setState(false);
         cb.addItemListener(this);
         cbPanel.add(cb);
 
@@ -114,22 +114,5 @@ class MyDialog extends Dialog implements ItemListener, ComponentListener {
         } else {
             ta.setText("dialog is NOT resizable (isResizable = " + bResizeState + ")");
         }
-    }
-
-    public void componentResized(ComponentEvent e) {
-        System.out.println("Dialog width: " + this.getSize().width);
-        System.out.println("Dialog height: " + this.getSize().height);
-    }
-
-    public void componentMoved(ComponentEvent e) {
-        System.out.println("componentMoved event occurred.");
-    }
-
-    public void componentShown(ComponentEvent e) {
-        System.out.println("componentShown event occurred.");
-    }
-
-    public void componentHidden(ComponentEvent e) {
-        System.out.println("componentHidden event occurred.");
     }
 }
