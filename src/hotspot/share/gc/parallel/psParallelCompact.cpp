@@ -782,16 +782,11 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
   // Need to fill in the gap only if it's smaller than min-obj-size, and the
   // filler obj will extend to next region.
 
-  // Note: If min-fill-size decreases to 1, this whole method becomes redundant.
-  assert(CollectedHeap::min_fill_size() >= 2, "inv");
-#ifndef _LP64
-  // In 32-bit system, each heap word is 4 bytes, so MinObjAlignment == 2.
-  // The gap is always equal to min-fill-size, so nothing to do.
-  return;
-#endif
   if (MinObjAlignment >= checked_cast<int>(CollectedHeap::min_fill_size())) {
     return;
   }
+
+  assert(!UseCompactObjectHeaders, "Compact headers can allocate small objects");
   assert(CollectedHeap::min_fill_size() == 2, "inv");
   HeapWord* const dense_prefix_end = dense_prefix(id);
   assert(_summary_data.is_region_aligned(dense_prefix_end), "precondition");
