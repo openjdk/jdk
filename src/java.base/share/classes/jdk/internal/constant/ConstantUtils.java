@@ -31,8 +31,6 @@ import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodType;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Set;
 
 import jdk.internal.access.JavaLangAccess;
@@ -70,7 +68,18 @@ public final class ConstantUtils {
      * @param binaryName a binary name
      */
     public static ClassDesc binaryNameToDesc(String binaryName) {
-        return ReferenceClassDescImpl.ofValidated(concat("L", binaryToInternal(binaryName), ";"));
+        return internalNameToDesc(binaryToInternal(binaryName));
+    }
+
+    /**
+     * Creates a {@linkplain ClassDesc} from a pre-validated internal name
+     * for a class or interface type. Validated version of {@link
+     * ClassDesc#ofInternalName(String)}.
+     *
+     * @param internalName a binary name
+     */
+    public static ClassDesc internalNameToDesc(String internalName) {
+        return ClassOrInterfaceDescImpl.ofValidated(concat("L", internalName, ";"));
     }
 
     /**
@@ -91,7 +100,21 @@ public final class ConstantUtils {
      * class or interface or an array type with a non-hidden component type.
      */
     public static ClassDesc referenceClassDesc(Class<?> type) {
-        return ReferenceClassDescImpl.ofValidated(type.descriptorString());
+        return referenceClassDesc(type.descriptorString());
+    }
+
+    /**
+     * Creates a {@linkplain ClassDesc} from a pre-validated descriptor string
+     * for a class or interface type or an array type.
+     *
+     * @param descriptor a field descriptor string for a class or interface type
+     * @jvms 4.3.2 Field Descriptors
+     */
+    public static ClassDesc referenceClassDesc(String descriptor) {
+        if (descriptor.charAt(0) == '[') {
+            return ArrayClassDescImpl.ofValidatedDescriptor(descriptor);
+        }
+        return ClassOrInterfaceDescImpl.ofValidated(descriptor);
     }
 
     /**
@@ -129,6 +152,26 @@ public final class ConstantUtils {
     }
 
     /**
+     * Creates a {@linkplain ClassDesc} from a descriptor string for a class or
+     * interface type or an array type.
+     *
+     * @param descriptor a field descriptor string for a class or interface type
+     * @throws IllegalArgumentException if the descriptor string is not a valid
+     * field descriptor string, or does not describe a class or interface type
+     * @jvms 4.3.2 Field Descriptors
+     */
+    public static ClassDesc parseReferenceTypeDesc(String descriptor) {
+        int dLen = descriptor.length();
+        int len = ConstantUtils.skipOverFieldSignature(descriptor, 0, dLen);
+        if (len <= 1 || len != dLen)
+            throw new IllegalArgumentException(String.format("not a valid reference type descriptor: %s", descriptor));
+        if (descriptor.charAt(0) == '[') {
+            return ArrayClassDescImpl.ofValidatedDescriptor(descriptor);
+        }
+        return ClassOrInterfaceDescImpl.ofValidated(descriptor);
+    }
+
+    /**
      * Validates the correctness of a binary class name. In particular checks for the presence of
      * invalid characters in the name.
      *
@@ -140,8 +183,9 @@ public final class ConstantUtils {
     public static String validateBinaryClassName(String name) {
         for (int i = 0; i < name.length(); i++) {
             char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '/')
-                throw new IllegalArgumentException("Invalid class name: " + name);
+            if (ch == ';' || ch == '[' || ch == '/'
+                    || ch == '.' && (i == 0 || i + 1 == name.length() || name.charAt(i - 1) == '.'))
+                throw invalidClassName(name);
         }
         return name;
     }
@@ -158,8 +202,9 @@ public final class ConstantUtils {
     public static String validateInternalClassName(String name) {
         for (int i = 0; i < name.length(); i++) {
             char ch = name.charAt(i);
-            if (ch == ';' || ch == '[' || ch == '.')
-                throw new IllegalArgumentException("Invalid class name: " + name);
+            if (ch == ';' || ch == '[' || ch == '.'
+                    || ch == '/' && (i == 0 || i + 1 == name.length() || name.charAt(i - 1) == '/'))
+                throw invalidClassName(name);
         }
         return name;
     }
@@ -267,10 +312,17 @@ public final class ConstantUtils {
         }
     }
 
-    public static int arrayDepth(String descriptorString) {
+    /**
+     * Retrieves the array depth on a trusted descriptor.
+     * Uses a simple loop with the assumption that most descriptors have
+     * 0 or very low array depths.
+     */
+    public static int arrayDepth(String descriptorString, int off) {
         int depth = 0;
-        while (descriptorString.charAt(depth) == '[')
+        while (descriptorString.charAt(off) == '[') {
             depth++;
+            off++;
+        }
         return depth;
     }
 
@@ -307,7 +359,18 @@ public final class ConstantUtils {
         }
 
         // Pre-verified in MethodTypeDescImpl#ofDescriptor; avoid redundant verification
-        return ReferenceClassDescImpl.ofValidated(descriptor.substring(start, start + len));
+        int arrayDepth = arrayDepth(descriptor, start);
+        if (arrayDepth == 0) {
+            return ClassOrInterfaceDescImpl.ofValidated(descriptor.substring(start, start + len));
+        } else if (arrayDepth + 1 == len) {
+            return ArrayClassDescImpl.ofValidated(forPrimitiveType(descriptor, start + arrayDepth), arrayDepth);
+        } else {
+            return ArrayClassDescImpl.ofValidated(ClassOrInterfaceDescImpl.ofValidated(descriptor.substring(start + arrayDepth, start + len)), arrayDepth);
+        }
+    }
+
+    static IllegalArgumentException invalidClassName(String className) {
+        return new IllegalArgumentException("Invalid class name: ".concat(className));
     }
 
     static IllegalArgumentException badMethodDescriptor(String descriptor) {

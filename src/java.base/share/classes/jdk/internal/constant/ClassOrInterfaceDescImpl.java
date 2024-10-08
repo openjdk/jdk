@@ -31,48 +31,30 @@ import static jdk.internal.constant.ConstantUtils.*;
 
 /**
  * A class or interface descriptor.
+ * Restrictions:
+ * <ul>
+ * <li>Starts with 'L'
+ * <li>Ends with ';'
+ * <li>No '.' or '[' or ';' in the middle
+ * <li>No leading/trailing/consecutive '/'
+ * </ul>
  */
-public final class ReferenceClassDescImpl implements ClassDesc {
+public final class ClassOrInterfaceDescImpl implements ClassDesc {
     private final String descriptor;
 
-    private ReferenceClassDescImpl(String descriptor) {
-        this.descriptor = descriptor;
-    }
-
     /**
-     * Creates a {@linkplain ClassDesc} from a descriptor string for a class or
-     * interface type or an array type.
-     *
-     * @param descriptor a field descriptor string for a class or interface type
-     * @throws IllegalArgumentException if the descriptor string is not a valid
-     * field descriptor string, or does not describe a class or interface type
-     * @jvms 4.3.2 Field Descriptors
+     * Creates a {@linkplain ClassOrInterfaceDescImpl} from a pre-validated descriptor string
+     * for a class or interface.
      */
-    public static ClassDesc of(String descriptor) {
-        int dLen = descriptor.length();
-        int len = ConstantUtils.skipOverFieldSignature(descriptor, 0, dLen);
-        if (len <= 1 || len != dLen)
-            throw new IllegalArgumentException(String.format("not a valid reference type descriptor: %s", descriptor));
-        if (descriptor.charAt(0) == '[') {
-            return ArrayClassDescImpl.ofValidatedDescriptor(descriptor);
-        }
-        return new ReferenceClassDescImpl(descriptor);
-    }
-
-    /**
-     * Creates a {@linkplain ClassDesc} from a pre-validated descriptor string
-     * for a class or interface type or an array type.
-     *
-     * @param descriptor a field descriptor string for a class or interface type
-     * @jvms 4.3.2 Field Descriptors
-     */
-    public static ClassDesc ofValidated(String descriptor) {
+    public static ClassOrInterfaceDescImpl ofValidated(String descriptor) {
         assert ConstantUtils.skipOverFieldSignature(descriptor, 0, descriptor.length())
                 == descriptor.length() : descriptor;
-        if (descriptor.charAt(0) == '[') {
-            return ArrayClassDescImpl.ofValidatedDescriptor(descriptor);
-        }
-        return new ReferenceClassDescImpl(descriptor);
+        assert descriptor.charAt(0) == 'L';
+        return new ClassOrInterfaceDescImpl(descriptor);
+    }
+
+    ClassOrInterfaceDescImpl(String descriptor) {
+        this.descriptor = descriptor;
     }
 
     @Override
@@ -92,7 +74,7 @@ public final class ReferenceClassDescImpl implements ClassDesc {
         String desc = descriptorString();
         StringBuilder sb = new StringBuilder(desc.length() + nestedName.length() + 1);
         sb.append(desc, 0, desc.length() - 1).append('$').append(nestedName).append(';');
-        return ReferenceClassDescImpl.ofValidated(sb.toString());
+        return ofValidated(sb.toString());
     }
 
     @Override
@@ -138,8 +120,8 @@ public final class ReferenceClassDescImpl implements ClassDesc {
     }
 
     /**
-     * Returns {@code true} if this {@linkplain ReferenceClassDescImpl} is
-     * equal to another {@linkplain ReferenceClassDescImpl}.  Equality is
+     * Returns {@code true} if this {@linkplain ClassOrInterfaceDescImpl} is
+     * equal to another {@linkplain ClassOrInterfaceDescImpl}.  Equality is
      * determined by the two class descriptors having equal class descriptor
      * strings.
      *
@@ -151,7 +133,7 @@ public final class ReferenceClassDescImpl implements ClassDesc {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o instanceof ReferenceClassDescImpl constant) {
+        if (o instanceof ClassOrInterfaceDescImpl constant) {
             return descriptor.equals(constant.descriptor);
         }
         return false;
@@ -164,6 +146,6 @@ public final class ReferenceClassDescImpl implements ClassDesc {
 
     @Override
     public String toString() {
-        return String.format("ClassDesc[%s]", displayName());
+        return String.format("ClassOrInterfaceDesc[%s]", displayName());
     }
 }

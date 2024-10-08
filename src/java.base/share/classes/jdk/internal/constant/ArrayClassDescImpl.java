@@ -34,20 +34,29 @@ import static java.lang.constant.ConstantDescs.CD_void;
 
 import static jdk.internal.constant.ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS;
 
+/**
+ * An array class descriptor.
+ * Restrictions: <ul>
+ * <li>{@code rank} must be in {@code [1, 255]}
+ * <li>{@code element} must not be void or array
+ * </ul>
+ */
 public final class ArrayClassDescImpl implements ClassDesc {
     private final ClassDesc element;
     private final int rank;
     private @Stable String cachedDescriptorString;
 
     public static ArrayClassDescImpl ofValidatedDescriptor(String desc) {
+        assert desc.charAt(0) == '[';
         var lastChar = desc.charAt(desc.length() - 1);
+        ArrayClassDescImpl ret;
         if (lastChar != ';') {
-            var ret = ofValidated(Wrapper.forBasicType(lastChar).basicClassDescriptor(), desc.length() - 1);
-            ret.cachedDescriptorString = desc;
-            return ret;
+            // Primitive element arrays
+            ret = ofValidated(Wrapper.forBasicType(lastChar).basicClassDescriptor(), desc.length() - 1);
+        } else {
+            int level = ConstantUtils.arrayDepth(desc, 0);
+            ret = ofValidated(ClassOrInterfaceDescImpl.ofValidated(desc.substring(level)), level);
         }
-        int level = ConstantUtils.arrayDepth(desc);
-        var ret = ofValidated(ReferenceClassDescImpl.ofValidated(desc.substring(level)), level);
         ret.cachedDescriptorString = desc;
         return ret;
     }

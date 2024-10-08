@@ -28,8 +28,9 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.TypeDescriptor;
 
 import jdk.internal.constant.ArrayClassDescImpl;
+import jdk.internal.constant.ConstantUtils;
 import jdk.internal.constant.PrimitiveClassDescImpl;
-import jdk.internal.constant.ReferenceClassDescImpl;
+import jdk.internal.constant.ClassOrInterfaceDescImpl;
 
 import static jdk.internal.constant.ConstantUtils.*;
 
@@ -54,7 +55,7 @@ public sealed interface ClassDesc
         extends ConstantDesc,
                 TypeDescriptor.OfField<ClassDesc>
         permits PrimitiveClassDescImpl,
-                ReferenceClassDescImpl,
+                ClassOrInterfaceDescImpl,
                 ArrayClassDescImpl {
 
     /**
@@ -75,7 +76,7 @@ public sealed interface ClassDesc
      */
     static ClassDesc of(String name) {
         validateBinaryClassName(name);
-        return ClassDesc.ofDescriptor(concat("L", binaryToInternal(name), ";"));
+        return ConstantUtils.binaryNameToDesc(name);
     }
 
     /**
@@ -101,7 +102,7 @@ public sealed interface ClassDesc
      */
     static ClassDesc ofInternalName(String name) {
         validateInternalClassName(name);
-        return ClassDesc.ofDescriptor(concat("L", name, ";"));
+        return ConstantUtils.internalNameToDesc(name);
     }
 
     /**
@@ -120,11 +121,11 @@ public sealed interface ClassDesc
      */
     static ClassDesc of(String packageName, String className) {
         validateBinaryClassName(packageName);
-        if (packageName.isEmpty()) {
-            return of(className);
-        }
         validateMemberName(className, false);
-        return ofDescriptor('L' + binaryToInternal(packageName) +
+        if (packageName.isEmpty()) {
+            return internalNameToDesc(className);
+        }
+        return ClassOrInterfaceDescImpl.ofValidated('L' + binaryToInternal(packageName) +
                 '/' + className + ';');
     }
 
@@ -159,7 +160,7 @@ public sealed interface ClassDesc
         return (descriptor.length() == 1)
                ? forPrimitiveType(descriptor, 0)
                // will throw IAE on descriptor.length == 0 or if array dimensions too long
-               : ReferenceClassDescImpl.of(descriptor);
+               : parseReferenceTypeDesc(descriptor);
     }
 
     /**
