@@ -21,19 +21,28 @@
  * questions.
  */
 
-/*
- * @test
- * @library /test/lib ../../tools/tester
- * @build jtreg.SkippedException
- * @summary example of a test on the generated documentation
- * @run main TestDocs
+package tester;
+
+import jtreg.SkippedException;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+/**
+ * Test framework for performing tests on the generated documentation.
  */
+public class DocTester {
+    private final static String DIR = System.getenv("DOCS_IMAGE_DIR");
+    private static final Path firstCandidate = Path.of(System.getProperty("test.jdk"))
+            .getParent().resolve("docs");
 
-import tester.DocTester;
-
-public class TestDocs {
-    public static void main(String... args) throws Exception {
-        var docs = DocTester.resolveDocs();
-        System.err.println(docs);
+    public static Path resolveDocs() {
+        if (DIR != null && !DIR.isBlank() && Files.exists(Path.of(DIR))) {
+            return Path.of(DIR);
+        } else if (Files.exists(firstCandidate)) {
+            return firstCandidate;
+        }else {
+            throw new SkippedException("docs folder not found in either location");
+        }
     }
 }
