@@ -102,6 +102,8 @@ class LayoutRawBlock : public ResourceObj {
   // Note: with line types, the comparison should include alignment constraint if sizes are equals
   static int compare_size_inverted(LayoutRawBlock** x, LayoutRawBlock** y)  {
     int diff = (*y)->size() - (*x)->size();
+    // qsort() may reverse the order of fields with the same size.
+    // The extension is to ensure stable sort.
     if (diff == 0) {
       diff = (*x)->field_index() - (*y)->field_index();
     }
