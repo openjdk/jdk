@@ -85,6 +85,7 @@ final class PlainTunnelingConnection extends HttpConnection {
                                     // close delegate after reading body: we won't
                                     // be reusing that connection anyway.
                                     delegate.close();
+                                    System.out.println("CLOSING DELEGATE");
                                     ProxyAuthenticationRequired authenticationRequired =
                                             new ProxyAuthenticationRequired(resp);
                                     cf.completeExceptionally(authenticationRequired);
