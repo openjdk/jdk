@@ -214,6 +214,7 @@ java/awt/TrayIcon/TrayIconPopup/TrayIconPopupClickTest.java 8150540 windows-all,
 java/awt/TrayIcon/TrayIconPopup/TrayIconPopupTest.java 8150540 windows-all
 java/awt/TrayIcon/MouseMoveTest.java 8203053 linux-all
 java/awt/TrayIcon/TrayIconKeySelectTest.java 8341557 windows-all
+java/awt/TrayIcon/TrayIconTest.java 8341559 generic-all
 
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeAndClick.java 8197936 macosx-all
 java/awt/Window/ShapedAndTranslucentWindows/SetShapeDynamicallyAndClick.java 8013450 macosx-all
