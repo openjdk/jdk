@@ -33,6 +33,7 @@
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "runtime/safepointMechanism.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
@@ -130,6 +131,29 @@ class Thread: public ThreadShadow {
     ByteSize offset = byte_offset_of(Thread, _nmethod_disarmed_guard_value);
     // At least on x86_64, nmethod entry barrier encodes disarmed value offset
     // in instruction as disp8 immed
+    assert(in_bytes(offset) < 128, "Offset >= 128");
+    return offset;
+  }
+
+ protected:
+  // Poll data is used in generated code for safepoint polls.
+  SafepointMechanism::ThreadData _poll_data;
+
+ public:
+  SafepointMechanism::ThreadData* poll_data()  { return &_poll_data; }
+
+  static ByteSize polling_word_offset() {
+    ByteSize offset = byte_offset_of(Thread, _poll_data) +
+                      byte_offset_of(SafepointMechanism::ThreadData, _polling_word);
+    // At least on x86_64, safepoint polls encode the offset as disp8 imm.
+    assert(in_bytes(offset) < 128, "Offset >= 128");
+    return offset;
+  }
+
+  static ByteSize polling_page_offset() {
+    ByteSize offset = byte_offset_of(Thread, _poll_data) +
+                      byte_offset_of(SafepointMechanism::ThreadData, _polling_page);
+    // At least on x86_64, safepoint polls encode the offset as disp8 imm.
     assert(in_bytes(offset) < 128, "Offset >= 128");
     return offset;
   }
