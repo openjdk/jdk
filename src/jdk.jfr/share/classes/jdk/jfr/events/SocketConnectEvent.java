@@ -36,8 +36,7 @@ import jdk.jfr.internal.Type;
 @Label("Socket Connect")
 @Category("Java Application")
 @Description("Connecting a socket")
-@MirrorEvent(className = "jdk.internal.event.SocketConnectEvent")
-public class SocketConnectEvent extends AbstractJDKEvent {
+public class SocketConnectEvent extends MirrorEvent {
 
     @Label("Remote Host")
     public String host;
