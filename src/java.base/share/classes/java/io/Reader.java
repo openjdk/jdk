@@ -157,7 +157,7 @@ public abstract class Reader implements Readable, Closeable {
      * {@code read(CharBuffer)}, {@code ready()}, {@code skip(long)}, and
      * {@code transferTo()} methods all throw {@code IOException}.
      *
-     * <p> The {@code markSupported()} method returns {@code true}.
+     * <p> The returned reader supports the {@link #mark mark()} operation.
      *
      * @param source {@code CharSequence} providing the character stream.
      *
