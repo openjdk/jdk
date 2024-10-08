@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,6 +198,7 @@
  * are disallowed for use by the HTTP client implementation, for HTTP CONNECT tunneling.
  * </li>
  * </ul>
+ * <p>
  * The following system properties can be used to configure some aspects of the
  * <a href="https://www.rfc-editor.org/info/rfc9000">QUIC Protocol</a>
  * implementation used for HTTP/3:
@@ -212,6 +213,37 @@
  * default)<br>The QUIC {@linkplain java.nio.channels.DatagramChannel UDP client socket}
  * <a href="../java.base/java/net/StandardSocketOptions.html#SO_SNDBUF">send buffer size</a>.
  * Values less than or equal to zero are ignored.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.quic.defaultMTU}</b> (default: 1200 bytes)<br>
+ * The default Maximum Transmission Unit (MTU) size that will be used on quic connections.
+ * The default implementation of the HTTP/3 client does not implement Path MTU Detection,
+ * but will attempt to send 1-RTT packets up to the size defined by this property.
+ * Specifying a higher value may give better upload performance when the client and
+ * servers are located on the same machine, but is likely to result in irrecoverable
+ * packet loss if used over the network. Allowed values are in the range [1200, 65527].
+ * If an out-of-range value is specified, the minimum default value will be used.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.quic.maxBytesInFlight}</b> (default:
+ * 16777216 bytes or 16mB)<br>
+ * This is the maximum number of unacknowledged bytes that the quic congestion
+ * controller allows to be in flight. When this amount is reached, no new
+ * data is sent until some of the packets in flight are acknowledged.
+ * <br>
+ * Allowed values are in the range [2^14, 2^24] (or [16kB, 16mB]).
+ * If an out-of-range value is specified, it will be clamped to the closest
+ * value in range.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.quic.maxInitialData}</b> (default: 15728640
+ * bytes, or 15mB)<br>
+ * The initial flow control limit for quic connections in bytes. Valid values are in
+ * the range [0, 2^60]. The initial limit is also used to initialize the receive window
+ * size. If less than 16kB, the window size will be set to 16kB.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.quic.maxStreamInitialData}</b> (default: 6291456
+ * bytes, or 6mB)<br>
+ * The initial flow control limit for quic streams in bytes. Valid values are in
+ * the range [0, 2^60]. The initial limit is also used to initialize the receive window
+ * size. If less than 16kB, the window size will be set to 16kB.
  * </li>
  *
  * </ul>
