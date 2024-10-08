@@ -2326,9 +2326,9 @@ public final class Locale implements Cloneable, Serializable {
             // installation is missing some core files (FormatData etc.).
             StringBuilder result = new StringBuilder((String) displayNames[1]);
             if (displayNames[2] != null) {
-                result.append(" (");
-                result.append((String) displayNames[2]);
-                result.append(')');
+                result.append(" (")
+                        .append((String) displayNames[2])
+                        .append(')');
             }
             return result.toString();
         }
