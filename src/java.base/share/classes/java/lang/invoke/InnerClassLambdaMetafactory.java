@@ -73,8 +73,13 @@ import sun.invoke.util.Wrapper;
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
     private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
     private static final String[] EMPTY_STRING_ARRAY = new String[0];
-    private static final String ARG_NAME_0 = "arg$1";
-    private static final @Stable String[] ARG_NAMES_1 = {ARG_NAME_0};
+    private static final @Stable String[] ARG_NAME_CACHE = {"arg$1", "arg$2", "arg$3", "arg$4"};
+    private static final @Stable String[][] ARG_NAMES_CACHE = {
+            {ARG_NAME_CACHE[0]},
+            {ARG_NAME_CACHE[0], ARG_NAME_CACHE[1]},
+            {ARG_NAME_CACHE[0], ARG_NAME_CACHE[1], ARG_NAME_CACHE[2]},
+            {ARG_NAME_CACHE[0], ARG_NAME_CACHE[1], ARG_NAME_CACHE[2], ARG_NAME_CACHE[3]},
+    };
     private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = ConstantUtils.EMPTY_CLASSDESC;
 
     // For dumping generated classes to disk, for debugging purposes
@@ -181,7 +186,7 @@ import sun.invoke.util.Wrapper;
         ClassDesc[] argDescs;
         MethodTypeDesc constructorTypeDesc;
         if (parameterCount > 0) {
-            argNames = parameterCount == 1 ? ARG_NAMES_1 : buildArgNames(parameterCount);
+            argNames = parameterCount < ARG_NAMES_CACHE.length ? ARG_NAMES_CACHE[parameterCount - 1] : buildArgNames(parameterCount);
             argDescs = new ClassDesc[parameterCount];
             for (int i = 0; i < parameterCount; i++) {
                 argDescs[i] = classDesc(factoryType.parameterType(i));
@@ -200,7 +205,7 @@ import sun.invoke.util.Wrapper;
     private static String[] buildArgNames(int parameterCount) {
         var argNames = new String[parameterCount];
         for (int i = 0; i < parameterCount; i++) {
-            argNames[i] = i == 0 ? ARG_NAME_0 : "arg$" + (i + 1);
+            argNames[i] = i < ARG_NAME_CACHE.length ? ARG_NAME_CACHE[i] : "arg$" + (i + 1);
         }
         return argNames;
     }
