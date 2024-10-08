@@ -26,7 +26,7 @@
  * @bug 8189131
  * @summary Interoperability tests with Actalis CA
  * Before this test set to manual, the original timeout
- * value if 180
+ * value is 180
  * @library /test/lib
  * @build jtreg.SkippedException ValidatePathWithURL CAInterop
  * @run main/othervm/manual -Djava.security.debug=certpath,ocsp
