@@ -1918,11 +1918,27 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   //     Since stride > 0 and limit_correction <= stride + 1, we can restate this with no over- or underflow into:
   //         max_int - canonicalized_correction - limit_correction >= limit
   //     Since canonicalized_correction and limit_correction are both constants, we can replace them with a new constant:
-  //         final_correction = canonicalized_correction + limit_correction
+  //         (v) final_correction = canonicalized_correction + limit_correction
+  //
   //     which gives us:
   //
   //     Final predicate condition:
   //         max_int - final_correction >= limit
+  //
+  //     However, we need to be careful that (v) does not over- or underflow.
+  //     We know that:
+  //         canonicalized_correction = stride - 1
+  //     and
+  //         limit_correction <= stride + 1
+  //     and thus
+  //         canonicalized_correction + limit_correction <= 2 * stride
+  //     To prevent an over- or underflow of (v), we must ensure that
+  //         2 * stride <= max_int
+  //     which can safely be checked without over- or underflow with
+  //         (vi) stride != min_int AND abs(stride) <= max_int / 2
+  //
+  //     We could try to further optimize the cases where (vi) does not hold but given that such large strides are
+  //     very uncommon and the loop would only run for a very few iterations anyway, we simply bail out if (vi) fails.
   //
   // (2) Loop Limit Check Predicate for (ii):
   //     Using (ii): init < limit
@@ -1954,6 +1970,10 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   //            there is no overflow of the iv phi after the first iteration. In this case, we don't need to check (ii)
   //            again and can skip the predicate.
 
+  // Check (vi) and bail out if the stride is too big.
+  if (stride_con == min_signed_integer(iv_bt) || (ABS(stride_con) > max_signed_integer(iv_bt) / 2)) {
+    return false;
+  }
 
   // Accounting for (LE3) and (LE4) where we use pre-incremented phis in the loop exit check.
   const jlong limit_correction_for_pre_iv_exit_check = (phi_incr != nullptr) ? stride_con : 0;
