@@ -394,10 +394,9 @@ import sun.invoke.util.Wrapper;
                            .invokespecial(CD_Object, INIT_NAME, MTD_void);
                         int parameterCount = factoryType.parameterCount();
                         for (int i = 0; i < parameterCount; i++) {
-                            cob.aload(0);
-                            Class<?> argType = factoryType.parameterType(i);
-                            cob.loadLocal(TypeKind.from(argType), cob.parameterSlot(i));
-                            cob.putfield(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(argNames[i], argDescs[i])));
+                            cob.aload(0)
+                               .loadLocal(TypeKind.from(factoryType.parameterType(i)), cob.parameterSlot(i))
+                               .putfield(pool.fieldRefEntry(lambdaClassEntry, pool.nameAndTypeEntry(argNames[i], argDescs[i])));
                         }
                         cob.return_();
                     }
