@@ -273,7 +273,7 @@ public final class VectorMath {
      * @param a the first operand.
      * @param b the second operand.
      * @return the saturating addition of the operands.
-     * @see VectorOperators#SADD
+     * @see VectorOperators#SUADD
      */
     public static int addSaturatingUnsigned(int a, int b) {
         int res = a + b;
@@ -299,7 +299,7 @@ public final class VectorMath {
      * @param a the first operand.
      * @param b the second operand.
      * @return the saturating difference of the operands.
-     * @see VectorOperators#SSUB
+     * @see VectorOperators#SUSUB
      */
     public static int subSaturatingUnsigned(int a, int b) {
         if (Integer.compareUnsigned(b, a) < 0) {
@@ -411,7 +411,7 @@ public final class VectorMath {
      * @param a the first operand.
      * @param b the second operand.
      * @return the saturating addition of the operands.
-     * @see VectorOperators#SADD
+     * @see VectorOperators#SUADD
      */
     public static short addSaturatingUnsigned(short a, short b) {
         short res = (short)(a + b);
@@ -437,7 +437,7 @@ public final class VectorMath {
      * @param a the first operand.
      * @param b the second operand.
      * @return the saturating difference of the operands.
-     * @see VectorOperators#SSUB
+     * @see VectorOperators#SUSUB
      */
     public static short subSaturatingUnsigned(short a, short b) {
         if (Short.compareUnsigned(b, a) < 0) {
@@ -549,7 +549,7 @@ public final class VectorMath {
      * @param a the first operand.
      * @param b the second operand.
      * @return the saturating addition of the operands.
-     * @see VectorOperators#SADD
+     * @see VectorOperators#SUADD
      */
     public static byte addSaturatingUnsigned(byte a, byte b) {
         byte res = (byte)(a + b);
@@ -575,7 +575,7 @@ public final class VectorMath {
      * @param a the first operand.
      * @param b the second operand.
      * @return the saturating difference of the operands.
-     * @see VectorOperators#SSUB
+     * @see VectorOperators#SUSUB
      */
    public static byte subSaturatingUnsigned(byte a, byte b) {
         if (Byte.compareUnsigned(b, a) < 0) {
