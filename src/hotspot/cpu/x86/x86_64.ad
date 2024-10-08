@@ -4386,9 +4386,9 @@ instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
   match(Set dst (LoadNKlass mem));
   effect(KILL cr);
   ins_cost(125); // XXX
-  format %{ "load_nklass_compact    $dst, $mem\t# compressed klass ptr" %}
+  format %{ "load_narrow_klass_compact    $dst, $mem\t# compressed klass ptr" %}
   ins_encode %{
-    __ load_nklass_compact_c2($dst$$Register, $mem$$Address);
+    __ load_narrow_klass_compact_c2($dst$$Register, $mem$$Address);
   %}
   ins_pipe(pipe_slow); // XXX
 %}
