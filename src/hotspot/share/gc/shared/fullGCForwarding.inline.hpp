@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef GC_SHARED_GCFORWARDING_INLINE_HPP
-#define GC_SHARED_GCFORWARDING_INLINE_HPP
+#ifndef GC_SHARED_FULLGCFORWARDING_INLINE_HPP
+#define GC_SHARED_FULLGCFORWARDING_INLINE_HPP
 
 #include "gc/shared/fullGCForwarding.hpp"
 
@@ -57,4 +57,4 @@ bool FullGCForwarding::is_forwarded(oop obj) {
   return obj->mark().is_forwarded();
 }
 
-#endif // GC_SHARED_GCFORWARDING_INLINE_HPP
+#endif // GC_SHARED_FULLGCFORWARDING_INLINE_HPP
