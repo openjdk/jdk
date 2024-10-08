@@ -32,6 +32,8 @@ import jdk.internal.util.ArraysSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -71,7 +73,7 @@ public class EndOfCenValidation {
     private static final int ENDSIZ = ZipFile.ENDSIZ; // Offset of CEN size field within ENDHDR
     private static final int ENDOFF = ZipFile.ENDOFF; // Offset of CEN offset field within ENDHDR
     // Maximum allowed CEN size allowed by ZipFile
-    private static int MAX_CEN_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
+    private static final int MAX_CEN_SIZE = ArraysSupport.SOFT_MAX_ARRAY_LENGTH;
 
     // Expected message when CEN size does not match file size
     private static final String INVALID_CEN_BAD_SIZE = "invalid END header (bad central directory size)";
@@ -170,8 +172,15 @@ public class EndOfCenValidation {
      *
      * @throws IOException if an error occurs
      */
-    @Test
-    public void shouldRejectBadTotalEntries() throws IOException {
+    @ParameterizedTest
+    @ValueSource(longs = {
+            -1,                   // Negative
+            Long.MIN_VALUE,       // Very negative
+            0x3B / 3L - 1,        // Cannot fit in test ZIP's CEN
+            MAX_CEN_SIZE / 3 + 1, // Too large to allocate int[] entries array
+            Long.MAX_VALUE        // Unreasonably large
+    })
+    public void shouldRejectBadTotalEntries(long totalEntries) throws IOException {
         /**
          * A small ZIP using the ZIP64 format.
          *
@@ -267,7 +276,7 @@ public class EndOfCenValidation {
         ByteBuffer buf = ByteBuffer.wrap(zipBytes).order(ByteOrder.LITTLE_ENDIAN);
         // Offset of the 'total entries' in the 'ZIP64 END CENTRAL DIR' record
         // Update ZIP64 entry count to a value which cannot possibly fit in the small CEN
-        buf.putLong(0x94, MAX_CEN_SIZE / 3);
+        buf.putLong(0x94, totalEntries);
         // The corresponding END field needs the ZIP64 magic value
         buf.putShort(0xCA, (short) 0xFFFF);
         // Write the ZIP to disk

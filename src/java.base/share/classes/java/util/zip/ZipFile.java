@@ -1739,7 +1739,7 @@ public class ZipFile implements ZipConstants, Closeable {
                 if (end.cenlen > MAX_CEN_SIZE) {
                     zerror("invalid END header (central directory size too large)");
                 }
-                if (end.centot > end.cenlen / CENHDR) {
+                if (end.centot < 0 || end.centot > end.cenlen / CENHDR) {
                     zerror("invalid END header (total entries count too large)");
                 }
                 cen = this.cen = new byte[(int)end.cenlen];
