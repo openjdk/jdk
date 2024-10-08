@@ -12401,7 +12401,7 @@ instruct cmpFastUnlockLightweight(rFlagsReg cr, rRegP object, rax_RegP rax_reg, 
 
 // ============================================================================
 // Safepoint Instructions
-instruct safePoint_poll_tls(rFlagsReg cr, rRegP poll)
+instruct safePoint_poll_tls(rFlagsReg cr, rax_RegP poll)
 %{
   match(SafePoint poll);
   effect(KILL cr, USE poll);
