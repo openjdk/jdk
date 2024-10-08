@@ -159,26 +159,26 @@ public abstract class Reader implements Readable, Closeable {
      *
      * <p> The returned reader supports the {@link #mark mark()} operation.
      *
-     * @param source {@code CharSequence} providing the character stream.
+     * @param cs {@code CharSequence} providing the character stream.
      *
-     * @return a {@code Reader} which reads characters from {@code source}
+     * @return a {@code Reader} which reads characters from {@code cs}
      *
-     * @throws NullPointerException if {@code source} is {@code null}
+     * @throws NullPointerException if {@code cs} is {@code null}
      *
      * @since 24
      */
-    public static Reader of(CharSequence source) {
-        Objects.requireNonNull(source);
+    public static Reader of(final CharSequence cs) {
+        Objects.requireNonNull(cs);
 
         return new Reader() {
-            private final int length = source.length();
-            private CharSequence cs = source;
+            private final int length = cs.length();
+            private boolean isClosed;
             private int next = 0;
             private int mark = 0;
 
             /** Check to make sure that the stream has not been closed */
             private void ensureOpen() throws IOException {
-                if (cs == null)
+                if (isClosed)
                     throw new IOException("Stream closed");
             }
 
@@ -254,7 +254,7 @@ public abstract class Reader implements Readable, Closeable {
 
             @Override
             public void close() {
-                cs = null;
+                isClosed = true;
             }
         };
     }
