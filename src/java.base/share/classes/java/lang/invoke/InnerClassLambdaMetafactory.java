@@ -69,7 +69,7 @@ import sun.invoke.util.Wrapper;
 /* package */ final class InnerClassLambdaMetafactory extends AbstractValidatingLambdaMetafactory {
     private static final String LAMBDA_INSTANCE_FIELD = "LAMBDA_INSTANCE$";
     private static final int ARG_NAME_CACHE_SIZE = 8; // Arbitrary cache size for common capture arg names
-    private static final @Stable String[] ARG_NAME_CACHE;
+    private static final @Stable String[] ARG_NAME_CACHE = new String[ARG_NAME_CACHE_SIZE];
     private static final ClassDesc[] EMPTY_CLASSDESC_ARRAY = ConstantUtils.EMPTY_CLASSDESC;
 
     // For dumping generated classes to disk, for debugging purposes
@@ -86,12 +86,6 @@ import sun.invoke.util.Wrapper;
 
         final String disableEagerInitializationKey = "jdk.internal.lambda.disableEagerInitialization";
         disableEagerInitialization = GetBooleanAction.privilegedGetProperty(disableEagerInitializationKey);
-
-        var argNameCache = new String[ARG_NAME_CACHE_SIZE];
-        for (int i = 0; i < ARG_NAME_CACHE_SIZE; i++) {
-            argNameCache[i] = computeArgName(i);
-        }
-        ARG_NAME_CACHE = argNameCache;
     }
 
     // See context values in AbstractValidatingLambdaMetafactory
@@ -194,13 +188,14 @@ import sun.invoke.util.Wrapper;
     }
 
     private static String argName(int i) {
-        if (i < ARG_NAME_CACHE_SIZE)
-            return ARG_NAME_CACHE[i];
-        return computeArgName(i);
-    }
-
-    private static String computeArgName(int i) {
-        return "arg$".concat(Integer.toString(i + 1));
+        String argName = i < ARG_NAME_CACHE_SIZE ? ARG_NAME_CACHE[i] : null;
+        if (argName == null) {
+            argName = "arg$".concat(Integer.toString(i + 1));
+            if (i < ARG_NAME_CACHE_SIZE) {
+                ARG_NAME_CACHE[i] = argName;
+            }
+        }
+        return argName;
     }
 
     private static String lambdaClassName(Class<?> targetClass) {
