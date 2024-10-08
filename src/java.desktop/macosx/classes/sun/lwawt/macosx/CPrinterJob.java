@@ -791,7 +791,18 @@ public final class CPrinterJob extends RasterPrinterJob {
                 Graphics2D pathGraphics = new CPrinterGraphics(delegate, printerJob); // Just stores delegate into an ivar
                 Rectangle2D pageFormatArea = getPageFormatArea(page);
                 initPrinterGraphics(pathGraphics, pageFormatArea);
-                painter.print(pathGraphics, FlipPageFormat.getOriginal(page), pageIndex);
+                if (monochrome) {
+                    BufferedImage bufferedImage = new BufferedImage((int)page.getWidth(), (int)page.getHeight(),
+                            BufferedImage.TYPE_INT_ARGB);
+                    Graphics2D g2 = bufferedImage.createGraphics();
+                    g2.setFont(delegate.getFont());
+                    painter.print(g2, FlipPageFormat.getOriginal(page), pageIndex);
+                    g2.dispose();
+                    monochromeConverter.filter(bufferedImage, bufferedImage);
+                    pathGraphics.drawImage(bufferedImage, null, 0,0);
+                } else {
+                    painter.print(pathGraphics, FlipPageFormat.getOriginal(page), pageIndex);
+                }
                 delegate.dispose();
                 delegate = null;
         } catch (PrinterException pe) { throw new java.lang.reflect.UndeclaredThrowableException(pe); }

@@ -579,8 +579,9 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
                 flavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE) ||
                 !isIPPSupportedImages(flavor.getMimeType())) {
-                Chromaticity[]arr = new Chromaticity[1];
+                Chromaticity[]arr = new Chromaticity[2];
                 arr[0] = Chromaticity.COLOR;
+                arr[1] = Chromaticity.MONOCHROME;
                 return (arr);
             } else {
                 return null;
