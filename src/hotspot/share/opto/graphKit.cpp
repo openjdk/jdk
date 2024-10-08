@@ -3008,7 +3008,7 @@ void GraphKit::guard_klass_being_initialized(Node* klass) {
   Node* adr = basic_plus_adr(top(), klass, init_state_off);
   Node* init_state = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
                                     adr->bottom_type()->is_ptr(), TypeInt::BYTE,
-                                    T_BYTE, MemNode::unordered);
+                                    T_BYTE, MemNode::acquire);
   init_state = _gvn.transform(init_state);
 
   Node* being_initialized_state = makecon(TypeInt::make(InstanceKlass::being_initialized));
