@@ -2578,13 +2578,13 @@ const Type *TypeVect::xdual() const {
 // Structural equality check for Type representations
 bool TypeVect::eq(const Type *t) const {
   const TypeVect* v = t->is_vect();
-  return (_elem_bt == v->_elem_bt) && (_length == v->_length);
+  return (element_basic_type() == v->element_basic_type()) && (length() == v->length());
 }
 
 //------------------------------hash-------------------------------------------
 // Type-specific hashing function.
 uint TypeVect::hash(void) const {
-  return (uint)(uintptr_t)_elem_bt + (uint)(uintptr_t)_length;
+  return (uint)base() + (uint)(uintptr_t)_elem_bt + (uint)(uintptr_t)_length;
 }
 
 //------------------------------singleton--------------------------------------
@@ -2625,15 +2625,6 @@ void TypeVect::dump2(Dict &d, uint depth, outputStream *st) const {
   st->print("<%c,%u>", type2char(element_basic_type()), length());
 }
 #endif
-
-bool TypeVectMask::eq(const Type *t) const {
-  const TypeVectMask *v = t->is_vectmask();
-  return (element_basic_type() == v->element_basic_type()) && (length() == v->length());
-}
-
-const Type* TypeVectMask::xdual() const {
-  return this;
-}
 
 const TypeVectMask* TypeVectMask::make(const BasicType elem_bt, uint length) {
   return (TypeVectMask*) (new TypeVectMask(elem_bt, length))->hashcons();

@@ -856,8 +856,6 @@ class TypeVectMask : public TypeVect {
 public:
   friend class TypeVect;
   TypeVectMask(BasicType elem_bt, uint length) : TypeVect(VectorMask, elem_bt, length) {}
-  virtual bool eq(const Type* t) const;
-  virtual const Type* xdual() const;
   static const TypeVectMask* make(const BasicType elem_bt, uint length);
 };
 
