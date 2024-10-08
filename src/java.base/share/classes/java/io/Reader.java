@@ -148,6 +148,8 @@ public abstract class Reader implements Readable, Closeable {
      * concurrent threads. If the reader is to be used by more than one
      * thread it should be controlled by appropriate synchronization.
      *
+     * <p> If the sequence is concurrently modified then the result is undefined.
+     *
      * <p> The returned reader is initially open. The reader is closed by
      * calling the {@code close()} method. Subsequent calls to {@code close()}
      * have no effect. After the reader has been closed, the {@code read()},
@@ -169,7 +171,6 @@ public abstract class Reader implements Readable, Closeable {
         Objects.requireNonNull(cs);
 
         return new Reader() {
-            private final int length = cs.length();
             private boolean isClosed;
             private int next = 0;
             private int mark = 0;
@@ -183,7 +184,7 @@ public abstract class Reader implements Readable, Closeable {
             @Override
             public int read() throws IOException {
                 ensureOpen();
-                if (next >= length)
+                if (next >= cs.length())
                     return -1;
                 return cs.charAt(next++);
             }
@@ -195,9 +196,9 @@ public abstract class Reader implements Readable, Closeable {
                 if (len == 0) {
                     return 0;
                 }
-                if (next >= length)
+                if (next >= cs.length())
                     return -1;
-                int n = Math.min(length - next, len);
+                int n = Math.min(cs.length() - next, len);
                 switch (cs) {
                     case String s -> s.getChars(next, next + n, cbuf, off);
                     case StringBuilder sb -> sb.getChars(next, next + n, cbuf, off);
@@ -215,10 +216,10 @@ public abstract class Reader implements Readable, Closeable {
             @Override
             public long skip(long n) throws IOException {
                 ensureOpen();
-                if (next >= length)
+                if (next >= cs.length())
                     return 0;
                 // Bound skip by beginning and end of the source
-                long r = Math.min(length - next, n);
+                long r = Math.min(cs.length() - next, n);
                 r = Math.max(-next, r);
                 next += (int)r;
                 return r;
