@@ -66,32 +66,30 @@ public class RotatedScaledFontTest {
                 g2d.drawString("TEST", center, center);
                 Rectangle bounds = findTextBoundingBox(image);
                 if (bounds == null) {
-                    String path = saveImage("bounds", image);
+                    saveImage("bounds", image);
                     throw new RuntimeException("Text missing: scale=" + scale
-                        + ", quadrants=" + quadrants + ", center=" + center
-                        + ", png=" + path);
+                        + ", quadrants=" + quadrants + ", center=" + center);
                 }
                 boolean horizontal = (bounds.width > bounds.height);
                 boolean expectedHorizontal = (quadrants % 2 == 0);
                 if (horizontal != expectedHorizontal) {
-                    String path = saveImage("orientation", image);
+                    saveImage("orientation", image);
                     throw new RuntimeException("Wrong orientation: scale=" + scale
                         + ", quadrants=" + quadrants + ", center=" + center
                         + ", bounds=" + bounds + ", horizontal=" + horizontal
-                        + ", expectedHorizontal=" + expectedHorizontal
-                        + ", png=" + path);
+                        + ", expectedHorizontal=" + expectedHorizontal);
                 }
                 if (!roughlyEqual(center, bounds.x, scale) && !roughlyEqual(center, bounds.x + bounds.width, scale)) {
-                    String path = saveImage("xedge", image);
+                    saveImage("xedge", image);
                     throw new RuntimeException("No x-edge at center: scale=" + scale
                         + ", quadrants=" + quadrants + ", center=" + center
-                        + ", bounds=" + bounds + ", png=" + path);
+                        + ", bounds=" + bounds);
                 }
                 if (!roughlyEqual(center, bounds.y, scale) && !roughlyEqual(center, bounds.y + bounds.height, scale)) {
-                    String path = saveImage("yedge", image);
+                    saveImage("yedge", image);
                     throw new RuntimeException("No y-edge at center: scale=" + scale
                         + ", quadrants=" + quadrants + ", center=" + center
-                        + ", bounds=" + bounds + ", png=" + path);
+                        + ", bounds=" + bounds);
                 }
             }
         } finally {
@@ -138,13 +136,14 @@ public class RotatedScaledFontTest {
         return Math.abs(x1 - x2) <= Math.ceil(scale / 2d) + 1; // higher scale = higher allowed variance
     }
 
-    private static String saveImage(String name, BufferedImage image) {
+    private static void saveImage(String name, BufferedImage image) {
         try {
-            File file = new File(name + ".png");
+            String dir = System.getProperty("test.classes", ".");
+            String path = dir + File.separator + name + ".png";
+            File file = new File(path);
             ImageIO.write(image, "png", file);
-            return file.getAbsolutePath();
         } catch (Exception e) {
-            return null;
+            // we tried, and that's enough
         }
     }
 }
