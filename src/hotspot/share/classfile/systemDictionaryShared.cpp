@@ -716,7 +716,7 @@ void SystemDictionaryShared::find_all_archivable_classes() {
 // Iterate over all the classes in _dumptime_table, marking the ones that must be
 // excluded from the archive. Those that are not excluded will be archivable.
 //
-// (a) Non-hidden classes are easy. They are only check by the rules in 
+// (a) Non-hidden classes are easy. They are only check by the rules in
 //     SystemDictionaryShared::check_for_exclusion().
 // (b) For hidden classes, we only archive those that are required (i.e., they are
 //     referenced by Java objects (such as CallSites) that are reachable from

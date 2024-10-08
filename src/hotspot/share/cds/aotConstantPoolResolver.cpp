@@ -350,26 +350,6 @@ void AOTConstantPoolResolver::preresolve_indy_cp_entries(JavaThread* current, In
   }
 }
 
-// Does <clinit> exist for ik or any of its supertypes?
-static bool has_clinit(InstanceKlass* ik) {
-  if (ik->class_initializer() != nullptr) {
-    return true;
-  }
-  InstanceKlass* super = ik->java_super();
-  if (super != nullptr && has_clinit(super)) {
-    return true;
-  }
-  Array<InstanceKlass*>* interfaces = ik->local_interfaces();
-  int num_interfaces = interfaces->length();
-  for (int index = 0; index < num_interfaces; index++) {
-    InstanceKlass* intf = interfaces->at(index);
-    if (has_clinit(intf)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 // Check the method signatures used by parameters to LambdaMetafactory::metafactory. Make sure we don't
 // use types that have been excluded, or else we might end up creating MethodTypes that cannot be stored
 // in the AOT cache.
@@ -398,13 +378,14 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_signature(ConstantPool* c
           return false;
         }
 
-        if (has_clinit(InstanceKlass::cast(k))) {
+        InstanceKlass* ik = InstanceKlass::cast(k);
+        if (ik->has_nonstatic_concrete_methods() && ik->class_initializer() != nullptr) {
           // We initialize the class of the archived lambda proxy at VM start-up, which will also initialize
-          // the interface that it implements. If that interface has a clinit method, we can potentially
-          // change program execution order.
+          // the interface that it implements. If that interface has a clinit method that needs to be executed,
+          // we can potentially change program execution order.
           if (log_is_enabled(Debug, cds, resolve)) {
             ResourceMark rm;
-            log_debug(cds, resolve)("Cannot aot-resolve Lambda proxy of interface type %s (has <cilint>)", k->external_name());
+            log_debug(cds, resolve)("Cannot aot-resolve Lambda proxy of interface type %s (has <clinit>)", k->external_name());
           }
           return false;
         }
@@ -437,21 +418,12 @@ bool AOTConstantPoolResolver::check_lambda_metafactory_methodhandle_arg(Constant
     return false;
   }
 
- Symbol* sig = cp->method_handle_signature_ref_at(mh_index);
+  Symbol* sig = cp->method_handle_signature_ref_at(mh_index);
   if (log_is_enabled(Debug, cds, resolve)) {
     ResourceMark rm;
     log_debug(cds, resolve)("Checking MethodType of MethodHandle for LambdaMetafactory BSM arg %d: %s", arg_i, sig->as_C_string());
   }
-  if (!check_lambda_metafactory_signature(cp, sig, false)) {
-    return false;
-  }
-
-  Symbol* mh_sig = cp->method_handle_signature_ref_at(mh_index);
-  if (!check_lambda_metafactory_signature(cp, mh_sig, false)) {
-    return false;
-  }
-
-  return true;
+  return check_lambda_metafactory_signature(cp, sig, false);
 }
 
 bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp, int cp_index) {
@@ -487,16 +459,38 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
                              "Ljava/lang/invoke/MethodHandle;"
                              "Ljava/lang/invoke/MethodType;"
                             ")Ljava/lang/invoke/CallSite;")) {
-    // The signature of the resolved call site. I.e., after this indy is resolved, every
-    // time the indy bytecode is executed, we will dispatch to a (usually generated) method
-    // of this sigture.
-    Symbol* resolved_callsite_sig = cp->uncached_signature_ref_at(cp_index);
+    /*
+     * An indy callsite is associated with the following MethodType and MethodHandles:
+     *
+     * https://github.com/openjdk/jdk/blob/580eb62dc097efeb51c76b095c1404106859b673/src/java.base/share/classes/java/lang/invoke/LambdaMetafactory.java#L293-L309
+     *
+     * MethodType factoryType         The expected signature of the {@code CallSite}.  The
+     *                                parameter types represent the types of capture variables;
+     *                                the return type is the interface to implement.   When
+     *                                used with {@code invokedynamic}, this is provided by
+     *                                the {@code NameAndType} of the {@code InvokeDynamic}
+     *
+     * MethodType interfaceMethodType Signature and return type of method to be
+     *                                implemented by the function object.
+     *
+     * MethodHandle implementation    A direct method handle describing the implementation
+     *                                method which should be called (with suitable adaptation
+     *                                of argument types and return types, and with captured
+     *                                arguments prepended to the invocation arguments) at
+     *                                invocation time.
+     *
+     * MethodType dynamicMethodType   The signature and return type that should
+     *                                be enforced dynamically at invocation time.
+     *                                In simple use cases this is the same as
+     *                                {@code interfaceMethodType}.
+     */
+    Symbol* factory_type__sig = cp->uncached_signature_ref_at(cp_index);
     if (log_is_enabled(Debug, cds, resolve)) {
       ResourceMark rm;
-      log_debug(cds, resolve)("Checking resolved callsite signature: %s", resolved_callsite_sig->as_C_string());
+      log_debug(cds, resolve)("Checking indy callsite signature [%d]: %s", cp_index, factory_type__sig->as_C_string());
     }
 
-    if (!check_lambda_metafactory_signature(cp, resolved_callsite_sig, true)) {
+    if (!check_lambda_metafactory_signature(cp, factory_type__sig, true)) {
       return false;
     }
 
@@ -507,12 +501,17 @@ bool AOTConstantPoolResolver::is_indy_resolution_deterministic(ConstantPool* cp,
       return false;
     }
 
+    // interfaceMethodType
     if (!check_lambda_metafactory_methodtype_arg(cp, bsms_attribute_index, 0)) {
       return false;
     }
+
+    // implementation
     if (!check_lambda_metafactory_methodhandle_arg(cp, bsms_attribute_index, 1)) {
       return false;
     }
+
+    // dynamicMethodType
     if (!check_lambda_metafactory_methodtype_arg(cp, bsms_attribute_index, 2)) {
       return false;
     }

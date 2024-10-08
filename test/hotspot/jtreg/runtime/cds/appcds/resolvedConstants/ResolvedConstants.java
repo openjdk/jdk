@@ -150,7 +150,7 @@ public class ResolvedConstants {
             out.shouldContain("Cannot aot-resolve Lambda proxy because OldConsumer is excluded")
                .shouldContain("Cannot aot-resolve Lambda proxy because OldProvider is excluded")
                .shouldContain("Cannot aot-resolve Lambda proxy because OldClass is excluded")
-               .shouldContain("Cannot aot-resolve Lambda proxy of interface type InterfaceWithClinit (has <cilint>)")
+               .shouldContain("Cannot aot-resolve Lambda proxy of interface type InterfaceWithClinit (has <clinit>)")
                .shouldMatch("klasses.* app *NormalClass[$][$]Lambda/.* hidden aot-linked inited")
                .shouldNotMatch("klasses.* app *SubOfOldClass[$][$]Lambda/");
         }
@@ -257,6 +257,7 @@ interface MyInterface {
 interface InterfaceWithClinit {
     static final long X = System.currentTimeMillis();
     void dispatch();
+    default long dummy() { return X; }
 }
 
 class ResolvedConstantsFoo {

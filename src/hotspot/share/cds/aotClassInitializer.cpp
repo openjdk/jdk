@@ -219,8 +219,10 @@ void AOTClassInitializer::assert_no_clinit_will_run_for_aot_init_class(InstanceK
   for (int i = 0; i < len; i++) {
     InstanceKlass* intf = interfaces->at(i);
     if (!intf->is_initialized()) {
-      // Note: interfaces with no <clinit> are not marked as is_initialized().
-      assert(intf->class_initializer() == nullptr, "uninitialized super interface %s of aot-inited class %s must not have <clinit>",
+      // Note: an interface needs to be marked as is_initialized() only if
+      // - it has a <clinit>
+      // - it has at least one default method.
+      assert(!intf->has_nonstatic_concrete_methods() || intf->class_initializer() == nullptr, "uninitialized super interface %s of aot-inited class %s must not have <clinit>",
              intf->external_name(), ik->external_name());
     }
   }
