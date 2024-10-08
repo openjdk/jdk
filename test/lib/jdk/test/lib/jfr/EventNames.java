@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,6 +195,7 @@ public class EventNames {
     public static final String FileForce  = PREFIX + "FileForce";
     public static final String FileRead = PREFIX + "FileRead";
     public static final String FileWrite = PREFIX + "FileWrite";
+    public static final String SocketConnect = PREFIX + "SocketConnect";
     public static final String SocketRead = PREFIX + "SocketRead";
     public static final String SocketWrite = PREFIX + "SocketWrite";
     public static final String ExceptionStatistics = PREFIX + "ExceptionStatistics";

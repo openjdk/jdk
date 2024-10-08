@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.event.SocketConnectEvent;
 import jdk.internal.ref.CleanerFactory;
 import sun.net.ConnectionResetException;
 import sun.net.NetHooks;
@@ -573,10 +574,11 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         int port = isa.getPort();
 
         ReentrantLock connectLock = readLock;
+        boolean connected = false;
+        long start = SocketConnectEvent.timestamp();
         try {
             connectLock.lock();
             try {
-                boolean connected = false;
                 FileDescriptor fd = beginConnect(address, port);
                 try {
                     configureNonBlockingIfNeeded(fd, millis > 0);
@@ -612,6 +614,12 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
                 throw ioe;
             } else {
                 throw SocketExceptions.of(ioe, isa);
+            }
+        }
+        if (SocketConnectEvent.enabled()) {
+            long duration = SocketConnectEvent.timestamp() - start;
+            if (SocketConnectEvent.shouldCommit(duration)) {
+                SocketConnectEvent.commit(start, duration, isa.getHostString(), address.getHostAddress(), port, connected);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,13 +73,14 @@ public class IOEvent {
     public static final String EVENT_FILE_FORCE = EventNames.FileForce;
     public static final String EVENT_FILE_READ = EventNames.FileRead;
     public static final String EVENT_FILE_WRITE = EventNames.FileWrite;
+    public static final String EVENT_SOCKET_CONNECT = EventNames.SocketConnect;
     public static final String EVENT_SOCKET_READ = EventNames.SocketRead;
     public static final String EVENT_SOCKET_WRITE = EventNames.SocketWrite;
 
-    public enum EventType { UnknownEvent, FileForce, FileRead, FileWrite, SocketRead, SocketWrite }
+    public enum EventType { UnknownEvent, FileForce, FileRead, FileWrite, SocketConnect, SocketRead, SocketWrite }
 
     private static final String[] eventPaths = {
-        EVENT_UNKNOWN, EVENT_FILE_FORCE, EVENT_FILE_READ, EVENT_FILE_WRITE, EVENT_SOCKET_READ, EVENT_SOCKET_WRITE
+        EVENT_UNKNOWN, EVENT_FILE_FORCE, EVENT_FILE_READ, EVENT_FILE_WRITE, EVENT_SOCKET_CONNECT, EVENT_SOCKET_READ, EVENT_SOCKET_WRITE
     };
 
     public static boolean isWriteEvent(EventType eventType) {
@@ -92,6 +93,10 @@ public class IOEvent {
 
     public static boolean isFileEvent(EventType eventType) {
         return (eventType == EventType.FileForce || eventType == EventType.FileWrite || eventType == EventType.FileRead);
+    }
+
+    public static IOEvent createSocketConnectEvent(Socket s) {
+        return new IOEvent(Thread.currentThread().getName(), EventType.SocketConnect, 0, getAddress(s), false);
     }
 
     public static IOEvent createSocketWriteEvent(long size, Socket s) {
