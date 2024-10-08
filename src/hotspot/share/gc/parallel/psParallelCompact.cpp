@@ -774,7 +774,7 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
   // The size of the filler (min-obj-size) is 2 heap words with the default
   // MinObjAlignment, since both markword and klass take 1 heap word.
   // With +UseCompactObjectHeaders, the minimum filler size is only one word,
-  // because both Klass* gets encoded in the mark-word.
+  // because the Klass* gets encoded in the mark-word.
   //
   // The size of the gap (if any) right before dense-prefix-end is
   // MinObjAlignment.
