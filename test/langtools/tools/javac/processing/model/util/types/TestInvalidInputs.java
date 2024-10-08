@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8340721
+ * @bug 8340721 8341483
  * @summary Test invalid inputs to javax.lang.model.util.Types methods
  * @library /tools/javac/lib
  * @modules java.compiler
@@ -68,8 +68,20 @@ public class TestInvalidInputs extends JavacTestingAbstractProcessor {
                            RoundEnvironment roundEnv) {
         if (!roundEnv.processingOver()) {
             initializeTypes();
+
+            // isSubType
+            // isAssignable
+            // contains
+            // directSupertypes
             testUnboxedType();
+            // capture
+            // getPrimitiveType
+            // getNoType
+            testGetArrayType();
             testGetWildcardType();
+            // getDeclaredType
+            // getDeclaredType (overload)
+            // asMemberOf
         }
         return true;
     }
@@ -136,20 +148,28 @@ public class TestInvalidInputs extends JavacTestingAbstractProcessor {
 
         // Reference types are ArrayType, DeclaredType, ErrorType, NullType, TypeVariable
         // non-reference: ExecutableType, IntersectionType, NoType, PrimitiveType, UnionType, WildcardType
-        var invalidInputs = List.of(objectType, stringType, arrayType,
-                                    executableType, intersectionType,
-                                    noTypeVoid, noTypeNone, noTypePackage, noTypeModule, nullType,
-                                    primitiveType, /*unionType, */ wildcardType);
+        var invalidInputs =
+            List.of(primitiveType, executableType,
+                    objectType, stringType, arrayType,
+                    intersectionType, /*unionType, */
+                    noTypeVoid, noTypeNone, noTypePackage, noTypeModule,
+                    nullType,
+                    wildcardType);
 
         for (TypeMirror tm : invalidInputs) {
             try {
                 PrimitiveType pt = types.unboxedType(tm);
-                throw new RuntimeException("Should not reach " + tm);
+                shouldNotReach(tm);
             } catch(IllegalArgumentException iae) {
                 ; // Expected
             }
         }
         return;
+    }
+
+    private void shouldNotReach(TypeMirror tm) {
+        throw new RuntimeException("Should not reach " + tm +
+                                   " " + tm.getKind());
     }
 
     /**
@@ -160,25 +180,51 @@ public class TestInvalidInputs extends JavacTestingAbstractProcessor {
     void testGetWildcardType() {
         // Reference types are ArrayType, DeclaredType, ErrorType, NullType, TypeVariable
         // non-reference: ExecutableType, IntersectionType, NoType, PrimitiveType, UnionType, WildcardType
-        var invalidInputs = List.of(executableType, intersectionType,
-                                    noTypeVoid, noTypeNone, noTypePackage, noTypeModule, nullType,
-                                    primitiveType, /*unionType, */ wildcardType);
+        var invalidInputs =
+            List.of(primitiveType, executableType,
+                    intersectionType, /*unionType, */
+                    noTypeVoid, noTypeNone, noTypePackage, noTypeModule,
+                    nullType,
+                    wildcardType);
 
         for (TypeMirror tm : invalidInputs) {
             try {
                 WildcardType wc1 = types.getWildcardType(tm,   null);
-                throw new RuntimeException("Should not reach " + tm);
+                shouldNotReach(tm);
             } catch(IllegalArgumentException iae) {
                 ; // Expected
             }
 
             try {
                 WildcardType wc2 = types.getWildcardType(null, tm);
-                throw new RuntimeException("Should not reach " + tm);
+                shouldNotReach(tm);
             } catch(IllegalArgumentException iae) {
                 ; // Expected
             }
         }
         return;
+    }
+
+    /**
+     * @throws IllegalArgumentException if the component type is not valid for
+     *          an array. All valid types are {@linkplain ReferenceType
+     *          reference types} or {@linkplain PrimitiveType primitive types}.
+     *          Invalid types include null, executable, package, module, and wildcard types.
+     */
+    void testGetArrayType() {
+        var invalidInputs =
+            List.of(executableType,
+                    noTypeVoid, noTypeNone, noTypePackage, noTypeModule,
+                    nullType,
+                    /*unionType, */ wildcardType);
+
+        for (TypeMirror tm : invalidInputs) {
+            try {
+                ArrayType arrayType = types.getArrayType(tm);
+                shouldNotReach(tm);
+            } catch(IllegalArgumentException iae) {
+                ; // Expected
+            }
+        }
     }
 }

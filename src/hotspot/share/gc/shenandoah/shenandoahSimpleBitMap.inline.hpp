@@ -27,7 +27,7 @@
 
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
-inline uintx tail_mask(uintx bit_number) {
+inline uintx ShenandoahSimpleBitMap::tail_mask(uintx bit_number) {
   if (bit_number >= BitsPerWord) {
     return -1;
   }

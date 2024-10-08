@@ -196,6 +196,22 @@ class G1CollectionSet {
   // and retained collection set candidates.
   void finalize_old_part(double time_remaining_ms);
 
+  // Calculate and fill in the initial, optional and pinned old gen candidate regions from
+  // the given candidate list and the remaining time.
+  // Returns the remaining time.
+  double select_candidates_from_marking(double time_remaining_ms,
+                                        G1CollectionCandidateRegionList* initial_old_regions,
+                                        G1CollectionCandidateRegionList* pinned_old_regions);
+
+  void select_candidates_from_retained(double time_remaining_ms,
+                                       G1CollectionCandidateRegionList* initial_old_regions,
+                                       G1CollectionCandidateRegionList* pinned_old_regions);
+
+  // Calculate the number of optional regions from the given collection set candidates,
+  // the remaining time and the maximum number of these regions.
+  void select_candidates_from_optional_regions(double time_remaining_ms,
+                                               G1CollectionCandidateRegionList* selected);
+
   // Iterate the part of the collection set given by the offset and length applying the given
   // G1HeapRegionClosure. The worker_id will determine where in the part to start the iteration
   // to allow for more efficient parallel iteration.
