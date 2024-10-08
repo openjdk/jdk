@@ -52,6 +52,7 @@ public class ChoiceMouseEventTest extends Frame {
     static Dimension size;
 
     public void setupGUI() {
+        setTitle("Choice Mouse Event Test");
         this.setLayout(new BorderLayout());
         choice.add("item-1");
         choice.add("item-2");

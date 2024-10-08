@@ -52,6 +52,7 @@ public class ChoiceDragEventsInside extends Frame {
     volatile boolean mouseDraggedOutside = false;
 
     public void setupUI() {
+        setTitle("Choce Drag Events Inside");
         choice1 = new Choice();
         for (int i = 1; i < 50; i++) {
             choice1.add("item-0" + i);
